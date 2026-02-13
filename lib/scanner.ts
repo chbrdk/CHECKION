@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
-import type { Issue, Runner, ScanResult, ScanStats, WcagStandard, Device } from './types';
+import type { Issue, Runner, ScanResult, ScanStats, WcagStandard, Device, ScanOptions } from './types';
 
 /**
  * Viewport definitions for supported devices.
@@ -82,6 +82,7 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
     const { url, standard = 'WCAG2AA', runners = ['axe', 'htmlcs'], device = 'desktop', groupId } = options;
 
     // Dynamic import – pa11y is CommonJS and must stay server-only
+    // @ts-ignore
     const pa11y = (await import('pa11y')).default;
 
     const pa11yRunners: string[] = [];
@@ -100,6 +101,43 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
     const page = await browser.newPage();
     const viewport = VIEWPORTS[device];
     await page.setViewport(viewport);
+
+    // Inject CLS Observer immediately
+    await page.evaluateOnNewDocument(() => {
+        // @ts-ignore
+        window.__cls_score = 0;
+        // @ts-ignore
+        new PerformanceObserver((entryList) => {
+            for (const entry of entryList.getEntries()) {
+                // @ts-ignore
+                if (!entry.hadRecentInput) {
+                    // @ts-ignore
+                    window.__cls_score += entry.value;
+                }
+            }
+        }).observe({ type: 'layout-shift', buffered: true });
+    });
+
+    // --- Console Error Tracking ---
+    const consoleLogs: Array<{ type: 'error' | 'warning', text: string, location?: string }> = [];
+    page.on('console', (msg) => {
+        const type = msg.type() as string;
+        if (type === 'error' || type === 'warning') {
+            consoleLogs.push({
+                type: type as 'error' | 'warning',
+                text: msg.text(),
+                location: msg.location()?.url
+            });
+        }
+    });
+    page.on('pageerror', (err: any) => {
+        consoleLogs.push({
+            type: 'error',
+            text: err.message || 'Unknown error'
+        });
+    });
+
+
 
     // --- Performance & Eco Data Collection ---
     let totalBytes = 0;
@@ -138,6 +176,28 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
             timeout: 60_000, // Increase timeout for visual scan
             wait: 1_000,
         } as any);
+
+        // --- Aggressive Scroll for CLS ---
+        // Scroll down and up to trigger lazy loads and layout shifts
+        await page.evaluate(async () => {
+            const distance = 100;
+            const delay = 50;
+            const totalHeight = document.body.scrollHeight;
+            let currentScroll = 0;
+
+            // Scroll Down
+            while ((window.innerHeight + currentScroll) < totalHeight) {
+                window.scrollBy(0, distance);
+                currentScroll += distance;
+                await new Promise((resolve) => setTimeout(resolve, delay));
+                // Cap to avoid infinite loops
+                if (currentScroll > 5000) break;
+            }
+            // Scroll Up Trigger
+            window.scrollTo(0, 0);
+        });
+        // Allow time for shifts to settle
+        await new Promise((r) => setTimeout(r, 1000));
 
         // --- Extract Performance Metrics ---
         // We use page.evaluate to get window.performance data
@@ -298,6 +358,162 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
 
 
 
+
+        // --- UX Audit Collection ---
+
+        // 1. CLS (Cumulative Layout Shift)
+        // We'll trust the performance observer if it ran, or default to 0
+        const clsScore = await page.evaluate(() => {
+            // @ts-ignore
+            return window.__cls_score || 0;
+        });
+        console.log(`[UX] CLS Score for ${url}:`, clsScore); // Debug log
+
+        // 2. Tap Targets (Mobile Only - or general check)
+        const tapIssues = await page.evaluate(() => {
+            const issues: any[] = [];
+            document.querySelectorAll('button, a, input, [role="button"]').forEach((el) => {
+                const rect = el.getBoundingClientRect();
+                // Ignore hidden or tiny elements
+                if (rect.width === 0 || rect.height === 0 || window.getComputedStyle(el).display === 'none') return;
+
+                // 44px standard (iOS)
+                if (rect.width < 44 || rect.height < 44) {
+                    // Generate a simple selector
+                    let selector = el.tagName.toLowerCase();
+                    if (el.id) selector += `#${el.id}`;
+                    else if (el.className) selector += `.${el.className.split(' ')[0]}`;
+
+                    issues.push({
+                        selector,
+                        text: (el.textContent || '').slice(0, 50).trim(),
+                        size: { width: Math.round(rect.width), height: Math.round(rect.height) }
+                    });
+                }
+            });
+            return issues;
+        });
+
+        // 3. Readability Analysis
+        // Wait for body to be populated (Hydration check)
+        try {
+            await page.waitForFunction(() => document.body.innerText.length > 50, { timeout: 2000 });
+        } catch (e) {
+            // Ignore timeout, proceed with what we have
+        }
+
+        // Extract text content and calculate Flesch-Kincaid
+        const textContent = await page.evaluate(() => {
+            // Helper to get visible text only
+            const isVisible = (elem: HTMLElement) => !!(elem.offsetWidth || elem.offsetHeight || elem.getClientRects().length);
+            return document.body.innerText || '';
+        });
+
+        const cleanText = textContent.replace(/\s+/g, ' ').trim();
+        const sentences = cleanText.split(/[.!?]+/).length;
+        const words = cleanText.split(/\s+/).length;
+        const syllables = cleanText.split(/[aeiouy]+/).length; // Very rough approximation
+
+        // Flesch-Kincaid Grade Level Formula: 0.39 * (words/sentences) + 11.8 * (syllables/words) - 15.59
+        // Clamp values to sane defaults to avoid Infinity
+        const s_w = sentences > 0 ? (words / sentences) : 0;
+        const syl_w = words > 0 ? (syllables / words) : 0;
+        let gradeLevel = 0.39 * s_w + 11.8 * syl_w - 15.59;
+        if (isNaN(gradeLevel) || gradeLevel < 0) gradeLevel = 0;
+
+        let readabilityGrade = 'Unknown';
+        if (gradeLevel <= 6) readabilityGrade = 'Easy (6th Grade)';
+        else if (gradeLevel <= 10) readabilityGrade = 'Standard (High School)';
+        else if (gradeLevel <= 14) readabilityGrade = 'Complex (College)';
+        else readabilityGrade = 'Very Complex (Academic)';
+
+        // Return structured object matching UxResult interface
+        const readabilityResult = {
+            grade: readabilityGrade,
+            score: Number(gradeLevel.toFixed(1))
+        };
+
+        // 4. Viewport Check
+        const viewportCheck = await page.evaluate(() => {
+            const meta = document.querySelector('meta[name="viewport"]');
+            if (!meta) return { isMobileFriendly: false, issues: ['No viewport meta tag found'] };
+            const content = meta.getAttribute('content') || '';
+            const issues: string[] = [];
+            if (content.includes('user-scalable=no') || content.includes('maximum-scale')) {
+                issues.push('Zooming is disabled (user-scalable=no)');
+            }
+            if (!content.includes('width=device-width')) {
+                issues.push('Width not set to device-width');
+            }
+            return { isMobileFriendly: issues.length === 0, issues };
+        });
+
+        // 5. Broken Link Checker (Node-side Fetch)
+        const brokenLinks: Array<{ href: string; status: number; text: string }> = [];
+        let uniqueLinks: Array<{ href: string; text: string }> = [];
+        try {
+            const links = await page.evaluate(() => {
+                return Array.from(document.querySelectorAll('a[href]')).map(a => ({
+                    href: (a as HTMLAnchorElement).href,
+                    text: (a.textContent || '').slice(0, 30).trim()
+                }));
+            });
+
+            // Filter unique, http/https only, take top 15
+            uniqueLinks = Array.from(new Map(links.map(item => [item.href, item])).values())
+                .filter(l => l.href.startsWith('http'))
+                .slice(0, 15);
+
+            await Promise.all(uniqueLinks.map(async (link) => {
+                try {
+                    const res = await fetch(link.href, { method: 'HEAD', signal: AbortSignal.timeout(3000) });
+                    if (res.status >= 400) {
+                        brokenLinks.push({ href: link.href, status: res.status, text: link.text });
+                    }
+                } catch (e) {
+                    // Treat fetch errors as broken (or timeout)
+                    brokenLinks.push({ href: link.href, status: 0, text: link.text });
+                }
+            }));
+        } catch (e) {
+            console.error('Link check failed:', e);
+        }
+
+        // --- Calculate UX Score (Simple Algorithm) ---
+        // 100 Base
+        // CLS > 0.1: -10, > 0.25: -25
+        // Tap Issues: -2 per issue (max -20)
+        // Zoom disabled: -20
+        // Console Errors: -5 per error (max -20)
+        // Broken Links: -10 per link (max -30)
+
+        let uxScore = 100;
+        if (clsScore > 0.25) uxScore -= 25;
+        else if (clsScore > 0.1) uxScore -= 10;
+
+        uxScore -= Math.min(20, tapIssues.length * 2);
+
+        if (!viewportCheck.isMobileFriendly) uxScore -= 20;
+
+        uxScore -= Math.min(20, consoleLogs.filter(l => l.type === 'error').length * 5);
+        uxScore -= Math.min(30, brokenLinks.length * 10);
+
+        uxScore = Math.max(0, Math.round(uxScore));
+
+        const uxResult: ScanResult['ux'] = {
+            score: uxScore,
+            cls: parseFloat(clsScore.toFixed(3)),
+            readability: readabilityResult,
+            tapTargets: { issues: tapIssues },
+            viewport: viewportCheck,
+            consoleErrors: consoleLogs,
+            brokenLinks: brokenLinks
+        };
+
+        const internalLinks = uniqueLinks
+            .filter(l => l.href.startsWith(new URL(url).origin)) // Only internal
+            .map(l => l.href);
+
         const durationMs = Date.now() - startTime;
         const stats = computeStats(issues);
 
@@ -315,12 +531,14 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
             durationMs,
             score: calculateScore(stats),
             screenshot,
+            links: internalLinks,
             performance: perfData,
             eco: {
                 co2: parseFloat(co2Grams.toFixed(3)),
                 grade: ecoGrade,
                 pageWeight: totalBytes
-            }
+            },
+            ux: uxResult
         };
     } finally {
         await browser.close();

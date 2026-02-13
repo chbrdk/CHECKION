@@ -24,6 +24,8 @@ import {
 import { EcoCard } from '../../../components/EcoCard';
 import { PerformanceCard } from '../../../components/PerformanceCard';
 import { ScanIssueList } from '../../../components/ScanIssueList';
+import { UxCard } from '../../../components/UxCard';
+import { UxIssueList } from '../../../components/UxIssueList';
 import type { ScanResult, Issue, IssueSeverity } from '@/lib/types';
 
 const SEVERITY_CONFIG: Record<IssueSeverity, { color: string; label: string }> = {
@@ -43,7 +45,7 @@ export default function ResultsPage() {
     const [error, setError] = useState<string | null>(null);
     const [tab, setTab] = useState<TabFilter>('all');
     const [levelFilter, setLevelFilter] = useState<LevelFilter>('all');
-    const [viewMode, setViewMode] = useState<'list' | 'visual'>('list');
+    const [viewMode, setViewMode] = useState<'list' | 'visual' | 'ux'>('list');
     const [relatedScans, setRelatedScans] = useState<ScanResult[]>([]);
     const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
     const issueRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -347,18 +349,23 @@ export default function ResultsPage() {
                             <PerformanceCard perf={result.performance} />
                         </Box>
                     )}
+                    {result.ux && (
+                        <Box sx={{ minHeight: '100%' }}>
+                            <UxCard ux={result.ux} />
+                        </Box>
+                    )}
                 </Box>
             )}
 
             {/* View Toggle & Filters */}
-            <Box sx={{ mb: `${MSQDX_SPACING.scale.md}px`, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: `${MSQDX_SPACING.scale.md}px` }}>
-
+            <Box sx={{ mb: MSQDX_SPACING.scale.lg }}>
                 <MsqdxTabs
                     value={viewMode}
-                    onChange={setViewMode}
+                    onChange={(v: string) => setViewMode(v as any)}
                     tabs={[
-                        { value: 'list', label: 'Liste' },
-                        { value: 'visual', label: 'Visuell' }
+                        { value: 'list', label: 'Liste & Details' },
+                        { value: 'visual', label: 'Visuelle Analyse' },
+                        { value: 'ux', label: 'UX Audit' },
                     ]}
                 />
             </Box>
@@ -506,7 +513,6 @@ export default function ResultsPage() {
                                                     {pass.description}
                                                 </MsqdxTypography>
 
-                                                {/* List of passed nodes (limit to 10 for performance if list is huge) */}
                                                 <Box sx={{
                                                     display: 'flex',
                                                     flexDirection: 'column',
@@ -532,24 +538,8 @@ export default function ResultsPage() {
                                                             }}>
                                                                 {node.html}
                                                             </code>
-                                                            {node.target && node.target.length > 0 && (
-                                                                <code style={{
-                                                                    fontSize: '0.7rem',
-                                                                    color: MSQDX_THEME.dark.text.tertiary,
-                                                                    fontFamily: 'monospace',
-                                                                    display: 'block',
-                                                                    marginTop: '4px'
-                                                                }}>
-                                                                    {node.target.join(' ')}
-                                                                </code>
-                                                            )}
                                                         </Box>
                                                     ))}
-                                                    {pass.nodes.length > 50 && (
-                                                        <MsqdxTypography variant="caption" sx={{ color: MSQDX_THEME.dark.text.tertiary, textAlign: 'center', py: 1 }}>
-                                                            ... und {pass.nodes.length - 50} weitere Elemente
-                                                        </MsqdxTypography>
-                                                    )}
                                                 </Box>
                                             </Box>
                                         </MsqdxAccordionItem>
@@ -651,6 +641,18 @@ export default function ResultsPage() {
                                 Kein Screenshot verfügbar. (Scans vor dem Update haben keine visuellen Daten)
                             </MsqdxTypography>
                         </Box>
+                    )}
+                </MsqdxMoleculeCard>
+            )}
+            {viewMode === 'ux' && (
+                <MsqdxMoleculeCard
+                    title="User Experience Issues"
+                    description="Deep dive into usability and interactivity problems."
+                >
+                    {result.ux ? (
+                        <UxIssueList ux={result.ux} />
+                    ) : (
+                        <MsqdxTypography>No UX data available for this scan.</MsqdxTypography>
                     )}
                 </MsqdxMoleculeCard>
             )}

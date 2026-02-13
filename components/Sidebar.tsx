@@ -1,13 +1,13 @@
-'use client';
-
 import { usePathname } from 'next/navigation';
 import { MsqdxAdminNav } from '@msqdx/react';
 import type { AdminNavItem } from '@msqdx/react';
 import NextLink from 'next/link';
 
 const NAV_ITEMS: AdminNavItem[] = [
-    { label: 'Dashboard', path: '/', icon: 'dashboard', exact: true },
-    { label: 'Neuer Scan', path: '/scan', icon: 'add_circle' },
+    { label: 'Dashboard', path: '/', icon: 'dashboard' },
+    { label: 'Deep Domain Scan', path: '/scan/domain', icon: 'language' }, // Globe icon
+    { label: 'Single Page Scan', path: '/scan', icon: 'find_in_page' },
+    { label: 'Settings', path: '/settings', icon: 'settings' },
 ];
 
 const EXTERNAL_ITEMS: AdminNavItem[] = [

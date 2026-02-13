@@ -1,0 +1,183 @@
+'use client';
+
+import React, { useEffect, useState, useRef } from 'react';
+import {
+    MsqdxCard,
+    MsqdxTypography,
+    MsqdxButton,
+    MsqdxFormField
+} from '@msqdx/react';
+import { Box, LinearProgress, Paper } from '@mui/material';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { MSQDX_COLORS, MSQDX_SPACING } from '@msqdx/tokens';
+import type { DomainScanStatus } from '@/lib/types';
+
+export default function DomainScanLivePage() {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const [scanId, setScanId] = useState<string | null>(null);
+    const [logs, setLogs] = useState<string[]>([]);
+    const [status, setStatus] = useState<DomainScanStatus>('queued');
+    const logsEndRef = useRef<HTMLDivElement>(null);
+    const [scannedCount, setScannedCount] = useState(0);
+
+    const startUrl = searchParams.get('url');
+
+    // Scroll to bottom of logs
+    useEffect(() => {
+        logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [logs]);
+
+    // Initial Start
+    useEffect(() => {
+        if (startUrl && !scanId) {
+            startScan(startUrl);
+        }
+    }, [startUrl]);
+
+    // Polling Loop
+    useEffect(() => {
+        if (!scanId || status === 'complete' || status === 'error') return;
+
+        const interval = setInterval(async () => {
+            try {
+                const res = await fetch(`/api/scan/domain/${scanId}/status`);
+                if (res.ok) {
+                    const data = await res.json();
+
+                    // Update State
+                    setStatus(data.status);
+
+                    if (data.progress) {
+                        setScannedCount(data.progress.scanned);
+                        if (data.progress.currentUrl) {
+                            setLogs(prev => {
+                                const msg = `Scanning: ${data.progress.currentUrl}`;
+                                // Simple dedup
+                                if (prev[prev.length - 1] !== msg) return [...prev, msg];
+                                return prev;
+                            });
+                        }
+                    }
+
+                    if (data.status === 'complete') {
+                        setLogs(prev => [...prev, 'Scan Complete! Redirecting...']);
+
+                        setTimeout(() => {
+                            router.push(`/domain/${data.id}`);
+                        }, 1000);
+                    } else if (data.status === 'error') {
+                        setLogs(prev => [...prev, `Error: ${data.error || 'Unknown error'}`]);
+                    }
+                }
+            } catch (e) {
+                console.error("Polling error", e);
+            }
+        }, 2000);
+
+        return () => clearInterval(interval);
+    }, [scanId, status, router]);
+
+    async function startScan(url: string) {
+        setStatus('queued');
+        setLogs(['Initializing Async Deep Scan...']);
+
+        try {
+            const response = await fetch('/api/scan/domain', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setScanId(data.id);
+                setLogs(prev => [...prev, 'Scan started in background. Polling for updates...']);
+                setStatus('scanning');
+            } else {
+                throw new Error('Failed to start scan');
+            }
+        } catch (e) {
+            setStatus('error');
+            setLogs(prev => [...prev, 'Failed to initiate scan connection.']);
+        }
+    }
+
+    // Input Form
+    if (!startUrl && !scanId) {
+        return (
+            <Box sx={{ p: 4, maxWidth: 800, mx: 'auto', mt: 8 }}>
+                <MsqdxTypography variant="h3" sx={{ mb: 2, fontWeight: 700 }}>
+                    Deep Domain Scan (Async)
+                </MsqdxTypography>
+                <MsqdxTypography variant="body1" sx={{ mb: 4, color: 'text.secondary' }}>
+                    Crawls your website background job. Capable of scanning unlimited pages without timeout.
+                </MsqdxTypography>
+
+                <Box component="form"
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        const formData = new FormData(e.currentTarget);
+                        const inputUrl = formData.get('url') as string;
+                        if (inputUrl) {
+                            router.push(`/scan/domain?url=${encodeURIComponent(inputUrl)}`);
+                        }
+                    }}
+                    sx={{ display: 'flex', gap: 2 }}
+                >
+                    <Box sx={{ flex: 1 }}>
+                        <MsqdxFormField
+                            label="Domain URL (e.g. https://example.com)"
+                            name="url"
+                            placeholder="https://"
+                            required
+                        />
+                    </Box>
+                    <Box sx={{ pt: '28px' }}>
+                        <MsqdxButton type="submit" variant="contained" size="large">
+                            Start Deep Scan
+                        </MsqdxButton>
+                    </Box>
+                </Box>
+            </Box>
+        );
+    }
+
+    return (
+        <Box sx={{ p: `${MSQDX_SPACING.scale.md}px`, maxWidth: 1600, mx: 'auto' }}>
+            <Box sx={{ mb: 4 }}>
+                <MsqdxTypography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+                    Deep Scanning {startUrl}...
+                </MsqdxTypography>
+                <MsqdxTypography variant="body2" color="textSecondary">
+                    Status: {status.toUpperCase()} | Scanned: {scannedCount} pages
+                </MsqdxTypography>
+            </Box>
+
+            <Box sx={{ maxWidth: 800, mx: 'auto', mt: 4 }}>
+                <MsqdxCard title="Live Scan Progress">
+                    {(status === 'queued' || status === 'scanning') && <LinearProgress sx={{ mb: 2 }} />}
+
+                    <Paper
+                        variant="outlined"
+                        sx={{
+                            height: 400,
+                            overflowY: 'auto',
+                            p: 2,
+                            bgcolor: '#1E1E1E',
+                            color: '#00FF00',
+                            fontFamily: 'monospace'
+                        }}
+                    >
+                        {logs.map((log, i) => (
+                            <Box key={i} sx={{ mb: 0.5 }}>
+                                {log}
+                            </Box>
+                        ))}
+                        <div ref={logsEndRef} />
+                    </Paper>
+                </MsqdxCard>
+            </Box>
+        </Box>
+    );
+}
