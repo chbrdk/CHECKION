@@ -59,6 +59,8 @@ function detectWcagLevel(code: string): Issue['wcagLevel'] {
     if (upperCode.includes('WCAG2AAA')) return 'AAA';
     if (upperCode.includes('WCAG2AA')) return 'AA';
     if (upperCode.includes('WCAG2A')) return 'A';
+    // APCA / WCAG 3.0 Experimental
+    if (upperCode.includes('APCA') || upperCode.includes('COLOR-CONTRAST-ENHANCED')) return 'APCA';
     // Fallback/Heuristic for Axe or other codes if they contain level indicators
     return 'Unknown';
 }
@@ -99,13 +101,32 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
     const viewport = VIEWPORTS[device];
     await page.setViewport(viewport);
 
+    // --- Performance & Eco Data Collection ---
+    let totalBytes = 0;
+    // Enable request interception or just listen to responses for size
+    await page.setRequestInterception(false); // We don't need to block, just listen
+    page.on('response', async (response) => {
+        try {
+            // Getting buffer might fail for some resources (CORS, etc), heuristic fallback
+            const headers = response.headers();
+            if (headers['content-length']) {
+                totalBytes += parseInt(headers['content-length'], 10);
+            } else {
+                // Fallback: This is expensive and might fail, skip for now to save time/stability
+                // const buf = await response.buffer();
+                // totalBytes += buf.length;
+            }
+        } catch (e) {
+            // Ignore failed resource size collection
+        }
+    });
+
     // Set User Agent based on device (simplified)
     if (device === 'mobile') {
         await page.setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1');
     } else if (device === 'tablet') {
         await page.setUserAgent('Mozilla/5.0 (iPad; CPU OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1');
     }
-
 
     try {
         const results = await pa11y(url, {
@@ -117,6 +138,43 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
             timeout: 60_000, // Increase timeout for visual scan
             wait: 1_000,
         } as any);
+
+        // --- Extract Performance Metrics ---
+        // We use page.evaluate to get window.performance data
+        const perfData = await page.evaluate(() => {
+            const navHeading = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+            const paint = performance.getEntriesByName('first-contentful-paint')[0];
+
+            // Basic fallbacks
+            const ttfb = navHeading ? (navHeading.responseStart - navHeading.requestStart) : 0;
+            const domLoad = navHeading ? (navHeading.domContentLoadedEventEnd - navHeading.fetchStart) : 0;
+            const windowLoad = navHeading ? (navHeading.loadEventEnd - navHeading.fetchStart) : 0;
+            const fcp = paint ? paint.startTime : 0;
+
+            return {
+                ttfb: Math.round(ttfb),
+                fcp: Math.round(fcp),
+                domLoad: Math.round(domLoad),
+                windowLoad: Math.round(windowLoad),
+                lcp: 0, // LCP requires PerformanceObserver, keeping it simple for now
+            };
+        });
+
+        // --- Calculate Eco Score ---
+        // Model: Sustainable Web Design
+        // 0.81 kWh/GB for data transfer
+        // 442g CO2/kWh global average carbon intensity
+        const transferGB = totalBytes / (1024 * 1024 * 1024);
+        const energyKWh = transferGB * 0.81 * 0.75; // 0.75 for first-time visit (caching factor)
+        const co2Grams = energyKWh * 442;
+
+        let ecoGrade: 'A+' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' = 'F';
+        if (co2Grams < 0.095) ecoGrade = 'A+';
+        else if (co2Grams < 0.186) ecoGrade = 'A';
+        else if (co2Grams < 0.341) ecoGrade = 'B';
+        else if (co2Grams < 0.493) ecoGrade = 'C';
+        else if (co2Grams < 0.656) ecoGrade = 'D';
+        else if (co2Grams < 0.850) ecoGrade = 'E';
 
         // 1. Capture Full Page Screenshot (Base64)
         const screenshotBuffer = await page.screenshot({
@@ -130,6 +188,7 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
         // 2. Extract Bounding Boxes for Issues
         const issuePromises = (results.issues || []).map(async (raw: any) => {
             let boundingBox;
+
             if (raw.selector) {
                 try {
                     // Try to finding the element and get its bounding box
@@ -187,17 +246,28 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                 console.log("Axe injected via fallback path.");
             }
 
-            // Run axe
+            // Run axe with APCA enabled
             const axeResults = await page.evaluate(async () => {
                 try {
                     // @ts-ignore
                     if (typeof axe === 'undefined') return { error: 'axe is undefined in page context' };
+
+                    // Enable experimental APCA rules
+                    // @ts-ignore
+                    axe.configure({
+                        rules: [{
+                            id: 'color-contrast-enhanced',
+                            enabled: true
+                        }]
+                    });
+
                     // @ts-ignore
                     return await axe.run({
                         runOnly: {
                             type: 'tag',
-                            values: ['wcag2a', 'wcag2aa', 'wcag2aaa']
-                        }
+                            values: ['wcag2a', 'wcag2aa', 'wcag2aaa', 'cat.apca']
+                        },
+                        resultTypes: ['violations', 'passes', 'inapplicable', 'incomplete']
                     });
                 } catch (err: any) {
                     return { error: err.toString() };
@@ -245,6 +315,12 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
             durationMs,
             score: calculateScore(stats),
             screenshot,
+            performance: perfData,
+            eco: {
+                co2: parseFloat(co2Grams.toFixed(3)),
+                grade: ecoGrade,
+                pageWeight: totalBytes
+            }
         };
     } finally {
         await browser.close();

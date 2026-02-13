@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Box, alpha, Collapse, CircularProgress } from '@mui/material';
 import {
@@ -21,6 +21,9 @@ import {
     MSQDX_NEUTRAL,
     MSQDX_STATUS,
 } from '@msqdx/tokens';
+import { EcoCard } from '../../../components/EcoCard';
+import { PerformanceCard } from '../../../components/PerformanceCard';
+import { ScanIssueList } from '../../../components/ScanIssueList';
 import type { ScanResult, Issue, IssueSeverity } from '@/lib/types';
 
 const SEVERITY_CONFIG: Record<IssueSeverity, { color: string; label: string }> = {
@@ -30,7 +33,7 @@ const SEVERITY_CONFIG: Record<IssueSeverity, { color: string; label: string }> =
 };
 
 type TabFilter = 'all' | IssueSeverity;
-type LevelFilter = 'all' | 'A' | 'AA' | 'AAA' | 'Unknown';
+type LevelFilter = 'all' | 'A' | 'AA' | 'AAA' | 'APCA' | 'Unknown';
 
 export default function ResultsPage() {
     const params = useParams();
@@ -42,9 +45,45 @@ export default function ResultsPage() {
     const [levelFilter, setLevelFilter] = useState<LevelFilter>('all');
     const [viewMode, setViewMode] = useState<'list' | 'visual'>('list');
     const [relatedScans, setRelatedScans] = useState<ScanResult[]>([]);
+    const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
+    const issueRefs = useRef<(HTMLDivElement | null)[]>([]);
 
     // Derived stats for WCAG levels
-    const [levelStats, setLevelStats] = useState({ A: 0, AA: 0, AAA: 0, Unknown: 0 });
+    const [levelStats, setLevelStats] = useState({ A: 0, AA: 0, AAA: 0, APCA: 0, Unknown: 0 });
+
+    const handleHover = useCallback((index: number | null) => {
+        setHighlightedIndex(index);
+    }, []);
+
+    const handleRefRegister = useCallback((index: number, el: HTMLDivElement | null) => {
+        issueRefs.current[index] = el;
+    }, []);
+
+    const filteredIssues = useMemo(() => {
+        if (!result) return [];
+        return result.issues.filter((i) => {
+            const typeMatch = tab === 'all' || i.type === tab;
+            const levelMatch = levelFilter === 'all' || i.wcagLevel === levelFilter;
+            return typeMatch && levelMatch;
+        });
+    }, [result, tab, levelFilter]);
+
+    // Scroll to issue in list
+    const scrollToIssue = (index: number) => {
+        const el = issueRefs.current[index];
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setHighlightedIndex(index);
+            // Switch to list view if not already
+            if (viewMode !== 'list') {
+                setViewMode('list');
+                setTimeout(() => {
+                    const el = issueRefs.current[index];
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            }
+        }
+    };
 
     useEffect(() => {
         if (!params.id) return;
@@ -70,11 +109,12 @@ export default function ResultsPage() {
                 }
 
                 // Compute level stats
-                const stats = { A: 0, AA: 0, AAA: 0, Unknown: 0 };
+                const stats = { A: 0, AA: 0, AAA: 0, APCA: 0, Unknown: 0 };
                 data.issues.forEach(issue => {
                     if (issue.wcagLevel === 'A') stats.A++;
                     else if (issue.wcagLevel === 'AA') stats.AA++;
                     else if (issue.wcagLevel === 'AAA') stats.AAA++;
+                    else if (issue.wcagLevel === 'APCA') stats.APCA++;
                     else stats.Unknown++;
                 });
                 setLevelStats(stats);
@@ -107,11 +147,7 @@ export default function ResultsPage() {
         );
     }
 
-    const filteredIssues = result.issues.filter((i) => {
-        const typeMatch = tab === 'all' || i.type === tab;
-        const levelMatch = levelFilter === 'all' || i.wcagLevel === levelFilter;
-        return typeMatch && levelMatch;
-    });
+
 
     const TABS: { key: TabFilter | 'passed'; label: string; count: number; color: string }[] = [
         { key: 'all', label: 'Alle', count: result.issues.length, color: MSQDX_BRAND_PRIMARY.green },
@@ -293,19 +329,30 @@ export default function ResultsPage() {
                 </Box>
             </MsqdxMoleculeCard>
 
+            {/* Eco & Performance Grid */}
+            {(result.eco || result.performance) && (
+                <Box sx={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+                    gap: `${MSQDX_SPACING.scale.lg}px`,
+                    mb: `${MSQDX_SPACING.scale.lg}px`,
+                }}>
+                    {result.eco && (
+                        <Box sx={{ minHeight: '100%' }}>
+                            <EcoCard eco={result.eco} />
+                        </Box>
+                    )}
+                    {result.performance && (
+                        <Box sx={{ minHeight: '100%' }}>
+                            <PerformanceCard perf={result.performance} />
+                        </Box>
+                    )}
+                </Box>
+            )}
+
             {/* View Toggle & Filters */}
             <Box sx={{ mb: `${MSQDX_SPACING.scale.md}px`, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: `${MSQDX_SPACING.scale.md}px` }}>
-                <MsqdxTabs
-                    value={levelFilter}
-                    onChange={(val) => setLevelFilter(val as LevelFilter)}
-                    tabs={[
-                        { value: 'all', label: 'Alle Level' },
-                        { value: 'A', label: 'Level A' },
-                        { value: 'AA', label: 'Level AA' },
-                        { value: 'AAA', label: 'Level AAA' },
-                    ]}
-                    sx={{ '& .msqdx-tabs__tab': { minWidth: 'auto', px: 2 } }}
-                />
+
                 <MsqdxTabs
                     value={viewMode}
                     onChange={setViewMode}
@@ -342,6 +389,47 @@ export default function ResultsPage() {
                                 >
                                     {t.label}
                                     ({t.count})
+                                </MsqdxButton>
+                            ))}
+                            {/* Divider */}
+                            <Box sx={{ width: 1, height: 24, bgcolor: MSQDX_THEME.dark.border.subtle, mx: 1, alignSelf: 'center' }} />
+
+                            {/* Level Filters */}
+                            {['all', 'A', 'AA', 'AAA', 'APCA'].map((level) => (
+                                <MsqdxButton
+                                    key={level}
+                                    variant={levelFilter === level ? 'contained' : 'text'}
+                                    size="small"
+                                    onClick={() => setLevelFilter(level as LevelFilter)}
+                                    sx={{
+                                        fontSize: '0.75rem',
+                                        fontWeight: 600,
+                                        borderRadius: '16px',
+                                        color: levelFilter === level ? '#000' : MSQDX_THEME.dark.text.secondary,
+                                        backgroundColor: levelFilter === level ? MSQDX_BRAND_PRIMARY.green : 'transparent',
+                                        '&:hover': {
+                                            backgroundColor: levelFilter === level ? MSQDX_BRAND_PRIMARY.green : alpha(MSQDX_NEUTRAL[200], 0.1),
+                                        },
+                                        minWidth: 'auto',
+                                        px: 2
+                                    }}
+                                >
+                                    {level === 'all' ? 'Alle Level' : level === 'APCA' ? 'APCA' : `Lvl ${level}`}
+                                    {level !== 'all' && (
+                                        <Box
+                                            component="span"
+                                            sx={{
+                                                ml: 1,
+                                                fontSize: '0.65rem',
+                                                opacity: 0.7,
+                                                backgroundColor: 'rgba(0,0,0,0.1)',
+                                                px: 0.5,
+                                                borderRadius: '4px'
+                                            }}
+                                        >
+                                            {levelStats[level as keyof typeof levelStats]}
+                                        </Box>
+                                    )}
                                 </MsqdxButton>
                             ))}
                         </Box>
@@ -492,165 +580,12 @@ export default function ResultsPage() {
                             </MsqdxTypography>
                         </Box>
                     ) : (
-                        <MsqdxAccordion
-                            allowMultiple
-                            size="small"
-                            borderRadius="md"
-                            sx={{ display: 'flex', flexDirection: 'column', gap: `${MSQDX_SPACING.scale.sm}px`, background: 'transparent', border: 'none' }}
-                        >
-                            {filteredIssues.map((issue, idx) => {
-                                const config = SEVERITY_CONFIG[issue.type];
-                                const itemId = `issue-${idx}`;
-                                return (
-                                    <MsqdxAccordionItem
-                                        key={itemId}
-                                        id={itemId}
-                                        summary={
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: `${MSQDX_SPACING.scale.sm}px`, width: '100%' }}>
-                                                {/* Severity dot */}
-                                                <Box
-                                                    sx={{
-                                                        width: 8,
-                                                        height: 8,
-                                                        borderRadius: '50%',
-                                                        backgroundColor: config.color,
-                                                        flexShrink: 0,
-                                                    }}
-                                                />
-                                                <Box sx={{ flex: 1, minWidth: 0 }}>
-                                                    <MsqdxTypography
-                                                        variant="body2"
-                                                        sx={{
-                                                            fontWeight: 500,
-                                                            lineHeight: 1.5,
-                                                            whiteSpace: 'normal',
-                                                        }}
-                                                    >
-                                                        {issue.message}
-                                                    </MsqdxTypography>
-                                                    <Box sx={{ display: 'flex', gap: `${MSQDX_SPACING.scale.xs}px`, mt: `${MSQDX_SPACING.scale.xs}px`, flexWrap: 'wrap' }}>
-                                                        <MsqdxChip
-                                                            label={config.label}
-                                                            size="small"
-                                                            sx={{
-                                                                backgroundColor: alpha(config.color, 0.12),
-                                                                color: config.color,
-                                                                fontWeight: 600,
-                                                                fontSize: '0.6rem',
-                                                                height: 20,
-                                                            }}
-                                                        />
-                                                        {issue.wcagLevel && issue.wcagLevel !== 'Unknown' && (
-                                                            <MsqdxChip
-                                                                label={`Level ${issue.wcagLevel}`}
-                                                                size="small"
-                                                                sx={{
-                                                                    backgroundColor: alpha(MSQDX_STATUS.info.base, 0.12),
-                                                                    color: MSQDX_STATUS.info.base,
-                                                                    fontWeight: 600,
-                                                                    fontSize: '0.6rem',
-                                                                    height: 20,
-                                                                }}
-                                                            />
-                                                        )}
-                                                        <MsqdxChip
-                                                            label={issue.runner}
-                                                            size="small"
-                                                            sx={{
-                                                                backgroundColor: alpha(MSQDX_NEUTRAL[400], 0.1),
-                                                                color: MSQDX_THEME.dark.text.tertiary,
-                                                                fontSize: '0.6rem',
-                                                                height: 20,
-                                                            }}
-                                                        />
-                                                        {issue.code && (
-                                                            <MsqdxChip
-                                                                label={issue.code.length > 50 ? issue.code.slice(0, 50) + '…' : issue.code}
-                                                                size="small"
-                                                                sx={{
-                                                                    backgroundColor: alpha(MSQDX_BRAND_PRIMARY.purple, 0.08),
-                                                                    color: MSQDX_BRAND_PRIMARY.purple,
-                                                                    fontSize: '0.55rem',
-                                                                    height: 20,
-                                                                }}
-                                                            />
-                                                        )}
-                                                    </Box>
-                                                </Box>
-                                            </Box>
-                                        }
-                                    >
-                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: `${MSQDX_SPACING.scale.sm}px` }}>
-                                            {issue.selector && (
-                                                <Box>
-                                                    <MsqdxTypography
-                                                        variant="caption"
-                                                        sx={{
-                                                            color: MSQDX_THEME.dark.text.tertiary,
-                                                            textTransform: 'uppercase',
-                                                            letterSpacing: '0.1em',
-                                                            fontSize: '0.6rem',
-                                                            fontWeight: 600,
-                                                        }}
-                                                    >
-                                                        CSS Selector
-                                                    </MsqdxTypography>
-                                                    <Box
-                                                        component="code"
-                                                        sx={{
-                                                            display: 'block',
-                                                            mt: '4px',
-                                                            p: `${MSQDX_SPACING.scale.sm}px`,
-                                                            borderRadius: `${MSQDX_SPACING.borderRadius.sm}px`,
-                                                            backgroundColor: MSQDX_NEUTRAL[800],
-                                                            color: MSQDX_BRAND_PRIMARY.yellow,
-                                                            fontSize: '0.75rem',
-                                                            overflowX: 'auto',
-                                                            whiteSpace: 'pre-wrap',
-                                                            wordBreak: 'break-all',
-                                                        }}
-                                                    >
-                                                        {issue.selector}
-                                                    </Box>
-                                                </Box>
-                                            )}
-                                            {issue.context && (
-                                                <Box>
-                                                    <MsqdxTypography
-                                                        variant="caption"
-                                                        sx={{
-                                                            color: MSQDX_THEME.dark.text.tertiary,
-                                                            textTransform: 'uppercase',
-                                                            letterSpacing: '0.1em',
-                                                            fontSize: '0.6rem',
-                                                            fontWeight: 600,
-                                                        }}
-                                                    >
-                                                        HTML Context
-                                                    </MsqdxTypography>
-                                                    <Box
-                                                        component="pre"
-                                                        sx={{
-                                                            mt: '4px',
-                                                            p: `${MSQDX_SPACING.scale.sm}px`,
-                                                            borderRadius: `${MSQDX_SPACING.borderRadius.sm}px`,
-                                                            backgroundColor: MSQDX_NEUTRAL[800],
-                                                            color: MSQDX_BRAND_PRIMARY.orange,
-                                                            fontSize: '0.75rem',
-                                                            overflowX: 'auto',
-                                                            whiteSpace: 'pre-wrap',
-                                                            wordBreak: 'break-all',
-                                                        }}
-                                                    >
-                                                        {issue.context}
-                                                    </Box>
-                                                </Box>
-                                            )}
-                                        </Box>
-                                    </MsqdxAccordionItem>
-                                );
-                            })}
-                        </MsqdxAccordion>
+                        <ScanIssueList
+                            issues={filteredIssues}
+                            highlightedIndex={highlightedIndex}
+                            onHover={handleHover}
+                            registerRef={handleRefRegister}
+                        />
                     )}
                 </MsqdxMoleculeCard>
             )}
@@ -677,7 +612,7 @@ export default function ResultsPage() {
                                                     <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{issue.message}</MsqdxTypography>
                                                     <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
                                                         <MsqdxChip label={issue.type} size="small" sx={{ height: 16, fontSize: '0.6rem', bgcolor: SEVERITY_CONFIG[issue.type].color, color: '#000' }} />
-                                                        {issue.wcagLevel && issue.wcagLevel !== 'Unknown' && <MsqdxChip label={`Level ${issue.wcagLevel}`} size="small" sx={{ height: 16, fontSize: '0.6rem', bgcolor: MSQDX_BRAND_PRIMARY.blue, color: '#fff' }} />}
+                                                        {issue.wcagLevel && issue.wcagLevel !== 'Unknown' && <MsqdxChip label={issue.wcagLevel === 'APCA' ? 'APCA' : `Level ${issue.wcagLevel}`} size="small" sx={{ height: 16, fontSize: '0.6rem', bgcolor: issue.wcagLevel === 'APCA' ? MSQDX_BRAND_PRIMARY.purple : MSQDX_BRAND_PRIMARY.blue, color: '#fff' }} />}
                                                     </Box>
                                                     <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{issue.selector}</MsqdxTypography>
                                                 </Box>
@@ -690,15 +625,21 @@ export default function ResultsPage() {
                                                 top: issue.boundingBox.y,
                                                 width: issue.boundingBox.width,
                                                 height: issue.boundingBox.height,
-                                                border: `3px solid ${SEVERITY_CONFIG[issue.type].color}`,
-                                                backgroundColor: alpha(SEVERITY_CONFIG[issue.type].color, 0.2),
+                                                border: highlightedIndex === idx ? `4px solid ${SEVERITY_CONFIG[issue.type].color}` : `3px solid ${SEVERITY_CONFIG[issue.type].color}`,
+                                                backgroundColor: highlightedIndex === idx ? alpha(SEVERITY_CONFIG[issue.type].color, 0.5) : alpha(SEVERITY_CONFIG[issue.type].color, 0.2),
                                                 cursor: 'pointer',
-                                                zIndex: 10,
+                                                zIndex: highlightedIndex === idx ? 30 : 10,
+                                                transition: 'all 0.2s',
+                                                boxShadow: highlightedIndex === idx ? `0 0 0 4px ${alpha(SEVERITY_CONFIG[issue.type].color, 0.4)}` : 'none',
                                                 '&:hover': {
                                                     backgroundColor: alpha(SEVERITY_CONFIG[issue.type].color, 0.4),
                                                     zIndex: 20,
                                                 }
-                                            }} />
+                                            }}
+                                                onClick={() => scrollToIssue(idx)}
+                                                onMouseEnter={() => setHighlightedIndex(idx)}
+                                                onMouseLeave={() => setHighlightedIndex(null)}
+                                            />
                                         </MsqdxTooltip>
                                     )
                                 ))}

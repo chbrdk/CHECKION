@@ -18,7 +18,7 @@ export interface Issue {
     /** Which runner found this issue */
     runner: Runner;
     /** WCAG Level (A, AA, AAA) or Unknown */
-    wcagLevel: 'A' | 'AA' | 'AAA' | 'Unknown';
+    wcagLevel: 'A' | 'AA' | 'AAA' | 'APCA' | 'Unknown';
     boundingBox?: {
         x: number;
         y: number;
@@ -61,6 +61,20 @@ export interface ScanResult {
     /** Overall accessibility score (0-100) */
     score: number;
     screenshot?: string; // Base64
+    /** Sustainability metrics */
+    eco?: {
+        co2: number; // grams per visit
+        grade: 'A+' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
+        pageWeight: number; // bytes
+    };
+    /** Performance metrics */
+    performance?: {
+        ttfb: number; // ms
+        fcp: number; // ms
+        lcp: number; // ms
+        domLoad: number; // ms
+        windowLoad: number; // ms
+    };
 }
 
 export interface ScanRequest {
