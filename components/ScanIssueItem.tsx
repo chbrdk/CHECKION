@@ -44,23 +44,12 @@ export const ScanIssueItem = memo(({ issue, index, isHighlighted, registerRef }:
     }, [index, registerRef]);
 
     return (
-        <Box
-            id={`${itemId}-wrapper`}
-            ref={handleRef}
-            sx={{
-                transition: 'background-color 0.15s, border-color 0.15s',
-                backgroundColor: isHighlighted ? `${config.color}18` : 'transparent',
-                borderRadius: '8px',
-                border: `1px solid ${isHighlighted ? config.color : 'transparent'}`,
-                '&:hover': {
-                    backgroundColor: `${config.color}18`,
-                    borderColor: config.color,
-                },
-            }}
-        >
-            <MsqdxAccordionItem
-                id={itemId}
-                summary={
+        <MsqdxAccordionItem
+            id={itemId}
+            wrapperRef={handleRef}
+            highlighted={isHighlighted}
+            highlightColor={config.color}
+            summary={
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: `${MSQDX_SPACING.scale.sm}px`, width: '100%' }}>
                         {/* Severity dot */}
                         <Box
@@ -203,8 +192,7 @@ export const ScanIssueItem = memo(({ issue, index, isHighlighted, registerRef }:
                         </Box>
                     )}
                 </Box>
-            </MsqdxAccordionItem>
-        </Box>
+        </MsqdxAccordionItem>
     );
 });
 
