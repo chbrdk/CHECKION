@@ -21,11 +21,11 @@ const tableBorder = `1px solid ${MSQDX_NEUTRAL[700]}`;
 interface ScanIssueRowProps {
     issue: Issue;
     index: number;
-    isHighlighted: boolean;
     registerRef: (index: number, el: HTMLDivElement | null) => void;
 }
 
-export const ScanIssueRow = memo(({ issue, index, isHighlighted, registerRef }: ScanIssueRowProps) => {
+/** Highlight is applied via parent CSS (data-highlighted-index + data-row-index) so this row never re-renders when highlight changes. */
+export const ScanIssueRow = memo(({ issue, index, registerRef }: ScanIssueRowProps) => {
     const config = SEVERITY_CONFIG[issue.type] ?? SEVERITY_CONFIG.notice;
     const handleRef = React.useCallback((el: HTMLDivElement | null) => registerRef(index, el), [index, registerRef]);
 
@@ -38,6 +38,7 @@ export const ScanIssueRow = memo(({ issue, index, isHighlighted, registerRef }: 
             ref={handleRef}
             id={`issue-${index}-wrapper`}
             component="div"
+            data-row-index={index}
             sx={{
                 display: 'grid',
                 gridTemplateColumns: 'minmax(0, 1fr) minmax(120px, 1.2fr) 80px 72px minmax(0, 1fr) 40px',
@@ -46,7 +47,9 @@ export const ScanIssueRow = memo(({ issue, index, isHighlighted, registerRef }: 
                 borderBottom: tableBorder,
                 alignItems: 'stretch',
                 transition: 'background-color 0.12s',
-                backgroundColor: isHighlighted ? `${config.color}18` : 'transparent',
+                backgroundColor: 'transparent',
+                contentVisibility: 'auto',
+                containIntrinsicSize: 'auto 52px',
                 '&:last-of-type': { borderBottom: 'none' },
                 '&:hover': {
                     backgroundColor: `${config.color}12`,

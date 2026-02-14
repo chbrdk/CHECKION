@@ -1,6 +1,6 @@
-import React, { memo } from 'react';
-import { Box } from '@mui/material';
-import { MSQDX_SPACING, MSQDX_NEUTRAL, MSQDX_THEME } from '@msqdx/tokens';
+import React, { memo, useMemo } from 'react';
+import { Box, alpha } from '@mui/material';
+import { MSQDX_SPACING, MSQDX_NEUTRAL, MSQDX_THEME, MSQDX_STATUS } from '@msqdx/tokens';
 import { MsqdxTypography } from '@msqdx/react';
 import { ScanIssueRow } from './ScanIssueRow';
 import type { Issue } from '@/lib/types';
@@ -12,17 +12,28 @@ interface ScanIssueListProps {
 }
 
 const tableBorder = `1px solid ${MSQDX_NEUTRAL[700]}`;
+const highlightBg = alpha(MSQDX_STATUS.info.base, 0.15);
 
 export const ScanIssueList = memo(({ issues, highlightedIndex, registerRef }: ScanIssueListProps) => {
+    const containerSx = useMemo(() => ({
+        border: tableBorder,
+        borderRadius: `${MSQDX_SPACING.borderRadius.md}px`,
+        overflow: 'auto',
+        maxHeight: '65vh',
+        backgroundColor: MSQDX_THEME.dark.surface.primary,
+        contain: 'layout',
+        ...(highlightedIndex !== null && {
+            [`& [data-row-index="${highlightedIndex}"]`]: {
+                backgroundColor: highlightBg,
+            },
+        }),
+    }), [highlightedIndex]);
+
     return (
         <Box
             component="div"
-            sx={{
-                border: tableBorder,
-                borderRadius: `${MSQDX_SPACING.borderRadius.md}px`,
-                overflow: 'hidden',
-                backgroundColor: MSQDX_THEME.dark.surface.primary,
-            }}
+            data-highlighted-index={highlightedIndex ?? ''}
+            sx={containerSx}
         >
             {/* Table header */}
             <Box
@@ -72,7 +83,6 @@ export const ScanIssueList = memo(({ issues, highlightedIndex, registerRef }: Sc
                     key={`issue-${idx}`}
                     issue={issue}
                     index={idx}
-                    isHighlighted={highlightedIndex === idx}
                     registerRef={registerRef}
                 />
             ))}
