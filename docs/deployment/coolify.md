@@ -36,7 +36,7 @@ Optional (Build-Arg): Wenn das Design-System aus einem anderen Repo kommen soll:
 
 ## 3. Umgebungsvariablen setzen
 
-In den Application-Einstellungen unter **Environment Variables** eintragen:
+In Coolify: **Application** → **Environment Variables** (bzw. **Variables** / **Env**) alle nötigen Variablen eintragen:
 
 ```bash
 # Pflicht – fehlt einer davon, gibt es 500 bei /api/auth/session und /api/auth/register
@@ -45,21 +45,27 @@ DATABASE_URL=postgresql://checkion:<DEIN_PASSWORT>@checkion-postgres:5432/checki
 
 # Optional – für zuverlässige Session-Cookies hinter Proxy (empfohlen)
 AUTH_URL=https://checkion.projects-a.plygrnd.tech
+
+# Optional – für UX/CX Check (Tab „Zusammenfassung generieren“). Ohne KEY funktioniert der Rest; nur der LLM-Summary schlägt fehl.
+OPENAI_API_KEY=sk-...
+# OPENAI_MODEL=gpt5-mini
 ```
 Ersetze die URL durch deine echte CHECKION-Domain.
 
 **Hinweis:** Wenn Coolify `postgres://` ausgibt, in `postgresql://` ändern (Drizzle/Node erwarten `postgresql://`).
 
-## 4. Schema anlegen
+## 4. Schema anlegen / DB aktualisieren
 
-Beim Start des Containers wird automatisch `drizzle-kit push` ausgeführt. Falls die Tabelle **users** trotzdem fehlt (z. B. Log: `relation "users" does not exist`), Schema einmalig von Hand anlegen:
+Beim Start des Containers wird automatisch `drizzle-kit push` ausgeführt. Dadurch werden fehlende Tabellen und **neue Spalten** (z. B. `scans.llm_summary` für den UX/CX-Check) angelegt.
+
+Falls die Tabelle **users** trotzdem fehlt (z. B. Log: `relation "users" does not exist`) oder nach einem Update die neue Spalte **llm_summary** fehlt, Schema einmalig von Hand anwenden:
 
 1. In Coolify: **Application** → CHECKION → **Terminal** (oder **Execute Command**).
 2. Befehl ausführen:
    ```bash
    npx drizzle-kit push
    ```
-3. Danach die App erneut aufrufen (Login/Registrierung sollte funktionieren).
+3. Danach die App erneut aufrufen (Login/Registrierung bzw. „Zusammenfassung generieren“ sollte funktionieren).
 
 ## 5. Domain & SSL
 

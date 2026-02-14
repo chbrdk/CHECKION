@@ -1,9 +1,9 @@
 /**
  * LLM config: model and API key.
- * OPENAI_API_KEY is required; OPENAI_MODEL defaults to gpt-5.1.
+ * OPENAI_API_KEY is required; OPENAI_MODEL defaults to gpt5-mini.
  */
 
-export const OPENAI_MODEL = process.env.OPENAI_MODEL ?? 'gpt-5.1';
+export const OPENAI_MODEL = process.env.OPENAI_MODEL ?? 'gpt5-mini';
 
 export function getOpenAIKey(): string {
     const key = process.env.OPENAI_API_KEY;
