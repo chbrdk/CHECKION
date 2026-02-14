@@ -6,7 +6,8 @@
     "dev": "next dev --webpack --port 3333",
     "build": "next build --webpack",
     "start": "next start --port 3333",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:push": "drizzle-kit push"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -16,19 +17,26 @@
     "@mui/material": "^7.3.5",
     "@react-pdf/renderer": "^4.3.2",
     "axe-core": "^4.11.1",
+    "bcryptjs": "^3.0.3",
+    "drizzle-orm": "^0.45.1",
     "lucide-react": "^0.563.0",
     "next": "16.1.6",
+    "next-auth": "^5.0.0-beta.30",
     "pa11y": "^8.0.0",
+    "pg": "^8.18.0",
     "puppeteer": "^24.37.2",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
+    "@types/pg": "^8.16.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/uuid": "^10.0.0",
+    "drizzle-kit": "^0.31.9",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tsx": "^4.21.0",

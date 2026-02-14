@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/auth';
 import { runDomainScan } from '@/lib/spider';
-import { scanStore } from '@/lib/store';
+import { createDomainScan, updateDomainScan, getDomainScan, addScan } from '@/lib/db/scans';
 import { v4 as uuidv4 } from 'uuid';
+import type { DomainScanResult } from '@/lib/types';
 
-export const maxDuration = 10; // Fast response for async job
+export const maxDuration = 10;
 
 export async function POST(req: NextRequest) {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const userId = session.user.id;
     let url: string;
     try {
         const body = await req.json();
@@ -13,72 +20,57 @@ export async function POST(req: NextRequest) {
     } catch {
         return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
     }
-
     if (!url) {
         return NextResponse.json({ error: 'URL is required' }, { status: 400 });
     }
 
     const id = uuidv4();
+    const initial: DomainScanResult = {
+        id,
+        domain: url,
+        timestamp: new Date().toISOString(),
+        status: 'queued',
+        progress: { scanned: 0, total: 0 },
+        totalPages: 0,
+        score: 0,
+        pages: [],
+        graph: { nodes: [], links: [] },
+        systemicIssues: []
+    };
+    await createDomainScan(userId, initial);
 
-    // Initialize in store
-    scanStore.createDomainScan(id, url);
-
-    // Start Background Job (Fire & Forget)
     (async () => {
         try {
-            scanStore.updateDomainScan(id, { status: 'scanning' });
-
-            // Iterate over generator updates
+            await updateDomainScan(id, userId, { status: 'scanning' });
             for await (const update of runDomainScan(url, {})) {
-
-                // Map generator events to store updates
-                const currentScan = scanStore.getDomainScan(id);
+                const currentScan = await getDomainScan(id, userId);
                 if (!currentScan) break;
-
                 if (update.type === 'progress') {
-                    scanStore.updateDomainScan(id, {
-                        progress: {
-                            scanned: update.scannedCount,
-                            total: 0, // Unknown/Unlimited
-                            currentUrl: update.url
-                        }
+                    await updateDomainScan(id, userId, {
+                        progress: { scanned: update.scannedCount, total: 0, currentUrl: update.url }
                     });
                 } else if (update.type === 'complete') {
-                    // Update the full result object when done
-                    scanStore.updateDomainScan(id, {
+                    await updateDomainScan(id, userId, {
                         score: update.domainResult.score,
                         pages: update.domainResult.pages,
                         graph: update.domainResult.graph,
                         systemicIssues: update.domainResult.systemicIssues,
                         totalPages: update.domainResult.totalPages
                     });
-
-                    // Index individual pages so they can be opened via /results/[id]
-                    update.domainResult.pages.forEach((page: any) => {
-                        scanStore.add(page);
-                    });
+                    for (const page of update.domainResult.pages) {
+                        await addScan(userId, page);
+                    }
                 }
             }
-
-            // Mark complete
-            scanStore.updateDomainScan(id, { status: 'complete' });
-
+            await updateDomainScan(id, userId, { status: 'complete' });
         } catch (e) {
             console.error('Background Scan Error:', e);
-            scanStore.updateDomainScan(id, {
-                status: 'error',
-                error: (e as Error).message
-            });
+            await updateDomainScan(id, userId, { status: 'error', error: (e as Error).message } as Partial<DomainScanResult>);
         }
     })();
 
-    // Return immediately with 202 Accepted
     return NextResponse.json({
         success: true,
-        data: {
-            id,
-            status: 'queued',
-            message: 'Scan started in background'
-        }
+        data: { id, status: 'queued', message: 'Scan started in background' }
     }, { status: 202 });
 }

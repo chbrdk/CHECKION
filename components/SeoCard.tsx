@@ -74,7 +74,7 @@ export function SeoCard({ seo }: { seo: SeoAudit }) {
                             {seo.keywordAnalysis.totalWords} Wörter im Body · Top-Begriffe (Stopwörter entfernt), Dichte in %
                         </MsqdxTypography>
                         <Box sx={{
-                            borderRadius: MSQDX_SPACING.borderRadius.md,
+                            borderRadius: MSQDX_SPACING.borderRadius.xxs,
                             border: '1px solid var(--color-secondary-dx-grey-light-tint)',
                             overflow: 'hidden',
                             bgcolor: 'var(--color-secondary-dx-grey-light-tint)'

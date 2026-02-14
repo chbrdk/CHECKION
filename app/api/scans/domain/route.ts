@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
-import { scanStore } from '@/lib/store';
+import { auth } from '@/auth';
+import { listDomainScans } from '@/lib/db/scans';
 
 export async function GET() {
-    const scans = scanStore.listDomainScans();
-    // Return summary only (lighter payload)
+    const session = await auth();
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const scans = await listDomainScans(session.user.id);
     const summary = scans.map(s => ({
         id: s.id,
         domain: s.domain,
@@ -11,7 +15,6 @@ export async function GET() {
         status: s.status,
         score: s.score,
         totalPages: s.totalPages,
-        // Omit heavy graph/pages data for list view
     }));
 
     return NextResponse.json({

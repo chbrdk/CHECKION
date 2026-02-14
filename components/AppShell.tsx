@@ -1,11 +1,21 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import { Box } from '@mui/material';
 import { MsqdxAppLayout } from '@msqdx/react';
 import { Sidebar } from './Sidebar';
 
+const AUTH_PATHS = ['/login', '/register'];
+
 export function AppShell({ children }: { children: ReactNode }) {
+    const pathname = usePathname();
+    const isAuthPage = AUTH_PATHS.some(p => pathname === p || pathname?.startsWith(p + '/'));
+
+    if (isAuthPage) {
+        return <>{children}</>;
+    }
+
     return (
         <MsqdxAppLayout
             brandColor="green"

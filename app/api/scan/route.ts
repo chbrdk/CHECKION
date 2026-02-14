@@ -3,12 +3,17 @@
 /* ------------------------------------------------------------------ */
 
 import { NextResponse } from 'next/server';
+import { auth } from '@/auth';
 import { runScan } from '@/lib/scanner';
-import { scanStore } from '@/lib/store';
+import { addScan, listScans } from '@/lib/db/scans';
 import type { ScanRequest, Device } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: Request) {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     try {
         const body = (await request.json()) as ScanRequest;
 
@@ -47,8 +52,9 @@ export async function POST(request: Request) {
             )
         );
 
-        // Store all results
-        results.forEach(result => scanStore.add(result));
+        for (const result of results) {
+            await addScan(session.user.id, result);
+        }
 
         // Find desktop result to return (for redirect)
         const desktopResult = results.find(r => r.device === 'desktop') || results[0];
@@ -68,5 +74,10 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
-    return NextResponse.json(scanStore.list());
+    const session = await auth();
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const list = await listScans(session.user.id);
+    return NextResponse.json(list);
 }

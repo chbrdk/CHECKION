@@ -489,14 +489,16 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
 
         // 5. Advanced Link Audit (Broken Links + Stats + missing rel=noopener + vague link texts)
         const vaguePhrases = ['hier klicken', 'mehr', 'read more', 'weiter', 'link', 'click here', 'mehr erfahren', 'more', 'here', 'weiterlesen', 'lesen sie mehr', 'weiterlesen', 'mehr lesen', 'mehr erfahren', 'zum artikel', 'hier', 'klicken sie hier', 'read more'];
-        const allLinksResult = await page.evaluate(function (phrases: string[]) {
+        const allLinksResult = await page.evaluate(function (phrases) {
+            const base = document.location.href;
             const links = Array.from(document.querySelectorAll('a[href]')).map(function (a) {
-                const el = a as HTMLAnchorElement;
+                var hrefAttr = a.getAttribute('href');
+                var href = hrefAttr ? (function() { try { return new URL(hrefAttr, base).href; } catch (_) { return hrefAttr; } }()) : '';
                 return {
-                    href: el.href,
-                    text: (el.textContent || '').slice(0, 50).trim(),
-                    target: el.getAttribute('target') || '',
-                    rel: (el.getAttribute('rel') || '').toLowerCase()
+                    href: href,
+                    text: (a.textContent || '').slice(0, 50).trim(),
+                    target: a.getAttribute('target') || '',
+                    rel: (a.getAttribute('rel') || '').toLowerCase()
                 };
             });
             const vagueLinkTexts: Array<{ href: string; text: string }> = [];
@@ -624,11 +626,11 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                     else schemaTypeList.push(type || null);
                     checkArticleFields(json);
                 } catch (e) {
-                    const msg = (e && typeof (e as Error).message === 'string' ? (e as Error).message : String(e));
+                    const msg = (e instanceof Error ? e.message : String(e));
                     schemaParseErrors.push('Script #' + (idx + 1) + ': ' + msg);
                 }
             });
-            const schemaTypes = schemaTypeList.filter(Boolean) as string[];
+            const schemaTypes = schemaTypeList.filter(Boolean).flatMap(function(x) { return Array.isArray(x) ? x : [x]; }).filter(function(x) { return typeof x === 'string'; });
             const recommendedFound = RECOMMENDED_TYPES.filter(function(t) { return schemaTypes.indexOf(t) !== -1; });
             const missingRecommended = RECOMMENDED_TYPES.filter(function(t) { return schemaTypes.indexOf(t) === -1; });
 
@@ -692,21 +694,21 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                     const json = JSON.parse(el.textContent || '{}');
                     const type = json['@type'];
                     const types = Array.isArray(type) ? type : (type ? [type] : []);
-                    types.forEach(function(t: string) {
+                    types.forEach(function(t) {
                         const required = requiredByType[t];
                         if (!required) return;
-                        const missing = required.filter(function(r) { return !json[r] && (!json['@graph'] || !json['@graph'].some((g: any) => g[r])); });
+                        const missing = required.filter(function(r) { return !json[r] && (!json['@graph'] || !json['@graph'].some(function(g: Record<string, unknown>) { return g[r]; })); });
                         if (missing.length) structuredDataRequiredFields.push({ type: t, missing: missing });
                     });
                 } catch (_) {}
             });
 
-            const preloadLinks = Array.from(document.querySelectorAll('link[rel="preload"]')).map(function(l) { return (l as HTMLLinkElement).href || ''; }).filter(Boolean);
-            const preconnectLinks = Array.from(document.querySelectorAll('link[rel="preconnect"]')).map(function(l) { return (l as HTMLLinkElement).href || ''; }).filter(Boolean);
-            const sriMissing: Array<{ tag: string; url: string }> = [];
+            const preloadLinks = Array.from(document.querySelectorAll('link[rel="preload"]')).map(function(l) { return l.getAttribute('href') || ''; }).filter(Boolean);
+            const preconnectLinks = Array.from(document.querySelectorAll('link[rel="preconnect"]')).map(function(l) { return l.getAttribute('href') || ''; }).filter(Boolean);
+            const sriMissing: { tag: string; url: string }[] = [];
             const pageOrigin = window.location.origin;
             document.querySelectorAll('script[src], link[rel="stylesheet"][href]').forEach(function(el) {
-                const src = (el as HTMLScriptElement).src || (el as HTMLLinkElement).href;
+                const src = el.getAttribute('src') || el.getAttribute('href') || '';
                 if (!src || src.startsWith(pageOrigin) || src.startsWith('data:') || src.startsWith('blob:')) return;
                 if (!el.getAttribute('integrity')) sriMissing.push({ tag: el.tagName, url: src });
             });
@@ -720,9 +722,9 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                         const rules = sheet.cssRules || sheet.rules;
                         for (let j = 0; j < (rules?.length || 0); j++) {
                             const r = rules[j];
-                            const cssText = r && (r as CSSRule).cssText ? (r as CSSRule).cssText : '';
+                            const cssText = r && r.cssText ? r.cssText : '';
                             if (r && cssText.indexOf('prefers-reduced-motion') !== -1) reducedMotionInCss = true;
-                            if (r && (r as CSSRule).type === 5) {
+                            if (r && r.type === 5) {
                                 if (cssText.indexOf('font-display') === -1) withoutFontDisplay++;
                                 else if (/font-display:\s*block\b/.test(cssText)) fontDisplayBlockCount++;
                             }
@@ -744,18 +746,18 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
             let videosWithoutCaptions = 0;
             let audiosWithoutTranscript = 0;
             videos.forEach(function(v) {
-                const hasTrack = (v as HTMLVideoElement).querySelectorAll('track[kind="captions"], track[kind="subtitles"]').length > 0;
+                const hasTrack = v.querySelectorAll('track[kind="captions"], track[kind="subtitles"]').length > 0;
                 if (!hasTrack) videosWithoutCaptions++;
             });
             audios.forEach(function(a) {
-                const parent = (a as HTMLAudioElement).parentElement;
+                const parent = a.parentElement;
                 const hasTranscript = parent && (parent.querySelector('a[href*="transcript"], a[download], [class*="transcript"]') || (parent.innerText || '').length > 100);
                 if (!hasTranscript) audiosWithoutTranscript++;
             });
-            const manifestLink = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null;
+            const manifestLink = document.querySelector('link[rel="manifest"]');
             const themeColor = getMeta('theme-color') || null;
-            const appleTouch = document.querySelector('link[rel="apple-touch-icon"]') as HTMLLinkElement | null;
-            const appleTouchIcon = appleTouch ? (appleTouch.href || null) : null;
+            const appleTouch = document.querySelector('link[rel="apple-touch-icon"]');
+            const appleTouchIcon = appleTouch ? (appleTouch.getAttribute('href') || null) : null;
 
             return {
                 seo: {
@@ -808,7 +810,7 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                     reducedMotionInCss: reducedMotionInCss,
                     focusVisibleFailCount: focusVisibleFailCount,
                     mediaAccessibility: { videosWithoutCaptions: videosWithoutCaptions, audiosWithoutTranscript: audiosWithoutTranscript },
-                    manifest: { present: !!manifestLink, url: manifestLink?.href || undefined },
+                    manifest: { present: !!manifestLink, url: (manifestLink && manifestLink.getAttribute('href')) || undefined },
                     themeColor: themeColor,
                     appleTouchIcon: appleTouchIcon,
                     metaRefreshPresent: metaRefreshPresent,
@@ -1121,8 +1123,8 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                         width: Math.round(r.width),
                         height: Math.round(r.height)
                     };
-                    const hasWidth = !!(img.getAttribute('width') || (img as HTMLImageElement).width);
-                    const hasHeight = !!(img.getAttribute('height') || (img as HTMLImageElement).height);
+                    const hasWidth = !!(img.getAttribute('width') || img.width);
+                    const hasHeight = !!(img.getAttribute('height') || img.height);
                     if (!hasWidth || !hasHeight) {
                         missingDimensions++;
                         if (imageDetails.length < 5) imageDetails.push({ reason: 'Missing width/height', selector: img.tagName + (img.src ? '' : '') });
@@ -1239,8 +1241,7 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
         // Iframes: title attribute (a11y)
         const iframeIssues = await page.evaluate(function () {
             return Array.from(document.querySelectorAll('iframe')).map(function (el) {
-                const iframe = el as HTMLIFrameElement;
-                return { hasTitle: !!(iframe.getAttribute('title')), src: iframe.getAttribute('src') || undefined };
+                return { hasTitle: !!(el.getAttribute('title')), src: el.getAttribute('src') || undefined };
             });
         });
 
@@ -1248,7 +1249,7 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
         let serviceWorkerRegistered = false;
         try {
             serviceWorkerRegistered = await page.evaluate(function () {
-                return !!(navigator.serviceWorker && (navigator as any).serviceWorker.controller);
+                return !!(navigator.serviceWorker && navigator.serviceWorker.controller);
             });
         } catch (_) {}
 

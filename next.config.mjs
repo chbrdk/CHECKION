@@ -4,7 +4,10 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const dsBase = resolve(__dirname, '..', 'MSQDX-DS', 'msqdx-design-system', 'packages');
+// In Docker/Coolify set DS_BASE=../msqdx-design-system so design system resolves
+const dsBase = process.env.DS_BASE
+    ? resolve(__dirname, process.env.DS_BASE, 'packages')
+    : resolve(__dirname, '..', 'MSQDX-DS', 'msqdx-design-system', 'packages');
 
 const nextConfig = {
     reactStrictMode: true,

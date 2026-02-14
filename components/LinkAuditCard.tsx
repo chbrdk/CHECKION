@@ -29,19 +29,20 @@ export function LinkAuditCard({ links }: { links: LinkAudit }) {
 
             {links.broken.length > 0 ? (
                 <Box>
-                    <MsqdxTypography variant="subtitle2" sx={{ mb: 'var(--msqdx-spacing-xs)', color: MSQDX_STATUS.error.base, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <MsqdxTypography variant="subtitle2" sx={{ mb: 'var(--msqdx-spacing-xxs)', color: MSQDX_STATUS.error.base, display: 'flex', alignItems: 'center', gap: 1 }}>
                         <AlertTriangle size={16} />
                         Broken Links ({links.broken.length})
                     </MsqdxTypography>
                     <Box sx={{
-                        borderRadius: MSQDX_SPACING.borderRadius.md,
+                        borderRadius: MSQDX_SPACING.borderRadius.xxs,
                         border: `1px solid ${MSQDX_STATUS.error.base}`,
                         bgcolor: alpha(MSQDX_STATUS.error.base, 0.05),
                         overflow: 'hidden'
                     }}>
                         {links.broken.map((link, i) => (
                             <Box key={i} sx={{
-                                p: MSQDX_SPACING.scale.sm,
+                                py: MSQDX_SPACING.scale.xxs,
+                                px: MSQDX_SPACING.scale.xs,
                                 borderBottom: i < links.broken.length - 1 ? `1px solid ${alpha(MSQDX_STATUS.error.base, 0.5)}` : 'none',
                                 display: 'flex',
                                 justifyContent: 'space-between',
@@ -73,7 +74,7 @@ export function LinkAuditCard({ links }: { links: LinkAudit }) {
                 <Box sx={{
                     p: 'var(--msqdx-spacing-sm)',
                     bgcolor: alpha(MSQDX_STATUS.success.base, 0.05),
-                    borderRadius: MSQDX_SPACING.borderRadius.md,
+                    borderRadius: MSQDX_SPACING.borderRadius.xxs,
                     display: 'flex',
                     alignItems: 'center',
                     gap: 'var(--msqdx-spacing-sm)'
@@ -100,7 +101,7 @@ export function LinkAuditCard({ links }: { links: LinkAudit }) {
                         Externe Links mit target="_blank" sollten rel="noopener noreferrer" setzen.
                     </MsqdxTypography>
                     <Box sx={{
-                        borderRadius: MSQDX_SPACING.borderRadius.md,
+                        borderRadius: MSQDX_SPACING.borderRadius.xxs,
                         border: `1px solid ${alpha(MSQDX_STATUS.warning.base, 0.6)}`,
                         bgcolor: alpha(MSQDX_STATUS.warning.base, 0.05),
                         overflow: 'hidden'
@@ -132,7 +133,7 @@ export function LinkAuditCard({ links }: { links: LinkAudit }) {
                         {links.pdfLinks.length} PDF(s) verlinkt – Barrierefreiheit der PDFs separat prüfen
                     </MsqdxTypography>
                     <Box sx={{
-                        borderRadius: MSQDX_SPACING.borderRadius.md,
+                        borderRadius: MSQDX_SPACING.borderRadius.xxs,
                         border: `1px solid ${alpha(MSQDX_STATUS.warning.base, 0.6)}`,
                         bgcolor: alpha(MSQDX_STATUS.warning.base, 0.05),
                         overflow: 'hidden'
