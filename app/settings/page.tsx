@@ -39,7 +39,7 @@ export default function SettingsPage() {
     };
 
     return (
-        <Box sx={{ p: MSQDX_SPACING.scale.lg, maxWidth: 1600, mx: 'auto' }}>
+        <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto' }}>
             {/* Header */}
             <Box sx={{ mb: MSQDX_SPACING.scale.md }}>
                 <MsqdxTypography
@@ -50,13 +50,13 @@ export default function SettingsPage() {
                 </MsqdxTypography>
                 <MsqdxTypography
                     variant="body2"
-                    sx={{ color: MSQDX_THEME.dark.text.tertiary }}
+                    sx={{ color: 'var(--color-text-muted-on-light)' }}
                 >
                     Konfiguriere die Standard-Parameter für neue Scans.
                 </MsqdxTypography>
             </Box>
 
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' }, gap: MSQDX_SPACING.scale.lg }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' }, gap: 'var(--msqdx-spacing-md)' }}>
 
                 {/* Left Column: Config */}
                 <Box>
@@ -67,7 +67,7 @@ export default function SettingsPage() {
                         borderRadius="lg"
                         footerDivider={false}
                     >
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: MSQDX_SPACING.scale.lg }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-md)' }}>
                             {/* Default WCAG Standard */}
                             <MsqdxSelect
                                 label="Standard WCAG Level"
@@ -94,7 +94,7 @@ export default function SettingsPage() {
                         brandColor="green"
                         size="medium"
                         onClick={handleSave}
-                        sx={{ mt: MSQDX_SPACING.scale.lg, width: 'auto', minWidth: 200 }}
+                        sx={{ mt: 'var(--msqdx-spacing-md)', width: 'auto', minWidth: 200 }}
                     >
                         {saved ? '✓ Gespeichert' : 'Einstellungen speichern'}
                     </MsqdxButton>
@@ -108,14 +108,14 @@ export default function SettingsPage() {
                         borderRadius="lg"
                         footerDivider={false}
                     >
-                        <MsqdxTypography variant="body2" sx={{ color: MSQDX_THEME.dark.text.secondary, lineHeight: 1.7 }}>
+                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', lineHeight: 1.7 }}>
                             CHECKION nutzt <strong>pa11y</strong> und <strong>axe-core</strong> um automatisierte WCAG Accessibility
                             Checks durchzuführen. Die Ergebnisse helfen dir, deine Webseiten barrierefrei zu gestalten und gängige
                             Standards (WCAG 2.0 A, AA, AAA) einzuhalten.
                         </MsqdxTypography>
                         <MsqdxTypography
                             variant="caption"
-                            sx={{ color: MSQDX_THEME.dark.text.disabled, mt: MSQDX_SPACING.scale.sm, display: 'block', fontSize: '0.6rem' }}
+                            sx={{ color: 'var(--color-text-muted-on-light)', mt: MSQDX_SPACING.scale.sm, display: 'block', fontSize: '0.6rem' }}
                         >
                             Basiert auf dem MSQDX Design System · v0.1.0
                         </MsqdxTypography>

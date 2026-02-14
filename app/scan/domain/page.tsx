@@ -7,7 +7,7 @@ import {
     MsqdxButton,
     MsqdxFormField
 } from '@msqdx/react';
-import { Box, LinearProgress, Paper } from '@mui/material';
+import { Box, LinearProgress } from '@mui/material';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { MSQDX_COLORS, MSQDX_SPACING } from '@msqdx/tokens';
 import type { DomainScanStatus } from '@/lib/types';
@@ -110,11 +110,11 @@ function ScanContent() {
     // Input Form
     if (!startUrl && !scanId) {
         return (
-            <Box sx={{ p: 4, maxWidth: 800, mx: 'auto', mt: 8 }}>
-                <MsqdxTypography variant="h3" sx={{ mb: 2, fontWeight: 700 }}>
+            <Box sx={{ p: 'var(--msqdx-spacing-xl)', maxWidth: 800, mx: 'auto', mt: 'var(--msqdx-spacing-xxl)' }}>
+                <MsqdxTypography variant="h3" weight="bold" sx={{ mb: 'var(--msqdx-spacing-md)' }}>
                     Deep Domain Scan (Async)
                 </MsqdxTypography>
-                <MsqdxTypography variant="body1" sx={{ mb: 4, color: 'text.secondary' }}>
+                <MsqdxTypography variant="body1" sx={{ mb: 'var(--msqdx-spacing-xl)', color: 'var(--color-text-secondary)' }}>
                     Crawls your website background job. Capable of scanning unlimited pages without timeout.
                 </MsqdxTypography>
 
@@ -127,7 +127,7 @@ function ScanContent() {
                             router.push(`/scan/domain?url=${encodeURIComponent(inputUrl)}`);
                         }
                     }}
-                    sx={{ display: 'flex', gap: 2 }}
+                    sx={{ display: 'flex', gap: 'var(--msqdx-spacing-md)' }}
                 >
                     <Box sx={{ flex: 1 }}>
                         <MsqdxFormField
@@ -148,38 +148,39 @@ function ScanContent() {
     }
 
     return (
-        <Box sx={{ p: `${MSQDX_SPACING.scale.md}px`, maxWidth: 1600, mx: 'auto' }}>
-            <Box sx={{ mb: 4 }}>
-                <MsqdxTypography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+        <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto' }}>
+            <Box sx={{ mb: 'var(--msqdx-spacing-xl)' }}>
+                <MsqdxTypography variant="h4" weight="bold" sx={{ mb: 'var(--msqdx-spacing-xs)' }}>
                     Deep Scanning {startUrl}...
                 </MsqdxTypography>
-                <MsqdxTypography variant="body2" color="textSecondary">
+                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-secondary)' }}>
                     Status: {status.toUpperCase()} | Scanned: {scannedCount} pages
                 </MsqdxTypography>
             </Box>
 
-            <Box sx={{ maxWidth: 800, mx: 'auto', mt: 4 }}>
-                <MsqdxCard title="Live Scan Progress">
-                    {(status === 'queued' || status === 'scanning') && <LinearProgress sx={{ mb: 2 }} />}
+            <Box sx={{ maxWidth: 800, mx: 'auto', mt: 'var(--msqdx-spacing-md)' }}>
+                <MsqdxCard title="Live Scan Progress" sx={{ bgcolor: 'var(--color-card-bg)' }}>
+                    {(status === 'queued' || status === 'scanning') && <LinearProgress sx={{ mb: 'var(--msqdx-spacing-sm)' }} />}
 
-                    <Paper
-                        variant="outlined"
+                    <Box
                         sx={{
                             height: 400,
                             overflowY: 'auto',
-                            p: 2,
-                            bgcolor: '#1E1E1E',
-                            color: '#00FF00',
-                            fontFamily: 'monospace'
+                            p: 'var(--msqdx-spacing-md)',
+                            bgcolor: 'var(--color-secondary-dx-grey-light-tint)',
+                            color: 'var(--color-text-on-light)',
+                            fontFamily: 'monospace',
+                            border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                            borderRadius: 'var(--msqdx-radius-sm)'
                         }}
                     >
                         {logs.map((log, i) => (
-                            <Box key={i} sx={{ mb: 0.5 }}>
+                            <Box key={i} sx={{ mb: 'var(--msqdx-spacing-xs)' }}>
                                 {log}
                             </Box>
                         ))}
                         <div ref={logsEndRef} />
-                    </Paper>
+                    </Box>
                 </MsqdxCard>
             </Box>
         </Box>

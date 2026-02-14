@@ -1,5 +1,63 @@
+/* MSQDX Design Token CSS variables – align with AUDION/dashboard-design-rules */
+:root {
+  --msqdx-radius-xs: 4px;
+  --msqdx-radius-sm: 8px;
+  --msqdx-radius-md: 20px;
+  --msqdx-radius-3xl: 24px;
+  --msqdx-radius-lg: 40px;
+  --msqdx-spacing-xxs: 4px;
+  --msqdx-spacing-xs: 8px;
+  --msqdx-spacing-sm: 12px;
+  --msqdx-spacing-md: 16px;
+  --msqdx-spacing-lg: 18px;
+  --msqdx-spacing-xl: 24px;
+  --msqdx-spacing-xxl: 32px;
+  --msqdx-font-size-sm: 0.875rem;
+  --msqdx-font-size-base: 1rem;
+  --msqdx-font-size-lg: 1.125rem;
+  --msqdx-transition: 0.3s ease;
+  --msqdx-transition-fast: 0.2s ease;
+}
+
+/* App background & DX palette – same as AUDION (dark slate default) */
 :root {
   color-scheme: dark;
+  font-family: 'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+  /* App-Hintergrund wie AUDION */
+  --checkion-app-bg: #0f172a;
+  --color-primary-white: #fff;
+  --color-secondary-dx-yellow: #fef14d;
+  --color-secondary-dx-yellow-tint: #f3f0c8;
+  --color-secondary-dx-pink: #f256b6;
+  --color-secondary-dx-pink-tint: #f3d9e3;
+  --color-secondary-dx-pink-on-light: #d5108a;
+  --color-secondary-dx-orange: #ff6a3b;
+  --color-secondary-dx-orange-overlay-20: rgba(255, 106, 59, 0.2);
+  --color-secondary-dx-orange-tint: #f8d5cb;
+  --color-secondary-dx-purple: #b638ff;
+  --color-secondary-dx-purple-tint: #eed9f9;
+  --color-secondary-dx-blue: #3b82f6;
+  --color-secondary-dx-blue-tint: #dbeafe;
+  --color-secondary-dx-green: #00ca55;
+  --color-secondary-dx-green-tint: #dff1e1;
+  --color-secondary-dx-grey-light: #d4d2d2;
+  --color-secondary-dx-grey-light-tint: rgba(212, 210, 210, 0.5);
+  --color-neutral: #0f0f0f;
+  --color-theme-accent: #b638ff;
+  --color-theme-accent-tint: rgba(182, 56, 255, 0.2);
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #94a3b8;
+  /* Karten & helle Flächen: Hintergrund + Schrift dunkel (Token wie AUDION) */
+  --color-card-bg: var(--color-primary-white);
+  --color-text-on-light: #0f172a;
+  --color-text-muted-on-light: #475569;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --color-neutral: #f8f6f0;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
 }
 
 * {
@@ -8,12 +66,31 @@
   padding: 0;
 }
 
-html,
+html {
+  height: 100%;
+  background: var(--checkion-app-bg) !important;
+  background-color: var(--checkion-app-bg);
+  transition: background-color var(--msqdx-transition);
+}
+
 body {
   height: 100%;
+  min-height: calc(100vh - 20px);
+  display: flex;
+  flex-direction: column;
   font-family: 'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+  background-color: var(--checkion-app-bg) !important;
+  color: var(--color-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color var(--msqdx-transition), color var(--msqdx-transition);
+}
+
+main {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Code snippets in issue cards */
@@ -21,4 +98,168 @@ code,
 pre {
   font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   font-size: 0.8rem;
+}
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined', sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ========== Form & UI auf hellem Grund (Inputs, Tabs, Select, Checkbox, etc.) ========== */
+[data-checkion-content] .MuiOutlinedInput-root {
+  background-color: var(--color-card-bg) !important;
+  color: var(--color-text-on-light) !important;
+  border: 1px solid var(--color-secondary-dx-grey-light-tint) !important;
+}
+[data-checkion-content] .MuiOutlinedInput-root:hover {
+  border-color: var(--color-text-muted-on-light) !important;
+}
+[data-checkion-content] .MuiOutlinedInput-root.Mui-focused {
+  border-color: var(--color-theme-accent) !important;
+}
+[data-checkion-content] .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline {
+  border-color: var(--color-secondary-dx-grey-light-tint) !important;
+}
+[data-checkion-content] .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: var(--color-text-muted-on-light) !important;
+}
+[data-checkion-content] .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: var(--color-theme-accent) !important;
+}
+[data-checkion-content] .MuiInputBase-input {
+  color: var(--color-text-on-light) !important;
+}
+[data-checkion-content] .MuiInputBase-input::placeholder {
+  color: var(--color-text-muted-on-light);
+  opacity: 0.8;
+}
+
+[data-checkion-content] .MuiFormLabel-root,
+[data-checkion-content] .MuiInputLabel-root {
+  color: var(--color-text-muted-on-light) !important;
+}
+[data-checkion-content] .MuiFormLabel-root.Mui-focused,
+[data-checkion-content] .MuiInputLabel-root.Mui-focused {
+  color: var(--color-theme-accent) !important;
+}
+
+[data-checkion-content] .MuiTab-root {
+  color: var(--color-text-muted-on-light) !important;
+}
+[data-checkion-content] .MuiTab-root.Mui-selected {
+  color: var(--color-text-on-light) !important;
+}
+[data-checkion-content] .MuiTabs-indicator {
+  background-color: var(--color-theme-accent) !important;
+}
+[data-checkion-content] .MuiTabs-root {
+  border-bottom-color: var(--color-secondary-dx-grey-light-tint);
+}
+
+[data-checkion-content] .MuiSelect-select,
+[data-checkion-content] .MuiSelect-icon {
+  color: var(--color-text-on-light) !important;
+}
+[data-checkion-content] .MuiSelect-nativeInput {
+  color: var(--color-text-on-light);
+}
+
+[data-checkion-content] .MuiCheckbox-root {
+  color: var(--color-text-muted-on-light) !important;
+}
+[data-checkion-content] .MuiCheckbox-root.Mui-checked {
+  color: var(--color-theme-accent) !important;
+}
+[data-checkion-content] .MuiFormControlLabel-label {
+  color: var(--color-text-on-light) !important;
+}
+
+[data-checkion-content] .MuiAccordion-root {
+  background-color: var(--color-card-bg) !important;
+  color: var(--color-text-on-light);
+}
+[data-checkion-content] .MuiAccordionSummary-root {
+  color: var(--color-text-on-light) !important;
+}
+[data-checkion-content] .MuiAccordionDetails-root {
+  color: var(--color-text-on-light);
+}
+
+[data-checkion-content] .MuiList-root {
+  background-color: var(--color-card-bg);
+  color: var(--color-text-on-light);
+}
+[data-checkion-content] .MuiListItemText-primary,
+[data-checkion-content] .MuiListItemText-secondary {
+  color: inherit;
+}
+
+[data-checkion-content] .MuiChip-root {
+  color: var(--color-text-on-light);
+}
+[data-checkion-content] .MuiChip-label {
+  color: inherit;
+}
+
+[data-checkion-content] .MuiDivider-root {
+  border-color: var(--color-secondary-dx-grey-light-tint);
+}
+
+[data-checkion-content] .MuiLinearProgress-root {
+  background-color: var(--color-secondary-dx-grey-light-tint) !important;
+}
+[data-checkion-content] .MuiCircularProgress-root {
+  color: var(--color-theme-accent) !important;
+}
+
+[data-checkion-content] .MuiMenuItem-root {
+  color: var(--color-text-on-light) !important;
+  background-color: var(--color-card-bg) !important;
+}
+[data-checkion-content] .MuiMenu-paper,
+[data-checkion-content] .MuiPopover-paper {
+  background-color: var(--color-card-bg) !important;
+  color: var(--color-text-on-light);
+}
+[data-checkion-content] .MuiAutocomplete-paper {
+  background-color: var(--color-card-bg) !important;
+}
+
+/* ========== Abstände reduzieren (Token-basiert) ========== */
+[data-checkion-content] .MuiCardContent-root {
+  padding: var(--msqdx-spacing-sm) !important;
+}
+[data-checkion-content] .MuiAccordionSummary-root {
+  padding: var(--msqdx-spacing-sm) var(--msqdx-spacing-md) !important;
+}
+[data-checkion-content] .MuiAccordionDetails-root {
+  padding: var(--msqdx-spacing-md) !important;
+}
+[data-checkion-content] .MuiTabs-root {
+  min-height: auto;
+}
+[data-checkion-content] .MuiTab-root {
+  padding: var(--msqdx-spacing-xs) var(--msqdx-spacing-md) !important;
+  min-height: 40px !important;
+}
+[data-checkion-content] .MuiListItem-root {
+  padding-top: var(--msqdx-spacing-xs) !important;
+  padding-bottom: var(--msqdx-spacing-xs) !important;
+}
+[data-checkion-content] .MuiDialogContent-root {
+  padding: var(--msqdx-spacing-md) !important;
+}
+[data-checkion-content] .MuiDialogTitle-root {
+  padding: var(--msqdx-spacing-md) !important;
 }

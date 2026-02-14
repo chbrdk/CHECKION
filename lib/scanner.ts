@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
-import type { Issue, Runner, ScanResult, ScanStats, WcagStandard, Device, ScanOptions } from './types';
+import type { Issue, Runner, ScanResult, ScanStats, WcagStandard, Device, ScanOptions, SeoAudit } from './types';
 
 /**
  * Viewport definitions for supported devices.
@@ -102,20 +102,33 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
     const viewport = VIEWPORTS[device];
     await page.setViewport(viewport);
 
-    // Inject CLS Observer immediately
+    // Inject CLS, LCP, INP observers immediately
     await page.evaluateOnNewDocument(function () {
-        // @ts-ignore
-        window.__cls_score = 0;
-        // @ts-ignore
+        (window as any).__cls_score = 0;
+        (window as any).__lcp_value = 0;
+        (window as any).__inp_value = null;
         new PerformanceObserver(function (entryList) {
             for (const entry of entryList.getEntries()) {
-                // @ts-ignore
-                if (!entry.hadRecentInput) {
-                    // @ts-ignore
-                    window.__cls_score += entry.value;
+                if (!(entry as any).hadRecentInput) {
+                    (window as any).__cls_score += (entry as any).value;
                 }
             }
         }).observe({ type: 'layout-shift', buffered: true });
+        try {
+            new PerformanceObserver(function (entryList) {
+                const entries = entryList.getEntries();
+                const last = entries[entries.length - 1];
+                if (last) (window as any).__lcp_value = (last as any).startTime;
+            }).observe({ type: 'largest-contentful-paint', buffered: true });
+        } catch (_) {}
+        try {
+            new PerformanceObserver(function (entryList) {
+                for (const entry of entryList.getEntries()) {
+                    const e = entry as any;
+                    if (e.duration !== undefined) (window as any).__inp_value = e.duration;
+                }
+            }).observe({ type: 'event', buffered: true });
+        } catch (_) {}
     });
 
     // --- Console Error Tracking ---
@@ -139,30 +152,47 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
 
 
 
-    // --- Performance & Eco Data Collection ---
+    // --- Performance & Eco Data Collection + Mixed Content + Third-Party ---
     let totalBytes = 0;
     let serverIp: string | null = null;
     let mainHeaders: Record<string, string> = {};
+    let mainRedirectCount = 0;
+    const mixedContentUrls: string[] = [];
+    const allRequestHosts = new Set<string>();
+    const pageOrigin = (() => {
+        try {
+            return new URL(url).origin;
+        } catch {
+            return '';
+        }
+    })();
+    const pageIsHttps = pageOrigin.toLowerCase().startsWith('https://');
 
-    // Enable request interception or just listen to responses for size
-    await page.setRequestInterception(false); // We don't need to block, just listen
+    await page.setRequestInterception(false);
     page.on('response', async (response) => {
         try {
             const rUrl = response.url();
-            // Capture main resource IP and headers
+            if (pageIsHttps && rUrl.startsWith('http://')) {
+                mixedContentUrls.push(rUrl);
+            }
+            try {
+                const u = new URL(rUrl);
+                allRequestHosts.add(u.hostname);
+            } catch (_) {}
             if (!serverIp && (rUrl === url || rUrl === url + '/' || rUrl.split('?')[0] === url.split('?')[0])) {
                 const remoteAddress = response.remoteAddress();
                 serverIp = remoteAddress.ip || null;
                 mainHeaders = response.headers();
+                try {
+                    mainRedirectCount = response.request().redirectChain().length;
+                } catch (_) {}
             }
-
-            // Getting buffer might fail for some resources (CORS, etc), heuristic fallback
             const headers = response.headers();
             if (headers['content-length']) {
                 totalBytes += parseInt(headers['content-length'], 10);
             }
         } catch (e) {
-            // Ignore failed resource size collection
+            // Ignore
         }
     });
 
@@ -206,24 +236,23 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
         // Allow time for shifts to settle
         await new Promise((r) => setTimeout(r, 1000));
 
-        // --- Extract Performance Metrics ---
-        // We use page.evaluate to get window.performance data
+        // --- Extract Performance Metrics (incl. LCP/INP from observers) ---
         const perfData = await page.evaluate(function () {
             const navHeading = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
             const paint = performance.getEntriesByName('first-contentful-paint')[0];
-
-            // Basic fallbacks
             const ttfb = navHeading ? (navHeading.responseStart - navHeading.requestStart) : 0;
             const domLoad = navHeading ? (navHeading.domContentLoadedEventEnd - navHeading.fetchStart) : 0;
             const windowLoad = navHeading ? (navHeading.loadEventEnd - navHeading.fetchStart) : 0;
             const fcp = paint ? paint.startTime : 0;
-
+            const lcp = (window as any).__lcp_value != null ? Math.round((window as any).__lcp_value) : 0;
+            const inp = (window as any).__inp_value != null ? Math.round((window as any).__inp_value) : null;
             return {
                 ttfb: Math.round(ttfb),
                 fcp: Math.round(fcp),
                 domLoad: Math.round(domLoad),
                 windowLoad: Math.round(windowLoad),
-                lcp: 0, // LCP requires PerformanceObserver, keeping it simple for now
+                lcp,
+                inp
             };
         });
 
@@ -458,25 +487,45 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
             return { isMobileFriendly: issues.length === 0, issues };
         });
 
-        // 5. Advanced Link Audit (Broken Links + Stats)
-        // We capture ALL links now
-        const allLinks = await page.evaluate(function () {
-            // @ts-ignore
-            return Array.from(document.querySelectorAll('a[href]')).map(function (a) {
+        // 5. Advanced Link Audit (Broken Links + Stats + missing rel=noopener + vague link texts)
+        const vaguePhrases = ['hier klicken', 'mehr', 'read more', 'weiter', 'link', 'click here', 'mehr erfahren', 'more', 'here', 'weiterlesen', 'lesen sie mehr', 'weiterlesen', 'mehr lesen', 'mehr erfahren', 'zum artikel', 'hier', 'klicken sie hier', 'read more'];
+        const allLinksResult = await page.evaluate(function (phrases: string[]) {
+            const links = Array.from(document.querySelectorAll('a[href]')).map(function (a) {
+                const el = a as HTMLAnchorElement;
                 return {
-                    // @ts-ignore
-                    href: (a as HTMLAnchorElement).href,
-                    // @ts-ignore
-                    text: (a.textContent || '').slice(0, 50).trim()
+                    href: el.href,
+                    text: (el.textContent || '').slice(0, 50).trim(),
+                    target: el.getAttribute('target') || '',
+                    rel: (el.getAttribute('rel') || '').toLowerCase()
                 };
             });
-        });
+            const vagueLinkTexts: Array<{ href: string; text: string }> = [];
+            links.forEach(function (l) {
+                const t = l.text.toLowerCase().trim();
+                if (!t || t.length < 4) {
+                    if (l.href && (t === 'mehr' || t === 'more' || t === 'link' || t === 'hier' || t === 'here')) vagueLinkTexts.push({ href: l.href, text: l.text });
+                    return;
+                }
+                if (phrases.some(function (p) { return t === p || t === p + '.'; })) vagueLinkTexts.push({ href: l.href, text: l.text });
+            });
+            return { links, vagueLinkTexts };
+        }, vaguePhrases);
+        const allLinks = allLinksResult.links;
 
-        const uniqueLinksMap = new Map<string, { href: string; text: string }>();
-        allLinks.forEach(l => {
+        const origin = new URL(url).origin;
+        const uniqueLinksMap = new Map<string, { href: string; text: string; target: string; rel: string }>();
+        allLinks.forEach((l: { href: string; text: string; target: string; rel: string }) => {
             if (l.href.startsWith('http')) uniqueLinksMap.set(l.href, l);
         });
         const uniqueLinksList = Array.from(uniqueLinksMap.values());
+
+        // External links with target="_blank" but missing rel="noopener" or "noreferrer"
+        const missingNoopenerList = uniqueLinksList.filter(l => {
+            if (!l.href.startsWith('http') || l.href.startsWith(origin)) return false;
+            if ((l.target || '').toLowerCase() !== '_blank') return false;
+            const rel = (l.rel || '').toLowerCase();
+            return !rel.includes('noopener') && !rel.includes('noreferrer');
+        }).map(l => ({ url: l.href, text: l.text }));
 
         const internalLinksCount = uniqueLinksList.filter(l => l.href.startsWith(new URL(url).origin)).length;
         const externalLinksCount = uniqueLinksList.length - internalLinksCount;
@@ -514,11 +563,17 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
             }
         }));
 
+        const pdfLinksList = uniqueLinksList
+            .filter(l => /\.pdf$/i.test(l.href))
+            .map(l => ({ url: l.href, text: l.text }));
+
         const linkAudit = {
             broken: brokenLinkResults,
             total: uniqueLinksList.length,
             internal: internalLinksCount,
-            external: externalLinksCount
+            external: externalLinksCount,
+            missingNoopener: missingNoopenerList,
+            pdfLinks: pdfLinksList.length > 0 ? pdfLinksList : undefined
         };
 
         // 5b. SEO Meta Extraction (Enhanced with Languages & Privacy)
@@ -543,23 +598,164 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                 !!document.querySelector('#cookie-banner, .cookie-banner, #consent-manager, .consent-banner');
 
             // --- GEO Metrics (Generative Engine Optimization) ---
-            const schemaTypes = Array.from(document.querySelectorAll('script[type="application/ld+json"]'))
-                .map(el => {
-                    try {
-                        const json = JSON.parse(el.textContent || '{}');
-                        const type = json['@type'];
-                        if (Array.isArray(type)) return type;
-                        return type || null;
-                    } catch (e) { return null; }
-                }).flat().filter(Boolean) as string[];
+            const RECOMMENDED_TYPES = ['Article', 'FAQPage', 'HowTo', 'Organization', 'Person', 'WebPage', 'NewsArticle', 'WebSite'];
+            const schemaParseErrors: string[] = [];
+            const schemaTypeList: (string | string[] | null)[] = [];
+            let articleHasDatePublished = false;
+            let articleHasDateModified = false;
+            let articleHasAuthor = false;
+
+            function checkArticleFields(obj: any) {
+                if (!obj || typeof obj !== 'object') return;
+                const type = obj['@type'];
+                const types = Array.isArray(type) ? type : (type ? [type] : []);
+                if (!types.some((t: string) => t === 'Article' || t === 'NewsArticle')) return;
+                if (obj.datePublished) articleHasDatePublished = true;
+                if (obj.dateModified) articleHasDateModified = true;
+                if (obj.author) articleHasAuthor = true;
+                if (obj['@graph']) obj['@graph'].forEach(checkArticleFields);
+            }
+
+            document.querySelectorAll('script[type="application/ld+json"]').forEach((el, idx) => {
+                try {
+                    const json = JSON.parse(el.textContent || '{}');
+                    const type = json['@type'];
+                    if (Array.isArray(type)) schemaTypeList.push(...type);
+                    else schemaTypeList.push(type || null);
+                    checkArticleFields(json);
+                } catch (e) {
+                    const msg = (e && typeof (e as Error).message === 'string' ? (e as Error).message : String(e));
+                    schemaParseErrors.push('Script #' + (idx + 1) + ': ' + msg);
+                }
+            });
+            const schemaTypes = schemaTypeList.filter(Boolean) as string[];
+            const recommendedFound = RECOMMENDED_TYPES.filter(function(t) { return schemaTypes.indexOf(t) !== -1; });
+            const missingRecommended = RECOMMENDED_TYPES.filter(function(t) { return schemaTypes.indexOf(t) === -1; });
+
+            const metaRobotsContent = getMeta('robots') || getMeta('googlebot') || null;
+            const metaRobotsIndexable = !metaRobotsContent || metaRobotsContent.toLowerCase().indexOf('noindex') === -1;
 
             const tables = document.querySelectorAll('table').length;
             const lists = document.querySelectorAll('ul, ol').length;
             const faqSegments = document.querySelectorAll('[itemprop="mainEntity"][itemtype*="Question"], .faq-question, .faq-item, details summary').length;
 
             const bodyText = document.body.innerText;
+            const bodyWordCount = bodyText.trim().split(/\s+/).filter(Boolean).length;
+            const skinnyContent = bodyWordCount < 300;
             const citations = (bodyText.match(/\[\d+\]|source:|quelle:|statist\w+|%/gi) || []).length;
             const hasAuthorBio = !!document.querySelector('.author-bio, [itemprop="author"], .byline, .author-info') || bodyText.toLowerCase().includes('about the author');
+
+            const titleStr = document.title || '';
+            const metaDesc = getMeta('description') || '';
+            const h1Str = document.querySelector('h1')?.textContent?.trim() || '';
+            const duplicateContentWarning = titleStr.length > 10 && metaDesc.length > 10 &&
+                (titleStr.indexOf(metaDesc.slice(0, 30)) !== -1 || metaDesc.indexOf(titleStr.slice(0, 30)) !== -1);
+
+            const stopWords = new Set(['der','die','das','den','dem','des','ein','eine','einer','eines','und','oder','aber','dass','ist','sind','war','waren','werden','wird','hat','haben','had','kann','können','muss','müssen','soll','sollen','noch','auch','nur','schon','sehr','bei','von','zum','zur','mit','für','auf','aus','nach','bis','durch','gegen','ohne','um','the','a','an','and','or','but','that','is','are','was','were','will','would','has','have','had','can','could','must','should','also','only','just','very','with','for','from','to','in','on','at','by','as','it','its','this','these','that','those','i','you','he','she','we','they','what','which','who','when','where','how','all','each','every','both','some','any','not']);
+            const rawWords = bodyText.toLowerCase().replace(/[^a-zäöüß\s]/g, ' ').split(/\s+/).filter(function(w) { return w.length >= 2; });
+            const wordFreq: Record<string, number> = {};
+            rawWords.forEach(function(w) {
+                if (!stopWords.has(w)) wordFreq[w] = (wordFreq[w] || 0) + 1;
+            });
+            const sortedWords = Object.keys(wordFreq).sort(function(a, b) { return (wordFreq[b] || 0) - (wordFreq[a] || 0); }).slice(0, 15);
+            const totalWords = bodyWordCount || 1;
+            const topKeywords = sortedWords.map(function(word) {
+                const count = wordFreq[word] || 0;
+                return { keyword: word, count: count, densityPercent: Math.round((count / totalWords) * 10000) / 100 };
+            });
+            const keywordPresence = topKeywords.map(function(k) {
+                const kw = k.keyword;
+                const t = titleStr.toLowerCase();
+                const h = h1Str.toLowerCase();
+                const m = metaDesc.toLowerCase();
+                return { keyword: kw, inTitle: t.indexOf(kw) !== -1, inH1: h.indexOf(kw) !== -1, inMetaDescription: m.indexOf(kw) !== -1 };
+            });
+            const metaKeywordsRaw = getMeta('keywords') || null;
+            const keywordAnalysis = topKeywords.length > 0 ? {
+                totalWords: totalWords,
+                topKeywords: topKeywords,
+                keywordPresence: keywordPresence,
+                metaKeywordsRaw: metaKeywordsRaw
+            } : undefined;
+
+            const requiredByType: Record<string, string[]> = {
+                Article: ['headline', 'datePublished'],
+                NewsArticle: ['headline', 'datePublished'],
+                FAQPage: ['mainEntity'],
+                Organization: ['name'],
+                WebSite: ['name'],
+                HowTo: ['name', 'step']
+            };
+            const structuredDataRequiredFields: Array<{ type: string; missing: string[] }> = [];
+            document.querySelectorAll('script[type="application/ld+json"]').forEach(function(el) {
+                try {
+                    const json = JSON.parse(el.textContent || '{}');
+                    const type = json['@type'];
+                    const types = Array.isArray(type) ? type : (type ? [type] : []);
+                    types.forEach(function(t: string) {
+                        const required = requiredByType[t];
+                        if (!required) return;
+                        const missing = required.filter(function(r) { return !json[r] && (!json['@graph'] || !json['@graph'].some((g: any) => g[r])); });
+                        if (missing.length) structuredDataRequiredFields.push({ type: t, missing: missing });
+                    });
+                } catch (_) {}
+            });
+
+            const preloadLinks = Array.from(document.querySelectorAll('link[rel="preload"]')).map(function(l) { return (l as HTMLLinkElement).href || ''; }).filter(Boolean);
+            const preconnectLinks = Array.from(document.querySelectorAll('link[rel="preconnect"]')).map(function(l) { return (l as HTMLLinkElement).href || ''; }).filter(Boolean);
+            const sriMissing: Array<{ tag: string; url: string }> = [];
+            const pageOrigin = window.location.origin;
+            document.querySelectorAll('script[src], link[rel="stylesheet"][href]').forEach(function(el) {
+                const src = (el as HTMLScriptElement).src || (el as HTMLLinkElement).href;
+                if (!src || src.startsWith(pageOrigin) || src.startsWith('data:') || src.startsWith('blob:')) return;
+                if (!el.getAttribute('integrity')) sriMissing.push({ tag: el.tagName, url: src });
+            });
+            let reducedMotionInCss = false;
+            let withoutFontDisplay = 0;
+            let fontDisplayBlockCount = 0;
+            try {
+                for (let i = 0; i < document.styleSheets.length; i++) {
+                    const sheet = document.styleSheets[i];
+                    try {
+                        const rules = sheet.cssRules || sheet.rules;
+                        for (let j = 0; j < (rules?.length || 0); j++) {
+                            const r = rules[j];
+                            const cssText = r && (r as CSSRule).cssText ? (r as CSSRule).cssText : '';
+                            if (r && cssText.indexOf('prefers-reduced-motion') !== -1) reducedMotionInCss = true;
+                            if (r && (r as CSSRule).type === 5) {
+                                if (cssText.indexOf('font-display') === -1) withoutFontDisplay++;
+                                else if (/font-display:\s*block\b/.test(cssText)) fontDisplayBlockCount++;
+                            }
+                        }
+                    } catch (_) {}
+                }
+            } catch (_) {}
+            const metaRefreshPresent = !!(document.querySelector('meta[http-equiv="refresh"]') || document.querySelector('meta[http-equiv="Refresh"]'));
+            let focusVisibleFailCount = 0;
+            const focusable = document.querySelectorAll('a[href], button, input, textarea, select, [tabindex="0"]');
+            focusable.forEach(function(el) {
+                const style = window.getComputedStyle(el, ':focus');
+                const outline = style.outlineWidth || style.outline;
+                const boxShadow = style.boxShadow;
+                if ((!outline || outline === '0px' || outline === 'none') && (!boxShadow || boxShadow === 'none')) focusVisibleFailCount++;
+            });
+            const videos = document.querySelectorAll('video');
+            const audios = document.querySelectorAll('audio');
+            let videosWithoutCaptions = 0;
+            let audiosWithoutTranscript = 0;
+            videos.forEach(function(v) {
+                const hasTrack = (v as HTMLVideoElement).querySelectorAll('track[kind="captions"], track[kind="subtitles"]').length > 0;
+                if (!hasTrack) videosWithoutCaptions++;
+            });
+            audios.forEach(function(a) {
+                const parent = (a as HTMLAudioElement).parentElement;
+                const hasTranscript = parent && (parent.querySelector('a[href*="transcript"], a[download], [class*="transcript"]') || (parent.innerText || '').length > 100);
+                if (!hasTranscript) audiosWithoutTranscript++;
+            });
+            const manifestLink = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null;
+            const themeColor = getMeta('theme-color') || null;
+            const appleTouch = document.querySelector('link[rel="apple-touch-icon"]') as HTMLLinkElement | null;
+            const appleTouchIcon = appleTouch ? (appleTouch.href || null) : null;
 
             return {
                 seo: {
@@ -570,7 +766,12 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                     ogTitle: getOg('og:title'),
                     ogDescription: getOg('og:description'),
                     ogImage: getOg('og:image'),
-                    twitterCard: getMeta('twitter:card')
+                    twitterCard: getMeta('twitter:card'),
+                    duplicateContentWarning: duplicateContentWarning,
+                    skinnyContent: skinnyContent,
+                    bodyWordCount: bodyWordCount,
+                    structuredDataRequiredFields: structuredDataRequiredFields.length > 0 ? structuredDataRequiredFields : undefined,
+                    keywordAnalysis: keywordAnalysis
                 },
                 geo: {
                     htmlLang,
@@ -584,25 +785,49 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                 },
                 generative: {
                     schemaCoverage: [...new Set(schemaTypes)],
+                    schemaParseErrors: schemaParseErrors.length > 0 ? schemaParseErrors : undefined,
+                    recommendedSchemaTypesFound: recommendedFound,
+                    missingRecommendedSchemaTypes: missingRecommended,
+                    articleSchemaQuality: {
+                        hasDatePublished: articleHasDatePublished,
+                        hasDateModified: articleHasDateModified,
+                        hasAuthor: articleHasAuthor
+                    },
+                    metaRobotsContent: metaRobotsContent,
+                    metaRobotsIndexable: metaRobotsIndexable,
                     tableCount: tables,
                     listCount: lists,
                     faqCount: faqSegments,
                     citationCount: citations,
                     hasAuthorBio: hasAuthorBio,
                     listDensity: Number((lists / (document.querySelectorAll('div, section, article').length || 1)).toFixed(2))
+                },
+                extended: {
+                    resourceHints: { preload: preloadLinks, preconnect: preconnectLinks },
+                    sriMissing: sriMissing,
+                    reducedMotionInCss: reducedMotionInCss,
+                    focusVisibleFailCount: focusVisibleFailCount,
+                    mediaAccessibility: { videosWithoutCaptions: videosWithoutCaptions, audiosWithoutTranscript: audiosWithoutTranscript },
+                    manifest: { present: !!manifestLink, url: manifestLink?.href || undefined },
+                    themeColor: themeColor,
+                    appleTouchIcon: appleTouchIcon,
+                    metaRefreshPresent: metaRefreshPresent,
+                    fontDisplayIssues: (withoutFontDisplay > 0 || fontDisplayBlockCount > 0) ? { withoutFontDisplay: withoutFontDisplay, blockCount: fontDisplayBlockCount } : undefined
                 }
             };
         });
 
-        const seoAudit = seoAndMeta.seo;
+        let seoAudit: SeoAudit = seoAndMeta.seo as SeoAudit;
         const privacyAudit = seoAndMeta.privacy;
 
         // 5c. Geo Location Lookup & CDN Detection
         let locationData: any = null;
-        if (serverIp && !serverIp.startsWith('127.') && !serverIp.startsWith('192.168.')) {
+        const ip = serverIp as string | null;
+        const isPublicIp = ip && typeof ip === 'string' && ip !== '' && !ip.startsWith('127.') && !ip.startsWith('192.168.');
+        if (isPublicIp) {
             try {
                 // Using ip-api.com (Free for demo/dev)
-                const geoRes = await fetch(`http://ip-api.com/json/${serverIp}`);
+                const geoRes = await fetch(`http://ip-api.com/json/${ip}`);
                 const geoJson: any = await geoRes.json();
                 if (geoJson.status === 'success') {
                     locationData = {
@@ -636,26 +861,103 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
             languages: seoAndMeta.geo
         };
 
-        // 5d. GEO (Generative Engine Optimization) - Technical Checks
+        // Security Headers Audit (main resource headers; Puppeteer returns lowercase keys)
+        const ext = seoAndMeta.extended as {
+            resourceHints?: { preload: string[]; preconnect: string[] };
+            sriMissing?: Array<{ tag: string; url: string }>;
+            reducedMotionInCss?: boolean;
+            focusVisibleFailCount?: number;
+            mediaAccessibility?: { videosWithoutCaptions: number; audiosWithoutTranscript: number };
+            manifest?: { present: boolean; url?: string };
+            themeColor?: string | null;
+            appleTouchIcon?: string | null;
+            metaRefreshPresent?: boolean;
+            fontDisplayIssues?: { withoutFontDisplay: number; blockCount: number };
+        } | undefined;
+
+        const cookieWarnings: Array<{ message: string }> = [];
+        const setCookieRaw = mainHeaders['set-cookie'] ?? mainHeaders['Set-Cookie'];
+        if (setCookieRaw) {
+            const setCookieStr = Array.isArray(setCookieRaw) ? setCookieRaw.join('; ') : String(setCookieRaw);
+            if (setCookieStr.toLowerCase().indexOf('samesite') === -1) cookieWarnings.push({ message: 'Set-Cookie ohne SameSite' });
+            if (pageIsHttps && setCookieStr.toLowerCase().indexOf('secure') === -1) cookieWarnings.push({ message: 'Set-Cookie ohne Secure auf HTTPS' });
+        }
+
+        const securityAudit = {
+            contentSecurityPolicy: {
+                present: !!h['content-security-policy'],
+                value: h['content-security-policy'] || undefined
+            },
+            xFrameOptions: {
+                present: !!h['x-frame-options'],
+                value: h['x-frame-options'] || undefined
+            },
+            xContentTypeOptions: {
+                present: !!h['x-content-type-options'],
+                value: h['x-content-type-options'] || undefined
+            },
+            strictTransportSecurity: {
+                present: !!h['strict-transport-security'],
+                value: h['strict-transport-security'] || undefined
+            },
+            referrerPolicy: {
+                present: !!h['referrer-policy'],
+                value: h['referrer-policy'] || undefined
+            },
+            mixedContentUrls: mixedContentUrls.length > 0 ? mixedContentUrls : undefined,
+            sriMissing: ext?.sriMissing && ext.sriMissing.length > 0 ? ext.sriMissing : undefined,
+            cookieWarnings: cookieWarnings.length > 0 ? cookieWarnings : undefined
+        };
+
+        // 5d. GEO (Generative Engine Optimization) - Technical Checks + robots/sitemap for SEO
         let hasLlmsTxt = false;
         let hasRobotsAllowingAI = true; // Default to true if fine, or if robots.txt is missing
+        let robotsTxtPresent = false;
+        let sitemapUrl: string | null = null;
+        let llmsTxtSections: string[] = [];
+        let llmsTxtHasSitemap = false;
+        const aiBotList = ['GPTBot', 'PerplexityBot', 'CCBot', 'GoogleOther', 'Anthropic-AI', 'Claude-Web'];
+        const aiBotStatus: Array<{ bot: string; status: 'allowed' | 'blocked' }> = [];
 
         try {
             const origin = new URL(url).origin;
-            const llmsTxtRes = await fetch(`${origin}/llms.txt`, { method: 'HEAD' });
-            hasLlmsTxt = llmsTxtRes.ok;
+
+            // GET llms.txt to parse content (sections + sitemap)
+            const llmsTxtRes = await fetch(`${origin}/llms.txt`);
+            if (llmsTxtRes.ok) {
+                hasLlmsTxt = true;
+                const llmsBody = await llmsTxtRes.text();
+                // Common section headers: "Description:", "Rules:", "Allow:", "Block:", "Sitemap:", or "## Section"
+                const sectionNames = ['Description', 'Rules', 'Allow', 'Block', 'Sitemap', 'Contact', 'Policy'];
+                sectionNames.forEach(name => {
+                    if (new RegExp('^\\s*' + name + '\\s*:', 'im').test(llmsBody) || llmsBody.includes('## ' + name)) {
+                        llmsTxtSections.push(name);
+                    }
+                });
+                llmsTxtHasSitemap = /^\s*Sitemap:\s*https?:\/\//im.test(llmsBody) || /\bhttps?:\/\/[^\s]+\/sitemap[^\s]*/i.test(llmsBody);
+            }
 
             const robotsRes = await fetch(`${origin}/robots.txt`);
             if (robotsRes.ok) {
+                robotsTxtPresent = true;
                 const robotsTxt = await robotsRes.text();
-                // Simple check for AI bots
-                const aiBots = ['GPTBot', 'PerplexityBot', 'CCBot', 'GoogleOther', 'Anthropic-AI', 'Claude-Web'];
-                const blocked = aiBots.some(bot => robotsTxt.includes(`User-agent: ${bot}`) && robotsTxt.includes('Disallow: /'));
-                if (blocked) hasRobotsAllowingAI = false;
+                // Per-bot: find User-agent: BotName, then until next User-agent check for Disallow: /
+                aiBotList.forEach(bot => {
+                    const uaMatch = robotsTxt.match(new RegExp('User-agent:\\s*' + bot.replace(/[.*+?^${}()|[\]\\]/g, '\\$0') + '\\s*([\\s\\S]*?)(?=User-agent:|$)', 'i'));
+                    const block = uaMatch ? /Disallow:\\s*\/\s*(\s|$)/m.test(uaMatch[1]) : false;
+                    aiBotStatus.push({ bot, status: block ? 'blocked' : 'allowed' });
+                    if (block) hasRobotsAllowingAI = false;
+                });
+                const sitemapMatch = robotsTxt.match(/^\s*Sitemap:\s*(.+)\s*$/im);
+                if (sitemapMatch && sitemapMatch[1]) {
+                    sitemapUrl = sitemapMatch[1].trim();
+                }
             }
         } catch (e) {
             // Ignore fetch errors
         }
+
+        seoAudit = { ...seoAudit, robotsTxtPresent, sitemapUrl };
 
         // Calculate GEO Score (0-100)
         let geoScore = 50; // Starting point
@@ -676,7 +978,16 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
             technical: {
                 hasLlmsTxt,
                 hasRobotsAllowingAI,
-                schemaCoverage: g.schemaCoverage
+                schemaCoverage: g.schemaCoverage,
+                jsonLdErrors: g.schemaParseErrors,
+                llmsTxtSections: llmsTxtSections.length > 0 ? llmsTxtSections : undefined,
+                llmsTxtHasSitemap,
+                aiBotStatus: aiBotStatus.length > 0 ? aiBotStatus : undefined,
+                metaRobotsContent: g.metaRobotsContent ?? undefined,
+                metaRobotsIndexable: g.metaRobotsIndexable,
+                recommendedSchemaTypesFound: g.recommendedSchemaTypesFound,
+                missingRecommendedSchemaTypes: g.missingRecommendedSchemaTypes,
+                articleSchemaQuality: g.articleSchemaQuality
             },
             content: {
                 faqCount: g.faqCount,
@@ -796,8 +1107,10 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                     }
                 });
 
-                // --- 7c. Smart Alt-Text Analysis ---
+                // --- 7c. Smart Alt-Text Analysis + Image dimensions/lazy/srcset ---
                 const altTextIssues = [];
+                let missingDimensions = 0, missingLazy = 0, missingSrcset = 0;
+                const imageDetails = [];
                 document.querySelectorAll('img').forEach(function(img) {
                     const alt = (img.getAttribute('alt') || '').trim();
                     const src = (img.getAttribute('src') || '').trim();
@@ -808,7 +1121,20 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                         width: Math.round(r.width),
                         height: Math.round(r.height)
                     };
-                    
+                    const hasWidth = !!(img.getAttribute('width') || (img as HTMLImageElement).width);
+                    const hasHeight = !!(img.getAttribute('height') || (img as HTMLImageElement).height);
+                    if (!hasWidth || !hasHeight) {
+                        missingDimensions++;
+                        if (imageDetails.length < 5) imageDetails.push({ reason: 'Missing width/height', selector: img.tagName + (img.src ? '' : '') });
+                    }
+                    const loading = (img.getAttribute('loading') || '').toLowerCase();
+                    if (loading !== 'lazy' && loading !== 'eager') {
+                        missingLazy++;
+                        if (imageDetails.length < 5) imageDetails.push({ reason: 'Missing loading="lazy"', selector: img.tagName });
+                    }
+                    if (!img.getAttribute('srcset')) {
+                        missingSrcset++;
+                    }
                     if (img.getAttribute('alt') === null) {
                         altTextIssues.push({
                             imgHtml: img.outerHTML.slice(0, 50),
@@ -829,6 +1155,12 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                         }
                     }
                 });
+                const imageIssues = (missingDimensions > 0 || missingLazy > 0 || missingSrcset > 0) ? {
+                    missingDimensions: missingDimensions,
+                    missingLazy: missingLazy,
+                    missingSrcset: missingSrcset,
+                    details: imageDetails.length > 0 ? imageDetails : undefined
+                } : undefined;
 
                 // --- 7d. ARIA Integrity ---
                 const ariaIssues = [];
@@ -879,13 +1211,63 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                     }
                 });
 
-                return { structureMap: structureMap, touchTargets: touchTargets, altTextIssues: altTextIssues, ariaIssues: ariaIssues, formIssues: formIssues };
+                return { structureMap: structureMap, touchTargets: touchTargets, altTextIssues: altTextIssues, ariaIssues: ariaIssues, formIssues: formIssues, imageIssues: imageIssues };
             })();
         `;
 
         // Use 'any' cast to satisfy TS because evaluate expects a function usually, but accepts string in vanilla puppeteer
         // Puppeteer source: evaluate(pageFunction, ...args) -> usually function or string
         const advancedChecks = await page.evaluate(advancedChecksScript as any);
+
+        // Heading hierarchy from structureMap (headings only: level 1-6)
+        const headingEntries = (advancedChecks.structureMap || []).filter((n: { level: number }) => n.level >= 1 && n.level <= 6);
+        const h1Count = headingEntries.filter((n: { level: number }) => n.level === 1).length;
+        const outline = headingEntries.map((n: { level: number; text: string }) => ({ level: n.level, text: n.text || '' }));
+        const skippedLevels: Array<{ from: number; to: number }> = [];
+        let prevLevel = 0;
+        headingEntries.forEach((n: { level: number }) => {
+            if (prevLevel > 0 && n.level > prevLevel + 1) skippedLevels.push({ from: prevLevel, to: n.level });
+            if (n.level >= 1) prevLevel = n.level;
+        });
+        const headingHierarchy = headingEntries.length > 0 ? {
+            hasSingleH1: h1Count === 1,
+            h1Count,
+            skippedLevels,
+            outline
+        } : undefined;
+
+        // Iframes: title attribute (a11y)
+        const iframeIssues = await page.evaluate(function () {
+            return Array.from(document.querySelectorAll('iframe')).map(function (el) {
+                const iframe = el as HTMLIFrameElement;
+                return { hasTitle: !!(iframe.getAttribute('title')), src: iframe.getAttribute('src') || undefined };
+            });
+        });
+
+        // Service Worker (PWA indicator)
+        let serviceWorkerRegistered = false;
+        try {
+            serviceWorkerRegistered = await page.evaluate(function () {
+                return !!(navigator.serviceWorker && (navigator as any).serviceWorker.controller);
+            });
+        } catch (_) {}
+
+        // Skip-link detection: first focusable anchor with href="#..." and skip-like text/aria-label
+        const skipLinkResult = await page.evaluate(function () {
+            const skipKeywords = ['skip', 'springen', 'content', 'main', 'zum inhalt', 'inhaltsverzeichnis', 'navigation überspringen'];
+            const links = Array.from(document.querySelectorAll('a[href^="#"]'));
+            for (const a of links) {
+                const href = (a.getAttribute('href') || '').trim();
+                const text = (a.textContent || '').toLowerCase().trim();
+                const ariaLabel = (a.getAttribute('aria-label') || '').toLowerCase();
+                const combined = text + ' ' + ariaLabel;
+                const looksLikeSkip = skipKeywords.some(kw => combined.includes(kw));
+                if (looksLikeSkip && href.length > 1) {
+                    return { hasSkipLink: true, skipLinkHref: href };
+                }
+            }
+            return { hasSkipLink: false, skipLinkHref: null };
+        });
 
         // --- Calculate UX Score (Simple Algorithm) ---
         // 100 Base
@@ -915,17 +1297,64 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                 issues: viewportCheck.issues
             },
             consoleErrors: consoleLogs,
-            brokenLinks: linkAudit.broken,
+            brokenLinks: linkAudit.broken.map((b) => ({ href: b.url, status: b.statusCode, text: b.text })),
             focusOrder: focusOrder,
             structureMap: advancedChecks.structureMap,
             altTextIssues: advancedChecks.altTextIssues,
             ariaIssues: advancedChecks.ariaIssues,
             formIssues: advancedChecks.formIssues,
-            // Replace legacy tapTargets with detailed ones
+            hasSkipLink: skipLinkResult.hasSkipLink,
+            skipLinkHref: skipLinkResult.skipLinkHref ?? null,
+            resourceHints: ext?.resourceHints,
+            reducedMotionInCss: ext?.reducedMotionInCss,
+            focusVisibleFailCount: ext?.focusVisibleFailCount,
+            mediaAccessibility: ext?.mediaAccessibility,
             tapTargets: {
                 issues: advancedChecks.touchTargets.map((t: any) => `${t.element} (${t.size.width}x${t.size.height}px)`),
                 details: advancedChecks.touchTargets
+            },
+            headingHierarchy,
+            vagueLinkTexts: allLinksResult.vagueLinkTexts?.length ? allLinksResult.vagueLinkTexts : undefined,
+            imageIssues: advancedChecks.imageIssues,
+            iframeIssues: iframeIssues.length > 0 ? iframeIssues : undefined,
+            metaRefreshPresent: ext?.metaRefreshPresent,
+            fontDisplayIssues: ext?.fontDisplayIssues
+        };
+
+        let manifestHasName = false;
+        let manifestHasIcons = false;
+        if (ext?.manifest?.url) {
+            try {
+                const manRes = await fetch(ext.manifest.url);
+                if (manRes.ok) {
+                    const man = await manRes.json() as { name?: string; short_name?: string; icons?: unknown[] };
+                    manifestHasName = !!(man.name || man.short_name);
+                    manifestHasIcons = !!(man.icons && Array.isArray(man.icons) && man.icons.length > 0);
+                }
+            } catch (_) {}
+        }
+        const pageHost = (() => {
+            try {
+                return new URL(url).hostname;
+            } catch {
+                return '';
             }
+        })();
+        const thirdPartyDomains = Array.from(allRequestHosts).filter(host => host && host !== pageHost);
+
+        const technicalInsights = {
+            thirdPartyDomains,
+            manifest: {
+                present: !!ext?.manifest?.present,
+                hasName: manifestHasName,
+                hasIcons: manifestHasIcons,
+                url: ext?.manifest?.url
+            },
+            themeColor: ext?.themeColor ?? null,
+            appleTouchIcon: ext?.appleTouchIcon ?? null,
+            serviceWorkerRegistered,
+            redirectCount: mainRedirectCount,
+            metaRefreshPresent: ext?.metaRefreshPresent
         };
 
         const internalLinks = uniqueLinksList
@@ -961,7 +1390,9 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
             links: linkAudit,
             geo: geoAudit,
             privacy: privacyAudit,
-            generative: generativeAudit
+            generative: generativeAudit,
+            security: securityAudit,
+            technicalInsights
         };
     } finally {
         await browser.close();

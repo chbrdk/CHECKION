@@ -33,6 +33,8 @@ import { SeoCard } from '../../../components/SeoCard';
 import { LinkAuditCard } from '../../../components/LinkAuditCard';
 import { InfraCard } from '../../../components/InfraCard';
 import { PrivacyCard } from '../../../components/PrivacyCard';
+import { SecurityCard } from '../../../components/SecurityCard';
+import { TechnicalInsightsCard } from '../../../components/TechnicalInsightsCard';
 import { GenerativeOptimizerCard } from '../../../components/GenerativeOptimizerCard';
 import type { ScanResult, Issue, IssueSeverity } from '@/lib/types';
 
@@ -148,8 +150,8 @@ export default function ResultsPage() {
 
     if (error || !result) {
         return (
-            <Box sx={{ p: MSQDX_SPACING.scale.xl, textAlign: 'center' }}>
-                <MsqdxTypography variant="h5" sx={{ color: MSQDX_STATUS.error.light, mb: MSQDX_SPACING.scale.md }}>
+            <Box sx={{ p: 'var(--msqdx-spacing-md)', textAlign: 'center' }}>
+                <MsqdxTypography variant="h5" sx={{ color: MSQDX_STATUS.error.light, mb: 'var(--msqdx-spacing-sm)' }}>
                     {error || 'Ergebnis nicht gefunden'}
                 </MsqdxTypography>
                 <MsqdxButton variant="outlined" onClick={() => router.push('/')}>
@@ -173,15 +175,15 @@ export default function ResultsPage() {
     const scoreColor = result.score >= 90 ? MSQDX_BRAND_PRIMARY.green : result.score >= 70 ? MSQDX_BRAND_PRIMARY.yellow : MSQDX_STATUS.error.base;
 
     return (
-        <Box sx={{ p: MSQDX_SPACING.scale.md, maxWidth: 1600, mx: 'auto' }}>
+        <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto' }}>
             {/* Header with Score */}
-            <Box sx={{ mb: MSQDX_SPACING.scale.md, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <Box sx={{ mb: 'var(--msqdx-spacing-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <Box>
                     <MsqdxButton
                         variant="text"
                         size="small"
                         onClick={() => router.push('/')}
-                        sx={{ mb: MSQDX_SPACING.scale.sm, color: MSQDX_THEME.dark.text.tertiary }}
+                        sx={{ mb: MSQDX_SPACING.scale.sm, color: 'var(--color-text-muted-on-light)' }}
                     >
                         ← Dashboard
                     </MsqdxButton>
@@ -194,7 +196,7 @@ export default function ResultsPage() {
                     <MsqdxTypography
                         variant="body2"
                         sx={{
-                            color: MSQDX_THEME.dark.text.tertiary,
+                            color: 'var(--color-text-muted-on-light)',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
@@ -206,7 +208,7 @@ export default function ResultsPage() {
                 </Box>
 
                 {/* Score Gauge */}
-                <Box sx={{ position: 'relative', display: 'inline-flex', mr: MSQDX_SPACING.scale.md }}>
+                <Box sx={{ position: 'relative', display: 'inline-flex', mr: 'var(--msqdx-spacing-sm)' }}>
                     <CircularProgress
                         variant="determinate"
                         value={100}
@@ -237,7 +239,7 @@ export default function ResultsPage() {
                         <MsqdxTypography variant="h4" sx={{ fontWeight: 800, color: scoreColor, lineHeight: 1 }}>
                             {result.score}
                         </MsqdxTypography>
-                        <MsqdxTypography variant="caption" sx={{ fontSize: '0.6rem', color: MSQDX_THEME.dark.text.tertiary }}>
+                        <MsqdxTypography variant="caption" sx={{ fontSize: '0.6rem', color: 'var(--color-text-muted-on-light)' }}>
                             SCORE
                         </MsqdxTypography>
                     </Box>
@@ -248,7 +250,7 @@ export default function ResultsPage() {
             <MsqdxMoleculeCard
                 variant="flat"
                 borderRadius="lg"
-                sx={{ mb: MSQDX_SPACING.scale.lg }}
+                sx={{ bgcolor: 'var(--color-card-bg)', mb: 'var(--msqdx-spacing-md)' }}
                 chips={
                     <>
                         <MsqdxChip
@@ -290,7 +292,7 @@ export default function ResultsPage() {
                                 size="small"
                                 sx={{
                                     backgroundColor: alpha(MSQDX_NEUTRAL[400], 0.12),
-                                    color: MSQDX_THEME.dark.text.secondary,
+                                    color: 'var(--color-text-muted-on-light)',
                                     fontWeight: 600,
                                     fontSize: '0.7rem',
                                 }}
@@ -328,7 +330,7 @@ export default function ResultsPage() {
                     sx={{
                         display: 'grid',
                         gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-                        gap: MSQDX_SPACING.scale.sm,
+                        gap: 'var(--msqdx-spacing-sm)',
                     }}
                 >
                     <MiniStat label="Errors" value={result.stats.errors} color={MSQDX_STATUS.error.base} />
@@ -346,8 +348,8 @@ export default function ResultsPage() {
                 <Box sx={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-                    gap: MSQDX_SPACING.scale.lg,
-                    mb: MSQDX_SPACING.scale.lg,
+                    gap: 'var(--msqdx-spacing-md)',
+                    mb: 'var(--msqdx-spacing-md)',
                 }}>
                     {result.eco && (
                         <Box sx={{ minHeight: '100%' }}>
@@ -368,7 +370,7 @@ export default function ResultsPage() {
             )}
 
             {/* View Toggle & Filters */}
-            <Box sx={{ mb: MSQDX_SPACING.scale.lg }}>
+            <Box sx={{ mb: 'var(--msqdx-spacing-md)' }}>
                 <MsqdxTabs
                     value={viewMode}
                     onChange={(v: string) => setViewMode(v as any)}
@@ -385,9 +387,10 @@ export default function ResultsPage() {
             </Box>
 
             {viewMode === 'list' && (
-                <MsqdxMoleculeCard // Use Molecule Card here
+                <MsqdxMoleculeCard
                     title="Gefundene Issues"
                     variant="flat"
+                    sx={{ bgcolor: 'var(--color-card-bg)' }}
                     borderRadius="lg"
                     headerActions={
                         <Box sx={{ display: 'flex', gap: MSQDX_SPACING.scale.xs }}>
@@ -404,7 +407,7 @@ export default function ResultsPage() {
                                     onClick={() => setTab(t.key)}
                                     sx={{
                                         fontSize: '0.75rem',
-                                        ...(tab !== t.key && { color: MSQDX_THEME.dark.text.secondary }),
+                                        ...(tab !== t.key && { color: 'var(--color-text-muted-on-light)' }),
                                         minWidth: 'auto'
                                     }}
                                 >
@@ -413,7 +416,7 @@ export default function ResultsPage() {
                                 </MsqdxButton>
                             ))}
                             {/* Divider */}
-                            <Box sx={{ width: 1, height: 24, bgcolor: MSQDX_THEME.dark.border.subtle, mx: 1, alignSelf: 'center' }} />
+                            <Box sx={{ width: 1, height: 24, bgcolor: 'var(--color-secondary-dx-grey-light-tint)', mx: 1, alignSelf: 'center' }} />
 
                             {/* Level Filters */}
                             {['all', 'A', 'AA', 'AAA', 'APCA'].map((level) => (
@@ -426,7 +429,7 @@ export default function ResultsPage() {
                                         fontSize: '0.75rem',
                                         fontWeight: 600,
                                         borderRadius: '16px',
-                                        color: levelFilter === level ? '#000' : MSQDX_THEME.dark.text.secondary,
+                                        color: levelFilter === level ? '#000' : 'var(--color-text-muted-on-light)',
                                         backgroundColor: levelFilter === level ? MSQDX_BRAND_PRIMARY.green : 'transparent',
                                         '&:hover': {
                                             backgroundColor: levelFilter === level ? MSQDX_BRAND_PRIMARY.green : alpha(MSQDX_NEUTRAL[200], 0.1),
@@ -464,7 +467,7 @@ export default function ResultsPage() {
                                 allowMultiple
                                 size="small"
                                 borderRadius="md"
-                                sx={{ display: 'flex', flexDirection: 'column', gap: MSQDX_SPACING.scale.sm, background: 'transparent', border: 'none' }}
+                                sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-sm)', background: 'transparent', border: 'none' }}
                             >
                                 {result.passes.map((pass, idx) => {
                                     const itemId = `pass-${idx}`;
@@ -473,7 +476,7 @@ export default function ResultsPage() {
                                             key={itemId}
                                             id={itemId}
                                             summary={
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: MSQDX_SPACING.scale.sm, width: '100%' }}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-sm)', width: '100%' }}>
                                                     {/* Success dot */}
                                                     <Box
                                                         sx={{
@@ -512,7 +515,7 @@ export default function ResultsPage() {
                                                                 size="small"
                                                                 sx={{
                                                                     backgroundColor: alpha(MSQDX_NEUTRAL[400], 0.1),
-                                                                    color: MSQDX_THEME.dark.text.tertiary,
+                                                                    color: 'var(--color-text-muted-on-light)',
                                                                     fontSize: '0.6rem',
                                                                     height: 20,
                                                                 }}
@@ -522,8 +525,8 @@ export default function ResultsPage() {
                                                 </Box>
                                             }
                                         >
-                                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: MSQDX_SPACING.scale.sm, width: '100%' }}>
-                                                <MsqdxTypography variant="body2" sx={{ color: MSQDX_THEME.dark.text.secondary }}>
+                                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-sm)', width: '100%' }}>
+                                                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
                                                     {pass.description}
                                                 </MsqdxTypography>
 
@@ -535,13 +538,13 @@ export default function ResultsPage() {
                                                     overflowY: 'auto',
                                                     p: MSQDX_SPACING.scale.xs,
                                                     borderRadius: MSQDX_SPACING.scale.xs,
-                                                    backgroundColor: alpha(MSQDX_NEUTRAL[900], 0.3),
-                                                    border: `1px solid ${MSQDX_THEME.dark.border.subtle}`
+                                                    backgroundColor: 'var(--color-secondary-dx-grey-light-tint)',
+                                                    border: `1px solid ${'var(--color-secondary-dx-grey-light-tint)'}`
                                                 }}>
                                                     {pass.nodes.slice(0, 50).map((node: any, nodeIdx: number) => (
                                                         <Box key={nodeIdx} sx={{
                                                             p: MSQDX_SPACING.scale.xs,
-                                                            borderBottom: nodeIdx < pass.nodes.length - 1 ? `1px solid ${MSQDX_THEME.dark.border.subtle}` : 'none'
+                                                            borderBottom: nodeIdx < pass.nodes.length - 1 ? `1px solid ${'var(--color-secondary-dx-grey-light-tint)'}` : 'none'
                                                         }}>
                                                             <code style={{
                                                                 fontSize: '0.75rem',
@@ -564,10 +567,10 @@ export default function ResultsPage() {
                             <Box
                                 sx={{
                                     textAlign: 'center',
-                                    py: MSQDX_SPACING.scale.xl,
+                                    py: 'var(--msqdx-spacing-md)',
                                 }}
                             >
-                                <MsqdxTypography variant="h6" sx={{ color: MSQDX_THEME.dark.text.secondary }}>
+                                <MsqdxTypography variant="h6" sx={{ color: 'var(--color-text-muted-on-light)' }}>
                                     Keine validierten Elemente gefunden (oder Scan wurde nicht mit Validierung durchgeführt).
                                 </MsqdxTypography>
                             </Box>
@@ -576,7 +579,7 @@ export default function ResultsPage() {
                         <Box
                             sx={{
                                 textAlign: 'center',
-                                py: MSQDX_SPACING.scale.xl,
+                                py: 'var(--msqdx-spacing-md)',
                             }}
                         >
                             <MsqdxTypography variant="h6" sx={{ color: MSQDX_BRAND_PRIMARY.green }}>
@@ -598,8 +601,8 @@ export default function ResultsPage() {
                 <MsqdxMoleculeCard
                     title="Visuelle Analyse"
                     variant="flat"
+                    sx={{ bgcolor: 'var(--color-card-bg)', mb: 'var(--msqdx-spacing-md)' }}
                     borderRadius="lg"
-                    sx={{ mb: MSQDX_SPACING.scale.lg }}
                     headerActions={
                         <Box sx={{ display: 'flex', gap: 1 }}>
                             <MsqdxButton
@@ -693,7 +696,7 @@ export default function ResultsPage() {
                         </Box>
                     ) : (
                         <Box sx={{ textAlign: 'center', py: 8 }}>
-                            <MsqdxTypography variant="body1" sx={{ color: MSQDX_THEME.dark.text.secondary }}>
+                            <MsqdxTypography variant="body1" sx={{ color: 'var(--color-text-muted-on-light)' }}>
                                 Kein Screenshot verfügbar. (Scans vor dem Update haben keine visuellen Daten)
                             </MsqdxTypography>
                         </Box>
@@ -704,6 +707,7 @@ export default function ResultsPage() {
                 <MsqdxMoleculeCard
                     title="User Experience Issues"
                     subtitle="User Experience Issues"
+                    sx={{ bgcolor: 'var(--color-card-bg)' }}
                 >
                     {result.ux ? (
                         <UxIssueList ux={result.ux} />
@@ -717,7 +721,49 @@ export default function ResultsPage() {
                 <MsqdxMoleculeCard
                     title="Struktur & Semantik"
                     subtitle="Visualisierung der Dokumentenstruktur (Headings, Landmarks)."
+                    sx={{ bgcolor: 'var(--color-card-bg)' }}
                 >
+                    {result.ux?.headingHierarchy?.outline && result.ux.headingHierarchy.outline.length > 0 && (
+                        <Box sx={{ mb: 'var(--msqdx-spacing-md)' }}>
+                            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 'var(--msqdx-spacing-xs)', color: 'var(--color-text-on-light)' }}>
+                                Document Outline
+                            </MsqdxTypography>
+                            <Box component="ul" sx={{ pl: 2, m: 0, listStyle: 'none' }}>
+                                {result.ux.headingHierarchy.outline.map((item, i) => (
+                                    <Box
+                                        key={i}
+                                        component="li"
+                                        sx={{
+                                            pl: (item.level - 1) * 16,
+                                            py: 0.25,
+                                            fontSize: item.level === 1 ? '1rem' : item.level === 2 ? '0.95rem' : '0.85rem',
+                                            color: 'var(--color-text-on-light)'
+                                        }}
+                                    >
+                                        <Box component="span" sx={{ fontWeight: item.level <= 2 ? 600 : 400 }}>
+                                            H{item.level}
+                                        </Box>
+                                        {' — '}
+                                        {item.text || '(leer)'}
+                                    </Box>
+                                ))}
+                            </Box>
+                            {(!result.ux.headingHierarchy.hasSingleH1 || result.ux.headingHierarchy.skippedLevels.length > 0) && (
+                                <Box sx={{ mt: 1, p: 1, bgcolor: 'var(--color-secondary-dx-grey-light-tint)', borderRadius: 1 }}>
+                                    {!result.ux.headingHierarchy.hasSingleH1 && (
+                                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-warning)', display: 'block' }}>
+                                            Mehrere H1 auf der Seite ({result.ux.headingHierarchy.h1Count})
+                                        </MsqdxTypography>
+                                    )}
+                                    {result.ux.headingHierarchy.skippedLevels.length > 0 && (
+                                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-warning)', display: 'block' }}>
+                                            Übersprungene Level: {result.ux.headingHierarchy.skippedLevels.map(s => `H${s.from}→H${s.to}`).join(', ')}
+                                        </MsqdxTypography>
+                                    )}
+                                </Box>
+                            )}
+                        </Box>
+                    )}
                     {result.ux?.structureMap ? (
                         <StructureMap nodes={result.ux.structureMap} />
                     ) : (
@@ -730,18 +776,18 @@ export default function ResultsPage() {
                 <Box sx={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-                    gap: MSQDX_SPACING.scale.lg
+                    gap: 'var(--msqdx-spacing-md)'
                 }}>
                     {result.seo ? (
                         <SeoCard seo={result.seo} />
                     ) : (
-                        <MsqdxMoleculeCard title="SEO Audit" subtitle="No SEO data."><MsqdxTypography>Keine SEO Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
+                        <MsqdxMoleculeCard title="SEO Audit" subtitle="No SEO data." sx={{ bgcolor: 'var(--color-card-bg)' }}><MsqdxTypography>Keine SEO Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
                     )}
 
                     {result.links ? (
                         <LinkAuditCard links={result.links} />
                     ) : (
-                        <MsqdxMoleculeCard title="Link Audit" subtitle="No Link data."><MsqdxTypography>Keine Link Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
+                        <MsqdxMoleculeCard title="Link Audit" subtitle="No Link data." sx={{ bgcolor: 'var(--color-card-bg)' }}><MsqdxTypography>Keine Link Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
                     )}
                 </Box>
             )}
@@ -750,19 +796,27 @@ export default function ResultsPage() {
                 <Box sx={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-                    gap: MSQDX_SPACING.scale.lg
+                    gap: 'var(--msqdx-spacing-md)'
                 }}>
                     {result.geo ? (
                         <InfraCard geo={result.geo} />
                     ) : (
-                        <MsqdxMoleculeCard title="Infrastruktur" subtitle="No data."><MsqdxTypography>Keine Infrastruktur-Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
+                        <MsqdxMoleculeCard title="Infrastruktur" subtitle="No data." sx={{ bgcolor: 'var(--color-card-bg)' }}><MsqdxTypography>Keine Infrastruktur-Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
                     )}
 
                     {result.privacy ? (
                         <PrivacyCard privacy={result.privacy} />
                     ) : (
-                        <MsqdxMoleculeCard title="Privacy Audit" subtitle="No Privacy data."><MsqdxTypography>Keine Privacy-Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
+                        <MsqdxMoleculeCard title="Privacy Audit" subtitle="No Privacy data." sx={{ bgcolor: 'var(--color-card-bg)' }}><MsqdxTypography>Keine Privacy-Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
                     )}
+
+                    {result.security ? (
+                        <SecurityCard security={result.security} />
+                    ) : null}
+
+                    {result.technicalInsights ? (
+                        <TechnicalInsightsCard insights={result.technicalInsights} />
+                    ) : null}
                 </Box>
             )}
 
@@ -771,7 +825,7 @@ export default function ResultsPage() {
                     {result.generative ? (
                         <GenerativeOptimizerCard data={result.generative} />
                     ) : (
-                        <MsqdxMoleculeCard title="GEO Analysis" subtitle="No data."><MsqdxTypography>Keine GEO-Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
+                        <MsqdxMoleculeCard title="GEO Analysis" subtitle="No data." sx={{ bgcolor: 'var(--color-card-bg)' }}><MsqdxTypography>Keine GEO-Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
                     )}
                 </Box>
             )}
@@ -783,10 +837,10 @@ function MiniStat({ label, value, color }: { label: string; value: number; color
     return (
         <Box
             sx={{
-                p: MSQDX_SPACING.scale.md,
+                p: 'var(--msqdx-spacing-md)',
                 borderRadius: MSQDX_SPACING.borderRadius.md,
-                backgroundColor: MSQDX_NEUTRAL[900],
-                border: `1px solid ${MSQDX_THEME.dark.border.subtle}`,
+                backgroundColor: 'var(--color-card-bg)',
+                border: '1px solid var(--color-secondary-dx-grey-light-tint)',
                 textAlign: 'center',
             }}
         >
@@ -799,7 +853,7 @@ function MiniStat({ label, value, color }: { label: string; value: number; color
             <MsqdxTypography
                 variant="caption"
                 sx={{
-                    color: MSQDX_THEME.dark.text.tertiary,
+                    color: 'var(--color-text-muted-on-light)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.08em',
                     fontSize: '0.6rem',

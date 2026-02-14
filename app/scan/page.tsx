@@ -96,7 +96,7 @@ export default function ScanPage() {
     };
 
     return (
-        <Box sx={{ p: MSQDX_SPACING.scale.lg, maxWidth: 1600, mx: 'auto' }}>
+        <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto' }}>
             {/* Header */}
             <Box sx={{ mb: MSQDX_SPACING.scale.md }}>
                 <MsqdxTypography
@@ -107,7 +107,7 @@ export default function ScanPage() {
                 </MsqdxTypography>
                 <MsqdxTypography
                     variant="body2"
-                    sx={{ color: MSQDX_THEME.dark.text.tertiary }}
+                    sx={{ color: 'var(--color-text-muted-on-light)' }}
                 >
                     Gib eine URL ein und starte einen automatisierten WCAG Accessibility Check (Desktop, Tablet & Mobile).
                 </MsqdxTypography>
@@ -118,7 +118,8 @@ export default function ScanPage() {
                 title="Scan Konfiguration"
                 variant="flat"
                 borderRadius="lg"
-                footerDivider={false} // Custom footer layout
+                footerDivider={false}
+                sx={{ bgcolor: 'var(--color-card-bg)' }}
                 actions={
                     <MsqdxButton
                         variant="contained"
@@ -133,7 +134,7 @@ export default function ScanPage() {
                     </MsqdxButton>
                 }
             >
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr auto auto' }, gap: MSQDX_SPACING.scale.lg, alignItems: 'start' }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr auto auto' }, gap: 'var(--msqdx-spacing-md)', alignItems: 'start' }}>
 
                     {/* Scan Mode Selection */}
                     <Box sx={{ gridColumn: { xs: '1 / -1', md: '1 / -1' }, mb: 1 }}>
@@ -145,7 +146,7 @@ export default function ScanPage() {
                                 { value: 'deep', label: 'Deep Domain Scan' }
                             ]}
                         />
-                        <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 1, color: MSQDX_THEME.dark.text.tertiary }}>
+                        <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 1, color: 'var(--color-text-muted-on-light)' }}>
                             {scanMode === 'single'
                                 ? 'Analysiert genau EINE Seite sofort (Synchron). Inklusive Screenshots & Visueller Analyse.'
                                 : 'Analysiert die gesamte Domain im Hintergrund (Asynchron). Findet systemische Fehler.'}
@@ -195,8 +196,8 @@ export default function ScanPage() {
                 {error && (
                     <Box
                         sx={{
-                            mt: MSQDX_SPACING.scale.lg,
-                            p: MSQDX_SPACING.scale.md,
+                            mt: 'var(--msqdx-spacing-md)',
+                            p: 'var(--msqdx-spacing-sm)',
                             borderRadius: MSQDX_SPACING.borderRadius.md,
                             backgroundColor: alpha(MSQDX_STATUS.error.base, 0.1),
                             border: `1px solid ${alpha(MSQDX_STATUS.error.base, 0.3)}`,
@@ -210,11 +211,11 @@ export default function ScanPage() {
             </MsqdxMoleculeCard>
 
             {scanning && (
-                <Box sx={{ mt: MSQDX_SPACING.scale.lg, textAlign: 'center' }}>
+                <Box sx={{ mt: 'var(--msqdx-spacing-md)', textAlign: 'center' }}>
                     <CircularProgress size={28} sx={{ color: MSQDX_BRAND_PRIMARY.green }} />
                     <MsqdxTypography
                         variant="caption"
-                        sx={{ color: MSQDX_THEME.dark.text.tertiary, mt: MSQDX_SPACING.scale.sm, display: 'block' }}
+                        sx={{ color: 'var(--color-text-muted-on-light)', mt: 'var(--msqdx-spacing-xs)', display: 'block' }}
                     >
                         Die Seite wird geladen und analysiert. Das kann einige Sekunden dauern…
                     </MsqdxTypography>

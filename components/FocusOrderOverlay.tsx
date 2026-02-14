@@ -1,5 +1,4 @@
 import React from 'react';
-import { Box, Typography } from '@mui/material';
 import { MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
 
 interface FocusItem {

@@ -83,6 +83,28 @@ export interface UxResult {
     altTextIssues?: AltTextIssue[];
     ariaIssues?: AriaIssue[];
     formIssues?: FormIssue[];
+    hasSkipLink?: boolean;
+    skipLinkHref?: string | null;
+    resourceHints?: { preload: string[]; preconnect: string[] };
+    reducedMotionInCss?: boolean;
+    focusVisibleFailCount?: number;
+    mediaAccessibility?: { videosWithoutCaptions: number; audiosWithoutTranscript: number };
+    headingHierarchy?: {
+        hasSingleH1: boolean;
+        h1Count: number;
+        skippedLevels: Array<{ from: number; to: number }>;
+        outline: Array<{ level: number; text: string }>;
+    };
+    vagueLinkTexts?: Array<{ href: string; text: string }>;
+    imageIssues?: {
+        missingDimensions: number;
+        missingLazy: number;
+        missingSrcset: number;
+        details?: Array<{ reason: string; selector?: string }>;
+    };
+    iframeIssues?: Array<{ hasTitle: boolean; src?: string }>;
+    metaRefreshPresent?: boolean;
+    fontDisplayIssues?: { withoutFontDisplay: number; blockCount: number };
 }
 
 export type ScanResult = {
@@ -106,6 +128,7 @@ export type ScanResult = {
         domLoad: number;
         windowLoad: number;
         lcp: number;
+        inp?: number | null;
     };
     eco: {
         co2: number;
@@ -118,7 +141,44 @@ export type ScanResult = {
     geo?: GeoAudit;
     privacy?: PrivacyAudit;
     generative?: GenerativeEngineAudit;
-};
+    security?: SecurityAudit;
+    technicalInsights?: TechnicalInsights;
+}
+
+export interface TechnicalInsights {
+    thirdPartyDomains: string[];
+    manifest: { present: boolean; hasName: boolean; hasIcons: boolean; url?: string };
+    themeColor: string | null;
+    appleTouchIcon: string | null;
+    serviceWorkerRegistered?: boolean;
+    redirectCount?: number;
+    metaRefreshPresent?: boolean;
+}
+
+/** Single keyword with frequency and density (content analysis). */
+export interface KeywordDensityItem {
+    keyword: string;
+    count: number;
+    densityPercent: number;
+}
+
+/** For top keywords: whether they appear in critical SEO elements. */
+export interface KeywordPresenceItem {
+    keyword: string;
+    inTitle: boolean;
+    inH1: boolean;
+    inMetaDescription: boolean;
+}
+
+export interface SeoKeywordAnalysis {
+    totalWords: number;
+    /** Top content keywords (stop words removed), sorted by count, max ~15. */
+    topKeywords: KeywordDensityItem[];
+    /** Presence of each top keyword in title, H1, meta description. */
+    keywordPresence: KeywordPresenceItem[];
+    /** Raw meta keywords if present (meta name="keywords"). */
+    metaKeywordsRaw?: string | null;
+}
 
 export interface SeoAudit {
     title: string | null;
@@ -129,7 +189,20 @@ export interface SeoAudit {
     ogDescription: string | null;
     ogImage: string | null;
     twitterCard: string | null;
+    robotsTxtPresent?: boolean;
+    sitemapUrl?: string | null;
+    duplicateContentWarning?: boolean;
+    skinnyContent?: boolean;
+    bodyWordCount?: number;
+    structuredDataRequiredFields?: Array<{ type: string; missing: string[] }>;
+    /** Keyword extraction from body, density, and presence in title/H1/meta. */
+    keywordAnalysis?: SeoKeywordAnalysis;
 }
+
+/** AI-recommended Schema.org types for GEO */
+export const GEO_RECOMMENDED_SCHEMA_TYPES = [
+    'Article', 'FAQPage', 'HowTo', 'Organization', 'Person', 'WebPage', 'NewsArticle', 'WebSite'
+] as const;
 
 export interface GenerativeEngineAudit {
     score: number;
@@ -137,6 +210,27 @@ export interface GenerativeEngineAudit {
         hasLlmsTxt: boolean;
         hasRobotsAllowingAI: boolean;
         schemaCoverage: string[];
+        jsonLdErrors?: string[];
+        /** Parsed llms.txt: which sections exist (e.g. Description, Rules, Allow, Block) */
+        llmsTxtSections?: string[];
+        /** True if llms.txt contains a Sitemap URL */
+        llmsTxtHasSitemap?: boolean;
+        /** Per-bot status from robots.txt */
+        aiBotStatus?: Array<{ bot: string; status: 'allowed' | 'blocked' }>;
+        /** Content of meta name="robots" (or first robots-like meta) */
+        metaRobotsContent?: string | null;
+        /** True if page is not noindex (indexable for crawlers) */
+        metaRobotsIndexable?: boolean;
+        /** Schema @types that are in the recommended AI list */
+        recommendedSchemaTypesFound?: string[];
+        /** Which recommended types are missing (subset of GEO_RECOMMENDED_SCHEMA_TYPES) */
+        missingRecommendedSchemaTypes?: string[];
+        /** Article/NewsArticle JSON-LD: at least one has these fields */
+        articleSchemaQuality?: {
+            hasDatePublished: boolean;
+            hasDateModified: boolean;
+            hasAuthor: boolean;
+        };
     };
     content: {
         faqCount: number;
@@ -175,11 +269,24 @@ export interface PrivacyAudit {
     hasTermsOfService: boolean;
 }
 
+export interface SecurityAudit {
+    contentSecurityPolicy: { present: boolean; value?: string };
+    xFrameOptions: { present: boolean; value?: string };
+    xContentTypeOptions: { present: boolean; value?: string };
+    strictTransportSecurity: { present: boolean; value?: string };
+    referrerPolicy: { present: boolean; value?: string };
+    mixedContentUrls?: string[];
+    sriMissing?: Array<{ tag: string; url: string }>;
+    cookieWarnings?: Array<{ message: string }>;
+}
+
 export interface LinkAudit {
     broken: LinkResult[];
     total: number;
     internal: number;
     external: number;
+    missingNoopener?: Array<{ url: string; text: string }>;
+    pdfLinks?: Array<{ url: string; text: string }>;
 }
 
 export interface LinkResult {

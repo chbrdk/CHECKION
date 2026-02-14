@@ -142,8 +142,8 @@ export async function* runDomainScan(startUrl: string, options: any): AsyncGener
 
             // Extract Internal Links for next items (if depth allows)
             if (current.depth < MAX_DEPTH && results.length + queue.length < MAX_PAGES * 2) {
-                // Use the links returned by the scanner
-                const newLinks = result.links || [];
+                // Use the internal links list returned by the scanner (allLinks), not links audit object
+                const newLinks = result.allLinks || [];
                 console.log(`[Spider] Found ${newLinks.length} links on ${current.url}`);
 
                 newLinks.forEach(link => {

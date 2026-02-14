@@ -4,7 +4,7 @@ import {
     MsqdxMoleculeCard,
     MsqdxChip,
 } from '@msqdx/react';
-import { MSQDX_SPACING, MSQDX_THEME, MSQDX_STATUS, MSQDX_BRAND_PRIMARY, MSQDX_NEUTRAL } from '@msqdx/tokens';
+import { MSQDX_STATUS, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
 import type { PrivacyAudit } from '@/lib/types';
 import { ShieldCheck, FileText, Cookie } from 'lucide-react';
 
@@ -17,9 +17,9 @@ export function PrivacyCard({ privacy }: { privacy: PrivacyAudit }) {
             subtitle="Basic GDPR and legal requirement checks."
             variant="flat"
             borderRadius="lg"
-            sx={{ height: '100%' }}
+            sx={{ bgcolor: 'var(--color-card-bg)', height: '100%' }}
         >
-            <Box sx={{ display: 'grid', gap: MSQDX_SPACING.scale.sm }}>
+            <Box sx={{ display: 'grid', gap: 'var(--msqdx-spacing-xs)' }}>
                 <PrivacyItem
                     label="Privacy Policy"
                     present={privacy.hasPrivacyPolicy}
@@ -37,8 +37,8 @@ export function PrivacyCard({ privacy }: { privacy: PrivacyAudit }) {
                     icon={<ShieldCheck size={18} />}
                 />
 
-                <Box sx={{ mt: 1, p: 1.5, borderRadius: 1, bgcolor: alpha(MSQDX_STATUS.info.base, 0.05), border: `1px dashed ${alpha(MSQDX_STATUS.info.base, 0.3)}` }}>
-                    <MsqdxTypography variant="caption" sx={{ color: MSQDX_THEME.dark.text.tertiary, lineHeight: 1.4, display: 'block' }}>
+                <Box sx={{ mt: 'var(--msqdx-spacing-xs)', p: 'var(--msqdx-spacing-sm)', borderRadius: 1, bgcolor: alpha(MSQDX_STATUS.info.base, 0.05), border: `1px dashed ${alpha(MSQDX_STATUS.info.base, 0.3)}` }}>
+                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', lineHeight: 1.4, display: 'block' }}>
                         Hinweis: Diese Prüfung basiert auf Heuristiken (Keywords, Selektoren) und ersetzt keine rechtliche Beratung.
                     </MsqdxTypography>
                 </Box>
@@ -49,15 +49,15 @@ export function PrivacyCard({ privacy }: { privacy: PrivacyAudit }) {
 
 function PrivacyItem({ label, present, icon, url }: { label: string, present: boolean, icon: React.ReactNode, url?: string | null }) {
     return (
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1.5, borderRadius: 1, bgcolor: alpha(MSQDX_NEUTRAL[900], 0.2), border: `1px solid ${MSQDX_THEME.dark.border.subtle}` }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 'var(--msqdx-spacing-sm)', borderRadius: 1, bgcolor: 'var(--color-secondary-dx-grey-light-tint)', border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-sm)' }}>
                 <Box sx={{ color: present ? MSQDX_BRAND_PRIMARY.green : MSQDX_STATUS.error.base, display: 'flex' }}>
                     {icon}
                 </Box>
                 <Box>
                     <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>{label}</MsqdxTypography>
                     {url && (
-                        <MsqdxTypography variant="caption" sx={{ color: MSQDX_THEME.dark.text.tertiary, display: 'block', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {url}
                         </MsqdxTypography>
                     )}

@@ -26,8 +26,9 @@ export const EcoCard: React.FC<EcoCardProps> = ({ eco }) => {
         <MsqdxMoleculeCard
             title="Eco Score"
             subtitle="Geschätzter CO2-Fußabdruck pro Seitenaufruf"
+            sx={{ bgcolor: 'var(--color-card-bg)' }}
         >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: `${MSQDX_SPACING.scale.lg}px`, height: '100%' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-md)', height: '100%' }}>
                 {/* Grade Circle */}
                 <Box sx={{
                     width: 80,
@@ -52,23 +53,23 @@ export const EcoCard: React.FC<EcoCardProps> = ({ eco }) => {
 
                 {/* Details */}
                 <Box sx={{ flex: 1 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: '4px', mb: 1 }}>
-                        <MsqdxTypography variant="h3" sx={{ fontWeight: 700, color: MSQDX_NEUTRAL[900] }}>
+                    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 'var(--msqdx-spacing-xxs)', mb: 'var(--msqdx-spacing-xs)' }}>
+                        <MsqdxTypography variant="h3" sx={{ fontWeight: 700, color: 'var(--color-text-on-light)' }}>
                             {eco.co2}g
                         </MsqdxTypography>
-                        <MsqdxTypography variant="body2" sx={{ color: MSQDX_NEUTRAL[600] }}>
+                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
                             CO2 / View
                         </MsqdxTypography>
                     </Box>
 
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px', color: MSQDX_NEUTRAL[700] }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', color: 'var(--color-text-muted-on-light)' }}>
                         <Leaf size={16} color={gradeColor} />
                         <MsqdxTypography variant="body2">
                             {(eco.pageWeight / 1024 / 1024).toFixed(2)} MB Transfer
                         </MsqdxTypography>
                     </Box>
 
-                    <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 1, color: MSQDX_NEUTRAL[500] }}>
+                    <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 1, color: 'var(--color-text-muted-on-light)' }}>
                         Cleaner than ~{getPercentile(eco.co2)}% of pages
                     </MsqdxTypography>
                 </Box>

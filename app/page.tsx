@@ -40,15 +40,15 @@ export default function DashboardPage() {
   const totalNotices = scans.reduce((sum, s) => sum + s.stats.notices, 0);
 
   return (
-    <Box sx={{ p: MSQDX_SPACING.scale.lg, maxWidth: 1600, mx: 'auto' }}>
+    <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto' }}>
       {/* Header */}
-      <Box sx={{ mb: MSQDX_SPACING.scale.md, display: 'flex', justifyContent: 'space-between', alignItems: 'end' }}>
+      <Box sx={{ mb: 'var(--msqdx-spacing-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'end' }}>
         <Box>
           <MsqdxTypography
             variant="h4"
             sx={{
               fontWeight: 700,
-              mb: MSQDX_SPACING.scale.xs,
+              mb: 'var(--msqdx-spacing-xs)',
               letterSpacing: '-0.02em',
             }}
           >
@@ -56,7 +56,7 @@ export default function DashboardPage() {
           </MsqdxTypography>
           <MsqdxTypography
             variant="body2"
-            sx={{ color: MSQDX_THEME.dark.text.tertiary }}
+            sx={{ color: 'var(--color-text-muted-on-light)' }}
           >
             Übersicht aller durchgeführten WCAG Accessibility Checks
           </MsqdxTypography>
@@ -77,8 +77,8 @@ export default function DashboardPage() {
         sx={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: MSQDX_SPACING.scale.md,
-          mb: MSQDX_SPACING.scale.xl,
+          gap: 'var(--msqdx-spacing-sm)',
+          mb: 'var(--msqdx-spacing-md)',
         }}
       >
         <StatCard label="Scans" value={totalScans} color="green" />
@@ -87,29 +87,30 @@ export default function DashboardPage() {
         <StatCard label="Notices" value={totalNotices} color="purple" />
       </Box>
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: MSQDX_SPACING.scale.lg }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 'var(--msqdx-spacing-md)' }}>
         {/* Scan History using MsqdxCard */}
         <Box sx={{ gridColumn: '1 / -1' }}>
           <MsqdxMoleculeCard
             title="Scan-Historie"
             variant="flat"
             borderRadius="lg"
-            footerDivider={false} // Clean look
+            footerDivider={false}
+            sx={{ bgcolor: 'var(--color-card-bg)' }}
           >
             {loading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: MSQDX_SPACING.scale.xxl }}>
-                <CircularProgress size={28} sx={{ color: MSQDX_BRAND_PRIMARY.green }} />
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 'var(--msqdx-spacing-xl)' }}>
+                <CircularProgress size={28} sx={{ color: 'var(--color-theme-accent)' }} />
               </Box>
             ) : scans.length === 0 ? (
               <Box
                 sx={{
                   textAlign: 'center',
-                  py: MSQDX_SPACING.scale.xl,
+                  py: 'var(--msqdx-spacing-md)',
                 }}
               >
                 <MsqdxTypography
                   variant="body2"
-                  sx={{ color: MSQDX_THEME.dark.text.tertiary, mb: MSQDX_SPACING.scale.md }}
+                  sx={{ color: 'var(--color-text-muted-on-light)', mb: 'var(--msqdx-spacing-sm)' }}
                 >
                   Noch keine Scans durchgeführt.
                 </MsqdxTypography>
@@ -123,7 +124,7 @@ export default function DashboardPage() {
                 </MsqdxButton>
               </Box>
             ) : (
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: MSQDX_SPACING.scale.sm }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: 'var(--msqdx-spacing-sm)' }}>
                 {scans.map((scan) => (
                   <Box
                     key={scan.id}
@@ -131,12 +132,12 @@ export default function DashboardPage() {
                     sx={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: MSQDX_SPACING.scale.md,
-                      p: MSQDX_SPACING.scale.md,
+                      gap: 'var(--msqdx-spacing-sm)',
+                      p: 'var(--msqdx-spacing-sm)',
                       borderRadius: MSQDX_SPACING.borderRadius.md,
                       cursor: 'pointer',
-                      backgroundColor: MSQDX_NEUTRAL[900],
-                      border: `1px solid ${MSQDX_THEME.dark.border.subtle}`,
+                      backgroundColor: 'var(--color-card-bg)',
+                      border: '1px solid var(--color-secondary-dx-grey-light-tint)',
                       transition: 'all 0.2s ease',
                       '&:hover': {
                         borderColor: MSQDX_BRAND_PRIMARY.green,
@@ -169,7 +170,7 @@ export default function DashboardPage() {
                       </MsqdxTypography>
                       <MsqdxTypography
                         variant="caption"
-                        sx={{ color: MSQDX_THEME.dark.text.tertiary, fontSize: '0.7rem' }}
+                        sx={{ color: 'var(--color-text-muted-on-light)', fontSize: '0.7rem' }}
                       >
                         {new Date(scan.timestamp).toLocaleString('de-DE')}
                       </MsqdxTypography>
@@ -188,7 +189,7 @@ export default function DashboardPage() {
                           display: 'inline-flex'
                         }}
                       />
-                      <MsqdxTypography variant="caption" sx={{ display: 'block', color: MSQDX_THEME.dark.text.tertiary, fontSize: '0.6rem' }}>Errors</MsqdxTypography>
+                      <MsqdxTypography variant="caption" sx={{ display: 'block', color: 'var(--color-text-muted-on-light)', fontSize: '0.6rem' }}>Errors</MsqdxTypography>
                     </Box>
                   </Box>
                 ))}
@@ -222,12 +223,12 @@ function StatCard({ label, value, color }: { label: string; value: number; color
       brandColor={color}
       clickable
       hoverable
-    // We can use children for the content
+      sx={{ bgcolor: 'var(--color-card-bg)' }}
     >
       <MsqdxTypography
         variant="caption"
         sx={{
-          color: MSQDX_THEME.dark.text.tertiary,
+          color: 'var(--color-text-muted-on-light)',
           textTransform: 'uppercase',
           letterSpacing: '0.1em',
           fontSize: '0.65rem',

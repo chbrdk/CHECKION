@@ -10,10 +10,11 @@ interface PerformanceCardProps {
 }
 
 // Thresholds in ms
-const METRICS_CONFIG = {
+const METRICS_CONFIG: Record<string, { label: string; icon: React.ComponentType<{ size?: number; color?: string; style?: React.CSSProperties }>; good: number; poor: number }> = {
     ttfb: { label: 'TTFB', icon: Timer, good: 800, poor: 1800 },
     fcp: { label: 'FCP', icon: Zap, good: 1800, poor: 3000 },
     windowLoad: { label: 'Load', icon: Layout, good: 2500, poor: 4500 },
+    lcp: { label: 'LCP', icon: Layout, good: 2500, poor: 4000 },
 };
 
 function getStatusColor(value: number, metric: keyof typeof METRICS_CONFIG) {
@@ -27,10 +28,13 @@ export const PerformanceCard: React.FC<PerformanceCardProps> = ({ perf }) => {
         <MsqdxMoleculeCard
             title="Performance"
             subtitle="Ladezeiten & Core Web Vitals (Lab Data)"
+            sx={{ bgcolor: 'var(--color-card-bg)' }}
         >
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: `${MSQDX_SPACING.scale.md}px`, height: '100%' }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 'var(--msqdx-spacing-sm)', height: '100%' }}>
                 {Object.entries(METRICS_CONFIG).map(([key, config]) => {
-                    const value = perf[key as keyof typeof METRICS_CONFIG];
+                    const raw = perf[key as keyof typeof perf];
+                    const value = typeof raw === 'number' ? raw : 0;
+                    if (key === 'lcp' && value === 0) return null;
                     const color = getStatusColor(value, key as keyof typeof METRICS_CONFIG);
                     const Icon = config.icon;
 
@@ -40,13 +44,13 @@ export const PerformanceCard: React.FC<PerformanceCardProps> = ({ perf }) => {
                             flexDirection: 'column',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            p: 2,
+                            p: 'var(--msqdx-spacing-sm)',
                             borderRadius: '12px',
-                            border: `1px solid ${MSQDX_NEUTRAL[200]}`,
-                            backgroundColor: MSQDX_NEUTRAL[50], // Very light grey bg
+                            border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                            backgroundColor: 'var(--color-card-bg)',
                         }}>
                             <Icon size={20} color={MSQDX_NEUTRAL[600]} style={{ marginBottom: 8 }} />
-                            <MsqdxTypography variant="caption" sx={{ color: MSQDX_NEUTRAL[600], fontWeight: 500, mb: 0.5 }}>
+                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', fontWeight: 500, mb: 0.5 }}>
                                 {config.label}
                             </MsqdxTypography>
                             <MsqdxTypography variant="h4" sx={{ color: color, fontWeight: 700 }}>
@@ -58,6 +62,19 @@ export const PerformanceCard: React.FC<PerformanceCardProps> = ({ perf }) => {
                         </Box>
                     );
                 })}
+                {perf.inp != null && (
+                    <Box sx={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        p: 'var(--msqdx-spacing-sm)', borderRadius: '12px', border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                        backgroundColor: 'var(--color-card-bg)',
+                    }}>
+                        <Zap size={20} color={MSQDX_NEUTRAL[600]} style={{ marginBottom: 8 }} />
+                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', fontWeight: 500, mb: 0.5 }}>INP</MsqdxTypography>
+                        <MsqdxTypography variant="h4" sx={{ color: perf.inp <= 200 ? MSQDX_STATUS.success.base : perf.inp <= 500 ? MSQDX_STATUS.warning.base : MSQDX_STATUS.error.base, fontWeight: 700 }}>
+                            {perf.inp}ms
+                        </MsqdxTypography>
+                    </Box>
+                )}
             </Box>
         </MsqdxMoleculeCard>
     );

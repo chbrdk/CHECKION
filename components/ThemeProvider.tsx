@@ -1,7 +1,7 @@
 'use client';
 
 import { createTheme, ThemeProvider as MuiThemeProvider, CssBaseline } from '@mui/material';
-import { MSQDX_THEME, MSQDX_BRAND_PRIMARY, MSQDX_NEUTRAL, MSQDX_STATUS } from '@msqdx/tokens';
+import { MSQDX_THEME, MSQDX_BRAND_PRIMARY, MSQDX_STATUS } from '@msqdx/tokens';
 import type { ReactNode } from 'react';
 
 const theme = createTheme({
@@ -26,7 +26,8 @@ const theme = createTheme({
             main: MSQDX_STATUS.info.base,
         },
         background: {
-            default: MSQDX_THEME.dark.background.primary,
+            /* Match AUDION/globals --checkion-app-bg */
+            default: '#0f172a',
             paper: MSQDX_THEME.dark.surface.primary,
         },
         text: {
@@ -44,8 +45,9 @@ const theme = createTheme({
         MuiCssBaseline: {
             styleOverrides: {
                 body: {
-                    backgroundColor: MSQDX_THEME.dark.background.primary,
-                    color: MSQDX_THEME.dark.text.primary,
+                    /* Align with globals.css --checkion-app-bg (#0f172a); MUI needs hex for palette ops */
+                    backgroundColor: '#0f172a',
+                    color: '#ffffff',
                 },
             },
         },
