@@ -16,6 +16,7 @@ if (process.env.NODE_ENV === 'production' && (!AUTH_SECRET || AUTH_SECRET.length
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
     secret: AUTH_SECRET || undefined,
+    trustHost: true,
     providers: [
         Credentials({
             name: 'credentials',

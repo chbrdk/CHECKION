@@ -43,9 +43,8 @@ In den Application-Einstellungen unter **Environment Variables** eintragen:
 AUTH_SECRET=<mind. 32 Zeichen, z. B.: npx auth secret>
 DATABASE_URL=postgresql://checkion:<DEIN_PASSWORT>@checkion-postgres:5432/checkion
 
-# Optional – für korrekte Login-Callbacks (sonst nutzt NextAuth die Request-URL)
-AUTH_URL=https://deine-domain.de
-NEXTAUTH_URL=https://deine-domain.de
+# Optional – wenn /api/auth/session weiter 500 gibt: öffentliche App-URL setzen (Coolify/Proxy)
+# AUTH_URL=https://checkion.projects-a.plygrnd.tech
 ```
 
 **Hinweis:** Wenn Coolify `postgres://` ausgibt, in `postgresql://` ändern (Drizzle/Node erwarten `postgresql://`).
