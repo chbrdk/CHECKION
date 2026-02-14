@@ -39,12 +39,12 @@ export default function SettingsPage() {
     };
 
     return (
-        <Box sx={{ p: `${MSQDX_SPACING.scale.md}px`, maxWidth: 1600, mx: 'auto' }}>
+        <Box sx={{ p: MSQDX_SPACING.scale.lg, maxWidth: 1600, mx: 'auto' }}>
             {/* Header */}
-            <Box sx={{ mb: `${MSQDX_SPACING.scale.md}px` }}>
+            <Box sx={{ mb: MSQDX_SPACING.scale.md }}>
                 <MsqdxTypography
                     variant="h4"
-                    sx={{ fontWeight: 700, mb: `${MSQDX_SPACING.scale.xs}px`, letterSpacing: '-0.02em' }}
+                    sx={{ fontWeight: 700, mb: MSQDX_SPACING.scale.xs, letterSpacing: '-0.02em' }}
                 >
                     Einstellungen
                 </MsqdxTypography>
@@ -56,7 +56,7 @@ export default function SettingsPage() {
                 </MsqdxTypography>
             </Box>
 
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' }, gap: `${MSQDX_SPACING.scale.lg}px` }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' }, gap: MSQDX_SPACING.scale.lg }}>
 
                 {/* Left Column: Config */}
                 <Box>
@@ -67,7 +67,7 @@ export default function SettingsPage() {
                         borderRadius="lg"
                         footerDivider={false}
                     >
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: `${MSQDX_SPACING.scale.lg}px` }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: MSQDX_SPACING.scale.lg }}>
                             {/* Default WCAG Standard */}
                             <MsqdxSelect
                                 label="Standard WCAG Level"
@@ -94,7 +94,7 @@ export default function SettingsPage() {
                         brandColor="green"
                         size="medium"
                         onClick={handleSave}
-                        sx={{ mt: `${MSQDX_SPACING.scale.lg}px`, width: 'auto', minWidth: 200 }}
+                        sx={{ mt: MSQDX_SPACING.scale.lg, width: 'auto', minWidth: 200 }}
                     >
                         {saved ? '✓ Gespeichert' : 'Einstellungen speichern'}
                     </MsqdxButton>

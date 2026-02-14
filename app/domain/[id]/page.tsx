@@ -14,16 +14,20 @@ import {
     ListItem,
     ListItemText,
     Paper,
-    Grid2 as Grid
+    Grid,
+    Tabs,
+    Tab
 } from '@mui/material';
 import { useParams, useRouter } from 'next/navigation';
 import type { DomainScanResult } from '@/lib/types';
+import { DomainGraph } from '@/components/DomainGraph';
 import { ArrowLeft, Share2, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function DomainResultPage() {
     const params = useParams();
     const router = useRouter();
     const [result, setResult] = useState<DomainScanResult | null>(null);
+    const [tabValue, setTabValue] = useState(0);
 
     useEffect(() => {
         if (!params.id) return;
@@ -67,104 +71,119 @@ export default function DomainResultPage() {
                 </Box>
             </Box>
 
-            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 4 }}>
-                {/* Score */}
-                <Box sx={{ flex: '0 0 350px' }}>
-                    <Card variant="outlined">
-                        <CardContent>
-                            <Typography variant="h6" sx={{ mb: 2 }}>Domain Score</Typography>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 2 }}>
-                                <Box sx={{
-                                    position: 'relative',
-                                    width: 120,
-                                    height: 120,
-                                    borderRadius: '50%',
-                                    border: `8px solid ${result.score > 80 ? '#4caf50' : '#ff9800'}`,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}>
-                                    <Typography variant="h2">{result.score}</Typography>
-                                </Box>
-                                <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary' }}>
-                                    {result.totalPages} Pages Scanned
-                                </Typography>
-                            </Box>
-                        </CardContent>
-                    </Card>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+                <Tabs value={tabValue} onChange={(e, v) => setTabValue(v)}>
+                    <Tab label="Overview & Pages" />
+                    <Tab label="Visual Map" />
+                </Tabs>
+            </Box>
 
-                    <Box sx={{ mt: 4 }}>
+            {tabValue === 0 && (
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 4 }}>
+                    {/* Score */}
+                    <Box sx={{ flex: '0 0 350px' }}>
                         <Card variant="outlined">
                             <CardContent>
-                                <Typography variant="h6" sx={{ mb: 2 }}>Systemic Issues</Typography>
-                                {result.systemicIssues.length === 0 ? (
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                        <CheckCircle color="#4caf50" />
-                                        <Typography>No systemic issues detected.</Typography>
+                                <Typography variant="h6" sx={{ mb: 2 }}>Domain Score</Typography>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 2 }}>
+                                    <Box sx={{
+                                        position: 'relative',
+                                        width: 120,
+                                        height: 120,
+                                        borderRadius: '50%',
+                                        border: `8px solid ${result.score > 80 ? '#4caf50' : '#ff9800'}`,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}>
+                                        <Typography variant="h2">{result.score}</Typography>
                                     </Box>
-                                ) : (
-                                    result.systemicIssues.map((issue, idx) => (
-                                        <Box key={idx} sx={{
-                                            p: 2,
-                                            mb: 2,
-                                            border: '1px solid #ffcdd2',
-                                            borderRadius: 1,
-                                            backgroundColor: '#ffebee'
-                                        }}>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                                <AlertCircle color="#d32f2f" size={20} />
-                                                <Typography variant="subtitle1" color="error">
-                                                    {issue.title}
-                                                </Typography>
-                                                <Chip label={`${issue.count} pages`} size="small" color="error" variant="outlined" />
-                                            </Box>
-                                            <Typography variant="body2" sx={{ mb: 1 }}>
-                                                Fixing rule ({issue.issueId}) affects {issue.count} pages.
-                                            </Typography>
+                                    <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary' }}>
+                                        {result.totalPages} Pages Scanned
+                                    </Typography>
+                                </Box>
+                            </CardContent>
+                        </Card>
+
+                        <Box sx={{ mt: 4 }}>
+                            <Card variant="outlined">
+                                <CardContent>
+                                    <Typography variant="h6" sx={{ mb: 2 }}>Systemic Issues</Typography>
+                                    {result.systemicIssues.length === 0 ? (
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                            <CheckCircle color="#4caf50" />
+                                            <Typography>No systemic issues detected.</Typography>
                                         </Box>
-                                    ))
-                                )}
+                                    ) : (
+                                        result.systemicIssues.map((issue, idx) => (
+                                            <Box key={idx} sx={{
+                                                p: 2,
+                                                mb: 2,
+                                                border: '1px solid #ffcdd2',
+                                                borderRadius: 1,
+                                                backgroundColor: '#ffebee'
+                                            }}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                                    <AlertCircle color="#d32f2f" size={20} />
+                                                    <Typography variant="subtitle1" color="error">
+                                                        {issue.title}
+                                                    </Typography>
+                                                    <Chip label={`${issue.count} pages`} size="small" color="error" variant="outlined" />
+                                                </Box>
+                                                <Typography variant="body2" sx={{ mb: 1 }}>
+                                                    Fixing rule ({issue.issueId}) affects {issue.count} pages.
+                                                </Typography>
+                                            </Box>
+                                        ))
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </Box>
+                    </Box>
+
+                    {/* Pages List */}
+                    <Box sx={{ flex: 1 }}>
+                        <Card variant="outlined">
+                            <CardContent>
+                                <Typography variant="h6" sx={{ mb: 2 }}>Scanned Pages</Typography>
+                                <List>
+                                    {result.pages.map((page, idx) => (
+                                        <React.Fragment key={idx}>
+                                            <ListItem
+                                                component="div"
+                                                sx={{
+                                                    cursor: 'pointer',
+                                                    '&:hover': { bgcolor: 'action.hover' },
+                                                    border: '1px solid #eee',
+                                                    borderRadius: 2,
+                                                    mb: 1
+                                                }}
+                                                onClick={() => router.push(`/results/${page.id}`)}
+                                            >
+                                                <ListItemText
+                                                    primary={page.url}
+                                                    secondary={`${page.ux?.score || 0} UX Score • ${page.issues.length} Issues`}
+                                                />
+                                                <Chip
+                                                    label={page.score.toString()}
+                                                    color={page.score > 80 ? 'success' : 'warning'}
+                                                    size="small"
+                                                />
+                                            </ListItem>
+                                        </React.Fragment>
+                                    ))}
+                                </List>
                             </CardContent>
                         </Card>
                     </Box>
                 </Box>
+            )}
 
-                {/* Pages List */}
-                <Box sx={{ flex: 1 }}>
-                    <Card variant="outlined">
-                        <CardContent>
-                            <Typography variant="h6" sx={{ mb: 2 }}>Scanned Pages</Typography>
-                            <List>
-                                {result.pages.map((page, idx) => (
-                                    <React.Fragment key={idx}>
-                                        <ListItem
-                                            component="div"
-                                            sx={{
-                                                cursor: 'pointer',
-                                                '&:hover': { bgcolor: 'action.hover' },
-                                                border: '1px solid #eee',
-                                                borderRadius: 2,
-                                                mb: 1
-                                            }}
-                                            onClick={() => router.push(`/results/${page.id}`)}
-                                        >
-                                            <ListItemText
-                                                primary={page.url}
-                                                secondary={`${page.ux?.score || 0} UX Score • ${page.issues.length} Issues`}
-                                            />
-                                            <Chip
-                                                label={page.score.toString()}
-                                                color={page.score > 80 ? 'success' : 'warning'}
-                                                size="small"
-                                            />
-                                        </ListItem>
-                                    </React.Fragment>
-                                ))}
-                            </List>
-                        </CardContent>
-                    </Card>
+            {tabValue === 1 && (
+                <Box>
+                    <DomainGraph data={result.graph} width={1200} height={800} />
                 </Box>
-            </Box>
+            )}
         </Box>
     );
 }

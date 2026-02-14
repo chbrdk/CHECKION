@@ -176,7 +176,7 @@ export const ScanReportDocument = ({ scan }: ScanReportProps) => {
                         Mobile Friendly: {scan.ux?.viewport.isMobileFriendly ? 'Yes' : 'No'}
                     </Text>
                     <Text style={{ fontSize: 10, color: '#374151' }}>
-                        Readability: {scan.ux?.readability}
+                        Readability: {scan.ux?.readability.grade} (Score: {scan.ux?.readability.score})
                     </Text>
                     <Text style={{ fontSize: 10, color: '#374151' }}>
                         Console Errors: {scan.ux?.consoleErrors?.length || 0}

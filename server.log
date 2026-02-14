@@ -9,373 +9,50 @@
   · optimizePackageImports
 
 ✓ Starting...
-✓ Ready in 12.4s
-○ Compiling /results/[id] ...
- GET /results/20f6ee1f-98b9-4dfc-9434-12340dbc9017 200 in 14.0s (compile: 13.8s, render: 205ms)
- GET /results/e098c86f-aea8-4461-835f-74a8d42a0a77 200 in 418ms (compile: 212ms, render: 206ms)
- GET /api/scan/20f6ee1f-98b9-4dfc-9434-12340dbc9017 404 in 753ms (compile: 744ms, render: 9ms)
- GET /api/scan/e098c86f-aea8-4461-835f-74a8d42a0a77 404 in 10ms (compile: 5ms, render: 5ms)
- GET /results/20f6ee1f-98b9-4dfc-9434-12340dbc9017 200 in 252ms (compile: 28ms, render: 224ms)
- GET /api/scan/20f6ee1f-98b9-4dfc-9434-12340dbc9017 404 in 6ms (compile: 3ms, render: 3ms)
- GET /scan/domain 200 in 583ms (compile: 393ms, render: 191ms)
-⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
- GET /results/e098c86f-aea8-4461-835f-74a8d42a0a77 200 in 158ms (compile: 18ms, render: 140ms)
- GET /api/scan/e098c86f-aea8-4461-835f-74a8d42a0a77 404 in 21ms (compile: 15ms, render: 6ms)
- GET /scan/domain?url=https%3A%2F%2Fwww.msqdx.com%2Fen%2Finsights 200 in 22ms (compile: 4ms, render: 18ms)
- POST /api/scan/domain 202 in 1203ms (compile: 997ms, render: 206ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 1387ms (compile: 1378ms, render: 9ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 12ms (compile: 6ms, render: 6ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 9ms (compile: 4ms, render: 5ms)
-Injecting axe-core...
-Axe injected via content. Running axe...
-Axe run complete.
-Found 28 passed rules.
-[UX] CLS Score for https://www.msqdx.com/en/insights: 0
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 11ms (compile: 4ms, render: 7ms)
-[Spider] Found 9 links on https://www.msqdx.com/en/insights
-[Spider] Queuing: https://www.msqdx.com
-[Spider] Queuing: https://www.msqdx.com/en/our-work
-[Spider] Queuing: https://www.msqdx.com/en/capabilities
-[Spider] Queuing: https://www.msqdx.com/en/about
-[Spider] Queuing: https://www.msqdx.com/en/contact
-[Spider] Queuing: https://www.msqdx.com/en/insights/universal-principles-and-practical-strategies-for-scalable-content-models
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 17ms (compile: 6ms, render: 10ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 3.5s (compile: 3.2s, render: 353ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 1352ms (compile: 422ms, render: 930ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 2.3s (compile: 386ms, render: 1951ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 2.7s (compile: 2.6s, render: 68ms)
-Injecting axe-core...
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 303ms (compile: 224ms, render: 79ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 616ms (compile: 165ms, render: 452ms)
-Axe injected via content. Running axe...
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 584ms (compile: 339ms, render: 245ms)
-Axe run complete.
-Found 29 passed rules.
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 356ms (compile: 154ms, render: 202ms)
-[UX] CLS Score for https://www.msqdx.com/: 0
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 155ms (compile: 21ms, render: 134ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 576ms (compile: 201ms, render: 375ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 5.1s (compile: 3.3s, render: 1814ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 553ms (compile: 432ms, render: 121ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 295ms (compile: 64ms, render: 231ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 513ms (compile: 42ms, render: 470ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 233ms (compile: 202ms, render: 31ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 1408ms (compile: 1097ms, render: 310ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 320ms (compile: 128ms, render: 192ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 400ms (compile: 258ms, render: 143ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 491ms (compile: 352ms, render: 139ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 446ms (compile: 148ms, render: 297ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 504ms (compile: 247ms, render: 257ms)
-[Spider] Found 9 links on https://www.msqdx.com/
-[Spider] Queuing: https://www.msqdx.com/en
-[Spider] Queuing: https://www.msqdx.com/about
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 18ms (compile: 8ms, render: 10ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 8ms (compile: 3ms, render: 5ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 14ms (compile: 7ms, render: 7ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 8ms (compile: 3ms, render: 5ms)
-Injecting axe-core...
-Axe injected via content. Running axe...
-Axe run complete.
-Found 28 passed rules.
-[UX] CLS Score for https://www.msqdx.com/en/our-work: 0
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 10ms (compile: 5ms, render: 5ms)
-[Spider] Found 9 links on https://www.msqdx.com/en/our-work
-[Spider] Queuing: https://www.msqdx.com/en/our-work/cfa
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 9ms (compile: 5ms, render: 4ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 8ms (compile: 4ms, render: 4ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 11ms (compile: 3ms, render: 8ms)
-Injecting axe-core...
-Axe injected via content. Running axe...
-Axe run complete.
-Found 28 passed rules.
-[UX] CLS Score for https://www.msqdx.com/en/capabilities: 0
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 9ms (compile: 5ms, render: 4ms)
-[Spider] Found 9 links on https://www.msqdx.com/en/capabilities
-[Spider] Queuing: https://www.msqdx.com/en/services
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 20ms (compile: 15ms, render: 5ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 6ms (compile: 3ms, render: 4ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 49ms (compile: 24ms, render: 25ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 241ms (compile: 212ms, render: 28ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 393ms (compile: 318ms, render: 75ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 498ms (compile: 226ms, render: 273ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 1015ms (compile: 669ms, render: 346ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 154ms (compile: 44ms, render: 110ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 1401ms (compile: 1282ms, render: 119ms)
-Injecting axe-core...
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 141ms (compile: 82ms, render: 59ms)
-Axe injected via content. Running axe...
-Axe run complete.
-Found 31 passed rules.
-[UX] CLS Score for https://www.msqdx.com/en/about: 0.06701388888888889
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 50ms (compile: 8ms, render: 42ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 325ms (compile: 162ms, render: 163ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 180ms (compile: 65ms, render: 114ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 49ms (compile: 8ms, render: 41ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 70ms (compile: 19ms, render: 51ms)
-[Spider] Found 8 links on https://www.msqdx.com/en/about
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 121ms (compile: 80ms, render: 41ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 172ms (compile: 85ms, render: 88ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 188ms (compile: 158ms, render: 30ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 202ms (compile: 128ms, render: 74ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 127ms (compile: 109ms, render: 18ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 158ms (compile: 28ms, render: 130ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 474ms (compile: 291ms, render: 182ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 64ms (compile: 28ms, render: 37ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 214ms (compile: 184ms, render: 30ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 9ms (compile: 3ms, render: 6ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 11ms (compile: 6ms, render: 5ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 7ms (compile: 3ms, render: 5ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 10ms (compile: 5ms, render: 5ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 12ms (compile: 10ms, render: 3ms)
-Injecting axe-core...
-Axe injected via content. Running axe...
-Axe run complete.
-Found 31 passed rules.
-[UX] CLS Score for https://www.msqdx.com/en/contact: 0.00008704574019820602
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 8ms (compile: 3ms, render: 5ms)
-[Spider] Found 8 links on https://www.msqdx.com/en/contact
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 15ms (compile: 6ms, render: 9ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 11ms (compile: 5ms, render: 6ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 9ms (compile: 4ms, render: 5ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 12ms (compile: 5ms, render: 7ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 1507ms (compile: 1174ms, render: 333ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 370ms (compile: 205ms, render: 165ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 1528ms (compile: 864ms, render: 664ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 1162ms (compile: 826ms, render: 336ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 639ms (compile: 278ms, render: 361ms)
-Injecting axe-core...
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 676ms (compile: 437ms, render: 239ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 383ms (compile: 190ms, render: 193ms)
-Axe injected via content. Running axe...
-Axe run complete.
-Found 29 passed rules.
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 1588ms (compile: 729ms, render: 859ms)
-[UX] CLS Score for https://www.msqdx.com/en/insights/universal-principles-and-practical-strategies-for-scalable-content-models: 1.0038823935426313
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 434ms (compile: 335ms, render: 98ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 249ms (compile: 212ms, render: 37ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 189ms (compile: 111ms, render: 77ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 404ms (compile: 105ms, render: 299ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 40ms (compile: 24ms, render: 16ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 85ms (compile: 34ms, render: 51ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 237ms (compile: 74ms, render: 163ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 224ms (compile: 172ms, render: 52ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 49ms (compile: 14ms, render: 35ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 127ms (compile: 34ms, render: 93ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 180ms (compile: 47ms, render: 133ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 159ms (compile: 6ms, render: 153ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 213ms (compile: 78ms, render: 135ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 418ms (compile: 208ms, render: 210ms)
-[Spider] Found 9 links on https://www.msqdx.com/en/insights/universal-principles-and-practical-strategies-for-scalable-content-models
-[Spider] Queuing: https://www.msqdx.com/en/home
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 270ms (compile: 66ms, render: 205ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 219ms (compile: 159ms, render: 60ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 227ms (compile: 27ms, render: 200ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 247ms (compile: 160ms, render: 87ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 317ms (compile: 141ms, render: 177ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 375ms (compile: 193ms, render: 182ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 15ms (compile: 5ms, render: 10ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 9ms (compile: 5ms, render: 4ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 6ms (compile: 3ms, render: 3ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 8ms (compile: 4ms, render: 4ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 12ms (compile: 5ms, render: 7ms)
-Injecting axe-core...
-Axe injected via content. Running axe...
-Axe run complete.
-Found 29 passed rules.
-[UX] CLS Score for https://www.msqdx.com/en#: 0
-[Spider] Found 9 links on https://www.msqdx.com/en#
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 6ms (compile: 3ms, render: 3ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 5ms (compile: 2ms, render: 3ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 5ms (compile: 3ms, render: 2ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 11ms (compile: 4ms, render: 7ms)
-Injecting axe-core...
-Axe injected via content. Running axe...
-Axe run complete.
-Found 31 passed rules.
-[UX] CLS Score for https://www.msqdx.com/about: 0
-[Spider] Found 8 links on https://www.msqdx.com/about
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 9ms (compile: 5ms, render: 4ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 14ms (compile: 7ms, render: 7ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 3.4s (compile: 2.7s, render: 635ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 1772ms (compile: 1226ms, render: 546ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 1456ms (compile: 1157ms, render: 299ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 1610ms (compile: 1335ms, render: 275ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 297ms (compile: 268ms, render: 28ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 47ms (compile: 17ms, render: 30ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 336ms (compile: 227ms, render: 108ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 563ms (compile: 89ms, render: 473ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 700ms (compile: 547ms, render: 154ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 37ms (compile: 17ms, render: 20ms)
-Injecting axe-core...
-Axe injected via content. Running axe...
-Axe run complete.
-Found 28 passed rules.
-[UX] CLS Score for https://www.msqdx.com/en/our-work/cfa: 0.06962287808641976
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 723ms (compile: 181ms, render: 542ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 786ms (compile: 371ms, render: 415ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 540ms (compile: 284ms, render: 256ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 259ms (compile: 227ms, render: 31ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 147ms (compile: 17ms, render: 130ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 186ms (compile: 5ms, render: 180ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 194ms (compile: 130ms, render: 65ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 110ms (compile: 13ms, render: 96ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 214ms (compile: 177ms, render: 37ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 794ms (compile: 568ms, render: 225ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 60ms (compile: 6ms, render: 54ms)
-[Spider] Found 9 links on https://www.msqdx.com/en/our-work/cfa
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 129ms (compile: 74ms, render: 56ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 247ms (compile: 72ms, render: 175ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 130ms (compile: 13ms, render: 117ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 219ms (compile: 112ms, render: 108ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 14ms (compile: 5ms, render: 8ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 7ms (compile: 4ms, render: 3ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 17ms (compile: 8ms, render: 9ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 8ms (compile: 5ms, render: 3ms)
-Injecting axe-core...
-Axe injected via content. Running axe...
-Axe run complete.
-Found 28 passed rules.
-[UX] CLS Score for https://www.msqdx.com/en/services/: 0
-[Spider] Found 8 links on https://www.msqdx.com/en/services/
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 11ms (compile: 4ms, render: 6ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 8ms (compile: 3ms, render: 5ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 7ms (compile: 4ms, render: 4ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 9ms (compile: 5ms, render: 3ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 1639ms (compile: 753ms, render: 886ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 1313ms (compile: 653ms, render: 660ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 1221ms (compile: 880ms, render: 341ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 1008ms (compile: 556ms, render: 452ms)
-Injecting axe-core...
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 739ms (compile: 231ms, render: 508ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 589ms (compile: 289ms, render: 299ms)
-Axe injected via content. Running axe...
-Axe run complete.
-Found 29 passed rules.
-[UX] CLS Score for https://www.msqdx.com/en/home: 0.17314814814814813
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 387ms (compile: 231ms, render: 156ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 246ms (compile: 191ms, render: 56ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 567ms (compile: 245ms, render: 322ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 1935ms (compile: 1833ms, render: 102ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 43ms (compile: 19ms, render: 24ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 236ms (compile: 30ms, render: 205ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 116ms (compile: 40ms, render: 77ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 417ms (compile: 376ms, render: 41ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 178ms (compile: 31ms, render: 146ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 155ms (compile: 35ms, render: 120ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 43ms (compile: 7ms, render: 37ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 1049ms (compile: 720ms, render: 329ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 852ms (compile: 737ms, render: 115ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 241ms (compile: 105ms, render: 136ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 86ms (compile: 55ms, render: 31ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 414ms (compile: 274ms, render: 140ms)
-[Spider] Found 9 links on https://www.msqdx.com/en/home
-[Spider] Queuing: https://www.msqdx.com/en/insights/new-digital-impact-company-msq-dx-launches-to-measure-success-by-client-outcomes-not-deliverables
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 210ms (compile: 66ms, render: 144ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 364ms (compile: 185ms, render: 179ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 249ms (compile: 167ms, render: 82ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 396ms (compile: 172ms, render: 224ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 93ms (compile: 43ms, render: 51ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 512ms (compile: 19ms, render: 492ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 80ms (compile: 19ms, render: 62ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 157ms (compile: 36ms, render: 121ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 224ms (compile: 159ms, render: 65ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 5ms (compile: 3ms, render: 3ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 7ms (compile: 4ms, render: 3ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 5ms (compile: 2ms, render: 3ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 4ms (compile: 2ms, render: 2ms)
-Injecting axe-core...
-Axe injected via content. Running axe...
-Axe run complete.
-Found 28 passed rules.
-[UX] CLS Score for https://www.msqdx.com/en/insights/new-digital-impact-company-msq-dx-launches-to-measure-success-by-client-outcomes-not-deliverables: 0
-[Spider] Max depth/pages reached. Depth: 3, Results: 13, Queue: 0
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 142ms (compile: 3ms, render: 139ms)
- GET /domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf 200 in 1526ms (compile: 1509ms, render: 17ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 154ms (compile: 14ms, render: 140ms)
- GET /api/scan/domain/7bb82bef-562c-4b36-aa44-9b35c76f50bf/status 200 in 161ms (compile: 3ms, render: 158ms)
- GET /scan/domain 200 in 442ms (compile: 50ms, render: 392ms)
- GET /results/e098c86f-aea8-4461-835f-74a8d42a0a77 200 in 69ms (compile: 27ms, render: 42ms)
- GET /api/scan/e098c86f-aea8-4461-835f-74a8d42a0a77 404 in 787ms (compile: 776ms, render: 11ms)
- GET /scan/domain?url=https%3A%2F%2Fwww.msqdx.com%2Fen%2Finsights 200 in 282ms (compile: 201ms, render: 82ms)
-○ Compiling /api/scan/domain ...
- POST /api/scan/domain 202 in 10.5s (compile: 10.4s, render: 127ms)
-○ Compiling /api/scan/domain/[id]/status ...
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 16.6s (compile: 16.0s, render: 523ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 427ms (compile: 275ms, render: 153ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 43ms (compile: 23ms, render: 20ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 30ms (compile: 11ms, render: 19ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 38ms (compile: 5ms, render: 33ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 172ms (compile: 133ms, render: 38ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 316ms (compile: 162ms, render: 153ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 58ms (compile: 12ms, render: 46ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 311ms (compile: 263ms, render: 48ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 54ms (compile: 28ms, render: 26ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 121ms (compile: 84ms, render: 38ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 218ms (compile: 23ms, render: 195ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 225ms (compile: 15ms, render: 210ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 170ms (compile: 87ms, render: 83ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 129ms (compile: 96ms, render: 33ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 240ms (compile: 106ms, render: 133ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 264ms (compile: 53ms, render: 211ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 512ms (compile: 367ms, render: 145ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 392ms (compile: 269ms, render: 123ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 117ms (compile: 43ms, render: 74ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 116ms (compile: 88ms, render: 28ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 359ms (compile: 232ms, render: 127ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 384ms (compile: 108ms, render: 275ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 1009ms (compile: 680ms, render: 328ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 1267ms (compile: 1231ms, render: 36ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 128ms (compile: 53ms, render: 75ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 148ms (compile: 58ms, render: 90ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 203ms (compile: 119ms, render: 84ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 502ms (compile: 241ms, render: 262ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 42ms (compile: 5ms, render: 37ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 294ms (compile: 50ms, render: 244ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 175ms (compile: 114ms, render: 62ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 399ms (compile: 271ms, render: 127ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 241ms (compile: 91ms, render: 149ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 151ms (compile: 80ms, render: 71ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 101ms (compile: 60ms, render: 41ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 343ms (compile: 95ms, render: 248ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 171ms (compile: 55ms, render: 116ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 166ms (compile: 57ms, render: 109ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 61ms (compile: 27ms, render: 34ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 119ms (compile: 70ms, render: 49ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 128ms (compile: 29ms, render: 99ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 110ms (compile: 34ms, render: 77ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 202ms (compile: 67ms, render: 135ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 340ms (compile: 209ms, render: 131ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 388ms (compile: 229ms, render: 159ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 317ms (compile: 192ms, render: 126ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 139ms (compile: 48ms, render: 91ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 352ms (compile: 203ms, render: 149ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 304ms (compile: 71ms, render: 233ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 158ms (compile: 50ms, render: 108ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 124ms (compile: 44ms, render: 80ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 640ms (compile: 207ms, render: 433ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 391ms (compile: 57ms, render: 334ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 283ms (compile: 38ms, render: 245ms)
-Failed to scan https://www.msqdx.com/en/insights Error [TimeoutError]: Navigation timeout of 60000 ms exceeded
-    at async runScan (lib/scanner.ts:170:25)
-    at async runDomainScan (lib/spider.ts:125:28)
-    at async eval (app/api/scan/domain/route.ts:32:30)
-  168 |
-  169 |     try {
-> 170 |         const results = await pa11y(url, {
-      |                         ^
-  171 |             browser,
-  172 |             page,
-  173 |             viewport,
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 330ms (compile: 162ms, render: 168ms)
- GET /domain/4e0d5854-86aa-4f81-a189-774c2f30c74d 200 in 1445ms (compile: 334ms, render: 1111ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 111ms (compile: 82ms, render: 29ms)
- GET /api/scan/domain/4e0d5854-86aa-4f81-a189-774c2f30c74d/status 200 in 101ms (compile: 76ms, render: 25ms)
-○ Compiling / ...
- GET / 200 in 46s (compile: 41s, render: 5.2s)
-○ Compiling /api/scan ...
- GET /api/scan 200 in 7.1s (compile: 4.0s, render: 3.1s)
- GET /api/scan 200 in 29.8s (compile: 26.4s, render: 3.5s)
- GET /results/a270201a-0e53-40b3-8e64-f68977dd91f5 200 in 415ms (compile: 141ms, render: 274ms)
-○ Compiling /api/scan/[id] ...
- GET /api/scan/a270201a-0e53-40b3-8e64-f68977dd91f5 200 in 10.5s (compile: 9.9s, render: 601ms)
- GET /api/scan/a270201a-0e53-40b3-8e64-f68977dd91f5 200 in 32.5s (compile: 31.9s, render: 601ms)
+✓ Ready in 1494ms
+ GET /developers 200 in 2.0s (compile: 1819ms, render: 182ms)
+ GET /results/12b877e4-cf3e-471a-8775-ef07667d3b36 200 in 2.2s (compile: 2.2s, render: 42ms)
+ GET /api/scan/12b877e4-cf3e-471a-8775-ef07667d3b36 404 in 768ms (compile: 759ms, render: 10ms)
+ GET /api/scan/12b877e4-cf3e-471a-8775-ef07667d3b36 404 in 337ms (compile: 320ms, render: 17ms)
+⨯ ./components/ScanIssueItem.tsx
+Error:   x Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+     ,-[/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION/components/ScanIssueItem.tsx:206:1]
+ 203 |                 </Box>
+ 204 |             </MsqdxAccordionItem>
+ 205 |             );
+ 206 | }, (prevProps, nextProps) => {
+     : ^
+ 207 |     // Custom comparison to ensure strict equality where it matters
+ 208 |     return (
+ 209 |             prevProps.isHighlighted === nextProps.isHighlighted &&
+     `----
+  x Unexpected token. Did you mean `{'>'}` or `&gt;`?
+     ,-[/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION/components/ScanIssueItem.tsx:206:1]
+ 203 |                 </Box>
+ 204 |             </MsqdxAccordionItem>
+ 205 |             );
+ 206 | }, (prevProps, nextProps) => {
+     :                            ^
+ 207 |     // Custom comparison to ensure strict equality where it matters
+ 208 |     return (
+ 209 |             prevProps.isHighlighted === nextProps.isHighlighted &&
+     `----
+  x Expected '</', got 'return'
+     ,-[/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION/components/ScanIssueItem.tsx:208:1]
+ 205 |             );
+ 206 | }, (prevProps, nextProps) => {
+ 207 |     // Custom comparison to ensure strict equality where it matters
+ 208 |     return (
+     :     ^^^^^^
+ 209 |             prevProps.isHighlighted === nextProps.isHighlighted &&
+ 210 |             prevProps.issue === nextProps.issue && // Issue object reference should be stable from server/props?
+ 211 |             prevProps.onHover === nextProps.onHover && // Should be stable callback
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/ScanIssueItem.tsx
+./components/ScanIssueList.tsx
+./app/results/[id]/page.tsx

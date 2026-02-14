@@ -63,6 +63,25 @@ class ScanStore {
     getDomainScan(id: string): DomainScanResult | undefined {
         return this.domainScans.get(id);
     }
+
+    listDomainScans(): DomainScanResult[] {
+        // Return sorted by timestamp desc
+        return Array.from(this.domainScans.values())
+            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    }
+
+    delete(id: string): boolean {
+        // Also remove from byId map
+        const index = this.results.findIndex(r => r.id === id);
+        if (index !== -1) {
+            this.results.splice(index, 1);
+        }
+        return this.byId.delete(id);
+    }
+
+    deleteDomainScan(id: string): boolean {
+        return this.domainScans.delete(id);
+    }
 }
 
 // Singleton – survives hot reloads in development via globalThis

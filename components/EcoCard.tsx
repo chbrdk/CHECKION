@@ -25,7 +25,7 @@ export const EcoCard: React.FC<EcoCardProps> = ({ eco }) => {
     return (
         <MsqdxMoleculeCard
             title="Eco Score"
-            description="Geschätzter CO2-Fußabdruck pro Seitenaufruf"
+            subtitle="Geschätzter CO2-Fußabdruck pro Seitenaufruf"
         >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: `${MSQDX_SPACING.scale.lg}px`, height: '100%' }}>
                 {/* Grade Circle */}

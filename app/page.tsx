@@ -40,9 +40,9 @@ export default function DashboardPage() {
   const totalNotices = scans.reduce((sum, s) => sum + s.stats.notices, 0);
 
   return (
-    <Box sx={{ p: `${MSQDX_SPACING.scale.md}px`, maxWidth: 1600, mx: 'auto' }}>
+    <Box sx={{ p: MSQDX_SPACING.scale.lg, maxWidth: 1600, mx: 'auto' }}>
       {/* Header */}
-      <Box sx={{ mb: `${MSQDX_SPACING.scale.md}px`, display: 'flex', justifyContent: 'space-between', alignItems: 'end' }}>
+      <Box sx={{ mb: MSQDX_SPACING.scale.md, display: 'flex', justifyContent: 'space-between', alignItems: 'end' }}>
         <Box>
           <MsqdxTypography
             variant="h4"
@@ -77,8 +77,8 @@ export default function DashboardPage() {
         sx={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: `${MSQDX_SPACING.scale.md}px`,
-          mb: `${MSQDX_SPACING.scale.xl}px`,
+          gap: MSQDX_SPACING.scale.md,
+          mb: MSQDX_SPACING.scale.xl,
         }}
       >
         <StatCard label="Scans" value={totalScans} color="green" />
@@ -133,7 +133,7 @@ export default function DashboardPage() {
                       alignItems: 'center',
                       gap: MSQDX_SPACING.scale.md,
                       p: MSQDX_SPACING.scale.md,
-                      borderRadius: `${MSQDX_SPACING.borderRadius.md}px`,
+                      borderRadius: MSQDX_SPACING.borderRadius.md,
                       cursor: 'pointer',
                       backgroundColor: MSQDX_NEUTRAL[900],
                       border: `1px solid ${MSQDX_THEME.dark.border.subtle}`,

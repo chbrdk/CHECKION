@@ -103,11 +103,11 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
     await page.setViewport(viewport);
 
     // Inject CLS Observer immediately
-    await page.evaluateOnNewDocument(() => {
+    await page.evaluateOnNewDocument(function () {
         // @ts-ignore
         window.__cls_score = 0;
         // @ts-ignore
-        new PerformanceObserver((entryList) => {
+        new PerformanceObserver(function (entryList) {
             for (const entry of entryList.getEntries()) {
                 // @ts-ignore
                 if (!entry.hadRecentInput) {
@@ -141,18 +141,25 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
 
     // --- Performance & Eco Data Collection ---
     let totalBytes = 0;
+    let serverIp: string | null = null;
+    let mainHeaders: Record<string, string> = {};
+
     // Enable request interception or just listen to responses for size
     await page.setRequestInterception(false); // We don't need to block, just listen
     page.on('response', async (response) => {
         try {
+            const rUrl = response.url();
+            // Capture main resource IP and headers
+            if (!serverIp && (rUrl === url || rUrl === url + '/' || rUrl.split('?')[0] === url.split('?')[0])) {
+                const remoteAddress = response.remoteAddress();
+                serverIp = remoteAddress.ip || null;
+                mainHeaders = response.headers();
+            }
+
             // Getting buffer might fail for some resources (CORS, etc), heuristic fallback
             const headers = response.headers();
             if (headers['content-length']) {
                 totalBytes += parseInt(headers['content-length'], 10);
-            } else {
-                // Fallback: This is expensive and might fail, skip for now to save time/stability
-                // const buf = await response.buffer();
-                // totalBytes += buf.length;
             }
         } catch (e) {
             // Ignore failed resource size collection
@@ -179,7 +186,7 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
 
         // --- Aggressive Scroll for CLS ---
         // Scroll down and up to trigger lazy loads and layout shifts
-        await page.evaluate(async () => {
+        await page.evaluate(async function () {
             const distance = 100;
             const delay = 50;
             const totalHeight = document.body.scrollHeight;
@@ -201,7 +208,7 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
 
         // --- Extract Performance Metrics ---
         // We use page.evaluate to get window.performance data
-        const perfData = await page.evaluate(() => {
+        const perfData = await page.evaluate(function () {
             const navHeading = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
             const paint = performance.getEntriesByName('first-contentful-paint')[0];
 
@@ -253,7 +260,7 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                 try {
                     // Try to finding the element and get its bounding box
                     // Note: This runs in the browser context
-                    const box = await page.evaluate((sel) => {
+                    const box = await page.evaluate(function (sel) {
                         const el = document.querySelector(sel);
                         if (!el) return null;
                         const rect = el.getBoundingClientRect();
@@ -307,7 +314,7 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
             }
 
             // Run axe with APCA enabled
-            const axeResults = await page.evaluate(async () => {
+            const axeResults = await page.evaluate(async function () {
                 try {
                     // @ts-ignore
                     if (typeof axe === 'undefined') return { error: 'axe is undefined in page context' };
@@ -363,16 +370,16 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
 
         // 1. CLS (Cumulative Layout Shift)
         // We'll trust the performance observer if it ran, or default to 0
-        const clsScore = await page.evaluate(() => {
+        const clsScore = await page.evaluate(function () {
             // @ts-ignore
             return window.__cls_score || 0;
         });
         console.log(`[UX] CLS Score for ${url}:`, clsScore); // Debug log
 
         // 2. Tap Targets (Mobile Only - or general check)
-        const tapIssues = await page.evaluate(() => {
+        const tapIssues = await page.evaluate(function () {
             const issues: any[] = [];
-            document.querySelectorAll('button, a, input, [role="button"]').forEach((el) => {
+            document.querySelectorAll('button, a, input, [role="button"]').forEach(function (el) {
                 const rect = el.getBoundingClientRect();
                 // Ignore hidden or tiny elements
                 if (rect.width === 0 || rect.height === 0 || window.getComputedStyle(el).display === 'none') return;
@@ -403,11 +410,14 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
         }
 
         // Extract text content and calculate Flesch-Kincaid
-        const textContent = await page.evaluate(() => {
-            // Helper to get visible text only
-            const isVisible = (elem: HTMLElement) => !!(elem.offsetWidth || elem.offsetHeight || elem.getClientRects().length);
-            return document.body.innerText || '';
-        });
+        const textContent = await page.evaluate(`
+            (function() {
+                function isVisible(elem) {
+                    return !!(elem.offsetWidth || elem.offsetHeight || elem.getClientRects().length);
+                }
+                return document.body.innerText || '';
+            })()
+        ` as any);
 
         const cleanText = textContent.replace(/\s+/g, ' ').trim();
         const sentences = cleanText.split(/[.!?]+/).length;
@@ -434,7 +444,7 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
         };
 
         // 4. Viewport Check
-        const viewportCheck = await page.evaluate(() => {
+        const viewportCheck = await page.evaluate(function () {
             const meta = document.querySelector('meta[name="viewport"]');
             if (!meta) return { isMobileFriendly: false, issues: ['No viewport meta tag found'] };
             const content = meta.getAttribute('content') || '';
@@ -448,42 +458,438 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
             return { isMobileFriendly: issues.length === 0, issues };
         });
 
-        // 5. Broken Link Checker (Node-side Fetch)
-        const brokenLinks: Array<{ href: string; status: number; text: string }> = [];
-        let uniqueLinks: Array<{ href: string; text: string }> = [];
-        try {
-            const links = await page.evaluate(() => {
-                return Array.from(document.querySelectorAll('a[href]')).map(a => ({
+        // 5. Advanced Link Audit (Broken Links + Stats)
+        // We capture ALL links now
+        const allLinks = await page.evaluate(function () {
+            // @ts-ignore
+            return Array.from(document.querySelectorAll('a[href]')).map(function (a) {
+                return {
+                    // @ts-ignore
                     href: (a as HTMLAnchorElement).href,
-                    text: (a.textContent || '').slice(0, 30).trim()
-                }));
+                    // @ts-ignore
+                    text: (a.textContent || '').slice(0, 50).trim()
+                };
             });
+        });
 
-            // Filter unique, http/https only, take top 15
-            uniqueLinks = Array.from(new Map(links.map(item => [item.href, item])).values())
-                .filter(l => l.href.startsWith('http'))
-                .slice(0, 15);
+        const uniqueLinksMap = new Map<string, { href: string; text: string }>();
+        allLinks.forEach(l => {
+            if (l.href.startsWith('http')) uniqueLinksMap.set(l.href, l);
+        });
+        const uniqueLinksList = Array.from(uniqueLinksMap.values());
 
-            await Promise.all(uniqueLinks.map(async (link) => {
-                try {
-                    const res = await fetch(link.href, { method: 'HEAD', signal: AbortSignal.timeout(3000) });
-                    if (res.status >= 400) {
-                        brokenLinks.push({ href: link.href, status: res.status, text: link.text });
-                    }
-                } catch (e) {
-                    // Treat fetch errors as broken (or timeout)
-                    brokenLinks.push({ href: link.href, status: 0, text: link.text });
+        const internalLinksCount = uniqueLinksList.filter(l => l.href.startsWith(new URL(url).origin)).length;
+        const externalLinksCount = uniqueLinksList.length - internalLinksCount;
+
+        // Check status of up to 25 links (prioritizing internal)
+        const linksToCheck = uniqueLinksList.sort((a, b) => {
+            const aInt = a.href.startsWith(new URL(url).origin);
+            const bInt = b.href.startsWith(new URL(url).origin);
+            return (aInt === bInt) ? 0 : aInt ? -1 : 1;
+        }).slice(0, 25);
+
+        const brokenLinkResults: Array<{ url: string; text: string; statusCode: number; message?: string; internal: boolean }> = [];
+
+        await Promise.all(linksToCheck.map(async (link) => {
+            try {
+                const res = await fetch(link.href, { method: 'HEAD', signal: AbortSignal.timeout(4000) });
+                if (res.status >= 400) {
+                    brokenLinkResults.push({
+                        url: link.href,
+                        text: link.text,
+                        statusCode: res.status,
+                        message: res.statusText,
+                        internal: link.href.startsWith(new URL(url).origin)
+                    });
                 }
+            } catch (e: any) {
+                // Treat fetch errors as broken (or timeout)
+                brokenLinkResults.push({
+                    url: link.href,
+                    text: link.text,
+                    statusCode: 0,
+                    message: e.message || 'Network Error/Timeout',
+                    internal: link.href.startsWith(new URL(url).origin)
+                });
+            }
+        }));
+
+        const linkAudit = {
+            broken: brokenLinkResults,
+            total: uniqueLinksList.length,
+            internal: internalLinksCount,
+            external: externalLinksCount
+        };
+
+        // 5b. SEO Meta Extraction (Enhanced with Languages & Privacy)
+        const seoAndMeta = await page.evaluate(function () {
+            const getMeta = (name: string) => document.querySelector(`meta[name="${name}"]`)?.getAttribute('content') || null;
+            const getOg = (prop: string) => document.querySelector(`meta[property="${prop}"]`)?.getAttribute('content') || null;
+
+            // Language Detection
+            const htmlLang = document.documentElement.getAttribute('lang') || null;
+            const hreflangs = Array.from(document.querySelectorAll('link[rel="alternate"][hreflang]')).map(el => ({
+                lang: el.getAttribute('hreflang') || '',
+                href: el.getAttribute('href') || ''
             }));
-        } catch (e) {
-            console.error('Link check failed:', e);
+
+            // Privacy Markers
+            const links = Array.from(document.querySelectorAll('a')).map(a => ({ text: a.textContent?.toLowerCase() || '', href: a.getAttribute('href') }));
+            const privacyKeywords = ['privacy', 'datenschutz', 'legal', 'impressum', 'terms', 'nutzungsbedingungen'];
+            const privacyLink = links.find(l => privacyKeywords.some(kw => l.text.includes(kw)));
+
+            const cookieKeywords = ['cookie', 'consent', 'akzeptieren', 'accept', 'einstellungen'];
+            const hasCookieBannerHeuristic = !!document.body.innerText.toLowerCase().includes('cookie') ||
+                !!document.querySelector('#cookie-banner, .cookie-banner, #consent-manager, .consent-banner');
+
+            // --- GEO Metrics (Generative Engine Optimization) ---
+            const schemaTypes = Array.from(document.querySelectorAll('script[type="application/ld+json"]'))
+                .map(el => {
+                    try {
+                        const json = JSON.parse(el.textContent || '{}');
+                        const type = json['@type'];
+                        if (Array.isArray(type)) return type;
+                        return type || null;
+                    } catch (e) { return null; }
+                }).flat().filter(Boolean) as string[];
+
+            const tables = document.querySelectorAll('table').length;
+            const lists = document.querySelectorAll('ul, ol').length;
+            const faqSegments = document.querySelectorAll('[itemprop="mainEntity"][itemtype*="Question"], .faq-question, .faq-item, details summary').length;
+
+            const bodyText = document.body.innerText;
+            const citations = (bodyText.match(/\[\d+\]|source:|quelle:|statist\w+|%/gi) || []).length;
+            const hasAuthorBio = !!document.querySelector('.author-bio, [itemprop="author"], .byline, .author-info') || bodyText.toLowerCase().includes('about the author');
+
+            return {
+                seo: {
+                    title: document.title || null,
+                    metaDescription: getMeta('description'),
+                    h1: document.querySelector('h1')?.textContent?.trim() || null,
+                    canonical: document.querySelector('link[rel="canonical"]')?.getAttribute('href') || null,
+                    ogTitle: getOg('og:title'),
+                    ogDescription: getOg('og:description'),
+                    ogImage: getOg('og:image'),
+                    twitterCard: getMeta('twitter:card')
+                },
+                geo: {
+                    htmlLang,
+                    hreflangs
+                },
+                privacy: {
+                    hasPrivacyPolicy: privacyLink?.text.includes('privacy') || privacyLink?.text.includes('datenschutz') || false,
+                    privacyPolicyUrl: privacyLink?.href || null,
+                    hasCookieBanner: hasCookieBannerHeuristic,
+                    hasTermsOfService: privacyLink?.text.includes('terms') || privacyLink?.text.includes('bedingungen') || false,
+                },
+                generative: {
+                    schemaCoverage: [...new Set(schemaTypes)],
+                    tableCount: tables,
+                    listCount: lists,
+                    faqCount: faqSegments,
+                    citationCount: citations,
+                    hasAuthorBio: hasAuthorBio,
+                    listDensity: Number((lists / (document.querySelectorAll('div, section, article').length || 1)).toFixed(2))
+                }
+            };
+        });
+
+        const seoAudit = seoAndMeta.seo;
+        const privacyAudit = seoAndMeta.privacy;
+
+        // 5c. Geo Location Lookup & CDN Detection
+        let locationData: any = null;
+        if (serverIp && !serverIp.startsWith('127.') && !serverIp.startsWith('192.168.')) {
+            try {
+                // Using ip-api.com (Free for demo/dev)
+                const geoRes = await fetch(`http://ip-api.com/json/${serverIp}`);
+                const geoJson: any = await geoRes.json();
+                if (geoJson.status === 'success') {
+                    locationData = {
+                        city: geoJson.city,
+                        country: geoJson.country,
+                        continent: geoJson.timezone?.split('/')[0] || 'Unknown',
+                        region: geoJson.regionName
+                    };
+                }
+            } catch (e) {
+                console.error('Geo lookup failed:', e);
+            }
         }
+
+        // CDN Detection Heuristics
+        const h = mainHeaders;
+        let cdnProvider: string | null = null;
+        if (h['cf-ray'] || h['server'] === 'cloudflare') cdnProvider = 'Cloudflare';
+        else if (h['x-amz-cf-id']) cdnProvider = 'Amazon CloudFront';
+        else if (h['x-fastly-request-id']) cdnProvider = 'Fastly';
+        else if (h['server']?.includes('Akamai')) cdnProvider = 'Akamai';
+        else if (h['x-cdn']) cdnProvider = h['x-cdn'];
+
+        const geoAudit = {
+            serverIp,
+            location: locationData,
+            cdn: {
+                detected: !!cdnProvider,
+                provider: cdnProvider
+            },
+            languages: seoAndMeta.geo
+        };
+
+        // 5d. GEO (Generative Engine Optimization) - Technical Checks
+        let hasLlmsTxt = false;
+        let hasRobotsAllowingAI = true; // Default to true if fine, or if robots.txt is missing
+
+        try {
+            const origin = new URL(url).origin;
+            const llmsTxtRes = await fetch(`${origin}/llms.txt`, { method: 'HEAD' });
+            hasLlmsTxt = llmsTxtRes.ok;
+
+            const robotsRes = await fetch(`${origin}/robots.txt`);
+            if (robotsRes.ok) {
+                const robotsTxt = await robotsRes.text();
+                // Simple check for AI bots
+                const aiBots = ['GPTBot', 'PerplexityBot', 'CCBot', 'GoogleOther', 'Anthropic-AI', 'Claude-Web'];
+                const blocked = aiBots.some(bot => robotsTxt.includes(`User-agent: ${bot}`) && robotsTxt.includes('Disallow: /'));
+                if (blocked) hasRobotsAllowingAI = false;
+            }
+        } catch (e) {
+            // Ignore fetch errors
+        }
+
+        // Calculate GEO Score (0-100)
+        let geoScore = 50; // Starting point
+        const g = seoAndMeta.generative;
+
+        if (hasLlmsTxt) geoScore += 10;
+        if (!hasRobotsAllowingAI) geoScore -= 20;
+        if (g.schemaCoverage.length > 0) geoScore += 10;
+        if (g.tableCount > 0) geoScore += 5;
+        if (g.faqCount > 0) geoScore += 10;
+        if (g.citationCount > 5) geoScore += 10;
+        if (g.hasAuthorBio) geoScore += 5;
+
+        geoScore = Math.max(0, Math.min(100, geoScore));
+
+        const generativeAudit = {
+            score: geoScore,
+            technical: {
+                hasLlmsTxt,
+                hasRobotsAllowingAI,
+                schemaCoverage: g.schemaCoverage
+            },
+            content: {
+                faqCount: g.faqCount,
+                tableCount: g.tableCount,
+                listDensity: g.listDensity,
+                citationDensity: g.citationCount
+            },
+            expertise: {
+                hasAuthorBio: g.hasAuthorBio,
+                hasExpertCitations: g.citationCount > 3
+            }
+        };
+
+
+
+        // 6. Focus Order Detection
+        const focusOrder = await page.evaluate(`
+            (function() {
+                function isVisible(el) {
+                    const style = window.getComputedStyle(el);
+                    return style.display !== 'none' && style.visibility !== 'hidden' && el.offsetWidth > 0 && el.offsetHeight > 0;
+                }
+
+                const selector = 'a[href], button, input, textarea, select, details, [tabindex]:not([tabindex="-1"])';
+                const elements = Array.from(document.querySelectorAll(selector));
+
+                const focusable = elements.filter(function(el) { return isVisible(el) && !el.hasAttribute('disabled') && el.getAttribute('aria-hidden') !== 'true'; });
+
+                const positiveTabIndex = focusable.filter(function(el) { return (parseInt(el.getAttribute('tabindex') || '0', 10) > 0); })
+                    .sort(function(a, b) { return parseInt(a.getAttribute('tabindex') || '0', 10) - parseInt(b.getAttribute('tabindex') || '0', 10); });
+
+                const zeroTabIndex = focusable.filter(function(el) {
+                    const t = el.getAttribute('tabindex');
+                    return !t || parseInt(t, 10) === 0;
+                });
+
+                const sorted = positiveTabIndex.concat(zeroTabIndex);
+
+                return sorted.map(function(el, index) {
+                    const rect = el.getBoundingClientRect();
+                    return {
+                        index: index + 1,
+                        text: (el.innerText || el.getAttribute('aria-label') || el.tagName).slice(0, 30).trim(),
+                        role: el.tagName.toLowerCase(),
+                        rect: {
+                            x: Math.round(rect.x),
+                            y: Math.round(rect.y),
+                            width: Math.round(rect.width),
+                            height: Math.round(rect.height)
+                        }
+                    };
+                }).slice(0, 50);
+            })()
+        ` as any);
+
+        // 7. Advanced Pro-Level Checks (Structure, Alt, Aria, Form)
+        // We use a string function to avoid any transpilation/instrumentation issues (__name is not defined)
+        const advancedChecksScript = `
+            (function() {
+                function getRect(el) {
+                    const r = el.getBoundingClientRect();
+                    return {
+                        x: Math.round(r.x),
+                        y: Math.round(r.y),
+                        width: Math.round(r.width),
+                        height: Math.round(r.height)
+                    };
+                }
+                
+                // --- 7a. Semantic Structure Map ---
+                const structureMap = [];
+                document.querySelectorAll('h1, h2, h3, h4, h5, h6, nav, main, aside, footer, header').forEach(function(el) {
+                    let level = 0; // Landmarks
+                    if (el.tagName.startsWith('H')) level = parseInt(el.tagName[1]);
+                    
+                    const r = el.getBoundingClientRect();
+                    structureMap.push({
+                        tag: el.tagName.toLowerCase(),
+                        text: (el.textContent || '').slice(0, 50).trim(),
+                        level: level,
+                        rect: {
+                            x: Math.round(r.x),
+                            y: Math.round(r.y),
+                            width: Math.round(r.width),
+                            height: Math.round(r.height)
+                        }
+                    });
+                });
+
+                // --- 7b. Touch Target Heatmap (All small elements) ---
+                const touchTargets = []; 
+                
+                document.querySelectorAll('a, button, input, [role="button"]').forEach(function(el) {
+                    const r = el.getBoundingClientRect();
+                    // Ignore hidden or tiny elements
+                    if (r.width === 0 || r.height === 0 || window.getComputedStyle(el).display === 'none') return;
+
+                    if (r.width < 44 || r.height < 44) {
+                        // Generate simple selector
+                        let selector = el.tagName.toLowerCase();
+                        if (el.id) selector += '#' + el.id;
+                        else if (el.className && typeof el.className === 'string') selector += '.' + el.className.split(' ')[0];
+
+                        touchTargets.push({
+                            selector: selector,
+                            element: el.tagName.toLowerCase(),
+                            text: (el.textContent || '').slice(0, 50).trim(),
+                            rect: {
+                                x: Math.round(r.x),
+                                y: Math.round(r.y),
+                                width: Math.round(r.width),
+                                height: Math.round(r.height)
+                            },
+                            size: { width: Math.round(r.width), height: Math.round(r.height) },
+                            message: 'Target size ' + Math.round(r.width) + 'x' + Math.round(r.height) + 'px is too small.'
+                        });
+                    }
+                });
+
+                // --- 7c. Smart Alt-Text Analysis ---
+                const altTextIssues = [];
+                document.querySelectorAll('img').forEach(function(img) {
+                    const alt = (img.getAttribute('alt') || '').trim();
+                    const src = (img.getAttribute('src') || '').trim();
+                    const r = img.getBoundingClientRect();
+                    const rect = {
+                        x: Math.round(r.x),
+                        y: Math.round(r.y),
+                        width: Math.round(r.width),
+                        height: Math.round(r.height)
+                    };
+                    
+                    if (img.getAttribute('alt') === null) {
+                        altTextIssues.push({
+                            imgHtml: img.outerHTML.slice(0, 50),
+                            alt: '[MISSING]',
+                            rect: rect,
+                            reason: 'Missing alt attribute'
+                        });
+                    } else if (alt === '') {
+                        // Decorative
+                    } else {
+                        const filename = src.split('/').pop().split('?')[0] || '';
+                        if (alt.toLowerCase().endsWith('.jpg') || alt.toLowerCase().endsWith('.png') || alt === filename) {
+                            altTextIssues.push({ imgHtml: img.outerHTML.slice(0, 50), alt: alt, rect: rect, reason: 'Alt text looks like a filename' });
+                        } else if (['image', 'picture', 'spacer', 'white', 'logo'].indexOf(alt.toLowerCase()) !== -1) {
+                            altTextIssues.push({ imgHtml: img.outerHTML.slice(0, 50), alt: alt, rect: rect, reason: 'Alt text is generic/redundant' });
+                        } else if (alt.length < 5) {
+                            altTextIssues.push({ imgHtml: img.outerHTML.slice(0, 50), alt: alt, rect: rect, reason: 'Alt text is extremely short' });
+                        }
+                    }
+                });
+
+                // --- 7d. ARIA Integrity ---
+                const ariaIssues = [];
+                document.querySelectorAll('[aria-labelledby], [aria-describedby], [aria-controls]').forEach(function(el) {
+                    ['aria-labelledby', 'aria-describedby', 'aria-controls'].forEach(function(attr) {
+                        if (el.hasAttribute(attr)) {
+                            const ids = (el.getAttribute(attr) || '').split(' ');
+                            ids.forEach(function(id) {
+                                if (id && !document.getElementById(id)) {
+                                    const r = el.getBoundingClientRect();
+                                    ariaIssues.push({
+                                        element: el.tagName.toLowerCase(),
+                                        attribute: attr,
+                                        value: id,
+                                        rect: {
+                                            x: Math.round(r.x),
+                                            y: Math.round(r.y),
+                                            width: Math.round(r.width),
+                                            height: Math.round(r.height)
+                                        },
+                                        message: 'Referenced ID "' + id + '" does not exist.'
+                                    });
+                                }
+                            });
+                        }
+                    });
+                });
+
+                // --- 7e. Form UX (Orphan Inputs) ---
+                const formIssues = [];
+                document.querySelectorAll('input:not([type="hidden"]), select, textarea').forEach(function(el) {
+                    const parentLabel = el.closest('label');
+                    const hasId = el.id && document.querySelector('label[for="' + el.id + '"]');
+                    const hasAriaLabel = el.hasAttribute('aria-label') || el.hasAttribute('aria-labelledby');
+                    
+                    if (!parentLabel && !hasId && !hasAriaLabel) {
+                        const r = el.getBoundingClientRect();
+                        formIssues.push({
+                            element: el.tagName.toLowerCase(),
+                            rect: {
+                                x: Math.round(r.x),
+                                y: Math.round(r.y),
+                                width: Math.round(r.width),
+                                height: Math.round(r.height)
+                            },
+                            message: 'Form element has no associated label.'
+                        });
+                    }
+                });
+
+                return { structureMap: structureMap, touchTargets: touchTargets, altTextIssues: altTextIssues, ariaIssues: ariaIssues, formIssues: formIssues };
+            })();
+        `;
+
+        // Use 'any' cast to satisfy TS because evaluate expects a function usually, but accepts string in vanilla puppeteer
+        // Puppeteer source: evaluate(pageFunction, ...args) -> usually function or string
+        const advancedChecks = await page.evaluate(advancedChecksScript as any);
 
         // --- Calculate UX Score (Simple Algorithm) ---
         // 100 Base
         // CLS > 0.1: -10, > 0.25: -25
-        // Tap Issues: -2 per issue (max -20)
-        // Zoom disabled: -20
         // Console Errors: -5 per error (max -20)
         // Broken Links: -10 per link (max -30)
 
@@ -491,12 +897,12 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
         if (clsScore > 0.25) uxScore -= 25;
         else if (clsScore > 0.1) uxScore -= 10;
 
-        uxScore -= Math.min(20, tapIssues.length * 2);
+        uxScore -= Math.min(20, advancedChecks.touchTargets.length * 2);
 
         if (!viewportCheck.isMobileFriendly) uxScore -= 20;
 
         uxScore -= Math.min(20, consoleLogs.filter(l => l.type === 'error').length * 5);
-        uxScore -= Math.min(30, brokenLinks.length * 10);
+        uxScore -= Math.min(30, linkAudit.broken.length * 10);
 
         uxScore = Math.max(0, Math.round(uxScore));
 
@@ -504,13 +910,25 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
             score: uxScore,
             cls: parseFloat(clsScore.toFixed(3)),
             readability: readabilityResult,
-            tapTargets: { issues: tapIssues },
-            viewport: viewportCheck,
+            viewport: {
+                isMobileFriendly: viewportCheck.isMobileFriendly,
+                issues: viewportCheck.issues
+            },
             consoleErrors: consoleLogs,
-            brokenLinks: brokenLinks
+            brokenLinks: linkAudit.broken,
+            focusOrder: focusOrder,
+            structureMap: advancedChecks.structureMap,
+            altTextIssues: advancedChecks.altTextIssues,
+            ariaIssues: advancedChecks.ariaIssues,
+            formIssues: advancedChecks.formIssues,
+            // Replace legacy tapTargets with detailed ones
+            tapTargets: {
+                issues: advancedChecks.touchTargets.map((t: any) => `${t.element} (${t.size.width}x${t.size.height}px)`),
+                details: advancedChecks.touchTargets
+            }
         };
 
-        const internalLinks = uniqueLinks
+        const internalLinks = uniqueLinksList
             .filter(l => l.href.startsWith(new URL(url).origin)) // Only internal
             .map(l => l.href);
 
@@ -531,14 +949,19 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
             durationMs,
             score: calculateScore(stats),
             screenshot,
-            links: internalLinks,
+            allLinks: internalLinks,
             performance: perfData,
             eco: {
                 co2: parseFloat(co2Grams.toFixed(3)),
                 grade: ecoGrade,
                 pageWeight: totalBytes
             },
-            ux: uxResult
+            ux: uxResult,
+            seo: seoAudit,
+            links: linkAudit,
+            geo: geoAudit,
+            privacy: privacyAudit,
+            generative: generativeAudit
         };
     } finally {
         await browser.close();

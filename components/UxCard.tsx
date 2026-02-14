@@ -22,7 +22,7 @@ interface UxCardProps {
 
 export const UxCard = ({ ux }: UxCardProps) => {
     // Determine Score Color
-    let scoreColor = MSQDX_STATUS.success.base;
+    let scoreColor: string = MSQDX_STATUS.success.base;
     if (ux.score < 50) scoreColor = MSQDX_STATUS.error.base;
     else if (ux.score < 80) scoreColor = MSQDX_STATUS.warning.base;
 
@@ -32,7 +32,7 @@ export const UxCard = ({ ux }: UxCardProps) => {
     return (
         <MsqdxMoleculeCard
             title="User Experience Scan"
-            description="Analysis of visual stability, interactivity, and content."
+            subtitle="Analysis of visual stability, interactivity, and content."
             headerActions={
                 <MsqdxChip
                     label={`Score: ${ux.score}/100`}
@@ -45,12 +45,12 @@ export const UxCard = ({ ux }: UxCardProps) => {
                 {/* Visual Stability (CLS) */}
                 <Box>
                     <Stack direction="row" alignItems="center" spacing={1} mb={0.5}>
-                        <MsqdxIcon name="Monitor" size="small" />
+                        <MsqdxIcon name="Monitor" size="sm" />
                         <MsqdxTypography variant="body2" color="textSecondary">
                             Visual Stability (CLS)
                         </MsqdxTypography>
                         <MsqdxTooltip title="Cumulative Layout Shift measures how much the page content shifts unexpectedly. Lower is better. Goal: < 0.1">
-                            <MsqdxTypography variant="caption" sx={{ cursor: 'help', color: MSQDX_BRAND_PRIMARY.blue }}>
+                            <MsqdxTypography variant="caption" sx={{ cursor: 'help', color: MSQDX_BRAND_PRIMARY.purple }}>
                                 ?
                             </MsqdxTypography>
                         </MsqdxTooltip>
@@ -100,7 +100,7 @@ export const UxCard = ({ ux }: UxCardProps) => {
                     <Box sx={{ flex: 1, p: 1.5, bgcolor: MSQDX_NEUTRAL[50], borderRadius: `${MSQDX_SPACING.borderRadius.md}px` }}>
                         <Stack direction="row" alignItems="center" spacing={1} mb={0.5}>
                             <Smartphone size={16} color={ux.viewport.isMobileFriendly ? MSQDX_STATUS.success.base : MSQDX_STATUS.error.base} />
-                            <MsqdxTypography variant="caption" fontWeight={600}>
+                            <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>
                                 Mobile Viewport
                             </MsqdxTypography>
                         </Stack>
@@ -112,7 +112,7 @@ export const UxCard = ({ ux }: UxCardProps) => {
                     <Box sx={{ flex: 1, p: 1.5, bgcolor: MSQDX_NEUTRAL[50], borderRadius: `${MSQDX_SPACING.borderRadius.md}px` }}>
                         <Stack direction="row" alignItems="center" spacing={1} mb={0.5}>
                             <MousePointerClick size={16} color={ux.tapTargets.issues.length === 0 ? MSQDX_STATUS.success.base : MSQDX_STATUS.warning.base} />
-                            <MsqdxTypography variant="caption" fontWeight={600}>
+                            <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>
                                 Tap Targets
                             </MsqdxTypography>
                         </Stack>

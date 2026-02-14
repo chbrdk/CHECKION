@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, Suspense } from 'react';
 import {
     MsqdxCard,
     MsqdxTypography,
@@ -12,7 +12,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { MSQDX_COLORS, MSQDX_SPACING } from '@msqdx/tokens';
 import type { DomainScanStatus } from '@/lib/types';
 
-export default function DomainScanLivePage() {
+function ScanContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const [scanId, setScanId] = useState<string | null>(null);
@@ -91,9 +91,13 @@ export default function DomainScanLivePage() {
 
             if (response.ok) {
                 const data = await response.json();
-                setScanId(data.id);
-                setLogs(prev => [...prev, 'Scan started in background. Polling for updates...']);
-                setStatus('scanning');
+                if (data.success && data.data) {
+                    setScanId(data.data.id);
+                    setLogs(prev => [...prev, 'Scan started in background. Polling for updates...']);
+                    setStatus('scanning');
+                } else {
+                    throw new Error(data.error || 'Failed to start scan');
+                }
             } else {
                 throw new Error('Failed to start scan');
             }
@@ -179,5 +183,13 @@ export default function DomainScanLivePage() {
                 </MsqdxCard>
             </Box>
         </Box>
+    );
+}
+
+export default function DomainScanLivePage() {
+    return (
+        <Suspense fallback={<LinearProgress />}>
+            <ScanContent />
+        </Suspense>
     );
 }

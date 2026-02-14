@@ -74,8 +74,11 @@ export async function POST(req: NextRequest) {
 
     // Return immediately with 202 Accepted
     return NextResponse.json({
-        id,
-        status: 'queued',
-        message: 'Scan started in background'
+        success: true,
+        data: {
+            id,
+            status: 'queued',
+            message: 'Scan started in background'
+        }
     }, { status: 202 });
 }

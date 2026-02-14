@@ -46,6 +46,45 @@ export interface Pass {
     }>;
 }
 
+export interface FocusOrder {
+    index: number;
+    text: string;
+    role: string;
+    rect: { x: number; y: number; width: number; height: number };
+}
+
+export interface UxResult {
+    score: number;
+    cls: number;
+    readability: {
+        grade: string;
+        score: number;
+    };
+    tapTargets: {
+        issues: string[];
+        details?: TouchTargetIssue[]; // Added details
+    };
+    viewport: {
+        isMobileFriendly: boolean;
+        issues: string[];
+    };
+    consoleErrors: Array<{
+        type: 'error' | 'warning';
+        text: string;
+        location?: string;
+    }>;
+    brokenLinks: Array<{
+        href: string;
+        status: number;
+        text: string;
+    }>;
+    focusOrder: FocusOrder[];
+    structureMap?: StructureNode[];
+    altTextIssues?: AltTextIssue[];
+    ariaIssues?: AriaIssue[];
+    formIssues?: FormIssue[];
+}
+
 export type ScanResult = {
     id: string;
     groupId?: string; // Optional for ad-hoc scans
@@ -60,7 +99,7 @@ export type ScanResult = {
     durationMs: number;
     score: number;
     screenshot: string;
-    links?: string[]; // Internal links found
+    allLinks?: string[]; // Internal links found (raw)
     performance: {
         ttfb: number;
         fcp: number;
@@ -73,16 +112,83 @@ export type ScanResult = {
         grade: 'A+' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
         pageWeight: number;
     };
-    ux?: {
-        score: number;
-        cls: number;
-        readability: string;
-        tapTargets: { issues: any[] };
-        viewport: { isMobileFriendly: boolean; issues: string[] };
-        consoleErrors: any[];
-        brokenLinks: any[];
-    };
+    ux?: UxResult;
+    seo?: SeoAudit;
+    links?: LinkAudit;
+    geo?: GeoAudit;
+    privacy?: PrivacyAudit;
+    generative?: GenerativeEngineAudit;
 };
+
+export interface SeoAudit {
+    title: string | null;
+    metaDescription: string | null;
+    h1: string | null;
+    canonical: string | null;
+    ogTitle: string | null;
+    ogDescription: string | null;
+    ogImage: string | null;
+    twitterCard: string | null;
+}
+
+export interface GenerativeEngineAudit {
+    score: number;
+    technical: {
+        hasLlmsTxt: boolean;
+        hasRobotsAllowingAI: boolean;
+        schemaCoverage: string[];
+    };
+    content: {
+        faqCount: number;
+        tableCount: number;
+        listDensity: number;
+        citationDensity: number;
+    };
+    expertise: {
+        hasAuthorBio: boolean;
+        hasExpertCitations: boolean;
+    };
+}
+
+export interface GeoAudit {
+    serverIp: string | null;
+    location: {
+        city: string | null;
+        country: string | null;
+        continent: string | null;
+        region?: string | null;
+    } | null;
+    cdn: {
+        detected: boolean;
+        provider: string | null;
+    };
+    languages: {
+        htmlLang: string | null;
+        hreflangs: Array<{ lang: string; href: string }>;
+    };
+}
+
+export interface PrivacyAudit {
+    hasPrivacyPolicy: boolean;
+    privacyPolicyUrl: string | null;
+    hasCookieBanner: boolean;
+    hasTermsOfService: boolean;
+}
+
+export interface LinkAudit {
+    broken: LinkResult[];
+    total: number;
+    internal: number;
+    external: number;
+}
+
+export interface LinkResult {
+    url: string;
+    text: string;
+    statusCode: number;
+    message?: string;
+    internal: boolean;
+}
 
 export type DomainScanStatus = 'queued' | 'scanning' | 'complete' | 'error';
 
@@ -121,36 +227,43 @@ export type DomainScanResult = {
     error?: string;
 };
 
-export interface UxResult {
-    score: number;
-    cls: number;
-    readability: {
-        score: number;
-        grade: string;
-        wordCount: number;
-    };
-    tapTargets: {
-        score: number;
-        issues: Array<{
-            selector: string;
-            text: string;
-            size: { width: number; height: number };
-        }>;
-    };
-    viewport: {
-        isMobileFriendly: boolean;
-        issues: string[];
-    };
-    consoleErrors: Array<{
-        type: 'error' | 'warning';
-        text: string;
-        location?: string;
-    }>;
-    brokenLinks: Array<{
-        href: string;
-        status: number;
-        text: string;
-    }>;
+export interface StructureNode {
+    tag: string;
+    text: string;
+    level: number; // 1-6 for headings, 0 for landmarks
+    rect?: { x: number; y: number; width: number; height: number };
+    children?: StructureNode[];
+    error?: string; // e.g. "Skipped heading level"
+}
+
+export interface TouchTargetIssue {
+    selector: string;
+    element: string;
+    text?: string;
+    rect: { x: number; y: number; width: number; height: number };
+    size: { width: number; height: number };
+    message: string;
+}
+
+export interface AltTextIssue {
+    imgHtml: string;
+    alt: string;
+    rect: { x: number; y: number; width: number; height: number };
+    reason: string; // "Filename", "Too short", "Redundant"
+}
+
+export interface AriaIssue {
+    element: string;
+    attribute: string; // aria-labelledby, for, etc.
+    value: string;
+    rect: { x: number; y: number; width: number; height: number };
+    message: string;
+}
+
+export interface FormIssue {
+    element: string;
+    rect: { x: number; y: number; width: number; height: number };
+    message: string; // "Missing label", "Duplicate ID"
 }
 
 export interface ScanRequest {

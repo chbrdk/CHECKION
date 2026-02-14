@@ -10,6 +10,7 @@ import {
     MsqdxFormField,
     MsqdxSelect,
     MsqdxCheckboxField,
+    MsqdxTabs,
 } from '@msqdx/react';
 import {
     MSQDX_SPACING,
@@ -39,27 +40,55 @@ export default function ScanPage() {
     const [scanning, setScanning] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const [scanMode, setScanMode] = useState<'single' | 'deep'>('single');
+
     const handleScan = async () => {
         if (!url.trim()) return;
         setError(null);
         setScanning(true);
 
         try {
-            const res = await fetch('/api/scan', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: url.trim(), standard, runners: selectedRunners }),
-            });
+            if (scanMode === 'single') {
+                const res = await fetch('/api/scan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url.trim(), standard, runners: selectedRunners }),
+                });
 
-            const data = await res.json();
-            if (!res.ok) {
-                setError(data.error || 'Scan fehlgeschlagen');
-                setScanning(false);
-                return;
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    setError(data.error || 'Scan fehlgeschlagen');
+                    setScanning(false);
+                    return;
+                }
+
+                const result = data.data as ScanResult;
+                router.push(`/results/${result.id}`);
+            } else {
+                // Deep Scan
+                // We use the existing progress page for viewing progress, so we can just redirect there with the URL check logic
+                // Or better, start it here and redirect to /scan/domain?url=... which handles picking up the ID
+
+                // Let's trigger it directly via API to be cleaner
+                const res = await fetch('/api/scan/domain', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url.trim() }),
+                });
+
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    setError(data.error || 'Scan fehlgeschlagen');
+                    setScanning(false);
+                    return;
+                }
+
+                // Redirect to the Domain Scan Progress page
+                // We pass the URL parameter so the page knows what we are looking for, 
+                // but since we already started it, let's redirect to monitoring
+                router.push(`/scan/domain?url=${encodeURIComponent(url.trim())}`);
             }
 
-            const result = data as ScanResult;
-            router.push(`/results/${result.id}`);
         } catch (err) {
             setError('Netzwerkfehler. Bitte prüfe deine Verbindung.');
             setScanning(false);
@@ -67,12 +96,12 @@ export default function ScanPage() {
     };
 
     return (
-        <Box sx={{ p: `${MSQDX_SPACING.scale.md}px`, maxWidth: 1600, mx: 'auto' }}>
+        <Box sx={{ p: MSQDX_SPACING.scale.lg, maxWidth: 1600, mx: 'auto' }}>
             {/* Header */}
-            <Box sx={{ mb: `${MSQDX_SPACING.scale.md}px` }}>
+            <Box sx={{ mb: MSQDX_SPACING.scale.md }}>
                 <MsqdxTypography
                     variant="h4"
-                    sx={{ fontWeight: 700, mb: `${MSQDX_SPACING.scale.xs}px`, letterSpacing: '-0.02em' }}
+                    sx={{ fontWeight: 700, mb: MSQDX_SPACING.scale.xs, letterSpacing: '-0.02em' }}
                 >
                     Neuer Scan
                 </MsqdxTypography>
@@ -106,11 +135,28 @@ export default function ScanPage() {
             >
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr auto auto' }, gap: MSQDX_SPACING.scale.lg, alignItems: 'start' }}>
 
+                    {/* Scan Mode Selection */}
+                    <Box sx={{ gridColumn: { xs: '1 / -1', md: '1 / -1' }, mb: 1 }}>
+                        <MsqdxTabs
+                            value={scanMode}
+                            onChange={(v: string) => setScanMode(v as 'single' | 'deep')}
+                            tabs={[
+                                { value: 'single', label: 'Single Page Scan' },
+                                { value: 'deep', label: 'Deep Domain Scan' }
+                            ]}
+                        />
+                        <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 1, color: MSQDX_THEME.dark.text.tertiary }}>
+                            {scanMode === 'single'
+                                ? 'Analysiert genau EINE Seite sofort (Synchron). Inklusive Screenshots & Visueller Analyse.'
+                                : 'Analysiert die gesamte Domain im Hintergrund (Asynchron). Findet systemische Fehler.'}
+                        </MsqdxTypography>
+                    </Box>
+
                     {/* URL Input - Grows to fill available space */}
                     <Box sx={{ flex: 1 }}>
                         <MsqdxFormField
                             label="Ziel-URL"
-                            placeholder="https://example.com"
+                            placeholder={scanMode === 'single' ? "https://example.com/page" : "https://example.com"}
                             value={url}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUrl(e.target.value)}
                             disabled={scanning}
@@ -120,23 +166,23 @@ export default function ScanPage() {
                         />
                     </Box>
 
-                    {/* WCAG Standard */}
-                    <Box sx={{ minWidth: 200 }}>
+                    {/* WCAG Standard (Only for Single Page currently) */}
+                    <Box sx={{ minWidth: 200, opacity: scanMode === 'deep' ? 0.5 : 1, pointerEvents: scanMode === 'deep' ? 'none' : 'auto' }}>
                         <MsqdxSelect
                             label="Standard"
                             value={standard}
                             onChange={(e: SelectChangeEvent<unknown>) => setStandard(e.target.value as WcagStandard)}
                             options={STANDARDS}
-                            disabled={scanning}
+                            disabled={scanning || scanMode === 'deep'}
                             fullWidth
                         />
                     </Box>
 
-                    {/* Runners */}
-                    <Box sx={{ minWidth: 200, pt: 0.5 }}>
+                    {/* Runners (Only for Single Page currently) */}
+                    <Box sx={{ minWidth: 200, pt: 0.5, opacity: scanMode === 'deep' ? 0.5 : 1, pointerEvents: scanMode === 'deep' ? 'none' : 'auto' }}>
                         <MsqdxCheckboxField
                             label="Engines"
-                            options={RUNNERS.map(r => ({ value: r.value, label: r.label, disabled: scanning }))}
+                            options={RUNNERS.map(r => ({ value: r.value, label: r.label, disabled: scanning || scanMode === 'deep' }))}
                             value={selectedRunners}
                             onChange={(val) => setSelectedRunners(val as Runner[])}
                         // row -- Vertical might be better in this layout if we have multiple
@@ -151,7 +197,7 @@ export default function ScanPage() {
                         sx={{
                             mt: MSQDX_SPACING.scale.lg,
                             p: MSQDX_SPACING.scale.md,
-                            borderRadius: `${MSQDX_SPACING.borderRadius.md}px`,
+                            borderRadius: MSQDX_SPACING.borderRadius.md,
                             backgroundColor: alpha(MSQDX_STATUS.error.base, 0.1),
                             border: `1px solid ${alpha(MSQDX_STATUS.error.base, 0.3)}`,
                         }}

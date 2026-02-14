@@ -1,13 +1,21 @@
 import { usePathname } from 'next/navigation';
 import { MsqdxAdminNav } from '@msqdx/react';
+import {
+    LayoutDashboard,
+    ScanLine,
+    Settings,
+    History,
+    Globe,
+    Terminal
+} from 'lucide-react';
 import type { AdminNavItem } from '@msqdx/react';
 import NextLink from 'next/link';
 
 const NAV_ITEMS: AdminNavItem[] = [
     { label: 'Dashboard', path: '/', icon: 'dashboard' },
-    { label: 'Deep Domain Scan', path: '/scan/domain', icon: 'language' }, // Globe icon
-    { label: 'Single Page Scan', path: '/scan', icon: 'find_in_page' },
-    { label: 'Settings', path: '/settings', icon: 'settings' },
+    { label: 'New Scan', path: '/scan', icon: 'search' },
+    { label: 'History', path: '/history', icon: 'history' }, // Assuming history page exists or will exist, or just remove if not ready
+    { label: 'Settings', path: '/developers', icon: 'code' }, // API/Devs
 ];
 
 const EXTERNAL_ITEMS: AdminNavItem[] = [
@@ -25,7 +33,7 @@ export function Sidebar() {
             items={NAV_ITEMS}
             externalItems={EXTERNAL_ITEMS}
             brandColor="green"
-            linkComponent={NextLink}
+            linkComponent={NextLink as any}
         />
     );
 }

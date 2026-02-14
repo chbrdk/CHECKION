@@ -26,7 +26,7 @@ export const PerformanceCard: React.FC<PerformanceCardProps> = ({ perf }) => {
     return (
         <MsqdxMoleculeCard
             title="Performance"
-            description="Ladezeiten & Core Web Vitals (Lab Data)"
+            subtitle="Ladezeiten & Core Web Vitals (Lab Data)"
         >
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: `${MSQDX_SPACING.scale.md}px`, height: '100%' }}>
                 {Object.entries(METRICS_CONFIG).map(([key, config]) => {

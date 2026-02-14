@@ -187,6 +187,11 @@ export async function* runDomainScan(startUrl: string, options: any): AsyncGener
         id: domainId,
         domain: origin,
         timestamp: new Date().toISOString(),
+        status: 'complete',
+        progress: {
+            scanned: results.length,
+            total: results.length
+        },
         totalPages: results.length,
         score: domainScore,
         pages: results.map(r => r.result),

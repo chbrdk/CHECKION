@@ -16,7 +16,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             innerBackgroundColor={MSQDX_THEME.dark.background.primary}
             sidebar={<Sidebar />}
         >
-            {children}
+            {children as any}
         </MsqdxAppLayout>
     );
 }

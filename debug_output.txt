@@ -1,0 +1,15 @@
+Starting debug scan...
+Injecting axe-core...
+Axe injected via content. Running axe...
+Axe run complete.
+Found 10 passed rules.
+[UX] CLS Score for https://example.com: 0
+Scan failed: Error [ReferenceError]: __name is not defined
+    at evaluate (evaluate at runScan (/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION/lib/scanner.ts:2:8858), <anonymous>:0:22)
+    at ExecutionContext.#evaluate (/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION/node_modules/puppeteer-core/src/cdp/ExecutionContext.ts:456:34)
+    at async ExecutionContext.evaluate (/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION/node_modules/puppeteer-core/src/cdp/ExecutionContext.ts:293:12)
+    at async IsolatedWorld.evaluate (/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION/node_modules/puppeteer-core/src/cdp/IsolatedWorld.ts:196:12)
+    at async CdpFrame.evaluate (/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION/node_modules/puppeteer-core/src/api/Frame.ts:488:12)
+    at async CdpPage.evaluate (/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION/node_modules/puppeteer-core/src/api/Page.ts:2362:12)
+    at async runScan (/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION/lib/scanner.ts:406:29)
+    at async testHelp (/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION/debug_advanced.ts:7:29)

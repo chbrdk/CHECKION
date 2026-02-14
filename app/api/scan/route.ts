@@ -53,7 +53,10 @@ export async function POST(request: Request) {
         // Find desktop result to return (for redirect)
         const desktopResult = results.find(r => r.device === 'desktop') || results[0];
 
-        return NextResponse.json(desktopResult);
+        return NextResponse.json({
+            success: true,
+            data: desktopResult
+        });
     } catch (err) {
         console.error('[CHECKION] Scan failed:', err);
         const message = err instanceof Error ? err.message : 'Unknown error';

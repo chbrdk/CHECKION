@@ -26,6 +26,14 @@ import { PerformanceCard } from '../../../components/PerformanceCard';
 import { ScanIssueList } from '../../../components/ScanIssueList';
 import { UxCard } from '../../../components/UxCard';
 import { UxIssueList } from '../../../components/UxIssueList';
+import { FocusOrderOverlay } from '../../../components/FocusOrderOverlay';
+import { StructureMap } from '../../../components/StructureMap';
+import { TouchTargetOverlay } from '../../../components/TouchTargetOverlay';
+import { SeoCard } from '../../../components/SeoCard';
+import { LinkAuditCard } from '../../../components/LinkAuditCard';
+import { InfraCard } from '../../../components/InfraCard';
+import { PrivacyCard } from '../../../components/PrivacyCard';
+import { GenerativeOptimizerCard } from '../../../components/GenerativeOptimizerCard';
 import type { ScanResult, Issue, IssueSeverity } from '@/lib/types';
 
 const SEVERITY_CONFIG: Record<IssueSeverity, { color: string; label: string }> = {
@@ -34,7 +42,7 @@ const SEVERITY_CONFIG: Record<IssueSeverity, { color: string; label: string }> =
     notice: { color: MSQDX_STATUS.info.base, label: 'Notice' },
 };
 
-type TabFilter = 'all' | IssueSeverity;
+type TabFilter = 'all' | IssueSeverity | 'passed';
 type LevelFilter = 'all' | 'A' | 'AA' | 'AAA' | 'APCA' | 'Unknown';
 
 export default function ResultsPage() {
@@ -45,9 +53,11 @@ export default function ResultsPage() {
     const [error, setError] = useState<string | null>(null);
     const [tab, setTab] = useState<TabFilter>('all');
     const [levelFilter, setLevelFilter] = useState<LevelFilter>('all');
-    const [viewMode, setViewMode] = useState<'list' | 'visual' | 'ux'>('list');
+    const [viewMode, setViewMode] = useState<'list' | 'visual' | 'ux' | 'structure' | 'seo' | 'infra' | 'generative'>('list');
     const [relatedScans, setRelatedScans] = useState<ScanResult[]>([]);
     const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
+    const [showFocusOrder, setShowFocusOrder] = useState(false);
+    const [showTouchTargets, setShowTouchTargets] = useState(false);
     const issueRefs = useRef<(HTMLDivElement | null)[]>([]);
 
     // Derived stats for WCAG levels
@@ -163,21 +173,21 @@ export default function ResultsPage() {
     const scoreColor = result.score >= 90 ? MSQDX_BRAND_PRIMARY.green : result.score >= 70 ? MSQDX_BRAND_PRIMARY.yellow : MSQDX_STATUS.error.base;
 
     return (
-        <Box sx={{ p: `${MSQDX_SPACING.scale.md}px`, maxWidth: 1600, mx: 'auto' }}>
+        <Box sx={{ p: MSQDX_SPACING.scale.md, maxWidth: 1600, mx: 'auto' }}>
             {/* Header with Score */}
-            <Box sx={{ mb: `${MSQDX_SPACING.scale.md}px`, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <Box sx={{ mb: MSQDX_SPACING.scale.md, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <Box>
                     <MsqdxButton
                         variant="text"
                         size="small"
                         onClick={() => router.push('/')}
-                        sx={{ mb: `${MSQDX_SPACING.scale.sm}px`, color: MSQDX_THEME.dark.text.tertiary }}
+                        sx={{ mb: MSQDX_SPACING.scale.sm, color: MSQDX_THEME.dark.text.tertiary }}
                     >
                         ← Dashboard
                     </MsqdxButton>
                     <MsqdxTypography
                         variant="h4"
-                        sx={{ fontWeight: 700, mb: `${MSQDX_SPACING.scale.xs}px`, letterSpacing: '-0.02em' }}
+                        sx={{ fontWeight: 700, mb: MSQDX_SPACING.scale.xs, letterSpacing: '-0.02em' }}
                     >
                         Scan-Ergebnis
                     </MsqdxTypography>
@@ -196,7 +206,7 @@ export default function ResultsPage() {
                 </Box>
 
                 {/* Score Gauge */}
-                <Box sx={{ position: 'relative', display: 'inline-flex', mr: `${MSQDX_SPACING.scale.md}px` }}>
+                <Box sx={{ position: 'relative', display: 'inline-flex', mr: MSQDX_SPACING.scale.md }}>
                     <CircularProgress
                         variant="determinate"
                         value={100}
@@ -238,7 +248,7 @@ export default function ResultsPage() {
             <MsqdxMoleculeCard
                 variant="flat"
                 borderRadius="lg"
-                sx={{ mb: `${MSQDX_SPACING.scale.lg}px` }}
+                sx={{ mb: MSQDX_SPACING.scale.lg }}
                 chips={
                     <>
                         <MsqdxChip
@@ -300,7 +310,7 @@ export default function ResultsPage() {
                                     <MsqdxButton
                                         key={d}
                                         variant={result.device === d ? 'contained' : 'outlined'}
-                                        brandColor={result.device === d ? 'green' : 'neutral'}
+                                        brandColor={result.device === d ? 'green' : undefined}
                                         size="small"
                                         onClick={() => router.push(`/results/${scan.id}`)}
                                         startIcon={d === 'mobile' ? 'smartphone' : d === 'tablet' ? 'tablet_mac' : 'desktop_windows'}
@@ -318,7 +328,7 @@ export default function ResultsPage() {
                     sx={{
                         display: 'grid',
                         gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-                        gap: `${MSQDX_SPACING.scale.sm}px`,
+                        gap: MSQDX_SPACING.scale.sm,
                     }}
                 >
                     <MiniStat label="Errors" value={result.stats.errors} color={MSQDX_STATUS.error.base} />
@@ -336,8 +346,8 @@ export default function ResultsPage() {
                 <Box sx={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-                    gap: `${MSQDX_SPACING.scale.lg}px`,
-                    mb: `${MSQDX_SPACING.scale.lg}px`,
+                    gap: MSQDX_SPACING.scale.lg,
+                    mb: MSQDX_SPACING.scale.lg,
                 }}>
                     {result.eco && (
                         <Box sx={{ minHeight: '100%' }}>
@@ -366,6 +376,10 @@ export default function ResultsPage() {
                         { value: 'list', label: 'Liste & Details' },
                         { value: 'visual', label: 'Visuelle Analyse' },
                         { value: 'ux', label: 'UX Audit' },
+                        { value: 'structure', label: 'Struktur & Semantik' },
+                        { value: 'seo', label: 'Links & SEO' },
+                        { value: 'infra', label: 'Infrastruktur & Privacy' },
+                        { value: 'generative', label: 'Generative Search (GEO)' },
                     ]}
                 />
             </Box>
@@ -376,14 +390,14 @@ export default function ResultsPage() {
                     variant="flat"
                     borderRadius="lg"
                     headerActions={
-                        <Box sx={{ display: 'flex', gap: `${MSQDX_SPACING.scale.xs}px` }}>
+                        <Box sx={{ display: 'flex', gap: MSQDX_SPACING.scale.xs }}>
                             {TABS.map((t) => (
                                 <MsqdxButton
                                     key={t.key}
                                     variant={tab === t.key ? 'contained' : 'text'}
                                     brandColor={
                                         t.key === 'passed' ? 'green' :
-                                            tab === t.key ? (t.key === 'error' ? 'red' : t.key === 'warning' ? 'orange' : 'green') :
+                                            tab === t.key ? (t.key === 'error' ? 'pink' : t.key === 'warning' ? 'yellow' : 'green') :
                                                 undefined
                                     }
                                     size="small"
@@ -450,7 +464,7 @@ export default function ResultsPage() {
                                 allowMultiple
                                 size="small"
                                 borderRadius="md"
-                                sx={{ display: 'flex', flexDirection: 'column', gap: `${MSQDX_SPACING.scale.sm}px`, background: 'transparent', border: 'none' }}
+                                sx={{ display: 'flex', flexDirection: 'column', gap: MSQDX_SPACING.scale.sm, background: 'transparent', border: 'none' }}
                             >
                                 {result.passes.map((pass, idx) => {
                                     const itemId = `pass-${idx}`;
@@ -459,7 +473,7 @@ export default function ResultsPage() {
                                             key={itemId}
                                             id={itemId}
                                             summary={
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: `${MSQDX_SPACING.scale.sm}px`, width: '100%' }}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: MSQDX_SPACING.scale.sm, width: '100%' }}>
                                                     {/* Success dot */}
                                                     <Box
                                                         sx={{
@@ -481,7 +495,7 @@ export default function ResultsPage() {
                                                         >
                                                             {pass.help}
                                                         </MsqdxTypography>
-                                                        <Box sx={{ display: 'flex', gap: `${MSQDX_SPACING.scale.xs}px`, mt: `${MSQDX_SPACING.scale.xs}px`, flexWrap: 'wrap' }}>
+                                                        <Box sx={{ display: 'flex', gap: MSQDX_SPACING.scale.xs, mt: MSQDX_SPACING.scale.xs, flexWrap: 'wrap' }}>
                                                             <MsqdxChip
                                                                 label={pass.id}
                                                                 size="small"
@@ -508,7 +522,7 @@ export default function ResultsPage() {
                                                 </Box>
                                             }
                                         >
-                                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: `${MSQDX_SPACING.scale.sm}px`, width: '100%' }}>
+                                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: MSQDX_SPACING.scale.sm, width: '100%' }}>
                                                 <MsqdxTypography variant="body2" sx={{ color: MSQDX_THEME.dark.text.secondary }}>
                                                     {pass.description}
                                                 </MsqdxTypography>
@@ -516,17 +530,17 @@ export default function ResultsPage() {
                                                 <Box sx={{
                                                     display: 'flex',
                                                     flexDirection: 'column',
-                                                    gap: `${MSQDX_SPACING.scale.xs}px`,
+                                                    gap: MSQDX_SPACING.scale.xs,
                                                     maxHeight: '300px',
                                                     overflowY: 'auto',
-                                                    p: `${MSQDX_SPACING.scale.xs}px`,
-                                                    borderRadius: `${MSQDX_SPACING.scale.xs}px`,
+                                                    p: MSQDX_SPACING.scale.xs,
+                                                    borderRadius: MSQDX_SPACING.scale.xs,
                                                     backgroundColor: alpha(MSQDX_NEUTRAL[900], 0.3),
                                                     border: `1px solid ${MSQDX_THEME.dark.border.subtle}`
                                                 }}>
-                                                    {pass.nodes.slice(0, 50).map((node, nodeIdx) => (
+                                                    {pass.nodes.slice(0, 50).map((node: any, nodeIdx: number) => (
                                                         <Box key={nodeIdx} sx={{
-                                                            p: `${MSQDX_SPACING.scale.xs}px`,
+                                                            p: MSQDX_SPACING.scale.xs,
                                                             borderBottom: nodeIdx < pass.nodes.length - 1 ? `1px solid ${MSQDX_THEME.dark.border.subtle}` : 'none'
                                                         }}>
                                                             <code style={{
@@ -550,7 +564,7 @@ export default function ResultsPage() {
                             <Box
                                 sx={{
                                     textAlign: 'center',
-                                    py: `${MSQDX_SPACING.scale.xl}px`,
+                                    py: MSQDX_SPACING.scale.xl,
                                 }}
                             >
                                 <MsqdxTypography variant="h6" sx={{ color: MSQDX_THEME.dark.text.secondary }}>
@@ -562,7 +576,7 @@ export default function ResultsPage() {
                         <Box
                             sx={{
                                 textAlign: 'center',
-                                py: `${MSQDX_SPACING.scale.xl}px`,
+                                py: MSQDX_SPACING.scale.xl,
                             }}
                         >
                             <MsqdxTypography variant="h6" sx={{ color: MSQDX_BRAND_PRIMARY.green }}>
@@ -585,10 +599,52 @@ export default function ResultsPage() {
                     title="Visuelle Analyse"
                     variant="flat"
                     borderRadius="lg"
-                    sx={{ mb: `${MSQDX_SPACING.scale.lg}px` }}
+                    sx={{ mb: MSQDX_SPACING.scale.lg }}
+                    headerActions={
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                            <MsqdxButton
+                                variant={showFocusOrder ? 'contained' : 'outlined'}
+                                size="small"
+                                onClick={() => setShowFocusOrder(!showFocusOrder)}
+                                brandColor={showFocusOrder ? 'green' : undefined}
+                            >
+                                {showFocusOrder ? 'Hide Focus Order' : 'Show Focus Order'}
+                            </MsqdxButton>
+                            <MsqdxButton
+                                variant={showTouchTargets ? 'contained' : 'outlined'}
+                                size="small"
+                                onClick={() => setShowTouchTargets(!showTouchTargets)}
+                                brandColor={showTouchTargets ? 'green' : undefined}
+                            >
+                                {showTouchTargets ? 'Hide Touch Targets' : 'Show Touch Targets'}
+                            </MsqdxButton>
+                        </Box>
+                    }
                 >
                     {result.screenshot ? (
-                        <Box sx={{ overflow: 'auto', position: 'relative', width: '100%', border: `1px solid ${MSQDX_NEUTRAL[800]}`, borderRadius: `${MSQDX_SPACING.borderRadius.md}px` }}>
+                        <Box sx={{ overflow: 'auto', position: 'relative', width: '100%', border: `1px solid ${MSQDX_NEUTRAL[800]}`, borderRadius: MSQDX_SPACING.borderRadius.md }}>
+
+                            {/* Focus Order Overlay */}
+                            {result.ux?.focusOrder && (
+                                <Box sx={{ position: 'absolute', top: 0, left: 0, width: 1280, height: '100%', zIndex: 40, pointerEvents: 'none' }}>
+                                    <FocusOrderOverlay
+                                        items={result.ux.focusOrder}
+                                        visible={showFocusOrder}
+                                    />
+                                </Box>
+                            )}
+
+                            {/* Touch Target Overlay */}
+                            {result.ux?.tapTargets?.details && (
+                                <Box sx={{ position: 'absolute', top: 0, left: 0, width: 1280, height: '100%', zIndex: 45, pointerEvents: 'none' }}>
+                                    {showTouchTargets && (
+                                        <TouchTargetOverlay
+                                            issues={result.ux.tapTargets.details}
+                                            scale={1}
+                                        />
+                                    )}
+                                </Box>
+                            )}
                             {/* ... same visual view content ... */}
                             <Box sx={{ position: 'relative', width: 1280, minHeight: 600, bgcolor: '#fff' }}>
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -602,7 +658,7 @@ export default function ResultsPage() {
                                                     <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{issue.message}</MsqdxTypography>
                                                     <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
                                                         <MsqdxChip label={issue.type} size="small" sx={{ height: 16, fontSize: '0.6rem', bgcolor: SEVERITY_CONFIG[issue.type].color, color: '#000' }} />
-                                                        {issue.wcagLevel && issue.wcagLevel !== 'Unknown' && <MsqdxChip label={issue.wcagLevel === 'APCA' ? 'APCA' : `Level ${issue.wcagLevel}`} size="small" sx={{ height: 16, fontSize: '0.6rem', bgcolor: issue.wcagLevel === 'APCA' ? MSQDX_BRAND_PRIMARY.purple : MSQDX_BRAND_PRIMARY.blue, color: '#fff' }} />}
+                                                        {issue.wcagLevel && issue.wcagLevel !== 'Unknown' && <MsqdxChip label={issue.wcagLevel === 'APCA' ? 'APCA' : `Level ${issue.wcagLevel}`} size="small" sx={{ height: 16, fontSize: '0.6rem', bgcolor: issue.wcagLevel === 'APCA' ? MSQDX_BRAND_PRIMARY.purple : MSQDX_BRAND_PRIMARY.green, color: '#fff' }} />}
                                                     </Box>
                                                     <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{issue.selector}</MsqdxTypography>
                                                 </Box>
@@ -647,7 +703,7 @@ export default function ResultsPage() {
             {viewMode === 'ux' && (
                 <MsqdxMoleculeCard
                     title="User Experience Issues"
-                    description="Deep dive into usability and interactivity problems."
+                    subtitle="User Experience Issues"
                 >
                     {result.ux ? (
                         <UxIssueList ux={result.ux} />
@@ -655,6 +711,69 @@ export default function ResultsPage() {
                         <MsqdxTypography>No UX data available for this scan.</MsqdxTypography>
                     )}
                 </MsqdxMoleculeCard>
+            )}
+
+            {viewMode === 'structure' && (
+                <MsqdxMoleculeCard
+                    title="Struktur & Semantik"
+                    subtitle="Visualisierung der Dokumentenstruktur (Headings, Landmarks)."
+                >
+                    {result.ux?.structureMap ? (
+                        <StructureMap nodes={result.ux.structureMap} />
+                    ) : (
+                        <MsqdxTypography>Keine Strukturdaten verfügbar.</MsqdxTypography>
+                    )}
+                </MsqdxMoleculeCard>
+            )}
+
+            {viewMode === 'seo' && (
+                <Box sx={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+                    gap: MSQDX_SPACING.scale.lg
+                }}>
+                    {result.seo ? (
+                        <SeoCard seo={result.seo} />
+                    ) : (
+                        <MsqdxMoleculeCard title="SEO Audit" subtitle="No SEO data."><MsqdxTypography>Keine SEO Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
+                    )}
+
+                    {result.links ? (
+                        <LinkAuditCard links={result.links} />
+                    ) : (
+                        <MsqdxMoleculeCard title="Link Audit" subtitle="No Link data."><MsqdxTypography>Keine Link Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
+                    )}
+                </Box>
+            )}
+
+            {viewMode === 'infra' && (
+                <Box sx={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+                    gap: MSQDX_SPACING.scale.lg
+                }}>
+                    {result.geo ? (
+                        <InfraCard geo={result.geo} />
+                    ) : (
+                        <MsqdxMoleculeCard title="Infrastruktur" subtitle="No data."><MsqdxTypography>Keine Infrastruktur-Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
+                    )}
+
+                    {result.privacy ? (
+                        <PrivacyCard privacy={result.privacy} />
+                    ) : (
+                        <MsqdxMoleculeCard title="Privacy Audit" subtitle="No Privacy data."><MsqdxTypography>Keine Privacy-Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
+                    )}
+                </Box>
+            )}
+
+            {viewMode === 'generative' && (
+                <Box sx={{ maxWidth: '800px', mx: 'auto' }}>
+                    {result.generative ? (
+                        <GenerativeOptimizerCard data={result.generative} />
+                    ) : (
+                        <MsqdxMoleculeCard title="GEO Analysis" subtitle="No data."><MsqdxTypography>Keine GEO-Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
+                    )}
+                </Box>
             )}
         </Box>
     );
@@ -664,8 +783,8 @@ function MiniStat({ label, value, color }: { label: string; value: number; color
     return (
         <Box
             sx={{
-                p: `${MSQDX_SPACING.scale.md}px`,
-                borderRadius: `${MSQDX_SPACING.borderRadius.md}px`,
+                p: MSQDX_SPACING.scale.md,
+                borderRadius: MSQDX_SPACING.borderRadius.md,
                 backgroundColor: MSQDX_NEUTRAL[900],
                 border: `1px solid ${MSQDX_THEME.dark.border.subtle}`,
                 textAlign: 'center',

@@ -45,167 +45,166 @@ export const ScanIssueItem = memo(({ issue, index, isHighlighted, onHover, regis
     }, [index, registerRef]);
 
     return (
-        <MsqdxAccordionItem
-            id={itemId}
+        <Box
+            id={`${itemId}-wrapper`}
             ref={handleRef}
             onMouseEnter={() => onHover(index)}
             onMouseLeave={() => onHover(null)}
             sx={{
-                transition: 'background-color 0.2s',
-                backgroundColor: isHighlighted ? alpha(config.color, 0.05) : 'transparent',
-                borderRadius: `${MSQDX_SPACING.borderRadius.md}px`,
+                transition: 'all 0.2s',
+                backgroundColor: isHighlighted ? `${config.color}10` : 'transparent',
+                borderRadius: '8px',
+                border: isHighlighted ? `1px solid ${config.color}` : 'none'
             }}
-            summary={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: `${MSQDX_SPACING.scale.sm}px`, width: '100%' }}>
-                    {/* Severity dot */}
-                    <Box
-                        sx={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: '50%',
-                            backgroundColor: config.color,
-                            flexShrink: 0,
-                        }}
-                    />
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <MsqdxTypography
-                            variant="body2"
+        >
+            <MsqdxAccordionItem
+                id={itemId}
+                summary={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: `${MSQDX_SPACING.scale.sm}px`, width: '100%' }}>
+                        {/* Severity dot */}
+                        <Box
                             sx={{
-                                fontWeight: 500,
-                                lineHeight: 1.5,
-                                whiteSpace: 'normal',
+                                width: 8,
+                                height: 8,
+                                borderRadius: '50%',
+                                backgroundColor: config.color,
+                                flexShrink: 0,
                             }}
-                        >
-                            {issue.message}
-                        </MsqdxTypography>
-                        <Box sx={{ display: 'flex', gap: `${MSQDX_SPACING.scale.xs}px`, mt: `${MSQDX_SPACING.scale.xs}px`, flexWrap: 'wrap' }}>
-                            <MsqdxChip
-                                label={config.label}
-                                size="small"
+                        />
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <MsqdxTypography
+                                variant="body2"
                                 sx={{
-                                    backgroundColor: alpha(config.color, 0.12),
-                                    color: config.color,
-                                    fontWeight: 600,
-                                    fontSize: '0.6rem',
-                                    height: 20,
+                                    fontWeight: 500,
+                                    lineHeight: 1.5,
+                                    whiteSpace: 'normal',
                                 }}
-                            />
-                            {issue.wcagLevel && issue.wcagLevel !== 'Unknown' && (
+                            >
+                                {issue.message}
+                            </MsqdxTypography>
+                            <Box sx={{ display: 'flex', gap: `${MSQDX_SPACING.scale.xs}px`, mt: `${MSQDX_SPACING.scale.xs}px`, flexWrap: 'wrap' }}>
                                 <MsqdxChip
-                                    label={issue.wcagLevel === 'APCA' ? 'APCA' : `Level ${issue.wcagLevel}`}
+                                    label={config.label}
                                     size="small"
                                     sx={{
-                                        backgroundColor: issue.wcagLevel === 'APCA' ? alpha(MSQDX_BRAND_PRIMARY.purple, 0.12) : alpha(MSQDX_STATUS.info.base, 0.12),
-                                        color: issue.wcagLevel === 'APCA' ? MSQDX_BRAND_PRIMARY.purple : MSQDX_STATUS.info.base,
+                                        backgroundColor: alpha(config.color, 0.12),
+                                        color: config.color,
                                         fontWeight: 600,
                                         fontSize: '0.6rem',
                                         height: 20,
                                     }}
                                 />
-                            )}
-                            <MsqdxChip
-                                label={issue.runner}
-                                size="small"
-                                sx={{
-                                    backgroundColor: alpha(MSQDX_NEUTRAL[400], 0.1),
-                                    color: MSQDX_THEME.dark.text.tertiary,
-                                    fontSize: '0.6rem',
-                                    height: 20,
-                                }}
-                            />
-                            {issue.code && (
+                                {issue.wcagLevel && issue.wcagLevel !== 'Unknown' && (
+                                    <MsqdxChip
+                                        label={issue.wcagLevel === 'APCA' ? 'APCA' : `Level ${issue.wcagLevel}`}
+                                        size="small"
+                                        sx={{
+                                            backgroundColor: issue.wcagLevel === 'APCA' ? alpha(MSQDX_BRAND_PRIMARY.purple, 0.12) : alpha(MSQDX_STATUS.info.base, 0.12),
+                                            color: issue.wcagLevel === 'APCA' ? MSQDX_BRAND_PRIMARY.purple : MSQDX_STATUS.info.base,
+                                            fontWeight: 600,
+                                            fontSize: '0.6rem',
+                                            height: 20,
+                                        }}
+                                    />
+                                )}
                                 <MsqdxChip
-                                    label={issue.code.length > 50 ? issue.code.slice(0, 50) + '…' : issue.code}
+                                    label={issue.runner}
                                     size="small"
                                     sx={{
-                                        backgroundColor: alpha(MSQDX_BRAND_PRIMARY.purple, 0.08),
-                                        color: MSQDX_BRAND_PRIMARY.purple,
-                                        fontSize: '0.55rem',
+                                        backgroundColor: alpha(MSQDX_NEUTRAL[400], 0.1),
+                                        color: MSQDX_THEME.dark.text.tertiary,
+                                        fontSize: '0.6rem',
                                         height: 20,
                                     }}
                                 />
-                            )}
+                                {issue.code && (
+                                    <MsqdxChip
+                                        label={issue.code.length > 50 ? issue.code.slice(0, 50) + '…' : issue.code}
+                                        size="small"
+                                        sx={{
+                                            backgroundColor: alpha(MSQDX_BRAND_PRIMARY.purple, 0.08),
+                                            color: MSQDX_BRAND_PRIMARY.purple,
+                                            fontSize: '0.55rem',
+                                            height: 20,
+                                        }}
+                                    />
+                                )}
+                            </Box>
                         </Box>
                     </Box>
-                </Box>
-            }
-        >
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: `${MSQDX_SPACING.scale.sm}px` }}>
-                {issue.selector && (
-                    <Box>
-                        <MsqdxTypography
-                            variant="caption"
-                            sx={{
-                                color: MSQDX_THEME.dark.text.tertiary,
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.1em',
-                                fontSize: '0.6rem',
-                                fontWeight: 600,
-                            }}
-                        >
-                            CSS Selector
-                        </MsqdxTypography>
+                }
+            >
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: `${MSQDX_SPACING.scale.sm}px` }}>
+                    {issue.selector && (
+                        <Box>
+                            <MsqdxTypography
+                                variant="caption"
+                                sx={{
+                                    color: MSQDX_THEME.dark.text.tertiary,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.1em',
+                                    fontSize: '0.6rem',
+                                    fontWeight: 600,
+                                }}
+                            >
+                                CSS Selector
+                            </MsqdxTypography>
 
-                        <Box
-                            component="code"
-                            sx={{
-                                display: 'block',
-                                mt: '4px',
-                                p: `${MSQDX_SPACING.scale.sm}px`,
-                                borderRadius: `${MSQDX_SPACING.borderRadius.sm}px`,
-                                backgroundColor: MSQDX_NEUTRAL[800],
-                                color: MSQDX_BRAND_PRIMARY.yellow,
-                                fontSize: '0.75rem',
-                                overflowX: 'auto',
-                                whiteSpace: 'pre-wrap',
-                                wordBreak: 'break-all',
-                            }}
-                        >
-                            {issue.selector}
+                            <Box
+                                component="code"
+                                sx={{
+                                    display: 'block',
+                                    mt: '4px',
+                                    p: `${MSQDX_SPACING.scale.sm}px`,
+                                    borderRadius: `${MSQDX_SPACING.borderRadius.sm}px`,
+                                    backgroundColor: MSQDX_NEUTRAL[800],
+                                    color: MSQDX_BRAND_PRIMARY.yellow,
+                                    fontSize: '0.75rem',
+                                    overflowX: 'auto',
+                                    whiteSpace: 'pre-wrap',
+                                    wordBreak: 'break-all',
+                                }}
+                            >
+                                {issue.selector}
+                            </Box>
                         </Box>
-                    </Box>
-                )}
-                {issue.context && (
-                    <Box>
-                        <MsqdxTypography
-                            variant="caption"
-                            sx={{
-                                color: MSQDX_THEME.dark.text.tertiary,
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.1em',
-                                fontSize: '0.6rem',
-                                fontWeight: 600,
-                            }}
-                        >
-                            HTML Context
-                        </MsqdxTypography>
-                        <Box
-                            component="pre"
-                            sx={{
-                                mt: '4px',
-                                p: `${MSQDX_SPACING.scale.sm}px`,
-                                borderRadius: `${MSQDX_SPACING.borderRadius.sm}px`,
-                                backgroundColor: MSQDX_NEUTRAL[800],
-                                color: MSQDX_BRAND_PRIMARY.orange,
-                                fontSize: '0.75rem',
-                                overflowX: 'auto',
-                                whiteSpace: 'pre-wrap',
-                                wordBreak: 'break-all',
-                            }}
-                        >
-                            {issue.context}
+                    )}
+                    {issue.context && (
+                        <Box>
+                            <MsqdxTypography
+                                variant="caption"
+                                sx={{
+                                    color: MSQDX_THEME.dark.text.tertiary,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.1em',
+                                    fontSize: '0.6rem',
+                                    fontWeight: 600,
+                                }}
+                            >
+                                HTML Context
+                            </MsqdxTypography>
+                            <Box
+                                component="pre"
+                                sx={{
+                                    mt: '4px',
+                                    p: `${MSQDX_SPACING.scale.sm}px`,
+                                    borderRadius: `${MSQDX_SPACING.borderRadius.sm}px`,
+                                    backgroundColor: MSQDX_NEUTRAL[800],
+                                    color: MSQDX_BRAND_PRIMARY.orange,
+                                    fontSize: '0.75rem',
+                                    overflowX: 'auto',
+                                    whiteSpace: 'pre-wrap',
+                                    wordBreak: 'break-all',
+                                }}
+                            >
+                                {issue.context}
+                            </Box>
                         </Box>
-                    </Box>
-                )}
-            </Box>
-        </MsqdxAccordionItem>
-    );
-}, (prevProps, nextProps) => {
-    // Custom comparison to ensure strict equality where it matters
-    return (
-        prevProps.isHighlighted === nextProps.isHighlighted &&
-        prevProps.issue === nextProps.issue && // Issue object reference should be stable from server/props?
-        prevProps.onHover === nextProps.onHover && // Should be stable callback
-        prevProps.index === nextProps.index
+                    )}
+                </Box>
+            </MsqdxAccordionItem>
+        </Box>
     );
 });
+
+ScanIssueItem.displayName = 'ScanIssueItem';
