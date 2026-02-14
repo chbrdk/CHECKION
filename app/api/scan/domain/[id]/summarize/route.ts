@@ -69,9 +69,10 @@ export async function POST(
         rawContent = completion.choices[0]?.message?.content ?? '';
         if (completion.model) modelUsed = completion.model;
     } catch (e) {
+        const message = e instanceof Error ? e.message : 'LLM request failed';
         console.error('[CHECKION] domain summarize: OpenAI API error', e);
         return NextResponse.json(
-            { error: 'LLM request failed. Check logs.' },
+            { error: message },
             { status: 500 },
         );
     }

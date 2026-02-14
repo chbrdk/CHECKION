@@ -48,7 +48,7 @@ AUTH_URL=https://checkion.projects-a.plygrnd.tech
 
 # Optional – für UX/CX Check (Tab „Zusammenfassung generieren“). Ohne KEY funktioniert der Rest; nur der LLM-Summary schlägt fehl.
 OPENAI_API_KEY=sk-...
-# OPENAI_MODEL=gpt5-mini
+# OPENAI_MODEL=gpt-5-mini
 ```
 Ersetze die URL durch deine echte CHECKION-Domain.
 
