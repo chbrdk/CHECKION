@@ -13,6 +13,7 @@ import {
     MsqdxTooltip,
     MsqdxAccordion,
     MsqdxAccordionItem,
+    MsqdxIcon,
 } from '@msqdx/react';
 import {
     MSQDX_SPACING,
@@ -316,7 +317,11 @@ export default function ResultsPage() {
                                         brandColor={result.device === d ? 'green' : undefined}
                                         size="small"
                                         onClick={() => router.push(`/results/${scan.id}`)}
-                                        startIcon={d === 'mobile' ? 'smartphone' : d === 'tablet' ? 'tablet_mac' : 'desktop_windows'}
+                                        startIcon={
+                                            d === 'mobile' ? <MsqdxIcon name="Smartphone" size="sm" /> :
+                                            d === 'tablet' ? <MsqdxIcon name="TabletMac" size="sm" /> :
+                                            <MsqdxIcon name="DesktopWindows" size="sm" />
+                                        }
                                     >
                                         {d.charAt(0).toUpperCase() + d.slice(1)}
                                     </MsqdxButton>
