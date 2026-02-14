@@ -12,6 +12,13 @@ import { randomUUID } from 'crypto';
 const SALT_ROUNDS = 10;
 
 export async function POST(request: Request) {
+    if (!process.env.DATABASE_URL) {
+        console.error('[CHECKION] DATABASE_URL is not set');
+        return NextResponse.json(
+            { error: 'Server misconfiguration: database not configured.' },
+            { status: 503 }
+        );
+    }
     try {
         const body = await request.json();
         const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';

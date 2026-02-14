@@ -39,7 +39,7 @@ Optional (Build-Arg): Wenn das Design-System aus einem anderen Repo kommen soll:
 In den Application-Einstellungen unter **Environment Variables** eintragen:
 
 ```bash
-# Pflicht
+# Pflicht – fehlt einer davon, gibt es 500 bei /api/auth/session und /api/auth/register
 AUTH_SECRET=<mind. 32 Zeichen, z. B.: npx auth secret>
 DATABASE_URL=postgresql://checkion:<DEIN_PASSWORT>@checkion-postgres:5432/checkion
 
@@ -50,20 +50,9 @@ NEXTAUTH_URL=https://deine-domain.de
 
 **Hinweis:** Wenn Coolify `postgres://` ausgibt, in `postgresql://` ändern (Drizzle/Node erwarten `postgresql://`).
 
-## 4. Schema einmalig anlegen
+## 4. Schema (automatisch beim Start)
 
-Nach dem ersten Deploy die Tabellen in PostgreSQL anlegen:
-
-1. In Coolify: **Application** → **Service/Container** → **Terminal** (oder **Execute Command**)
-2. Im Container ausführen:
-
-```bash
-npx drizzle-kit push
-```
-
-(Dabei wird die im Container gesetzte `DATABASE_URL` verwendet.)
-
-Alternativ: In Coolify eine **One-off**- oder **Job**-Run mit dem gleichen Image und demselben Befehl ausführen, falls ihr das anbietet.
+Beim Start des Containers wird automatisch `drizzle-kit push` ausgeführt – die Tabellen werden also bei jedem Deploy angelegt bzw. aktualisiert, sobald `DATABASE_URL` gesetzt ist. Ein manueller Schritt ist nicht nötig.
 
 ## 5. Domain & SSL
 
@@ -73,6 +62,27 @@ Alternativ: In Coolify eine **One-off**- oder **Job**-Run mit dem gleichen Image
 ## 6. Deploy
 
 **Deploy** starten. Beim nächsten Push auf den verbundenen Branch baut Coolify neu (wenn Auto-Deploy aktiv ist).
+
+---
+
+## Bad Gateway (502) beheben
+
+Wenn die Domain **502 Bad Gateway** anzeigt:
+
+1. **Container-Port prüfen**  
+   In Coolify: **Application** → **General** / **Settings** → **Port** bzw. **Container Port** muss **3333** sein (nicht 3000 oder 80). Der Proxy leitet dann auf den richtigen Port weiter.
+
+2. **Container-Logs ansehen**  
+   In Coolify: **Application** → **Logs** (oder **Deployments** → Container-Logs).  
+   - Stürzt der Container sofort ab? Oft fehlen `AUTH_SECRET` oder `DATABASE_URL`, oder die DB ist nicht erreichbar (falscher Host/Passwort).  
+   - Steht dort z. B. „Ready on http://0.0.0.0:3333“? Dann läuft die App; dann ist fast immer der **Port in Coolify** falsch (siehe Punkt 1).
+
+3. **Umgebungsvariablen prüfen**  
+   - `AUTH_SECRET`: gesetzt und mind. 32 Zeichen?  
+   - `DATABASE_URL`: `postgresql://...` (nicht `postgres://`), Host = Name der PostgreSQL-Resource in Coolify (z. B. `checkion-postgres`).
+
+4. **Health-Check (falls konfiguriert)**  
+   Wenn Coolify einen Health-Check nutzt: URL z. B. `http://localhost:3333/api/health` (Port 3333).
 
 ---
 

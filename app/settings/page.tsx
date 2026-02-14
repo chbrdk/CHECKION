@@ -50,6 +50,8 @@ type ProfileUser = {
 export default function SettingsPage() {
     const router = useRouter();
     const { data: session, status } = useSession();
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
 
     const [profile, setProfile] = useState<ProfileUser | null>(null);
     const [name, setName] = useState('');
@@ -167,9 +169,9 @@ export default function SettingsPage() {
         setTimeout(() => setSaved(false), 2000);
     };
 
-    if (status === 'loading') {
+    if (!mounted || status === 'loading') {
         return (
-            <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto' }}>
+            <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto' }} suppressHydrationWarning>
                 <MsqdxTypography>Laden…</MsqdxTypography>
             </Box>
         );

@@ -9,7 +9,13 @@ import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 
+const AUTH_SECRET = process.env.AUTH_SECRET;
+if (process.env.NODE_ENV === 'production' && (!AUTH_SECRET || AUTH_SECRET.length < 32)) {
+    console.error('[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.');
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
+    secret: AUTH_SECRET || undefined,
     providers: [
         Credentials({
             name: 'credentials',
@@ -19,13 +25,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             },
             async authorize(credentials) {
                 if (!credentials?.email || !credentials?.password) return null;
-                const email = String(credentials.email).trim().toLowerCase();
-                const db = getDb();
-                const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
-                if (!user) return null;
-                const ok = await bcrypt.compare(String(credentials.password), user.passwordHash);
-                if (!ok) return null;
-                return { id: user.id, email: user.email, name: user.name ?? undefined };
+                try {
+                    const email = String(credentials.email).trim().toLowerCase();
+                    const db = getDb();
+                    const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+                    if (!user) return null;
+                    const ok = await bcrypt.compare(String(credentials.password), user.passwordHash);
+                    if (!ok) return null;
+                    return { id: user.id, email: user.email, name: user.name ?? undefined };
+                } catch (e) {
+                    console.error('[CHECKION] authorize error:', e);
+                    return null;
+                }
             },
         }),
     ],

@@ -61,5 +61,11 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
 
-# Next.js standalone is optional; we run with full node_modules for puppeteer
-CMD ["npm", "run", "start"]
+# For drizzle-kit push at startup (schema create/update)
+COPY --from=builder /app/lib ./lib
+COPY --from=builder /app/drizzle.config.ts ./
+COPY --from=builder /app/tsconfig.json ./
+COPY --from=builder /app/scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh
+RUN chmod +x ./scripts/docker-entrypoint.sh
+
+CMD ["./scripts/docker-entrypoint.sh"]

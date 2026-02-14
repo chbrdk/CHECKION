@@ -17,9 +17,9 @@
 | `NEXTAUTH_URL` | nein   | Wie `AUTH_URL`, falls NextAuth sie auswertet |
 | `DS_BASE`      | nein   | Nur im Build/Dev; im Docker-Build gesetzt: `../msqdx-design-system` |
 
-## Nach dem ersten Deploy
+## Schema beim Start
 
-Tabellen anlegen: im Container oder als One-off-Job `npx drizzle-kit push` ausführen (siehe `docs/deployment/coolify.md`).
+Der Container führt beim Start automatisch `npx drizzle-kit push` aus (siehe `scripts/docker-entrypoint.sh`). Tabellen werden angelegt/aktualisiert, sobald `DATABASE_URL` gesetzt ist – kein manueller Schritt nötig.
 
 ## Weitere Docs
 

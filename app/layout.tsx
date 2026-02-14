@@ -7,6 +7,7 @@ import '@/styles/globals.css';
 export const metadata: Metadata = {
   title: 'CHECKION – WCAG Accessibility Checker',
   description: 'Automated WCAG accessibility checks powered by pa11y and axe-core.',
+  icons: { icon: '/favicon.svg' },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
