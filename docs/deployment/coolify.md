@@ -43,15 +43,23 @@ In den Application-Einstellungen unter **Environment Variables** eintragen:
 AUTH_SECRET=<mind. 32 Zeichen, z. B.: npx auth secret>
 DATABASE_URL=postgresql://checkion:<DEIN_PASSWORT>@checkion-postgres:5432/checkion
 
-# Optional – wenn /api/auth/session weiter 500 gibt: öffentliche App-URL setzen (Coolify/Proxy)
-# AUTH_URL=https://checkion.projects-a.plygrnd.tech
+# Optional – für zuverlässige Session-Cookies hinter Proxy (empfohlen)
+AUTH_URL=https://checkion.projects-a.plygrnd.tech
 ```
+Ersetze die URL durch deine echte CHECKION-Domain.
 
 **Hinweis:** Wenn Coolify `postgres://` ausgibt, in `postgresql://` ändern (Drizzle/Node erwarten `postgresql://`).
 
-## 4. Schema (automatisch beim Start)
+## 4. Schema anlegen
 
-Beim Start des Containers wird automatisch `drizzle-kit push` ausgeführt – die Tabellen werden also bei jedem Deploy angelegt bzw. aktualisiert, sobald `DATABASE_URL` gesetzt ist. Ein manueller Schritt ist nicht nötig.
+Beim Start des Containers wird automatisch `drizzle-kit push` ausgeführt. Falls die Tabelle **users** trotzdem fehlt (z. B. Log: `relation "users" does not exist`), Schema einmalig von Hand anlegen:
+
+1. In Coolify: **Application** → CHECKION → **Terminal** (oder **Execute Command**).
+2. Befehl ausführen:
+   ```bash
+   npx drizzle-kit push
+   ```
+3. Danach die App erneut aufrufen (Login/Registrierung sollte funktionieren).
 
 ## 5. Domain & SSL
 

@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server';
 const protectedPaths = ['/scan', '/results', '/domain', '/settings'];
 const authPaths = ['/login', '/register'];
 
-const SESSION_COOKIE = 'authjs.session-token';
+const SESSION_COOKIES = ['authjs.session-token', '__Secure-authjs.session-token'];
 
 function isProtected(pathname: string): boolean {
     return protectedPaths.some(p => pathname === p || pathname.startsWith(p + '/'));
@@ -13,9 +13,13 @@ function isAuthPath(pathname: string): boolean {
     return authPaths.some(p => pathname === p || pathname.startsWith(p + '/'));
 }
 
+function hasSessionCookie(req: NextRequest): boolean {
+    return SESSION_COOKIES.some(name => req.cookies.has(name));
+}
+
 export function middleware(req: NextRequest) {
     const { pathname } = req.nextUrl;
-    const hasSession = req.cookies.has(SESSION_COOKIE);
+    const hasSession = hasSessionCookie(req);
 
     if (pathname.startsWith('/api/')) return NextResponse.next();
 
