@@ -590,7 +590,6 @@ export default function ResultsPage() {
                         <ScanIssueList
                             issues={filteredIssues}
                             highlightedIndex={highlightedIndex}
-                            onHover={handleHover}
                             registerRef={handleRefRegister}
                         />
                     )}

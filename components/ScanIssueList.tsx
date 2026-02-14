@@ -7,11 +7,10 @@ import type { Issue } from '@/lib/types';
 interface ScanIssueListProps {
     issues: Issue[];
     highlightedIndex: number | null;
-    onHover: (index: number | null) => void;
     registerRef: (index: number, el: HTMLDivElement | null) => void;
 }
 
-export const ScanIssueList = memo(({ issues, highlightedIndex, onHover, registerRef }: ScanIssueListProps) => {
+export const ScanIssueList = memo(({ issues, highlightedIndex, registerRef }: ScanIssueListProps) => {
     // Memoizing sx to prevent MsqdxAccordion from re-rendering due to new object reference
     const accordionSx = useMemo(() => ({
         display: 'flex',
@@ -35,7 +34,6 @@ export const ScanIssueList = memo(({ issues, highlightedIndex, onHover, register
                     issue={issue}
                     index={idx}
                     isHighlighted={highlightedIndex === idx}
-                    onHover={onHover}
                     registerRef={registerRef}
                 />
             ))}

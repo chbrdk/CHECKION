@@ -31,11 +31,10 @@ interface ScanIssueItemProps {
     issue: Issue;
     index: number;
     isHighlighted: boolean;
-    onHover: (index: number | null) => void;
     registerRef: (index: number, el: HTMLDivElement | null) => void;
 }
 
-export const ScanIssueItem = memo(({ issue, index, isHighlighted, onHover, registerRef }: ScanIssueItemProps) => {
+export const ScanIssueItem = memo(({ issue, index, isHighlighted, registerRef }: ScanIssueItemProps) => {
     const config = SEVERITY_CONFIG[issue.type] || SEVERITY_CONFIG['notice']; // Fallback
     const itemId = `issue-${index}`;
 
@@ -48,13 +47,15 @@ export const ScanIssueItem = memo(({ issue, index, isHighlighted, onHover, regis
         <Box
             id={`${itemId}-wrapper`}
             ref={handleRef}
-            onMouseEnter={() => onHover(index)}
-            onMouseLeave={() => onHover(null)}
             sx={{
-                transition: 'all 0.2s',
-                backgroundColor: isHighlighted ? `${config.color}10` : 'transparent',
+                transition: 'background-color 0.15s, border-color 0.15s',
+                backgroundColor: isHighlighted ? `${config.color}18` : 'transparent',
                 borderRadius: '8px',
-                border: isHighlighted ? `1px solid ${config.color}` : 'none'
+                border: `1px solid ${isHighlighted ? config.color : 'transparent'}`,
+                '&:hover': {
+                    backgroundColor: `${config.color}18`,
+                    borderColor: config.color,
+                },
             }}
         >
             <MsqdxAccordionItem
