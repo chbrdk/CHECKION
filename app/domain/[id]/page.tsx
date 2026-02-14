@@ -1,14 +1,16 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Box, CircularProgress } from '@mui/material';
+import { Box, CircularProgress, alpha } from '@mui/material';
 import {
     MsqdxTypography,
     MsqdxButton,
     MsqdxCard,
     MsqdxChip,
     MsqdxTabs,
+    MsqdxMoleculeCard,
 } from '@msqdx/react';
+import { MSQDX_STATUS } from '@msqdx/tokens';
 import { useParams, useRouter } from 'next/navigation';
 import type { DomainScanResult } from '@/lib/types';
 import { DomainGraph } from '@/components/DomainGraph';
@@ -19,6 +21,8 @@ export default function DomainResultPage() {
     const router = useRouter();
     const [result, setResult] = useState<DomainScanResult | null>(null);
     const [tabValue, setTabValue] = useState(0);
+    const [summarizing, setSummarizing] = useState(false);
+    const [summarizeError, setSummarizeError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!params.id) return;
@@ -66,6 +70,7 @@ export default function DomainResultPage() {
                     tabs={[
                         { label: 'Overview & Pages', value: 0 },
                         { label: 'Visual Map', value: 1 },
+                        { label: 'UX/CX Check', value: 2 },
                     ]}
                 />
             </Box>
@@ -97,13 +102,13 @@ export default function DomainResultPage() {
                         <Box sx={{ mt: 'var(--msqdx-spacing-xl)' }}>
                             <MsqdxCard variant="flat" sx={{ bgcolor: 'var(--color-card-bg)', p: 'var(--msqdx-spacing-md)', borderRadius: 'var(--msqdx-radius-sm)', border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
                                 <MsqdxTypography variant="h6" sx={{ mb: 'var(--msqdx-spacing-md)' }}>Systemic Issues</MsqdxTypography>
-                                {result.systemicIssues.length === 0 ? (
+                                {(result.systemicIssues?.length ?? 0) === 0 ? (
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-md)' }}>
                                         <CheckCircle color="var(--color-secondary-dx-green)" />
                                         <MsqdxTypography>No systemic issues detected.</MsqdxTypography>
                                     </Box>
                                 ) : (
-                                    result.systemicIssues.map((issue, idx) => (
+                                    (result.systemicIssues ?? []).map((issue, idx) => (
                                         <Box key={idx} sx={{
                                             p: 'var(--msqdx-spacing-md)',
                                             mb: 'var(--msqdx-spacing-md)',
@@ -132,7 +137,7 @@ export default function DomainResultPage() {
                         <MsqdxCard variant="flat" sx={{ bgcolor: 'var(--color-card-bg)', p: 'var(--msqdx-spacing-md)', borderRadius: 'var(--msqdx-radius-sm)', border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
                             <MsqdxTypography variant="h6" sx={{ mb: 'var(--msqdx-spacing-md)' }}>Scanned Pages</MsqdxTypography>
                             <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
-                                {result.pages.map((page, idx) => (
+                                {(result.pages ?? []).map((page, idx) => (
                                     <Box
                                         component="li"
                                         key={idx}
@@ -173,6 +178,101 @@ export default function DomainResultPage() {
                 <Box>
                     <DomainGraph data={result.graph} width={1200} height={800} />
                 </Box>
+            )}
+
+            {tabValue === 2 && (
+                <MsqdxMoleculeCard
+                    title="UX/CX Check (Domain)"
+                    subtitle="Bewertung und Handlungsempfehlungen für die gesamte Domain"
+                    variant="flat"
+                    sx={{ bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}
+                    borderRadius="lg"
+                >
+                    {result.llmSummary ? (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-md)' }}>
+                            {result.llmSummary.overallGrade && (
+                                <MsqdxChip
+                                    label={result.llmSummary.overallGrade}
+                                    size="small"
+                                    sx={{ alignSelf: 'flex-start', fontWeight: 600 }}
+                                />
+                            )}
+                            <MsqdxTypography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+                                {result.llmSummary.summary}
+                            </MsqdxTypography>
+                            {result.llmSummary.themes?.length > 0 && (
+                                <Box>
+                                    <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Themen</MsqdxTypography>
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                        {result.llmSummary.themes.map((t, i) => (
+                                            <MsqdxChip
+                                                key={i}
+                                                label={t.description ? `${t.name}: ${t.description}` : t.name}
+                                                size="small"
+                                                variant="outlined"
+                                                sx={{
+                                                    bgcolor: t.severity === 'high' ? alpha(MSQDX_STATUS.error.base, 0.08) : t.severity === 'medium' ? alpha(MSQDX_STATUS.warning.base, 0.08) : undefined,
+                                                }}
+                                            />
+                                        ))}
+                                    </Box>
+                                </Box>
+                            )}
+                            {result.llmSummary.recommendations?.length > 0 && (
+                                <Box>
+                                    <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Handlungsempfehlungen</MsqdxTypography>
+                                    <Box component="ol" sx={{ m: 0, pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                        {[...result.llmSummary.recommendations]
+                                            .sort((a, b) => a.priority - b.priority)
+                                            .map((r, i) => (
+                                                <Box component="li" key={i} sx={{ mb: 0.5 }}>
+                                                    <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600 }}>{r.title}</MsqdxTypography>
+                                                    {r.category && (
+                                                        <MsqdxChip label={r.category} size="small" sx={{ ml: 1, height: 18, fontSize: '0.65rem' }} />
+                                                    )}
+                                                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mt: 0.25 }}>{r.description}</MsqdxTypography>
+                                                </Box>
+                                            ))}
+                                    </Box>
+                                </Box>
+                            )}
+                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                Generiert mit {result.llmSummary.modelUsed} am {new Date(result.llmSummary.generatedAt).toLocaleString('de-DE')}.
+                            </MsqdxTypography>
+                        </Box>
+                    ) : (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, py: 4 }}>
+                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', textAlign: 'center' }}>
+                                Hier erscheint eine Gesamtbewertung der Domain und konkrete Handlungsempfehlungen auf Basis aller gescannten Seiten und systemischen Issues.
+                            </MsqdxTypography>
+                            {summarizeError && (
+                                <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.error.base }}>{summarizeError}</MsqdxTypography>
+                            )}
+                            <MsqdxButton
+                                variant="contained"
+                                brandColor="green"
+                                disabled={summarizing || result.status !== 'complete'}
+                                onClick={async () => {
+                                    if (!result?.id || summarizing) return;
+                                    setSummarizeError(null);
+                                    setSummarizing(true);
+                                    try {
+                                        const res = await fetch(`/api/scan/domain/${result.id}/summarize`, { method: 'POST' });
+                                        const data = await res.json().catch(() => ({}));
+                                        if (!res.ok) throw new Error(data.error ?? 'Fehler beim Generieren');
+                                        setResult((prev) => (prev ? { ...prev, llmSummary: data } : null));
+                                    } catch (e) {
+                                        setSummarizeError(e instanceof Error ? e.message : 'Unbekannter Fehler');
+                                    } finally {
+                                        setSummarizing(false);
+                                    }
+                                }}
+                            >
+                                {summarizing ? 'Wird generiert…' : 'Zusammenfassung generieren'}
+                            </MsqdxButton>
+                        </Box>
+                    )}
+                </MsqdxMoleculeCard>
             )}
         </Box>
     );

@@ -344,6 +344,8 @@ export type DomainScanResult = {
         pages: string[]
     }>;
     error?: string;
+    /** LLM-generated domain-wide UX/CX summary (from POST /api/scan/domain/[id]/summarize). */
+    llmSummary?: LlmSummary | null;
 };
 
 export interface StructureNode {
