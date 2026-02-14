@@ -5,7 +5,7 @@
 - **Auth:** NextAuth v5 mit Credentials-Provider (E-Mail + Passwort), JWT-Session
 
 ## Tabellen
-- **users:** id, email, password_hash, name, created_at (timestamptz)
+- **users:** id, email, password_hash, name, company, avatar_url, locale, created_at (timestamptz)
 - **scans:** id, user_id, url, device, group_id, timestamp, result (jsonb)
 - **domain_scans:** id, user_id, domain, status, timestamp, payload (jsonb)
 

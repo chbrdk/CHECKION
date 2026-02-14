@@ -31,6 +31,9 @@ Notiere die Verbindungsdaten (Host ist der Resource-Name, z. B. `checkion-post
 4. **Dockerfile-Pfad**: `Dockerfile` (im Repo-Root)
 5. **Port**: `3333` (wird von CHECKION genutzt)
 
+Optional (Build-Arg): Wenn das Design-System aus einem anderen Repo kommen soll:
+`DESIGN_SYSTEM_REPO=https://github.com/<org>/msqdx-design-system.git`
+
 ## 3. Umgebungsvariablen setzen
 
 In den Application-Einstellungen unter **Environment Variables** eintragen:
