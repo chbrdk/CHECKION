@@ -23,6 +23,7 @@ export const scans = pgTable('scans', {
     groupId: text('group_id'),
     timestamp: text('timestamp').notNull(),
     result: jsonb('result').notNull(), // ScanResult
+    llmSummary: jsonb('llm_summary'), // UxCxSummary | null
 });
 
 export const domainScans = pgTable('domain_scans', {

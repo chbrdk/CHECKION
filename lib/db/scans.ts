@@ -6,6 +6,7 @@ import { eq, and, desc } from 'drizzle-orm';
 import { getDb } from './index';
 import { scans, domainScans } from './schema';
 import type { ScanResult, DomainScanResult } from '@/lib/types';
+import type { UxCxSummary } from '@/lib/llm-summary-types';
 
 export async function addScan(userId: string, result: ScanResult): Promise<void> {
     const db = getDb();
@@ -25,6 +26,28 @@ export async function getScan(id: string, userId: string): Promise<ScanResult | 
     const rows = await db.select().from(scans).where(and(eq(scans.id, id), eq(scans.userId, userId))).limit(1);
     if (rows.length === 0) return null;
     return rows[0].result as unknown as ScanResult;
+}
+
+/** Returns scan result plus llm_summary for API response. */
+export async function getScanWithSummary(id: string, userId: string): Promise<{ result: ScanResult; llmSummary: UxCxSummary | null } | null> {
+    const db = getDb();
+    const rows = await db.select({
+        result: scans.result,
+        llmSummary: scans.llmSummary,
+    }).from(scans).where(and(eq(scans.id, id), eq(scans.userId, userId))).limit(1);
+    if (rows.length === 0) return null;
+    return {
+        result: rows[0].result as unknown as ScanResult,
+        llmSummary: (rows[0].llmSummary as UxCxSummary | null) ?? null,
+    };
+}
+
+export async function updateScanSummary(id: string, userId: string, summary: UxCxSummary): Promise<boolean> {
+    const db = getDb();
+    const updated = await db.update(scans)
+        .set({ llmSummary: summary as unknown as Record<string, unknown> })
+        .where(and(eq(scans.id, id), eq(scans.userId, userId)));
+    return (updated.rowCount ?? 0) > 0;
 }
 
 export async function listScans(userId: string): Promise<ScanResult[]> {

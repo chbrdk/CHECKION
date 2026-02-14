@@ -4,7 +4,7 @@
 
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { getScan } from '@/lib/db/scans';
+import { getScanWithSummary } from '@/lib/db/scans';
 
 export async function GET(
     _request: Request,
@@ -15,11 +15,11 @@ export async function GET(
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const { id } = await params;
-    const result = await getScan(id, session.user.id);
+    const row = await getScanWithSummary(id, session.user.id);
 
-    if (!result) {
+    if (!row) {
         return NextResponse.json({ error: 'Scan result not found.' }, { status: 404 });
     }
 
-    return NextResponse.json(result);
+    return NextResponse.json({ ...row.result, llmSummary: row.llmSummary });
 }

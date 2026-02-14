@@ -107,6 +107,16 @@ export interface UxResult {
     fontDisplayIssues?: { withoutFontDisplay: number; blockCount: number };
 }
 
+/** LLM-generated UX/CX summary (from POST /api/scan/[id]/summarize). */
+export interface LlmSummary {
+    summary: string;
+    themes: Array<{ name: string; description?: string; severity?: 'high' | 'medium' | 'low' }>;
+    recommendations: Array<{ title: string; description: string; priority: 1 | 2 | 3 | 4 | 5; category?: string }>;
+    overallGrade?: string;
+    modelUsed: string;
+    generatedAt: string;
+}
+
 export type ScanResult = {
     id: string;
     groupId?: string; // Optional for ad-hoc scans
@@ -143,6 +153,8 @@ export type ScanResult = {
     generative?: GenerativeEngineAudit;
     security?: SecurityAudit;
     technicalInsights?: TechnicalInsights;
+    /** Set when UX/CX summary has been generated (GET includes it, POST /summarize writes it). */
+    llmSummary?: LlmSummary | null;
 }
 
 export interface TechnicalInsights {
