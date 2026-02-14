@@ -60,6 +60,7 @@ export default function ResultsPage() {
     const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
     const [showFocusOrder, setShowFocusOrder] = useState(false);
     const [showTouchTargets, setShowTouchTargets] = useState(false);
+    const [screenshotHeight, setScreenshotHeight] = useState<number>(900);
     const issueRefs = useRef<(HTMLDivElement | null)[]>([]);
 
     // Derived stats for WCAG levels
@@ -601,7 +602,7 @@ export default function ResultsPage() {
                     title="Visuelle Analyse"
                     variant="flat"
                     sx={{ bgcolor: 'var(--color-card-bg)', mb: 'var(--msqdx-spacing-md)' }}
-                    borderRadius="lg"
+                    borderRadius="xs"
                     headerActions={
                         <Box sx={{ display: 'flex', gap: 1 }}>
                             <MsqdxButton
@@ -624,73 +625,81 @@ export default function ResultsPage() {
                     }
                 >
                     {result.screenshot ? (
-                        <Box sx={{ overflow: 'auto', position: 'relative', width: '100%', border: `1px solid ${MSQDX_NEUTRAL[800]}`, borderRadius: MSQDX_SPACING.borderRadius.md }}>
-
-                            {/* Focus Order Overlay */}
-                            {result.ux?.focusOrder && (
-                                <Box sx={{ position: 'absolute', top: 0, left: 0, width: 1280, height: '100%', zIndex: 40, pointerEvents: 'none' }}>
-                                    <FocusOrderOverlay
-                                        items={result.ux.focusOrder}
-                                        visible={showFocusOrder}
-                                    />
-                                </Box>
-                            )}
-
-                            {/* Touch Target Overlay */}
-                            {result.ux?.tapTargets?.details && (
-                                <Box sx={{ position: 'absolute', top: 0, left: 0, width: 1280, height: '100%', zIndex: 45, pointerEvents: 'none' }}>
-                                    {showTouchTargets && (
-                                        <TouchTargetOverlay
-                                            issues={result.ux.tapTargets.details}
-                                            scale={1}
-                                        />
-                                    )}
-                                </Box>
-                            )}
-                            {/* ... same visual view content ... */}
-                            <Box sx={{ position: 'relative', width: 1280, minHeight: 600, bgcolor: '#fff' }}>
+                        <Box sx={{ overflow: 'auto', position: 'relative', width: '100%', maxWidth: '100%', border: `1px solid ${MSQDX_NEUTRAL[800]}`, borderRadius: MSQDX_SPACING.borderRadius.xs }}>
+                            {/* Screenshot + overlays: one fluid-width container so image fits and overlays align via % */}
+                            <Box sx={{ position: 'relative', width: '100%', bgcolor: '#fff' }}>
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={result.screenshot} alt="Scan Screenshot" style={{ width: 1280, display: 'block' }} />
-                                {filteredIssues.map((issue, idx) => (
-                                    issue.boundingBox && (
-                                        <MsqdxTooltip
-                                            key={idx}
-                                            title={
-                                                <Box>
-                                                    <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{issue.message}</MsqdxTypography>
-                                                    <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
-                                                        <MsqdxChip label={issue.type} size="small" sx={{ height: 16, fontSize: '0.6rem', bgcolor: SEVERITY_CONFIG[issue.type].color, color: '#000' }} />
-                                                        {issue.wcagLevel && issue.wcagLevel !== 'Unknown' && <MsqdxChip label={issue.wcagLevel === 'APCA' ? 'APCA' : `Level ${issue.wcagLevel}`} size="small" sx={{ height: 16, fontSize: '0.6rem', bgcolor: issue.wcagLevel === 'APCA' ? MSQDX_BRAND_PRIMARY.purple : MSQDX_BRAND_PRIMARY.green, color: '#fff' }} />}
-                                                    </Box>
-                                                    <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{issue.selector}</MsqdxTypography>
-                                                </Box>
-                                            }
-                                            brandColor={SEVERITY_CONFIG[issue.type].label === 'Error' ? 'pink' : SEVERITY_CONFIG[issue.type].label === 'Warning' ? 'yellow' : 'purple'}
-                                        >
-                                            <Box sx={{
-                                                position: 'absolute',
-                                                left: issue.boundingBox.x,
-                                                top: issue.boundingBox.y,
-                                                width: issue.boundingBox.width,
-                                                height: issue.boundingBox.height,
-                                                border: highlightedIndex === idx ? `4px solid ${SEVERITY_CONFIG[issue.type].color}` : `3px solid ${SEVERITY_CONFIG[issue.type].color}`,
-                                                backgroundColor: highlightedIndex === idx ? alpha(SEVERITY_CONFIG[issue.type].color, 0.5) : alpha(SEVERITY_CONFIG[issue.type].color, 0.2),
-                                                cursor: 'pointer',
-                                                zIndex: highlightedIndex === idx ? 30 : 10,
-                                                transition: 'all 0.2s',
-                                                boxShadow: highlightedIndex === idx ? `0 0 0 4px ${alpha(SEVERITY_CONFIG[issue.type].color, 0.4)}` : 'none',
-                                                '&:hover': {
-                                                    backgroundColor: alpha(SEVERITY_CONFIG[issue.type].color, 0.4),
-                                                    zIndex: 20,
-                                                }
-                                            }}
-                                                onClick={() => scrollToIssue(idx)}
-                                                onMouseEnter={() => setHighlightedIndex(idx)}
-                                                onMouseLeave={() => setHighlightedIndex(null)}
+                                <img
+                                    src={result.screenshot}
+                                    alt="Scan Screenshot"
+                                    style={{ width: '100%', display: 'block', verticalAlign: 'top' }}
+                                    onLoad={(e) => setScreenshotHeight(e.currentTarget.naturalHeight)}
+                                />
+                                {/* Overlay layer: same size as image (100% × 100%) so positioning scales with screenshot */}
+                                <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 10 }}>
+                                    {result.ux?.focusOrder && (
+                                        <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 40 }}>
+                                            <FocusOrderOverlay
+                                                items={result.ux.focusOrder}
+                                                screenshotHeight={screenshotHeight}
+                                                visible={showFocusOrder}
                                             />
-                                        </MsqdxTooltip>
-                                    )
-                                ))}
+                                        </Box>
+                                    )}
+                                    {result.ux?.tapTargets?.details && (
+                                        <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 45 }}>
+                                            {showTouchTargets && (
+                                                <TouchTargetOverlay
+                                                    issues={result.ux.tapTargets.details}
+                                                    screenshotHeight={screenshotHeight}
+                                                />
+                                            )}
+                                        </Box>
+                                    )}
+                                    {/* Issue boxes: percentage-based so they stay aligned when screenshot is scaled */}
+                                    {filteredIssues.map((issue, idx) => (
+                                        issue.boundingBox && (
+                                            <MsqdxTooltip
+                                                key={idx}
+                                                title={
+                                                    <Box>
+                                                        <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{issue.message}</MsqdxTypography>
+                                                        <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
+                                                            <MsqdxChip label={issue.type} size="small" sx={{ height: 16, fontSize: '0.6rem', bgcolor: SEVERITY_CONFIG[issue.type].color, color: '#000' }} />
+                                                            {issue.wcagLevel && issue.wcagLevel !== 'Unknown' && <MsqdxChip label={issue.wcagLevel === 'APCA' ? 'APCA' : `Level ${issue.wcagLevel}`} size="small" sx={{ height: 16, fontSize: '0.6rem', bgcolor: issue.wcagLevel === 'APCA' ? MSQDX_BRAND_PRIMARY.purple : MSQDX_BRAND_PRIMARY.green, color: '#fff' }} />}
+                                                        </Box>
+                                                        <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{issue.selector}</MsqdxTypography>
+                                                    </Box>
+                                                }
+                                                brandColor={SEVERITY_CONFIG[issue.type].label === 'Error' ? 'pink' : SEVERITY_CONFIG[issue.type].label === 'Warning' ? 'yellow' : 'purple'}
+                                            >
+                                                <Box
+                                                    sx={{
+                                                        position: 'absolute',
+                                                        left: `${(issue.boundingBox.x / 1280) * 100}%`,
+                                                        top: `${(issue.boundingBox.y / screenshotHeight) * 100}%`,
+                                                        width: `${(issue.boundingBox.width / 1280) * 100}%`,
+                                                        height: `${(issue.boundingBox.height / screenshotHeight) * 100}%`,
+                                                        border: highlightedIndex === idx ? `4px solid ${SEVERITY_CONFIG[issue.type].color}` : `3px solid ${SEVERITY_CONFIG[issue.type].color}`,
+                                                        backgroundColor: highlightedIndex === idx ? alpha(SEVERITY_CONFIG[issue.type].color, 0.5) : alpha(SEVERITY_CONFIG[issue.type].color, 0.2),
+                                                        cursor: 'pointer',
+                                                        zIndex: highlightedIndex === idx ? 30 : 10,
+                                                        transition: 'all 0.2s',
+                                                        boxShadow: highlightedIndex === idx ? `0 0 0 4px ${alpha(SEVERITY_CONFIG[issue.type].color, 0.4)}` : 'none',
+                                                        pointerEvents: 'auto',
+                                                        '&:hover': {
+                                                            backgroundColor: alpha(SEVERITY_CONFIG[issue.type].color, 0.4),
+                                                            zIndex: 20,
+                                                        }
+                                                    }}
+                                                    onClick={() => scrollToIssue(idx)}
+                                                    onMouseEnter={() => setHighlightedIndex(idx)}
+                                                    onMouseLeave={() => setHighlightedIndex(null)}
+                                                />
+                                            </MsqdxTooltip>
+                                        )
+                                    ))}
+                                </Box>
                             </Box>
                         </Box>
                     ) : (

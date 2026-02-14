@@ -5,14 +5,18 @@ import { MSQDX_STATUS } from '@msqdx/tokens';
 
 interface TouchTargetOverlayProps {
     issues: TouchTargetIssue[];
-    scale: number;
+    /** Screenshot height in px (from image naturalHeight). With viewBox the SVG scales to fit. */
+    screenshotHeight?: number;
+    scale?: number;
 }
 
-export const TouchTargetOverlay: React.FC<TouchTargetOverlayProps> = ({ issues, scale = 1 }) => {
+export const TouchTargetOverlay: React.FC<TouchTargetOverlayProps> = ({ issues, screenshotHeight = 900, scale = 1 }) => {
     if (!issues || issues.length === 0) return null;
 
     return (
         <svg
+            viewBox={`0 0 1280 ${screenshotHeight}`}
+            preserveAspectRatio="xMidYMid meet"
             style={{
                 position: 'absolute',
                 top: 0,

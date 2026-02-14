@@ -10,15 +10,19 @@ interface FocusItem {
 
 interface FocusOrderOverlayProps {
     items: FocusItem[];
-    scale?: number; // If screenshot is scaled
+    /** Screenshot height in px (from image naturalHeight). With viewBox the SVG scales to fit; no scale factor needed. */
+    screenshotHeight?: number;
+    scale?: number;
     visible: boolean;
 }
 
-export const FocusOrderOverlay = ({ items, scale = 1, visible }: FocusOrderOverlayProps) => {
+export const FocusOrderOverlay = ({ items, screenshotHeight = 900, scale = 1, visible }: FocusOrderOverlayProps) => {
     if (!visible) return null;
 
     return (
         <svg
+            viewBox={`0 0 1280 ${screenshotHeight}`}
+            preserveAspectRatio="xMidYMid meet"
             style={{
                 position: 'absolute',
                 top: 0,
@@ -46,6 +50,8 @@ export const FocusOrderOverlay = ({ items, scale = 1, visible }: FocusOrderOverl
                 const nextItem = items[i + 1];
                 const cx = (item.rect.x + item.rect.width / 2) * scale;
                 const cy = (item.rect.y + item.rect.height / 2) * scale;
+                const nx = nextItem ? (nextItem.rect.x + nextItem.rect.width / 2) * scale : 0;
+                const ny = nextItem ? (nextItem.rect.y + nextItem.rect.height / 2) * scale : 0;
 
                 return (
                     <g key={item.index}>
@@ -54,8 +60,8 @@ export const FocusOrderOverlay = ({ items, scale = 1, visible }: FocusOrderOverl
                             <line
                                 x1={cx}
                                 y1={cy}
-                                x2={(nextItem.rect.x + nextItem.rect.width / 2) * scale}
-                                y2={(nextItem.rect.y + nextItem.rect.height / 2) * scale}
+                                x2={nx}
+                                y2={ny}
                                 stroke={MSQDX_BRAND_PRIMARY.purple}
                                 strokeWidth="2"
                                 strokeDasharray="4"
