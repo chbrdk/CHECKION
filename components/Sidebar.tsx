@@ -1,8 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { signOut } from 'next-auth/react';
-import { MsqdxAdminNav, MsqdxButton } from '@msqdx/react';
+import { MsqdxAdminNav } from '@msqdx/react';
 import type { AdminNavItem } from '@msqdx/react';
 import NextLink from 'next/link';
 import { Box } from '@mui/material';
@@ -32,11 +31,6 @@ export function Sidebar() {
                 brandColor="green"
                 linkComponent={NextLink as any}
             />
-            <Box sx={{ p: 1, mt: 'auto' }}>
-                <MsqdxButton variant="outlined" size="small" fullWidth onClick={() => signOut({ callbackUrl: '/login' })}>
-                    Abmelden
-                </MsqdxButton>
-            </Box>
         </Box>
     );
 }

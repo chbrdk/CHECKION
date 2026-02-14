@@ -43,8 +43,9 @@ RUN npm run build
 FROM ${NODE_IMAGE} AS runner
 WORKDIR /app
 
-# Chromium deps for Puppeteer (scanner runs in-process)
+# System Chromium + deps for Puppeteer (scanner runs in-process; no bundled Chrome in image)
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    chromium \
     libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 \
     libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libasound2 \
     fonts-liberation \
@@ -53,9 +54,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3333
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=1
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 EXPOSE 3333
 
-# Copy built app and deps (puppeteer’s Chromium lives in node_modules)
+# Copy built app and deps
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
