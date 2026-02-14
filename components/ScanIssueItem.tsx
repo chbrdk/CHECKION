@@ -30,15 +30,14 @@ const SEVERITY_CONFIG: Record<string, { label: string; color: string }> = {
 interface ScanIssueItemProps {
     issue: Issue;
     index: number;
-    isHighlighted: boolean;
     registerRef: (index: number, el: HTMLDivElement | null) => void;
 }
 
-export const ScanIssueItem = memo(({ issue, index, isHighlighted, registerRef }: ScanIssueItemProps) => {
-    const config = SEVERITY_CONFIG[issue.type] || SEVERITY_CONFIG['notice']; // Fallback
+/** Highlight is applied via parent CSS (data-highlighted-index + data-row-index) so this item never re-renders when highlight changes. */
+export const ScanIssueItem = memo(({ issue, index, registerRef }: ScanIssueItemProps) => {
+    const config = SEVERITY_CONFIG[issue.type] || SEVERITY_CONFIG['notice'];
     const itemId = `issue-${index}`;
 
-    // Create stable ref callback
     const handleRef = React.useCallback((el: HTMLDivElement | null) => {
         registerRef(index, el);
     }, [index, registerRef]);
@@ -47,11 +46,12 @@ export const ScanIssueItem = memo(({ issue, index, isHighlighted, registerRef }:
         <Box
             id={`${itemId}-wrapper`}
             ref={handleRef}
+            data-row-index={index}
             sx={{
                 transition: 'background-color 0.15s, border-color 0.15s',
-                backgroundColor: isHighlighted ? `${config.color}18` : 'transparent',
                 borderRadius: '8px',
-                border: `1px solid ${isHighlighted ? config.color : 'transparent'}`,
+                backgroundColor: 'transparent',
+                border: '1px solid transparent',
                 '&:hover': {
                     backgroundColor: `${config.color}18`,
                     borderColor: config.color,
