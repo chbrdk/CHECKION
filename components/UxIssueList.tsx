@@ -6,7 +6,7 @@ import {
     MsqdxAccordionItem,
     MsqdxChip
 } from '@msqdx/react';
-import { MSQDX_SPACING, MSQDX_STATUS } from '@msqdx/tokens';
+import { MSQDX_SPACING, MSQDX_STATUS, MSQDX_THEME, MSQDX_NEUTRAL } from '@msqdx/tokens';
 import type { UxResult } from '@/lib/types';
 import { MousePointerClick, Smartphone, AlertTriangle, Unlink, FileCode, Keyboard, Link2, Image, Monitor, Type, RefreshCw } from 'lucide-react';
 
@@ -29,13 +29,17 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
         ux.metaRefreshPresent === true ||
         (ux.fontDisplayIssues && (ux.fontDisplayIssues.withoutFontDisplay > 0 || ux.fontDisplayIssues.blockCount > 0));
 
+    const textPrimary = MSQDX_THEME.light.text.primary;
+    const textSecondary = MSQDX_THEME.light.text.secondary;
+    const textTertiary = MSQDX_THEME.light.text.tertiary;
+
     if (!hasIssues) {
         return (
-            <Box sx={{ p: 'var(--msqdx-spacing-md)', textAlign: 'center' }}>
-                <MsqdxTypography variant="h6" sx={{ color: 'var(--color-secondary-dx-green)' }}>
+            <Box sx={{ p: 'var(--msqdx-spacing-md)', textAlign: 'center', backgroundColor: MSQDX_THEME.light.surface.primary, color: textPrimary }}>
+                <MsqdxTypography variant="h6" sx={{ color: MSQDX_STATUS.success.base }}>
                     No critical UX issues found!
                 </MsqdxTypography>
-                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                <MsqdxTypography variant="body2" sx={{ color: textTertiary }}>
                     Your site passes our core UX checks for mobile friendliness, interactivity, and stability.
                 </MsqdxTypography>
             </Box>
@@ -43,7 +47,8 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
     }
 
     return (
-        <MsqdxAccordion allowMultiple size="small" borderRadius="md">
+        <Box sx={{ backgroundColor: MSQDX_THEME.light.surface.primary, color: textPrimary, borderRadius: `${MSQDX_SPACING.borderRadius.md}px`, border: `1px solid ${MSQDX_NEUTRAL[200]}`, overflow: 'hidden' }}>
+            <MsqdxAccordion allowMultiple size="small" borderRadius="md" sx={{ background: 'transparent', border: 'none' }}>
             {/* Viewport Issues */}
             {!ux.viewport.isMobileFriendly && ux.viewport.issues.map((issue, idx) => (
                 <MsqdxAccordionItem
@@ -53,7 +58,7 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-sm)', width: '100%' }}>
                             <Smartphone size={20} color={MSQDX_STATUS.error.base} />
                             <Box sx={{ flex: 1 }}>
-                                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}>
+                                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: textPrimary }}>
                                     Mobile Viewport Configuration Error
                                 </MsqdxTypography>
                             </Box>
@@ -76,10 +81,10 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-sm)', width: '100%' }}>
                             <AlertTriangle size={20} color={error.type === 'error' ? MSQDX_STATUS.error.base : MSQDX_STATUS.warning.base} />
                             <Box sx={{ flex: 1 }}>
-                                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}>
+                                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: textPrimary }}>
                                     Browser Console {error.type === 'error' ? 'Error' : 'Warning'}
                                 </MsqdxTypography>
-                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', fontFamily: 'monospace' }}>
+                                <MsqdxTypography variant="caption" sx={{ color: textTertiary, fontFamily: 'monospace' }}>
                                     {error.text.slice(0, 60)}...
                                 </MsqdxTypography>
                             </Box>
@@ -92,7 +97,7 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                             {error.text}
                         </MsqdxTypography>
                         {error.location && (
-                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', mt: 1 }} display="block">
+                            <MsqdxTypography variant="caption" sx={{ color: textTertiary, mt: 1 }} display="block">
                                 <strong>Source:</strong> {error.location}
                             </MsqdxTypography>
                         )}
@@ -109,10 +114,10 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-sm)', width: '100%' }}>
                             <Unlink size={20} color={MSQDX_STATUS.error.base} />
                             <Box sx={{ flex: 1 }}>
-                                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}>
+                                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: textPrimary }}>
                                     Broken Link ({link.status})
                                 </MsqdxTypography>
-                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', fontFamily: 'monospace' }}>
+                                <MsqdxTypography variant="caption" sx={{ color: textTertiary, fontFamily: 'monospace' }}>
                                     {link.href}
                                 </MsqdxTypography>
                             </Box>
@@ -121,14 +126,14 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                     }
                 >
                     <Box sx={{ p: 1 }}>
-                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-on-light)' }} gutterBottom>
+                        <MsqdxTypography variant="body2" sx={{ color: textPrimary }} gutterBottom>
                             This link returns a {link.status} error code.
                         </MsqdxTypography>
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }} display="block">
+                        <MsqdxTypography variant="caption" sx={{ color: textTertiary }} display="block">
                             <strong>Link Text:</strong> "{link.text}"
                         </MsqdxTypography>
                         <a href={link.href} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
-                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-theme-accent)' }}>
+                            <MsqdxTypography variant="caption" sx={{ color: MSQDX_STATUS.info.base }}>
                                 Visit URL ↗
                             </MsqdxTypography>
                         </a>
@@ -145,10 +150,10 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-sm)', width: '100%' }}>
                             <MousePointerClick size={20} color={MSQDX_STATUS.warning.base} />
                             <Box sx={{ flex: 1 }}>
-                                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}>
+                                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: textPrimary }}>
                                     Tap Target Too Small
                                 </MsqdxTypography>
-                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', fontFamily: 'monospace' }}>
+                                <MsqdxTypography variant="caption" sx={{ color: textTertiary, fontFamily: 'monospace' }}>
                                     {issue.selector}
                                 </MsqdxTypography>
                             </Box>
@@ -162,13 +167,13 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                     }
                 >
                     <Box sx={{ p: 1 }}>
-                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-on-light)' }} gutterBottom>
+                        <MsqdxTypography variant="body2" sx={{ color: textPrimary }} gutterBottom>
                             This interactive element is smaller than the recommended 44x44px.
                         </MsqdxTypography>
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }} display="block">
+                        <MsqdxTypography variant="caption" sx={{ color: textTertiary }} display="block">
                             <strong>Text Content:</strong> "{issue.text}"
                         </MsqdxTypography>
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }} display="block">
+                        <MsqdxTypography variant="caption" sx={{ color: textTertiary }} display="block">
                             <strong>Selector:</strong> {issue.selector}
                         </MsqdxTypography>
                     </Box>
@@ -184,10 +189,10 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-sm)', width: '100%' }}>
                             <FileCode size={20} color={MSQDX_STATUS.warning.base} />
                             <Box sx={{ flex: 1 }}>
-                                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}>
+                                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: textPrimary }}>
                                     Broken ARIA Reference
                                 </MsqdxTypography>
-                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', fontFamily: 'monospace' }}>
+                                <MsqdxTypography variant="caption" sx={{ color: textTertiary, fontFamily: 'monospace' }}>
                                     {issue.element}[{issue.attribute}="{issue.value}"]
                                 </MsqdxTypography>
                             </Box>
@@ -201,10 +206,10 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                     }
                 >
                     <Box sx={{ p: 1 }}>
-                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-on-light)' }} gutterBottom>
+                        <MsqdxTypography variant="body2" sx={{ color: textPrimary }} gutterBottom>
                             {issue.message}
                         </MsqdxTypography>
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }} display="block">
+                        <MsqdxTypography variant="caption" sx={{ color: textTertiary }} display="block">
                             <strong>Element:</strong> {issue.element}
                         </MsqdxTypography>
                     </Box>
@@ -220,10 +225,10 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-sm)', width: '100%' }}>
                             <Link2 size={20} color={MSQDX_STATUS.warning.base} />
                             <Box sx={{ flex: 1 }}>
-                                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}>
+                                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: textPrimary }}>
                                     Unklarer Link-Text (WCAG 2.4.4)
                                 </MsqdxTypography>
-                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                <MsqdxTypography variant="caption" sx={{ color: textTertiary }}>
                                     "{item.text}" → {item.href.slice(0, 40)}…
                                 </MsqdxTypography>
                             </Box>
@@ -247,10 +252,10 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-sm)', width: '100%' }}>
                             <Image size={20} color={MSQDX_STATUS.warning.base} />
                             <Box sx={{ flex: 1 }}>
-                                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}>
+                                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: textPrimary }}>
                                     Bilder: Dimensionen / Lazy Loading / srcset
                                 </MsqdxTypography>
-                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                <MsqdxTypography variant="caption" sx={{ color: textTertiary }}>
                                     {ux.imageIssues.missingDimensions > 0 && `${ux.imageIssues.missingDimensions} ohne width/height`}
                                     {ux.imageIssues.missingDimensions > 0 && (ux.imageIssues.missingLazy > 0 || ux.imageIssues.missingSrcset > 0) && ', '}
                                     {ux.imageIssues.missingLazy > 0 && `${ux.imageIssues.missingLazy} ohne loading=lazy`}
@@ -264,7 +269,7 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                     <Box sx={{ p: 1 }}>
                         <MsqdxTypography variant="body2">Fehlende width/height können CLS verursachen. loading="lazy" und srcset verbessern Performance.</MsqdxTypography>
                         {ux.imageIssues.details?.slice(0, 5).map((d, i) => (
-                            <MsqdxTypography key={i} variant="caption" sx={{ display: 'block', color: 'var(--color-text-muted-on-light)' }}>{d.reason}</MsqdxTypography>
+                            <MsqdxTypography key={i} variant="caption" sx={{ display: 'block', color: textTertiary }}>{d.reason}</MsqdxTypography>
                         ))}
                     </Box>
                 </MsqdxAccordionItem>
@@ -279,7 +284,7 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-sm)', width: '100%' }}>
                             <Monitor size={20} color={MSQDX_STATUS.warning.base} />
                             <Box sx={{ flex: 1 }}>
-                                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}>
+                                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: textPrimary }}>
                                     Iframes: {ux.iframeIssues.filter(i => !i.hasTitle).length} ohne title
                                 </MsqdxTypography>
                             </Box>
@@ -303,7 +308,7 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                     summary={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-sm)', width: '100%' }}>
                             <RefreshCw size={20} color={MSQDX_STATUS.warning.base} />
-                            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}>
+                            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: textPrimary }}>
                                 Meta Refresh vorhanden (nicht empfohlen für A11y/SEO)
                             </MsqdxTypography>
                         </Box>
@@ -321,7 +326,7 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                     summary={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-sm)', width: '100%' }}>
                             <Type size={20} color={MSQDX_STATUS.warning.base} />
-                            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}>
+                            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: textPrimary }}>
                                 Schriftarten: {ux.fontDisplayIssues.withoutFontDisplay} @font-face ohne font-display, {ux.fontDisplayIssues.blockCount} mit block
                             </MsqdxTypography>
                         </Box>
@@ -339,7 +344,7 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                     summary={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-sm)', width: '100%' }}>
                             <Type size={20} color={MSQDX_STATUS.warning.base} />
-                            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}>
+                            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: textPrimary }}>
                                 Überschriften: {!ux.headingHierarchy.hasSingleH1 && `${ux.headingHierarchy.h1Count} H1`}
                                 {!ux.headingHierarchy.hasSingleH1 && ux.headingHierarchy.skippedLevels.length > 0 && ', '}
                                 {ux.headingHierarchy.skippedLevels.length > 0 && `Übersprungene Level: ${ux.headingHierarchy.skippedLevels.map(s => `H${s.from}→H${s.to}`).join(', ')}`}
@@ -360,10 +365,10 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-sm)', width: '100%' }}>
                             <Keyboard size={20} color={MSQDX_STATUS.warning.base} />
                             <Box sx={{ flex: 1 }}>
-                                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}>
+                                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: textPrimary }}>
                                     Form Accessibility Issue
                                 </MsqdxTypography>
-                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', fontFamily: 'monospace' }}>
+                                <MsqdxTypography variant="caption" sx={{ color: textTertiary, fontFamily: 'monospace' }}>
                                     {issue.element}
                                 </MsqdxTypography>
                             </Box>
@@ -377,15 +382,16 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                     }
                 >
                     <Box sx={{ p: 1 }}>
-                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-on-light)' }} gutterBottom>
+                        <MsqdxTypography variant="body2" sx={{ color: textPrimary }} gutterBottom>
                             {issue.message}
                         </MsqdxTypography>
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }} display="block">
+                        <MsqdxTypography variant="caption" sx={{ color: textTertiary }} display="block">
                             <strong>Element:</strong> {issue.element}
                         </MsqdxTypography>
                     </Box>
                 </MsqdxAccordionItem>
             ))}
-        </MsqdxAccordion>
+            </MsqdxAccordion>
+        </Box>
     );
 };

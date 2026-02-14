@@ -820,13 +820,13 @@ export default function ResultsPage() {
             )}
 
             {viewMode === 'generative' && (
-                <Box sx={{ maxWidth: '800px', mx: 'auto' }}>
+                <>
                     {result.generative ? (
                         <GenerativeOptimizerCard data={result.generative} />
                     ) : (
-                        <MsqdxMoleculeCard title="GEO Analysis" subtitle="No data." sx={{ bgcolor: 'var(--color-card-bg)' }}><MsqdxTypography>Keine GEO-Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
+                        <MsqdxMoleculeCard title="GEO-Analyse" subtitle="Keine Daten." sx={{ bgcolor: 'var(--color-card-bg)' }}><MsqdxTypography>Keine GEO-Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
                     )}
-                </Box>
+                </>
             )}
         </Box>
     );
