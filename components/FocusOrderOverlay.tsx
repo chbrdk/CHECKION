@@ -10,18 +10,19 @@ interface FocusItem {
 
 interface FocusOrderOverlayProps {
     items: FocusItem[];
-    /** Screenshot height in px (from image naturalHeight). With viewBox the SVG scales to fit; no scale factor needed. */
+    /** Screenshot dimensions in px (from image naturalWidth/naturalHeight). viewBox matches so SVG scales with image. */
+    screenshotWidth?: number;
     screenshotHeight?: number;
     scale?: number;
     visible: boolean;
 }
 
-export const FocusOrderOverlay = ({ items, screenshotHeight = 900, scale = 1, visible }: FocusOrderOverlayProps) => {
+export const FocusOrderOverlay = ({ items, screenshotWidth = 1920, screenshotHeight = 1080, scale = 1, visible }: FocusOrderOverlayProps) => {
     if (!visible) return null;
 
     return (
         <svg
-            viewBox={`0 0 1280 ${screenshotHeight}`}
+            viewBox={`0 0 ${screenshotWidth} ${screenshotHeight}`}
             preserveAspectRatio="xMidYMid meet"
             style={{
                 position: 'absolute',

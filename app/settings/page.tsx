@@ -210,7 +210,7 @@ export default function SettingsPage() {
                 <MsqdxCard
                     variant="flat"
                     borderRadius="button"
-                    sx={{ p: 'var(--msqdx-spacing-md)', border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}
+                    sx={{ p: 'var(--msqdx-spacing-md)', border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}
                 >
                     <Stack direction={{ xs: 'column', md: 'row' }} sx={{ gap: 'var(--msqdx-spacing-lg)', alignItems: 'center' }}>
                         <MsqdxAvatar
@@ -286,7 +286,7 @@ export default function SettingsPage() {
                 <MsqdxCard
                     variant="flat"
                     borderRadius="button"
-                    sx={{ p: 'var(--msqdx-spacing-md)', border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}
+                    sx={{ p: 'var(--msqdx-spacing-md)', border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}
                 >
                     <MsqdxTypography variant="h6" weight="semibold" sx={{ mb: 'var(--msqdx-spacing-xs)' }}>
                         Erscheinungsbild
@@ -301,7 +301,7 @@ export default function SettingsPage() {
                 <MsqdxCard
                     variant="flat"
                     borderRadius="button"
-                    sx={{ p: 'var(--msqdx-spacing-md)', border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}
+                    sx={{ p: 'var(--msqdx-spacing-md)', border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}
                 >
                     <MsqdxTypography variant="h6" weight="semibold" sx={{ mb: 'var(--msqdx-spacing-sm)' }}>
                         Passwort ändern
@@ -341,7 +341,7 @@ export default function SettingsPage() {
                 <MsqdxCard
                     variant="flat"
                     borderRadius="button"
-                    sx={{ p: 'var(--msqdx-spacing-md)', border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}
+                    sx={{ p: 'var(--msqdx-spacing-md)', border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}
                 >
                     <MsqdxTypography variant="h6" weight="semibold" sx={{ mb: 'var(--msqdx-spacing-xs)' }}>
                         Sitzung
@@ -362,6 +362,7 @@ export default function SettingsPage() {
                             variant="flat"
                             borderRadius="lg"
                             footerDivider={false}
+                            sx={{ bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}
                         >
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-md)' }}>
                                 <MsqdxSelect
@@ -397,7 +398,7 @@ export default function SettingsPage() {
                         </MsqdxButton>
                     </Box>
                     <Box>
-                        <MsqdxMoleculeCard title="Über CHECKION" variant="flat" borderRadius="lg" footerDivider={false}>
+                        <MsqdxMoleculeCard title="Über CHECKION" variant="flat" borderRadius="lg" footerDivider={false} sx={{ bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}>
                             <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', lineHeight: 1.7 }}>
                                 CHECKION nutzt <strong>pa11y</strong> und <strong>axe-core</strong> für automatisierte WCAG-Checks.
                                 Basiert auf dem MSQDX Design System · v0.1.0

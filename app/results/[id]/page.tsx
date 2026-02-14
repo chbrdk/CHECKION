@@ -61,7 +61,7 @@ export default function ResultsPage() {
     const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
     const [showFocusOrder, setShowFocusOrder] = useState(false);
     const [showTouchTargets, setShowTouchTargets] = useState(false);
-    const [screenshotHeight, setScreenshotHeight] = useState<number>(900);
+    const [screenshotDimensions, setScreenshotDimensions] = useState<{ width: number; height: number }>({ width: 1920, height: 1080 });
     const issueRefs = useRef<(HTMLDivElement | null)[]>([]);
 
     // Derived stats for WCAG levels
@@ -638,7 +638,10 @@ export default function ResultsPage() {
                                     src={result.screenshot}
                                     alt="Scan Screenshot"
                                     style={{ width: '100%', display: 'block', verticalAlign: 'top' }}
-                                    onLoad={(e) => setScreenshotHeight(e.currentTarget.naturalHeight)}
+                                    onLoad={(e) => {
+                                        const el = e.currentTarget;
+                                        setScreenshotDimensions({ width: el.naturalWidth, height: el.naturalHeight });
+                                    }}
                                 />
                                 {/* Overlay layer: same size as image (100% × 100%) so positioning scales with screenshot */}
                                 <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 10 }}>
@@ -646,7 +649,8 @@ export default function ResultsPage() {
                                         <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 40 }}>
                                             <FocusOrderOverlay
                                                 items={result.ux.focusOrder}
-                                                screenshotHeight={screenshotHeight}
+                                                screenshotWidth={screenshotDimensions.width}
+                                                screenshotHeight={screenshotDimensions.height}
                                                 visible={showFocusOrder}
                                             />
                                         </Box>
@@ -656,7 +660,8 @@ export default function ResultsPage() {
                                             {showTouchTargets && (
                                                 <TouchTargetOverlay
                                                     issues={result.ux.tapTargets.details}
-                                                    screenshotHeight={screenshotHeight}
+                                                    screenshotWidth={screenshotDimensions.width}
+                                                    screenshotHeight={screenshotDimensions.height}
                                                 />
                                             )}
                                         </Box>
@@ -681,10 +686,10 @@ export default function ResultsPage() {
                                                 <Box
                                                     sx={{
                                                         position: 'absolute',
-                                                        left: `${(issue.boundingBox.x / 1280) * 100}%`,
-                                                        top: `${(issue.boundingBox.y / screenshotHeight) * 100}%`,
-                                                        width: `${(issue.boundingBox.width / 1280) * 100}%`,
-                                                        height: `${(issue.boundingBox.height / screenshotHeight) * 100}%`,
+                                                        left: `${(issue.boundingBox.x / screenshotDimensions.width) * 100}%`,
+                                                        top: `${(issue.boundingBox.y / screenshotDimensions.height) * 100}%`,
+                                                        width: `${(issue.boundingBox.width / screenshotDimensions.width) * 100}%`,
+                                                        height: `${(issue.boundingBox.height / screenshotDimensions.height) * 100}%`,
                                                         border: highlightedIndex === idx ? `4px solid ${SEVERITY_CONFIG[issue.type].color}` : `3px solid ${SEVERITY_CONFIG[issue.type].color}`,
                                                         backgroundColor: highlightedIndex === idx ? alpha(SEVERITY_CONFIG[issue.type].color, 0.5) : alpha(SEVERITY_CONFIG[issue.type].color, 0.2),
                                                         cursor: 'pointer',

@@ -5,6 +5,7 @@ import { MsqdxAdminNav } from '@msqdx/react';
 import type { AdminNavItem } from '@msqdx/react';
 import NextLink from 'next/link';
 import { Box } from '@mui/material';
+import { THEME_ACCENT_WITH_FALLBACK } from '@/lib/theme-accent';
 
 const NAV_ITEMS: AdminNavItem[] = [
     { label: 'Dashboard', path: '/', icon: 'dashboard' },
@@ -28,8 +29,14 @@ export function Sidebar() {
                 currentPath={pathname}
                 items={NAV_ITEMS}
                 externalItems={EXTERNAL_ITEMS}
-                brandColor="green"
                 linkComponent={NextLink as any}
+                sx={{
+                    backgroundColor: THEME_ACCENT_WITH_FALLBACK.backgroundColor,
+                    borderRightColor: THEME_ACCENT_WITH_FALLBACK.borderColor,
+                    color: 'var(--color-theme-accent-contrast, #ffffff)',
+                    '& a': { color: 'inherit' },
+                    '& .MuiIconButton-root': { color: 'var(--color-theme-accent-contrast, #ffffff)' },
+                }}
             />
         </Box>
     );
