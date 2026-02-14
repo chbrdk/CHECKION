@@ -1,20 +1,18 @@
 # CHECKION – MSQDX Accordion (Results Issue List)
 
-## Erweiterte Komponente
+## Aktuell: Wrapper in CHECKION (deployment-kompatibel)
 
-Die **Issues-Tabelle** auf der Results-Page nutzt die erweiterte **MsqdxAccordion** aus dem msqdx-design-system.
-
-- **MsqdxAccordionItem** wurde um optionale Props ergänzt:
-  - `wrapperRef?: (el: HTMLDivElement | null) => void` – z. B. für scroll-into-view
-  - `highlighted?: boolean` – programmatische Hervorhebung (z. B. Sync mit visueller Ansicht)
-  - `highlightColor?: string` – Farbe für Highlight und Hover (CSS-only, kein Re-Render)
-- Implementierung: `msqdx-design-system/packages/react/src/components/molecules/Accordion/MsqdxAccordion.tsx`
-
-## Nutzung in CHECKION
-
+- **Deployment** (Coolify/Docker) baut das Design-System aus **GitHub** (`chbrdk/msqdx-design-system`). Dort ist die Accordion-Erweiterung ggf. noch nicht released.
+- **ScanIssueItem** nutzt daher **keine** erweiterten Props (`wrapperRef`, `highlighted`, `highlightColor`), sondern eine eigene **Box** um **MsqdxAccordionItem**: Ref, Highlight und Hover-Styles liegen in CHECKION (rein per CSS, kein State beim Hover → kein Flimmern).
 - **ScanIssueList** rendert `MsqdxAccordion` mit `ScanIssueItem` pro Issue.
-- **ScanIssueItem** rendert nur noch **MsqdxAccordionItem** mit `wrapperRef`, `highlighted`, `highlightColor` (Severity-Farbe); kein eigenes Wrapper-Box mehr.
-- Hover-Highlight ist rein per CSS in der DS-Komponente → kein Flimmern durch State-Updates beim Hover.
+
+## Optionale DS-Erweiterung (lokal/geplant)
+
+Im Repo msqdx-design-system wurde **MsqdxAccordionItem** optional erweitert um:
+- `wrapperRef`, `highlighted`, `highlightColor`
+- Siehe `msqdx-design-system/packages/react/.../Accordion/MsqdxAccordion.tsx`
+
+Sobald diese Version auf GitHub ist und im Docker-Build verwendet wird, kann ScanIssueItem auf die DS-Props umgestellt werden (Wrapper-Box entfernen, Props durchreichen).
 
 ## Referenzen
 
