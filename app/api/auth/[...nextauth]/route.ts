@@ -17,17 +17,17 @@ function authErrorResponse(e: unknown) {
     );
 }
 
-export async function GET(req: NextRequest, context: { params: Promise<{ nextauth: string[] }> }) {
+export async function GET(req: NextRequest) {
     try {
-        return await AuthGet(req, context);
+        return await AuthGet(req);
     } catch (e) {
         return authErrorResponse(e);
     }
 }
 
-export async function POST(req: NextRequest, context: { params: Promise<{ nextauth: string[] }> }) {
+export async function POST(req: NextRequest) {
     try {
-        return await AuthPost(req, context);
+        return await AuthPost(req);
     } catch (e) {
         return authErrorResponse(e);
     }
