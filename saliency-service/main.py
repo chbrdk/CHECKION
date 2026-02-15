@@ -12,10 +12,24 @@ from pathlib import Path
 import numpy as np
 import torch
 import uvicorn
-import cv2
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from PIL import Image
+
+
+def _jet_colormap_uint8() -> np.ndarray:
+    """Jet-like colormap: blue (0) -> cyan -> green -> yellow -> red (255). Returns (256, 3) uint8."""
+    # Standard Jet: 0=blue, 0.25=cyan, 0.5=green, 0.75=yellow, 1=red; linear in between
+    x = np.linspace(0, 1, 256)
+    r = np.clip(1.5 - 4 * np.abs(x - 0.75), 0, 1)
+    g = np.clip(1.5 - 4 * np.abs(x - 0.5), 0, 1)
+    b = np.clip(1.5 - 4 * np.abs(x - 0.25), 0, 1)
+    return (np.stack([r, g, b], axis=1) * 255).astype(np.uint8)
+
+
+def _apply_colormap(gray_uint8: np.ndarray, colormap: np.ndarray) -> np.ndarray:
+    """Map (H, W) uint8 to (H, W, 3) RGB using colormap (256, 3)."""
+    return colormap[gray_uint8]
 
 # Add MDS-ViTNet to path (clone into mds_vitnet next to this file)
 MDS_ROOT = Path(__file__).resolve().parent / "mds_vitnet"
@@ -115,12 +129,12 @@ def run_saliency(img: Image.Image, out_w: int, out_h: int) -> bytes:
     # 0..1 -> 0..255 uint8 for colormap
     arr_u8 = (np.clip(arr, 0, 1) * 255).astype(np.uint8)
 
-    # Colorize: Jet colormap (blue = low attention, red/yellow = high attention)
-    heat_rgb = cv2.applyColorMap(arr_u8, cv2.COLORMAP_JET)
-    heat_rgb = cv2.cvtColor(heat_rgb, cv2.COLOR_BGR2RGB)
+    # Colorize: Jet colormap (blue = low attention, red/yellow = high attention), no cv2
+    cmap = _jet_colormap_uint8()
+    heat_rgb = _apply_colormap(arr_u8, cmap)
 
     out = io.BytesIO()
-    Image.fromarray(heat_rgb).save(out, format="PNG")
+    Image.fromarray(heat_rgb, mode="RGB").save(out, format="PNG")
     return out.getvalue()
 
 
