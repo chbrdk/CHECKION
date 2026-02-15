@@ -541,7 +541,7 @@ export async function dismissCookieBanner(page: { addStyleTag: (opts: { content:
 
   const script = getCookieBannerDismissScript();
   try {
-    await page.evaluate(new Function(script));
+    await page.evaluate(new Function(script) as () => void);
   } catch (_) {}
 
   if (typeof page.waitForTimeout === 'function') {
