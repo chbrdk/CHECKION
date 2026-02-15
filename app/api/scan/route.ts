@@ -5,7 +5,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { runScan } from '@/lib/scanner';
-import { addScan, listScans } from '@/lib/db/scans';
+import { addScan, listStandaloneScans } from '@/lib/db/scans';
 import type { ScanRequest, Device } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -78,6 +78,6 @@ export async function GET() {
     if (!session?.user?.id) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const list = await listScans(session.user.id);
+    const list = await listStandaloneScans(session.user.id);
     return NextResponse.json(list);
 }

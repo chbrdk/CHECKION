@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
                         totalPages: update.domainResult.totalPages
                     });
                     for (const page of update.domainResult.pages) {
-                        await addScan(userId, page);
+                        await addScan(userId, { ...page, groupId: id });
                     }
                 }
             }

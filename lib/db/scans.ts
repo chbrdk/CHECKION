@@ -2,7 +2,7 @@
 /*  CHECKION – Scan persistence (DB)                                   */
 /* ------------------------------------------------------------------ */
 
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, isNull } from 'drizzle-orm';
 import { getDb } from './index';
 import { scans, domainScans } from './schema';
 import type { ScanResult, DomainScanResult } from '@/lib/types';
@@ -53,6 +53,13 @@ export async function updateScanSummary(id: string, userId: string, summary: UxC
 export async function listScans(userId: string): Promise<ScanResult[]> {
     const db = getDb();
     const rows = await db.select({ result: scans.result }).from(scans).where(eq(scans.userId, userId)).orderBy(desc(scans.timestamp));
+    return rows.map(r => r.result as unknown as ScanResult);
+}
+
+/** Only scans that are not part of a domain scan (standalone single-URL scans). */
+export async function listStandaloneScans(userId: string): Promise<ScanResult[]> {
+    const db = getDb();
+    const rows = await db.select({ result: scans.result }).from(scans).where(and(eq(scans.userId, userId), isNull(scans.groupId))).orderBy(desc(scans.timestamp));
     return rows.map(r => r.result as unknown as ScanResult);
 }
 

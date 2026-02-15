@@ -19,22 +19,28 @@ import {
 } from '@msqdx/tokens';
 import type { ScanResult } from '@/lib/types';
 
+type DomainScanSummary = { id: string; domain: string; timestamp: string; status: string; score: number; totalPages: number };
+
 export default function DashboardPage() {
   const router = useRouter();
   const [scans, setScans] = useState<ScanResult[]>([]);
+  const [domainScans, setDomainScans] = useState<DomainScanSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/scan')
-      .then((res) => res.json())
-      .then((data) => {
-        setScans(data);
-        setLoading(false);
+    Promise.all([
+      fetch('/api/scan').then((res) => res.json()).then((data) => Array.isArray(data) ? data : []),
+      fetch('/api/scans/domain').then((res) => res.json()).then((data) => (data?.data ?? []) as DomainScanSummary[]),
+    ])
+      .then(([single, domain]) => {
+        setScans(single);
+        setDomainScans(domain);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
-  const totalScans = scans.length;
+  const totalScans = scans.length + domainScans.length;
   const totalErrors = scans.reduce((sum, s) => sum + s.stats.errors, 0);
   const totalWarnings = scans.reduce((sum, s) => sum + s.stats.warnings, 0);
   const totalNotices = scans.reduce((sum, s) => sum + s.stats.notices, 0);
@@ -190,6 +196,75 @@ export default function DashboardPage() {
                         }}
                       />
                       <MsqdxTypography variant="caption" sx={{ display: 'block', color: 'var(--color-text-muted-on-light)', fontSize: '0.6rem' }}>Errors</MsqdxTypography>
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+            )}
+          </MsqdxMoleculeCard>
+
+          <MsqdxMoleculeCard
+            title="Deep-Scan-Historie (Domain)"
+            variant="flat"
+            borderRadius="lg"
+            footerDivider={false}
+            sx={{ bgcolor: 'var(--color-card-bg)', mt: 'var(--msqdx-spacing-md)' }}
+          >
+            {loading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 'var(--msqdx-spacing-xl)' }}>
+                <CircularProgress size={28} sx={{ color: 'var(--color-theme-accent)' }} />
+              </Box>
+            ) : domainScans.length === 0 ? (
+              <Box sx={{ textAlign: 'center', py: 'var(--msqdx-spacing-md)' }}>
+                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 'var(--msqdx-spacing-sm)' }}>
+                  Noch keine Deep Scans (Domain) durchgeführt.
+                </MsqdxTypography>
+                <MsqdxButton variant="outlined" brandColor="green" size="small" onClick={() => router.push('/scan')}>
+                  Deep Scan starten
+                </MsqdxButton>
+              </Box>
+            ) : (
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: 'var(--msqdx-spacing-sm)' }}>
+                {domainScans.map((ds) => (
+                  <Box
+                    key={ds.id}
+                    onClick={() => router.push(`/domain/${ds.id}`)}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 'var(--msqdx-spacing-sm)',
+                      p: 'var(--msqdx-spacing-sm)',
+                      borderRadius: MSQDX_SPACING.borderRadius.md,
+                      cursor: 'pointer',
+                      backgroundColor: 'var(--color-card-bg)',
+                      border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        borderColor: MSQDX_BRAND_PRIMARY.green,
+                        backgroundColor: alpha(MSQDX_BRAND_PRIMARY.green, 0.02),
+                        transform: 'translateY(-2px)',
+                      },
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: '50%',
+                        backgroundColor: ds.status === 'complete' ? (ds.score > 80 ? MSQDX_BRAND_PRIMARY.green : MSQDX_BRAND_PRIMARY.orange) : MSQDX_NEUTRAL[400],
+                        flexShrink: 0,
+                      }}
+                    />
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <MsqdxTypography variant="body2" sx={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', mb: 0.5 }}>
+                        {ds.domain}
+                      </MsqdxTypography>
+                      <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', fontSize: '0.7rem' }}>
+                        {new Date(ds.timestamp).toLocaleString('de-DE')} · {ds.totalPages} Seiten
+                      </MsqdxTypography>
+                    </Box>
+                    <Box sx={{ textAlign: 'right' }}>
+                      <MsqdxChip label={ds.status === 'complete' ? `${ds.score}` : ds.status} size="small" brandColor={ds.status === 'complete' ? (ds.score > 80 ? 'green' : 'orange') : undefined} />
                     </Box>
                   </Box>
                 ))}
