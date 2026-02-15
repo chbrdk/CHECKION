@@ -52,9 +52,10 @@ export async function POST(request: Request) {
         });
     } catch (e) {
         const message = e instanceof Error ? e.message : 'Saliency service request failed';
-        console.error('[CHECKION] saliency/generate: fetch error', e);
+        const detail = e instanceof Error ? String(e) : message;
+        console.error('[CHECKION] saliency/generate: fetch error', { url: predictUrl, error: detail });
         return NextResponse.json(
-            { error: message },
+            { error: `${message} (SALIENCY_SERVICE_URL prüfen, gleiches Netz wie Saliency-Container.)` },
             { status: 502 },
         );
     }
