@@ -14,6 +14,8 @@ RUN git clone --depth 1 https://github.com/IgnatPolezhaev/MDS-ViTNet.git mds_vit
 
 # Install MDS-ViTNet dependencies then our API deps (long timeout for large wheels on slow build networks)
 RUN pip install --no-cache-dir --timeout 600 --retries 3 -r mds_vitnet/requirements.txt
+# Pin NumPy <2: torch 1.13 / torchvision 0.14 were built for NumPy 1.x; NumPy 2.x causes "module compiled with NumPy 1.x cannot run"
+RUN pip install --no-cache-dir 'numpy<2'
 COPY requirements.txt .
 RUN pip install --no-cache-dir --timeout 600 -r requirements.txt
 
