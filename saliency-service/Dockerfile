@@ -1,5 +1,6 @@
 # Saliency service for CHECKION (MDS-ViTNet) – same repo, deploy as second app in Coolify
-FROM python:3.11-slim-bookworm
+# Python 3.10 required: MDS-ViTNet pins torch==1.13.1, torchvision==0.14.1 (no 3.11 wheels)
+FROM python:3.10-slim-bookworm
 
 WORKDIR /app
 

@@ -116,6 +116,12 @@ Ersten User unter **Registrieren** anlegen.
 
 ---
 
+## Saliency (Attention-Heatmap)
+
+Für den optionalen Saliency-Service (gleiches Repo, zweite Anwendung) und die genaue Coolify-Eingabe Schritt für Schritt:
+
+→ **`docs/deployment/coolify-saliency-schritt-fuer-schritt.md`**
+
 ## Referenzen
 
 - [Coolify Docs](https://coolify.io/docs)

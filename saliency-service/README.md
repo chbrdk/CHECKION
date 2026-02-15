@@ -50,8 +50,8 @@ Deploy CHECKION and the saliency service as **two separate applications** from t
 - **Repository:** Your CHECKION GitHub repo (same as the main app).
 - **Build:**
   - **Type:** Dockerfile.
-  - **Dockerfile path:** `saliency-service/Dockerfile`.
-  - **Build context / Root directory:** `saliency-service` (so the context is the folder that contains `main.py`, `requirements.txt`, `Dockerfile`, `entrypoint.sh`).
+  - **Build context / Root directory:** `saliency-service`.
+  - **Dockerfile path:** `Dockerfile` (relative to that context – do not use `saliency-service/Dockerfile` or Coolify will look for `saliency-service/saliency-service`).
 - **Port:** `8000` (expose in Coolify).
 - **Weights (choose one):**
   - **Option A – Env in Coolify:** Add env var  
