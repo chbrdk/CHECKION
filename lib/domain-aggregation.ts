@@ -135,7 +135,28 @@ export function aggregateUx(pages: ScanResult[]): AggregatedUx | null {
   };
 }
 
-/** SEO: counts across pages (e.g. how many missing meta description). */
+/** Keyword aggregated across multiple pages (domain-wide). */
+export interface CrossPageKeyword {
+  keyword: string;
+  totalCount: number;
+  pageCount: number;
+  avgDensityPercent: number;
+  pageUrls: string[];
+}
+
+/** Per-page SEO summary including content/density. */
+export interface PageSeoSummary {
+  url: string;
+  title: string | null;
+  hasMeta: boolean;
+  hasH1: boolean;
+  wordCount: number;
+  topKeywordCount: number;
+  /** True if body word count < 300 (skinny content). */
+  isSkinny: boolean;
+}
+
+/** SEO: counts across pages + cross-page keywords + per-page density. */
 export interface AggregatedSeo {
   totalPages: number;
   withTitle: number;
@@ -144,8 +165,14 @@ export interface AggregatedSeo {
   withCanonical: number;
   missingMetaDescriptionUrls: string[];
   missingH1Urls: string[];
-  pages: Array<{ url: string; title: string | null; hasMeta: boolean; hasH1: boolean }>;
+  pages: PageSeoSummary[];
+  /** Keywords that appear on multiple pages, sorted by totalCount desc. */
+  crossPageKeywords: CrossPageKeyword[];
+  /** Total words across all pages (for domain-wide density context). */
+  totalWordsAcrossPages: number;
 }
+
+const SKINNY_WORD_THRESHOLD = 300;
 
 export function aggregateSeo(pages: ScanResult[]): AggregatedSeo | null {
   const withSeo = pages.filter((p) => p.seo != null);
@@ -154,7 +181,9 @@ export function aggregateSeo(pages: ScanResult[]): AggregatedSeo | null {
   let withTitle = 0, withMetaDescription = 0, withH1 = 0, withCanonical = 0;
   const missingMetaDescriptionUrls: string[] = [];
   const missingH1Urls: string[] = [];
-  const pagesList: AggregatedSeo['pages'] = [];
+  const pagesList: PageSeoSummary[] = [];
+  const keywordMap = new Map<string, { totalCount: number; pageUrls: Set<string>; densitySum: number; densityCount: number }>();
+  let totalWordsAcrossPages = 0;
 
   for (const p of withSeo) {
     const seo = p.seo!;
@@ -164,13 +193,52 @@ export function aggregateSeo(pages: ScanResult[]): AggregatedSeo | null {
     if (seo.h1?.trim()) withH1++;
     else missingH1Urls.push(p.url);
     if (seo.canonical?.trim()) withCanonical++;
+
+    const wordCount = seo.bodyWordCount ?? seo.keywordAnalysis?.totalWords ?? 0;
+    totalWordsAcrossPages += wordCount;
+    const topKeywords = seo.keywordAnalysis?.topKeywords ?? [];
+    const topKeywordCount = topKeywords.length;
+
     pagesList.push({
       url: p.url,
       title: seo.title ?? null,
       hasMeta: !!(seo.metaDescription?.trim()),
       hasH1: !!(seo.h1?.trim()),
+      wordCount,
+      topKeywordCount,
+      isSkinny: wordCount > 0 && wordCount < SKINNY_WORD_THRESHOLD,
     });
+
+    for (const item of topKeywords) {
+      const key = item.keyword.toLowerCase().trim();
+      if (!key) continue;
+      const existing = keywordMap.get(key);
+      if (existing) {
+        existing.totalCount += item.count;
+        existing.pageUrls.add(p.url);
+        existing.densitySum += item.densityPercent;
+        existing.densityCount += 1;
+      } else {
+        keywordMap.set(key, {
+          totalCount: item.count,
+          pageUrls: new Set([p.url]),
+          densitySum: item.densityPercent,
+          densityCount: 1,
+        });
+      }
+    }
   }
+
+  const crossPageKeywords: CrossPageKeyword[] = Array.from(keywordMap.entries())
+    .map(([keyword, data]) => ({
+      keyword,
+      totalCount: data.totalCount,
+      pageCount: data.pageUrls.size,
+      avgDensityPercent: data.densityCount > 0 ? Math.round((data.densitySum / data.densityCount) * 100) / 100 : 0,
+      pageUrls: Array.from(data.pageUrls),
+    }))
+    .sort((a, b) => b.totalCount - a.totalCount)
+    .slice(0, 50);
 
   return {
     totalPages: withSeo.length,
@@ -180,7 +248,9 @@ export function aggregateSeo(pages: ScanResult[]): AggregatedSeo | null {
     withCanonical,
     missingMetaDescriptionUrls,
     missingH1Urls,
-    pages: pagesList,
+    pages: pagesList.sort((a, b) => b.wordCount - a.wordCount),
+    crossPageKeywords,
+    totalWordsAcrossPages,
   };
 }
 

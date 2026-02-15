@@ -437,20 +437,88 @@ export default function DomainResultPage() {
                 (aggregated.seo || aggregated.links) ? (
                 <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 'var(--msqdx-spacing-md)' }}>
                     {aggregated.seo && (
-                        <MsqdxMoleculeCard title="SEO (Domain)" subtitle="Aggregiert über alle Seiten" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
-                            <Box sx={{ display: 'grid', gap: 1 }}>
-                                <MsqdxTypography variant="body2">Seiten mit Title: {aggregated.seo.withTitle} / {aggregated.seo.totalPages}</MsqdxTypography>
-                                <MsqdxTypography variant="body2">Seiten mit Meta-Description: {aggregated.seo.withMetaDescription} / {aggregated.seo.totalPages}</MsqdxTypography>
-                                <MsqdxTypography variant="body2">Seiten mit H1: {aggregated.seo.withH1} / {aggregated.seo.totalPages}</MsqdxTypography>
-                                {aggregated.seo.missingMetaDescriptionUrls.length > 0 && (
-                                    <Box sx={{ mt: 1 }}>
-                                        <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>Ohne Meta-Description:</MsqdxTypography>
-                                        {aggregated.seo.missingMetaDescriptionUrls.slice(0, 5).map((url) => {
-                                            const page = pages.find((p) => p.url === url);
-                                            return page ? <Box key={url}><MsqdxButton size="small" variant="text" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>{url}</MsqdxButton></Box> : null;
-                                        })}
+                        <MsqdxMoleculeCard title="SEO (Domain)" subtitle="Meta, Keywords seitenübergreifend, Inhaltsdichte" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                <Box>
+                                    <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Meta & Struktur</MsqdxTypography>
+                                    <Box sx={{ display: 'grid', gap: 0.5 }}>
+                                        <MsqdxTypography variant="body2">Seiten mit Title: {aggregated.seo.withTitle} / {aggregated.seo.totalPages}</MsqdxTypography>
+                                        <MsqdxTypography variant="body2">Seiten mit Meta-Description: {aggregated.seo.withMetaDescription} / {aggregated.seo.totalPages}</MsqdxTypography>
+                                        <MsqdxTypography variant="body2">Seiten mit H1: {aggregated.seo.withH1} / {aggregated.seo.totalPages}</MsqdxTypography>
+                                        {aggregated.seo.totalWordsAcrossPages > 0 && (
+                                            <MsqdxTypography variant="body2">Wörter gesamt (alle Seiten): {aggregated.seo.totalWordsAcrossPages.toLocaleString('de-DE')}</MsqdxTypography>
+                                        )}
+                                    </Box>
+                                    {aggregated.seo.missingMetaDescriptionUrls.length > 0 && (
+                                        <Box sx={{ mt: 1 }}>
+                                            <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>Ohne Meta-Description:</MsqdxTypography>
+                                            {aggregated.seo.missingMetaDescriptionUrls.slice(0, 5).map((url) => {
+                                                const page = pages.find((p) => p.url === url);
+                                                return page ? <Box key={url}><MsqdxButton size="small" variant="text" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>{url}</MsqdxButton></Box> : null;
+                                            })}
+                                        </Box>
+                                    )}
+                                </Box>
+
+                                {aggregated.seo.crossPageKeywords.length > 0 && (
+                                    <Box>
+                                        <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Keywords seitenübergreifend (Top)</MsqdxTypography>
+                                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1 }}>
+                                            Begriffe, die auf mehreren Seiten vorkommen; sortiert nach Gesamt-Vorkommen.
+                                        </MsqdxTypography>
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                            {aggregated.seo.crossPageKeywords.slice(0, 25).map((kw) => (
+                                                <MsqdxChip
+                                                    key={kw.keyword}
+                                                    label={`${kw.keyword} (${kw.totalCount}×, ${kw.pageCount} Seite(n), Ø ${kw.avgDensityPercent}%)`}
+                                                    size="small"
+                                                    sx={{ fontSize: '0.7rem', height: 22 }}
+                                                />
+                                            ))}
+                                        </Box>
                                     </Box>
                                 )}
+
+                                <Box>
+                                    <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Seiten nach Inhalt & Dichte</MsqdxTypography>
+                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1 }}>
+                                        Sortiert nach Wortanzahl; &lt;300 Wörter = Skinny Content.
+                                    </MsqdxTypography>
+                                    <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0, maxHeight: 280, overflow: 'auto' }}>
+                                        {aggregated.seo.pages.map((row) => {
+                                            const page = pages.find((p) => p.url === row.url);
+                                            return (
+                                                <Box
+                                                    component="li"
+                                                    key={row.url}
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 1,
+                                                        py: 0.5,
+                                                        borderBottom: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                                                        flexWrap: 'wrap',
+                                                    }}
+                                                >
+                                                    {page ? (
+                                                        <MsqdxButton size="small" variant="text" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none', fontSize: '0.75rem', flex: '1 1 auto', minWidth: 0, justifyContent: 'flex-start' }}>
+                                                            {row.url}
+                                                        </MsqdxButton>
+                                                    ) : (
+                                                        <MsqdxTypography variant="caption" sx={{ flex: '1 1 auto', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.url}</MsqdxTypography>
+                                                    )}
+                                                    <MsqdxTypography variant="caption" sx={{ whiteSpace: 'nowrap' }}>{row.wordCount.toLocaleString('de-DE')} Wörter</MsqdxTypography>
+                                                    {row.topKeywordCount > 0 && (
+                                                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>{row.topKeywordCount} Top-Keywords</MsqdxTypography>
+                                                    )}
+                                                    {row.isSkinny && (
+                                                        <MsqdxChip label="Skinny" size="small" sx={{ height: 18, fontSize: '0.65rem', bgcolor: 'var(--color-secondary-dx-orange-tint)', color: 'var(--color-secondary-dx-orange)' }} />
+                                                    )}
+                                                </Box>
+                                            );
+                                        })}
+                                    </Box>
+                                </Box>
                             </Box>
                         </MsqdxMoleculeCard>
                     )}
