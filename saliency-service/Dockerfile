@@ -12,10 +12,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Clone MDS-ViTNet (no weights yet – see entrypoint or volume mount)
 RUN git clone --depth 1 https://github.com/IgnatPolezhaev/MDS-ViTNet.git mds_vitnet
 
-# Install MDS-ViTNet dependencies then our API deps
-RUN pip install --no-cache-dir -r mds_vitnet/requirements.txt
+# Install MDS-ViTNet dependencies then our API deps (long timeout for large wheels on slow build networks)
+RUN pip install --no-cache-dir --timeout 600 --retries 3 -r mds_vitnet/requirements.txt
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --timeout 600 -r requirements.txt
 
 # Optional: gdown for one-time weights download from Google Drive (set WEIGHTS_FOLDER_ID in Coolify)
 RUN pip install --no-cache-dir gdown
