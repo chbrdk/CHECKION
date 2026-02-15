@@ -27,6 +27,8 @@ export interface AggregatedIssuesResult {
   issues: AggregatedIssue[];
   stats: ScanStats;
   levelStats: { A: number; AA: number; AAA: number; APCA: number; Unknown: number };
+  /** Per-page issue counts, sorted by errors desc (worst first). */
+  pagesByIssueCount: Array<{ url: string; errors: number; warnings: number; notices: number }>;
 }
 
 function mergeStats(pages: ScanResult[]): ScanStats {
@@ -67,7 +69,13 @@ export function aggregateIssues(pages: ScanResult[]): AggregatedIssuesResult {
   }));
 
   const stats = mergeStats(pages);
-  return { issues, stats, levelStats: levelCounts };
+  const pagesByIssueCount = pages.map((p) => ({
+    url: p.url,
+    errors: p.stats?.errors ?? 0,
+    warnings: p.stats?.warnings ?? 0,
+    notices: p.stats?.notices ?? 0,
+  })).sort((a, b) => b.errors - a.errors || b.warnings - a.warnings);
+  return { issues, stats, levelStats: levelCounts, pagesByIssueCount };
 }
 
 /** Aggregated UX: averages + merged lists (broken links with pageUrl). */
@@ -76,6 +84,8 @@ export interface AggregatedUx {
   cls: number;
   readability: { grade: string; score: number };
   tapTargets: { issues: string[]; detailsByPage: Array<{ url: string; count: number }> };
+  /** Focus-order items per page (for visual/tab-order analysis). */
+  focusOrderByPage: Array<{ url: string; count: number }>;
   brokenLinks: Array<{ href: string; status: number; text: string; pageUrl: string }>;
   consoleErrorsByPage: Array<{ url: string; count: number }>;
   headingHierarchy: {
@@ -84,6 +94,8 @@ export interface AggregatedUx {
     totalPages: number;
   };
   pageCount: number;
+  /** Pages sorted by UX score asc (worst first) for prioritization. */
+  pagesByScore: Array<{ url: string; score: number; cls: number }>;
 }
 
 export function aggregateUx(pages: ScanResult[]): AggregatedUx | null {
@@ -94,7 +106,9 @@ export function aggregateUx(pages: ScanResult[]): AggregatedUx | null {
   const tapIssuesSet = new Set<string>();
   const brokenLinks: AggregatedUx['brokenLinks'] = [];
   const detailsByPage: AggregatedUx['tapTargets']['detailsByPage'] = [];
+  const focusOrderByPage: Array<{ url: string; count: number }> = [];
   const consoleErrorsByPage: AggregatedUx['consoleErrorsByPage'] = [];
+  const pagesByScore: Array<{ url: string; score: number; cls: number }> = [];
   let pagesWithMultipleH1 = 0, pagesWithSkippedLevels = 0;
   let readGrade = '';
 
@@ -102,6 +116,7 @@ export function aggregateUx(pages: ScanResult[]): AggregatedUx | null {
     const ux = p.ux!;
     scoreSum += ux.score;
     clsSum += ux.cls;
+    pagesByScore.push({ url: p.url, score: ux.score, cls: ux.cls });
     if (ux.readability?.score != null) {
       readScoreSum += ux.readability.score;
       if (!readGrade) readGrade = ux.readability.grade ?? '';
@@ -109,6 +124,8 @@ export function aggregateUx(pages: ScanResult[]): AggregatedUx | null {
     (ux.tapTargets?.issues ?? []).forEach((i) => tapIssuesSet.add(i));
     const tapCount = ux.tapTargets?.details?.length ?? 0;
     if (tapCount > 0) detailsByPage.push({ url: p.url, count: tapCount });
+    const focusCount = ux.focusOrder?.length ?? 0;
+    if (focusCount > 0) focusOrderByPage.push({ url: p.url, count: focusCount });
     (ux.brokenLinks ?? []).forEach((l) => brokenLinks.push({ ...l, pageUrl: p.url }));
     const errCount = ux.consoleErrors?.length ?? 0;
     if (errCount > 0) consoleErrorsByPage.push({ url: p.url, count: errCount });
@@ -118,12 +135,15 @@ export function aggregateUx(pages: ScanResult[]): AggregatedUx | null {
     }
   }
 
+  pagesByScore.sort((a, b) => a.score - b.score);
+
   const n = withUx.length;
   return {
     score: Math.round(scoreSum / n),
     cls: Math.round((clsSum / n) * 1000) / 1000,
     readability: { grade: readGrade, score: n ? Math.round(readScoreSum / n) : 0 },
     tapTargets: { issues: Array.from(tapIssuesSet), detailsByPage },
+    focusOrderByPage,
     brokenLinks,
     consoleErrorsByPage,
     headingHierarchy: {
@@ -132,6 +152,7 @@ export function aggregateUx(pages: ScanResult[]): AggregatedUx | null {
       totalPages: n,
     },
     pageCount: n,
+    pagesByScore,
   };
 }
 
@@ -261,6 +282,8 @@ export interface AggregatedLinks {
   internal: number;
   external: number;
   uniqueBrokenUrls: number;
+  /** Per-page broken count, sorted desc (pages with most broken first). */
+  brokenByPage: Array<{ url: string; count: number }>;
 }
 
 export function aggregateLinks(pages: ScanResult[]): AggregatedLinks | null {
@@ -270,17 +293,22 @@ export function aggregateLinks(pages: ScanResult[]): AggregatedLinks | null {
   const broken: AggregatedLinks['broken'] = [];
   let totalLinks = 0, internal = 0, external = 0;
   const uniqueBroken = new Set<string>();
+  const brokenByPage: Array<{ url: string; count: number }> = [];
 
   for (const p of withLinks) {
     const links = p.links!;
     totalLinks += links.total ?? 0;
     internal += links.internal ?? 0;
     external += links.external ?? 0;
+    const brokenCount = links.broken?.length ?? 0;
+    if (brokenCount > 0) brokenByPage.push({ url: p.url, count: brokenCount });
     (links.broken ?? []).forEach((b) => {
       broken.push({ ...b, pageUrl: p.url });
       uniqueBroken.add(b.url);
     });
   }
+
+  brokenByPage.sort((a, b) => b.count - a.count);
 
   return {
     broken,
@@ -288,15 +316,30 @@ export function aggregateLinks(pages: ScanResult[]): AggregatedLinks | null {
     internal,
     external,
     uniqueBrokenUrls: uniqueBroken.size,
+    brokenByPage,
   };
 }
 
-/** Infra: counts and merged data. */
+/** Infra: counts and URL lists per category. */
 export interface AggregatedInfra {
   geo: { pageCount: number; sample: GeoAudit | null };
-  privacy: { withPolicy: number; withCookieBanner: number; withTerms: number; totalPages: number };
-  security: { withCsp: number; withXFrame: number; totalPages: number };
-  technical: TechnicalInsights | null; // merged from first page or merge logic
+  privacy: {
+    withPolicy: number;
+    withCookieBanner: number;
+    withTerms: number;
+    totalPages: number;
+    urlsWithPolicy: string[];
+    urlsWithCookieBanner: string[];
+    urlsWithTerms: string[];
+  };
+  security: {
+    withCsp: number;
+    withXFrame: number;
+    totalPages: number;
+    urlsWithCsp: string[];
+    urlsWithXFrame: string[];
+  };
+  technical: TechnicalInsights | null;
 }
 
 export function aggregateInfra(pages: ScanResult[]): AggregatedInfra | null {
@@ -305,21 +348,24 @@ export function aggregateInfra(pages: ScanResult[]): AggregatedInfra | null {
   );
   if (withAny.length === 0) return null;
 
-  let withPolicy = 0, withCookieBanner = 0, withTerms = 0;
-  let withCsp = 0, withXFrame = 0;
+  const urlsWithPolicy: string[] = [];
+  const urlsWithCookieBanner: string[] = [];
+  const urlsWithTerms: string[] = [];
+  const urlsWithCsp: string[] = [];
+  const urlsWithXFrame: string[] = [];
   let geoSample: GeoAudit | null = null;
   let technical: TechnicalInsights | null = null;
 
   for (const p of pages) {
     if (p.geo) geoSample ??= p.geo;
     if (p.privacy) {
-      if (p.privacy.hasPrivacyPolicy) withPolicy++;
-      if (p.privacy.hasCookieBanner) withCookieBanner++;
-      if (p.privacy.hasTermsOfService) withTerms++;
+      if (p.privacy.hasPrivacyPolicy) urlsWithPolicy.push(p.url);
+      if (p.privacy.hasCookieBanner) urlsWithCookieBanner.push(p.url);
+      if (p.privacy.hasTermsOfService) urlsWithTerms.push(p.url);
     }
     if (p.security) {
-      if (p.security.contentSecurityPolicy?.present) withCsp++;
-      if (p.security.xFrameOptions?.present) withXFrame++;
+      if (p.security.contentSecurityPolicy?.present) urlsWithCsp.push(p.url);
+      if (p.security.xFrameOptions?.present) urlsWithXFrame.push(p.url);
     }
     if (p.technicalInsights) technical ??= p.technicalInsights;
   }
@@ -330,23 +376,34 @@ export function aggregateInfra(pages: ScanResult[]): AggregatedInfra | null {
   return {
     geo: { pageCount: pages.filter((p) => p.geo != null).length, sample: geoSample },
     privacy: {
-      withPolicy,
-      withCookieBanner,
-      withTerms,
+      withPolicy: urlsWithPolicy.length,
+      withCookieBanner: urlsWithCookieBanner.length,
+      withTerms: urlsWithTerms.length,
       totalPages: withPrivacy || pages.length,
+      urlsWithPolicy,
+      urlsWithCookieBanner,
+      urlsWithTerms,
     },
-    security: { withCsp, withXFrame, totalPages: withSecurity || pages.length },
+    security: {
+      withCsp: urlsWithCsp.length,
+      withXFrame: urlsWithXFrame.length,
+      totalPages: withSecurity || pages.length,
+      urlsWithCsp,
+      urlsWithXFrame,
+    },
     technical,
   };
 }
 
-/** Generative (GEO): average score + merged technical/content. */
+/** Generative (GEO): average score + content summary + per-page. */
 export interface AggregatedGenerative {
   score: number;
   pageCount: number;
   withLlmsTxt: number;
   withRobotsAllowingAi: number;
-  pages: Array<{ url: string; score: number; hasLlmsTxt: boolean }>;
+  /** Averages across pages (faqCount, listDensity, citationDensity). */
+  contentSummary: { avgFaqCount: number; avgListDensity: number; avgCitationDensity: number };
+  pages: Array<{ url: string; score: number; hasLlmsTxt: boolean; hasRecommendedSchema: boolean }>;
 }
 
 export function aggregateGenerative(pages: ScanResult[]): AggregatedGenerative | null {
@@ -354,6 +411,7 @@ export function aggregateGenerative(pages: ScanResult[]): AggregatedGenerative |
   if (withGen.length === 0) return null;
 
   let scoreSum = 0, withLlmsTxt = 0, withRobotsAllowingAi = 0;
+  let faqSum = 0, listDensitySum = 0, citationDensitySum = 0;
   const pagesList: AggregatedGenerative['pages'] = [];
 
   for (const p of withGen) {
@@ -361,18 +419,32 @@ export function aggregateGenerative(pages: ScanResult[]): AggregatedGenerative |
     scoreSum += g.score;
     if (g.technical?.hasLlmsTxt) withLlmsTxt++;
     if (g.technical?.hasRobotsAllowingAI) withRobotsAllowingAi++;
+    const content = g.content;
+    if (content) {
+      faqSum += content.faqCount ?? 0;
+      listDensitySum += content.listDensity ?? 0;
+      citationDensitySum += content.citationDensity ?? 0;
+    }
+    const hasRecommendedSchema = (g.technical?.recommendedSchemaTypesFound?.length ?? 0) > 0;
     pagesList.push({
       url: p.url,
       score: g.score,
       hasLlmsTxt: g.technical?.hasLlmsTxt ?? false,
+      hasRecommendedSchema,
     });
   }
 
+  const n = withGen.length;
   return {
-    score: Math.round(scoreSum / withGen.length),
-    pageCount: withGen.length,
+    score: Math.round(scoreSum / n),
+    pageCount: n,
     withLlmsTxt,
     withRobotsAllowingAi,
+    contentSummary: {
+      avgFaqCount: Math.round((faqSum / n) * 10) / 10,
+      avgListDensity: Math.round((listDensitySum / n) * 100) / 100,
+      avgCitationDensity: Math.round((citationDensitySum / n) * 100) / 100,
+    },
     pages: pagesList,
   };
 }
@@ -382,6 +454,8 @@ export interface AggregatedStructure {
   pagesWithHeadingIssues: number;
   pagesWithMultipleH1: string[];
   pagesWithSkippedLevels: string[];
+  /** Pages with single H1 and no skipped levels. */
+  pagesWithGoodStructure: string[];
   totalPages: number;
 }
 
@@ -391,17 +465,22 @@ export function aggregateStructure(pages: ScanResult[]): AggregatedStructure | n
 
   const pagesWithMultipleH1: string[] = [];
   const pagesWithSkippedLevels: string[] = [];
+  const pagesWithGoodStructure: string[] = [];
 
   for (const p of withUx) {
     const h = p.ux!.headingHierarchy!;
-    if (!h.hasSingleH1 || (h.h1Count ?? 0) > 1) pagesWithMultipleH1.push(p.url);
-    if ((h.skippedLevels?.length ?? 0) > 0) pagesWithSkippedLevels.push(p.url);
+    const multiH1 = !h.hasSingleH1 || (h.h1Count ?? 0) > 1;
+    const skipped = (h.skippedLevels?.length ?? 0) > 0;
+    if (multiH1) pagesWithMultipleH1.push(p.url);
+    if (skipped) pagesWithSkippedLevels.push(p.url);
+    if (!multiH1 && !skipped) pagesWithGoodStructure.push(p.url);
   }
 
   return {
     pagesWithHeadingIssues: pagesWithMultipleH1.length + pagesWithSkippedLevels.length,
     pagesWithMultipleH1,
     pagesWithSkippedLevels,
+    pagesWithGoodStructure,
     totalPages: withUx.length,
   };
 }
