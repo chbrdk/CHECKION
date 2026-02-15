@@ -196,7 +196,10 @@
     "tabValidated": "Validiert",
     "showAttentionHeatmap": "Attention Heatmap anzeigen",
     "hideAttentionHeatmap": "Attention Heatmap ausblenden",
-    "attentionHeatmapComputing": "Wird berechnet…"
+    "attentionHeatmapComputing": "Wird berechnet…",
+    "generateAttentionHeatmap": "Heatmap jetzt berechnen",
+    "generatingHeatmap": "Wird berechnet…",
+    "heatmapError": "Heatmap konnte nicht geladen werden (Service prüfen)."
   },
   "domainResult": {
     "loading": "Laden…",

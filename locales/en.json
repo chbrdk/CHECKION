@@ -196,7 +196,10 @@
     "tabValidated": "Passed",
     "showAttentionHeatmap": "Show Attention heatmap",
     "hideAttentionHeatmap": "Hide Attention heatmap",
-    "attentionHeatmapComputing": "Computing…"
+    "attentionHeatmapComputing": "Computing…",
+    "generateAttentionHeatmap": "Generate heatmap now",
+    "generatingHeatmap": "Generating…",
+    "heatmapError": "Heatmap could not be generated (check service)."
   },
   "domainResult": {
     "loading": "Loading…",

@@ -66,6 +66,8 @@ export default function ResultsPage() {
     const [showFocusOrder, setShowFocusOrder] = useState(false);
     const [showTouchTargets, setShowTouchTargets] = useState(false);
     const [showSaliencyHeatmap, setShowSaliencyHeatmap] = useState(false);
+    const [saliencyGenerating, setSaliencyGenerating] = useState(false);
+    const [saliencyError, setSaliencyError] = useState<string | null>(null);
     const [screenshotDimensions, setScreenshotDimensions] = useState<{ width: number; height: number }>({ width: 1920, height: 1080 });
     const [summarizing, setSummarizing] = useState(false);
     const [summarizeError, setSummarizeError] = useState<string | null>(null);
@@ -82,6 +84,31 @@ export default function ResultsPage() {
     const handleRefRegister = useCallback((index: number, el: HTMLDivElement | null) => {
         issueRefs.current[index] = el;
     }, []);
+
+    const handleGenerateSaliency = useCallback(async () => {
+        if (!result?.id || saliencyGenerating) return;
+        setSaliencyError(null);
+        setSaliencyGenerating(true);
+        try {
+            const res = await fetch('/api/saliency/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ scanId: result.id }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error ?? t('results.heatmapError'));
+            const scanRes = await fetch(`/api/scan/${result.id}`);
+            if (scanRes.ok) {
+                const updated = await scanRes.json();
+                setResult(updated);
+                setShowSaliencyHeatmap(true);
+            }
+        } catch (e) {
+            setSaliencyError(e instanceof Error ? e.message : t('results.heatmapError'));
+        } finally {
+            setSaliencyGenerating(false);
+        }
+    }, [result?.id, saliencyGenerating, t]);
 
     const filteredIssues = useMemo(() => {
         if (!result) return [];
@@ -786,13 +813,29 @@ export default function ResultsPage() {
                                     </MsqdxButton>
                                 </Box>
                             ) : (
-                                <MsqdxTooltip title={t('info.saliencyHeatmap')} brandColor="purple">
-                                    <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center' }}>
-                                        <MsqdxButton variant="outlined" size="small" disabled>
-                                            {t('results.attentionHeatmapComputing')}
-                                        </MsqdxButton>
-                                    </Box>
-                                </MsqdxTooltip>
+                                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+                                    <InfoTooltip title={t('info.saliencyHeatmap')} ariaLabel={t('common.info')} />
+                                    <MsqdxButton
+                                        variant="outlined"
+                                        size="small"
+                                        disabled={saliencyGenerating}
+                                        onClick={handleGenerateSaliency}
+                                    >
+                                        {saliencyGenerating ? (
+                                            <>
+                                                <CircularProgress size={14} sx={{ mr: 0.5 }} />
+                                                {t('results.generatingHeatmap')}
+                                            </>
+                                        ) : (
+                                            t('results.generateAttentionHeatmap')
+                                        )}
+                                    </MsqdxButton>
+                                    {saliencyError && (
+                                        <MsqdxTypography variant="caption" sx={{ color: MSQDX_STATUS.error.base, ml: 0.5 }}>
+                                            {saliencyError}
+                                        </MsqdxTypography>
+                                    )}
+                                </Box>
                             )}
                         </Box>
                     }
