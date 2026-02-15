@@ -8,6 +8,9 @@ import { getScan, updateScanResult } from '@/lib/db/scans';
 
 const SALIENCY_SERVICE_URL = process.env.SALIENCY_SERVICE_URL;
 
+/** Timeout (ms) for saliency request. Model on CPU can take 1–3 min for large screenshots. */
+const SALIENCY_REQUEST_TIMEOUT_MS = 180_000;
+
 export async function POST(request: Request) {
     const session = await auth();
     if (!session?.user?.id) {
@@ -48,16 +51,19 @@ export async function POST(request: Request) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ image_base64: result.screenshot }),
-            signal: AbortSignal.timeout(60000),
+            signal: AbortSignal.timeout(SALIENCY_REQUEST_TIMEOUT_MS),
         });
     } catch (e) {
-        const message = e instanceof Error ? e.message : 'Saliency service request failed';
+        const isTimeout =
+            (e instanceof Error && e.name === 'AbortError') ||
+            (e instanceof Error && /timeout|aborted/i.test(e.message));
+        const message = isTimeout
+            ? `Saliency-Anfrage Zeitüberschreitung (${SALIENCY_REQUEST_TIMEOUT_MS / 1000}s). Service auf CPU kann länger brauchen. SALIENCY_SERVICE_URL prüfen, gleiches Netz wie Saliency-Container.`
+            : (e instanceof Error ? e.message : 'Saliency service request failed') +
+              ' (SALIENCY_SERVICE_URL prüfen, gleiches Netz wie Saliency-Container.)';
         const detail = e instanceof Error ? String(e) : message;
         console.error('[CHECKION] saliency/generate: fetch error', { url: predictUrl, error: detail });
-        return NextResponse.json(
-            { error: `${message} (SALIENCY_SERVICE_URL prüfen, gleiches Netz wie Saliency-Container.)` },
-            { status: 502 },
-        );
+        return NextResponse.json({ error: message }, { status: 502 });
     }
 
     if (!res.ok) {

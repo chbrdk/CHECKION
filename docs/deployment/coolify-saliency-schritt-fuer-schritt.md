@@ -83,18 +83,23 @@ Danach werden bei jedem neuen Scan die Attention-Heatmaps asynchron berechnet un
 
 ---
 
-## Fehler: „fetch failed“ / 502
+## Fehler: „fetch failed“ / 502 / Timeout
 
-Wenn CHECKION die Meldung **„fetch failed (SALIENCY_SERVICE_URL prüfen…)“** oder **502 Bad Gateway** anzeigt:
+Wenn CHECKION **„fetch failed“**, **502 Bad Gateway** oder **„The operation was aborted due to timeout“** (bzw. „Saliency-Anfrage Zeitüberschreitung“) anzeigt:
 
-1. **Container-ID statt App-Namen nutzen**  
+1. **Timeout („operation was aborted due to timeout“)**  
+   Die Berechnung kann auf CPU **1–3 Minuten** dauern. CHECKION wartet bis zu **3 Minuten**.  
+   - Kommt die Meldung trotzdem: **SALIENCY_SERVICE_URL** prüfen (siehe unten) und sicherstellen, dass CHECKION und Saliency im **gleichen Netz** laufen.  
+   - In den **Saliency-Logs** prüfen: Kommt **POST /predict** an und antwortet der Service? Wenn ja, aber CHECKION bricht ab, liegt oft die URL/Netzwerk-Konfiguration auf CHECKION-Seite.
+
+2. **Container-ID statt App-Namen nutzen**  
    In Coolify bei der **Saliency**-App die **interne Container-ID** finden (Auge-Symbol oder „Internal URL“ / Netzwerk-Details).  
    In CHECKION unter **Environment Variables** eintragen:  
    **`SALIENCY_SERVICE_URL`** = **`http://<diese-Container-ID>:8000`**  
    (z. B. `http://rc8gsg4kcwc8k0wsgo484w80:8000`). CHECKION danach **neu deployen**.
 
-2. **Gleicher Server / Projekt**  
+3. **Gleicher Server / Projekt**  
    CHECKION und Saliency müssen auf dem **gleichen Coolify-Server** (und idealerweise im gleichen Projekt) laufen, damit sie sich im internen Netz erreichen können.
 
-3. **Saliency-Logs prüfen**  
+4. **Saliency-Logs prüfen**  
    Beim Klick auf „Heatmap jetzt berechnen“ in den **Saliency**-Logs nach **POST /predict** suchen. Kommt keine Anfrage an, erreicht CHECKION den Container nicht (falsche ID oder anderes Netz).
