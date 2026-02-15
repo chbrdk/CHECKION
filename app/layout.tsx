@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { AppShell } from '@/components/AppShell';
 import { Providers } from '@/components/Providers';
+import { I18nProvider } from '@/components/i18n/I18nProvider';
+import { getServerLocale } from '@/lib/i18n/server';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
@@ -10,9 +12,10 @@ export const metadata: Metadata = {
   icons: { icon: '/favicon.svg' },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getServerLocale();
   return (
-    <html lang="de" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
@@ -26,7 +29,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body suppressHydrationWarning>
         <ThemeProvider>
           <Providers>
-            <AppShell>{children}</AppShell>
+            <I18nProvider initialLocale={locale}>
+              <AppShell>{children}</AppShell>
+            </I18nProvider>
           </Providers>
         </ThemeProvider>
       </body>

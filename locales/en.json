@@ -1,0 +1,113 @@
+{
+  "common": {
+    "loading": "Loading…",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "close": "Close",
+    "error": "Error",
+    "unknownError": "Unknown error"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "newScan": "New Scan",
+    "history": "History",
+    "developers": "Settings",
+    "settings": "Settings"
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome back",
+      "subtitle": "Sign in to CHECKION.",
+      "email": "Email",
+      "password": "Password",
+      "cta": "Sign in",
+      "ctaLoading": "Signing in…",
+      "error": "Sign in failed",
+      "prompt": "Don't have an account?",
+      "link": "Register"
+    },
+    "register": {
+      "title": "Create account",
+      "subtitle": "Register for CHECKION.",
+      "name": "Name (optional)",
+      "email": "Email",
+      "password": "Password (min. 8 characters)",
+      "cta": "Create account",
+      "ctaLoading": "Creating…",
+      "error": "Registration failed",
+      "prompt": "Already have an account?",
+      "link": "Sign in"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Profile, appearance, security and scan standards.",
+    "profile": {
+      "title": "Profile",
+      "subtitle": "Name, email and display options.",
+      "name": "Name",
+      "namePlaceholder": "Your name",
+      "email": "Email",
+      "emailPlaceholder": "Email",
+      "company": "Company (optional)",
+      "companyPlaceholder": "Company",
+      "avatarUrl": "Avatar URL (optional)",
+      "avatarUrlPlaceholder": "https://…",
+      "language": "Language",
+      "save": "Save profile",
+      "saving": "Saving…"
+    },
+    "appearance": {
+      "title": "Appearance",
+      "subtitle": "Accent colour for sidebar and buttons."
+    },
+    "password": {
+      "title": "Change password",
+      "current": "Current password",
+      "new": "New password",
+      "confirm": "Confirm new password",
+      "cta": "Change password",
+      "ctaSaving": "Updating…"
+    },
+    "session": {
+      "title": "Session",
+      "subtitle": "Sign out from this device.",
+      "logout": "Sign out"
+    },
+    "scanConfig": {
+      "title": "Default configuration",
+      "wcagLabel": "Default WCAG level",
+      "wcagHelper": "Choose the default level for new scans.",
+      "runnersLabel": "Default runners",
+      "saveCta": "Save settings",
+      "saved": "✓ Saved"
+    },
+    "about": {
+      "title": "About CHECKION",
+      "body": "CHECKION uses **pa11y** and **axe-core** for automated WCAG checks. Based on the MSQDX Design System · v0.1.0"
+    },
+    "messages": {
+      "profileUpdated": "Profile updated.",
+      "profileSaveFailed": "Profile could not be saved",
+      "profileError": "Error saving",
+      "passwordMissing": "Enter current and new password.",
+      "passwordMismatch": "New password and confirmation do not match.",
+      "passwordUpdated": "Password updated.",
+      "passwordError": "Password could not be changed"
+    }
+  },
+  "standards": {
+    "wcag2a": "Level A - Basic accessibility",
+    "wcag2aa": "Level AA - Recommended for most sites",
+    "wcag2aaa": "Level AAA - Highest level of accessibility"
+  },
+  "runners": {
+    "axe": "axe-core (Deque axe accessibility engine)",
+    "htmlcs": "HTML CodeSniffer (Squiz HTML_CodeSniffer)"
+  },
+  "language": {
+    "de": "Deutsch",
+    "en": "English"
+  }
+}

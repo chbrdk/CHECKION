@@ -14,10 +14,12 @@ import {
 } from '@msqdx/react';
 import { MSQDX_TYPOGRAPHY } from '@msqdx/tokens';
 import { AuthBrandColorSelector } from '@/components/auth/AuthBrandColorSelector';
+import { useI18n } from '@/components/i18n/I18nProvider';
 
 function LoginForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { t } = useI18n();
     const redirectTo = searchParams.get('redirect') ?? '/';
 
     const [email, setEmail] = useState('');
@@ -41,10 +43,10 @@ function LoginForm() {
                 router.replace(redirectTo);
                 router.refresh();
             } else {
-                throw new Error('Anmeldung fehlgeschlagen');
+                throw new Error(t('auth.login.error'));
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Anmeldung fehlgeschlagen');
+            setError(err instanceof Error ? err.message : t('auth.login.error'));
         } finally {
             setLoading(false);
         }
@@ -122,13 +124,13 @@ function LoginForm() {
                                 weight="bold"
                                 sx={{ fontFamily: MSQDX_TYPOGRAPHY.fontFamily.mono }}
                             >
-                                Anmelden
+                                {t('auth.login.title')}
                             </MsqdxTypography>
                             <MsqdxTypography
                                 variant="body2"
                                 sx={{ mt: 'var(--msqdx-spacing-xs)', color: 'var(--color-text-secondary)' }}
                             >
-                                CHECKION – WCAG Accessibility Checker
+                                {t('auth.login.subtitle')}
                             </MsqdxTypography>
                         </Box>
 
@@ -153,7 +155,7 @@ function LoginForm() {
                         >
                             <Stack sx={{ gap: 'var(--msqdx-spacing-md)' }}>
                                 <MsqdxFormField
-                                    label="E-Mail"
+                                    label={t('auth.login.email')}
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail((e.target as HTMLInputElement).value)}
@@ -161,7 +163,7 @@ function LoginForm() {
                                     fullWidth
                                 />
                                 <MsqdxFormField
-                                    label="Passwort"
+                                    label={t('auth.login.password')}
                                     type="password"
                                     value={password}
                                     onChange={(e) => setPassword((e.target as HTMLInputElement).value)}
@@ -183,15 +185,15 @@ function LoginForm() {
                                         },
                                     }}
                                 >
-                                    {loading ? 'Wird angemeldet…' : 'Anmelden'}
+                                    {loading ? t('auth.login.ctaLoading') : t('auth.login.cta')}
                                 </MsqdxButton>
                             </Stack>
                         </Box>
 
                         <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-secondary)' }}>
-                            Noch kein Konto?{' '}
+                            {t('auth.login.prompt')}{' '}
                             <Link href="/register" style={{ color: 'inherit', fontWeight: 600 }}>
-                                Registrieren
+                                {t('auth.login.link')}
                             </Link>
                         </MsqdxTypography>
                     </Stack>
@@ -201,23 +203,26 @@ function LoginForm() {
     );
 }
 
+function LoginFallback() {
+    const { t } = useI18n();
+    return (
+        <Box
+            sx={{
+                minHeight: '100vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: 'var(--audion-light-html-background-color, var(--color-secondary-dx-green))',
+            }}
+        >
+            {t('common.loading')}
+        </Box>
+    );
+}
+
 export default function LoginPage() {
     return (
-        <Suspense
-            fallback={
-                <Box
-                    sx={{
-                        minHeight: '100vh',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        bgcolor: 'var(--audion-light-html-background-color, var(--color-secondary-dx-green))',
-                    }}
-                >
-                    Laden…
-                </Box>
-            }
-        >
+        <Suspense fallback={<LoginFallback />}>
             <LoginForm />
         </Suspense>
     );

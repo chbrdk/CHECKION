@@ -13,9 +13,11 @@ import {
 } from '@msqdx/react';
 import { MSQDX_TYPOGRAPHY } from '@msqdx/tokens';
 import { AuthBrandColorSelector } from '@/components/auth/AuthBrandColorSelector';
+import { useI18n } from '@/components/i18n/I18nProvider';
 
 export default function RegisterPage() {
     const router = useRouter();
+    const { t } = useI18n();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -33,11 +35,11 @@ export default function RegisterPage() {
                 body: JSON.stringify({ name: name.trim() || undefined, email, password }),
             });
             const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.error ?? 'Registrierung fehlgeschlagen');
+            if (!res.ok) throw new Error(data.error ?? t('auth.register.error'));
             router.replace('/login');
             router.refresh();
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Registrierung fehlgeschlagen');
+            setError(err instanceof Error ? err.message : t('auth.register.error'));
         } finally {
             setLoading(false);
         }
@@ -115,13 +117,13 @@ export default function RegisterPage() {
                                 weight="bold"
                                 sx={{ fontFamily: MSQDX_TYPOGRAPHY.fontFamily.mono }}
                             >
-                                Konto erstellen
+                                {t('auth.register.title')}
                             </MsqdxTypography>
                             <MsqdxTypography
                                 variant="body2"
                                 sx={{ mt: 'var(--msqdx-spacing-xs)', color: 'var(--color-text-secondary)' }}
                             >
-                                CHECKION – WCAG Accessibility Checker
+                                {t('auth.register.subtitle')}
                             </MsqdxTypography>
                         </Box>
 
@@ -146,13 +148,13 @@ export default function RegisterPage() {
                         >
                             <Stack sx={{ gap: 'var(--msqdx-spacing-md)' }}>
                                 <MsqdxFormField
-                                    label="Name (optional)"
+                                    label={t('auth.register.name')}
                                     value={name}
                                     onChange={(e) => setName((e.target as HTMLInputElement).value)}
                                     fullWidth
                                 />
                                 <MsqdxFormField
-                                    label="E-Mail"
+                                    label={t('auth.register.email')}
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail((e.target as HTMLInputElement).value)}
@@ -160,7 +162,7 @@ export default function RegisterPage() {
                                     fullWidth
                                 />
                                 <MsqdxFormField
-                                    label="Passwort (min. 8 Zeichen)"
+                                    label={t('auth.register.password')}
                                     type="password"
                                     value={password}
                                     onChange={(e) => setPassword((e.target as HTMLInputElement).value)}
@@ -182,15 +184,15 @@ export default function RegisterPage() {
                                         },
                                     }}
                                 >
-                                    {loading ? 'Wird erstellt…' : 'Registrieren'}
+                                    {loading ? t('auth.register.ctaLoading') : t('auth.register.cta')}
                                 </MsqdxButton>
                             </Stack>
                         </Box>
 
                         <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-secondary)' }}>
-                            Bereits ein Konto?{' '}
+                            {t('auth.register.prompt')}{' '}
                             <Link href="/login" style={{ color: 'inherit', fontWeight: 600 }}>
-                                Anmelden
+                                {t('auth.register.link')}
                             </Link>
                         </MsqdxTypography>
                     </Stack>

@@ -21,22 +21,28 @@ import type { WcagStandard, Runner } from '@/lib/types';
 import type { SelectChangeEvent } from '@mui/material';
 import { BrandColorSelector } from '@/components/settings/BrandColorSelector';
 import { FORM_FIELD_ACCENT_SX } from '@/lib/theme-accent';
+import { useI18n } from '@/components/i18n/I18nProvider';
 
-const STANDARDS: { value: WcagStandard; label: string; desc: string }[] = [
-    { value: 'WCAG2A', label: 'Level A - Grundlegende Barrierefreiheit', desc: '' },
-    { value: 'WCAG2AA', label: 'Level AA - Empfohlen für die meisten Websites', desc: '' },
-    { value: 'WCAG2AAA', label: 'Level AAA - Höchstes Level der Barrierefreiheit', desc: '' },
-];
+function useStandards(t: (k: string) => string): { value: WcagStandard; label: string; desc: string }[] {
+    return useMemo(
+        () => [
+            { value: 'WCAG2A', label: t('standards.wcag2a'), desc: '' },
+            { value: 'WCAG2AA', label: t('standards.wcag2aa'), desc: '' },
+            { value: 'WCAG2AAA', label: t('standards.wcag2aaa'), desc: '' },
+        ],
+        [t]
+    );
+}
 
-const RUNNERS: { value: Runner; label: string; desc: string }[] = [
-    { value: 'axe', label: 'axe-core (Deque axe accessibility engine)', desc: '' },
-    { value: 'htmlcs', label: 'HTML CodeSniffer (Squiz HTML_CodeSniffer)', desc: '' },
-];
-
-const LANGUAGE_OPTIONS = [
-    { value: 'de', label: 'Deutsch' },
-    { value: 'en', label: 'English' },
-];
+function useRunners(t: (k: string) => string): { value: Runner; label: string; desc: string }[] {
+    return useMemo(
+        () => [
+            { value: 'axe', label: t('runners.axe'), desc: '' },
+            { value: 'htmlcs', label: t('runners.htmlcs'), desc: '' },
+        ],
+        [t]
+    );
+}
 
 type ProfileUser = {
     id: string;
@@ -50,8 +56,19 @@ type ProfileUser = {
 export default function SettingsPage() {
     const router = useRouter();
     const { data: session, status } = useSession();
+    const { t, setLocale: setUiLocale } = useI18n();
     const [mounted, setMounted] = useState(false);
     useEffect(() => setMounted(true), []);
+
+    const STANDARDS = useStandards(t);
+    const RUNNERS = useRunners(t);
+    const LANGUAGE_OPTIONS = useMemo(
+        () => [
+            { value: 'de', label: t('language.de') },
+            { value: 'en', label: t('language.en') },
+        ],
+        [t]
+    );
 
     const [profile, setProfile] = useState<ProfileUser | null>(null);
     const [name, setName] = useState('');
@@ -117,11 +134,12 @@ export default function SettingsPage() {
                 }),
             });
             const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.error ?? 'Profil konnte nicht gespeichert werden');
+            if (!res.ok) throw new Error(data.error ?? t('settings.messages.profileSaveFailed'));
             setProfile(data.user);
-            setSuccess('Profil aktualisiert.');
+            setSuccess(t('settings.messages.profileUpdated'));
+            setUiLocale(locale);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Fehler beim Speichern');
+            setError(err instanceof Error ? err.message : t('settings.messages.profileError'));
         } finally {
             setSavingProfile(false);
         }
@@ -131,11 +149,11 @@ export default function SettingsPage() {
         setError(null);
         setSuccess(null);
         if (!currentPassword || !newPassword) {
-            setError('Aktuelles und neues Passwort eingeben.');
+            setError(t('settings.messages.passwordMissing'));
             return;
         }
         if (newPassword !== confirmPassword) {
-            setError('Neues Passwort und Bestätigung stimmen nicht überein.');
+            setError(t('settings.messages.passwordMismatch'));
             return;
         }
         setSavingPassword(true);
@@ -146,13 +164,13 @@ export default function SettingsPage() {
                 body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
             });
             const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.error ?? 'Passwort konnte nicht geändert werden');
-            setSuccess('Passwort geändert.');
+            if (!res.ok) throw new Error(data.error ?? t('settings.messages.passwordError'));
+            setSuccess(t('settings.messages.passwordUpdated'));
             setCurrentPassword('');
             setNewPassword('');
             setConfirmPassword('');
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Fehler');
+            setError(err instanceof Error ? err.message : t('settings.messages.passwordError'));
         } finally {
             setSavingPassword(false);
         }
@@ -172,7 +190,7 @@ export default function SettingsPage() {
     if (!mounted || status === 'loading') {
         return (
             <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto' }} suppressHydrationWarning>
-                <MsqdxTypography>Laden…</MsqdxTypography>
+                <MsqdxTypography>{t('common.loading')}</MsqdxTypography>
             </Box>
         );
     }
@@ -184,10 +202,10 @@ export default function SettingsPage() {
                     variant="h4"
                     sx={{ fontWeight: 700, mb: MSQDX_SPACING.scale.xs, letterSpacing: '-0.02em' }}
                 >
-                    Einstellungen
+                    {t('settings.title')}
                 </MsqdxTypography>
                 <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                    Profil, Erscheinungsbild, Sicherheit und Scan-Standards.
+                    {t('settings.subtitle')}
                 </MsqdxTypography>
             </Box>
 
@@ -227,49 +245,49 @@ export default function SettingsPage() {
                         </MsqdxAvatar>
                         <Box sx={{ flex: 1 }}>
                             <MsqdxTypography variant="h6" weight="semibold" sx={{ mb: 'var(--msqdx-spacing-xs)' }}>
-                                Profil
+                                {t('settings.profile.title')}
                             </MsqdxTypography>
                             <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-secondary)' }}>
-                                Name, E-Mail und Anzeigeoptionen.
+                                {t('settings.profile.subtitle')}
                             </MsqdxTypography>
                         </Box>
                     </Stack>
                     <MsqdxDivider spacing="lg" />
                     <Stack spacing={2}>
                         <MsqdxFormField
-                            label="Name"
+                            label={t('settings.profile.name')}
                             value={name}
                             onChange={(e) => setName((e.target as HTMLInputElement).value)}
-                            placeholder="Dein Name"
+                            placeholder={t('settings.profile.namePlaceholder')}
                             fullWidth
                             sx={FORM_FIELD_ACCENT_SX}
                         />
                         <MsqdxFormField
-                            label="E-Mail"
+                            label={t('settings.profile.email')}
                             value={email}
                             onChange={(e) => setEmail((e.target as HTMLInputElement).value)}
-                            placeholder="E-Mail"
+                            placeholder={t('settings.profile.emailPlaceholder')}
                             fullWidth
                             sx={FORM_FIELD_ACCENT_SX}
                         />
                         <MsqdxFormField
-                            label="Firma (optional)"
+                            label={t('settings.profile.company')}
                             value={company}
                             onChange={(e) => setCompany((e.target as HTMLInputElement).value)}
-                            placeholder="Firma"
+                            placeholder={t('settings.profile.companyPlaceholder')}
                             fullWidth
                             sx={FORM_FIELD_ACCENT_SX}
                         />
                         <MsqdxFormField
-                            label="Avatar-URL (optional)"
+                            label={t('settings.profile.avatarUrl')}
                             value={avatarUrl}
                             onChange={(e) => setAvatarUrl((e.target as HTMLInputElement).value)}
-                            placeholder="https://…"
+                            placeholder={t('settings.profile.avatarUrlPlaceholder')}
                             fullWidth
                             sx={FORM_FIELD_ACCENT_SX}
                         />
                         <MsqdxSelect
-                            label="Sprache"
+                            label={t('settings.profile.language')}
                             value={locale}
                             onChange={(e: SelectChangeEvent<unknown>) => setLocale(e.target.value as string)}
                             options={LANGUAGE_OPTIONS}
@@ -277,7 +295,7 @@ export default function SettingsPage() {
                             sx={FORM_FIELD_ACCENT_SX}
                         />
                         <MsqdxButton variant="contained" onClick={handleSaveProfile} disabled={savingProfile} sx={{ alignSelf: 'flex-start' }}>
-                            {savingProfile ? 'Wird gespeichert…' : 'Profil speichern'}
+                            {savingProfile ? t('settings.profile.saving') : t('settings.profile.save')}
                         </MsqdxButton>
                     </Stack>
                 </MsqdxCard>
@@ -289,10 +307,10 @@ export default function SettingsPage() {
                     sx={{ p: 'var(--msqdx-spacing-md)', border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}
                 >
                     <MsqdxTypography variant="h6" weight="semibold" sx={{ mb: 'var(--msqdx-spacing-xs)' }}>
-                        Erscheinungsbild
+                        {t('settings.appearance.title')}
                     </MsqdxTypography>
                     <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-secondary)', mb: 'var(--msqdx-spacing-md)' }}>
-                        Akzentfarbe für Sidebar und Buttons.
+                        {t('settings.appearance.subtitle')}
                     </MsqdxTypography>
                     <BrandColorSelector />
                 </MsqdxCard>
@@ -304,11 +322,11 @@ export default function SettingsPage() {
                     sx={{ p: 'var(--msqdx-spacing-md)', border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}
                 >
                     <MsqdxTypography variant="h6" weight="semibold" sx={{ mb: 'var(--msqdx-spacing-sm)' }}>
-                        Passwort ändern
+                        {t('settings.password.title')}
                     </MsqdxTypography>
                     <Stack sx={{ gap: 'var(--msqdx-spacing-md)' }}>
                         <MsqdxFormField
-                            label="Aktuelles Passwort"
+                            label={t('settings.password.current')}
                             value={currentPassword}
                             onChange={(e) => setCurrentPassword((e.target as HTMLInputElement).value)}
                             type="password"
@@ -316,7 +334,7 @@ export default function SettingsPage() {
                             sx={FORM_FIELD_ACCENT_SX}
                         />
                         <MsqdxFormField
-                            label="Neues Passwort"
+                            label={t('settings.password.new')}
                             value={newPassword}
                             onChange={(e) => setNewPassword((e.target as HTMLInputElement).value)}
                             type="password"
@@ -324,7 +342,7 @@ export default function SettingsPage() {
                             sx={FORM_FIELD_ACCENT_SX}
                         />
                         <MsqdxFormField
-                            label="Neues Passwort bestätigen"
+                            label={t('settings.password.confirm')}
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword((e.target as HTMLInputElement).value)}
                             type="password"
@@ -332,7 +350,7 @@ export default function SettingsPage() {
                             sx={FORM_FIELD_ACCENT_SX}
                         />
                         <MsqdxButton variant="outlined" onClick={handlePasswordUpdate} disabled={savingPassword} sx={{ alignSelf: 'flex-start' }}>
-                            {savingPassword ? 'Wird geändert…' : 'Passwort ändern'}
+                            {savingPassword ? t('settings.password.ctaSaving') : t('settings.password.cta')}
                         </MsqdxButton>
                     </Stack>
                 </MsqdxCard>
@@ -344,13 +362,13 @@ export default function SettingsPage() {
                     sx={{ p: 'var(--msqdx-spacing-md)', border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}
                 >
                     <MsqdxTypography variant="h6" weight="semibold" sx={{ mb: 'var(--msqdx-spacing-xs)' }}>
-                        Sitzung
+                        {t('settings.session.title')}
                     </MsqdxTypography>
                     <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-secondary)', mb: 'var(--msqdx-spacing-md)' }}>
-                        Dich von diesem Gerät abmelden.
+                        {t('settings.session.subtitle')}
                     </MsqdxTypography>
                     <MsqdxButton variant="text" onClick={handleLogout}>
-                        Abmelden
+                        {t('settings.session.logout')}
                     </MsqdxButton>
                 </MsqdxCard>
 
@@ -358,7 +376,7 @@ export default function SettingsPage() {
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' }, gap: 'var(--msqdx-spacing-md)' }}>
                     <Box>
                         <MsqdxMoleculeCard
-                            title="Standard Konfiguration"
+                            title={t('settings.scanConfig.title')}
                             variant="flat"
                             borderRadius="lg"
                             footerDivider={false}
@@ -366,7 +384,7 @@ export default function SettingsPage() {
                         >
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-md)' }}>
                                 <MsqdxSelect
-                                    label="Standard WCAG Level"
+                                    label={t('settings.scanConfig.wcagLabel')}
                                     value={standard}
                                     onChange={(e: SelectChangeEvent<unknown>) => {
                                         setStandard(e.target.value as WcagStandard);
@@ -374,10 +392,10 @@ export default function SettingsPage() {
                                     }}
                                     options={STANDARDS}
                                     fullWidth
-                                    helperText="Wähle das Standard-Level für neue Scans."
+                                    helperText={t('settings.scanConfig.wcagHelper')}
                                 />
                                 <MsqdxCheckboxField
-                                    label="Standard Runners"
+                                    label={t('settings.scanConfig.runnersLabel')}
                                     options={RUNNERS.map((r) => ({ value: r.value, label: r.label }))}
                                     value={runners}
                                     onChange={(val) => {
@@ -394,14 +412,13 @@ export default function SettingsPage() {
                             onClick={handleSave}
                             sx={{ mt: 'var(--msqdx-spacing-md)', width: 'auto', minWidth: 200 }}
                         >
-                            {saved ? '✓ Gespeichert' : 'Einstellungen speichern'}
+                            {saved ? t('settings.scanConfig.saved') : t('settings.scanConfig.saveCta')}
                         </MsqdxButton>
                     </Box>
                     <Box>
-                        <MsqdxMoleculeCard title="Über CHECKION" variant="flat" borderRadius="lg" footerDivider={false} sx={{ bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}>
+                        <MsqdxMoleculeCard title={t('settings.about.title')} variant="flat" borderRadius="lg" footerDivider={false} sx={{ bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}>
                             <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', lineHeight: 1.7 }}>
-                                CHECKION nutzt <strong>pa11y</strong> und <strong>axe-core</strong> für automatisierte WCAG-Checks.
-                                Basiert auf dem MSQDX Design System · v0.1.0
+                                {t('settings.about.body')}
                             </MsqdxTypography>
                         </MsqdxMoleculeCard>
                     </Box>

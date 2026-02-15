@@ -1,0 +1,113 @@
+{
+  "common": {
+    "loading": "Laden…",
+    "save": "Speichern",
+    "saving": "Wird gespeichert…",
+    "cancel": "Abbrechen",
+    "close": "Schließen",
+    "error": "Fehler",
+    "unknownError": "Unbekannter Fehler"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "newScan": "New Scan",
+    "history": "History",
+    "developers": "Settings",
+    "settings": "Einstellungen"
+  },
+  "auth": {
+    "login": {
+      "title": "Willkommen zurück",
+      "subtitle": "Melde dich an für CHECKION.",
+      "email": "E-Mail",
+      "password": "Passwort",
+      "cta": "Anmelden",
+      "ctaLoading": "Anmeldung…",
+      "error": "Anmeldung fehlgeschlagen",
+      "prompt": "Noch kein Konto?",
+      "link": "Registrieren"
+    },
+    "register": {
+      "title": "Konto erstellen",
+      "subtitle": "Registriere dich für CHECKION.",
+      "name": "Name (optional)",
+      "email": "E-Mail",
+      "password": "Passwort (min. 8 Zeichen)",
+      "cta": "Konto erstellen",
+      "ctaLoading": "Erstellen…",
+      "error": "Registrierung fehlgeschlagen",
+      "prompt": "Bereits ein Konto?",
+      "link": "Anmelden"
+    }
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "subtitle": "Profil, Erscheinungsbild, Sicherheit und Scan-Standards.",
+    "profile": {
+      "title": "Profil",
+      "subtitle": "Name, E-Mail und Anzeigeoptionen.",
+      "name": "Name",
+      "namePlaceholder": "Dein Name",
+      "email": "E-Mail",
+      "emailPlaceholder": "E-Mail",
+      "company": "Firma (optional)",
+      "companyPlaceholder": "Firma",
+      "avatarUrl": "Avatar-URL (optional)",
+      "avatarUrlPlaceholder": "https://…",
+      "language": "Sprache",
+      "save": "Profil speichern",
+      "saving": "Wird gespeichert…"
+    },
+    "appearance": {
+      "title": "Erscheinungsbild",
+      "subtitle": "Akzentfarbe für Sidebar und Buttons."
+    },
+    "password": {
+      "title": "Passwort ändern",
+      "current": "Aktuelles Passwort",
+      "new": "Neues Passwort",
+      "confirm": "Neues Passwort bestätigen",
+      "cta": "Passwort ändern",
+      "ctaSaving": "Wird geändert…"
+    },
+    "session": {
+      "title": "Sitzung",
+      "subtitle": "Dich von diesem Gerät abmelden.",
+      "logout": "Abmelden"
+    },
+    "scanConfig": {
+      "title": "Standard Konfiguration",
+      "wcagLabel": "Standard WCAG Level",
+      "wcagHelper": "Wähle das Standard-Level für neue Scans.",
+      "runnersLabel": "Standard Runners",
+      "saveCta": "Einstellungen speichern",
+      "saved": "✓ Gespeichert"
+    },
+    "about": {
+      "title": "Über CHECKION",
+      "body": "CHECKION nutzt **pa11y** und **axe-core** für automatisierte WCAG-Checks. Basiert auf dem MSQDX Design System · v0.1.0"
+    },
+    "messages": {
+      "profileUpdated": "Profil aktualisiert.",
+      "profileSaveFailed": "Profil konnte nicht gespeichert werden",
+      "profileError": "Fehler beim Speichern",
+      "passwordMissing": "Aktuelles und neues Passwort eingeben.",
+      "passwordMismatch": "Neues Passwort und Bestätigung stimmen nicht überein.",
+      "passwordUpdated": "Passwort geändert.",
+      "passwordError": "Passwort konnte nicht geändert werden"
+    }
+  },
+  "standards": {
+    "wcag2a": "Level A - Grundlegende Barrierefreiheit",
+    "wcag2aa": "Level AA - Empfohlen für die meisten Websites",
+    "wcag2aaa": "Level AAA - Höchstes Level der Barrierefreiheit"
+  },
+  "runners": {
+    "axe": "axe-core (Deque axe accessibility engine)",
+    "htmlcs": "HTML CodeSniffer (Squiz HTML_CodeSniffer)"
+  },
+  "language": {
+    "de": "Deutsch",
+    "en": "English"
+  }
+}

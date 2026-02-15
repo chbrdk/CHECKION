@@ -6,20 +6,22 @@ import type { AdminNavItem } from '@msqdx/react';
 import NextLink from 'next/link';
 import { Box } from '@mui/material';
 import { THEME_ACCENT_WITH_FALLBACK } from '@/lib/theme-accent';
-
-const NAV_ITEMS: AdminNavItem[] = [
-    { label: 'Dashboard', path: '/', icon: 'dashboard' },
-    { label: 'New Scan', path: '/scan', icon: 'search' },
-    { label: 'History', path: '/history', icon: 'history' },
-    { label: 'Settings', path: '/developers', icon: 'code' },
-];
-
-const EXTERNAL_ITEMS: AdminNavItem[] = [
-    { label: 'Einstellungen', path: '/settings', icon: 'settings' },
-];
+import { useI18n } from '@/components/i18n/I18nProvider';
 
 export function Sidebar() {
     const pathname = usePathname();
+    const { t } = useI18n();
+
+    const NAV_ITEMS: AdminNavItem[] = [
+        { label: t('nav.dashboard'), path: '/', icon: 'dashboard' },
+        { label: t('nav.newScan'), path: '/scan', icon: 'search' },
+        { label: t('nav.history'), path: '/history', icon: 'history' },
+        { label: t('nav.developers'), path: '/developers', icon: 'code' },
+    ];
+
+    const EXTERNAL_ITEMS: AdminNavItem[] = [
+        { label: t('nav.settings'), path: '/settings', icon: 'settings' },
+    ];
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
