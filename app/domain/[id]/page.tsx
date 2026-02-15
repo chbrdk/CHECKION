@@ -26,6 +26,7 @@ import { DomainGraph } from '@/components/DomainGraph';
 import { DomainAggregatedIssueList } from '@/components/DomainAggregatedIssueList';
 import { ArrowLeft, Share2, AlertCircle, CheckCircle } from 'lucide-react';
 import { useI18n } from '@/components/i18n/I18nProvider';
+import { InfoTooltip } from '@/components/InfoTooltip';
 
 export default function DomainResultPage() {
     const params = useParams();
@@ -86,7 +87,10 @@ export default function DomainResultPage() {
         <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto' }}>
             <Box sx={{ mb: 'var(--msqdx-spacing-xl)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box>
-                    <MsqdxTypography variant="h4" weight="bold" sx={{ mb: 'var(--msqdx-spacing-xs)' }}>{t('domainResult.title')}</MsqdxTypography>
+                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-xs)' }}>
+                        <MsqdxTypography variant="h4" weight="bold">{t('domainResult.title')}</MsqdxTypography>
+                        <InfoTooltip title={t('info.domainResult')} ariaLabel={t('common.info')} />
+                    </Box>
                     <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
                         {result.domain} • {new Date(result.timestamp).toLocaleDateString()}
                     </MsqdxTypography>
@@ -113,7 +117,10 @@ export default function DomainResultPage() {
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 'var(--msqdx-spacing-md)' }}>
                     <Box sx={{ flex: '0 0 350px' }}>
                         <MsqdxCard variant="flat" sx={{ bgcolor: 'var(--color-card-bg)', p: 'var(--msqdx-spacing-md)', borderRadius: 'var(--msqdx-radius-sm)', border: '1px solid var(--color-secondary-dx-grey-light-tint)', mb: 'var(--msqdx-spacing-md)' }}>
-                            <MsqdxTypography variant="h6" sx={{ mb: 'var(--msqdx-spacing-md)' }}>{t('domainResult.domainScore')}</MsqdxTypography>
+                            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-md)' }}>
+                                <MsqdxTypography variant="h6">{t('domainResult.domainScore')}</MsqdxTypography>
+                                <InfoTooltip title={t('info.domainScore')} ariaLabel={t('common.info')} />
+                            </Box>
                             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 'var(--msqdx-spacing-md)' }}>
                                 <Box sx={{
                                     position: 'relative',
@@ -135,7 +142,10 @@ export default function DomainResultPage() {
 
                         <Box sx={{ mt: 'var(--msqdx-spacing-xl)' }}>
                             <MsqdxCard variant="flat" sx={{ bgcolor: 'var(--color-card-bg)', p: 'var(--msqdx-spacing-md)', borderRadius: 'var(--msqdx-radius-sm)', border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
-                                <MsqdxTypography variant="h6" sx={{ mb: 'var(--msqdx-spacing-md)' }}>{t('domainResult.systemicIssues')}</MsqdxTypography>
+                                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-md)' }}>
+                                <MsqdxTypography variant="h6">{t('domainResult.systemicIssues')}</MsqdxTypography>
+                                <InfoTooltip title={t('info.systemicIssues')} ariaLabel={t('common.info')} />
+                            </Box>
                                 {(result.systemicIssues?.length ?? 0) === 0 ? (
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-md)' }}>
                                         <CheckCircle color="var(--color-secondary-dx-green)" />
@@ -169,7 +179,10 @@ export default function DomainResultPage() {
 
                     <Box sx={{ flex: 1 }}>
                         <MsqdxCard variant="flat" sx={{ bgcolor: 'var(--color-card-bg)', p: 'var(--msqdx-spacing-md)', borderRadius: 'var(--msqdx-radius-sm)', border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
-                            <MsqdxTypography variant="h6" sx={{ mb: 'var(--msqdx-spacing-md)' }}>{t('domainResult.scannedPages')}</MsqdxTypography>
+                            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-md)' }}>
+                                <MsqdxTypography variant="h6">{t('domainResult.scannedPages')}</MsqdxTypography>
+                                <InfoTooltip title={t('info.scannedPages')} ariaLabel={t('common.info')} />
+                            </Box>
                             <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
                                 {(result.pages ?? []).map((page, idx) => (
                                     <Box

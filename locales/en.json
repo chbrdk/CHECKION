@@ -6,7 +6,8 @@
     "cancel": "Cancel",
     "close": "Close",
     "error": "Error",
-    "unknownError": "Unknown error"
+    "unknownError": "Unknown error",
+    "info": "Information"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -214,5 +215,36 @@
     "tabLinksSeo": "Links & SEO",
     "tabInfra": "Infrastructure & Privacy",
     "tabGenerative": "Generative Search (GEO)"
+  },
+  "info": {
+    "dashboard": "Overview of all WCAG accessibility checks you have run. Use \"New Scan\" to check a single page or an entire domain.",
+    "dashboardStats": "Scans: number of checks run. Errors/Warnings/Notices: total accessibility issues found (errors = critical, warnings = medium, notices = hints).",
+    "scanHistory": "List of your single-page scans. Each entry links to the detailed result view with issues, screenshot and metrics.",
+    "domainHistory": "List of your domain (deep) scans. A domain scan crawls many pages of a site and shows systemic issues.",
+    "scanPage": "Enter a URL and run an automated WCAG check. You can test a single page (immediate) or an entire domain (background).",
+    "scanConfig": "URL: the page or site to check. Standard: WCAG level (A, AA or AAA). Engines: which tools run (axe-core, HTML CodeSniffer).",
+    "singleTab": "Analyzes exactly one page immediately. Best for quick checks and detailed single-page results including screenshot.",
+    "deepTab": "Crawls the whole domain in the background. Finds recurring issues across many pages.",
+    "standard": "WCAG 2.x level: A = minimum, AA = recommended for most sites, AAA = highest. Choose based on your compliance target.",
+    "engines": "axe-core and HTML CodeSniffer are established accessibility engines. Using both gives broad coverage.",
+    "settings": "Profile, language, appearance, password and default settings for new scans.",
+    "profile": "Name, email and optional details. The selected language applies to the whole UI.",
+    "appearance": "Accent colour for sidebar and buttons. Affects look only, not functionality.",
+    "password": "Change your password. You must enter your current password and confirm the new one twice.",
+    "session": "Sign out from this device. Your scan data remains on the server.",
+    "scanConfigSettings": "These values are used as defaults when you start a new single-page scan (WCAG level and engines).",
+    "about": "CHECKION uses pa11y and axe-core for WCAG checks and is based on the MSQDX Design System.",
+    "developers": "REST API for accessibility checks: integrate into CI/CD, build custom dashboards or use the micro-tools programmatically.",
+    "microTools": "Utility endpoints: contrast ratio, readability (Flesch-Kincaid), and content extraction by selector.",
+    "scanData": "Trigger scans and fetch results. GET = list, POST = new scan, DELETE = remove a result.",
+    "domainScan": "A domain scan crawls your site in the background and can check unlimited pages without timeout.",
+    "liveProgress": "Shows the progress of the running domain scan and the URLs currently being scanned.",
+    "scanResult": "Detailed result of a single-page scan: issues found, WCAG levels, screenshot and metrics.",
+    "score": "Overall accessibility score (0–100). Higher means fewer issues found.",
+    "severityTabs": "Filter by severity: all issues, only errors (critical), warnings, notices, or passed rules.",
+    "domainResult": "Result of a domain scan: aggregated issues across all pages, UX/SEO/structure and systemic issues.",
+    "domainScore": "Score for the whole domain, based on all scanned pages.",
+    "systemicIssues": "Issues that appear on many pages. Fixing one rule improves accessibility on all affected pages.",
+    "scannedPages": "List of all pages scanned in this domain scan. Click to open individual results."
   }
 }

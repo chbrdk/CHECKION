@@ -5,15 +5,19 @@ import { Box } from '@mui/material';
 import { MsqdxCard, MsqdxChip, MsqdxTypography } from '@msqdx/react';
 import { Code, Terminal, Database } from 'lucide-react';
 import { useI18n } from '@/components/i18n/I18nProvider';
+import { InfoTooltip } from '@/components/InfoTooltip';
 
 export default function DevelopersPage() {
     const { t } = useI18n();
     return (
         <Box sx={{ p: 'var(--msqdx-spacing-xl)', maxWidth: 1200, mx: 'auto' }}>
             <Box sx={{ mb: 'var(--msqdx-spacing-xxl)' }}>
-                <MsqdxTypography variant="h3" weight="bold" sx={{ mb: 'var(--msqdx-spacing-md)' }}>
-                    {t('developers.title')}
-                </MsqdxTypography>
+                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-md)' }}>
+                    <MsqdxTypography variant="h3" weight="bold">
+                        {t('developers.title')}
+                    </MsqdxTypography>
+                    <InfoTooltip title={t('info.developers')} ariaLabel={t('common.info')} />
+                </Box>
                 <MsqdxTypography variant="body1" sx={{ maxWidth: 800, color: 'var(--color-text-muted-on-light)' }}>
                     {t('developers.subtitle')}
                 </MsqdxTypography>
@@ -24,6 +28,7 @@ export default function DevelopersPage() {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-md)', mb: 'var(--msqdx-spacing-lg)' }}>
                         <Terminal color="var(--color-secondary-dx-blue)" />
                         <MsqdxTypography variant="h6">{t('developers.microTools')}</MsqdxTypography>
+                        <InfoTooltip title={t('info.microTools')} ariaLabel={t('common.info')} />
                     </Box>
 
                     <Endpoint method="GET" path="/api/tools/contrast" desc={t('developers.contrastDesc')} params="?f=000000&b=ffffff" />
@@ -35,6 +40,7 @@ export default function DevelopersPage() {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-md)', mb: 'var(--msqdx-spacing-lg)' }}>
                         <Database color="var(--color-secondary-dx-green)" />
                         <MsqdxTypography variant="h6">{t('developers.scanData')}</MsqdxTypography>
+                        <InfoTooltip title={t('info.scanData')} ariaLabel={t('common.info')} />
                     </Box>
 
                     <Endpoint method="GET" path="/api/scans" desc={t('developers.scansDesc')} />

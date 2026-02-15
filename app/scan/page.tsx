@@ -12,6 +12,7 @@ import {
     MsqdxCheckboxField,
     MsqdxTabs,
 } from '@msqdx/react';
+import { InfoTooltip } from '@/components/InfoTooltip';
 import {
     MSQDX_SPACING,
     MSQDX_THEME,
@@ -99,12 +100,15 @@ export default function ScanPage() {
         <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto' }}>
             {/* Header */}
             <Box sx={{ mb: MSQDX_SPACING.scale.md }}>
-                <MsqdxTypography
-                    variant="h4"
-                    sx={{ fontWeight: 700, mb: MSQDX_SPACING.scale.xs, letterSpacing: '-0.02em' }}
-                >
-                    {t('scan.title')}
-                </MsqdxTypography>
+                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: MSQDX_SPACING.scale.xs }}>
+                    <MsqdxTypography
+                        variant="h4"
+                        sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}
+                    >
+                        {t('scan.title')}
+                    </MsqdxTypography>
+                    <InfoTooltip title={t('info.scanPage')} ariaLabel={t('common.info')} />
+                </Box>
                 <MsqdxTypography
                     variant="body2"
                     sx={{ color: 'var(--color-text-muted-on-light)' }}
@@ -116,6 +120,7 @@ export default function ScanPage() {
             {/* Main Scan Card */}
             <MsqdxMoleculeCard
                 title={t('scan.configTitle')}
+                headerActions={<InfoTooltip title={t('info.scanConfig')} ariaLabel={t('common.info')} />}
                 variant="flat"
                 borderRadius="lg"
                 footerDivider={false}

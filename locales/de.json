@@ -6,7 +6,8 @@
     "cancel": "Abbrechen",
     "close": "Schließen",
     "error": "Fehler",
-    "unknownError": "Unbekannter Fehler"
+    "unknownError": "Unbekannter Fehler",
+    "info": "Information"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -214,5 +215,36 @@
     "tabLinksSeo": "Links & SEO",
     "tabInfra": "Infrastruktur & Privacy",
     "tabGenerative": "Generative Search (GEO)"
+  },
+  "info": {
+    "dashboard": "Hier siehst du alle durchgeführten WCAG-Barrierefreiheits-Checks. Ein Klick auf „Neuer Scan“ startet einen Check für eine einzelne Seite oder eine ganze Domain.",
+    "dashboardStats": "Scans: Anzahl durchgeführter Checks. Errors/Warnings/Notices: Summe der gefundenen Barrierefreiheits-Probleme (Fehler = kritisch, Warnings = mittel, Notices = Hinweise).",
+    "scanHistory": "Liste deiner Single-Page-Scans. Jeder Eintrag führt zur detaillierten Ergebnisansicht mit Issues, Screenshot und Metriken.",
+    "domainHistory": "Liste deiner Domain-Scans (Deep Scans). Ein Domain-Scan durchsucht viele Seiten einer Website und zeigt systemische Probleme.",
+    "scanPage": "Gib eine URL ein und starte einen automatisierten WCAG-Check. Du kannst eine einzelne Seite (sofort) oder eine ganze Domain (im Hintergrund) prüfen.",
+    "scanConfig": "URL: die zu prüfende Adresse. Standard: WCAG-Level (A, AA oder AAA). Engines: welche Prüfwerkzeuge genutzt werden (axe-core, HTML CodeSniffer).",
+    "singleTab": "Analysiert genau eine Seite sofort. Ideal für schnelle Checks und detaillierte Einzelergebnisse inkl. Screenshot.",
+    "deepTab": "Durchsucht die gesamte Domain im Hintergrund. Findet wiederkehrende Fehler über viele Seiten hinweg.",
+    "standard": "WCAG 2.x Level: A = Mindestanforderungen, AA = empfohlen für die meisten Websites, AAA = höchstes Niveau.",
+    "engines": "axe-core und HTML CodeSniffer sind etablierte Barrierefreiheits-Engines. Beide zusammen liefern eine breite Abdeckung.",
+    "settings": "Profil, Sprache, Erscheinungsbild, Passwort und Standard-Einstellungen für neue Scans.",
+    "profile": "Name, E-Mail und optionale Angaben. Die gewählte Sprache gilt für die gesamte Oberfläche.",
+    "appearance": "Akzentfarbe für Sidebar und Buttons. Beeinflusst nur die Darstellung, nicht die Funktionalität.",
+    "password": "Passwort ändern. Du musst dein aktuelles Passwort eingeben und das neue zweimal bestätigen.",
+    "session": "Hier kannst du dich von diesem Gerät abmelden. Deine Scan-Daten bleiben auf dem Server.",
+    "scanConfigSettings": "Diese Einstellungen werden als Standard für neue Single-Page-Scans verwendet (WCAG-Level und Engines).",
+    "about": "CHECKION nutzt pa11y und axe-core für WCAG-Checks und basiert auf dem MSQDX Design System.",
+    "developers": "REST-API für Barrierefreiheits-Checks: in CI/CD einbinden, eigene Dashboards bauen oder die Micro-Tools programmatisch nutzen.",
+    "microTools": "Kleine Hilfsfunktionen: Kontrast berechnen, Lesbarkeit analysieren, Inhalte per Selektor extrahieren.",
+    "scanData": "Scans auslösen und Ergebnisse abrufen. GET = Liste, POST = neuer Scan, DELETE = Ergebnis löschen.",
+    "domainScan": "Ein Domain-Scan crawlt deine Website im Hintergrund und kann beliebig viele Seiten prüfen, ohne Timeout.",
+    "liveProgress": "Zeigt den Fortschritt des laufenden Domain-Scans und die aktuell gescannten URLs.",
+    "scanResult": "Detailliertes Ergebnis eines Single-Page-Scans: gefundene Issues, WCAG-Level, Screenshot und Metriken.",
+    "score": "Gesamtbewertung der Barrierefreiheit (0–100). Höhere Werte bedeuten weniger gefundene Probleme.",
+    "severityTabs": "Filter nach Schweregrad: Alle Issues, nur Errors (kritisch), Warnings, Notices oder bestandene Regeln (Validiert).",
+    "domainResult": "Ergebnis eines Domain-Scans: aggregierte Issues über alle gescannten Seiten, UX/SEO/Struktur und systemische Probleme.",
+    "domainScore": "Bewertung der gesamten Domain. Basiert auf den Ergebnissen aller gescannten Seiten.",
+    "systemicIssues": "Probleme, die auf vielen Seiten gleich auftreten. Ein Fix verbessert die Barrierefreiheit auf allen betroffenen Seiten.",
+    "scannedPages": "Liste aller Seiten, die im Domain-Scan geprüft wurden. Klick öffnet die Einzelergebnisse."
   }
 }

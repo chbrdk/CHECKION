@@ -13,6 +13,7 @@ import { MSQDX_SPACING, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
 import type { ScanResult } from '@/lib/types';
 import { HistoryList, SingleScanRow, DomainScanRow, type DomainScanSummary } from '@/components/HistoryList';
 import { useI18n } from '@/components/i18n/I18nProvider';
+import { InfoTooltip } from '@/components/InfoTooltip';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -44,16 +45,18 @@ export default function DashboardPage() {
       {/* Header */}
       <Box sx={{ mb: 'var(--msqdx-spacing-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'end' }}>
         <Box>
-          <MsqdxTypography
-            variant="h4"
-            sx={{
-              fontWeight: 700,
-              mb: 'var(--msqdx-spacing-xs)',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            {t('dashboard.title')}
-          </MsqdxTypography>
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-xs)' }}>
+            <MsqdxTypography
+              variant="h4"
+              sx={{
+                fontWeight: 700,
+                letterSpacing: '-0.02em',
+              }}
+            >
+              {t('dashboard.title')}
+            </MsqdxTypography>
+            <InfoTooltip title={t('info.dashboard')} ariaLabel={t('common.info')} />
+          </Box>
           <MsqdxTypography
             variant="body2"
             sx={{ color: 'var(--color-text-muted-on-light)' }}
@@ -73,6 +76,9 @@ export default function DashboardPage() {
       </Box>
 
       {/* Stats Cards */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-xs)' }}>
+        <InfoTooltip title={t('info.dashboardStats')} ariaLabel={t('common.info')} />
+      </Box>
       <Box
         sx={{
           display: 'grid',
@@ -92,6 +98,7 @@ export default function DashboardPage() {
         <Box sx={{ gridColumn: '1 / -1' }}>
           <MsqdxMoleculeCard
             title={t('dashboard.historyTitle')}
+            headerActions={<InfoTooltip title={t('info.scanHistory')} ariaLabel={t('common.info')} />}
             variant="flat"
             borderRadius="lg"
             footerDivider={false}
@@ -116,6 +123,7 @@ export default function DashboardPage() {
 
           <MsqdxMoleculeCard
             title={t('dashboard.domainHistoryTitle')}
+            headerActions={<InfoTooltip title={t('info.domainHistory')} ariaLabel={t('common.info')} />}
             variant="flat"
             borderRadius="lg"
             footerDivider={false}

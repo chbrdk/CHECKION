@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef, Suspense } from 'react';
 import {
-    MsqdxCard,
+    MsqdxMoleculeCard,
     MsqdxTypography,
     MsqdxButton,
     MsqdxFormField
@@ -12,6 +12,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { MSQDX_COLORS, MSQDX_SPACING } from '@msqdx/tokens';
 import type { DomainScanStatus } from '@/lib/types';
 import { useI18n } from '@/components/i18n/I18nProvider';
+import { InfoTooltip } from '@/components/InfoTooltip';
 
 function ScanContent() {
     const searchParams = useSearchParams();
@@ -113,9 +114,12 @@ function ScanContent() {
     if (!startUrl && !scanId) {
         return (
             <Box sx={{ p: 'var(--msqdx-spacing-xl)', maxWidth: 800, mx: 'auto', mt: 'var(--msqdx-spacing-xxl)' }}>
-                <MsqdxTypography variant="h3" weight="bold" sx={{ mb: 'var(--msqdx-spacing-md)' }}>
-                    {t('domain.title')}
-                </MsqdxTypography>
+                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-md)' }}>
+                    <MsqdxTypography variant="h3" weight="bold">
+                        {t('domain.title')}
+                    </MsqdxTypography>
+                    <InfoTooltip title={t('info.domainScan')} ariaLabel={t('common.info')} />
+                </Box>
                 <MsqdxTypography variant="body1" sx={{ mb: 'var(--msqdx-spacing-xl)', color: 'var(--color-text-secondary)' }}>
                     {t('domain.subtitle')}
                 </MsqdxTypography>
@@ -161,7 +165,14 @@ function ScanContent() {
             </Box>
 
             <Box sx={{ maxWidth: 800, mx: 'auto', mt: 'var(--msqdx-spacing-md)' }}>
-                <MsqdxCard title={t('domain.liveProgress')} sx={{ bgcolor: 'var(--color-card-bg)' }}>
+                <MsqdxMoleculeCard
+                    title={t('domain.liveProgress')}
+                    headerActions={<InfoTooltip title={t('info.liveProgress')} ariaLabel={t('common.info')} />}
+                    variant="flat"
+                    borderRadius="lg"
+                    footerDivider={false}
+                    sx={{ bgcolor: 'var(--color-card-bg)' }}
+                >
                     {(status === 'queued' || status === 'scanning') && <LinearProgress sx={{ mb: 'var(--msqdx-spacing-sm)' }} />}
 
                     <Box
@@ -183,7 +194,7 @@ function ScanContent() {
                         ))}
                         <div ref={logsEndRef} />
                     </Box>
-                </MsqdxCard>
+                </MsqdxMoleculeCard>
             </Box>
         </Box>
     );

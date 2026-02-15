@@ -39,6 +39,7 @@ import { TechnicalInsightsCard } from '../../../components/TechnicalInsightsCard
 import { GenerativeOptimizerCard } from '../../../components/GenerativeOptimizerCard';
 import type { ScanResult, Issue, IssueSeverity } from '@/lib/types';
 import { useI18n } from '@/components/i18n/I18nProvider';
+import { InfoTooltip } from '@/components/InfoTooltip';
 
 const SEVERITY_CONFIG: Record<IssueSeverity, { color: string; label: string }> = {
     error: { color: MSQDX_STATUS.error.base, label: 'Error' },
@@ -214,12 +215,15 @@ export default function ResultsPage() {
                     >
                         ← {t('results.dashboard')}
                     </MsqdxButton>
-                    <MsqdxTypography
-                        variant="h4"
-                        sx={{ fontWeight: 700, mb: MSQDX_SPACING.scale.xs, letterSpacing: '-0.02em' }}
-                    >
-                        {t('results.scanResult')}
-                    </MsqdxTypography>
+                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: MSQDX_SPACING.scale.xs }}>
+                        <MsqdxTypography
+                            variant="h4"
+                            sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}
+                        >
+                            {t('results.scanResult')}
+                        </MsqdxTypography>
+                        <InfoTooltip title={t('info.scanResult')} ariaLabel={t('common.info')} />
+                    </Box>
                     <MsqdxTypography
                         variant="body2"
                         sx={{
@@ -266,9 +270,12 @@ export default function ResultsPage() {
                         <MsqdxTypography variant="h4" sx={{ fontWeight: 800, color: scoreColor, lineHeight: 1 }}>
                             {result.score}
                         </MsqdxTypography>
-                        <MsqdxTypography variant="caption" sx={{ fontSize: '0.6rem', color: 'var(--color-text-muted-on-light)' }}>
-                            {t('results.score')}
-                        </MsqdxTypography>
+                        <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                            <MsqdxTypography variant="caption" sx={{ fontSize: '0.6rem', color: 'var(--color-text-muted-on-light)' }}>
+                                {t('results.score')}
+                            </MsqdxTypography>
+                            <InfoTooltip title={t('info.score')} ariaLabel={t('common.info')} placement="bottom" />
+                        </Box>
                     </Box>
                 </Box>
             </Box>
@@ -531,7 +538,8 @@ export default function ResultsPage() {
                     sx={{ bgcolor: 'var(--color-card-bg)' }}
                     borderRadius="lg"
                     headerActions={
-                        <Box sx={{ display: 'flex', gap: MSQDX_SPACING.scale.xs }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: MSQDX_SPACING.scale.sm }}>
+                            <InfoTooltip title={t('info.severityTabs')} ariaLabel={t('common.info')} placement="bottom" />
                             {TABS.map((t) => (
                                 <MsqdxButton
                                     key={t.key}
