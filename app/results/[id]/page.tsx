@@ -30,6 +30,7 @@ import { UxIssueList } from '../../../components/UxIssueList';
 import { FocusOrderOverlay } from '../../../components/FocusOrderOverlay';
 import { StructureMap } from '../../../components/StructureMap';
 import { TouchTargetOverlay } from '../../../components/TouchTargetOverlay';
+import { SaliencyHeatmapOverlay } from '../../../components/SaliencyHeatmapOverlay';
 import { SeoCard } from '../../../components/SeoCard';
 import { LinkAuditCard } from '../../../components/LinkAuditCard';
 import { InfraCard } from '../../../components/InfraCard';
@@ -64,6 +65,7 @@ export default function ResultsPage() {
     const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
     const [showFocusOrder, setShowFocusOrder] = useState(false);
     const [showTouchTargets, setShowTouchTargets] = useState(false);
+    const [showSaliencyHeatmap, setShowSaliencyHeatmap] = useState(false);
     const [screenshotDimensions, setScreenshotDimensions] = useState<{ width: number; height: number }>({ width: 1920, height: 1080 });
     const [summarizing, setSummarizing] = useState(false);
     const [summarizeError, setSummarizeError] = useState<string | null>(null);
@@ -771,6 +773,27 @@ export default function ResultsPage() {
                             >
                                 {showTouchTargets ? 'Hide Touch Targets' : 'Show Touch Targets'}
                             </MsqdxButton>
+                            {result.saliencyHeatmap ? (
+                                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                                    <InfoTooltip title={t('info.saliencyHeatmap')} ariaLabel={t('common.info')} />
+                                    <MsqdxButton
+                                        variant={showSaliencyHeatmap ? 'contained' : 'outlined'}
+                                        size="small"
+                                        onClick={() => setShowSaliencyHeatmap(!showSaliencyHeatmap)}
+                                        brandColor={showSaliencyHeatmap ? 'green' : undefined}
+                                    >
+                                        {showSaliencyHeatmap ? t('results.hideAttentionHeatmap') : t('results.showAttentionHeatmap')}
+                                    </MsqdxButton>
+                                </Box>
+                            ) : (
+                                <MsqdxTooltip title={t('info.saliencyHeatmap')} brandColor="purple">
+                                    <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center' }}>
+                                        <MsqdxButton variant="outlined" size="small" disabled>
+                                            {t('results.attentionHeatmapComputing')}
+                                        </MsqdxButton>
+                                    </Box>
+                                </MsqdxTooltip>
+                            )}
                         </Box>
                     }
                 >
@@ -809,6 +832,16 @@ export default function ResultsPage() {
                                                     screenshotHeight={screenshotDimensions.height}
                                                 />
                                             )}
+                                        </Box>
+                                    )}
+                                    {result.saliencyHeatmap && (
+                                        <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 15 }}>
+                                            <SaliencyHeatmapOverlay
+                                                heatmapDataUrl={result.saliencyHeatmap}
+                                                screenshotWidth={screenshotDimensions.width}
+                                                screenshotHeight={screenshotDimensions.height}
+                                                visible={showSaliencyHeatmap}
+                                            />
                                         </Box>
                                     )}
                                     {/* Issue boxes: percentage-based so they stay aligned when screenshot is scaled */}

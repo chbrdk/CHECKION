@@ -56,6 +56,20 @@ export async function POST(request: Request) {
             await addScan(session.user.id, result);
         }
 
+        // Fire-and-forget: trigger async saliency heatmap generation per scan (only if service is configured)
+        const saliencyUrl = process.env.SALIENCY_SERVICE_URL;
+        if (saliencyUrl) {
+            const origin = new URL(request.url).origin;
+            const cookie = request.headers.get('cookie') ?? '';
+            for (const result of results) {
+                fetch(`${origin}/api/saliency/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Cookie: cookie },
+                    body: JSON.stringify({ scanId: result.id }),
+                }).catch((err) => console.error('[CHECKION] saliency fire-and-forget failed', result.id, err));
+            }
+        }
+
         // Find desktop result to return (for redirect)
         const desktopResult = results.find(r => r.device === 'desktop') || results[0];
 

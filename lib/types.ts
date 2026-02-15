@@ -131,6 +131,8 @@ export type ScanResult = {
     durationMs: number;
     score: number;
     screenshot: string;
+    /** Optional attention/saliency heatmap (data URL or base64 PNG) from MDS-ViTNet. */
+    saliencyHeatmap?: string;
     allLinks?: string[]; // Internal links found (raw)
     performance: {
         ttfb: number;

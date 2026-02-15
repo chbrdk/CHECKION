@@ -50,6 +50,19 @@ export async function updateScanSummary(id: string, userId: string, summary: UxC
     return (updated.rowCount ?? 0) > 0;
 }
 
+/** Merge a patch into the existing scan result (e.g. saliencyHeatmap). */
+export async function updateScanResult(id: string, userId: string, patch: Partial<ScanResult>): Promise<boolean> {
+    const db = getDb();
+    const rows = await db.select({ result: scans.result }).from(scans).where(and(eq(scans.id, id), eq(scans.userId, userId))).limit(1);
+    if (rows.length === 0) return false;
+    const current = rows[0].result as unknown as ScanResult;
+    const merged = { ...current, ...patch };
+    const updated = await db.update(scans)
+        .set({ result: merged as unknown as Record<string, unknown> })
+        .where(and(eq(scans.id, id), eq(scans.userId, userId)));
+    return (updated.rowCount ?? 0) > 0;
+}
+
 export async function listScans(userId: string): Promise<ScanResult[]> {
     const db = getDb();
     const rows = await db.select({ result: scans.result }).from(scans).where(eq(scans.userId, userId)).orderBy(desc(scans.timestamp));

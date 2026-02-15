@@ -193,7 +193,10 @@
     "tabErrors": "Errors",
     "tabWarnings": "Warnings",
     "tabNotices": "Notices",
-    "tabValidated": "Passed"
+    "tabValidated": "Passed",
+    "showAttentionHeatmap": "Show Attention heatmap",
+    "hideAttentionHeatmap": "Hide Attention heatmap",
+    "attentionHeatmapComputing": "Computing…"
   },
   "domainResult": {
     "loading": "Loading…",
@@ -251,6 +254,7 @@
     "uxCxCheck": "Rating and recommendations based on UX and accessibility data (including AI summary if enabled).",
     "uxAudit": "Aggregated UX metrics (e.g. CLS, readability) across all scanned pages.",
     "visualAnalysis": "Screenshot with highlighted issues, focus order and touch targets for orientation.",
+    "saliencyHeatmap": "Predicted visual attention map (MDS-ViTNet model). Not real eye-tracking data.",
     "uxIssues": "Concrete user experience issues detected in the scan.",
     "structureSemantics": "Heading hierarchy and semantic structure (headings, landmarks) of the page.",
     "linksSeo": "Link check (broken links) and SEO-related data (meta, keywords).",
