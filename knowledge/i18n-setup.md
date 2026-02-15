@@ -58,13 +58,20 @@ t('some.key', { name: 'Value' })  // Key: "Hello {name}" → "Hello Value"
 
 ## Bereits auf t() umgestellt
 
-- **Nav/Sidebar**: Dashboard, New Scan, History, Settings, Einstellungen
+- **Nav/Sidebar**: Dashboard, New Scan, History, Developers, Settings
 - **Auth**: Login- und Register-Seite (Titel, Labels, CTA, Fehler, Links)
 - **Settings**: komplette Seite (Profil, Erscheinungsbild, Passwort, Sitzung, Standard-Konfiguration, Über CHECKION, Meldungen)
+- **Dashboard** (`app/page.tsx`): Titel, Subtitle, Neuer Scan, Stats (Scans/Errors/Warnings/Notices), Scan-Historie & Deep-Scan-Historie (Titel, leere Zustände, CTAs)
+- **Scan** (`app/scan/page.tsx`): Titel, Konfiguration, Tabs (Single/Deep), URL-Labels, Standard/Engines, Fehlermeldungen, PDF-Button
+- **Scan Domain** (`app/scan/domain/page.tsx`): Formular (Titel, Subtitle, URL, Start), Fortschritt (Status, Live Log), Log-Texte
+- **Developers** (`app/developers/page.tsx`): Titel, Subtitle, Micro-Tools/Scan Data, Endpoint-Beschreibungen, Example Usage
+- **Results** (`app/results/[id]/page.tsx`): Fehler/Zurück, Scan-Ergebnis, SCORE, PDF exportieren/erstellen, Scan Verifiziert, Tabs (Alle, Errors, Warnings, Notices, Validiert)
+- **Domain Result** (`app/domain/[id]/page.tsx`): Loading, Titel, Back/Share, Domain Score, Pages Scanned, Systemic Issues, Scanned Pages, alle Tab-Labels
 
 ## Noch offen (optional)
 
-- Scan-Seite, History, Results, Developers, Domain-Seiten: weitere Strings schrittweise auf `t('...')` umstellen und Keys in `locales/de.json` / `locales/en.json` ergänzen.
+- **History**: Seite leitet aktuell auf `/` weiter; bei künftigem Inhalt gleiche Keys wie Dashboard/Scan nutzen.
+- Weitere Einzelstrings in Results/Domain (z. B. View-Mode-Namen, Section-Titel in Unterkomponenten) bei Bedarf ergänzen.
 
 ## Zentral
 

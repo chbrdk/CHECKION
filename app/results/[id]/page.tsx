@@ -38,6 +38,7 @@ import { SecurityCard } from '../../../components/SecurityCard';
 import { TechnicalInsightsCard } from '../../../components/TechnicalInsightsCard';
 import { GenerativeOptimizerCard } from '../../../components/GenerativeOptimizerCard';
 import type { ScanResult, Issue, IssueSeverity } from '@/lib/types';
+import { useI18n } from '@/components/i18n/I18nProvider';
 
 const SEVERITY_CONFIG: Record<IssueSeverity, { color: string; label: string }> = {
     error: { color: MSQDX_STATUS.error.base, label: 'Error' },
@@ -51,6 +52,7 @@ type LevelFilter = 'all' | 'A' | 'AA' | 'AAA' | 'APCA' | 'Unknown';
 export default function ResultsPage() {
     const params = useParams();
     const router = useRouter();
+    const { t } = useI18n();
     const [result, setResult] = useState<ScanResult | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -177,10 +179,10 @@ export default function ResultsPage() {
         return (
             <Box sx={{ p: 'var(--msqdx-spacing-md)', textAlign: 'center' }}>
                 <MsqdxTypography variant="h5" sx={{ color: MSQDX_STATUS.error.light, mb: 'var(--msqdx-spacing-sm)' }}>
-                    {error || 'Ergebnis nicht gefunden'}
+                    {error || t('results.errorNotFound')}
                 </MsqdxTypography>
                 <MsqdxButton variant="outlined" onClick={() => router.push('/')}>
-                    ← Zurück zum Dashboard
+                    ← {t('results.backToDashboard')}
                 </MsqdxButton>
             </Box>
         );
@@ -189,11 +191,11 @@ export default function ResultsPage() {
 
 
     const TABS: { key: TabFilter | 'passed'; label: string; count: number; color: string }[] = [
-        { key: 'all', label: 'Alle', count: result.issues.length, color: MSQDX_BRAND_PRIMARY.green },
-        { key: 'error', label: 'Errors', count: result.stats.errors, color: MSQDX_STATUS.error.base },
-        { key: 'warning', label: 'Warnings', count: result.stats.warnings, color: MSQDX_STATUS.warning.base },
-        { key: 'notice', label: 'Notices', count: result.stats.notices, color: MSQDX_STATUS.info.base },
-        { key: 'passed', label: 'Validiert', count: result.passes ? result.passes.length : 0, color: MSQDX_STATUS.success.base },
+        { key: 'all', label: t('results.tabAll'), count: result.issues.length, color: MSQDX_BRAND_PRIMARY.green },
+        { key: 'error', label: t('results.tabErrors'), count: result.stats.errors, color: MSQDX_STATUS.error.base },
+        { key: 'warning', label: t('results.tabWarnings'), count: result.stats.warnings, color: MSQDX_STATUS.warning.base },
+        { key: 'notice', label: t('results.tabNotices'), count: result.stats.notices, color: MSQDX_STATUS.info.base },
+        { key: 'passed', label: t('results.tabValidated'), count: result.passes ? result.passes.length : 0, color: MSQDX_STATUS.success.base },
     ];
 
     // Score Color
@@ -210,13 +212,13 @@ export default function ResultsPage() {
                         onClick={() => router.push('/')}
                         sx={{ mb: MSQDX_SPACING.scale.sm, color: 'var(--color-text-muted-on-light)' }}
                     >
-                        ← Dashboard
+                        ← {t('results.dashboard')}
                     </MsqdxButton>
                     <MsqdxTypography
                         variant="h4"
                         sx={{ fontWeight: 700, mb: MSQDX_SPACING.scale.xs, letterSpacing: '-0.02em' }}
                     >
-                        Scan-Ergebnis
+                        {t('results.scanResult')}
                     </MsqdxTypography>
                     <MsqdxTypography
                         variant="body2"
@@ -265,7 +267,7 @@ export default function ResultsPage() {
                             {result.score}
                         </MsqdxTypography>
                         <MsqdxTypography variant="caption" sx={{ fontSize: '0.6rem', color: 'var(--color-text-muted-on-light)' }}>
-                            SCORE
+                            {t('results.score')}
                         </MsqdxTypography>
                     </Box>
                 </Box>
@@ -325,7 +327,7 @@ export default function ResultsPage() {
                         ))}
                     </>
                 }
-                title="Scan Verifiziert"
+                title={t('results.scanVerified')}
                 subtitle={`URL: ${result.url}`}
                 actions={
                     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -336,7 +338,7 @@ export default function ResultsPage() {
                             onClick={handlePdfExport}
                             startIcon={<MsqdxIcon name="Download" size="sm" />}
                         >
-                            {pdfExporting ? 'PDF wird erstellt…' : 'PDF exportieren'}
+                            {pdfExporting ? t('results.pdfCreating') : t('results.pdfExport')}
                         </MsqdxButton>
                         {relatedScans.length > 1 && (
                             <>

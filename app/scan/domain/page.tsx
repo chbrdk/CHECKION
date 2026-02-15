@@ -11,10 +11,12 @@ import { Box, LinearProgress } from '@mui/material';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { MSQDX_COLORS, MSQDX_SPACING } from '@msqdx/tokens';
 import type { DomainScanStatus } from '@/lib/types';
+import { useI18n } from '@/components/i18n/I18nProvider';
 
 function ScanContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
+    const { t } = useI18n();
     const [scanId, setScanId] = useState<string | null>(null);
     const [logs, setLogs] = useState<string[]>([]);
     const [status, setStatus] = useState<DomainScanStatus>('queued');
@@ -61,13 +63,13 @@ function ScanContent() {
                     }
 
                     if (data.status === 'complete') {
-                        setLogs(prev => [...prev, 'Scan Complete! Redirecting...']);
+                        setLogs(prev => [...prev, t('domain.completeLog')]);
 
                         setTimeout(() => {
                             router.push(`/domain/${data.id}`);
                         }, 1000);
                     } else if (data.status === 'error') {
-                        setLogs(prev => [...prev, `Error: ${data.error || 'Unknown error'}`]);
+                        setLogs(prev => [...prev, `${t('domain.errorLog')}: ${data.error || 'Unknown error'}`]);
                     }
                 }
             } catch (e) {
@@ -80,7 +82,7 @@ function ScanContent() {
 
     async function startScan(url: string) {
         setStatus('queued');
-        setLogs(['Initializing Async Deep Scan...']);
+        setLogs([t('domain.initLog')]);
 
         try {
             const response = await fetch('/api/scan/domain', {
@@ -93,17 +95,17 @@ function ScanContent() {
                 const data = await response.json();
                 if (data.success && data.data) {
                     setScanId(data.data.id);
-                    setLogs(prev => [...prev, 'Scan started in background. Polling for updates...']);
+                    setLogs(prev => [...prev, t('domain.startedLog')]);
                     setStatus('scanning');
                 } else {
-                    throw new Error(data.error || 'Failed to start scan');
+                    throw new Error(data.error || t('domain.failedStart'));
                 }
             } else {
-                throw new Error('Failed to start scan');
+                throw new Error(t('domain.failedStart'));
             }
         } catch (e) {
             setStatus('error');
-            setLogs(prev => [...prev, 'Failed to initiate scan connection.']);
+            setLogs(prev => [...prev, t('domain.failedConnection')]);
         }
     }
 
@@ -112,10 +114,10 @@ function ScanContent() {
         return (
             <Box sx={{ p: 'var(--msqdx-spacing-xl)', maxWidth: 800, mx: 'auto', mt: 'var(--msqdx-spacing-xxl)' }}>
                 <MsqdxTypography variant="h3" weight="bold" sx={{ mb: 'var(--msqdx-spacing-md)' }}>
-                    Deep Domain Scan (Async)
+                    {t('domain.title')}
                 </MsqdxTypography>
                 <MsqdxTypography variant="body1" sx={{ mb: 'var(--msqdx-spacing-xl)', color: 'var(--color-text-secondary)' }}>
-                    Crawls your website background job. Capable of scanning unlimited pages without timeout.
+                    {t('domain.subtitle')}
                 </MsqdxTypography>
 
                 <Box component="form"
@@ -131,15 +133,15 @@ function ScanContent() {
                 >
                     <Box sx={{ flex: 1 }}>
                         <MsqdxFormField
-                            label="Domain URL (e.g. https://example.com)"
+                            label={t('domain.urlLabel')}
                             name="url"
-                            placeholder="https://"
+                            placeholder={t('domain.urlPlaceholder')}
                             required
                         />
                     </Box>
                     <Box sx={{ pt: '28px' }}>
                         <MsqdxButton type="submit" variant="contained" size="large">
-                            Start Deep Scan
+                            {t('domain.startCta')}
                         </MsqdxButton>
                     </Box>
                 </Box>
@@ -151,15 +153,15 @@ function ScanContent() {
         <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto' }}>
             <Box sx={{ mb: 'var(--msqdx-spacing-xl)' }}>
                 <MsqdxTypography variant="h4" weight="bold" sx={{ mb: 'var(--msqdx-spacing-xs)' }}>
-                    Deep Scanning {startUrl}...
+                    {t('domain.scanningTitle').replace('{url}', startUrl || '')}
                 </MsqdxTypography>
                 <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-secondary)' }}>
-                    Status: {status.toUpperCase()} | Scanned: {scannedCount} pages
+                    {t('domain.status')}: {status.toUpperCase()} | {t('domain.scannedPages')}: {scannedCount} {t('domain.pages')}
                 </MsqdxTypography>
             </Box>
 
             <Box sx={{ maxWidth: 800, mx: 'auto', mt: 'var(--msqdx-spacing-md)' }}>
-                <MsqdxCard title="Live Scan Progress" sx={{ bgcolor: 'var(--color-card-bg)' }}>
+                <MsqdxCard title={t('domain.liveProgress')} sx={{ bgcolor: 'var(--color-card-bg)' }}>
                     {(status === 'queued' || status === 'scanning') && <LinearProgress sx={{ mb: 'var(--msqdx-spacing-sm)' }} />}
 
                     <Box

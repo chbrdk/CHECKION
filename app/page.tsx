@@ -12,9 +12,11 @@ import {
 import { MSQDX_SPACING, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
 import type { ScanResult } from '@/lib/types';
 import { HistoryList, SingleScanRow, DomainScanRow, type DomainScanSummary } from '@/components/HistoryList';
+import { useI18n } from '@/components/i18n/I18nProvider';
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { t } = useI18n();
   const [scans, setScans] = useState<ScanResult[]>([]);
   const [domainScans, setDomainScans] = useState<DomainScanSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,13 +52,13 @@ export default function DashboardPage() {
               letterSpacing: '-0.02em',
             }}
           >
-            Dashboard
+            {t('dashboard.title')}
           </MsqdxTypography>
           <MsqdxTypography
             variant="body2"
             sx={{ color: 'var(--color-text-muted-on-light)' }}
           >
-            Übersicht aller durchgeführten WCAG Accessibility Checks
+            {t('dashboard.subtitle')}
           </MsqdxTypography>
         </Box>
         <MsqdxButton
@@ -66,7 +68,7 @@ export default function DashboardPage() {
           startIcon="add"
           onClick={() => router.push('/scan')}
         >
-          Neuer Scan
+          {t('dashboard.newScan')}
         </MsqdxButton>
       </Box>
 
@@ -79,17 +81,17 @@ export default function DashboardPage() {
           mb: 'var(--msqdx-spacing-md)',
         }}
       >
-        <StatCard label="Scans" value={totalScans} color="green" />
-        <StatCard label="Errors" value={totalErrors} color="pink" />
-        <StatCard label="Warnings" value={totalWarnings} color="yellow" />
-        <StatCard label="Notices" value={totalNotices} color="purple" />
+        <StatCard label={t('dashboard.stats.scans')} value={totalScans} color="green" />
+        <StatCard label={t('dashboard.stats.errors')} value={totalErrors} color="pink" />
+        <StatCard label={t('dashboard.stats.warnings')} value={totalWarnings} color="yellow" />
+        <StatCard label={t('dashboard.stats.notices')} value={totalNotices} color="purple" />
       </Box>
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 'var(--msqdx-spacing-md)' }}>
         {/* Scan History using MsqdxCard */}
         <Box sx={{ gridColumn: '1 / -1' }}>
           <MsqdxMoleculeCard
-            title="Scan-Historie"
+            title={t('dashboard.historyTitle')}
             variant="flat"
             borderRadius="lg"
             footerDivider={false}
@@ -98,8 +100,8 @@ export default function DashboardPage() {
             <HistoryList
               loading={loading}
               itemCount={scans.length}
-              emptyMessage="Noch keine Scans durchgeführt."
-              emptyActionLabel="Ersten Scan starten"
+              emptyMessage={t('dashboard.emptyMessage')}
+              emptyActionLabel={t('dashboard.emptyCta')}
               onEmptyAction={() => router.push('/scan')}
             >
               {scans.map((scan) => (
@@ -113,7 +115,7 @@ export default function DashboardPage() {
           </MsqdxMoleculeCard>
 
           <MsqdxMoleculeCard
-            title="Deep-Scan-Historie (Domain)"
+            title={t('dashboard.domainHistoryTitle')}
             variant="flat"
             borderRadius="lg"
             footerDivider={false}
@@ -122,8 +124,8 @@ export default function DashboardPage() {
             <HistoryList
               loading={loading}
               itemCount={domainScans.length}
-              emptyMessage="Noch keine Deep Scans (Domain) durchgeführt."
-              emptyActionLabel="Deep Scan starten"
+              emptyMessage={t('dashboard.domainEmptyMessage')}
+              emptyActionLabel={t('dashboard.domainEmptyCta')}
               onEmptyAction={() => router.push('/scan')}
             >
               {domainScans.map((ds) => (

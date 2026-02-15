@@ -20,20 +20,20 @@ import {
 } from '@msqdx/tokens';
 import type { ScanResult, WcagStandard, Runner } from '@/lib/types';
 import type { SelectChangeEvent } from '@mui/material';
-
-const STANDARDS: { value: WcagStandard; label: string }[] = [
-    { value: 'WCAG2A', label: 'WCAG 2.0 Level A' },
-    { value: 'WCAG2AA', label: 'WCAG 2.0 Level AA' },
-    { value: 'WCAG2AAA', label: 'WCAG 2.0 Level AAA' },
-];
-
-const RUNNERS: { value: Runner; label: string; desc: string }[] = [
-    { value: 'axe', label: 'axe-core', desc: 'Deque axe accessibility engine' },
-    { value: 'htmlcs', label: 'HTML CodeSniffer', desc: 'Squiz HTML_CodeSniffer' },
-];
+import { useI18n } from '@/components/i18n/I18nProvider';
 
 export default function ScanPage() {
     const router = useRouter();
+    const { t } = useI18n();
+    const STANDARDS: { value: WcagStandard; label: string }[] = [
+        { value: 'WCAG2A', label: t('standards.wcag2a') },
+        { value: 'WCAG2AA', label: t('standards.wcag2aa') },
+        { value: 'WCAG2AAA', label: t('standards.wcag2aaa') },
+    ];
+    const RUNNERS: { value: Runner; label: string; desc: string }[] = [
+        { value: 'axe', label: t('runners.axe').split(' (')[0], desc: t('runners.axe') },
+        { value: 'htmlcs', label: t('runners.htmlcs').split(' (')[0], desc: t('runners.htmlcs') },
+    ];
     const [url, setUrl] = useState('');
     const [standard, setStandard] = useState<WcagStandard>('WCAG2AA');
     const [selectedRunners, setSelectedRunners] = useState<Runner[]>(['axe', 'htmlcs']);
@@ -57,7 +57,7 @@ export default function ScanPage() {
 
                 const data = await res.json();
                 if (!res.ok || !data.success) {
-                    setError(data.error || 'Scan fehlgeschlagen');
+                    setError(data.error || t('scan.error'));
                     setScanning(false);
                     return;
                 }
@@ -78,7 +78,7 @@ export default function ScanPage() {
 
                 const data = await res.json();
                 if (!res.ok || !data.success) {
-                    setError(data.error || 'Scan fehlgeschlagen');
+                    setError(data.error || t('scan.error'));
                     setScanning(false);
                     return;
                 }
@@ -90,7 +90,7 @@ export default function ScanPage() {
             }
 
         } catch (err) {
-            setError('Netzwerkfehler. Bitte prüfe deine Verbindung.');
+            setError(t('scan.networkError'));
             setScanning(false);
         }
     };
@@ -103,19 +103,19 @@ export default function ScanPage() {
                     variant="h4"
                     sx={{ fontWeight: 700, mb: MSQDX_SPACING.scale.xs, letterSpacing: '-0.02em' }}
                 >
-                    Neuer Scan
+                    {t('scan.title')}
                 </MsqdxTypography>
                 <MsqdxTypography
                     variant="body2"
                     sx={{ color: 'var(--color-text-muted-on-light)' }}
                 >
-                    Gib eine URL ein und starte einen automatisierten WCAG Accessibility Check (Desktop, Tablet & Mobile).
+                    {t('scan.subtitle')}
                 </MsqdxTypography>
             </Box>
 
             {/* Main Scan Card */}
             <MsqdxMoleculeCard
-                title="Scan Konfiguration"
+                title={t('scan.configTitle')}
                 variant="flat"
                 borderRadius="lg"
                 footerDivider={false}
@@ -130,7 +130,7 @@ export default function ScanPage() {
                         loading={scanning}
                         sx={{ minWidth: 150 }}
                     >
-                        {scanning ? 'Scan läuft…' : 'Scan starten'}
+                        {scanning ? t('scan.scanningCta') : t('scan.startCta')}
                     </MsqdxButton>
                 }
             >
@@ -142,22 +142,20 @@ export default function ScanPage() {
                             value={scanMode}
                             onChange={(v: string) => setScanMode(v as 'single' | 'deep')}
                             tabs={[
-                                { value: 'single', label: 'Single Page Scan' },
-                                { value: 'deep', label: 'Deep Domain Scan' }
+                                { value: 'single', label: t('scan.singleTab') },
+                                { value: 'deep', label: t('scan.deepTab') }
                             ]}
                         />
                         <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 1, color: 'var(--color-text-muted-on-light)' }}>
-                            {scanMode === 'single'
-                                ? 'Analysiert genau EINE Seite sofort (Synchron). Inklusive Screenshots & Visueller Analyse.'
-                                : 'Analysiert die gesamte Domain im Hintergrund (Asynchron). Findet systemische Fehler.'}
+                            {scanMode === 'single' ? t('scan.singleHint') : t('scan.deepHint')}
                         </MsqdxTypography>
                     </Box>
 
                     {/* URL Input - Grows to fill available space */}
                     <Box sx={{ flex: 1 }}>
                         <MsqdxFormField
-                            label="Ziel-URL"
-                            placeholder={scanMode === 'single' ? "https://example.com/page" : "https://example.com"}
+                            label={t('scan.urlLabel')}
+                            placeholder={scanMode === 'single' ? t('scan.urlPlaceholderSingle') : t('scan.urlPlaceholderDeep')}
                             value={url}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUrl(e.target.value)}
                             disabled={scanning}
@@ -170,7 +168,7 @@ export default function ScanPage() {
                     {/* WCAG Standard (Only for Single Page currently) */}
                     <Box sx={{ minWidth: 200, opacity: scanMode === 'deep' ? 0.5 : 1, pointerEvents: scanMode === 'deep' ? 'none' : 'auto' }}>
                         <MsqdxSelect
-                            label="Standard"
+                            label={t('scan.standardLabel')}
                             value={standard}
                             onChange={(e: SelectChangeEvent<unknown>) => setStandard(e.target.value as WcagStandard)}
                             options={STANDARDS}
@@ -182,7 +180,7 @@ export default function ScanPage() {
                     {/* Runners (Only for Single Page currently) */}
                     <Box sx={{ minWidth: 200, pt: 0.5, opacity: scanMode === 'deep' ? 0.5 : 1, pointerEvents: scanMode === 'deep' ? 'none' : 'auto' }}>
                         <MsqdxCheckboxField
-                            label="Engines"
+                            label={t('scan.enginesLabel')}
                             options={RUNNERS.map(r => ({ value: r.value, label: r.label, disabled: scanning || scanMode === 'deep' }))}
                             value={selectedRunners}
                             onChange={(val) => setSelectedRunners(val as Runner[])}
@@ -217,7 +215,7 @@ export default function ScanPage() {
                         variant="caption"
                         sx={{ color: 'var(--color-text-muted-on-light)', mt: 'var(--msqdx-spacing-xs)', display: 'block' }}
                     >
-                        Die Seite wird geladen und analysiert. Das kann einige Sekunden dauern…
+                        {t('scan.analyzing')}
                     </MsqdxTypography>
                 </Box>
             )}
