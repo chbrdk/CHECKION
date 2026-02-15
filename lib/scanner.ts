@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
+import { dismissCookieBanner } from './cookie-banner-dismiss';
 import type { Issue, Runner, ScanResult, ScanStats, WcagStandard, Device, ScanOptions, SeoAudit } from './types';
 
 /**
@@ -204,6 +205,10 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
     }
 
     try {
+        // Navigate first so we can dismiss cookie banners before pa11y runs
+        await page.goto(url, { waitUntil: 'networkidle2', timeout: 60_000 });
+        await dismissCookieBanner(page);
+
         const results = await pa11y(url, {
             browser,
             page,
@@ -212,6 +217,7 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
             runners: pa11yRunners,
             timeout: 60_000, // Increase timeout for visual scan
             wait: 1_000,
+            ignoreUrl: true, // Page already loaded and banner dismissed above
         } as any);
 
         // --- Aggressive Scroll for CLS ---
@@ -235,6 +241,9 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
         });
         // Allow time for shifts to settle
         await new Promise((r) => setTimeout(r, 1000));
+
+        // Re-apply cookie banner hide before screenshot (in case of late-loading banners)
+        await dismissCookieBanner(page);
 
         // --- Extract Performance Metrics (incl. LCP/INP from observers) ---
         const perfData = await page.evaluate(function () {
