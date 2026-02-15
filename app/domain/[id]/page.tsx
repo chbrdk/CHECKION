@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Box, CircularProgress, alpha } from '@mui/material';
 import {
     MsqdxTypography,
@@ -10,11 +10,34 @@ import {
     MsqdxTabs,
     MsqdxMoleculeCard,
 } from '@msqdx/react';
-import { MSQDX_STATUS } from '@msqdx/tokens';
+import { MSQDX_STATUS, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
 import { useParams, useRouter } from 'next/navigation';
 import type { DomainScanResult } from '@/lib/types';
+import {
+    aggregateIssues,
+    aggregateUx,
+    aggregateSeo,
+    aggregateLinks,
+    aggregateInfra,
+    aggregateGenerative,
+    aggregateStructure,
+} from '@/lib/domain-aggregation';
 import { DomainGraph } from '@/components/DomainGraph';
+import { DomainAggregatedIssueList } from '@/components/DomainAggregatedIssueList';
 import { ArrowLeft, Share2, AlertCircle, CheckCircle } from 'lucide-react';
+
+const DOMAIN_TABS = [
+    { label: 'Overview & Seiten', value: 0 },
+    { label: 'Visual Map', value: 1 },
+    { label: 'Liste & Details', value: 2 },
+    { label: 'UX/CX Check', value: 3 },
+    { label: 'Visuelle Analyse', value: 4 },
+    { label: 'UX Audit', value: 5 },
+    { label: 'Struktur & Semantik', value: 6 },
+    { label: 'Links & SEO', value: 7 },
+    { label: 'Infrastruktur & Privacy', value: 8 },
+    { label: 'Generative Search (GEO)', value: 9 },
+];
 
 export default function DomainResultPage() {
     const params = useParams();
@@ -23,6 +46,20 @@ export default function DomainResultPage() {
     const [tabValue, setTabValue] = useState(0);
     const [summarizing, setSummarizing] = useState(false);
     const [summarizeError, setSummarizeError] = useState<string | null>(null);
+
+    const pages = result?.pages ?? [];
+    const aggregated = useMemo(() => {
+        if (pages.length === 0) return null;
+        return {
+            issues: aggregateIssues(pages),
+            ux: aggregateUx(pages),
+            seo: aggregateSeo(pages),
+            links: aggregateLinks(pages),
+            infra: aggregateInfra(pages),
+            generative: aggregateGenerative(pages),
+            structure: aggregateStructure(pages),
+        };
+    }, [result]);
 
     useEffect(() => {
         if (!params.id) return;
@@ -67,11 +104,7 @@ export default function DomainResultPage() {
                 <MsqdxTabs
                     value={tabValue}
                     onChange={(v) => setTabValue(v as number)}
-                    tabs={[
-                        { label: 'Overview & Pages', value: 0 },
-                        { label: 'Visual Map', value: 1 },
-                        { label: 'UX/CX Check', value: 2 },
-                    ]}
+                    tabs={DOMAIN_TABS}
                 />
             </Box>
 
@@ -180,7 +213,30 @@ export default function DomainResultPage() {
                 </Box>
             )}
 
-            {tabValue === 2 && (
+            {tabValue === 2 && aggregated && (
+                <MsqdxMoleculeCard
+                    title="Gefundene Issues (Domain)"
+                    subtitle={`Aggregiert über ${pages.length} Seite(n) · gleiche Kategorien wie Einzel-Scan`}
+                    variant="flat"
+                    sx={{ bgcolor: 'var(--color-card-bg)' }}
+                    borderRadius="lg"
+                >
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                        <MsqdxChip label={`Errors: ${aggregated.issues.stats.errors}`} size="small" sx={{ bgcolor: alpha(MSQDX_STATUS.error.base, 0.12), color: MSQDX_STATUS.error.base }} />
+                        <MsqdxChip label={`Warnings: ${aggregated.issues.stats.warnings}`} size="small" sx={{ bgcolor: alpha(MSQDX_STATUS.warning.base, 0.12), color: MSQDX_STATUS.warning.base }} />
+                        <MsqdxChip label={`Notices: ${aggregated.issues.stats.notices}`} size="small" sx={{ bgcolor: alpha(MSQDX_STATUS.info.base, 0.12), color: MSQDX_STATUS.info.base }} />
+                    </Box>
+                    <DomainAggregatedIssueList
+                        issues={aggregated.issues.issues}
+                        onPageClick={(url) => {
+                            const page = pages.find((p) => p.url === url);
+                            if (page) router.push(`/results/${page.id}`);
+                        }}
+                    />
+                </MsqdxMoleculeCard>
+            )}
+
+            {tabValue === 3 && (
                 <MsqdxMoleculeCard
                     title="UX/CX Check (Domain)"
                     subtitle="Bewertung und Handlungsempfehlungen für die gesamte Domain"
@@ -273,6 +329,200 @@ export default function DomainResultPage() {
                         </Box>
                     )}
                 </MsqdxMoleculeCard>
+            )}
+
+            {tabValue === 4 && (
+                <MsqdxMoleculeCard title="Visuelle Analyse (Domain)" subtitle="Pro Seite verfügbar" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
+                        Screenshot, Focus Order und Touch Targets sind pro Seite in den Einzel-Scans sichtbar. Öffne eine Seite für die visuelle Analyse.
+                    </MsqdxTypography>
+                    <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
+                        {(result.pages ?? []).map((page) => (
+                            <Box key={page.id} component="li" sx={{ mb: 1 }}>
+                                <MsqdxButton variant="outlined" size="small" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none' }}>
+                                    {page.url}
+                                </MsqdxButton>
+                            </Box>
+                        ))}
+                    </Box>
+                </MsqdxMoleculeCard>
+            )}
+
+            {tabValue === 5 && (
+                aggregated?.ux ? (
+                <MsqdxMoleculeCard title="UX Audit (Domain)" subtitle="Aggregierte Werte über alle Seiten" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2, mb: 2 }}>
+                        <Box sx={{ p: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', borderRadius: 1 }}>
+                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>Ø UX-Score</MsqdxTypography>
+                            <MsqdxTypography variant="h4" sx={{ fontWeight: 700, color: aggregated.ux.score >= 80 ? MSQDX_BRAND_PRIMARY.green : MSQDX_STATUS.warning.base }}>{aggregated.ux.score}</MsqdxTypography>
+                        </Box>
+                        <Box sx={{ p: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', borderRadius: 1 }}>
+                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>Ø CLS</MsqdxTypography>
+                            <MsqdxTypography variant="h4" sx={{ fontWeight: 700 }}>{aggregated.ux.cls}</MsqdxTypography>
+                        </Box>
+                        <Box sx={{ p: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', borderRadius: 1 }}>
+                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>Kaputte Links (gesamt)</MsqdxTypography>
+                            <MsqdxTypography variant="h4" sx={{ fontWeight: 700 }}>{aggregated.ux.brokenLinks.length}</MsqdxTypography>
+                        </Box>
+                    </Box>
+                    {aggregated.ux.brokenLinks.length > 0 && (
+                        <Box sx={{ mt: 2 }}>
+                            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Kaputte Links (Seite)</MsqdxTypography>
+                            <Box component="ul" sx={{ m: 0, pl: 2, maxHeight: 200, overflow: 'auto' }}>
+                                {aggregated.ux.brokenLinks.slice(0, 30).map((l, i) => (
+                                    <li key={i}>
+                                        <MsqdxTypography variant="caption">{l.href} → {l.pageUrl} (HTTP {l.status})</MsqdxTypography>
+                                    </li>
+                                ))}
+                                {aggregated.ux.brokenLinks.length > 30 && (
+                                    <li><MsqdxTypography variant="caption">… und {aggregated.ux.brokenLinks.length - 30} weitere</MsqdxTypography></li>
+                                )}
+                            </Box>
+                        </Box>
+                    )}
+                </MsqdxMoleculeCard>
+                ) : (
+                    <MsqdxMoleculeCard title="UX Audit (Domain)" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>Keine UX-Daten über die gescannten Seiten verfügbar.</MsqdxTypography>
+                    </MsqdxMoleculeCard>
+                )
+            )}
+
+            {tabValue === 6 && (
+                aggregated?.structure ? (
+                <MsqdxMoleculeCard title="Struktur & Semantik (Domain)" subtitle="Überschriften-Hierarchie über alle Seiten" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
+                        <MsqdxChip label={`Seiten mit mehreren H1: ${aggregated.structure.pagesWithMultipleH1.length}`} size="small" brandColor="pink" />
+                        <MsqdxChip label={`Seiten mit übersprungenen Leveln: ${aggregated.structure.pagesWithSkippedLevels.length}`} size="small" brandColor="yellow" />
+                    </Box>
+                    {aggregated.structure.pagesWithMultipleH1.length > 0 && (
+                        <Box sx={{ mb: 2 }}>
+                            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Seiten mit mehreren H1</MsqdxTypography>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                {aggregated.structure.pagesWithMultipleH1.map((url) => {
+                                    const page = pages.find((p) => p.url === url);
+                                    return page ? (
+                                        <MsqdxButton key={url} variant="outlined" size="small" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none' }}>{url}</MsqdxButton>
+                                    ) : (
+                                        <MsqdxTypography key={url} variant="caption" sx={{ display: 'block' }}>{url}</MsqdxTypography>
+                                    );
+                                })}
+                            </Box>
+                        </Box>
+                    )}
+                    {aggregated.structure.pagesWithSkippedLevels.length > 0 && (
+                        <Box>
+                            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Seiten mit übersprungenen Überschriften-Leveln</MsqdxTypography>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                {aggregated.structure.pagesWithSkippedLevels.map((url) => {
+                                    const page = pages.find((p) => p.url === url);
+                                    return page ? (
+                                        <MsqdxButton key={url} variant="outlined" size="small" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none' }}>{url}</MsqdxButton>
+                                    ) : (
+                                        <MsqdxTypography key={url} variant="caption">{url}</MsqdxTypography>
+                                    );
+                                })}
+                            </Box>
+                        </Box>
+                    )}
+                </MsqdxMoleculeCard>
+                ) : (
+                    <MsqdxMoleculeCard title="Struktur & Semantik (Domain)" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>Keine Struktur-Daten (Überschriften) verfügbar.</MsqdxTypography>
+                    </MsqdxMoleculeCard>
+                )
+            )}
+
+            {tabValue === 7 && aggregated && (
+                (aggregated.seo || aggregated.links) ? (
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 'var(--msqdx-spacing-md)' }}>
+                    {aggregated.seo && (
+                        <MsqdxMoleculeCard title="SEO (Domain)" subtitle="Aggregiert über alle Seiten" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                            <Box sx={{ display: 'grid', gap: 1 }}>
+                                <MsqdxTypography variant="body2">Seiten mit Title: {aggregated.seo.withTitle} / {aggregated.seo.totalPages}</MsqdxTypography>
+                                <MsqdxTypography variant="body2">Seiten mit Meta-Description: {aggregated.seo.withMetaDescription} / {aggregated.seo.totalPages}</MsqdxTypography>
+                                <MsqdxTypography variant="body2">Seiten mit H1: {aggregated.seo.withH1} / {aggregated.seo.totalPages}</MsqdxTypography>
+                                {aggregated.seo.missingMetaDescriptionUrls.length > 0 && (
+                                    <Box sx={{ mt: 1 }}>
+                                        <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>Ohne Meta-Description:</MsqdxTypography>
+                                        {aggregated.seo.missingMetaDescriptionUrls.slice(0, 5).map((url) => {
+                                            const page = pages.find((p) => p.url === url);
+                                            return page ? <Box key={url}><MsqdxButton size="small" variant="text" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>{url}</MsqdxButton></Box> : null;
+                                        })}
+                                    </Box>
+                                )}
+                            </Box>
+                        </MsqdxMoleculeCard>
+                    )}
+                    {aggregated.links && (
+                        <MsqdxMoleculeCard title="Links (Domain)" subtitle="Kaputte Links über alle Seiten" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                            <MsqdxTypography variant="body2">Kaputte Links gesamt: {aggregated.links.broken.length}</MsqdxTypography>
+                            <MsqdxTypography variant="body2">Eindeutige kaputte URLs: {aggregated.links.uniqueBrokenUrls}</MsqdxTypography>
+                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>Total Links: {aggregated.links.totalLinks} (intern: {aggregated.links.internal}, extern: {aggregated.links.external})</MsqdxTypography>
+                        </MsqdxMoleculeCard>
+                    )}
+                </Box>
+                ) : (
+                    <MsqdxMoleculeCard title="Links & SEO (Domain)" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>Keine SEO- oder Link-Daten verfügbar.</MsqdxTypography>
+                    </MsqdxMoleculeCard>
+                )
+            )}
+
+            {tabValue === 8 && (
+                aggregated?.infra ? (
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'var(--msqdx-spacing-md)' }}>
+                    <MsqdxMoleculeCard title="Privacy (Domain)" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                        <MsqdxTypography variant="body2">Seiten mit Datenschutz: {aggregated.infra.privacy.withPolicy} / {aggregated.infra.privacy.totalPages}</MsqdxTypography>
+                        <MsqdxTypography variant="body2">Seiten mit Cookie-Banner: {aggregated.infra.privacy.withCookieBanner} / {aggregated.infra.privacy.totalPages}</MsqdxTypography>
+                        <MsqdxTypography variant="body2">Seiten mit AGB: {aggregated.infra.privacy.withTerms} / {aggregated.infra.privacy.totalPages}</MsqdxTypography>
+                    </MsqdxMoleculeCard>
+                    <MsqdxMoleculeCard title="Security (Domain)" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                        <MsqdxTypography variant="body2">Seiten mit CSP: {aggregated.infra.security.withCsp} / {aggregated.infra.security.totalPages}</MsqdxTypography>
+                        <MsqdxTypography variant="body2">Seiten mit X-Frame-Options: {aggregated.infra.security.withXFrame} / {aggregated.infra.security.totalPages}</MsqdxTypography>
+                    </MsqdxMoleculeCard>
+                </Box>
+                ) : (
+                    <MsqdxMoleculeCard title="Infrastruktur & Privacy (Domain)" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>Keine Infrastruktur-Daten verfügbar.</MsqdxTypography>
+                    </MsqdxMoleculeCard>
+                )
+            )}
+
+            {tabValue === 9 && (
+                aggregated?.generative ? (
+                <MsqdxMoleculeCard title="Generative Search / GEO (Domain)" subtitle="Aggregiert über alle Seiten" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
+                        <Box sx={{ p: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', borderRadius: 1 }}>
+                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>Ø GEO-Score</MsqdxTypography>
+                            <MsqdxTypography variant="h4" sx={{ fontWeight: 700 }}>{aggregated.generative.score}</MsqdxTypography>
+                        </Box>
+                        <MsqdxChip label={`Seiten mit llms.txt: ${aggregated.generative.withLlmsTxt} / ${aggregated.generative.pageCount}`} size="small" />
+                        <MsqdxChip label={`Seiten mit robots (AI erlaubt): ${aggregated.generative.withRobotsAllowingAi} / ${aggregated.generative.pageCount}`} size="small" />
+                    </Box>
+                    <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Pro Seite</MsqdxTypography>
+                    <Box component="ul" sx={{ m: 0, pl: 2, maxHeight: 300, overflow: 'auto' }}>
+                        {aggregated.generative.pages.map((p) => {
+                            const page = pages.find((x) => x.url === p.url);
+                            return (
+                                <li key={p.url}>
+                                    {page ? (
+                                        <MsqdxButton size="small" variant="text" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none', fontSize: '0.8rem' }}>
+                                            {p.url} — Score: {p.score} {p.hasLlmsTxt ? '· llms.txt' : ''}
+                                        </MsqdxButton>
+                                    ) : (
+                                        <MsqdxTypography variant="caption">{p.url} — Score: {p.score}</MsqdxTypography>
+                                    )}
+                                </li>
+                            );
+                        })}
+                    </Box>
+                </MsqdxMoleculeCard>
+                ) : (
+                    <MsqdxMoleculeCard title="Generative Search / GEO (Domain)" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>Keine GEO-Daten verfügbar.</MsqdxTypography>
+                    </MsqdxMoleculeCard>
+                )
             )}
         </Box>
     );
