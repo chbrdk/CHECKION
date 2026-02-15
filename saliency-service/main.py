@@ -118,25 +118,31 @@ def run_saliency(img: Image.Image, out_w: int, out_h: int) -> bytes:
     arr = pred_map.squeeze().cpu().numpy().astype(np.float64)
     arr = np.clip(arr, 0, 1)
 
-    # Tight percentile stretch so small differences use full range
-    lo, hi = np.percentile(arr, [5, 95])
+    # Remove global gradient: large blur, subtract strongly → only local hotspots remain
+    sigma_global = max(25.0, min(out_h, out_w) / 6)
+    global_smooth = gaussian_filter(arr, sigma=sigma_global, mode="nearest")
+    arr = arr - 0.92 * global_smooth
+    arr = np.clip(arr, 0, 1)
+
+    # Tight percentile (20–80) so local differences use full range
+    lo, hi = np.percentile(arr, [20, 80])
     if hi > lo:
         arr = (arr - lo) / (hi - lo)
     arr = np.clip(arr, 0, 1)
 
-    # Local contrast: smaller sigma = finer, less "global" blobs (neighborhood in px)
-    sigma_local = max(1.5, min(out_h, out_w) / 200)
+    # Local contrast: minimal sigma = very fine, almost pixel-level detail
+    sigma_local = max(0.8, min(out_h, out_w) / 1000)
     local_mean = gaussian_filter(arr, sigma=sigma_local, mode="nearest")
-    arr = arr + 1.2 * (arr - local_mean)
+    arr = arr + 2.0 * (arr - local_mean)
     arr = np.clip(arr, 0, 1)
 
-    # Unsharp: emphasize edges and small hotspots so it's less smooth/global
-    blur = gaussian_filter(arr, sigma=2.0, mode="nearest")
-    arr = arr + 0.4 * (arr - blur)
+    # Very sharp unsharp: tiny blur radius for crisp edges and small spots only
+    blur = gaussian_filter(arr, sigma=0.6, mode="nearest")
+    arr = arr + 0.85 * (arr - blur)
     arr = np.clip(arr, 0, 1)
 
-    # Gamma: more in the "hot" range, clearer separation
-    arr = np.power(arr, 0.5)
+    # Gamma: push more into hot range, clearer separation
+    arr = np.power(arr, 0.45)
 
     # 0..1 -> 0..255 uint8 for colormap
     arr_u8 = (np.clip(arr, 0, 1) * 255).astype(np.uint8)
