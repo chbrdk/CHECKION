@@ -2,24 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Box, CircularProgress, alpha } from '@mui/material';
+import { Box } from '@mui/material';
 import {
   MsqdxTypography,
   MsqdxButton,
-  MsqdxChip,
   MsqdxCard,
-  MsqdxMoleculeCard, // Import molecule card
+  MsqdxMoleculeCard,
 } from '@msqdx/react';
-import {
-  MSQDX_SPACING,
-  MSQDX_THEME,
-  MSQDX_BRAND_PRIMARY,
-  MSQDX_STATUS,
-  MSQDX_NEUTRAL,
-} from '@msqdx/tokens';
+import { MSQDX_SPACING, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
 import type { ScanResult } from '@/lib/types';
-
-type DomainScanSummary = { id: string; domain: string; timestamp: string; status: string; score: number; totalPages: number };
+import { HistoryList, SingleScanRow, DomainScanRow, type DomainScanSummary } from '@/components/HistoryList';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -103,104 +95,21 @@ export default function DashboardPage() {
             footerDivider={false}
             sx={{ bgcolor: 'var(--color-card-bg)' }}
           >
-            {loading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 'var(--msqdx-spacing-xl)' }}>
-                <CircularProgress size={28} sx={{ color: 'var(--color-theme-accent)' }} />
-              </Box>
-            ) : scans.length === 0 ? (
-              <Box
-                sx={{
-                  textAlign: 'center',
-                  py: 'var(--msqdx-spacing-md)',
-                }}
-              >
-                <MsqdxTypography
-                  variant="body2"
-                  sx={{ color: 'var(--color-text-muted-on-light)', mb: 'var(--msqdx-spacing-sm)' }}
-                >
-                  Noch keine Scans durchgeführt.
-                </MsqdxTypography>
-                <MsqdxButton
-                  variant="outlined"
-                  brandColor="green"
-                  size="small"
-                  onClick={() => router.push('/scan')}
-                >
-                  Ersten Scan starten
-                </MsqdxButton>
-              </Box>
-            ) : (
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: 'var(--msqdx-spacing-sm)' }}>
-                {scans.map((scan) => (
-                  <Box
-                    key={scan.id}
-                    onClick={() => router.push(`/results/${scan.id}`)}
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--msqdx-spacing-sm)',
-                      p: 'var(--msqdx-spacing-sm)',
-                      borderRadius: MSQDX_SPACING.borderRadius.md,
-                      cursor: 'pointer',
-                      backgroundColor: 'var(--color-card-bg)',
-                      border: '1px solid var(--color-secondary-dx-grey-light-tint)',
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        borderColor: MSQDX_BRAND_PRIMARY.green,
-                        backgroundColor: alpha(MSQDX_BRAND_PRIMARY.green, 0.02),
-                        transform: 'translateY(-2px)',
-                      },
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: '50%',
-                        backgroundColor: scan.stats.errors > 0 ? MSQDX_STATUS.error.base : MSQDX_BRAND_PRIMARY.green,
-                        flexShrink: 0,
-                      }}
-                    />
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <MsqdxTypography
-                        variant="body2"
-                        sx={{
-                          fontWeight: 600,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          mb: 0.5,
-                        }}
-                      >
-                        {scan.url}
-                      </MsqdxTypography>
-                      <MsqdxTypography
-                        variant="caption"
-                        sx={{ color: 'var(--color-text-muted-on-light)', fontSize: '0.7rem' }}
-                      >
-                        {new Date(scan.timestamp).toLocaleString('de-DE')}
-                      </MsqdxTypography>
-                    </Box>
-
-                    <Box sx={{ textAlign: 'right' }}>
-                      <MsqdxChip
-                        label={`${scan.stats.errors}`}
-                        size="small"
-                        sx={{
-                          backgroundColor: alpha(MSQDX_STATUS.error.base, 0.1),
-                          color: MSQDX_STATUS.error.light,
-                          border: 'none',
-                          fontWeight: 700,
-                          mb: 0.5,
-                          display: 'inline-flex'
-                        }}
-                      />
-                      <MsqdxTypography variant="caption" sx={{ display: 'block', color: 'var(--color-text-muted-on-light)', fontSize: '0.6rem' }}>Errors</MsqdxTypography>
-                    </Box>
-                  </Box>
-                ))}
-              </Box>
-            )}
+            <HistoryList
+              loading={loading}
+              itemCount={scans.length}
+              emptyMessage="Noch keine Scans durchgeführt."
+              emptyActionLabel="Ersten Scan starten"
+              onEmptyAction={() => router.push('/scan')}
+            >
+              {scans.map((scan) => (
+                <SingleScanRow
+                  key={scan.id}
+                  scan={scan}
+                  onClick={() => router.push(`/results/${scan.id}`)}
+                />
+              ))}
+            </HistoryList>
           </MsqdxMoleculeCard>
 
           <MsqdxMoleculeCard
@@ -210,66 +119,21 @@ export default function DashboardPage() {
             footerDivider={false}
             sx={{ bgcolor: 'var(--color-card-bg)', mt: 'var(--msqdx-spacing-md)' }}
           >
-            {loading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 'var(--msqdx-spacing-xl)' }}>
-                <CircularProgress size={28} sx={{ color: 'var(--color-theme-accent)' }} />
-              </Box>
-            ) : domainScans.length === 0 ? (
-              <Box sx={{ textAlign: 'center', py: 'var(--msqdx-spacing-md)' }}>
-                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 'var(--msqdx-spacing-sm)' }}>
-                  Noch keine Deep Scans (Domain) durchgeführt.
-                </MsqdxTypography>
-                <MsqdxButton variant="outlined" brandColor="green" size="small" onClick={() => router.push('/scan')}>
-                  Deep Scan starten
-                </MsqdxButton>
-              </Box>
-            ) : (
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: 'var(--msqdx-spacing-sm)' }}>
-                {domainScans.map((ds) => (
-                  <Box
-                    key={ds.id}
-                    onClick={() => router.push(`/domain/${ds.id}`)}
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--msqdx-spacing-sm)',
-                      p: 'var(--msqdx-spacing-sm)',
-                      borderRadius: MSQDX_SPACING.borderRadius.md,
-                      cursor: 'pointer',
-                      backgroundColor: 'var(--color-card-bg)',
-                      border: '1px solid var(--color-secondary-dx-grey-light-tint)',
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        borderColor: MSQDX_BRAND_PRIMARY.green,
-                        backgroundColor: alpha(MSQDX_BRAND_PRIMARY.green, 0.02),
-                        transform: 'translateY(-2px)',
-                      },
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: '50%',
-                        backgroundColor: ds.status === 'complete' ? (ds.score > 80 ? MSQDX_BRAND_PRIMARY.green : MSQDX_BRAND_PRIMARY.orange) : MSQDX_NEUTRAL[400],
-                        flexShrink: 0,
-                      }}
-                    />
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <MsqdxTypography variant="body2" sx={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', mb: 0.5 }}>
-                        {ds.domain}
-                      </MsqdxTypography>
-                      <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', fontSize: '0.7rem' }}>
-                        {new Date(ds.timestamp).toLocaleString('de-DE')} · {ds.totalPages} Seiten
-                      </MsqdxTypography>
-                    </Box>
-                    <Box sx={{ textAlign: 'right' }}>
-                      <MsqdxChip label={ds.status === 'complete' ? `${ds.score}` : ds.status} size="small" brandColor={ds.status === 'complete' ? (ds.score > 80 ? 'green' : 'orange') : undefined} />
-                    </Box>
-                  </Box>
-                ))}
-              </Box>
-            )}
+            <HistoryList
+              loading={loading}
+              itemCount={domainScans.length}
+              emptyMessage="Noch keine Deep Scans (Domain) durchgeführt."
+              emptyActionLabel="Deep Scan starten"
+              onEmptyAction={() => router.push('/scan')}
+            >
+              {domainScans.map((ds) => (
+                <DomainScanRow
+                  key={ds.id}
+                  item={ds}
+                  onClick={() => router.push(`/domain/${ds.id}`)}
+                />
+              ))}
+            </HistoryList>
           </MsqdxMoleculeCard>
         </Box>
       </Box>
