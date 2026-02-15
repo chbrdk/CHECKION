@@ -1,11 +1,15 @@
 import { runScan } from './scanner';
+import { getSitemapUrlFromRobots, fetchSitemapUrls } from './sitemap';
 import type { ScanResult, DomainScanResult } from './types';
 import { v4 as uuidv4 } from 'uuid';
 
-const MAX_PAGES = 25;
+const MAX_PAGES = 100;
 const MAX_DEPTH = 3; // Home + 3 levels; max pages will likely hit first
 
-// Force rebuild timestamp: 2026-02-13
+export type DomainScanOptions = {
+    /** If true (default), discover sitemap and use its URLs as scan list when available; otherwise pure link crawl. */
+    useSitemap?: boolean;
+};
 
 
 /**
@@ -86,25 +90,56 @@ function identifySystemicIssues(pages: Array<ScanResult>) {
 
 /**
  * Main Spider Function (Generator to allow streaming)
+ * When useSitemap is true (default), discovers sitemap and uses its URLs as scan list if available; otherwise crawls by following links.
  */
-export async function* runDomainScan(startUrl: string, options: any): AsyncGenerator<any, DomainScanResult, unknown> {
+export async function* runDomainScan(startUrl: string, options: DomainScanOptions = {}): AsyncGenerator<any, DomainScanResult, unknown> {
     const domainId = uuidv4();
     const baseUrl = new URL(startUrl);
     const origin = baseUrl.origin;
+    const useSitemap = options.useSitemap !== false;
 
-    // Queue: { url, depth }
-    const queue: Array<{ url: string, depth: number }> = [{ url: startUrl, depth: 0 }];
+    // Queue: { url, depth }; seed from sitemap or start URL
+    let queue: Array<{ url: string, depth: number }> = [];
     const visited = new Set<string>();
-    const results: Array<{ result: ScanResult, depth: number }> = [];
+    let sitemapMode = false;
 
-    // Graph Data
+    if (useSitemap) {
+        const sitemapUrl = await getSitemapUrlFromRobots(origin);
+        if (sitemapUrl) {
+            const sitemapUrls = await fetchSitemapUrls(sitemapUrl, origin, MAX_PAGES);
+            if (sitemapUrls.length > 0) {
+                const startNorm = normalizeUrl(startUrl);
+                sitemapUrls.forEach(u => {
+                    const n = normalizeUrl(u);
+                    if (!visited.has(n)) {
+                        visited.add(n);
+                        queue.push({ url: u, depth: 0 });
+                    }
+                });
+                if (!visited.has(startNorm)) {
+                    visited.add(startNorm);
+                    queue.unshift({ url: startUrl, depth: 0 });
+                }
+                sitemapMode = true;
+            }
+        }
+    }
+
+    if (queue.length === 0) {
+        queue = [{ url: startUrl, depth: 0 }];
+        visited.add(normalizeUrl(startUrl));
+    }
+
+    const results: Array<{ result: ScanResult, depth: number }> = [];
     const graphNodes: DomainScanResult['graph']['nodes'] = [];
     const graphLinks: DomainScanResult['graph']['links'] = [];
 
-    // Add start node
-    visited.add(normalizeUrl(startUrl));
-
-    yield { type: 'init', message: `Starting scan for ${origin}` };
+    yield {
+        type: 'init',
+        message: sitemapMode
+            ? `Starting scan for ${origin} (${queue.length} URLs from sitemap)`
+            : `Starting scan for ${origin}`
+    };
 
     while (queue.length > 0 && results.length < MAX_PAGES) {
         const current = queue.shift()!;
@@ -140,16 +175,13 @@ export async function* runDomainScan(startUrl: string, options: any): AsyncGener
                 status: 'ok'
             });
 
-            // Extract Internal Links for next items (if depth allows)
-            if (current.depth < MAX_DEPTH && results.length + queue.length < MAX_PAGES * 2) {
-                // Use the internal links list returned by the scanner (allLinks), not links audit object
+            // Extract internal links only when not in sitemap mode (in sitemap mode we only scan the sitemap URL list)
+            if (!sitemapMode && current.depth < MAX_DEPTH && results.length + queue.length < MAX_PAGES * 2) {
                 const newLinks = result.allLinks || [];
                 console.log(`[Spider] Found ${newLinks.length} links on ${current.url}`);
 
                 newLinks.forEach(link => {
                     const norm = normalizeUrl(link);
-                    // Ensure it is internal (scanner already filters, but double check)
-                    // and not visited
                     const isInternal = norm.startsWith(origin);
                     const isVisited = visited.has(norm);
 
@@ -158,11 +190,9 @@ export async function* runDomainScan(startUrl: string, options: any): AsyncGener
                         visited.add(norm);
                         queue.push({ url: link, depth: current.depth + 1 });
                         graphLinks.push({ source: normalizedCurrent, target: norm });
-                    } else {
-                        // console.log(`[Spider] Skipped: ${norm} (Internal: ${isInternal}, Visited: ${isVisited})`);
                     }
                 });
-            } else {
+            } else if (!sitemapMode) {
                 console.log(`[Spider] Max depth/pages reached. Depth: ${current.depth}, Results: ${results.length}, Queue: ${queue.length}`);
             }
 

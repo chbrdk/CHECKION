@@ -159,12 +159,12 @@
     "scansDesc": "Retrieve a history of recent single-page scans.",
     "scanPostDesc": "Trigger a single page scan.",
     "scansDomainDesc": "Retrieve a history of deep domain scans.",
-    "scanDomainPostDesc": "Trigger a deep domain scan (Async).",
+    "scanDomainPostDesc": "Startet einen Deep Domain Scan (async). Nutzt bei vorhandener Sitemap deren URLs, sonst Link-Crawl. Body: url, optional useSitemap (true/false).",
     "deleteDesc": "Delete a scan result from memory."
   },
   "domain": {
     "title": "Deep Domain Scan (Async)",
-    "subtitle": "Crawls your website background job. Capable of scanning unlimited pages without timeout.",
+    "subtitle": "Crawls your website in the background. If a sitemap is found (robots.txt or /sitemap.xml), its URLs are scanned; otherwise links are followed.",
     "urlLabel": "Domain URL (e.g. https://example.com)",
     "urlPlaceholder": "https://",
     "startCta": "Start Deep Scan",

@@ -46,7 +46,7 @@ export default function DevelopersPage() {
                     <Endpoint method="GET" path="/api/scans" desc={t('developers.scansDesc')} />
                     <Endpoint method="POST" path="/api/scan" desc={t('developers.scanPostDesc')} body='{ "url": "..." }' />
                     <Endpoint method="GET" path="/api/scans/domain" desc={t('developers.scansDomainDesc')} />
-                    <Endpoint method="POST" path="/api/scan/domain" desc={t('developers.scanDomainPostDesc')} body='{ "url": "..." }' />
+                    <Endpoint method="POST" path="/api/scan/domain" desc={t('developers.scanDomainPostDesc')} body='{ "url": "https://...", "useSitemap": true }' />
                     <Endpoint method="DELETE" path="/api/scans/:id" desc={t('developers.deleteDesc')} />
                 </MsqdxCard>
             </Box>
