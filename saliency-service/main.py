@@ -12,6 +12,7 @@ from pathlib import Path
 import numpy as np
 import torch
 import uvicorn
+from scipy.ndimage import gaussian_filter
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from PIL import Image
@@ -117,14 +118,20 @@ def run_saliency(img: Image.Image, out_w: int, out_h: int) -> bytes:
     arr = pred_map.squeeze().cpu().numpy().astype(np.float64)
     arr = np.clip(arr, 0, 1)
 
-    # Contrast: stretch to percentiles so more of the range is used (higher sensitivity)
-    lo, hi = np.percentile(arr, [3, 97])
+    # Finer sensitivity: tight percentile stretch (5–95) so small differences use full range
+    lo, hi = np.percentile(arr, [5, 95])
     if hi > lo:
         arr = (arr - lo) / (hi - lo)
     arr = np.clip(arr, 0, 1)
 
-    # Optional: gamma < 1 makes mid-tones more distinct (more "pop")
-    arr = np.power(arr, 0.7)
+    # Local contrast: emphasize detail at neighborhood scale (sigma in px, smaller = finer)
+    sigma = max(2.0, min(out_h, out_w) / 90)
+    local_mean = gaussian_filter(arr, sigma=sigma, mode="nearest")
+    arr = arr + 0.9 * (arr - local_mean)
+    arr = np.clip(arr, 0, 1)
+
+    # Gamma < 1: more of the map in the "hot" range, finer gradations visible
+    arr = np.power(arr, 0.5)
 
     # 0..1 -> 0..255 uint8 for colormap
     arr_u8 = (np.clip(arr, 0, 1) * 255).astype(np.uint8)

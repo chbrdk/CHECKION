@@ -56,55 +56,69 @@ function LoginForm() {
         <Box
             component="main"
             sx={{
-                minHeight: '100vh',
+                minHeight: '100dvh',
                 display: 'flex',
-                flexDirection: 'row',
+                flexDirection: { xs: 'column', md: 'row' },
                 bgcolor: 'var(--audion-light-html-background-color, var(--color-secondary-dx-green))',
+                paddingLeft: 'env(safe-area-inset-left)',
+                paddingRight: 'env(safe-area-inset-right)',
+                paddingBottom: 'env(safe-area-inset-bottom)',
             }}
         >
-            {/* Left 70%: Logo + CHECKION headline */}
+            {/* Left 70% on desktop; on mobile: top block with logo */}
             <Box
                 sx={{
-                    flex: '0 0 70%',
+                    flex: { xs: '0 0 auto', md: '0 0 70%' },
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    px: 'var(--msqdx-spacing-xl)',
+                    px: { xs: 'var(--msqdx-spacing-md)', sm: 'var(--msqdx-spacing-lg)', md: 'var(--msqdx-spacing-xl)' },
+                    py: { xs: 'var(--msqdx-spacing-xl)', md: 0 },
                 }}
             >
                 <Stack alignItems="flex-start" sx={{ gap: 0 }}>
-                    <Stack direction="row" alignItems="center">
-                        <MsqdxLogo
-                            width={220}
-                            height={53}
-                            color="var(--auth-logo-color, var(--color-primary-white))"
-                        />
+                    <Stack direction="row" alignItems="center" flexWrap="wrap">
+                        <Box
+                            sx={{
+                                transform: { xs: 'scale(0.64)', sm: 'scale(0.82)', md: 'scale(1)' },
+                                transformOrigin: 'left center',
+                            }}
+                        >
+                            <MsqdxLogo
+                                width={220}
+                                height={53}
+                                color="var(--auth-logo-color, var(--color-primary-white))"
+                            />
+                        </Box>
                         <MsqdxTypography
                             variant="h4"
                             weight="light"
                             sx={{
                                 color: 'var(--auth-logo-color, var(--color-primary-white))',
-                                fontSize: '2.25rem',
-                                ml: 'var(--msqdx-spacing-xl)',
+                                fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2.25rem' },
+                                ml: { xs: 'var(--msqdx-spacing-md)', md: 'var(--msqdx-spacing-xl)' },
                             }}
                         >
                             CHECKION
                         </MsqdxTypography>
                     </Stack>
-                    <AuthBrandColorSelector />
+                    <Box sx={{ display: { xs: 'none', sm: 'block' }, mt: 1 }}>
+                        <AuthBrandColorSelector />
+                    </Box>
                 </Stack>
             </Box>
 
-            {/* Right 30%: Login card */}
+            {/* Right 30% on desktop; on mobile: scrollable card area */}
             <Box
                 sx={{
-                    flex: '0 0 30%',
+                    flex: { xs: '1 1 auto', md: '0 0 30%' },
                     display: 'flex',
-                    alignItems: 'center',
+                    alignItems: { xs: 'flex-start', md: 'center' },
                     justifyContent: 'center',
-                    px: 'var(--msqdx-spacing-lg)',
-                    py: 'var(--msqdx-spacing-xl)',
+                    px: { xs: 'var(--msqdx-spacing-md)', sm: 'var(--msqdx-spacing-lg)', md: 'var(--msqdx-spacing-lg)' },
+                    py: { xs: 'var(--msqdx-spacing-lg)', md: 'var(--msqdx-spacing-xl)' },
+                    pb: { xs: 'var(--msqdx-spacing-xl)', md: 'var(--msqdx-spacing-xl)' },
                 }}
             >
                 <MsqdxMoleculeCard
@@ -113,8 +127,10 @@ function LoginForm() {
                     sx={{
                         width: '100%',
                         maxWidth: 360,
-                        p: 'var(--msqdx-spacing-lg)',
+                        p: { xs: 'var(--msqdx-spacing-lg)', sm: 'var(--msqdx-spacing-lg)' },
                         border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                        '& .MuiButton-root': { minHeight: 48 },
+                        '& .MuiInputBase-root': { minHeight: 48 },
                     }}
                 >
                     <Stack sx={{ gap: 'var(--msqdx-spacing-lg)' }}>
