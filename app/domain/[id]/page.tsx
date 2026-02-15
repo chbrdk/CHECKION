@@ -230,6 +230,7 @@ export default function DomainResultPage() {
             {tabValue === 2 && aggregated && (
                 <MsqdxMoleculeCard
                     title="Gefundene Issues (Domain)"
+                    headerActions={<InfoTooltip title={t('info.issuesList')} ariaLabel={t('common.info')} />}
                     subtitle={`Aggregiert über ${pages.length} Seite(n) · gleiche Kategorien wie Einzel-Scan`}
                     variant="flat"
                     sx={{ bgcolor: 'var(--color-card-bg)' }}
@@ -275,6 +276,7 @@ export default function DomainResultPage() {
             {tabValue === 3 && (
                 <MsqdxMoleculeCard
                     title="UX/CX Check (Domain)"
+                    headerActions={<InfoTooltip title={t('info.uxCxCheck')} ariaLabel={t('common.info')} />}
                     subtitle="Bewertung und Handlungsempfehlungen für die gesamte Domain"
                     variant="flat"
                     sx={{ bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}
@@ -368,7 +370,7 @@ export default function DomainResultPage() {
             )}
 
             {tabValue === 4 && (
-                <MsqdxMoleculeCard title="Visuelle Analyse (Domain)" subtitle="Focus Order & Touch Targets aus Einzelseiten" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                <MsqdxMoleculeCard title="Visuelle Analyse (Domain)" headerActions={<InfoTooltip title={t('info.visualAnalysis')} ariaLabel={t('common.info')} />} subtitle="Focus Order & Touch Targets aus Einzelseiten" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
                     <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
                         Screenshot, Focus Order und Touch Targets sind pro Seite in den Einzel-Scans sichtbar. Unten: Seiten mit relevanten Einträgen.
                     </MsqdxTypography>
@@ -419,7 +421,7 @@ export default function DomainResultPage() {
 
             {tabValue === 5 && (
                 aggregated?.ux ? (
-                <MsqdxMoleculeCard title="UX Audit (Domain)" subtitle="Aggregierte Werte über alle Seiten" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                <MsqdxMoleculeCard title="UX Audit (Domain)" headerActions={<InfoTooltip title={t('info.uxAudit')} ariaLabel={t('common.info')} />} subtitle="Aggregierte Werte über alle Seiten" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
                     <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2, mb: 2 }}>
                         <Box sx={{ p: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', borderRadius: 1 }}>
                             <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>Ø UX-Score</MsqdxTypography>
@@ -499,7 +501,7 @@ export default function DomainResultPage() {
                     )}
                 </MsqdxMoleculeCard>
                 ) : (
-                    <MsqdxMoleculeCard title="UX Audit (Domain)" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                    <MsqdxMoleculeCard title="UX Audit (Domain)" headerActions={<InfoTooltip title={t('info.uxAudit')} ariaLabel={t('common.info')} />} variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
                         <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>Keine UX-Daten über die gescannten Seiten verfügbar.</MsqdxTypography>
                     </MsqdxMoleculeCard>
                 )
@@ -507,7 +509,7 @@ export default function DomainResultPage() {
 
             {tabValue === 6 && (
                 aggregated?.structure ? (
-                <MsqdxMoleculeCard title="Struktur & Semantik (Domain)" subtitle="Überschriften-Hierarchie über alle Seiten" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                <MsqdxMoleculeCard title="Struktur & Semantik (Domain)" headerActions={<InfoTooltip title={t('info.structureSemantics')} ariaLabel={t('common.info')} />} subtitle="Überschriften-Hierarchie über alle Seiten" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
                     <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
                         <MsqdxChip label={`Seiten mit mehreren H1: ${aggregated.structure.pagesWithMultipleH1.length}`} size="small" brandColor="pink" />
                         <MsqdxChip label={`Seiten mit übersprungenen Leveln: ${aggregated.structure.pagesWithSkippedLevels.length}`} size="small" brandColor="yellow" />
@@ -562,7 +564,7 @@ export default function DomainResultPage() {
                     )}
                 </MsqdxMoleculeCard>
                 ) : (
-                    <MsqdxMoleculeCard title="Struktur & Semantik (Domain)" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                    <MsqdxMoleculeCard title="Struktur & Semantik (Domain)" headerActions={<InfoTooltip title={t('info.structureSemantics')} ariaLabel={t('common.info')} />} variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
                         <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>Keine Struktur-Daten (Überschriften) verfügbar.</MsqdxTypography>
                     </MsqdxMoleculeCard>
                 )
@@ -572,7 +574,7 @@ export default function DomainResultPage() {
                 (aggregated.seo || aggregated.links) ? (
                 <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 'var(--msqdx-spacing-md)' }}>
                     {aggregated.seo && (
-                        <MsqdxMoleculeCard title="SEO (Domain)" subtitle="Meta, Keywords seitenübergreifend, Inhaltsdichte" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                        <MsqdxMoleculeCard title="SEO (Domain)" headerActions={<InfoTooltip title={t('info.linksSeo')} ariaLabel={t('common.info')} />} subtitle="Meta, Keywords seitenübergreifend, Inhaltsdichte" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                 <Box>
                                     <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Meta & Struktur</MsqdxTypography>
@@ -658,7 +660,7 @@ export default function DomainResultPage() {
                         </MsqdxMoleculeCard>
                     )}
                     {aggregated.links && (
-                        <MsqdxMoleculeCard title="Links (Domain)" subtitle="Kaputte Links über alle Seiten" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                        <MsqdxMoleculeCard title="Links (Domain)" headerActions={<InfoTooltip title={t('info.linksSeo')} ariaLabel={t('common.info')} />} subtitle="Kaputte Links über alle Seiten" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                                 <MsqdxTypography variant="body2">Kaputte Links gesamt: {aggregated.links.broken.length}</MsqdxTypography>
                                 <MsqdxTypography variant="body2">Eindeutige kaputte URLs: {aggregated.links.uniqueBrokenUrls}</MsqdxTypography>
@@ -687,7 +689,7 @@ export default function DomainResultPage() {
                     )}
                 </Box>
                 ) : (
-                    <MsqdxMoleculeCard title="Links & SEO (Domain)" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                    <MsqdxMoleculeCard title="Links & SEO (Domain)" headerActions={<InfoTooltip title={t('info.linksSeo')} ariaLabel={t('common.info')} />} variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
                         <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>Keine SEO- oder Link-Daten verfügbar.</MsqdxTypography>
                     </MsqdxMoleculeCard>
                 )
@@ -696,7 +698,7 @@ export default function DomainResultPage() {
             {tabValue === 8 && (
                 aggregated?.infra ? (
                 <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'var(--msqdx-spacing-md)' }}>
-                    <MsqdxMoleculeCard title="Privacy (Domain)" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                    <MsqdxMoleculeCard title="Privacy (Domain)" headerActions={<InfoTooltip title={t('info.infraPrivacy')} ariaLabel={t('common.info')} />} variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                             <MsqdxTypography variant="body2">Seiten mit Datenschutz: {aggregated.infra.privacy.withPolicy} / {aggregated.infra.privacy.totalPages}</MsqdxTypography>
                             <MsqdxTypography variant="body2">Seiten mit Cookie-Banner: {aggregated.infra.privacy.withCookieBanner} / {aggregated.infra.privacy.totalPages}</MsqdxTypography>
@@ -718,7 +720,7 @@ export default function DomainResultPage() {
                             )}
                         </Box>
                     </MsqdxMoleculeCard>
-                    <MsqdxMoleculeCard title="Security (Domain)" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                    <MsqdxMoleculeCard title="Security (Domain)" headerActions={<InfoTooltip title={t('info.infraPrivacy')} ariaLabel={t('common.info')} />} variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                             <MsqdxTypography variant="body2">Seiten mit CSP: {aggregated.infra.security.withCsp} / {aggregated.infra.security.totalPages}</MsqdxTypography>
                             <MsqdxTypography variant="body2">Seiten mit X-Frame-Options: {aggregated.infra.security.withXFrame} / {aggregated.infra.security.totalPages}</MsqdxTypography>
@@ -737,7 +739,7 @@ export default function DomainResultPage() {
                     </MsqdxMoleculeCard>
                 </Box>
                 ) : (
-                    <MsqdxMoleculeCard title="Infrastruktur & Privacy (Domain)" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                    <MsqdxMoleculeCard title="Infrastruktur & Privacy (Domain)" headerActions={<InfoTooltip title={t('info.infraPrivacy')} ariaLabel={t('common.info')} />} variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
                         <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>Keine Infrastruktur-Daten verfügbar.</MsqdxTypography>
                     </MsqdxMoleculeCard>
                 )
@@ -745,7 +747,7 @@ export default function DomainResultPage() {
 
             {tabValue === 9 && (
                 aggregated?.generative ? (
-                <MsqdxMoleculeCard title="Generative Search / GEO (Domain)" subtitle="Aggregiert über alle Seiten" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                <MsqdxMoleculeCard title="Generative Search / GEO (Domain)" headerActions={<InfoTooltip title={t('info.generativeGeo')} ariaLabel={t('common.info')} />} subtitle="Aggregiert über alle Seiten" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
                     <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
                         <Box sx={{ p: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', borderRadius: 1 }}>
                             <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>Ø GEO-Score</MsqdxTypography>
@@ -779,7 +781,7 @@ export default function DomainResultPage() {
                     </Box>
                 </MsqdxMoleculeCard>
                 ) : (
-                    <MsqdxMoleculeCard title="Generative Search / GEO (Domain)" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
+                    <MsqdxMoleculeCard title="Generative Search / GEO (Domain)" headerActions={<InfoTooltip title={t('info.generativeGeo')} ariaLabel={t('common.info')} />} variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
                         <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>Keine GEO-Daten verfügbar.</MsqdxTypography>
                     </MsqdxMoleculeCard>
                 )

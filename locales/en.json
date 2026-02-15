@@ -245,6 +245,17 @@
     "domainResult": "Result of a domain scan: aggregated issues across all pages, UX/SEO/structure and systemic issues.",
     "domainScore": "Score for the whole domain, based on all scanned pages.",
     "systemicIssues": "Issues that appear on many pages. Fixing one rule improves accessibility on all affected pages.",
-    "scannedPages": "List of all pages scanned in this domain scan. Click to open individual results."
+    "scannedPages": "List of all pages scanned in this domain scan. Click to open individual results.",
+    "scanVerified": "Summary of this scan: URL checked, device and duration. You can export the result as PDF here.",
+    "viewModes": "Switch between issue list, UX rating, visual analysis, structure and other categories.",
+    "uxCxCheck": "Rating and recommendations based on UX and accessibility data (including AI summary if enabled).",
+    "uxAudit": "Aggregated UX metrics (e.g. CLS, readability) across all scanned pages.",
+    "visualAnalysis": "Screenshot with highlighted issues, focus order and touch targets for orientation.",
+    "uxIssues": "Concrete user experience issues detected in the scan.",
+    "structureSemantics": "Heading hierarchy and semantic structure (headings, landmarks) of the page.",
+    "linksSeo": "Link check (broken links) and SEO-related data (meta, keywords).",
+    "infraPrivacy": "Technical infrastructure and privacy-related notes.",
+    "generativeGeo": "Rating for Generative Search / GEO (Google) – how well the page is suited for AI overviews.",
+    "issuesList": "List of accessibility issues found, with severity and WCAG level. Filter by error, warning, notice or passed."
   }
 }

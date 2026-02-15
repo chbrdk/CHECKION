@@ -335,6 +335,7 @@ export default function ResultsPage() {
                     </>
                 }
                 title={t('results.scanVerified')}
+                headerActions={<InfoTooltip title={t('info.scanVerified')} ariaLabel={t('common.info')} />}
                 subtitle={`URL: ${result.url}`}
                 actions={
                     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -419,7 +420,8 @@ export default function ResultsPage() {
             )}
 
             {/* View Toggle & Filters */}
-            <Box sx={{ mb: 'var(--msqdx-spacing-md)' }}>
+            <Box sx={{ mb: 'var(--msqdx-spacing-md)', display: 'flex', alignItems: 'center', gap: 1 }}>
+                <InfoTooltip title={t('info.viewModes')} ariaLabel={t('common.info')} placement="bottom" />
                 <MsqdxTabs
                     value={viewMode}
                     onChange={(v: string) => setViewMode(v as any)}
@@ -439,6 +441,7 @@ export default function ResultsPage() {
             {viewMode === 'summary' && (
                 <MsqdxMoleculeCard
                     title="UX/CX Check"
+                    headerActions={<InfoTooltip title={t('info.uxCxCheck')} ariaLabel={t('common.info')} />}
                     subtitle="Bewertung und Handlungsempfehlungen auf Basis aller Scan-Kategorien"
                     variant="flat"
                     sx={{ bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}
@@ -539,6 +542,7 @@ export default function ResultsPage() {
                     borderRadius="lg"
                     headerActions={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: MSQDX_SPACING.scale.sm }}>
+                            <InfoTooltip title={t('info.issuesList')} ariaLabel={t('common.info')} placement="bottom" />
                             <InfoTooltip title={t('info.severityTabs')} ariaLabel={t('common.info')} placement="bottom" />
                             {TABS.map((t) => (
                                 <MsqdxButton
@@ -749,7 +753,8 @@ export default function ResultsPage() {
                     sx={{ bgcolor: 'var(--color-card-bg)', mb: 'var(--msqdx-spacing-md)' }}
                     borderRadius="xs"
                     headerActions={
-                        <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <InfoTooltip title={t('info.visualAnalysis')} ariaLabel={t('common.info')} />
                             <MsqdxButton
                                 variant={showFocusOrder ? 'contained' : 'outlined'}
                                 size="small"
@@ -864,6 +869,7 @@ export default function ResultsPage() {
             {viewMode === 'ux' && (
                 <MsqdxMoleculeCard
                     title="User Experience Issues"
+                    headerActions={<InfoTooltip title={t('info.uxIssues')} ariaLabel={t('common.info')} />}
                     subtitle="User Experience Issues"
                     sx={{ bgcolor: 'var(--color-card-bg)' }}
                 >
@@ -878,6 +884,7 @@ export default function ResultsPage() {
             {viewMode === 'structure' && (
                 <MsqdxMoleculeCard
                     title="Struktur & Semantik"
+                    headerActions={<InfoTooltip title={t('info.structureSemantics')} ariaLabel={t('common.info')} />}
                     subtitle="Visualisierung der Dokumentenstruktur (Headings, Landmarks)."
                     sx={{ bgcolor: 'var(--color-card-bg)' }}
                 >

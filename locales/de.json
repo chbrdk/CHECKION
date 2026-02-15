@@ -245,6 +245,17 @@
     "domainResult": "Ergebnis eines Domain-Scans: aggregierte Issues über alle gescannten Seiten, UX/SEO/Struktur und systemische Probleme.",
     "domainScore": "Bewertung der gesamten Domain. Basiert auf den Ergebnissen aller gescannten Seiten.",
     "systemicIssues": "Probleme, die auf vielen Seiten gleich auftreten. Ein Fix verbessert die Barrierefreiheit auf allen betroffenen Seiten.",
-    "scannedPages": "Liste aller Seiten, die im Domain-Scan geprüft wurden. Klick öffnet die Einzelergebnisse."
+    "scannedPages": "Liste aller Seiten, die im Domain-Scan geprüft wurden. Klick öffnet die Einzelergebnisse.",
+    "scanVerified": "Zusammenfassung des Scans: geprüfte URL, Gerät und Laufzeit. Hier kannst du das Ergebnis als PDF exportieren.",
+    "viewModes": "Wechsle zwischen Listenansicht der Issues, UX-Bewertung, visueller Analyse, Struktur und weiteren Kategorien.",
+    "uxCxCheck": "Bewertung und Handlungsempfehlungen auf Basis von UX- und Barrierefreiheits-Daten (inkl. KI-Zusammenfassung falls aktiv).",
+    "uxAudit": "Aggregierte UX-Metriken (z. B. CLS, Lesbarkeit) über alle gescannten Seiten.",
+    "visualAnalysis": "Screenshot mit markierten Issues, Focus Order und Touch Targets für bessere Orientierung.",
+    "uxIssues": "Konkrete User-Experience-Probleme, die im Scan erkannt wurden.",
+    "structureSemantics": "Überschriften-Hierarchie und semantische Struktur (Headings, Landmarks) der Seite.",
+    "linksSeo": "Link-Check (kaputte Links) und SEO-relevante Daten (Meta, Keywords).",
+    "infraPrivacy": "Technische Infrastruktur und Privacy-relevante Hinweise.",
+    "generativeGeo": "Bewertung für Generative Search / GEO (Google) – wie gut die Seite für AI Overviews geeignet ist.",
+    "issuesList": "Liste der gefundenen Barrierefreiheits-Probleme mit Schweregrad und WCAG-Level. Filter nach Error, Warning, Notice oder bestanden."
   }
 }
