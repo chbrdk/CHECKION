@@ -1,5 +1,5 @@
-# syntax=docker/dockerfile:1.7
 # CHECKION – Docker image for Coolify/self-hosted deployment.
+# (No syntax directive to avoid Docker Hub TLS timeouts in restricted networks.)
 # Build: docker build -t checkion .
 # Run:   docker run -p 3333:3333 -e DATABASE_URL=... -e AUTH_SECRET=... checkion
 
