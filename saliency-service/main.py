@@ -118,19 +118,24 @@ def run_saliency(img: Image.Image, out_w: int, out_h: int) -> bytes:
     arr = pred_map.squeeze().cpu().numpy().astype(np.float64)
     arr = np.clip(arr, 0, 1)
 
-    # Finer sensitivity: tight percentile stretch (5–95) so small differences use full range
+    # Tight percentile stretch so small differences use full range
     lo, hi = np.percentile(arr, [5, 95])
     if hi > lo:
         arr = (arr - lo) / (hi - lo)
     arr = np.clip(arr, 0, 1)
 
-    # Local contrast: emphasize detail at neighborhood scale (sigma in px, smaller = finer)
-    sigma = max(2.0, min(out_h, out_w) / 90)
-    local_mean = gaussian_filter(arr, sigma=sigma, mode="nearest")
-    arr = arr + 0.9 * (arr - local_mean)
+    # Local contrast: smaller sigma = finer, less "global" blobs (neighborhood in px)
+    sigma_local = max(1.5, min(out_h, out_w) / 200)
+    local_mean = gaussian_filter(arr, sigma=sigma_local, mode="nearest")
+    arr = arr + 1.2 * (arr - local_mean)
     arr = np.clip(arr, 0, 1)
 
-    # Gamma < 1: more of the map in the "hot" range, finer gradations visible
+    # Unsharp: emphasize edges and small hotspots so it's less smooth/global
+    blur = gaussian_filter(arr, sigma=2.0, mode="nearest")
+    arr = arr + 0.4 * (arr - blur)
+    arr = np.clip(arr, 0, 1)
+
+    # Gamma: more in the "hot" range, clearer separation
     arr = np.power(arr, 0.5)
 
     # 0..1 -> 0..255 uint8 for colormap
