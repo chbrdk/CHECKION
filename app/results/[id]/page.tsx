@@ -64,6 +64,7 @@ export default function ResultsPage() {
     const [screenshotDimensions, setScreenshotDimensions] = useState<{ width: number; height: number }>({ width: 1920, height: 1080 });
     const [summarizing, setSummarizing] = useState(false);
     const [summarizeError, setSummarizeError] = useState<string | null>(null);
+    const [pdfExporting, setPdfExporting] = useState(false);
     const issueRefs = useRef<(HTMLDivElement | null)[]>([]);
 
     // Derived stats for WCAG levels
@@ -102,6 +103,26 @@ export default function ResultsPage() {
             }
         }
     };
+
+    const handlePdfExport = useCallback(async () => {
+        if (!result) return;
+        setPdfExporting(true);
+        try {
+            const { pdf } = await import('@react-pdf/renderer');
+            const { ScanReportDocument } = await import('@/components/pdf/ScanReportDocument');
+            const blob = await pdf(<ScanReportDocument scan={result} />).toBlob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `checkion-report-${result.id.slice(0, 8)}-${new Date().toISOString().slice(0, 10)}.pdf`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            console.error('PDF export failed', e);
+        } finally {
+            setPdfExporting(false);
+        }
+    }, [result]);
 
     useEffect(() => {
         if (!params.id) return;
@@ -307,30 +328,41 @@ export default function ResultsPage() {
                 title="Scan Verifiziert"
                 subtitle={`URL: ${result.url}`}
                 actions={
-                    relatedScans.length > 1 && (
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                            {['desktop', 'tablet', 'mobile'].map((d) => {
-                                const scan = relatedScans.find(s => s.device === d);
-                                if (!scan) return null;
-                                return (
-                                    <MsqdxButton
-                                        key={d}
-                                        variant={result.device === d ? 'contained' : 'outlined'}
-                                        brandColor={result.device === d ? 'green' : undefined}
-                                        size="small"
-                                        onClick={() => router.push(`/results/${scan.id}`)}
-                                        startIcon={
-                                            d === 'mobile' ? <MsqdxIcon name="Smartphone" size="sm" /> :
-                                            d === 'tablet' ? <MsqdxIcon name="TabletMac" size="sm" /> :
-                                            <MsqdxIcon name="DesktopWindows" size="sm" />
-                                        }
-                                    >
-                                        {d.charAt(0).toUpperCase() + d.slice(1)}
-                                    </MsqdxButton>
-                                );
-                            })}
-                        </Box>
-                    )
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <MsqdxButton
+                            variant="outlined"
+                            size="small"
+                            disabled={pdfExporting}
+                            onClick={handlePdfExport}
+                            startIcon={<MsqdxIcon name="Download" size="sm" />}
+                        >
+                            {pdfExporting ? 'PDF wird erstellt…' : 'PDF exportieren'}
+                        </MsqdxButton>
+                        {relatedScans.length > 1 && (
+                            <>
+                                {['desktop', 'tablet', 'mobile'].map((d) => {
+                                    const scan = relatedScans.find(s => s.device === d);
+                                    if (!scan) return null;
+                                    return (
+                                        <MsqdxButton
+                                            key={d}
+                                            variant={result.device === d ? 'contained' : 'outlined'}
+                                            brandColor={result.device === d ? 'green' : undefined}
+                                            size="small"
+                                            onClick={() => router.push(`/results/${scan.id}`)}
+                                            startIcon={
+                                                d === 'mobile' ? <MsqdxIcon name="Smartphone" size="sm" /> :
+                                                d === 'tablet' ? <MsqdxIcon name="TabletMac" size="sm" /> :
+                                                <MsqdxIcon name="DesktopWindows" size="sm" />
+                                            }
+                                        >
+                                            {d.charAt(0).toUpperCase() + d.slice(1)}
+                                        </MsqdxButton>
+                                    );
+                                })}
+                            </>
+                        )}
+                    </Box>
                 }
             >
                 {/* Stats Grid: Current + WCAG Levels */}
