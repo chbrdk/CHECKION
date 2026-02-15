@@ -107,12 +107,16 @@ def run_saliency(img: Image.Image, out_w: int, out_h: int) -> bytes:
 
 
 # --- FastAPI app ---
-app = FastAPI(title="CHECKION Saliency Service", version="0.1.0")
+from contextlib import asynccontextmanager
 
 
-@app.on_event("startup")
-def startup() -> None:
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
     load_models()
+    yield
+
+
+app = FastAPI(title="CHECKION Saliency Service", version="0.1.0", lifespan=lifespan)
 
 
 @app.get("/health")
