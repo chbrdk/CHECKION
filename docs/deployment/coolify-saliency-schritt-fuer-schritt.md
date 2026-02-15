@@ -41,12 +41,13 @@ Eine Anleitung: **wo du in Coolify was eintragen musst.** (Gleiches GitHub-Repo,
 
 ### Schritt 5: Namen & Deploy
 
-1. **Name** der Anwendung: z. B. `checkion-saliency` (merken für Teil B).
+1. **Name** der Anwendung: z. B. `checkion-saliency`.
 2. **Deploy** ausführen.
 3. Warten, bis der Build durch ist und der Container läuft.
-4. **Interne URL** notieren: In Coolify bei der Saliency-Anwendung unter **General** / **Networking** / **Domain** oder in den Logs steht, unter welchem Hostnamen der Dienst erreichbar ist. Typisch:  
-   **`http://checkion-saliency:8000`**  
-   (Der Hostname ist oft der **Application Name** in Kleinbuchstaben ohne Sonderzeichen. In Coolify ggf. unter „Internal“ oder „Service URL“ nachsehen.)
+4. **Interne Container-Adresse für Teil B ermitteln** (wichtig für „fetch failed“):
+   - Saliency-Anwendung in Coolify öffnen.
+   - Nach **interner URL** / **Container-Name** suchen: oft ein **Auge-Symbol (👁)** oder Link neben der Domain/Network-Sektion. Dort steht die **Container-ID** (z. B. `rc8gsg4kcwc8k0wsgo484w80` oder ein kürzerer Name).
+   - Diese ID ist der Hostname, den CHECKION braucht: **`http://<diese-id>:8000`**
 
 ---
 
@@ -63,10 +64,9 @@ Eine Anleitung: **wo du in Coolify was eintragen musst.** (Gleiches GitHub-Repo,
 
 | Name | Wert |
 |------|------|
-| `SALIENCY_SERVICE_URL` | `http://checkion-saliency:8000` |
+| `SALIENCY_SERVICE_URL` | `http://<Container-ID-von-Saliency>:8000` |
 
-**Hinweis:** `checkion-saliency` durch den **exakten Namen** ersetzen, den Coolify für die Saliency-Anwendung als Hostname nutzt. Wenn die App in Coolify z. B. „Saliency“ heißt und Coolify den Hostnamen `saliency` vergibt, dann:  
-`http://saliency:8000`
+**Wichtig:** Statt des App-Namens die **Container-ID** aus Schritt 5.4 verwenden (z. B. `http://rc8gsg4kcwc8k0wsgo484w80:8000`). Der App-Name wie `checkion-saliency` funktioniert in Coolify oft nicht für Container-zu-Container-Verbindungen – nur die angezeigte interne ID.
 
 ### Schritt 8: CHECKION neu deployen
 
@@ -80,3 +80,21 @@ Eine Anleitung: **wo du in Coolify was eintragen musst.** (Gleiches GitHub-Repo,
 - [ ] **Teil B:** In CHECKION Env `SALIENCY_SERVICE_URL=http://<saliency-app-name>:8000` eintragen, CHECKION redeployen.
 
 Danach werden bei jedem neuen Scan die Attention-Heatmaps asynchron berechnet und auf der Ergebnis-Seite angezeigt, sobald sie fertig sind.
+
+---
+
+## Fehler: „fetch failed“ / 502
+
+Wenn CHECKION die Meldung **„fetch failed (SALIENCY_SERVICE_URL prüfen…)“** oder **502 Bad Gateway** anzeigt:
+
+1. **Container-ID statt App-Namen nutzen**  
+   In Coolify bei der **Saliency**-App die **interne Container-ID** finden (Auge-Symbol oder „Internal URL“ / Netzwerk-Details).  
+   In CHECKION unter **Environment Variables** eintragen:  
+   **`SALIENCY_SERVICE_URL`** = **`http://<diese-Container-ID>:8000`**  
+   (z. B. `http://rc8gsg4kcwc8k0wsgo484w80:8000`). CHECKION danach **neu deployen**.
+
+2. **Gleicher Server / Projekt**  
+   CHECKION und Saliency müssen auf dem **gleichen Coolify-Server** (und idealerweise im gleichen Projekt) laufen, damit sie sich im internen Netz erreichen können.
+
+3. **Saliency-Logs prüfen**  
+   Beim Klick auf „Heatmap jetzt berechnen“ in den **Saliency**-Logs nach **POST /predict** suchen. Kommt keine Anfrage an, erreicht CHECKION den Container nicht (falsche ID oder anderes Netz).

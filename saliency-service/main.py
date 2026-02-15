@@ -12,6 +12,7 @@ from pathlib import Path
 import numpy as np
 import torch
 import uvicorn
+import cv2
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from PIL import Image
@@ -98,11 +99,28 @@ def run_saliency(img: Image.Image, out_w: int, out_h: int) -> bytes:
         pred_map = model_cnn(pred_1, pred_2)
 
     pred_map = TF.resize(pred_map, (out_h, out_w))
-    # [1, 1, H, W] -> HxW, 0..1 -> 0..255 PNG
-    arr = pred_map.squeeze().cpu().numpy()
-    arr = (np.clip(arr, 0, 1) * 255).astype(np.uint8)
+    # [1, 1, H, W] -> HxW, float 0..1
+    arr = pred_map.squeeze().cpu().numpy().astype(np.float64)
+    arr = np.clip(arr, 0, 1)
+
+    # Contrast: stretch to percentiles so more of the range is used (higher sensitivity)
+    lo, hi = np.percentile(arr, [3, 97])
+    if hi > lo:
+        arr = (arr - lo) / (hi - lo)
+    arr = np.clip(arr, 0, 1)
+
+    # Optional: gamma < 1 makes mid-tones more distinct (more "pop")
+    arr = np.power(arr, 0.7)
+
+    # 0..1 -> 0..255 uint8 for colormap
+    arr_u8 = (np.clip(arr, 0, 1) * 255).astype(np.uint8)
+
+    # Colorize: Jet colormap (blue = low attention, red/yellow = high attention)
+    heat_rgb = cv2.applyColorMap(arr_u8, cv2.COLORMAP_JET)
+    heat_rgb = cv2.cvtColor(heat_rgb, cv2.COLOR_BGR2RGB)
+
     out = io.BytesIO()
-    Image.fromarray(arr, mode="L").save(out, format="PNG")
+    Image.fromarray(heat_rgb).save(out, format="PNG")
     return out.getvalue()
 
 
