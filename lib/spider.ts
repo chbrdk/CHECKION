@@ -223,6 +223,29 @@ export async function* runDomainScan(startUrl: string, options: DomainScanOption
         }
     }
 
+    // Parent links from URL path: link each node to its path parent (e.g. /australia/models → /australia) so the graph shows a tree
+    const nodeIds = new Set(graphNodes.map((n) => n.id));
+    const linkKeys = new Set(graphLinks.map((l) => `${l.source}\t${l.target}`));
+    graphNodes.forEach((node) => {
+        if (node.depth <= 0) return;
+        try {
+            const u = new URL(node.url);
+            const pathname = u.pathname.replace(/\/$/, '');
+            const segments = pathname.split('/').filter(Boolean);
+            if (segments.length === 0) return;
+            const parentPath = segments.length === 1 ? '/' : '/' + segments.slice(0, -1).join('/');
+            const parentUrl = parentPath === '/' ? origin : origin + parentPath;
+            const parentNorm = normalizeUrl(parentUrl);
+            if (parentNorm === node.id || !nodeIds.has(parentNorm)) return;
+            const key = `${parentNorm}\t${node.id}`;
+            if (linkKeys.has(key)) return;
+            linkKeys.add(key);
+            graphLinks.push({ source: parentNorm, target: node.id });
+        } catch {
+            // ignore invalid URLs
+        }
+    });
+
     // Final calculations
     const domainScore = calculateDomainScore(results);
     const systemicIssues = identifySystemicIssues(results.map(r => r.result));
