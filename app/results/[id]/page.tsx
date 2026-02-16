@@ -30,6 +30,7 @@ import { UxIssueList } from '../../../components/UxIssueList';
 import { FocusOrderOverlay } from '../../../components/FocusOrderOverlay';
 import { StructureMap } from '../../../components/StructureMap';
 import { PageIndexCard } from '../../../components/PageIndexCard';
+import { PageIndexRegionsOverlay } from '../../../components/PageIndexRegionsOverlay';
 import { TouchTargetOverlay } from '../../../components/TouchTargetOverlay';
 import { SaliencyHeatmapOverlay } from '../../../components/SaliencyHeatmapOverlay';
 import { SeoCard } from '../../../components/SeoCard';
@@ -70,6 +71,9 @@ export default function ResultsPage() {
     const [saliencyGenerating, setSaliencyGenerating] = useState(false);
     const [saliencyError, setSaliencyError] = useState<string | null>(null);
     const [screenshotDimensions, setScreenshotDimensions] = useState<{ width: number; height: number }>({ width: 1920, height: 1080 });
+    const autoSaliencyTriggeredRef = useRef(false);
+    const [showRegionHighlight, setShowRegionHighlight] = useState(false);
+    const [hoveredRegionId, setHoveredRegionId] = useState<string | null>(null);
     const [summarizing, setSummarizing] = useState(false);
     const [summarizeError, setSummarizeError] = useState<string | null>(null);
     const [pdfExporting, setPdfExporting] = useState(false);
@@ -110,6 +114,18 @@ export default function ResultsPage() {
             setSaliencyGenerating(false);
         }
     }, [result?.id, saliencyGenerating, t]);
+
+    // Auto-trigger heatmap generation once when result has screenshot but no heatmap (e.g. right after scan)
+    const resultIdRef = useRef<string | null>(null);
+    useEffect(() => {
+        if (result?.id !== resultIdRef.current) {
+            resultIdRef.current = result?.id ?? null;
+            autoSaliencyTriggeredRef.current = false;
+        }
+        if (!result?.id || !result.screenshot || result.saliencyHeatmap || saliencyGenerating || autoSaliencyTriggeredRef.current) return;
+        autoSaliencyTriggeredRef.current = true;
+        handleGenerateSaliency();
+    }, [result?.id, result?.screenshot, result?.saliencyHeatmap, saliencyGenerating, handleGenerateSaliency]);
 
     const filteredIssues = useMemo(() => {
         if (!result) return [];
@@ -801,6 +817,16 @@ export default function ResultsPage() {
                             >
                                 {showTouchTargets ? 'Hide Touch Targets' : 'Show Touch Targets'}
                             </MsqdxButton>
+                            {result.pageIndex && result.pageIndex.regions.length > 0 && (
+                                <MsqdxButton
+                                    variant={showRegionHighlight ? 'contained' : 'outlined'}
+                                    size="small"
+                                    onClick={() => setShowRegionHighlight(!showRegionHighlight)}
+                                    brandColor={showRegionHighlight ? 'green' : undefined}
+                                >
+                                    {showRegionHighlight ? t('results.hideRegionHighlight') : t('results.showRegionHighlight')}
+                                </MsqdxButton>
+                            )}
                             {result.saliencyHeatmap ? (
                                 <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
                                     <InfoTooltip title={t('info.saliencyHeatmap')} ariaLabel={t('common.info')} />
@@ -888,6 +914,15 @@ export default function ResultsPage() {
                                             />
                                         </Box>
                                     )}
+                                    {result.pageIndex && (
+                                        <PageIndexRegionsOverlay
+                                            regions={result.pageIndex.regions}
+                                            screenshotWidth={screenshotDimensions.width}
+                                            screenshotHeight={screenshotDimensions.height}
+                                            highlightedRegionId={hoveredRegionId}
+                                            visible={showRegionHighlight}
+                                        />
+                                    )}
                                     {/* Issue boxes: percentage-based so they stay aligned when screenshot is scaled */}
                                     {filteredIssues.map((issue, idx) => (
                                         issue.boundingBox && (
@@ -933,6 +968,43 @@ export default function ResultsPage() {
                                     ))}
                                 </Box>
                             </Box>
+                            {showRegionHighlight && result.pageIndex && result.pageIndex.regions.length > 0 && (
+                                <Box sx={{ mt: 1.5, p: 1.5, bgcolor: 'var(--color-secondary-dx-grey-light-tint)', borderRadius: 1 }}>
+                                    <MsqdxTypography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 1, color: 'var(--color-text-muted-on-light)' }}>
+                                        {t('results.pageIndexTitle')} — {t('results.hoverToHighlight')}
+                                    </MsqdxTypography>
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                        {result.pageIndex.regions.map((r) => (
+                                            <Box
+                                                key={r.id}
+                                                component="span"
+                                                onMouseEnter={() => setHoveredRegionId(r.id)}
+                                                onMouseLeave={() => setHoveredRegionId(null)}
+                                                sx={{
+                                                    display: 'inline-block',
+                                                    px: 1,
+                                                    py: 0.5,
+                                                    borderRadius: 0.5,
+                                                    fontSize: '0.75rem',
+                                                    bgcolor: hoveredRegionId === r.id ? alpha(MSQDX_BRAND_PRIMARY.green, 0.2) : 'transparent',
+                                                    border: hoveredRegionId === r.id ? `1px solid ${MSQDX_BRAND_PRIMARY.green}` : '1px solid transparent',
+                                                    cursor: 'pointer',
+                                                    maxWidth: 220,
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
+                                                }}
+                                            >
+                                                <Box component="span" sx={{ fontWeight: 600, color: 'var(--color-text-muted-on-light)', mr: 0.5 }}>
+                                                    {r.tag}
+                                                </Box>
+                                                {(r.headingText || '').slice(0, 35)}
+                                                {(r.headingText || '').length > 35 ? '…' : ''}
+                                            </Box>
+                                        ))}
+                                    </Box>
+                                </Box>
+                            )}
                         </Box>
                     ) : (
                         <Box sx={{ textAlign: 'center', py: 8 }}>

@@ -52,6 +52,17 @@ async function run(): Promise<void> {
     assert.strictEqual(emptyEnriched.regions.length, indexAbove.regions.length);
     assert.strictEqual(emptyEnriched.regions[0].saliencyProminence, undefined);
 
+    // Button (level 7) and paragraph (level 8) get lower findability than headings
+    const buttonAndP: StructureNode[] = [
+        { tag: 'button', text: 'Jetzt kaufen', level: 7, rect: { x: 0, y: 200, width: 120, height: 40 } },
+        { tag: 'p', text: 'Das Produkt ist nur hier erwähnt.', level: 8, rect: { x: 0, y: 300, width: 400, height: 24 } },
+    ];
+    const indexButtonP = buildPageIndex(buttonAndP, viewportHeight, url);
+    assert.strictEqual(indexButtonP.regions.length, 2);
+    assert.strictEqual(indexButtonP.regions[0].tag, 'button');
+    assert.strictEqual(indexButtonP.regions[1].tag, 'p');
+    assert.ok(indexButtonP.regions[0].findabilityScore > indexButtonP.regions[1].findabilityScore, 'button findability > paragraph');
+
     console.log('page-index tests passed');
 }
 

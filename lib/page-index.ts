@@ -49,6 +49,10 @@ function computeFindabilityScore(aboveFold: boolean, level: number, indexInDocum
     let score = aboveFold ? ABOVE_FOLD_WEIGHT : 0;
     if (level >= 1 && level <= 6) {
         score += (7 - level) * LEVEL_WEIGHT;
+    } else if (level === 7) {
+        score += 0.8; // button: lower than headings, higher than paragraphs
+    } else if (level === 8) {
+        score += 0.4; // paragraph: lowest, so "only in paragraph" signals optimization potential
     } else {
         score += 2; // landmarks get a fixed boost
     }

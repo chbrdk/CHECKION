@@ -104,7 +104,7 @@ function RegionRow({
                     minWidth: 36,
                 }}
             >
-                {region.tag}
+                {region.tag === 'button' ? t('results.pageIndexTagButton') : region.tag === 'p' ? t('results.pageIndexTagParagraph') : region.tag}
             </Box>
             <MsqdxTypography
                 variant="body2"

@@ -208,7 +208,12 @@
     "pageIndexFindability": "Findability",
     "pageIndexSaliency": "Saliency",
     "pageIndexSemanticType": "Typ",
-    "pageIndexNoData": "Kein Seiten-Index für diesen Scan."
+    "pageIndexNoData": "Kein Seiten-Index für diesen Scan.",
+    "pageIndexTagButton": "Button",
+    "pageIndexTagParagraph": "Absatz",
+    "showRegionHighlight": "Regionen hervorheben",
+    "hideRegionHighlight": "Regionen ausblenden",
+    "hoverToHighlight": "Hover über eine Region, um sie auf dem Screenshot zu markieren."
   },
   "domainResult": {
     "loading": "Laden…",

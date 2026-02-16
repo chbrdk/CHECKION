@@ -394,7 +394,7 @@ export type DomainScanResult = {
 export interface StructureNode {
     tag: string;
     text: string;
-    level: number; // 1-6 for headings, 0 for landmarks
+    level: number; // 1-6 headings, 0 landmarks, 7 button, 8 paragraph
     rect?: { x: number; y: number; width: number; height: number };
     children?: StructureNode[];
     error?: string; // e.g. "Skipped heading level"

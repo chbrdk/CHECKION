@@ -18,9 +18,13 @@
 - **Ort:** Tab „Struktur & Semantik“ (viewMode `structure`) – unter Document Outline und Structure Map.
 - **Inhalt:**
   - **Liste „Seiten-Index (Auffindbarkeit)“:** Pro Region eine Zeile: Tag (z. B. h2, nav), Heading-Text (gekürzt), Above the fold (Ja/Nein), Findability-Score (Zahl), optional Saliency-Prominenz (Balken 0–1), semantischer Typ (Chip, z. B. pricing, faq, contact). Sortierung: indexInDocument oder nach Findability absteigend.
-  - **Optional:** In der „Visuelle Analyse“-Ansicht Regionen-Rahmen auf dem Screenshot (Highlight bei Hover in der Liste), wenn `result.pageIndex` und Screenshot vorhanden; gleiche Skalierung wie Saliency-Overlay.
-- **i18n:** Neue Keys unter `results.pageIndex.*` und `info.pageIndex` (Tooltip).
-- **Komponente:** `components/PageIndexCard.tsx` (oder `PageIndexList.tsx`) – nimmt `pageIndex`, optional `highlightRegionId`, `onHighlightRegion`; optional zweite Komponente für Overlay-Rahmen oder Integration in bestehende Screenshot-Overlay-Logik.
+  - **Umsetzung:** In der „Visuelle Analyse“-Ansicht: Toggle „Regionen hervorheben“; bei Aktivierung zeichnet `PageIndexRegionsOverlay` alle Region-Rects auf dem Screenshot, die hervorgehobene Region (bei Hover in der Liste) mit grünem Rahmen und Label. Kompakte Regionen-Liste unter dem Screenshot mit Hover → setzt `hoveredRegionId`.
+- **i18n:** Keys unter `results.pageIndex.*`, `results.showRegionHighlight`, `results.hoverToHighlight`, `info.pageIndex`.
+
+### Erweiterungen (Buttons & Absätze, Auto-Heatmap)
+
+- **Structure Map:** Im Scanner erweitert um `button`, `[role="button"]`, `p` (Level 7 = Button, 8 = Absatz), in Dokumentreihenfolge. Findability: Button 0.8, Absatz 0.4 – so ist erkennbar, wenn z. B. das Produkt nur im Absatz und nicht in der Headline vorkommt (Optimierungspotenzial).
+- **Heatmap automatisch:** Beim Laden der Ergebnis-Seite wird einmalig `POST /api/saliency/generate` ausgelöst, wenn `screenshot` vorhanden und `saliencyHeatmap` fehlt (Ref verhindert Doppelaufruf).
 
 ### Phase 3: Persona & Klickpfade (später)
 
