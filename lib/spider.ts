@@ -263,11 +263,11 @@ export async function* runDomainScan(startUrl: string, options: DomainScanOption
             totalPages,
         },
         expertise: {
-            pagesWithAuthorBio: pages.filter((p) => p.generative?.hasAuthorBio).length,
-            pagesWithArticleAuthor: pages.filter((p) => p.generative?.articleSchemaQuality?.hasAuthor).length,
+            pagesWithAuthorBio: pages.filter((p) => p.generative?.expertise?.hasAuthorBio).length,
+            pagesWithArticleAuthor: pages.filter((p) => p.generative?.technical?.articleSchemaQuality?.hasAuthor).length,
             avgCitationsPerPage:
                 totalPages > 0
-                    ? pages.reduce((sum, p) => sum + (p.generative?.citationCount ?? 0), 0) / totalPages
+                    ? pages.reduce((sum, p) => sum + (p.generative?.content?.citationDensity ?? 0), 0) / totalPages
                     : 0,
             totalPages,
         },
