@@ -1,0 +1,122 @@
+/* ------------------------------------------------------------------ */
+/*  CHECKION – GET /api/search (dashboard search over scans)          */
+/* ------------------------------------------------------------------ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/auth';
+import { listStandaloneScans, listDomainScans } from '@/lib/db/scans';
+import type { ScanResult, DomainScanResult, SearchMatch, SearchMatchType } from '@/lib/types';
+
+const MAX_SINGLE_LOAD = 300;
+const MAX_DOMAIN_LOAD = 30;
+const MAX_MATCHES = 100;
+
+function containsQuery(text: string | null | undefined, q: string): boolean {
+    if (text == null || typeof text !== 'string') return false;
+    return text.toLowerCase().includes(q);
+}
+
+function snippet(str: string, maxLen: number): string {
+    const s = str.trim();
+    if (s.length <= maxLen) return s;
+    return s.slice(0, maxLen).trim() + '…';
+}
+
+function searchInScan(
+    result: ScanResult,
+    q: string,
+    type: 'single' | 'domain',
+    scanId: string,
+    domain?: string
+): SearchMatch[] {
+    const matches: SearchMatch[] = [];
+    const seen = new Set<string>();
+
+    const add = (matchType: SearchMatchType, snippetText: string) => {
+        const key = `${result.url}\t${matchType}\t${snippetText.slice(0, 50)}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        matches.push({
+            type,
+            id: scanId,
+            url: result.url,
+            domain,
+            snippet: snippet(snippetText, 120),
+            matchType,
+            timestamp: result.timestamp,
+            score: result.score,
+        });
+    };
+
+    if (containsQuery(result.url, q)) add('url', result.url);
+
+    result.pageIndex?.regions?.forEach((r) => {
+        if (containsQuery(r.headingText, q)) add('region', r.headingText || r.tag);
+        if (containsQuery(r.semanticType, q)) add('region', `${r.tag}: ${r.semanticType}`);
+    });
+
+    result.issues?.forEach((i) => {
+        if (containsQuery(i.message, q)) add('issue', i.message);
+        if (containsQuery(i.code, q)) add('issue', i.code + ' – ' + i.message);
+    });
+
+    if (result.seo) {
+        if (containsQuery(result.seo.title, q)) add('seo', result.seo.title ?? '');
+        if (containsQuery(result.seo.metaDescription, q)) add('seo', result.seo.metaDescription ?? '');
+        if (containsQuery(result.seo.h1, q)) add('seo', result.seo.h1 ?? '');
+    }
+
+    if (domain && containsQuery(domain, q)) add('domain', domain);
+
+    return matches;
+}
+
+export async function GET(req: NextRequest) {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const q = (searchParams.get('q') ?? '').trim().toLowerCase();
+    if (!q) {
+        return NextResponse.json({ matches: [] });
+    }
+
+    const typeParam = searchParams.get('type') ?? 'all';
+    const typeFilter = typeParam === 'single' ? 'single' : typeParam === 'domain' ? 'domain' : 'all';
+    const limit = Math.min(100, Math.max(1, Number(searchParams.get('limit')) || 50));
+
+    const allMatches: SearchMatch[] = [];
+
+    if (typeFilter === 'all' || typeFilter === 'single') {
+        const singleScans = await listStandaloneScans(session.user.id, { limit: MAX_SINGLE_LOAD });
+        for (const result of singleScans) {
+            const list = searchInScan(result, q, 'single', result.id);
+            for (const m of list) {
+                if (allMatches.length >= limit) break;
+                allMatches.push(m);
+            }
+            if (allMatches.length >= limit) break;
+        }
+    }
+
+    if ((typeFilter === 'all' || typeFilter === 'domain') && allMatches.length < limit) {
+        const domainScans = await listDomainScans(session.user.id, { limit: MAX_DOMAIN_LOAD });
+        for (const ds of domainScans) {
+            if (allMatches.length >= limit) break;
+            const domain = ds.domain;
+            for (const page of ds.pages ?? []) {
+                if (allMatches.length >= limit) break;
+                const list = searchInScan(page, q, 'domain', ds.id, domain);
+                for (const m of list) {
+                    if (allMatches.length >= limit) break;
+                    allMatches.push(m);
+                }
+            }
+        }
+    }
+
+    const capped = allMatches.slice(0, Math.min(limit, MAX_MATCHES));
+    return NextResponse.json({ matches: capped });
+}

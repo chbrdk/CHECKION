@@ -426,6 +426,20 @@ export interface PageIndex {
     regions: PageIndexRegion[];
 }
 
+/** One search result from GET /api/search (dashboard search). */
+export type SearchMatchType = 'url' | 'region' | 'issue' | 'seo' | 'domain';
+
+export interface SearchMatch {
+    type: 'single' | 'domain';
+    id: string;
+    url: string;
+    domain?: string;
+    snippet: string;
+    matchType: SearchMatchType;
+    timestamp?: string;
+    score?: number;
+}
+
 export interface TouchTargetIssue {
     selector: string;
     element: string;

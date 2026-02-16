@@ -148,7 +148,22 @@
     "domainEmptyCta": "Deep Scan starten",
     "pageOf": "Seite {page} von {total}",
     "prev": "Zurück",
-    "next": "Weiter"
+    "next": "Weiter",
+    "searchLabel": "Suche",
+    "searchPlaceholder": "Suche in Scans, Seiten, Issues…",
+    "searchButton": "Suchen",
+    "searchResultsTitle": "Suchergebnisse",
+    "searchNoResults": "Keine Treffer für „{query}“. Suchbegriff ändern oder Scans anlegen.",
+    "searchNoResultsEmpty": "Gib einen Suchbegriff ein.",
+    "searchLoading": "Suche…",
+    "searchType_single": "Single",
+    "searchType_domain": "Domain",
+    "matchType_url": "URL",
+    "matchType_region": "Region",
+    "matchType_issue": "Issue",
+    "matchType_seo": "SEO",
+    "matchType_domain": "Domain",
+    "clearSearch": "Suche leeren"
   },
   "developers": {
     "title": "Developer API",

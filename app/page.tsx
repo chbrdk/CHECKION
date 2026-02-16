@@ -8,10 +8,12 @@ import {
   MsqdxButton,
   MsqdxCard,
   MsqdxMoleculeCard,
+  MsqdxFormField,
 } from '@msqdx/react';
 import { MSQDX_SPACING, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
-import type { ScanResult } from '@/lib/types';
+import type { ScanResult, SearchMatch } from '@/lib/types';
 import { HistoryList, SingleScanRow, DomainScanRow, type DomainScanSummary } from '@/components/HistoryList';
+import { SearchResultsList } from '@/components/SearchResultsList';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { DASHBOARD_SCANS_PAGE_SIZE } from '@/lib/constants';
@@ -30,6 +32,51 @@ export default function DashboardPage() {
   const [scanPage, setScanPage] = useState(1);
   const [domainPage, setDomainPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [lastSearchedQuery, setLastSearchedQuery] = useState('');
+  const [searchMatches, setSearchMatches] = useState<SearchMatch[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+
+  const runSearch = useCallback(async (q: string) => {
+    const trimmed = q.trim();
+    if (!trimmed) {
+      setSearchMatches([]);
+      setLastSearchedQuery('');
+      return;
+    }
+    setLastSearchedQuery(trimmed);
+    setSearchLoading(true);
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(trimmed)}&limit=50`);
+      const data = await res.json();
+      setSearchMatches(Array.isArray(data?.matches) ? data.matches : []);
+    } catch {
+      setSearchMatches([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  }, []);
+
+  const handleSearchSubmit = useCallback(() => {
+    runSearch(searchQuery);
+  }, [searchQuery, runSearch]);
+
+  const clearSearch = useCallback(() => {
+    setSearchQuery('');
+    setLastSearchedQuery('');
+    setSearchMatches([]);
+  }, []);
+
+  const handleSelectMatch = useCallback(
+    (match: SearchMatch) => {
+      if (match.type === 'single') {
+        router.push(`/results/${match.id}`);
+      } else {
+        router.push(`/domain/${match.id}`);
+      }
+    },
+    [router]
+  );
 
   const loadScans = useCallback(async () => {
     setLoading(true);
@@ -96,6 +143,36 @@ export default function DashboardPage() {
         </MsqdxButton>
       </Box>
 
+      {/* Search bar */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--msqdx-spacing-sm)',
+          mb: 'var(--msqdx-spacing-md)',
+          flexWrap: 'wrap',
+        }}
+      >
+        <Box sx={{ flex: 1, minWidth: 200, maxWidth: 420 }}>
+          <MsqdxFormField
+            label={t('dashboard.searchLabel')}
+            placeholder={t('dashboard.searchPlaceholder')}
+            value={searchQuery}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+            onKeyDown={(e: React.KeyboardEvent) => e.key === 'Enter' && handleSearchSubmit()}
+            fullWidth
+          />
+        </Box>
+        <MsqdxButton variant="contained" brandColor="green" size="medium" onClick={handleSearchSubmit}>
+          {t('dashboard.searchButton')}
+        </MsqdxButton>
+        {lastSearchedQuery && (
+          <MsqdxButton variant="outlined" size="medium" onClick={clearSearch}>
+            {t('dashboard.clearSearch')}
+          </MsqdxButton>
+        )}
+      </Box>
+
       {/* Stats Cards */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-xs)' }}>
         <InfoTooltip title={t('info.dashboardStats')} ariaLabel={t('common.info')} />
@@ -113,6 +190,24 @@ export default function DashboardPage() {
         <StatCard label={t('dashboard.stats.warnings')} value={totalWarnings} color="yellow" />
         <StatCard label={t('dashboard.stats.notices')} value={totalNotices} color="purple" />
       </Box>
+
+      {/* Search results block (after user has submitted a search) */}
+      {lastSearchedQuery && (
+        <MsqdxMoleculeCard
+          title={t('dashboard.searchResultsTitle')}
+          variant="flat"
+          borderRadius="lg"
+          footerDivider={false}
+          sx={{ bgcolor: 'var(--color-card-bg)', mb: 'var(--msqdx-spacing-md)' }}
+        >
+          <SearchResultsList
+            matches={searchMatches}
+            loading={searchLoading}
+            query={lastSearchedQuery}
+            onSelectMatch={handleSelectMatch}
+          />
+        </MsqdxMoleculeCard>
+      )}
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 'var(--msqdx-spacing-md)' }}>
         {/* Scan History using MsqdxCard */}
