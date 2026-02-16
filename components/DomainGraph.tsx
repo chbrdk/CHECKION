@@ -22,6 +22,24 @@ interface Link {
     target: Node;
 }
 
+function normalizeId(urlOrId: string): string {
+    try {
+        const u = new URL(urlOrId);
+        return u.origin + (u.pathname.replace(/\/$/, '') || '');
+    } catch {
+        return urlOrId;
+    }
+}
+
+function pathDepthFromUrl(url: string): number {
+    try {
+        const path = new URL(url).pathname.replace(/\/$/, '');
+        return path ? path.split('/').filter(Boolean).length : 0;
+    } catch {
+        return 0;
+    }
+}
+
 export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [nodes, setNodes] = useState<Node[]>([]);
@@ -33,30 +51,41 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
         if (!data || !data.nodes.length) return;
 
         // Scale spacing with node count so 100 nodes don’t collapse into a blob (factor from 25-node baseline)
-        const R_BASE = 100;
+        const R_BASE = 140;
         const TWO_PI = 2 * Math.PI;
 
-        const layoutNodes: Node[] = data.nodes.map((n) => ({ ...n, x: 0, y: 0 }));
-        const nodeMap = new Map(layoutNodes.map((n) => [n.id, n]));
+        const layoutNodes: Node[] = data.nodes.map((n) => ({
+            ...n,
+            x: 0,
+            y: 0,
+            depth: n.depth ?? pathDepthFromUrl(n.url),
+        }));
+        const nodeMap = new Map<string, Node>();
+        layoutNodes.forEach((n) => {
+            nodeMap.set(normalizeId(n.id), n);
+            nodeMap.set(normalizeId(n.url), n);
+        });
 
         const childrenMap = new Map<string, string[]>();
         data.links.forEach((l) => {
-            if (!childrenMap.has(l.source)) childrenMap.set(l.source, []);
-            childrenMap.get(l.source)!.push(l.target);
+            const src = normalizeId(l.source);
+            const tgt = normalizeId(l.target);
+            if (!childrenMap.has(src)) childrenMap.set(src, []);
+            if (!childrenMap.get(src)!.includes(tgt)) childrenMap.get(src)!.push(tgt);
         });
 
         const placed = new Set<string>();
 
-        function placeNode(nodeId: string, angle: number, span: number) {
-            const node = nodeMap.get(nodeId);
-            if (!node || placed.has(nodeId)) return;
+        function placeNode(nodeIdNorm: string, angle: number, span: number) {
+            const node = nodeMap.get(nodeIdNorm);
+            if (!node || placed.has(nodeIdNorm)) return;
             const depth = node.depth ?? 0;
             const r = depth === 0 ? 0 : R_BASE * depth;
             node.x = r * Math.cos(angle);
             node.y = r * Math.sin(angle);
-            placed.add(nodeId);
+            placed.add(nodeIdNorm);
 
-            const children = childrenMap.get(nodeId) ?? [];
+            const children = childrenMap.get(nodeIdNorm) ?? [];
             if (children.length === 0) return;
             const childSpan = span / children.length;
             children.forEach((childId, i) => {
@@ -66,13 +95,16 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
         }
 
         const roots = layoutNodes.filter((n) => (n.depth ?? 0) === 0);
-        if (roots.length === 1) {
-            placeNode(roots[0].id, 0, TWO_PI);
-        } else if (roots.length > 1) {
-            roots.forEach((r, i) => placeNode(r.id, (TWO_PI * i) / roots.length, TWO_PI / roots.length));
+        if (roots.length >= 1) {
+            const rootId = normalizeId(roots[0].id);
+            if (roots.length === 1) {
+                placeNode(rootId, 0, TWO_PI);
+            } else {
+                roots.forEach((r, i) => placeNode(normalizeId(r.id), (TWO_PI * i) / roots.length, TWO_PI / roots.length));
+            }
         }
 
-        const unplaced = layoutNodes.filter((n) => !placed.has(n.id)).sort((a, b) => (a.depth ?? 0) - (b.depth ?? 0));
+        const unplaced = layoutNodes.filter((n) => !placed.has(normalizeId(n.id))).sort((a, b) => (a.depth ?? 0) - (b.depth ?? 0));
         const byDepth = new Map<number, Node[]>();
         unplaced.forEach((n) => {
             const d = n.depth ?? 0;
@@ -90,8 +122,8 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
 
         const initialLinks: Link[] = data.links
             .map((l) => ({
-                source: nodeMap.get(l.source)!,
-                target: nodeMap.get(l.target)!,
+                source: nodeMap.get(normalizeId(l.source))!,
+                target: nodeMap.get(normalizeId(l.target))!,
             }))
             .filter((l) => l.source && l.target);
 
@@ -186,15 +218,17 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
                                 stroke="#fff"
                                 strokeWidth={2}
                             />
-                            <text
-                                y={-10}
-                                textAnchor="middle"
-                                fontSize={isHovered ? 11 : 9}
-                                fill="#333"
-                                style={{ pointerEvents: 'none', fontWeight: isHovered ? 'bold' : 'normal' }}
-                            >
-                                {label}
-                            </text>
+                            {(isHovered || nodes.length <= 25) && (
+                                <text
+                                    y={-10}
+                                    textAnchor="middle"
+                                    fontSize={isHovered ? 11 : 9}
+                                    fill="#333"
+                                    style={{ pointerEvents: 'none', fontWeight: isHovered ? 'bold' : 'normal' }}
+                                >
+                                    {label}
+                                </text>
+                            )}
                         </g>
                     );
                 })}
