@@ -1,8 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Box } from '@mui/material';
-import { MsqdxTypography, MsqdxCard } from '@msqdx/react';
-import { MSQDX_COLORS, MSQDX_STATUS } from '@msqdx/tokens';
+import { MsqdxTypography, MsqdxCard, MsqdxButton } from '@msqdx/react';
 import type { DomainScanResult } from '@/lib/types';
+
+const ZOOM_MIN = 0.25;
+const ZOOM_MAX = 3;
+const ZOOM_STEP = 1.25;
 
 interface DomainGraphProps {
     data: DomainScanResult['graph'];
@@ -46,10 +49,14 @@ const NODE_WIDTH = 128;
 const NODE_HEIGHT = 44;
 
 export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProps) => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
     const [nodes, setNodes] = useState<Node[]>([]);
     const [links, setLinks] = useState<Link[]>([]);
     const [hoveredNode, setHoveredNode] = useState<Node | null>(null);
+    const [pan, setPan] = useState({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const [isDragging, setIsDragging] = useState(false);
+    const dragStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
 
     // Flowchart layout: rows by depth, boxes with arrows
     useEffect(() => {
@@ -120,33 +127,83 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
 
     const toDisplay = (x: number, y: number) => ({ x: x * scaleX + offsetX, y: y * scaleY + offsetY });
 
+    // Screen to content coords (inverse of translate(pan) scale(zoom))
+    const screenToContent = (screenX: number, screenY: number) => ({
+        x: (screenX - pan.x) / zoom,
+        y: (screenY - pan.y) / zoom,
+    });
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if (e.button !== 0) return;
+        setIsDragging(false);
+        dragStart.current = { x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y };
+    };
+
     const handleMouseMove = (e: React.MouseEvent) => {
-        const rect = canvasRef.current?.getBoundingClientRect();
+        const rect = containerRef.current?.getBoundingClientRect();
         if (!rect) return;
         const mx = e.clientX - rect.left;
         const my = e.clientY - rect.top;
-        const halfW = (NODE_WIDTH / 2) * scaleX;
-        const halfH = (NODE_HEIGHT / 2) * scaleY;
-        const setHover = nodes.find((n) => {
-            const d = toDisplay(n.x, n.y);
-            return Math.abs(mx - d.x) <= halfW && Math.abs(my - d.y) <= halfH;
-        }) || null;
-        setHoveredNode(setHover);
+        if (e.buttons === 1 && (dragStart.current.x !== e.clientX || dragStart.current.y !== e.clientY)) {
+            setIsDragging(true);
+            setPan({
+                x: dragStart.current.panX + (e.clientX - dragStart.current.x),
+                y: dragStart.current.panY + (e.clientY - dragStart.current.y),
+            });
+            return;
+        }
+        if (!isDragging) {
+            const content = screenToContent(mx, my);
+            const halfW = (NODE_WIDTH / 2) * scaleX;
+            const halfH = (NODE_HEIGHT / 2) * scaleY;
+            const setHover =
+                nodes.find((n) => {
+                    const d = toDisplay(n.x, n.y);
+                    return Math.abs(content.x - d.x) <= halfW && Math.abs(content.y - d.y) <= halfH;
+                }) || null;
+            setHoveredNode(setHover);
+        }
+    };
+
+    const handleMouseUp = () => {
+        setIsDragging(false);
+    };
+
+    const handleMouseLeave = () => {
+        setIsDragging(false);
+        setHoveredNode(null);
+    };
+
+    const zoomIn = () => setZoom((z) => Math.min(ZOOM_MAX, z * ZOOM_STEP));
+    const zoomOut = () => setZoom((z) => Math.max(ZOOM_MIN, z / ZOOM_STEP));
+    const resetView = () => {
+        setPan({ x: 0, y: 0 });
+        setZoom(1);
     };
 
     return (
-        <Box sx={{ position: 'relative', width: width, height: height, background: '#f5f5f5', borderRadius: 2, overflow: 'hidden' }}>
+        <Box
+            ref={containerRef}
+            sx={{ position: 'relative', width: width, height: height, background: '#f5f5f5', borderRadius: 2, overflow: 'hidden' }}
+        >
             <svg
                 width={width}
                 height={height}
+                onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
-                style={{ cursor: hoveredNode ? 'pointer' : 'default' }}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseLeave}
+                style={{
+                    cursor: isDragging ? 'grabbing' : hoveredNode ? 'pointer' : 'grab',
+                    userSelect: 'none',
+                }}
             >
                 <defs>
                     <marker id="flowchart-arrow" markerWidth={10} markerHeight={8} refX={9} refY={4} orient="auto">
                         <path d="M0,0 L10,4 L0,8 Z" fill="#6b8cae" />
                     </marker>
                 </defs>
+                <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`}>
                 {/* Links: from bottom of source box to top of target box, with arrow */}
                 {links.map((link, i) => {
                     const s = nodes.find((n) => n.url === link.source.url);
@@ -215,18 +272,45 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
                         </g>
                     );
                 })}
+                </g>
             </svg>
+
+            {/* Zoom controls – stop propagation so clicking them doesn't start pan */}
+            <Box
+                onMouseDown={(e) => e.stopPropagation()}
+                sx={{
+                    position: 'absolute',
+                    bottom: 12,
+                    right: 12,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 0.5,
+                    zIndex: 10,
+                }}
+            >
+                <MsqdxButton variant="filled" size="small" onClick={zoomIn} sx={{ minWidth: 36 }} aria-label="Zoom in">
+                    +
+                </MsqdxButton>
+                <MsqdxButton variant="filled" size="small" onClick={zoomOut} sx={{ minWidth: 36 }} aria-label="Zoom out">
+                    −
+                </MsqdxButton>
+                <MsqdxButton variant="outlined" size="small" onClick={resetView} sx={{ minWidth: 36 }} aria-label="Reset view">
+                    ⟲
+                </MsqdxButton>
+            </Box>
 
             {/* Tooltip */}
             {hoveredNode && (() => {
                 const d = toDisplay(hoveredNode.x, hoveredNode.y);
+                const tooltipX = pan.x + d.x * zoom + 10;
+                const tooltipY = pan.y + d.y * zoom + 10;
                 return (
                 <MsqdxCard
                     variant="glass"
                     sx={{
                         position: 'absolute',
-                        top: d.y + 10,
-                        left: d.x + 10,
+                        top: tooltipY,
+                        left: tooltipX,
                         p: 1,
                         zIndex: 10,
                         pointerEvents: 'none',
