@@ -440,12 +440,18 @@ export interface SearchMatch {
     score?: number;
 }
 
-/** One step in a user journey (agent-chosen page + optional trigger). */
+/** One step in a user journey (agent-chosen page + optional trigger and region findability). */
 export interface JourneyStep {
     pageUrl: string;
     pageTitle?: string;
     triggerLabel?: string;
     regionId?: string;
+    /** Findability score of the matched region (0–1). Higher = easier to find. */
+    regionFindability?: number;
+    /** Whether the trigger region was above the fold. */
+    regionAboveFold?: boolean;
+    /** Semantic type of the region (e.g. nav, hero, main). */
+    regionSemanticType?: string;
     index: number;
 }
 

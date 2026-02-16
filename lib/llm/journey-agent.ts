@@ -149,21 +149,29 @@ Path so far (URLs already visited): ${JSON.stringify(pathSoFar)}
 Reply with one JSON object: either next (with next_page_url from outboundLinks and optional trigger_label) or goal_reached (with optional reason).`;
 }
 
-/** Resolve trigger_label to a region id by best match on headingText. */
-function matchTriggerToRegionId(
+/** Resolve trigger_label to a region by best match on headingText; returns id and region metadata. */
+function matchTriggerToRegion(
     page: ScanResult,
     triggerLabel: string | undefined
-): string | undefined {
+): { id: string; findabilityScore: number; aboveFold: boolean; semanticType?: string } | undefined {
     if (!triggerLabel?.trim() || !page.pageIndex?.regions?.length) return undefined;
     const label = triggerLabel.trim().toLowerCase();
-    let best: { id: string; score: number } | null = null;
+    let best: { id: string; score: number; findabilityScore: number; aboveFold: boolean; semanticType?: string } | null = null;
     for (const r of page.pageIndex.regions) {
         const text = (r.headingText ?? '').toLowerCase();
         if (!text) continue;
         const score = text.includes(label) ? label.length : (label.includes(text) ? text.length : 0);
-        if (score > 0 && (!best || score > best.score)) best = { id: r.id, score };
+        if (score > 0 && (!best || score > best.score)) {
+            best = {
+                id: r.id,
+                score,
+                findabilityScore: r.findabilityScore ?? 0,
+                aboveFold: r.aboveFold ?? false,
+                semanticType: r.semanticType,
+            };
+        }
     }
-    return best?.id;
+    return best ? { id: best.id, findabilityScore: best.findabilityScore, aboveFold: best.aboveFold, semanticType: best.semanticType } : undefined;
 }
 
 export async function runJourneyAgent(
@@ -246,8 +254,8 @@ export async function runJourneyAgent(
         }
 
         const currentScan = pageByUrl.get(currentUrl);
-        const regionId = currentScan
-            ? matchTriggerToRegionId(currentScan, action.trigger_label)
+        const region = currentScan
+            ? matchTriggerToRegion(currentScan, action.trigger_label)
             : undefined;
 
         const nextScan = pageByUrl.get(nextNorm);
@@ -255,7 +263,10 @@ export async function runJourneyAgent(
             pageUrl: nextScan?.url ?? nextContext.url,
             pageTitle: nextContext.title,
             triggerLabel: action.trigger_label,
-            regionId,
+            regionId: region?.id,
+            regionFindability: region?.findabilityScore,
+            regionAboveFold: region?.aboveFold,
+            regionSemanticType: region?.semanticType,
             index: steps.length,
         });
         pathSoFar.push(nextNorm);
