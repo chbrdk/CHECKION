@@ -8,3 +8,6 @@ export const PDF_LOGO_PATH = '/msqdx-logo-black.svg';
 
 /** Cookie and localStorage key for UI language (de/en). Used by lib/i18n. */
 export const LOCALE_STORAGE_KEY = 'checkion_locale';
+
+/** Number of scans per page on the dashboard (single + domain lists). */
+export const DASHBOARD_SCANS_PAGE_SIZE = 10;

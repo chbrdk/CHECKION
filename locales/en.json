@@ -145,7 +145,10 @@
     "emptyMessage": "No scans performed yet.",
     "emptyCta": "Start first scan",
     "domainEmptyMessage": "No deep scans (domain) performed yet.",
-    "domainEmptyCta": "Start deep scan"
+    "domainEmptyCta": "Start deep scan",
+    "pageOf": "Page {page} of {total}",
+    "prev": "Previous",
+    "next": "Next"
   },
   "developers": {
     "title": "Developer API",

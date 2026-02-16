@@ -2,7 +2,7 @@
 /*  CHECKION – Scan persistence (DB)                                   */
 /* ------------------------------------------------------------------ */
 
-import { eq, and, desc, isNull } from 'drizzle-orm';
+import { eq, and, desc, isNull, count } from 'drizzle-orm';
 import { getDb } from './index';
 import { scans, domainScans } from './schema';
 import type { ScanResult, DomainScanResult } from '@/lib/types';
@@ -70,10 +70,19 @@ export async function listScans(userId: string): Promise<ScanResult[]> {
 }
 
 /** Only scans that are not part of a domain scan (standalone single-URL scans). */
-export async function listStandaloneScans(userId: string): Promise<ScanResult[]> {
+export async function listStandaloneScans(userId: string, options?: { limit?: number; offset?: number }): Promise<ScanResult[]> {
     const db = getDb();
-    const rows = await db.select({ result: scans.result }).from(scans).where(and(eq(scans.userId, userId), isNull(scans.groupId))).orderBy(desc(scans.timestamp));
+    const base = db.select({ result: scans.result }).from(scans).where(and(eq(scans.userId, userId), isNull(scans.groupId))).orderBy(desc(scans.timestamp));
+    const rows = options?.limit != null || options?.offset != null
+        ? await base.limit(options.limit ?? 10000).offset(options.offset ?? 0)
+        : await base;
     return rows.map(r => r.result as unknown as ScanResult);
+}
+
+export async function getStandaloneScansCount(userId: string): Promise<number> {
+    const db = getDb();
+    const rows = await db.select({ count: count() }).from(scans).where(and(eq(scans.userId, userId), isNull(scans.groupId)));
+    return Number(rows[0]?.count ?? 0);
 }
 
 export async function deleteScan(id: string, userId: string): Promise<boolean> {
@@ -110,10 +119,19 @@ export async function getDomainScan(id: string, userId: string): Promise<DomainS
     return rows[0].payload as unknown as DomainScanResult;
 }
 
-export async function listDomainScans(userId: string): Promise<DomainScanResult[]> {
+export async function listDomainScans(userId: string, options?: { limit?: number; offset?: number }): Promise<DomainScanResult[]> {
     const db = getDb();
-    const rows = await db.select({ payload: domainScans.payload }).from(domainScans).where(eq(domainScans.userId, userId)).orderBy(desc(domainScans.timestamp));
+    const base = db.select({ payload: domainScans.payload }).from(domainScans).where(eq(domainScans.userId, userId)).orderBy(desc(domainScans.timestamp));
+    const rows = options?.limit != null || options?.offset != null
+        ? await base.limit(options.limit ?? 10000).offset(options.offset ?? 0)
+        : await base;
     return rows.map(r => r.payload as unknown as DomainScanResult);
+}
+
+export async function getDomainScansCount(userId: string): Promise<number> {
+    const db = getDb();
+    const rows = await db.select({ count: count() }).from(domainScans).where(eq(domainScans.userId, userId));
+    return Number(rows[0]?.count ?? 0);
 }
 
 export async function deleteDomainScan(id: string, userId: string): Promise<boolean> {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Box } from '@mui/material';
 import {
@@ -14,28 +14,49 @@ import type { ScanResult } from '@/lib/types';
 import { HistoryList, SingleScanRow, DomainScanRow, type DomainScanSummary } from '@/components/HistoryList';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
+import { DASHBOARD_SCANS_PAGE_SIZE } from '@/lib/constants';
+
+const LIMIT = DASHBOARD_SCANS_PAGE_SIZE;
+
+type Pagination = { total: number; page: number; limit: number; totalPages: number };
 
 export default function DashboardPage() {
   const router = useRouter();
   const { t } = useI18n();
   const [scans, setScans] = useState<ScanResult[]>([]);
   const [domainScans, setDomainScans] = useState<DomainScanSummary[]>([]);
+  const [scanPagination, setScanPagination] = useState<Pagination | null>(null);
+  const [domainPagination, setDomainPagination] = useState<Pagination | null>(null);
+  const [scanPage, setScanPage] = useState(1);
+  const [domainPage, setDomainPage] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    Promise.all([
-      fetch('/api/scan').then((res) => res.json()).then((data) => Array.isArray(data) ? data : []),
-      fetch('/api/scans/domain').then((res) => res.json()).then((data) => (data?.data ?? []) as DomainScanSummary[]),
-    ])
-      .then(([single, domain]) => {
-        setScans(single);
-        setDomainScans(domain);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+  const loadScans = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [scanRes, domainRes] = await Promise.all([
+        fetch(`/api/scan?limit=${LIMIT}&page=${scanPage}`).then((r) => r.json()),
+        fetch(`/api/scans/domain?limit=${LIMIT}&page=${domainPage}`).then((r) => r.json()),
+      ]);
+      setScans(Array.isArray(scanRes?.data) ? scanRes.data : []);
+      setScanPagination(scanRes?.pagination ?? null);
+      setDomainScans(Array.isArray(domainRes?.data) ? domainRes.data : []);
+      setDomainPagination(domainRes?.pagination ?? null);
+    } catch {
+      setScans([]);
+      setDomainScans([]);
+      setScanPagination(null);
+      setDomainPagination(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [scanPage, domainPage]);
 
-  const totalScans = scans.length + domainScans.length;
+  useEffect(() => {
+    loadScans();
+  }, [loadScans]);
+
+  const totalScans = (scanPagination?.total ?? 0) + (domainPagination?.total ?? 0);
   const totalErrors = scans.reduce((sum, s) => sum + s.stats.errors, 0);
   const totalWarnings = scans.reduce((sum, s) => sum + s.stats.warnings, 0);
   const totalNotices = scans.reduce((sum, s) => sum + s.stats.notices, 0);
@@ -119,6 +140,15 @@ export default function DashboardPage() {
                 />
               ))}
             </HistoryList>
+            {scanPagination && scanPagination.totalPages > 1 && (
+              <PaginationBar
+                page={scanPagination.page}
+                totalPages={scanPagination.totalPages}
+                onPrev={() => setScanPage((p) => Math.max(1, p - 1))}
+                onNext={() => setScanPage((p) => Math.min(scanPagination.totalPages, p + 1))}
+                t={t}
+              />
+            )}
           </MsqdxMoleculeCard>
 
           <MsqdxMoleculeCard
@@ -144,8 +174,58 @@ export default function DashboardPage() {
                 />
               ))}
             </HistoryList>
+            {domainPagination && domainPagination.totalPages > 1 && (
+              <PaginationBar
+                page={domainPagination.page}
+                totalPages={domainPagination.totalPages}
+                onPrev={() => setDomainPage((p) => Math.max(1, p - 1))}
+                onNext={() => setDomainPage((p) => Math.min(domainPagination.totalPages, p + 1))}
+                t={t}
+              />
+            )}
           </MsqdxMoleculeCard>
         </Box>
+      </Box>
+    </Box>
+  );
+}
+
+function PaginationBar({
+  page,
+  totalPages,
+  onPrev,
+  onNext,
+  t,
+}: {
+  page: number;
+  totalPages: number;
+  onPrev: () => void;
+  onNext: () => void;
+  t: (key: string, values?: Record<string, string | number>) => string;
+}) {
+  const pageOf = t('dashboard.pageOf', { page: String(page), total: String(totalPages) });
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 'var(--msqdx-spacing-sm)',
+        mt: 'var(--msqdx-spacing-md)',
+        pt: 'var(--msqdx-spacing-sm)',
+        borderTop: '1px solid var(--color-secondary-dx-grey-light-tint)',
+      }}
+    >
+      <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+        {pageOf}
+      </MsqdxTypography>
+      <Box sx={{ display: 'flex', gap: 'var(--msqdx-spacing-xs)' }}>
+        <MsqdxButton variant="outlined" size="small" onClick={onPrev} disabled={page <= 1}>
+          {t('dashboard.prev')}
+        </MsqdxButton>
+        <MsqdxButton variant="outlined" size="small" onClick={onNext} disabled={page >= totalPages}>
+          {t('dashboard.next')}
+        </MsqdxButton>
       </Box>
     </Box>
   );

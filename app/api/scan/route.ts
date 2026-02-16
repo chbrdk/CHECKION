@@ -2,12 +2,13 @@
 /*  CHECKION – POST /api/scan                                         */
 /* ------------------------------------------------------------------ */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { runScan } from '@/lib/scanner';
-import { addScan, listStandaloneScans } from '@/lib/db/scans';
+import { addScan, listStandaloneScans, getStandaloneScansCount } from '@/lib/db/scans';
 import type { ScanRequest, Device } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
+import { DASHBOARD_SCANS_PAGE_SIZE } from '@/lib/constants';
 
 export async function POST(request: Request) {
     const session = await auth();
@@ -87,11 +88,22 @@ export async function POST(request: Request) {
     }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
     const session = await auth();
     if (!session?.user?.id) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const list = await listStandaloneScans(session.user.id);
-    return NextResponse.json(list);
+    const { searchParams } = new URL(req.url);
+    const limit = Math.min(Math.max(1, Number(searchParams.get('limit')) || DASHBOARD_SCANS_PAGE_SIZE), 100);
+    const page = Math.max(1, Number(searchParams.get('page')) || 1);
+    const offset = (page - 1) * limit;
+    const [list, total] = await Promise.all([
+        listStandaloneScans(session.user.id, { limit, offset }),
+        getStandaloneScansCount(session.user.id),
+    ]);
+    const totalPages = Math.ceil(total / limit) || 1;
+    return NextResponse.json({
+        data: list,
+        pagination: { total, page, limit, totalPages },
+    });
 }
