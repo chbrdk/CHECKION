@@ -202,7 +202,13 @@
     "attentionHeatmapComputing": "Wird berechnet…",
     "generateAttentionHeatmap": "Heatmap jetzt berechnen",
     "generatingHeatmap": "Wird berechnet…",
-    "heatmapError": "Heatmap konnte nicht geladen werden (Service prüfen)."
+    "heatmapError": "Heatmap konnte nicht geladen werden (Service prüfen).",
+    "pageIndexTitle": "Seiten-Index (Auffindbarkeit)",
+    "pageIndexAboveFold": "Above the fold",
+    "pageIndexFindability": "Findability",
+    "pageIndexSaliency": "Saliency",
+    "pageIndexSemanticType": "Typ",
+    "pageIndexNoData": "Kein Seiten-Index für diesen Scan."
   },
   "domainResult": {
     "loading": "Laden…",
@@ -277,6 +283,7 @@
     "saliencyHeatmap": "Vorhersage-Karte der visuellen Aufmerksamkeit (Modell MDS-ViTNet). Keine echten Eye-Tracking-Daten.",
     "uxIssues": "Konkrete User-Experience-Probleme, die im Scan erkannt wurden.",
     "structureSemantics": "Überschriften-Hierarchie und semantische Struktur (Headings, Landmarks) der Seite.",
+    "pageIndex": "Seiten-Index: Was wo auf der Seite steht und wie auffindbar es ist (regelbasiert). Optional mit Saliency-Prominenz pro Region nach Heatmap-Generierung.",
     "linksSeo": "Link-Check (kaputte Links) und SEO-relevante Daten (Meta, Keywords).",
     "infraPrivacy": "Technische Infrastruktur und Privacy-relevante Hinweise.",
     "generativeGeo": "Bewertung für Generative Search / GEO (Google) – wie gut die Seite für AI Overviews geeignet ist.",

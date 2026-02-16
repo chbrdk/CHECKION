@@ -202,7 +202,13 @@
     "attentionHeatmapComputing": "Computing…",
     "generateAttentionHeatmap": "Generate heatmap now",
     "generatingHeatmap": "Generating…",
-    "heatmapError": "Heatmap could not be generated (check service)."
+    "heatmapError": "Heatmap could not be generated (check service).",
+    "pageIndexTitle": "Page Index (Findability)",
+    "pageIndexAboveFold": "Above the fold",
+    "pageIndexFindability": "Findability",
+    "pageIndexSaliency": "Saliency",
+    "pageIndexSemanticType": "Type",
+    "pageIndexNoData": "No page index for this scan."
   },
   "domainResult": {
     "loading": "Loading…",
@@ -277,6 +283,7 @@
     "saliencyHeatmap": "Predicted visual attention map (MDS-ViTNet model). Not real eye-tracking data.",
     "uxIssues": "Concrete user experience issues detected in the scan.",
     "structureSemantics": "Heading hierarchy and semantic structure (headings, landmarks) of the page.",
+    "pageIndex": "Page index: what is where on the page and how findable (rule-based). Optional saliency prominence per region after heatmap generation.",
     "linksSeo": "Link check (broken links) and SEO-related data (meta, keywords).",
     "infraPrivacy": "Technical infrastructure and privacy-related notes.",
     "generativeGeo": "Rating for Generative Search / GEO (Google) – how well the page is suited for AI overviews.",

@@ -29,6 +29,7 @@ import { UxCard } from '../../../components/UxCard';
 import { UxIssueList } from '../../../components/UxIssueList';
 import { FocusOrderOverlay } from '../../../components/FocusOrderOverlay';
 import { StructureMap } from '../../../components/StructureMap';
+import { PageIndexCard } from '../../../components/PageIndexCard';
 import { TouchTargetOverlay } from '../../../components/TouchTargetOverlay';
 import { SaliencyHeatmapOverlay } from '../../../components/SaliencyHeatmapOverlay';
 import { SeoCard } from '../../../components/SeoCard';
@@ -1009,6 +1010,11 @@ export default function ResultsPage() {
                         <StructureMap nodes={result.ux.structureMap} />
                     ) : (
                         <MsqdxTypography>Keine Strukturdaten verfügbar.</MsqdxTypography>
+                    )}
+                    {result.pageIndex && (
+                        <Box sx={{ mt: 'var(--msqdx-spacing-md)', pt: 'var(--msqdx-spacing-md)', borderTop: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
+                            <PageIndexCard pageIndex={result.pageIndex} showSaliency={true} />
+                        </Box>
                     )}
                 </MsqdxMoleculeCard>
             )}

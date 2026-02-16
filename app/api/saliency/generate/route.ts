@@ -5,6 +5,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getScan, updateScanResult } from '@/lib/db/scans';
+import { enrichPageIndexWithSaliency } from '@/lib/page-index';
 
 const SALIENCY_SERVICE_URL = process.env.SALIENCY_SERVICE_URL;
 
@@ -94,7 +95,21 @@ export async function POST(request: Request) {
     }
 
     const dataUrl = `data:image/png;base64,${heatmapBase64}`;
-    const updated = await updateScanResult(scanId, session.user.id, { saliencyHeatmap: dataUrl });
+
+    let pageIndexPatch: { pageIndex?: typeof result.pageIndex } = {};
+    if (result.pageIndex) {
+        try {
+            pageIndexPatch.pageIndex = await enrichPageIndexWithSaliency(result.pageIndex, dataUrl);
+        } catch (e) {
+            console.error('[CHECKION] saliency/generate: enrichPageIndexWithSaliency failed', e);
+            // continue without enriched pageIndex
+        }
+    }
+
+    const updated = await updateScanResult(scanId, session.user.id, {
+        saliencyHeatmap: dataUrl,
+        ...pageIndexPatch,
+    });
     if (!updated) {
         return NextResponse.json(
             { error: 'Failed to save heatmap to scan.' },

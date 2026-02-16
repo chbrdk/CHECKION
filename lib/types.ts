@@ -159,6 +159,8 @@ export type ScanResult = {
     technicalInsights?: TechnicalInsights;
     /** Set when UX/CX summary has been generated (GET includes it, POST /summarize writes it). */
     llmSummary?: LlmSummary | null;
+    /** Page index: regions (what where), findability, optional semantic types (for persona click-path evaluation). */
+    pageIndex?: PageIndex;
 }
 
 export interface TechnicalInsights {
@@ -396,6 +398,32 @@ export interface StructureNode {
     rect?: { x: number; y: number; width: number; height: number };
     children?: StructureNode[];
     error?: string; // e.g. "Skipped heading level"
+}
+
+/** Semantic type for a page region (heuristic from heading/label). */
+export type PageIndexRegionType = 'pricing' | 'faq' | 'contact' | 'hero' | 'product' | 'team' | 'about' | 'nav' | 'footer' | 'main' | 'aside' | 'unknown';
+
+/** Single region in the page index: one landmark or heading from structureMap with findability and optional semantic label. */
+export interface PageIndexRegion {
+    id: string;
+    tag: string;
+    headingText: string;
+    level: number;
+    rect?: { x: number; y: number; width: number; height: number };
+    indexInDocument: number;
+    aboveFold: boolean;
+    findabilityScore: number;
+    /** Optional: mean saliency (0–1) in this region from heatmap; set when saliency heatmap is available. */
+    saliencyProminence?: number;
+    semanticType?: PageIndexRegionType;
+    textSnippet?: string;
+}
+
+/** Page index: what is where and how findable (for persona click-path evaluation). */
+export interface PageIndex {
+    url: string;
+    viewportHeight: number;
+    regions: PageIndexRegion[];
 }
 
 export interface TouchTargetIssue {

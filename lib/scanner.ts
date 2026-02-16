@@ -7,6 +7,7 @@ import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
 import { dismissCookieBanner } from './cookie-banner-dismiss';
+import { buildPageIndex } from './page-index';
 import type { Issue, Runner, ScanResult, ScanStats, WcagStandard, Device, ScanOptions, SeoAudit } from './types';
 
 /**
@@ -1390,6 +1391,12 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
         const durationMs = Date.now() - startTime;
         const stats = computeStats(issues);
 
+        const pageIndex = buildPageIndex(
+            advancedChecks.structureMap || [],
+            viewport.height,
+            url
+        );
+
         return {
             id: uuidv4(),
             groupId,
@@ -1419,7 +1426,8 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
             eeatSignals: eeatSignals ?? undefined,
             generative: generativeAudit,
             security: securityAudit,
-            technicalInsights
+            technicalInsights,
+            pageIndex
         };
     } finally {
         await browser.close();
