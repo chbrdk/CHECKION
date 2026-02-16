@@ -79,6 +79,8 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
                 const repulsionRadius = 300 * spacingFactor;
                 const restingDistance = 100 * spacingFactor;
                 const centerForce = 0.002 / spacingFactor;
+                const simCenterX = simWidth / 2;
+                const simCenterY = simHeight / 2;
 
                 // 1. Repulsion (stronger and larger radius with more nodes)
                 for (let i = 0; i < newNodes.length; i++) {
@@ -118,10 +120,20 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
                     }
                 });
 
-                // 3. Weak center force (virtual space center) & velocity update
+                // 3. Depth-based radial force: push nodes outward by URL depth (home near center, /a/b further out)
                 newNodes.forEach(node => {
-                    node.vx += (simWidth / 2 - node.x) * centerForce;
-                    node.vy += (simHeight / 2 - node.y) * centerForce;
+                    const dx = node.x - simCenterX;
+                    const dy = node.y - simCenterY;
+                    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                    const depthPush = (node.depth ?? 0) * 2.5;
+                    node.vx += (dx / dist) * depthPush;
+                    node.vy += (dy / dist) * depthPush;
+                });
+
+                // 4. Weak center force & velocity update
+                newNodes.forEach(node => {
+                    node.vx += (simCenterX - node.x) * centerForce;
+                    node.vy += (simCenterY - node.y) * centerForce;
 
                     // Apply friction
                     node.vx *= 0.9;
@@ -217,25 +229,37 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
                         node.score >= 50 ? MSQDX_STATUS.warning.base :
                             MSQDX_STATUS.error.base;
                     const d = toDisplay(node.x, node.y);
+                    let label: string;
+                    if (node.title?.trim()) {
+                        label = node.title.trim();
+                        if (label.length > 32) label = label.slice(0, 29) + '…';
+                    } else {
+                        try {
+                            const pathname = new URL(node.url).pathname || '/';
+                            label = pathname === '/' ? 'Home' : pathname;
+                            if (label.length > 28) label = label.slice(0, 25) + '…';
+                        } catch {
+                            label = node.url;
+                        }
+                    }
+                    const isHovered = hoveredNode?.url === node.url;
                     return (
                         <g key={i} transform={`translate(${d.x},${d.y})`}>
                             <circle
-                                r={hoveredNode?.url === node.url ? 8 : 6}
+                                r={isHovered ? 8 : 6}
                                 fill={color}
                                 stroke="#fff"
                                 strokeWidth={2}
                             />
-                            {(hoveredNode?.url === node.url || node.depth === 0) && (
-                                <text
-                                    y={-10}
-                                    textAnchor="middle"
-                                    fontSize="10"
-                                    fill="#333"
-                                    style={{ pointerEvents: 'none', fontWeight: 'bold' }}
-                                >
-                                    {node.depth === 0 ? 'Home' : new URL(node.url).pathname}
-                                </text>
-                            )}
+                            <text
+                                y={-10}
+                                textAnchor="middle"
+                                fontSize={isHovered ? 11 : 9}
+                                fill="#333"
+                                style={{ pointerEvents: 'none', fontWeight: isHovered ? 'bold' : 'normal' }}
+                            >
+                                {label}
+                            </text>
                         </g>
                     );
                 })}

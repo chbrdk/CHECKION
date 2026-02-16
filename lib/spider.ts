@@ -26,6 +26,19 @@ function normalizeUrl(url: string): string {
 }
 
 /**
+ * URL path depth: porsche.com = 0, porsche.com/australia = 1, porsche.com/australia/models = 2, etc.
+ */
+function pathDepth(url: string): number {
+    try {
+        const path = new URL(url).pathname.replace(/\/$/, '');
+        if (!path) return 0;
+        return path.split('/').filter(Boolean).length;
+    } catch {
+        return 0;
+    }
+}
+
+/**
  * Calculates the Domain Health Score
  * Formula: Weighted Average based on depth.
  * Depth 0 (Home) = 1.5x weight
@@ -166,13 +179,14 @@ export async function* runDomainScan(startUrl: string, options: DomainScanOption
             // Add to results
             results.push({ result, depth: current.depth });
 
-            // Add to Graph
+            // Add to Graph (depth from URL path; title from scan)
             graphNodes.push({
                 id: normalizedCurrent,
                 url: current.url,
                 score: result.ux?.score || result.score,
-                depth: current.depth,
-                status: 'ok'
+                depth: pathDepth(current.url),
+                status: 'ok',
+                title: result.seo?.title ?? undefined
             });
 
             // Extract internal links only when not in sitemap mode (in sitemap mode we only scan the sitemap URL list)
@@ -202,7 +216,7 @@ export async function* runDomainScan(startUrl: string, options: DomainScanOption
                 id: normalizedCurrent,
                 url: current.url,
                 score: 0,
-                depth: current.depth,
+                depth: pathDepth(current.url),
                 status: 'error'
             });
             yield { type: 'error', url: current.url, message: `Scan failed: ${(e as Error).message}` };

@@ -331,8 +331,11 @@ export type DomainScanResult = {
             id: string,
             url: string,
             score: number,
+            /** URL path depth: 0 = home, 1 = /segment, 2 = /seg1/seg2, etc. */
             depth: number,
-            status: 'ok' | 'error'
+            status: 'ok' | 'error',
+            /** Page title from document title (SEO) when available */
+            title?: string | null
         }>,
         links: Array<{
             source: string,
