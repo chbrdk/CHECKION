@@ -30,7 +30,7 @@ export const SaliencyHeatmapOverlay = ({
                 objectFit: 'contain',
                 pointerEvents: 'none',
                 opacity,
-                zIndex: 15,
+                zIndex: 22,
             }}
         />
     );

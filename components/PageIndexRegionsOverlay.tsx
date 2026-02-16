@@ -2,14 +2,16 @@
 
 import React from 'react';
 import { Box } from '@mui/material';
-import { MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
 import type { PageIndexRegion } from '@/lib/types';
 
-/** Prominent color for region highlight so it's visible on any screenshot. */
-const REGION_HIGHLIGHT_COLOR = MSQDX_BRAND_PRIMARY.orange ?? '#ff6a3b';
-const REGION_HIGHLIGHT_FILL = 'rgba(255, 106, 59, 0.28)';
-const REGION_HIGHLIGHT_BORDER = `4px solid ${REGION_HIGHLIGHT_COLOR}`;
-const REGION_HIGHLIGHT_SHADOW = `0 0 0 2px #fff, 0 0 0 6px ${REGION_HIGHLIGHT_COLOR}`;
+/** Always use these hex values so regions are clearly visible regardless of theme. */
+const COLOR_ORANGE = '#ff6a3b';
+const COLOR_ORANGE_FILL = 'rgba(255, 106, 59, 0.35)';
+const COLOR_ORANGE_BORDER = `4px solid ${COLOR_ORANGE}`;
+const COLOR_ORANGE_SHADOW = `0 0 0 2px #fff, 0 0 0 6px ${COLOR_ORANGE}`;
+/** Subtle border for non-hovered regions so all regions are visibly highlighted. */
+const COLOR_REGION_DEFAULT_BORDER = '2px solid rgba(255, 106, 59, 0.6)';
+const COLOR_REGION_DEFAULT_FILL = 'rgba(255, 106, 59, 0.12)';
 
 export interface PageIndexRegionsOverlayProps {
     regions: PageIndexRegion[];
@@ -59,10 +61,10 @@ export function PageIndexRegionsOverlay({
                                 top: `${topPct}%`,
                                 width: `${widthPct}%`,
                                 height: `${heightPct}%`,
-                                border: isHighlighted ? REGION_HIGHLIGHT_BORDER : '1px solid rgba(0,0,0,0.2)',
-                                backgroundColor: isHighlighted ? REGION_HIGHLIGHT_FILL : 'transparent',
+                                border: isHighlighted ? COLOR_ORANGE_BORDER : COLOR_REGION_DEFAULT_BORDER,
+                                backgroundColor: isHighlighted ? COLOR_ORANGE_FILL : COLOR_REGION_DEFAULT_FILL,
                                 transition: 'border-color 0.15s, background-color 0.15s, box-shadow 0.15s',
-                                boxShadow: isHighlighted ? REGION_HIGHLIGHT_SHADOW : 'none',
+                                boxShadow: isHighlighted ? COLOR_ORANGE_SHADOW : 'none',
                             }}
                         >
                             {isHighlighted && (
@@ -74,7 +76,7 @@ export function PageIndexRegionsOverlay({
                                         mb: 0.25,
                                         px: 0.5,
                                         py: 0.25,
-                                        bgcolor: REGION_HIGHLIGHT_COLOR,
+                                        bgcolor: COLOR_ORANGE,
                                         color: '#fff',
                                         borderRadius: 0.5,
                                         fontSize: '0.65rem',

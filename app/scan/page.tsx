@@ -64,6 +64,12 @@ export default function ScanPage() {
                 }
 
                 const result = data.data as ScanResult;
+                // Start heatmap generation right after scan (part of analysis), don't wait
+                fetch('/api/saliency/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ scanId: result.id }),
+                }).catch(() => { /* ignore; user can retry on result page */ });
                 router.push(`/results/${result.id}`);
             } else {
                 // Deep Scan

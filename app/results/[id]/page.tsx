@@ -71,7 +71,6 @@ export default function ResultsPage() {
     const [saliencyGenerating, setSaliencyGenerating] = useState(false);
     const [saliencyError, setSaliencyError] = useState<string | null>(null);
     const [screenshotDimensions, setScreenshotDimensions] = useState<{ width: number; height: number }>({ width: 1920, height: 1080 });
-    const autoSaliencyTriggeredRef = useRef(false);
     const [showRegionHighlight, setShowRegionHighlight] = useState(false);
     const [hoveredRegionId, setHoveredRegionId] = useState<string | null>(null);
     const [summarizing, setSummarizing] = useState(false);
@@ -114,18 +113,6 @@ export default function ResultsPage() {
             setSaliencyGenerating(false);
         }
     }, [result?.id, saliencyGenerating, t]);
-
-    // Auto-trigger heatmap generation once when result has screenshot but no heatmap (e.g. right after scan)
-    const resultIdRef = useRef<string | null>(null);
-    useEffect(() => {
-        if (result?.id !== resultIdRef.current) {
-            resultIdRef.current = result?.id ?? null;
-            autoSaliencyTriggeredRef.current = false;
-        }
-        if (!result?.id || !result.screenshot || result.saliencyHeatmap || saliencyGenerating || autoSaliencyTriggeredRef.current) return;
-        autoSaliencyTriggeredRef.current = true;
-        handleGenerateSaliency();
-    }, [result?.id, result?.screenshot, result?.saliencyHeatmap, saliencyGenerating, handleGenerateSaliency]);
 
     const filteredIssues = useMemo(() => {
         if (!result) return [];
@@ -905,7 +892,7 @@ export default function ResultsPage() {
                                         </Box>
                                     )}
                                     {result.saliencyHeatmap && (
-                                        <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 15 }}>
+                                        <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 20 }}>
                                             <SaliencyHeatmapOverlay
                                                 heatmapDataUrl={result.saliencyHeatmap}
                                                 screenshotWidth={screenshotDimensions.width}
