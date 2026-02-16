@@ -25,7 +25,7 @@ function ScanContent() {
     const [status, setStatus] = useState<DomainScanStatus>('queued');
     const logsEndRef = useRef<HTMLDivElement>(null);
     const [scannedCount, setScannedCount] = useState(0);
-    const [maxPages, setMaxPages] = useState(100);
+    const [maxPages, setMaxPages] = useState(1000);
 
     const startUrl = searchParams.get('url');
     const maxPagesParam = searchParams.get('maxPages');
@@ -38,7 +38,7 @@ function ScanContent() {
     // Initial Start
     useEffect(() => {
         if (startUrl && !scanId) {
-            const limit = maxPagesParam ? Math.min(5000, Math.max(1, Number(maxPagesParam))) : 100;
+            const limit = maxPagesParam ? Math.min(5000, Math.max(1, Number(maxPagesParam))) : 1000;
             startScan(startUrl, limit);
         }
     }, [startUrl, maxPagesParam]);
@@ -94,7 +94,7 @@ function ScanContent() {
             const response = await fetch('/api/scan/domain', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url, maxPages: pageLimit ?? 100 })
+                body: JSON.stringify({ url, maxPages: pageLimit ?? 1000 })
             });
 
             if (response.ok) {

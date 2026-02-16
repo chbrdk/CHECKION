@@ -3,7 +3,7 @@ import { getSitemapUrlFromRobots, fetchSitemapUrls } from './sitemap';
 import type { ScanResult, DomainScanResult, EeatDomainAggregate } from './types';
 import { v4 as uuidv4 } from 'uuid';
 
-const DEFAULT_MAX_PAGES = 100;
+const DEFAULT_MAX_PAGES = 1000;
 const MAX_DEPTH = 3; // Home + 3 levels; max pages will likely hit first
 /** Upper cap for maxPages (e.g. "Alle" in UI). */
 export const DOMAIN_SCAN_MAX_PAGES_CAP = 5000;
@@ -11,7 +11,7 @@ export const DOMAIN_SCAN_MAX_PAGES_CAP = 5000;
 export type DomainScanOptions = {
     /** If true (default), discover sitemap and use its URLs as scan list when available; otherwise pure link crawl. */
     useSitemap?: boolean;
-    /** Max number of pages to scan (default 100). Capped at DOMAIN_SCAN_MAX_PAGES_CAP. */
+    /** Max number of pages to scan (default 1000). Capped at DOMAIN_SCAN_MAX_PAGES_CAP. */
     maxPages?: number;
 };
 
