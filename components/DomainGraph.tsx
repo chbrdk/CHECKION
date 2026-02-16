@@ -15,8 +15,6 @@ type NodeData = DomainScanResult['graph']['nodes'][number];
 interface Node extends NodeData {
     x: number;
     y: number;
-    vx: number;
-    vy: number;
 }
 
 interface Link {
@@ -30,26 +28,66 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
     const [links, setLinks] = useState<Link[]>([]);
     const [hoveredNode, setHoveredNode] = useState<Node | null>(null);
 
-    // Initialize simulation
+    // Radial mind-map layout: level by level, root at center, children on rings
     useEffect(() => {
         if (!data || !data.nodes.length) return;
 
         // Scale spacing with node count so 100 nodes don’t collapse into a blob (factor from 25-node baseline)
-        const spacingFactor = Math.max(1, Math.sqrt(data.nodes.length / 25)) * 5;
-        const simWidth = width * Math.max(2, spacingFactor * 0.8);
-        const simHeight = height * Math.max(2, spacingFactor * 0.8);
-        const initialSpread = Math.min(simWidth, simHeight) * 0.4;
+        const R_BASE = 100;
+        const TWO_PI = 2 * Math.PI;
 
-        const initialNodes: Node[] = data.nodes.map((n) => ({
-            ...n,
-            x: simWidth / 2 + (Math.random() - 0.5) * initialSpread,
-            y: simHeight / 2 + (Math.random() - 0.5) * initialSpread,
-            vx: 0,
-            vy: 0,
-        }));
+        const layoutNodes: Node[] = data.nodes.map((n) => ({ ...n, x: 0, y: 0 }));
+        const nodeMap = new Map(layoutNodes.map((n) => [n.id, n]));
 
-        // Map links to node objects
-        const nodeMap = new Map(initialNodes.map((n) => [n.url, n]));
+        const childrenMap = new Map<string, string[]>();
+        data.links.forEach((l) => {
+            if (!childrenMap.has(l.source)) childrenMap.set(l.source, []);
+            childrenMap.get(l.source)!.push(l.target);
+        });
+
+        const placed = new Set<string>();
+
+        function placeNode(nodeId: string, angle: number, span: number) {
+            const node = nodeMap.get(nodeId);
+            if (!node || placed.has(nodeId)) return;
+            const depth = node.depth ?? 0;
+            const r = depth === 0 ? 0 : R_BASE * depth;
+            node.x = r * Math.cos(angle);
+            node.y = r * Math.sin(angle);
+            placed.add(nodeId);
+
+            const children = childrenMap.get(nodeId) ?? [];
+            if (children.length === 0) return;
+            const childSpan = span / children.length;
+            children.forEach((childId, i) => {
+                const childAngle = angle - span / 2 + childSpan * (i + 0.5);
+                placeNode(childId, childAngle, childSpan);
+            });
+        }
+
+        const roots = layoutNodes.filter((n) => (n.depth ?? 0) === 0);
+        if (roots.length === 1) {
+            placeNode(roots[0].id, 0, TWO_PI);
+        } else if (roots.length > 1) {
+            roots.forEach((r, i) => placeNode(r.id, (TWO_PI * i) / roots.length, TWO_PI / roots.length));
+        }
+
+        const unplaced = layoutNodes.filter((n) => !placed.has(n.id)).sort((a, b) => (a.depth ?? 0) - (b.depth ?? 0));
+        const byDepth = new Map<number, Node[]>();
+        unplaced.forEach((n) => {
+            const d = n.depth ?? 0;
+            if (!byDepth.has(d)) byDepth.set(d, []);
+            byDepth.get(d)!.push(n);
+        });
+        byDepth.forEach((list, depth) => {
+            const r = depth === 0 ? 0 : R_BASE * depth;
+            list.forEach((node, i) => {
+                const angle = (TWO_PI * i) / list.length;
+                node.x = r * Math.cos(angle);
+                node.y = r * Math.sin(angle);
+            });
+        });
+
         const initialLinks: Link[] = data.links
             .map((l) => ({
                 source: nodeMap.get(l.source)!,
@@ -57,112 +95,9 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
             }))
             .filter((l) => l.source && l.target);
 
-        setNodes(initialNodes);
+        setNodes(layoutNodes);
         setLinks(initialLinks);
     }, [data, width, height]);
-
-    // Run simulation loop
-    useEffect(() => {
-        if (!nodes.length) return;
-
-        let animationFrameId: number;
-
-        const tick = () => {
-            setNodes(prevNodes => {
-                const newNodes = [...prevNodes];
-                const n = newNodes.length;
-                const spacingFactor = Math.max(1, Math.sqrt(n / 25)) * 5;
-                const simWidth = width * Math.max(2, spacingFactor * 0.8);
-                const simHeight = height * Math.max(2, spacingFactor * 0.8);
-                const k = 0.05;
-                const repulsion = 500 * spacingFactor;
-                const repulsionRadius = 300 * spacingFactor;
-                const restingDistance = 100 * spacingFactor;
-                const centerForce = 0.002 / spacingFactor;
-                const simCenterX = simWidth / 2;
-                const simCenterY = simHeight / 2;
-
-                // 1. Repulsion (stronger and larger radius with more nodes)
-                for (let i = 0; i < newNodes.length; i++) {
-                    for (let j = i + 1; j < newNodes.length; j++) {
-                        const dx = newNodes[i].x - newNodes[j].x;
-                        const dy = newNodes[i].y - newNodes[j].y;
-                        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-                        if (dist < repulsionRadius) {
-                            const force = repulsion / (dist * dist);
-                            const fx = (dx / dist) * force;
-                            const fy = (dy / dist) * force;
-                            newNodes[i].vx += fx;
-                            newNodes[i].vy += fy;
-                            newNodes[j].vx -= fx;
-                            newNodes[j].vy -= fy;
-                        }
-                    }
-                }
-
-                // 2. Spring force (Links) – resting distance scales with node count
-                links.forEach(link => {
-                    const source = newNodes.find(n => n.url === link.source.url);
-                    const target = newNodes.find(n => n.url === link.target.url);
-
-                    if (source && target) {
-                        const dx = target.x - source.x;
-                        const dy = target.y - source.y;
-                        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-                        const force = (dist - restingDistance) * k;
-                        const fx = (dx / dist) * force;
-                        const fy = (dy / dist) * force;
-
-                        source.vx += fx;
-                        source.vy += fy;
-                        target.vx -= fx;
-                        target.vy -= fy;
-                    }
-                });
-
-                // 3. Depth-based radial force: push nodes outward by URL depth (home near center, /a/b further out)
-                newNodes.forEach(node => {
-                    const dx = node.x - simCenterX;
-                    const dy = node.y - simCenterY;
-                    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-                    const depthPush = (node.depth ?? 0) * 2.5;
-                    node.vx += (dx / dist) * depthPush;
-                    node.vy += (dy / dist) * depthPush;
-                });
-
-                // 4. Weak center force & velocity update
-                newNodes.forEach(node => {
-                    node.vx += (simCenterX - node.x) * centerForce;
-                    node.vy += (simCenterY - node.y) * centerForce;
-
-                    // Apply friction
-                    node.vx *= 0.9;
-                    node.vy *= 0.9;
-
-                    // Update position
-                    node.x += node.vx;
-                    node.y += node.vy;
-                });
-
-                return newNodes;
-            });
-
-            animationFrameId = requestAnimationFrame(tick);
-        };
-
-        // Run longer when many nodes so the layout can settle (5s baseline, up to 8s for large graphs)
-        const simDuration = nodes.length > 50 ? 8000 : 5000;
-        const timeout = setTimeout(() => {
-            cancelAnimationFrame(animationFrameId);
-        }, simDuration);
-
-        animationFrameId = requestAnimationFrame(tick);
-
-        return () => {
-            cancelAnimationFrame(animationFrameId);
-            clearTimeout(timeout);
-        };
-    }, [links.length, width, height]); // Only restart if graph structure changes
 
     // Scale-to-fit: map simulation space to display (width x height)
     const padding = 40;
