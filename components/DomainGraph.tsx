@@ -36,12 +36,14 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
 
         // Scale spacing with node count so 100 nodes don’t collapse into a blob (factor from 25-node baseline)
         const spacingFactor = Math.max(1, Math.sqrt(data.nodes.length / 25)) * 5;
-        const initialSpread = 80 * spacingFactor;
+        const simWidth = width * Math.max(2, spacingFactor * 0.8);
+        const simHeight = height * Math.max(2, spacingFactor * 0.8);
+        const initialSpread = Math.min(simWidth, simHeight) * 0.4;
 
         const initialNodes: Node[] = data.nodes.map((n) => ({
             ...n,
-            x: width / 2 + (Math.random() - 0.5) * initialSpread,
-            y: height / 2 + (Math.random() - 0.5) * initialSpread,
+            x: simWidth / 2 + (Math.random() - 0.5) * initialSpread,
+            y: simHeight / 2 + (Math.random() - 0.5) * initialSpread,
             vx: 0,
             vy: 0,
         }));
@@ -70,11 +72,13 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
                 const newNodes = [...prevNodes];
                 const n = newNodes.length;
                 const spacingFactor = Math.max(1, Math.sqrt(n / 25)) * 5;
+                const simWidth = width * Math.max(2, spacingFactor * 0.8);
+                const simHeight = height * Math.max(2, spacingFactor * 0.8);
                 const k = 0.05;
                 const repulsion = 500 * spacingFactor;
                 const repulsionRadius = 300 * spacingFactor;
                 const restingDistance = 100 * spacingFactor;
-                const centerForce = 0.01;
+                const centerForce = 0.002 / spacingFactor;
 
                 // 1. Repulsion (stronger and larger radius with more nodes)
                 for (let i = 0; i < newNodes.length; i++) {
@@ -114,11 +118,10 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
                     }
                 });
 
-                // 3. Center force & Velocity update
+                // 3. Weak center force (virtual space center) & velocity update
                 newNodes.forEach(node => {
-                    // Pull to center
-                    node.vx += (width / 2 - node.x) * centerForce;
-                    node.vy += (height / 2 - node.y) * centerForce;
+                    node.vx += (simWidth / 2 - node.x) * centerForce;
+                    node.vy += (simHeight / 2 - node.y) * centerForce;
 
                     // Apply friction
                     node.vx *= 0.9;
@@ -149,18 +152,34 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
         };
     }, [links.length, width, height]); // Only restart if graph structure changes
 
-    // Interaction handlers
+    // Scale-to-fit: map simulation space to display (width x height)
+    const padding = 40;
+    const minX = nodes.length ? Math.min(...nodes.map((n) => n.x)) : 0;
+    const maxX = nodes.length ? Math.max(...nodes.map((n) => n.x)) : width;
+    const minY = nodes.length ? Math.min(...nodes.map((n) => n.y)) : 0;
+    const maxY = nodes.length ? Math.max(...nodes.map((n) => n.y)) : height;
+    const rangeX = maxX - minX || 1;
+    const rangeY = maxY - minY || 1;
+    const scale = nodes.length
+        ? Math.min((width - padding) / rangeX, (height - padding) / rangeY)
+        : 1;
+    const offsetX = nodes.length ? width / 2 - (minX + maxX) / 2 * scale : 0;
+    const offsetY = nodes.length ? height / 2 - (minY + maxY) / 2 * scale : 0;
+
+    const toDisplay = (x: number, y: number) => ({ x: x * scale + offsetX, y: y * scale + offsetY });
+    const toSim = (x: number, y: number) => ({ x: (x - offsetX) / scale, y: (y - offsetY) / scale });
+
     const handleMouseMove = (e: React.MouseEvent) => {
         const rect = canvasRef.current?.getBoundingClientRect();
         if (!rect) return;
         const mx = e.clientX - rect.left;
         const my = e.clientY - rect.top;
-
+        const sim = toSim(mx, my);
+        const hitRadiusSim = scale > 0 ? 14 / scale : 1000;
         const setHover = nodes.find(n => {
-            const dist = Math.sqrt((n.x - mx) ** 2 + (n.y - my) ** 2);
-            return dist < 10; // Node radius
+            const dist = Math.sqrt((n.x - sim.x) ** 2 + (n.y - sim.y) ** 2);
+            return dist < hitRadiusSim;
         });
-
         setHoveredNode(setHover || null);
     };
 
@@ -174,18 +193,18 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
             >
                 {/* Links */}
                 {links.map((link, i) => {
-                    // Find current positions
                     const s = nodes.find(n => n.url === link.source.url);
                     const t = nodes.find(n => n.url === link.target.url);
                     if (!s || !t) return null;
-
+                    const d1 = toDisplay(s.x, s.y);
+                    const d2 = toDisplay(t.x, t.y);
                     return (
                         <line
                             key={i}
-                            x1={s.x}
-                            y1={s.y}
-                            x2={t.x}
-                            y2={t.y}
+                            x1={d1.x}
+                            y1={d1.y}
+                            x2={d2.x}
+                            y2={d2.y}
                             stroke="#ccc"
                             strokeWidth={1}
                         />
@@ -197,16 +216,15 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
                     const color = node.score >= 90 ? MSQDX_STATUS.success.base :
                         node.score >= 50 ? MSQDX_STATUS.warning.base :
                             MSQDX_STATUS.error.base;
-
+                    const d = toDisplay(node.x, node.y);
                     return (
-                        <g key={i} transform={`translate(${node.x},${node.y})`}>
+                        <g key={i} transform={`translate(${d.x},${d.y})`}>
                             <circle
                                 r={hoveredNode?.url === node.url ? 8 : 6}
                                 fill={color}
                                 stroke="#fff"
                                 strokeWidth={2}
                             />
-                            {/* Label for hovered or high-level nodes */}
                             {(hoveredNode?.url === node.url || node.depth === 0) && (
                                 <text
                                     y={-10}
@@ -224,13 +242,15 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
             </svg>
 
             {/* Tooltip */}
-            {hoveredNode && (
+            {hoveredNode && (() => {
+                const d = toDisplay(hoveredNode.x, hoveredNode.y);
+                return (
                 <MsqdxCard
                     variant="glass"
                     sx={{
                         position: 'absolute',
-                        top: hoveredNode.y + 10,
-                        left: hoveredNode.x + 10,
+                        top: d.y + 10,
+                        left: d.x + 10,
                         p: 1,
                         zIndex: 10,
                         pointerEvents: 'none',
@@ -247,7 +267,8 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
                         Score: {hoveredNode.score}
                     </MsqdxTypography>
                 </MsqdxCard>
-            )}
+                );
+            })()}
         </Box>
     );
 };
