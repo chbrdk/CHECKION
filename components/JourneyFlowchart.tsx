@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Box } from '@mui/material';
+import { Box, CircularProgress } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxChip } from '@msqdx/react';
 import { ChevronRight } from 'lucide-react';
 import type { JourneyStep } from '@/lib/types';
@@ -11,6 +11,8 @@ interface JourneyFlowchartProps {
     goalReached: boolean;
     message?: string;
     onStepClick?: (step: JourneyStep) => void;
+    /** When true, show a loading indicator after the last step (streaming). */
+    streaming?: boolean;
     t: (key: string) => string;
 }
 
@@ -47,6 +49,7 @@ export function JourneyFlowchart({
     goalReached,
     message,
     onStepClick,
+    streaming,
     t,
 }: JourneyFlowchartProps) {
     if (steps.length === 0) {
@@ -93,18 +96,23 @@ export function JourneyFlowchart({
                                     alignItems: 'center',
                                     gap: 0.5,
                                     color: 'var(--color-text-muted-on-light)',
-                                    minWidth: 120,
+                                    minWidth: 140,
                                 }}
                             >
+                                <MsqdxTypography variant="caption" sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}>
+                                    {t('domainResult.journeySourceOnPage')}
+                                </MsqdxTypography>
                                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                     <ChevronRight size={20} />
-                                    {step.triggerLabel && (
-                                        <MsqdxTypography variant="caption" sx={{ ml: 0.5, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={step.triggerLabel}>
+                                    {step.triggerLabel ? (
+                                        <MsqdxTypography variant="caption" sx={{ ml: 0.5, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={step.triggerLabel}>
                                             {step.triggerLabel}
                                         </MsqdxTypography>
+                                    ) : (
+                                        <MsqdxTypography variant="caption" sx={{ ml: 0.5, fontStyle: 'italic' }}>{t('domainResult.journeySourceLink')}</MsqdxTypography>
                                     )}
                                 </Box>
-                                {(step.regionAboveFold != null || step.regionFindability != null || step.regionSemanticType) && (
+                                {(step.regionAboveFold != null || step.regionFindability != null || step.regionSemanticType) ? (
                                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, justifyContent: 'center' }}>
                                         {step.regionSemanticType && regionTypeLabel(step.regionSemanticType, t) && (
                                             <MsqdxChip
@@ -133,6 +141,10 @@ export function JourneyFlowchart({
                                             />
                                         )}
                                     </Box>
+                                ) : step.triggerLabel && (
+                                    <MsqdxTypography variant="caption" sx={{ fontSize: '0.65rem', fontStyle: 'italic' }}>
+                                        {t('domainResult.journeyNoRegionMatch')}
+                                    </MsqdxTypography>
                                 )}
                             </Box>
                         )}
@@ -157,6 +169,12 @@ export function JourneyFlowchart({
                                 </MsqdxTypography>
                             </Box>
                         </MsqdxButton>
+                        {streaming && i === steps.length - 1 && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'var(--color-text-muted-on-light)' }}>
+                                <CircularProgress size={14} sx={{ color: 'var(--color-theme-accent)' }} />
+                                <MsqdxTypography variant="caption">{t('domainResult.journeyStreaming')}</MsqdxTypography>
+                            </Box>
+                        )}
                     </React.Fragment>
                 ))}
             </Box>

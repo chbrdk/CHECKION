@@ -295,7 +295,11 @@
     "journeyRegion_pricing": "Preise",
     "journeyRegion_faq": "FAQ",
     "journeyRegion_team": "Team",
-    "journeyRegion_unknown": "Region"
+    "journeyRegion_unknown": "Region",
+    "journeySourceOnPage": "Gefunden auf der vorherigen Seite",
+    "journeySourceLink": "Link",
+    "journeyNoRegionMatch": "Keine Region-Zuordnung (Link-Text)",
+    "journeyStreaming": "Nächster Schritt…"
   },
   "info": {
     "dashboard": "Hier siehst du alle durchgeführten WCAG-Barrierefreiheits-Checks. Ein Klick auf „Neuer Scan“ startet einen Check für eine einzelne Seite oder eine ganze Domain.",

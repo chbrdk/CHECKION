@@ -295,7 +295,11 @@
     "journeyRegion_pricing": "Pricing",
     "journeyRegion_faq": "FAQ",
     "journeyRegion_team": "Team",
-    "journeyRegion_unknown": "Region"
+    "journeyRegion_unknown": "Region",
+    "journeySourceOnPage": "Found on previous page",
+    "journeySourceLink": "Link",
+    "journeyNoRegionMatch": "No region match (link text)",
+    "journeyStreaming": "Next step…"
   },
   "info": {
     "dashboard": "Overview of all WCAG accessibility checks you have run. Use \"New Scan\" to check a single page or an entire domain.",

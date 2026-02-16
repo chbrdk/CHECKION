@@ -7,7 +7,7 @@ import OpenAI from 'openai';
 import { auth } from '@/auth';
 import { getDomainScan } from '@/lib/db/scans';
 import { getOpenAIKey } from '@/lib/llm/config';
-import { runJourneyAgent } from '@/lib/llm/journey-agent';
+import { runJourneyAgent, runJourneyAgentStream, type JourneyStreamEvent } from '@/lib/llm/journey-agent';
 
 export async function POST(
     request: Request,
@@ -31,7 +31,7 @@ export async function POST(
         );
     }
 
-    let body: { goal?: string };
+    let body: { goal?: string; stream?: boolean };
     try {
         body = await request.json();
     } catch {
@@ -41,6 +41,7 @@ export async function POST(
     if (!goal) {
         return NextResponse.json({ error: 'Body must include goal (string).' }, { status: 400 });
     }
+    const stream = body?.stream === true;
 
     let openai: OpenAI;
     try {
@@ -51,6 +52,32 @@ export async function POST(
             { error: 'OpenAI API key not configured.' },
             { status: 500 },
         );
+    }
+
+    if (stream) {
+        const encoder = new TextEncoder();
+        const streamResponse = new ReadableStream({
+            async start(controller) {
+                try {
+                    for await (const event of runJourneyAgentStream(openai, goal, domainResult)) {
+                        controller.enqueue(encoder.encode('data: ' + JSON.stringify(event) + '\n\n'));
+                    }
+                } catch (e) {
+                    const msg = e instanceof Error ? e.message : 'Stream failed.';
+                    controller.enqueue(encoder.encode('data: ' + JSON.stringify({ type: 'error', message: msg } as JourneyStreamEvent) + '\n\n'));
+                    controller.enqueue(encoder.encode('data: ' + JSON.stringify({ type: 'done', result: { steps: [], goalReached: false, message: msg } } as JourneyStreamEvent) + '\n\n'));
+                } finally {
+                    controller.close();
+                }
+            },
+        });
+        return new Response(streamResponse, {
+            headers: {
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                Connection: 'keep-alive',
+            },
+        });
     }
 
     const result = await runJourneyAgent(openai, goal, domainResult);

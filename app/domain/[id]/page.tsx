@@ -13,7 +13,7 @@ import {
 } from '@msqdx/react';
 import { MSQDX_STATUS, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
 import { useParams, useRouter } from 'next/navigation';
-import type { DomainScanResult, JourneyResult } from '@/lib/types';
+import type { DomainScanResult, JourneyResult, JourneyStep } from '@/lib/types';
 import {
     aggregateIssues,
     aggregateUx,
@@ -874,11 +874,44 @@ export default function DomainResultPage() {
                                         const res = await fetch(`/api/scan/domain/${params.id}/journey`, {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ goal: journeyGoal.trim() }),
+                                            body: JSON.stringify({ goal: journeyGoal.trim(), stream: true }),
                                         });
-                                        const data = await res.json().catch(() => ({}));
-                                        if (!res.ok) throw new Error(data.error ?? t('domainResult.journeyError'));
-                                        setJourneyResult(data);
+                                        if (!res.ok) {
+                                            const data = await res.json().catch(() => ({}));
+                                            throw new Error(data.error ?? t('domainResult.journeyError'));
+                                        }
+                                        const reader = res.body?.getReader();
+                                        const decoder = new TextDecoder();
+                                        if (!reader) {
+                                            setJourneyError(t('domainResult.journeyError'));
+                                            return;
+                                        }
+                                        let buffer = '';
+                                        const streamedSteps: JourneyStep[] = [];
+                                        while (true) {
+                                            const { done, value } = await reader.read();
+                                            if (done) break;
+                                            buffer += decoder.decode(value, { stream: true });
+                                            const lines = buffer.split('\n\n');
+                                            buffer = lines.pop() ?? '';
+                                            for (const line of lines) {
+                                                const dataMatch = line.match(/^data:\s*(.+)$/m);
+                                                if (!dataMatch) continue;
+                                                try {
+                                                    const event = JSON.parse(dataMatch[1].trim()) as { type: string; step?: JourneyStep; result?: JourneyResult; message?: string };
+                                                    if (event.type === 'step' && event.step) {
+                                                        streamedSteps.push(event.step);
+                                                        setJourneyResult({ steps: [...streamedSteps], goalReached: false });
+                                                    } else if (event.type === 'done' && event.result) {
+                                                        setJourneyResult(event.result);
+                                                    } else if (event.type === 'error' && event.message) {
+                                                        setJourneyError(event.message);
+                                                    }
+                                                } catch {
+                                                    // ignore parse errors for partial chunks
+                                                }
+                                            }
+                                        }
                                     } catch (e) {
                                         setJourneyError(e instanceof Error ? e.message : t('domainResult.journeyError'));
                                     } finally {
@@ -897,6 +930,7 @@ export default function DomainResultPage() {
                                 steps={journeyResult.steps}
                                 goalReached={journeyResult.goalReached}
                                 message={journeyResult.message}
+                                streaming={journeyLoading}
                                 t={t}
                                 onStepClick={(step) => {
                                     const page = pages.find((p) => p.url === step.pageUrl);

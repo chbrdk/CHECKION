@@ -120,12 +120,12 @@ function parseAgentResponse(content: string): AgentAction | null {
     return null;
 }
 
-const JOURNEY_SYSTEM_PROMPT = `You are simulating a user navigating a website. You have a goal. You can only navigate to pages that are in the "outboundLinks" list for the current page. Do not invent URLs.
+const JOURNEY_SYSTEM_PROMPT = `You are simulating a user navigating a website by clicking links only. You have a goal. You can ONLY move to pages that appear in "outboundLinks" – these are links that actually exist on the current page (no sitemap, no external list). Do not invent URLs.
 
 Rules:
 - Reply ONLY with a JSON object. No markdown, no explanation outside JSON.
 - For each step you must choose exactly one of:
-  1. action: "next" – go to a next page. You MUST set "next_page_url" to one of the URLs in "outboundLinks". Optionally set "trigger_label" (e.g. link text or region heading the user would click).
+  1. action: "next" – go to a next page. You MUST set "next_page_url" to one of the URLs in "outboundLinks" (links on the current page). Optionally set "trigger_label" (the link text or region heading the user would click).
   2. action: "goal_reached" – the current page satisfies the goal. Optionally set "reason" (short explanation).
 
 Example next: {"action": "next", "next_page_url": "https://example.com/products", "trigger_label": "Products"}
@@ -142,7 +142,7 @@ Current page:
 - url: ${currentPage.url}
 - title: ${currentPage.title ?? '(no title)'}
 - regions (headings/landmarks): ${JSON.stringify(currentPage.regions.map((r) => ({ id: r.id, text: r.headingText, type: r.semanticType })))}
-- outboundLinks (you may only choose one of these as next_page_url): ${JSON.stringify(currentPage.outboundLinks)}
+- outboundLinks (links on this page – you may only choose one as next_page_url; no sitemap): ${JSON.stringify(currentPage.outboundLinks)}
 
 Path so far (URLs already visited): ${JSON.stringify(pathSoFar)}
 
@@ -278,4 +278,104 @@ export async function runJourneyAgent(
         goalReached: false,
         message: 'Max steps reached.',
     };
+}
+
+export type JourneyStreamEvent =
+    | { type: 'step'; step: JourneyStep }
+    | { type: 'done'; result: JourneyResult }
+    | { type: 'error'; message: string };
+
+/** Async generator that yields each step and finally the result (for streaming UI). */
+export async function* runJourneyAgentStream(
+    openai: OpenAI,
+    goal: string,
+    domainResult: DomainScanResult
+): AsyncGenerator<JourneyStreamEvent, void, unknown> {
+    const pageContexts = buildPageContexts(domainResult);
+    const startUrl = getStartPageUrl(domainResult);
+    if (!startUrl || !pageContexts.has(startUrl)) {
+        yield { type: 'done', result: { steps: [], goalReached: false, message: 'No start page or empty scan.' } };
+        return;
+    }
+
+    const steps: JourneyStep[] = [];
+    let currentUrl = startUrl;
+    const pathSoFar: string[] = [startUrl];
+    const pageByUrl = new Map(domainResult.pages.map((p) => [normalizeUrl(p.url), p]));
+
+    const firstPage = pageContexts.get(startUrl)!;
+    const firstScan = pageByUrl.get(startUrl);
+    const firstStep: JourneyStep = {
+        pageUrl: firstScan?.url ?? firstPage.url,
+        pageTitle: firstPage.title,
+        index: 0,
+    };
+    steps.push(firstStep);
+    yield { type: 'step', step: firstStep };
+
+    for (let i = 0; i < MAX_STEPS - 1; i++) {
+        const currentContext = pageContexts.get(currentUrl);
+        if (!currentContext) break;
+
+        const userMessage = buildUserMessage(currentContext, goal, pathSoFar);
+        let rawContent: string;
+        try {
+            const completion = await openai.chat.completions.create({
+                model: OPENAI_MODEL,
+                messages: [
+                    { role: 'system', content: JOURNEY_SYSTEM_PROMPT },
+                    { role: 'user', content: userMessage },
+                ],
+            });
+            rawContent = completion.choices[0]?.message?.content ?? '';
+        } catch (e) {
+            const msg = e instanceof Error ? e.message : 'LLM request failed.';
+            yield { type: 'error', message: msg };
+            yield { type: 'done', result: { steps, goalReached: false, message: msg } };
+            return;
+        }
+
+        const action = parseAgentResponse(rawContent);
+        if (!action) {
+            yield { type: 'done', result: { steps, goalReached: false, message: 'Invalid or missing JSON in agent response.' } };
+            return;
+        }
+
+        if (action.action === 'goal_reached') {
+            yield { type: 'done', result: { steps, goalReached: true, message: action.reason } };
+            return;
+        }
+
+        const nextNorm = normalizeUrl(action.next_page_url);
+        if (!currentContext.outboundLinks.includes(nextNorm)) {
+            yield { type: 'done', result: { steps, goalReached: false, message: `Agent chose a URL not in outboundLinks: ${action.next_page_url}` } };
+            return;
+        }
+
+        const nextContext = pageContexts.get(nextNorm);
+        if (!nextContext) {
+            yield { type: 'done', result: { steps, goalReached: false, message: 'Next page not in scan.' } };
+            return;
+        }
+
+        const currentScan = pageByUrl.get(currentUrl);
+        const region = currentScan ? matchTriggerToRegion(currentScan, action.trigger_label) : undefined;
+        const nextScan = pageByUrl.get(nextNorm);
+        const step: JourneyStep = {
+            pageUrl: nextScan?.url ?? nextContext.url,
+            pageTitle: nextContext.title,
+            triggerLabel: action.trigger_label,
+            regionId: region?.id,
+            regionFindability: region?.findabilityScore,
+            regionAboveFold: region?.aboveFold,
+            regionSemanticType: region?.semanticType,
+            index: steps.length,
+        };
+        steps.push(step);
+        pathSoFar.push(nextNorm);
+        currentUrl = nextNorm;
+        yield { type: 'step', step };
+    }
+
+    yield { type: 'done', result: { steps, goalReached: false, message: 'Max steps reached.' } };
 }
