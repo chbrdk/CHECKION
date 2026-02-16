@@ -47,7 +47,18 @@ function computeStats(issues: Issue[]): ScanStats {
     return stats;
 }
 
-
+/** Same origin or same domain (www vs non-www) for internal link detection */
+function isInternalLink(href: string, pageOrigin: string): boolean {
+    if (!href.startsWith('http')) return false;
+    if (href.startsWith(pageOrigin)) return true;
+    try {
+        const hostHref = new URL(href).hostname.replace(/^www\./i, '');
+        const hostPage = new URL(pageOrigin).hostname.replace(/^www\./i, '');
+        return hostHref === hostPage;
+    } catch {
+        return false;
+    }
+}
 
 /**
  * Detect WCAG Level from the issue code.
@@ -533,19 +544,20 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
 
         // External links with target="_blank" but missing rel="noopener" or "noreferrer"
         const missingNoopenerList = uniqueLinksList.filter(l => {
-            if (!l.href.startsWith('http') || l.href.startsWith(origin)) return false;
+            if (!l.href.startsWith('http') || isInternalLink(l.href, origin)) return false;
             if ((l.target || '').toLowerCase() !== '_blank') return false;
             const rel = (l.rel || '').toLowerCase();
             return !rel.includes('noopener') && !rel.includes('noreferrer');
         }).map(l => ({ url: l.href, text: l.text }));
 
-        const internalLinksCount = uniqueLinksList.filter(l => l.href.startsWith(new URL(url).origin)).length;
+        const internalLinksCount = uniqueLinksList.filter(l => isInternalLink(l.href, new URL(url).origin)).length;
         const externalLinksCount = uniqueLinksList.length - internalLinksCount;
 
         // Check status of up to 25 links (prioritizing internal)
+        const originForLinks = new URL(url).origin;
         const linksToCheck = uniqueLinksList.sort((a, b) => {
-            const aInt = a.href.startsWith(new URL(url).origin);
-            const bInt = b.href.startsWith(new URL(url).origin);
+            const aInt = isInternalLink(a.href, originForLinks);
+            const bInt = isInternalLink(b.href, originForLinks);
             return (aInt === bInt) ? 0 : aInt ? -1 : 1;
         }).slice(0, 25);
 
@@ -560,7 +572,7 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                         text: link.text,
                         statusCode: res.status,
                         message: res.statusText,
-                        internal: link.href.startsWith(new URL(url).origin)
+                        internal: isInternalLink(link.href, new URL(url).origin)
                     });
                 }
             } catch (e: any) {
@@ -570,7 +582,7 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                     text: link.text,
                     statusCode: 0,
                     message: e.message || 'Network Error/Timeout',
-                    internal: link.href.startsWith(new URL(url).origin)
+                    internal: isInternalLink(link.href, new URL(url).origin)
                 });
             }
         }));
@@ -1393,8 +1405,9 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
             metaRefreshPresent: ext?.metaRefreshPresent
         };
 
+        const pageOrigin = new URL(url).origin;
         const internalLinks = uniqueLinksList
-            .filter(l => l.href.startsWith(new URL(url).origin)) // Only internal
+            .filter(l => isInternalLink(l.href, pageOrigin))
             .map(l => l.href);
 
         const durationMs = Date.now() - startTime;
