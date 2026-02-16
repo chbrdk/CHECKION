@@ -152,6 +152,8 @@ export type ScanResult = {
     links?: LinkAudit;
     geo?: GeoAudit;
     privacy?: PrivacyAudit;
+    /** E-E-A-T page-level signals (for domain aggregation). */
+    eeatSignals?: EeatPageSignals;
     generative?: GenerativeEngineAudit;
     security?: SecurityAudit;
     technicalInsights?: TechnicalInsights;
@@ -283,6 +285,38 @@ export interface PrivacyAudit {
     hasTermsOfService: boolean;
 }
 
+/** Per-page E-E-A-T signals (for domain-scan aggregation). */
+export interface EeatPageSignals {
+    hasImpressum: boolean;
+    hasContact: boolean;
+    hasAboutLink: boolean;
+    hasTeamLink: boolean;
+    hasCaseStudyMention: boolean;
+}
+
+/** Domain-level E-E-A-T aggregate (from deep scan). */
+export interface EeatDomainAggregate {
+    trust: {
+        pagesWithImpressum: number;
+        pagesWithContact: number;
+        pagesWithPrivacy: number;
+        totalPages: number;
+    };
+    experience: {
+        pagesWithAbout: number;
+        pagesWithTeam: number;
+        pagesWithCaseStudyMention: number;
+        totalPages: number;
+    };
+    expertise: {
+        pagesWithAuthorBio: number;
+        pagesWithArticleAuthor: number;
+        avgCitationsPerPage: number;
+        totalPages: number;
+    };
+    authoritativeness?: string;
+}
+
 export interface SecurityAudit {
     contentSecurityPolicy: { present: boolean; value?: string };
     xFrameOptions: { present: boolean; value?: string };
@@ -348,6 +382,8 @@ export type DomainScanResult = {
         count: number,
         pages: string[]
     }>;
+    /** E-E-A-T aggregate (from deep scan only). */
+    eeat?: EeatDomainAggregate;
     error?: string;
     /** LLM-generated domain-wide UX/CX summary (from POST /api/scan/domain/[id]/summarize). */
     llmSummary?: LlmSummary | null;

@@ -1,6 +1,6 @@
 import { runScan } from './scanner';
 import { getSitemapUrlFromRobots, fetchSitemapUrls } from './sitemap';
-import type { ScanResult, DomainScanResult } from './types';
+import type { ScanResult, DomainScanResult, EeatDomainAggregate } from './types';
 import { v4 as uuidv4 } from 'uuid';
 
 const MAX_PAGES = 100;
@@ -246,6 +246,34 @@ export async function* runDomainScan(startUrl: string, options: DomainScanOption
         }
     });
 
+    // E-E-A-T aggregate (from deep scan only)
+    const pages = results.map((r) => r.result);
+    const totalPages = pages.length;
+    const eeat: EeatDomainAggregate = {
+        trust: {
+            pagesWithImpressum: pages.filter((p) => p.eeatSignals?.hasImpressum).length,
+            pagesWithContact: pages.filter((p) => p.eeatSignals?.hasContact).length,
+            pagesWithPrivacy: pages.filter((p) => p.privacy?.hasPrivacyPolicy).length,
+            totalPages,
+        },
+        experience: {
+            pagesWithAbout: pages.filter((p) => p.eeatSignals?.hasAboutLink).length,
+            pagesWithTeam: pages.filter((p) => p.eeatSignals?.hasTeamLink).length,
+            pagesWithCaseStudyMention: pages.filter((p) => p.eeatSignals?.hasCaseStudyMention).length,
+            totalPages,
+        },
+        expertise: {
+            pagesWithAuthorBio: pages.filter((p) => p.generative?.hasAuthorBio).length,
+            pagesWithArticleAuthor: pages.filter((p) => p.generative?.articleSchemaQuality?.hasAuthor).length,
+            avgCitationsPerPage:
+                totalPages > 0
+                    ? pages.reduce((sum, p) => sum + (p.generative?.citationCount ?? 0), 0) / totalPages
+                    : 0,
+            totalPages,
+        },
+        authoritativeness: undefined,
+    };
+
     // Final calculations
     const domainScore = calculateDomainScore(results);
     const systemicIssues = identifySystemicIssues(results.map(r => r.result));
@@ -266,7 +294,8 @@ export async function* runDomainScan(startUrl: string, options: DomainScanOption
             nodes: graphNodes,
             links: graphLinks
         },
-        systemicIssues
+        systemicIssues,
+        eeat
     };
 
     yield { type: 'complete', domainResult: finalResult };

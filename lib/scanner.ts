@@ -608,6 +608,14 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
             const hasCookieBannerHeuristic = !!document.body.innerText.toLowerCase().includes('cookie') ||
                 !!document.querySelector('#cookie-banner, .cookie-banner, #consent-manager, .consent-banner');
 
+            // E-E-A-T page signals (for domain-scan aggregation)
+            const bodyLower = document.body.innerText.toLowerCase();
+            const hasImpressum = links.some(function(l) { return /impressum|imprint|legal notice/i.test(l.text) || (l.href && /impressum|imprint/i.test(l.href)); });
+            const hasContact = links.some(function(l) { return /kontakt|contact|get in touch/i.test(l.text) || (l.href && /contact|kontakt/i.test(l.href)); });
+            const hasAboutLink = links.some(function(l) { return /über uns|about us|about we|who we|ueber uns/i.test(l.text) || (l.href && /about|ueber-uns|about-us/i.test(l.href)); });
+            const hasTeamLink = links.some(function(l) { return /team|unser team|our team/i.test(l.text) || (l.href && /team/i.test(l.href)); });
+            const hasCaseStudyMention = /case study|fallstudie|erfahrungsbericht|success story/i.test(bodyLower);
+
             // --- GEO Metrics (Generative Engine Optimization) ---
             const RECOMMENDED_TYPES = ['Article', 'FAQPage', 'HowTo', 'Organization', 'Person', 'WebPage', 'NewsArticle', 'WebSite'];
             const schemaParseErrors: string[] = [];
@@ -794,6 +802,13 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                     hasCookieBanner: hasCookieBannerHeuristic,
                     hasTermsOfService: privacyLink?.text.includes('terms') || privacyLink?.text.includes('bedingungen') || false,
                 },
+                eeatPage: {
+                    hasImpressum,
+                    hasContact,
+                    hasAboutLink,
+                    hasTeamLink,
+                    hasCaseStudyMention
+                },
                 generative: {
                     schemaCoverage: [...new Set(schemaTypes)],
                     schemaParseErrors: schemaParseErrors.length > 0 ? schemaParseErrors : undefined,
@@ -830,6 +845,7 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
 
         let seoAudit: SeoAudit = seoAndMeta.seo as SeoAudit;
         const privacyAudit = seoAndMeta.privacy;
+        const eeatSignals = (seoAndMeta as { eeatPage?: import('./types').EeatPageSignals }).eeatPage;
 
         // 5c. Geo Location Lookup & CDN Detection
         let locationData: any = null;
@@ -1400,6 +1416,7 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
             links: linkAudit,
             geo: geoAudit,
             privacy: privacyAudit,
+            eeatSignals: eeatSignals ?? undefined,
             generative: generativeAudit,
             security: securityAudit,
             technicalInsights

@@ -220,7 +220,21 @@
     "tabStructure": "Struktur & Semantik",
     "tabLinksSeo": "Links & SEO",
     "tabInfra": "Infrastruktur & Privacy",
-    "tabGenerative": "Generative Search (GEO)"
+    "tabGenerative": "Generative Search (GEO)",
+    "eeatTitle": "E-E-A-T (Domain)",
+    "eeatTrust": "Vertrauen",
+    "eeatImpressum": "Impressum {{count}}/{{total}}",
+    "eeatContact": "Kontakt {{count}}/{{total}}",
+    "eeatPrivacy": "Datenschutz {{count}}/{{total}}",
+    "eeatExperience": "Experience",
+    "eeatAbout": "Über uns {{count}}/{{total}}",
+    "eeatTeam": "Team {{count}}/{{total}}",
+    "eeatCaseStudy": "Fallstudie {{count}}/{{total}}",
+    "eeatExpertise": "Expertise",
+    "eeatAuthorBio": "Autoren-Bio {{count}}/{{total}}",
+    "eeatArticleAuthor": "Article-Author {{count}}/{{total}}",
+    "eeatAvgCitations": "Ø {{avg}} Zitate/Seite",
+    "eeatAuthoritativeness": "Authoritativeness"
   },
   "info": {
     "dashboard": "Hier siehst du alle durchgeführten WCAG-Barrierefreiheits-Checks. Ein Klick auf „Neuer Scan“ startet einen Check für eine einzelne Seite oder eine ganze Domain.",
@@ -263,6 +277,7 @@
     "linksSeo": "Link-Check (kaputte Links) und SEO-relevante Daten (Meta, Keywords).",
     "infraPrivacy": "Technische Infrastruktur und Privacy-relevante Hinweise.",
     "generativeGeo": "Bewertung für Generative Search / GEO (Google) – wie gut die Seite für AI Overviews geeignet ist.",
-    "issuesList": "Liste der gefundenen Barrierefreiheits-Probleme mit Schweregrad und WCAG-Level. Filter nach Error, Warning, Notice oder bestanden."
+    "issuesList": "Liste der gefundenen Barrierefreiheits-Probleme mit Schweregrad und WCAG-Level. Filter nach Error, Warning, Notice oder bestanden.",
+    "eeat": "E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness): über den Deep Scan aggregierte Signale für Vertrauen, Experience und Expertise. Authoritativeness würde Backlink-Daten erfordern."
   }
 }

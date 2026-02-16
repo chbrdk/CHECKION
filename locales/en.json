@@ -220,7 +220,21 @@
     "tabStructure": "Structure & Semantics",
     "tabLinksSeo": "Links & SEO",
     "tabInfra": "Infrastructure & Privacy",
-    "tabGenerative": "Generative Search (GEO)"
+    "tabGenerative": "Generative Search (GEO)",
+    "eeatTitle": "E-E-A-T (Domain)",
+    "eeatTrust": "Trust",
+    "eeatImpressum": "Impressum {{count}}/{{total}}",
+    "eeatContact": "Contact {{count}}/{{total}}",
+    "eeatPrivacy": "Privacy {{count}}/{{total}}",
+    "eeatExperience": "Experience",
+    "eeatAbout": "About {{count}}/{{total}}",
+    "eeatTeam": "Team {{count}}/{{total}}",
+    "eeatCaseStudy": "Case study {{count}}/{{total}}",
+    "eeatExpertise": "Expertise",
+    "eeatAuthorBio": "Author bio {{count}}/{{total}}",
+    "eeatArticleAuthor": "Article author {{count}}/{{total}}",
+    "eeatAvgCitations": "Ø {{avg}} citations/page",
+    "eeatAuthoritativeness": "Authoritativeness"
   },
   "info": {
     "dashboard": "Overview of all WCAG accessibility checks you have run. Use \"New Scan\" to check a single page or an entire domain.",
@@ -263,6 +277,7 @@
     "linksSeo": "Link check (broken links) and SEO-related data (meta, keywords).",
     "infraPrivacy": "Technical infrastructure and privacy-related notes.",
     "generativeGeo": "Rating for Generative Search / GEO (Google) – how well the page is suited for AI overviews.",
-    "issuesList": "List of accessibility issues found, with severity and WCAG level. Filter by error, warning, notice or passed."
+    "issuesList": "List of accessibility issues found, with severity and WCAG level. Filter by error, warning, notice or passed.",
+    "eeat": "E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness): signals aggregated from the deep scan for trust, experience and expertise. Authoritativeness would require backlink data."
   }
 }
