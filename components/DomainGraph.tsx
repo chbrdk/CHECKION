@@ -34,11 +34,14 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
     useEffect(() => {
         if (!data || !data.nodes.length) return;
 
-        // Clone and initialize nodes
+        // Scale spacing with node count so 100 nodes don’t collapse into a blob (factor from 25-node baseline)
+        const spacingFactor = Math.max(1, Math.sqrt(data.nodes.length / 25)) * 5;
+        const initialSpread = 80 * spacingFactor;
+
         const initialNodes: Node[] = data.nodes.map((n) => ({
             ...n,
-            x: width / 2 + (Math.random() - 0.5) * 50,
-            y: height / 2 + (Math.random() - 0.5) * 50,
+            x: width / 2 + (Math.random() - 0.5) * initialSpread,
+            y: height / 2 + (Math.random() - 0.5) * initialSpread,
             vx: 0,
             vy: 0,
         }));
@@ -65,17 +68,21 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
         const tick = () => {
             setNodes(prevNodes => {
                 const newNodes = [...prevNodes];
-                const k = 0.05; // Force constant
-                const repulsion = 500;
+                const n = newNodes.length;
+                const spacingFactor = Math.max(1, Math.sqrt(n / 25)) * 5;
+                const k = 0.05;
+                const repulsion = 500 * spacingFactor;
+                const repulsionRadius = 300 * spacingFactor;
+                const restingDistance = 100 * spacingFactor;
                 const centerForce = 0.01;
 
-                // 1. Repulsion
+                // 1. Repulsion (stronger and larger radius with more nodes)
                 for (let i = 0; i < newNodes.length; i++) {
                     for (let j = i + 1; j < newNodes.length; j++) {
                         const dx = newNodes[i].x - newNodes[j].x;
                         const dy = newNodes[i].y - newNodes[j].y;
                         const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-                        if (dist < 300) {
+                        if (dist < repulsionRadius) {
                             const force = repulsion / (dist * dist);
                             const fx = (dx / dist) * force;
                             const fy = (dy / dist) * force;
@@ -87,9 +94,8 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
                     }
                 }
 
-                // 2. Spring force (Links)
+                // 2. Spring force (Links) – resting distance scales with node count
                 links.forEach(link => {
-                    // We must find the *current* node objects in newNodes array by ID/URL to update them
                     const source = newNodes.find(n => n.url === link.source.url);
                     const target = newNodes.find(n => n.url === link.target.url);
 
@@ -97,7 +103,7 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
                         const dx = target.x - source.x;
                         const dy = target.y - source.y;
                         const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-                        const force = (dist - 100) * k; // Resting distance 100
+                        const force = (dist - restingDistance) * k;
                         const fx = (dx / dist) * force;
                         const fy = (dy / dist) * force;
 
@@ -129,10 +135,11 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
             animationFrameId = requestAnimationFrame(tick);
         };
 
-        // Run for a few seconds then stop to save CPU
+        // Run longer when many nodes so the layout can settle (5s baseline, up to 8s for large graphs)
+        const simDuration = nodes.length > 50 ? 8000 : 5000;
         const timeout = setTimeout(() => {
             cancelAnimationFrame(animationFrameId);
-        }, 5000); // 5 seconds of simulation
+        }, simDuration);
 
         animationFrameId = requestAnimationFrame(tick);
 
