@@ -9,10 +9,11 @@ import {
     MsqdxChip,
     MsqdxTabs,
     MsqdxMoleculeCard,
+    MsqdxFormField,
 } from '@msqdx/react';
 import { MSQDX_STATUS, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
 import { useParams, useRouter } from 'next/navigation';
-import type { DomainScanResult } from '@/lib/types';
+import type { DomainScanResult, JourneyResult } from '@/lib/types';
 import {
     aggregateIssues,
     aggregateUx,
@@ -24,6 +25,7 @@ import {
 } from '@/lib/domain-aggregation';
 import { DomainGraph } from '@/components/DomainGraph';
 import { DomainAggregatedIssueList } from '@/components/DomainAggregatedIssueList';
+import { JourneyFlowchart } from '@/components/JourneyFlowchart';
 import { ArrowLeft, Share2, AlertCircle, CheckCircle } from 'lucide-react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
@@ -43,11 +45,16 @@ export default function DomainResultPage() {
         { label: t('domainResult.tabLinksSeo'), value: 7 },
         { label: t('domainResult.tabInfra'), value: 8 },
         { label: t('domainResult.tabGenerative'), value: 9 },
+        { label: t('domainResult.tabJourney'), value: 10 },
     ];
     const [result, setResult] = useState<DomainScanResult | null>(null);
     const [tabValue, setTabValue] = useState(0);
     const [summarizing, setSummarizing] = useState(false);
     const [summarizeError, setSummarizeError] = useState<string | null>(null);
+    const [journeyGoal, setJourneyGoal] = useState('');
+    const [journeyLoading, setJourneyLoading] = useState(false);
+    const [journeyResult, setJourneyResult] = useState<JourneyResult | null>(null);
+    const [journeyError, setJourneyError] = useState<string | null>(null);
 
     const pages = result?.pages ?? [];
     const aggregated = useMemo(() => {
@@ -832,6 +839,73 @@ export default function DomainResultPage() {
                         <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>Keine GEO-Daten verfügbar.</MsqdxTypography>
                     </MsqdxMoleculeCard>
                 )
+            )}
+
+            {tabValue === 10 && (
+                <MsqdxMoleculeCard
+                    title={t('domainResult.journeyTitle')}
+                    headerActions={<InfoTooltip title={t('domainResult.journeyDescription')} ariaLabel={t('common.info')} />}
+                    subtitle={t('domainResult.journeySubtitle')}
+                    variant="flat"
+                    sx={{ bgcolor: 'var(--color-card-bg)' }}
+                    borderRadius="lg"
+                >
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, flexWrap: 'wrap' }}>
+                            <Box sx={{ flex: 1, minWidth: 200, maxWidth: 480 }}>
+                                <MsqdxFormField
+                                    label={t('domainResult.journeyGoalLabel')}
+                                    placeholder={t('domainResult.journeyPlaceholder')}
+                                    value={journeyGoal}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setJourneyGoal(e.target.value)}
+                                    disabled={journeyLoading}
+                                />
+                            </Box>
+                            <MsqdxButton
+                                variant="contained"
+                                brandColor="green"
+                                disabled={journeyLoading || !journeyGoal.trim()}
+                                onClick={async () => {
+                                    if (!params.id || !journeyGoal.trim()) return;
+                                    setJourneyError(null);
+                                    setJourneyResult(null);
+                                    setJourneyLoading(true);
+                                    try {
+                                        const res = await fetch(`/api/scan/domain/${params.id}/journey`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ goal: journeyGoal.trim() }),
+                                        });
+                                        const data = await res.json().catch(() => ({}));
+                                        if (!res.ok) throw new Error(data.error ?? t('domainResult.journeyError'));
+                                        setJourneyResult(data);
+                                    } catch (e) {
+                                        setJourneyError(e instanceof Error ? e.message : t('domainResult.journeyError'));
+                                    } finally {
+                                        setJourneyLoading(false);
+                                    }
+                                }}
+                            >
+                                {journeyLoading ? t('domainResult.journeyLoading') : t('domainResult.journeyButton')}
+                            </MsqdxButton>
+                        </Box>
+                        {journeyError && (
+                            <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.error.base }}>{journeyError}</MsqdxTypography>
+                        )}
+                        {journeyResult && (
+                            <JourneyFlowchart
+                                steps={journeyResult.steps}
+                                goalReached={journeyResult.goalReached}
+                                message={journeyResult.message}
+                                t={t}
+                                onStepClick={(step) => {
+                                    const page = pages.find((p) => p.url === step.pageUrl);
+                                    if (page) router.push(`/results/${page.id}`);
+                                }}
+                            />
+                        )}
+                    </Box>
+                </MsqdxMoleculeCard>
             )}
         </Box>
     );

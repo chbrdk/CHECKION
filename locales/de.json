@@ -266,7 +266,19 @@
     "eeatArticleAuthor": "Article-Author {{count}}/{{total}}",
     "eeatAvgCitations": "Ø {{avg}} Zitate/Seite",
     "eeatAuthoritativeness": "Authoritativeness",
-    "visualMapDescription": "Knoten = gescannte Seiten, Linien = Verlinkung (von welcher Seite auf welche). Basierend auf den pro Seite erfassten Links."
+    "visualMapDescription": "Knoten = gescannte Seiten, Linien = Verlinkung (von welcher Seite auf welche). Basierend auf den pro Seite erfassten Links.",
+    "tabJourney": "User Journey",
+    "journeyTitle": "User Journey / Nutzerpfad",
+    "journeyDescription": "Gib ein Ziel ein (z. B. „Finde Produkt XY“). Ein Agent simuliert die Navigation über die gescannten Seiten und zeigt den Pfad als Flowchart.",
+    "journeySubtitle": "Ziel eingeben und Journey starten – der Agent navigiert durch die gescannten Seiten.",
+    "journeyGoalLabel": "Ziel",
+    "journeyPlaceholder": "Wie und welche Seiten würdest du besuchen, um … zu erreichen?",
+    "journeyButton": "Journey starten",
+    "journeyLoading": "Journey läuft…",
+    "journeyError": "Journey konnte nicht ausgeführt werden.",
+    "journeyNoSteps": "Keine Schritte. Starte eine Journey mit einem Ziel.",
+    "journeyGoalReached": "Ziel erreicht.",
+    "journeyStep": "Schritt"
   },
   "info": {
     "dashboard": "Hier siehst du alle durchgeführten WCAG-Barrierefreiheits-Checks. Ein Klick auf „Neuer Scan“ startet einen Check für eine einzelne Seite oder eine ganze Domain.",

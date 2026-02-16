@@ -266,7 +266,19 @@
     "eeatArticleAuthor": "Article author {{count}}/{{total}}",
     "eeatAvgCitations": "Ø {{avg}} citations/page",
     "eeatAuthoritativeness": "Authoritativeness",
-    "visualMapDescription": "Nodes = scanned pages, lines = link from one page to another (from our per-page link index)."
+    "visualMapDescription": "Nodes = scanned pages, lines = link from one page to another (from our per-page link index).",
+    "tabJourney": "User Journey",
+    "journeyTitle": "User Journey",
+    "journeyDescription": "Enter a goal (e.g. \"Find product XY\"). An agent simulates navigation across the scanned pages and shows the path as a flowchart.",
+    "journeySubtitle": "Enter a goal and start the journey – the agent navigates through the scanned pages.",
+    "journeyGoalLabel": "Goal",
+    "journeyPlaceholder": "How and which pages would you visit to reach …?",
+    "journeyButton": "Start journey",
+    "journeyLoading": "Journey running…",
+    "journeyError": "Journey could not be completed.",
+    "journeyNoSteps": "No steps. Start a journey with a goal.",
+    "journeyGoalReached": "Goal reached.",
+    "journeyStep": "Step"
   },
   "info": {
     "dashboard": "Overview of all WCAG accessibility checks you have run. Use \"New Scan\" to check a single page or an entire domain.",

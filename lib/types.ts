@@ -440,6 +440,22 @@ export interface SearchMatch {
     score?: number;
 }
 
+/** One step in a user journey (agent-chosen page + optional trigger). */
+export interface JourneyStep {
+    pageUrl: string;
+    pageTitle?: string;
+    triggerLabel?: string;
+    regionId?: string;
+    index: number;
+}
+
+/** Result of the journey agent: path of pages and whether the goal was reached. */
+export interface JourneyResult {
+    steps: JourneyStep[];
+    goalReached: boolean;
+    message?: string;
+}
+
 export interface TouchTargetIssue {
     selector: string;
     element: string;
