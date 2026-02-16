@@ -288,10 +288,10 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
                     zIndex: 10,
                 }}
             >
-                <MsqdxButton variant="filled" size="small" onClick={zoomIn} sx={{ minWidth: 36 }} aria-label="Zoom in">
+                <MsqdxButton variant="contained" size="small" onClick={zoomIn} sx={{ minWidth: 36 }} aria-label="Zoom in">
                     +
                 </MsqdxButton>
-                <MsqdxButton variant="filled" size="small" onClick={zoomOut} sx={{ minWidth: 36 }} aria-label="Zoom out">
+                <MsqdxButton variant="contained" size="small" onClick={zoomOut} sx={{ minWidth: 36 }} aria-label="Zoom out">
                     −
                 </MsqdxButton>
                 <MsqdxButton variant="outlined" size="small" onClick={resetView} sx={{ minWidth: 36 }} aria-label="Reset view">
