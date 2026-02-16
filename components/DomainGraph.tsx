@@ -40,9 +40,10 @@ function pathDepthFromUrl(url: string): number {
     }
 }
 
-const ROW_HEIGHT = 72;
+/** Vertical spacing between depth rows – larger = more space between elements downwards */
+const ROW_HEIGHT = 120;
 const NODE_WIDTH = 128;
-const NODE_HEIGHT = 40;
+const NODE_HEIGHT = 44;
 
 export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -104,7 +105,7 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
         setLinks(initialLinks);
     }, [data, width, height]);
 
-    // Scale-to-fit including node box size so nothing is clipped
+    // Scale X and Y independently so the map uses full width and full height (no vertical squashing)
     const padding = 48;
     const minX = nodes.length ? Math.min(...nodes.map((n) => n.x)) - NODE_WIDTH / 2 : 0;
     const maxX = nodes.length ? Math.max(...nodes.map((n) => n.x)) + NODE_WIDTH / 2 : width;
@@ -112,22 +113,20 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
     const maxY = nodes.length ? Math.max(...nodes.map((n) => n.y)) + NODE_HEIGHT / 2 : height;
     const rangeX = maxX - minX || 1;
     const rangeY = maxY - minY || 1;
-    const scale = nodes.length
-        ? Math.min((width - padding) / rangeX, (height - padding) / rangeY)
-        : 1;
-    const offsetX = nodes.length ? width / 2 - (minX + maxX) / 2 * scale : 0;
-    const offsetY = nodes.length ? height / 2 - (minY + maxY) / 2 * scale : 0;
+    const scaleX = nodes.length ? (width - padding) / rangeX : 1;
+    const scaleY = nodes.length ? (height - padding) / rangeY : 1;
+    const offsetX = nodes.length ? width / 2 - (minX + maxX) / 2 * scaleX : 0;
+    const offsetY = nodes.length ? height / 2 - (minY + maxY) / 2 * scaleY : 0;
 
-    const toDisplay = (x: number, y: number) => ({ x: x * scale + offsetX, y: y * scale + offsetY });
-    const toSim = (x: number, y: number) => ({ x: (x - offsetX) / scale, y: (y - offsetY) / scale });
+    const toDisplay = (x: number, y: number) => ({ x: x * scaleX + offsetX, y: y * scaleY + offsetY });
 
     const handleMouseMove = (e: React.MouseEvent) => {
         const rect = canvasRef.current?.getBoundingClientRect();
         if (!rect) return;
         const mx = e.clientX - rect.left;
         const my = e.clientY - rect.top;
-        const halfW = (NODE_WIDTH / 2) * scale;
-        const halfH = (NODE_HEIGHT / 2) * scale;
+        const halfW = (NODE_WIDTH / 2) * scaleX;
+        const halfH = (NODE_HEIGHT / 2) * scaleY;
         const setHover = nodes.find((n) => {
             const d = toDisplay(n.x, n.y);
             return Math.abs(mx - d.x) <= halfW && Math.abs(my - d.y) <= halfH;
@@ -187,8 +186,8 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
                         }
                     }
                     const isHovered = hoveredNode?.url === node.url;
-                    const w = NODE_WIDTH * scale;
-                    const h = NODE_HEIGHT * scale;
+                    const w = NODE_WIDTH * scaleX;
+                    const h = NODE_HEIGHT * scaleY;
                     return (
                         <g key={i} transform={`translate(${d.x},${d.y})`}>
                             <rect
