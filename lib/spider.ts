@@ -3,12 +3,16 @@ import { getSitemapUrlFromRobots, fetchSitemapUrls } from './sitemap';
 import type { ScanResult, DomainScanResult, EeatDomainAggregate } from './types';
 import { v4 as uuidv4 } from 'uuid';
 
-const MAX_PAGES = 100;
+const DEFAULT_MAX_PAGES = 100;
 const MAX_DEPTH = 3; // Home + 3 levels; max pages will likely hit first
+/** Upper cap for maxPages (e.g. "Alle" in UI). */
+export const DOMAIN_SCAN_MAX_PAGES_CAP = 5000;
 
 export type DomainScanOptions = {
     /** If true (default), discover sitemap and use its URLs as scan list when available; otherwise pure link crawl. */
     useSitemap?: boolean;
+    /** Max number of pages to scan (default 100). Capped at DOMAIN_SCAN_MAX_PAGES_CAP. */
+    maxPages?: number;
 };
 
 
@@ -110,6 +114,10 @@ export async function* runDomainScan(startUrl: string, options: DomainScanOption
     const baseUrl = new URL(startUrl);
     const origin = baseUrl.origin;
     const useSitemap = options.useSitemap !== false;
+    const maxPages = Math.min(
+        DOMAIN_SCAN_MAX_PAGES_CAP,
+        Math.max(1, options.maxPages ?? DEFAULT_MAX_PAGES)
+    );
 
     // Queue: { url, depth }; seed from sitemap or start URL
     let queue: Array<{ url: string, depth: number }> = [];
@@ -119,7 +127,7 @@ export async function* runDomainScan(startUrl: string, options: DomainScanOption
     if (useSitemap) {
         const sitemapUrl = await getSitemapUrlFromRobots(origin);
         if (sitemapUrl) {
-            const sitemapUrls = await fetchSitemapUrls(sitemapUrl, origin, MAX_PAGES);
+            const sitemapUrls = await fetchSitemapUrls(sitemapUrl, origin, maxPages);
             if (sitemapUrls.length > 0) {
                 const startNorm = normalizeUrl(startUrl);
                 sitemapUrls.forEach(u => {
@@ -154,7 +162,7 @@ export async function* runDomainScan(startUrl: string, options: DomainScanOption
             : `Starting scan for ${origin}`
     };
 
-    while (queue.length > 0 && results.length < MAX_PAGES) {
+    while (queue.length > 0 && results.length < maxPages) {
         const current = queue.shift()!;
         const normalizedCurrent = normalizeUrl(current.url);
 
@@ -190,7 +198,7 @@ export async function* runDomainScan(startUrl: string, options: DomainScanOption
             });
 
             // Extract internal links only when not in sitemap mode (in sitemap mode we only scan the sitemap URL list)
-            if (!sitemapMode && current.depth < MAX_DEPTH && results.length + queue.length < MAX_PAGES * 2) {
+            if (!sitemapMode && current.depth < MAX_DEPTH && results.length + queue.length < maxPages * 2) {
                 const newLinks = result.allLinks || [];
                 console.log(`[Spider] Found ${newLinks.length} links on ${current.url}`);
 
@@ -244,6 +252,24 @@ export async function* runDomainScan(startUrl: string, options: DomainScanOption
         } catch {
             // ignore invalid URLs
         }
+    });
+
+    // Link edges from page content: for each scanned page, add edge to every other scanned page it links to (allLinks)
+    results.forEach(({ result }) => {
+        const sourceNorm = normalizeUrl(result.url);
+        if (!nodeIds.has(sourceNorm)) return;
+        (result.allLinks || []).forEach((href: string) => {
+            try {
+                const targetNorm = normalizeUrl(href);
+                if (!nodeIds.has(targetNorm) || targetNorm === sourceNorm) return;
+                const key = `${sourceNorm}\t${targetNorm}`;
+                if (linkKeys.has(key)) return;
+                linkKeys.add(key);
+                graphLinks.push({ source: sourceNorm, target: targetNorm });
+            } catch {
+                // skip invalid URLs
+            }
+        });
     });
 
     // E-E-A-T aggregate (from deep scan only)

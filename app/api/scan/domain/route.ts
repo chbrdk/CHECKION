@@ -15,10 +15,12 @@ export async function POST(req: NextRequest) {
     const userId = session.user.id;
     let url: string;
     let useSitemap = true;
+    let maxPages: number | undefined;
     try {
         const body = await req.json();
         url = body.url;
         if (typeof body.useSitemap === 'boolean') useSitemap = body.useSitemap;
+        if (typeof body.maxPages === 'number' && body.maxPages >= 1) maxPages = body.maxPages;
     } catch {
         return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
     }
@@ -44,7 +46,7 @@ export async function POST(req: NextRequest) {
     (async () => {
         try {
             await updateDomainScan(id, userId, { status: 'scanning' });
-            for await (const update of runDomainScan(url, { useSitemap })) {
+            for await (const update of runDomainScan(url, { useSitemap, maxPages })) {
                 const currentScan = await getDomainScan(id, userId);
                 if (!currentScan) break;
                 if (update.type === 'progress') {

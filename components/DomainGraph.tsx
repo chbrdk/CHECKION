@@ -211,6 +211,8 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
                     if (!s || !t) return null;
                     const d1 = toDisplay(s.x, s.y + NODE_HEIGHT / 2);
                     const d2 = toDisplay(t.x, t.y - NODE_HEIGHT / 2);
+                    const strokeW = links.length > 80 ? 1 : 2;
+                    const opacity = links.length > 150 ? 0.5 : links.length > 80 ? 0.7 : 1;
                     return (
                         <line
                             key={i}
@@ -219,7 +221,8 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
                             x2={d2.x}
                             y2={d2.y}
                             stroke="#6b8cae"
-                            strokeWidth={2}
+                            strokeWidth={strokeW}
+                            strokeOpacity={opacity}
                             markerEnd="url(#flowchart-arrow)"
                         />
                     );

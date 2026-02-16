@@ -267,6 +267,9 @@ export default function DomainResultPage() {
 
             {tabValue === 1 && (
                 <Box>
+                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 1 }}>
+                        {t('domainResult.visualMapDescription')}
+                    </MsqdxTypography>
                     <DomainGraph data={result.graph} width={1200} height={800} />
                 </Box>
             )}

@@ -181,7 +181,9 @@
     "completeLog": "Scan Complete! Redirecting...",
     "errorLog": "Error",
     "failedStart": "Failed to start scan",
-    "failedConnection": "Failed to initiate scan connection."
+    "failedConnection": "Failed to initiate scan connection.",
+    "maxPagesLabel": "Max. Seiten",
+    "maxPagesAll": "Alle (5000)"
   },
   "results": {
     "errorNotFound": "Ergebnis nicht gefunden",
@@ -248,7 +250,8 @@
     "eeatAuthorBio": "Autoren-Bio {{count}}/{{total}}",
     "eeatArticleAuthor": "Article-Author {{count}}/{{total}}",
     "eeatAvgCitations": "Ø {{avg}} Zitate/Seite",
-    "eeatAuthoritativeness": "Authoritativeness"
+    "eeatAuthoritativeness": "Authoritativeness",
+    "visualMapDescription": "Knoten = gescannte Seiten, Linien = Verlinkung (von welcher Seite auf welche). Basierend auf den pro Seite erfassten Links."
   },
   "info": {
     "dashboard": "Hier siehst du alle durchgeführten WCAG-Barrierefreiheits-Checks. Ein Klick auf „Neuer Scan“ startet einen Check für eine einzelne Seite oder eine ganze Domain.",

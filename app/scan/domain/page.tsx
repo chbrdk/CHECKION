@@ -5,8 +5,10 @@ import {
     MsqdxMoleculeCard,
     MsqdxTypography,
     MsqdxButton,
-    MsqdxFormField
+    MsqdxFormField,
+    MsqdxSelect
 } from '@msqdx/react';
+import type { SelectChangeEvent } from '@mui/material';
 import { Box, LinearProgress } from '@mui/material';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { MSQDX_COLORS, MSQDX_SPACING } from '@msqdx/tokens';
@@ -23,8 +25,10 @@ function ScanContent() {
     const [status, setStatus] = useState<DomainScanStatus>('queued');
     const logsEndRef = useRef<HTMLDivElement>(null);
     const [scannedCount, setScannedCount] = useState(0);
+    const [maxPages, setMaxPages] = useState(100);
 
     const startUrl = searchParams.get('url');
+    const maxPagesParam = searchParams.get('maxPages');
 
     // Scroll to bottom of logs
     useEffect(() => {
@@ -34,9 +38,10 @@ function ScanContent() {
     // Initial Start
     useEffect(() => {
         if (startUrl && !scanId) {
-            startScan(startUrl);
+            const limit = maxPagesParam ? Math.min(5000, Math.max(1, Number(maxPagesParam))) : 100;
+            startScan(startUrl, limit);
         }
-    }, [startUrl]);
+    }, [startUrl, maxPagesParam]);
 
     // Polling Loop
     useEffect(() => {
@@ -81,7 +86,7 @@ function ScanContent() {
         return () => clearInterval(interval);
     }, [scanId, status, router]);
 
-    async function startScan(url: string) {
+    async function startScan(url: string, pageLimit?: number) {
         setStatus('queued');
         setLogs([t('domain.initLog')]);
 
@@ -89,7 +94,7 @@ function ScanContent() {
             const response = await fetch('/api/scan/domain', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url })
+                body: JSON.stringify({ url, maxPages: pageLimit ?? 100 })
             });
 
             if (response.ok) {
@@ -130,17 +135,34 @@ function ScanContent() {
                         const formData = new FormData(e.currentTarget);
                         const inputUrl = formData.get('url') as string;
                         if (inputUrl) {
-                            router.push(`/scan/domain?url=${encodeURIComponent(inputUrl)}`);
+                            const limit = maxPages;
+                            router.push(`/scan/domain?url=${encodeURIComponent(inputUrl)}&maxPages=${limit}`);
                         }
                     }}
-                    sx={{ display: 'flex', gap: 'var(--msqdx-spacing-md)' }}
+                    sx={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--msqdx-spacing-md)', alignItems: 'flex-end' }}
                 >
-                    <Box sx={{ flex: 1 }}>
+                    <Box sx={{ flex: '1 1 280px', minWidth: 200 }}>
                         <MsqdxFormField
                             label={t('domain.urlLabel')}
                             name="url"
                             placeholder={t('domain.urlPlaceholder')}
                             required
+                        />
+                    </Box>
+                    <Box sx={{ minWidth: 160 }}>
+                        <MsqdxSelect
+                            label={t('domain.maxPagesLabel')}
+                            value={String(maxPages)}
+                            onChange={(e: SelectChangeEvent<unknown>) => setMaxPages(Number((e.target as HTMLSelectElement).value))}
+                            options={[
+                                { value: '50', label: '50' },
+                                { value: '100', label: '100' },
+                                { value: '250', label: '250' },
+                                { value: '500', label: '500' },
+                                { value: '1000', label: '1000' },
+                                { value: '5000', label: t('domain.maxPagesAll') },
+                            ]}
+                            fullWidth
                         />
                     </Box>
                     <Box sx={{ pt: '28px' }}>

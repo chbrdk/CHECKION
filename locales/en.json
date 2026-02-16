@@ -181,7 +181,9 @@
     "completeLog": "Scan Complete! Redirecting...",
     "errorLog": "Error",
     "failedStart": "Failed to start scan",
-    "failedConnection": "Failed to initiate scan connection."
+    "failedConnection": "Failed to initiate scan connection.",
+    "maxPagesLabel": "Max. pages",
+    "maxPagesAll": "All (5000)"
   },
   "results": {
     "errorNotFound": "Result not found",
@@ -248,7 +250,8 @@
     "eeatAuthorBio": "Author bio {{count}}/{{total}}",
     "eeatArticleAuthor": "Article author {{count}}/{{total}}",
     "eeatAvgCitations": "Ø {{avg}} citations/page",
-    "eeatAuthoritativeness": "Authoritativeness"
+    "eeatAuthoritativeness": "Authoritativeness",
+    "visualMapDescription": "Nodes = scanned pages, lines = link from one page to another (from our per-page link index)."
   },
   "info": {
     "dashboard": "Overview of all WCAG accessibility checks you have run. Use \"New Scan\" to check a single page or an entire domain.",

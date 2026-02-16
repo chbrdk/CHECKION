@@ -36,9 +36,15 @@ Beim **Deep Scan (Domain-Scan)** zusätzlich eine **Sitemap-Option**: Wir erkenn
 
 ## Limits
 
-- Weiterhin **MAX_PAGES** (100) für den Domain-Scan.
-- Sitemap-Index: z. B. max. 5 Child-Sitemaps abrufen, dann aus allen bis zu MAX_PAGES URLs nehmen.
+- **Max. Seiten konfigurierbar:** `DomainScanOptions.maxPages` (Default 100, Cap 5000). UI: Select auf der Deep-Scan-Startseite (`/scan/domain`) mit 50, 100, 250, 500, 1000, „Alle (5000)“. API: `POST /api/scan/domain` Body `{ "url": "...", "maxPages": 250 }`.
+- Sitemap-Index: max. 5 Child-Sitemaps, dann aus allen bis zu `maxPages` URLs.
 - Timeouts beim Abruf von robots.txt/sitemap.xml (z. B. 8s), bei Fehler/keine Sitemap: Fallback auf Link-Crawl.
+
+## Visual Map (Link-Graph)
+
+- **Graph:** Knoten = gescannte Seiten, Kanten = Verlinkung („Seite A verlinkt auf Seite B“).
+- **Kanten-Quellen:** (1) Beim Link-Crawl: entdeckte Links (A → B beim Queuen). (2) **Nach dem Scan:** Für jede gescannte Seite werden `result.allLinks` ausgewertet; jede Ziel-URL, die ebenfalls ein gescanntes Node ist, ergibt eine Kante `source → target`. So zeigt die Visual Map alle Link-Beziehungen zwischen den indexierten Seiten („riesiges Diagramm mit vielen Linien“).
+- DomainGraph: Bei vielen Kanten (>80) dünnere Linien und reduzierte Opazität für bessere Lesbarkeit.
 
 ## Testing
 
