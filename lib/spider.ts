@@ -29,6 +29,17 @@ function normalizeUrl(url: string): string {
     }
 }
 
+/** Treat www and non-www as same domain for internal link detection */
+function isSameDomain(a: string, b: string): boolean {
+    try {
+        const hostA = new URL(a).hostname.replace(/^www\./i, '');
+        const hostB = new URL(b).hostname.replace(/^www\./i, '');
+        return hostA === hostB;
+    } catch {
+        return false;
+    }
+}
+
 /**
  * URL path depth: porsche.com = 0, porsche.com/australia = 1, porsche.com/australia/models = 2, etc.
  */
@@ -128,7 +139,8 @@ export async function* runDomainScan(startUrl: string, options: DomainScanOption
         const sitemapUrl = await getSitemapUrlFromRobots(origin);
         if (sitemapUrl) {
             const sitemapUrls = await fetchSitemapUrls(sitemapUrl, origin, maxPages);
-            if (sitemapUrls.length > 0) {
+            // Only use sitemap when it provides enough URLs; otherwise fall back to link crawl so we discover pages from the first scan
+            if (sitemapUrls.length > 1) {
                 const startNorm = normalizeUrl(startUrl);
                 sitemapUrls.forEach(u => {
                     const n = normalizeUrl(u);
@@ -204,7 +216,7 @@ export async function* runDomainScan(startUrl: string, options: DomainScanOption
 
                 newLinks.forEach(link => {
                     const norm = normalizeUrl(link);
-                    const isInternal = norm.startsWith(origin);
+                    const isInternal = norm.startsWith(origin) || isSameDomain(link, origin);
                     const isVisited = visited.has(norm);
 
                     if (isInternal && !isVisited) {
