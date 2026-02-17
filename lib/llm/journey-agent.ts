@@ -12,11 +12,19 @@ const MAX_TURNS = 35; // LLM calls (advances + backtrack re-tries)
 const MAX_REGIONS_PER_PAGE = 20;
 const MAX_OUTBOUND_LINKS = 50;
 
-const DEBUG_JOURNEY = process.env.DEBUG_JOURNEY === '1' || process.env.DEBUG_JOURNEY === 'true';
+/** Set DEBUG_JOURNEY=0 or false to disable. Default: on in development, off in production. */
+const DEBUG_JOURNEY =
+    process.env.DEBUG_JOURNEY !== '0' &&
+    process.env.DEBUG_JOURNEY !== 'false' &&
+    (process.env.DEBUG_JOURNEY === '1' ||
+        process.env.DEBUG_JOURNEY === 'true' ||
+        process.env.NODE_ENV !== 'production');
 
 function debugJourney(label: string, data: unknown): void {
     if (!DEBUG_JOURNEY) return;
-    console.log('[CHECKION journey]', label, typeof data === 'string' ? data : JSON.stringify(data, null, 2));
+    const out = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    console.log('[CHECKION journey]', label);
+    console.log(out);
 }
 
 function normalizeUrl(url: string): string {
