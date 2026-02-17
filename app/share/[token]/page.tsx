@@ -31,21 +31,21 @@ export default function ShareLandingPage() {
 
     if (error) {
         return (
-            <Box sx={{ p: 4, maxWidth: 600, mx: 'auto', textAlign: 'center' }}>
+            <Box sx={{ p: 4, maxWidth: 600, mx: 'auto', textAlign: 'center', bgcolor: '#fff', minHeight: '100vh' }}>
                 <MsqdxTypography variant="h6" sx={{ color: MSQDX_STATUS.error.base }}>{error}</MsqdxTypography>
             </Box>
         );
     }
     if (!payload) {
         return (
-            <Box sx={{ p: 4, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
+            <Box sx={{ p: 4, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200, bgcolor: '#fff' }}>
                 <CircularProgress sx={{ color: MSQDX_BRAND_PRIMARY.green }} />
             </Box>
         );
     }
 
     return (
-        <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 900, mx: 'auto' }}>
+        <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 900, mx: 'auto', bgcolor: '#fff', minHeight: '100vh' }}>
             <Box sx={{ mb: 3, textAlign: 'center' }}>
                 <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
                     Geteilte Scan-Ergebnisse · CHECKION
@@ -66,7 +66,7 @@ function ShareDomainContent({ data }: { data: DomainSummaryResponse }) {
 
     return (
         <>
-            <MsqdxCard variant="flat" sx={{ p: 3, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
+            <MsqdxCard variant="flat" sx={{ p: 3, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
                 <MsqdxTypography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>Deep Scan: {data.domain}</MsqdxTypography>
                 <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
                     {new Date(data.timestamp).toLocaleDateString()} · {data.totalPages} Seiten
@@ -97,7 +97,7 @@ function ShareDomainContent({ data }: { data: DomainSummaryResponse }) {
             </MsqdxCard>
 
             {agg?.performance && (
-                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
+                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
                     <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Performance (Ø)</MsqdxTypography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                         <Box><MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>Ø TTFB</MsqdxTypography><MsqdxTypography variant="body1" sx={{ fontWeight: 600 }}>{agg.performance.avgTtfb} ms</MsqdxTypography></Box>
@@ -110,7 +110,7 @@ function ShareDomainContent({ data }: { data: DomainSummaryResponse }) {
             )}
 
             {agg?.eco && (
-                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
+                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
                     <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Ökobilanz (zusammengefasst)</MsqdxTypography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
                         <Box><MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>Ø CO₂</MsqdxTypography><MsqdxTypography variant="body1" sx={{ fontWeight: 600 }}>{agg.eco.avgCo2} g</MsqdxTypography></Box>
@@ -134,7 +134,7 @@ function ShareDomainContent({ data }: { data: DomainSummaryResponse }) {
             )}
 
             {agg?.ux && (
-                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
+                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
                     <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>UX (aggregiert)</MsqdxTypography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                         <Box><MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>Ø Score</MsqdxTypography><MsqdxTypography variant="body1" sx={{ fontWeight: 600 }}>{agg.ux.score}</MsqdxTypography></Box>
@@ -149,7 +149,7 @@ function ShareDomainContent({ data }: { data: DomainSummaryResponse }) {
             )}
 
             {agg?.seo && (
-                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
+                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
                     <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>SEO (aggregiert)</MsqdxTypography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                         <Box><MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>Mit Titel</MsqdxTypography><MsqdxTypography variant="body1" sx={{ fontWeight: 600 }}>{agg.seo.withTitle} / {agg.seo.totalPages}</MsqdxTypography></Box>
@@ -173,7 +173,7 @@ function ShareDomainContent({ data }: { data: DomainSummaryResponse }) {
             )}
 
             {agg?.links && (
-                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
+                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
                     <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Links</MsqdxTypography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                         <Box><MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>Gesamt</MsqdxTypography><MsqdxTypography variant="body1" sx={{ fontWeight: 600 }}>{agg.links.totalLinks}</MsqdxTypography></Box>
@@ -185,7 +185,7 @@ function ShareDomainContent({ data }: { data: DomainSummaryResponse }) {
             )}
 
             {agg?.infra?.technicalCounts && (
-                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
+                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
                     <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Technische Insights</MsqdxTypography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
                         <MsqdxChip size="small" label={`Manifest ${agg.infra.technicalCounts.withManifest}/${agg.infra.technicalCounts.pageCount}`} />
@@ -208,7 +208,7 @@ function ShareDomainContent({ data }: { data: DomainSummaryResponse }) {
             )}
 
             {agg?.infra && (agg.infra.privacy.totalPages > 0 || agg.infra.security.totalPages > 0) && (
-                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
+                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
                     <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Privacy & Security</MsqdxTypography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
                         {agg.infra.privacy.totalPages > 0 && (
@@ -229,7 +229,7 @@ function ShareDomainContent({ data }: { data: DomainSummaryResponse }) {
             )}
 
             {agg?.structure && (
-                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
+                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
                     <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Struktur (Überschriften)</MsqdxTypography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                         <Box><MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>Seiten mit mehreren H1</MsqdxTypography><MsqdxTypography variant="body1" sx={{ fontWeight: 600 }}>{agg.structure.pagesWithMultipleH1.length}</MsqdxTypography></Box>
@@ -240,7 +240,7 @@ function ShareDomainContent({ data }: { data: DomainSummaryResponse }) {
             )}
 
             {data.eeat && (
-                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
+                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
                     <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>E-E-A-T</MsqdxTypography>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
@@ -261,7 +261,7 @@ function ShareDomainContent({ data }: { data: DomainSummaryResponse }) {
             )}
 
             {agg?.generative && (
-                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
+                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
                     <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Generative / GEO</MsqdxTypography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                         <Box><MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>Ø Score</MsqdxTypography><MsqdxTypography variant="body1" sx={{ fontWeight: 600 }}>{agg.generative.score}</MsqdxTypography></Box>
@@ -272,7 +272,7 @@ function ShareDomainContent({ data }: { data: DomainSummaryResponse }) {
             )}
 
             {data.systemicIssues && data.systemicIssues.length > 0 && (
-                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
+                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
                     <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Systemische Issues</MsqdxTypography>
                     {data.systemicIssues.map((issue, idx) => (
                         <Box key={idx} sx={{ mb: 1 }}>
@@ -282,7 +282,7 @@ function ShareDomainContent({ data }: { data: DomainSummaryResponse }) {
                 </MsqdxCard>
             )}
 
-            <MsqdxCard variant="flat" sx={{ p: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
+            <MsqdxCard variant="flat" sx={{ p: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
                 <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Gescannte Seiten ({pages.length})</MsqdxTypography>
                 <Box component="ul" sx={{ m: 0, pl: 2, maxHeight: 400, overflow: 'auto' }}>
                     {pages.slice(0, 200).map((p) => (
@@ -319,7 +319,7 @@ function ShareSingleContent({ data }: { data: ScanResult }) {
 
     return (
         <>
-            <MsqdxCard variant="flat" sx={{ p: 3, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
+            <MsqdxCard variant="flat" sx={{ p: 3, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
                 <MsqdxTypography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>Seiten-Scan</MsqdxTypography>
                 <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2, wordBreak: 'break-all' }}>
                     {data.url}
@@ -354,7 +354,7 @@ function ShareSingleContent({ data }: { data: ScanResult }) {
             </MsqdxCard>
 
             {perf && (
-                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
+                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
                     <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Performance</MsqdxTypography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                         <Box><MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>TTFB</MsqdxTypography><MsqdxTypography variant="body1" sx={{ fontWeight: 600 }}>{perf.ttfb} ms</MsqdxTypography></Box>
@@ -366,7 +366,7 @@ function ShareSingleContent({ data }: { data: ScanResult }) {
             )}
 
             {eco && (
-                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
+                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
                     <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Ökobilanz</MsqdxTypography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                         <Box><MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>CO₂</MsqdxTypography><MsqdxTypography variant="body1" sx={{ fontWeight: 600 }}>{eco.co2} g</MsqdxTypography></Box>
@@ -377,7 +377,7 @@ function ShareSingleContent({ data }: { data: ScanResult }) {
             )}
 
             {seo && (
-                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
+                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
                     <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>SEO</MsqdxTypography>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                         {seo.title && <Box><MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>Titel</MsqdxTypography><MsqdxTypography variant="body2" sx={{ wordBreak: 'break-word' }}>{seo.title.length > 80 ? seo.title.slice(0, 80) + '…' : seo.title}</MsqdxTypography></Box>}
@@ -389,7 +389,7 @@ function ShareSingleContent({ data }: { data: ScanResult }) {
             )}
 
             {links && (
-                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
+                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
                     <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Links</MsqdxTypography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                         <Box><MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>Gesamt</MsqdxTypography><MsqdxTypography variant="body1" sx={{ fontWeight: 600 }}>{links.total}</MsqdxTypography></Box>
@@ -401,7 +401,7 @@ function ShareSingleContent({ data }: { data: ScanResult }) {
             )}
 
             {(privacy || security) && (
-                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
+                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
                     <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Privacy & Security</MsqdxTypography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                         {privacy && (
@@ -422,7 +422,7 @@ function ShareSingleContent({ data }: { data: ScanResult }) {
             )}
 
             {technicalInsights && (
-                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
+                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
                     <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Technische Insights</MsqdxTypography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
                         <MsqdxChip size="small" label={technicalInsights.manifest.present ? 'Web-App-Manifest' : 'Kein Manifest'} />
@@ -457,7 +457,7 @@ function ShareSingleContent({ data }: { data: ScanResult }) {
             )}
 
             {(generative || geo) && (
-                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
+                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
                     <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Generative / GEO</MsqdxTypography>
                     {generative && (
                         <Box sx={{ mb: geo ? 1.5 : 0 }}>
@@ -497,7 +497,7 @@ function ShareSingleContent({ data }: { data: ScanResult }) {
             )}
 
             {issueCount > 0 && (
-                <MsqdxCard variant="flat" sx={{ p: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
+                <MsqdxCard variant="flat" sx={{ p: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
                     <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Issues ({issueCount})</MsqdxTypography>
                     <Box component="ul" sx={{ m: 0, pl: 2, maxHeight: 300, overflow: 'auto' }}>
                         {(data.issues ?? []).slice(0, 50).map((issue, idx) => (
