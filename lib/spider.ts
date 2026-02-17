@@ -6,18 +6,18 @@ import { v4 as uuidv4 } from 'uuid';
 const DEFAULT_MAX_PAGES = 1000;
 const MAX_DEPTH = 3; // Home + 3 levels; max pages will likely hit first
 /** Upper cap for maxPages (e.g. "Alle" in UI). */
-export const DOMAIN_SCAN_MAX_PAGES_CAP = 5000;
+export const DOMAIN_SCAN_MAX_PAGES_CAP = 10000;
 
 /** How many pages to scan in parallel during domain scan (env: DOMAIN_SCAN_CONCURRENCY). */
 const DOMAIN_SCAN_CONCURRENCY = Math.min(
-    8,
-    Math.max(1, parseInt(process.env.DOMAIN_SCAN_CONCURRENCY || '4', 10) || 4)
+    12,
+    Math.max(1, parseInt(process.env.DOMAIN_SCAN_CONCURRENCY || '12', 10) || 12)
 );
 
 export type DomainScanOptions = {
     /** If true (default), discover sitemap and use its URLs as scan list when available; otherwise pure link crawl. */
     useSitemap?: boolean;
-    /** Max number of pages to scan (default 1000). Capped at DOMAIN_SCAN_MAX_PAGES_CAP. */
+    /** Max number of pages to scan (default 1000). Capped at DOMAIN_SCAN_MAX_PAGES_CAP (10000). */
     maxPages?: number;
 };
 

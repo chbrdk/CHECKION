@@ -38,7 +38,7 @@ function ScanContent() {
     // Initial Start
     useEffect(() => {
         if (startUrl && !scanId) {
-            const limit = maxPagesParam ? Math.min(5000, Math.max(1, Number(maxPagesParam))) : 1000;
+            const limit = maxPagesParam ? Math.min(10000, Math.max(1, Number(maxPagesParam))) : 1000;
             startScan(startUrl, limit);
         }
     }, [startUrl, maxPagesParam]);
@@ -160,7 +160,7 @@ function ScanContent() {
                                 { value: '250', label: '250' },
                                 { value: '500', label: '500' },
                                 { value: '1000', label: '1000' },
-                                { value: '5000', label: t('domain.maxPagesAll') },
+                                { value: '10000', label: t('domain.maxPagesAll') },
                             ]}
                             fullWidth
                         />

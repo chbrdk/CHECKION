@@ -198,7 +198,7 @@
     "failedStart": "Failed to start scan",
     "failedConnection": "Failed to initiate scan connection.",
     "maxPagesLabel": "Max. pages",
-    "maxPagesAll": "All (5000)"
+    "maxPagesAll": "All (10000)"
   },
   "results": {
     "errorNotFound": "Result not found",
