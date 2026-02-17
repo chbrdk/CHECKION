@@ -12,16 +12,7 @@ const MAX_TURNS = 35; // LLM calls (advances + backtrack re-tries)
 const MAX_REGIONS_PER_PAGE = 20;
 const MAX_OUTBOUND_LINKS = 50;
 
-/** Set DEBUG_JOURNEY=0 or false to disable. Default: on in development, off in production. */
-const DEBUG_JOURNEY =
-    process.env.DEBUG_JOURNEY !== '0' &&
-    process.env.DEBUG_JOURNEY !== 'false' &&
-    (process.env.DEBUG_JOURNEY === '1' ||
-        process.env.DEBUG_JOURNEY === 'true' ||
-        process.env.NODE_ENV !== 'production');
-
 function debugJourney(label: string, data: unknown): void {
-    if (!DEBUG_JOURNEY) return;
     const out = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
     console.log('[CHECKION journey]', label);
     console.log(out);
@@ -111,6 +102,30 @@ export function buildPageContexts(domainResult: DomainScanResult): Map<string, P
             outboundLinks,
         });
     }
+
+    // Diagnose: wenn eine Seite 0 outboundLinks hat, log warum (allLinks vs. gespeicherte URLs)
+    const emptyOutbound = Array.from(map.entries()).find(([, ctx]) => ctx.outboundLinks.length === 0);
+    if (emptyOutbound) {
+        const [pageUrlNorm, ctx] = emptyOutbound;
+        const page = (domainResult.pages ?? []).find((p) => normalizeUrl(p.url) === pageUrlNorm);
+        const rawLinks = page?.allLinks ?? [];
+        const sampleLinks = rawLinks.slice(0, 20).map((href) => {
+            try {
+                const n = normalizeUrl(href);
+                return { href, normalized: n, canonicalKey: canonicalKey(n) };
+            } catch {
+                return { href, normalized: null, canonicalKey: null };
+            }
+        });
+        const storedKeys = Array.from(canonicalToStoredUrl.keys()).slice(0, 30);
+        debugJourney('DIAG: page has 0 outboundLinks', {
+            pageUrl: pageUrlNorm,
+            allLinksCount: rawLinks.length,
+            sampleLinksFromPage: sampleLinks,
+            sampleStoredCanonicalKeys: storedKeys,
+        });
+    }
+
     return map;
 }
 

@@ -56,8 +56,6 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3333
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=1
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
-# Journey-Agent: Logs (Request/Response) in Konsole; zum Abschalten: DEBUG_JOURNEY=0
-ENV DEBUG_JOURNEY=1
 EXPOSE 3333
 
 # Copy built app and deps
