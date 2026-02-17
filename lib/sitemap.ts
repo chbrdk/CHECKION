@@ -4,7 +4,8 @@
  */
 
 const FETCH_TIMEOUT_MS = 8000;
-const MAX_SITEMAP_INDEX_CHILDREN = 5;
+/** Max child sitemaps to follow when the sitemap is an index. Increased so sections like /impact are not missed. */
+const MAX_SITEMAP_INDEX_CHILDREN = 25;
 
 /**
  * Fetch with timeout (Node/Next.js).
@@ -133,14 +134,11 @@ export async function fetchSitemapUrls(
 
     if (isSitemapIndex(firstXml)) {
         const childSitemaps = extractLocUrls(firstXml).filter(sameOrigin);
-        let followed = 0;
-        for (const childUrl of childSitemaps) {
-            if (followed >= MAX_SITEMAP_INDEX_CHILDREN || collected.length >= maxUrls) break;
+        const toFollow = childSitemaps.slice(0, MAX_SITEMAP_INDEX_CHILDREN);
+        for (const childUrl of toFollow) {
+            if (collected.length >= maxUrls) break;
             const childXml = await fetchSitemapXml(childUrl);
-            if (childXml) {
-                await addFromXml(childXml);
-                followed++;
-            }
+            if (childXml) await addFromXml(childXml);
         }
     } else {
         await addFromXml(firstXml);

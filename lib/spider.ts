@@ -201,7 +201,8 @@ export async function* runDomainScan(startUrl: string, options: DomainScanOption
                 status: 'ok',
                 title: result.seo?.title ?? undefined
             });
-            if (!sitemapMode && depth < MAX_DEPTH && results.length + queue.length < maxPages * 2) {
+            // Always discover internal links from scanned pages (sitemap and link-crawl). So pages like /impact are found even when they're in a sitemap we didn't fetch or only linked from the homepage.
+            if (depth < MAX_DEPTH && results.length + queue.length < maxPages * 2) {
                 const newLinks = result.allLinks || [];
                 newLinks.forEach(link => {
                     const norm = normalizeUrl(link);

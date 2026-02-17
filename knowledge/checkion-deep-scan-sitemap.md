@@ -22,8 +22,8 @@ Beim **Deep Scan (Domain-Scan)** zusätzlich eine **Sitemap-Option**: Wir erkenn
    - Wenn **URL-Set** (`<url><loc>...</loc></url>`): URLs direkt auslesen.  
    - Nur URLs mit gleichem **Origin** behalten, max. **MAX_PAGES** (z. B. 25).
 4. **Queue befüllen:**  
-   - Wenn Sitemap-URLs gefunden: Queue = diese URLs (+ Start-URL falls nicht enthalten). Beim Scan **keine** weiteren Links aus Seiten in die Queue (reine Sitemap-Liste).  
-   - Wenn **keine** Sitemap: bisheriges Verhalten (BFS von Start-URL, Links folgen).
+   - Wenn Sitemap-URLs gefunden: Queue = diese URLs (+ Start-URL falls nicht enthalten). **Zusätzlich** werden beim Scan aus jeder Seite interne Links in die Queue gelegt (Hybrid), damit verlinkte Seiten wie `/impact` nicht fehlen.  
+   - Wenn **keine** Sitemap: BFS von Start-URL, Links folgen.
 5. **Option:** API-Parameter `useSitemap: true` (Default) / `false` → Sitemap-Nutzung an/aus.
 
 ## Technik
@@ -43,7 +43,8 @@ Beim **Deep Scan (Domain-Scan)** zusätzlich eine **Sitemap-Option**: Wir erkenn
 ## Limits
 
 - **Max. Seiten konfigurierbar:** `DomainScanOptions.maxPages` (Default 100, Cap 5000). UI: Select auf der Deep-Scan-Startseite (`/scan/domain`) mit 50, 100, 250, 500, 1000, „Alle (5000)“. API: `POST /api/scan/domain` Body `{ "url": "...", "maxPages": 250 }`.
-- Sitemap-Index: max. 5 Child-Sitemaps, dann aus allen bis zu `maxPages` URLs.
+- Sitemap-Index: max. **25** Child-Sitemaps (`MAX_SITEMAP_INDEX_CHILDREN`), damit Abschnitte wie `/impact` nicht fehlen, wenn sie in einem späteren Sitemap-Eintrag stehen.
+- **Hybrid-Entdeckung:** Auch im Sitemap-Modus werden aus **jeder gescannten Seite** interne Links extrahiert und in die Queue gelegt. So werden Seiten wie `/impact` gefunden, wenn sie von der Startseite oder einer anderen gescannten Seite verlinkt sind – auch wenn sie nicht in den ersten 25 Sitemaps standen.
 - Timeouts beim Abruf von robots.txt/sitemap.xml (z. B. 8s), bei Fehler/keine Sitemap: Fallback auf Link-Crawl.
 
 ## Visual Map (Link-Graph)
