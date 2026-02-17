@@ -45,7 +45,7 @@ export async function listSavedJourneys(
     const where = options?.domainScanId
         ? and(eq(savedJourneys.userId, userId), eq(savedJourneys.domainScanId, options.domainScanId))
         : eq(savedJourneys.userId, userId);
-    let q = db
+    const base = db
         .select({
             id: savedJourneys.id,
             userId: savedJourneys.userId,
@@ -60,8 +60,7 @@ export async function listSavedJourneys(
         .innerJoin(domainScans, eq(savedJourneys.domainScanId, domainScans.id))
         .where(where)
         .orderBy(desc(savedJourneys.createdAt));
-    if (options?.limit != null) q = q.limit(options.limit);
-    const rows = await q;
+    const rows = options?.limit != null ? await base.limit(options.limit) : await base;
     return rows.map((r) => ({
         id: r.id,
         userId: r.userId,
