@@ -12,12 +12,31 @@ const MAX_TURNS = 35; // LLM calls (advances + backtrack re-tries)
 const MAX_REGIONS_PER_PAGE = 20;
 const MAX_OUTBOUND_LINKS = 50;
 
+const DEBUG_JOURNEY = process.env.DEBUG_JOURNEY === '1' || process.env.DEBUG_JOURNEY === 'true';
+
+function debugJourney(label: string, data: unknown): void {
+    if (!DEBUG_JOURNEY) return;
+    console.log('[CHECKION journey]', label, typeof data === 'string' ? data : JSON.stringify(data, null, 2));
+}
+
 function normalizeUrl(url: string): string {
     try {
         const u = new URL(url);
         return u.origin + (u.pathname.replace(/\/$/, '') || '');
     } catch {
         return url;
+    }
+}
+
+/** Canonical key: same host (www stripped) + path – so www and non-www match. */
+function canonicalKey(url: string): string | null {
+    try {
+        const u = new URL(url);
+        const host = u.hostname.replace(/^www\./i, '');
+        const path = (u.pathname.replace(/\/$/, '') || '');
+        return host + path;
+    } catch {
+        return null;
     }
 }
 
@@ -30,13 +49,22 @@ export interface PageContext {
     outboundLinks: string[];
 }
 
-/** Build a token-sparse page context for the LLM. */
+/** Build a token-sparse page context for the LLM. Uses canonical matching (www = non-www) so start page links find scanned pages. */
 export function buildPageContexts(domainResult: DomainScanResult): Map<string, PageContext> {
-    const nodeIds = new Set((domainResult.graph?.nodes ?? []).map((n) => normalizeUrl(n.id)));
+    const nodes = domainResult.graph?.nodes ?? [];
+    const nodeIds = new Set(nodes.map((n) => normalizeUrl(n.id)));
+    const canonicalToStoredUrl = new Map<string, string>();
+    for (const n of nodes) {
+        const norm = normalizeUrl(n.id);
+        const key = canonicalKey(norm);
+        if (key != null) canonicalToStoredUrl.set(key, norm);
+    }
+
     const map = new Map<string, PageContext>();
 
     for (const page of domainResult.pages ?? []) {
         const urlNorm = normalizeUrl(page.url);
+        const urlCanon = canonicalKey(urlNorm);
         const regions = (page.pageIndex?.regions ?? [])
             .slice(0, MAX_REGIONS_PER_PAGE)
             .map((r) => ({
@@ -45,23 +73,34 @@ export function buildPageContexts(domainResult: DomainScanResult): Map<string, P
                 semanticType: r.semanticType,
             }));
         const allLinks = page.allLinks ?? [];
-        const outboundLinks = allLinks
-            .map((href) => {
-                try {
-                    return normalizeUrl(href);
-                } catch {
-                    return null;
-                }
-            })
-            .filter((u): u is string => u !== null && nodeIds.has(u) && u !== urlNorm)
-            .slice(0, MAX_OUTBOUND_LINKS);
+        const seen = new Set<string>();
+        const outboundLinks: string[] = [];
+        for (const href of allLinks) {
+            let norm: string;
+            try {
+                norm = normalizeUrl(href);
+            } catch {
+                continue;
+            }
+            if (norm === urlNorm) continue;
+            const key = canonicalKey(norm);
+            const storedUrl = key != null ? canonicalToStoredUrl.get(key) : null;
+            if (storedUrl != null && !seen.has(storedUrl)) {
+                seen.add(storedUrl);
+                outboundLinks.push(storedUrl);
+            } else if (nodeIds.has(norm) && !seen.has(norm)) {
+                seen.add(norm);
+                outboundLinks.push(norm);
+            }
+            if (outboundLinks.length >= MAX_OUTBOUND_LINKS) break;
+        }
 
         map.set(urlNorm, {
             url: page.url,
             title: page.seo?.title ?? undefined,
             description: page.seo?.metaDescription ?? undefined,
             regions,
-            outboundLinks: [...new Set(outboundLinks)],
+            outboundLinks,
         });
     }
     return map;
@@ -220,6 +259,14 @@ export async function runJourneyAgent(
         return { steps: [], goalReached: false, message: 'No start page or empty scan.' };
     }
 
+    debugJourney('START', {
+        goal,
+        startUrl,
+        totalPages: pageContexts.size,
+        pageUrls: Array.from(pageContexts.keys()).slice(0, 20),
+    });
+    debugJourney('SYSTEM_PROMPT', JOURNEY_SYSTEM_PROMPT);
+
     const steps: JourneyStep[] = [];
     let currentUrl = startUrl;
     const pathSoFar: string[] = [startUrl];
@@ -242,6 +289,15 @@ export async function runJourneyAgent(
 
         const alreadyTried = Array.from(triedFromPage.get(currentUrl) ?? []);
         const userMessage = buildUserMessage(currentContext, goal, pathSoFar, alreadyTried);
+        debugJourney(`TURN ${totalTurns} REQUEST`, {
+            currentUrl,
+            pathSoFar,
+            alreadyTried,
+            currentTitle: currentContext.title,
+            outboundLinksCount: currentContext.outboundLinks.length,
+            outboundLinks: currentContext.outboundLinks.slice(0, 15),
+            userMessage,
+        });
         let rawContent: string;
         try {
             const completion = await openai.chat.completions.create({
@@ -260,8 +316,9 @@ export async function runJourneyAgent(
                 message: e instanceof Error ? e.message : 'LLM request failed.',
             };
         }
-
+        debugJourney(`TURN ${totalTurns} RESPONSE (raw)`, rawContent);
         const action = parseAgentResponse(rawContent);
+        debugJourney(`TURN ${totalTurns} PARSED ACTION`, action);
         if (!action) {
             return {
                 steps,
@@ -271,6 +328,7 @@ export async function runJourneyAgent(
         }
 
         if (action.action === 'goal_reached') {
+            debugJourney('DONE goal_reached', { steps: steps.length, reason: action.reason });
             return {
                 steps,
                 goalReached: true,
@@ -280,6 +338,7 @@ export async function runJourneyAgent(
 
         if (action.action === 'goal_not_found') {
             if (pathSoFar.length > 1) {
+                debugJourney('BACKTRACK', { from: currentUrl, to: pathSoFar[pathSoFar.length - 2] });
                 const failedUrl = currentUrl;
                 const previousUrl = pathSoFar[pathSoFar.length - 2];
                 if (!triedFromPage.has(previousUrl)) triedFromPage.set(previousUrl, new Set());
@@ -289,6 +348,7 @@ export async function runJourneyAgent(
                 currentUrl = pathSoFar[pathSoFar.length - 1];
                 continue;
             }
+            debugJourney('DONE goal_not_found', { steps: steps.length, reason: action.reason });
             return {
                 steps,
                 goalReached: false,
@@ -297,6 +357,7 @@ export async function runJourneyAgent(
         }
 
         const nextNorm = normalizeUrl(action.next_page_url);
+        debugJourney('NEXT', { next_page_url: nextNorm, trigger_label: action.trigger_label });
         if (triedFromPage.get(currentUrl)?.has(nextNorm)) {
             return {
                 steps,
@@ -318,6 +379,7 @@ export async function runJourneyAgent(
         }
 
         if (steps.length >= MAX_STEPS) {
+            debugJourney('DONE max_steps_reached', { steps: steps.length });
             return { steps, goalReached: false, message: 'Max steps reached.' };
         }
 
@@ -341,6 +403,7 @@ export async function runJourneyAgent(
         currentUrl = nextNorm;
     }
 
+    debugJourney('DONE max_turns_reached', { steps: steps.length });
     return {
         steps,
         goalReached: false,
@@ -366,6 +429,9 @@ export async function* runJourneyAgentStream(
         return;
     }
 
+    debugJourney('STREAM START', { goal, startUrl, totalPages: pageContexts.size });
+    debugJourney('SYSTEM_PROMPT', JOURNEY_SYSTEM_PROMPT);
+
     const steps: JourneyStep[] = [];
     let currentUrl = startUrl;
     const pathSoFar: string[] = [startUrl];
@@ -390,6 +456,14 @@ export async function* runJourneyAgentStream(
 
         const alreadyTried = Array.from(triedFromPage.get(currentUrl) ?? []);
         const userMessage = buildUserMessage(currentContext, goal, pathSoFar, alreadyTried);
+        debugJourney(`STREAM TURN ${totalTurns} REQUEST`, {
+            currentUrl,
+            pathSoFar,
+            alreadyTried,
+            outboundLinksCount: currentContext.outboundLinks.length,
+            outboundLinks: currentContext.outboundLinks.slice(0, 15),
+            userMessage,
+        });
         let rawContent: string;
         try {
             const completion = await openai.chat.completions.create({
@@ -406,20 +480,23 @@ export async function* runJourneyAgentStream(
             yield { type: 'done', result: { steps, goalReached: false, message: msg } };
             return;
         }
-
+        debugJourney(`STREAM TURN ${totalTurns} RESPONSE (raw)`, rawContent);
         const action = parseAgentResponse(rawContent);
+        debugJourney(`STREAM TURN ${totalTurns} PARSED ACTION`, action);
         if (!action) {
             yield { type: 'done', result: { steps, goalReached: false, message: 'Invalid or missing JSON in agent response.' } };
             return;
         }
 
         if (action.action === 'goal_reached') {
+            debugJourney('STREAM DONE goal_reached', { reason: action.reason });
             yield { type: 'done', result: { steps, goalReached: true, message: action.reason } };
             return;
         }
 
         if (action.action === 'goal_not_found') {
             if (pathSoFar.length > 1) {
+                debugJourney('STREAM BACKTRACK', { from: currentUrl, to: pathSoFar[pathSoFar.length - 2] });
                 const failedUrl = currentUrl;
                 const previousUrl = pathSoFar[pathSoFar.length - 2];
                 if (!triedFromPage.has(previousUrl)) triedFromPage.set(previousUrl, new Set());
@@ -429,11 +506,13 @@ export async function* runJourneyAgentStream(
                 currentUrl = pathSoFar[pathSoFar.length - 1];
                 continue;
             }
+            debugJourney('STREAM DONE goal_not_found', { reason: action.reason });
             yield { type: 'done', result: { steps, goalReached: false, message: action.reason } };
             return;
         }
 
         const nextNorm = normalizeUrl(action.next_page_url);
+        debugJourney('STREAM NEXT', { next_page_url: nextNorm, trigger_label: action.trigger_label });
         if (triedFromPage.get(currentUrl)?.has(nextNorm)) {
             yield { type: 'done', result: { steps, goalReached: false, message: 'Agent chose an already-tried link (backtrack and pick another).' } };
             return;
@@ -450,6 +529,7 @@ export async function* runJourneyAgentStream(
         }
 
         if (steps.length >= MAX_STEPS) {
+            debugJourney('STREAM DONE max_steps_reached', { steps: steps.length });
             yield { type: 'done', result: { steps, goalReached: false, message: 'Max steps reached.' } };
             return;
         }
@@ -473,5 +553,6 @@ export async function* runJourneyAgentStream(
         yield { type: 'step', step };
     }
 
+    debugJourney('STREAM DONE max_turns_reached', { steps: steps.length });
     yield { type: 'done', result: { steps, goalReached: false, message: 'Max turns reached.' } };
 }
