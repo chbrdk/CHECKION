@@ -29,13 +29,13 @@ export async function GET(
     if (!domain) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
     const page = (domain.pages ?? []).find((p) => p.id === pageId);
-    if (!page?.screenshot) {
+    if (!page) {
         return new NextResponse(PLACEHOLDER_SVG, {
             headers: { 'Content-Type': 'image/svg+xml' },
         });
     }
 
-    if (page.screenshot.startsWith('data:')) {
+    if (page.screenshot?.startsWith('data:')) {
         const match = page.screenshot.match(/^data:(image\/\w+);base64,(.+)$/);
         if (!match) return new NextResponse(PLACEHOLDER_SVG, { headers: { 'Content-Type': 'image/svg+xml' } });
         const buffer = Buffer.from(match[2], 'base64');
@@ -44,11 +44,18 @@ export async function GET(
         });
     }
 
-    if (isFileScreenshot(page.screenshot)) {
+    if (page.screenshot && isFileScreenshot(page.screenshot)) {
         const buffer = await readScreenshot(pageId);
-        if (!buffer) {
-            return new NextResponse(PLACEHOLDER_SVG, { headers: { 'Content-Type': 'image/svg+xml' } });
+        if (buffer) {
+            return new NextResponse(new Uint8Array(buffer), {
+                headers: { 'Content-Type': 'image/jpeg' },
+            });
         }
+    }
+
+    // Domain-Scans speichern Seiten als "slim" (screenshot: ''). Datei liegt trotzdem unter pageId.
+    const buffer = await readScreenshot(pageId);
+    if (buffer) {
         return new NextResponse(new Uint8Array(buffer), {
             headers: { 'Content-Type': 'image/jpeg' },
         });

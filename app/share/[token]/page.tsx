@@ -159,7 +159,7 @@ export default function ShareLandingPage() {
     }
 
     return (
-        <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 900, mx: 'auto', bgcolor: '#fff', minHeight: '100vh' }}>
+        <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 900, mx: 'auto', bgcolor: '#fff', minHeight: '100vh' }} suppressHydrationWarning>
             <Box sx={{ mb: 3, textAlign: 'center' }}>
                 <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
                     Geteilte Scan-Ergebnisse · CHECKION
@@ -207,7 +207,7 @@ function ShareDomainContent({ data, token }: { data: DomainSummaryResponse; toke
             <MsqdxCard variant="flat" sx={{ p: 3, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
                 <MsqdxTypography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>Deep Scan: {data.domain}</MsqdxTypography>
                 <MsqdxTypography variant="body2" sx={{ color: STATUS.neutral, mb: 2 }}>
-                    {new Date(data.timestamp).toLocaleDateString()} · {data.totalPages} Seiten
+                    <span suppressHydrationWarning>{new Date(data.timestamp).toISOString().slice(0, 10)}</span> · {data.totalPages} Seiten
                 </MsqdxTypography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
                     <ScoreRing score={data.score} size={64} label="Domain-Score" />
@@ -493,12 +493,20 @@ function ShareSingleContent({ data, shareToken }: { data: ScanResult; shareToken
     const [showRegions, setShowRegions] = useState(true);
     const [showFocusOrder, setShowFocusOrder] = useState(true);
     const [hoveredRegionId, setHoveredRegionId] = useState<string | null>(null);
+    const [screenshotError, setScreenshotError] = useState(false);
 
-    const screenshotSrc = shareToken && data.screenshot && !data.screenshot.startsWith('data:')
+    useEffect(() => {
+        setScreenshotError(false);
+    }, [data.id]);
+
+    // Im Share-Kontext immer Screenshot über API laden (liefert Bild oder Platzhalter)
+    const screenshotSrc = shareToken
         ? `/api/share/${encodeURIComponent(shareToken)}/pages/${encodeURIComponent(data.id)}/screenshot`
-        : data.screenshot;
+        : (data.screenshot || undefined);
 
-    const hasVisualAnalysis = shareToken && (data.screenshot || data.saliencyHeatmap || data.pageIndex?.regions?.length || data.ux?.focusOrder?.length);
+    const hasVisualAnalysis = shareToken
+        ? true
+        : Boolean(data.screenshot || data.saliencyHeatmap || data.pageIndex?.regions?.length || data.ux?.focusOrder?.length);
 
     const textPrimary = shareToken ? '#1a1a1a' : undefined;
     const textMuted = shareToken ? '#555' : STATUS.neutral;
@@ -521,43 +529,50 @@ function ShareSingleContent({ data, shareToken }: { data: ScanResult; shareToken
                     </Box>
                     {screenshotSrc && (
                         <Box sx={{ position: 'relative', width: '100%', bgcolor: '#fff', border: '1px solid #e0e0e0', borderRadius: 1, overflow: 'hidden' }}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                                src={screenshotSrc}
-                                alt="Screenshot"
-                                style={{ width: '100%', display: 'block', verticalAlign: 'top' }}
-                                onLoad={(e) => {
-                                    const el = e.currentTarget;
-                                    setScreenshotDimensions({ width: el.naturalWidth, height: el.naturalHeight });
-                                }}
-                            />
-                            <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 10 }}>
-                                {data.ux?.focusOrder && (
-                                    <FocusOrderOverlay
-                                        items={data.ux.focusOrder}
-                                        screenshotWidth={screenshotDimensions.width}
-                                        screenshotHeight={screenshotDimensions.height}
-                                        visible={showFocusOrder}
+                            {screenshotError ? (
+                                <Box sx={{ py: 4, textAlign: 'center', color: '#666', fontSize: 14 }}>Screenshot nicht verfügbar</Box>
+                            ) : (
+                                <>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                        src={screenshotSrc}
+                                        alt="Screenshot"
+                                        style={{ width: '100%', display: 'block', verticalAlign: 'top' }}
+                                        onLoad={(e) => {
+                                            const el = e.currentTarget;
+                                            setScreenshotDimensions({ width: el.naturalWidth, height: el.naturalHeight });
+                                        }}
+                                        onError={() => setScreenshotError(true)}
                                     />
-                                )}
-                                {data.saliencyHeatmap && (
-                                    <SaliencyHeatmapOverlay
-                                        heatmapDataUrl={data.saliencyHeatmap}
-                                        screenshotWidth={screenshotDimensions.width}
-                                        screenshotHeight={screenshotDimensions.height}
-                                        visible={showHeatmap}
-                                    />
-                                )}
-                                {data.pageIndex && (
-                                    <PageIndexRegionsOverlay
-                                        regions={data.pageIndex.regions}
-                                        screenshotWidth={screenshotDimensions.width}
-                                        screenshotHeight={screenshotDimensions.height}
-                                        highlightedRegionId={hoveredRegionId}
-                                        visible={showRegions}
-                                    />
-                                )}
-                            </Box>
+                                    <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 10 }}>
+                                        {data.ux?.focusOrder && (
+                                            <FocusOrderOverlay
+                                                items={data.ux.focusOrder}
+                                                screenshotWidth={screenshotDimensions.width}
+                                                screenshotHeight={screenshotDimensions.height}
+                                                visible={showFocusOrder}
+                                            />
+                                        )}
+                                        {data.saliencyHeatmap && (
+                                            <SaliencyHeatmapOverlay
+                                                heatmapDataUrl={data.saliencyHeatmap}
+                                                screenshotWidth={screenshotDimensions.width}
+                                                screenshotHeight={screenshotDimensions.height}
+                                                visible={showHeatmap}
+                                            />
+                                        )}
+                                        {data.pageIndex && (
+                                            <PageIndexRegionsOverlay
+                                                regions={data.pageIndex.regions}
+                                                screenshotWidth={screenshotDimensions.width}
+                                                screenshotHeight={screenshotDimensions.height}
+                                                highlightedRegionId={hoveredRegionId}
+                                                visible={showRegions}
+                                            />
+                                        )}
+                                    </Box>
+                                </>
+                            )}
                         </Box>
                     )}
                     {data.pageIndex?.regions?.length ? (
@@ -594,7 +609,7 @@ function ShareSingleContent({ data, shareToken }: { data: ScanResult; shareToken
                     {data.url}
                 </MsqdxTypography>
                 <MsqdxTypography variant="caption" sx={{ color: textMuted, display: 'block', mb: 2 }}>
-                    {new Date(data.timestamp).toISOString().slice(0, 10)} · {data.device}
+                    <span suppressHydrationWarning>{new Date(data.timestamp).toISOString().slice(0, 10)}</span> · {data.device}
                 </MsqdxTypography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
                     <ScoreRing score={data.score} size={64} label="Score" />
