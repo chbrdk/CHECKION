@@ -8,6 +8,12 @@ const MAX_DEPTH = 3; // Home + 3 levels; max pages will likely hit first
 /** Upper cap for maxPages (e.g. "Alle" in UI). */
 export const DOMAIN_SCAN_MAX_PAGES_CAP = 5000;
 
+/** How many pages to scan in parallel during domain scan (env: DOMAIN_SCAN_CONCURRENCY). */
+const DOMAIN_SCAN_CONCURRENCY = Math.min(
+    8,
+    Math.max(1, parseInt(process.env.DOMAIN_SCAN_CONCURRENCY || '4', 10) || 4)
+);
+
 export type DomainScanOptions = {
     /** If true (default), discover sitemap and use its URLs as scan list when available; otherwise pure link crawl. */
     useSitemap?: boolean;
@@ -174,72 +180,99 @@ export async function* runDomainScan(startUrl: string, options: DomainScanOption
             : `Starting scan for ${origin}`
     };
 
-    while (queue.length > 0 && results.length < maxPages) {
-        const current = queue.shift()!;
-        const normalizedCurrent = normalizeUrl(current.url);
+    type InFlight = {
+        promise: Promise<ScanResult>;
+        url: string;
+        depth: number;
+        normalizedCurrent: string;
+    };
 
-        // Notify progress
-        yield {
-            type: 'progress',
-            url: current.url,
-            depth: current.depth,
-            scannedCount: results.length + 1,
-            message: `Scanning ${current.url}...`
-        };
+    const inFlight: InFlight[] = [];
 
-        try {
-            // Run Single Page Scan
-            // Note: We run a "standard" scan but could optimize options for speed
-            const result = await runScan({
-                url: current.url,
-                device: 'desktop',
-                standard: 'WCAG2AA'
-            }); // Force desktop/WCAG2AA for uniformity
-
-            // Add to results
-            results.push({ result, depth: current.depth });
-
-            // Add to Graph (depth from URL path; title from scan)
+    const processCompleted = (completed: InFlight, result: ScanResult | null, error: Error | null) => {
+        const { url, depth, normalizedCurrent } = completed;
+        if (result) {
+            results.push({ result, depth });
             graphNodes.push({
                 id: normalizedCurrent,
-                url: current.url,
+                url,
                 score: result.ux?.score || result.score,
-                depth: pathDepth(current.url),
+                depth: pathDepth(url),
                 status: 'ok',
                 title: result.seo?.title ?? undefined
             });
-
-            // Extract internal links only when not in sitemap mode (in sitemap mode we only scan the sitemap URL list)
-            if (!sitemapMode && current.depth < MAX_DEPTH && results.length + queue.length < maxPages * 2) {
+            if (!sitemapMode && depth < MAX_DEPTH && results.length + queue.length < maxPages * 2) {
                 const newLinks = result.allLinks || [];
-                console.log(`[Spider] Found ${newLinks.length} links on ${current.url}`);
-
                 newLinks.forEach(link => {
                     const norm = normalizeUrl(link);
                     const isInternal = norm.startsWith(origin) || isSameDomain(link, origin);
-                    const isVisited = visited.has(norm);
-
-                    if (isInternal && !isVisited) {
-                        console.log(`[Spider] Queuing: ${norm}`);
+                    if (isInternal && !visited.has(norm)) {
                         visited.add(norm);
-                        queue.push({ url: link, depth: current.depth + 1 });
+                        queue.push({ url: link, depth: depth + 1 });
                         graphLinks.push({ source: normalizedCurrent, target: norm });
                     }
                 });
-            } else if (!sitemapMode) {
-                console.log(`[Spider] Max depth/pages reached. Depth: ${current.depth}, Results: ${results.length}, Queue: ${queue.length}`);
             }
-
-        } catch (e) {
-            console.error(`Failed to scan ${current.url}`, e);
+        } else {
+            console.error(`Failed to scan ${url}`, error);
             graphNodes.push({
                 id: normalizedCurrent,
-                url: current.url,
+                url,
                 score: 0,
-                depth: pathDepth(current.url),
+                depth: pathDepth(url),
                 status: 'error'
             });
-            yield { type: 'error', url: current.url, message: `Scan failed: ${(e as Error).message}` };
+        }
+    };
+
+    while (results.length < maxPages && (queue.length > 0 || inFlight.length > 0)) {
+        // Start new scans up to CONCURRENCY
+        while (
+            inFlight.length < DOMAIN_SCAN_CONCURRENCY &&
+            queue.length > 0 &&
+            results.length + inFlight.length < maxPages
+        ) {
+            const current = queue.shift()!;
+            const normalizedCurrent = normalizeUrl(current.url);
+            yield {
+                type: 'progress',
+                url: current.url,
+                depth: current.depth,
+                scannedCount: results.length + inFlight.length + 1,
+                message: `Scanning ${current.url}...`
+            };
+            const promise = runScan({
+                url: current.url,
+                device: 'desktop',
+                standard: 'WCAG2AA'
+            });
+            inFlight.push({
+                promise,
+                url: current.url,
+                depth: current.depth,
+                normalizedCurrent
+            });
+        }
+
+        if (inFlight.length === 0) break;
+
+        const raceResult = await Promise.race(
+            inFlight.map((slot, i) =>
+                slot.promise
+                    .then(result => ({ i, slot, result, error: null }))
+                    .catch(error => ({ i, slot, result: null, error: error as Error }))
+            )
+        );
+        inFlight.splice(raceResult.i, 1);
+        if (raceResult.result) {
+            processCompleted(raceResult.slot, raceResult.result, null);
+        } else {
+            processCompleted(raceResult.slot, null, raceResult.error);
+            yield {
+                type: 'error',
+                url: raceResult.slot.url,
+                message: `Scan failed: ${raceResult.error?.message ?? 'Unknown error'}`
+            };
         }
     }
 

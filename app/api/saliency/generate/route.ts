@@ -6,6 +6,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getScan, updateScanResult } from '@/lib/db/scans';
 import { enrichPageIndexWithSaliency } from '@/lib/page-index';
+import { getScreenshotBase64 } from '@/lib/screenshot-storage';
 
 const SALIENCY_SERVICE_URL = process.env.SALIENCY_SERVICE_URL;
 
@@ -41,8 +42,9 @@ export async function POST(request: Request) {
     if (!result) {
         return NextResponse.json({ error: 'Scan not found.' }, { status: 404 });
     }
-    if (!result.screenshot) {
-        return NextResponse.json({ error: 'Scan has no screenshot.' }, { status: 400 });
+    const imageBase64 = getScreenshotBase64(result.screenshot, scanId);
+    if (!imageBase64) {
+        return NextResponse.json({ error: 'Scan has no screenshot or screenshot file missing.' }, { status: 400 });
     }
 
     const predictUrl = SALIENCY_SERVICE_URL.replace(/\/$/, '') + '/predict';
@@ -51,7 +53,7 @@ export async function POST(request: Request) {
         res = await fetch(predictUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image_base64: result.screenshot }),
+            body: JSON.stringify({ image_base64: imageBase64 }),
             signal: AbortSignal.timeout(SALIENCY_REQUEST_TIMEOUT_MS),
         });
     } catch (e) {

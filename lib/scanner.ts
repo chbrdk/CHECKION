@@ -8,6 +8,7 @@ import fs from 'fs';
 import path from 'path';
 import { dismissCookieBanner } from './cookie-banner-dismiss';
 import { buildPageIndex } from './page-index';
+import { writeScreenshot } from './screenshot-storage';
 import type { Issue, Runner, ScanResult, ScanStats, WcagStandard, Device, ScanOptions, SeoAudit } from './types';
 
 /**
@@ -93,6 +94,7 @@ function calculateScore(counts: ScanStats): number {
 
 export async function runScan(options: ScanOptions & { groupId?: string }): Promise<ScanResult> {
     const { url, standard = 'WCAG2AA', runners = ['axe', 'htmlcs'], device = 'desktop', groupId } = options;
+    const scanId = uuidv4();
 
     // Dynamic import – pa11y is CommonJS and must stay server-only
     // @ts-ignore
@@ -293,14 +295,13 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
         else if (co2Grams < 0.656) ecoGrade = 'D';
         else if (co2Grams < 0.850) ecoGrade = 'E';
 
-        // 1. Capture Full Page Screenshot (Base64)
+        // 1. Capture Full Page Screenshot → save to disk, store URL in result
         const screenshotBuffer = await page.screenshot({
             fullPage: true,
-            encoding: 'base64',
-            type: 'jpeg', // Use JPEG to reduce size
+            type: 'jpeg',
             quality: 70
-        });
-        const screenshot = `data:image/jpeg;base64,${screenshotBuffer}`;
+        }) as Buffer;
+        const screenshot = writeScreenshot(scanId, screenshotBuffer);
 
         // 2. Extract Bounding Boxes for Issues
         const issuePromises = (results.issues || []).map(async (raw: any) => {
@@ -1420,7 +1421,7 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
         );
 
         return {
-            id: uuidv4(),
+            id: scanId,
             groupId,
             url,
             timestamp: new Date().toISOString(),

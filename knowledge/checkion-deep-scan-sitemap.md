@@ -34,6 +34,12 @@ Beim **Deep Scan (Domain-Scan)** zusätzlich eine **Sitemap-Option**: Wir erkenn
 - **Spider** (`lib/spider.ts`): Zu Beginn optional Sitemap-URLs holen; bei Erfolg Queue mit diesen URLs seeden und Link-Extraktion im Scan-Loop deaktivieren („Sitemap-Modus“).
 - **API** `POST /api/scan/domain`: Body optional `{ "url": "...", "useSitemap": true }`.
 
+## Parallelisierung
+
+- Domain-Scan führt bis zu **N Seiten gleichzeitig** aus (statt strikt nacheinander).
+- **Concurrency:** `DOMAIN_SCAN_CONCURRENCY` (Default 4, max 8). Env: `DOMAIN_SCAN_CONCURRENCY=6`.
+- Implementierung: Worker-Pool in `lib/spider.ts` – Queue wird abgearbeitet, bis zu N `runScan`-Promises laufen parallel; sobald einer fertig ist, wird der nächste URL aus der Queue gestartet.
+
 ## Limits
 
 - **Max. Seiten konfigurierbar:** `DomainScanOptions.maxPages` (Default 100, Cap 5000). UI: Select auf der Deep-Scan-Startseite (`/scan/domain`) mit 50, 100, 250, 500, 1000, „Alle (5000)“. API: `POST /api/scan/domain` Body `{ "url": "...", "maxPages": 250 }`.

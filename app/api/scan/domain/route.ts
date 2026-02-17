@@ -3,7 +3,16 @@ import { auth } from '@/auth';
 import { runDomainScan } from '@/lib/spider';
 import { createDomainScan, updateDomainScan, getDomainScan, addScan } from '@/lib/db/scans';
 import { v4 as uuidv4 } from 'uuid';
-import type { DomainScanResult } from '@/lib/types';
+import type { DomainScanResult, ScanResult } from '@/lib/types';
+
+/** Strip heavy fields from each page so the domain payload stays within JSON/DB limits (avoid "Invalid string length"). Full page data is stored per page via addScan. */
+function slimPagesForPayload(pages: ScanResult[]): ScanResult[] {
+    return pages.map(({ screenshot, saliencyHeatmap, ...rest }) => ({
+        ...rest,
+        screenshot: '',
+        saliencyHeatmap: undefined,
+    }));
+}
 
 export const maxDuration = 10;
 
@@ -54,9 +63,10 @@ export async function POST(req: NextRequest) {
                         progress: { scanned: update.scannedCount, total: 0, currentUrl: update.url }
                     });
                 } else if (update.type === 'complete') {
+                    const slimPages = slimPagesForPayload(update.domainResult.pages);
                     await updateDomainScan(id, userId, {
                         score: update.domainResult.score,
-                        pages: update.domainResult.pages,
+                        pages: slimPages,
                         graph: update.domainResult.graph,
                         systemicIssues: update.domainResult.systemicIssues,
                         totalPages: update.domainResult.totalPages,
