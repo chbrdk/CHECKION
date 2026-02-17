@@ -300,7 +300,9 @@
     "journeySourceLink": "Link",
     "journeyBacktrackPrefix": "Zurück zur vorherigen Seite, weil",
     "journeyNoRegionMatch": "Keine Region-Zuordnung (Link-Text)",
-    "journeyStreaming": "Nächster Schritt…"
+    "journeyStreaming": "Nächster Schritt…",
+    "journeyPrevStep": "Vorheriger Schritt",
+    "journeyNextStep": "Nächster Schritt"
   },
   "info": {
     "dashboard": "Hier siehst du alle durchgeführten WCAG-Barrierefreiheits-Checks. Ein Klick auf „Neuer Scan“ startet einen Check für eine einzelne Seite oder eine ganze Domain.",

@@ -300,7 +300,9 @@
     "journeySourceLink": "Link",
     "journeyBacktrackPrefix": "Back to previous page because",
     "journeyNoRegionMatch": "No region match (link text)",
-    "journeyStreaming": "Next step…"
+    "journeyStreaming": "Next step…",
+    "journeyPrevStep": "Previous step",
+    "journeyNextStep": "Next step"
   },
   "info": {
     "dashboard": "Overview of all WCAG accessibility checks you have run. Use \"New Scan\" to check a single page or an entire domain.",
