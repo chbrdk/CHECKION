@@ -275,6 +275,69 @@ export function aggregateSeo(pages: ScanResult[]): AggregatedSeo | null {
   };
 }
 
+/** Performance: averages across all pages (every ScanResult has performance). */
+export interface AggregatedPerformance {
+  avgTtfb: number;
+  avgFcp: number;
+  avgLcp: number;
+  avgDomLoad: number;
+  pageCount: number;
+}
+
+export function aggregatePerformance(pages: ScanResult[]): AggregatedPerformance | null {
+  if (pages.length === 0) return null;
+  let ttfb = 0, fcp = 0, lcp = 0, domLoad = 0;
+  for (const p of pages) {
+    const perf = p.performance;
+    if (!perf) continue;
+    ttfb += perf.ttfb ?? 0;
+    fcp += perf.fcp ?? 0;
+    lcp += perf.lcp ?? 0;
+    domLoad += perf.domLoad ?? 0;
+  }
+  const n = pages.filter((p) => p.performance != null).length;
+  if (n === 0) return null;
+  return {
+    avgTtfb: Math.round(ttfb / n),
+    avgFcp: Math.round(fcp / n),
+    avgLcp: Math.round(lcp / n),
+    avgDomLoad: Math.round(domLoad / n),
+    pageCount: n,
+  };
+}
+
+/** Eco: average CO2, total page weight, grade distribution. */
+export type EcoGrade = 'A+' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
+
+export interface AggregatedEco {
+  avgCo2: number;
+  totalPageWeight: number;
+  /** Count per grade (e.g. { A: 3, B: 2 }). */
+  gradeDistribution: Record<string, number>;
+  pageCount: number;
+}
+
+export function aggregateEco(pages: ScanResult[]): AggregatedEco | null {
+  const withEco = pages.filter((p) => p.eco != null);
+  if (withEco.length === 0) return null;
+  let co2Sum = 0, weightSum = 0;
+  const gradeDistribution: Record<string, number> = {};
+  for (const p of withEco) {
+    const eco = p.eco!;
+    co2Sum += eco.co2 ?? 0;
+    weightSum += eco.pageWeight ?? 0;
+    const g = (eco.grade ?? '') as string;
+    if (g) gradeDistribution[g] = (gradeDistribution[g] ?? 0) + 1;
+  }
+  const n = withEco.length;
+  return {
+    avgCo2: Math.round((co2Sum / n) * 100) / 100,
+    totalPageWeight: weightSum,
+    gradeDistribution,
+    pageCount: n,
+  };
+}
+
 /** Links: merge broken links, add pageUrl. */
 export interface AggregatedLinks {
   broken: Array<LinkResult & { pageUrl: string }>;
@@ -320,6 +383,18 @@ export function aggregateLinks(pages: ScanResult[]): AggregatedLinks | null {
   };
 }
 
+/** Technical insights aggregated counts (for share/deep scan). */
+export interface AggregatedTechnicalCounts {
+  pageCount: number;
+  withManifest: number;
+  withThemeColor: number;
+  withAppleTouchIcon: number;
+  withServiceWorker: number;
+  withMetaRefresh: number;
+  pagesWithRedirects: number;
+  totalThirdPartyDomains: number;
+}
+
 /** Infra: counts and URL lists per category. */
 export interface AggregatedInfra {
   geo: { pageCount: number; sample: GeoAudit | null };
@@ -340,6 +415,8 @@ export interface AggregatedInfra {
     urlsWithXFrame: string[];
   };
   technical: TechnicalInsights | null;
+  /** Aggregated counts for technical insights (for share). */
+  technicalCounts: AggregatedTechnicalCounts | null;
 }
 
 export function aggregateInfra(pages: ScanResult[]): AggregatedInfra | null {
@@ -373,6 +450,34 @@ export function aggregateInfra(pages: ScanResult[]): AggregatedInfra | null {
   const withPrivacy = pages.filter((p) => p.privacy != null).length;
   const withSecurity = pages.filter((p) => p.security != null).length;
 
+  // Technical insights counts across pages
+  const withTech = pages.filter((p) => p.technicalInsights != null);
+  let technicalCounts: AggregatedTechnicalCounts | null = null;
+  if (withTech.length > 0) {
+    let withManifest = 0, withThemeColor = 0, withAppleTouchIcon = 0, withServiceWorker = 0;
+    let withMetaRefresh = 0, pagesWithRedirects = 0, totalThirdPartyDomains = 0;
+    for (const p of withTech) {
+      const t = p.technicalInsights!;
+      if (t.manifest?.present) withManifest++;
+      if (t.themeColor != null && t.themeColor) withThemeColor++;
+      if (t.appleTouchIcon != null && t.appleTouchIcon) withAppleTouchIcon++;
+      if (t.serviceWorkerRegistered) withServiceWorker++;
+      if (t.metaRefreshPresent) withMetaRefresh++;
+      if ((t.redirectCount ?? 0) > 0) pagesWithRedirects++;
+      totalThirdPartyDomains += (t.thirdPartyDomains?.length ?? 0);
+    }
+    technicalCounts = {
+      pageCount: withTech.length,
+      withManifest,
+      withThemeColor,
+      withAppleTouchIcon,
+      withServiceWorker,
+      withMetaRefresh,
+      pagesWithRedirects,
+      totalThirdPartyDomains,
+    };
+  }
+
   return {
     geo: { pageCount: pages.filter((p) => p.geo != null).length, sample: geoSample },
     privacy: {
@@ -392,6 +497,7 @@ export function aggregateInfra(pages: ScanResult[]): AggregatedInfra | null {
       urlsWithXFrame,
     },
     technical,
+    technicalCounts,
   };
 }
 

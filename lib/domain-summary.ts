@@ -10,6 +10,8 @@ import {
     aggregateInfra,
     aggregateGenerative,
     aggregateStructure,
+    aggregatePerformance,
+    aggregateEco,
 } from './domain-aggregation';
 import type { ScanResult, DomainScanResult } from './types';
 
@@ -32,6 +34,8 @@ export interface DomainSummaryResponse extends Omit<DomainScanResult, 'pages'> {
         infra: ReturnType<typeof aggregateInfra>;
         generative: ReturnType<typeof aggregateGenerative>;
         structure: ReturnType<typeof aggregateStructure>;
+        performance: ReturnType<typeof aggregatePerformance>;
+        eco: ReturnType<typeof aggregateEco>;
     };
 }
 
@@ -56,6 +60,8 @@ export function buildDomainSummary(scan: DomainScanResult): DomainSummaryRespons
         infra: aggregateInfra(pages),
         generative: aggregateGenerative(pages),
         structure: aggregateStructure(pages),
+        performance: aggregatePerformance(pages),
+        eco: aggregateEco(pages),
     };
     const slimPages: SlimPage[] = pages.map(toSlimPage);
     return {
