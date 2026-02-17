@@ -400,16 +400,19 @@ function searchOnPage(
 
 const JOURNEY_TOOL_SYSTEM_PROMPT = `You are simulating a user navigating a website to reach a goal. Use the tools in order:
 
-1. search_on_page(query): Search the current page for links relevant to the goal. Use the goal or part of it (e.g. "2011", "Magazin") as query.
+1. search_on_page(query): Search the current page for links relevant to the goal. Use the goal or part of it (e.g. "2011", "Magazin") as query. It returns only links you have NOT yet tried from this page.
 2. Then either:
-   - navigate_to(url, link_label, reason): Click one of the URLs returned by search_on_page. Always pass link_label (the link text from the result) and reason (why you chose this link, e.g. the "reason" from search_on_page or a short explanation like "Link text matches goal" or "URL path suggests job listings").
+   - navigate_to(url, link_label, reason): Click one of the URLs returned by search_on_page. Always pass link_label and reason. You may ONLY use a URL that appears in the search_on_page result.
    - goal_reached(reason): The current page satisfies the goal.
    - goal_not_found(reason): The goal cannot be reached from here (no relevant links or dead end). If you backtrack, this reason explains why you left the next page.
 
+Critical – avoid endless loops:
+- If you just backtracked, you are back on the previous page because the link you took did NOT contain the goal. You MUST choose a different link now: pick the next best option from search_on_page (never the same URL again). search_on_page only returns links you have not tried from this page; use one of those.
+- If "alreadyTriedFromThisPage" is given in the user message, those URLs led to dead ends. Do NOT call navigate_to with any of them. Choose only from the list returned by search_on_page.
+- If search_on_page returns an empty list, all links from this page have been tried; call goal_not_found.
+
 Rules:
-- You may only call navigate_to with a URL that was returned by search_on_page for this page.
-- Always pass link_label and reason in navigate_to so the journey shows what the user would see and why you chose that link.
-- If search_on_page returns no links or you already tried all promising ones, call goal_not_found.
+- Always pass link_label and reason in navigate_to. If you get "Already tried this link", pick a different URL from your last search_on_page result.
 - Prefer calling search_on_page first, then navigate_to or goal_* based on the result.`;
 
 /** Resolve trigger_label to a region by best match on headingText; returns id and region metadata. */
@@ -475,7 +478,13 @@ function executeToolCall(
             return { result: { error: 'URL not in outbound links', allowed: currentContext.outboundLinks.slice(0, 5) } };
         }
         if (triedFromPage.get(currentUrl)?.has(nextNorm)) {
-            return { result: { error: 'Already tried this link' } };
+            const remaining = searchOnPage(currentContext, '', alreadyTried);
+            return {
+                result: {
+                    error: 'Already tried this link – that page did not contain the goal. Pick the next best URL from your last search_on_page result (or call search_on_page again).',
+                    remainingFromThisPage: remaining.slice(0, 8).map((r) => ({ url: r.url, label: r.label })),
+                },
+            };
         }
         const nextContext = pageContexts.get(nextNorm);
         if (!nextContext) return { result: { error: 'Page not in scan' } };
@@ -554,7 +563,15 @@ export async function runJourneyAgent(
         if (!currentContext) break;
 
         const alreadyTried = Array.from(triedFromPage.get(currentUrl) ?? []);
-        const userContent = `Goal: ${goal}\n\nCurrent page: ${currentContext.url}\nTitle: ${currentContext.title ?? '(none)'}\nPath so far: ${pathSoFar.length} pages.\nAlready tried from this page: ${alreadyTried.length} links.\n\nUse search_on_page to find relevant links, then navigate_to one of them, or goal_reached/goal_not_found.`;
+        const alreadyTriedLine = alreadyTried.length > 0
+            ? `\nAlready tried from this page (do NOT navigate to these again – they did not contain the goal): ${alreadyTried.map((u) => {
+                const label = currentContext.outboundLinksWithLabels?.find((l) => l.url === u)?.text;
+                const title = pageContexts.get(u)?.title;
+                const desc = [label, title].filter(Boolean).join(' | ') || u;
+                return `${desc} (${u})`;
+            }).join('; ')}\n`
+            : '';
+        const userContent = `Goal: ${goal}\n\nCurrent page: ${currentContext.url}\nTitle: ${currentContext.title ?? '(none)'}\nPath so far: ${pathSoFar.length} pages.${alreadyTriedLine}\nUse search_on_page to find relevant links, then navigate_to one of them (only URLs from the result), or goal_reached/goal_not_found.`;
         type Message = OpenAI.Chat.Completions.ChatCompletionMessageParam;
         let messages: Message[] = [
             { role: 'system', content: JOURNEY_TOOL_SYSTEM_PROMPT },
@@ -710,10 +727,19 @@ export async function* runJourneyAgentStream(
         const currentContext = pageContexts.get(currentUrl);
         if (!currentContext) break;
 
-        const userContent = `Goal: ${goal}\n\nCurrent page: ${currentContext.url}\nTitle: ${currentContext.title ?? '(none)'}\nPath so far: ${pathSoFar.length} pages.\n\nUse search_on_page to find relevant links, then navigate_to one of them, or goal_reached/goal_not_found.`;
+        const alreadyTriedStream = Array.from(triedFromPage.get(currentUrl) ?? []);
+        const alreadyTriedLineStream = alreadyTriedStream.length > 0
+            ? `\nAlready tried from this page (do NOT navigate to these again – they did not contain the goal): ${alreadyTriedStream.map((u) => {
+                const label = currentContext.outboundLinksWithLabels?.find((l) => l.url === u)?.text;
+                const title = pageContexts.get(u)?.title;
+                const desc = [label, title].filter(Boolean).join(' | ') || u;
+                return `${desc} (${u})`;
+            }).join('; ')}\n`
+            : '';
+        const userContentStream = `Goal: ${goal}\n\nCurrent page: ${currentContext.url}\nTitle: ${currentContext.title ?? '(none)'}\nPath so far: ${pathSoFar.length} pages.${alreadyTriedLineStream}\nUse search_on_page to find relevant links, then navigate_to one of them (only URLs from the result), or goal_reached/goal_not_found.`;
         let messages: Message[] = [
             { role: 'system', content: JOURNEY_TOOL_SYSTEM_PROMPT },
-            { role: 'user', content: userContent },
+            { role: 'user', content: userContentStream },
         ];
 
         let done = false;
