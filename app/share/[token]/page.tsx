@@ -387,7 +387,7 @@ function ShareDomainContent({ data, token }: { data: DomainSummaryResponse; toke
 
             {agg?.generative && (
                 <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
-                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5, color: textPrimary }}>Generative / GEO</MsqdxTypography>
+                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>Generative / GEO</MsqdxTypography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'flex-start' }}>
                         <ScoreRing score={agg.generative.score} size={52} label="Ø GEO-Score" />
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -578,12 +578,12 @@ function ShareSingleContent({ data, shareToken }: { data: ScanResult; shareToken
                                         }}
                                     >
                                         <Box component="span" sx={{ fontWeight: 600, color: '#666', mr: 0.5 }}>{r.tag}</Box>
-                                        {(r.headingText || '').slice(0, 35)}{(r.headingText || '').length > 35 ? '…' : ''}
+                                        {(r.headingText || '').slice(0, 35)}{(r.headingText || '').length > 35 ? '...' : ''}
                                     </Box>
                                 ))}
                             </Box>
                         </Box>
-                    )}
+                    ) : null}
                     {data.pageIndex && <Box sx={{ mt: 1.5, color: '#1a1a1a' }}><PageIndexCard pageIndex={data.pageIndex} showSaliency={true} /></Box>}
                 </MsqdxCard>
             )}
