@@ -14,7 +14,7 @@ import {
 import { MSQDX_STATUS, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import type { JourneyResult, JourneyStep } from '@/lib/types';
-import type { DomainSummaryResponse } from '@/app/api/scan/domain/[id]/summary/route';
+import type { DomainSummaryResponse } from '@/lib/domain-summary';
 import { DomainGraph } from '@/components/DomainGraph';
 import { DomainAggregatedIssueList } from '@/components/DomainAggregatedIssueList';
 import { JourneyFlowchart } from '@/components/JourneyFlowchart';
@@ -50,6 +50,8 @@ export default function DomainResultPage() {
     const [journeySaving, setJourneySaving] = useState(false);
     const [journeySaved, setJourneySaved] = useState(false);
     const [journeySaveName, setJourneySaveName] = useState('');
+    const [shareLoading, setShareLoading] = useState(false);
+    const [shareCopied, setShareCopied] = useState(false);
 
     const searchParams = useSearchParams();
     const pages = result?.pages ?? [];
@@ -114,8 +116,34 @@ export default function DomainResultPage() {
                     <MsqdxButton variant="outlined" startIcon={<ArrowLeft size={16} />} onClick={() => router.push('/')}>
                         {t('domainResult.back')}
                     </MsqdxButton>
-                    <MsqdxButton variant="contained" startIcon={<Share2 size={16} />}>
-                        {t('domainResult.share')}
+                    <MsqdxButton
+                        variant="contained"
+                        startIcon={<Share2 size={16} />}
+                        disabled={shareLoading}
+                        onClick={async () => {
+                            if (!params.id || shareLoading) return;
+                            setShareLoading(true);
+                            setShareCopied(false);
+                            try {
+                                const res = await fetch('/api/share', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ type: 'domain', id: params.id }),
+                                });
+                                const data = await res.json().catch(() => ({}));
+                                if (!res.ok) throw new Error(data.error ?? 'Share fehlgeschlagen');
+                                const url = data.url ?? `${window.location.origin}/share/${data.token}`;
+                                await navigator.clipboard.writeText(url);
+                                setShareCopied(true);
+                                setTimeout(() => setShareCopied(false), 2000);
+                            } catch {
+                                setShareCopied(false);
+                            } finally {
+                                setShareLoading(false);
+                            }
+                        }}
+                    >
+                        {shareLoading ? t('domainResult.shareCreating') : shareCopied ? t('domainResult.shareCopied') : t('domainResult.share')}
                     </MsqdxButton>
                 </Box>
             </Box>

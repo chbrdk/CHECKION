@@ -12,6 +12,9 @@ export const LOCALE_STORAGE_KEY = 'checkion_locale';
 /** Number of scans per page on the dashboard (single + domain lists). */
 export const DASHBOARD_SCANS_PAGE_SIZE = 10;
 
+/** Base path for public share landing pages. Full URL: origin + SHARE_PATH + '/' + token */
+export const SHARE_PATH = '/share';
+
 /** Screenshot storage: env key for backend (local disk vs S3). Use "s3" for shared storage across instances. */
 export const ENV_SCREENSHOT_STORAGE = 'SCREENSHOT_STORAGE';
 /** S3 bucket for screenshots when SCREENSHOT_STORAGE=s3. Fallback: S3_BUCKET. */
