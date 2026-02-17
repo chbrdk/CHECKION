@@ -2,6 +2,7 @@
  * Domain (deep) scan aggregation: same categories as single scan,
  * with values intelligently aggregated across all pages.
  */
+import { isSeoStopword } from './seo-stopwords';
 import type {
   ScanResult,
   Issue,
@@ -232,7 +233,7 @@ export function aggregateSeo(pages: ScanResult[]): AggregatedSeo | null {
 
     for (const item of topKeywords) {
       const key = item.keyword.toLowerCase().trim();
-      if (!key) continue;
+      if (!key || isSeoStopword(key)) continue;
       const existing = keywordMap.get(key);
       if (existing) {
         existing.totalCount += item.count;
@@ -251,6 +252,7 @@ export function aggregateSeo(pages: ScanResult[]): AggregatedSeo | null {
   }
 
   const crossPageKeywords: CrossPageKeyword[] = Array.from(keywordMap.entries())
+    .filter(([keyword]) => !isSeoStopword(keyword))
     .map(([keyword, data]) => ({
       keyword,
       totalCount: data.totalCount,
