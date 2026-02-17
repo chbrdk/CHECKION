@@ -285,6 +285,7 @@
     "journeySaveNameLabel": "Name (optional)",
     "journeySaveNamePlaceholder": "z. B. Kontakt finden",
     "journeySaveError": "Journey konnte nicht gespeichert werden.",
+    "showMorePages": "+ {count} weitere anzeigen",
     "journeyNoSteps": "Keine Schritte. Starte eine Journey mit einem Ziel.",
     "journeyGoalReached": "Ziel erreicht.",
     "journeyStep": "Schritt",

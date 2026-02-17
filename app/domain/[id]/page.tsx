@@ -13,16 +13,8 @@ import {
 } from '@msqdx/react';
 import { MSQDX_STATUS, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import type { DomainScanResult, JourneyResult, JourneyStep } from '@/lib/types';
-import {
-    aggregateIssues,
-    aggregateUx,
-    aggregateSeo,
-    aggregateLinks,
-    aggregateInfra,
-    aggregateGenerative,
-    aggregateStructure,
-} from '@/lib/domain-aggregation';
+import type { JourneyResult, JourneyStep } from '@/lib/types';
+import type { DomainSummaryResponse } from '@/app/api/scan/domain/[id]/summary/route';
 import { DomainGraph } from '@/components/DomainGraph';
 import { DomainAggregatedIssueList } from '@/components/DomainAggregatedIssueList';
 import { JourneyFlowchart } from '@/components/JourneyFlowchart';
@@ -47,7 +39,7 @@ export default function DomainResultPage() {
         { label: t('domainResult.tabGenerative'), value: 9 },
         { label: t('domainResult.tabJourney'), value: 10 },
     ];
-    const [result, setResult] = useState<DomainScanResult | null>(null);
+    const [result, setResult] = useState<DomainSummaryResponse | null>(null);
     const [tabValue, setTabValue] = useState(0);
     const [summarizing, setSummarizing] = useState(false);
     const [summarizeError, setSummarizeError] = useState<string | null>(null);
@@ -61,22 +53,18 @@ export default function DomainResultPage() {
 
     const searchParams = useSearchParams();
     const pages = result?.pages ?? [];
-    const aggregated = useMemo(() => {
-        if (pages.length === 0) return null;
-        return {
-            issues: aggregateIssues(pages),
-            ux: aggregateUx(pages),
-            seo: aggregateSeo(pages),
-            links: aggregateLinks(pages),
-            infra: aggregateInfra(pages),
-            generative: aggregateGenerative(pages),
-            structure: aggregateStructure(pages),
-        };
-    }, [result]);
+    const aggregated = result?.aggregated ?? null;
+    const pagesByUrl = useMemo(() => new Map(pages.map((p) => [p.url, p])), [pages]);
+    const norm = (u: string) => { try { const x = new URL(u); return x.origin + (x.pathname.replace(/\/$/, '') || '/'); } catch { return u; } };
+    const pagesByNormUrl = useMemo(() => { const m = new Map<string, typeof pages[0]>(); for (const p of pages) m.set(norm(p.url), p); return m; }, [pages]);
+    const [visiblePageCount, setVisiblePageCount] = useState(100);
+    const visiblePages = useMemo(() => pages.slice(0, visiblePageCount), [pages, visiblePageCount]);
+    const hasMorePages = pages.length > visiblePageCount;
 
     useEffect(() => {
         if (!params.id) return;
-        fetch(`/api/scan/domain/${params.id}/status`)
+        setVisiblePageCount(100);
+        fetch(`/api/scan/domain/${params.id}/summary`)
             .then(res => {
                 if (!res.ok) throw new Error('Scan not found');
                 return res.json();
@@ -254,11 +242,11 @@ export default function DomainResultPage() {
                                 <MsqdxTypography variant="h6">{t('domainResult.scannedPages')}</MsqdxTypography>
                                 <InfoTooltip title={t('info.scannedPages')} ariaLabel={t('common.info')} />
                             </Box>
-                            <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
-                                {(result.pages ?? []).map((page, idx) => (
+                            <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0, maxHeight: 420, overflow: 'auto' }}>
+                                {visiblePages.map((page) => (
                                     <Box
                                         component="li"
-                                        key={idx}
+                                        key={page.id}
                                         sx={{
                                             cursor: 'pointer',
                                             '&:hover': { bgcolor: 'var(--color-theme-accent-tint)' },
@@ -274,9 +262,9 @@ export default function DomainResultPage() {
                                         onClick={() => router.push(`/results/${page.id}`)}
                                     >
                                         <Box sx={{ flex: 1, minWidth: 0 }}>
-                                            <MsqdxTypography variant="body2" sx={{ fontWeight: 600 }}>{page.url}</MsqdxTypography>
+                                            <MsqdxTypography variant="body2" sx={{ fontWeight: 600 }} noWrap>{page.url}</MsqdxTypography>
                                             <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                                {page.ux?.score ?? 0} UX Score • {page.issues.length} Issues
+                                                {page.ux?.score ?? 0} UX Score • {page.stats.errors + page.stats.warnings + page.stats.notices} Issues
                                             </MsqdxTypography>
                                         </Box>
                                         <MsqdxChip
@@ -287,6 +275,11 @@ export default function DomainResultPage() {
                                     </Box>
                                 ))}
                             </Box>
+                            {hasMorePages && (
+                                <MsqdxButton size="small" variant="outlined" onClick={() => setVisiblePageCount((n) => Math.min(pages.length, n + 100))} sx={{ mt: 1 }}>
+                                    {t('domainResult.showMorePages', { count: Math.min(100, pages.length - visiblePageCount) })}
+                                </MsqdxButton>
+                            )}
                         </MsqdxCard>
                     </Box>
                 </Box>
@@ -318,7 +311,7 @@ export default function DomainResultPage() {
                     <DomainAggregatedIssueList
                         issues={aggregated.issues.issues}
                         onPageClick={(url) => {
-                            const page = pages.find((p) => p.url === url);
+                            const page = pagesByUrl.get(url);
                             if (page) router.push(`/results/${page.id}`);
                         }}
                     />
@@ -327,7 +320,7 @@ export default function DomainResultPage() {
                             <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Seiten mit den meisten Fehlern (Priorisierung)</MsqdxTypography>
                             <Box component="ul" sx={{ m: 0, pl: 2, maxHeight: 180, overflow: 'auto' }}>
                                 {aggregated.issues.pagesByIssueCount.slice(0, 15).map((row) => {
-                                    const page = pages.find((p) => p.url === row.url);
+                                    const page = pagesByUrl.get(row.url);
                                     const label = `${row.errors} Errors, ${row.warnings} Warnings`;
                                     return (
                                         <li key={row.url}>
@@ -455,7 +448,7 @@ export default function DomainResultPage() {
                                     <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Seiten mit Focus-Order-Einträgen</MsqdxTypography>
                                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                                         {aggregated.ux.focusOrderByPage.map(({ url, count }) => {
-                                            const page = pages.find((p) => p.url === url);
+                                            const page = pagesByUrl.get(url);
                                             return page ? (
                                                 <MsqdxButton key={url} size="small" variant="outlined" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none' }}>
                                                     {url} ({count})
@@ -470,7 +463,7 @@ export default function DomainResultPage() {
                                     <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Seiten mit Touch-Target-Problemen</MsqdxTypography>
                                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                                         {aggregated.ux.tapTargets.detailsByPage.map(({ url, count }) => {
-                                            const page = pages.find((p) => p.url === url);
+                                            const page = pagesByUrl.get(url);
                                             return page ? (
                                                 <MsqdxButton key={url} size="small" variant="outlined" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none' }}>
                                                     {url} ({count} Probleme)
@@ -484,12 +477,17 @@ export default function DomainResultPage() {
                     ) : null}
                     <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mt: 2 }}>Alle Seiten öffnen:</MsqdxTypography>
                     <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0, maxHeight: 200, overflow: 'auto' }}>
-                        {(result.pages ?? []).map((page) => (
+                        {visiblePages.map((page) => (
                             <Box key={page.id} component="li" sx={{ mb: 0.5 }}>
                                 <MsqdxButton size="small" variant="text" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>{page.url}</MsqdxButton>
                             </Box>
                         ))}
                     </Box>
+                    {hasMorePages && (
+                        <MsqdxButton size="small" variant="text" onClick={() => setVisiblePageCount((n) => Math.min(pages.length, n + 100))} sx={{ mt: 0.5, fontSize: '0.75rem' }}>
+                            {t('domainResult.showMorePages', { count: Math.min(100, pages.length - visiblePageCount) })}
+                        </MsqdxButton>
+                    )}
                 </MsqdxMoleculeCard>
             )}
 
@@ -518,7 +516,7 @@ export default function DomainResultPage() {
                                     <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>Seiten mit niedrigstem UX-Score (zuerst prüfen)</MsqdxTypography>
                                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
                                         {aggregated.ux.pagesByScore.slice(0, 8).map(({ url, score, cls }) => {
-                                            const page = pages.find((p) => p.url === url);
+                                            const page = pagesByUrl.get(url);
                                             return page ? (
                                                 <MsqdxButton key={url} size="small" variant="outlined" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none' }}>
                                                     {url} — Score {score}, CLS {cls}
@@ -533,7 +531,7 @@ export default function DomainResultPage() {
                                     <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>Seiten mit Console-Errors</MsqdxTypography>
                                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
                                         {aggregated.ux.consoleErrorsByPage.slice(0, 6).map(({ url, count }) => {
-                                            const page = pages.find((p) => p.url === url);
+                                            const page = pagesByUrl.get(url);
                                             return page ? (
                                                 <MsqdxButton key={url} size="small" variant="text" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>
                                                     {url} ({count})
@@ -548,7 +546,7 @@ export default function DomainResultPage() {
                                     <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>Seiten mit Touch-Target-Problemen</MsqdxTypography>
                                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
                                         {aggregated.ux.tapTargets.detailsByPage.slice(0, 6).map(({ url, count }) => {
-                                            const page = pages.find((p) => p.url === url);
+                                            const page = pagesByUrl.get(url);
                                             return page ? (
                                                 <MsqdxButton key={url} size="small" variant="text" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>{url} ({count})</MsqdxButton>
                                             ) : null;
@@ -596,7 +594,7 @@ export default function DomainResultPage() {
                             <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Seiten mit guter Überschriften-Struktur</MsqdxTypography>
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                                 {aggregated.structure.pagesWithGoodStructure.map((url) => {
-                                    const page = pages.find((p) => p.url === url);
+                                    const page = pagesByUrl.get(url);
                                     return page ? (
                                         <MsqdxButton key={url} variant="outlined" size="small" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none' }}>{url}</MsqdxButton>
                                     ) : (
@@ -611,7 +609,7 @@ export default function DomainResultPage() {
                             <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Seiten mit mehreren H1</MsqdxTypography>
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                                 {aggregated.structure.pagesWithMultipleH1.map((url) => {
-                                    const page = pages.find((p) => p.url === url);
+                                    const page = pagesByUrl.get(url);
                                     return page ? (
                                         <MsqdxButton key={url} variant="outlined" size="small" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none' }}>{url}</MsqdxButton>
                                     ) : (
@@ -626,7 +624,7 @@ export default function DomainResultPage() {
                             <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Seiten mit übersprungenen Überschriften-Leveln</MsqdxTypography>
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                                 {aggregated.structure.pagesWithSkippedLevels.map((url) => {
-                                    const page = pages.find((p) => p.url === url);
+                                    const page = pagesByUrl.get(url);
                                     return page ? (
                                         <MsqdxButton key={url} variant="outlined" size="small" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none' }}>{url}</MsqdxButton>
                                     ) : (
@@ -664,7 +662,7 @@ export default function DomainResultPage() {
                                         <Box sx={{ mt: 1 }}>
                                             <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>Ohne Meta-Description:</MsqdxTypography>
                                             {aggregated.seo.missingMetaDescriptionUrls.slice(0, 5).map((url) => {
-                                                const page = pages.find((p) => p.url === url);
+                                                const page = pagesByUrl.get(url);
                                                 return page ? <Box key={url}><MsqdxButton size="small" variant="text" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>{url}</MsqdxButton></Box> : null;
                                             })}
                                         </Box>
@@ -697,7 +695,7 @@ export default function DomainResultPage() {
                                     </MsqdxTypography>
                                     <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0, maxHeight: 280, overflow: 'auto' }}>
                                         {aggregated.seo.pages.map((row) => {
-                                            const page = pages.find((p) => p.url === row.url);
+                                            const page = pagesByUrl.get(row.url);
                                             return (
                                                 <Box
                                                     component="li"
@@ -744,7 +742,7 @@ export default function DomainResultPage() {
                                         <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>Seiten mit den meisten kaputten Links</MsqdxTypography>
                                         <Box component="ul" sx={{ m: 0, pl: 2 }}>
                                             {aggregated.links.brokenByPage.slice(0, 10).map(({ url, count }) => {
-                                                const page = pages.find((p) => p.url === url);
+                                                const page = pagesByUrl.get(url);
                                                 return (
                                                     <li key={url}>
                                                         {page ? (
@@ -785,7 +783,7 @@ export default function DomainResultPage() {
                                     {aggregated.infra.privacy.urlsWithPolicy.length > 0 && aggregated.infra.privacy.urlsWithPolicy.length <= 8 && (
                                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
                                             {aggregated.infra.privacy.urlsWithPolicy.slice(0, 5).map((url) => {
-                                                const page = pages.find((p) => p.url === url);
+                                                const page = pagesByUrl.get(url);
                                                 return page ? <MsqdxButton key={url} size="small" variant="text" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none', fontSize: '0.7rem' }}>{url}</MsqdxButton> : null;
                                             })}
                                         </Box>
@@ -803,7 +801,7 @@ export default function DomainResultPage() {
                                     <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>Seiten mit CSP:</MsqdxTypography>
                                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
                                         {aggregated.infra.security.urlsWithCsp.slice(0, 5).map((url) => {
-                                            const page = pages.find((p) => p.url === url);
+                                            const page = pagesByUrl.get(url);
                                             return page ? <MsqdxButton key={url} size="small" variant="text" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none', fontSize: '0.7rem' }}>{url}</MsqdxButton> : null;
                                         })}
                                     </Box>
@@ -838,7 +836,7 @@ export default function DomainResultPage() {
                     <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Pro Seite (Score, llms.txt, empfohlenes Schema)</MsqdxTypography>
                     <Box component="ul" sx={{ m: 0, pl: 2, maxHeight: 300, overflow: 'auto' }}>
                         {aggregated.generative.pages.map((p) => {
-                            const page = pages.find((x) => x.url === p.url);
+                            const page = pagesByUrl.get(p.url);
                             const badges = [`Score ${p.score}`, p.hasLlmsTxt && 'llms.txt', p.hasRecommendedSchema && 'Schema'].filter(Boolean).join(' · ');
                             return (
                                 <li key={p.url}>
@@ -956,7 +954,7 @@ export default function DomainResultPage() {
                                     pages={pages}
                                     onStepClick={(step) => {
                                         const norm = (u: string) => { try { const x = new URL(u); return x.origin + (x.pathname.replace(/\/$/, '') || '/'); } catch { return u; } };
-                                        const page = pages.find((p) => norm(p.url) === norm(step.pageUrl));
+                                        const page = pagesByNormUrl.get(norm(step.pageUrl));
                                         if (page) router.push(`/results/${page.id}`);
                                     }}
                                 />
