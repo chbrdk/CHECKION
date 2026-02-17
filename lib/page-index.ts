@@ -4,7 +4,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import sharp from 'sharp';
-import type { StructureNode, PageIndex, PageIndexRegion, PageIndexRegionType } from './types';
+import type { StructureNode, PageIndex, PageIndexRegion, PageIndexRegionType, StructureLink } from './types';
 
 /** Keyword/pattern rules for semantic type (DE + EN). Lowercase match on heading text. */
 const SEMANTIC_RULES: Array<{ type: PageIndexRegionType; patterns: RegExp[] }> = [
@@ -76,6 +76,8 @@ export function buildPageIndex(
         const headingText = (node.text || '').slice(0, 200).trim();
         const findabilityScore = computeFindabilityScore(aboveFold, level, indexInDocument);
         const semanticType = inferSemanticType(node.tag, headingText);
+        const textSnippet = node.contentSnippet ?? undefined;
+        const links = (node.links?.length ? node.links as StructureLink[] : undefined);
 
         return {
             id: uuidv4(),
@@ -87,6 +89,8 @@ export function buildPageIndex(
             aboveFold,
             findabilityScore,
             semanticType,
+            ...(textSnippet ? { textSnippet } : {}),
+            ...(links?.length ? { links } : {}),
         };
     });
 

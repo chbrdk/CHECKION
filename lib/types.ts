@@ -163,6 +163,8 @@ export type ScanResult = {
     llmSummary?: LlmSummary | null;
     /** Page index: regions (what where), findability, optional semantic types (for persona click-path evaluation). */
     pageIndex?: PageIndex;
+    /** Plain-text excerpt of the page body (for journey agent content evaluation). Capped at ~6k chars. */
+    bodyTextExcerpt?: string;
 }
 
 export interface TechnicalInsights {
@@ -393,11 +395,21 @@ export type DomainScanResult = {
     llmSummary?: LlmSummary | null;
 };
 
+/** Link with label for section/region assignment. */
+export interface StructureLink {
+    href: string;
+    text: string;
+}
+
 export interface StructureNode {
     tag: string;
     text: string;
     level: number; // 1-6 headings, 0 landmarks, 7 button, 8 paragraph
     rect?: { x: number; y: number; width: number; height: number };
+    /** Plain-text content of this section/region (for journey: attention zone content). */
+    contentSnippet?: string;
+    /** Links inside this section/region (for journey: which links belong to which zone). */
+    links?: StructureLink[];
     children?: StructureNode[];
     error?: string; // e.g. "Skipped heading level"
 }
@@ -418,7 +430,10 @@ export interface PageIndexRegion {
     /** Optional: mean saliency (0–1) in this region from heatmap; set when saliency heatmap is available. */
     saliencyProminence?: number;
     semanticType?: PageIndexRegionType;
+    /** Plain-text content of this section (attention zone). */
     textSnippet?: string;
+    /** Links inside this section/region (attention zone). */
+    links?: StructureLink[];
 }
 
 /** Page index: what is where and how findable (for persona click-path evaluation). */

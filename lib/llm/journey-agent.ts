@@ -44,7 +44,17 @@ export interface PageContext {
     title?: string;
     /** Short page description (SEO) for content evaluation. */
     description?: string;
-    regions: Array<{ id: string; headingText: string; semanticType?: string }>;
+    /** Plain-text excerpt of the page body (indexed for journey). Enables goal_reached when goal appears in paragraphs, not only in links/headings. */
+    bodyTextExcerpt?: string;
+    regions: Array<{
+        id: string;
+        headingText: string;
+        semanticType?: string;
+        /** Plain-text content of this section (attention zone). */
+        textSnippet?: string;
+        /** Links inside this section. */
+        links?: Array<{ href: string; text: string }>;
+    }>;
     outboundLinks: string[];
     /** Link text per outbound URL for semantic search (from allLinksWithLabels). */
     outboundLinksWithLabels?: Array<{ url: string; text: string }>;
@@ -72,6 +82,8 @@ export function buildPageContexts(domainResult: DomainScanResult): Map<string, P
                 id: r.id,
                 headingText: r.headingText,
                 semanticType: r.semanticType,
+                textSnippet: r.textSnippet?.slice(0, 1200),
+                links: r.links?.length ? r.links.slice(0, 25) : undefined,
             }));
         const allLinks = page.allLinks ?? [];
         const seen = new Set<string>();
@@ -117,6 +129,7 @@ export function buildPageContexts(domainResult: DomainScanResult): Map<string, P
             url: page.url,
             title: page.seo?.title ?? undefined,
             description: page.seo?.metaDescription ?? undefined,
+            bodyTextExcerpt: page.bodyTextExcerpt ?? undefined,
             regions,
             outboundLinks,
             outboundLinksWithLabels,
@@ -287,6 +300,22 @@ const JOURNEY_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     {
         type: 'function',
         function: {
+            name: 'get_page_content',
+            description: 'Get the full text content (body) of the current page. Use this to check if the goal is mentioned in paragraphs or body text, not only in links or headings. If the goal appears in the content, call goal_reached.',
+            parameters: { type: 'object', properties: {}, required: [] },
+        },
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'get_sections',
+            description: 'Get the page split into sections (attention zones): each section has heading, optional text snippet, and links inside that section. Use this to see which zone contains the goal or which links belong to which section.',
+            parameters: { type: 'object', properties: {}, required: [] },
+        },
+    },
+    {
+        type: 'function',
+        function: {
             name: 'search_on_page',
             description: 'Search the current page for links most relevant to the goal. Returns ranked links (url, label, reason). Use this first, then navigate_to one of the returned URLs or goal_reached/goal_not_found.',
             parameters: {
@@ -400,8 +429,10 @@ function searchOnPage(
 
 const JOURNEY_TOOL_SYSTEM_PROMPT = `You are simulating a user navigating a website to reach a goal. Use the tools in order:
 
-1. search_on_page(query): Search the current page for links relevant to the goal. Use the goal or part of it (e.g. "2011", "Magazin") as query. It returns only links you have NOT yet tried from this page.
-2. Then either:
+1. get_page_content(): Call to read the full text (body) of the current page. The goal might be mentioned in a paragraph or section, not only in link text or headings. If the content clearly satisfies the goal, call goal_reached.
+2. get_sections(): Get the page split into sections (attention zones). Each section has heading, optional text snippet, and links in that zone. Use to see which section contains the goal or which links belong to which area.
+3. search_on_page(query): Search the current page for links relevant to the goal. Use the goal or part of it (e.g. "2011", "Magazin") as query. It returns only links you have NOT yet tried from this page.
+4. Then either:
    - navigate_to(url, link_label, reason): Click one of the URLs returned by search_on_page. Always pass link_label and reason. You may ONLY use a URL that appears in the search_on_page result.
    - goal_reached(reason): The current page satisfies the goal.
    - goal_not_found(reason): The goal cannot be reached from here (no relevant links or dead end). If you backtrack, this reason explains why you left the next page.
@@ -410,6 +441,7 @@ Critical – avoid endless loops:
 - If you just backtracked, you are back on the previous page because the link you took did NOT contain the goal. You MUST choose a different link now: pick the next best option from search_on_page (never the same URL again). search_on_page only returns links you have not tried from this page; use one of those.
 - If "alreadyTriedFromThisPage" is given in the user message, those URLs led to dead ends. Do NOT call navigate_to with any of them. Choose only from the list returned by search_on_page.
 - If search_on_page returns an empty list, all links from this page have been tried; call goal_not_found.
+- Prefer calling get_page_content() when you need to decide if the current page already satisfies the goal (e.g. "awards" might be in a paragraph on Über uns, not only in a link).
 
 Rules:
 - Always pass link_label and reason in navigate_to. If you get "Already tried this link", pick a different URL from your last search_on_page result.
@@ -464,6 +496,22 @@ function executeToolCall(
     triedFromPage: Map<string, Set<string>>
 ): { result: unknown; navigated?: boolean; returnResult?: JourneyResult } {
     const alreadyTried = Array.from(triedFromPage.get(currentUrl) ?? []);
+    if (name === 'get_page_content') {
+        const text = currentContext.bodyTextExcerpt;
+        if (text) {
+            return { result: { content: text, note: 'This is the plain-text body of the current page. If the goal appears here, call goal_reached.' } };
+        }
+        return { result: { content: null, note: 'No body text indexed for this page. Use title, description, and regions to evaluate.' } };
+    }
+    if (name === 'get_sections') {
+        const sections = currentContext.regions.map((r) => ({
+            heading: r.headingText,
+            type: r.semanticType,
+            textSnippet: r.textSnippet ?? undefined,
+            links: r.links?.length ? r.links : undefined,
+        }));
+        return { result: sections };
+    }
     if (name === 'search_on_page') {
         const query = typeof args.query === 'string' ? args.query : '';
         const list = searchOnPage(currentContext, query, alreadyTried);

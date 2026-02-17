@@ -790,7 +790,9 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
             const appleTouch = document.querySelector('link[rel="apple-touch-icon"]');
             const appleTouchIcon = appleTouch ? (appleTouch.getAttribute('href') || null) : null;
 
+            const bodyTextExcerpt = bodyText.replace(/\s+/g, ' ').trim().slice(0, 6000);
             return {
+                bodyTextExcerpt: bodyTextExcerpt || undefined,
                 seo: {
                     title: document.title || null,
                     metaDescription: getMeta('description'),
@@ -860,6 +862,7 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
         let seoAudit: SeoAudit = seoAndMeta.seo as SeoAudit;
         const privacyAudit = seoAndMeta.privacy;
         const eeatSignals = (seoAndMeta as { eeatPage?: import('./types').EeatPageSignals }).eeatPage;
+        const bodyTextExcerpt = (seoAndMeta as { bodyTextExcerpt?: string }).bodyTextExcerpt;
 
         // 5c. Geo Location Lookup & CDN Detection
         let locationData: any = null;
@@ -1098,9 +1101,19 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                     };
                 }
                 
-                // --- 7a. Semantic Structure Map (headings, landmarks, sections, buttons, paragraphs in document order) ---
+                // --- 7a. Semantic Structure Map (headings, landmarks, sections, buttons, paragraphs in document order) + per-section content and links ---
                 const structureMap = [];
                 var selector = 'h1, h2, h3, h4, h5, h6, nav, main, aside, footer, header, section, article, [role="region"], [role="navigation"], button, [role="button"], p';
+                function getSectionLinks(container) {
+                    var out = [];
+                    try {
+                        (container.querySelectorAll && container.querySelectorAll('a[href]')) || [].forEach(function(a) {
+                            var href = a.getAttribute('href');
+                            if (href && href.trim()) out.push({ href: href.trim(), text: (a.textContent || '').trim().slice(0, 100) });
+                        });
+                    } catch (e) {}
+                    return out;
+                }
                 document.querySelectorAll(selector).forEach(function(el) {
                     var level = 0;
                     var tag = el.tagName.toLowerCase();
@@ -1119,6 +1132,28 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                     }
                     var r = el.getBoundingClientRect();
                     if (r.width === 0 && r.height === 0) return;
+                    var contentSnippet = '';
+                    var links = [];
+                    var isLandmark = ['nav','main','aside','footer','header','section','article','region','navigation'].indexOf(tag) !== -1 || level === 9;
+                    if (isLandmark) {
+                        contentSnippet = (el.innerText || '').replace(/\\s+/g, ' ').trim().slice(0, 1500);
+                        links = getSectionLinks(el);
+                    } else if (level >= 1 && level <= 6) {
+                        var next = el.nextElementSibling;
+                        while (next) {
+                            var nextTag = next.tagName ? next.tagName.toLowerCase() : '';
+                            if (nextTag.match(/^h[1-6]$/)) {
+                                var nextLevel = parseInt(nextTag[1]);
+                                if (nextLevel <= level) break;
+                            }
+                            contentSnippet += (next.innerText || '') + ' ';
+                            links = links.concat(getSectionLinks(next));
+                            next = next.nextElementSibling;
+                        }
+                        contentSnippet = contentSnippet.replace(/\\s+/g, ' ').trim().slice(0, 1500);
+                    } else if (level === 7 || level === 8) {
+                        contentSnippet = (el.textContent || '').trim().slice(0, 500);
+                    }
                     structureMap.push({
                         tag: tag,
                         text: (el.textContent || '').slice(0, 300).trim(),
@@ -1128,7 +1163,9 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                             y: Math.round(r.y),
                             width: Math.round(r.width),
                             height: Math.round(r.height)
-                        }
+                        },
+                        contentSnippet: contentSnippet || undefined,
+                        links: links.length > 0 ? links : undefined
                     });
                 });
 
@@ -1459,7 +1496,8 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
             generative: generativeAudit,
             security: securityAudit,
             technicalInsights,
-            pageIndex
+            pageIndex,
+            ...(bodyTextExcerpt != null && bodyTextExcerpt !== '' ? { bodyTextExcerpt } : {})
         };
     } finally {
         await browser.close();
