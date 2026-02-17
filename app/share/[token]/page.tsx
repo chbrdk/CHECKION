@@ -5,6 +5,10 @@ import { useParams } from 'next/navigation';
 import { Box, CircularProgress, alpha, Dialog, DialogTitle, DialogContent, IconButton, Button } from '@mui/material';
 import { MsqdxTypography, MsqdxCard, MsqdxChip } from '@msqdx/react';
 import { MSQDX_BRAND_PRIMARY, MSQDX_STATUS } from '@msqdx/tokens';
+import { SaliencyHeatmapOverlay } from '@/components/SaliencyHeatmapOverlay';
+import { PageIndexRegionsOverlay } from '@/components/PageIndexRegionsOverlay';
+import { FocusOrderOverlay } from '@/components/FocusOrderOverlay';
+import { PageIndexCard } from '@/components/PageIndexCard';
 import type { DomainSummaryResponse } from '@/lib/domain-summary';
 import type { ScanResult } from '@/lib/types';
 
@@ -383,7 +387,7 @@ function ShareDomainContent({ data, token }: { data: DomainSummaryResponse; toke
 
             {agg?.generative && (
                 <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
-                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>Generative / GEO</MsqdxTypography>
+                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5, color: textPrimary }}>Generative / GEO</MsqdxTypography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'flex-start' }}>
                         <ScoreRing score={agg.generative.score} size={52} label="Ø GEO-Score" />
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -448,20 +452,22 @@ function ShareDomainContent({ data, token }: { data: DomainSummaryResponse; toke
             </MsqdxCard>
 
             <Dialog open={!!selectedPageDetail || loadingDetail} onClose={() => !loadingDetail && setSelectedPageDetail(null)} maxWidth="md" fullWidth scroll="paper" PaperProps={{ sx: { bgcolor: '#fff' } }}>
-                <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <MsqdxTypography variant="h6">Einzelscan</MsqdxTypography>
-                    <IconButton aria-label="Schließen" onClick={() => setSelectedPageDetail(null)} disabled={loadingDetail} size="small" sx={{ ml: 1 }}>
+                <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#1a1a1a', borderBottom: '1px solid #eee' }}>
+                    <MsqdxTypography variant="h6" sx={{ color: '#1a1a1a' }}>Einzelscan</MsqdxTypography>
+                    <IconButton aria-label="Schließen" onClick={() => setSelectedPageDetail(null)} disabled={loadingDetail} size="small" sx={{ ml: 1, color: '#666' }}>
                         ×
                     </IconButton>
                 </DialogTitle>
-                <DialogContent dividers>
+                <DialogContent dividers sx={{ bgcolor: '#fff', color: '#1a1a1a' }}>
                     {loadingDetail && (
                         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
                             <CircularProgress sx={{ color: MSQDX_BRAND_PRIMARY.green }} />
                         </Box>
                     )}
                     {selectedPageDetail && !loadingDetail && (
-                        <ShareSingleContent data={selectedPageDetail} />
+                        <Box sx={{ color: '#1a1a1a', '& .MuiTypography-root': { color: 'inherit' }, '& .MuiChip-root': { color: 'inherit' } }}>
+                            <ShareSingleContent data={selectedPageDetail} shareToken={token} />
+                        </Box>
                     )}
                 </DialogContent>
             </Dialog>
@@ -469,7 +475,7 @@ function ShareDomainContent({ data, token }: { data: DomainSummaryResponse; toke
     );
 }
 
-function ShareSingleContent({ data }: { data: ScanResult }) {
+function ShareSingleContent({ data, shareToken }: { data: ScanResult; shareToken?: string }) {
     const issueCount = (data.issues?.length ?? 0);
     const stats = data.stats ?? { errors: 0, warnings: 0, notices: 0 };
     const perf = data.performance;
@@ -482,14 +488,112 @@ function ShareSingleContent({ data }: { data: ScanResult }) {
     const generative = data.generative;
     const geo = data.geo;
 
+    const [screenshotDimensions, setScreenshotDimensions] = useState({ width: 0, height: 0 });
+    const [showHeatmap, setShowHeatmap] = useState(true);
+    const [showRegions, setShowRegions] = useState(true);
+    const [showFocusOrder, setShowFocusOrder] = useState(true);
+    const [hoveredRegionId, setHoveredRegionId] = useState<string | null>(null);
+
+    const screenshotSrc = shareToken && data.screenshot && !data.screenshot.startsWith('data:')
+        ? `/api/share/${encodeURIComponent(shareToken)}/pages/${encodeURIComponent(data.id)}/screenshot`
+        : data.screenshot;
+
+    const hasVisualAnalysis = shareToken && (data.screenshot || data.saliencyHeatmap || data.pageIndex?.regions?.length || data.ux?.focusOrder?.length);
+
+    const textPrimary = shareToken ? '#1a1a1a' : undefined;
+    const textMuted = shareToken ? '#555' : STATUS.neutral;
+
     return (
         <>
+            {hasVisualAnalysis && (
+                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
+                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5, color: '#1a1a1a' }}>Visuelle Analyse</MsqdxTypography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1.5 }}>
+                        {data.saliencyHeatmap && (
+                            <Button size="small" variant={showHeatmap ? 'contained' : 'outlined'} onClick={() => setShowHeatmap(!showHeatmap)} sx={{ textTransform: 'none' }}>Heatmap</Button>
+                        )}
+                        {data.pageIndex?.regions?.length ? (
+                            <Button size="small" variant={showRegions ? 'contained' : 'outlined'} onClick={() => setShowRegions(!showRegions)} sx={{ textTransform: 'none' }}>Regionen</Button>
+                        ) : null}
+                        {data.ux?.focusOrder?.length ? (
+                            <Button size="small" variant={showFocusOrder ? 'contained' : 'outlined'} onClick={() => setShowFocusOrder(!showFocusOrder)} sx={{ textTransform: 'none' }}>Klickpfad (Fokus)</Button>
+                        ) : null}
+                    </Box>
+                    {screenshotSrc && (
+                        <Box sx={{ position: 'relative', width: '100%', bgcolor: '#fff', border: '1px solid #e0e0e0', borderRadius: 1, overflow: 'hidden' }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                                src={screenshotSrc}
+                                alt="Screenshot"
+                                style={{ width: '100%', display: 'block', verticalAlign: 'top' }}
+                                onLoad={(e) => {
+                                    const el = e.currentTarget;
+                                    setScreenshotDimensions({ width: el.naturalWidth, height: el.naturalHeight });
+                                }}
+                            />
+                            <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 10 }}>
+                                {data.ux?.focusOrder && (
+                                    <FocusOrderOverlay
+                                        items={data.ux.focusOrder}
+                                        screenshotWidth={screenshotDimensions.width}
+                                        screenshotHeight={screenshotDimensions.height}
+                                        visible={showFocusOrder}
+                                    />
+                                )}
+                                {data.saliencyHeatmap && (
+                                    <SaliencyHeatmapOverlay
+                                        heatmapDataUrl={data.saliencyHeatmap}
+                                        screenshotWidth={screenshotDimensions.width}
+                                        screenshotHeight={screenshotDimensions.height}
+                                        visible={showHeatmap}
+                                    />
+                                )}
+                                {data.pageIndex && (
+                                    <PageIndexRegionsOverlay
+                                        regions={data.pageIndex.regions}
+                                        screenshotWidth={screenshotDimensions.width}
+                                        screenshotHeight={screenshotDimensions.height}
+                                        highlightedRegionId={hoveredRegionId}
+                                        visible={showRegions}
+                                    />
+                                )}
+                            </Box>
+                        </Box>
+                    )}
+                    {data.pageIndex?.regions?.length ? (
+                        <Box sx={{ mt: 1.5, p: 1.5, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+                            <MsqdxTypography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 1, color: '#555' }}>Regionen — Hover zum Hervorheben</MsqdxTypography>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                {data.pageIndex.regions.map((r) => (
+                                    <Box
+                                        key={r.id}
+                                        component="span"
+                                        onMouseEnter={() => setHoveredRegionId(r.id)}
+                                        onMouseLeave={() => setHoveredRegionId(null)}
+                                        sx={{
+                                            display: 'inline-block', px: 1, py: 0.5, borderRadius: 0.5, fontSize: '0.75rem',
+                                            bgcolor: hoveredRegionId === r.id ? alpha(MSQDX_BRAND_PRIMARY.orange ?? '#ff6a3b', 0.25) : 'transparent',
+                                            border: hoveredRegionId === r.id ? '2px solid #ff6a3b' : '1px solid #ddd',
+                                            cursor: 'pointer', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#1a1a1a',
+                                        }}
+                                    >
+                                        <Box component="span" sx={{ fontWeight: 600, color: '#666', mr: 0.5 }}>{r.tag}</Box>
+                                        {(r.headingText || '').slice(0, 35)}{(r.headingText || '').length > 35 ? '…' : ''}
+                                    </Box>
+                                ))}
+                            </Box>
+                        </Box>
+                    )}
+                    {data.pageIndex && <Box sx={{ mt: 1.5, color: '#1a1a1a' }}><PageIndexCard pageIndex={data.pageIndex} showSaliency={true} /></Box>}
+                </MsqdxCard>
+            )}
+
             <MsqdxCard variant="flat" sx={{ p: 3, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
-                <MsqdxTypography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>Seiten-Scan</MsqdxTypography>
-                <MsqdxTypography variant="body2" sx={{ color: STATUS.neutral, mb: 2, wordBreak: 'break-all' }}>
+                <MsqdxTypography variant="h5" sx={{ fontWeight: 700, mb: 1, color: textPrimary }}>Seiten-Scan</MsqdxTypography>
+                <MsqdxTypography variant="body2" sx={{ color: textMuted, mb: 2, wordBreak: 'break-all' }}>
                     {data.url}
                 </MsqdxTypography>
-                <MsqdxTypography variant="caption" sx={{ color: STATUS.neutral, display: 'block', mb: 2 }}>
+                <MsqdxTypography variant="caption" sx={{ color: textMuted, display: 'block', mb: 2 }}>
                     {new Date(data.timestamp).toISOString().slice(0, 10)} · {data.device}
                 </MsqdxTypography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
@@ -507,7 +611,7 @@ function ShareSingleContent({ data }: { data: ScanResult }) {
 
             {perf && (
                 <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
-                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>Performance</MsqdxTypography>
+                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5, color: textPrimary }}>Performance</MsqdxTypography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                         <MetricBox label="TTFB" value={perf.ttfb} unit=" ms" statusColor={getPerformanceColor(perf.ttfb, 'ttfb')} />
                         <MetricBox label="FCP" value={perf.fcp} unit=" ms" statusColor={getPerformanceColor(perf.fcp, 'fcp')} />
@@ -519,11 +623,11 @@ function ShareSingleContent({ data }: { data: ScanResult }) {
 
             {eco && (
                 <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
-                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>Ökobilanz</MsqdxTypography>
+                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5, color: textPrimary }}>Ökobilanz</MsqdxTypography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                         <MetricBox label="CO₂" value={eco.co2} unit=" g" statusColor={getEcoCo2Color(eco.co2)} />
                         <Box sx={{ px: 1.5, py: 1, borderRadius: 1.5, bgcolor: alpha(getEcoGradeColor(eco.grade), 0.08), border: `1px solid ${alpha(getEcoGradeColor(eco.grade), 0.3)}` }}>
-                            <MsqdxTypography variant="caption" sx={{ color: STATUS.neutral }}>Grade</MsqdxTypography>
+                            <MsqdxTypography variant="caption" sx={{ color: textMuted }}>Grade</MsqdxTypography>
                             <MsqdxChip label={eco.grade} size="small" sx={{ mt: 0.25, bgcolor: alpha(getEcoGradeColor(eco.grade), 0.2), color: getEcoGradeColor(eco.grade), fontWeight: 700 }} />
                         </Box>
                         <MetricBox label="Seitengewicht" value={(eco.pageWeight / 1024).toFixed(1)} unit=" KB" />
@@ -533,19 +637,19 @@ function ShareSingleContent({ data }: { data: ScanResult }) {
 
             {seo && (
                 <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
-                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>SEO</MsqdxTypography>
+                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1, color: textPrimary }}>SEO</MsqdxTypography>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                        {seo.title && <Box><MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>Titel</MsqdxTypography><MsqdxTypography variant="body2" sx={{ wordBreak: 'break-word' }}>{seo.title.length > 80 ? seo.title.slice(0, 80) + '…' : seo.title}</MsqdxTypography></Box>}
-                        {seo.metaDescription && <Box><MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>Meta-Description</MsqdxTypography><MsqdxTypography variant="body2" sx={{ wordBreak: 'break-word' }}>{seo.metaDescription.length > 120 ? seo.metaDescription.slice(0, 120) + '…' : seo.metaDescription}</MsqdxTypography></Box>}
-                        {seo.h1 && <Box><MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>H1</MsqdxTypography><MsqdxTypography variant="body2" sx={{ wordBreak: 'break-word' }}>{seo.h1.length > 80 ? seo.h1.slice(0, 80) + '…' : seo.h1}</MsqdxTypography></Box>}
-                        {!seo.title && !seo.metaDescription && !seo.h1 && <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>Keine SEO-Daten</MsqdxTypography>}
+                        {seo.title && <Box><MsqdxTypography variant="caption" sx={{ color: textMuted }}>Titel</MsqdxTypography><MsqdxTypography variant="body2" sx={{ wordBreak: 'break-word', color: textPrimary }}>{seo.title.length > 80 ? seo.title.slice(0, 80) + '…' : seo.title}</MsqdxTypography></Box>}
+                        {seo.metaDescription && <Box><MsqdxTypography variant="caption" sx={{ color: textMuted }}>Meta-Description</MsqdxTypography><MsqdxTypography variant="body2" sx={{ wordBreak: 'break-word', color: textPrimary }}>{seo.metaDescription.length > 120 ? seo.metaDescription.slice(0, 120) + '…' : seo.metaDescription}</MsqdxTypography></Box>}
+                        {seo.h1 && <Box><MsqdxTypography variant="caption" sx={{ color: textMuted }}>H1</MsqdxTypography><MsqdxTypography variant="body2" sx={{ wordBreak: 'break-word', color: textPrimary }}>{seo.h1.length > 80 ? seo.h1.slice(0, 80) + '…' : seo.h1}</MsqdxTypography></Box>}
+                        {!seo.title && !seo.metaDescription && !seo.h1 && <MsqdxTypography variant="body2" sx={{ color: textMuted }}>Keine SEO-Daten</MsqdxTypography>}
                     </Box>
                 </MsqdxCard>
             )}
 
             {links && (
                 <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
-                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>Links</MsqdxTypography>
+                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5, color: textPrimary }}>Links</MsqdxTypography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                         <MetricBox label="Gesamt" value={links.total} />
                         <MetricBox label="Intern" value={links.internal} statusColor={STATUS.good} />
@@ -557,7 +661,7 @@ function ShareSingleContent({ data }: { data: ScanResult }) {
 
             {(privacy || security) && (
                 <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
-                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>Privacy & Security</MsqdxTypography>
+                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5, color: textPrimary }}>Privacy & Security</MsqdxTypography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                         {privacy && (
                             <>
@@ -578,7 +682,7 @@ function ShareSingleContent({ data }: { data: ScanResult }) {
 
             {technicalInsights && (
                 <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
-                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>Technische Insights</MsqdxTypography>
+                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5, color: textPrimary }}>Technische Insights</MsqdxTypography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
                         <MsqdxChip size="small" label={technicalInsights.manifest.present ? 'Web-App-Manifest' : 'Kein Manifest'} sx={technicalInsights.manifest.present ? { bgcolor: alpha(STATUS.good, 0.12), color: STATUS.good } : { bgcolor: alpha(STATUS.warning, 0.12), color: STATUS.warning }} />
                         {technicalInsights.manifest.present && (
@@ -651,11 +755,11 @@ function ShareSingleContent({ data }: { data: ScanResult }) {
 
             {issueCount > 0 && (
                 <MsqdxCard variant="flat" sx={{ p: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
-                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Issues ({issueCount})</MsqdxTypography>
+                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1, color: textPrimary }}>Issues ({issueCount})</MsqdxTypography>
                     <Box component="ul" sx={{ m: 0, pl: 2, maxHeight: 300, overflow: 'auto' }}>
                         {(data.issues ?? []).slice(0, 50).map((issue, idx) => (
                             <li key={idx}>
-                                <MsqdxTypography variant="body2">[{issue.type}] {issue.message}</MsqdxTypography>
+                                <MsqdxTypography variant="body2" sx={{ color: textPrimary }}>[{issue.type}] {issue.message}</MsqdxTypography>
                             </li>
                         ))}
                     </Box>
