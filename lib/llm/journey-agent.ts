@@ -8,6 +8,7 @@ import type { DomainScanResult, ScanResult, JourneyStep, JourneyResult } from '@
 import { OPENAI_MODEL, getOpenAIKey } from '@/lib/llm/config';
 
 const MAX_STEPS = 15;
+const MAX_TURNS = 35; // LLM calls (advances + backtrack re-tries)
 const MAX_REGIONS_PER_PAGE = 20;
 const MAX_OUTBOUND_LINKS = 50;
 
@@ -23,6 +24,8 @@ function normalizeUrl(url: string): string {
 export interface PageContext {
     url: string;
     title?: string;
+    /** Short page description (SEO) for content evaluation. */
+    description?: string;
     regions: Array<{ id: string; headingText: string; semanticType?: string }>;
     outboundLinks: string[];
 }
@@ -56,6 +59,7 @@ export function buildPageContexts(domainResult: DomainScanResult): Map<string, P
         map.set(urlNorm, {
             url: page.url,
             title: page.seo?.title ?? undefined,
+            description: page.seo?.description ?? undefined,
             regions,
             outboundLinks: [...new Set(outboundLinks)],
         });
@@ -97,7 +101,8 @@ function extractJsonFromResponse(content: string): string {
 
 type AgentAction =
     | { action: 'next'; next_page_url: string; trigger_label?: string }
-    | { action: 'goal_reached'; reason?: string };
+    | { action: 'goal_reached'; reason?: string }
+    | { action: 'goal_not_found'; reason: string };
 
 function parseAgentResponse(content: string): AgentAction | null {
     try {
@@ -106,6 +111,10 @@ function parseAgentResponse(content: string): AgentAction | null {
         const action = parsed?.action as string;
         if (action === 'goal_reached') {
             return { action: 'goal_reached', reason: parsed.reason as string | undefined };
+        }
+        if (action === 'goal_not_found') {
+            const reason = typeof parsed.reason === 'string' ? parsed.reason : 'Ziel nicht gefunden.';
+            return { action: 'goal_not_found', reason };
         }
         if (action === 'next' && typeof parsed?.next_page_url === 'string') {
             return {
@@ -120,33 +129,59 @@ function parseAgentResponse(content: string): AgentAction | null {
     return null;
 }
 
-const JOURNEY_SYSTEM_PROMPT = `You are simulating a user navigating a website by clicking links only. You have a goal. You can ONLY move to pages that appear in "outboundLinks" – these are links that actually exist on the current page (no sitemap, no external list). Do not invent URLs.
+const JOURNEY_SYSTEM_PROMPT = `You are simulating a user navigating a website. Your job is to evaluate each page fully and then choose the next action.
+
+Process for EVERY step:
+1. Evaluate the FULL page content: title, description, and all regions (headings/landmarks). Use this to decide where the goal is most likely to be.
+2. If the goal is clearly satisfied by the current page content, reply with action "goal_reached" and a short "reason".
+3. If you can move toward the goal, choose the best link from "outboundLinks" (only these URLs are reachable in this scan). Reply with action "next", "next_page_url" (must be exactly one URL from outboundLinks), and optionally "trigger_label" (link text or region the user would click).
+4. If you cannot reach the goal from here – e.g. outboundLinks is empty, or none of the links lead toward the goal – reply with action "goal_not_found" and a short "reason" (e.g. "Auf dieser Seite sind keine ausgehenden Links zu gescannten Seiten" or "Kein Link führt zum Ziel").
 
 Rules:
-- Reply ONLY with a JSON object. No markdown, no explanation outside JSON.
-- For each step you must choose exactly one of:
-  1. action: "next" – go to a next page. You MUST set "next_page_url" to one of the URLs in "outboundLinks" (links on the current page). Optionally set "trigger_label" (the link text or region heading the user would click).
-  2. action: "goal_reached" – the current page satisfies the goal. Optionally set "reason" (short explanation).
+- Reply ONLY with a single JSON object. No markdown, no text outside JSON.
+- You may ONLY set "next_page_url" to a URL that appears in "outboundLinks". Do not invent URLs.
+- Use "goal_reached" only when the current page actually satisfies the goal. Use "goal_not_found" when the goal cannot be reached (e.g. no navigable links, or dead end).
+- If "alreadyTried" is given: do NOT choose any of those URLs as next_page_url (they led to dead ends). Pick a different link from outboundLinks or goal_not_found.
 
-Example next: {"action": "next", "next_page_url": "https://example.com/products", "trigger_label": "Products"}
-Example goal_reached: {"action": "goal_reached", "reason": "Product XY is on this page"}`;
+Examples:
+{"action": "next", "next_page_url": "https://example.com/products", "trigger_label": "Products"}
+{"action": "goal_reached", "reason": "Product XY is on this page"}
+{"action": "goal_not_found", "reason": "Auf dieser Seite sind keine ausgehenden Links vorhanden; Ziel nicht erreichbar."}`;
 
 function buildUserMessage(
     currentPage: PageContext,
     goal: string,
-    pathSoFar: string[]
+    pathSoFar: string[],
+    alreadyTriedFromThisPage: string[] = []
 ): string {
+    const hasLinks = currentPage.outboundLinks.length > 0;
+    const remainingLinks = alreadyTriedFromThisPage.length > 0
+        ? currentPage.outboundLinks.filter((u) => !alreadyTriedFromThisPage.includes(u))
+        : currentPage.outboundLinks;
+    const linkHint = hasLinks
+        ? remainingLinks.length > 0
+            ? `Choose exactly one URL from outboundLinks as next_page_url (do not choose any URL in alreadyTried), or goal_reached/goal_not_found.`
+            : `All relevant links from this page have already been tried without success. Reply with action "goal_not_found" and a short reason.`
+        : `outboundLinks is empty – you cannot navigate to another page. Reply with action "goal_not_found" and a short reason (e.g. no navigable links, or goal not on this page).`;
+
+    const triedLine = alreadyTriedFromThisPage.length > 0
+        ? `- alreadyTried (from this page – led to dead end; do not choose again): ${JSON.stringify(alreadyTriedFromThisPage)}\n`
+        : '';
+
     return `Goal: ${goal}
 
-Current page:
+Current page (evaluate this full content to decide):
 - url: ${currentPage.url}
 - title: ${currentPage.title ?? '(no title)'}
-- regions (headings/landmarks): ${JSON.stringify(currentPage.regions.map((r) => ({ id: r.id, text: r.headingText, type: r.semanticType })))}
-- outboundLinks (links on this page – you may only choose one as next_page_url; no sitemap): ${JSON.stringify(currentPage.outboundLinks)}
-
+- description: ${currentPage.description ?? '(none)'}
+- regions (headings/landmarks – structure of the page): ${JSON.stringify(currentPage.regions.map((r) => ({ id: r.id, text: r.headingText, type: r.semanticType })))}
+- outboundLinks (only these URLs are reachable; you may only use one as next_page_url): ${JSON.stringify(currentPage.outboundLinks)}
+${triedLine}
 Path so far (URLs already visited): ${JSON.stringify(pathSoFar)}
 
-Reply with one JSON object: either next (with next_page_url from outboundLinks and optional trigger_label) or goal_reached (with optional reason).`;
+${linkHint}
+
+Reply with one JSON object: "next" (next_page_url + optional trigger_label), "goal_reached" (optional reason), or "goal_not_found" (reason required).`;
 }
 
 /** Resolve trigger_label to a region by best match on headingText; returns id and region metadata. */
@@ -188,6 +223,7 @@ export async function runJourneyAgent(
     const steps: JourneyStep[] = [];
     let currentUrl = startUrl;
     const pathSoFar: string[] = [startUrl];
+    const triedFromPage = new Map<string, Set<string>>(); // page URL -> set of next_page_url we tried and led to dead end
     const pageByUrl = new Map(domainResult.pages.map((p) => [normalizeUrl(p.url), p]));
 
     const firstPage = pageContexts.get(startUrl)!;
@@ -198,11 +234,14 @@ export async function runJourneyAgent(
         index: 0,
     });
 
-    for (let i = 0; i < MAX_STEPS - 1; i++) {
+    let totalTurns = 0;
+    while (totalTurns < MAX_TURNS) {
+        totalTurns++;
         const currentContext = pageContexts.get(currentUrl);
         if (!currentContext) break;
 
-        const userMessage = buildUserMessage(currentContext, goal, pathSoFar);
+        const alreadyTried = Array.from(triedFromPage.get(currentUrl) ?? []);
+        const userMessage = buildUserMessage(currentContext, goal, pathSoFar, alreadyTried);
         let rawContent: string;
         try {
             const completion = await openai.chat.completions.create({
@@ -239,7 +278,32 @@ export async function runJourneyAgent(
             };
         }
 
+        if (action.action === 'goal_not_found') {
+            if (pathSoFar.length > 1) {
+                const failedUrl = currentUrl;
+                const previousUrl = pathSoFar[pathSoFar.length - 2];
+                if (!triedFromPage.has(previousUrl)) triedFromPage.set(previousUrl, new Set());
+                triedFromPage.get(previousUrl)!.add(failedUrl);
+                steps.pop();
+                pathSoFar.pop();
+                currentUrl = pathSoFar[pathSoFar.length - 1];
+                continue;
+            }
+            return {
+                steps,
+                goalReached: false,
+                message: action.reason,
+            };
+        }
+
         const nextNorm = normalizeUrl(action.next_page_url);
+        if (triedFromPage.get(currentUrl)?.has(nextNorm)) {
+            return {
+                steps,
+                goalReached: false,
+                message: 'Agent chose an already-tried link (backtrack and pick another).',
+            };
+        }
         if (!currentContext.outboundLinks.includes(nextNorm)) {
             return {
                 steps,
@@ -251,6 +315,10 @@ export async function runJourneyAgent(
         const nextContext = pageContexts.get(nextNorm);
         if (!nextContext) {
             return { steps, goalReached: false, message: 'Next page not in scan.' };
+        }
+
+        if (steps.length >= MAX_STEPS) {
+            return { steps, goalReached: false, message: 'Max steps reached.' };
         }
 
         const currentScan = pageByUrl.get(currentUrl);
@@ -276,7 +344,7 @@ export async function runJourneyAgent(
     return {
         steps,
         goalReached: false,
-        message: 'Max steps reached.',
+        message: 'Max turns reached.',
     };
 }
 
@@ -301,6 +369,7 @@ export async function* runJourneyAgentStream(
     const steps: JourneyStep[] = [];
     let currentUrl = startUrl;
     const pathSoFar: string[] = [startUrl];
+    const triedFromPage = new Map<string, Set<string>>();
     const pageByUrl = new Map(domainResult.pages.map((p) => [normalizeUrl(p.url), p]));
 
     const firstPage = pageContexts.get(startUrl)!;
@@ -313,11 +382,14 @@ export async function* runJourneyAgentStream(
     steps.push(firstStep);
     yield { type: 'step', step: firstStep };
 
-    for (let i = 0; i < MAX_STEPS - 1; i++) {
+    let totalTurns = 0;
+    while (totalTurns < MAX_TURNS) {
+        totalTurns++;
         const currentContext = pageContexts.get(currentUrl);
         if (!currentContext) break;
 
-        const userMessage = buildUserMessage(currentContext, goal, pathSoFar);
+        const alreadyTried = Array.from(triedFromPage.get(currentUrl) ?? []);
+        const userMessage = buildUserMessage(currentContext, goal, pathSoFar, alreadyTried);
         let rawContent: string;
         try {
             const completion = await openai.chat.completions.create({
@@ -346,7 +418,26 @@ export async function* runJourneyAgentStream(
             return;
         }
 
+        if (action.action === 'goal_not_found') {
+            if (pathSoFar.length > 1) {
+                const failedUrl = currentUrl;
+                const previousUrl = pathSoFar[pathSoFar.length - 2];
+                if (!triedFromPage.has(previousUrl)) triedFromPage.set(previousUrl, new Set());
+                triedFromPage.get(previousUrl)!.add(failedUrl);
+                steps.pop();
+                pathSoFar.pop();
+                currentUrl = pathSoFar[pathSoFar.length - 1];
+                continue;
+            }
+            yield { type: 'done', result: { steps, goalReached: false, message: action.reason } };
+            return;
+        }
+
         const nextNorm = normalizeUrl(action.next_page_url);
+        if (triedFromPage.get(currentUrl)?.has(nextNorm)) {
+            yield { type: 'done', result: { steps, goalReached: false, message: 'Agent chose an already-tried link (backtrack and pick another).' } };
+            return;
+        }
         if (!currentContext.outboundLinks.includes(nextNorm)) {
             yield { type: 'done', result: { steps, goalReached: false, message: `Agent chose a URL not in outboundLinks: ${action.next_page_url}` } };
             return;
@@ -355,6 +446,11 @@ export async function* runJourneyAgentStream(
         const nextContext = pageContexts.get(nextNorm);
         if (!nextContext) {
             yield { type: 'done', result: { steps, goalReached: false, message: 'Next page not in scan.' } };
+            return;
+        }
+
+        if (steps.length >= MAX_STEPS) {
+            yield { type: 'done', result: { steps, goalReached: false, message: 'Max steps reached.' } };
             return;
         }
 
@@ -377,5 +473,5 @@ export async function* runJourneyAgentStream(
         yield { type: 'step', step };
     }
 
-    yield { type: 'done', result: { steps, goalReached: false, message: 'Max steps reached.' } };
+    yield { type: 'done', result: { steps, goalReached: false, message: 'Max turns reached.' } };
 }
