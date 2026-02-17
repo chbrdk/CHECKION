@@ -988,7 +988,11 @@ export default function DomainResultPage() {
                                                     }),
                                                 });
                                                 if (!res.ok) throw new Error('Save failed');
+                                                const data = await res.json().catch(() => ({}));
                                                 setJourneySaved(true);
+                                                if (data?.id && params.id) {
+                                                    router.replace(`/domain/${params.id}?restoreJourney=${data.id}`, { scroll: false });
+                                                }
                                             } catch {
                                                 setJourneyError(t('domainResult.journeySaveError'));
                                             } finally {

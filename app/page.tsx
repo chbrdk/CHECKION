@@ -85,7 +85,7 @@ export default function DashboardPage() {
       const [scanRes, domainRes, journeysRes] = await Promise.all([
         fetch(`/api/scan?limit=${LIMIT}&page=${scanPage}`).then((r) => r.json()),
         fetch(`/api/scans/domain?limit=${LIMIT}&page=${domainPage}`).then((r) => r.json()),
-        fetch('/api/journeys?limit=20').then((r) => r.json()),
+        fetch('/api/journeys?limit=20', { credentials: 'same-origin' }).then((r) => r.json()),
       ]);
       setScans(Array.isArray(scanRes?.data) ? scanRes.data : []);
       setScanPagination(scanRes?.pagination ?? null);
