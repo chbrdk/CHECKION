@@ -25,7 +25,7 @@ export async function GET(
     if (isFileScreenshot(result.screenshot)) {
         const buffer = readScreenshot(id);
         if (!buffer) return new NextResponse(null, { status: 404 });
-        return new NextResponse(buffer, {
+        return new NextResponse(new Uint8Array(buffer), {
             headers: { 'Content-Type': 'image/jpeg' },
         });
     }
@@ -36,7 +36,7 @@ export async function GET(
         const contentType = match[1];
         const base64 = match[2];
         const buffer = Buffer.from(base64, 'base64');
-        return new NextResponse(buffer, {
+        return new NextResponse(new Uint8Array(buffer), {
             headers: { 'Content-Type': contentType },
         });
     }
