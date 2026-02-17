@@ -12,7 +12,7 @@ import {
     MsqdxFormField,
 } from '@msqdx/react';
 import { MSQDX_STATUS, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import type { DomainScanResult, JourneyResult, JourneyStep } from '@/lib/types';
 import {
     aggregateIssues,
@@ -55,7 +55,11 @@ export default function DomainResultPage() {
     const [journeyLoading, setJourneyLoading] = useState(false);
     const [journeyResult, setJourneyResult] = useState<JourneyResult | null>(null);
     const [journeyError, setJourneyError] = useState<string | null>(null);
+    const [journeySaving, setJourneySaving] = useState(false);
+    const [journeySaved, setJourneySaved] = useState(false);
+    const [journeySaveName, setJourneySaveName] = useState('');
 
+    const searchParams = useSearchParams();
     const pages = result?.pages ?? [];
     const aggregated = useMemo(() => {
         if (pages.length === 0) return null;
@@ -80,6 +84,22 @@ export default function DomainResultPage() {
             .then(data => setResult(data))
             .catch(err => console.error('Failed to load scan', err));
     }, [params.id]);
+
+    const restoreJourneyId = searchParams.get('restoreJourney');
+    useEffect(() => {
+        if (!restoreJourneyId || !params.id) return;
+        fetch(`/api/journeys/${restoreJourneyId}`)
+            .then(res => {
+                if (!res.ok) throw new Error('Journey not found');
+                return res.json();
+            })
+            .then((row: { goal: string; result: JourneyResult }) => {
+                setJourneyGoal(row.goal);
+                setJourneyResult(row.result);
+                setTabValue(10);
+            })
+            .catch(() => {});
+    }, [restoreJourneyId, params.id]);
 
     if (!result) {
         return (
@@ -926,19 +946,60 @@ export default function DomainResultPage() {
                             <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.error.base }}>{journeyError}</MsqdxTypography>
                         )}
                         {journeyResult && (
-                            <JourneyFlowchart
-                                steps={journeyResult.steps}
-                                goalReached={journeyResult.goalReached}
-                                message={journeyResult.message}
-                                streaming={journeyLoading}
-                                t={t}
-                                pages={pages}
-                                onStepClick={(step) => {
-                                    const norm = (u: string) => { try { const x = new URL(u); return x.origin + (x.pathname.replace(/\/$/, '') || '/'); } catch { return u; } };
-                                    const page = pages.find((p) => norm(p.url) === norm(step.pageUrl));
-                                    if (page) router.push(`/results/${page.id}`);
-                                }}
-                            />
+                            <>
+                                <JourneyFlowchart
+                                    steps={journeyResult.steps}
+                                    goalReached={journeyResult.goalReached}
+                                    message={journeyResult.message}
+                                    streaming={journeyLoading}
+                                    t={t}
+                                    pages={pages}
+                                    onStepClick={(step) => {
+                                        const norm = (u: string) => { try { const x = new URL(u); return x.origin + (x.pathname.replace(/\/$/, '') || '/'); } catch { return u; } };
+                                        const page = pages.find((p) => norm(p.url) === norm(step.pageUrl));
+                                        if (page) router.push(`/results/${page.id}`);
+                                    }}
+                                />
+                                <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 2, flexWrap: 'wrap', pt: 1 }}>
+                                    <Box sx={{ minWidth: 200, maxWidth: 320 }}>
+                                        <MsqdxFormField
+                                            label={t('domainResult.journeySaveNameLabel')}
+                                            placeholder={t('domainResult.journeySaveNamePlaceholder')}
+                                            value={journeySaveName}
+                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setJourneySaveName(e.target.value)}
+                                            disabled={journeySaving}
+                                        />
+                                    </Box>
+                                    <MsqdxButton
+                                        variant="outlined"
+                                        disabled={journeySaving || journeySaved}
+                                        onClick={async () => {
+                                            if (!params.id || !journeyResult) return;
+                                            setJourneySaving(true);
+                                            try {
+                                                const res = await fetch('/api/journeys', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({
+                                                        domainScanId: params.id,
+                                                        goal: journeyGoal,
+                                                        result: journeyResult,
+                                                        name: journeySaveName.trim() || undefined,
+                                                    }),
+                                                });
+                                                if (!res.ok) throw new Error('Save failed');
+                                                setJourneySaved(true);
+                                            } catch {
+                                                setJourneyError(t('domainResult.journeySaveError'));
+                                            } finally {
+                                                setJourneySaving(false);
+                                            }
+                                        }}
+                                    >
+                                        {journeySaving ? t('domainResult.journeySaving') : journeySaved ? t('domainResult.journeySaved') : t('domainResult.journeySave')}
+                                    </MsqdxButton>
+                                </Box>
+                            </>
                         )}
                     </Box>
                 </MsqdxMoleculeCard>

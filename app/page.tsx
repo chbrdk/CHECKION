@@ -36,6 +36,7 @@ export default function DashboardPage() {
   const [lastSearchedQuery, setLastSearchedQuery] = useState('');
   const [searchMatches, setSearchMatches] = useState<SearchMatch[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [savedJourneys, setSavedJourneys] = useState<Array<{ id: string; domainScanId: string; domain?: string; name: string | null; goal: string; createdAt: string }>>([]);
 
   const runSearch = useCallback(async (q: string) => {
     const trimmed = q.trim();
@@ -81,19 +82,22 @@ export default function DashboardPage() {
   const loadScans = useCallback(async () => {
     setLoading(true);
     try {
-      const [scanRes, domainRes] = await Promise.all([
+      const [scanRes, domainRes, journeysRes] = await Promise.all([
         fetch(`/api/scan?limit=${LIMIT}&page=${scanPage}`).then((r) => r.json()),
         fetch(`/api/scans/domain?limit=${LIMIT}&page=${domainPage}`).then((r) => r.json()),
+        fetch('/api/journeys?limit=20').then((r) => r.json()),
       ]);
       setScans(Array.isArray(scanRes?.data) ? scanRes.data : []);
       setScanPagination(scanRes?.pagination ?? null);
       setDomainScans(Array.isArray(domainRes?.data) ? domainRes.data : []);
       setDomainPagination(domainRes?.pagination ?? null);
+      setSavedJourneys(Array.isArray(journeysRes?.data) ? journeysRes.data : []);
     } catch {
       setScans([]);
       setDomainScans([]);
       setScanPagination(null);
       setDomainPagination(null);
+      setSavedJourneys([]);
     } finally {
       setLoading(false);
     }
@@ -277,6 +281,55 @@ export default function DashboardPage() {
                 onNext={() => setDomainPage((p) => Math.min(domainPagination.totalPages, p + 1))}
                 t={t}
               />
+            )}
+          </MsqdxMoleculeCard>
+
+          <MsqdxMoleculeCard
+            title={t('dashboard.journeyHistoryTitle')}
+            variant="flat"
+            borderRadius="lg"
+            footerDivider={false}
+            sx={{ bgcolor: 'var(--color-card-bg)', mt: 'var(--msqdx-spacing-md)' }}
+          >
+            {savedJourneys.length === 0 ? (
+              <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                {t('dashboard.journeyHistoryEmpty')}
+              </MsqdxTypography>
+            ) : (
+              <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                {savedJourneys.map((j) => (
+                  <Box
+                    key={j.id}
+                    component="li"
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 1,
+                      py: 0.75,
+                      px: 1,
+                      borderRadius: 1,
+                      '&:hover': { bgcolor: 'var(--color-secondary-dx-grey-light-tint)' },
+                    }}
+                  >
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                      <MsqdxTypography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+                        {j.name || j.goal}
+                      </MsqdxTypography>
+                      <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                        {j.domain ?? j.domainScanId} · {new Date(j.createdAt).toLocaleDateString()}
+                      </MsqdxTypography>
+                    </Box>
+                    <MsqdxButton
+                      size="small"
+                      variant="outlined"
+                      onClick={() => router.push(`/domain/${j.domainScanId}?restoreJourney=${j.id}`)}
+                    >
+                      {t('dashboard.journeyHistoryOpen')}
+                    </MsqdxButton>
+                  </Box>
+                ))}
+              </Box>
             )}
           </MsqdxMoleculeCard>
         </Box>

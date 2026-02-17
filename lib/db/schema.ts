@@ -34,3 +34,14 @@ export const domainScans = pgTable('domain_scans', {
     timestamp: text('timestamp').notNull(),
     payload: jsonb('payload').notNull(), // DomainScanResult
 });
+
+/** Saved user journeys (goal + result) for history and restore. */
+export const savedJourneys = pgTable('saved_journeys', {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    domainScanId: text('domain_scan_id').notNull().references(() => domainScans.id, { onDelete: 'cascade' }),
+    name: text('name'),
+    goal: text('goal').notNull(),
+    result: jsonb('result').notNull(), // JourneyResult
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
