@@ -59,7 +59,7 @@ export function buildPageContexts(domainResult: DomainScanResult): Map<string, P
         map.set(urlNorm, {
             url: page.url,
             title: page.seo?.title ?? undefined,
-            description: page.seo?.description ?? undefined,
+            description: page.seo?.metaDescription ?? undefined,
             regions,
             outboundLinks: [...new Set(outboundLinks)],
         });
