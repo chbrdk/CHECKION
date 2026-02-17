@@ -2,11 +2,13 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Box, CircularProgress, alpha } from '@mui/material';
+import { Box, CircularProgress, alpha, Dialog, DialogTitle, DialogContent, IconButton, Button } from '@mui/material';
 import { MsqdxTypography, MsqdxCard, MsqdxChip } from '@msqdx/react';
 import { MSQDX_BRAND_PRIMARY, MSQDX_STATUS } from '@msqdx/tokens';
 import type { DomainSummaryResponse } from '@/lib/domain-summary';
 import type { ScanResult } from '@/lib/types';
+
+const PAGES_PER_PAGE = 10;
 
 // --- Status colors: sofort erkennen ob optimal oder nicht
 const STATUS = {
@@ -160,7 +162,7 @@ export default function ShareLandingPage() {
                 </MsqdxTypography>
             </Box>
             {payload.type === 'domain' ? (
-                <ShareDomainContent data={payload.data} />
+                <ShareDomainContent data={payload.data} token={token} />
             ) : (
                 <ShareSingleContent data={payload.data} />
             )}
@@ -168,9 +170,33 @@ export default function ShareLandingPage() {
     );
 }
 
-function ShareDomainContent({ data }: { data: DomainSummaryResponse }) {
+function ShareDomainContent({ data, token }: { data: DomainSummaryResponse; token: string }) {
     const pages = data.pages ?? [];
     const agg = data.aggregated;
+    const [listPage, setListPage] = useState(1);
+    const [selectedPageDetail, setSelectedPageDetail] = useState<ScanResult | null>(null);
+    const [loadingDetail, setLoadingDetail] = useState(false);
+    const [loadingPageId, setLoadingPageId] = useState<string | null>(null);
+
+    const totalPages = Math.max(1, Math.ceil(pages.length / PAGES_PER_PAGE));
+    const paginatedPages = pages.slice((listPage - 1) * PAGES_PER_PAGE, listPage * PAGES_PER_PAGE);
+
+    const openPageDetail = async (pageId: string) => {
+        setLoadingPageId(pageId);
+        setLoadingDetail(true);
+        setSelectedPageDetail(null);
+        try {
+            const res = await fetch(`/api/share/${encodeURIComponent(token)}/pages/${encodeURIComponent(pageId)}`);
+            if (!res.ok) throw new Error('Laden fehlgeschlagen');
+            const scanResult = (await res.json()) as ScanResult;
+            setSelectedPageDetail(scanResult);
+        } catch {
+            setSelectedPageDetail(null);
+        } finally {
+            setLoadingDetail(false);
+            setLoadingPageId(null);
+        }
+    };
 
     return (
         <>
@@ -381,22 +407,64 @@ function ShareDomainContent({ data }: { data: DomainSummaryResponse }) {
             )}
 
             <MsqdxCard variant="flat" sx={{ p: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
-                <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Gescannte Seiten ({pages.length})</MsqdxTypography>
-                <Box component="ul" sx={{ m: 0, pl: 2, maxHeight: 400, overflow: 'auto' }}>
-                    {pages.slice(0, 200).map((p) => (
-                        <li key={p.id} style={{ listStyle: 'none', marginLeft: -8 }}>
-                            <MsqdxTypography variant="body2" component="span" sx={{ wordBreak: 'break-all' }}>{p.url}</MsqdxTypography>
-                            <MsqdxTypography variant="caption" component="span" sx={{ ml: 1, fontWeight: 600, color: getScoreColor(p.score) }}>Score {p.score}</MsqdxTypography>
-                            <MsqdxTypography variant="caption" component="span" sx={{ ml: 0.5, color: STATUS.neutral }}>· {p.stats.errors + p.stats.warnings + p.stats.notices} Issues</MsqdxTypography>
+                <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>Gescannte Seiten ({pages.length})</MsqdxTypography>
+                <Box component="ul" sx={{ m: 0, pl: 0, listStyle: 'none', maxHeight: 480, overflow: 'auto' }}>
+                    {paginatedPages.map((p) => (
+                        <li key={p.id}>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, py: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+                                <Box sx={{ flex: '1 1 200px', minWidth: 0 }}>
+                                    <MsqdxTypography variant="body2" sx={{ wordBreak: 'break-all' }}>{p.url}</MsqdxTypography>
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                                        <MsqdxTypography variant="caption" sx={{ fontWeight: 600, color: getScoreColor(p.score) }}>Score {p.score}</MsqdxTypography>
+                                        {p.stats.errors > 0 && <MsqdxChip size="small" label={`${p.stats.errors} E`} sx={{ height: 20, fontSize: '0.7rem', bgcolor: alpha(STATUS.error, 0.12), color: STATUS.error }} />}
+                                        {p.stats.warnings > 0 && <MsqdxChip size="small" label={`${p.stats.warnings} W`} sx={{ height: 20, fontSize: '0.7rem', bgcolor: alpha(STATUS.warning, 0.12), color: STATUS.warning }} />}
+                                        {p.stats.notices > 0 && <MsqdxChip size="small" label={`${p.stats.notices} N`} sx={{ height: 20, fontSize: '0.7rem', bgcolor: alpha(MSQDX_STATUS.info.base, 0.12), color: MSQDX_STATUS.info.base }} />}
+                                    </Box>
+                                </Box>
+                                <Button
+                                    size="small"
+                                    variant="outlined"
+                                    onClick={() => openPageDetail(p.id)}
+                                    disabled={loadingDetail && loadingPageId === p.id}
+                                    sx={{ flexShrink: 0 }}
+                                >
+                                    {loadingDetail && loadingPageId === p.id ? 'Laden…' : 'Einzelscan anzeigen'}
+                                </Button>
+                            </Box>
                         </li>
                     ))}
                 </Box>
-                {pages.length > 200 && (
-                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                        … und {pages.length - 200} weitere Seiten
-                    </MsqdxTypography>
+                {totalPages > 1 && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1.5, pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
+                        <MsqdxTypography variant="caption" sx={{ color: STATUS.neutral }}>
+                            Seite {listPage} von {totalPages} ({pages.length} Seiten)
+                        </MsqdxTypography>
+                        <Box sx={{ display: 'flex', gap: 0.5 }}>
+                            <Button size="small" disabled={listPage <= 1} onClick={() => setListPage((x) => Math.max(1, x - 1))}>Zurück</Button>
+                            <Button size="small" disabled={listPage >= totalPages} onClick={() => setListPage((x) => Math.min(totalPages, x + 1))}>Weiter</Button>
+                        </Box>
+                    </Box>
                 )}
             </MsqdxCard>
+
+            <Dialog open={!!selectedPageDetail || loadingDetail} onClose={() => !loadingDetail && setSelectedPageDetail(null)} maxWidth="md" fullWidth scroll="paper" PaperProps={{ sx: { bgcolor: '#fff' } }}>
+                <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <MsqdxTypography variant="h6">Einzelscan</MsqdxTypography>
+                    <IconButton aria-label="Schließen" onClick={() => setSelectedPageDetail(null)} disabled={loadingDetail} size="small" sx={{ ml: 1 }}>
+                        ×
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent dividers>
+                    {loadingDetail && (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                            <CircularProgress sx={{ color: MSQDX_BRAND_PRIMARY.green }} />
+                        </Box>
+                    )}
+                    {selectedPageDetail && !loadingDetail && (
+                        <ShareSingleContent data={selectedPageDetail} />
+                    )}
+                </DialogContent>
+            </Dialog>
         </>
     );
 }
