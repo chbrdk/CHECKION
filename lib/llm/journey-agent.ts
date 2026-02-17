@@ -300,10 +300,14 @@ const JOURNEY_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
         type: 'function',
         function: {
             name: 'navigate_to',
-            description: 'Navigate to a URL. Only allowed if the URL was returned by search_on_page for this page.',
+            description: 'Navigate to a URL. Only allowed if the URL was returned by search_on_page for this page. Pass the link_label and reason from the search result so the journey can show why this link was chosen.',
             parameters: {
                 type: 'object',
-                properties: { url: { type: 'string', description: 'Full URL to navigate to (must be in current page outbound links)' } },
+                properties: {
+                    url: { type: 'string', description: 'Full URL to navigate to (must be in current page outbound links)' },
+                    link_label: { type: 'string', description: 'Link text from search_on_page (what the user would see)' },
+                    reason: { type: 'string', description: 'Why this link was chosen (e.g. "Link text matches", "URL path matches" from search_on_page, or your short explanation)' },
+                },
                 required: ['url'],
             },
         },
@@ -398,12 +402,13 @@ const JOURNEY_TOOL_SYSTEM_PROMPT = `You are simulating a user navigating a websi
 
 1. search_on_page(query): Search the current page for links relevant to the goal. Use the goal or part of it (e.g. "2011", "Magazin") as query.
 2. Then either:
-   - navigate_to(url): Click one of the URLs returned by search_on_page (only URLs from that result are allowed).
+   - navigate_to(url, link_label, reason): Click one of the URLs returned by search_on_page. Always pass link_label (the link text from the result) and reason (why you chose this link, e.g. the "reason" from search_on_page or a short explanation like "Link text matches goal" or "URL path suggests job listings").
    - goal_reached(reason): The current page satisfies the goal.
-   - goal_not_found(reason): The goal cannot be reached from here (no relevant links or dead end).
+   - goal_not_found(reason): The goal cannot be reached from here (no relevant links or dead end). If you backtrack, this reason explains why you left the next page.
 
 Rules:
 - You may only call navigate_to with a URL that was returned by search_on_page for this page.
+- Always pass link_label and reason in navigate_to so the journey shows what the user would see and why you chose that link.
 - If search_on_page returns no links or you already tried all promising ones, call goal_not_found.
 - Prefer calling search_on_page first, then navigate_to or goal_* based on the result.`;
 
@@ -476,13 +481,18 @@ function executeToolCall(
         if (!nextContext) return { result: { error: 'Page not in scan' } };
         if (steps.length >= MAX_STEPS) return { result: { error: 'Max steps reached' } };
         const nextScan = pageByUrl.get(nextNorm);
+        const linkLabel = typeof args.link_label === 'string' ? args.link_label.trim() || undefined : undefined;
+        const reason = typeof args.reason === 'string' ? args.reason.trim() || undefined : undefined;
+        const triggerLabel = linkLabel ?? currentContext.outboundLinksWithLabels?.find((l) => l.url === nextNorm)?.text;
         steps.push({
             pageUrl: nextScan?.url ?? nextContext.url,
             pageTitle: nextContext.title,
+            triggerLabel,
+            navigationReason: reason,
             index: steps.length,
         });
         pathSoFar.push(nextNorm);
-        debugJourney('TOOL navigate_to', { url: nextNorm });
+        debugJourney('TOOL navigate_to', { url: nextNorm, reason, triggerLabel });
         return { result: { success: true, url: nextNorm }, navigated: true };
     }
     if (name === 'goal_reached') {
@@ -498,7 +508,9 @@ function executeToolCall(
             triedFromPage.get(previousUrl)!.add(currentUrl);
             steps.pop();
             pathSoFar.pop();
-            debugJourney('TOOL goal_not_found (backtrack)', { to: previousUrl });
+            const lastStep = steps[steps.length - 1];
+            if (lastStep) lastStep.backtrackFromReason = reason;
+            debugJourney('TOOL goal_not_found (backtrack)', { to: previousUrl, reason });
             return { result: { backtracked: true, reason }, navigated: true };
         }
         debugJourney('TOOL goal_not_found', { reason });
@@ -583,6 +595,8 @@ export async function runJourneyAgent(
                         triedFromPage.get(previousUrl)!.add(currentUrl);
                         steps.pop();
                         pathSoFar.pop();
+                        const lastStep = steps[steps.length - 1];
+                        if (lastStep) lastStep.backtrackFromReason = action.reason;
                         currentUrl = pathSoFar[pathSoFar.length - 1];
                         done = true;
                         continue;
@@ -739,6 +753,8 @@ export async function* runJourneyAgentStream(
                         triedFromPage.get(previousUrl)!.add(currentUrl);
                         steps.pop();
                         pathSoFar.pop();
+                        const lastStep = steps[steps.length - 1];
+                        if (lastStep) lastStep.backtrackFromReason = action.reason;
                         currentUrl = pathSoFar[pathSoFar.length - 1];
                         done = true;
                         continue;

@@ -446,7 +446,12 @@ export interface SearchMatch {
 export interface JourneyStep {
     pageUrl: string;
     pageTitle?: string;
+    /** Link text or region the user would click to get here. */
     triggerLabel?: string;
+    /** Why the agent chose this link (e.g. from search_on_page reason). */
+    navigationReason?: string;
+    /** If the agent backtracked to this step, why it went back from the next page. */
+    backtrackFromReason?: string;
     regionId?: string;
     /** Findability score of the matched region (0–1). Higher = easier to find. */
     regionFindability?: number;

@@ -99,6 +99,11 @@ export function JourneyFlowchart({
                                     minWidth: 140,
                                 }}
                             >
+                                {steps[i - 1]?.backtrackFromReason && (
+                                    <MsqdxTypography variant="caption" sx={{ fontStyle: 'italic', color: 'var(--color-text-muted-on-light)', textAlign: 'center', maxWidth: 200 }}>
+                                        {t('domainResult.journeyBacktrackPrefix')} {steps[i - 1].backtrackFromReason}
+                                    </MsqdxTypography>
+                                )}
                                 <MsqdxTypography variant="caption" sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}>
                                     {t('domainResult.journeySourceOnPage')}
                                 </MsqdxTypography>
@@ -112,6 +117,11 @@ export function JourneyFlowchart({
                                         <MsqdxTypography variant="caption" sx={{ ml: 0.5, fontStyle: 'italic' }}>{t('domainResult.journeySourceLink')}</MsqdxTypography>
                                     )}
                                 </Box>
+                                {step.navigationReason && (
+                                    <MsqdxTypography variant="caption" sx={{ fontSize: '0.7rem', fontStyle: 'italic', color: 'var(--color-text-muted-on-light)', textAlign: 'center', maxWidth: 200 }} title={step.navigationReason}>
+                                        {step.navigationReason}
+                                    </MsqdxTypography>
+                                )}
                                 {(step.regionAboveFold != null || step.regionFindability != null || step.regionSemanticType) ? (
                                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, justifyContent: 'center' }}>
                                         {step.regionSemanticType && regionTypeLabel(step.regionSemanticType, t) && (

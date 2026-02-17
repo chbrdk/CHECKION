@@ -298,6 +298,7 @@
     "journeyRegion_unknown": "Region",
     "journeySourceOnPage": "Gefunden auf der vorherigen Seite",
     "journeySourceLink": "Link",
+    "journeyBacktrackPrefix": "Zurück zur vorherigen Seite, weil",
     "journeyNoRegionMatch": "Keine Region-Zuordnung (Link-Text)",
     "journeyStreaming": "Nächster Schritt…"
   },
