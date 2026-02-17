@@ -134,6 +134,8 @@ export type ScanResult = {
     /** Optional attention/saliency heatmap (data URL or base64 PNG) from MDS-ViTNet. */
     saliencyHeatmap?: string;
     allLinks?: string[]; // Internal links found (raw)
+    /** Internal links with visible text for semantic search / journey (same set as allLinks). */
+    allLinksWithLabels?: Array<{ href: string; text: string }>;
     performance: {
         ttfb: number;
         fcp: number;

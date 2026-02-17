@@ -46,6 +46,8 @@ export interface PageContext {
     description?: string;
     regions: Array<{ id: string; headingText: string; semanticType?: string }>;
     outboundLinks: string[];
+    /** Link text per outbound URL for semantic search (from allLinksWithLabels). */
+    outboundLinksWithLabels?: Array<{ url: string; text: string }>;
 }
 
 /** Build a token-sparse page context for the LLM. Uses canonical matching (www = non-www) so start page links find scanned pages. */
@@ -94,22 +96,46 @@ export function buildPageContexts(domainResult: DomainScanResult): Map<string, P
             if (outboundLinks.length >= MAX_OUTBOUND_LINKS) break;
         }
 
+        const labelsByUrl = new Map<string, string>();
+        for (const { href, text } of page.allLinksWithLabels ?? []) {
+            try {
+                const norm = normalizeUrl(href);
+                const key = canonicalKey(norm);
+                const stored = key != null ? canonicalToStoredUrl.get(key) : null;
+                if (stored != null && outboundLinks.includes(stored) && !labelsByUrl.has(stored))
+                    labelsByUrl.set(stored, (text || '').slice(0, 100).trim() || href);
+            } catch {
+                /* skip */
+            }
+        }
+        const outboundLinksWithLabels = outboundLinks.map((u) => ({
+            url: u,
+            text: labelsByUrl.get(u) ?? u,
+        }));
+
         map.set(urlNorm, {
             url: page.url,
             title: page.seo?.title ?? undefined,
             description: page.seo?.metaDescription ?? undefined,
             regions,
             outboundLinks,
+            outboundLinksWithLabels,
         });
     }
 
-    // Diagnose: wenn eine Seite 0 outboundLinks hat, log warum (allLinks vs. gespeicherte URLs)
-    const emptyOutbound = Array.from(map.entries()).find(([, ctx]) => ctx.outboundLinks.length === 0);
-    if (emptyOutbound) {
-        const [pageUrlNorm, ctx] = emptyOutbound;
+    // Diagnose: Seiten mit 0 outbound obwohl allLinks vorhanden (Matching-Problem) oder Startseiten-Kandidaten
+    const startCandidate = nodes.length > 0
+        ? normalizeUrl(([...nodes].sort((a, b) => (a.depth ?? 0) - (b.depth ?? 0))[0].url))
+        : null;
+    const emptyButHasLinks = Array.from(map.entries()).filter(
+        ([urlNorm, ctx]) => ctx.outboundLinks.length === 0 && (domainResult.pages ?? []).some((p) => normalizeUrl(p.url) === urlNorm && (p.allLinks?.length ?? 0) > 0)
+    );
+    const forStart = startCandidate != null && map.get(startCandidate)?.outboundLinks.length === 0;
+    if (emptyButHasLinks.length > 0 || forStart) {
+        const pageUrlNorm = forStart ? startCandidate! : emptyButHasLinks[0][0];
         const page = (domainResult.pages ?? []).find((p) => normalizeUrl(p.url) === pageUrlNorm);
         const rawLinks = page?.allLinks ?? [];
-        const sampleLinks = rawLinks.slice(0, 20).map((href) => {
+        const sampleLinks = rawLinks.slice(0, 25).map((href) => {
             try {
                 const n = normalizeUrl(href);
                 return { href, normalized: n, canonicalKey: canonicalKey(n) };
@@ -117,10 +143,21 @@ export function buildPageContexts(domainResult: DomainScanResult): Map<string, P
                 return { href, normalized: null, canonicalKey: null };
             }
         });
-        const storedKeys = Array.from(canonicalToStoredUrl.keys()).slice(0, 30);
-        debugJourney('DIAG: page has 0 outboundLinks', {
+        const storedKeys = Array.from(canonicalToStoredUrl.keys()).slice(0, 40);
+        const matchCount = rawLinks.filter((href) => {
+            try {
+                const n = normalizeUrl(href);
+                const key = canonicalKey(n);
+                return key != null && canonicalToStoredUrl.has(key);
+            } catch {
+                return false;
+            }
+        }).length;
+        debugJourney('DIAG: 0 outboundLinks (start or had links)', {
             pageUrl: pageUrlNorm,
+            isStartPage: forStart ?? false,
             allLinksCount: rawLinks.length,
+            howManyWouldMatch: matchCount,
             sampleLinksFromPage: sampleLinks,
             sampleStoredCanonicalKeys: storedKeys,
         });
@@ -246,6 +283,130 @@ ${linkHint}
 Reply with one JSON object: "next" (next_page_url + optional trigger_label), "goal_reached" (optional reason), or "goal_not_found" (reason required).`;
 }
 
+const JOURNEY_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
+    {
+        type: 'function',
+        function: {
+            name: 'search_on_page',
+            description: 'Search the current page for links most relevant to the goal. Returns ranked links (url, label, reason). Use this first, then navigate_to one of the returned URLs or goal_reached/goal_not_found.',
+            parameters: {
+                type: 'object',
+                properties: { query: { type: 'string', description: 'Search query (e.g. goal or part of it like "2011", "Magazin")' } },
+                required: ['query'],
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'navigate_to',
+            description: 'Navigate to a URL. Only allowed if the URL was returned by search_on_page for this page.',
+            parameters: {
+                type: 'object',
+                properties: { url: { type: 'string', description: 'Full URL to navigate to (must be in current page outbound links)' } },
+                required: ['url'],
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'goal_reached',
+            description: 'Call when the current page satisfies the goal.',
+            parameters: {
+                type: 'object',
+                properties: { reason: { type: 'string', description: 'Short explanation' } },
+                required: [],
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'goal_not_found',
+            description: 'Call when the goal cannot be reached from here (e.g. no relevant links, or all led to dead ends).',
+            parameters: {
+                type: 'object',
+                properties: { reason: { type: 'string', description: 'Short explanation' } },
+                required: ['reason'],
+            },
+        },
+    },
+];
+
+const SEARCH_TOP_N = 10;
+
+/** Keyword-based relevance: score URL path, link label, and region headings against query. */
+function searchOnPage(
+    currentPage: PageContext,
+    query: string,
+    alreadyTried: string[]
+): Array<{ url: string; label: string; reason?: string }> {
+    const q = query.trim().toLowerCase();
+    if (!q) return currentPage.outboundLinks.slice(0, SEARCH_TOP_N).map((url) => ({
+        url,
+        label: currentPage.outboundLinksWithLabels?.find((l) => l.url === url)?.text ?? url,
+    }));
+
+    const scored = currentPage.outboundLinks
+        .filter((url) => !alreadyTried.includes(url))
+        .map((url) => {
+            const label = currentPage.outboundLinksWithLabels?.find((l) => l.url === url)?.text ?? url;
+            let score = 0;
+            const reasons: string[] = [];
+            try {
+                const path = new URL(url).pathname.toLowerCase();
+                if (path.includes(q)) {
+                    score += 10;
+                    reasons.push('URL path matches');
+                }
+            } catch {
+                /* ignore */
+            }
+            if (label.toLowerCase().includes(q)) {
+                score += 15;
+                reasons.push('Link text matches');
+            }
+            for (const r of currentPage.regions) {
+                if ((r.headingText || '').toLowerCase().includes(q)) {
+                    score += 5;
+                    reasons.push('Region heading matches');
+                    break;
+                }
+            }
+            return { url, label, score, reason: reasons.join('; ') || undefined };
+        })
+        .filter((x) => x.score >= 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, SEARCH_TOP_N)
+        .map(({ url, label, reason }) => ({ url, label, reason }));
+
+    if (scored.length === 0 && currentPage.outboundLinks.some((u) => !alreadyTried.includes(u))) {
+        return currentPage.outboundLinks
+            .filter((u) => !alreadyTried.includes(u))
+            .slice(0, SEARCH_TOP_N)
+            .map((url) => ({
+                url,
+                label: currentPage.outboundLinksWithLabels?.find((l) => l.url === url)?.text ?? url,
+                reason: 'No keyword match; showing available links',
+            }));
+    }
+    return scored;
+}
+
+const JOURNEY_TOOL_SYSTEM_PROMPT = `You are simulating a user navigating a website to reach a goal. Use the tools in order:
+
+1. search_on_page(query): Search the current page for links relevant to the goal. Use the goal or part of it (e.g. "2011", "Magazin") as query.
+2. Then either:
+   - navigate_to(url): Click one of the URLs returned by search_on_page (only URLs from that result are allowed).
+   - goal_reached(reason): The current page satisfies the goal.
+   - goal_not_found(reason): The goal cannot be reached from here (no relevant links or dead end).
+
+Rules:
+- You may only call navigate_to with a URL that was returned by search_on_page for this page.
+- If search_on_page returns no links or you already tried all promising ones, call goal_not_found.
+- Prefer calling search_on_page first, then navigate_to or goal_* based on the result.`;
+
 /** Resolve trigger_label to a region by best match on headingText; returns id and region metadata. */
 function matchTriggerToRegion(
     page: ScanResult,
@@ -271,6 +432,81 @@ function matchTriggerToRegion(
     return best ? { id: best.id, findabilityScore: best.findabilityScore, aboveFold: best.aboveFold, semanticType: best.semanticType } : undefined;
 }
 
+type ToolCallHandler = (
+    name: string,
+    args: Record<string, unknown>,
+    currentContext: PageContext,
+    currentUrl: string,
+    pageContexts: Map<string, PageContext>,
+    pageByUrl: Map<string, ScanResult>,
+    steps: JourneyStep[],
+    pathSoFar: string[],
+    triedFromPage: Map<string, Set<string>>
+) => { result: unknown; navigated?: boolean; returnResult?: JourneyResult };
+
+function executeToolCall(
+    name: string,
+    args: Record<string, unknown>,
+    currentContext: PageContext,
+    currentUrl: string,
+    pageContexts: Map<string, PageContext>,
+    pageByUrl: Map<string, ScanResult>,
+    steps: JourneyStep[],
+    pathSoFar: string[],
+    triedFromPage: Map<string, Set<string>>
+): { result: unknown; navigated?: boolean; returnResult?: JourneyResult } {
+    const alreadyTried = Array.from(triedFromPage.get(currentUrl) ?? []);
+    if (name === 'search_on_page') {
+        const query = typeof args.query === 'string' ? args.query : '';
+        const list = searchOnPage(currentContext, query, alreadyTried);
+        debugJourney('TOOL search_on_page', { query, resultsCount: list.length });
+        return { result: list };
+    }
+    if (name === 'navigate_to') {
+        const urlArg = args.url;
+        if (typeof urlArg !== 'string') return { result: { error: 'Missing url' } };
+        const nextNorm = normalizeUrl(urlArg);
+        if (!currentContext.outboundLinks.includes(nextNorm)) {
+            return { result: { error: 'URL not in outbound links', allowed: currentContext.outboundLinks.slice(0, 5) } };
+        }
+        if (triedFromPage.get(currentUrl)?.has(nextNorm)) {
+            return { result: { error: 'Already tried this link' } };
+        }
+        const nextContext = pageContexts.get(nextNorm);
+        if (!nextContext) return { result: { error: 'Page not in scan' } };
+        if (steps.length >= MAX_STEPS) return { result: { error: 'Max steps reached' } };
+        const nextScan = pageByUrl.get(nextNorm);
+        steps.push({
+            pageUrl: nextScan?.url ?? nextContext.url,
+            pageTitle: nextContext.title,
+            index: steps.length,
+        });
+        pathSoFar.push(nextNorm);
+        debugJourney('TOOL navigate_to', { url: nextNorm });
+        return { result: { success: true, url: nextNorm }, navigated: true };
+    }
+    if (name === 'goal_reached') {
+        const reason = typeof args.reason === 'string' ? args.reason : undefined;
+        debugJourney('TOOL goal_reached', { reason });
+        return { result: { success: true }, returnResult: { steps, goalReached: true, message: reason } };
+    }
+    if (name === 'goal_not_found') {
+        const reason = typeof args.reason === 'string' ? args.reason : 'Goal not found.';
+        if (pathSoFar.length > 1) {
+            const previousUrl = pathSoFar[pathSoFar.length - 2];
+            if (!triedFromPage.has(previousUrl)) triedFromPage.set(previousUrl, new Set());
+            triedFromPage.get(previousUrl)!.add(currentUrl);
+            steps.pop();
+            pathSoFar.pop();
+            debugJourney('TOOL goal_not_found (backtrack)', { to: previousUrl });
+            return { result: { backtracked: true, reason }, navigated: true };
+        }
+        debugJourney('TOOL goal_not_found', { reason });
+        return { result: { success: false, reason }, returnResult: { steps, goalReached: false, message: reason } };
+    }
+    return { result: { error: 'Unknown tool' } };
+}
+
 export async function runJourneyAgent(
     openai: OpenAI,
     goal: string,
@@ -282,18 +518,13 @@ export async function runJourneyAgent(
         return { steps: [], goalReached: false, message: 'No start page or empty scan.' };
     }
 
-    debugJourney('START', {
-        goal,
-        startUrl,
-        totalPages: pageContexts.size,
-        pageUrls: Array.from(pageContexts.keys()).slice(0, 20),
-    });
-    debugJourney('SYSTEM_PROMPT', JOURNEY_SYSTEM_PROMPT);
+    debugJourney('START', { goal, startUrl, totalPages: pageContexts.size });
+    debugJourney('SYSTEM_PROMPT', JOURNEY_TOOL_SYSTEM_PROMPT);
 
     const steps: JourneyStep[] = [];
     let currentUrl = startUrl;
     const pathSoFar: string[] = [startUrl];
-    const triedFromPage = new Map<string, Set<string>>(); // page URL -> set of next_page_url we tried and led to dead end
+    const triedFromPage = new Map<string, Set<string>>();
     const pageByUrl = new Map(domainResult.pages.map((p) => [normalizeUrl(p.url), p]));
 
     const firstPage = pageContexts.get(startUrl)!;
@@ -311,127 +542,114 @@ export async function runJourneyAgent(
         if (!currentContext) break;
 
         const alreadyTried = Array.from(triedFromPage.get(currentUrl) ?? []);
-        const userMessage = buildUserMessage(currentContext, goal, pathSoFar, alreadyTried);
-        debugJourney(`TURN ${totalTurns} REQUEST`, {
-            currentUrl,
-            pathSoFar,
-            alreadyTried,
-            currentTitle: currentContext.title,
-            outboundLinksCount: currentContext.outboundLinks.length,
-            outboundLinks: currentContext.outboundLinks.slice(0, 15),
-            userMessage,
-        });
-        let rawContent: string;
-        try {
-            const completion = await openai.chat.completions.create({
-                model: OPENAI_MODEL,
-                messages: [
-                    { role: 'system', content: JOURNEY_SYSTEM_PROMPT },
-                    { role: 'user', content: userMessage },
-                ],
-            });
-            rawContent = completion.choices[0]?.message?.content ?? '';
-        } catch (e) {
-            console.error('[CHECKION] journey agent: OpenAI error', e);
-            return {
-                steps,
-                goalReached: false,
-                message: e instanceof Error ? e.message : 'LLM request failed.',
-            };
-        }
-        debugJourney(`TURN ${totalTurns} RESPONSE (raw)`, rawContent);
-        const action = parseAgentResponse(rawContent);
-        debugJourney(`TURN ${totalTurns} PARSED ACTION`, action);
-        if (!action) {
-            return {
-                steps,
-                goalReached: false,
-                message: 'Invalid or missing JSON in agent response.',
-            };
-        }
+        const userContent = `Goal: ${goal}\n\nCurrent page: ${currentContext.url}\nTitle: ${currentContext.title ?? '(none)'}\nPath so far: ${pathSoFar.length} pages.\nAlready tried from this page: ${alreadyTried.length} links.\n\nUse search_on_page to find relevant links, then navigate_to one of them, or goal_reached/goal_not_found.`;
+        type Message = OpenAI.Chat.Completions.ChatCompletionMessageParam;
+        let messages: Message[] = [
+            { role: 'system', content: JOURNEY_TOOL_SYSTEM_PROMPT },
+            { role: 'user', content: userContent },
+        ];
 
-        if (action.action === 'goal_reached') {
-            debugJourney('DONE goal_reached', { steps: steps.length, reason: action.reason });
-            return {
-                steps,
-                goalReached: true,
-                message: action.reason,
-            };
-        }
-
-        if (action.action === 'goal_not_found') {
-            if (pathSoFar.length > 1) {
-                debugJourney('BACKTRACK', { from: currentUrl, to: pathSoFar[pathSoFar.length - 2] });
-                const failedUrl = currentUrl;
-                const previousUrl = pathSoFar[pathSoFar.length - 2];
-                if (!triedFromPage.has(previousUrl)) triedFromPage.set(previousUrl, new Set());
-                triedFromPage.get(previousUrl)!.add(failedUrl);
-                steps.pop();
-                pathSoFar.pop();
-                currentUrl = pathSoFar[pathSoFar.length - 1];
-                continue;
+        let done = false;
+        let journeyResult: JourneyResult | null = null;
+        while (!done) {
+            let completion: OpenAI.Chat.Completions.ChatCompletion;
+            try {
+                completion = await openai.chat.completions.create({
+                    model: OPENAI_MODEL,
+                    messages,
+                    tools: JOURNEY_TOOLS,
+                    tool_choice: 'auto',
+                });
+            } catch (e) {
+                console.error('[CHECKION] journey agent: OpenAI error', e);
+                return { steps, goalReached: false, message: e instanceof Error ? e.message : 'LLM request failed.' };
             }
-            debugJourney('DONE goal_not_found', { steps: steps.length, reason: action.reason });
-            return {
-                steps,
-                goalReached: false,
-                message: action.reason,
-            };
-        }
 
-        const nextNorm = normalizeUrl(action.next_page_url);
-        debugJourney('NEXT', { next_page_url: nextNorm, trigger_label: action.trigger_label });
-        if (triedFromPage.get(currentUrl)?.has(nextNorm)) {
-            return {
-                steps,
-                goalReached: false,
-                message: 'Agent chose an already-tried link (backtrack and pick another).',
-            };
-        }
-        if (!currentContext.outboundLinks.includes(nextNorm)) {
-            return {
-                steps,
-                goalReached: false,
-                message: `Agent chose a URL not in outboundLinks: ${action.next_page_url}`,
-            };
-        }
+            const msg = completion.choices[0]?.message;
+            if (!msg) {
+                return { steps, goalReached: false, message: 'No message from model.' };
+            }
 
-        const nextContext = pageContexts.get(nextNorm);
-        if (!nextContext) {
-            return { steps, goalReached: false, message: 'Next page not in scan.' };
+            if (!msg.tool_calls?.length) {
+                const rawContent = typeof msg.content === 'string' ? msg.content : '';
+                const action = parseAgentResponse(rawContent);
+                if (action?.action === 'goal_reached') {
+                    return { steps, goalReached: true, message: action.reason };
+                }
+                if (action?.action === 'goal_not_found') {
+                    if (pathSoFar.length > 1) {
+                        const previousUrl = pathSoFar[pathSoFar.length - 2];
+                        if (!triedFromPage.has(previousUrl)) triedFromPage.set(previousUrl, new Set());
+                        triedFromPage.get(previousUrl)!.add(currentUrl);
+                        steps.pop();
+                        pathSoFar.pop();
+                        currentUrl = pathSoFar[pathSoFar.length - 1];
+                        done = true;
+                        continue;
+                    }
+                    return { steps, goalReached: false, message: action.reason };
+                }
+                if (action?.action === 'next') {
+                    const nextNorm = normalizeUrl(action.next_page_url);
+                    if (currentContext.outboundLinks.includes(nextNorm) && !triedFromPage.get(currentUrl)?.has(nextNorm)) {
+                        const nextContext = pageContexts.get(nextNorm);
+                        if (nextContext && steps.length < MAX_STEPS) {
+                            const nextScan = pageByUrl.get(nextNorm);
+                            steps.push({
+                                pageUrl: nextScan?.url ?? nextContext.url,
+                                pageTitle: nextContext.title,
+                                triggerLabel: action.trigger_label,
+                                index: steps.length,
+                            });
+                            pathSoFar.push(nextNorm);
+                            currentUrl = nextNorm;
+                        }
+                    }
+                }
+                done = true;
+                break;
+            }
+
+            messages = [...messages, { role: 'assistant', content: msg.content ?? null, tool_calls: msg.tool_calls }];
+            let navigated = false;
+            for (const tc of msg.tool_calls) {
+                const fn = 'function' in tc ? tc.function : undefined;
+                const name = fn?.name ?? '';
+                let args: Record<string, unknown> = {};
+                try {
+                    args = JSON.parse(typeof fn?.arguments === 'string' ? fn.arguments : '{}') as Record<string, unknown>;
+                } catch {
+                    /* ignore */
+                }
+                const out = executeToolCall(
+                    name,
+                    args,
+                    currentContext,
+                    currentUrl,
+                    pageContexts,
+                    pageByUrl,
+                    steps,
+                    pathSoFar,
+                    triedFromPage
+                );
+                messages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(out.result) });
+                if (out.returnResult) {
+                    return out.returnResult;
+                }
+                if (out.navigated) {
+                    currentUrl = pathSoFar[pathSoFar.length - 1];
+                    navigated = true;
+                    break;
+                }
+            }
+            if (navigated) {
+                done = true;
+            }
         }
-
-        if (steps.length >= MAX_STEPS) {
-            debugJourney('DONE max_steps_reached', { steps: steps.length });
-            return { steps, goalReached: false, message: 'Max steps reached.' };
-        }
-
-        const currentScan = pageByUrl.get(currentUrl);
-        const region = currentScan
-            ? matchTriggerToRegion(currentScan, action.trigger_label)
-            : undefined;
-
-        const nextScan = pageByUrl.get(nextNorm);
-        steps.push({
-            pageUrl: nextScan?.url ?? nextContext.url,
-            pageTitle: nextContext.title,
-            triggerLabel: action.trigger_label,
-            regionId: region?.id,
-            regionFindability: region?.findabilityScore,
-            regionAboveFold: region?.aboveFold,
-            regionSemanticType: region?.semanticType,
-            index: steps.length,
-        });
-        pathSoFar.push(nextNorm);
-        currentUrl = nextNorm;
     }
 
     debugJourney('DONE max_turns_reached', { steps: steps.length });
-    return {
-        steps,
-        goalReached: false,
-        message: 'Max turns reached.',
-    };
+    return { steps, goalReached: false, message: 'Max turns reached.' };
 }
 
 export type JourneyStreamEvent =
@@ -453,7 +671,7 @@ export async function* runJourneyAgentStream(
     }
 
     debugJourney('STREAM START', { goal, startUrl, totalPages: pageContexts.size });
-    debugJourney('SYSTEM_PROMPT', JOURNEY_SYSTEM_PROMPT);
+    debugJourney('SYSTEM_PROMPT', JOURNEY_TOOL_SYSTEM_PROMPT);
 
     const steps: JourneyStep[] = [];
     let currentUrl = startUrl;
@@ -471,109 +689,123 @@ export async function* runJourneyAgentStream(
     steps.push(firstStep);
     yield { type: 'step', step: firstStep };
 
+    type Message = OpenAI.Chat.Completions.ChatCompletionMessageParam;
     let totalTurns = 0;
     while (totalTurns < MAX_TURNS) {
         totalTurns++;
         const currentContext = pageContexts.get(currentUrl);
         if (!currentContext) break;
 
-        const alreadyTried = Array.from(triedFromPage.get(currentUrl) ?? []);
-        const userMessage = buildUserMessage(currentContext, goal, pathSoFar, alreadyTried);
-        debugJourney(`STREAM TURN ${totalTurns} REQUEST`, {
-            currentUrl,
-            pathSoFar,
-            alreadyTried,
-            outboundLinksCount: currentContext.outboundLinks.length,
-            outboundLinks: currentContext.outboundLinks.slice(0, 15),
-            userMessage,
-        });
-        let rawContent: string;
-        try {
-            const completion = await openai.chat.completions.create({
-                model: OPENAI_MODEL,
-                messages: [
-                    { role: 'system', content: JOURNEY_SYSTEM_PROMPT },
-                    { role: 'user', content: userMessage },
-                ],
-            });
-            rawContent = completion.choices[0]?.message?.content ?? '';
-        } catch (e) {
-            const msg = e instanceof Error ? e.message : 'LLM request failed.';
-            yield { type: 'error', message: msg };
-            yield { type: 'done', result: { steps, goalReached: false, message: msg } };
-            return;
-        }
-        debugJourney(`STREAM TURN ${totalTurns} RESPONSE (raw)`, rawContent);
-        const action = parseAgentResponse(rawContent);
-        debugJourney(`STREAM TURN ${totalTurns} PARSED ACTION`, action);
-        if (!action) {
-            yield { type: 'done', result: { steps, goalReached: false, message: 'Invalid or missing JSON in agent response.' } };
-            return;
-        }
+        const userContent = `Goal: ${goal}\n\nCurrent page: ${currentContext.url}\nTitle: ${currentContext.title ?? '(none)'}\nPath so far: ${pathSoFar.length} pages.\n\nUse search_on_page to find relevant links, then navigate_to one of them, or goal_reached/goal_not_found.`;
+        let messages: Message[] = [
+            { role: 'system', content: JOURNEY_TOOL_SYSTEM_PROMPT },
+            { role: 'user', content: userContent },
+        ];
 
-        if (action.action === 'goal_reached') {
-            debugJourney('STREAM DONE goal_reached', { reason: action.reason });
-            yield { type: 'done', result: { steps, goalReached: true, message: action.reason } };
-            return;
-        }
-
-        if (action.action === 'goal_not_found') {
-            if (pathSoFar.length > 1) {
-                debugJourney('STREAM BACKTRACK', { from: currentUrl, to: pathSoFar[pathSoFar.length - 2] });
-                const failedUrl = currentUrl;
-                const previousUrl = pathSoFar[pathSoFar.length - 2];
-                if (!triedFromPage.has(previousUrl)) triedFromPage.set(previousUrl, new Set());
-                triedFromPage.get(previousUrl)!.add(failedUrl);
-                steps.pop();
-                pathSoFar.pop();
-                currentUrl = pathSoFar[pathSoFar.length - 1];
-                continue;
+        let done = false;
+        while (!done) {
+            let completion: OpenAI.Chat.Completions.ChatCompletion;
+            try {
+                completion = await openai.chat.completions.create({
+                    model: OPENAI_MODEL,
+                    messages,
+                    tools: JOURNEY_TOOLS,
+                    tool_choice: 'auto',
+                });
+            } catch (e) {
+                const msg = e instanceof Error ? e.message : 'LLM request failed.';
+                yield { type: 'error', message: msg };
+                yield { type: 'done', result: { steps, goalReached: false, message: msg } };
+                return;
             }
-            debugJourney('STREAM DONE goal_not_found', { reason: action.reason });
-            yield { type: 'done', result: { steps, goalReached: false, message: action.reason } };
-            return;
-        }
 
-        const nextNorm = normalizeUrl(action.next_page_url);
-        debugJourney('STREAM NEXT', { next_page_url: nextNorm, trigger_label: action.trigger_label });
-        if (triedFromPage.get(currentUrl)?.has(nextNorm)) {
-            yield { type: 'done', result: { steps, goalReached: false, message: 'Agent chose an already-tried link (backtrack and pick another).' } };
-            return;
-        }
-        if (!currentContext.outboundLinks.includes(nextNorm)) {
-            yield { type: 'done', result: { steps, goalReached: false, message: `Agent chose a URL not in outboundLinks: ${action.next_page_url}` } };
-            return;
-        }
+            const msg = completion.choices[0]?.message;
+            if (!msg) {
+                yield { type: 'done', result: { steps, goalReached: false, message: 'No message from model.' } };
+                return;
+            }
 
-        const nextContext = pageContexts.get(nextNorm);
-        if (!nextContext) {
-            yield { type: 'done', result: { steps, goalReached: false, message: 'Next page not in scan.' } };
-            return;
-        }
+            if (!msg.tool_calls?.length) {
+                const rawContent = typeof msg.content === 'string' ? msg.content : '';
+                const action = parseAgentResponse(rawContent);
+                if (action?.action === 'goal_reached') {
+                    yield { type: 'done', result: { steps, goalReached: true, message: action.reason } };
+                    return;
+                }
+                if (action?.action === 'goal_not_found') {
+                    if (pathSoFar.length > 1) {
+                        const previousUrl = pathSoFar[pathSoFar.length - 2];
+                        if (!triedFromPage.has(previousUrl)) triedFromPage.set(previousUrl, new Set());
+                        triedFromPage.get(previousUrl)!.add(currentUrl);
+                        steps.pop();
+                        pathSoFar.pop();
+                        currentUrl = pathSoFar[pathSoFar.length - 1];
+                        done = true;
+                        continue;
+                    }
+                    yield { type: 'done', result: { steps, goalReached: false, message: action.reason } };
+                    return;
+                }
+                if (action?.action === 'next') {
+                    const nextNorm = normalizeUrl(action.next_page_url);
+                    if (currentContext.outboundLinks.includes(nextNorm) && !triedFromPage.get(currentUrl)?.has(nextNorm)) {
+                        const nextContext = pageContexts.get(nextNorm);
+                        if (nextContext && steps.length < MAX_STEPS) {
+                            const nextScan = pageByUrl.get(nextNorm);
+                            const step: JourneyStep = {
+                                pageUrl: nextScan?.url ?? nextContext.url,
+                                pageTitle: nextContext.title,
+                                triggerLabel: action.trigger_label,
+                                index: steps.length,
+                            };
+                            steps.push(step);
+                            pathSoFar.push(nextNorm);
+                            currentUrl = nextNorm;
+                            yield { type: 'step', step };
+                        }
+                    }
+                }
+                done = true;
+                break;
+            }
 
-        if (steps.length >= MAX_STEPS) {
-            debugJourney('STREAM DONE max_steps_reached', { steps: steps.length });
-            yield { type: 'done', result: { steps, goalReached: false, message: 'Max steps reached.' } };
-            return;
+            messages = [...messages, { role: 'assistant', content: msg.content ?? null, tool_calls: msg.tool_calls }];
+            let navigated = false;
+            for (const tc of msg.tool_calls) {
+                const fn = 'function' in tc ? tc.function : undefined;
+                const name = fn?.name ?? '';
+                let args: Record<string, unknown> = {};
+                try {
+                    args = JSON.parse(typeof fn?.arguments === 'string' ? fn.arguments : '{}') as Record<string, unknown>;
+                } catch {
+                    /* ignore */
+                }
+                const out = executeToolCall(
+                    name,
+                    args,
+                    currentContext,
+                    currentUrl,
+                    pageContexts,
+                    pageByUrl,
+                    steps,
+                    pathSoFar,
+                    triedFromPage
+                );
+                messages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(out.result) });
+                if (out.returnResult) {
+                    yield { type: 'done', result: out.returnResult };
+                    return;
+                }
+                if (out.navigated) {
+                    currentUrl = pathSoFar[pathSoFar.length - 1];
+                    const lastStep = steps[steps.length - 1];
+                    if (lastStep) yield { type: 'step', step: lastStep };
+                    navigated = true;
+                    break;
+                }
+            }
+            if (navigated) done = true;
         }
-
-        const currentScan = pageByUrl.get(currentUrl);
-        const region = currentScan ? matchTriggerToRegion(currentScan, action.trigger_label) : undefined;
-        const nextScan = pageByUrl.get(nextNorm);
-        const step: JourneyStep = {
-            pageUrl: nextScan?.url ?? nextContext.url,
-            pageTitle: nextContext.title,
-            triggerLabel: action.trigger_label,
-            regionId: region?.id,
-            regionFindability: region?.findabilityScore,
-            regionAboveFold: region?.aboveFold,
-            regionSemanticType: region?.semanticType,
-            index: steps.length,
-        };
-        steps.push(step);
-        pathSoFar.push(nextNorm);
-        currentUrl = nextNorm;
-        yield { type: 'step', step };
     }
 
     debugJourney('STREAM DONE max_turns_reached', { steps: steps.length });

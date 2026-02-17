@@ -1098,25 +1098,30 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                     };
                 }
                 
-                // --- 7a. Semantic Structure Map (headings, landmarks, buttons, paragraphs in document order) ---
+                // --- 7a. Semantic Structure Map (headings, landmarks, sections, buttons, paragraphs in document order) ---
                 const structureMap = [];
-                var selector = 'h1, h2, h3, h4, h5, h6, nav, main, aside, footer, header, button, [role="button"], p';
+                var selector = 'h1, h2, h3, h4, h5, h6, nav, main, aside, footer, header, section, article, [role="region"], [role="navigation"], button, [role="button"], p';
                 document.querySelectorAll(selector).forEach(function(el) {
                     var level = 0;
                     var tag = el.tagName.toLowerCase();
+                    var role = (el.getAttribute('role') || '').toLowerCase();
                     if (el.tagName.match(/^H[1-6]$/)) {
                         level = parseInt(el.tagName[1]);
-                    } else if (el.tagName === 'BUTTON' || el.getAttribute('role') === 'button') {
+                    } else if (el.tagName === 'BUTTON' || role === 'button') {
                         level = 7;
                         tag = 'button';
                     } else if (el.tagName === 'P') {
                         level = 8;
+                    } else if (el.tagName === 'SECTION' || el.tagName === 'ARTICLE' || role === 'region' || role === 'navigation') {
+                        level = 9;
+                        if (role === 'region') tag = 'region';
+                        else if (role === 'navigation') tag = 'navigation';
                     }
                     var r = el.getBoundingClientRect();
                     if (r.width === 0 && r.height === 0) return;
                     structureMap.push({
                         tag: tag,
-                        text: (el.textContent || '').slice(0, 200).trim(),
+                        text: (el.textContent || '').slice(0, 300).trim(),
                         level: level,
                         rect: {
                             x: Math.round(r.x),
@@ -1410,6 +1415,9 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
         const internalLinks = uniqueLinksList
             .filter(l => isInternalLink(l.href, pageOrigin))
             .map(l => l.href);
+        const internalLinksWithLabels = uniqueLinksList
+            .filter(l => isInternalLink(l.href, pageOrigin))
+            .map(l => ({ href: l.href, text: (l.text || '').slice(0, 100).trim() }));
 
         const durationMs = Date.now() - startTime;
         const stats = computeStats(issues);
@@ -1435,6 +1443,7 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
             score: calculateScore(stats),
             screenshot,
             allLinks: internalLinks,
+            allLinksWithLabels: internalLinksWithLabels,
             performance: perfData,
             eco: {
                 co2: parseFloat(co2Grams.toFixed(3)),

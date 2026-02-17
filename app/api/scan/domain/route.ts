@@ -5,12 +5,15 @@ import { createDomainScan, updateDomainScan, getDomainScan, addScan } from '@/li
 import { v4 as uuidv4 } from 'uuid';
 import type { DomainScanResult, ScanResult } from '@/lib/types';
 
-/** Strip heavy fields from each page so the domain payload stays within JSON/DB limits (avoid "Invalid string length"). Full page data is stored per page via addScan. */
+const SLIM_LINKS_WITH_LABELS_CAP = 100;
+
+/** Strip heavy fields from each page so the domain payload stays within JSON/DB limits. Keeps allLinksWithLabels for journey; caps per page for large domains. */
 function slimPagesForPayload(pages: ScanResult[]): ScanResult[] {
-    return pages.map(({ screenshot, saliencyHeatmap, ...rest }) => ({
+    return pages.map(({ screenshot, saliencyHeatmap, allLinksWithLabels, ...rest }) => ({
         ...rest,
         screenshot: '',
         saliencyHeatmap: undefined,
+        allLinksWithLabels: allLinksWithLabels?.slice(0, SLIM_LINKS_WITH_LABELS_CAP),
     }));
 }
 
