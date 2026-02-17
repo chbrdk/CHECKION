@@ -932,8 +932,10 @@ export default function DomainResultPage() {
                                 message={journeyResult.message}
                                 streaming={journeyLoading}
                                 t={t}
+                                pages={pages}
                                 onStepClick={(step) => {
-                                    const page = pages.find((p) => p.url === step.pageUrl);
+                                    const norm = (u: string) => { try { const x = new URL(u); return x.origin + (x.pathname.replace(/\/$/, '') || '/'); } catch { return u; } };
+                                    const page = pages.find((p) => norm(p.url) === norm(step.pageUrl));
                                     if (page) router.push(`/results/${page.id}`);
                                 }}
                             />

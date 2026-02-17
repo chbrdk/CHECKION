@@ -5,6 +5,14 @@ import { Box, CircularProgress, IconButton } from '@mui/material';
 import { MsqdxTypography, MsqdxChip } from '@msqdx/react';
 import { ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import type { JourneyStep } from '@/lib/types';
+import type { PageIndexRegion } from '@/lib/types';
+
+/** Minimal page info for screenshot + region lookup (from domain result pages). */
+export interface JourneyPageRef {
+    id: string;
+    url: string;
+    pageIndex?: { regions?: PageIndexRegion[] };
+}
 
 interface JourneyFlowchartProps {
     steps: JourneyStep[];
@@ -14,6 +22,8 @@ interface JourneyFlowchartProps {
     /** When true, show a loading indicator after the last step (streaming). */
     streaming?: boolean;
     t: (key: string) => string;
+    /** Pages from domain result (id, url, pageIndex) so we can show screenshot + click region per step. */
+    pages?: JourneyPageRef[];
 }
 
 function shortUrl(url: string, maxLen = 50): string {
@@ -25,6 +35,33 @@ function shortUrl(url: string, maxLen = 50): string {
     } catch {
         return url.length <= maxLen ? url : url.slice(0, maxLen - 3) + '...';
     }
+}
+
+function normalizePageUrl(url: string): string {
+    try {
+        const u = new URL(url);
+        return u.origin + (u.pathname.replace(/\/$/, '') || '/');
+    } catch {
+        return url;
+    }
+}
+
+/** Find the region whose heading best matches the trigger label (for click highlight). */
+function regionRectForTrigger(regions: PageIndexRegion[] | undefined, triggerLabel: string | undefined): { x: number; y: number; width: number; height: number } | null {
+    if (!triggerLabel?.trim() || !regions?.length) return null;
+    const label = triggerLabel.trim().toLowerCase();
+    let best: PageIndexRegion | null = null;
+    let bestScore = 0;
+    for (const r of regions) {
+        const text = (r.headingText ?? '').toLowerCase();
+        if (!text) continue;
+        const score = text.includes(label) ? label.length : (label.includes(text) ? text.length : 0);
+        if (score > 0 && score > bestScore) {
+            bestScore = score;
+            best = r;
+        }
+    }
+    return best?.rect ?? null;
 }
 
 /** Label for findability: high = easy to find, low = rather hidden. */
@@ -47,6 +84,52 @@ function regionTypeLabel(semanticType: string | undefined, t: (key: string) => s
 const CARD_MIN_WIDTH = 280;
 const CARD_GAP = 12;
 
+/** Screenshot with optional highlight rect (where the agent "clicked"). */
+function StepScreenshot({
+    scanId,
+    highlightRect,
+    alt,
+}: {
+    scanId: string;
+    highlightRect: { x: number; y: number; width: number; height: number } | null;
+    alt: string;
+}) {
+    const [imgSize, setImgSize] = useState<{ w: number; h: number } | null>(null);
+    const src = `/api/scan/${scanId}/screenshot`;
+    return (
+        <Box sx={{ position: 'relative', width: '100%', borderRadius: 1, overflow: 'hidden', bgcolor: 'var(--color-neutral-100)', aspectRatio: '16/10' }}>
+            <Box
+                component="img"
+                alt={alt}
+                src={src}
+                loading="lazy"
+                onLoad={(e) => {
+                    const img = e.target as HTMLImageElement;
+                    if (img.naturalWidth && img.naturalHeight) setImgSize({ w: img.naturalWidth, h: img.naturalHeight });
+                }}
+                sx={{ width: '100%', height: 'auto', display: 'block', verticalAlign: 'middle' }}
+            />
+            {highlightRect && imgSize && highlightRect.width > 0 && highlightRect.height > 0 && (
+                <Box
+                    aria-hidden
+                    sx={{
+                        position: 'absolute',
+                        left: `${(highlightRect.x / imgSize.w) * 100}%`,
+                        top: `${(highlightRect.y / imgSize.h) * 100}%`,
+                        width: `${(highlightRect.width / imgSize.w) * 100}%`,
+                        height: `${(highlightRect.height / imgSize.h) * 100}%`,
+                        border: '2px solid var(--color-secondary-dx-green)',
+                        borderRadius: 0.5,
+                        boxSizing: 'border-box',
+                        pointerEvents: 'none',
+                        boxShadow: '0 0 0 2px rgba(255,255,255,0.8)',
+                    }}
+                />
+            )}
+        </Box>
+    );
+}
+
 export function JourneyFlowchart({
     steps,
     goalReached,
@@ -54,6 +137,7 @@ export function JourneyFlowchart({
     onStepClick,
     streaming,
     t,
+    pages = [],
 }: JourneyFlowchartProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
     const [activeIndex, setActiveIndex] = useState(0);
@@ -153,7 +237,13 @@ export function JourneyFlowchart({
                     }}
                     onScroll={updateScrollState}
                 >
-                    {steps.map((step, i) => (
+                    {steps.map((step, i) => {
+                        const screenshotPageUrl = i === 0 ? step.pageUrl : steps[i - 1].pageUrl;
+                        const screenshotPage = pages.find((p) => normalizePageUrl(p.url) === normalizePageUrl(screenshotPageUrl));
+                        const highlightRect = i > 0 && screenshotPage?.pageIndex?.regions
+                            ? regionRectForTrigger(screenshotPage.pageIndex.regions, step.triggerLabel)
+                            : null;
+                        return (
                         <Box
                             key={step.index}
                             data-journey-card
@@ -175,6 +265,15 @@ export function JourneyFlowchart({
                                 '&:hover': onStepClick ? { boxShadow: 1, borderColor: 'var(--color-theme-accent, #1976d2)' } : {},
                             }}
                         >
+                            {screenshotPage && (
+                                <Box sx={{ mb: 1.5 }}>
+                                    <StepScreenshot
+                                        scanId={screenshotPage.id}
+                                        highlightRect={highlightRect}
+                                        alt={i === 0 ? (step.pageTitle || step.pageUrl) : (t('domainResult.journeySourceOnPage') + ': ' + (step.triggerLabel || ''))}
+                                    />
+                                </Box>
+                            )}
                             <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1, mb: 1 }}>
                                 <MsqdxTypography variant="caption" sx={{ fontWeight: 700, color: 'var(--color-text-muted-on-light)' }}>
                                     {t('domainResult.journeyStep')} {step.index + 1}
@@ -245,7 +344,8 @@ export function JourneyFlowchart({
                                 </Box>
                             )}
                         </Box>
-                    ))}
+                        );
+                    })}
                 </Box>
                 <IconButton
                     size="small"
