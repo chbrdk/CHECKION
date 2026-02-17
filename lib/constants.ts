@@ -11,3 +11,12 @@ export const LOCALE_STORAGE_KEY = 'checkion_locale';
 
 /** Number of scans per page on the dashboard (single + domain lists). */
 export const DASHBOARD_SCANS_PAGE_SIZE = 10;
+
+/** Screenshot storage: env key for backend (local disk vs S3). Use "s3" for shared storage across instances. */
+export const ENV_SCREENSHOT_STORAGE = 'SCREENSHOT_STORAGE';
+/** S3 bucket for screenshots when SCREENSHOT_STORAGE=s3. Fallback: S3_BUCKET. */
+export const ENV_SCREENSHOT_S3_BUCKET = 'SCREENSHOT_S3_BUCKET';
+/** Optional S3 key prefix (e.g. "screenshots"). */
+export const ENV_SCREENSHOT_S3_PREFIX = 'SCREENSHOT_S3_PREFIX';
+/** AWS region for S3 (default eu-central-1). */
+export const ENV_SCREENSHOT_AWS_REGION = 'SCREENSHOT_AWS_REGION';

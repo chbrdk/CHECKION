@@ -301,7 +301,7 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
             type: 'jpeg',
             quality: 70
         }) as Buffer;
-        const screenshot = writeScreenshot(scanId, screenshotBuffer);
+        const screenshot = await writeScreenshot(scanId, screenshotBuffer);
 
         // 2. Extract Bounding Boxes for Issues
         const issuePromises = (results.issues || []).map(async (raw: any) => {

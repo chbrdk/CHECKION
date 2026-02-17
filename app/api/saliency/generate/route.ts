@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     if (!result) {
         return NextResponse.json({ error: 'Scan not found.' }, { status: 404 });
     }
-    const imageBase64 = getScreenshotBase64(result.screenshot, scanId);
+    const imageBase64 = await getScreenshotBase64(result.screenshot, scanId);
     if (!imageBase64) {
         return NextResponse.json({ error: 'Scan has no screenshot or screenshot file missing.' }, { status: 400 });
     }
