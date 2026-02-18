@@ -299,14 +299,11 @@ export default function ScanPage() {
                                                 {run.url} · {run.status === 'complete' ? t('scan.journeyStatusComplete') : run.status === 'error' ? t('scan.journeyStatusError') : t('scan.journeyStatusRunning')}
                                             </MsqdxTypography>
                                         </Box>
-                                        <MsqdxButton
-                                            variant="text"
-                                            size="small"
-                                            component={Link}
-                                            href={`/journey-agent/${run.id}`}
-                                        >
-                                            {t('scan.journeyView')}
-                                        </MsqdxButton>
+                                        <Link href={`/journey-agent/${run.id}`} style={{ textDecoration: 'none' }}>
+                                            <MsqdxButton variant="text" size="small">
+                                                {t('scan.journeyView')}
+                                            </MsqdxButton>
+                                        </Link>
                                     </Box>
                                 ))}
                             </Box>
