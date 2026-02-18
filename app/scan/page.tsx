@@ -272,7 +272,7 @@ export default function ScanPage() {
                 {scanMode === 'journey' && (
                     <Box sx={{ mt: 'var(--msqdx-spacing-md)', pt: 'var(--msqdx-spacing-md)', borderTop: '1px solid var(--color-border)' }}>
                         <MsqdxTypography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-                            {t('scan.journeyHistoryTitle', 'Letzte Journeys')}
+                            {t('scan.journeyHistoryTitle')}
                         </MsqdxTypography>
                         {journeyHistory.length > 0 ? (
                             <Box component="ul" sx={{ m: 0, p: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
@@ -296,7 +296,7 @@ export default function ScanPage() {
                                                 {run.task.length > 60 ? run.task.slice(0, 60) + '…' : run.task}
                                             </MsqdxTypography>
                                             <MsqdxTypography variant="caption" color="text.secondary">
-                                                {run.url} · {run.status === 'complete' ? t('scan.journeyStatusComplete', 'Abgeschlossen') : run.status === 'error' ? t('scan.journeyStatusError', 'Fehler') : t('scan.journeyStatusRunning', 'Läuft')}
+                                                {run.url} · {run.status === 'complete' ? t('scan.journeyStatusComplete') : run.status === 'error' ? t('scan.journeyStatusError') : t('scan.journeyStatusRunning')}
                                             </MsqdxTypography>
                                         </Box>
                                         <MsqdxButton
@@ -305,14 +305,14 @@ export default function ScanPage() {
                                             component={Link}
                                             href={`/journey-agent/${run.id}`}
                                         >
-                                            {t('scan.journeyView', 'Ansehen')}
+                                            {t('scan.journeyView')}
                                         </MsqdxButton>
                                     </Box>
                                 ))}
                             </Box>
                         ) : (
                             <MsqdxTypography variant="body2" color="text.secondary">
-                                {t('scan.journeyHistoryEmpty', 'Noch keine gespeicherten Journeys. Starte eine Journey oben.')}
+                                {t('scan.journeyHistoryEmpty')}
                             </MsqdxTypography>
                         )}
                     </Box>
