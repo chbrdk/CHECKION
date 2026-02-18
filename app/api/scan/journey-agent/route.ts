@@ -77,8 +77,9 @@ export async function POST(request: NextRequest) {
         const jobId = data.jobId as string;
         try {
             await insertJourneyRun(jobId, session.user.id, url, task);
-        } catch {
-            // non-fatal: history might be unavailable (e.g. no DB)
+        } catch (err) {
+            // non-fatal: history unavailable if table missing or DB error
+            console.warn('[journey-agent] Could not save run to history:', err instanceof Error ? err.message : err);
         }
         return NextResponse.json({ success: true, jobId });
     } catch (e) {

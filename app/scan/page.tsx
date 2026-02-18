@@ -269,46 +269,52 @@ export default function ScanPage() {
                     </Box>
                 )}
 
-                {scanMode === 'journey' && journeyHistory.length > 0 && (
+                {scanMode === 'journey' && (
                     <Box sx={{ mt: 'var(--msqdx-spacing-md)', pt: 'var(--msqdx-spacing-md)', borderTop: '1px solid var(--color-border)' }}>
                         <MsqdxTypography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
                             {t('scan.journeyHistoryTitle', 'Letzte Journeys')}
                         </MsqdxTypography>
-                        <Box component="ul" sx={{ m: 0, p: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                            {journeyHistory.map((run) => (
-                                <Box
-                                    key={run.id}
-                                    component="li"
-                                    sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 1,
-                                        flexWrap: 'wrap',
-                                        py: 0.75,
-                                        px: 1,
-                                        borderRadius: 1,
-                                        '&:hover': { bgcolor: 'action.hover' },
-                                    }}
-                                >
-                                    <Box sx={{ flex: '1 1 200px', minWidth: 0 }}>
-                                        <MsqdxTypography variant="body2" sx={{ fontWeight: 500 }} noWrap>
-                                            {run.task.length > 60 ? run.task.slice(0, 60) + '…' : run.task}
-                                        </MsqdxTypography>
-                                        <MsqdxTypography variant="caption" color="text.secondary">
-                                            {run.url} · {run.status === 'complete' ? t('scan.journeyStatusComplete', 'Abgeschlossen') : run.status === 'error' ? t('scan.journeyStatusError', 'Fehler') : t('scan.journeyStatusRunning', 'Läuft')}
-                                        </MsqdxTypography>
-                                    </Box>
-                                    <MsqdxButton
-                                        variant="text"
-                                        size="small"
-                                        component={Link}
-                                        href={`/journey-agent/${run.id}`}
+                        {journeyHistory.length > 0 ? (
+                            <Box component="ul" sx={{ m: 0, p: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                {journeyHistory.map((run) => (
+                                    <Box
+                                        key={run.id}
+                                        component="li"
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 1,
+                                            flexWrap: 'wrap',
+                                            py: 0.75,
+                                            px: 1,
+                                            borderRadius: 1,
+                                            '&:hover': { bgcolor: 'action.hover' },
+                                        }}
                                     >
-                                        {t('scan.journeyView', 'Ansehen')}
-                                    </MsqdxButton>
-                                </Box>
-                            ))}
-                        </Box>
+                                        <Box sx={{ flex: '1 1 200px', minWidth: 0 }}>
+                                            <MsqdxTypography variant="body2" sx={{ fontWeight: 500 }} noWrap>
+                                                {run.task.length > 60 ? run.task.slice(0, 60) + '…' : run.task}
+                                            </MsqdxTypography>
+                                            <MsqdxTypography variant="caption" color="text.secondary">
+                                                {run.url} · {run.status === 'complete' ? t('scan.journeyStatusComplete', 'Abgeschlossen') : run.status === 'error' ? t('scan.journeyStatusError', 'Fehler') : t('scan.journeyStatusRunning', 'Läuft')}
+                                            </MsqdxTypography>
+                                        </Box>
+                                        <MsqdxButton
+                                            variant="text"
+                                            size="small"
+                                            component={Link}
+                                            href={`/journey-agent/${run.id}`}
+                                        >
+                                            {t('scan.journeyView', 'Ansehen')}
+                                        </MsqdxButton>
+                                    </Box>
+                                ))}
+                            </Box>
+                        ) : (
+                            <MsqdxTypography variant="body2" color="text.secondary">
+                                {t('scan.journeyHistoryEmpty', 'Noch keine gespeicherten Journeys. Starte eine Journey oben.')}
+                            </MsqdxTypography>
+                        )}
                     </Box>
                 )}
             </MsqdxMoleculeCard>
