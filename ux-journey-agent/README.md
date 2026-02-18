@@ -6,6 +6,8 @@ Browser agent service for CHECKION: runs autonomous navigation tasks (URL + natu
 
 - **POST /run** – Body: `{ "url": "https://example.com", "task": "Find product X and add to cart" }` → `{ "jobId": "uuid" }`
 - **GET /run/{jobId}** – Returns `{ "status": "running"|"complete"|"error", "result?: { steps, success, ... }" }`
+- **GET /run/{jobId}/video** – Recorded journey video (when available).
+- **GET /run/{jobId}/live** – Latest viewport frame (JPEG) while the job is running; 404 when no frame.
 - **GET /health** – `{ "status": "ok" }`
 
 ## Env
@@ -20,6 +22,7 @@ Browser agent service for CHECKION: runs autonomous navigation tasks (URL + natu
 | `UX_JOURNEY_STEP_START_DELAY_SECONDS` | no | Delay at the *start* of each step so the viewer sees the current state before the action runs (default 1.2). Effectively increases visible "action lead-in" time. |
 | `UX_JOURNEY_STEP_DELAY_SECONDS` | no | Delay at the *end* of each step after the red circle (default 1.0). |
 | `UX_JOURNEY_SCROLL_VISIBLE_SECONDS` | no | After a scroll action, a short smooth-scroll animation is run so the video shows scroll movement (default 1.2). |
+| `UX_JOURNEY_LIVE_FRAME_INTERVAL` | no | Seconds between live viewport screenshots (default 0.4, ~2.5 fps). |
 | `PORT` | no | HTTP port (default 8320) |
 
 ## Local run
@@ -31,6 +34,14 @@ python -m playwright install chromium
 export ANTHROPIC_API_KEY=sk-ant-...
 python main.py
 # POST http://localhost:8320/run with { "url", "task" }
+```
+
+## Tests
+
+With dependencies installed (see Local run):
+
+```bash
+python -m unittest test_live -v
 ```
 
 ## Docker (Coolify)

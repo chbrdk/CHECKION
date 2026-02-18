@@ -7,9 +7,11 @@ Screen recording is attempted for every run; GET /run/{jobId}/video returns the 
 from __future__ import annotations
 
 import asyncio
+import base64
 import glob
 import os
 import shutil
+import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -17,7 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 
 # Directory for recorded videos (per job)
@@ -31,6 +33,8 @@ STEP_DELAY_SECONDS = float(os.environ.get("UX_JOURNEY_STEP_DELAY_SECONDS", "1.0"
 CLICK_CIRCLE_VISIBLE_SECONDS = 1.5
 # After a scroll action: run a short smooth-scroll animation so the video shows scroll movement (seconds)
 SCROLL_VISIBLE_SECONDS = float(os.environ.get("UX_JOURNEY_SCROLL_VISIBLE_SECONDS", "1.2"))
+# Live viewport screenshot interval (seconds); ~2.5 fps at 0.4
+LIVE_FRAME_INTERVAL = float(os.environ.get("UX_JOURNEY_LIVE_FRAME_INTERVAL", "0.4"))
 
 # ---------------------------------------------------------------------------
 # Job store (in-memory; replace with Redis/DB for multi-instance)
@@ -49,6 +53,10 @@ class JobState:
 
 _jobs: dict[str, JobState] = {}
 _jobs_lock = asyncio.Lock()
+
+# Live viewport: agent ref and latest frame per job (only while job is running)
+_live_agents: dict[str, Any] = {}
+_live_frames: dict[str, tuple[float, bytes]] = {}
 
 # ---------------------------------------------------------------------------
 # Request/Response models
@@ -187,6 +195,52 @@ def _history_screenshots(history: Any) -> list[str]:
         return []
 
 
+async def _capture_live_frame(agent: Any) -> bytes | None:
+    """Capture current viewport as JPEG via CDP. Returns None on failure."""
+    try:
+        cdp = await agent.browser_session.get_or_create_cdp_session()
+        if not cdp:
+            return None
+        send = None
+        if hasattr(cdp, "cdp_client"):
+            send = getattr(cdp.cdp_client, "send", None)
+        elif hasattr(cdp, "send"):
+            send = cdp.send
+        if not send:
+            return None
+        Page = getattr(send, "Page", None)
+        if not Page:
+            return None
+        capture = getattr(Page, "capture_screenshot", None) or getattr(Page, "captureScreenshot", None)
+        if not capture:
+            return None
+        kwargs: dict[str, Any] = {"format": "jpeg", "quality": 80}
+        if hasattr(cdp, "session_id") and cdp.session_id is not None:
+            kwargs["session_id"] = cdp.session_id
+        result = await capture(**kwargs)
+        if isinstance(result, dict) and result.get("data"):
+            return base64.b64decode(result["data"])
+        return None
+    except Exception:
+        return None
+
+
+async def _live_screenshot_loop(job_id: str) -> None:
+    """Background task: capture viewport at LIVE_FRAME_INTERVAL and store in _live_frames."""
+    while job_id in _live_agents:
+        try:
+            agent = _live_agents.get(job_id)
+            if agent:
+                jpeg = await _capture_live_frame(agent)
+                if jpeg:
+                    _live_frames[job_id] = (time.monotonic(), jpeg)
+        except asyncio.CancelledError:
+            break
+        except Exception:
+            pass
+        await asyncio.sleep(LIVE_FRAME_INTERVAL)
+
+
 async def run_agent(job_id: str, url: str, task: str) -> None:
     try:
         from browser_use import Agent, Browser
@@ -293,10 +347,21 @@ async def run_agent(job_id: str, url: str, task: str) -> None:
             # 3) Pause so the video clearly shows the state before the next step
             await asyncio.sleep(max(0.5, STEP_DELAY_SECONDS - CLICK_CIRCLE_VISIBLE_SECONDS))
 
+        _live_agents[job_id] = agent
+        screenshot_task = asyncio.create_task(_live_screenshot_loop(job_id))
         try:
-            history = await agent.run(on_step_start=_on_step_start, on_step_end=_on_step_end)
-        except TypeError:
-            history = await agent.run()
+            try:
+                history = await agent.run(on_step_start=_on_step_start, on_step_end=_on_step_end)
+            except TypeError:
+                history = await agent.run()
+        finally:
+            screenshot_task.cancel()
+            try:
+                await screenshot_task
+            except asyncio.CancelledError:
+                pass
+            _live_agents.pop(job_id, None)
+            _live_frames.pop(job_id, None)
 
         # Map browser-use history to CHECKION result format
         steps = _history_to_steps(history)
@@ -414,6 +479,20 @@ async def get_run_video(job_id: str) -> FileResponse:
         job.video_path,
         media_type=media_type,
         filename=filename,
+    )
+
+
+@app.get("/run/{job_id}/live")
+async def get_run_live(job_id: str) -> Response:
+    """Return the latest live viewport frame (JPEG) while the job is running."""
+    frame = _live_frames.get(job_id)
+    if not frame:
+        raise HTTPException(status_code=404, detail="No live frame")
+    _, jpeg_bytes = frame
+    return Response(
+        content=jpeg_bytes,
+        media_type="image/jpeg",
+        headers={"Cache-Control": "no-store"},
     )
 
 # ---------------------------------------------------------------------------
