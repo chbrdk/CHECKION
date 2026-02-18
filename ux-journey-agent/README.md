@@ -16,6 +16,7 @@ Browser agent service for CHECKION: runs autonomous navigation tasks (URL + natu
 | `OPENAI_API_KEY` | one of these | OpenAI fallback |
 | `UX_JOURNEY_MAX_STEPS` | no | Max agent steps (default 25) |
 | `UX_JOURNEY_CLAUDE_MODEL` | no | Claude model (default claude-sonnet-4-20250514) |
+| `UX_JOURNEY_VIDEO_DIR` | no | Directory for video files (default `/tmp/ux-journey-videos`). Every run attempts to record; video is served at GET /run/{jobId}/video when browser-use supports it. |
 | `PORT` | no | HTTP port (default 8320) |
 
 ## Local run

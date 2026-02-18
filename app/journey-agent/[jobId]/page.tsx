@@ -23,6 +23,7 @@ export default function JourneyAgentStatusPage() {
         success?: boolean;
         taskDescription?: string;
         siteDomain?: string;
+        videoUrl?: string;
     } | null>(null);
 
     useEffect(() => {
@@ -133,7 +134,7 @@ export default function JourneyAgentStatusPage() {
                         {result.success ? t('scan.journeyStatusComplete') : t('scan.journeyStatusFinished')}
                     </MsqdxTypography>
                     {result.taskDescription && (
-                        <MsqdxTypography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <MsqdxTypography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
                             {t('scan.journeyTaskLabel')}: {result.taskDescription}
                         </MsqdxTypography>
                     )}
@@ -142,20 +143,66 @@ export default function JourneyAgentStatusPage() {
                             Site: {result.siteDomain}
                         </MsqdxTypography>
                     )}
+
+                    {result.videoUrl && (
+                        <Box sx={{ mt: 2, mb: 2 }}>
+                            <MsqdxTypography variant="subtitle2" sx={{ mb: 1 }}>
+                                Aufzeichnung
+                            </MsqdxTypography>
+                            <Box
+                                component="video"
+                                controls
+                                playsInline
+                                sx={{ width: '100%', maxWidth: 800, borderRadius: 1, bgcolor: '#000' }}
+                                src={result.videoUrl}
+                            >
+                                Your browser does not support the video tag.
+                            </Box>
+                        </Box>
+                    )}
+
                     {result.steps && result.steps.length > 0 && (
                         <Box sx={{ mt: 2 }}>
                             <MsqdxTypography variant="subtitle2" sx={{ mb: 1 }}>
                                 {t('scan.journeyStepsTitle')} ({result.steps.length})
                             </MsqdxTypography>
-                            <Box component="ol" sx={{ pl: 2, m: 0 }}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                                 {result.steps.map((s, i) => (
-                                    <li key={i} style={{ marginBottom: 8 }}>
-                                        <MsqdxTypography variant="body2">
-                                            {s.action}
-                                            {s.target ? ` → ${s.target}` : ''}
-                                            {s.reasoning ? ` — ${s.reasoning}` : ''}
-                                        </MsqdxTypography>
-                                    </li>
+                                    <Box
+                                        key={i}
+                                        sx={{
+                                            p: 1.5,
+                                            borderRadius: 1,
+                                            border: '1px solid',
+                                            borderColor: 'divider',
+                                            bgcolor: 'action.hover',
+                                        }}
+                                    >
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.5 }}>
+                                            <Box
+                                                component="span"
+                                                sx={{
+                                                    fontSize: 12,
+                                                    fontWeight: 600,
+                                                    px: 1,
+                                                    py: 0.25,
+                                                    borderRadius: 1,
+                                                    bgcolor: s.action === 'done' ? 'success.light' : s.action === 'navigate' ? 'info.light' : 'primary.light',
+                                                    color: s.action === 'done' ? 'success.dark' : s.action === 'navigate' ? 'info.dark' : 'primary.dark',
+                                                }}
+                                            >
+                                                {s.action === 'navigate' ? 'Seite' : s.action === 'click' ? 'Klick' : s.action === 'done' ? 'Abgeschlossen' : s.action}
+                                            </Box>
+                                            <MsqdxTypography variant="body2" sx={{ fontWeight: 500 }}>
+                                                {s.target && s.target !== '—' ? (s.target.length > 80 ? s.target.slice(0, 80) + '…' : s.target) : null}
+                                            </MsqdxTypography>
+                                        </Box>
+                                        {s.result && (
+                                            <MsqdxTypography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                                                {s.result.length > 400 ? s.result.slice(0, 400) + '…' : s.result}
+                                            </MsqdxTypography>
+                                        )}
+                                    </Box>
                                 ))}
                             </Box>
                         </Box>

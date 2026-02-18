@@ -33,12 +33,16 @@ export async function GET(
     const statusUrl = agentBaseUrl.replace(/\/$/, '') + '/run/' + encodeURIComponent(jobId);
     try {
         const res = await fetch(statusUrl);
-        const data = await res.json();
+        const data = (await res.json()) as { result?: { videoUrl?: string }; status?: string; error?: string };
         if (!res.ok) {
             return NextResponse.json(
-                { error: (data as { error?: string })?.error || `Agent service error: ${res.status}`, status: 'error' },
+                { error: data?.error || `Agent service error: ${res.status}`, status: 'error' },
                 { status: res.status >= 400 && res.status < 600 ? res.status : 502 }
             );
+        }
+        // Rewrite agent's videoUrl to CHECKION proxy so the client can load the video with auth
+        if (data?.result?.videoUrl && jobId) {
+            data.result.videoUrl = `/api/scan/journey-agent/${encodeURIComponent(jobId)}/video`;
         }
         return NextResponse.json(data);
     } catch (e) {

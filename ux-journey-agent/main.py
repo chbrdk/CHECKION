@@ -2,18 +2,26 @@
 UX Journey Agent HTTP API for CHECKION.
 Uses browser-use (Playwright + LLM) to run autonomous browser tasks.
 POST /run -> { url, task } -> { jobId }; GET /run/{jobId} -> status + result.
+Screen recording is attempted for every run; GET /run/{jobId}/video returns the video (when browser-use supports record_video_dir).
 """
 from __future__ import annotations
 
 import asyncio
+import glob
 import os
+import shutil
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
+
+# Directory for recorded videos (per job)
+VIDEO_BASE_DIR = Path(os.environ.get("UX_JOURNEY_VIDEO_DIR", "/tmp/ux-journey-videos"))
 
 # ---------------------------------------------------------------------------
 # Job store (in-memory; replace with Redis/DB for multi-instance)
@@ -27,6 +35,7 @@ class JobState:
     task: str
     result: dict[str, Any] | None = None
     error: str | None = None
+    video_path: str | None = None  # path to recorded video file (if any)
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 _jobs: dict[str, JobState] = {}
@@ -67,27 +76,87 @@ def _make_llm():
     raise RuntimeError("Set ANTHROPIC_API_KEY or OPENAI_API_KEY for the agent LLM.")
 
 
+def _normalize_action_entry(entry: Any) -> tuple[str, str, str]:
+    """Extract (action_label, target, result) from one action_history entry. Entry can be dict, list of dicts, or object."""
+    action_label = "step"
+    target = ""
+    result = ""
+    raw: Any = entry
+    if isinstance(entry, (list, tuple)) and len(entry) > 0:
+        raw = entry[0]
+    # Handle list of dicts (e.g. [{'navigate': {...}, 'result': '...'}])
+    if isinstance(raw, (list, tuple)) and len(raw) > 0:
+        raw = raw[0]
+    if not isinstance(raw, dict):
+        # May be an object with __dict__ or attributes
+        res = getattr(raw, "result", None) or ""
+        result = str(res)[:500]
+        return (getattr(raw, "name", str(raw))[:50] if hasattr(raw, "name") else str(raw)[:50], "", result)
+    # Keys like 'navigate', 'click', 'done' with payload; plus 'result' or 'interacted_element'
+    res = raw.get("result") or ""
+    elem = raw.get("interacted_element")
+    if "navigate" in raw:
+        pl = raw["navigate"] or {}
+        url = pl.get("url", "")
+        action_label = "navigate"
+        target = url
+        result = (res or "")[:500]
+    elif "click" in raw:
+        pl = raw["click"] or {}
+        action_label = "click"
+        if elem is not None:
+            attrs = getattr(elem, "attributes", None) or {}
+            if isinstance(attrs, dict):
+                target = attrs.get("ax_name") or attrs.get("aria-label") or attrs.get("href") or ""
+            target = target or getattr(elem, "x_path", "") or str(pl.get("index", ""))
+        else:
+            target = str(pl.get("index", ""))
+        result = (res or "")[:500]
+    elif "done" in raw:
+        pl = raw["done"] or {}
+        action_label = "done"
+        target = "—"
+        result = (pl.get("text") or res or "")[:1000]
+    else:
+        key = next((k for k in raw if k not in ("result", "interacted_element")), "step")
+        action_label = str(key)
+        target = str(raw.get(key, ""))[:200] if isinstance(raw.get(key), dict) else ""
+        result = (res or "")[:500]
+    return (action_label, target, result)
+
+
 def _history_to_steps(history: Any) -> list[dict[str, Any]]:
-    """Map browser-use history to CHECKION steps format."""
+    """Map browser-use action_history to CHECKION steps (readable labels, target, result)."""
     steps: list[dict[str, Any]] = []
     try:
-        urls = list(history.urls()) if hasattr(history, "urls") and callable(history.urls) else []
         actions = list(history.action_history()) if hasattr(history, "action_history") and callable(history.action_history) else []
         for i, action_item in enumerate(actions):
             step_num = i + 1
-            action_name = getattr(action_item, "name", str(action_item)) if not isinstance(action_item, str) else action_item
+            action_label, target, result = _normalize_action_entry(action_item)
             steps.append({
                 "step": step_num,
-                "action": action_name,
-                "target": getattr(action_item, "selector", None) or getattr(action_item, "target", None),
-                "reasoning": getattr(action_item, "reasoning", None),
+                "action": action_label,
+                "target": target or None,
+                "result": result or None,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             })
-        if not steps and urls:
-            for i, u in enumerate(urls):
-                steps.append({"step": i + 1, "action": "navigate", "target": u, "timestamp": datetime.now(timezone.utc).isoformat()})
+        if not steps and hasattr(history, "urls") and callable(history.urls):
+            for i, u in enumerate(history.urls()):
+                steps.append({
+                    "step": i + 1,
+                    "action": "navigate",
+                    "target": u,
+                    "result": None,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                })
     except Exception as e:
-        steps = [{"step": 1, "action": "run", "reasoning": str(e), "timestamp": datetime.now(timezone.utc).isoformat()}]
+        steps = [{
+            "step": 1,
+            "action": "run",
+            "target": None,
+            "result": str(e)[:500],
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }]
     return steps
 
 
@@ -125,9 +194,16 @@ async def run_agent(job_id: str, url: str, task: str) -> None:
             _jobs[job_id].status = "running"
 
     browser = None
+    VIDEO_BASE_DIR.mkdir(parents=True, exist_ok=True)
+    video_dir = str(VIDEO_BASE_DIR / job_id)
+    os.makedirs(video_dir, exist_ok=True)
+
     try:
         llm = _make_llm()
-        browser = Browser()
+        try:
+            browser = Browser(record_video_dir=video_dir)
+        except TypeError:
+            browser = Browser()
         # Prefer initial_url if supported; else bake URL into task
         import inspect
         sig = inspect.signature(Agent.__init__)
@@ -154,6 +230,23 @@ async def run_agent(job_id: str, url: str, task: str) -> None:
         except Exception:
             domain = url
 
+        # Move recorded video to a known path and expose URL (recording attempted in all runs)
+        video_path: str | None = None
+        if os.path.isdir(video_dir):
+            # Playwright writes video on context close; find the .webm file
+            webms = glob.glob(os.path.join(video_dir, "*.webm"))
+            if webms:
+                dest = VIDEO_BASE_DIR / f"{job_id}.webm"
+                try:
+                    shutil.move(webms[0], str(dest))
+                    video_path = str(dest)
+                except Exception:
+                    pass
+            try:
+                shutil.rmtree(video_dir, ignore_errors=True)
+            except Exception:
+                pass
+
         result = {
             "jobId": job_id,
             "taskDescription": task,
@@ -162,11 +255,15 @@ async def run_agent(job_id: str, url: str, task: str) -> None:
             "success": success,
             "screenshots": screenshots[:50],
         }
+        if video_path:
+            result["videoUrl"] = f"/run/{job_id}/video"
 
         async with _jobs_lock:
             if job_id in _jobs:
                 _jobs[job_id].status = "complete"
                 _jobs[job_id].result = result
+                if video_path:
+                    _jobs[job_id].video_path = video_path
     except Exception as e:
         async with _jobs_lock:
             if job_id in _jobs:
@@ -221,6 +318,20 @@ async def get_run(job_id: str) -> dict[str, Any]:
     if job.error:
         out["error"] = job.error
     return out
+
+
+@app.get("/run/{job_id}/video")
+async def get_run_video(job_id: str) -> FileResponse:
+    """Return the recorded journey video (if UX_JOURNEY_RECORD_VIDEO was set)."""
+    async with _jobs_lock:
+        job = _jobs.get(job_id)
+    if not job or not job.video_path or not os.path.isfile(job.video_path):
+        raise HTTPException(status_code=404, detail="Video not found")
+    return FileResponse(
+        job.video_path,
+        media_type="video/webm",
+        filename=f"journey-{job_id}.webm",
+    )
 
 # ---------------------------------------------------------------------------
 # Entrypoint

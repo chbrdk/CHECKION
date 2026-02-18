@@ -491,6 +491,8 @@ export interface UxJourneyAgentStep {
     target?: string;
     selector?: string;
     reasoning?: string;
+    /** Human-readable outcome for this step (e.g. "Navigated to ...", "Task completed: ..."). */
+    result?: string;
     screenshot?: string;
     timestamp?: string;
 }
@@ -503,6 +505,8 @@ export interface UxJourneyAgentResult {
     steps: UxJourneyAgentStep[];
     success: boolean;
     screenshots?: string[];
+    /** If recording was enabled: path/URL to the journey video (use CHECKION proxy /api/scan/journey-agent/[jobId]/video). */
+    videoUrl?: string;
 }
 
 export interface TouchTargetIssue {
