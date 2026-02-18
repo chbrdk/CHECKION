@@ -17,7 +17,9 @@ Browser agent service for CHECKION: runs autonomous navigation tasks (URL + natu
 | `UX_JOURNEY_MAX_STEPS` | no | Max agent steps (default 25) |
 | `UX_JOURNEY_CLAUDE_MODEL` | no | Claude model (default claude-sonnet-4-20250514) |
 | `UX_JOURNEY_VIDEO_DIR` | no | Directory for video files (default `/tmp/ux-journey-videos`). Every run attempts to record; video is served at GET /run/{jobId}/video when browser-use supports it. |
-| `UX_JOURNEY_STEP_DELAY_SECONDS` | no | Seconds to wait after each step so the recording clearly shows each action (default 2.5). Combined with a red circle overlay at click positions. |
+| `UX_JOURNEY_STEP_START_DELAY_SECONDS` | no | Delay at the *start* of each step so the viewer sees the current state before the action runs (default 1.2). Effectively increases visible "action lead-in" time. |
+| `UX_JOURNEY_STEP_DELAY_SECONDS` | no | Delay at the *end* of each step after the red circle (default 1.0). |
+| `UX_JOURNEY_SCROLL_VISIBLE_SECONDS` | no | After a scroll action, a short smooth-scroll animation is run so the video shows scroll movement (default 1.2). |
 | `PORT` | no | HTTP port (default 8320) |
 
 ## Local run

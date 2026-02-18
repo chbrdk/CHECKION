@@ -23,10 +23,14 @@ from pydantic import BaseModel
 # Directory for recorded videos (per job)
 VIDEO_BASE_DIR = Path(os.environ.get("UX_JOURNEY_VIDEO_DIR", "/tmp/ux-journey-videos"))
 
-# Seconds to wait after each step so the video clearly shows each action (configurable)
-STEP_DELAY_SECONDS = float(os.environ.get("UX_JOURNEY_STEP_DELAY_SECONDS", "2.5"))
+# Delay at the *start* of each step so the viewer sees the current state before the action runs ("action lead-in")
+STEP_START_DELAY_SECONDS = float(os.environ.get("UX_JOURNEY_STEP_START_DELAY_SECONDS", "1.2"))
+# Delay at the *end* of each step (after action + red circle) before the next step
+STEP_DELAY_SECONDS = float(os.environ.get("UX_JOURNEY_STEP_DELAY_SECONDS", "1.0"))
 # How long the red click circle stays visible (seconds)
 CLICK_CIRCLE_VISIBLE_SECONDS = 1.5
+# After a scroll action: run a short smooth-scroll animation so the video shows scroll movement (seconds)
+SCROLL_VISIBLE_SECONDS = float(os.environ.get("UX_JOURNEY_SCROLL_VISIBLE_SECONDS", "1.2"))
 
 # ---------------------------------------------------------------------------
 # Job store (in-memory; replace with Redis/DB for multi-instance)
@@ -222,10 +226,19 @@ async def run_agent(job_id: str, url: str, task: str) -> None:
         if hasattr(agent, "max_steps"):
             agent.max_steps = max_steps
 
+        async def _on_step_start(agent_instance: Any) -> None:
+            # Pause at the beginning of each step so the video shows the current state before the action runs
+            await asyncio.sleep(max(0, STEP_START_DELAY_SECONDS))
+
         async def _on_step_end(agent_instance: Any) -> None:
-            # 1) Try to show red circle at last click position (visible in the recording)
+            actions: list[Any] = []
+            raw: Any = None
             try:
                 actions = list(agent_instance.history.action_history()) if hasattr(agent_instance.history, "action_history") and callable(agent_instance.history.action_history) else []
+            except Exception:
+                pass
+            # 1) Try to show red circle at last click position (visible in the recording)
+            try:
                 if actions:
                     last_entry = actions[-1]
                     raw = last_entry[0] if isinstance(last_entry, (list, tuple)) and len(last_entry) > 0 else last_entry
@@ -258,11 +271,30 @@ async def run_agent(job_id: str, url: str, task: str) -> None:
                             await asyncio.sleep(CLICK_CIRCLE_VISIBLE_SECONDS)
             except Exception:
                 pass
-            # 2) Pause so the video clearly shows the state before the next step
+            # 2) If last action was scroll, run a short smooth-scroll so the video shows scroll movement
+            try:
+                if not raw and actions:
+                    last_entry = actions[-1]
+                    raw = last_entry[0] if isinstance(last_entry, (list, tuple)) and len(last_entry) > 0 else last_entry
+                if actions and isinstance(raw, dict) and "scroll" in raw:
+                    cdp = await agent_instance.browser_session.get_or_create_cdp_session()
+                    if cdp:
+                        js = (
+                            "window.scrollBy({top:80,behavior:'smooth'});"
+                            "setTimeout(function(){window.scrollBy({top:-80,behavior:'smooth'});}, 600);"
+                        )
+                        if hasattr(cdp, "cdp_client") and hasattr(cdp.cdp_client, "send") and hasattr(cdp.cdp_client.send, "Runtime"):
+                            await cdp.cdp_client.send.Runtime.evaluate(expression=js, session_id=cdp.session_id)
+                        elif hasattr(cdp, "send") and hasattr(cdp.send, "Runtime"):
+                            await cdp.send.Runtime.evaluate(expression=js, session_id=cdp.session_id)
+                        await asyncio.sleep(max(0.6, SCROLL_VISIBLE_SECONDS))
+            except Exception:
+                pass
+            # 3) Pause so the video clearly shows the state before the next step
             await asyncio.sleep(max(0.5, STEP_DELAY_SECONDS - CLICK_CIRCLE_VISIBLE_SECONDS))
 
         try:
-            history = await agent.run(on_step_end=_on_step_end)
+            history = await agent.run(on_step_start=_on_step_start, on_step_end=_on_step_end)
         except TypeError:
             history = await agent.run()
 
