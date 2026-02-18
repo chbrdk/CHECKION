@@ -23,6 +23,11 @@ from pydantic import BaseModel
 # Directory for recorded videos (per job)
 VIDEO_BASE_DIR = Path(os.environ.get("UX_JOURNEY_VIDEO_DIR", "/tmp/ux-journey-videos"))
 
+# Seconds to wait after each step so the video clearly shows each action (configurable)
+STEP_DELAY_SECONDS = float(os.environ.get("UX_JOURNEY_STEP_DELAY_SECONDS", "2.5"))
+# How long the red click circle stays visible (seconds)
+CLICK_CIRCLE_VISIBLE_SECONDS = 1.5
+
 # ---------------------------------------------------------------------------
 # Job store (in-memory; replace with Redis/DB for multi-instance)
 # ---------------------------------------------------------------------------
@@ -217,7 +222,49 @@ async def run_agent(job_id: str, url: str, task: str) -> None:
         if hasattr(agent, "max_steps"):
             agent.max_steps = max_steps
 
-        history = await agent.run()
+        async def _on_step_end(agent_instance: Any) -> None:
+            # 1) Try to show red circle at last click position (visible in the recording)
+            try:
+                actions = list(agent_instance.history.action_history()) if hasattr(agent_instance.history, "action_history") and callable(agent_instance.history.action_history) else []
+                if actions:
+                    last_entry = actions[-1]
+                    raw = last_entry[0] if isinstance(last_entry, (list, tuple)) and len(last_entry) > 0 else last_entry
+                    if isinstance(raw, dict) and raw.get("interacted_element"):
+                        elem = raw["interacted_element"]
+                        if hasattr(elem, "bounds") and elem.bounds is not None:
+                            b = elem.bounds
+                            cx = getattr(b, "x", 0) + getattr(b, "width", 0) / 2
+                            cy = getattr(b, "y", 0) + getattr(b, "height", 0) / 2
+                            radius = 24
+                            ms = int(CLICK_CIRCLE_VISIBLE_SECONDS * 1000)
+                            js = (
+                                f"(function(){{var el=document.getElementById('agent-click-ring');"
+                                f"if(el)el.remove();el=document.createElement('div');el.id='agent-click-ring';"
+                                f"el.style.cssText='position:fixed;left:{cx - radius}px;top:{cy - radius}px;"
+                                f"width:{radius*2}px;height:{radius*2}px;border-radius:50%;border:4px solid #e53935;"
+                                f"pointer-events:none;z-index:2147483647;box-shadow:0 0 0 2px rgba(229,57,53,0.5);';"
+                                f"document.body.appendChild(el);setTimeout(function(){{el.remove();}},{ms});}})();"
+                            )
+                            cdp = await agent_instance.browser_session.get_or_create_cdp_session()
+                            if cdp:
+                                if hasattr(cdp, "cdp_client"):
+                                    send = getattr(cdp.cdp_client, "send", None)
+                                    if send and hasattr(send, "Runtime"):
+                                        await send.Runtime.evaluate(expression=js, session_id=cdp.session_id)
+                                elif hasattr(cdp, "send"):
+                                    send = cdp.send
+                                    if hasattr(send, "Runtime"):
+                                        await send.Runtime.evaluate(expression=js, session_id=cdp.session_id)
+                            await asyncio.sleep(CLICK_CIRCLE_VISIBLE_SECONDS)
+            except Exception:
+                pass
+            # 2) Pause so the video clearly shows the state before the next step
+            await asyncio.sleep(max(0.5, STEP_DELAY_SECONDS - CLICK_CIRCLE_VISIBLE_SECONDS))
+
+        try:
+            history = await agent.run(on_step_end=_on_step_end)
+        except TypeError:
+            history = await agent.run()
 
         # Map browser-use history to CHECKION result format
         steps = _history_to_steps(history)
