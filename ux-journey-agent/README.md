@@ -22,8 +22,8 @@ Browser agent service for CHECKION: runs autonomous navigation tasks (URL + natu
 | `UX_JOURNEY_STEP_START_DELAY_SECONDS` | no | Delay at the *start* of each step so the viewer sees the current state before the action runs (default 1.2). Increase to slow the agent. |
 | `UX_JOURNEY_STEP_DELAY_SECONDS` | no | Delay at the *end* of each step after the red circle (default 1.0). Increase to slow the agent. |
 | `UX_JOURNEY_CLICK_CIRCLE_VISIBLE_SECONDS` | no | How long the red click circle is shown (default 1.5). Increase so clicks are visible longer. |
-| `UX_JOURNEY_SCROLL_VISIBLE_SECONDS` | no | After a scroll action, smooth-scroll animation duration (default 1.2). |
-| `UX_JOURNEY_LIVE_FRAME_INTERVAL` | no | Seconds between live/MJPEG frames (default 0.05 = 20 fps). Lower value = higher fps. |
+| `UX_JOURNEY_SCROLL_VISIBLE_SECONDS` | no | After a scroll action, duration in seconds for each direction of the slow step-based scroll (default 2.5). Ensures the live stream captures scrolling at 25 fps. |
+| `UX_JOURNEY_LIVE_FRAME_INTERVAL` | no | Seconds between live/MJPEG frames (default 0.04 = 25 fps). Lower value = higher fps. |
 | `PORT` | no | HTTP port (default 8320) |
 
 ## Local run

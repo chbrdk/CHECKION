@@ -33,10 +33,10 @@ STEP_START_DELAY_SECONDS = float(os.environ.get("UX_JOURNEY_STEP_START_DELAY_SEC
 STEP_DELAY_SECONDS = float(os.environ.get("UX_JOURNEY_STEP_DELAY_SECONDS", "1.0"))
 # How long the red click circle stays visible (seconds); increase to slow down and make actions more visible
 CLICK_CIRCLE_VISIBLE_SECONDS = float(os.environ.get("UX_JOURNEY_CLICK_CIRCLE_VISIBLE_SECONDS", "1.5"))
-# After a scroll action: run a short smooth-scroll animation so the video shows scroll movement (seconds)
-SCROLL_VISIBLE_SECONDS = float(os.environ.get("UX_JOURNEY_SCROLL_VISIBLE_SECONDS", "1.2"))
-# Live viewport screenshot interval (seconds); lower = higher fps (0.05 = 20 fps)
-LIVE_FRAME_INTERVAL = float(os.environ.get("UX_JOURNEY_LIVE_FRAME_INTERVAL", "0.05"))
+# After a scroll action: run a slow step-based scroll so the live stream captures it (duration per direction in seconds)
+SCROLL_VISIBLE_SECONDS = float(os.environ.get("UX_JOURNEY_SCROLL_VISIBLE_SECONDS", "2.5"))
+# Live viewport screenshot interval (seconds); lower = higher fps (0.04 = 25 fps)
+LIVE_FRAME_INTERVAL = float(os.environ.get("UX_JOURNEY_LIVE_FRAME_INTERVAL", "0.04"))
 
 # ---------------------------------------------------------------------------
 # Job store (in-memory; replace with Redis/DB for multi-instance)
@@ -371,7 +371,7 @@ async def run_agent(job_id: str, url: str, task: str) -> None:
                             await asyncio.sleep(CLICK_CIRCLE_VISIBLE_SECONDS)
             except Exception:
                 pass
-            # 2) If last action was scroll, run a short smooth-scroll so the video shows scroll movement
+            # 2) If last action was scroll, run a very slow step-based scroll so the live stream always captures it
             try:
                 if not raw and actions:
                     last_entry = actions[-1]
@@ -379,15 +379,48 @@ async def run_agent(job_id: str, url: str, task: str) -> None:
                 if actions and isinstance(raw, dict) and "scroll" in raw:
                     cdp = await agent_instance.browser_session.get_or_create_cdp_session()
                     if cdp:
+                        # Step-based scroll: move in small steps at ~25 fps so each frame shows movement
+                        duration_sec = max(1.0, SCROLL_VISIBLE_SECONDS)
+                        interval_ms = 40  # 25 fps
+                        total_px = 80
+                        steps = max(1, int((duration_sec * 1000) / interval_ms))
+                        step_px = total_px / steps
                         js = (
-                            "window.scrollBy({top:80,behavior:'smooth'});"
-                            "setTimeout(function(){window.scrollBy({top:-80,behavior:'smooth'});}, 600);"
-                        )
+                            "(function(){"
+                            "var d=%(duration)s, iv=%(interval)s, total=%(total)s, n=%(steps)s, step=%(step)s, c=0;"
+                            "function run(){ window.scrollBy(0,step); c++; if(c<n) setTimeout(run,iv); }"
+                            "run();"
+                            "})();"
+                        ) % {
+                            "duration": duration_sec,
+                            "interval": interval_ms,
+                            "total": total_px,
+                            "steps": steps,
+                            "step": step_px,
+                        }
                         if hasattr(cdp, "cdp_client") and hasattr(cdp.cdp_client, "send") and hasattr(cdp.cdp_client.send, "Runtime"):
                             await cdp.cdp_client.send.Runtime.evaluate(expression=js, session_id=cdp.session_id)
                         elif hasattr(cdp, "send") and hasattr(cdp.send, "Runtime"):
                             await cdp.send.Runtime.evaluate(expression=js, session_id=cdp.session_id)
-                        await asyncio.sleep(max(0.6, SCROLL_VISIBLE_SECONDS))
+                        await asyncio.sleep(duration_sec)
+                        # Scroll back slowly as well so the stream captures the return
+                        js_back = (
+                            "(function(){"
+                            "var iv=%(interval)s, total=%(total)s, n=%(steps)s, step=%(step)s, c=0;"
+                            "function run(){ window.scrollBy(0,-step); c++; if(c<n) setTimeout(run,iv); }"
+                            "run();"
+                            "})();"
+                        ) % {
+                            "interval": interval_ms,
+                            "total": total_px,
+                            "steps": steps,
+                            "step": step_px,
+                        }
+                        if hasattr(cdp, "cdp_client") and hasattr(cdp.cdp_client, "send") and hasattr(cdp.cdp_client.send, "Runtime"):
+                            await cdp.cdp_client.send.Runtime.evaluate(expression=js_back, session_id=cdp.session_id)
+                        elif hasattr(cdp, "send") and hasattr(cdp.send, "Runtime"):
+                            await cdp.send.Runtime.evaluate(expression=js_back, session_id=cdp.session_id)
+                        await asyncio.sleep(duration_sec)
             except Exception:
                 pass
             # 3) Pause so the video clearly shows the state before the next step
