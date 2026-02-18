@@ -72,7 +72,7 @@ export async function GET(
                 // non-fatal
             }
         }
-        return buildResponse(jobId, data);
+        return buildResponse(jobId, { status, result: data.result, error: data.error });
     } catch (e) {
         const message = e instanceof Error ? e.message : 'Failed to reach UX Journey Agent service.';
         return NextResponse.json(
