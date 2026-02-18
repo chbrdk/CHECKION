@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Box, CircularProgress, alpha } from '@mui/material';
 import {
     MsqdxTypography,
@@ -43,6 +44,17 @@ export default function ScanPage() {
 
     const [scanMode, setScanMode] = useState<'single' | 'deep' | 'journey'>('single');
     const [task, setTask] = useState('');
+    const [journeyHistory, setJourneyHistory] = useState<Array<{ id: string; url: string; task: string; status: string; createdAt: string }>>([]);
+
+    useEffect(() => {
+        if (scanMode !== 'journey') return;
+        fetch('/api/scan/journey-agent/history?limit=15')
+            .then((res) => res.ok ? res.json() : { runs: [] })
+            .then((data: { runs?: Array<{ id: string; url: string; task: string; status: string; createdAt: string }> }) =>
+                setJourneyHistory(data.runs ?? [])
+            )
+            .catch(() => setJourneyHistory([]));
+    }, [scanMode]);
 
     const handleScan = async () => {
         if (!url.trim()) return;
@@ -254,6 +266,49 @@ export default function ScanPage() {
                         <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.error.light }}>
                             {error}
                         </MsqdxTypography>
+                    </Box>
+                )}
+
+                {scanMode === 'journey' && journeyHistory.length > 0 && (
+                    <Box sx={{ mt: 'var(--msqdx-spacing-md)', pt: 'var(--msqdx-spacing-md)', borderTop: '1px solid var(--color-border)' }}>
+                        <MsqdxTypography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                            {t('scan.journeyHistoryTitle', 'Letzte Journeys')}
+                        </MsqdxTypography>
+                        <Box component="ul" sx={{ m: 0, p: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            {journeyHistory.map((run) => (
+                                <Box
+                                    key={run.id}
+                                    component="li"
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1,
+                                        flexWrap: 'wrap',
+                                        py: 0.75,
+                                        px: 1,
+                                        borderRadius: 1,
+                                        '&:hover': { bgcolor: 'action.hover' },
+                                    }}
+                                >
+                                    <Box sx={{ flex: '1 1 200px', minWidth: 0 }}>
+                                        <MsqdxTypography variant="body2" sx={{ fontWeight: 500 }} noWrap>
+                                            {run.task.length > 60 ? run.task.slice(0, 60) + '…' : run.task}
+                                        </MsqdxTypography>
+                                        <MsqdxTypography variant="caption" color="text.secondary">
+                                            {run.url} · {run.status === 'complete' ? t('scan.journeyStatusComplete', 'Abgeschlossen') : run.status === 'error' ? t('scan.journeyStatusError', 'Fehler') : t('scan.journeyStatusRunning', 'Läuft')}
+                                        </MsqdxTypography>
+                                    </Box>
+                                    <MsqdxButton
+                                        variant="text"
+                                        size="small"
+                                        component={Link}
+                                        href={`/journey-agent/${run.id}`}
+                                    >
+                                        {t('scan.journeyView', 'Ansehen')}
+                                    </MsqdxButton>
+                                </Box>
+                            ))}
+                        </Box>
                     </Box>
                 )}
             </MsqdxMoleculeCard>

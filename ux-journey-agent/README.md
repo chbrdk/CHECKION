@@ -18,11 +18,12 @@ Browser agent service for CHECKION: runs autonomous navigation tasks (URL + natu
 | `OPENAI_API_KEY` | one of these | OpenAI fallback |
 | `UX_JOURNEY_MAX_STEPS` | no | Max agent steps (default 25) |
 | `UX_JOURNEY_CLAUDE_MODEL` | no | Claude model (default claude-sonnet-4-20250514) |
-| `UX_JOURNEY_VIDEO_DIR` | no | Directory for video files (default `/tmp/ux-journey-videos`). Every run attempts to record; video is served at GET /run/{jobId}/video when browser-use supports it. |
-| `UX_JOURNEY_STEP_START_DELAY_SECONDS` | no | Delay at the *start* of each step so the viewer sees the current state before the action runs (default 1.2). Effectively increases visible "action lead-in" time. |
-| `UX_JOURNEY_STEP_DELAY_SECONDS` | no | Delay at the *end* of each step after the red circle (default 1.0). |
-| `UX_JOURNEY_SCROLL_VISIBLE_SECONDS` | no | After a scroll action, a short smooth-scroll animation is run so the video shows scroll movement (default 1.2). |
-| `UX_JOURNEY_LIVE_FRAME_INTERVAL` | no | Seconds between live viewport screenshots (default 0.4, ~2.5 fps). |
+| `UX_JOURNEY_VIDEO_DIR` | no | Directory for video files (default `/tmp/ux-journey-videos`). **Use a path that is mounted as a persistent volume in Docker** (e.g. `/data/journey-videos`) so videos survive container restarts. |
+| `UX_JOURNEY_STEP_START_DELAY_SECONDS` | no | Delay at the *start* of each step so the viewer sees the current state before the action runs (default 1.2). Increase to slow the agent. |
+| `UX_JOURNEY_STEP_DELAY_SECONDS` | no | Delay at the *end* of each step after the red circle (default 1.0). Increase to slow the agent. |
+| `UX_JOURNEY_CLICK_CIRCLE_VISIBLE_SECONDS` | no | How long the red click circle is shown (default 1.5). Increase so clicks are visible longer. |
+| `UX_JOURNEY_SCROLL_VISIBLE_SECONDS` | no | After a scroll action, smooth-scroll animation duration (default 1.2). |
+| `UX_JOURNEY_LIVE_FRAME_INTERVAL` | no | Seconds between live/MJPEG frames (default 0.05 = 20 fps). Lower value = higher fps. |
 | `PORT` | no | HTTP port (default 8320) |
 
 ## Local run
@@ -49,6 +50,15 @@ python -m unittest test_live -v
 - **Build context:** `ux-journey-agent` (root directory of this service).
 - **Dockerfile path:** `Dockerfile`.
 - **Port:** 8320.
-- In Coolify: add env `ANTHROPIC_API_KEY` (or `OPENAI_API_KEY`). Optionally `UX_JOURNEY_MAX_STEPS`.
+- **Env:** `ANTHROPIC_API_KEY` (or `OPENAI_API_KEY`). Optionally `UX_JOURNEY_MAX_STEPS`, `UX_JOURNEY_VIDEO_DIR`.
+
+### Persistent videos (Shared Volume)
+
+So that recorded videos and the possibility to play them survive container rebuilds/restarts:
+
+1. **Volume in Coolify:** Add a **Persistent Storage** volume to the UX Journey Agent service. Mount it at a path inside the container, e.g. **`/data/journey-videos`**.
+2. **Env:** Set **`UX_JOURNEY_VIDEO_DIR=/data/journey-videos`** for the agent.
+
+The agent writes all journey recordings into this directory. After a container restart, `GET /run/{jobId}/video` still serves the file from that path if it exists (fallback by job ID). Screenshots from the run are stored in the CHECKION DB (journey history) as base64 in the result; they are not written to disk by the agent.
 
 See [Coolify deployment](../../docs/deployment/coolify-ux-journey-agent.md) for step-by-step.

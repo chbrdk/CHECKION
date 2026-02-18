@@ -31,12 +31,12 @@ VIDEO_BASE_DIR = Path(os.environ.get("UX_JOURNEY_VIDEO_DIR", "/tmp/ux-journey-vi
 STEP_START_DELAY_SECONDS = float(os.environ.get("UX_JOURNEY_STEP_START_DELAY_SECONDS", "1.2"))
 # Delay at the *end* of each step (after action + red circle) before the next step
 STEP_DELAY_SECONDS = float(os.environ.get("UX_JOURNEY_STEP_DELAY_SECONDS", "1.0"))
-# How long the red click circle stays visible (seconds)
-CLICK_CIRCLE_VISIBLE_SECONDS = 1.5
+# How long the red click circle stays visible (seconds); increase to slow down and make actions more visible
+CLICK_CIRCLE_VISIBLE_SECONDS = float(os.environ.get("UX_JOURNEY_CLICK_CIRCLE_VISIBLE_SECONDS", "1.5"))
 # After a scroll action: run a short smooth-scroll animation so the video shows scroll movement (seconds)
 SCROLL_VISIBLE_SECONDS = float(os.environ.get("UX_JOURNEY_SCROLL_VISIBLE_SECONDS", "1.2"))
-# Live viewport screenshot interval (seconds); ~2.5 fps at 0.4
-LIVE_FRAME_INTERVAL = float(os.environ.get("UX_JOURNEY_LIVE_FRAME_INTERVAL", "0.4"))
+# Live viewport screenshot interval (seconds); lower = higher fps (0.05 = 20 fps)
+LIVE_FRAME_INTERVAL = float(os.environ.get("UX_JOURNEY_LIVE_FRAME_INTERVAL", "0.05"))
 
 # ---------------------------------------------------------------------------
 # Job store (in-memory; replace with Redis/DB for multi-instance)
@@ -483,15 +483,24 @@ async def get_run(job_id: str) -> dict[str, Any]:
 
 @app.get("/run/{job_id}/video")
 async def get_run_video(job_id: str) -> FileResponse:
-    """Return the recorded journey video (MP4 or WebM from browser-use[video] or Playwright)."""
+    """Return the recorded journey video (MP4 or WebM). Serves from memory or from VIDEO_BASE_DIR (persistent volume)."""
+    video_path: str | None = None
     async with _jobs_lock:
         job = _jobs.get(job_id)
-    if not job or not job.video_path or not os.path.isfile(job.video_path):
+        if job and job.video_path and os.path.isfile(job.video_path):
+            video_path = job.video_path
+    if not video_path:
+        for ext in ("mp4", "webm"):
+            candidate = VIDEO_BASE_DIR / f"{job_id}.{ext}"
+            if candidate.is_file():
+                video_path = str(candidate)
+                break
+    if not video_path:
         raise HTTPException(status_code=404, detail="Video not found")
-    media_type = "video/mp4" if job.video_path.lower().endswith(".mp4") else "video/webm"
+    media_type = "video/mp4" if video_path.lower().endswith(".mp4") else "video/webm"
     filename = f"journey-{job_id}.mp4" if media_type == "video/mp4" else f"journey-{job_id}.webm"
     return FileResponse(
-        job.video_path,
+        video_path,
         media_type=media_type,
         filename=filename,
     )

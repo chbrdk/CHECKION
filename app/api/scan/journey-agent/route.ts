@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { ENV_UX_JOURNEY_AGENT_URL } from '@/lib/constants';
+import { insertJourneyRun } from '@/lib/db/journey-runs';
 
 function isValidUrl(s: string): boolean {
     try {
@@ -73,7 +74,13 @@ export async function POST(request: NextRequest) {
                 { status: 502 }
             );
         }
-        return NextResponse.json({ success: true, jobId: data.jobId });
+        const jobId = data.jobId as string;
+        try {
+            await insertJourneyRun(jobId, session.user.id, url, task);
+        } catch {
+            // non-fatal: history might be unavailable (e.g. no DB)
+        }
+        return NextResponse.json({ success: true, jobId });
     } catch (e) {
         const message = e instanceof Error ? e.message : 'Failed to reach UX Journey Agent service.';
         return NextResponse.json(

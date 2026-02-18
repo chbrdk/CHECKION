@@ -55,3 +55,16 @@ export const savedJourneys = pgTable('saved_journeys', {
     result: jsonb('result').notNull(), // JourneyResult
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** UX Journey Agent runs (browser-use): history of started/completed journeys. */
+export const journeyRuns = pgTable('journey_runs', {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    url: text('url').notNull(),
+    task: text('task').notNull(),
+    status: text('status').notNull(), // 'running' | 'complete' | 'error'
+    result: jsonb('result'),
+    error: text('error'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});

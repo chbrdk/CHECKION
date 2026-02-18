@@ -44,6 +44,16 @@ Optional:
 
 (Falls du OpenAI nutzt: `OPENAI_API_KEY` statt `ANTHROPIC_API_KEY`.)
 
+### 4a. Persistente Videos (Shared Volume, optional)
+
+Damit Aufnahmen auch nach Container-Neubau noch abspielbar sind:
+
+1. Beim **UX Journey Agent** in Coolify: **Persistent Storage / Volumes** hinzufügen.
+2. **Container Path:** z. B. `/data/journey-videos`.
+3. **Env:** `UX_JOURNEY_VIDEO_DIR=/data/journey-videos` setzen.
+
+Ohne Volume landen Videos nur in `/tmp` im Container und gehen beim Neustart verloren. Mit Volume bleiben sie erhalten; der Agent liefert sie nach Neustart weiterhin unter `GET /run/{jobId}/video` aus.
+
 ### 5. Deploy & interne URL notieren
 
 1. **Name** der Anwendung: z. B. `checkion-ux-journey-agent`.
