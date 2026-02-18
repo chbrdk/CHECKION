@@ -42,3 +42,4 @@
 - `lib/page-index.test.ts` – Tests
 - `app/api/saliency/generate/route.ts` – Saliency-API (Phase 2: hier oder beim Lesen pageIndex + Heatmap mergen)
 - `saliency-service/main.py` – Heatmap-Erzeugung (MDS-ViTNet)
+- `ux-journey-agent/main.py` – UX Journey Agent (browser-use + Claude), POST /run, GET /run/{jobId}; siehe `knowledge/ux-journey-agent.md`

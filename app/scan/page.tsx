@@ -41,14 +41,37 @@ export default function ScanPage() {
     const [scanning, setScanning] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const [scanMode, setScanMode] = useState<'single' | 'deep'>('single');
+    const [scanMode, setScanMode] = useState<'single' | 'deep' | 'journey'>('single');
+    const [task, setTask] = useState('');
 
     const handleScan = async () => {
         if (!url.trim()) return;
+        if (scanMode === 'journey' && !task.trim()) return;
         setError(null);
         setScanning(true);
 
         try {
+            if (scanMode === 'journey') {
+                const res = await fetch('/api/scan/journey-agent', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url.trim(), task: task.trim() }),
+                });
+                const data = await res.json();
+                if (res.status === 501) {
+                    setError(data.hint || data.error || t('scan.journeyNotConfigured'));
+                    setScanning(false);
+                    return;
+                }
+                if (!res.ok || !data.success) {
+                    setError(data.error || t('scan.journeyError'));
+                    setScanning(false);
+                    return;
+                }
+                const jobId = data.jobId as string;
+                router.push(`/journey-agent/${jobId}`);
+                return;
+            }
             if (scanMode === 'single') {
                 const res = await fetch('/api/scan', {
                     method: 'POST',
@@ -137,11 +160,11 @@ export default function ScanPage() {
                         brandColor="green"
                         size="medium"
                         onClick={handleScan}
-                        disabled={!url.trim() || scanning}
+                        disabled={!url.trim() || scanning || (scanMode === 'journey' && !task.trim())}
                         loading={scanning}
                         sx={{ minWidth: 150 }}
                     >
-                        {scanning ? t('scan.scanningCta') : t('scan.startCta')}
+                        {scanning ? t('scan.scanningCta') : scanMode === 'journey' ? t('scan.startJourneyCta') : t('scan.startCta')}
                     </MsqdxButton>
                 }
             >
@@ -151,14 +174,15 @@ export default function ScanPage() {
                     <Box sx={{ gridColumn: { xs: '1 / -1', md: '1 / -1' }, mb: 1 }}>
                         <MsqdxTabs
                             value={scanMode}
-                            onChange={(v: string) => setScanMode(v as 'single' | 'deep')}
+                            onChange={(v: string) => setScanMode(v as 'single' | 'deep' | 'journey')}
                             tabs={[
                                 { value: 'single', label: t('scan.singleTab') },
-                                { value: 'deep', label: t('scan.deepTab') }
+                                { value: 'deep', label: t('scan.deepTab') },
+                                { value: 'journey', label: t('scan.journeyTab') },
                             ]}
                         />
                         <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 1, color: 'var(--color-text-muted-on-light)' }}>
-                            {scanMode === 'single' ? t('scan.singleHint') : t('scan.deepHint')}
+                            {scanMode === 'single' ? t('scan.singleHint') : scanMode === 'deep' ? t('scan.deepHint') : t('scan.journeyHint')}
                         </MsqdxTypography>
                     </Box>
 
@@ -166,7 +190,7 @@ export default function ScanPage() {
                     <Box sx={{ flex: 1 }}>
                         <MsqdxFormField
                             label={t('scan.urlLabel')}
-                            placeholder={scanMode === 'single' ? t('scan.urlPlaceholderSingle') : t('scan.urlPlaceholderDeep')}
+                            placeholder={scanMode === 'single' ? t('scan.urlPlaceholderSingle') : scanMode === 'deep' ? t('scan.urlPlaceholderDeep') : 'https://example.com'}
                             value={url}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUrl(e.target.value)}
                             disabled={scanning}
@@ -176,23 +200,38 @@ export default function ScanPage() {
                         />
                     </Box>
 
+                    {/* Task (only for UX Journey) */}
+                    {scanMode === 'journey' && (
+                        <Box sx={{ gridColumn: { xs: '1 / -1', md: '1 / -1' } }}>
+                            <MsqdxFormField
+                                label={t('scan.taskLabel')}
+                                placeholder={t('scan.taskPlaceholder')}
+                                value={task}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTask(e.target.value)}
+                                disabled={scanning}
+                                onKeyDown={(e: React.KeyboardEvent) => e.key === 'Enter' && handleScan()}
+                                fullWidth
+                            />
+                        </Box>
+                    )}
+
                     {/* WCAG Standard (Only for Single Page currently) */}
-                    <Box sx={{ minWidth: 200, opacity: scanMode === 'deep' ? 0.5 : 1, pointerEvents: scanMode === 'deep' ? 'none' : 'auto' }}>
+                    <Box sx={{ minWidth: 200, opacity: scanMode === 'deep' || scanMode === 'journey' ? 0.5 : 1, pointerEvents: scanMode === 'deep' || scanMode === 'journey' ? 'none' : 'auto' }}>
                         <MsqdxSelect
                             label={t('scan.standardLabel')}
                             value={standard}
                             onChange={(e: SelectChangeEvent<unknown>) => setStandard(e.target.value as WcagStandard)}
                             options={STANDARDS}
-                            disabled={scanning || scanMode === 'deep'}
+                            disabled={scanning || scanMode === 'deep' || scanMode === 'journey'}
                             fullWidth
                         />
                     </Box>
 
                     {/* Runners (Only for Single Page currently) */}
-                    <Box sx={{ minWidth: 200, pt: 0.5, opacity: scanMode === 'deep' ? 0.5 : 1, pointerEvents: scanMode === 'deep' ? 'none' : 'auto' }}>
+                    <Box sx={{ minWidth: 200, pt: 0.5, opacity: scanMode === 'deep' || scanMode === 'journey' ? 0.5 : 1, pointerEvents: scanMode === 'deep' || scanMode === 'journey' ? 'none' : 'auto' }}>
                         <MsqdxCheckboxField
                             label={t('scan.enginesLabel')}
-                            options={RUNNERS.map(r => ({ value: r.value, label: r.label, disabled: scanning || scanMode === 'deep' }))}
+                            options={RUNNERS.map(r => ({ value: r.value, label: r.label, disabled: scanning || scanMode === 'deep' || scanMode === 'journey' }))}
                             value={selectedRunners}
                             onChange={(val) => setSelectedRunners(val as Runner[])}
                         // row -- Vertical might be better in this layout if we have multiple

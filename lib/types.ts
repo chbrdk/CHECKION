@@ -484,6 +484,27 @@ export interface JourneyResult {
     message?: string;
 }
 
+/** One step from the UX Journey Agent (browser-based: action, selector, screenshot per step). */
+export interface UxJourneyAgentStep {
+    step: number;
+    action: string;
+    target?: string;
+    selector?: string;
+    reasoning?: string;
+    screenshot?: string;
+    timestamp?: string;
+}
+
+/** Result of a UX Journey Agent run (Browser Use + Claude). */
+export interface UxJourneyAgentResult {
+    jobId: string;
+    taskDescription: string;
+    siteDomain: string;
+    steps: UxJourneyAgentStep[];
+    success: boolean;
+    screenshots?: string[];
+}
+
 export interface TouchTargetIssue {
     selector: string;
     element: string;
