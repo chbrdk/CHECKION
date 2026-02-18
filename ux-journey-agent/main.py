@@ -230,18 +230,20 @@ async def run_agent(job_id: str, url: str, task: str) -> None:
         except Exception:
             domain = url
 
-        # Move recorded video to a known path and expose URL (recording attempted in all runs)
+        # Move recorded video to a known path (browser-use[video] writes MP4, Playwright can write WebM)
         video_path: str | None = None
         if os.path.isdir(video_dir):
-            # Playwright writes video on context close; find the .webm file
-            webms = glob.glob(os.path.join(video_dir, "*.webm"))
-            if webms:
-                dest = VIDEO_BASE_DIR / f"{job_id}.webm"
-                try:
-                    shutil.move(webms[0], str(dest))
-                    video_path = str(dest)
-                except Exception:
-                    pass
+            for ext in ("*.mp4", "*.webm"):
+                found = glob.glob(os.path.join(video_dir, ext))
+                if found:
+                    suffix = ext.replace("*", "")
+                    dest = VIDEO_BASE_DIR / f"{job_id}{suffix}"
+                    try:
+                        shutil.move(found[0], str(dest))
+                        video_path = str(dest)
+                        break
+                    except Exception:
+                        pass
             try:
                 shutil.rmtree(video_dir, ignore_errors=True)
             except Exception:
@@ -322,15 +324,17 @@ async def get_run(job_id: str) -> dict[str, Any]:
 
 @app.get("/run/{job_id}/video")
 async def get_run_video(job_id: str) -> FileResponse:
-    """Return the recorded journey video (if UX_JOURNEY_RECORD_VIDEO was set)."""
+    """Return the recorded journey video (MP4 or WebM from browser-use[video] or Playwright)."""
     async with _jobs_lock:
         job = _jobs.get(job_id)
     if not job or not job.video_path or not os.path.isfile(job.video_path):
         raise HTTPException(status_code=404, detail="Video not found")
+    media_type = "video/mp4" if job.video_path.lower().endswith(".mp4") else "video/webm"
+    filename = f"journey-{job_id}.mp4" if media_type == "video/mp4" else f"journey-{job_id}.webm"
     return FileResponse(
         job.video_path,
-        media_type="video/webm",
-        filename=f"journey-{job_id}.webm",
+        media_type=media_type,
+        filename=filename,
     )
 
 # ---------------------------------------------------------------------------
