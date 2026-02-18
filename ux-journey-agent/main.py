@@ -67,6 +67,48 @@ def _make_llm():
     raise RuntimeError("Set ANTHROPIC_API_KEY or OPENAI_API_KEY for the agent LLM.")
 
 
+def _history_to_steps(history: Any) -> list[dict[str, Any]]:
+    """Map browser-use history to CHECKION steps format."""
+    steps: list[dict[str, Any]] = []
+    try:
+        urls = list(history.urls()) if hasattr(history, "urls") and callable(history.urls) else []
+        actions = list(history.action_history()) if hasattr(history, "action_history") and callable(history.action_history) else []
+        for i, action_item in enumerate(actions):
+            step_num = i + 1
+            action_name = getattr(action_item, "name", str(action_item)) if not isinstance(action_item, str) else action_item
+            steps.append({
+                "step": step_num,
+                "action": action_name,
+                "target": getattr(action_item, "selector", None) or getattr(action_item, "target", None),
+                "reasoning": getattr(action_item, "reasoning", None),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            })
+        if not steps and urls:
+            for i, u in enumerate(urls):
+                steps.append({"step": i + 1, "action": "navigate", "target": u, "timestamp": datetime.now(timezone.utc).isoformat()})
+    except Exception as e:
+        steps = [{"step": 1, "action": "run", "reasoning": str(e), "timestamp": datetime.now(timezone.utc).isoformat()}]
+    return steps
+
+
+def _history_success(history: Any) -> bool:
+    """Whether the agent run completed successfully."""
+    if hasattr(history, "is_done") and callable(history.is_done):
+        return bool(history.is_done())
+    return True
+
+
+def _history_screenshots(history: Any) -> list[str]:
+    """Extract screenshot base64 strings from history (if any)."""
+    if not hasattr(history, "screenshots") or not callable(history.screenshots):
+        return []
+    try:
+        out = list(history.screenshots())
+        return out if isinstance(out, list) else []
+    except Exception:
+        return []
+
+
 async def run_agent(job_id: str, url: str, task: str) -> None:
     try:
         from browser_use import Agent, Browser
