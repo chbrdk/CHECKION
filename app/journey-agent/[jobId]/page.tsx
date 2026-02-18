@@ -223,6 +223,16 @@ export default function JourneyAgentStatusPage() {
                                                 {s.target && s.target !== '—' ? (s.target.length > 80 ? s.target.slice(0, 80) + '…' : s.target) : null}
                                             </MsqdxTypography>
                                         </Box>
+                                        {s.reasoning && (
+                                            <Box sx={{ mb: 1, p: 1, borderRadius: 1, bgcolor: 'action.hover', borderLeft: '3px solid', borderColor: 'primary.main' }}>
+                                                <MsqdxTypography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
+                                                    {t('scan.journeyReasoning')}
+                                                </MsqdxTypography>
+                                                <MsqdxTypography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                                                    {s.reasoning.length > 800 ? s.reasoning.slice(0, 800) + '…' : s.reasoning}
+                                                </MsqdxTypography>
+                                            </Box>
+                                        )}
                                         {s.result && (
                                             <MsqdxTypography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
                                                 {s.result.length > 400 ? s.result.slice(0, 400) + '…' : s.result}

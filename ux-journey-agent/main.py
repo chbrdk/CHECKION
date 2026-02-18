@@ -144,21 +144,52 @@ def _normalize_action_entry(entry: Any) -> tuple[str, str, str]:
     return (action_label, target, result)
 
 
+def _get_model_thoughts(history: Any) -> list[str]:
+    """Extract reasoning/thoughts per step from browser-use history (model_thoughts or model_outputs)."""
+    out: list[str] = []
+    try:
+        if hasattr(history, "model_thoughts") and callable(history.model_thoughts):
+            raw = list(history.model_thoughts())
+            if isinstance(raw, list):
+                for item in raw:
+                    if isinstance(item, str):
+                        out.append(item[:2000])
+                    elif item is not None:
+                        out.append(str(item)[:2000])
+        if not out and hasattr(history, "model_outputs") and callable(history.model_outputs):
+            raw = list(history.model_outputs())
+            if isinstance(raw, list):
+                for item in raw:
+                    if isinstance(item, str):
+                        out.append(item[:2000])
+                    elif isinstance(item, dict) and item.get("thought"):
+                        out.append(str(item["thought"])[:2000])
+                    elif item is not None:
+                        out.append(str(item)[:2000])
+    except Exception:
+        pass
+    return out
+
+
 def _history_to_steps(history: Any) -> list[dict[str, Any]]:
-    """Map browser-use action_history to CHECKION steps (readable labels, target, result)."""
+    """Map browser-use action_history to CHECKION steps (readable labels, target, result, reasoning)."""
     steps: list[dict[str, Any]] = []
     try:
         actions = list(history.action_history()) if hasattr(history, "action_history") and callable(history.action_history) else []
+        thoughts = _get_model_thoughts(history)
         for i, action_item in enumerate(actions):
             step_num = i + 1
             action_label, target, result = _normalize_action_entry(action_item)
-            steps.append({
+            step_entry: dict[str, Any] = {
                 "step": step_num,
                 "action": action_label,
                 "target": target or None,
                 "result": result or None,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
-            })
+            }
+            if i < len(thoughts) and thoughts[i].strip():
+                step_entry["reasoning"] = thoughts[i].strip()
+            steps.append(step_entry)
         if not steps and hasattr(history, "urls") and callable(history.urls):
             for i, u in enumerate(history.urls()):
                 steps.append({
