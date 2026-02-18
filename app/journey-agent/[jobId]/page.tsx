@@ -107,7 +107,7 @@ export default function JourneyAgentStatusPage() {
             )}
 
             {status === 'unavailable' && (
-                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2 }}>
+                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, bgcolor: '#fff' }}>
                     <MsqdxTypography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                         {error || t('scan.journeyNotConfigured')}
                     </MsqdxTypography>
@@ -118,7 +118,7 @@ export default function JourneyAgentStatusPage() {
             )}
 
             {status === 'error' && (
-                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, border: '1px solid', borderColor: 'error.light' }}>
+                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, bgcolor: '#fff', border: '1px solid', borderColor: 'error.light' }}>
                     <MsqdxTypography variant="body2" color="error" sx={{ mb: 1 }}>
                         {error}
                     </MsqdxTypography>
@@ -129,7 +129,7 @@ export default function JourneyAgentStatusPage() {
             )}
 
             {status === 'complete' && result && (
-                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2 }}>
+                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, bgcolor: '#fff' }}>
                     <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
                         {result.success ? t('scan.journeyStatusComplete') : t('scan.journeyStatusFinished')}
                     </MsqdxTypography>
@@ -174,8 +174,8 @@ export default function JourneyAgentStatusPage() {
                                             p: 1.5,
                                             borderRadius: 1,
                                             border: '1px solid',
-                                            borderColor: 'divider',
-                                            bgcolor: 'action.hover',
+                                            borderColor: '#e0e0e0',
+                                            bgcolor: '#fafafa',
                                         }}
                                     >
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.5 }}>
