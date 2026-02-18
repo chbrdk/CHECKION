@@ -25,7 +25,6 @@ export default function JourneyAgentStatusPage() {
         siteDomain?: string;
         videoUrl?: string;
     } | null>(null);
-    const [liveSrc, setLiveSrc] = useState<string | null>(null);
 
     useEffect(() => {
         if (!jobId) return;
@@ -72,45 +71,6 @@ export default function JourneyAgentStatusPage() {
             cancelled = true;
         };
     }, [jobId]);
-
-    // Live viewport polling while job is running (400–500 ms)
-    useEffect(() => {
-        if (!jobId || status !== 'running') {
-            if (liveSrc) {
-                URL.revokeObjectURL(liveSrc);
-                setLiveSrc(null);
-            }
-            return;
-        }
-        let cancelled = false;
-        const liveUrl = `/api/scan/journey-agent/${encodeURIComponent(jobId)}/live`;
-        const pollLive = async () => {
-            try {
-                const res = await fetch(liveUrl);
-                if (cancelled) return;
-                if (res.ok) {
-                    const blob = await res.blob();
-                    if (cancelled) return;
-                    setLiveSrc((prev) => {
-                        if (prev) URL.revokeObjectURL(prev);
-                        return URL.createObjectURL(blob);
-                    });
-                }
-            } catch {
-                // ignore; keep previous frame or placeholder
-            }
-        };
-        pollLive();
-        const interval = setInterval(pollLive, 450);
-        return () => {
-            cancelled = true;
-            clearInterval(interval);
-            setLiveSrc((prev) => {
-                if (prev) URL.revokeObjectURL(prev);
-                return null;
-            });
-        };
-    }, [jobId, status]);
 
     if (!jobId) {
         return (
@@ -161,20 +121,12 @@ export default function JourneyAgentStatusPage() {
                                 minHeight: 200,
                             }}
                         >
-                            {liveSrc ? (
-                                <Box
-                                    component="img"
-                                    src={liveSrc}
-                                    alt="Agent-Browser Live-Ansicht"
-                                    sx={{ display: 'block', width: '100%', height: 'auto', verticalAlign: 'top' }}
-                                />
-                            ) : (
-                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200, p: 2 }}>
-                                    <MsqdxTypography variant="body2" color="text.secondary">
-                                        Warte auf Live-Ansicht…
-                                    </MsqdxTypography>
-                                </Box>
-                            )}
+                            <Box
+                                component="img"
+                                src={`/api/scan/journey-agent/${encodeURIComponent(jobId)}/live/stream`}
+                                alt="Agent-Browser Live-Ansicht"
+                                sx={{ display: 'block', width: '100%', height: 'auto', verticalAlign: 'top' }}
+                            />
                         </Box>
                     </Box>
                 </Box>

@@ -19,8 +19,10 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from pydantic import BaseModel
+
+MJPEG_BOUNDARY = b"frame"
 
 # Directory for recorded videos (per job)
 VIDEO_BASE_DIR = Path(os.environ.get("UX_JOURNEY_VIDEO_DIR", "/tmp/ux-journey-videos"))
@@ -196,7 +198,20 @@ def _history_screenshots(history: Any) -> list[str]:
 
 
 async def _capture_live_frame(agent: Any) -> bytes | None:
-    """Capture current viewport as JPEG via CDP. Returns None on failure."""
+    """Capture current viewport as JPEG via CDP or Playwright page. Returns None on failure."""
+    # Fallback: try Playwright page.screenshot if browser_session exposes a page
+    page = getattr(agent.browser_session, "page", None) or getattr(
+        agent.browser_session, "current_page", None
+    )
+    if page is not None and hasattr(page, "screenshot"):
+        try:
+            result = await page.screenshot(type="jpeg", quality=80)
+            if isinstance(result, bytes):
+                return result
+        except Exception:
+            pass
+
+    # Primary: CDP Page.captureScreenshot
     try:
         cdp = await agent.browser_session.get_or_create_cdp_session()
         if not cdp:
@@ -494,6 +509,38 @@ async def get_run_live(job_id: str) -> Response:
         media_type="image/jpeg",
         headers={"Cache-Control": "no-store"},
     )
+
+
+async def _mjpeg_stream_generator(job_id: str):
+    """Yield MJPEG parts (boundary + headers + jpeg) while the job is running."""
+    while job_id in _live_agents:
+        frame = _live_frames.get(job_id)
+        if frame:
+            _, jpeg_bytes = frame
+            part = (
+                b"--"
+                + MJPEG_BOUNDARY
+                + b"\r\nContent-Type: image/jpeg\r\nContent-Length: "
+                + str(len(jpeg_bytes)).encode()
+                + b"\r\n\r\n"
+                + jpeg_bytes
+                + b"\r\n"
+            )
+            yield part
+        await asyncio.sleep(LIVE_FRAME_INTERVAL)
+
+
+@app.get("/run/{job_id}/live/stream")
+async def get_run_live_stream(job_id: str) -> StreamingResponse:
+    """MJPEG stream of the live viewport while the job is running."""
+    if job_id not in _live_agents:
+        raise HTTPException(status_code=404, detail="Job not running")
+    return StreamingResponse(
+        _mjpeg_stream_generator(job_id),
+        media_type="multipart/x-mixed-replace; boundary=" + MJPEG_BOUNDARY.decode(),
+        headers={"Cache-Control": "no-store"},
+    )
+
 
 # ---------------------------------------------------------------------------
 # Entrypoint
