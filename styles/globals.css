@@ -263,3 +263,9 @@ pre {
 [data-checkion-content] .MuiDialogTitle-root {
   padding: var(--msqdx-spacing-md) !important;
 }
+
+/* Journey video: floating MSQDX logomark at intro */
+@keyframes journey-video-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}

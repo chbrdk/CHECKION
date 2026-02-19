@@ -1,14 +1,86 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxCard } from '@msqdx/react';
 import { MSQDX_SPACING, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
 import { useI18n } from '@/components/i18n/I18nProvider';
+import { PDF_LOGO_PATH } from '@/lib/constants';
 import type { UxJourneyAgentStep } from '@/lib/types';
 
 type Status = 'idle' | 'loading' | 'running' | 'complete' | 'error' | 'unavailable';
+
+const INTRO_OVERLAY_DURATION_SEC = 2;
+
+/** Video player with MSQDX logomark overlay at the start (floating) instead of the default placeholder. */
+function JourneyVideoWithIntroLogo({ videoUrl }: { videoUrl: string }) {
+    const [showIntroOverlay, setShowIntroOverlay] = useState(true);
+    const videoRef = useRef<HTMLVideoElement>(null);
+
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+        const onTimeUpdate = () => setShowIntroOverlay(video.currentTime < INTRO_OVERLAY_DURATION_SEC);
+        video.addEventListener('timeupdate', onTimeUpdate);
+        return () => video.removeEventListener('timeupdate', onTimeUpdate);
+    }, []);
+
+    return (
+        <Box sx={{ mt: 2, mb: 2 }}>
+            <MsqdxTypography variant="subtitle2" sx={{ mb: 1 }}>
+                Aufzeichnung
+            </MsqdxTypography>
+            <Box
+                sx={{
+                    position: 'relative',
+                    width: '100%',
+                    maxWidth: 800,
+                    borderRadius: 1,
+                    bgcolor: '#000',
+                    overflow: 'hidden',
+                }}
+            >
+                <Box
+                    component="video"
+                    ref={videoRef}
+                    controls
+                    playsInline
+                    sx={{ width: '100%', display: 'block', verticalAlign: 'middle' }}
+                    src={videoUrl}
+                >
+                    Your browser does not support the video tag.
+                </Box>
+                {showIntroOverlay && (
+                    <Box
+                        sx={{
+                            position: 'absolute',
+                            inset: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor: '#000',
+                            pointerEvents: 'none',
+                        }}
+                    >
+                        <Box
+                            component="img"
+                            src={PDF_LOGO_PATH}
+                            alt="MSQDX"
+                            sx={{
+                                width: 120,
+                                height: 'auto',
+                                filter: 'invert(1) brightness(1.1)',
+                                opacity: 0.9,
+                                animation: 'journey-video-float 2.5s ease-in-out infinite',
+                            }}
+                        />
+                    </Box>
+                )}
+            </Box>
+        </Box>
+    );
+}
 
 /** Renders reasoning text with paragraphs, numbered and bullet lists for a readable layout. */
 function ReasoningBlock({ text }: { text: string }) {
@@ -201,20 +273,7 @@ export default function JourneyAgentStatusPage() {
                     )}
 
                     {result.videoUrl && (
-                        <Box sx={{ mt: 2, mb: 2 }}>
-                            <MsqdxTypography variant="subtitle2" sx={{ mb: 1 }}>
-                                Aufzeichnung
-                            </MsqdxTypography>
-                            <Box
-                                component="video"
-                                controls
-                                playsInline
-                                sx={{ width: '100%', maxWidth: 800, borderRadius: 1, bgcolor: '#000' }}
-                                src={result.videoUrl}
-                            >
-                                Your browser does not support the video tag.
-                            </Box>
-                        </Box>
+                        <JourneyVideoWithIntroLogo videoUrl={result.videoUrl} />
                     )}
 
                     {result.steps && result.steps.length > 0 && (

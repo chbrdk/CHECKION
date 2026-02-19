@@ -28,13 +28,13 @@ MJPEG_BOUNDARY = b"frame"
 VIDEO_BASE_DIR = Path(os.environ.get("UX_JOURNEY_VIDEO_DIR", "/tmp/ux-journey-videos"))
 
 # Delay at the *start* of each step so the viewer sees the current state before the action runs ("action lead-in")
-STEP_START_DELAY_SECONDS = float(os.environ.get("UX_JOURNEY_STEP_START_DELAY_SECONDS", "1.2"))
+STEP_START_DELAY_SECONDS = float(os.environ.get("UX_JOURNEY_STEP_START_DELAY_SECONDS", "2.5"))
 # Delay at the *end* of each step (after action + red circle) before the next step
-STEP_DELAY_SECONDS = float(os.environ.get("UX_JOURNEY_STEP_DELAY_SECONDS", "1.0"))
+STEP_DELAY_SECONDS = float(os.environ.get("UX_JOURNEY_STEP_DELAY_SECONDS", "2.0"))
 # How long the red click circle stays visible (seconds); increase to slow down and make actions more visible
-CLICK_CIRCLE_VISIBLE_SECONDS = float(os.environ.get("UX_JOURNEY_CLICK_CIRCLE_VISIBLE_SECONDS", "1.5"))
+CLICK_CIRCLE_VISIBLE_SECONDS = float(os.environ.get("UX_JOURNEY_CLICK_CIRCLE_VISIBLE_SECONDS", "2.5"))
 # After a scroll action: run a slow step-based scroll so the live stream captures it (duration per direction in seconds)
-SCROLL_VISIBLE_SECONDS = float(os.environ.get("UX_JOURNEY_SCROLL_VISIBLE_SECONDS", "2.5"))
+SCROLL_VISIBLE_SECONDS = float(os.environ.get("UX_JOURNEY_SCROLL_VISIBLE_SECONDS", "5.0"))
 # Live viewport screenshot interval (seconds); lower = higher fps (0.04 = 25 fps)
 LIVE_FRAME_INTERVAL = float(os.environ.get("UX_JOURNEY_LIVE_FRAME_INTERVAL", "0.04"))
 
