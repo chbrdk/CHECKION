@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --webpack --port 3333",
     "build": "next build --webpack",
+    "analyze": "cross-env ANALYZE=true next build --webpack",
     "start": "next start --port 3333",
     "lint": "eslint",
     "db:push": "drizzle-kit push"
@@ -34,12 +35,14 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^15.5.12",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/pg": "^8.16.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/uuid": "^10.0.0",
+    "cross-env": "^7.0.3",
     "drizzle-kit": "^0.31.9",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",

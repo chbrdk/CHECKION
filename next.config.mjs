@@ -1,6 +1,13 @@
 /** @type {import('next').NextConfig} */
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+    enabled: process.env.ANALYZE === 'true',
+    openAnalyzer: false,
+});
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -36,4 +43,4 @@ const nextConfig = {
     },
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);

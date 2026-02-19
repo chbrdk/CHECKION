@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { useParams, useRouter } from 'next/navigation';
 import { Box, alpha, Collapse, CircularProgress } from '@mui/material';
 import {
@@ -22,25 +23,68 @@ import {
     MSQDX_NEUTRAL,
     MSQDX_STATUS,
 } from '@msqdx/tokens';
-import { EcoCard } from '../../../components/EcoCard';
-import { PerformanceCard } from '../../../components/PerformanceCard';
-import { ScanIssueList } from '../../../components/ScanIssueList';
-import { UxCard } from '../../../components/UxCard';
-import { UxIssueList } from '../../../components/UxIssueList';
-import { FocusOrderOverlay } from '../../../components/FocusOrderOverlay';
-import { StructureMap } from '../../../components/StructureMap';
-import { PageIndexCard } from '../../../components/PageIndexCard';
-import { PageIndexRegionsOverlay } from '../../../components/PageIndexRegionsOverlay';
-import { TouchTargetOverlay } from '../../../components/TouchTargetOverlay';
-import { SaliencyHeatmapOverlay } from '../../../components/SaliencyHeatmapOverlay';
-import { SeoCard } from '../../../components/SeoCard';
-import { LinkAuditCard } from '../../../components/LinkAuditCard';
-import { InfraCard } from '../../../components/InfraCard';
-import { PrivacyCard } from '../../../components/PrivacyCard';
-import { SecurityCard } from '../../../components/SecurityCard';
-import { TechnicalInsightsCard } from '../../../components/TechnicalInsightsCard';
-import { GenerativeOptimizerCard } from '../../../components/GenerativeOptimizerCard';
+import { EcoCard } from '@/components/EcoCard';
+import { PerformanceCard } from '@/components/PerformanceCard';
+import { ScanIssueList } from '@/components/ScanIssueList';
+import { UxCard } from '@/components/UxCard';
 import type { ScanResult, Issue, IssueSeverity } from '@/lib/types';
+
+const UxIssueList = dynamic(
+    () => import('@/components/UxIssueList').then((m) => ({ default: m.UxIssueList })),
+    { ssr: false, loading: () => <Box sx={{ py: 2, display: 'flex', justifyContent: 'center' }}><CircularProgress size={24} /></Box> }
+);
+const FocusOrderOverlay = dynamic(
+    () => import('@/components/FocusOrderOverlay').then((m) => ({ default: m.FocusOrderOverlay })),
+    { ssr: false }
+);
+const StructureMap = dynamic(
+    () => import('@/components/StructureMap').then((m) => ({ default: m.StructureMap })),
+    { ssr: false, loading: () => <Box sx={{ py: 2 }}><CircularProgress size={24} /></Box> }
+);
+const PageIndexCard = dynamic(
+    () => import('@/components/PageIndexCard').then((m) => ({ default: m.PageIndexCard })),
+    { ssr: false, loading: () => <Box sx={{ py: 1 }}><CircularProgress size={20} /></Box> }
+);
+const PageIndexRegionsOverlay = dynamic(
+    () => import('@/components/PageIndexRegionsOverlay').then((m) => ({ default: m.PageIndexRegionsOverlay })),
+    { ssr: false }
+);
+const TouchTargetOverlay = dynamic(
+    () => import('@/components/TouchTargetOverlay').then((m) => ({ default: m.TouchTargetOverlay })),
+    { ssr: false }
+);
+const SaliencyHeatmapOverlay = dynamic(
+    () => import('@/components/SaliencyHeatmapOverlay').then((m) => ({ default: m.SaliencyHeatmapOverlay })),
+    { ssr: false }
+);
+const SeoCard = dynamic(
+    () => import('@/components/SeoCard').then((m) => ({ default: m.SeoCard })),
+    { ssr: false, loading: () => <Box sx={{ py: 2 }}><CircularProgress size={24} /></Box> }
+);
+const LinkAuditCard = dynamic(
+    () => import('@/components/LinkAuditCard').then((m) => ({ default: m.LinkAuditCard })),
+    { ssr: false, loading: () => <Box sx={{ py: 2 }}><CircularProgress size={24} /></Box> }
+);
+const InfraCard = dynamic(
+    () => import('@/components/InfraCard').then((m) => ({ default: m.InfraCard })),
+    { ssr: false, loading: () => <Box sx={{ py: 2 }}><CircularProgress size={24} /></Box> }
+);
+const PrivacyCard = dynamic(
+    () => import('@/components/PrivacyCard').then((m) => ({ default: m.PrivacyCard })),
+    { ssr: false, loading: () => <Box sx={{ py: 2 }}><CircularProgress size={24} /></Box> }
+);
+const SecurityCard = dynamic(
+    () => import('@/components/SecurityCard').then((m) => ({ default: m.SecurityCard })),
+    { ssr: false, loading: () => <Box sx={{ py: 2 }}><CircularProgress size={24} /></Box> }
+);
+const TechnicalInsightsCard = dynamic(
+    () => import('@/components/TechnicalInsightsCard').then((m) => ({ default: m.TechnicalInsightsCard })),
+    { ssr: false, loading: () => <Box sx={{ py: 2 }}><CircularProgress size={24} /></Box> }
+);
+const GenerativeOptimizerCard = dynamic(
+    () => import('@/components/GenerativeOptimizerCard').then((m) => ({ default: m.GenerativeOptimizerCard })),
+    { ssr: false, loading: () => <Box sx={{ py: 2 }}><CircularProgress size={24} /></Box> }
+);
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { PaginationBar } from '@/components/PaginationBar';

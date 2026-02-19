@@ -47,3 +47,11 @@ Mutationen (POST/PATCH/DELETE) bleiben in `lib/db/*` und triggern danach die zug
 
 - **Cached Listen:** Die Suche nutzt `listCachedStandaloneScans` und `listCachedDomainScans` statt direkter DB-Abfragen.
 - **Gecachte Suchergebnisse:** Das Ergebnis von `GET /api/search` wird pro (userId, q, typeFilter, limit) mit `unstable_cache` und Tags `scans-list-${userId}`, `domain-list-${userId}` gecacht (Revalidate wie Listen). Wiederholte gleiche Suchanfragen treffen nicht erneut die DB.
+
+### Results-Seite (Einzelscan)
+
+- **Code-Splitting:** Schwere View-Mode-Komponenten (UxIssueList, FocusOrderOverlay, StructureMap, PageIndexCard, PageIndexRegionsOverlay, TouchTargetOverlay, SaliencyHeatmapOverlay, SeoCard, LinkAuditCard, InfraCard, PrivacyCard, SecurityCard, TechnicalInsightsCard, GenerativeOptimizerCard) werden per `next/dynamic` mit `ssr: false` nachgeladen; sie laden nur beim Öffnen des jeweiligen Tabs. EcoCard, PerformanceCard, UxCard und ScanIssueList bleiben statisch.
+
+### Bundle-Analyzer
+
+- **Script:** `npm run analyze` (ANALYZE=true, Webpack-Build). Report in `.next/analyze/`; `openAnalyzer: false` in next.config.mjs. Zweck: große Chunks und Duplikate finden.
