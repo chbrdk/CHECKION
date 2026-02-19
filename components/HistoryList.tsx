@@ -101,6 +101,10 @@ export function HistoryList({
   children,
 }: HistoryListProps) {
   const showEmpty = !loading && itemCount === 0;
+  const showing = loading ? 'loading' : (itemCount === 0 ? 'empty' : 'children');
+  // #region agent log
+  if (typeof fetch !== 'undefined') fetch('http://localhost:7690/ingest/c9cbac84-1718-43da-bac2-daa2249304ab', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'e0b1bb' }, body: JSON.stringify({ sessionId: 'e0b1bb', hypothesisId: 'A', location: 'components/HistoryList.tsx', message: 'HistoryList render', data: { loading, itemCount, showing }, timestamp: Date.now() }) }).catch(() => {});
+  // #endregion
   return (
     <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
       {loading && (

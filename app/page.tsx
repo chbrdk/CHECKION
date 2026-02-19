@@ -22,7 +22,12 @@ const LIMIT = DASHBOARD_SCANS_PAGE_SIZE;
 
 type Pagination = { total: number; page: number; limit: number; totalPages: number };
 
+let dashboardRenderCount = 0;
 export default function DashboardPage() {
+  dashboardRenderCount += 1;
+  // #region agent log
+  if (typeof fetch !== 'undefined') fetch('http://localhost:7690/ingest/c9cbac84-1718-43da-bac2-daa2249304ab', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'e0b1bb' }, body: JSON.stringify({ sessionId: 'e0b1bb', hypothesisId: 'D', location: 'app/page.tsx:DashboardPage', message: 'DashboardPage render', data: { renderCount: dashboardRenderCount }, timestamp: Date.now() }) }).catch(() => {});
+  // #endregion
   const router = useRouter();
   const { t } = useI18n();
   const [scans, setScans] = useState<ScanResult[]>([]);
@@ -80,7 +85,14 @@ export default function DashboardPage() {
   );
 
   const loadScans = useCallback(async () => {
+    const runId = `run_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    // #region agent log
+    fetch('http://localhost:7690/ingest/c9cbac84-1718-43da-bac2-daa2249304ab', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'e0b1bb' }, body: JSON.stringify({ sessionId: 'e0b1bb', runId, hypothesisId: 'B', location: 'app/page.tsx:loadScans', message: 'loadScans invoked', data: { scanPage, domainPage }, timestamp: Date.now() }) }).catch(() => {});
+    // #endregion
     setLoading(true);
+    // #region agent log
+    fetch('http://localhost:7690/ingest/c9cbac84-1718-43da-bac2-daa2249304ab', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'e0b1bb' }, body: JSON.stringify({ sessionId: 'e0b1bb', runId, hypothesisId: 'B', location: 'app/page.tsx:setLoading(true)', message: 'setLoading(true)', data: {}, timestamp: Date.now() }) }).catch(() => {});
+    // #endregion
     try {
       const [scanRes, domainRes, journeysRes] = await Promise.all([
         fetch(`/api/scan?limit=${LIMIT}&page=${scanPage}`).then((r) => r.json()),
@@ -100,10 +112,16 @@ export default function DashboardPage() {
       setSavedJourneys([]);
     } finally {
       setLoading(false);
+      // #region agent log
+      fetch('http://localhost:7690/ingest/c9cbac84-1718-43da-bac2-daa2249304ab', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'e0b1bb' }, body: JSON.stringify({ sessionId: 'e0b1bb', runId, hypothesisId: 'B', location: 'app/page.tsx:setLoading(false)', message: 'setLoading(false)', data: {}, timestamp: Date.now() }) }).catch(() => {});
+      // #endregion
     }
   }, [scanPage, domainPage]);
 
   useEffect(() => {
+    // #region agent log
+    fetch('http://localhost:7690/ingest/c9cbac84-1718-43da-bac2-daa2249304ab', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'e0b1bb' }, body: JSON.stringify({ sessionId: 'e0b1bb', hypothesisId: 'C', location: 'app/page.tsx:useEffect', message: 'useEffect loadScans deps ran', data: { scanPage, domainPage }, timestamp: Date.now() }) }).catch(() => {});
+    // #endregion
     loadScans();
   }, [loadScans]);
 
