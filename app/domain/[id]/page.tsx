@@ -15,7 +15,7 @@ import {
 import { MSQDX_STATUS, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import type { JourneyResult, JourneyStep } from '@/lib/types';
-import type { DomainSummaryResponse } from '@/lib/domain-summary';
+import type { DomainSummaryResponse, SlimPage } from '@/lib/domain-summary';
 import { ArrowLeft, Share2, AlertCircle, CheckCircle } from 'lucide-react';
 
 const DomainGraph = dynamic(
@@ -66,20 +66,25 @@ export default function DomainResultPage() {
     const [journeySaveName, setJourneySaveName] = useState('');
     const [shareLoading, setShareLoading] = useState(false);
     const [shareCopied, setShareCopied] = useState(false);
+    const [extraPages, setExtraPages] = useState<SlimPage[]>([]);
+    const [loadingMorePages, setLoadingMorePages] = useState(false);
 
     const searchParams = useSearchParams();
-    const pages = result?.pages ?? [];
+    const summaryPages = result?.pages ?? [];
+    const allPages = useMemo(() => summaryPages.concat(extraPages), [summaryPages, extraPages]);
+    const totalPageCount = result?.totalPageCount ?? allPages.length;
     const aggregated = result?.aggregated ?? null;
-    const pagesByUrl = useMemo(() => new Map(pages.map((p) => [p.url, p])), [pages]);
+    const pagesByUrl = useMemo(() => new Map(allPages.map((p) => [p.url, p])), [allPages]);
     const norm = (u: string) => { try { const x = new URL(u); return x.origin + (x.pathname.replace(/\/$/, '') || '/'); } catch { return u; } };
-    const pagesByNormUrl = useMemo(() => { const m = new Map<string, typeof pages[0]>(); for (const p of pages) m.set(norm(p.url), p); return m; }, [pages]);
+    const pagesByNormUrl = useMemo(() => { const m = new Map<string, SlimPage>(); for (const p of allPages) m.set(norm(p.url), p); return m; }, [allPages]);
     const [visiblePageCount, setVisiblePageCount] = useState(DOMAIN_PAGES_INITIAL);
-    const visiblePages = useMemo(() => pages.slice(0, visiblePageCount), [pages, visiblePageCount]);
-    const hasMorePages = pages.length > visiblePageCount;
+    const visiblePages = useMemo(() => allPages.slice(0, visiblePageCount), [allPages, visiblePageCount]);
+    const hasMorePages = totalPageCount > visiblePageCount;
 
     useEffect(() => {
         if (!params.id) return;
         setVisiblePageCount(DOMAIN_PAGES_INITIAL);
+        setExtraPages([]);
         fetch(`/api/scan/domain/${params.id}/summary`)
             .then(res => {
                 if (!res.ok) throw new Error('Scan not found');
@@ -88,6 +93,26 @@ export default function DomainResultPage() {
             .then(data => setResult(data))
             .catch(err => console.error('Failed to load scan', err));
     }, [params.id]);
+
+    const loadMorePages = () => {
+        if (visiblePageCount < allPages.length) {
+            setVisiblePageCount((n) => Math.min(allPages.length, n + DOMAIN_PAGES_INCREMENT));
+            return;
+        }
+        if (allPages.length >= totalPageCount || !params.id) return;
+        setLoadingMorePages(true);
+        fetch(`/api/scan/domain/${params.id}/pages?offset=${allPages.length}&limit=${DOMAIN_PAGES_INCREMENT}`)
+            .then(res => {
+                if (!res.ok) throw new Error('Failed to load more');
+                return res.json();
+            })
+            .then((data: { pages: SlimPage[] }) => {
+                setExtraPages((prev) => prev.concat(data.pages));
+                setVisiblePageCount((n) => n + data.pages.length);
+            })
+            .catch((err) => console.error('Load more pages', err))
+            .finally(() => setLoadingMorePages(false));
+    };
 
     const restoreJourneyId = searchParams.get('restoreJourney');
     useEffect(() => {
@@ -317,8 +342,8 @@ export default function DomainResultPage() {
                                 ))}
                             </Box>
                             {hasMorePages && (
-                                <MsqdxButton size="small" variant="outlined" onClick={() => setVisiblePageCount((n) => Math.min(pages.length, n + DOMAIN_PAGES_INCREMENT))} sx={{ mt: 1 }}>
-                                    {t('domainResult.showMorePages', { count: Math.min(DOMAIN_PAGES_INCREMENT, pages.length - visiblePageCount) })}
+                                <MsqdxButton size="small" variant="outlined" onClick={loadMorePages} disabled={loadingMorePages} sx={{ mt: 1 }}>
+                                    {loadingMorePages ? t('domainResult.loading') : t('domainResult.showMorePages', { count: Math.min(DOMAIN_PAGES_INCREMENT, totalPageCount - visiblePageCount) })}
                                 </MsqdxButton>
                             )}
                         </MsqdxCard>
@@ -339,7 +364,7 @@ export default function DomainResultPage() {
                 <MsqdxMoleculeCard
                     title="Gefundene Issues (Domain)"
                     headerActions={<InfoTooltip title={t('info.issuesList')} ariaLabel={t('common.info')} />}
-                    subtitle={`Aggregiert über ${pages.length} Seite(n) · gleiche Kategorien wie Einzel-Scan`}
+                    subtitle={`Aggregiert über ${totalPageCount} Seite(n) · gleiche Kategorien wie Einzel-Scan`}
                     variant="flat"
                     sx={{ bgcolor: 'var(--color-card-bg)' }}
                     borderRadius="lg"
@@ -525,8 +550,8 @@ export default function DomainResultPage() {
                         ))}
                     </Box>
                     {hasMorePages && (
-                        <MsqdxButton size="small" variant="text" onClick={() => setVisiblePageCount((n) => Math.min(pages.length, n + DOMAIN_PAGES_INCREMENT))} sx={{ mt: 0.5, fontSize: '0.75rem' }}>
-                            {t('domainResult.showMorePages', { count: Math.min(DOMAIN_PAGES_INCREMENT, pages.length - visiblePageCount) })}
+                        <MsqdxButton size="small" variant="text" onClick={loadMorePages} disabled={loadingMorePages} sx={{ mt: 0.5, fontSize: '0.75rem' }}>
+                            {loadingMorePages ? t('domainResult.loading') : t('domainResult.showMorePages', { count: Math.min(DOMAIN_PAGES_INCREMENT, totalPageCount - visiblePageCount) })}
                         </MsqdxButton>
                     )}
                 </MsqdxMoleculeCard>
@@ -992,7 +1017,7 @@ export default function DomainResultPage() {
                                     message={journeyResult.message}
                                     streaming={journeyLoading}
                                     t={t}
-                                    pages={pages}
+                                    pages={allPages}
                                     onStepClick={(step) => {
                                         const norm = (u: string) => { try { const x = new URL(u); return x.origin + (x.pathname.replace(/\/$/, '') || '/'); } catch { return u; } };
                                         const page = pagesByNormUrl.get(norm(step.pageUrl));
