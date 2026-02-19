@@ -145,7 +145,7 @@ def _normalize_action_entry(entry: Any) -> tuple[str, str, str]:
 
 
 def _get_model_thoughts(history: Any) -> list[str]:
-    """Extract reasoning/thoughts per step from browser-use history (model_thoughts or model_outputs)."""
+    """Extract reasoning/thoughts per step from browser-use history (model_thoughts or model_outputs). No length limit."""
     out: list[str] = []
     try:
         if hasattr(history, "model_thoughts") and callable(history.model_thoughts):
@@ -153,19 +153,19 @@ def _get_model_thoughts(history: Any) -> list[str]:
             if isinstance(raw, list):
                 for item in raw:
                     if isinstance(item, str):
-                        out.append(item[:2000])
+                        out.append(item)
                     elif item is not None:
-                        out.append(str(item)[:2000])
+                        out.append(str(item))
         if not out and hasattr(history, "model_outputs") and callable(history.model_outputs):
             raw = list(history.model_outputs())
             if isinstance(raw, list):
                 for item in raw:
                     if isinstance(item, str):
-                        out.append(item[:2000])
+                        out.append(item)
                     elif isinstance(item, dict) and item.get("thought"):
-                        out.append(str(item["thought"])[:2000])
+                        out.append(str(item["thought"]))
                     elif item is not None:
-                        out.append(str(item)[:2000])
+                        out.append(str(item))
     except Exception:
         pass
     return out
@@ -313,14 +313,16 @@ async def run_agent(job_id: str, url: str, task: str) -> None:
             browser = Browser(record_video_dir=video_dir)
         except TypeError:
             browser = Browser()
-        # Prefer initial_url if supported; else bake URL into task
+        # Prefer initial_url if supported; else bake URL into task. Instruct model to output reasoning in German.
         import inspect
         sig = inspect.signature(Agent.__init__)
-        agent_kw: dict[str, Any] = {"task": task, "llm": llm, "browser": browser}
+        german_instruction = "WICHTIG: Formuliere alle deine Überlegungen und Gedanken (thinking/reasoning) ausschließlich auf Deutsch. "
+        task_with_lang = german_instruction + task
+        agent_kw: dict[str, Any] = {"task": task_with_lang, "llm": llm, "browser": browser}
         if "initial_url" in sig.parameters:
             agent_kw["initial_url"] = url
         else:
-            agent_kw["task"] = f"Go to {url}. Then: {task}"
+            agent_kw["task"] = f"Go to {url}. Then: {task_with_lang}"
         agent = Agent(**agent_kw)
         max_steps = int(os.environ.get("UX_JOURNEY_MAX_STEPS", "25"))
         if hasattr(agent, "max_steps"):

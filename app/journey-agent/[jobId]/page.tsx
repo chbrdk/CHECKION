@@ -10,6 +10,36 @@ import type { UxJourneyAgentStep } from '@/lib/types';
 
 type Status = 'idle' | 'loading' | 'running' | 'complete' | 'error' | 'unavailable';
 
+/** Renders reasoning text with paragraphs, numbered and bullet lists for a readable layout. */
+function ReasoningBlock({ text }: { text: string }) {
+    const blocks = text.split(/\n\s*\n/).filter(Boolean);
+    return (
+        <Box component="div" sx={{ '& > * + *': { mt: 1 } }}>
+            {blocks.map((block, idx) => {
+                const lines = block.split(/\n/).map((l) => l.trim()).filter(Boolean);
+                const isNumberedList = lines.length > 0 && /^\d+\.\s/.test(lines[0]);
+                const isBulletList = lines.length > 0 && /^[-*•]\s/.test(lines[0]);
+                if (isNumberedList || isBulletList) {
+                    return (
+                        <Box component="ul" key={idx} sx={{ m: 0, pl: 2.5, py: 0 }}>
+                            {lines.map((line, i) => (
+                                <MsqdxTypography key={i} variant="body2" color="text.secondary" component="li" sx={{ mb: 0.25 }}>
+                                    {line.replace(/^(\d+\.|[-*•])\s*/, '')}
+                                </MsqdxTypography>
+                            ))}
+                        </Box>
+                    );
+                }
+                return (
+                    <MsqdxTypography key={idx} variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                        {lines.join('\n')}
+                    </MsqdxTypography>
+                );
+            })}
+        </Box>
+    );
+}
+
 export default function JourneyAgentStatusPage() {
     const params = useParams();
     const router = useRouter();
@@ -224,13 +254,31 @@ export default function JourneyAgentStatusPage() {
                                             </MsqdxTypography>
                                         </Box>
                                         {s.reasoning && (
-                                            <Box sx={{ mb: 1, p: 1, borderRadius: 1, bgcolor: 'action.hover', borderLeft: '3px solid', borderColor: 'primary.main' }}>
-                                                <MsqdxTypography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
+                                            <Box
+                                                sx={{
+                                                    mb: 1,
+                                                    p: 1.5,
+                                                    borderRadius: 1.5,
+                                                    bgcolor: 'grey.50',
+                                                    borderLeft: '4px solid',
+                                                    borderColor: 'primary.main',
+                                                    boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                                                }}
+                                            >
+                                                <MsqdxTypography
+                                                    variant="caption"
+                                                    sx={{
+                                                        fontWeight: 700,
+                                                        display: 'block',
+                                                        mb: 1,
+                                                        color: 'primary.dark',
+                                                        letterSpacing: '0.02em',
+                                                        textTransform: 'uppercase',
+                                                    }}
+                                                >
                                                     {t('scan.journeyReasoning')}
                                                 </MsqdxTypography>
-                                                <MsqdxTypography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                                                    {s.reasoning.length > 800 ? s.reasoning.slice(0, 800) + '…' : s.reasoning}
-                                                </MsqdxTypography>
+                                                <ReasoningBlock text={s.reasoning} />
                                             </Box>
                                         )}
                                         {s.result && (
