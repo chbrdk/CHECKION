@@ -621,8 +621,8 @@ export default function ResultsPage() {
                                     </Box>
                                 </Box>
                             )}
-                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                Generiert mit {result.llmSummary.modelUsed} am {new Date(result.llmSummary.generatedAt).toLocaleString('de-DE')}.
+                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }} component="div">
+                                Generiert mit {result.llmSummary.modelUsed} am <span suppressHydrationWarning>{new Date(result.llmSummary.generatedAt).toLocaleString('de-DE')}</span>.
                             </MsqdxTypography>
                         </Box>
                     ) : (

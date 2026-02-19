@@ -439,7 +439,7 @@ export default function DomainResultPage() {
                                 </Box>
                             )}
                             <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                Generiert mit {result.llmSummary.modelUsed} am {new Date(result.llmSummary.generatedAt).toLocaleString('de-DE')}.
+                                Generiert mit {result.llmSummary.modelUsed} am <span suppressHydrationWarning>{new Date(result.llmSummary.generatedAt).toLocaleString('de-DE')}</span>.
                             </MsqdxTypography>
                         </Box>
                     ) : (

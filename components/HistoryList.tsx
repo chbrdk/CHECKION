@@ -36,7 +36,7 @@ export function SingleScanRow({
           {scan.url}
         </MsqdxTypography>
         <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-          {new Date(scan.timestamp).toLocaleString('de-DE')} · {scan.stats.errors} Errors
+          <span suppressHydrationWarning>{new Date(scan.timestamp).toLocaleString('de-DE')}</span> · {scan.stats.errors} Errors
         </MsqdxTypography>
       </Box>
       <MsqdxChip
@@ -67,7 +67,7 @@ export function DomainScanRow({
           {item.domain}
         </MsqdxTypography>
         <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-          {new Date(item.timestamp).toLocaleString('de-DE')} · {item.totalPages} Seiten
+          <span suppressHydrationWarning>{new Date(item.timestamp).toLocaleString('de-DE')}</span> · {item.totalPages} Seiten
         </MsqdxTypography>
       </Box>
       <MsqdxChip
