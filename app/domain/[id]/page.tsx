@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { Box, CircularProgress, alpha } from '@mui/material';
 import {
     MsqdxTypography,
@@ -15,10 +16,22 @@ import { MSQDX_STATUS, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import type { JourneyResult, JourneyStep } from '@/lib/types';
 import type { DomainSummaryResponse } from '@/lib/domain-summary';
-import { DomainGraph } from '@/components/DomainGraph';
-import { DomainAggregatedIssueList } from '@/components/DomainAggregatedIssueList';
-import { JourneyFlowchart } from '@/components/JourneyFlowchart';
 import { ArrowLeft, Share2, AlertCircle, CheckCircle } from 'lucide-react';
+
+const DomainGraph = dynamic(
+    () => import('@/components/DomainGraph').then((m) => ({ default: m.DomainGraph })),
+    { ssr: false, loading: () => <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={32} /></Box> }
+);
+
+const DomainAggregatedIssueList = dynamic(
+    () => import('@/components/DomainAggregatedIssueList').then((m) => ({ default: m.DomainAggregatedIssueList })),
+    { ssr: false, loading: () => <Box sx={{ py: 2 }}><CircularProgress size={24} /></Box> }
+);
+
+const JourneyFlowchart = dynamic(
+    () => import('@/components/JourneyFlowchart').then((m) => ({ default: m.JourneyFlowchart })),
+    { ssr: false, loading: () => <Box sx={{ py: 2 }}><CircularProgress size={24} /></Box> }
+);
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { DOMAIN_PAGES_INITIAL, DOMAIN_PAGES_INCREMENT } from '@/lib/constants';

@@ -34,3 +34,16 @@ API-Routen, die schreiben/löschen, rufen die passenden `invalidate*`-Funktionen
 - **GET** `/api/share/[token]`, `/api/share/[token]/pages/[pageId]` → gecachte Share- und Domain-Daten.
 
 Mutationen (POST/PATCH/DELETE) bleiben in `lib/db/*` und triggern danach die zugehörige Invalidierung.
+
+---
+
+## Weitere Optimierungen (Performance)
+
+### Frontend (Domain-Seite)
+
+- **Code-Splitting:** `DomainGraph`, `DomainAggregatedIssueList` und `JourneyFlowchart` werden auf der Domain-Ergebnisseite per `next/dynamic` mit `ssr: false` nachgeladen. Sie erscheinen nur in bestimmten Tabs; der initiale JS-Bundle wird kleiner, der Long Task beim ersten Load reduziert.
+
+### Search-API
+
+- **Cached Listen:** Die Suche nutzt `listCachedStandaloneScans` und `listCachedDomainScans` statt direkter DB-Abfragen.
+- **Gecachte Suchergebnisse:** Das Ergebnis von `GET /api/search` wird pro (userId, q, typeFilter, limit) mit `unstable_cache` und Tags `scans-list-${userId}`, `domain-list-${userId}` gecacht (Revalidate wie Listen). Wiederholte gleiche Suchanfragen treffen nicht erneut die DB.

@@ -3,9 +3,11 @@
 /* ------------------------------------------------------------------ */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { unstable_cache } from 'next/cache';
 import { auth } from '@/auth';
-import { listStandaloneScans, listDomainScans } from '@/lib/db/scans';
+import { listCachedStandaloneScans, listCachedDomainScans } from '@/lib/cache';
 import type { ScanResult, DomainScanResult, SearchMatch, SearchMatchType } from '@/lib/types';
+import { CACHE_REVALIDATE_LIST } from '@/lib/constants';
 
 const MAX_SINGLE_LOAD = 300;
 const MAX_DOMAIN_LOAD = 30;
@@ -71,6 +73,45 @@ function searchInScan(
     return matches;
 }
 
+async function runSearch(
+    userId: string,
+    q: string,
+    typeFilter: 'single' | 'domain' | 'all',
+    limit: number
+): Promise<SearchMatch[]> {
+    const allMatches: SearchMatch[] = [];
+
+    if (typeFilter === 'all' || typeFilter === 'single') {
+        const singleScans = await listCachedStandaloneScans(userId, { limit: MAX_SINGLE_LOAD });
+        for (const result of singleScans) {
+            const list = searchInScan(result, q, 'single', result.id);
+            for (const m of list) {
+                if (allMatches.length >= limit) break;
+                allMatches.push(m);
+            }
+            if (allMatches.length >= limit) break;
+        }
+    }
+
+    if ((typeFilter === 'all' || typeFilter === 'domain') && allMatches.length < limit) {
+        const domainScans = await listCachedDomainScans(userId, { limit: MAX_DOMAIN_LOAD });
+        for (const ds of domainScans) {
+            if (allMatches.length >= limit) break;
+            const domain = ds.domain;
+            for (const page of ds.pages ?? []) {
+                if (allMatches.length >= limit) break;
+                const list = searchInScan(page, q, 'domain', ds.id, domain);
+                for (const m of list) {
+                    if (allMatches.length >= limit) break;
+                    allMatches.push(m);
+                }
+            }
+        }
+    }
+
+    return allMatches.slice(0, Math.min(limit, MAX_MATCHES));
+}
+
 export async function GET(req: NextRequest) {
     const session = await auth();
     if (!session?.user?.id) {
@@ -87,36 +128,12 @@ export async function GET(req: NextRequest) {
     const typeFilter = typeParam === 'single' ? 'single' : typeParam === 'domain' ? 'domain' : 'all';
     const limit = Math.min(100, Math.max(1, Number(searchParams.get('limit')) || 50));
 
-    const allMatches: SearchMatch[] = [];
+    const getCachedSearch = unstable_cache(
+        () => runSearch(session.user.id, q, typeFilter, limit),
+        ['search', session.user.id, q, typeFilter, String(limit)],
+        { revalidate: CACHE_REVALIDATE_LIST, tags: [`scans-list-${session.user.id}`, `domain-list-${session.user.id}`] }
+    );
 
-    if (typeFilter === 'all' || typeFilter === 'single') {
-        const singleScans = await listStandaloneScans(session.user.id, { limit: MAX_SINGLE_LOAD });
-        for (const result of singleScans) {
-            const list = searchInScan(result, q, 'single', result.id);
-            for (const m of list) {
-                if (allMatches.length >= limit) break;
-                allMatches.push(m);
-            }
-            if (allMatches.length >= limit) break;
-        }
-    }
-
-    if ((typeFilter === 'all' || typeFilter === 'domain') && allMatches.length < limit) {
-        const domainScans = await listDomainScans(session.user.id, { limit: MAX_DOMAIN_LOAD });
-        for (const ds of domainScans) {
-            if (allMatches.length >= limit) break;
-            const domain = ds.domain;
-            for (const page of ds.pages ?? []) {
-                if (allMatches.length >= limit) break;
-                const list = searchInScan(page, q, 'domain', ds.id, domain);
-                for (const m of list) {
-                    if (allMatches.length >= limit) break;
-                    allMatches.push(m);
-                }
-            }
-        }
-    }
-
-    const capped = allMatches.slice(0, Math.min(limit, MAX_MATCHES));
+    const capped = await getCachedSearch();
     return NextResponse.json({ matches: capped });
 }
