@@ -1,11 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import { MsqdxTypography, MsqdxChip } from '@msqdx/react';
 import { MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
 import type { SearchMatch, SearchMatchType } from '@/lib/types';
 import { useI18n } from '@/components/i18n/I18nProvider';
+import { LoadMoreBar } from '@/components/PaginationBar';
+import { SEARCH_RESULTS_PAGE_SIZE } from '@/lib/constants';
 
 const listItemSx = {
   cursor: 'pointer',
@@ -36,33 +38,48 @@ export interface SearchResultsListProps {
   onSelectMatch: (match: SearchMatch) => void;
 }
 
+/**
+ * Search results list. Keeps previous list in DOM while loading (spinner only when no matches yet) to avoid flicker.
+ */
 export function SearchResultsList({ matches, loading, query, onSelectMatch }: SearchResultsListProps) {
   const { t } = useI18n();
-
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, py: 3 }}>
-        <CircularProgress size={24} sx={{ color: 'var(--color-theme-accent)' }} />
-        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-          {t('dashboard.searchLoading')}
-        </MsqdxTypography>
-      </Box>
-    );
-  }
-
-  if (matches.length === 0) {
-    return (
-      <Box sx={{ textAlign: 'center', py: 3, px: 2 }}>
-        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-          {query ? t('dashboard.searchNoResults', { query }) : t('dashboard.searchNoResultsEmpty')}
-        </MsqdxTypography>
-      </Box>
-    );
-  }
+  const [displayCount, setDisplayCount] = useState(SEARCH_RESULTS_PAGE_SIZE);
+  useEffect(() => {
+    setDisplayCount(SEARCH_RESULTS_PAGE_SIZE);
+  }, [matches.length]);
+  const visibleMatches = matches.slice(0, displayCount);
+  const showSpinnerOnly = loading && matches.length === 0;
+  const showEmpty = !loading && matches.length === 0;
+  const showList = matches.length > 0;
 
   return (
-    <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
-      {matches.map((match, idx) => (
+    <>
+      {showSpinnerOnly && (
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, py: 3 }}>
+          <CircularProgress size={24} sx={{ color: 'var(--color-theme-accent)' }} />
+          <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+            {t('dashboard.searchLoading')}
+          </MsqdxTypography>
+        </Box>
+      )}
+      {showEmpty && (
+        <Box sx={{ textAlign: 'center', py: 3, px: 2 }}>
+          <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+            {query ? t('dashboard.searchNoResults', { query }) : t('dashboard.searchNoResultsEmpty')}
+          </MsqdxTypography>
+        </Box>
+      )}
+      {showList && (
+        <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
+          {loading && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 1.5, mb: 0.5 }}>
+              <CircularProgress size={18} sx={{ color: 'var(--color-theme-accent)' }} />
+              <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                {t('dashboard.searchLoading')}
+              </MsqdxTypography>
+            </Box>
+          )}
+          {visibleMatches.map((match, idx) => (
         <Box
           component="li"
           key={`${match.id}-${match.url}-${match.matchType}-${idx}`}
@@ -101,6 +118,15 @@ export function SearchResultsList({ matches, loading, query, onSelectMatch }: Se
           </Box>
         </Box>
       ))}
-    </Box>
+          <LoadMoreBar
+            shown={visibleMatches.length}
+            total={matches.length}
+            pageSize={SEARCH_RESULTS_PAGE_SIZE}
+            onLoadMore={() => setDisplayCount((c) => Math.min(c + SEARCH_RESULTS_PAGE_SIZE, matches.length))}
+            loadMoreLabel={t('dashboard.loadMore')}
+          />
+        </Box>
+      )}
+    </>
   );
 }

@@ -16,18 +16,14 @@ import { HistoryList, SingleScanRow, DomainScanRow, type DomainScanSummary } fro
 import { SearchResultsList } from '@/components/SearchResultsList';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
-import { DASHBOARD_SCANS_PAGE_SIZE } from '@/lib/constants';
+import { DASHBOARD_SCANS_PAGE_SIZE, DASHBOARD_JOURNEYS_PAGE_SIZE } from '@/lib/constants';
+import { PaginationBar } from '@/components/PaginationBar';
 
 const LIMIT = DASHBOARD_SCANS_PAGE_SIZE;
 
 type Pagination = { total: number; page: number; limit: number; totalPages: number };
 
-let dashboardRenderCount = 0;
 export default function DashboardPage() {
-  dashboardRenderCount += 1;
-  // #region agent log
-  if (typeof fetch !== 'undefined') fetch('http://localhost:7690/ingest/c9cbac84-1718-43da-bac2-daa2249304ab', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'e0b1bb' }, body: JSON.stringify({ sessionId: 'e0b1bb', hypothesisId: 'D', location: 'app/page.tsx:DashboardPage', message: 'DashboardPage render', data: { renderCount: dashboardRenderCount }, timestamp: Date.now() }) }).catch(() => {});
-  // #endregion
   const router = useRouter();
   const { t } = useI18n();
   const [scans, setScans] = useState<ScanResult[]>([]);
@@ -36,12 +32,14 @@ export default function DashboardPage() {
   const [domainPagination, setDomainPagination] = useState<Pagination | null>(null);
   const [scanPage, setScanPage] = useState(1);
   const [domainPage, setDomainPage] = useState(1);
+  const [journeyPage, setJourneyPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [lastSearchedQuery, setLastSearchedQuery] = useState('');
   const [searchMatches, setSearchMatches] = useState<SearchMatch[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [savedJourneys, setSavedJourneys] = useState<Array<{ id: string; domainScanId: string; domain?: string; name: string | null; goal: string; createdAt: string }>>([]);
+  const [journeyPagination, setJourneyPagination] = useState<Pagination | null>(null);
 
   const runSearch = useCallback(async (q: string) => {
     const trimmed = q.trim();
@@ -85,43 +83,32 @@ export default function DashboardPage() {
   );
 
   const loadScans = useCallback(async () => {
-    const runId = `run_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    // #region agent log
-    fetch('http://localhost:7690/ingest/c9cbac84-1718-43da-bac2-daa2249304ab', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'e0b1bb' }, body: JSON.stringify({ sessionId: 'e0b1bb', runId, hypothesisId: 'B', location: 'app/page.tsx:loadScans', message: 'loadScans invoked', data: { scanPage, domainPage }, timestamp: Date.now() }) }).catch(() => {});
-    // #endregion
     setLoading(true);
-    // #region agent log
-    fetch('http://localhost:7690/ingest/c9cbac84-1718-43da-bac2-daa2249304ab', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'e0b1bb' }, body: JSON.stringify({ sessionId: 'e0b1bb', runId, hypothesisId: 'B', location: 'app/page.tsx:setLoading(true)', message: 'setLoading(true)', data: {}, timestamp: Date.now() }) }).catch(() => {});
-    // #endregion
     try {
       const [scanRes, domainRes, journeysRes] = await Promise.all([
         fetch(`/api/scan?limit=${LIMIT}&page=${scanPage}`).then((r) => r.json()),
         fetch(`/api/scans/domain?limit=${LIMIT}&page=${domainPage}`).then((r) => r.json()),
-        fetch('/api/journeys?limit=20', { credentials: 'same-origin' }).then((r) => r.json()),
+        fetch(`/api/journeys?limit=${DASHBOARD_JOURNEYS_PAGE_SIZE}&page=${journeyPage}`, { credentials: 'same-origin' }).then((r) => r.json()),
       ]);
       setScans(Array.isArray(scanRes?.data) ? scanRes.data : []);
       setScanPagination(scanRes?.pagination ?? null);
       setDomainScans(Array.isArray(domainRes?.data) ? domainRes.data : []);
       setDomainPagination(domainRes?.pagination ?? null);
       setSavedJourneys(Array.isArray(journeysRes?.data) ? journeysRes.data : []);
+      setJourneyPagination(journeysRes?.pagination ?? null);
     } catch {
       setScans([]);
       setDomainScans([]);
       setScanPagination(null);
       setDomainPagination(null);
       setSavedJourneys([]);
+      setJourneyPagination(null);
     } finally {
       setLoading(false);
-      // #region agent log
-      fetch('http://localhost:7690/ingest/c9cbac84-1718-43da-bac2-daa2249304ab', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'e0b1bb' }, body: JSON.stringify({ sessionId: 'e0b1bb', runId, hypothesisId: 'B', location: 'app/page.tsx:setLoading(false)', message: 'setLoading(false)', data: {}, timestamp: Date.now() }) }).catch(() => {});
-      // #endregion
     }
-  }, [scanPage, domainPage]);
+  }, [scanPage, domainPage, journeyPage]);
 
   useEffect(() => {
-    // #region agent log
-    fetch('http://localhost:7690/ingest/c9cbac84-1718-43da-bac2-daa2249304ab', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'e0b1bb' }, body: JSON.stringify({ sessionId: 'e0b1bb', hypothesisId: 'C', location: 'app/page.tsx:useEffect', message: 'useEffect loadScans deps ran', data: { scanPage, domainPage }, timestamp: Date.now() }) }).catch(() => {});
-    // #endregion
     loadScans();
   }, [loadScans]);
 
@@ -349,49 +336,17 @@ export default function DashboardPage() {
                 ))}
               </Box>
             )}
+            {journeyPagination && journeyPagination.totalPages > 1 && (
+              <PaginationBar
+                page={journeyPagination.page}
+                totalPages={journeyPagination.totalPages}
+                onPrev={() => setJourneyPage((p) => Math.max(1, p - 1))}
+                onNext={() => setJourneyPage((p) => Math.min(journeyPagination.totalPages, p + 1))}
+                t={t}
+              />
+            )}
           </MsqdxMoleculeCard>
         </Box>
-      </Box>
-    </Box>
-  );
-}
-
-function PaginationBar({
-  page,
-  totalPages,
-  onPrev,
-  onNext,
-  t,
-}: {
-  page: number;
-  totalPages: number;
-  onPrev: () => void;
-  onNext: () => void;
-  t: (key: string, values?: Record<string, string | number>) => string;
-}) {
-  const pageOf = t('dashboard.pageOf', { page: String(page), total: String(totalPages) });
-  return (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 'var(--msqdx-spacing-sm)',
-        mt: 'var(--msqdx-spacing-md)',
-        pt: 'var(--msqdx-spacing-sm)',
-        borderTop: '1px solid var(--color-secondary-dx-grey-light-tint)',
-      }}
-    >
-      <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-        {pageOf}
-      </MsqdxTypography>
-      <Box sx={{ display: 'flex', gap: 'var(--msqdx-spacing-xs)' }}>
-        <MsqdxButton variant="outlined" size="small" onClick={onPrev} disabled={page <= 1}>
-          {t('dashboard.prev')}
-        </MsqdxButton>
-        <MsqdxButton variant="outlined" size="small" onClick={onNext} disabled={page >= totalPages}>
-          {t('dashboard.next')}
-        </MsqdxButton>
       </Box>
     </Box>
   );

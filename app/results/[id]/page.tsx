@@ -43,6 +43,8 @@ import { GenerativeOptimizerCard } from '../../../components/GenerativeOptimizer
 import type { ScanResult, Issue, IssueSeverity } from '@/lib/types';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
+import { PaginationBar } from '@/components/PaginationBar';
+import { RESULTS_ISSUES_PAGE_SIZE } from '@/lib/constants';
 import { Share2 } from 'lucide-react';
 
 const SEVERITY_CONFIG: Record<IssueSeverity, { color: string; label: string }> = {
@@ -63,6 +65,7 @@ export default function ResultsPage() {
     const [error, setError] = useState<string | null>(null);
     const [tab, setTab] = useState<TabFilter>('all');
     const [levelFilter, setLevelFilter] = useState<LevelFilter>('all');
+    const [issuesPage, setIssuesPage] = useState(1);
     const [viewMode, setViewMode] = useState<'list' | 'summary' | 'visual' | 'ux' | 'structure' | 'seo' | 'infra' | 'generative'>('list');
     const [relatedScans, setRelatedScans] = useState<ScanResult[]>([]);
     const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
@@ -125,6 +128,20 @@ export default function ResultsPage() {
             return typeMatch && levelMatch;
         });
     }, [result, tab, levelFilter]);
+
+    useEffect(() => {
+        setIssuesPage(1);
+    }, [tab, levelFilter]);
+
+    const issuesTotalPages = Math.max(1, Math.ceil(filteredIssues.length / RESULTS_ISSUES_PAGE_SIZE));
+    const paginatedIssues = useMemo(
+        () =>
+            filteredIssues.slice(
+                (issuesPage - 1) * RESULTS_ISSUES_PAGE_SIZE,
+                issuesPage * RESULTS_ISSUES_PAGE_SIZE
+            ),
+        [filteredIssues, issuesPage]
+    );
 
     // Scroll to issue in list
     const scrollToIssue = (index: number) => {
@@ -204,42 +221,39 @@ export default function ResultsPage() {
             });
     }, [params.id]);
 
-    if (loading) {
-        return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-                <CircularProgress size={28} sx={{ color: MSQDX_BRAND_PRIMARY.green }} />
-            </Box>
-        );
-    }
+    const TABS: { key: TabFilter | 'passed'; label: string; count: number; color: string }[] = result
+        ? [
+            { key: 'all', label: t('results.tabAll'), count: result.issues.length, color: MSQDX_BRAND_PRIMARY.green },
+            { key: 'error', label: t('results.tabErrors'), count: result.stats.errors, color: MSQDX_STATUS.error.base },
+            { key: 'warning', label: t('results.tabWarnings'), count: result.stats.warnings, color: MSQDX_STATUS.warning.base },
+            { key: 'notice', label: t('results.tabNotices'), count: result.stats.notices, color: MSQDX_STATUS.info.base },
+            { key: 'passed', label: t('results.tabValidated'), count: result.passes ? result.passes.length : 0, color: MSQDX_STATUS.success.base },
+          ]
+        : [];
 
-    if (error || !result) {
-        return (
-            <Box sx={{ p: 'var(--msqdx-spacing-md)', textAlign: 'center' }}>
-                <MsqdxTypography variant="h5" sx={{ color: MSQDX_STATUS.error.light, mb: 'var(--msqdx-spacing-sm)' }}>
-                    {error || t('results.errorNotFound')}
-                </MsqdxTypography>
-                <MsqdxButton variant="outlined" onClick={() => router.push('/')}>
-                    ← {t('results.backToDashboard')}
-                </MsqdxButton>
-            </Box>
-        );
-    }
-
-
-
-    const TABS: { key: TabFilter | 'passed'; label: string; count: number; color: string }[] = [
-        { key: 'all', label: t('results.tabAll'), count: result.issues.length, color: MSQDX_BRAND_PRIMARY.green },
-        { key: 'error', label: t('results.tabErrors'), count: result.stats.errors, color: MSQDX_STATUS.error.base },
-        { key: 'warning', label: t('results.tabWarnings'), count: result.stats.warnings, color: MSQDX_STATUS.warning.base },
-        { key: 'notice', label: t('results.tabNotices'), count: result.stats.notices, color: MSQDX_STATUS.info.base },
-        { key: 'passed', label: t('results.tabValidated'), count: result.passes ? result.passes.length : 0, color: MSQDX_STATUS.success.base },
-    ];
-
-    // Score Color
-    const scoreColor = result.score >= 90 ? MSQDX_BRAND_PRIMARY.green : result.score >= 70 ? MSQDX_BRAND_PRIMARY.yellow : MSQDX_STATUS.error.base;
+    const scoreColor = result
+        ? (result.score >= 90 ? MSQDX_BRAND_PRIMARY.green : result.score >= 70 ? MSQDX_BRAND_PRIMARY.yellow : MSQDX_STATUS.error.base)
+        : '';
 
     return (
-        <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto' }}>
+        <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto', minHeight: 360 }}>
+            {loading && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 360 }}>
+                    <CircularProgress size={28} sx={{ color: MSQDX_BRAND_PRIMARY.green }} />
+                </Box>
+            )}
+            {!loading && (error || !result) && (
+                <Box sx={{ textAlign: 'center' }}>
+                    <MsqdxTypography variant="h5" sx={{ color: MSQDX_STATUS.error.light, mb: 'var(--msqdx-spacing-sm)' }}>
+                        {error || t('results.errorNotFound')}
+                    </MsqdxTypography>
+                    <MsqdxButton variant="outlined" onClick={() => router.push('/')}>
+                        ← {t('results.backToDashboard')}
+                    </MsqdxButton>
+                </Box>
+            )}
+            {!loading && result && (
+        <Box component="span" sx={{ display: 'block' }}>
             {/* Header with Score */}
             <Box sx={{ mb: 'var(--msqdx-spacing-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <Box>
@@ -805,11 +819,22 @@ export default function ResultsPage() {
                             </MsqdxTypography>
                         </Box>
                     ) : (
-                        <ScanIssueList
-                            issues={filteredIssues}
-                            highlightedIndex={highlightedIndex}
-                            registerRef={handleRefRegister}
-                        />
+                        <>
+                            <ScanIssueList
+                                issues={paginatedIssues}
+                                highlightedIndex={highlightedIndex}
+                                registerRef={handleRefRegister}
+                            />
+                            {filteredIssues.length > RESULTS_ISSUES_PAGE_SIZE && (
+                                <PaginationBar
+                                    page={issuesPage}
+                                    totalPages={issuesTotalPages}
+                                    onPrev={() => setIssuesPage((p) => Math.max(1, p - 1))}
+                                    onNext={() => setIssuesPage((p) => Math.min(issuesTotalPages, p + 1))}
+                                    t={t}
+                                />
+                            )}
+                        </>
                     )}
                 </MsqdxMoleculeCard>
             )}
@@ -1169,6 +1194,8 @@ export default function ResultsPage() {
                         <MsqdxMoleculeCard title="GEO-Analyse" subtitle="Keine Daten." sx={{ bgcolor: 'var(--color-card-bg)' }}><MsqdxTypography>Keine GEO-Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
                     )}
                 </>
+            )}
+        </Box>
             )}
         </Box>
     );

@@ -90,7 +90,7 @@ interface HistoryListProps {
 
 /**
  * Wrapper for scan history: same ul/li structure as domain "Scanned Pages" and results.
- * Keeps layout stable (no spinner → grid swap) to avoid flicker.
+ * Keeps list items in the DOM during loading (spinner only when no data yet) to avoid flicker on refetch/Strict Mode.
  */
 export function HistoryList({
   loading,
@@ -101,13 +101,12 @@ export function HistoryList({
   children,
 }: HistoryListProps) {
   const showEmpty = !loading && itemCount === 0;
-  const showing = loading ? 'loading' : (itemCount === 0 ? 'empty' : 'children');
-  // #region agent log
-  if (typeof fetch !== 'undefined') fetch('http://localhost:7690/ingest/c9cbac84-1718-43da-bac2-daa2249304ab', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'e0b1bb' }, body: JSON.stringify({ sessionId: 'e0b1bb', hypothesisId: 'A', location: 'components/HistoryList.tsx', message: 'HistoryList render', data: { loading, itemCount, showing }, timestamp: Date.now() }) }).catch(() => {});
-  // #endregion
+  const showSpinnerOnly = loading && itemCount === 0;
+  const showChildren = itemCount > 0;
+
   return (
     <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
-      {loading && (
+      {showSpinnerOnly && (
         <Box
           component="li"
           sx={{
@@ -143,7 +142,28 @@ export function HistoryList({
           </MsqdxButton>
         </Box>
       )}
-      {!loading && itemCount > 0 && children}
+      {showChildren && (
+        <>
+          {loading && (
+            <Box
+              component="li"
+              sx={{
+                ...listItemSx,
+                cursor: 'default',
+                justifyContent: 'center',
+                gap: 'var(--msqdx-spacing-sm)',
+                py: 'var(--msqdx-spacing-xs)',
+              }}
+            >
+              <CircularProgress size={16} sx={{ color: 'var(--color-theme-accent)' }} />
+              <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                Aktualisiere…
+              </MsqdxTypography>
+            </Box>
+          )}
+          {children}
+        </>
+      )}
     </Box>
   );
 }

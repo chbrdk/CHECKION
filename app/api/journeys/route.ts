@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { addSavedJourney, listSavedJourneys } from '@/lib/db/journeys';
+import { addSavedJourney, listSavedJourneys, getSavedJourneysCount } from '@/lib/db/journeys';
 import { getDomainScan } from '@/lib/db/scans';
 import type { JourneyResult } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
@@ -16,9 +16,18 @@ export async function GET(request: NextRequest) {
     }
     const { searchParams } = new URL(request.url);
     const domainScanId = searchParams.get('domainScanId') ?? undefined;
-    const limit = Math.min(100, Math.max(1, Number(searchParams.get('limit')) || 50));
-    const rows = await listSavedJourneys(session.user.id, { domainScanId, limit });
-    return NextResponse.json({ data: rows });
+    const limit = Math.min(100, Math.max(1, Number(searchParams.get('limit')) || 10));
+    const page = Math.max(1, Number(searchParams.get('page')) || 1);
+    const offset = (page - 1) * limit;
+    const [rows, total] = await Promise.all([
+        listSavedJourneys(session.user.id, { domainScanId, limit, offset }),
+        getSavedJourneysCount(session.user.id, domainScanId),
+    ]);
+    const totalPages = Math.ceil(total / limit) || 1;
+    return NextResponse.json({
+        data: rows,
+        pagination: { total, page, limit, totalPages },
+    });
 }
 
 export async function POST(request: Request) {

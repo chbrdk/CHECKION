@@ -2,7 +2,7 @@
 /*  CHECKION – Saved user journeys (history)                           */
 /* ------------------------------------------------------------------ */
 
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, count } from 'drizzle-orm';
 import { getDb } from './index';
 import { savedJourneys, domainScans } from './schema';
 import type { JourneyResult } from '@/lib/types';
@@ -39,7 +39,7 @@ export async function addSavedJourney(
 
 export async function listSavedJourneys(
     userId: string,
-    options?: { domainScanId?: string; limit?: number }
+    options?: { domainScanId?: string; limit?: number; offset?: number }
 ): Promise<SavedJourneyRow[]> {
     const db = getDb();
     const where = options?.domainScanId
@@ -60,7 +60,10 @@ export async function listSavedJourneys(
         .innerJoin(domainScans, eq(savedJourneys.domainScanId, domainScans.id))
         .where(where)
         .orderBy(desc(savedJourneys.createdAt));
-    const rows = options?.limit != null ? await base.limit(options.limit) : await base;
+    const rows =
+        options?.limit != null || options?.offset != null
+            ? await base.limit(options.limit ?? 100).offset(options.offset ?? 0)
+            : await base;
     return rows.map((r) => ({
         id: r.id,
         userId: r.userId,
@@ -71,6 +74,15 @@ export async function listSavedJourneys(
         result: r.result as unknown as JourneyResult,
         createdAt: r.createdAt,
     }));
+}
+
+export async function getSavedJourneysCount(userId: string, domainScanId?: string): Promise<number> {
+    const db = getDb();
+    const where = domainScanId
+        ? and(eq(savedJourneys.userId, userId), eq(savedJourneys.domainScanId, domainScanId))
+        : eq(savedJourneys.userId, userId);
+    const rows = await db.select({ count: count() }).from(savedJourneys).where(where);
+    return Number(rows[0]?.count ?? 0);
 }
 
 export async function getSavedJourney(id: string, userId: string): Promise<SavedJourneyRow | null> {

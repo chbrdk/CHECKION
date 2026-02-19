@@ -11,6 +11,16 @@ export const LOCALE_STORAGE_KEY = 'checkion_locale';
 
 /** Number of scans per page on the dashboard (single + domain lists). */
 export const DASHBOARD_SCANS_PAGE_SIZE = 10;
+/** Issues per page on the single-scan results page (list view). */
+export const RESULTS_ISSUES_PAGE_SIZE = 50;
+/** Search results to show initially; "load more" adds this many. */
+export const SEARCH_RESULTS_PAGE_SIZE = 15;
+/** Saved journeys per page on the dashboard. */
+export const DASHBOARD_JOURNEYS_PAGE_SIZE = 10;
+/** Domain scan: pages (URLs) to show initially; "load more" adds this many. */
+export const DOMAIN_PAGES_INITIAL = 50;
+/** Domain scan: increment when "load more" is clicked. */
+export const DOMAIN_PAGES_INCREMENT = 50;
 
 /** Base path for public share landing pages. Full URL: origin + SHARE_PATH + '/' + token */
 export const SHARE_PATH = '/share';

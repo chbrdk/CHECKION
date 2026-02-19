@@ -185,6 +185,9 @@
     "matchType_issue": "Issue",
     "matchType_seo": "SEO",
     "matchType_domain": "Domain",
+    "loadMore": "Show more",
+    "loadMoreIssues": "Load more issues",
+    "showingOf": "{shown} of {total} shown",
     "clearSearch": "Clear search"
   },
   "developers": {

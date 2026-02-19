@@ -21,6 +21,7 @@ import { JourneyFlowchart } from '@/components/JourneyFlowchart';
 import { ArrowLeft, Share2, AlertCircle, CheckCircle } from 'lucide-react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
+import { DOMAIN_PAGES_INITIAL, DOMAIN_PAGES_INCREMENT } from '@/lib/constants';
 
 export default function DomainResultPage() {
     const params = useParams();
@@ -59,13 +60,13 @@ export default function DomainResultPage() {
     const pagesByUrl = useMemo(() => new Map(pages.map((p) => [p.url, p])), [pages]);
     const norm = (u: string) => { try { const x = new URL(u); return x.origin + (x.pathname.replace(/\/$/, '') || '/'); } catch { return u; } };
     const pagesByNormUrl = useMemo(() => { const m = new Map<string, typeof pages[0]>(); for (const p of pages) m.set(norm(p.url), p); return m; }, [pages]);
-    const [visiblePageCount, setVisiblePageCount] = useState(100);
+    const [visiblePageCount, setVisiblePageCount] = useState(DOMAIN_PAGES_INITIAL);
     const visiblePages = useMemo(() => pages.slice(0, visiblePageCount), [pages, visiblePageCount]);
     const hasMorePages = pages.length > visiblePageCount;
 
     useEffect(() => {
         if (!params.id) return;
-        setVisiblePageCount(100);
+        setVisiblePageCount(DOMAIN_PAGES_INITIAL);
         fetch(`/api/scan/domain/${params.id}/summary`)
             .then(res => {
                 if (!res.ok) throw new Error('Scan not found');
@@ -91,17 +92,16 @@ export default function DomainResultPage() {
             .catch(() => {});
     }, [restoreJourneyId, params.id]);
 
-    if (!result) {
-        return (
-            <Box sx={{ p: 'var(--msqdx-spacing-md)', display: 'flex', justifyContent: 'center', flexDirection: 'column', alignItems: 'center', gap: 'var(--msqdx-spacing-md)' }}>
-                <MsqdxTypography variant="h5" sx={{ mb: 'var(--msqdx-spacing-md)' }}>{t('domainResult.loading')}</MsqdxTypography>
-                <CircularProgress sx={{ color: 'var(--color-theme-accent)' }} />
-            </Box>
-        );
-    }
-
     return (
-        <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto' }}>
+        <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto', minHeight: 320 }}>
+            {!result && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', flexDirection: 'column', alignItems: 'center', gap: 'var(--msqdx-spacing-md)', py: 8 }}>
+                    <MsqdxTypography variant="h5" sx={{ mb: 'var(--msqdx-spacing-md)' }}>{t('domainResult.loading')}</MsqdxTypography>
+                    <CircularProgress sx={{ color: 'var(--color-theme-accent)' }} />
+                </Box>
+            )}
+            {result && (
+        <Box component="span" sx={{ display: 'block' }}>
             <Box sx={{ mb: 'var(--msqdx-spacing-xl)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box>
                     <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-xs)' }}>
@@ -304,8 +304,8 @@ export default function DomainResultPage() {
                                 ))}
                             </Box>
                             {hasMorePages && (
-                                <MsqdxButton size="small" variant="outlined" onClick={() => setVisiblePageCount((n) => Math.min(pages.length, n + 100))} sx={{ mt: 1 }}>
-                                    {t('domainResult.showMorePages', { count: Math.min(100, pages.length - visiblePageCount) })}
+                                <MsqdxButton size="small" variant="outlined" onClick={() => setVisiblePageCount((n) => Math.min(pages.length, n + DOMAIN_PAGES_INCREMENT))} sx={{ mt: 1 }}>
+                                    {t('domainResult.showMorePages', { count: Math.min(DOMAIN_PAGES_INCREMENT, pages.length - visiblePageCount) })}
                                 </MsqdxButton>
                             )}
                         </MsqdxCard>
@@ -512,8 +512,8 @@ export default function DomainResultPage() {
                         ))}
                     </Box>
                     {hasMorePages && (
-                        <MsqdxButton size="small" variant="text" onClick={() => setVisiblePageCount((n) => Math.min(pages.length, n + 100))} sx={{ mt: 0.5, fontSize: '0.75rem' }}>
-                            {t('domainResult.showMorePages', { count: Math.min(100, pages.length - visiblePageCount) })}
+                        <MsqdxButton size="small" variant="text" onClick={() => setVisiblePageCount((n) => Math.min(pages.length, n + DOMAIN_PAGES_INCREMENT))} sx={{ mt: 0.5, fontSize: '0.75rem' }}>
+                            {t('domainResult.showMorePages', { count: Math.min(DOMAIN_PAGES_INCREMENT, pages.length - visiblePageCount) })}
                         </MsqdxButton>
                     )}
                 </MsqdxMoleculeCard>
@@ -1033,6 +1033,8 @@ export default function DomainResultPage() {
                         )}
                     </Box>
                 </MsqdxMoleculeCard>
+            )}
+        </Box>
             )}
         </Box>
     );
