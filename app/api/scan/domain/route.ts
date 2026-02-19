@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { runDomainScan } from '@/lib/spider';
 import { createDomainScan, updateDomainScan, getDomainScan, addScan } from '@/lib/db/scans';
+import { invalidateDomainScan, invalidateDomainList } from '@/lib/cache';
 import { v4 as uuidv4 } from 'uuid';
 import type { DomainScanResult, ScanResult } from '@/lib/types';
 
@@ -54,10 +55,12 @@ export async function POST(req: NextRequest) {
         systemicIssues: []
     };
     await createDomainScan(userId, initial);
+    invalidateDomainList(userId);
 
     (async () => {
         try {
             await updateDomainScan(id, userId, { status: 'scanning' });
+            invalidateDomainScan(id);
             for await (const update of runDomainScan(url, { useSitemap, maxPages })) {
                 const currentScan = await getDomainScan(id, userId);
                 if (!currentScan) break;
@@ -65,6 +68,7 @@ export async function POST(req: NextRequest) {
                     await updateDomainScan(id, userId, {
                         progress: { scanned: update.scannedCount, total: 0, currentUrl: update.url }
                     });
+                    invalidateDomainScan(id);
                 } else if (update.type === 'complete') {
                     const slimPages = slimPagesForPayload(update.domainResult.pages);
                     await updateDomainScan(id, userId, {
@@ -78,12 +82,17 @@ export async function POST(req: NextRequest) {
                     for (const page of update.domainResult.pages) {
                         await addScan(userId, { ...page, groupId: id });
                     }
+                    invalidateDomainScan(id);
                 }
             }
             await updateDomainScan(id, userId, { status: 'complete' });
+            invalidateDomainScan(id);
+            invalidateDomainList(userId);
         } catch (e) {
             console.error('Background Scan Error:', e);
             await updateDomainScan(id, userId, { status: 'error', error: (e as Error).message } as Partial<DomainScanResult>);
+            invalidateDomainScan(id);
+            invalidateDomainList(userId);
         }
     })();
 

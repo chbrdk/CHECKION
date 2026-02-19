@@ -5,6 +5,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getScan, updateScanResult } from '@/lib/db/scans';
+import { invalidateScan } from '@/lib/cache';
 import { enrichPageIndexWithSaliency } from '@/lib/page-index';
 import { getScreenshotBase64 } from '@/lib/screenshot-storage';
 
@@ -118,6 +119,7 @@ export async function POST(request: Request) {
             { status: 500 },
         );
     }
+    invalidateScan(scanId);
 
     return NextResponse.json({ success: true });
 }

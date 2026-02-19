@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { listDomainScans, getDomainScansCount } from '@/lib/db/scans';
+import { listCachedDomainScans, getCachedDomainScansCount } from '@/lib/cache';
 import { DASHBOARD_SCANS_PAGE_SIZE } from '@/lib/constants';
 
 export async function GET(req: NextRequest) {
@@ -13,8 +13,8 @@ export async function GET(req: NextRequest) {
     const page = Math.max(1, Number(searchParams.get('page')) || 1);
     const offset = (page - 1) * limit;
     const [scans, total] = await Promise.all([
-        listDomainScans(session.user.id, { limit, offset }),
-        getDomainScansCount(session.user.id),
+        listCachedDomainScans(session.user.id, { limit, offset }),
+        getCachedDomainScansCount(session.user.id),
     ]);
     const summary = scans.map(s => ({
         id: s.id,

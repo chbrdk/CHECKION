@@ -21,9 +21,17 @@ export const DASHBOARD_JOURNEYS_PAGE_SIZE = 10;
 export const DOMAIN_PAGES_INITIAL = 50;
 /** Domain scan: increment when "load more" is clicked. */
 export const DOMAIN_PAGES_INCREMENT = 50;
+/** Share page (deep scan): scanned pages list page size (prev/next pagination). */
+export const SHARE_DOMAIN_PAGES_PAGE_SIZE = 10;
 
 /** Base path for public share landing pages. Full URL: origin + SHARE_PATH + '/' + token */
 export const SHARE_PATH = '/share';
+
+/** Cache revalidate times (seconds). Used by lib/cache with unstable_cache. */
+export const CACHE_REVALIDATE_SCAN = 60;
+export const CACHE_REVALIDATE_DOMAIN = 60;
+export const CACHE_REVALIDATE_SHARE = 300;
+export const CACHE_REVALIDATE_LIST = 30;
 
 /** Screenshot storage: env key for backend (local disk vs S3). Use "s3" for shared storage across instances. */
 export const ENV_SCREENSHOT_STORAGE = 'SCREENSHOT_STORAGE';

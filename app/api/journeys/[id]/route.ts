@@ -5,6 +5,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getSavedJourney, deleteSavedJourney } from '@/lib/db/journeys';
+import { invalidateJourneys } from '@/lib/cache';
 
 export async function GET(
     _request: Request,
@@ -35,5 +36,6 @@ export async function DELETE(
     if (!ok) {
         return NextResponse.json({ error: 'Saved journey not found.' }, { status: 404 });
     }
+    invalidateJourneys(session.user.id);
     return NextResponse.json({ success: true });
 }

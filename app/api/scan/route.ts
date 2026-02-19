@@ -5,7 +5,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { runScan } from '@/lib/scanner';
-import { addScan, listStandaloneScans, getStandaloneScansCount } from '@/lib/db/scans';
+import { addScan } from '@/lib/db/scans';
+import { listCachedStandaloneScans, getCachedStandaloneScansCount, invalidateScansList } from '@/lib/cache';
 import type { ScanRequest, Device } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 import { DASHBOARD_SCANS_PAGE_SIZE } from '@/lib/constants';
@@ -56,6 +57,7 @@ export async function POST(request: Request) {
         for (const result of results) {
             await addScan(session.user.id, result);
         }
+        invalidateScansList(session.user.id);
 
         // Fire-and-forget: trigger async saliency heatmap generation per scan (only if service is configured)
         const saliencyUrl = process.env.SALIENCY_SERVICE_URL;
@@ -98,8 +100,8 @@ export async function GET(req: NextRequest) {
     const page = Math.max(1, Number(searchParams.get('page')) || 1);
     const offset = (page - 1) * limit;
     const [list, total] = await Promise.all([
-        listStandaloneScans(session.user.id, { limit, offset }),
-        getStandaloneScansCount(session.user.id),
+        listCachedStandaloneScans(session.user.id, { limit, offset }),
+        getCachedStandaloneScansCount(session.user.id),
     ]);
     const totalPages = Math.ceil(total / limit) || 1;
     return NextResponse.json({

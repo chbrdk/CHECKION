@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { deleteScan } from '@/lib/db/scans';
+import { invalidateScan, invalidateScansList } from '@/lib/cache';
 
 export async function DELETE(
     _req: NextRequest,
@@ -16,6 +17,8 @@ export async function DELETE(
     if (!success) {
         return NextResponse.json({ success: false, error: 'Scan not found' }, { status: 404 });
     }
+    invalidateScan(id);
+    invalidateScansList(session.user.id);
 
     return NextResponse.json({ success: true, message: 'Scan deleted' });
 }

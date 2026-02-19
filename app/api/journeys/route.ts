@@ -4,8 +4,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { addSavedJourney, listSavedJourneys, getSavedJourneysCount } from '@/lib/db/journeys';
-import { getDomainScan } from '@/lib/db/scans';
+import { addSavedJourney } from '@/lib/db/journeys';
+import {
+    getCachedDomainScan,
+    listCachedSavedJourneys,
+    getCachedSavedJourneysCount,
+    invalidateJourneys,
+} from '@/lib/cache';
 import type { JourneyResult } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -20,8 +25,8 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, Number(searchParams.get('page')) || 1);
     const offset = (page - 1) * limit;
     const [rows, total] = await Promise.all([
-        listSavedJourneys(session.user.id, { domainScanId, limit, offset }),
-        getSavedJourneysCount(session.user.id, domainScanId),
+        listCachedSavedJourneys(session.user.id, { domainScanId, limit, offset }),
+        getCachedSavedJourneysCount(session.user.id, domainScanId),
     ]);
     const totalPages = Math.ceil(total / limit) || 1;
     return NextResponse.json({
@@ -51,11 +56,12 @@ export async function POST(request: Request) {
             { status: 400 }
         );
     }
-    const domain = await getDomainScan(domainScanId, session.user.id);
+    const domain = await getCachedDomainScan(domainScanId, session.user.id);
     if (!domain) {
         return NextResponse.json({ error: 'Domain scan not found.' }, { status: 404 });
     }
     const id = uuidv4();
     await addSavedJourney(id, session.user.id, domainScanId, goal, result, name);
+    invalidateJourneys(session.user.id, domainScanId);
     return NextResponse.json({ id, success: true });
 }

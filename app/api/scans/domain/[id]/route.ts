@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { deleteDomainScan } from '@/lib/db/scans';
+import { invalidateDomainScan, invalidateDomainList } from '@/lib/cache';
 
 export async function DELETE(
     _req: NextRequest,
@@ -16,6 +17,8 @@ export async function DELETE(
     if (!success) {
         return NextResponse.json({ success: false, error: 'Domain scan not found' }, { status: 404 });
     }
+    invalidateDomainScan(id);
+    invalidateDomainList(session.user.id);
 
     return NextResponse.json({ success: true, message: 'Domain scan deleted' });
 }

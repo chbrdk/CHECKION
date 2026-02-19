@@ -4,7 +4,7 @@
 
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { getScanWithSummary } from '@/lib/db/scans';
+import { getCachedScanWithSummary } from '@/lib/cache';
 
 export async function GET(
     _request: Request,
@@ -15,7 +15,7 @@ export async function GET(
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const { id } = await params;
-    const row = await getScanWithSummary(id, session.user.id);
+    const row = await getCachedScanWithSummary(id, session.user.id);
 
     if (!row) {
         return NextResponse.json({ error: 'Scan result not found.' }, { status: 404 });

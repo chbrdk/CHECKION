@@ -6,6 +6,7 @@ import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { auth } from '@/auth';
 import { getDomainScan, updateDomainScan } from '@/lib/db/scans';
+import { invalidateDomainScan } from '@/lib/cache';
 import { buildDomainSummaryPayload } from '@/lib/llm/build-domain-summary-payload';
 import { OPENAI_MODEL, getOpenAIKey } from '@/lib/llm/config';
 import { DOMAIN_SYSTEM_PROMPT, buildDomainUserPrompt } from '@/lib/llm/prompts';
@@ -118,6 +119,7 @@ export async function POST(
             { status: 500 },
         );
     }
+    invalidateDomainScan(id);
 
     return NextResponse.json(summary);
 }

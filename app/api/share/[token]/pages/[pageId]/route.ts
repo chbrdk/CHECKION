@@ -4,15 +4,14 @@
 /* ------------------------------------------------------------------ */
 
 import { NextResponse } from 'next/server';
-import { getShareByToken } from '@/lib/db/shares';
-import { getDomainScan } from '@/lib/db/scans';
+import { getCachedShareByToken, getCachedDomainScan } from '@/lib/cache';
 
 export async function GET(
     _request: Request,
     { params }: { params: Promise<{ token: string; pageId: string }> }
 ) {
     const { token, pageId } = await params;
-    const share = await getShareByToken(token);
+    const share = await getCachedShareByToken(token);
     if (!share) {
         return NextResponse.json({ error: 'Share not found or expired' }, { status: 404 });
     }
@@ -20,7 +19,7 @@ export async function GET(
         return NextResponse.json({ error: 'Not a domain share' }, { status: 400 });
     }
 
-    const domain = await getDomainScan(share.resourceId, share.userId);
+    const domain = await getCachedDomainScan(share.resourceId, share.userId);
     if (!domain) return NextResponse.json({ error: 'Domain scan not found' }, { status: 404 });
 
     const page = (domain.pages ?? []).find((p) => p.id === pageId);

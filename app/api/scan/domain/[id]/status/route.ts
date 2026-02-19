@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { getDomainScan } from '@/lib/db/scans';
+import { getCachedDomainScan } from '@/lib/cache';
 
 export async function GET(
     req: NextRequest,
@@ -11,7 +11,7 @@ export async function GET(
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const { id } = await params;
-    const scan = await getDomainScan(id, session.user.id);
+    const scan = await getCachedDomainScan(id, session.user.id);
 
     if (!scan) {
         return NextResponse.json({ error: 'Scan not found' }, { status: 404 });

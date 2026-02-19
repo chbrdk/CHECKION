@@ -11,8 +11,7 @@ import { FocusOrderOverlay } from '@/components/FocusOrderOverlay';
 import { PageIndexCard } from '@/components/PageIndexCard';
 import type { DomainSummaryResponse } from '@/lib/domain-summary';
 import type { ScanResult } from '@/lib/types';
-
-const PAGES_PER_PAGE = 10;
+import { SHARE_DOMAIN_PAGES_PAGE_SIZE } from '@/lib/constants';
 
 // --- Status colors: sofort erkennen ob optimal oder nicht
 const STATUS = {
@@ -182,8 +181,8 @@ function ShareDomainContent({ data, token }: { data: DomainSummaryResponse; toke
     const [loadingDetail, setLoadingDetail] = useState(false);
     const [loadingPageId, setLoadingPageId] = useState<string | null>(null);
 
-    const totalPages = Math.max(1, Math.ceil(pages.length / PAGES_PER_PAGE));
-    const paginatedPages = pages.slice((listPage - 1) * PAGES_PER_PAGE, listPage * PAGES_PER_PAGE);
+    const totalPages = Math.max(1, Math.ceil(pages.length / SHARE_DOMAIN_PAGES_PAGE_SIZE));
+    const paginatedPages = pages.slice((listPage - 1) * SHARE_DOMAIN_PAGES_PAGE_SIZE, listPage * SHARE_DOMAIN_PAGES_PAGE_SIZE);
 
     const openPageDetail = async (pageId: string) => {
         setLoadingPageId(pageId);

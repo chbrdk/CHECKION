@@ -6,6 +6,7 @@ import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { auth } from '@/auth';
 import { getScan, updateScanSummary } from '@/lib/db/scans';
+import { invalidateScan } from '@/lib/cache';
 import { buildSummaryPayload } from '@/lib/llm/build-summary-payload';
 import { OPENAI_MODEL, getOpenAIKey } from '@/lib/llm/config';
 import { SYSTEM_PROMPT, buildUserPrompt } from '@/lib/llm/prompts';
@@ -111,6 +112,7 @@ export async function POST(
             { status: 500 },
         );
     }
+    invalidateScan(id);
 
     return NextResponse.json(summary);
 }
