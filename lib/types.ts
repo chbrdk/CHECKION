@@ -353,6 +353,21 @@ export interface LinkResult {
 
 export type DomainScanStatus = 'queued' | 'scanning' | 'complete' | 'error';
 
+/** Minimal page reference stored in domain scan payload (single scan id = link to /results/[id]). */
+export interface SlimPage {
+    id: string;
+    url: string;
+    score: number;
+    stats: { errors: number; warnings: number; notices: number };
+    ux?: { score: number };
+}
+
+/** Precomputed during deep scan; stored in domain_scans.payload. */
+export type DomainAggregated = Record<string, unknown>;
+
+/** Domain scan with full page results (e.g. for journey agent). Load from scans table when payload has slim pages. */
+export type DomainScanResultWithFullPages = Omit<DomainScanResult, 'pages'> & { pages: ScanResult[] };
+
 export type DomainScanResult = {
     id: string;
     domain: string;
@@ -365,7 +380,10 @@ export type DomainScanResult = {
     };
     totalPages: number;
     score: number;
-    pages: ScanResult[];
+    /** Stored: SlimPage[] (id = scan id). Legacy payloads may have ScanResult[]; use payload.aggregated to detect. */
+    pages: SlimPage[] | ScanResult[];
+    /** Precomputed during deep scan; absent on legacy payloads. */
+    aggregated?: DomainAggregated;
     graph: {
         nodes: Array<{
             id: string,

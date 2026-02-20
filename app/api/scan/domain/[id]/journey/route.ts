@@ -5,9 +5,12 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { auth } from '@/auth';
-import { getDomainScan } from '@/lib/db/scans';
+import { getDomainScan, listScansByGroupId } from '@/lib/db/scans';
 import { getOpenAIKey } from '@/lib/llm/config';
 import { runJourneyAgent, runJourneyAgentStream, type JourneyStreamEvent } from '@/lib/llm/journey-agent';
+import { hasStoredAggregated } from '@/lib/domain-summary';
+import type { DomainScanResult } from '@/lib/types';
+import type { ScanResult } from '@/lib/types';
 
 export async function POST(
     request: Request,
@@ -19,16 +22,25 @@ export async function POST(
     }
 
     const { id } = await params;
-    const domainResult = await getDomainScan(id, session.user.id);
-    if (!domainResult) {
+    const domainPayload = await getDomainScan(id, session.user.id);
+    if (!domainPayload) {
         return NextResponse.json({ error: 'Domain scan not found.' }, { status: 404 });
     }
 
-    if (domainResult.status !== 'complete') {
+    if (domainPayload.status !== 'complete') {
         return NextResponse.json(
             { error: 'Domain scan must be complete before running a journey.' },
             { status: 400 },
         );
+    }
+
+    /** Journey needs full ScanResult[] (pageIndex, allLinks, etc.). Load from scans table when stored payload has slim pages. */
+    let domainResult: DomainScanResult & { pages: ScanResult[] };
+    if (hasStoredAggregated(domainPayload)) {
+        const fullPages = await listScansByGroupId(session.user.id, id);
+        domainResult = { ...domainPayload, pages: fullPages };
+    } else {
+        domainResult = domainPayload as DomainScanResult & { pages: ScanResult[] };
     }
 
     let body: { goal?: string; stream?: boolean };

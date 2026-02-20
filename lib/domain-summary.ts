@@ -1,6 +1,6 @@
 /**
- * Build domain summary (aggregated + slim pages) from a DomainScanResult.
- * Used by GET /api/scan/domain/[id]/summary and by public share payload.
+ * Domain summary: built from stored payload (new format) or from full pages (legacy).
+ * New format: domain_scans.payload already has pages: SlimPage[] and aggregated (computed during deep scan).
  */
 import {
     aggregateIssues,
@@ -13,21 +13,12 @@ import {
     aggregatePerformance,
     aggregateEco,
 } from './domain-aggregation';
-import type { ScanResult, DomainScanResult } from './types';
+import type { ScanResult, DomainScanResult, SlimPage } from './types';
 
-export interface SlimPage {
-    id: string;
-    url: string;
-    score: number;
-    stats: { errors: number; warnings: number; notices: number };
-    ux?: { score: number };
-    /** Omitted in list responses to keep payload small; fetch per page when needed. */
-    pageIndex?: ScanResult['pageIndex'];
-}
+export type { SlimPage } from './types';
 
 export interface DomainSummaryResponse extends Omit<DomainScanResult, 'pages'> {
     pages: SlimPage[];
-    /** Total number of scanned pages (pages array may be truncated; use /pages endpoint for more). */
     totalPageCount?: number;
     aggregated: {
         issues: ReturnType<typeof aggregateIssues>;
@@ -42,26 +33,39 @@ export interface DomainSummaryResponse extends Omit<DomainScanResult, 'pages'> {
     };
 }
 
-/** Build slim page without pageIndex to keep list payload small. */
-function toSlimPage(p: ScanResult, includePageIndex = false): SlimPage {
-    const slim: SlimPage = {
+/** True if payload has precomputed aggregated (new format). */
+export function hasStoredAggregated(scan: DomainScanResult): scan is DomainScanResult & { aggregated: NonNullable<DomainScanResult['aggregated']> } {
+    return scan.aggregated != null && typeof scan.aggregated === 'object';
+}
+
+/** True if pages are full ScanResult[] (legacy). */
+function isFullPages(pages: DomainScanResult['pages']): pages is ScanResult[] {
+    if (!pages?.length) return false;
+    const first = pages[0] as Record<string, unknown>;
+    return Array.isArray(first.issues) || first.pageIndex != null;
+}
+
+function toSlimPage(p: ScanResult): SlimPage {
+    return {
         id: p.id,
         url: p.url,
         score: p.score,
         stats: p.stats ?? { errors: 0, warnings: 0, notices: 0 },
         ux: p.ux != null ? { score: p.ux.score } : undefined,
     };
-    if (includePageIndex && p.pageIndex) slim.pageIndex = p.pageIndex;
-    return slim;
 }
 
-export function buildDomainSummary(
-    scan: DomainScanResult,
-    options?: { pagesLimit?: number; includePageIndex?: boolean }
-): DomainSummaryResponse {
-    const pages = scan.pages ?? [];
-    const includePageIndex = options?.includePageIndex ?? false;
-    const pagesLimit = options?.pagesLimit;
+/** Build summary from stored payload (return as-is) or from legacy full pages. */
+export function buildDomainSummary(scan: DomainScanResult): DomainSummaryResponse {
+    if (hasStoredAggregated(scan) && !isFullPages(scan.pages)) {
+        return {
+            ...scan,
+            pages: scan.pages as SlimPage[],
+            totalPageCount: (scan.pages as SlimPage[]).length,
+            aggregated: scan.aggregated as DomainSummaryResponse['aggregated'],
+        };
+    }
+    const pages = (scan.pages ?? []) as ScanResult[];
     const aggregated = {
         issues: aggregateIssues(pages),
         ux: aggregateUx(pages),
@@ -73,8 +77,6 @@ export function buildDomainSummary(
         performance: aggregatePerformance(pages),
         eco: aggregateEco(pages),
     };
-    const allSlim: SlimPage[] = pages.map((p) => toSlimPage(p, includePageIndex));
-    const slimPages = pagesLimit != null ? allSlim.slice(0, pagesLimit) : allSlim;
     return {
         id: scan.id,
         domain: scan.domain,
@@ -88,18 +90,31 @@ export function buildDomainSummary(
         eeat: scan.eeat,
         error: scan.error,
         llmSummary: scan.llmSummary,
-        pages: slimPages,
+        pages: pages.map(toSlimPage),
         totalPageCount: pages.length,
         aggregated,
     };
 }
 
-/** Return slim pages slice (for paginated "load more"). No pageIndex. */
-export function getSlimPagesSlice(
-    scan: DomainScanResult,
-    offset: number,
-    limit: number
-): SlimPage[] {
-    const pages = scan.pages ?? [];
-    return pages.slice(offset, offset + limit).map((p) => toSlimPage(p, false));
+/** Build the payload to store in domain_scans after deep scan (slim pages + precomputed aggregated). */
+export function buildStoredDomainPayload(
+    fullPages: ScanResult[],
+    base: Pick<DomainScanResult, 'id' | 'domain' | 'timestamp' | 'status' | 'progress' | 'totalPages' | 'score' | 'graph' | 'systemicIssues' | 'eeat'>
+): DomainScanResult {
+    const aggregated = {
+        issues: aggregateIssues(fullPages),
+        ux: aggregateUx(fullPages),
+        seo: aggregateSeo(fullPages),
+        links: aggregateLinks(fullPages),
+        infra: aggregateInfra(fullPages),
+        generative: aggregateGenerative(fullPages),
+        structure: aggregateStructure(fullPages),
+        performance: aggregatePerformance(fullPages),
+        eco: aggregateEco(fullPages),
+    };
+    return {
+        ...base,
+        pages: fullPages.map(toSlimPage),
+        aggregated,
+    };
 }

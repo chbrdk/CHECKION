@@ -6,18 +6,13 @@
 import type { DomainScanResult } from '@/lib/types';
 
 const MAX_PAGES_IN_PAYLOAD = 30;
-const MAX_ISSUES_PER_PAGE = 5;
 
 export function buildDomainSummaryPayload(domainResult: DomainScanResult): Record<string, unknown> {
     const pages = (domainResult.pages ?? []).slice(0, MAX_PAGES_IN_PAYLOAD).map((page) => ({
         url: page.url,
         score: page.score,
         stats: page.stats,
-        issuesCount: page.issues?.length ?? 0,
         uxScore: page.ux?.score,
-        issueMessagesSample: (page.issues ?? [])
-            .slice(0, MAX_ISSUES_PER_PAGE)
-            .map((i) => ({ type: i.type, message: i.message.slice(0, 120), wcagLevel: i.wcagLevel })),
     }));
 
     const graph = domainResult.graph

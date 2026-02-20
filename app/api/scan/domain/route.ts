@@ -3,20 +3,9 @@ import { auth } from '@/auth';
 import { runDomainScan } from '@/lib/spider';
 import { createDomainScan, updateDomainScan, getDomainScan, addScan } from '@/lib/db/scans';
 import { invalidateDomainScan, invalidateDomainList } from '@/lib/cache';
+import { buildStoredDomainPayload } from '@/lib/domain-summary';
 import { v4 as uuidv4 } from 'uuid';
-import type { DomainScanResult, ScanResult } from '@/lib/types';
-
-const SLIM_LINKS_WITH_LABELS_CAP = 100;
-
-/** Strip heavy fields from each page so the domain payload stays within JSON/DB limits. Keeps allLinksWithLabels for journey; caps per page for large domains. */
-function slimPagesForPayload(pages: ScanResult[]): ScanResult[] {
-    return pages.map(({ screenshot, saliencyHeatmap, allLinksWithLabels, ...rest }) => ({
-        ...rest,
-        screenshot: '',
-        saliencyHeatmap: undefined,
-        allLinksWithLabels: allLinksWithLabels?.slice(0, SLIM_LINKS_WITH_LABELS_CAP),
-    }));
-}
+import type { DomainScanResult } from '@/lib/types';
 
 export const maxDuration = 10;
 
@@ -70,18 +59,23 @@ export async function POST(req: NextRequest) {
                     });
                     invalidateDomainScan(id);
                 } else if (update.type === 'complete') {
-                    const slimPages = slimPagesForPayload(update.domainResult.pages);
-                    await updateDomainScan(id, userId, {
-                        score: update.domainResult.score,
-                        pages: slimPages,
-                        graph: update.domainResult.graph,
-                        systemicIssues: update.domainResult.systemicIssues,
-                        totalPages: update.domainResult.totalPages,
-                        eeat: update.domainResult.eeat,
-                    });
-                    for (const page of update.domainResult.pages) {
+                    const fullPages = update.domainResult.pages;
+                    for (const page of fullPages) {
                         await addScan(userId, { ...page, groupId: id });
                     }
+                    const stored: DomainScanResult = buildStoredDomainPayload(fullPages, {
+                        id: update.domainResult.id,
+                        domain: update.domainResult.domain,
+                        timestamp: update.domainResult.timestamp,
+                        status: update.domainResult.status,
+                        progress: update.domainResult.progress,
+                        totalPages: update.domainResult.totalPages,
+                        score: update.domainResult.score,
+                        graph: update.domainResult.graph,
+                        systemicIssues: update.domainResult.systemicIssues,
+                        eeat: update.domainResult.eeat,
+                    });
+                    await updateDomainScan(id, userId, stored);
                     invalidateDomainScan(id);
                 }
             }

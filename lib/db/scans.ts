@@ -79,6 +79,15 @@ export async function listStandaloneScans(userId: string, options?: { limit?: nu
     return rows.map(r => r.result as unknown as ScanResult);
 }
 
+/** All single-scan results belonging to a domain (deep) scan; for journey/buildPageContexts. */
+export async function listScansByGroupId(userId: string, groupId: string): Promise<ScanResult[]> {
+    const db = getDb();
+    const rows = await db.select({ result: scans.result })
+        .from(scans)
+        .where(and(eq(scans.userId, userId), eq(scans.groupId, groupId)));
+    return rows.map(r => r.result as unknown as ScanResult);
+}
+
 export async function getStandaloneScansCount(userId: string): Promise<number> {
     const db = getDb();
     const rows = await db.select({ count: count() }).from(scans).where(and(eq(scans.userId, userId), isNull(scans.groupId)));

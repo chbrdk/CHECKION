@@ -1,10 +1,11 @@
 /* ------------------------------------------------------------------ */
 /*  CHECKION – GET /api/share/[token]/pages/[pageId] (public)         */
 /*  Returns full ScanResult for one page of a shared domain scan.     */
+/*  Page data is stored in scans table (groupId = domain scan id).    */
 /* ------------------------------------------------------------------ */
 
 import { NextResponse } from 'next/server';
-import { getCachedShareByToken, getCachedDomainScan } from '@/lib/cache';
+import { getCachedShareByToken, getCachedDomainScan, getCachedScan } from '@/lib/cache';
 
 export async function GET(
     _request: Request,
@@ -22,7 +23,10 @@ export async function GET(
     const domain = await getCachedDomainScan(share.resourceId, share.userId);
     if (!domain) return NextResponse.json({ error: 'Domain scan not found' }, { status: 404 });
 
-    const page = (domain.pages ?? []).find((p) => p.id === pageId);
+    const inList = (domain.pages ?? []).some((p) => p.id === pageId);
+    if (!inList) return NextResponse.json({ error: 'Page not found' }, { status: 404 });
+
+    const page = await getCachedScan(pageId, share.userId);
     if (!page) return NextResponse.json({ error: 'Page not found' }, { status: 404 });
 
     return NextResponse.json(page);

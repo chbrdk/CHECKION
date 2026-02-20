@@ -6,7 +6,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
 import { auth } from '@/auth';
 import { listCachedStandaloneScans, listCachedDomainScans } from '@/lib/cache';
-import type { ScanResult, DomainScanResult, SearchMatch, SearchMatchType } from '@/lib/types';
+import { listScansByGroupId } from '@/lib/db/scans';
+import { hasStoredAggregated } from '@/lib/domain-summary';
+import type { ScanResult, SearchMatch, SearchMatchType } from '@/lib/types';
 import { CACHE_REVALIDATE_LIST } from '@/lib/constants';
 
 const MAX_SINGLE_LOAD = 300;
@@ -98,7 +100,10 @@ async function runSearch(
         for (const ds of domainScans) {
             if (allMatches.length >= limit) break;
             const domain = ds.domain;
-            for (const page of ds.pages ?? []) {
+            const pagesToSearch = hasStoredAggregated(ds)
+                ? await listScansByGroupId(userId, ds.id)
+                : (ds.pages ?? []) as ScanResult[];
+            for (const page of pagesToSearch) {
                 if (allMatches.length >= limit) break;
                 const list = searchInScan(page, q, 'domain', ds.id, domain);
                 for (const m of list) {

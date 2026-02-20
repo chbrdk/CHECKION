@@ -4,7 +4,7 @@
  */
 
 import OpenAI from 'openai';
-import type { DomainScanResult, ScanResult, JourneyStep, JourneyResult } from '@/lib/types';
+import type { DomainScanResultWithFullPages, ScanResult, JourneyStep, JourneyResult } from '@/lib/types';
 import { OPENAI_MODEL, getOpenAIKey } from '@/lib/llm/config';
 
 const MAX_STEPS = 15;
@@ -61,7 +61,7 @@ export interface PageContext {
 }
 
 /** Build a token-sparse page context for the LLM. Uses canonical matching (www = non-www) so start page links find scanned pages. */
-export function buildPageContexts(domainResult: DomainScanResult): Map<string, PageContext> {
+export function buildPageContexts(domainResult: DomainScanResultWithFullPages): Map<string, PageContext> {
     const nodes = domainResult.graph?.nodes ?? [];
     const nodeIds = new Set(nodes.map((n) => normalizeUrl(n.id)));
     const canonicalToStoredUrl = new Map<string, string>();
@@ -180,7 +180,7 @@ export function buildPageContexts(domainResult: DomainScanResult): Map<string, P
 }
 
 /** Pick the start page: root (depth 0) or first by depth/URL. */
-export function getStartPageUrl(domainResult: DomainScanResult): string | null {
+export function getStartPageUrl(domainResult: DomainScanResultWithFullPages): string | null {
     const nodes = domainResult.graph?.nodes ?? [];
     if (nodes.length === 0) return null;
     const byDepth = [...nodes].sort((a, b) => (a.depth ?? 0) - (b.depth ?? 0));
@@ -579,7 +579,7 @@ function executeToolCall(
 export async function runJourneyAgent(
     openai: OpenAI,
     goal: string,
-    domainResult: DomainScanResult
+    domainResult: DomainScanResultWithFullPages
 ): Promise<JourneyResult> {
     const pageContexts = buildPageContexts(domainResult);
     const startUrl = getStartPageUrl(domainResult);
@@ -740,7 +740,7 @@ export type JourneyStreamEvent =
 export async function* runJourneyAgentStream(
     openai: OpenAI,
     goal: string,
-    domainResult: DomainScanResult
+    domainResult: DomainScanResultWithFullPages
 ): AsyncGenerator<JourneyStreamEvent, void, unknown> {
     const pageContexts = buildPageContexts(domainResult);
     const startUrl = getStartPageUrl(domainResult);
