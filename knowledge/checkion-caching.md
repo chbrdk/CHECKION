@@ -30,10 +30,13 @@ API-Routen, die schreiben/löschen, rufen die passenden `invalidate*`-Funktionen
 ## Wo Cache genutzt wird
 
 - **GET** `/api/scan`, `/api/scans/domain`, `/api/journeys` → gecachte Listen/Counts.
-- **GET** `/api/scan/[id]`, `/api/scan/domain/[id]/summary`, `/api/scan/domain/[id]/status` → gecachte Einzelabfragen.
+- **GET** `/api/scan/[id]`, `/api/scan/domain/[id]/summary` → gecachte Einzelabfragen.
+- **GET** `/api/scan/domain/[id]/status` → **kein Cache**: liefert nur Status/Progress (slim), direkte DB-Abfrage. Vermeidet „items over 2MB can not be cached“ bei großen Domain-Scans beim Polling.
 - **GET** `/api/share/[token]`, `/api/share/[token]/pages/[pageId]` → gecachte Share- und Domain-Daten.
 
 Mutationen (POST/PATCH/DELETE) bleiben in `lib/db/*` und triggern danach die zugehörige Invalidierung.
+
+**Next.js Cache-Limit:** `unstable_cache` speichert nur Einträge ≤ 2 MB. Sehr große Domain-Scans (viele Seiten + Aggregation) können dieses Limit überschreiten; dann erscheint „items over 2MB can not be cached“. Die Status-Route umgeht das durch schlanke Antwort ohne Cache. Summary/Detail nutzen weiterhin `getCachedDomainScan`; bei > 2 MB schlägt nur das Speichern im Cache fehl, die Antwort wird trotzdem geliefert.
 
 ---
 
