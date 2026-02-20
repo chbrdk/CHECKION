@@ -4,6 +4,7 @@ import React from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxChip } from '@msqdx/react';
 import { MSQDX_BRAND_PRIMARY, MSQDX_STATUS } from '@msqdx/tokens';
+import { Trash2 } from 'lucide-react';
 import type { ScanResult } from '@/lib/types';
 
 export type DomainScanSummary = { id: string; domain: string; timestamp: string; status: string; score: number; totalPages: number };
@@ -25,10 +26,16 @@ const listItemSx = {
 export function SingleScanRow({
   scan,
   onClick,
+  onDelete,
 }: {
   scan: ScanResult;
   onClick: () => void;
+  onDelete?: (id: string) => void;
 }) {
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete?.(scan.id);
+  };
   return (
     <Box component="li" sx={listItemSx} onClick={onClick}>
       <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -39,15 +46,28 @@ export function SingleScanRow({
           <span suppressHydrationWarning>{new Date(scan.timestamp).toLocaleString('de-DE')}</span> · {scan.stats.errors} Errors
         </MsqdxTypography>
       </Box>
-      <MsqdxChip
-        label={scan.stats.errors > 0 ? String(scan.stats.errors) : '0'}
-        size="small"
-        sx={{
-          backgroundColor: scan.stats.errors > 0 ? 'var(--color-secondary-dx-pink-tint)' : 'var(--color-secondary-dx-green-tint)',
-          color: scan.stats.errors > 0 ? MSQDX_STATUS.error.base : MSQDX_BRAND_PRIMARY.green,
-          fontWeight: 700,
-        }}
-      />
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)' }}>
+        <MsqdxChip
+          label={scan.stats.errors > 0 ? String(scan.stats.errors) : '0'}
+          size="small"
+          sx={{
+            backgroundColor: scan.stats.errors > 0 ? 'var(--color-secondary-dx-pink-tint)' : 'var(--color-secondary-dx-green-tint)',
+            color: scan.stats.errors > 0 ? MSQDX_STATUS.error.base : MSQDX_BRAND_PRIMARY.green,
+            fontWeight: 700,
+          }}
+        />
+        {onDelete && (
+          <MsqdxButton
+            variant="text"
+            size="small"
+            onClick={handleDelete}
+            aria-label="Scan löschen"
+            sx={{ minWidth: 32, p: 0.5, color: 'var(--color-text-muted-on-light)' }}
+          >
+            <Trash2 size={16} />
+          </MsqdxButton>
+        )}
+      </Box>
     </Box>
   );
 }
@@ -56,10 +76,16 @@ export function SingleScanRow({
 export function DomainScanRow({
   item,
   onClick,
+  onDelete,
 }: {
   item: DomainScanSummary;
   onClick: () => void;
+  onDelete?: (id: string) => void;
 }) {
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete?.(item.id);
+  };
   return (
     <Box component="li" sx={listItemSx} onClick={onClick}>
       <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -70,11 +96,24 @@ export function DomainScanRow({
           <span suppressHydrationWarning>{new Date(item.timestamp).toLocaleString('de-DE')}</span> · {item.totalPages} Seiten
         </MsqdxTypography>
       </Box>
-      <MsqdxChip
-        label={item.status === 'complete' ? String(item.score) : item.status}
-        size="small"
-        brandColor={item.status === 'complete' ? (item.score > 80 ? 'green' : 'orange') : undefined}
-      />
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)' }}>
+        <MsqdxChip
+          label={item.status === 'complete' ? String(item.score) : item.status}
+          size="small"
+          brandColor={item.status === 'complete' ? (item.score > 80 ? 'green' : 'orange') : undefined}
+        />
+        {onDelete && (
+          <MsqdxButton
+            variant="text"
+            size="small"
+            onClick={handleDelete}
+            aria-label="Deep Scan löschen"
+            sx={{ minWidth: 32, p: 0.5, color: 'var(--color-text-muted-on-light)' }}
+          >
+            <Trash2 size={16} />
+          </MsqdxButton>
+        )}
+      </Box>
     </Box>
   );
 }

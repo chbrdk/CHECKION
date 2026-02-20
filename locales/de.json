@@ -165,6 +165,8 @@
     "emptyCta": "Ersten Scan starten",
     "domainEmptyMessage": "Noch keine Deep Scans (Domain) durchgeführt.",
     "domainEmptyCta": "Deep Scan starten",
+    "deleteScanConfirm": "Diesen Scan wirklich löschen?",
+    "deleteDomainScanConfirm": "Diesen Deep Scan wirklich löschen? Alle zugehörigen Einzelseiten werden mit entfernt.",
     "journeyHistoryTitle": "Gespeicherte User Journeys",
     "journeyHistoryEmpty": "Noch keine Journeys gespeichert.",
     "journeyHistoryOpen": "Öffnen",

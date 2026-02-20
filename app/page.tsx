@@ -82,6 +82,36 @@ export default function DashboardPage() {
     [router]
   );
 
+  const handleDeleteScan = useCallback(async (id: string) => {
+    if (!window.confirm(t('dashboard.deleteScanConfirm'))) return;
+    try {
+      const res = await fetch(`/api/scans/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setScans((prev) => prev.filter((s) => s.id !== id));
+        if (scanPagination) {
+          setScanPagination((p) => (p ? { ...p, total: Math.max(0, p.total - 1) } : null));
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [scanPagination, t]);
+
+  const handleDeleteDomainScan = useCallback(async (id: string) => {
+    if (!window.confirm(t('dashboard.deleteDomainScanConfirm'))) return;
+    try {
+      const res = await fetch(`/api/scans/domain/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setDomainScans((prev) => prev.filter((d) => d.id !== id));
+        if (domainPagination) {
+          setDomainPagination((p) => (p ? { ...p, total: Math.max(0, p.total - 1) } : null));
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [domainPagination, t]);
+
   const loadScans = useCallback(async () => {
     setLoading(true);
     try {
@@ -241,6 +271,7 @@ export default function DashboardPage() {
                   key={scan.id}
                   scan={scan}
                   onClick={() => router.push(`/results/${scan.id}`)}
+                  onDelete={handleDeleteScan}
                 />
               ))}
             </HistoryList>
@@ -275,6 +306,7 @@ export default function DashboardPage() {
                   key={ds.id}
                   item={ds}
                   onClick={() => router.push(`/domain/${ds.id}`)}
+                  onDelete={handleDeleteDomainScan}
                 />
               ))}
             </HistoryList>
