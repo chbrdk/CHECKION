@@ -73,21 +73,6 @@ export const DomainGraph = ({
         hasFittedRef.current = false;
     }, [data]);
 
-    /** Increase node spacing: larger link distance and stronger repulsion (charge). */
-    useEffect(() => {
-        if (!filteredData.nodes.length) return;
-        const id = setTimeout(() => {
-            const g = fgRef.current as { d3Force?: (name: string) => { distance?: (v: number) => void; strength?: (v: number) => void } | undefined; d3ReheatSimulation?: () => void } | undefined };
-            if (!g?.d3Force) return;
-            const linkForce = g.d3Force('link');
-            const chargeForce = g.d3Force('charge');
-            if (linkForce && typeof linkForce.distance === 'function') linkForce.distance(100);
-            if (chargeForce && typeof chargeForce.strength === 'function') chargeForce.strength(-80);
-            g.d3ReheatSimulation?.();
-        }, 150);
-        return () => clearTimeout(id);
-    }, [filteredData]);
-
     const filteredData = useMemo(() => {
         let opts: Parameters<typeof filterForceGraphData>[1] = {};
         if (search.trim()) opts.search = search.trim();
@@ -117,6 +102,24 @@ export const DomainGraph = ({
         });
         return set;
     }, [focusedNodeId, filteredData]);
+
+    /** Increase node spacing: larger link distance and stronger repulsion (charge). */
+    useEffect(() => {
+        if (!filteredData.nodes.length) return;
+        const id = setTimeout(() => {
+            const g = fgRef.current as unknown as {
+                d3Force?: (name: string) => { distance?: (v: number) => unknown; strength?: (v: number) => unknown } | undefined;
+                d3ReheatSimulation?: () => void;
+            };
+            if (!g?.d3Force) return;
+            const linkForce = g.d3Force('link');
+            const chargeForce = g.d3Force('charge');
+            if (linkForce && typeof linkForce.distance === 'function') linkForce.distance(100);
+            if (chargeForce && typeof chargeForce.strength === 'function') chargeForce.strength(-80);
+            g.d3ReheatSimulation?.();
+        }, 150);
+        return () => clearTimeout(id);
+    }, [filteredData]);
 
     /** Always show all nodes (no hiding on click). */
     const nodeVisibility = useCallback(() => true, []);
