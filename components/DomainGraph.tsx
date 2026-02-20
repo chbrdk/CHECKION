@@ -73,6 +73,21 @@ export const DomainGraph = ({
         hasFittedRef.current = false;
     }, [data]);
 
+    /** Increase node spacing: larger link distance and stronger repulsion (charge). */
+    useEffect(() => {
+        if (!filteredData.nodes.length) return;
+        const id = setTimeout(() => {
+            const g = fgRef.current as { d3Force?: (name: string) => { distance?: (v: number) => void; strength?: (v: number) => void } | undefined; d3ReheatSimulation?: () => void } | undefined };
+            if (!g?.d3Force) return;
+            const linkForce = g.d3Force('link');
+            const chargeForce = g.d3Force('charge');
+            if (linkForce && typeof linkForce.distance === 'function') linkForce.distance(100);
+            if (chargeForce && typeof chargeForce.strength === 'function') chargeForce.strength(-80);
+            g.d3ReheatSimulation?.();
+        }, 150);
+        return () => clearTimeout(id);
+    }, [filteredData]);
+
     const filteredData = useMemo(() => {
         let opts: Parameters<typeof filterForceGraphData>[1] = {};
         if (search.trim()) opts.search = search.trim();
@@ -87,6 +102,7 @@ export const DomainGraph = ({
         return filterForceGraphData(fullGraphData, opts);
     }, [fullGraphData, search, scoreFilter, depthMax, statusFilter]);
 
+    /** When a node is focused: set of that node + all directly linked nodes (for highlight-only, no hiding). */
     const focusedNodeSet = useMemo(() => {
         if (!focusedNodeId || !filteredData.nodes.length) return null;
         const nodeMap = new Map(filteredData.nodes.map((n) => [n.id, n]));
@@ -102,40 +118,33 @@ export const DomainGraph = ({
         return set;
     }, [focusedNodeId, filteredData]);
 
-    const nodeVisibility = useCallback(
-        (node: { id?: string }) => {
-            if (!focusedNodeSet || !node.id) return true;
-            return focusedNodeSet.has(node.id);
-        },
-        [focusedNodeSet]
-    );
+    /** Always show all nodes (no hiding on click). */
+    const nodeVisibility = useCallback(() => true, []);
 
+    /** Focus = highlight: linked nodes in full score color, rest dimmed. No hiding. */
     const nodeColor = useCallback(
         (node: ForceGraphNode | { id?: string; score?: number }) => {
             const n = node as ForceGraphNode;
             const base = nodeColorByScore(n.score ?? 0);
-            if (!focusedNodeSet) return base;
-            if (!n.id) return base;
-            const isCenter = n.id === focusedNodeId;
-            if (isCenter) return base;
+            if (!focusedNodeSet || !n.id) return base;
             if (focusedNodeSet.has(n.id)) return base;
-            return '#ccc';
-        },
-        [focusedNodeSet, focusedNodeId]
-    );
-
-    const linkVisibility = useCallback(
-        (link: { source?: string | object; target?: string | object }) => {
-            if (!focusedNodeSet) return true;
-            const src = typeof link.source === 'string' ? link.source : (link.source as ForceGraphNode)?.id;
-            const tgt = typeof link.target === 'string' ? link.target : (link.target as ForceGraphNode)?.id;
-            return !!src && !!tgt && focusedNodeSet.has(src) && focusedNodeSet.has(tgt);
+            return '#e0e0e0';
         },
         [focusedNodeSet]
     );
 
+    /** Always show all links (no hiding on click). */
+    const linkVisibility = useCallback(() => true, []);
+
+    /** Focus = highlight: links between focused nodes in full color, rest dimmed. */
     const linkColor = useCallback(
-        () => (focusedNodeSet ? '#b0b0b0' : '#6b8cae'),
+        (link: { source?: string | object; target?: string | object }) => {
+            if (!focusedNodeSet) return '#6b8cae';
+            const src = typeof link.source === 'string' ? link.source : (link.source as ForceGraphNode)?.id;
+            const tgt = typeof link.target === 'string' ? link.target : (link.target as ForceGraphNode)?.id;
+            if (!!src && !!tgt && focusedNodeSet.has(src) && focusedNodeSet.has(tgt)) return '#6b8cae';
+            return '#d0d0d0';
+        },
         [focusedNodeSet]
     );
 
@@ -170,7 +179,7 @@ export const DomainGraph = ({
             roundRect(ctx, x, y, w, h, 6);
             ctx.fill();
             ctx.stroke();
-            ctx.fillStyle = '#fff';
+            ctx.fillStyle = '#111';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(label, (n.x ?? 0), n.y ?? 0);
@@ -325,7 +334,7 @@ export const DomainGraph = ({
                 onNodeClick={(n: unknown) => handleNodeClick(n as ForceGraphNode)}
                 onBackgroundClick={handleBackgroundClick}
                 linkVisibility={linkVisibility as (l: unknown) => boolean}
-                linkColor={linkColor as () => string}
+                linkColor={linkColor as (l: unknown) => string}
                 linkDirectionalArrowLength={4}
                 linkDirectionalArrowRelPos={1}
                 linkWidth={filteredData.links.length > 200 ? 0.8 : 1.2}
@@ -396,24 +405,26 @@ export const DomainGraph = ({
                         pointerEvents: 'none',
                         minWidth: 180,
                         maxWidth: 360,
+                        color: '#111',
                     }}
                 >
                     <MsqdxTypography
                         variant="caption"
                         display="block"
-                        sx={{ fontWeight: 'bold', wordBreak: 'break-all' }}
+                        sx={{ fontWeight: 'bold', wordBreak: 'break-all', color: '#111' }}
                     >
                         {hoveredNode.url}
                     </MsqdxTypography>
                     <MsqdxTypography
                         variant="caption"
-                        color={
-                            hoveredNode.score >= 90
-                                ? 'success'
-                                : hoveredNode.score >= 50
-                                  ? 'warning'
-                                  : 'error'
-                        }
+                        sx={{
+                            color:
+                                hoveredNode.score >= 90
+                                    ? '#2e7d32'
+                                    : hoveredNode.score >= 50
+                                      ? '#ed6c02'
+                                      : '#d32f2f',
+                        }}
                     >
                         Score: {hoveredNode.score}
                     </MsqdxTypography>
