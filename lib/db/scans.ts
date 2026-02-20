@@ -2,10 +2,12 @@
 /*  CHECKION – Scan persistence (DB)                                   */
 /* ------------------------------------------------------------------ */
 
-import { eq, and, desc, isNull, count } from 'drizzle-orm';
+import { eq, and, desc, isNull, count, sql } from 'drizzle-orm';
 import { getDb } from './index';
 import { scans, domainScans } from './schema';
 import type { ScanResult, DomainScanResult } from '@/lib/types';
+
+export type DomainScanSummaryRow = { id: string; domain: string; timestamp: string; status: string; score: number; totalPages: number };
 import type { UxCxSummary } from '@/lib/llm-summary-types';
 
 export async function addScan(userId: string, result: ScanResult): Promise<void> {
@@ -126,6 +128,34 @@ export async function getDomainScan(id: string, userId: string): Promise<DomainS
     const rows = await db.select().from(domainScans).where(and(eq(domainScans.id, id), eq(domainScans.userId, userId))).limit(1);
     if (rows.length === 0) return null;
     return rows[0].payload as unknown as DomainScanResult;
+}
+
+/** List only summary fields (no payload) to keep response small for list/cache. */
+export async function listDomainScanSummaries(userId: string, options?: { limit?: number; offset?: number }): Promise<DomainScanSummaryRow[]> {
+    const db = getDb();
+    const base = db
+        .select({
+            id: domainScans.id,
+            domain: domainScans.domain,
+            timestamp: domainScans.timestamp,
+            status: domainScans.status,
+            score: sql<number>`(${domainScans.payload}->>'score')::int`,
+            totalPages: sql<number>`(${domainScans.payload}->>'totalPages')::int`,
+        })
+        .from(domainScans)
+        .where(eq(domainScans.userId, userId))
+        .orderBy(desc(domainScans.timestamp));
+    const rows = options?.limit != null || options?.offset != null
+        ? await base.limit(options.limit ?? 10000).offset(options.offset ?? 0)
+        : await base;
+    return rows.map(r => ({
+        id: r.id,
+        domain: r.domain,
+        timestamp: r.timestamp,
+        status: r.status,
+        score: r.score ?? 0,
+        totalPages: r.totalPages ?? 0,
+    }));
 }
 
 export async function listDomainScans(userId: string, options?: { limit?: number; offset?: number }): Promise<DomainScanResult[]> {

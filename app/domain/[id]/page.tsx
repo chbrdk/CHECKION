@@ -55,6 +55,7 @@ export default function DomainResultPage() {
         { label: t('domainResult.tabJourney'), value: 10 },
     ];
     const [result, setResult] = useState<DomainSummaryResponse | null>(null);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [tabValue, setTabValue] = useState(0);
     const [summarizing, setSummarizing] = useState(false);
     const [summarizeError, setSummarizeError] = useState<string | null>(null);
@@ -81,14 +82,20 @@ export default function DomainResultPage() {
 
     useEffect(() => {
         if (!params.id) return;
+        setLoadError(null);
         setVisiblePageCount(DOMAIN_PAGES_INITIAL);
         fetch(`/api/scan/domain/${params.id}/summary`)
             .then(res => {
-                if (!res.ok) throw new Error('Scan not found');
+                if (!res.ok) {
+                    setLoadError('not_found');
+                    return null;
+                }
                 return res.json();
             })
-            .then(data => setResult(data))
-            .catch(err => console.error('Failed to load scan', err));
+            .then(data => {
+                if (data) setResult(data);
+            })
+            .catch(() => setLoadError('not_found'));
     }, [params.id]);
 
     const loadMorePages = () => setVisiblePageCount((n) => Math.min(pages.length, n + DOMAIN_PAGES_INCREMENT));
@@ -111,7 +118,17 @@ export default function DomainResultPage() {
 
     return (
         <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto', minHeight: 320 }}>
-            {!result && (
+            {loadError && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', flexDirection: 'column', alignItems: 'center', gap: 'var(--msqdx-spacing-md)', py: 8 }}>
+                    <MsqdxTypography variant="h5" sx={{ color: 'var(--color-text-muted-on-light)', textAlign: 'center', maxWidth: 480 }}>
+                        {t('domainResult.notFound')}
+                    </MsqdxTypography>
+                    <MsqdxButton variant="contained" startIcon={<ArrowLeft size={16} />} onClick={() => router.push('/')}>
+                        {t('domainResult.back')}
+                    </MsqdxButton>
+                </Box>
+            )}
+            {!result && !loadError && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', flexDirection: 'column', alignItems: 'center', gap: 'var(--msqdx-spacing-md)', py: 8 }}>
                     <MsqdxTypography variant="h5" sx={{ mb: 'var(--msqdx-spacing-md)' }}>{t('domainResult.loading')}</MsqdxTypography>
                     <CircularProgress sx={{ color: 'var(--color-theme-accent)' }} />

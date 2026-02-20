@@ -15,7 +15,8 @@ Um Datenbankabfragen zu reduzieren, nutzt CHECKION **Next.js `unstable_cache`** 
 | Domain-Scan | `getCachedDomainScan` | `domain-${id}` | 60 s |
 | Share-Link | `getCachedShareByToken` | `share-${token}` | 300 s |
 | Liste Einzelscans | `listCachedStandaloneScans`, `getCachedStandaloneScansCount` | `scans-list-${userId}` | 30 s |
-| Liste Domain-Scans | `listCachedDomainScans`, `getCachedDomainScansCount` | `domain-list-${userId}` | 30 s |
+| Liste Domain-Scans (Summaries) | `listCachedDomainScanSummaries`, `getCachedDomainScansCount` | `domain-list-${userId}` | 30 s |
+| Liste Domain-Scans (voll, für Suche) | `listCachedDomainScans` | `domain-list-${userId}` | 30 s (kann >2MB sein) |
 | Saved Journeys | `listCachedSavedJourneys`, `getCachedSavedJourneysCount` | `journeys-${userId}`, optional `journeys-${userId}-${domainScanId}` | 30 s |
 
 ## Invalidierung (nach Mutation aufrufen)

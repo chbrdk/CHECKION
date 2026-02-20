@@ -264,6 +264,7 @@
   },
   "domainResult": {
     "loading": "Loading…",
+    "notFound": "This deep scan was not found or you don't have access. It may have been deleted.",
     "title": "Deep Domain Scan",
     "back": "Back",
     "share": "Share",

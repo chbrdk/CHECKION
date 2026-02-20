@@ -264,6 +264,7 @@
   },
   "domainResult": {
     "loading": "Laden…",
+    "notFound": "Dieser Deep Scan wurde nicht gefunden oder Sie haben keine Berechtigung. Er wurde möglicherweise gelöscht.",
     "title": "Deep Domain Scan",
     "back": "Zurück",
     "share": "Teilen",

@@ -80,7 +80,7 @@ export async function getCachedStandaloneScansCount(userId: string): Promise<num
     )();
 }
 
-/** Cached: domain scans list (paginated). */
+/** Cached: domain scans list – full payload (for search). May exceed 2MB with many scans. */
 export async function listCachedDomainScans(
     userId: string,
     options?: { limit?: number; offset?: number }
@@ -90,6 +90,20 @@ export async function listCachedDomainScans(
     return unstable_cache(
         () => dbScans.listDomainScans(userId, { limit, offset }),
         ['domain-list', userId, String(limit), String(offset)],
+        { revalidate: CACHE_REVALIDATE_LIST, tags: [`domain-list-${userId}`] }
+    )();
+}
+
+/** Cached: domain scan summaries only (id, domain, timestamp, status, score, totalPages). Stays under 2MB. */
+export async function listCachedDomainScanSummaries(
+    userId: string,
+    options?: { limit?: number; offset?: number }
+): Promise<Array<{ id: string; domain: string; timestamp: string; status: string; score: number; totalPages: number }>> {
+    const limit = options?.limit ?? 100;
+    const offset = options?.offset ?? 0;
+    return unstable_cache(
+        () => dbScans.listDomainScanSummaries(userId, { limit, offset }),
+        ['domain-summaries', userId, String(limit), String(offset)],
         { revalidate: CACHE_REVALIDATE_LIST, tags: [`domain-list-${userId}`] }
     )();
 }

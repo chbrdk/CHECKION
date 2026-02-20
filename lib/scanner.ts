@@ -20,6 +20,9 @@ const VIEWPORTS: Record<Device, { width: number; height: number; isMobile: boole
     mobile: { width: 375, height: 667, isMobile: true, hasTouch: true }, // iPhone SE
 };
 
+/** Only log geo lookup network failure once per process to avoid log spam. */
+let geoNetworkWarned = false;
+
 /**
  * Map pa11y's numeric type codes to our severity labels.
  * Pa11y uses: 1 = error, 2 = warning, 3 = notice
@@ -882,7 +885,20 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                     };
                 }
             } catch (e) {
-                console.error('Geo lookup failed:', e);
+                const cause = e instanceof Error && e.cause instanceof Error ? e.cause : e;
+                const isNetwork = cause instanceof Error && (
+                    (cause as NodeJS.ErrnoException).code === 'ECONNRESET' ||
+                    cause.message?.includes('ECONNRESET') ||
+                    cause.message?.includes('fetch failed')
+                );
+                if (isNetwork) {
+                    if (!geoNetworkWarned) {
+                        geoNetworkWarned = true;
+                        console.warn('Geo lookup skipped (network error). Scan continues without location.');
+                    }
+                } else {
+                    console.error('Geo lookup failed:', e);
+                }
             }
         }
 
