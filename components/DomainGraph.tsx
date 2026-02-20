@@ -1,284 +1,348 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Box } from '@mui/material';
+'use client';
+
+import React, { useRef, useState, useMemo, useCallback, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+import { Box, TextField } from '@mui/material';
 import { MsqdxTypography, MsqdxCard, MsqdxButton } from '@msqdx/react';
 import type { DomainScanResult } from '@/lib/types';
+import {
+    domainGraphToForceData,
+    filterForceGraphData,
+    type ForceGraphData,
+    type ForceGraphNode,
+} from '@/lib/domain-graph-data';
+
+const ForceGraph2D = dynamic(
+    () => import('react-force-graph-2d').then((m) => m.default),
+    { ssr: false }
+);
 
 const ZOOM_MIN = 0.25;
-const ZOOM_MAX = 3;
-const ZOOM_STEP = 1.25;
+const ZOOM_MAX = 4;
 
 interface DomainGraphProps {
     data: DomainScanResult['graph'];
     width?: number;
     height?: number;
+    /** Called when user selects a node (e.g. to scroll to page in list). */
+    onNodeClick?: (node: { url: string; id: string }) => void;
 }
 
-type NodeData = DomainScanResult['graph']['nodes'][number];
-
-interface Node extends NodeData {
-    x: number;
-    y: number;
+function nodeColorByScore(score: number): string {
+    if (score >= 90) return '#7cb87c';
+    if (score >= 50) return '#e8a64a';
+    return '#c75c5c';
 }
 
-interface Link {
-    source: Node;
-    target: Node;
-}
-
-function normalizeId(urlOrId: string): string {
+function getNodeLabel(node: ForceGraphNode): string {
+    if (node.title?.trim()) return node.title.trim();
     try {
-        const u = new URL(urlOrId);
-        return u.origin + (u.pathname.replace(/\/$/, '') || '');
+        const pathname = new URL(node.url).pathname || '/';
+        return pathname === '/' ? 'Home' : pathname.replace(/^\//, '').slice(0, 24) || 'Page';
     } catch {
-        return urlOrId;
+        return 'Page';
     }
 }
 
-function pathDepthFromUrl(url: string): number {
-    try {
-        const path = new URL(url).pathname.replace(/\/$/, '');
-        return path ? path.split('/').filter(Boolean).length : 0;
-    } catch {
-        return 0;
-    }
+/** Short label for node box (truncated). */
+function getNodeShortLabel(node: ForceGraphNode, maxLen: number): string {
+    const full = getNodeLabel(node);
+    if (full.length <= maxLen) return full;
+    return full.slice(0, maxLen - 1) + '…';
 }
 
-/** Vertical spacing between depth rows – larger = more space between elements downwards */
-const ROW_HEIGHT = 120;
-const NODE_WIDTH = 128;
-const NODE_HEIGHT = 44;
+export const DomainGraph = ({
+    data,
+    width = 800,
+    height = 600,
+    onNodeClick,
+}: DomainGraphProps) => {
+    const fgRef = useRef<{ zoom: (scale?: number, ms?: number) => number; zoomToFit: (ms?: number, padding?: number, nodeFilter?: (n: ForceGraphNode) => boolean) => void } | undefined>(undefined);
+    const hasFittedRef = useRef(false);
 
-export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProps) => {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const [nodes, setNodes] = useState<Node[]>([]);
-    const [links, setLinks] = useState<Link[]>([]);
-    const [hoveredNode, setHoveredNode] = useState<Node | null>(null);
-    const [pan, setPan] = useState({ x: 0, y: 0 });
-    const [zoom, setZoom] = useState(1);
-    const [isDragging, setIsDragging] = useState(false);
-    const dragStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
+    const [hoveredNode, setHoveredNode] = useState<ForceGraphNode | null>(null);
+    const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
+    const [search, setSearch] = useState('');
+    const [scoreFilter, setScoreFilter] = useState<'all' | 'low' | 'medium' | 'high'>('all');
+    const [depthMax, setDepthMax] = useState<number | ''>('');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'ok' | 'error'>('all');
 
-    // Flowchart layout: rows by depth, boxes with arrows
+    const fullGraphData = useMemo(() => domainGraphToForceData(data), [data]);
+
     useEffect(() => {
-        if (!data || !data.nodes.length) return;
+        hasFittedRef.current = false;
+    }, [data]);
 
-        // Scale spacing with node count so 100 nodes don’t collapse into a blob (factor from 25-node baseline)
-        const PAD = 24;
-        const NODE_W = NODE_WIDTH;
-        const NODE_H = NODE_HEIGHT;
-
-        const layoutNodes: Node[] = data.nodes.map((n) => ({
-            ...n,
-            x: 0,
-            y: 0,
-            depth: n.depth ?? pathDepthFromUrl(n.url),
-        }));
-        const nodeMap = new Map<string, Node>();
-        layoutNodes.forEach((n) => {
-            nodeMap.set(normalizeId(n.id), n);
-            nodeMap.set(normalizeId(n.url), n);
-        });
-
-        const byDepth = new Map<number, Node[]>();
-        layoutNodes.forEach((n) => {
-            const d = n.depth ?? 0;
-            if (!byDepth.has(d)) byDepth.set(d, []);
-            byDepth.get(d)!.push(n);
-        });
-
-        let layoutWidth = 400;
-        byDepth.forEach((list) => {
-            layoutWidth = Math.max(layoutWidth, list.length * (NODE_W + PAD));
-        });
-
-        byDepth.forEach((list, depth) => {
-            const rowWidth = Math.max(layoutWidth, list.length * (NODE_W + PAD));
-            const step = list.length > 1 ? (rowWidth - NODE_W) / (list.length - 1) : 0;
-            const startX = (rowWidth - (list.length - 1) * step - NODE_W) / 2 + NODE_W / 2;
-            list.forEach((node, i) => {
-                node.x = startX + i * step;
-                node.y = depth * ROW_HEIGHT + ROW_HEIGHT / 2;
-            });
-        });
-
-        const initialLinks: Link[] = data.links
-            .map((l) => ({
-                source: nodeMap.get(normalizeId(l.source))!,
-                target: nodeMap.get(normalizeId(l.target))!,
-            }))
-            .filter((l) => l.source && l.target);
-
-        setNodes(layoutNodes);
-        setLinks(initialLinks);
-    }, [data, width, height]);
-
-    // Scale X and Y independently so the map uses full width and full height (no vertical squashing)
-    const padding = 48;
-    const minX = nodes.length ? Math.min(...nodes.map((n) => n.x)) - NODE_WIDTH / 2 : 0;
-    const maxX = nodes.length ? Math.max(...nodes.map((n) => n.x)) + NODE_WIDTH / 2 : width;
-    const minY = nodes.length ? Math.min(...nodes.map((n) => n.y)) - NODE_HEIGHT / 2 : 0;
-    const maxY = nodes.length ? Math.max(...nodes.map((n) => n.y)) + NODE_HEIGHT / 2 : height;
-    const rangeX = maxX - minX || 1;
-    const rangeY = maxY - minY || 1;
-    const scaleX = nodes.length ? (width - padding) / rangeX : 1;
-    const scaleY = nodes.length ? (height - padding) / rangeY : 1;
-    const offsetX = nodes.length ? width / 2 - (minX + maxX) / 2 * scaleX : 0;
-    const offsetY = nodes.length ? height / 2 - (minY + maxY) / 2 * scaleY : 0;
-
-    const toDisplay = (x: number, y: number) => ({ x: x * scaleX + offsetX, y: y * scaleY + offsetY });
-
-    // Screen to content coords (inverse of translate(pan) scale(zoom))
-    const screenToContent = (screenX: number, screenY: number) => ({
-        x: (screenX - pan.x) / zoom,
-        y: (screenY - pan.y) / zoom,
-    });
-
-    const handleMouseDown = (e: React.MouseEvent) => {
-        if (e.button !== 0) return;
-        setIsDragging(false);
-        dragStart.current = { x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y };
-    };
-
-    const handleMouseMove = (e: React.MouseEvent) => {
-        const rect = containerRef.current?.getBoundingClientRect();
-        if (!rect) return;
-        const mx = e.clientX - rect.left;
-        const my = e.clientY - rect.top;
-        if (e.buttons === 1 && (dragStart.current.x !== e.clientX || dragStart.current.y !== e.clientY)) {
-            setIsDragging(true);
-            setPan({
-                x: dragStart.current.panX + (e.clientX - dragStart.current.x),
-                y: dragStart.current.panY + (e.clientY - dragStart.current.y),
-            });
-            return;
+    const filteredData = useMemo(() => {
+        let opts: Parameters<typeof filterForceGraphData>[1] = {};
+        if (search.trim()) opts.search = search.trim();
+        if (scoreFilter === 'low') opts.scoreMax = 49;
+        if (scoreFilter === 'medium') {
+            opts.scoreMin = 50;
+            opts.scoreMax = 89;
         }
-        if (!isDragging) {
-            const content = screenToContent(mx, my);
-            const halfW = (NODE_WIDTH / 2) * scaleX;
-            const halfH = (NODE_HEIGHT / 2) * scaleY;
-            const setHover =
-                nodes.find((n) => {
-                    const d = toDisplay(n.x, n.y);
-                    return Math.abs(content.x - d.x) <= halfW && Math.abs(content.y - d.y) <= halfH;
-                }) || null;
-            setHoveredNode(setHover);
+        if (scoreFilter === 'high') opts.scoreMin = 90;
+        if (depthMax !== '') opts.depthMax = Number(depthMax);
+        if (statusFilter !== 'all') opts.status = statusFilter;
+        return filterForceGraphData(fullGraphData, opts);
+    }, [fullGraphData, search, scoreFilter, depthMax, statusFilter]);
+
+    const focusedNodeSet = useMemo(() => {
+        if (!focusedNodeId || !filteredData.nodes.length) return null;
+        const nodeMap = new Map(filteredData.nodes.map((n) => [n.id, n]));
+        const node = nodeMap.get(focusedNodeId);
+        if (!node) return null;
+        const set = new Set<string>([node.id]);
+        filteredData.links.forEach((l) => {
+            if (l.source === node.id || l.target === node.id) {
+                set.add(l.source);
+                set.add(l.target);
+            }
+        });
+        return set;
+    }, [focusedNodeId, filteredData]);
+
+    const nodeVisibility = useCallback(
+        (node: { id?: string }) => {
+            if (!focusedNodeSet || !node.id) return true;
+            return focusedNodeSet.has(node.id);
+        },
+        [focusedNodeSet]
+    );
+
+    const nodeColor = useCallback(
+        (node: ForceGraphNode | { id?: string; score?: number }) => {
+            const n = node as ForceGraphNode;
+            const base = nodeColorByScore(n.score ?? 0);
+            if (!focusedNodeSet) return base;
+            if (!n.id) return base;
+            const isCenter = n.id === focusedNodeId;
+            if (isCenter) return base;
+            if (focusedNodeSet.has(n.id)) return base;
+            return '#ccc';
+        },
+        [focusedNodeSet, focusedNodeId]
+    );
+
+    const linkVisibility = useCallback(
+        (link: { source?: string | object; target?: string | object }) => {
+            if (!focusedNodeSet) return true;
+            const src = typeof link.source === 'string' ? link.source : (link.source as ForceGraphNode)?.id;
+            const tgt = typeof link.target === 'string' ? link.target : (link.target as ForceGraphNode)?.id;
+            return !!src && !!tgt && focusedNodeSet.has(src) && focusedNodeSet.has(tgt);
+        },
+        [focusedNodeSet]
+    );
+
+    const linkColor = useCallback(
+        () => (focusedNodeSet ? '#b0b0b0' : '#6b8cae'),
+        [focusedNodeSet]
+    );
+
+    const handleNodeClick = useCallback(
+        (node: ForceGraphNode) => {
+            setFocusedNodeId((prev) => (prev === node.id ? null : node.id));
+            onNodeClick?.({ url: node.url, id: node.id });
+        },
+        [onNodeClick]
+    );
+
+    const handleBackgroundClick = useCallback(() => {
+        setFocusedNodeId(null);
+    }, []);
+
+    const nodeCanvasObject = useCallback(
+        (node: unknown, ctx: CanvasRenderingContext2D, globalScale: number) => {
+            const n = node as ForceGraphNode & { x?: number; y?: number };
+            const label = getNodeShortLabel(n, globalScale > 1.5 ? 22 : 14);
+            const fontSize = globalScale > 1.5 ? 11 : 9;
+            ctx.font = `${fontSize}px Sans-Serif`;
+            const textWidth = ctx.measureText(label).width;
+            const w = Math.max(textWidth + 12, 48);
+            const h = 28;
+            const x = (n.x ?? 0) - w / 2;
+            const y = (n.y ?? 0) - h / 2;
+            const color = nodeColor(n);
+            ctx.fillStyle = color;
+            ctx.strokeStyle = hoveredNode?.id === n.id ? '#333' : '#5a7a9a';
+            ctx.lineWidth = hoveredNode?.id === n.id ? 2 : 1;
+            ctx.beginPath();
+            roundRect(ctx, x, y, w, h, 6);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#fff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, (n.x ?? 0), n.y ?? 0);
+        },
+        [hoveredNode?.id, nodeColor]
+    );
+
+    const zoomIn = useCallback(() => {
+        const g = fgRef.current;
+        if (g) {
+            const z = g.zoom();
+            g.zoom(Math.min(ZOOM_MAX, z * 1.4), 200);
         }
-    };
+    }, []);
 
-    const handleMouseUp = () => {
-        setIsDragging(false);
-    };
+    const zoomOut = useCallback(() => {
+        const g = fgRef.current;
+        if (g) {
+            const z = g.zoom();
+            g.zoom(Math.max(ZOOM_MIN, z / 1.4), 200);
+        }
+    }, []);
 
-    const handleMouseLeave = () => {
-        setIsDragging(false);
-        setHoveredNode(null);
-    };
+    const resetView = useCallback(() => {
+        setFocusedNodeId(null);
+        fgRef.current?.zoomToFit(200, 40);
+    }, []);
 
-    const zoomIn = () => setZoom((z) => Math.min(ZOOM_MAX, z * ZOOM_STEP));
-    const zoomOut = () => setZoom((z) => Math.max(ZOOM_MIN, z / ZOOM_STEP));
-    const resetView = () => {
-        setPan({ x: 0, y: 0 });
-        setZoom(1);
-    };
+    const showFilterBar =
+        fullGraphData.nodes.length > 20 ||
+        search ||
+        scoreFilter !== 'all' ||
+        depthMax !== '' ||
+        statusFilter !== 'all';
 
     return (
         <Box
-            ref={containerRef}
-            sx={{ position: 'relative', width: width, height: height, background: '#f5f5f5', borderRadius: 2, overflow: 'hidden' }}
+            sx={{
+                position: 'relative',
+                width,
+                height,
+                background: '#f5f5f5',
+                borderRadius: 2,
+                overflow: 'hidden',
+            }}
         >
-            <svg
+            {showFilterBar && (
+                <Box
+                    onMouseDown={(e) => e.stopPropagation()}
+                    sx={{
+                        position: 'absolute',
+                        top: 8,
+                        left: 8,
+                        right: 8,
+                        zIndex: 10,
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: 1,
+                        alignItems: 'center',
+                    }}
+                >
+                    <TextField
+                        size="small"
+                        placeholder="URL or title…"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        sx={{
+                            width: 180,
+                            '& .MuiOutlinedInput-root': {
+                                bgcolor: 'background.paper',
+                                borderRadius: 1,
+                            },
+                        }}
+                        inputProps={{ 'aria-label': 'Search pages by URL or title' }}
+                    />
+                    <select
+                        aria-label="Filter by score"
+                        value={scoreFilter}
+                        onChange={(e) =>
+                            setScoreFilter(e.target.value as 'all' | 'low' | 'medium' | 'high')
+                        }
+                        style={{
+                            padding: '6px 10px',
+                            borderRadius: 4,
+                            border: '1px solid #ccc',
+                            background: '#fff',
+                            fontSize: 14,
+                        }}
+                    >
+                        <option value="all">Score: all</option>
+                        <option value="high">Score ≥ 90</option>
+                        <option value="medium">Score 50–89</option>
+                        <option value="low">Score &lt; 50</option>
+                    </select>
+                    <TextField
+                        size="small"
+                        type="number"
+                        placeholder="Max depth"
+                        value={depthMax}
+                        onChange={(e) => setDepthMax(e.target.value === '' ? '' : Number(e.target.value))}
+                        inputProps={{ min: 0, 'aria-label': 'Max URL depth' }}
+                        sx={{
+                            width: 100,
+                            '& .MuiOutlinedInput-root': { bgcolor: 'background.paper', borderRadius: 1 },
+                        }}
+                    />
+                    <select
+                        aria-label="Filter by status"
+                        value={statusFilter}
+                        onChange={(e) =>
+                            setStatusFilter(e.target.value as 'all' | 'ok' | 'error')
+                        }
+                        style={{
+                            padding: '6px 10px',
+                            borderRadius: 4,
+                            border: '1px solid #ccc',
+                            background: '#fff',
+                            fontSize: 14,
+                        }}
+                    >
+                        <option value="all">Status: all</option>
+                        <option value="ok">OK</option>
+                        <option value="error">Error</option>
+                    </select>
+                    {(search || scoreFilter !== 'all' || depthMax !== '' || statusFilter !== 'all') && (
+                        <MsqdxTypography variant="caption" sx={{ color: 'text.secondary' }}>
+                            {filteredData.nodes.length} / {fullGraphData.nodes.length} nodes
+                        </MsqdxTypography>
+                    )}
+                </Box>
+            )}
+
+            <ForceGraph2D
+                ref={fgRef as never}
+                graphData={filteredData}
                 width={width}
                 height={height}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseLeave}
-                style={{
-                    cursor: isDragging ? 'grabbing' : hoveredNode ? 'pointer' : 'grab',
-                    userSelect: 'none',
+                backgroundColor="#f5f5f5"
+                nodeId="id"
+                linkSource="source"
+                linkTarget="target"
+                nodeVal={() => 6}
+                nodeLabel={(n: unknown) => {
+                    const node = n as ForceGraphNode;
+                    return `${node.url}\nScore: ${node.score}`;
                 }}
-            >
-                <defs>
-                    <marker id="flowchart-arrow" markerWidth={10} markerHeight={8} refX={9} refY={4} orient="auto">
-                        <path d="M0,0 L10,4 L0,8 Z" fill="#6b8cae" />
-                    </marker>
-                </defs>
-                <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`}>
-                {/* Links: from bottom of source box to top of target box, with arrow */}
-                {links.map((link, i) => {
-                    const s = nodes.find((n) => n.url === link.source.url);
-                    const t = nodes.find((n) => n.url === link.target.url);
-                    if (!s || !t) return null;
-                    const d1 = toDisplay(s.x, s.y + NODE_HEIGHT / 2);
-                    const d2 = toDisplay(t.x, t.y - NODE_HEIGHT / 2);
-                    const strokeW = links.length > 80 ? 1 : 2;
-                    const opacity = links.length > 150 ? 0.5 : links.length > 80 ? 0.7 : 1;
-                    return (
-                        <line
-                            key={i}
-                            x1={d1.x}
-                            y1={d1.y}
-                            x2={d2.x}
-                            y2={d2.y}
-                            stroke="#6b8cae"
-                            strokeWidth={strokeW}
-                            strokeOpacity={opacity}
-                            markerEnd="url(#flowchart-arrow)"
-                        />
-                    );
-                })}
-
-                {/* Nodes: flowchart boxes */}
-                {nodes.map((node, i) => {
-                    const color = node.score >= 90 ? '#7cb87c' : node.score >= 50 ? '#e8a64a' : '#c75c5c';
-                    const d = toDisplay(node.x, node.y);
-                    let label: string;
-                    if (node.title?.trim()) {
-                        label = node.title.trim();
-                        if (label.length > 22) label = label.slice(0, 19) + '…';
-                    } else {
-                        try {
-                            const pathname = new URL(node.url).pathname || '/';
-                            label = pathname === '/' ? 'Home' : pathname.replace(/^\//, '').slice(0, 18) || 'Page';
-                            if (pathname.length > 18) label += '…';
-                        } catch {
-                            label = 'Page';
-                        }
+                nodeVisibility={nodeVisibility as (n: unknown) => boolean}
+                nodeColor={nodeColor as (n: unknown) => string}
+                nodeCanvasObject={nodeCanvasObject}
+                nodeCanvasObjectMode="replace"
+                onNodeHover={(n: unknown) => setHoveredNode(n as ForceGraphNode | null)}
+                onNodeClick={(n: unknown) => handleNodeClick(n as ForceGraphNode)}
+                onBackgroundClick={handleBackgroundClick}
+                linkVisibility={linkVisibility as (l: unknown) => boolean}
+                linkColor={linkColor as () => string}
+                linkDirectionalArrowLength={4}
+                linkDirectionalArrowRelPos={1}
+                linkWidth={filteredData.links.length > 200 ? 0.8 : 1.2}
+                enableNodeDrag
+                enableZoomInteraction
+                enablePanInteraction
+                minZoom={ZOOM_MIN}
+                maxZoom={ZOOM_MAX}
+                showPointerCursor
+                onEngineStop={() => {
+                    if (!hasFittedRef.current && filteredData.nodes.length > 0) {
+                        hasFittedRef.current = true;
+                        fgRef.current?.zoomToFit(0, 40);
                     }
-                    const isHovered = hoveredNode?.url === node.url;
-                    const w = NODE_WIDTH * scaleX;
-                    const h = NODE_HEIGHT * scaleY;
-                    return (
-                        <g key={i} transform={`translate(${d.x},${d.y})`}>
-                            <rect
-                                x={-w / 2}
-                                y={-h / 2}
-                                width={w}
-                                height={h}
-                                rx={6}
-                                ry={6}
-                                fill={color}
-                                fillOpacity={isHovered ? 1 : 0.85}
-                                stroke={isHovered ? '#333' : '#5a7a9a'}
-                                strokeWidth={isHovered ? 2 : 1}
-                            />
-                            <text
-                                y={0}
-                                textAnchor="middle"
-                                dominantBaseline="central"
-                                fontSize={11}
-                                fill="#fff"
-                                style={{ pointerEvents: 'none', fontWeight: isHovered ? 'bold' : 'normal' }}
-                            >
-                                {label}
-                            </text>
-                        </g>
-                    );
-                })}
-                </g>
-            </svg>
+                }}
+            />
 
-            {/* Zoom controls – stop propagation so clicking them doesn't start pan */}
             <Box
                 onMouseDown={(e) => e.stopPropagation()}
                 sx={{
@@ -291,47 +355,104 @@ export const DomainGraph = ({ data, width = 800, height = 600 }: DomainGraphProp
                     zIndex: 10,
                 }}
             >
-                <MsqdxButton variant="contained" size="small" onClick={zoomIn} sx={{ minWidth: 36 }} aria-label="Zoom in">
+                <MsqdxButton
+                    variant="contained"
+                    size="small"
+                    onClick={zoomIn}
+                    sx={{ minWidth: 36 }}
+                    aria-label="Zoom in"
+                >
                     +
                 </MsqdxButton>
-                <MsqdxButton variant="contained" size="small" onClick={zoomOut} sx={{ minWidth: 36 }} aria-label="Zoom out">
+                <MsqdxButton
+                    variant="contained"
+                    size="small"
+                    onClick={zoomOut}
+                    sx={{ minWidth: 36 }}
+                    aria-label="Zoom out"
+                >
                     −
                 </MsqdxButton>
-                <MsqdxButton variant="outlined" size="small" onClick={resetView} sx={{ minWidth: 36 }} aria-label="Reset view">
+                <MsqdxButton
+                    variant="outlined"
+                    size="small"
+                    onClick={resetView}
+                    sx={{ minWidth: 36 }}
+                    aria-label="Reset view"
+                >
                     ⟲
                 </MsqdxButton>
             </Box>
 
-            {/* Tooltip */}
-            {hoveredNode && (() => {
-                const d = toDisplay(hoveredNode.x, hoveredNode.y);
-                const tooltipX = pan.x + d.x * zoom + 10;
-                const tooltipY = pan.y + d.y * zoom + 10;
-                return (
+            {hoveredNode && (
                 <MsqdxCard
                     variant="glass"
                     sx={{
                         position: 'absolute',
-                        top: tooltipY,
-                        left: tooltipX,
+                        top: showFilterBar ? 52 : 10,
+                        left: 10,
                         p: 1,
                         zIndex: 10,
                         pointerEvents: 'none',
-                        minWidth: 150
+                        minWidth: 180,
+                        maxWidth: 360,
                     }}
                 >
-                    <MsqdxTypography variant="caption" display="block" sx={{ fontWeight: 'bold' }}>
+                    <MsqdxTypography
+                        variant="caption"
+                        display="block"
+                        sx={{ fontWeight: 'bold', wordBreak: 'break-all' }}
+                    >
                         {hoveredNode.url}
                     </MsqdxTypography>
                     <MsqdxTypography
                         variant="caption"
-                        color={hoveredNode.score >= 90 ? 'success' : hoveredNode.score >= 50 ? 'warning' : 'error'}
+                        color={
+                            hoveredNode.score >= 90
+                                ? 'success'
+                                : hoveredNode.score >= 50
+                                  ? 'warning'
+                                  : 'error'
+                        }
                     >
                         Score: {hoveredNode.score}
                     </MsqdxTypography>
                 </MsqdxCard>
-                );
-            })()}
+            )}
+
+            {filteredData.nodes.length === 0 && fullGraphData.nodes.length > 0 && (
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        textAlign: 'center',
+                        color: 'text.secondary',
+                    }}
+                >
+                    <MsqdxTypography variant="body2">No nodes match the current filters.</MsqdxTypography>
+                </Box>
+            )}
         </Box>
     );
 };
+
+function roundRect(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    r: number
+) {
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+}
