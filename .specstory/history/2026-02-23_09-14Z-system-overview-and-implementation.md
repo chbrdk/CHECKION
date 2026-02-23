@@ -1645,11 +1645,926 @@ Parameters:
   "caseInsensitive": false
 }
 ```
-Status: **loading**
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "journeyStepsTitle|journeyReasoning|journeyTaskLabel",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "outputMode": "content",
+  "totalFiles": 2,
+  "totalMatches": 6,
+  "topFiles": [
+    {
+      "uri": "locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "locales/de.json",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
 
 
 </details>
 </tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. There are no journeyActionNavigate etc - I'll simplify actionLabel to just return the German fallbacks without t() to avoid adding new keys, or I can add the keys. For minimal change I'll keep the inline strings "Seite", "Klick", "Abgeschlossen" in actionLabel without t().
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to add activeStepIndex state and replace the entire main return block: loading, running, unavailable, error, complete. Let me do the state and the complete block with the new layout and slideshow.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+When result changes (e.g. from null to loaded), we should reset activeStepIndex to 0. Let me add an effect for that. Actually when we set result in the poll, steps get populated and activeStepIndex might be out of bounds - so when steps.length changes we could clamp. Or we can reset activeStepIndex when result is set. Let me add: when result is set and has steps, set activeStepIndex to 0. I'll do that in the poll success branch by not needing an effect - when status becomes 'complete', result is set and steps = result.steps. So on first render of complete, activeStepIndex is 0. If there's only 1 step, goToNext does nothing. Good. But if the user had previously viewed a different journey and had activeStepIndex 5, then we load a new result with 3 steps - we'd show steps[5] which is undefined. So we need to clamp when steps change. Let me add a useEffect that resets activeStepIndex to 0 when result changes (when we get new result).
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now replace the "not jobId" and loading/running/unavailable/error/complete sections. I'll do the not jobId and loading first, then running (with tokens), then unavailable and error (with tokens), then the big complete block with new layout and slideshow.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to fix the aria-label for the prev/next buttons - I used t('results.dashboard') which is wrong. Let me check if there are i18n keys for "Previous step" / "Next step". JourneyFlowchart uses t('domainResult.journeyPrevStep') and t('domainResult.journeyNextStep'). Let me use those or add simple strings.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "journeyPrevStep|journeyNextStep",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "journeyPrevStep|journeyNextStep",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "outputMode": "content",
+  "totalFiles": 2,
+  "totalMatches": 4,
+  "topFiles": [
+    {
+      "uri": "locales/en.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "locales/de.json",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+They're under domainResult. Let me fix the aria-labels to use t('domainResult.journeyPrevStep') and t('domainResult.journeyNextStep').
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Check if MSQDX_STATUS has success and info - I used MSQDX_STATUS.success.base and MSQDX_STATUS.info.base. Let me verify the tokens package exports.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+Path does not exist: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/node_modules/@msqdx/tokens
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The package might be in a sibling path (file:../msqdx-design-system/packages/tokens). Let me check how other files use MSQDX_STATUS.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "MSQDX_STATUS\\.(success|info|error)",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "MSQDX_STATUS\\.(success|info|error)",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 23,
+  "totalMatches": 115,
+  "topFiles": [
+    {
+      "uri": "./app/journey-agent/[jobId]/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "./components/UxIssueList.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "./components/UxCard.tsx",
+      "matchCount": 9
+    },
+    {
+      "uri": "./components/TouchTargetOverlay.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./components/ThemeProvider.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./components/TechnicalInsightsCard.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "./components/SeoCard.tsx",
+      "matchCount": 8
+    },
+    {
+      "uri": "./components/SecurityCard.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "./components/ScanIssueRow.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "./components/ScanIssueList.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/ScanIssueItem.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "./components/PrivacyCard.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "./components/PerformanceCard.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./components/PageIndexCard.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/LinkAuditCard.tsx",
+      "matchCount": 8
+    },
+    {
+      "uri": "./components/InfraCard.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/HistoryList.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/GenerativeOptimizerCard.tsx",
+      "matchCount": 13
+    },
+    {
+      "uri": "./components/DomainAggregatedIssueList.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "./app/share/[token]/page.tsx",
+      "matchCount": 5
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+MSQDX_STATUS.success.base, .info.base, .error.base are used throughout. So the imports and usage are correct. Let me mark todos and run a quick test to ensure the app builds.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Layout + imports: Video groß, Steps-Slideshow, MSQDX-Tokens
+- [x] Step-Card MSQDX: MsqdxMoleculeCard, MsqdxChip, schwarze Schrift
+- [x] Status-Cards + Running-State mit Tokens anpassen
+- [x] ReasoningBlock + Video-Label auf Tokens umstellen
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+sh: next: command not found
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+next not in PATH - need npx next build
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npx next build --webpack 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npx next build --webpack 2>&1
+```
+
+```
+npm warn exec The following package was not found and will be installed: next@16.1.6
+⨯ Failed to load next.config.mjs, see more info here https://nextjs.org/docs/messages/next-config-error
+
+&gt; Build error occurred
+Error: Cannot find module '@next/bundle-analyzer'
+Require stack:
+- /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/next.config.mjs
+    at ignore-listed frames {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The build failed due to missing devDependency in the environment (npm install wasn't run). The code changes themselves are fine. Let me run npm install first and then build again, or we can just confirm there are no TypeScript/lint errors in our file.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+No linter errors. The build failure is an environment issue (node_modules / bundle-analyzer), not related to our code. Implementation is complete. Let me provide a short summary to the user.
+</details></think>
+
+---
+
+
+Die Anpassungen sind umgesetzt. Kurzüberblick:
+
+## Umgesetzte Änderungen
+
+### 1. **Layout & Imports**
+- **Imports:** `IconButton` (MUI), `MsqdxMoleculeCard`, `MsqdxChip`, `ChevronLeft`/`ChevronRight` (lucide-react), `MSQDX_STATUS`, `useCallback`.
+- **Video:** Größere Darstellung mit `VIDEO_MAX_WIDTH = 960`, Abstände über `var(--msqdx-spacing-md)`.
+- **Slideshow-State:** `activeStepIndex`, `goToPrev`, `goToNext`, `goTo(index)`; Index wird bei neuem `result` auf 0 gesetzt.
+
+### 2. **Complete-State – neues Layout**
+- **Oben:** `MsqdxMoleculeCard` mit Titel (Erfolg/Abgeschlossen), Subtitle (Task + Site), Action „Neue Journey“.
+- **Video:** Groß und zentral (max 960px) mit „Aufzeichnung“-Label in `var(--color-text-on-light)`.
+- **Schritte:** Eigene `MsqdxMoleculeCard` mit Titel „Schritte (N)“ und Header „X / Y“.
+  - **Slideshow:** Nur der aktuelle Schritt (`steps[activeStepIndex]`) wird gerendert.
+  - **Prev/Next:** `IconButton` mit `ChevronLeft`/`ChevronRight`, disabled am Anfang/Ende, Aria-Labels über `t('domainResult.journeyPrevStep')` / `t('domainResult.journeyNextStep')`.
+  - **Dots:** Klickbare Punkte unter der Karte zum direkten Wechsel (Schritt 1 … N).
+
+### 3. **Step-Card im MSQDX-Stil**
+- Container: `Box` mit `bgcolor: 'var(--color-card-bg)'`, `border: '1px solid var(--color-secondary-dx-grey-light-tint)'`, `borderRadius: 'var(--msqdx-radius-sm)'`.
+- **Action:** `MsqdxChip` (size="small") mit Farben: done → success, navigate → info, sonst green.
+- **Texte:** Haupttext `var(--color-text-on-light)`, Zusatz/Result `var(--color-text-muted-on-light)`.
+- **Reasoning-Block:** Hintergrund `var(--color-secondary-dx-grey-light-tint)`, linke Border `var(--color-theme-accent)`, Label „Reasoning“ in `var(--color-text-on-light)`.
+
+### 4. **Status-Cards & Running**
+- **Unavailable/Error:** `MsqdxCard` mit `bgcolor: 'var(--color-card-bg)'`, `border: '1px solid var(--color-secondary-dx-grey-light-tint)'` (bzw. `MSQDX_STATUS.error.base` bei Error), `borderRadius: 'var(--msqdx-radius-sm)'`, Text `var(--color-text-on-light)` bzw. `MSQDX_STATUS.error.base`.
+- **Running:** Live-Ansicht mit `borderColor: 'var(--color-secondary-dx-grey-light-tint)'`, `bgcolor: 'var(--color-card-bg)'`, Label „Live-Ansicht“ in `var(--color-text-on-light)`.
+
+### 5. **ReasoningBlock & Video-Label**
+- `ReasoningBlock`: Alle Texte auf `color: 'var(--color-text-muted-on-light)'` (kein `color="text.secondary"`).
+- Video-Label „Aufzeichnung“ und Abstände mit Tokens.
+
+---
+
+**Hinweis:** `npm run build` schlägt im aktuellen Setup wegen fehlender Module (z. B. `@next/bundle-analyzer`) fehl. Die Journey-Agent-Seite hat keine Linter-Fehler; nach `npm install` sollte der Build durchlaufen.
+
+---
+
+_**User**_
+
+ich würde schon gern auf desktop mehrere slides/cards anzeigen anstatt nur einer. können wir ausserdem das ergebnis besser darstellen? momentan geben wir rein den text aus den wir bekommen, z.b. "thinking='Ich bin jetzt im Panamera-Menü und kann die verschiedenen Panamera-Modelle sehen. Ich sehe:\n1. Panamera (7 Modellvarianten) - Hybrid | Benzin\n2. Panamera 4 E-Hybrid Executive (2 Modellvarianten) - Hybrid\n\nIch muss den Panamera GTS finden. Der GTS ist normalerweise eine sportlichere Variante und sollte unter den 7 Modellvarianten des normalen Panamera zu finden sein. Ich sollte auf "Panamera" mit den 7 Modellvarianten klicken, um alle verfügbaren Varianten zu sehen und den GTS zu finden.\n\nDas Ziel ist es, Informationen über goldmetallic Lackierung und Massagefunktionen für den Panamera GTS zu finden. Ich muss Schritt für Schritt vorgehen und explizit die Optionen auswählen.' evaluation_previous_goal='Erfolgreich auf Panamera geklickt und das Panamera-Untermenü geöffnet, das verschiedene Panamera-Varianten zeigt. Verdikt: Erfolg' memory='Bin auf der deutschen Porsche-Website im Panamera-Menü. Kann zwei Hauptkategorien sehen: Panamera (7 Modellvarianten) und Panamera 4 E-Hybrid Executive (2 Modellvarianten). Muss den GTS unter den 7 Modellvarianten des normalen Panamera finden.' next_goal='Auf "Panamera" mit den 7 Modellvarianten klicken, um alle verfügbaren Panamera-Varianten zu sehen und den GTS zu finden.'" 
+
+aber wir können es besser formatieren und die einzelnen bereiche wie memory, next, goal, thinking usw. als eigene kleine bereiche darstellen.
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants two things:
+
+1. **Desktop: show multiple slides/cards** instead of just one - so on desktop we should show several step cards visible at once (e.g. in a horizontal row or grid), while possibly keeping single-card view on mobile.
+
+2. **Better result formatting** - Currently they're displaying raw text that comes from the API, which looks like a concatenated string with keys like `thinking=`, `evaluation_previous_goal=`, `memory=`, `next_goal=`. They want to parse this and display each section (memory, next_goal, thinking, evaluation_previous_goal, etc.) as separate small labeled areas/cards.
+
+Let me look at the current journey-agent page to see:
+- How steps are rendered and how we can show multiple on desktop
+- Where the "result" text is displayed and what the structure of the data is (step.result, step.reasoning, etc.)
+
+I'll need to:
+1. Read the current page implementation
+2. Understand the step data structure (UxJourneyAgentStep has result?, reasoning?, etc.)
+3. Parse the result string into sections (thinking, memory, next_goal, evaluation_previous_goal, etc.) - likely with a small parser or regex
+4. On desktop use a layout that shows multiple cards (e.g. 2-3 visible), with horizontal scroll or a wider grid
+5. Create a component or block that renders the parsed result as labeled sections
+</details></think>
+
+---
+
+
+Implementierung prüfen und anschließend beide Änderungen umsetzen: mehrere Step-Cards auf Desktop und bessere Formatierung der Ergebnis-Texte (Parsing in Bereiche wie thinking, memory, next_goal).
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see. The `result` field on each step contains the raw string like:
+`"thinking='...' evaluation_previous_goal='...' memory='...' next_goal='...'"`
+
+So I need to:
+1. **Parse the result string** into key-value pairs. The format appears to be `key='value'` where value can contain escaped quotes or span multiple lines. So we need to parse:
+   - thinking='...'
+   - evaluation_previous_goal='...'
+   - memory='...'
+   - next_goal='...'
+   and possibly other keys. The value is in single quotes and might contain newlines. So a regex like /(\w+)='((?:[^'\\]|\\.)*)'/g might not work if the value has single quotes inside. Looking at the example, the value can have newlines. So the format is key='value' and the value might end at the next key=' pattern. So we could split by / \w+='/ and then the first segment is nothing or something, and each subsequent segment ends at the next key='. Actually simpler: match all /(\w+)='([^']*(?:''[^']*)*)'/ or just find all keys and then take the value as "from after the first ' to the last ' before the next key=". Let me try a different approach: split by regex that matches key=' - so we get ["", "thinking", "evaluation_previous_goal", ...] and the content after each key. Actually the easiest is to repeatedly match (\w+)=' and then capture everything until we hit a space and then \w+= (next key) or end of string. So value is from first ' to either:
+- next occurrence of " word=" (space, word, equals, quote)
+- or end of string
+
+So regex: /(\w+)='(.*?)(?=\s\w+='|$)/gs - but .*? is non-greedy and might stop too early. The value can have newlines. So we need to allow [^] or . with s flag to match newline. And the value ends when we see (space + word + '=') or end. So: /(\w+)='((?:(?!\s\w+=').)*)'/s - no, the value might contain ' so we can't easily match. So let's try: find all keys with /(\w+)='/g, then for each key, the value starts after the opening ' and we need to find the closing '. If the value contains ', we might have '' or \'. So the value could be: take from first ' after key=, then find the next ' that is either followed by space and \w+= or end. So we need a parser that: for each key=' we find, we look for the matching closing quote. So we iterate: let pos = 0; while (match = /(\w+)='/g.exec(str)) { key = match[1]; start = match.index + match[0].length; then find end: from start, look for ' that is not doubled? Or just find next ' that is followed by \s+\w+= or end. So nextQuote = str.indexOf("'", start). But that might be inside the value. So we need to handle escaped quotes. In the user's example I don't see escaped quotes inside the value. So maybe the value runs until we get " ' " (space quote) at the start of next key='. So the pattern for "end of value" might be " ' " (space, single quote, space) and then word. So: value ends at the last ' before a pattern like " \w+='". So we could do: split by " '" and then we get segments. Actually simpler: use a regex that captures key and value where value is "anything that doesn't contain the substring \" 'word=\"". So value = [^']*(?:'[^'\s][^']*)*? No. Let me try: /(\w+)='((?:[^'\\]|\\.)*)'/g - that would match value until next unescaped '. So if we have thinking='hello world' next='x' we get thinking -> "hello world". But if value is "I'm here" we have a problem. So perhaps the API uses a convention like '' for escape. I'll assume values can contain newlines and we look for the pattern that ends the value: either ' followed by optional space and then end of string, or ' followed by space and then a word and =. So regex: /(\w+)='(.*?)'(?=\s*\w+='|$)/gs - the .*? is ungreedy so it stops at the first '. So we get value up to first '. That could work if values don't contain '. If they do, we need a different strategy. I'll go with: parse key='value' where value is "from here until we see a ' that is followed by whitespace and then a word and =". So: /(\w+)='(.*?)'(?=\s+\w+='|\s*$)/gs. So the value is minimal until we see ' then (space+word+= or end). Let me implement and if the user has quotes in values we can refine.
+
+Actually re-reading the user message: the format is like key='value' and they want thinking, memory, next_goal, evaluation_previous_goal as separate sections. So I'll parse with a regex that extracts these. Let me use a simpler approach: split by the pattern that looks like " word='" (space, identifier, equals, quote) and then the first part might be empty, and each part after that we have "key='value" and the value runs to the next " key='". So we split by / (?=\w+=')/ to get segments? No. Better: match all /(\w+)='([^']*)'/g - but [^']* doesn't allow ' in value. So allow [^']* to have newlines: [^']* in JS dotAll doesn't change [^']. So we need a value that can span and can have '. The user example shows the value has \n in it. So the value is multi-line. So perhaps the convention is that value goes until the next key=' pattern (next key= followed by '). So we can do: const keys = [...str.matchAll(/(\w+)='/g)]. Then for i in keys, value is from keys[i].index + keys[i][0].length until keys[i+1].index (strip one quote at end). So we get the substring and then remove the trailing ' if any. So:
+- Find all matches of /(\w+)='/g
+- For each match i, key = match[1], valueStart = match.index + match[0].length. valueEnd = matches[i+1] ? matches[i+1].index - 1 : str.length (to exclude the closing ' before next key). So value = str.slice(valueStart, valueEnd).trim(). But wait, the closing ' - the next match is at "next_goal='", so the character before that is the closing ' of the previous value. So value = str.slice(valueStart, matches[i+1].index - 1). So we need to find the position of the ' that closes the value. That is the last ' before the next key='. So value = str.slice(valueStart, matches[i+1].index - 1). Yes.
+
+Let me implement:
+1. Parse the result string into { thinking?, memory?, next_goal?, evaluation_previous_goal?, ... }
+2. Render each as a small labeled card/section
+
+For "multiple cards on desktop" - I'll use a responsive layout: on desktop (md and up) show a grid or horizontal scroll with e.g. 2-3 cards visible (cards for steps from activeStepIndex to activeStepIndex + 2 or 3), and on mobile keep single card. So we need a "visible count" that is 1 on mobile and 2 or 3 on desktop. We can use useMediaQuery or a container query. I'll use useMediaQuery(theme.breakpoints.up('md')) and then show 2 or 3 cards: the "window" of steps is [activeStepIndex, activeStepIndex + cardsVisible - 1]. So we still have prev/next but they move the window by 1 (or by cardsVisible). So when you click next, we go to activeStepIndex + 1, and the window shows that step and the next 2 (on desktop). So we show steps at indices [activeStepIndex, activeStepIndex+1, activeStepIndex+2] (3 cards on desktop). When at the end, we might show 1 or 2 cards. So the visible steps are steps.slice(activeStepIndex, activeStepIndex + cardsVisible). I'll use 3 for desktop and 1 for mobile. We need to import useTheme and useMediaQuery from MUI.
+</details></think>
+
+---
+
+
+Implementierung: 1) Auf Desktop mehrere Step-Cards anzeigen (z. B. 3), auf Mobile eine. 2) Ergebnis-String parsen und Bereiche (thinking, memory, next_goal, evaluation_previous_goal) als eigene Sektionen darstellen.
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] Desktop: mehrere Step-Cards anzeigen (responsive)
+- [ ] Result-String parsen und als Sektionen (thinking, memory, next_goal, …) darstellen
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Implement:
+
+1. Add useTheme, useMediaQuery - on md and up show 3 cards, else 1. Visible steps = steps.slice(activeStepIndex, activeStepIndex + cardsVisible). When we have multiple cards we don't need the single "currentStep" - we map over visibleSteps and render each. Prev/Next still move by 1 (so we scroll one step at a time). Dots still work. So we need: cardsVisible = isDesktop ? 3 : 1, visibleSteps = steps.slice(activeStepIndex, activeStepIndex + cardsVisible). Render visibleSteps.map(step => <StepCard step={step} />). The layout for multiple cards: on desktop a horizontal flex or grid so 3 cards sit side by side (each taking 1/3 or min-width). So the container could be display: flex, gap, and each card flex: 1 1 0 or minWidth: 280 or so.
+
+2. Parse result: function parseStepResult(raw: string): Record<string, string> - extract key='value' pairs. Value can be multiline and might contain '. I'll use: match all /(\w+)='/g to get keys and positions, then for each key the value is from after the opening ' until the character before the next key=' (so we need the next key=' index - 1). So we get segments. Then render with a small component that shows each key as a label and value as body. Labels: thinking -> "Thinking", memory -> "Memory", next_goal -> "Next goal", evaluation_previous_goal -> "Previous goal evaluation", etc. Use human-readable labels.
+
+Let me write the parser and the section component, then update the step card to use it, and then update the layout for multiple cards.
+</details></think>
+
+---
+
+
+Parser-Funktion und formatierte Ergebnisdarstellung hinzufügen:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to:
+1. Replace the single currentStep display with a slice of steps (visibleSteps) and render multiple cards on desktop.
+2. Use StepResultSections instead of the raw result text in the step card.
+3. Add useTheme/useMediaQuery and cardsVisible logic.
+
+Let me do the step card as a reusable component that takes a step and renders it, then in the main content we compute visibleSteps and map over it. Also need to update the "X / Y" indicator to reflect the window (e.g. "2–4 / 10" when showing 3 cards) and the dots - when we have 3 cards visible, we might still show dots for "which step is the first of the visible window" or we keep dots for the active step (leading card). I'll keep activeStepIndex as "first visible step index" so Prev/Next move the window. So dots: one dot per step, active is activeStepIndex. When we have 3 cards, we show steps at index activeStepIndex, activeStepIndex+1, activeStepIndex+2. Good.
+
+Now replace the single-card rendering with a grid/flex of visible steps. Extract the step card content into a component so we can reuse it for each visible step.
+</details></think>
+
+---
+
+
+Step-Card als eigene Komponente extrahieren und mit `StepResultSections` verwenden:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to:
+1. Add useTheme and useMediaQuery to the page component and compute cardsVisible and visibleSteps.
+2. Replace the single currentStep block with a flex/grid that maps over visibleSteps and renders StepCard for each.
+3. Update the header indicator to show range when multiple cards (e.g. "2–4 / 10").
+</details></think>
+
+---
+
+
+Responsive Logik und Anzeige mehrerer Cards einbauen:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now replace the block that renders currentStep with the new layout that renders visibleSteps (multiple StepCards) and update the header indicator to show range when multiple cards.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to replace the whole section that renders the single currentStep card with the new layout that renders visibleSteps with StepCard, and use stepRangeLabel in the header.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The parser might have an issue: in the user's example the format is like `thinking='...' evaluation_previous_goal='...'` - so there's a space between the closing quote of one value and the next key. So when we find valueEnd = matches[i+1].start - 1, we're including the closing quote in the value. So we do "if (value.endsWith("'")) value = value.slice(0, -1)" - that removes the trailing quote. Good. But wait - the value might contain a single quote in the middle (e.g. "I'm here"). So we're trimming the last character only if it's a quote - that could remove a valid quote from the end of the value. So the value in the API might not contain unescaped quotes. I'll leave it as is. If the value is "hello'world'", we'd get "hello'world" after slice(0,-1). So we're assuming the last character before the next key=' is the closing quote. So value = raw.slice(valueStart, valueEnd) gives us the value including the closing quote, then we strip the quote. So we get the right value. Good.
+
+Let me double-check the regex. We have key=' and we want to capture key and the value. The value runs until the next key='. So matches give us positions of "key='". So for "thinking='abc' next_goal='x'" we have matches: [{key: thinking, valueStart: 10}, {key: next_goal, valueStart: 22}]. So for thinking, value = raw.slice(10, 22-1) = raw.slice(10, 21) = "abc'" - then we remove trailing ' to get "abc". For next_goal, value = raw.slice(22, len) = "x'" then "x". Good.
+
+Let me also ensure that when there's no key=' pattern (plain text result), we show the raw text. We already do that in StepResultSections: if (sections.length === 0) we render the raw text. Good.
+
+I'll add a maxHeight to the step cards container so that on desktop when we have 3 cards with long content they don't get too tall - or we can leave it. Actually the user said they want multiple cards visible - so we want them side by side. Each card has flex: 1 1 0 so they share space. We might want a minWidth so that each card doesn't get too narrow, e.g. minWidth: 260. Let me add that.
+</details></think>
+
+---
+
+
+Step-Cards mit fester Mindestbreite auf Desktop versehen, damit sie lesbar bleiben:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+minWidth: { xs: '100%', md: 260 } might conflict with flex: '1 1 0'. On mobile we have one card so 100% is fine. On desktop we want 3 cards with min 260px. So the container should allow wrapping or we keep flex row and let them shrink with minWidth: 260. So each card flex 1 1 0 and minWidth 260. Good.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Check: the result string in the user's example has the format with keys like thinking='...' and the value contains newlines and possibly single quotes. Our parser splits by finding key=' and then taking value until the next key='. So if the value contains a single quote (e.g. "I'm here"), we would incorrectly cut at that quote. So we need to handle that. Looking at the example again: "thinking='Ich bin jetzt im Panamera-Menü..." - so the value can contain apostrophes in German words? "Panamera-Menü" has no quote. "don't" would have a quote. So to be safe we could try to find the closing quote by: from valueStart, find the next occurrence of "' " (quote followed by space) or "'\n" which might indicate end of value before next key='. Actually the pattern for "next key" is space + word + '='. So the value ends where we have ' followed by (space and then word and =). So we could look for the regex /'\s+\w+='/ to find the end of value - the value ends at the '. So value = from valueStart to (position of match of /'\s+\w+='/). Let me not change the parser for now - the user can report if values with quotes break. The current logic "value ends one char before next key=' " is correct when values don't contain '. If they do, we'd need a smarter parser.
+
+Let me also add human-readable labels for any other keys that might appear (e.g. "goal", "evaluation"). I already have goal and evaluation in RESULT_SECTION_LABELS. Good.
+
+Mark todos complete.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Desktop: mehrere Step-Cards anzeigen (responsive)
+- [x] Result-String parsen und als Sektionen (thinking, memory, next_goal, …) darstellen
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Improve the parser to handle values that might contain a single quote. In the user's example I don't see escaped quotes. So the pattern could be: value ends at the last ' that is immediately followed by whitespace and then a word and '='. So we could match from valueStart: find all occurrences of " ' " (space quote) and then check if the next part is word='. So we need to find the boundary. A simpler approach: from valueStart, scan for the pattern that ends the value: either ' followed by \s+\w+= or end of string. So we can use a regex to find the next key=' and then the value is from valueStart to (that match index - 1). So we're already doing that. The only issue is if the value itself contains something like " next_goal='" as literal text - then we'd cut early. Unlikely. So we're good.
+
+Let me re-read the StepResultSections fallback: when sections.length === 0 we show resultText (up to 500 chars). So when the result doesn't have the key=' format we show raw. Good.
+</details></think>
+
+---
+
+
+Zusammenfassung der Änderungen:
+
+## 1. Mehrere Step-Cards auf Desktop
+
+- **Responsive:** `useTheme()` und `useMediaQuery(theme.breakpoints.up('md'))` – unterhalb `md` 1 Card, ab `md` 3 Cards.
+- **Konstanten:** `STEP_CARDS_DESKTOP = 3`, `STEP_CARDS_MOBILE = 1`.
+- **Sichtbare Schritte:** `visibleSteps = steps.slice(activeStepIndex, activeStepIndex + cardsVisible)`; Prev/Next verschieben weiterhin um einen Schritt.
+- **Layout:** Die Step-Cards 
 
 ---
 
