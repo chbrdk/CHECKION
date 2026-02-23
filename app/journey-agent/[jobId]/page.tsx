@@ -17,18 +17,19 @@ const STEP_CARDS_MOBILE = 1;
 /**
  * Parses agent result string with key='value' pairs (e.g. thinking='...', memory='...', next_goal='...').
  * Values can be multiline and may contain single quotes; we detect value end by the pattern ' followed by optional whitespace and next key='.
+ * Handles optional spaces around = (e.g. thinking = '...').
  */
 function parseStepResult(raw: string): Array<{ key: string; value: string }> {
     if (!raw?.trim()) return [];
     const pairs: Array<{ key: string; value: string }> = [];
-    const keyValueRe = /(\w+)='/g;
+    const keyValueRe = /(\w+)\s*=\s*'/g;
     let match: RegExpExecArray | null;
     while ((match = keyValueRe.exec(raw)) !== null) {
         const key = match[1];
         const valueStart = match.index + match[0].length;
         const rest = raw.slice(valueStart);
-        // Value ends at a quote that is followed by optional whitespace and then the next key='
-        const closingMatch = rest.match(/'(\s*\w+=)/);
+        // Value ends at a quote that is followed by optional whitespace, next key, optional whitespace, and ='
+        const closingMatch = rest.match(/'(\s*\w+\s*=')/);
         const valueLength = closingMatch ? closingMatch.index! : rest.length;
         const value = rest.slice(0, valueLength).trim();
         if (value) pairs.push({ key, value });
@@ -259,30 +260,35 @@ function StepCard({
                 {step.target && step.target !== '—' ? (step.target.length > 120 ? step.target.slice(0, 120) + '…' : step.target) : null}
             </MsqdxTypography>
             {step.reasoning && (
-                <Box
-                    sx={{
-                        mb: 'var(--msqdx-spacing-sm)',
-                        p: 'var(--msqdx-spacing-sm)',
-                        borderRadius: 'var(--msqdx-radius-sm)',
-                        bgcolor: 'var(--color-secondary-dx-grey-light-tint)',
-                        borderLeft: '4px solid',
-                        borderColor: 'var(--color-theme-accent)',
-                    }}
-                >
-                    <MsqdxTypography
-                        variant="caption"
-                        sx={{
-                            fontWeight: 700,
-                            display: 'block',
-                            mb: 'var(--msqdx-spacing-xxs)',
-                            color: 'var(--color-text-on-light)',
-                            letterSpacing: '0.02em',
-                            textTransform: 'uppercase',
-                        }}
-                    >
-                        {t('scan.journeyReasoning')}
-                    </MsqdxTypography>
-                    <ReasoningBlock text={step.reasoning} />
+                <Box sx={{ mb: 'var(--msqdx-spacing-sm)' }}>
+                    {parseStepResult(step.reasoning).length >= 2 ? (
+                        <StepResultSections resultText={step.reasoning} />
+                    ) : (
+                        <Box
+                            sx={{
+                                p: 'var(--msqdx-spacing-sm)',
+                                borderRadius: 'var(--msqdx-radius-sm)',
+                                bgcolor: 'var(--color-secondary-dx-grey-light-tint)',
+                                borderLeft: '4px solid',
+                                borderColor: 'var(--color-theme-accent)',
+                            }}
+                        >
+                            <MsqdxTypography
+                                variant="caption"
+                                sx={{
+                                    fontWeight: 700,
+                                    display: 'block',
+                                    mb: 'var(--msqdx-spacing-xxs)',
+                                    color: 'var(--color-text-on-light)',
+                                    letterSpacing: '0.02em',
+                                    textTransform: 'uppercase',
+                                }}
+                            >
+                                {t('scan.journeyReasoning')}
+                            </MsqdxTypography>
+                            <ReasoningBlock text={step.reasoning} />
+                        </Box>
+                    )}
                 </Box>
             )}
             {step.result && (
