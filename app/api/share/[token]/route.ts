@@ -70,12 +70,12 @@ export async function DELETE(
     }
     const { token } = await params;
     const { deleteShare } = await import('@/lib/db/shares');
-    const { revalidateTag } = await import('next/cache');
+    const { invalidateShare } = await import('@/lib/cache');
     const deleted = await deleteShare(token, session.user.id);
     if (!deleted) {
         return NextResponse.json({ error: 'Share not found or access denied' }, { status: 404 });
     }
-    revalidateTag(`share-${token}`);
+    invalidateShare(token);
     return NextResponse.json({ ok: true });
 }
 
@@ -90,7 +90,7 @@ export async function PATCH(
     }
     const { token } = await params;
     const { getShareByToken, updateSharePassword } = await import('@/lib/db/shares');
-    const { revalidateTag } = await import('next/cache');
+    const { invalidateShare } = await import('@/lib/cache');
     const share = await getShareByToken(token);
     if (!share || share.userId !== session.user.id) {
         return NextResponse.json({ error: 'Share not found or access denied' }, { status: 404 });
@@ -106,6 +106,6 @@ export async function PATCH(
         return NextResponse.json({ error: 'Body must include password (string or null)' }, { status: 400 });
     }
     await updateSharePassword(token, session.user.id, password);
-    revalidateTag(`share-${token}`);
+    invalidateShare(token);
     return NextResponse.json({ ok: true, hasPassword: password !== null });
 }
