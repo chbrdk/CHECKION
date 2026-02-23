@@ -12,6 +12,7 @@ import {
     ENV_SCREENSHOT_S3_BUCKET,
     ENV_SCREENSHOT_S3_PREFIX,
     ENV_SCREENSHOT_STORAGE,
+    ENV_SCAN_SCREENSHOTS_PATH,
 } from '@/lib/constants';
 
 const DEFAULT_DIR = path.join(process.cwd(), 'data', 'screenshots');
@@ -23,7 +24,7 @@ const S3_PREFIX = (process.env[ENV_SCREENSHOT_S3_PREFIX] || 'screenshots').repla
 const AWS_REGION = process.env[ENV_SCREENSHOT_AWS_REGION] || process.env.AWS_REGION || 'eu-central-1';
 
 function getDir(): string {
-    const dir = process.env.SCAN_SCREENSHOTS_PATH || DEFAULT_DIR;
+    const dir = process.env[ENV_SCAN_SCREENSHOTS_PATH] || DEFAULT_DIR;
     return path.isAbsolute(dir) ? dir : path.join(process.cwd(), dir);
 }
 

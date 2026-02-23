@@ -83,6 +83,18 @@ Danach werden bei jedem neuen Scan die Attention-Heatmaps asynchron berechnet un
 
 ---
 
+## Optional: SUM-Backend (speziell für Webseiten/UI)
+
+Für **auf Webseiten optimierte** Heatmaps (Headlines, CTAs, UI-Elemente wie bei EyeQuant) kannst du statt MDS-ViTNet den **SUM**-Backend nutzen:
+
+- In **Teil A** (Saliency-Service): **Dockerfile Path** auf **`Dockerfile.sum`** setzen (Build Context bleibt `saliency-service`).
+- **Weights:** SUM verwendet eine einzige Datei `sum_model.pth`. Entweder:
+  - **Volume** anlegen und unter dem Container-Pfad `/app/SUM/net/pre_trained_weights` die Datei `sum_model.pth` ablegen (Download: [Google Drive](https://drive.google.com/file/d/14ma_hLe8DrVNuHCSKoOz41Q-rB1Hbg6A/view)), oder
+  - Eine **direkte Download-URL** für `sum_model.pth` als Env **`SUM_WEIGHTS_URL`** setzen (der Container lädt beim Start).
+- Port und **SALIENCY_SERVICE_URL** in CHECKION wie oben; Health-Check liefert dann `"model": "SUM", "condition": "UI (web pages)"`.
+
+---
+
 ## Fehler: „fetch failed“ / 502 / Timeout
 
 Wenn CHECKION **„fetch failed“**, **502 Bad Gateway** oder **„The operation was aborted due to timeout“** (bzw. „Saliency-Anfrage Zeitüberschreitung“) anzeigt:

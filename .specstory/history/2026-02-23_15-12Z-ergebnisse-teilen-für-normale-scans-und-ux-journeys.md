@@ -10222,10 +10222,3941 @@ AppShell anpassen: Share-Seiten mit MsqdxAppLayout und Logo rendern, Sidebar weg
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/AppShell.tsx</summary>
 
-Status: **loading**
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to check if MsqdxAppLayout accepts sidebar={null}. If it doesn't, we might get a runtime error. Let me also hide the mobile menu button on share pages since there's no sidebar to open.
+</details></think>
+
+---
+
+
+Mobilen Menü-Button auf Share-Seiten ausblenden (keine Sidebar).
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/AppShell.tsx</summary>
 
 </details>
 
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me check if MsqdxAppLayout from @msqdx/react accepts `sidebar={null}`. I don't have the package source - if it doesn't accept null we might need to pass an empty fragment or a minimal placeholder. I'll leave it as null; if the component requires a ReactNode we could use <></> or <Box sx={{ display: 'none' }} />. Let me check the codebase for how MsqdxAppLayout is used or if there's a type for sidebar.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "MsqdxAppLayout|sidebar",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "MsqdxAppLayout|sidebar",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 2,
+  "totalMatches": 6,
+  "topFiles": [
+    {
+      "uri": "./components/AppShell.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "./components/auth/AuthBrandColorSelector.tsx",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/AppShell.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/AppShell.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+No linter errors. The MsqdxAppLayout might accept null for sidebar - if the library's type is ReactNode | null it's fine. If at runtime it breaks when sidebar is null, we could pass an empty fragment <> </> or a div with no content. Let me leave it as is; the user can test. If the library doesn't support null we might need to pass an empty Box or similar. I'll add a short note in the knowledge doc.
+</details></think>
+
+---
+
+
+Hier die Änderungen:
+
+**AppShell.tsx**
+
+1. **Share-Seiten nicht mehr komplett ohne Layout**  
+   Statt für `/share` nur `children` zu rendern, wird jetzt immer das gleiche Layout (inkl. Logo) genutzt.
+
+2. **Navigation nur auf Share-Seiten ausblenden**  
+   - `showSidebar = !isSharePage`: Auf Share-Seiten wird keine Sidebar gerendert.  
+   - `sidebar={showSidebar ? <Sidebar ... /> : null}`: Wenn `showSidebar` false ist, bekommt `MsqdxAppLayout` `null` als Sidebar, also kein Navigationsbereich.  
+   - Logo, App-Name und der restliche Rahmen von `MsqdxAppLayout` bleiben erhalten.
+
+3. **Mobilen Menü-Button nur mit Sidebar**  
+   Der schwebende „Menü öffnen“-Button erscheint nur, wenn `showSidebar` true ist, also nicht auf Share-Seiten.
+
+Ergebnis auf `/share/[token]`:
+- **Sichtbar:** App-Layout mit Logo und CHECKION-Branding.  
+- **Nicht sichtbar:** Sidebar/Navigation und (auf Mobil) der Menü-Button.
+
+Falls die MSQDX-Komponente `sidebar={null}` nicht unterstützt und es zu Laufzeitfehlern kommt, können wir stattdessen eine leere Sidebar-Komponente (z. B. leeres `<Box />`) übergeben.
+
+---
+
+_**User**_
+
+die screenshots werden beim scan noch nicht im persistant storage gespeichert. im coolify variablen ist es SCAN_SCREENSHOTS_PATH=/screenshots 
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user says screenshots are not being saved to persistent storage during scans. They have set the Coolify variable `SCAN_SCREENSHOTS_PATH=/screenshots`. The image shows Coolify storage config with source/destination path `/screenshot` (singular), but the user's env var is `SCAN_SCREENSHOTS_PATH=/screenshots` (plural).
+
+I need to:
+1. Check how the app uses SCAN_SCREENSHOTS_PATH and where it writes screenshots
+2. Ensure the app writes to the path that's mounted in Coolify. There's a mismatch: Coolify volume is mounted at `/screenshot` (singular), env is `/screenshots` (plural). So either the volume should be `/screenshots` or the env should be `/screenshot` - they need to match.
+3. Verify the screenshot storage code actually uses SCAN_SCREENSHOTS_PATH and writes to that directory
+
+Let me look at the screenshot storage implementation and constants.
+</details></think>
+
+---
+
+
+Screenshot-Speicher prüfen: wo und wie wird geschrieben, und wie wird `SCAN_SCREENSHOTS_PATH` verwendet?
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/screenshot-storage.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "SCAN_SCREENSHOTS_PATH|screenshot.*path|screenshots",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "SCAN_SCREENSHOTS_PATH|screenshot.*path|screenshots",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 12,
+  "totalMatches": 25,
+  "topFiles": [
+    {
+      "uri": "./locales/en.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "./.specstory/history/2026-02-23_09-14Z-system-overview-and-implementation.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./ux-journey-agent/main.py",
+      "matchCount": 5
+    },
+    {
+      "uri": "./saliency-service/README.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./lib/types.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./lib/screenshot-storage.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "./lib/constants.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./knowledge/ux-journey-agent.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./knowledge/checkion-screenshot-storage.md",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/api/saliency/generate/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./Trace-20260219T213538.json",
+      "matchCount": 4
+    },
+    {
+      "uri": "./.gitignore",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The code already uses `process.env.SCAN_SCREENSHOTS_PATH` in `getDir()`. If the path is not absolute, it's joined with `process.cwd()`. The user set `SCAN_SCREENSHOTS_PATH=/screenshots` - that's an absolute path, so `path.isAbsolute('/screenshots')` is true and the code will use `/screenshots` directly. So the app should write to `/screenshots`.
+
+In the Coolify screenshot the volume is configured with:
+- Source Path: `/screenshot` (singular)
+- Destination: `/screenshot`
+
+So there's a **path mismatch**: the app uses `/screenshots` (plural, from env) but the persistent volume in Coolify is mounted at `/screenshot` (singular). So the app writes to `/screenshots` which is inside the container's filesystem but NOT the mounted volume. The volume is at `/screenshot`. So we have two options:
+
+1. **Change Coolify**: Mount the volume at `/screenshots` (plural) so it matches SCAN_SCREENSHOTS_PATH=/screenshots.
+2. **Change app/env**: Use SCAN_SCREENSHOTS_PATH=/screenshot (singular) to match the current Coolify volume.
+
+Since the user said they have `SCAN_SCREENSHOTS_PATH=/screenshots` in Coolify variables, they want to use `/screenshots`. So the fix on the Coolify side would be: in Storages, set the **source path** (path inside container that gets persisted) to `/screenshots` instead of `/screenshot`. That way the app writes to `/screenshots` and that directory is the one backed by the volume.
+
+Let me also check where screenshots are actually *written* during a scan - maybe they're not being saved at all (e.g. only in memory or wrong code path). So I need to find where writeScreenshot is called.
+</details></think>
+
+---
+
+
+Prüfen, wo beim Scan `writeScreenshot` aufgerufen wird:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "writeScreenshot|ensureScreenshotDir",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "writeScreenshot|ensureScreenshotDir",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 3,
+  "totalMatches": 7,
+  "topFiles": [
+    {
+      "uri": "./lib/screenshot-storage.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "./lib/scanner.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./knowledge/checkion-screenshot-storage.md",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-screenshot-storage.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So the scanner does call writeScreenshot. The storage code uses SCAN_SCREENSHOTS_PATH. The issue from the user's screenshot: Coolify has the volume configured with **Source Path** and **Destination Path** both as `/screenshot` (singular). But the user's env is `SCAN_SCREENSHOTS_PATH=/screenshots` (plural). So:
+
+- App writes to: `/screenshots` (from env)
+- Volume is mounted at: `/screenshot` (from Coolify config in the image)
+
+So anything written to `/screenshots` goes to the container's ephemeral filesystem. The persistent volume is at `/screenshot`. So we need either:
+1. In Coolify Storages: change the path from `/screenshot` to `/screenshots` so the mount point matches the app.
+2. Or document that SCAN_SCREENSHOTS_PATH must be `/screenshot` if they use that volume.
+
+I'll add the constant to lib/constants.ts if it's not there (for central doc), and update the knowledge doc to state clearly that the path must match the Coolify volume mount. I'll also add a note that for Coolify the volume "Source Path" (path in container) must be the same as SCAN_SCREENSHOTS_PATH (e.g. /screenshots).
+
+Actually re-reading the image description again: "Source Path" is "the path *inside the application's container* that will be mapped to the persistent storage". So in Coolify you configure: "mount the persistent volume at this path in the container". So if they set Source Path = `/screenshot`, then the container sees the persistent storage at `/screenshot`. The app must write to `/screenshot` then. So the user should set SCAN_SCREENSHOTS_PATH=/screenshot (singular) to match the Coolify volume, OR they change Coolify to use Source Path = `/screenshots` so it matches their env.
+
+I'll:
+1. Export SCAN_SCREENSHOTS_PATH constant from constants.ts if not already (for consistency with user rule about central paths).
+2. Use that constant in screenshot-storage.ts so the env key is defined in one place.
+3. Update knowledge/checkion-screenshot-storage.md to state: For Coolify persistent storage, set the volume "Source Path" (path in container) to the same value as SCAN_SCREENSHOTS_PATH (e.g. /screenshots). If the volume is already configured as /screenshot, use SCAN_SCREENSHOTS_PATH=/screenshot.
+
+Let me check constants.ts for SCAN_SCREENSHOTS_PATH.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "SCREENSHOT|SCAN_",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "SCREENSHOT|SCAN_",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 5,
+  "topFiles": [
+    {
+      "uri": "lib/constants.ts",
+      "matchCount": 5
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see that SCAN_SCREENSHOTS_PATH is not in constants.ts - it's used directly as a string in screenshot-storage.ts. The issue is:
+
+1. **Path mismatch**: In the Coolify screenshot, the volume is configured with Source Path = `/screenshot` (singular). The user set the env var `SCAN_SCREENSHOTS_PATH=/screenshots` (plural). So the app writes to `/screenshots` but the persistent volume is mounted at `/screenshot`. They don't match! So either:
+   - Change Coolify volume to use `/screenshots` (Source Path and Destination), then SCAN_SCREENSHOTS_PATH=/screenshots is correct.
+   - Or keep Coolify at `/screenshot` and set SCAN_SCREENSHOTS_PATH=/screenshot.
+
+2. **Ensure the constant is centralized**: Add ENV_SCAN_SCREENSHOTS_PATH to constants.ts and use it in screenshot-storage.ts.
+
+3. **Ensure directory is created at startup**: In Docker/Coolify, the path /screenshots (or /screenshot) might not exist when the app starts. ensureScreenshotDir() is called from getScreenshotPath which is called when writing. So when we first write we call ensureScreenshotDir() which does fs.mkdirSync(dir, { recursive: true }). So /screenshots should be created by the app. But wait - if the volume is mounted at /screenshot, then when the app creates /screenshots it's creating a different directory (not on the volume). So the key fix is: **path must match**. I'll document this and add the constant. I could also add a startup check that ensures the directory exists and is writable, and log the resolved path so operators can verify.
+
+Let me:
+1. Add ENV_SCAN_SCREENSHOTS_PATH = 'SCAN_SCREENSHOTS_PATH' to constants.ts and use it in screenshot-storage.ts.
+2. In getDir(), if SCAN_SCREENSHOTS_PATH is set, normalize it to always use the same form (e.g. resolve to absolute) so /screenshots and /screenshot are clearly different.
+3. Update knowledge doc: Coolify volume "Source Path" (path in container) must equal SCAN_SCREENSHOTS_PATH. If volume is /screenshot, set SCAN_SCREENSHOTS_PATH=/screenshot. If you prefer /screenshots, set volume Source Path to /screenshots and SCAN_SCREENSHOTS_PATH=/screenshots.
+</details></think>
+
+---
+
+
+Konstante zentralisieren und Dokumentation anpassen. Wahrscheinliche Ursache: Pfad-Mismatch — Coolify-Volume ist als `/screenshot` (Singular) gemountet, die App schreibt mit `SCAN_SCREENSHOTS_PATH=/screenshots` (Plural) nach `/screenshots`.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add ENV_SCAN_SCREENSHOTS_PATH and use it in screenshot-storage. Then update the knowledge doc to explain the Coolify path mismatch.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/screenshot-storage.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-screenshot-storage.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Now the key point for the user: in their Coolify screenshot, the volume is configured with Source Path = `/screenshot` (singular). So they have two options:
+
+1. **Env anpassen:** `SCAN_SCREENSHOTS_PATH=/screenshot` (singular) setzen, dann schreibt die App genau in das gemountete Volume.
+
+2. **Coolify anpassen:** In Storages den Source Path (und ggf. Destination) von `/screenshot` auf `/screenshots` ändern und `SCAN_SCREENSHOTS_PATH=/screenshots` beibehalten.
+
+I've documented this. Let me give the user a clear summary.
+</details></think>
+
+---
+
+
+Hier die Änderungen und die Ursache:
+
+**Ursache:**  
+In Coolify ist das Volume mit **Source Path `/screenshot`** (Singular) eingetragen, die App nutzt aber **`SCAN_SCREENSHOTS_PATH=/screenshots`** (Plural). Die App schreibt also nach `/screenshots`, das Volume hängt unter `/screenshot` – die Pfade sind unterschiedlich, die Screenshots landen nicht im persistenten Storage.
+
+**Zwei Möglichkeiten:**
+
+1. **Env an Coolify anpassen (schnell)**  
+   In den Coolify-Variablen setzen:
+   ```bash
+   SCAN_SCREENSHOTS_PATH=/screenshot
+   ```
+   (also Singular, wie der aktuelle Volume-Source-Path). Dann schreibt die App in das gemountete Volume.
+
+2. **Coolify-Volume an Env anpassen**  
+   In Coolify unter **Storages** beim Volume **Source Path** (und ggf. Destination) von `/screenshot` auf **`/screenshots`** ändern. Dann passt es zu `SCAN_SCREENSHOTS_PATH=/screenshots`.
+
+**Änderungen im Code:**
+
+- **`lib/constants.ts`:** Konstante `ENV_SCAN_SCREENSHOTS_PATH = 'SCAN_SCREENSHOTS_PATH'` ergänzt und im Kommentar festgehalten, dass der Wert mit dem Coolify-Source-Path übereinstimmen muss.
+- **`lib/screenshot-storage.ts`:** Verwendet jetzt `ENV_SCAN_SCREENSHOTS_PATH` aus den Constants statt des hart kodierten Namens.
+- **`knowledge/checkion-screenshot-storage.md`:** Abschnitt zu Coolify Persistent Storage ergänzt (Source Path = `SCAN_SCREENSHOTS_PATH`).
+
+Kurz: Entweder **`SCAN_SCREENSHOTS_PATH=/screenshot`** setzen (zu deinem aktuellen Volume) oder in Coolify den Volume-Pfad auf **`/screenshots`** umstellen.
+
+---
+
+_**User**_
+
+guck mal unsere heathmap sieht aktuell so aus. also irgendwie sehr von oben nach unten und arbeitet nicht wirklich headlines usw. aus. es müsste eher in die richtung von eyequant gehen, siehe zweiter screen
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is saying that their current heatmap looks very "top to bottom" and doesn't really highlight headlines etc. They want it to be more like EyeQuant - and they're referring to a second screen (the second image). Let me understand:
+
+From the image descriptions:
+1. First image (current CHECKION heatmap): Strong concentration on cookie popup, then a vertical band of attention going down. Headlines like "SOLUTIONS. FOR LIFE." get moderate attention. Very top-to-bottom, doesn't highlight headlines well.
+2. Second image (EyeQuant-style): Strong heat at the very top (main headline "Alles, was Ihr Kesselspeisesystem Braucht", hero image), then decreases going down. A secondary headline "Was können wir für Sie tun?" has moderate attention. The three columns at the bottom have very little heat.
+
+Actually wait - both descriptions sound somewhat similar (top-heavy). The user says they want it "eher in die Richtung von eyequant" - so the second screen is the *target* (EyeQuant style). So:
+- Current CHECKION: very top-to-bottom gradient, doesn't highlight headlines
+- Desired (EyeQuant): should highlight headlines and key elements more distinctly, not just a vertical gradient
+
+So the issue is that the current saliency/heatmap model or rendering produces a smooth top-to-bottom falloff rather than highlighting specific elements like headlines, CTAs, key content blocks. EyeQuant typically shows more "spotty" or element-focused attention - i.e. attention peaks on specific UI elements (headlines, buttons, faces) rather than a diffuse vertical gradient.
+
+I need to look at:
+1. How the saliency/heatmap is generated (saliency service, model)
+2. How it's rendered/overlaid (blur, normalization, coloring)
+3. Whether we can make it more "element-aware" or adjust the visualization to emphasize peaks (headlines, etc.) rather than smooth gradients
+
+Let me search the codebase for saliency, heatmap, and how the overlay is built.
+</details></think>
+
+---
+
+
+Saliency-/Heatmap-Generierung und -Darstellung prüfen, um sie näher an EyeQuant anzunähern (stärkere Hervorhebung von Headlines und Elementen statt glattem Verlauf).
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="semantic_search_full">
+<details>
+<summary>Tool use: **semantic_search_full**</summary>
+
+
+Parameters:
+
+```json
+{
+  "query": "Where is the saliency heatmap overlay generated and how is attention mapped to the image?",
+  "topK": 10,
+  "explanation": ""
+}
+```
+Result:
+
+```json
+{
+  "codeResults": [
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./saliency-service/main.py",
+        "range": {
+          "startPosition": {
+            "line": 98,
+            "column": 20
+          },
+          "endPosition": {
+            "line": 155
+          }
+        },
+        "signatures": {},
+        "detailedLines": [
+          {
+            "text": "def run_saliency(img: Image.Image, out_w: int, out_h: int) -&gt; bytes:",
+            "lineNumber": 102,
+            "isSignature": true
+          },
+          {
+            "text": "    \"\"\"Run MDS-ViTNet on image; return PNG bytes of heatmap at (out_w, out_h).\"\"\"",
+            "lineNumber": 103
+          },
+          {
+            "text": "    img_np = np.array(img) / 255.0",
+            "lineNumber": 104
+          },
+          {
+            "text": "    shape_h, shape_w = img_np.shape[0], img_np.shape[1]",
+            "lineNumber": 105
+          },
+          {
+            "text": "    img_np = np.transpose(img_np, (2, 0, 1))",
+            "lineNumber": 106
+          },
+          {
+            "text": "    t = torch.from_numpy(img_np)",
+            "lineNumber": 107
+          },
+          {
+            "text": "    t = TF.normalize(t, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225])",
+            "lineNumber": 108
+          },
+          {
+            "text": "    t = TF.resize(t, (288, 384))",
+            "lineNumber": 109
+          },
+          {
+            "text": "    t = t.to(torch.float32).to(DEVICE)",
+            "lineNumber": 110
+          },
+          {
+            "lineNumber": 111
+          },
+          {
+            "text": "    with torch.no_grad():",
+            "lineNumber": 112
+          },
+          {
+            "text": "        pred_1, pred_2 = model_vit(t.unsqueeze(0))",
+            "lineNumber": 113
+          },
+          {
+            "text": "        pred_map = model_cnn(pred_1, pred_2)",
+            "lineNumber": 114
+          },
+          {
+            "lineNumber": 115
+          },
+          {
+            "text": "    pred_map = TF.resize(pred_map, (out_h, out_w))",
+            "lineNumber": 116
+          },
+          {
+            "text": "    # [1, 1, H, W] -&gt; HxW, float 0..1",
+            "lineNumber": 117
+          },
+          {
+            "text": "    arr = pred_map.squeeze().cpu().numpy().astype(np.float64)",
+            "lineNumber": 118
+          },
+          {
+            "text": "    arr = np.clip(arr, 0, 1)",
+            "lineNumber": 119
+          },
+          {
+            "lineNumber": 120
+          },
+          {
+            "text": "    # Remove global gradient: large blur, subtract strongly → only local hotspots remain",
+            "lineNumber": 121
+          },
+          {
+            "text": "    sigma_global = max(25.0, min(out_h, out_w) / 6)",
+            "lineNumber": 122
+          },
+          {
+            "text": "    global_smooth = gaussian_filter(arr, sigma=sigma_global, mode=\"nearest\")",
+            "lineNumber": 123
+          },
+          {
+            "text": "    arr = arr - 0.92 * global_smooth",
+            "lineNumber": 124
+          },
+          {
+            "text": "    arr = np.clip(arr, 0, 1)",
+            "lineNumber": 125
+          },
+          {
+            "lineNumber": 126
+          },
+          {
+            "text": "    # Tight percentile (20–80) so local differences use full range",
+            "lineNumber": 127
+          },
+          {
+            "text": "    lo, hi = np.percentile(arr, [20, 80])",
+            "lineNumber": 128
+          },
+          {
+            "text": "    if hi &gt; lo:",
+            "lineNumber": 129
+          },
+          {
+            "text": "        arr = (arr - lo) / (hi - lo)",
+            "lineNumber": 130
+          },
+          {
+            "text": "    arr = np.clip(arr, 0, 1)",
+            "lineNumber": 131
+          },
+          {
+            "lineNumber": 132
+          },
+          {
+            "text": "    # Local contrast: minimal sigma = very fine, almost pixel-level detail",
+            "lineNumber": 133
+          },
+          {
+            "text": "    sigma_local = max(0.8, min(out_h, out_w) / 1000)",
+            "lineNumber": 134
+          },
+          {
+            "text": "    local_mean = gaussian_filter(arr, sigma=sigma_local, mode=\"nearest\")",
+            "lineNumber": 135
+          },
+          {
+            "text": "    arr = arr + 2.0 * (arr - local_mean)",
+            "lineNumber": 136
+          },
+          {
+            "text": "    arr = np.clip(arr, 0, 1)",
+            "lineNumber": 137
+          },
+          {
+            "lineNumber": 138
+          },
+          {
+            "text": "    # Very sharp unsharp: tiny blur radius for crisp edges and small spots only",
+            "lineNumber": 139
+          },
+          {
+            "text": "    blur = gaussian_filter(arr, sigma=0.6, mode=\"nearest\")",
+            "lineNumber": 140
+          },
+          {
+            "text": "    arr = arr + 0.85 * (arr - blur)",
+            "lineNumber": 141
+          },
+          {
+            "text": "    arr = np.clip(arr, 0, 1)",
+            "lineNumber": 142
+          },
+          {
+            "lineNumber": 143
+          },
+          {
+            "text": "    # Gamma: push more into hot range, clearer separation",
+            "lineNumber": 144
+          },
+          {
+            "text": "    arr = np.power(arr, 0.45)",
+            "lineNumber": 145
+          },
+          {
+            "lineNumber": 146
+          },
+          {
+            "text": "    # 0..1 -&gt; 0..255 uint8 for colormap",
+            "lineNumber": 147
+          },
+          {
+            "text": "    arr_u8 = (np.clip(arr, 0, 1) * 255).astype(np.uint8)",
+            "lineNumber": 148
+          },
+          {
+            "lineNumber": 149
+          },
+          {
+            "text": "    # Colorize: Jet colormap (blue = low attention, red/yellow = high attention), no cv2",
+            "lineNumber": 150
+          },
+          {
+            "text": "    cmap = _jet_colormap_uint8()",
+            "lineNumber": 151
+          },
+          {
+            "text": "    heat_rgb = _apply_colormap(arr_u8, cmap)",
+            "lineNumber": 152
+          },
+          {
+            "lineNumber": 153
+          },
+          {
+            "text": "    out = io.BytesIO()",
+            "lineNumber": 154
+          },
+          {
+            "text": "    Image.fromarray(heat_rgb, mode=\"RGB\").save",
+            "lineNumber": 155
+          }
+        ]
+      },
+      "score": 0.5147665143013
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./components/SaliencyHeatmapOverlay.tsx",
+        "range": {
+          "startPosition": {
+            "line": 2
+          },
+          "endPosition": {
+            "line": 36,
+            "column": 2
+          }
+        },
+        "signatures": {},
+        "detailedLines": [
+          {
+            "text": ";",
+            "lineNumber": 9,
+            "isSignature": true
+          },
+          {
+            "text": "}",
+            "lineNumber": 10,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 11
+          },
+          {
+            "text": "export const SaliencyHeatmapOverlay = ({",
+            "lineNumber": 12
+          },
+          {
+            "text": "    heatmapDataUrl,",
+            "lineNumber": 13
+          },
+          {
+            "text": "    visible,",
+            "lineNumber": 14
+          },
+          {
+            "text": "    opacity = 0.6,",
+            "lineNumber": 15
+          },
+          {
+            "text": "}: SaliencyHeatmapOverlayProps) =&gt; {",
+            "lineNumber": 16
+          },
+          {
+            "text": "    if (!visible) return null;",
+            "lineNumber": 17
+          },
+          {
+            "lineNumber": 18
+          },
+          {
+            "text": "    return (",
+            "lineNumber": 19
+          },
+          {
+            "text": "        &lt;img",
+            "lineNumber": 20
+          },
+          {
+            "text": "            src={heatmapDataUrl}",
+            "lineNumber": 21
+          },
+          {
+            "text": "            alt=\"Attention heatmap\"",
+            "lineNumber": 22
+          },
+          {
+            "text": "            aria-hidden",
+            "lineNumber": 23
+          },
+          {
+            "text": "            style={{",
+            "lineNumber": 24
+          },
+          {
+            "text": "                position: 'absolute',",
+            "lineNumber": 25
+          },
+          {
+            "text": "                top: 0,",
+            "lineNumber": 26
+          },
+          {
+            "text": "                left: 0,",
+            "lineNumber": 27
+          },
+          {
+            "text": "                width: '100%',",
+            "lineNumber": 28
+          },
+          {
+            "text": "                height: '100%',",
+            "lineNumber": 29
+          },
+          {
+            "text": "                objectFit: 'contain',",
+            "lineNumber": 30
+          },
+          {
+            "text": "                pointerEvents: 'none',",
+            "lineNumber": 31
+          },
+          {
+            "text": "                opacity,",
+            "lineNumber": 32
+          },
+          {
+            "text": "                zIndex: 22,",
+            "lineNumber": 33
+          },
+          {
+            "text": "            }}",
+            "lineNumber": 34
+          },
+          {
+            "text": "        /&gt;",
+            "lineNumber": 35
+          },
+          {
+            "text": "    );",
+            "lineNumber": 36
+          },
+          {
+            "text": "};",
+            "lineNumber": 37
+          }
+        ]
+      },
+      "score": 0.4601632356643677
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 102
+          },
+          "endPosition": {
+            "line": 1214,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 16
+              }
+            },
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 16
+              },
+              "endPosition": {
+                "line": 104,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "text": "(issue, idx) =&gt; (",
+            "lineNumber": 987
+          },
+          {
+            "lineNumber": 997
+          },
+          {
+            "text": "                                                        &lt;MsqdxTypography variant=\"caption\" sx={{ display: 'block', mt: 0.5 }}&gt;{issue.selector}&lt;/MsqdxTypography&gt;",
+            "lineNumber": 998
+          },
+          {
+            "text": "                                                    &lt;/Box&gt;",
+            "lineNumber": 999
+          },
+          {
+            "text": "                                                }",
+            "lineNumber": 1000
+          },
+          {
+            "text": "                                                brandColor={SEVERITY_CONFIG[issue.type].label === 'Error' ? 'pink' : SEVERITY_CONFIG[issue.type].label === 'Warning' ? 'yellow' : 'purple'}",
+            "lineNumber": 1001
+          },
+          {
+            "text": "                                            &gt;",
+            "lineNumber": 1002
+          },
+          {
+            "text": "                                                &lt;Box",
+            "lineNumber": 1003
+          },
+          {
+            "text": "                                                    sx={{",
+            "lineNumber": 1004
+          },
+          {
+            "text": "                                                        position: 'absolute',",
+            "lineNumber": 1005
+          },
+          {
+            "text": "                                                        left: &#96;${(issue.boundingBox.x / screenshotDimensions.width) * 100}%&#96;,",
+            "lineNumber": 1006
+          },
+          {
+            "text": "                                                        top: &#96;${(issue.boundingBox.y / screenshotDimensions.height) * 100}%&#96;,",
+            "lineNumber": 1007
+          },
+          {
+            "text": "                                                        width: &#96;${(issue.boundingBox.width / screenshotDimensions.width) * 100}%&#96;,",
+            "lineNumber": 1008
+          },
+          {
+            "text": "                                                        height: &#96;${(issue.boundingBox.height / screenshotDimensions.height) * 100}%&#96;,",
+            "lineNumber": 1009
+          },
+          {
+            "text": "                                                        border: highlightedIndex === idx ? &#96;4px solid ${SEVERITY_CONFIG[issue.type].color}&#96; : &#96;3px solid ${SEVERITY_CONFIG[issue.type].color}&#96;,",
+            "lineNumber": 1010
+          },
+          {
+            "text": "                                                        backgroundColor: highlightedIndex === idx ? alpha(SEVERITY_CONFIG[issue.type].color, 0.5) : alpha(SEVERITY_CONFIG[issue.type].color, 0.2),",
+            "lineNumber": 1011
+          },
+          {
+            "text": "                                                        cursor: 'pointer',",
+            "lineNumber": 1012
+          },
+          {
+            "text": "                                                        zIndex: highlightedIndex === idx ? 30 : 10,",
+            "lineNumber": 1013
+          },
+          {
+            "text": "                                                        transition: 'all 0.2s',",
+            "lineNumber": 1014
+          },
+          {
+            "text": "                                                        boxShadow: highlightedIndex === idx ? &#96;0 0 0 4px ${alpha(SEVERITY_CONFIG[issue.type].color, 0.4)}&#96; : 'none',",
+            "lineNumber": 1015
+          },
+          {
+            "text": "                                                        pointerEvents: 'auto',",
+            "lineNumber": 1016
+          },
+          {
+            "text": "                                                        '&amp;:hover': {",
+            "lineNumber": 1017
+          },
+          {
+            "text": "                                                            backgroundColor: alpha(SEVERITY_CONFIG[issue.type].color, 0.4),",
+            "lineNumber": 1018
+          },
+          {
+            "text": "                                                            zIndex: 20,",
+            "lineNumber": 1019
+          },
+          {
+            "text": "                                    )",
+            "lineNumber": 1028
+          },
+          {
+            "text": "}",
+            "lineNumber": 1215,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.4208207130432129
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./lib/page-index.ts",
+        "range": {
+          "startPosition": {
+            "line": 133,
+            "column": 1
+          },
+          "endPosition": {
+            "line": 168,
+            "column": 1
+          }
+        },
+        "signatures": {},
+        "detailedLines": [
+          {
+            "text": "/**",
+            "lineNumber": 136
+          },
+          {
+            "text": " * Enrich page index with saliency prominence per region using the heatmap image.",
+            "lineNumber": 137
+          },
+          {
+            "text": " * Heatmap is assumed to be same dimensions as the page/screenshot (rects in same coordinate system).",
+            "lineNumber": 138
+          },
+          {
+            "text": " * Use after saliency heatmap is available (e.g. in saliency/generate route).",
+            "lineNumber": 139
+          },
+          {
+            "text": " */",
+            "lineNumber": 140
+          },
+          {
+            "text": "export async function enrichPageIndexWithSaliency(",
+            "lineNumber": 141,
+            "isSignature": true
+          },
+          {
+            "text": "    pageIndex: PageIndex,",
+            "lineNumber": 142,
+            "isSignature": true
+          },
+          {
+            "text": "    heatmapDataUrlOrBase64: string",
+            "lineNumber": 143,
+            "isSignature": true
+          },
+          {
+            "text": "): Promise&lt;PageIndex&gt; {",
+            "lineNumber": 144,
+            "isSignature": true
+          },
+          {
+            "text": "    let rawBase64 = heatmapDataUrlOrBase64.trim();",
+            "lineNumber": 145
+          },
+          {
+            "text": "    if (rawBase64.startsWith('data:')) {",
+            "lineNumber": 146
+          },
+          {
+            "text": "        const comma = rawBase64.indexOf(',');",
+            "lineNumber": 147
+          },
+          {
+            "text": "        rawBase64 = comma &gt;= 0 ? rawBase64.slice(comma + 1) : '';",
+            "lineNumber": 148
+          },
+          {
+            "text": "    }",
+            "lineNumber": 149
+          },
+          {
+            "text": "    if (!rawBase64) return pageIndex;",
+            "lineNumber": 150
+          },
+          {
+            "lineNumber": 151
+          },
+          {
+            "text": "    const buf = Buffer.from(rawBase64, 'base64');",
+            "lineNumber": 152
+          },
+          {
+            "text": "    const { data, info } = await sharp(buf)",
+            "lineNumber": 153
+          },
+          {
+            "text": "        .raw()",
+            "lineNumber": 154
+          },
+          {
+            "text": "        .toBuffer({ resolveWithObject: true });",
+            "lineNumber": 155
+          },
+          {
+            "text": "    const { width: imgWidth, height: imgHeight, channels } = info;",
+            "lineNumber": 156
+          },
+          {
+            "text": "    const arr = new Uint8Array(data);",
+            "lineNumber": 157
+          },
+          {
+            "lineNumber": 158
+          },
+          {
+            "text": "    const regions: PageIndexRegion[] = pageIndex.regions.map((r) =&gt; {",
+            "lineNumber": 159
+          },
+          {
+            "text": "        if (!r.rect) return r;",
+            "lineNumber": 160
+          },
+          {
+            "text": "        const saliencyProminence = meanSaliencyInRect(arr, imgWidth, imgHeight, channels, r.rect);",
+            "lineNumber": 161
+          },
+          {
+            "text": "        return { ...r, saliencyProminence };",
+            "lineNumber": 162
+          },
+          {
+            "text": "    });",
+            "lineNumber": 163
+          },
+          {
+            "lineNumber": 164
+          },
+          {
+            "text": "    return {",
+            "lineNumber": 165
+          },
+          {
+            "text": "        ...pageIndex,",
+            "lineNumber": 166
+          },
+          {
+            "text": "        regions,",
+            "lineNumber": 167
+          },
+          {
+            "text": "    };",
+            "lineNumber": 168
+          },
+          {
+            "text": "}",
+            "lineNumber": 169,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.4054790139198303
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/api/saliency/generate/route.ts",
+        "range": {
+          "startPosition": {
+            "line": 16
+          },
+          "endPosition": {
+            "line": 124,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 17,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 17,
+                "column": 8
+              }
+            },
+            {
+              "startPosition": {
+                "line": 17,
+                "column": 8
+              },
+              "endPosition": {
+                "line": 18,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export async function POST(request: Request) {",
+            "lineNumber": 17,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 92
+          },
+          {
+            "text": "    if (!heatmapBase64 || typeof heatmapBase64 !== 'string') {",
+            "lineNumber": 93
+          },
+          {
+            "text": "        return NextResponse.json(",
+            "lineNumber": 94
+          },
+          {
+            "text": "            { error: 'Saliency service did not return heatmap_base64.' },",
+            "lineNumber": 95
+          },
+          {
+            "text": "            { status: 502 },",
+            "lineNumber": 96
+          },
+          {
+            "text": "        );",
+            "lineNumber": 97
+          },
+          {
+            "text": "    }",
+            "lineNumber": 98
+          },
+          {
+            "lineNumber": 99
+          },
+          {
+            "text": "    const dataUrl = &#96;data:image/png;base64,${heatmapBase64}&#96;;",
+            "lineNumber": 100
+          },
+          {
+            "lineNumber": 101
+          },
+          {
+            "text": "    let pageIndexPatch: { pageIndex?: typeof result.pageIndex } = {};",
+            "lineNumber": 102
+          },
+          {
+            "text": "    if (result.pageIndex) {",
+            "lineNumber": 103
+          },
+          {
+            "text": "        try {",
+            "lineNumber": 104
+          },
+          {
+            "text": "            pageIndexPatch.pageIndex = await enrichPageIndexWithSaliency(result.pageIndex, dataUrl);",
+            "lineNumber": 105
+          },
+          {
+            "text": "        } catch (e) {",
+            "lineNumber": 106
+          },
+          {
+            "text": "            console.error('[CHECKION] saliency/generate: enrichPageIndexWithSaliency failed', e);",
+            "lineNumber": 107
+          },
+          {
+            "text": "            // continue without enriched pageIndex",
+            "lineNumber": 108
+          },
+          {
+            "text": "        }",
+            "lineNumber": 109
+          },
+          {
+            "text": "    }",
+            "lineNumber": 110
+          },
+          {
+            "lineNumber": 111
+          },
+          {
+            "text": "    const updated = await updateScanResult(scanId, session.user.id, {",
+            "lineNumber": 112
+          },
+          {
+            "text": "        saliencyHeatmap: dataUrl,",
+            "lineNumber": 113
+          },
+          {
+            "text": "        ...pageIndexPatch,",
+            "lineNumber": 114
+          },
+          {
+            "text": "    });",
+            "lineNumber": 115
+          },
+          {
+            "text": "    if (!updated) {",
+            "lineNumber": 116
+          },
+          {
+            "text": "        return NextResponse.json(",
+            "lineNumber": 117
+          },
+          {
+            "text": "            { error: 'Failed to save heatmap to scan.' },",
+            "lineNumber": 118
+          },
+          {
+            "text": "            { status: 500 },",
+            "lineNumber": 119
+          },
+          {
+            "text": "        );",
+            "lineNumber": 120
+          },
+          {
+            "text": "    }",
+            "lineNumber": 121
+          },
+          {
+            "text": "    invalidateScan(scanId);",
+            "lineNumber": 122
+          },
+          {
+            "lineNumber": 123
+          },
+          {
+            "text": "    return NextResponse.json({ success: true });",
+            "lineNumber": 124
+          },
+          {
+            "text": "}",
+            "lineNumber": 125,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.4034912586212158
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/share/[token]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 336
+          },
+          "endPosition": {
+            "line": 638,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 477,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 478,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "function ShareDomainContent({ data, token, accessToken }: { data: DomainSummaryResponse; token: string; accessToken?: string | null }) {",
+            "lineNumber": 337,
+            "isSignature": true
+          },
+          {
+            "text": " data.eeat.expertise.totalPages)} /&gt;",
+            "lineNumber": 545
+          },
+          {
+            "text": "                    &lt;/Box&gt;",
+            "lineNumber": 546
+          },
+          {
+            "text": "                    &lt;MsqdxTypography variant=\"caption\" sx={{ color: STATUS.neutral, mt: 1 }}&gt;Ø Zitate/Seite: {data.eeat.expertise.avgCitationsPerPage.toFixed(1)}&lt;/MsqdxTypography&gt;",
+            "lineNumber": 547
+          },
+          {
+            "text": "                &lt;/MsqdxCard&gt;",
+            "lineNumber": 548
+          },
+          {
+            "text": "            )}",
+            "lineNumber": 549
+          },
+          {
+            "lineNumber": 550
+          },
+          {
+            "text": "            {agg?.generative &amp;&amp; (",
+            "lineNumber": 551
+          },
+          {
+            "text": "                &lt;MsqdxCard variant=\"flat\" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}&gt;",
+            "lineNumber": 552
+          },
+          {
+            "text": "                    &lt;MsqdxTypography variant=\"subtitle1\" sx={{ fontWeight: 600, mb: 1.5 }}&gt;Generative / GEO&lt;/MsqdxTypography&gt;",
+            "lineNumber": 553
+          },
+          {
+            "text": "                    &lt;Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'flex-start' }}&gt;",
+            "lineNumber": 554
+          },
+          {
+            "text": "                        &lt;ScoreRing score={agg.generative.score} size={52} label=\"Ø GEO-Score\" /&gt;",
+            "lineNumber": 555
+          },
+          {
+            "text": "                        &lt;Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}&gt;",
+            "lineNumber": 556
+          },
+          {
+            "text": "                            &lt;MetricBar label=\"Seiten mit LLMs.txt\" value={agg.generative.withLlmsTxt} total={agg.generative.pageCount} color={getRatioColor(agg.generative.withLlmsTxt / agg.generative.pageCount)} /&gt;",
+            "lineNumber": 557
+          },
+          {
+            "text": "                            &lt;MetricBar label=\"Robots erlauben AI\" value={agg.generative.withRobotsAllowingAi} total={agg.generative.pageCount} color={getRatioColor(agg.generative.withRobotsAllowingAi / agg.generative.pageCount)} /&gt;",
+            "lineNumber": 558
+          },
+          {
+            "text": "                        &lt;/Box&gt;",
+            "lineNumber": 559
+          },
+          {
+            "text": "                    &lt;/Box&gt;",
+            "lineNumber": 560
+          },
+          {
+            "text": "                &lt;/MsqdxCard&gt;",
+            "lineNumber": 561
+          },
+          {
+            "text": "            )}",
+            "lineNumber": 562
+          },
+          {
+            "lineNumber": 563
+          },
+          {
+            "text": "            {data.systemicIssues &amp;&amp; data.systemicIssues.length &gt; 0 &amp;&amp; (",
+            "lineNumber": 564
+          },
+          {
+            "text": "                &lt;MsqdxCard variant=\"flat\" sx={{ p: 2, mb: 2, borderRadius: 2, border: &#96;1px solid ${alpha(STATUS.error, 0.3)}&#96;, bgcolor: alpha(STATUS.error, 0.04) }}&gt;",
+            "lineNumber": 565
+          },
+          {
+            "text": "                    &lt;MsqdxTypography variant=\"subtitle1\" sx={{ fontWeight: 600, mb: 1, color: STATUS.error }}&gt;Systemische Issues&lt;/MsqdxTypography&gt;",
+            "lineNumber": 566
+          },
+          {
+            "text": "                    {data.systemicIssues.map((issue, idx) =&gt; (",
+            "lineNumber": 567
+          },
+          {
+            "text": "                        &lt;Box key={idx} sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}&gt;",
+            "lineNumber": 568
+          },
+          {
+            "text": "                            &lt;Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: STATUS.error }} /&gt;",
+            "lineNumber": 569
+          },
+          {
+            "text": "                            &lt;MsqdxTypography variant=\"body2\" sx={{ color: STATUS.error }}&gt;{issue.title} — {issue.count} Seiten&lt;/MsqdxTypography&gt;",
+            "lineNumber": 570
+          },
+          {
+            "text": "                        &lt;/Box&gt;",
+            "lineNumber": 571
+          },
+          {
+            "text": "                    ))}",
+            "lineNumber": 572
+          },
+          {
+            "text": "                &lt;/MsqdxCard&gt;",
+            "lineNumber": 573
+          },
+          {
+            "text": "            )}",
+            "lineNumber": 574
+          },
+          {
+            "lineNumber": 575
+          },
+          {
+            "text": "            &lt;MsqdxCard variant=\"flat\"",
+            "lineNumber": 576
+          },
+          {
+            "text": "}",
+            "lineNumber": 639,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.39499691128730774
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./saliency-service/main.py",
+        "range": {
+          "startPosition": {
+            "line": 101
+          },
+          "endPosition": {
+            "line": 159,
+            "column": 42
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 102,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "def run_saliency(img: Image.Image, out_w: int, out_h: int) -&gt; bytes:",
+            "lineNumber": 102,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 150
+          },
+          {
+            "text": "    cmap = _jet_colormap_uint8()",
+            "lineNumber": 151
+          },
+          {
+            "text": "    heat_rgb = _apply_colormap(arr_u8, cmap)",
+            "lineNumber": 152
+          },
+          {
+            "lineNumber": 153
+          },
+          {
+            "text": "    out = io.BytesIO()",
+            "lineNumber": 154
+          },
+          {
+            "text": "    Image.fromarray(heat_rgb, mode=\"RGB\").save(out, format=\"PNG\")",
+            "lineNumber": 155
+          },
+          {
+            "text": "    return out.getvalue()",
+            "lineNumber": 156,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 157
+          },
+          {
+            "lineNumber": 158
+          },
+          {
+            "text": "# --- FastAPI app ---",
+            "lineNumber": 159
+          },
+          {
+            "text": "from contextlib import asynccontextmanager",
+            "lineNumber": 160
+          }
+        ]
+      },
+      "score": 0.34964263439178467
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./components/SaliencyHeatmapOverlay.tsx",
+        "range": {
+          "startPosition": {},
+          "endPosition": {
+            "line": 36,
+            "column": 1
+          }
+        },
+        "signatures": {},
+        "detailedLines": [
+          {
+            "text": "import React from 'react';",
+            "lineNumber": 1
+          },
+          {
+            "lineNumber": 2
+          },
+          {
+            "text": "export interface SaliencyHeatmapOverlayProps {",
+            "lineNumber": 3,
+            "isSignature": true
+          },
+          {
+            "text": "    heatmapDataUrl: string;",
+            "lineNumber": 4
+          },
+          {
+            "text": "    screenshotWidth?: number;",
+            "lineNumber": 5
+          },
+          {
+            "text": "    screenshotHeight?: number;",
+            "lineNumber": 6
+          },
+          {
+            "text": "    visible: boolean;",
+            "lineNumber": 7
+          },
+          {
+            "text": "    /** Opacity of the heatmap over the screenshot (0–1). Default 0.6 */",
+            "lineNumber": 8
+          },
+          {
+            "text": "    opacity?: number;",
+            "lineNumber": 9,
+            "isSignature": true
+          },
+          {
+            "text": "}",
+            "lineNumber": 10,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 11
+          },
+          {
+            "text": "export const SaliencyHeatmapOverlay = (",
+            "lineNumber": 12
+          },
+          {
+            "text": ";",
+            "lineNumber": 37
+          }
+        ]
+      },
+      "score": 0.3328520953655243
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/api/saliency/generate/route.ts",
+        "range": {
+          "startPosition": {},
+          "endPosition": {
+            "line": 124,
+            "column": 1
+          }
+        },
+        "signatures": {},
+        "detailedLines": [
+          {
+            "text": "/* ------------------------------------------------------------------ */",
+            "lineNumber": 1
+          },
+          {
+            "text": "/*  CHECKION – POST /api/saliency/generate (async heatmap from scan)  */",
+            "lineNumber": 2
+          },
+          {
+            "text": "/* ------------------------------------------------------------------ */",
+            "lineNumber": 3
+          },
+          {
+            "lineNumber": 4
+          },
+          {
+            "text": "import { NextResponse } from 'next/server';",
+            "lineNumber": 5
+          },
+          {
+            "text": "import { auth } from '@/auth';",
+            "lineNumber": 6
+          },
+          {
+            "text": "import { getScan, updateScanResult } from '@/lib/db/scans';",
+            "lineNumber": 7
+          },
+          {
+            "text": "import { invalidateScan } from '@/lib/cache';",
+            "lineNumber": 8
+          },
+          {
+            "text": "import { enrichPageIndexWithSaliency } from '@/lib/page-index';",
+            "lineNumber": 9
+          },
+          {
+            "text": "import { getScreenshotBase64 } from '@/lib/screenshot-storage';",
+            "lineNumber": 10
+          },
+          {
+            "lineNumber": 11
+          },
+          {
+            "text": "const SALIENCY_SERVICE_URL = process.env.SALIENCY_SERVICE_URL;",
+            "lineNumber": 12
+          },
+          {
+            "lineNumber": 13
+          },
+          {
+            "text": "/** Timeout (ms) for saliency request. Model on CPU can take 1–3 min for large screenshots. */",
+            "lineNumber": 14
+          },
+          {
+            "text": "const SALIENCY_REQUEST_TIMEOUT_MS = 180_000;",
+            "lineNumber": 15
+          },
+          {
+            "lineNumber": 16
+          },
+          {
+            "text": "export async function POST(request: Request) {",
+            "lineNumber": 17,
+            "isSignature": true
+          },
+          {
+            "text": "    const session = await auth();",
+            "lineNumber": 18
+          },
+          {
+            "text": "    if (!session?.user?.id) {",
+            "lineNumber": 19
+          },
+          {
+            "text": "        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });",
+            "lineNumber": 20
+          },
+          {
+            "text": "    }",
+            "lineNumber": 21
+          },
+          {
+            "lineNumber": 22
+          },
+          {
+            "text": "    if (!SALIENCY_SERVICE_URL) {",
+            "lineNumber": 23
+          },
+          {
+            "text": "        return NextResponse.json(",
+            "lineNumber": 24
+          },
+          {
+            "text": "            { error: 'Saliency service not configured (SALIENCY_SERVICE_URL).' },",
+            "lineNumber": 25
+          },
+          {
+            "text": "            { status: 503 },",
+            "lineNumber": 26
+          },
+          {
+            "text": "        );",
+            "lineNumber": 27
+          },
+          {
+            "text": "    }",
+            "lineNumber": 28
+          },
+          {
+            "lineNumber": 29
+          },
+          {
+            "text": "    let body: { scanId?: string };",
+            "lineNumber": 30
+          },
+          {
+            "text": "    try {",
+            "lineNumber": 31
+          },
+          {
+            "text": "        body = (await request.json()) as { scanId?: string };",
+            "lineNumber": 32
+          },
+          {
+            "text": "    } catch {",
+            "lineNumber": 33
+          },
+          {
+            "text": "        return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 });",
+            "lineNumber": 34
+          },
+          {
+            "text": "    }",
+            "lineNumber": 35
+          },
+          {
+            "lineNumber": 36
+          },
+          {
+            "text": "    const scanId = body.scanId;",
+            "lineNumber": 37
+          },
+          {
+            "text": "    if (!scanId || typeof scanId !== 'string') {",
+            "lineNumber": 38
+          },
+          {
+            "text": "        return NextResponse.json({ error: 'Missing or invalid \"scanId\".' }, { status: 400 });",
+            "lineNumber": 39
+          },
+          {
+            "text": "    }",
+            "lineNumber": 40
+          },
+          {
+            "lineNumber": 41
+          },
+          {
+            "text": "    const result = await getScan(scanId, session.user.id);",
+            "lineNumber": 42
+          },
+          {
+            "text": "    if (!result) {",
+            "lineNumber": 43
+          },
+          {
+            "text": "        return NextResponse.json({ error: 'Scan not found.' }, { status: 404 });",
+            "lineNumber": 44
+          },
+          {
+            "text": "    }",
+            "lineNumber": 45
+          },
+          {
+            "text": "    const imageBase64 = await getScreenshotBase64(result.screenshot, scanId);",
+            "lineNumber": 46
+          },
+          {
+            "text": "    if (!imageBase64) {",
+            "lineNumber": 47
+          },
+          {
+            "text": "        return NextResponse.json({ error: 'Scan has no screenshot or screenshot file missing.' }, { status: 400 });",
+            "lineNumber": 48
+          },
+          {
+            "text": "    }",
+            "lineNumber": 49
+          },
+          {
+            "lineNumber": 50
+          },
+          {
+            "text": "    const predictUrl = SALIENCY_SERVICE_URL.replace(/\\/$/, '') + '/predict';",
+            "lineNumber": 51
+          },
+          {
+            "text": "    let res: Response;",
+            "lineNumber": 52
+          },
+          {
+            "text": "    try",
+            "lineNumber": 53
+          },
+          {
+            "text": "}",
+            "lineNumber": 125,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.32896310091018677
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 102
+          },
+          "endPosition": {
+            "line": 1214,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 16
+              }
+            },
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 16
+              },
+              "endPosition": {
+                "line": 104,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 130
+          },
+          {
+            "lineNumber": 131
+          },
+          {
+            "text": "    const handleHover = useCallback((index: number | null) =&gt; {",
+            "lineNumber": 132
+          },
+          {
+            "text": "        setHighlightedIndex(index);",
+            "lineNumber": 133
+          },
+          {
+            "text": "    }, []);",
+            "lineNumber": 134
+          },
+          {
+            "lineNumber": 135
+          },
+          {
+            "text": "    const handleRefRegister = useCallback((index: number, el: HTMLDivElement | null) =&gt; {",
+            "lineNumber": 136
+          },
+          {
+            "text": "        issueRefs.current[index] = el;",
+            "lineNumber": 137
+          },
+          {
+            "text": "    }, []);",
+            "lineNumber": 138
+          },
+          {
+            "lineNumber": 139
+          },
+          {
+            "text": "    const handleGenerateSaliency = useCallback(async () =&gt; {",
+            "lineNumber": 140
+          },
+          {
+            "text": "        if (!result?.id || saliencyGenerating) return;",
+            "lineNumber": 141
+          },
+          {
+            "text": "        setSaliencyError(null);",
+            "lineNumber": 142
+          },
+          {
+            "text": "        setSaliencyGenerating(true);",
+            "lineNumber": 143
+          },
+          {
+            "text": "        try {",
+            "lineNumber": 144
+          },
+          {
+            "text": "            const res = await fetch('/api/saliency/generate', {",
+            "lineNumber": 145
+          },
+          {
+            "text": "                method: 'POST',",
+            "lineNumber": 146
+          },
+          {
+            "text": "                headers: { 'Content-Type': 'application/json' },",
+            "lineNumber": 147
+          },
+          {
+            "text": "                body: JSON.stringify({ scanId: result.id }),",
+            "lineNumber": 148
+          },
+          {
+            "text": "            });",
+            "lineNumber": 149
+          },
+          {
+            "text": "            const data = await res.json().catch(() =&gt; ({}));",
+            "lineNumber": 150
+          },
+          {
+            "text": "            if (!res.ok) throw new Error(data.error ?? t('results.heatmapError'));",
+            "lineNumber": 151
+          },
+          {
+            "text": "            const scanRes = await fetch(&#96;/api/scan/${result.id}&#96;);",
+            "lineNumber": 152
+          },
+          {
+            "text": "            if (scanRes.ok) {",
+            "lineNumber": 153
+          },
+          {
+            "text": "                const updated = await scanRes.json();",
+            "lineNumber": 154
+          },
+          {
+            "text": "                setResult(updated);",
+            "lineNumber": 155
+          },
+          {
+            "text": "                setShowSaliencyHeatmap(true);",
+            "lineNumber": 156
+          },
+          {
+            "text": "            }",
+            "lineNumber": 157
+          },
+          {
+            "text": "        } catch (e) {",
+            "lineNumber": 158
+          },
+          {
+            "text": "            setSaliencyError(e instanceof Error ? e.message : t('results.heatmapError'));",
+            "lineNumber": 159
+          },
+          {
+            "text": "        } finally {",
+            "lineNumber": 160
+          },
+          {
+            "text": "            setSaliencyGenerating(false);",
+            "lineNumber": 161
+          },
+          {
+            "text": "        }",
+            "lineNumber": 162
+          },
+          {
+            "text": "    }, [result?.id, saliencyGenerating, t]);",
+            "lineNumber": 163
+          },
+          {
+            "lineNumber": 164
+          },
+          {
+            "text": "    const filteredIssues = useMemo(() =&gt; {",
+            "lineNumber": 165
+          },
+          {
+            "text": "        if (!result) return [];",
+            "lineNumber": 166
+          },
+          {
+            "text": "        return result.issues.filter((i) =&gt; {",
+            "lineNumber": 167
+          },
+          {
+            "text": "            const typeMatch = tab === 'all' || i.type === tab;",
+            "lineNumber": 168
+          },
+          {
+            "text": "            const levelMatch = levelFilter === 'all' || i.wcagLevel === levelFilter;",
+            "lineNumber": 169
+          },
+          {
+            "text": "            return typeMatch &amp;&amp; levelMatch;",
+            "lineNumber": 170
+          },
+          {
+            "text": "        });",
+            "lineNumber": 171
+          },
+          {
+            "text": "    }, [result, tab, levelFilter]);",
+            "lineNumber": 172
+          },
+          {
+            "lineNumber": 173
+          },
+          {
+            "text": "    useEffect(() =&gt; {",
+            "lineNumber": 174
+          },
+          {
+            "text": "        setIssuesPage(1);",
+            "lineNumber": 175
+          },
+          {
+            "text": "    }, [tab, levelFilter]);",
+            "lineNumber": 176
+          },
+          {
+            "lineNumber": 177
+          },
+          {
+            "text": "    const issuesTotalPages = Math.max(1, Math.ceil(filteredIssues.length / RESULTS_ISSUES_PAGE_SIZE));",
+            "lineNumber": 178
+          },
+          {
+            "text": "    const paginatedIssues = useMemo(",
+            "lineNumber": 179
+          },
+          {
+            "text": "        () =&gt;",
+            "lineNumber": 180
+          },
+          {
+            "text": "            filteredIssues.slice(",
+            "lineNumber": 181
+          },
+          {
+            "text": "                (issuesPage - 1) * RESULTS_ISSUES_PAGE_SIZE,",
+            "lineNumber": 182
+          },
+          {
+            "lineNumber": 184
+          },
+          {
+            "text": ";",
+            "lineNumber": 186
+          },
+          {
+            "text": "}",
+            "lineNumber": 1215,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.3249376118183136
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./lib/types.ts",
+        "range": {
+          "startPosition": {
+            "line": 117,
+            "column": 1
+          },
+          "endPosition": {
+            "line": 177,
+            "column": 1
+          }
+        },
+        "signatures": {},
+        "detailedLines": [
+          {
+            "text": "export type ScanResult = {",
+            "lineNumber": 120,
+            "isSignature": true
+          },
+          {
+            "text": "    id: string;",
+            "lineNumber": 121
+          },
+          {
+            "text": "    groupId?: string; // Optional for ad-hoc scans",
+            "lineNumber": 122
+          },
+          {
+            "text": "    url: string;",
+            "lineNumber": 123
+          },
+          {
+            "text": "    timestamp: string;",
+            "lineNumber": 124
+          },
+          {
+            "text": "    standard: WcagStandard;",
+            "lineNumber": 125
+          },
+          {
+            "text": "    device: Device;",
+            "lineNumber": 126
+          },
+          {
+            "text": "    runners: Runner[];",
+            "lineNumber": 127
+          },
+          {
+            "text": "    issues: Issue[];",
+            "lineNumber": 128
+          },
+          {
+            "text": "    passes: any[];",
+            "lineNumber": 129
+          },
+          {
+            "text": "    stats: ScanStats;",
+            "lineNumber": 130
+          },
+          {
+            "text": "    durationMs: number;",
+            "lineNumber": 131
+          },
+          {
+            "text": "    score: number;",
+            "lineNumber": 132
+          },
+          {
+            "text": "    screenshot: string;",
+            "lineNumber": 133
+          },
+          {
+            "text": "    /** Optional attention/saliency heatmap (data URL or base64 PNG) from MDS-ViTNet. */",
+            "lineNumber": 134
+          },
+          {
+            "text": "    saliencyHeatmap?: string;",
+            "lineNumber": 135
+          },
+          {
+            "text": "    allLinks?: string[]; // Internal links found (raw)",
+            "lineNumber": 136
+          },
+          {
+            "text": "    /** Internal links with visible text for semantic search / journey (same set as allLinks). */",
+            "lineNumber": 137
+          },
+          {
+            "text": "    allLinksWithLabels?: Array&lt;{ href: string; text: string }&gt;;",
+            "lineNumber": 138
+          },
+          {
+            "text": "    performance: {",
+            "lineNumber": 139
+          },
+          {
+            "text": "        ttfb: number;",
+            "lineNumber": 140
+          },
+          {
+            "text": "        fcp: number;",
+            "lineNumber": 141
+          },
+          {
+            "text": "        domLoad: number;",
+            "lineNumber": 142
+          },
+          {
+            "text": "        windowLoad: number;",
+            "lineNumber": 143
+          },
+          {
+            "text": "        lcp: number;",
+            "lineNumber": 144
+          },
+          {
+            "text": "        inp?: number | null;",
+            "lineNumber": 145
+          },
+          {
+            "text": "    };",
+            "lineNumber": 146
+          },
+          {
+            "text": "    eco: {",
+            "lineNumber": 147
+          },
+          {
+            "text": "        co2: number;",
+            "lineNumber": 148
+          },
+          {
+            "text": "        grade: 'A+' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F';",
+            "lineNumber": 149
+          },
+          {
+            "text": "        pageWeight: number;",
+            "lineNumber": 150
+          },
+          {
+            "text": "    };",
+            "lineNumber": 151
+          },
+          {
+            "text": "    ux?: UxResult;",
+            "lineNumber": 152
+          },
+          {
+            "text": "    seo?: SeoAudit;",
+            "lineNumber": 153
+          },
+          {
+            "text": "    links?: LinkAudit;",
+            "lineNumber": 154
+          },
+          {
+            "text": "    geo?: GeoAudit;",
+            "lineNumber": 155
+          },
+          {
+            "text": "    privacy?: PrivacyAudit;",
+            "lineNumber": 156
+          },
+          {
+            "text": "    /** E-E-A-T page-level signals (for domain aggregation). */",
+            "lineNumber": 157
+          },
+          {
+            "text": "    eeatSignals?: EeatPageSignals;",
+            "lineNumber": 158
+          },
+          {
+            "text": "    generative?: GenerativeEngineAudit;",
+            "lineNumber": 159
+          },
+          {
+            "text": "    security?: SecurityAudit;",
+            "lineNumber": 160
+          },
+          {
+            "text": "    technicalInsights?: TechnicalInsights;",
+            "lineNumber": 161
+          },
+          {
+            "text": "    /** Set when UX/CX summary has been generated (GET includes it, POST /summarize writes it). */",
+            "lineNumber": 162
+          },
+          {
+            "text": "    llmSummary?: LlmSummary | null;",
+            "lineNumber": 163
+          },
+          {
+            "text": "    /** Page index: regions (what where), findability, optional semantic types (for persona click-path evaluation). */",
+            "lineNumber": 164
+          },
+          {
+            "text": "    pageIndex?: PageIndex;",
+            "lineNumber": 165
+          },
+          {
+            "text": "    /** Plain-text excerpt of the page body (for journey agent content evaluation). Capped at ~6k chars. */",
+            "lineNumber": 166
+          },
+          {
+            "text": "    bodyTextExcerpt?: string;",
+            "lineNumber": 167
+          },
+          {
+            "text": "}",
+            "lineNumber": 168,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 169
+          },
+          {
+            "text": "export interface TechnicalInsights {",
+            "lineNumber": 170,
+            "isSignature": true
+          },
+          {
+            "text": "    thirdPartyDomains: string[];",
+            "lineNumber": 171
+          },
+          {
+            "text": ";",
+            "lineNumber": 177,
+            "isSignature": true
+          },
+          {
+            "text": "}",
+            "lineNumber": 178,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.31439968943595886
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 102
+          },
+          "endPosition": {
+            "line": 1214,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 16
+              }
+            },
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 16
+              },
+              "endPosition": {
+                "line": 104,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 933
+          },
+          {
+            "text": "                                {/* eslint-disable-next-line @next/next/no-img-element */}",
+            "lineNumber": 934
+          },
+          {
+            "text": "                                &lt;img",
+            "lineNumber": 935
+          },
+          {
+            "text": "                                    src={result.screenshot}",
+            "lineNumber": 936
+          },
+          {
+            "text": "                                    alt=\"Scan Screenshot\"",
+            "lineNumber": 937
+          },
+          {
+            "text": "                                    style={{ width: '100%', display: 'block', verticalAlign: 'top' }}",
+            "lineNumber": 938
+          },
+          {
+            "text": "                                    onLoad={(e) =&gt; {",
+            "lineNumber": 939
+          },
+          {
+            "text": "                                        const el = e.currentTarget;",
+            "lineNumber": 940
+          },
+          {
+            "text": "                                        setScreenshotDimensions({ width: el.naturalWidth, height: el.naturalHeight });",
+            "lineNumber": 941
+          },
+          {
+            "text": "                                    }}",
+            "lineNumber": 942
+          },
+          {
+            "text": "                                /&gt;",
+            "lineNumber": 943
+          },
+          {
+            "text": "                                {/* Overlay layer: same size as image (100% × 100%) so positioning scales with screenshot */}",
+            "lineNumber": 944
+          },
+          {
+            "text": "                                &lt;Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 10 }}&gt;",
+            "lineNumber": 945
+          },
+          {
+            "text": "                                    {result.ux?.focusOrder &amp;&amp; (",
+            "lineNumber": 946
+          },
+          {
+            "text": "                                        &lt;Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 40 }}&gt;",
+            "lineNumber": 947
+          },
+          {
+            "text": "                                            &lt;FocusOrderOverlay",
+            "lineNumber": 948
+          },
+          {
+            "text": "                                                items={result.ux.focusOrder}",
+            "lineNumber": 949
+          },
+          {
+            "text": "                                                screenshotWidth={screenshotDimensions.width}",
+            "lineNumber": 950
+          },
+          {
+            "text": "                                                screenshotHeight={screenshotDimensions.height}",
+            "lineNumber": 951
+          },
+          {
+            "text": "                                                visible={showFocusOrder}",
+            "lineNumber": 952
+          },
+          {
+            "text": "                                            /&gt;",
+            "lineNumber": 953
+          },
+          {
+            "text": "                                        &lt;/Box&gt;",
+            "lineNumber": 954
+          },
+          {
+            "text": "                                    )}",
+            "lineNumber": 955
+          },
+          {
+            "text": "                                    {result.ux?.tapTargets?.details &amp;&amp; (",
+            "lineNumber": 956
+          },
+          {
+            "text": "                                        &lt;Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 45 }}&gt;",
+            "lineNumber": 957
+          },
+          {
+            "text": "                                            {showTouchTargets &amp;&amp; (",
+            "lineNumber": 958
+          },
+          {
+            "text": "                                                &lt;TouchTargetOverlay",
+            "lineNumber": 959
+          },
+          {
+            "text": "                                                    issues={result.ux.tapTargets.details}",
+            "lineNumber": 960
+          },
+          {
+            "text": "                                                    screenshotWidth={screenshotDimensions.width}",
+            "lineNumber": 961
+          },
+          {
+            "text": "                                                    ",
+            "lineNumber": 962
+          },
+          {
+            "text": "}",
+            "lineNumber": 1215,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.30906593799591064
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/api/saliency/generate/route.ts",
+        "range": {
+          "startPosition": {
+            "line": 16
+          },
+          "endPosition": {
+            "line": 124,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 17,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 17,
+                "column": 8
+              }
+            },
+            {
+              "startPosition": {
+                "line": 17,
+                "column": 8
+              },
+              "endPosition": {
+                "line": 18,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export async function POST(request: Request) {",
+            "lineNumber": 17,
+            "isSignature": true
+          },
+          {
+            "text": "const predictUrl =  + '/predict';",
+            "lineNumber": 51
+          },
+          {
+            "text": "    let res: Response;",
+            "lineNumber": 52
+          },
+          {
+            "text": "    try {",
+            "lineNumber": 53
+          },
+          {
+            "text": "        res = await fetch(predictUrl, {",
+            "lineNumber": 54
+          },
+          {
+            "text": "            method: 'POST',",
+            "lineNumber": 55
+          },
+          {
+            "text": "            headers: { 'Content-Type': 'application/json' },",
+            "lineNumber": 56
+          },
+          {
+            "text": "            body: JSON.stringify({ image_base64: imageBase64 }),",
+            "lineNumber": 57
+          },
+          {
+            "text": "            signal: AbortSignal.timeout(SALIENCY_REQUEST_TIMEOUT_MS),",
+            "lineNumber": 58
+          },
+          {
+            "text": "        });",
+            "lineNumber": 59
+          },
+          {
+            "text": "    } catch (e) {",
+            "lineNumber": 60
+          },
+          {
+            "text": "        const isTimeout =",
+            "lineNumber": 61
+          },
+          {
+            "text": "            (e instanceof Error &amp;&amp; e.name === 'AbortError') ||",
+            "lineNumber": 62
+          },
+          {
+            "text": "            (e instanceof Error &amp;&amp; /timeout|aborted/i.test(e.message));",
+            "lineNumber": 63
+          },
+          {
+            "text": "        const message = isTimeout",
+            "lineNumber": 64
+          },
+          {
+            "text": "            ? &#96;Saliency-Anfrage Zeitüberschreitung (${SALIENCY_REQUEST_TIMEOUT_MS / 1000}s). Service auf CPU kann länger brauchen. SALIENCY_SERVICE_URL prüfen, gleiches Netz wie Saliency-Container.&#96;",
+            "lineNumber": 65
+          },
+          {
+            "text": "            : (e instanceof Error ? e.message : 'Saliency service request failed') +",
+            "lineNumber": 66
+          },
+          {
+            "text": "              ' (SALIENCY_SERVICE_URL prüfen, gleiches Netz wie Saliency-Container.)';",
+            "lineNumber": 67
+          },
+          {
+            "text": "        const detail = e instanceof Error ? String(e) : message;",
+            "lineNumber": 68
+          },
+          {
+            "text": "        console.error('[CHECKION] saliency/generate: fetch error', { url: predictUrl, error: detail });",
+            "lineNumber": 69
+          },
+          {
+            "text": "        return NextResponse.json({ error: message }, { status: 502 });",
+            "lineNumber": 70
+          },
+          {
+            "text": "    }",
+            "lineNumber": 71
+          },
+          {
+            "lineNumber": 72
+          },
+          {
+            "text": "    if (!res.ok) {",
+            "lineNumber": 73
+          },
+          {
+            "text": "        const text = await res.text();",
+            "lineNumber": 74
+          },
+          {
+            "text": "        console.error('[CHECKION] saliency/generate: service returned', res.status, text);",
+            "lineNumber": 75
+          },
+          {
+            "text": "        return NextResponse.json(",
+            "lineNumber": 76
+          },
+          {
+            "text": "            { error: &#96;Saliency service error: ${res.status}&#96; },",
+            "lineNumber": 77
+          },
+          {
+            "text": "            { status: res.status &gt;= 500 ? 502 : 502 },",
+            "lineNumber": 78
+          },
+          {
+            "text": "        );",
+            "lineNumber": 79
+          },
+          {
+            "text": "    }",
+            "lineNumber": 80
+          },
+          {
+            "lineNumber": 81
+          },
+          {
+            "text": "    let data: { heatmap_base64?: string };",
+            "lineNumber": 82
+          },
+          {
+            "text": "    try {",
+            "lineNumber": 83
+          },
+          {
+            "text": "        data = (await res.json()) as { heatmap_base64?: string };",
+            "lineNumber": 84
+          },
+          {
+            "text": "    } catch {",
+            "lineNumber": 85
+          },
+          {
+            "text": "        return NextResponse.json(",
+            "lineNumber": 86
+          },
+          {
+            "text": "            { error: 'Invalid response from saliency service.' },",
+            "lineNumber": 87
+          },
+          {
+            "text": "            { status: 502 },",
+            "lineNumber": 88
+          },
+          {
+            "text": "        );",
+            "lineNumber": 89
+          },
+          {
+            "text": "    }",
+            "lineNumber": 90
+          },
+          {
+            "lineNumber": 91
+          },
+          {
+            "text": "    const heatmapBase64 = data.heatmap_base64;",
+            "lineNumber": 92
+          },
+          {
+            "text": "    if (!heatmapBase64 || typeof heatmapBase64 !== 'string') {",
+            "lineNumber": 93
+          },
+          {
+            "text": "        return NextResponse.json(",
+            "lineNumber": 94
+          },
+          {
+            "text": "            {",
+            "lineNumber": 95
+          },
+          {
+            "lineNumber": 97
+          },
+          {
+            "text": "}",
+            "lineNumber": 125,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.30823230743408203
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "saliency|heatmap|SaliencyHeatmap",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "files_with_matches",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "saliency|heatmap|SaliencyHeatmap",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "files_with_matches",
+  "totalFiles": 24,
+  "totalMatches": 24,
+  "topFiles": [
+    {
+      "uri": "./lib/screenshot-storage.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./.specstory/history/2026-02-23_15-12Z-ergebnisse-teilen-für-normale-scans-und-ux-journeys.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/share/[token]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./locales/en.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "./locales/de.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/results/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./.specstory/history/2026-02-23_09-14Z-system-overview-and-implementation.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./saliency-service/requirements.txt",
+      "matchCount": 1
+    },
+    {
+      "uri": "./saliency-service/main.py",
+      "matchCount": 1
+    },
+    {
+      "uri": "./saliency-service/README.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./lib/types.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./lib/page-index.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./lib/page-index.test.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./lib/db/scans.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./knowledge/checkion-page-index.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./knowledge/checkion-caching.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./docs/deployment/coolify.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./docs/deployment/coolify-saliency-schritt-fuer-schritt.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/SaliencyHeatmapOverlay.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/PageIndexCard.tsx",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I found the saliency service. The key is in `saliency-service/main.py` - it already has some post-processing:
+- Remove global gradient (large blur, subtract) to get "only local hotspots"
+- Percentile 20-80 for contrast
+- Local contrast enhancement
+- Unsharp mask
+- Gamma
+
+But the user says it's still very top-to-bottom and doesn't highlight headlines. So either:
+1. The model (MDS-ViTNet) itself has a strong top bias that isn't fully removed
+2. The post-processing parameters need tuning to be more "EyeQuant-like" - i.e. more emphasis on local peaks, stronger suppression of smooth gradients, maybe different colormap or normalization
+
+Let me read the full saliency-service main.py to understand the pipeline and then search for what EyeQuant typically does (or similar attention/saliency visualizations). EyeQuant-style heatmaps tend to:
+- Show distinct "hot" regions on specific elements (headlines, buttons, faces)
+- Less of a smooth vertical gradient
+- Often use a more "spotty" or high-contrast visualization
+
+So we might need to:
+1. Stronger global gradient removal (higher subtraction factor or larger sigma)
+2. More aggressive percentile clipping (e.g. 10-90 or 5-95) to stretch local differences
+3. Possibly element-aware processing (but that would require detection of headlines etc.)
+4. Different gamma or colormap to make hotspots pop more
+
+Let me read the full main.py to see all parameters.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/main.py</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/README.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I understand the pipeline. The current post-processing:
+1. Remove global gradient: sigma_global = max(25, min(h,w)/6), subtract 0.92 * global_smooth → leaves local hotspots
+2. Percentile 20-80 normalization
+3. Local contrast: sigma_local small, arr + 2.0*(arr - local_mean)
+4. Unsharp: sigma=0.6, arr + 0.85*(arr - blur)
+5. Gamma 0.45
+
+The user says it's still very top-to-bottom. So either:
+- The global gradient removal isn't strong enough (0.92 might leave too much of the gradient; try 0.95 or 0.98)
+- The sigma_global might be too small, so we're not removing a smooth "top bias" that spans the whole image
+- We could add explicit "vertical gradient" removal: compute mean attention per row, fit a line/curve, subtract it so that top-to-bottom bias is removed
+- Percentile: maybe use 10-90 or 5-95 to get more contrast between real hotspots and background
+- EyeQuant often shows more discrete "blobs" - we could use a higher gamma (e.g. 0.35) to make the hot regions pop more and compress the rest
+
+Let me try:
+1. Stronger global gradient removal: increase factor from 0.92 to 0.96 or 0.98, and/or use a larger sigma_global so we remove more of the broad top-to-bottom trend.
+2. Optional: explicit row-wise baseline removal - compute per-row mean, subtract a smoothed version so that a uniform "top is hot" trend is removed.
+3. Tighter percentile (10-90 or 15-85) to stretch the range and make local peaks stand out more.
+4. Slightly lower gamma (e.g. 0.4) to push more values into the "hot" end so hotspots are more visible.
+
+I'll implement a more aggressive "flatten vertical gradient" step and tune the existing parameters toward EyeQuant-style (more spotty, less smooth gradient).
+</details></think>
+
+---
+
+
+Post-Processing anpassen: Wir verstärken die Entfernung des vertikalen Gradienten und heben lokale Hotspots (Headlines, Buttons) stärker hervor — Richtung EyeQuant.
+
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="web_search">
+<details>
+            <summary>Tool use: **web_search** • Searched web `undefined` • **1** results</summary>
+        
+| Title | URL | Chunk |
+|-------|-----|-------|
+| Web search results for query: EyeQuant attention heatmap visualization saliency contrast local hotspots |  | Links:<br/>1. [We value your privacy](https://www.eyequant.com/interpreting-eyequant-results/)<br/>2. [Beyond attention heatmaps](https://eyequant.readme.io/docs/beyond-attention-heatmaps)<br/>3. [We value your privacy](https://www.eyequant.com/resources/how-does-eyequant-work/)<br/>4. [We value your privacy](https://www.eyequant.com/resources/whats-in-a-heatmap-predictive-eye-tracking-versus-click-tracking/)<br/>5. [Welcome](https://eyequant.readme.io/)<br/><br/># EyeQuant Attention Heatmap Visualization<br/><br/>EyeQuant provides several complementary visualization tools for analyzing visual attention and perception:<br/><br/>## Attention Map<br/>The Attention Map is a heatmap that shows how user attention is distributed across a design, revealing where users focus most and least.[1][3] It provides granular insight into attention patterns and helps optimize the placement of important elements like calls-to-action.[1]<br/><br/>## Perception Map<br/>The Perception Map highlights content that is seen or missed by visitors in the first 3 seconds of landing on a page.[1][3] It works like a "spotlight tool" to show which elements capture user attention immediately, helping designers ensure critical information is presented prominently.[1]<br/><br/>## Hot Spots<br/>Hot Spots identify the top 10 most eye-catching areas on a design, represented by magenta circles where larger circles indicate higher visibility.[3] This helps optimize placement of critical elements to capture attention effectively.[3]<br/><br/>## Technical Foundation<br/>EyeQuant's heatmaps use a patented model of human visual attention based on actual eye-tracking studies, combined with machine learning to predict attention patterns instantly.[4] This differs from click-tracking heatmaps, which show where users click rather than where they look.[4]<br/><br/>## Available Outputs<br/>The API supports multiple visualization outputs including attentionMap, perceptionMap, and clarity maps through configurable prediction settings.[2] |
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So EyeQuant emphasizes: attention distribution, "spotlight" on elements that capture attention, and discrete "hot spots" (top 10 areas as circles). So the key is: more distinct hotspots, less smooth gradient; content that "pops" (headlines, CTAs) should stand out.
+
+I'll update the saliency post-processing to:
+1. **Stronger vertical (top-to-bottom) baseline removal**: Compute per-row mean attention and subtract a smoothed row baseline, so a uniform "top is brighter" trend is removed and only local peaks remain.
+2. **Stronger global gradient removal**: Increase subtraction factor from 0.92 to ~0.97 and/or slightly larger sigma so the remaining gradient is flatter.
+3. **More aggressive percentile**: Use 10-90 or 15-85 so that only the real peaks get the hottest colors and the rest is more compressed (more EyeQuant-like contrast).
+4. **Gamma**: Maybe 0.4 to make hotspots pop more (more of the range in yellow/red).
+
+Let me implement these in main.py.
+</details></think>
+
+---
+
+
+Saliency-Post-Processing anpassen: vertikalen Verlauf stärker entfernen und lokale Hotspots (Headlines, CTAs) deutlicher hervorheben.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/main.py</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Let me also add a short comment at the top of the run_saliency section so the intent is clear, and document this in the knowledge/saliency doc if there is one. Let me check if there's a knowledge file for saliency.
+</details></think>
+
+---
+
+
+Dokumentation ergänzen und prüfen, ob die Frontend-Overlay-Opazität die Hotspots besser sichtbar macht:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SaliencyHeatmapOverlay.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "SaliencyHeatmapOverlay|saliencyHeatmap|opacity",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "SaliencyHeatmapOverlay|saliencyHeatmap|opacity",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 30,
+  "topFiles": [
+    {
+      "uri": "./app/share/[token]/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "./app/journey-agent/[jobId]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/results/[id]/page.tsx",
+      "matchCount": 9
+    },
+    {
+      "uri": "./components/settings/BrandColorSelector.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./components/TouchTargetOverlay.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/SaliencyHeatmapOverlay.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "./components/PerformanceCard.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/FocusOrderOverlay.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/EcoCard.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/scan/page.tsx",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Results page uses opacity 0.7 for the heatmap. I've made the saliency service produce more EyeQuant-like output. I could slightly increase default overlay opacity (e.g. 0.65 or 0.7) so the new, more contrasted hotspots are a bit more visible - but that might be a matter of taste. I'll leave overlay opacity as is unless the user asks. The main fix is the Python post-processing.
+
+Let me add a brief note in the saliency README or a knowledge file about the EyeQuant-style tuning.
+</details></think>
+
+---
+
+
+Kurz in der Saliency-Doku vermerken:
+
+
+---
+
+The string to replace was not found in the file.
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The exact string might have a different newline. Let me read the README again and do a smaller replace.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/README.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The line 37 has a special apostrophe in "CHECKION's" - maybe that's the issue. Let me try inserting the new section between line 37 and ## API.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+The string to replace was not found in the file.
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Maybe the apostrophe is a special Unicode character. Let me try with just "CHECKION" and the rest.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "API|Listens",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/README.md",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "API|Listens",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/README.md",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 2,
+  "topFiles": [
+    {
+      "uri": "saliency-service/README.md",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+There might be a special Unicode apostrophe (') in "CHECKION's" - U+2019 RIGHT SINGLE QUOTATION MARK instead of ASCII '. Let me try replace with the exact bytes by reading the file in hex or just do a smaller replace.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+Incorrect tool arguments
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add the new section. Let me try:
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/README.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Summary for the user.
+</details></think>
+
+---
+
+
+Die Heatmap-Verarbeitung ist angepasst, damit sie näher an EyeQuant arbeitet: weniger gleichmäßiger Verlauf von oben nach unten, mehr Betonung von Headlines und einzelnen Elementen.
+
+**Änderungen in `saliency-service/main.py`:**
+
+1. **Entfernen des vertikalen Verlaufs (neu)**  
+   Das Modell liefert oft mehr Aufmerksamkeit oben. Es wird ein zeilenweiser Mittelwert gebildet, geglättet und als Baseline abgezogen. So verschwindet der „oben hell, unten dunkel“-Trend und Aufmerksamkeitsinseln in der Mitte/unten (Headlines, CTAs) bleiben sichtbar.
+
+2. **Stärkere Entfernung des globalen Gradienten**  
+   Größerer Blur-Radius (`sigma_global`: ca. 35 bzw. min(h,w)/4) und höherer Abzug (0.97 statt 0.92). Es bleiben vor allem lokale Hotspots übrig, weniger ein weicher Gesamtverlauf.
+
+3. **Kontrast (Percentile)**  
+   Percentile von 20–80 auf **10–90** geändert, damit die wirklich starken Bereiche den vollen Farbbereich nutzen und sich klarer abheben.
+
+4. **Lokaler Kontrast**  
+   Leicht angepasst (sigma_local, Faktor 1.8), damit Ränder von Aufmerksamkeitsbereichen (z. B. um Headlines) etwas schärfer sind.
+
+5. **Unsharp**  
+   Leicht stärker (sigma 0.8, Faktor 0.9), damit Hotspots klarer begrenzt sind.
+
+6. **Gamma**  
+   Von 0.45 auf **0.38** gesenkt, damit mehr Werte im „heißeren“ Bereich landen und Headlines/Buttons wie bei EyeQuant deutlicher hervortreten.
+
+**Ergebnis:**  
+Die Karte sollte weniger einen durchgängigen Top-to-Bottom-Gradienten zeigen und stattdessen klarere Hotspots auf Überschriften, Buttons und zentralen Elementen (inkl. Cookie-Banner, wenn das Modell dort Aufmerksamkeit vorhersagt).
+
+**Nächster Schritt:**  
+Saliency-Service neu deployen (z. B. in Coolify neu bauen/starten). Nur **neue** Scans bekommen die neue Heatmap; bestehende gespeicherte Heatmaps bleiben unverändert. In der README ist der Abschnitt „Post-processing (EyeQuant-style)“ ergänzt.
+
+---
+
+_**User**_
+
+und ein model bzw. gewichte nutzen die speziell für websites sind?
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is asking whether we can use a model/weights that are specifically trained for websites (rather than the current MDS-ViTNet which is a general saliency model). Let me search for:
+1. What model we currently use (MDS-ViTNet)
+2. Whether there are saliency/attention models trained specifically on web pages or UI
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="web_search">
+<details>
+            <summary>Tool use: **web_search** • Searched web `undefined` • **1** results</summary>
+        
+| Title | URL | Chunk |
+|-------|-----|-------|
+| Web search results for query: saliency prediction model trained on web pages websites UI attention heatmap 2024 |  | Links:<br/>1. [[2406.17815] SUM: Saliency Unification through Mamba for Visual Attention Modeling](https://arxiv.org/abs/2406.17815)<br/>2. [Webpage Sailency](https://www-users.cse.umn.edu/~qzhao/webpage_saliency.html)<br/>3. [Towards a unified model for predicting human responses to diverse visual content](https://research.google/blog/towards-a-unified-model-for-predicting-human-responses-to-diverse-visual-content/)<br/>4. [Computer Science > Computer Vision and Pattern Recognition](https://arxiv.org/abs/2407.02439)<br/>5. [Computer Science > Human-Computer Interaction](https://arxiv.org/abs/2404.14232)<br/><br/># Saliency Prediction Models for Web Pages and UI Attention (2024)<br/><br/>Several recent models have emerged for predicting visual attention and saliency on websites and UI interfaces:<br/><br/>## Unified Models<br/><br/>**SUM (Saliency Unification through Mamba)** uses a Mamba-based architecture with U-Net to create a single model that adapts across diverse image types, including natural scenes, web pages, and commercial imagery.[1] It employs a Conditional Visual State Space block to dynamically adapt to different visual characteristics and outperforms existing models across five benchmarks.[1]<br/><br/>**UniAR** is Google's multimodal model that unifies prediction of human attention and responses across diverse visual content including images, UIs, webpages, and more.[3] Built on a transformer encoder-decoder architecture, it performs comparably to domain-specific baseline methods and enables applications like providing instant feedback on UI effectiveness.[3]<br/><br/>## Web-Specific Models<br/><br/>**Graphic Design Document Attention** presents a two-stage model specifically for predicting both spatial attention (saliency maps) and temporal fixation order on webpages and other graphic design documents.[4] The model predicts component-level saliency conditioned on document layout, then uses inverse reinforcement learning for scanpath prediction. It was tested on a new dataset of 450 webpages with eye-tracking data from 41 participants.[4]<br/><br/>**HCEye** examines how visual highlighting and cognitive load affect user attention on webpages, showing that saliency models improve performance when accounting for different cognitive loads.[5]<br/><br/>Earlier work by Shen and Zhao (2014) pioneered webpage saliency prediction using multiple kernel learning to integrate multi-scale features, object representations, text, and positional bias.[2] |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="web_search">
+<details>
+            <summary>Tool use: **web_search** • Searched web `undefined` • **1** results</summary>
+        
+| Title | URL | Chunk |
+|-------|-----|-------|
+| Web search results for query: web page attention prediction model eye tracking dataset saliency |  | Links:<br/>1. [[2507.19213] PRE-MAP: Personalized Reinforced Eye-tracking Multimodal LLM for High-Resolution Multi-Attribute Point Prediction](https://arxiv.org/abs/2507.19213)<br/>2. [[2303.17876] WebQAmGaze: A Multilingual Webcam Eye-Tracking-While-Reading Dataset](https://arxiv.org/abs/2303.17876)<br/>3. [Computer Science > Computer Vision and Pattern Recognition](https://arxiv.org/abs/2407.02439)<br/>4. [](https://jianbojiao.com/pdfs/eccv_TDSal.pdf)<br/>5. [Webpage Saliency](https://link.springer.com/chapter/10.1007/978-3-319-10584-0_3?error=cookies_not_supported&code=5f165681-5e73-47f0-a5f6-80e2256dab44)<br/><br/># Web Page Attention Prediction, Eye Tracking, and Saliency<br/><br/>## Key Datasets<br/><br/>**SPA-ADV Dataset**: A large-scale multimodal dataset capturing gaze behaviors from over 4,500 participants of varying ages and genders viewing 486 advertisement videos, designed to capture personalized attention patterns.[1]<br/><br/>**WebQAmGaze**: A multilingual webcam-based eye-tracking-while-reading dataset with 600 participants reading texts in English, German, Spanish, and Turkish. It validates that higher fixation duration on relevant text spans accurately indicates comprehension.[2]<br/><br/>**Webpage Eye Tracking Dataset**: A collection of eye movement data from 41 people freely viewing 450 webpages, described as the largest dataset of its kind for studying visual attention on web documents.[3]<br/><br/>## Prediction Models<br/><br/>**PRE-MAP**: A novel eye-tracking saliency model that uses multimodal large language models (MLLMs) to predict personalized visual attention points on webpages and videos, incorporating reinforcement learning and user profile attributes.[1]<br/><br/>**Task-Driven Webpage Saliency**: A CNN-based model that predicts where people look on webpages under different task conditions (e.g., information browsing, form filling, shopping) by disentangling task-specific attention shifts from task-free visual saliency.[4]<br/><br/>**Layout-Based Attention Model**: A two-stage deep learning approach that predicts both spatial attention (saliency maps) and temporal fixation order (scanpath) on graphic design documents, including webpages, comics, posters, and mobile UIs.[3]<br/><br/>## Dataset Characteristics<br/><br/>Early webpage saliency research used smaller datasets (149 webpages with 11 subjects eye-tracking data), while modern approaches employ datasets with hundreds to thousands of participants to capture cognitive diversity and personalized attention patterns.[5][1] |
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I found several options:
+
+1. **SUM (Saliency Unification through Mamba)** - arxiv 2406.17815 - unified model that works across natural scenes, web pages, commercial imagery. Might have weights available.
+
+2. **UniAR (Google)** - unified attention/responses across UIs, webpages. May not be open-source or easily deployable.
+
+3. **Graphic Design Document Attention** - arxiv 2407.02439 - two-stage model specifically for webpages and graphic design docs, 450 webpages with eye-tracking from 41 participants. Predicts component-level saliency + scanpath.
+
+4. **Webpage Saliency (Shen & Zhao, 2014)** - older, multiple kernel learning. There's a link to "Webpage Sailency" (typo) at University of Minnesota.
+
+5. **Task-Driven Webpage Saliency (ECCV)** - CNN-based, task-conditioned (browsing, form filling, shopping).
+
+Let me search for:
+- Whether any of these have public weights/code (especially SUM, or the Graphic Design one)
+- MDS-ViTNet training data - was it trained on natural images or also web?
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="web_search">
+<details>
+            <summary>Tool use: **web_search** • Searched web `undefined` • **1** results</summary>
+        
+| Title | URL | Chunk |
+|-------|-----|-------|
+| Web search results for query: SUM Saliency Unification Mamba github weights pretrained |  | Links:<br/>1. [SUM: Saliency Unification through Mamba for Visual Attention Modeling](https://arxiv.org/html/2406.17815v1)<br/>2. [SUM: Saliency Unification through Mamba for Visual Attention Modeling](https://openaccess.thecvf.com/content/WACV2025/papers/Hosseini_SUM_Saliency_Unification_through_Mamba_for_Visual_Attention_Modeling_WACV_2025_paper.pdf)<br/>3. [Search code, repositories, users, issues, pull requests...](https://github.com/maklachur/Mamba-in-Computer-Vision)<br/>4. [Search code, repositories, users, issues, pull requests...](https://github.com/jia-hao999/samba)<br/>5. [Search code, repositories, users, issues, pull requests...](https://github.com/topics/mamba-model)<br/><br/># SUM: Saliency Unification through Mamba<br/><br/>SUM is a visual attention modeling approach that uses Mamba architecture for saliency prediction.[1] The method integrates Mamba's efficient long-range dependency modeling with U-Net architecture to create a unified model for diverse image types including natural scenes, web pages, and commercial imagery.[1][2]<br/><br/>## Key Features<br/><br/>The model introduces a novel **Conditional Visual State Space (C-VSS) block** that dynamically adapts to various image types, providing universal applicability across different visual content.[1][2] Unlike traditional Transformer-based saliency models that are computationally expensive, SUM offers more efficient processing while maintaining superior performance.[2]<br/><br/>## Code and Pretrained Weights<br/><br/>The code and pretrained models are publicly available at:<br/>- GitHub: https://github.com/Arhosseini77/SUM[1]<br/>- Project page: https://arhosseini77.github.io/sum_page/[2]<br/><br/>## Performance<br/><br/>SUM was evaluated across five benchmarks and demonstrated consistent improvements over existing models for saliency prediction across different image types.[1][2] The work was published at WACV 2025 as an oral presentation.[5] |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="web_search">
+<details>
+            <summary>Tool use: **web_search** • Searched web `undefined` • **1** results</summary>
+        
+| Title | URL | Chunk |
+|-------|-----|-------|
+| Web search results for query: Graphic Design Document Attention webpage saliency two-stage model github arxiv 2407.02439 |  | Links:<br/>1. [Computer Science > Computer Vision and Pattern Recognition](https://arxiv.org/abs/2407.02439)<br/>2. [Predicting Visual Attention in Graphic Design Documents](https://ieeexplore.ieee.org/document/9779948)<br/>3. [](https://ieeexplore.ieee.org/document/9779948/;jsessionid=5484EA6230F339FA30F140A8AAF4CB3C)<br/>4. [Search code, repositories, users, issues, pull requests...](https://github.com/IntMeGroup/TGSal)<br/>5. [Computer Science > Human-Computer Interaction](https://arxiv.org/abs/2404.14232)<br/><br/># Predicting Visual Attention in Graphic Design Documents (arXiv 2407.02439)<br/><br/>The paper by Chakraborty et al. presents a deep learning model for predicting visual attention in graphic design documents, particularly webpages.[1]<br/><br/>## Key Innovation<br/><br/>This is the first work to predict both **spatial attention** (where users look) and **dynamic temporal order** (the sequence of fixations) during free viewing of graphic design documents, rather than just static saliency.[1]<br/><br/>## Two-Stage Model Architecture<br/><br/>**Stage 1:** Predicts component-level saliency maps for individual document elements (logos, banners, text, etc.) conditioned on document layout type, then combines these to predict overall document saliency.[1]<br/><br/>**Stage 2:** Uses the layout-specific component saliency maps as state representation for an inverse reinforcement learning model to predict fixation scanpaths during document viewing.[1]<br/><br/>## Dataset and Results<br/><br/>The authors collected a new eye-tracking dataset with 41 participants viewing 450 webpages—the largest dataset of its kind for this task.[1] The model outperforms existing approaches in both saliency and scanpath prediction for webpages and generalizes well to other graphic design formats including comics, posters, mobile UIs, and natural images.[1]<br/><br/>The paper was submitted to arXiv on July 2, 2024.[1] |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="web_search">
+<details>
+            <summary>Tool use: **web_search** • Searched web `undefined` • **1** results</summary>
+        
+| Title | URL | Chunk |
+|-------|-----|-------|
+| Web search results for query: MDS-ViTNet saliency model training dataset SALICON |  | Links:<br/>1. [Search code, repositories, users, issues, pull requests...](https://github.com/IgnatPolezhaev/MDS-ViTNet)<br/>2. [MDS-ViTNet: Improving Saliency Prediction for Eye-Tracking with Vision Transformer](https://link.springer.com/article/10.1134/S1064562424602117?error=cookies_not_supported&code=3c134caf-ece3-4dc1-af1d-0604169bca6f)<br/>3. [](https://www.arxiv.org/pdf/2405.19501)<br/>4. [Papers with Code - SALICON Dataset](https://paperswithcode.com/dataset/salicon)<br/>5. [](https://www.cv-foundation.org/openaccess/content_cvpr_2015/ext/1A_117_ext.pdf)<br/><br/># MDS-ViTNet and SALICON Dataset<br/><br/>**MDS-ViTNet Overview:**<br/>MDS-ViTNet (Multi Decoder Saliency by Vision Transformer Network) is a novel architecture for visual saliency prediction and eye-tracking.[1][3] The model uses an encoder-decoder structure with a Swin transformer encoder and dual CNN decoders that generate two distinct attention maps, which are combined into a single output.[3] It achieves state-of-the-art results across several benchmarks.[1][3]<br/><br/>**SALICON Dataset:**<br/>SALICON (Saliency in Context) is the training dataset used for saliency prediction tasks.[4][5] It contains 10,000 training images, 5,000 validation images, and 5,000 test images sourced from the MS COCO dataset.[4] The ground-truth annotations include fixations generated from mouse trajectories, with isolated fixations filtered out to improve data quality.[4] The dataset was created through crowdsourcing via Amazon Mechanical Turk, collecting human attentional data during natural image exploration.[5]<br/><br/>**Training Methodology:**<br/>MDS-ViTNet employs transfer learning, converting Vision Transformer layers through an Encoder Transformer and integrating them into the CNN decoder with minimal information loss from the original input image.[3] |
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So:
+- **MDS-ViTNet** is trained on SALICON = natural images (MS COCO), not web pages. So it's generic scene saliency.
+- **SUM** has public GitHub (Arhosseini77/SUM) and pretrained weights, and is designed for diverse content including "web pages and commercial imagery". That could be a good drop-in replacement.
+- The Graphic Design Document paper (Chakraborty et al.) doesn't seem to have an obvious public repo with weights from the search - the TGSal link might be different.
+
+Let me fetch the SUM GitHub to see structure, dependencies, and how to integrate it into our saliency service.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="web_fetch">
+<details>
+<summary>Tool use: **web_fetch**</summary>
+
+
+Parameters:
+
+```json
+{
+  "url": "https://github.com/Arhosseini77/SUM"
+}
+```
+Result:
+
+```json
+{
+  "url": "https://github.com/Arhosseini77/SUM",
+  "markdown": "# Arhosseini77/SUM\n\n[WACV2025 Oral] SUM: Saliency Unification through Mamba for Visual Attention Modeling\n\n⭐ 89 stars | 🍴 13 forks\n\n## Links\n\n- [Repository](https://github.com/Arhosseini77/SUM)\n- [Issues](https://github.com/Arhosseini77/SUM/issues)\n- [Pull Requests](https://github.com/Arhosseini77/SUM/pulls)\n\n## Files\n\n- [assets/](https://github.com/Arhosseini77/SUM/tree/main/assets)\n- [net/](https://github.com/Arhosseini77/SUM/tree/main/net)\n- [utils/](https://github.com/Arhosseini77/SUM/tree/main/utils)\n- [.gitignore](https://github.com/Arhosseini77/SUM/blob/main/.gitignore)\n- [LICENSE](https://github.com/Arhosseini77/SUM/blob/main/LICENSE)\n- [README.md](https://github.com/Arhosseini77/SUM/blob/main/README.md)\n- [SUM.yml](https://github.com/Arhosseini77/SUM/blob/main/SUM.yml)\n- [inference.py](https://github.com/Arhosseini77/SUM/blob/main/inference.py)\n- [optuna_network.py](https://github.com/Arhosseini77/SUM/blob/main/optuna_network.py)\n- [pyproject.toml](https://github.com/Arhosseini77/SUM/blob/main/pyproject.toml)\n- [requirements.txt](https://github.com/Arhosseini77/SUM/blob/main/requirements.txt)\n- [test_model.py](https://github.com/Arhosseini77/SUM/blob/main/test_model.py)\n- [train.py](https://github.com/Arhosseini77/SUM/blob/main/train.py)\n- [train_colab.py](https://github.com/Arhosseini77/SUM/blob/main/train_colab.py)\n- [validation.py](https://github.com/Arhosseini77/SUM/blob/main/validation.py)\n\n## README\n\nSaliency Unification through Mamba for Visual Attention Modeling  WACV2025 - Oral  [Paper](https://openaccess.thecvf.com/content/WACV2025/html/Hosseini_SUM_Saliency_Unification_through_Mamba_for_Visual_Attention_Modeling_WACV_2025_paper.html) . [Project Page](https://arhosseini77.github.io/sum_page/)\n\nVisual attention modeling, important for interpreting and prioritizing visual stimuli, plays a significant role in applications such as marketing, multimedia, and robotics. Traditional saliency prediction models, especially those based on Convolutional Neural Networks (CNNs) or Transformers, achieve notable success by leveraging large-scale annotated datasets. However, the current state-of-the-art (SOTA) models that use Transformers are computationally expensive. Additionally, separate models are often required for each image type, lacking a unified approach. In this paper, we propose Saliency Unification through Mamba (SUM), a novel approach that integrates the efficient long-range dependency modeling of Mamba with U-Net to provide a unified model for diverse image types. Using a novel Conditional Visual State Space (C-VSS) block, SUM dynamically adapts to various image types, including natural scenes, web pages, and commercial imagery, ensuring universal applicability across different data types. Our comprehensive evaluations across five benchmarks demonstrate that SUM seamlessly adapts to different visual characteristics and consistently outperforms existing models. These results position SUM as a versatile and powerful tool for advancing visual attention modeling, offering a robust solution universally applicable across different types of visual content.\n\n&gt; [Alireza Hosseini](https://arhosseini77.github.io/), [Amirhossein Kazerouni](https://amirhossein-kz.github.io/), [Saeed Akhavan](https://scholar.google.com/citations?user=nuLXGJUAAAAJ&amp;hl=en), [Michael Brudno](https://scholar.google.com/citations?user=xoNrEqUAAAAJ&amp;hl=en), [Babak Taati](https://scholar.google.com.au/citations?user=7-X6qUUAAAAJ&amp;hl=en)\n\n(a) Overview of SUM model, (b) demonstrates our conditional-U-Net-based model for saliency prediction, and (c) illustrates the proposed C-VSS module.\n\n# 💥 News 💥\n\n- &#96;25.06.2024&#96; | Code is released!\n\n- &#96;30.08.2024&#96; | Accepted in WACV 2025! 🥳\n\n- &#96;08.12.2024&#96; | Gradio demo added and SUM is now package-installable via pip! 🎉\n\n# Installation\n\nEnsure you have Python &gt;= 3.10 installed on your system. Then, install the required libraries and dependencies.\n\n## Requirements\n\nInstall PyTorch and other necessary libraries:\n\n&#96;&#96;&#96;shell\npip install torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu121\npip install -r requirements.txt\n&#96;&#96;&#96;\n\n- If you encounter NVCC problems during installation, see: [NVCC Issue](https://github.com/Arhosseini77/SUM/issues/1).\n\n### Install via pip\n\nYou can also install the SUM package directly from GitHub using pip:\n\n&#96;&#96;&#96;shell\npip install git+https://github.com/Arhosseini77/SUM.git\n&#96;&#96;&#96;\n\n## Pre-trained Weights\n\nDownload the SUM model from the provided Google Drive link and move it to the specified directory:\n\n- [Download SUM model](https://drive.google.com/file/d/14ma_hLe8DrVNuHCSKoOz41Q-rB1Hbg6A/view?usp=drive_link): &#96;sum_model.pth&#96;\n\n- Move &#96;sum_model.pth&#96; to: &#96;net/pre_trained_weights&#96;\n\n# Usage\n\n## Inference\n\nTo generate saliency maps, use the &#96;inference.py&#96; script. Here are the steps and commands:\n\n&#96;&#96;&#96;shell\npython inference.py --img_path /path/to/your/image.jpg --condition [0, 1, 2, 3] --output_path /path/to/output --heat_map_type [HOT, Overlay]\n&#96;&#96;&#96;\n\n### Parameters:\n\n- &#96;--img_path&#96;: Path to the input image for which you want to generate the saliency map.\n\n- &#96;--condition&#96;: Condition index for generating the saliency map. Each number corresponds to a specific type of visual content:\n\n&#96;0&#96;: Natural scenes based on the Salicon dataset (Mouse data).\n&#96;1&#96;: Natural scenes (Eye-tracking data).\n&#96;2&#96;: E-Commercial images.\n&#96;3&#96;: User Interface (UI) images.\n\n- &#96;--output_path&#96;: Path to the folder where the output saliency map will be saved.\n\n- &#96;--heat_map_type&#96;: Type of heatmap to generate. Choose either &#96;HOT&#96; for a standalone heatmap or &#96;Overlay&#96; to overlay the heatmap on the original image.\n\n### Examples\n\nGenerate a standalone HOT heatmap for natural scenes images:\n\n&#96;&#96;&#96;shell\npython inference.py --img_path input_image.jpg --condition 1 --output_path output_results --heat_map_type HOT\n&#96;&#96;&#96;\n\nOverlay the heatmap on the original image for e-commerce images:\n\n&#96;&#96;&#96;shell\npython inference.py --img_path input_image.jpg --condition 2 --output_path output_results --heat_map_type Overlay\n&#96;&#96;&#96;\n\n#### Example Images\n\nInput\nSUM\n\n## Gradio Demo\n\nWe are excited to introduce a Gradio-based interactive demo for the SUM model. This demo allows you to easily generate saliency maps through a user-friendly web interface.\n\n### Running the Gradio Interface\n\nHere is a simple example to launch the Gradio demo:\n\n&#96;&#96;&#96;python\nimport os\nimport gradio as gr\nfrom accelerate import Accelerator\nfrom SUM import (\nSUM,\nload_and_preprocess_image,\npredict_saliency_map,\noverlay_heatmap_on_image,\nwrite_heatmap_to_image,\n)\n\naccelerator = Accelerator()\nmodel = SUM.from_pretrained(\"safe-models/SUM\").to(accelerator.device)\n\ndef predict(image_path, condition):\nfilename = os.path.splitext(os.path.basename(image_path))[0]\nhot_output_filename = f\"{filename}_saliencymap.png\"\noverlay_output_filename = f\"{filename}_overlay.png\"\n\nimage, orig_size = load_and_preprocess_image(image_path)\nsaliency_map = predict_saliency_map(image, condition, model, accelerator.device)\nwrite_heatmap_to_image(saliency_map, orig_size, hot_output_filename)\noverlay_heatmap_on_image(image_path, hot_output_filename, overlay_output_filename)\n\nreturn overlay_output_filename, hot_output_filename\n\niface = gr.Interface(\nfn=predict,\ninputs=[\ngr.Image(type=\"filepath\", label=\"Input\"),\ngr.Dropdown(\nlabel=\"Mode\",\nchoices=[\n[\"Natural scenes based on the Salicon dataset (Mouse data)\", 0],\n[\"Natural scenes (Eye-tracking data)\", 1],\n[\"E-Commercial images\", 2],\n[\"User Interface (UI) images\", 3],\n],\n),\n],\noutputs=[\ngr.Image(type=\"filepath\", label=\"Overlay\"),\ngr.Image(type=\"filepath\", label=\"Saliency Map\"),\n],\ntitle=\"SUM Saliency Map Prediction\",\ndescription=\"Upload an image to generate its saliency map.\",\n)\n\niface.launch(debug=True)\n&#96;&#96;&#96;\n\n### example\n\nThe Gradio interface for SUM Saliency Map Prediction.\n\n## Training\n\nTo train the model, first download the necessary pre-trained weights and datasets:\n\n- Pretrained Encoder Weights: Download from [VMamba GitHub](https://github.com/MzeroMiko/VMamba/releases/download/%2320240218/vssmsmall_dp03_ckpt_epoch_238.pth)  or [google drive](https://drive.google.com/file/d/1zUczEDh09Sr2HtQclYwGBvTh0Gwydr52/view?usp=sharing) and move the file to &#96;net/pre_trained_weights/vssmsmall_dp03_ckpt_epoch_238.pth&#96;.\n\n- Datasets: Download the dataset of 7 different sets from the provided Google Drive link. This zip file contains 256x256 images of stimuli, saliency maps, fixation maps, and ID CSVs of datasets SALICON, MIT1003, CAT2000, SALECI, UEYE, and FIWI.\n\n[Download datasets](https://drive.google.com/file/d/1Mdk97UB0phYDZv8zgjBayeC1I1_QcUmh/view?usp=drive_link)\nunzip and move &#96;datasets&#96; directory to &#96;./&#96;\n\nRun the training process:\n\n&#96;&#96;&#96;shell\npython train.py\n&#96;&#96;&#96;\n\n- If you want to run the training in Google Colab to manage resource constraints better, reduce the batch size or use the alternative script:\n\n&#96;&#96;&#96;shell\npython train_colab.py\n&#96;&#96;&#96;\n\n## Validation\n\nFor model validation on the dataset's validation set, download the dataset as mentioned above. then execute the validation script:\n\n&#96;&#96;&#96;shell\npython validation.py\n&#96;&#96;&#96;\n\n# Acknowledgment\n\nWe would like to thank the authors and contributors of [VMamba](https://github.com/MzeroMiko/VMamba), [VM-UNet](https://github.com/JCruan519/VM-UNet), and [TranSalNet](https://github.com/LJOVO/TranSalNet) for their open-sourced code, which significantly aided this project. Additionally, we extend our gratitude to [JacobLinCool](https://github.com/JacobLinCool) for his invaluable contributions in packaging the code, deployment, and developing the Gradio demo inference for the model.\n\n# Citation\n\n&#96;&#96;&#96;\n@inproceedings{hosseini2025sum,\ntitle={Sum: Saliency unification through mamba for visual attention modeling},\nauthor={Hosseini, Alireza and Kazerouni, Amirhossein and Akhavan, Saeed and Brudno, Michael and Taati, Babak},\nbooktitle={2025 IEEE/CVF Winter Conference on Applications of Computer Vision (WACV)},\npages={1597--1607},\nyear={2025},\norganization={IEEE}\n}\n&#96;&#96;&#96;"
+}
+```
+User decision: **accepted**
+
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="web_search">
+<details>
+            <summary>Tool use: **web_search** • Searched web `undefined` • **1** results</summary>
+        
+| Title | URL | Chunk |
+|-------|-----|-------|
+| Web search results for query: webpage saliency prediction model pretrained weights download 2024 |  | Links:<br/>1. [Webpage Sailency](https://www-users.cse.umn.edu/~qzhao/webpage_saliency.html)<br/>2. [Search code, repositories, users, issues, pull requests...](https://github.com/Niloy-Chakraborty/Webpage_Saliency_Prediction)<br/>3. [alexanderkroner <br/>     <br/>         / <br/><br/> MSI-Net <br/>     <br/>         <br/>             <br/><br/>        <br/>         like <br/>     4](https://huggingface.co/alexanderkroner/MSI-Net/blob/main/README.md)<br/>4. [Visual Importance](https://predimportance.mit.edu/)<br/>5. [README.md · alexanderkroner/MSI-Net at cfa491995ab7854747ade8d4f4f6bd444d843941](https://huggingface.co/alexanderkroner/MSI-Net/blob/cfa491995ab7854747ade8d4f4f6bd444d843941/README.md)<br/><br/># Webpage Saliency Prediction Models and Pretrained Weights<br/><br/>## Available Resources<br/><br/>**Original Webpage Saliency Model (2014)**<br/>The foundational work on webpage saliency prediction was introduced by Shen and Zhao in ECCV 2014.[1] Their model integrates multi-scale feature maps containing object blob and text representations with face maps and positional bias, using multiple kernel learning. The accompanying FiWI (Fixations in Webpage Images) dataset containing 149 webpages with eye tracking data and code is available for download (267M).[1]<br/><br/>**Transfer Learning Approach**<br/>A webpage saliency prediction model using two-stage transfer learning with FCN-16s architecture is available on GitHub (Niloy-Chakraborty/Webpage_Saliency_Prediction).[2]<br/><br/>**Related Visual Saliency Models with Pretrained Weights**<br/><br/>**MSI-Net** - A contextual encoder-decoder network for visual saliency prediction is available on HuggingFace.[3][5] It consists of approximately 25M parameters and was pre-trained on the SALICON dataset using VGG16 ImageNet weights. While primarily designed for natural images, the architecture is applicable to saliency tasks. A demo is available on HuggingFace Spaces.[3]<br/><br/>**UMSI (Unified Model of Saliency and Importance)** - MIT researchers provide a model trained on multiple design types including webpages, posters, infographics, and mobile UIs.[4] Pretrained model weights are available for download in Keras h5 format, along with the Imp1k dataset of 1000 designs and accompanying code on GitHub.[4] |
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+SUM is perfect for this:
+- **Condition 3 = "User Interface (UI) images"** – exactly for web pages / UI
+- Public weights: `sum_model.pth` from Google Drive, place in `net/pre_trained_weights`
+- Can be installed via pip: `pip install git+https://github.com/Arhosseini77/SUM.git`
+- Has `load_and_preprocess_image`, `predict_saliency_map`, `write_heatmap_to_image` – we need to integrate this into our HTTP service
+
+So the plan:
+1. Add an option in our saliency service to use SUM with condition=3 (UI) when available, or document how to switch.
+2. Alternatively, create a new Dockerfile or variant that uses SUM instead of MDS-ViTNet.
+
+Actually the user asked "ein model bzw. gewichte nutzen die speziell für websites sind" – so they want to *use* a model that's for websites. The cleanest approach would be:
+1. Integrate SUM into the saliency-service with condition=3 (UI images) for website screenshots.
+2. Document how to get SUM weights and switch (or make SUM the default when weights are present).
+
+Let me check SUM's inference API more closely – we need to call it from our FastAPI service, get back a heatmap image, and return it as before (PNG base64). I'll look at their inference.py and the SUM package API.
+</details></think>
+
+---
+
+
+SUM unterstützt explizit **User Interface (UI) / Webseiten** (Condition 3). Wir prüfen die Inferenz-API und integrieren SUM als Option.
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="web_fetch">
+<details>
+<summary>Tool use: **web_fetch**</summary>
+
+
+Parameters:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/Arhosseini77/SUM/main/inference.py"
+}
+```
+Result:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/Arhosseini77/SUM/main/inference.py",
+  "markdown": "import os\nimport argparse\nimport torch\n\nfrom net import SUM, load_and_preprocess_image, predict_saliency_map, overlay_heatmap_on_image, write_heatmap_to_image\nfrom net.configs.config_setting import setting_config\n\n\ndef setup_model(device):\n config = setting_config\n model_cfg = config.model_config\n if config.network == 'sum':\n model = SUM(\n num_classes=model_cfg['num_classes'],\n input_channels=model_cfg['input_channels'],\n depths=model_cfg['depths'],\n depths_decoder=model_cfg['depths_decoder'],\n drop_path_rate=model_cfg['drop_path_rate'],\n )\n model.load_state_dict(torch.load('net/pre_trained_weights/sum_model.pth', map_location=device))\n model.to(device)\n return model\n else:\n raise NotImplementedError(\"The specified network configuration is not supported.\")\n\n\ndef main():\n parser = argparse.ArgumentParser(description='Saliency Map Prediction')\n parser.add_argument('--img_path', type=str, required=True)\n parser.add_argument('--condition', type=int, required=True, choices=[0, 1, 2, 3])\n parser.add_argument('--output_path', type=str, default='results')\n parser.add_argument('--heat_map_type', type=str, default='HOT', choices=['HOT', 'Overlay'], help='Type of heatmap: HOT or Overlay')\n parser.add_argument('--from_pretrained', type=str)\n args = parser.parse_args()\n\n if not os.path.exists(args.output_path):\n os.makedirs(args.output_path)\n device = torch.device(\"cuda:0\" if torch.cuda.is_available() else \"cpu\")\n if args.from_pretrained:\n model = SUM.from_pretrained(args.from_pretrained).to(device)\n else:\n model = setup_model(device)\n\n img, orig_size = load_and_preprocess_image(args.img_path)\n pred_saliency = predict_saliency_map(img, args.condition, model, device)\n\n filename = os.path.splitext(os.path.basename(args.img_path))[0]\n hot_output_filename = os.path.join(args.output_path, f'{filename}_saliencymap.png')\n\n write_heatmap_to_image(pred_saliency, orig_size, hot_output_filename)\n print(f\"Saved HOT saliency map to {hot_output_filename}\")\n\n if args.heat_map_type == 'Overlay':\n overlay_output_filename = os.path.join(args.output_path, f'{filename}_overlay.png')\n overlay_heatmap_on_image(args.img_path, hot_output_filename, overlay_output_filename)\n print(f\"Saved overlay image to {overlay_output_filename}\")\n\n\nif __name__ == \"__main__\":\n main()\n"
+}
+```
+User decision: **accepted**
+
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/requirements.txt</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/Dockerfile</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+SUM uses:
+- `from net import SUM, load_and_preprocess_image, predict_saliency_map, overlay_heatmap_on_image, write_heatmap_to_image`
+- So the package has a `net` module with config. When installed via pip (`pip install git+https://github.com/Arhosseini77/SUM.git`), we get `SUM` package.
+- They use `load_and_preprocess_image(args.img_path)` - takes a file path. We have base64 image data, so we'd need to save to temp file or check if they have an in-memory API.
+- `predict_saliency_map(img, condition, model, device)` - condition 3 for UI.
+- `write_heatmap_to_image(pred_saliency, orig_size, hot_output_filename)` - writes to file. We need heatmap as array/buffer to return base64.
+
+So we have two integration options:
+
+**Option A: Two services**  
+Keep MDS-ViTNet as default, add a second deployment "saliency-sum" that uses SUM with condition=3. CHECKION would need an env var to choose which service to call. More complex for the user.
+
+**Option B: Single service with model selection**  
+Support both backends in one service via env var (e.g. SALIENCY_MODEL=mds_vitnet|sum). If sum: load SUM, use condition=3, return heatmap. If mds_vitnet: current behavior. Build would need both sets of deps or two Dockerfiles.
+
+**Option C: Replace MDS-ViTNet with SUM**  
+Switch the saliency service to SUM only, condition=3 for all requests. One Dockerfile, one set of weights. Simpler, and directly addresses "model for websites".
+
+Given the user said they want a model "speziell für websites", Option C (replace with SUM, condition=3) is the most direct. We'd need to:
+1. New Dockerfile or major update: install SUM from pip, download sum_model.pth to net/pre_trained_weights (or their package structure).
+2. When using pip install SUM, the package might expose different paths - need to check. From the README, after `pip install git+https://github.com/Arhosseini77/SUM.git`, they do `from SUM import SUM, load_and_preprocess_image, predict_saliency_map, ...`. So the package is named `SUM` (capital). And they also have `from net import SUM, ...` in inference.py - so the repo has a `net` folder. So when installed from git, the structure might be sum/net/..., and we'd need to load weights from somewhere. Let me check - the pip install puts the package in site-packages. So we need to find where net/pre_trained_weights goes. Actually in inference they do torch.load('net/pre_trained_weights/sum_model.pth') - that's a relative path from CWD. So when we run our service, we'd need to have the SUM repo structure (or the package's net folder) with weights in net/pre_trained_weights. Easiest: clone SUM repo in Docker, install its deps, add our main.py that imports from the cloned repo and runs FastAPI. So similar to current MDS-ViTNet: clone SUM, install SUM requirements, our main.py imports from the clone.
+
+Let me check SUM's load_and_preprocess_image - does it take path only or can we pass image array? If path only, we write base64 to temp file then pass path.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="web_fetch">
+<details>
+<summary>Tool use: **web_fetch**</summary>
+
+
+Parameters:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/Arhosseini77/SUM/main/net/__init__.py"
+}
+```
+Result:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/Arhosseini77/SUM/main/net/__init__.py",
+  "markdown": "# re-export the classes and functions from the other modules\nfrom .models.SUM import *\nfrom .inference_utils import *\n"
+}
+```
+User decision: **accepted**
+
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "base64|decode|BytesIO|temp",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "base64|decode|BytesIO|temp",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service",
+  "outputMode": "content",
+  "totalFiles": 3,
+  "totalMatches": 18,
+  "topFiles": [
+    {
+      "uri": "saliency-service/README.md",
+      "matchCount": 3
+    },
+    {
+      "uri": "saliency-service/main.py",
+      "matchCount": 13
+    },
+    {
+      "uri": "saliency-service/entrypoint.sh",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me check SUM's inference_utils to see load_and_preprocess_image and predict_saliency_map - do they need file path or can we pass tensor/image?
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="web_fetch">
+<details>
+<summary>Tool use: **web_fetch**</summary>
+
+
+Parameters:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/Arhosseini77/SUM/main/net/inference_utils.py"
+}
+```
+Result:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/Arhosseini77/SUM/main/net/inference_utils.py",
+  "markdown": "import io\nfrom PIL import Image\nimport torchvision.transforms as transforms\nimport torch\nimport numpy as np\nimport cv2\nimport matplotlib.pyplot as plt\n\n\ndef load_and_preprocess_image(img_path):\n image = Image.open(img_path).convert(\"RGB\")\n orig_size = image.size\n transform = transforms.Compose(\n [\n transforms.Resize((256, 256)),\n transforms.ToTensor(),\n transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),\n ]\n )\n image = transform(image)\n return image, orig_size\n\n\ndef predict_saliency_map(img, condition, model, device):\n img = img.unsqueeze(0).to(device)\n one_hot_condition = torch.zeros((1, 4), device=device)\n one_hot_condition[0, condition] = 1\n model.eval()\n with torch.no_grad():\n pred_saliency = model(img, one_hot_condition)\n\n pred_saliency = pred_saliency.squeeze().cpu().numpy()\n return pred_saliency\n\n\ndef overlay_heatmap_on_image(original_img_path, heatmap_img_path, output_img_path):\n # Read the original image\n orig_image = cv2.imread(original_img_path)\n orig_size = orig_image.shape[:2] # Height, Width\n\n # Read the heatmap image\n overlay_heatmap = cv2.imread(heatmap_img_path, cv2.IMREAD_GRAYSCALE)\n\n # Resize the heatmap to match the original image size\n overlay_heatmap = cv2.resize(overlay_heatmap, (orig_size[1], orig_size[0]))\n\n # Apply color map to the heatmap\n overlay_heatmap = cv2.applyColorMap(overlay_heatmap, cv2.COLORMAP_JET)\n\n # Overlay the heatmap on the original image\n overlay_image = cv2.addWeighted(orig_image, 1, overlay_heatmap, 0.8, 0)\n\n # Save the result\n cv2.imwrite(output_img_path, overlay_image)\n\n\ndef write_heatmap_to_image(heatmap, orig_size, output_path):\n plt.figure()\n plt.imshow(heatmap, cmap=\"hot\")\n plt.axis(\"off\")\n\n buf = io.BytesIO()\n plt.savefig(buf, format=\"png\", bbox_inches=\"tight\", pad_inches=0)\n buf.seek(0)\n plt.close()\n\n img = Image.open(buf)\n img_cv = cv2.cvtColor(np.array(img), cv2.COLOR_RGBA2BGR)\n img_resized = cv2.resize(img_cv, orig_size, interpolation=cv2.INTER_AREA)\n cv2.imwrite(output_path, img_resized)\n"
+}
+```
+User decision: **accepted**
+
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="web_fetch">
+<details>
+<summary>Tool use: **web_fetch**</summary>
+
+
+Parameters:
+
+```json
+{
+  "url": "https://github.com/Arhosseini77/SUM/blob/main/requirements.txt"
+}
+```
+Result:
+
+```json
+{
+  "url": "https://github.com/Arhosseini77/SUM/blob/main/requirements.txt",
+  "markdown": "# requirements.txt\n\n**Repository:** [Arhosseini77/SUM](https://github.com/Arhosseini77/SUM)\n**Branch:** main\n**Lines:** 13\n\n## Source\n\n&#96;&#96;&#96;pip requirements\nscikit-image\npackaging\ncausal-conv1d==1.0.2\nmamba-ssm==1.0.1\nmonai\nopencv-python==4.6.0.66\npandas\nscikit-learn\nmatplotlib\nh5py\nyacs\ntimm\nhuggingface_hub\n&#96;&#96;&#96;"
+}
+```
+User decision: **accepted**
+
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So SUM's `load_and_preprocess_image` takes a path and returns (tensor, orig_size). We can save our base64 to a temp file and pass the path. And `predict_saliency_map` returns a numpy array (pred_saliency). The `write_heatmap_to_image` writes to file using matplotlib "hot" colormap and resizes to orig_size. We could replicate that in our code to get PNG bytes without writing to disk: run predict_saliency_map, then create the heatmap image in memory (matplotlib or our own colormap), resize to orig_size, and return PNG bytes. That way we don't need temp files.
+
+So the plan:
+1. Add a second backend "SUM" to the saliency service, selected via env var SALIENCY_BACKEND=mds_vitnet|sum (default mds_vitnet for backward compatibility).
+2. When SALIENCY_BACKEND=sum: clone SUM repo in Docker, install SUM requirements, load SUM model with condition=3 (UI). On request: decode base64 -> PIL Image -> save to temp file (or we could add a small wrapper that takes PIL and runs the same transform). Actually load_and_preprocess_image expects a path. So we write to tempfile.NamedTemporaryFile(suffix='.jpg'), pass path, get tensor and orig_size, run predict_saliency_map(img, 3, model, device), then we need to produce PNG bytes. We can use write_heatmap_to_image logic but output to BytesIO - they use plt.savefig(buf), then open as Image, resize, cv2.imwrite. We can do the same and get bytes.
+3. Dockerfile: we need either two Dockerfiles (one for MDS-ViTNet, one for SUM) or one Dockerfile with both and env select. Having both in one image would double the image size and deps (torch versions might differ). Cleaner: one Dockerfile per backend, and document "for website-focused heatmaps use the SUM image". So:
+   - Keep current Dockerfile as is for MDS-ViTNet.
+   - Add Dockerfile.sum (or saliency-service/Dockerfile.sum) that clones SUM, installs SUM deps, adds our main_sum.py that uses SUM with condition=3. And a small main.py that imports from sum_backend when SALIENCY_BACKEND=sum.
+
+Actually the user said they want to USE a model for websites. So the simplest is: offer SUM as an alternative backend in the same service, selected by env. So we need one service that can load either MDS-ViTNet or SUM. That implies one Dockerfile that has both sets of dependencies. SUM uses torch 2.1.0 (from their readme), MDS-ViTNet uses torch 1.13.1. So we can't easily have both in the same process without version conflicts. So we have to choose:
+A) Replace MDS-ViTNet with SUM entirely (new Dockerfile, new weights, condition=3). One service, one model.
+B) Two separate deployments: saliency-mds (current) and saliency-sum (new); CHECKION uses SALIENCY_SERVICE_URL to point to one or the other.
+
+I'll go with A) Replace with SUM for the "website" use case, but make it configurable so we can document "use SUM for websites" and keep the option to use MDS-ViTNet by building the other image. So:
+- Create a new Dockerfile (Dockerfile.sum) and main_sum.py (or main.py that checks SALIENCY_BACKEND and loads SUM or MDS). But torch versions conflict. So the only clean way is two Dockerfiles:
+  - Dockerfile (existing): MDS-ViTNet
+  - Dockerfile.sum: SUM, condition=3
+
+Then in CHECKION docs we say: for website-optimized heatmaps, deploy the SUM-based image and set SALIENCY_SERVICE_URL to that.
+
+Let me implement the SUM-based service: new Dockerfile.sum and a new main_sum.py that exposes the same POST /predict API, using SUM with condition=3. Our current main.py stays as is for MDS-ViTNet. So we have two ways to run the service; the SUM one is for websites.
+</details></think>
+
+---
+
+
+SUM unterstützt Condition 3 für User-Interface-/Webseiten-Bilder. Wir bauen eine SUM-Variante des Saliency-Services (Condition 3) und dokumentieren die Nutzung.
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="web_fetch">
+<details>
+<summary>Tool use: **web_fetch**</summary>
+
+
+Parameters:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/Arhosseini77/SUM/main/net/configs/config_setting.py"
+}
+```
+Result:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/Arhosseini77/SUM/main/net/configs/config_setting.py",
+  "markdown": "from torchvision import transforms \nfrom net.utils import * \n \nfrom datetime import datetime \n \n \nclass setting_config: \n \"\"\" \n the config of training setting. \n \"\"\" \n \n network = 'sum' \n model_config = { \n 'num_classes': 1, \n 'input_channels': 3, \n # ----- SUM ----- # \n 'depths': [2, 2, 27, 2], \n 'depths_decoder': [2, 2, 2, 1], \n 'drop_path_rate': 0.3, \n 'load_ckpt_path': './net/pre_trained_weights/vssmsmall_dp03_ckpt_epoch_238.pth', \n } \n \n datasets = 'isic18' \n if datasets == 'isic18': \n data_path = './data/isic2018/' \n elif datasets == 'isic17': \n data_path = './data/isic2017/' \n else: \n raise Exception('datasets in not right!') \n \n criterion = BceDiceLoss(wb=1, wd=1) \n \n pretrained_path = './pre_trained/' \n num_classes = 1 \n input_size_h = 256 \n input_size_w = 256 \n input_channels = 3 \n distributed = False \n local_rank = -1 \n num_workers = 0 \n seed = 42 \n world_size = None \n rank = None \n amp = False \n gpu_id = '0' \n batch_size = 32 \n epochs = 300 \n \n work_dir = 'results/' + network + '_' + datasets + '_' + datetime.now().strftime('%A_%d_%B_%Y_%Hh_%Mm_%Ss') + '/' \n \n print_interval = 20 \n val_interval = 30 \n save_interval = 100 \n threshold = 0.5 \n \n train_transformer = transforms.Compose([ \n myNormalize(datasets, train=True), \n myToTensor(), \n myRandomHorizontalFlip(p=0.5), \n myRandomVerticalFlip(p=0.5), \n myRandomRotation(p=0.5, degree=[0, 360]), \n myResize(input_size_h, input_size_w) \n ]) \n test_transformer = transforms.Compose([ \n myNormalize(datasets, train=False), \n myToTensor(), \n myResize(input_size_h, input_size_w) \n ]) \n \n opt = 'AdamW' \n assert opt in ['Adadelta', 'Adagrad', 'Adam', 'AdamW', 'Adamax', 'ASGD', 'RMSprop', 'Rprop', \n 'SGD'], 'Unsupported optimizer!' \n if opt == 'Adadelta': \n lr = 0.01 # default: 1.0 – coefficient that scale delta before it is applied to the parameters \n rho = 0.9 # default: 0.9 – coefficient used for computing a running average of squared gradients \n eps = 1e-6 # default: 1e-6 – term added to the denominator to improve numerical stability \n weight_decay = 0.05 # default: 0 – weight decay (L2 penalty) \n elif opt == 'Adagrad': \n lr = 0.01 # default: 0.01 – learning rate \n lr_decay = 0 # default: 0 – learning rate decay \n eps = 1e-10 # default: 1e-10 – term added to the denominator to improve numerical stability \n weight_decay = 0.05 # default: 0 – weight decay (L2 penalty) \n elif opt == 'Adam': \n lr = 0.001 # default: 1e-3 – learning rate \n betas = (0.9, \n 0.999) # default: (0.9, 0.999) – coefficients used for computing running averages of gradient and its square \n eps = 1e-8 # default: 1e-8 – term added to the denominator to improve numerical stability \n weight_decay = 0.0001 # default: 0 – weight decay (L2 penalty) \n amsgrad = False # default: False – whether to use the AMSGrad variant of this algorithm from the paper On the Convergence of Adam and Beyond \n elif opt == 'AdamW': \n lr = 0.001 # default: 1e-3 – learning rate \n betas = (0.9, \n 0.999) # default: (0.9, 0.999) – coefficients used for computing running averages of gradient and its square \n eps = 1e-8 # default: 1e-8 – term added to the denominator to improve numerical stability \n weight_decay = 1e-2 # default: 1e-2 – weight decay coefficient \n amsgrad = False # default: False – whether to use the AMSGrad variant of this algorithm from the paper On the Convergence of Adam and Beyond \n elif opt == 'Adamax': \n lr = 2e-3 # default: 2e-3 – learning rate \n betas = (0.9, \n 0.999) # default: (0.9, 0.999) – coefficients used for computing running averages of gradient and its square \n eps = 1e-8 # default: 1e-8 – term added to the denominator to improve numerical stability \n weight_decay = 0 # default: 0 – weight decay (L2 penalty) \n elif opt == 'ASGD': \n lr = 0.01 # default: 1e-2 – learning rate \n lambd = 1e-4 # default: 1e-4 – decay term \n alpha = 0.75 # default: 0.75 – power for eta update \n t0 = 1e6 # default: 1e6 – point at which to start averaging \n weight_decay = 0 # default: 0 – weight decay \n elif opt == 'RMSprop': \n lr = 1e-2 # default: 1e-2 – learning rate \n momentum = 0 # default: 0 – momentum factor \n alpha = 0.99 # default: 0.99 – smoothing constant \n eps = 1e-8 # default: 1e-8 – term added to the denominator to improve numerical stability \n centered = False # default: False – if True, compute the centered RMSProp, the gradient is normalized by an estimation of its variance \n weight_decay = 0 # default: 0 – weight decay (L2 penalty) \n elif opt == 'Rprop': \n lr = 1e-2 # default: 1e-2 – learning rate \n etas = (0.5, \n 1.2) # default: (0.5, 1.2) – pair of (etaminus, etaplis), that are multiplicative increase and decrease factors \n step_sizes = (1e-6, 50) # default: (1e-6, 50) – a pair of minimal and maximal allowed step sizes \n elif opt == 'SGD': \n lr = 0.01 # – learning rate \n momentum = 0.9 # default: 0 – momentum factor \n weight_decay = 0.05 # default: 0 – weight decay (L2 penalty) \n dampening = 0 # default: 0 – dampening for momentum \n nesterov = False # default: False – enables Nesterov momentum \n \n sch = 'CosineAnnealingLR' \n if sch == 'StepLR': \n step_size = epochs // 5 # – Period of learning rate decay. \n gamma = 0.5 # – Multiplicative factor of learning rate decay. Default: 0.1 \n last_epoch = -1 # – The index of last epoch. Default: -1. \n elif sch == 'MultiStepLR': \n milestones = [60, 120, 150] # – List of epoch indices. Must be increasing. \n gamma = 0.1 # – Multiplicative factor of learning rate decay. Default: 0.1. \n last_epoch = -1 # – The index of last epoch. Default: -1. \n elif sch == 'ExponentialLR': \n gamma = 0.99 # – Multiplicative factor of learning rate decay. \n last_epoch = -1 # – The index of last epoch. Default: -1. \n elif sch == 'CosineAnnealingLR': \n T_max = 50 # – Maximum number of iterations. Cosine function period. \n eta_min = 0.00001 # – Minimum learning rate. Default: 0. \n last_epoch = -1 # – The index of last epoch. Default: -1. \n elif sch == 'ReduceLROnPlateau': \n mode = 'min' # – One of min, max. In min mode, lr will be reduced when the quantity monitored has stopped decreasing; in max mode it will be reduced when the quantity monitored has stopped increasing. Default: ‘min’. \n factor = 0.1 # – Factor by which the learning rate will be reduced. new_lr = lr * factor. Default: 0.1. \n patience = 10 # – Number of epochs with no improvement after which learning rate will be reduced. For example, if patience = 2, then we will ignore the first 2 epochs with no improvement, and will only decrease the LR after the 3rd epoch if the loss still hasn’t improved then. Default: 10. \n threshold = 0.0001 # – Threshold for measuring the new optimum, to only focus on significant changes. Default: 1e-4. \n threshold_mode = 'rel' # – One of rel, abs. In rel mode, dynamic_threshold = best * ( 1 + threshold ) in ‘max’ mode or best * ( 1 - threshold ) in min mode. In abs mode, dynamic_threshold = best + threshold in max mode or best - threshold in min mode. Default: ‘rel’. \n cooldown = 0 # – Number of epochs to wait before resuming normal operation after lr has been reduced. Default: 0. \n min_lr = 0 # – A scalar or a list of scalars. A lower bound on the learning rate of all param groups or each group respectively. Default: 0. \n eps = 1e-08 # – Minimal decay applied to lr. If the difference between new and old lr is smaller than eps, the update is ignored. Default: 1e-8. \n elif sch == 'CosineAnnealingWarmRestarts': \n T_0 = 50 # – Number of iterations for the first restart. \n T_mult = 2 # – A factor increases T_{i} after a restart. Default: 1. \n eta_min = 1e-6 # – Minimum learning rate. Default: 0. \n last_epoch = -1 # – The index of last epoch. Default: -1. \n elif sch == 'WP_MultiStepLR': \n warm_up_epochs = 10 \n gamma = 0.1 \n milestones = [125, 225] \n elif sch == 'WP_CosineLR': \n warm_up_epochs = 20 \n \n"
+}
+```
+User decision: **accepted**
+
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/entrypoint.sh</summary>
+
+</details>
 </tool-use>
 
 ---

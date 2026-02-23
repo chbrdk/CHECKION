@@ -4,6 +4,10 @@ Screenshots are stored **outside the database** (no base64 in DB → keine träg
 
 - **Konfiguration**
   - **Lokal (Standard):** `SCREENSHOT_STORAGE=local` oder weglassen. `SCAN_SCREENSHOTS_PATH` optional, Default: `process.cwd() + '/data/screenshots'`.
+  - **Coolify Persistent Storage:** Der Pfad **muss** mit dem Volume übereinstimmen. In Coolify unter „Storages“ ist der **Source Path** der Pfad *im Container*, an dem das Volume gemountet wird. Setze `SCAN_SCREENSHOTS_PATH` auf exakt denselben Wert, z. B.:
+    - Wenn das Volume als **Source Path** `/screenshot` hat → `SCAN_SCREENSHOTS_PATH=/screenshot`
+    - Wenn du `/screenshots` (Plural) nutzen willst → in Coolify Source Path auf `/screenshots` stellen und `SCAN_SCREENSHOTS_PATH=/screenshots`
+    - Stimmen Source Path und Env-Variable nicht überein, schreibt die App in ein anderes Verzeichnis und die Dateien überleben Deployments nicht.
   - **S3 (geteilter Storage für alle Instanzen):**
     - `SCREENSHOT_STORAGE=s3`
     - `SCREENSHOT_S3_BUCKET` oder `S3_BUCKET` (Bucket-Name)

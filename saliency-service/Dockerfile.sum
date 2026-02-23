@@ -1,0 +1,36 @@
+# CHECKION Saliency Service – SUM backend (website/UI-optimized heatmaps)
+# Uses SUM (Saliency Unification through Mamba) with condition=3 (User Interface).
+# Same API as main.py; CHECKION calls SALIENCY_SERVICE_URL so point it to this app.
+FROM python:3.10-slim-bookworm
+
+WORKDIR /app
+
+# Build deps for mamba-ssm / causal-conv1d (optional; may use wheels)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    build-essential \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Clone SUM (no weights yet – see entrypoint or volume)
+RUN git clone --depth 1 https://github.com/Arhosseini77/SUM.git SUM
+RUN mkdir -p SUM/net/pre_trained_weights
+
+# PyTorch CPU (for GPU use: add --index-url https://download.pytorch.org/whl/cu121)
+RUN pip install --no-cache-dir --timeout 600 torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0
+
+# SUM dependencies (mamba-ssm may need build-essential)
+RUN pip install --no-cache-dir --timeout 600 -r SUM/requirements.txt
+
+# Our API deps
+COPY requirements-sum.txt .
+RUN pip install --no-cache-dir -r requirements-sum.txt
+
+COPY main_sum.py .
+COPY entrypoint-sum.sh .
+RUN chmod +x entrypoint-sum.sh
+
+EXPOSE 8000
+
+ENTRYPOINT ["./entrypoint-sum.sh"]
+CMD ["python", "main_sum.py"]

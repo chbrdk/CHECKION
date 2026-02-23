@@ -1,8 +1,26 @@
-# CHECKION Saliency Service (MDS-ViTNet)
+# CHECKION Saliency Service (MDS-ViTNet / SUM)
 
-HTTP service that predicts attention/saliency heatmaps from screenshots for CHECKION. Uses [MDS-ViTNet](https://github.com/IgnatPolezhaev/MDS-ViTNet).
+HTTP service that predicts attention/saliency heatmaps from screenshots for CHECKION.
 
-## Setup
+- **Default:** [MDS-ViTNet](https://github.com/IgnatPolezhaev/MDS-ViTNet) – general-purpose saliency (trained on natural images). Use `Dockerfile` and `main.py`.
+- **Website-optimized:** [SUM](https://github.com/Arhosseini77/SUM) (Saliency Unification through Mamba) with **condition=3 (User Interface)** – better suited for web pages, UI, and headlines. Use `Dockerfile.sum` and `main_sum.py`; same API.
+
+## SUM backend (website/UI heatmaps)
+
+For heatmaps that better highlight headlines, CTAs, and UI elements (EyeQuant-style), use the SUM-based service:
+
+1. **Build** with `Dockerfile.sum` (build context: `saliency-service`):
+   ```bash
+   docker build -f Dockerfile.sum -t checkion-saliency-sum .
+   ```
+2. **Weights:** Download [sum_model.pth](https://drive.google.com/file/d/14ma_hLe8DrVNuHCSKoOz41Q-rB1Hbg6A/view) and place in `SUM/net/pre_trained_weights/` (or mount a volume at `/app/SUM/net/pre_trained_weights` in the container with `sum_model.pth` inside).
+3. **Run:** Same port 8000; set CHECKION’s `SALIENCY_SERVICE_URL` to this service. Health returns `"model": "SUM", "condition": "UI (web pages)"`.
+
+In Coolify: create a **second** application from the same repo, build with **Root directory** `saliency-service`, **Dockerfile path** `Dockerfile.sum`. Mount a volume at `/app/SUM/net/pre_trained_weights` with `sum_model.pth`, or provide a direct download URL via env `SUM_WEIGHTS_URL`.
+
+---
+
+## Setup (MDS-ViTNet, default)
 
 1. **Clone this repo** (CHECKION) and go to the saliency service:
    ```bash
@@ -35,6 +53,10 @@ HTTP service that predicts attention/saliency heatmaps from screenshots for CHEC
    python main.py
    ```
    Listens on `http://0.0.0.0:8000`. Set `SALIENCY_SERVICE_URL=http://localhost:8000` in CHECKION’s `.env` so the app can call it.
+
+## Post-processing (EyeQuant-style)
+
+The raw MDS-ViTNet prediction tends to be top-heavy. In `run_saliency()` we apply vertical baseline removal, strong global gradient removal, tight percentile (10–90), and lower gamma so headlines and CTAs show as distinct hotspots. Redeploy the saliency service after changing `main.py` for new scans to use the updated heatmaps.
 
 ## API
 

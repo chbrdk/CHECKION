@@ -118,31 +118,40 @@ def run_saliency(img: Image.Image, out_w: int, out_h: int) -> bytes:
     arr = pred_map.squeeze().cpu().numpy().astype(np.float64)
     arr = np.clip(arr, 0, 1)
 
-    # Remove global gradient: large blur, subtract strongly → only local hotspots remain
-    sigma_global = max(25.0, min(out_h, out_w) / 6)
-    global_smooth = gaussian_filter(arr, sigma=sigma_global, mode="nearest")
-    arr = arr - 0.92 * global_smooth
+    # 1) Remove top-to-bottom gradient: model often predicts stronger attention at top.
+    #    Per-row mean -> smooth baseline -> subtract so headlines/elements elsewhere pop.
+    row_means = np.mean(arr, axis=1)
+    sigma_row = max(15.0, out_h / 8)
+    row_baseline = gaussian_filter(row_means, sigma=sigma_row, mode="nearest")
+    row_baseline_2d = np.tile(row_baseline[:, np.newaxis], (1, out_w))
+    arr = arr - 0.85 * row_baseline_2d
     arr = np.clip(arr, 0, 1)
 
-    # Tight percentile (20–80) so local differences use full range
-    lo, hi = np.percentile(arr, [20, 80])
+    # 2) Remove global gradient: large blur, subtract strongly → only local hotspots remain (EyeQuant-style)
+    sigma_global = max(35.0, min(out_h, out_w) / 4)
+    global_smooth = gaussian_filter(arr, sigma=sigma_global, mode="nearest")
+    arr = arr - 0.97 * global_smooth
+    arr = np.clip(arr, 0, 1)
+
+    # 3) Stretch contrast: tight percentile so real hotspots use full range (headlines/CTAs stand out)
+    lo, hi = np.percentile(arr, [10, 90])
     if hi > lo:
         arr = (arr - lo) / (hi - lo)
     arr = np.clip(arr, 0, 1)
 
-    # Local contrast: minimal sigma = very fine, almost pixel-level detail
-    sigma_local = max(0.8, min(out_h, out_w) / 1000)
+    # 4) Local contrast: emphasize edges of attention blobs (element boundaries)
+    sigma_local = max(1.0, min(out_h, out_w) / 800)
     local_mean = gaussian_filter(arr, sigma=sigma_local, mode="nearest")
-    arr = arr + 2.0 * (arr - local_mean)
+    arr = arr + 1.8 * (arr - local_mean)
     arr = np.clip(arr, 0, 1)
 
-    # Very sharp unsharp: tiny blur radius for crisp edges and small spots only
-    blur = gaussian_filter(arr, sigma=0.6, mode="nearest")
-    arr = arr + 0.85 * (arr - blur)
+    # 5) Unsharp: crisp hotspots, less diffuse gradient
+    blur = gaussian_filter(arr, sigma=0.8, mode="nearest")
+    arr = arr + 0.9 * (arr - blur)
     arr = np.clip(arr, 0, 1)
 
-    # Gamma: push more into hot range, clearer separation
-    arr = np.power(arr, 0.45)
+    # 6) Gamma: push more into hot range so hotspots (headlines, buttons) pop like EyeQuant
+    arr = np.power(arr, 0.38)
 
     # 0..1 -> 0..255 uint8 for colormap
     arr_u8 = (np.clip(arr, 0, 1) * 255).astype(np.uint8)

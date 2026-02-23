@@ -35,6 +35,8 @@ export const CACHE_REVALIDATE_LIST = 30;
 
 /** Screenshot storage: env key for backend (local disk vs S3). Use "s3" for shared storage across instances. */
 export const ENV_SCREENSHOT_STORAGE = 'SCREENSHOT_STORAGE';
+/** Path for local screenshot files. Must match Coolify volume "Source Path" if using persistent storage (e.g. /screenshots or /screenshot). */
+export const ENV_SCAN_SCREENSHOTS_PATH = 'SCAN_SCREENSHOTS_PATH';
 /** S3 bucket for screenshots when SCREENSHOT_STORAGE=s3. Fallback: S3_BUCKET. */
 export const ENV_SCREENSHOT_S3_BUCKET = 'SCREENSHOT_S3_BUCKET';
 /** Optional S3 key prefix (e.g. "screenshots"). */
