@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
-import { MsqdxTypography, MsqdxButton } from '@msqdx/react';
+import { Box, Stack } from '@mui/material';
+import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard, MsqdxFormField } from '@msqdx/react';
 import { Share2, Copy, Trash2, Lock, LockOpen } from 'lucide-react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import type { ShareResourceType } from '@/lib/db/shares';
@@ -158,27 +158,56 @@ export function SharePanel({ resourceType, resourceId, labelNamespace = 'results
                     {t('share.revoke')}
                 </MsqdxButton>
 
-                <Dialog open={passwordDialogOpen} onClose={() => setPasswordDialogOpen(false)} maxWidth="xs" fullWidth>
-                    <DialogTitle>{shareInfo.hasPassword ? t('share.removePassword') : t('share.setPassword')}</DialogTitle>
-                    <DialogContent>
-                        <TextField
-                            fullWidth
-                            type="password"
-                            label={t('share.passwordLabel')}
-                            placeholder={t('share.passwordPlaceholder')}
-                            value={passwordValue}
-                            onChange={(e) => setPasswordValue(e.target.value)}
-                            sx={{ mt: 1 }}
-                            autoComplete="new-password"
-                        />
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={() => setPasswordDialogOpen(false)}>{t('common.cancel')}</Button>
-                        <Button variant="contained" onClick={handlePatchPassword} disabled={patchLoading}>
-                            {patchLoading ? t('common.saving') : t('common.save')}
-                        </Button>
-                    </DialogActions>
-                </Dialog>
+                {passwordDialogOpen && (
+                    <Box
+                        sx={{
+                            position: 'fixed',
+                            inset: 0,
+                            zIndex: 1300,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor: 'rgba(0,0,0,0.4)',
+                            p: 2,
+                        }}
+                        onClick={() => setPasswordDialogOpen(false)}
+                        role="presentation"
+                    >
+                        <Box onClick={(e) => e.stopPropagation()} sx={{ width: '100%', maxWidth: 400 }}>
+                            <MsqdxMoleculeCard
+                                variant="flat"
+                                borderRadius="lg"
+                                sx={{
+                                    width: '100%',
+                                    p: 'var(--msqdx-spacing-lg)',
+                                    border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                                    bgcolor: 'var(--color-card-bg)',
+                                }}
+                                title={shareInfo.hasPassword ? t('share.removePassword') : t('share.setPassword')}
+                            >
+                            <Stack sx={{ gap: 'var(--msqdx-spacing-md)', mt: 1 }}>
+                                <MsqdxFormField
+                                    label={t('share.passwordLabel')}
+                                    type="password"
+                                    value={passwordValue}
+                                    onChange={(e) => setPasswordValue((e.target as HTMLInputElement).value)}
+                                    placeholder={t('share.passwordPlaceholder')}
+                                    fullWidth
+                                    autoComplete="new-password"
+                                />
+                                <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                                    <MsqdxButton variant="outlined" onClick={() => setPasswordDialogOpen(false)}>
+                                        {t('common.cancel')}
+                                    </MsqdxButton>
+                                    <MsqdxButton variant="contained" onClick={handlePatchPassword} disabled={patchLoading}>
+                                        {patchLoading ? t('common.saving') : t('common.save')}
+                                    </MsqdxButton>
+                                </Box>
+                            </Stack>
+                            </MsqdxMoleculeCard>
+                        </Box>
+                    </Box>
+                )}
             </Box>
         );
     }
@@ -193,27 +222,56 @@ export function SharePanel({ resourceType, resourceId, labelNamespace = 'results
             >
                 {t(`${labelNamespace}.share`)}
             </MsqdxButton>
-            <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="xs" fullWidth>
-                <DialogTitle>{t('share.createShare')}</DialogTitle>
-                <DialogContent>
-                    <TextField
-                        fullWidth
-                        type="password"
-                        label={t('share.passwordLabel')}
-                        placeholder={t('share.passwordPlaceholder')}
-                        value={createPassword}
-                        onChange={(e) => setCreatePassword(e.target.value)}
-                        sx={{ mt: 1 }}
-                        autoComplete="new-password"
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setCreateDialogOpen(false)}>{t('common.cancel')}</Button>
-                    <Button variant="contained" onClick={handleCreate} disabled={createLoading}>
-                        {createLoading ? t('share.creating') : t('share.createShare')}
-                    </Button>
-                </DialogActions>
-            </Dialog>
+            {createDialogOpen && (
+                <Box
+                    sx={{
+                        position: 'fixed',
+                        inset: 0,
+                        zIndex: 1300,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: 'rgba(0,0,0,0.4)',
+                        p: 2,
+                    }}
+                    onClick={() => setCreateDialogOpen(false)}
+                    role="presentation"
+                >
+                    <Box onClick={(e) => e.stopPropagation()} sx={{ width: '100%', maxWidth: 400 }}>
+                        <MsqdxMoleculeCard
+                            variant="flat"
+                            borderRadius="lg"
+                            sx={{
+                                width: '100%',
+                                p: 'var(--msqdx-spacing-lg)',
+                                border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                                bgcolor: 'var(--color-card-bg)',
+                            }}
+                            title={t('share.createShare')}
+                        >
+                            <Stack sx={{ gap: 'var(--msqdx-spacing-md)', mt: 1 }}>
+                                <MsqdxFormField
+                                    label={t('share.passwordLabel')}
+                                    type="password"
+                                    value={createPassword}
+                                    onChange={(e) => setCreatePassword((e.target as HTMLInputElement).value)}
+                                    placeholder={t('share.passwordPlaceholder')}
+                                    fullWidth
+                                    autoComplete="new-password"
+                                />
+                                <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                                    <MsqdxButton variant="outlined" onClick={() => setCreateDialogOpen(false)}>
+                                        {t('common.cancel')}
+                                    </MsqdxButton>
+                                    <MsqdxButton variant="contained" onClick={handleCreate} disabled={createLoading}>
+                                        {createLoading ? t('share.creating') : t('share.createShare')}
+                                    </MsqdxButton>
+                                </Box>
+                            </Stack>
+                        </MsqdxMoleculeCard>
+                    </Box>
+                </Box>
+            )}
         </>
     );
 }

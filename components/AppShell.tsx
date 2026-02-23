@@ -10,6 +10,8 @@ import { BrandColorInitializer } from './settings/BrandColorInitializer';
 import { THEME_ACCENT_WITH_FALLBACK } from '@/lib/theme-accent';
 
 const AUTH_PATHS = ['/login', '/register'];
+/** Share landing pages: no app layout, no navigation (public view). */
+const SHARE_PATHS = ['/share'];
 
 export function AppShell({ children }: { children: ReactNode }) {
     const pathname = usePathname();
@@ -17,8 +19,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const [mobileNavOpen, setMobileNavOpen] = useState(true);
     const isAuthPage = AUTH_PATHS.some(p => pathname === p || pathname?.startsWith(p + '/'));
+    const isSharePage = SHARE_PATHS.some(p => pathname === p || pathname?.startsWith(p + '/'));
 
-    if (isAuthPage) {
+    if (isAuthPage || isSharePage) {
         return <>{children}</>;
     }
 

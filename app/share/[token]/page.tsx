@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Box, CircularProgress, alpha, Dialog, DialogTitle, DialogContent, IconButton, Button } from '@mui/material';
-import { MsqdxTypography, MsqdxCard, MsqdxChip } from '@msqdx/react';
+import { MsqdxTypography, MsqdxCard, MsqdxChip, MsqdxButton, MsqdxFormField } from '@msqdx/react';
 import { MSQDX_BRAND_PRIMARY, MSQDX_STATUS } from '@msqdx/tokens';
 import { SaliencyHeatmapOverlay } from '@/components/SaliencyHeatmapOverlay';
 import { PageIndexRegionsOverlay } from '@/components/PageIndexRegionsOverlay';
@@ -12,6 +12,7 @@ import { PageIndexCard } from '@/components/PageIndexCard';
 import type { DomainSummaryResponse } from '@/lib/domain-summary';
 import type { ScanResult, UxJourneyAgentStep } from '@/lib/types';
 import { SHARE_DOMAIN_PAGES_PAGE_SIZE } from '@/lib/constants';
+import { useI18n } from '@/components/i18n/I18nProvider';
 
 /** Journey share payload (from GET /api/share/[token] when type=journey). */
 export interface ShareJourneyData {
@@ -139,6 +140,7 @@ type SharePayload =
 const SHARE_ACCESS_STORAGE_KEY = 'checkion_share_access';
 
 export default function ShareLandingPage() {
+    const { t } = useI18n();
     const params = useParams();
     const token = params.token as string;
     const [payload, setPayload] = useState<SharePayload | null>(null);
@@ -158,7 +160,7 @@ export default function ShareLandingPage() {
                         const clone = res.clone();
                         return clone.json().then((b) => (b.requiresPassword ? Promise.reject(new Error('PASSWORD_REQUIRED')) : res));
                     }
-                    if (!res.ok) throw new Error(res.status === 404 ? 'Link ungültig oder abgelaufen' : 'Fehler beim Laden');
+                    if (!res.ok) throw new Error(res.status === 404 ? t('share.linkInvalidOrExpired') : t('share.loadError'));
                     return res.json();
                 })
                 .then((data) => {
@@ -194,15 +196,15 @@ export default function ShareLandingPage() {
                                 setError(null);
                                 return;
                             }
-                            setError('Zugriff verweigert');
+                            setError(t('share.accessDenied'));
                         });
                     }
-                    if (!res.ok) throw new Error(res.status === 404 ? 'Link ungültig oder abgelaufen' : 'Fehler beim Laden');
+                    if (!res.ok) throw new Error(res.status === 404 ? t('share.linkInvalidOrExpired') : t('share.loadError'));
                     return res.json().then(setPayload);
                 })
-                .catch((e) => setError(e instanceof Error ? e.message : 'Fehler'));
+                .catch((e) => setError(e instanceof Error ? e.message : t('share.genericError')));
         }
-    }, [token, loadWithAuth]);
+    }, [token, loadWithAuth, t]);
 
     const handlePasswordSubmit = useCallback(
         (password: string) => {
@@ -220,12 +222,12 @@ export default function ShareLandingPage() {
                         if (typeof window !== 'undefined') sessionStorage.setItem(SHARE_ACCESS_STORAGE_KEY + '_' + token, data.accessToken);
                         return loadWithAuth(data.accessToken);
                     }
-                    setPasswordError('Falsches Passwort');
+                    setPasswordError(t('share.wrongPassword'));
                 })
-                .catch(() => setPasswordError('Falsches Passwort'))
+                .catch(() => setPasswordError(t('share.wrongPassword')))
                 .finally(() => setPasswordSubmitting(false));
         },
-        [token, loadWithAuth]
+        [token, loadWithAuth, t]
     );
 
     if (error && !requiresPassword) {
@@ -237,12 +239,36 @@ export default function ShareLandingPage() {
     }
     if (requiresPassword && !payload) {
         return (
-            <Box sx={{ p: 4, maxWidth: 400, mx: 'auto', bgcolor: '#fff', minHeight: '100vh' }}>
-                <MsqdxTypography variant="h6" sx={{ mb: 2, textAlign: 'center' }}>Passwort erforderlich</MsqdxTypography>
-                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2, textAlign: 'center' }}>
-                    Dieser geteilte Link ist durch ein Passwort geschützt.
-                </MsqdxTypography>
-                <SharePasswordForm onSubmit={handlePasswordSubmit} error={passwordError} loading={passwordSubmitting} />
+            <Box
+                sx={{
+                    minHeight: '100vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    p: 'var(--msqdx-spacing-lg)',
+                    bgcolor: 'var(--color-html-background, #fff)',
+                }}
+            >
+                <MsqdxCard
+                    variant="flat"
+                    sx={{
+                        maxWidth: 400,
+                        width: '100%',
+                        p: 'var(--msqdx-spacing-xl)',
+                        borderRadius: 2,
+                        border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                        bgcolor: 'var(--color-card-bg)',
+                    }}
+                >
+                    <MsqdxTypography variant="h5" weight="bold" sx={{ mb: 1, textAlign: 'center' }}>
+                        {t('share.passwordRequiredTitle')}
+                    </MsqdxTypography>
+                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 'var(--msqdx-spacing-lg)', textAlign: 'center' }}>
+                        {t('share.passwordRequiredSubtitle')}
+                    </MsqdxTypography>
+                    <SharePasswordForm onSubmit={handlePasswordSubmit} error={passwordError} loading={passwordSubmitting} />
+                </MsqdxCard>
             </Box>
         );
     }
@@ -260,7 +286,7 @@ export default function ShareLandingPage() {
         <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 900, mx: 'auto', bgcolor: '#fff', minHeight: '100vh' }} suppressHydrationWarning>
             <Box sx={{ mb: 3, textAlign: 'center' }}>
                 <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                    Geteilte Ergebnisse · CHECKION
+                    {t('share.sharedResultsCaption')}
                 </MsqdxTypography>
             </Box>
             {payload.type === 'domain' && <ShareDomainContent data={payload.data} token={token} accessToken={authToken} />}
@@ -279,6 +305,7 @@ function SharePasswordForm({
     error: string | null;
     loading: boolean;
 }) {
+    const { t } = useI18n();
     const [password, setPassword] = useState('');
     return (
         <Box
@@ -287,31 +314,28 @@ function SharePasswordForm({
                 e.preventDefault();
                 onSubmit(password);
             }}
-            sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+            sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-md)' }}
         >
-            <input
+            <MsqdxFormField
+                label={t('share.passwordFieldLabel')}
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Passwort"
+                onChange={(e) => setPassword((e.target as HTMLInputElement).value)}
+                placeholder={t('share.passwordFieldPlaceholder')}
                 required
+                fullWidth
                 autoComplete="current-password"
-                style={{
-                    padding: '10px 12px',
-                    borderRadius: 8,
-                    border: '1px solid var(--color-secondary-dx-grey-light-tint)',
-                    fontSize: 14,
-                }}
             />
             {error && <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.error.base }}>{error}</MsqdxTypography>}
-            <Button type="submit" variant="contained" disabled={loading} sx={{ alignSelf: 'flex-start' }}>
-                {loading ? 'Prüfe…' : 'Öffnen'}
-            </Button>
+            <MsqdxButton type="submit" variant="contained" disabled={loading} sx={{ alignSelf: 'flex-start' }}>
+                {loading ? t('share.submitChecking') : t('share.submitOpen')}
+            </MsqdxButton>
         </Box>
     );
 }
 
 function ShareDomainContent({ data, token, accessToken }: { data: DomainSummaryResponse; token: string; accessToken?: string | null }) {
+    const { t } = useI18n();
     const pages = data.pages ?? [];
     const agg = data.aggregated;
     const [listPage, setListPage] = useState(1);
@@ -330,7 +354,7 @@ function ShareDomainContent({ data, token, accessToken }: { data: DomainSummaryR
             const headers: HeadersInit = {};
             if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
             const res = await fetch(`/api/share/${encodeURIComponent(token)}/pages/${encodeURIComponent(pageId)}`, { headers });
-            if (!res.ok) throw new Error('Laden fehlgeschlagen');
+            if (!res.ok) throw new Error(t('share.loadFailed'));
             const scanResult = (await res.json()) as ScanResult;
             setSelectedPageDetail(scanResult);
         } catch {
@@ -344,17 +368,17 @@ function ShareDomainContent({ data, token, accessToken }: { data: DomainSummaryR
     return (
         <>
             <MsqdxCard variant="flat" sx={{ p: 3, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
-                <MsqdxTypography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>Deep Scan: {data.domain}</MsqdxTypography>
+                <MsqdxTypography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>{t('share.deepScanTitle')}: {data.domain}</MsqdxTypography>
                 <MsqdxTypography variant="body2" sx={{ color: STATUS.neutral, mb: 2 }}>
-                    <span suppressHydrationWarning>{new Date(data.timestamp).toISOString().slice(0, 10)}</span> · {data.totalPages} Seiten
+                    <span suppressHydrationWarning>{new Date(data.timestamp).toISOString().slice(0, 10)}</span> · {data.totalPages} {t('share.pages')}
                 </MsqdxTypography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
-                    <ScoreRing score={data.score} size={64} label="Domain-Score" />
+                    <ScoreRing score={data.score} size={64} label={t('share.domainScore')} />
                     {agg?.issues && (
                         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
-                            <MsqdxChip label={`${agg.issues.stats.errors} Errors`} size="small" sx={{ bgcolor: alpha(STATUS.error, 0.12), color: STATUS.error }} />
-                            <MsqdxChip label={`${agg.issues.stats.warnings} Warnings`} size="small" sx={{ bgcolor: alpha(STATUS.warning, 0.12), color: STATUS.warning }} />
-                            <MsqdxChip label={`${agg.issues.stats.notices} Notices`} size="small" sx={{ bgcolor: alpha(MSQDX_STATUS.info.base, 0.12), color: MSQDX_STATUS.info.base }} />
+                            <MsqdxChip label={`${agg.issues.stats.errors} ${t('share.errors')}`} size="small" sx={{ bgcolor: alpha(STATUS.error, 0.12), color: STATUS.error }} />
+                            <MsqdxChip label={`${agg.issues.stats.warnings} ${t('share.warnings')}`} size="small" sx={{ bgcolor: alpha(STATUS.warning, 0.12), color: STATUS.warning }} />
+                            <MsqdxChip label={`${agg.issues.stats.notices} ${t('share.notices')}`} size="small" sx={{ bgcolor: alpha(MSQDX_STATUS.info.base, 0.12), color: MSQDX_STATUS.info.base }} />
                         </Box>
                     )}
                 </Box>
@@ -362,14 +386,14 @@ function ShareDomainContent({ data, token, accessToken }: { data: DomainSummaryR
 
             {agg?.performance && (
                 <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
-                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>Performance (Ø)</MsqdxTypography>
+                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>{t('share.performanceAvg')}</MsqdxTypography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                         <MetricBox label="Ø TTFB" value={agg.performance.avgTtfb} unit=" ms" statusColor={getPerformanceColor(agg.performance.avgTtfb, 'ttfb')} />
                         <MetricBox label="Ø FCP" value={agg.performance.avgFcp} unit=" ms" statusColor={getPerformanceColor(agg.performance.avgFcp, 'fcp')} />
                         <MetricBox label="Ø LCP" value={agg.performance.avgLcp} unit=" ms" statusColor={getPerformanceColor(agg.performance.avgLcp, 'lcp')} />
                         <MetricBox label="Ø DOM Load" value={agg.performance.avgDomLoad} unit=" ms" statusColor={getPerformanceColor(agg.performance.avgDomLoad, 'dom')} />
                         <Box sx={{ alignSelf: 'flex-end', py: 1 }}>
-                            <MsqdxTypography variant="caption" sx={{ color: STATUS.neutral }}>{agg.performance.pageCount} Seiten</MsqdxTypography>
+                            <MsqdxTypography variant="caption" sx={{ color: STATUS.neutral }}>{agg.performance.pageCount} {t('share.pages')}</MsqdxTypography>
                         </Box>
                     </Box>
                 </MsqdxCard>
@@ -550,7 +574,7 @@ function ShareDomainContent({ data, token, accessToken }: { data: DomainSummaryR
             )}
 
             <MsqdxCard variant="flat" sx={{ p: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
-                <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>Gescannte Seiten ({pages.length})</MsqdxTypography>
+                <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>{t('share.scannedPages', { count: String(pages.length) })}</MsqdxTypography>
                 <Box component="ul" sx={{ m: 0, pl: 0, listStyle: 'none', maxHeight: 480, overflow: 'auto' }}>
                     {paginatedPages.map((p) => (
                         <li key={p.id}>
@@ -571,7 +595,7 @@ function ShareDomainContent({ data, token, accessToken }: { data: DomainSummaryR
                                     disabled={loadingDetail && loadingPageId === p.id}
                                     sx={{ flexShrink: 0 }}
                                 >
-                                    {loadingDetail && loadingPageId === p.id ? 'Laden…' : 'Einzelscan anzeigen'}
+                                    {loadingDetail && loadingPageId === p.id ? t('share.loading') : t('share.showSingleScan')}
                                 </Button>
                             </Box>
                         </li>
@@ -580,11 +604,11 @@ function ShareDomainContent({ data, token, accessToken }: { data: DomainSummaryR
                 {totalPages > 1 && (
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1.5, pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
                         <MsqdxTypography variant="caption" sx={{ color: STATUS.neutral }}>
-                            Seite {listPage} von {totalPages} ({pages.length} Seiten)
+                            {t('share.pageOfTotal', { current: String(listPage), total: String(totalPages), count: String(pages.length) })}
                         </MsqdxTypography>
                         <Box sx={{ display: 'flex', gap: 0.5 }}>
-                            <Button size="small" disabled={listPage <= 1} onClick={() => setListPage((x) => Math.max(1, x - 1))}>Zurück</Button>
-                            <Button size="small" disabled={listPage >= totalPages} onClick={() => setListPage((x) => Math.min(totalPages, x + 1))}>Weiter</Button>
+                            <Button size="small" disabled={listPage <= 1} onClick={() => setListPage((x) => Math.max(1, x - 1))}>{t('share.back')}</Button>
+                            <Button size="small" disabled={listPage >= totalPages} onClick={() => setListPage((x) => Math.min(totalPages, x + 1))}>{t('share.next')}</Button>
                         </Box>
                     </Box>
                 )}
@@ -592,8 +616,8 @@ function ShareDomainContent({ data, token, accessToken }: { data: DomainSummaryR
 
             <Dialog open={!!selectedPageDetail || loadingDetail} onClose={() => !loadingDetail && setSelectedPageDetail(null)} maxWidth="md" fullWidth scroll="paper" PaperProps={{ sx: { bgcolor: '#fff' } }}>
                 <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#1a1a1a', borderBottom: '1px solid #eee' }}>
-                    <MsqdxTypography variant="h6" sx={{ color: '#1a1a1a' }}>Einzelscan</MsqdxTypography>
-                    <IconButton aria-label="Schließen" onClick={() => setSelectedPageDetail(null)} disabled={loadingDetail} size="small" sx={{ ml: 1, color: '#666' }}>
+                    <MsqdxTypography variant="h6" sx={{ color: '#1a1a1a' }}>{t('share.singleScanTitle')}</MsqdxTypography>
+                    <IconButton aria-label={t('share.close')} onClick={() => setSelectedPageDetail(null)} disabled={loadingDetail} size="small" sx={{ ml: 1, color: '#666' }}>
                         ×
                     </IconButton>
                 </DialogTitle>
@@ -615,6 +639,7 @@ function ShareDomainContent({ data, token, accessToken }: { data: DomainSummaryR
 }
 
 function ShareJourneyContent({ data, accessToken }: { data: ShareJourneyData; accessToken?: string | null }) {
+    const { t } = useI18n();
     const steps = data.steps ?? [];
     const taskDescription = data.taskDescription ?? '';
     const siteDomain = data.siteDomain ?? '';
@@ -624,7 +649,7 @@ function ShareJourneyContent({ data, accessToken }: { data: ShareJourneyData; ac
     return (
         <>
             <MsqdxCard variant="flat" sx={{ p: 3, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
-                <MsqdxTypography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>UX Journey</MsqdxTypography>
+                <MsqdxTypography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>{t('share.uxJourneyTitle')}</MsqdxTypography>
                 <MsqdxTypography variant="body2" sx={{ color: STATUS.neutral, mb: 2 }}>
                     {taskDescription && <span>{taskDescription}</span>}
                     {siteDomain && (
@@ -637,25 +662,25 @@ function ShareJourneyContent({ data, accessToken }: { data: ShareJourneyData; ac
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <MsqdxChip
                         size="small"
-                        label={success ? 'Erfolgreich abgeschlossen' : 'Abgeschlossen'}
+                        label={success ? t('share.completedSuccess') : t('share.completed')}
                         sx={{
                             bgcolor: success ? alpha(STATUS.good, 0.12) : alpha(STATUS.neutral, 0.12),
                             color: success ? STATUS.good : STATUS.neutral,
                         }}
                     />
                     {steps.length > 0 && (
-                        <MsqdxTypography variant="caption" sx={{ color: STATUS.neutral }}>{steps.length} Schritte</MsqdxTypography>
+                        <MsqdxTypography variant="caption" sx={{ color: STATUS.neutral }}>{t('share.stepsCount', { count: String(steps.length) })}</MsqdxTypography>
                     )}
                 </Box>
             </MsqdxCard>
 
             {videoUrl && (
                 <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
-                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>Aufzeichnung</MsqdxTypography>
+                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>{t('share.recording')}</MsqdxTypography>
                     <Box sx={{ width: '100%', maxWidth: 960, borderRadius: 1, overflow: 'hidden', bgcolor: '#000' }}>
                         {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
                         <video controls playsInline style={{ width: '100%', display: 'block' }} src={videoUrl}>
-                            Video nicht verfügbar.
+                            {t('share.videoUnavailable')}
                         </video>
                     </Box>
                 </MsqdxCard>
@@ -663,7 +688,7 @@ function ShareJourneyContent({ data, accessToken }: { data: ShareJourneyData; ac
 
             {steps.length > 0 && (
                 <MsqdxCard variant="flat" sx={{ p: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
-                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>Schritte ({steps.length})</MsqdxTypography>
+                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>{t('share.stepsCount', { count: String(steps.length) })}</MsqdxTypography>
                     <Box component="ul" sx={{ m: 0, pl: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                         {steps.map((step, idx) => (
                             <Box
@@ -679,7 +704,7 @@ function ShareJourneyContent({ data, accessToken }: { data: ShareJourneyData; ac
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                                     <MsqdxChip
                                         size="small"
-                                        label={step.action === 'navigate' ? 'Seite' : step.action === 'click' ? 'Klick' : step.action === 'done' ? 'Abgeschlossen' : step.action}
+                                        label={step.action === 'navigate' ? t('share.stepLabelPage') : step.action === 'click' ? t('share.stepLabelClick') : step.action === 'done' ? t('share.stepLabelDone') : step.action}
                                         sx={{
                                             fontWeight: 600,
                                             fontSize: '0.75rem',
@@ -690,7 +715,7 @@ function ShareJourneyContent({ data, accessToken }: { data: ShareJourneyData; ac
                                                   : { bgcolor: alpha(STATUS.good, 0.2), color: STATUS.good }),
                                         }}
                                     />
-                                    <MsqdxTypography variant="caption" sx={{ color: STATUS.neutral }}>Schritt {idx + 1}</MsqdxTypography>
+                                    <MsqdxTypography variant="caption" sx={{ color: STATUS.neutral }}>{t('share.stepN', { n: String(idx + 1) })}</MsqdxTypography>
                                 </Box>
                                 {step.target && step.target !== '—' && (
                                     <MsqdxTypography variant="body2" sx={{ color: '#1a1a1a', wordBreak: 'break-word' }}>

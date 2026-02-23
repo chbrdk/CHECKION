@@ -13,6 +13,7 @@ Scan-Ergebnisse (Seiten-Scan, Deep Scan) und **UX Journeys** können per Link ge
   - **DELETE /api/share/[token]** (Auth): Teilung aufheben (nur eigener Share). Cache-Tag `share-${token}` wird invalidiert.
   - **PATCH /api/share/[token]** (Auth): Body `{ password: string | null }`. Passwort setzen oder entfernen.
 - **Landingpage:** **/share/[token]** – lädt GET /api/share/[token]. Bei 403 und requiresPassword: Passwortformular anzeigen; nach POST /access Token in sessionStorage, dann GET mit Bearer und Anzeige der Daten. Video/Screenshot-URLs werden mit `?access=` versehen, damit der Browser sie laden kann.
+- **i18n:** Alle sichtbaren Texte auf Share-Landingpage und SharePanel nutzen `useI18n()` und `t('share.*')`. Locale-Keys in `locales/de.json` und `locales/en.json` unter `share` (inkl. Fehlermeldungen, Passwortformular, Deep Scan/Einzel/Journey-Titel, Pagination, Schritte, Aufzeichnung usw.).
 - **UI (SharePanel):** Auf Results-, Domain- und Journey-Seite: Wenn bereits geteilt → Anzeige „Bereits geteilt“, Link (gekürzt), [Link kopieren], [Passwort setzen/entfernen], [Teilung aufheben]. Wenn nicht geteilt → [Teilen]; Dialog mit optionalem Passwort, dann Erstellen und Link kopieren.
 - **Middleware:** /share und /api/share sind nicht in protectedPaths, daher öffentlich abrufbar.
 - **Ablauf:** Optional `expiresAt` bei createShare; GET prüft Ablauf und liefert 404 bei abgelaufenem Token. Access-Token für passwortgeschützte Shares: lib/share-access.ts (HMAC mit AUTH_SECRET, 24h).

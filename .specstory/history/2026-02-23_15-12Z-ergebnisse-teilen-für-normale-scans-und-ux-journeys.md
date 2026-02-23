@@ -7315,3 +7315,1089 @@ Damit sollte der Build durchlaufen. Bitte den Deploy erneut starten.
 
 ---
 
+_**User**_
+
+okay das dialogelement für passworteingabe ist absolut nicht im msqdx design system, schau bitte wir müssten modale oder dialoge als componenten bereits haben genauso wie inputs etc. gleiches gilt auf der geteilten seite, da müsste keine navigation sichtbar sein und das passwort inputfeld im msqdx style 
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants:
+1. The password dialog (in SharePanel and on the share page) to use MSQDX design system components - modals/dialogs and inputs instead of raw MUI/HTML
+2. On the shared page (/share/[token]) - no navigation should be visible, and the password input field should be in MSQDX style
+
+Let me search for existing MSQDX modal/dialog and input components in the codebase.
+</details></think>
+
+---
+
+
+Suche nach MSQDX-Dialog-, Modal- und Input-Komponenten im Projekt:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "Msqdx.*Modal|Msqdx.*Dialog|Msqdx.*Input|from '@msqdx",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "Msqdx.*Modal|Msqdx.*Dialog|Msqdx.*Input|from '@msqdx",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 43,
+  "totalMatches": 75,
+  "topFiles": [
+    {
+      "uri": "./.specstory/history/2026-02-23_15-12Z-ergebnisse-teilen-für-normale-scans-und-ux-journeys.md",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/domain/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/journey-agent/[jobId]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/results/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./components/SharePanel.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/share/[token]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./components/settings/BrandColorSelector.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/UxIssueList.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./components/UxCard.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./components/TouchTargetOverlay.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/ThemeProvider.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/TechnicalInsightsCard.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./components/StructureMap.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/Sidebar.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./components/SeoCard.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./components/SecurityCard.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./components/SearchResultsList.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./components/ScanIssueRow.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./components/ScanIssueList.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./components/ScanIssueItem.tsx",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/package.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The msqdx package is at `file:../msqdx-design-system/packages/react`. I need to look at what the design system exports - Modal, Dialog, Input. Let me search in the repo for the design system or any usage of modal/dialog/input.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **0** result in **1** directory</summary>
+
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1** (0 file)
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/login/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SharePanel.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Login uses MsqdxFormField - that's the MSQDX input style. Let me check the login page for the full form field usage and see if there's MsqdxModal or similar in the design system. The package is in a sibling folder so I might not have access. Let me search for Modal or Dialog in the codebase and for MsqdxFormField usage.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/login/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "MsqdxFormField|MsqdxModal|MsqdxDialog",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "MsqdxFormField|MsqdxModal|MsqdxDialog",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 7,
+  "totalMatches": 25,
+  "topFiles": [
+    {
+      "uri": "./app/domain/[id]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/settings/page.tsx",
+      "matchCount": 8
+    },
+    {
+      "uri": "./app/scan/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/scan/domain/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/register/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "./app/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/login/page.tsx",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So we have:
+- MsqdxFormField for inputs (used in login, register, settings, etc.) - with label, type, value, onChange, required, fullWidth
+- No MsqdxModal/MsqdxDialog found in the codebase - the design system might have it but it's in a sibling folder. Let me check if there's an export from @msqdx/react that we can use. I'll try searching for "Modal" or "Dialog" in node_modules or the design system path. Actually the package is file:../msqdx-design-system - that might not be in the workspace. So I'll use MsqdxFormField and MsqdxButton for the form. For the modal/dialog - if the design system doesn't export one, we could use a simple overlay with MsqdxCard and MsqdxButton that looks consistent (no MUI Dialog). Or we check what @msqdx/react exports.
+
+Let me list what's available from @msqdx/react by checking existing imports across the app.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "from '@msqdx/react'",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "from '@msqdx/react'",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 38,
+  "totalMatches": 39,
+  "topFiles": [
+    {
+      "uri": "./.specstory/history/2026-02-23_15-12Z-ergebnisse-teilen-für-normale-scans-und-ux-journeys.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/domain/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/journey-agent/[jobId]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/results/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/SharePanel.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/share/[token]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/settings/BrandColorSelector.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/UxIssueList.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/UxCard.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/TechnicalInsightsCard.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/Sidebar.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./components/SeoCard.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/SecurityCard.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/SearchResultsList.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/ScanIssueRow.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/ScanIssueList.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/ScanIssueItem.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/PrivacyCard.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/PerformanceCard.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/PaginationBar.tsx",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/login/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to:
+1. SharePanel: Replace MUI Dialog + TextField + Button with MSQDX. Use MsqdxMoleculeCard or MsqdxCard as overlay content (modal-style) with MsqdxFormField and MsqdxButton. If there's no MsqdxModal, I'll build a simple overlay with Box (backdrop) + MsqdxMoleculeCard (content) and MSQDX buttons/inputs.
+2. Share page: Ensure no navigation is visible (the share page might be inside a layout that has nav - I need to check the app layout). And replace the native input + Button with MsqdxFormField + MsqdxButton.
+
+Let me check the app layout to see if share has its own layout or uses the main one.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **1** result in **1** directory</summary>
+
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app** (1 file)
+
+| File |
+|------|
+| `layout.tsx` |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/layout.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/settings/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+AppShell wraps all children - so the share page might render inside AppShell which likely has navigation. I need to check AppShell to see if it conditionally hides nav for /share routes.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/AppShell.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+AppShell already has AUTH_PATHS = ['/login', '/register'] and when pathname is on those, it renders only children (no layout/sidebar). I need to add '/share' to a similar list so that share pages render without the app layout (no navigation). I'll add SHARE_PATHS or extend to skip layout for pathname.startsWith('/share').
+</details></think>
+
+---
+
+
+Änderungen vornehmen:
+1. AppShell: Share-Routen ohne Navigation rendern (wie Login)
+2. SharePanel: MUI-Dialog/TextField durch MSQDX ersetzen — Modal-Overlay mit MsqdxMoleculeCard, MsqdxFormField, MsqdxButton
+3. Share-Seite: SharePasswordForm mit MsqdxFormField und MsqdxButton
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/AppShell.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now update SharePanel to use MSQDX: use a full-screen overlay (Box with position fixed, backdrop) and a centered MsqdxMoleculeCard with MsqdxFormField and MsqdxButton. No MUI Dialog.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SharePanel.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SharePanel.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SharePanel.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+MsqdxMoleculeCard might not accept onClick - it's a card. Let me check - we need to stop propagation on the card so the backdrop click doesn't close it. I'll wrap the card content in a Box that has onClick stopPropagation. Let me check - I put onClick on MsqdxMoleculeCard. If that doesn't work we can wrap in Box. Let me leave it and fix if needed.
+
+Now update the share page: SharePasswordForm with MsqdxFormField and MsqdxButton, and remove any Button import if it was only used there.
+</details></think>
+
+---
+
+
+Share-Seite: Passwortformular auf MSQDX umstellen und Button-Import prüfen.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The share page still uses Button in the ShareDomainContent for the pagination and "Einzelscan anzeigen" - let me check. I removed Button from the import - need to add it back if it's used elsewhere in the file.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "Button",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "Button",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 13,
+  "topFiles": [
+    {
+      "uri": "app/share/[token]/page.tsx",
+      "matchCount": 13
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+There are still MUI Button usages in the share page (ShareDomainContent - pagination, open page detail, and ShareSingleContent - heatmap/regions toggles). So I need to add Button back to the MUI import for the share page. I'll leave the import as is with Button from MUI for those, or we could replace those with MsqdxButton for consistency - but the user asked specifically for the password dialog and the share page password input to be MSQDX. The other buttons (pagination, view toggles) could stay MUI for now unless we want to replace all. I'll add Button back to the import.
+</details></think>
+
+---
+
+
+Button wird an anderen Stellen der Share-Seite verwendet. Wir fügen den Import wieder hinzu:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Check if MsqdxMoleculeCard supports onClick - it might not. Let me check the SharePanel - we need the overlay content to stop propagation. I used onClick on MsqdxMoleculeCard - if the component doesn't forward it, the click might bubble to the backdrop. Let me wrap the card in a Box with onClick stopPropagation to be safe.
+</details></think>
+
+---
+
+
+Sicherstellen, dass das Modal-Inner Klicks nicht an den Backdrop durchlässt. MsqdxMoleculeCard könnte onClick nicht weiterreichen — Klick-Handler in eine umschließende Box legen:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SharePanel.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SharePanel.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SharePanel.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me verify the SharePanel file structure - the first dialog had two closing tags: </MsqdxMoleculeCard> and </Box>. I need to make sure the first modal (password dialog) has the right structure. Let me read the file to verify.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SharePanel.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Structure looks good. Let me run linter on both files.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SharePanel.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/AppShell.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SharePanel.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/AppShell.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+All good. Let me provide a short summary to the user.
+</details></think>
+
+---
+
+
+Zusammenfassung der Änderungen:
+
+## 1. **Share-Seite ohne Navigation**
+- **AppShell.tsx:** Pfade unter `/share` werden wie Login/Register behandelt: Es wird nur `children` gerendert, **ohne** MsqdxAppLayout und Sidebar. Geteilte Links öffnen sich ohne CHECKION-Navigation.
+
+## 2. **SharePanel – Dialoge im MSQDX-Stil**
+- **MUI Dialog/TextField/Button entfernt.** Stattdessen:
+  - **Modal:** Eigenes Overlay mit `position: fixed`, dunklem Backdrop (`rgba(0,0,0,0.4)`), zentriert.
+  - **Inhalt:** **MsqdxMoleculeCard** (variant="flat", borderRadius="lg") mit Titel.
+  - **Eingabe:** **MsqdxFormField** (label, type="password", placeholder, fullWidth).
+  - **Aktionen:** **MsqdxButton** (variant="outlined" für Abbrechen, variant="contained" für Speichern/Teilen).
+- Klick auf den Backdrop schließt das Modal; Klick auf die Card wird per `stopPropagation` nicht geschlossen.
+- Gilt für beide Modale: „Passwort setzen/entfernen“ (bereits geteilt) und „Teilen“ (mit optionalem Passwort).
+
+## 3. **Geteilte Seite – Passwort-Formular im MSQDX-Stil**
+- **Passwort-Bereich:** Zentrierter Inhalt mit **MsqdxCard** (Titel „Passwort erforderlich“, kurzer Hinweistext).
+- **Eingabe:** **MsqdxFormField** (label, type="password", placeholder, fullWidth, required).
+- **Aktion:** **MsqdxButton** (variant="contained", type="submit", „Öffnen“ / „Prüfe…“).
+- **Layout:** `minHeight: 100vh`, zentriert, Abstände und Farben über Design-Tokens (`var(--msqdx-spacing-*)`, `var(--color-card-bg)` usw.).
+
+Die übrigen MUI-Buttons auf der Share-Seite (Pagination „Zurück/Weiter“, „Einzelscan anzeigen“, Heatmap/Regionen-Umschalter) sind unverändert; nur die Passwort-Dialoge und das Passwort-Formular auf der geteilten Seite nutzen jetzt durchgängig MSQDX-Komponenten.
+
+---
+
+_**User**_
+
+hast du überall direkt weiter an unsere vorhandene  l18n umsetzung gedacht?
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
