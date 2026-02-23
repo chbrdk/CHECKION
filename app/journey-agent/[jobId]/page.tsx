@@ -234,7 +234,6 @@ function StepCard({
                 borderRadius: 'var(--msqdx-radius-sm)',
                 border: '1px solid var(--color-secondary-dx-grey-light-tint)',
                 bgcolor: 'var(--color-card-bg)',
-                minWidth: 0,
                 flex: '1 1 0',
                 minWidth: { xs: '100%', md: 260 },
             }}

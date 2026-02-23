@@ -2564,7 +2564,380 @@ Zusammenfassung der Änderungen:
 - **Responsive:** `useTheme()` und `useMediaQuery(theme.breakpoints.up('md'))` – unterhalb `md` 1 Card, ab `md` 3 Cards.
 - **Konstanten:** `STEP_CARDS_DESKTOP = 3`, `STEP_CARDS_MOBILE = 1`.
 - **Sichtbare Schritte:** `visibleSteps = steps.slice(activeStepIndex, activeStepIndex + cardsVisible)`; Prev/Next verschieben weiterhin um einen Schritt.
-- **Layout:** Die Step-Cards 
+- **Layout:** Die Step-Cards stehen in einem Flex-Container mit `display: 'flex'`, `flexDirection: 'row'`, `gap`; jede Card hat `flex: '1 1 0'` und `minWidth: { xs: '100%', md: 260 }`.
+- **Header:** Bei mehreren sichtbaren Cards wird „2–4 / 10“ angezeigt, sonst „3 / 10“.
+
+## 2. Ergebnis-Text als Sektionen (thinking, memory, next_goal, …)
+
+- **Parser `parseStepResult(raw)`:** Erkennt Muster `key='value'` (inkl. mehrzeiliger Werte). Findet alle `(\w+)='`, ermittelt die Wert-Länge bis zum nächsten `key='` und baut eine Liste `{ key, value }`.
+- **Labels:** `RESULT_SECTION_LABELS` mit z. B. `thinking` → „Thinking“, `memory` → „Memory“, `next_goal` → „Next goal“, `evaluation_previous_goal` → „Previous goal evaluation“, `goal`, `evaluation`. Unbekannte Keys werden mit Unterstrichen als Leerzeichen angezeigt.
+- **Komponente `StepResultSections`:** Rendert für jedes erkannte Paar einen kleinen Block (Token-Hintergrund, linke Akzent-Border, Label in Großbuchstaben, Wert mit `pre-wrap`). Wenn kein `key='value'` vorkommt, wird der Roh-Text (max. 500 Zeichen) angezeigt.
+- **Step-Card:** Die bisherige direkte Anzeige von `step.result` wurde durch `<StepResultSections resultText={step.result} />` ersetzt.
+
+## 3. Step-Card als Komponente
+
+- **`StepCard`** kapselt Action-Chip, Schrittnummer („Schritt X / Y“), Target, Reasoning-Block und die formatierte Ergebnis-Sektion. Wird für jede Karte in `visibleSteps` genutzt.
+
+Datei: `app/journey-agent/[jobId]/page.tsx`. Linter meldet keine Fehler.
+
+---
+
+_**User**_
+
+2026-Feb-23 10:40:14.626135
+#7 35.20 Setting up libxpm4:amd64 (1:3.5.12-1.1+deb12u1) ...
+2026-Feb-23 10:40:14.626135
+#7 35.21 Setting up libxrender1:amd64 (1:0.9.10-1.1) ...
+2026-Feb-23 10:40:14.626135
+#7 35.22 Setting up libgbm1:amd64 (22.3.6-1+deb12u1) ...
+2026-Feb-23 10:40:14.626135
+#7 35.24 Setting up libpulse0:amd64 (16.1+dfsg1-2+b1) ...
+2026-Feb-23 10:40:14.626135
+#7 35.30 Setting up libdrm-radeon1:amd64 (2.4.114-1+b1) ...
+2026-Feb-23 10:40:14.626135
+#7 35.34 Setting up libpango-1.0-0:amd64 (1.50.12+ds-1) ...
+2026-Feb-23 10:40:14.626135
+#7 35.36 Setting up libdrm-intel1:amd64 (2.4.114-1+b1) ...
+2026-Feb-23 10:40:14.626135
+#7 35.37 Setting up libgl1-mesa-dri:amd64 (22.3.6-1+deb12u1) ...
+2026-Feb-23 10:40:14.626135
+#7 35.41 Setting up libxext6:amd64 (2:1.3.4-1+b1) ...
+2026-Feb-23 10:40:14.626135
+#7 35.43 Setting up libcairo2:amd64 (1.16.0-7) ...
+2026-Feb-23 10:40:14.626135
+#7 35.44 Setting up libxxf86vm1:amd64 (1:1.1.4-1+b2) ...
+2026-Feb-23 10:40:14.626135
+#7 35.45 Setting up libxnvctrl0:amd64 (525.85.05-3~deb12u1) ...
+2026-Feb-23 10:40:14.626135
+#7 35.47 Setting up dbus-user-session (1.14.10-1~deb12u1) ...
+2026-Feb-23 10:40:14.626135
+#7 35.48 Setting up adwaita-icon-theme (43-1) ...
+2026-Feb-23 10:40:14.626135
+#7 35.82 update-alternatives: using /usr/share/icons/Adwaita/cursor.theme to provide /usr/share/icons/default/index.theme (x-cursor-theme) in auto mode
+2026-Feb-23 10:40:14.626135
+#7 35.85 Setting up libxfixes3:amd64 (1:6.0.0-2) ...
+2026-Feb-23 10:40:14.626135
+#7 35.90 Setting up libxinerama1:amd64 (2:1.1.4-3) ...
+2026-Feb-23 10:40:14.626135
+#7 35.91 Setting up libxv1:amd64 (2:1.0.11-1.1) ...
+2026-Feb-23 10:40:14.626135
+#7 35.93 Setting up libxrandr2:amd64 (2:1.5.2-2+b1) ...
+2026-Feb-23 10:40:14.626135
+#7 35.95 Setting up libxt6:amd64 (1:1.2.1-1.1) ...
+2026-Feb-23 10:40:14.626135
+#7 35.97 Setting up libcups2:amd64 (2.4.2-3+deb12u9) ...
+2026-Feb-23 10:40:14.626135
+#7 35.99 Setting up libharfbuzz-subset0:amd64 (6.0.0+dfsg-3) ...
+2026-Feb-23 10:40:14.626135
+#7 36.01 Setting up libcairo-gobject2:amd64 (1.16.0-7) ...
+2026-Feb-23 10:40:14.626135
+#7 36.02 Setting up libpangoft2-1.0-0:amd64 (1.50.12+ds-1) ...
+2026-Feb-23 10:40:14.626135
+#7 36.03 Setting up libpangocairo-1.0-0:amd64 (1.50.12+ds-1) ...
+2026-Feb-23 10:40:14.626135
+#7 36.05 Setting up libxft2:amd64 (2.3.6-1) ...
+2026-Feb-23 10:40:14.626135
+#7 36.06 Setting up libxmu6:amd64 (2:1.1.3-3) ...
+2026-Feb-23 10:40:14.626135
+#7 36.10 Setting up libglx-mesa0:amd64 (22.3.6-1+deb12u1) ...
+2026-Feb-23 10:40:14.626135
+#7 36.12 Setting up libxi6:amd64 (2:1.8-1+b1) ...
+2026-Feb-23 10:40:14.626135
+#7 36.14 Setting up libglx0:amd64 (1.6.0-1) ...
+2026-Feb-23 10:40:14.626135
+#7 36.17 Setting up libxtst6:amd64 (2:1.2.3-1.1) ...
+2026-Feb-23 10:40:14.626135
+#7 36.19 Setting up libxcursor1:amd64 (1:1.2.1-1) ...
+2026-Feb-23 10:40:14.626135
+#7 36.23 Setting up libxxf86dga1:amd64 (2:1.1.5-1) ...
+2026-Feb-23 10:40:14.626135
+#7 36.24 Setting up dconf-service (0.40.0-4) ...
+2026-Feb-23 10:40:14.626135
+#7 36.26 Setting up libxaw7:amd64 (2:1.0.14-1) ...
+2026-Feb-23 10:40:14.626135
+#7 36.27 Setting up libatspi2.0-0:amd64 (2.46.0-5) ...
+2026-Feb-23 10:40:14.626135
+#7 36.29 Setting up libatk-bridge2.0-0:amd64 (2.46.0-5) ...
+2026-Feb-23 10:40:14.626135
+#7 36.30 Setting up libgl1:amd64 (1.6.0-1) ...
+2026-Feb-23 10:40:14.626135
+#7 36.32 Setting up x11-utils (7.7+5) ...
+2026-Feb-23 10:40:14.626135
+#7 36.40 Setting up chromium-common (145.0.7632.109-1~deb12u3) ...
+2026-Feb-23 10:40:14.626135
+#7 36.41 Setting up dconf-gsettings-backend:amd64 (0.40.0-4) ...
+2026-Feb-23 10:40:14.626135
+#7 36.42 Setting up libgtk-3-common (3.24.38-2~deb12u3) ...
+2026-Feb-23 10:40:14.626135
+#7 36.44 Setting up libgtk-3-0:amd64 (3.24.38-2~deb12u3) ...
+2026-Feb-23 10:40:14.626135
+#7 36.48 Setting up chromium (145.0.7632.109-1~deb12u3) ...
+2026-Feb-23 10:40:14.626135
+#7 36.51 update-alternatives: using /usr/bin/chromium to provide /usr/bin/x-www-browser (x-www-browser) in auto mode
+2026-Feb-23 10:40:14.626135
+#7 36.52 update-alternatives: using /usr/bin/chromium to provide /usr/bin/gnome-www-browser (gnome-www-browser) in auto mode
+2026-Feb-23 10:40:14.626135
+#7 36.53 Processing triggers for libc-bin (2.36-9+deb12u13) ...
+2026-Feb-23 10:40:14.626135
+#7 DONE 38.2s
+2026-Feb-23 10:40:14.626135
+2026-Feb-23 10:40:14.626135
+#11 [deps 3/3] RUN --mount=type=cache,target=/root/.npm     (test -f package-lock.json && npm ci --ignore-scripts) || npm install --ignore-scripts
+2026-Feb-23 10:40:14.626135
+#11 6.080 npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+2026-Feb-23 10:40:14.626135
+#11 6.281 npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+2026-Feb-23 10:40:14.626135
+#11 7.417 npm warn deprecated puppeteer@22.15.0: < 24.15.0 is no longer supported
+2026-Feb-23 10:40:14.626135
+#11 14.57
+2026-Feb-23 10:40:14.626135
+#11 14.57 added 749 packages, and audited 752 packages in 14s
+2026-Feb-23 10:40:14.626135
+#11 14.57
+2026-Feb-23 10:40:14.626135
+#11 14.57 165 packages are looking for funding
+2026-Feb-23 10:40:14.626135
+#11 14.57   run `npm fund` for details
+2026-Feb-23 10:40:14.626135
+#11 14.86
+2026-Feb-23 10:40:14.626135
+#11 14.86 24 vulnerabilities (5 moderate, 18 high, 1 critical)
+2026-Feb-23 10:40:14.626135
+#11 14.86
+2026-Feb-23 10:40:14.626135
+#11 14.86 To address issues that do not require attention, run:
+2026-Feb-23 10:40:14.626135
+#11 14.86   npm audit fix
+2026-Feb-23 10:40:14.626135
+#11 14.86
+2026-Feb-23 10:40:14.626135
+#11 14.86 To address all issues (including breaking changes), run:
+2026-Feb-23 10:40:14.626135
+#11 14.86   npm audit fix --force
+2026-Feb-23 10:40:14.626135
+#11 14.86
+2026-Feb-23 10:40:14.626135
+#11 14.86 Run `npm audit` for details.
+2026-Feb-23 10:40:14.626135
+#11 DONE 15.8s
+2026-Feb-23 10:40:14.626135
+2026-Feb-23 10:40:14.626135
+#12 [builder 1/5] COPY --from=deps /msqdx-design-system /msqdx-design-system
+2026-Feb-23 10:40:14.626135
+#12 DONE 4.6s
+2026-Feb-23 10:40:14.626135
+2026-Feb-23 10:40:14.626135
+#13 [builder 2/5] COPY --from=deps /app/node_modules ./node_modules
+2026-Feb-23 10:40:14.626135
+#13 DONE 11.8s
+2026-Feb-23 10:40:14.626135
+2026-Feb-23 10:40:14.626135
+#14 [builder 3/5] COPY package.json package-lock.json* ./
+2026-Feb-23 10:40:14.626135
+#14 DONE 0.1s
+2026-Feb-23 10:40:14.626135
+2026-Feb-23 10:40:14.626135
+#15 [builder 4/5] COPY . .
+2026-Feb-23 10:40:14.626135
+#15 DONE 0.1s
+2026-Feb-23 10:40:14.626135
+2026-Feb-23 10:40:14.626135
+#16 [builder 5/5] RUN npm run build
+2026-Feb-23 10:40:14.626135
+#16 0.433
+2026-Feb-23 10:40:14.626135
+#16 0.433 > checkion@0.1.0 build
+2026-Feb-23 10:40:14.626135
+#16 0.433 > next build --webpack
+2026-Feb-23 10:40:14.626135
+#16 0.433
+2026-Feb-23 10:40:14.626135
+#16 1.149 ▲ Next.js 16.1.6 (webpack)
+2026-Feb-23 10:40:14.626135
+#16 1.149 - Experiments (use with caution):
+2026-Feb-23 10:40:14.626135
+#16 1.149   · optimizePackageImports
+2026-Feb-23 10:40:14.626135
+#16 1.150
+2026-Feb-23 10:40:14.626135
+#16 1.152 ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+2026-Feb-23 10:40:14.626135
+#16 1.191   Creating an optimized production build ...
+2026-Feb-23 10:40:14.626135
+#16 23.12 ✓ Compiled successfully in 21.5s
+2026-Feb-23 10:40:14.626135
+#16 23.12   Running TypeScript ...
+2026-Feb-23 10:40:14.626135
+#16 33.52 Failed to compile.
+2026-Feb-23 10:40:14.626135
+#16 33.52
+2026-Feb-23 10:40:14.626135
+#16 33.52 ./app/journey-agent/[jobId]/page.tsx:239:17
+2026-Feb-23 10:40:14.626135
+#16 33.52 Type error: An object literal cannot have multiple properties with the same name.
+2026-Feb-23 10:40:14.626135
+#16 33.52
+2026-Feb-23 10:40:14.626135
+#16 33.52   237 |                 minWidth: 0,
+2026-Feb-23 10:40:14.626135
+#16 33.52   238 |                 flex: '1 1 0',
+2026-Feb-23 10:40:14.626135
+#16 33.52 > 239 |                 minWidth: { xs: '100%', md: 260 },
+2026-Feb-23 10:40:14.626135
+#16 33.52       |                 ^
+2026-Feb-23 10:40:14.626135
+#16 33.52   240 |             }}
+2026-Feb-23 10:40:14.626135
+#16 33.52   241 |         >
+2026-Feb-23 10:40:14.626135
+#16 33.52   242 |             <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', flexWrap: 'wrap', mb: 'var(--msqdx-spacing-xs)' }}>
+2026-Feb-23 10:40:14.626135
+#16 33.62 Next.js build worker exited with code: 1 and signal: null
+2026-Feb-23 10:40:14.626135
+#16 33.80 npm notice
+2026-Feb-23 10:40:14.626135
+#16 33.80 npm notice New major version of npm available! 10.9.4 -> 11.10.1
+2026-Feb-23 10:40:14.626135
+#16 33.80 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.10.1
+2026-Feb-23 10:40:14.626135
+#16 33.80 npm notice To update run: npm install -g npm@11.10.1
+2026-Feb-23 10:40:14.626135
+#16 33.80 npm notice
+2026-Feb-23 10:40:14.626135
+#16 ERROR: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+2026-Feb-23 10:40:14.626135
+------
+2026-Feb-23 10:40:14.626135
+> [builder 5/5] RUN npm run build:
+2026-Feb-23 10:40:14.626135
+33.52       |                 ^
+2026-Feb-23 10:40:14.626135
+33.52   240 |             }}
+2026-Feb-23 10:40:14.626135
+33.52   241 |         >
+2026-Feb-23 10:40:14.626135
+33.52   242 |             <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', flexWrap: 'wrap', mb: 'var(--msqdx-spacing-xs)' }}>
+2026-Feb-23 10:40:14.626135
+33.62 Next.js build worker exited with code: 1 and signal: null
+2026-Feb-23 10:40:14.626135
+33.80 npm notice
+2026-Feb-23 10:40:14.626135
+33.80 npm notice New major version of npm available! 10.9.4 -> 11.10.1
+2026-Feb-23 10:40:14.626135
+33.80 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.10.1
+2026-Feb-23 10:40:14.626135
+33.80 npm notice To update run: npm install -g npm@11.10.1
+2026-Feb-23 10:40:14.626135
+33.80 npm notice
+2026-Feb-23 10:40:14.626135
+------
+2026-Feb-23 10:40:14.626135
+2026-Feb-23 10:40:14.626135
+12 warnings found (use docker --debug to expand):
+2026-Feb-23 10:40:14.626135
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "OPENAI_API_KEY") (line 58)
+2026-Feb-23 10:40:14.626135
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_SECRET") (line 81)
+2026-Feb-23 10:40:14.626135
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_SECRET") (line 11)
+2026-Feb-23 10:40:14.626135
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_SECRET") (line 32)
+2026-Feb-23 10:40:14.626135
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "OPENAI_API_KEY") (line 34)
+2026-Feb-23 10:40:14.626135
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_URL") (line 80)
+2026-Feb-23 10:40:14.626135
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "OPENAI_API_KEY") (line 83)
+2026-Feb-23 10:40:14.626135
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_URL") (line 10)
+2026-Feb-23 10:40:14.626135
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "OPENAI_API_KEY") (line 13)
+2026-Feb-23 10:40:14.626135
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_URL") (line 31)
+2026-Feb-23 10:40:14.626135
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_URL") (line 55)
+2026-Feb-23 10:40:14.626135
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_SECRET") (line 56)
+2026-Feb-23 10:40:14.626135
+Dockerfile:76
+2026-Feb-23 10:40:14.626135
+--------------------
+2026-Feb-23 10:40:14.626135
+74 |     ENV DS_BASE=../msqdx-design-system
+2026-Feb-23 10:40:14.626135
+75 |
+2026-Feb-23 10:40:14.626135
+76 | >>> RUN npm run build
+2026-Feb-23 10:40:14.626135
+77 |
+2026-Feb-23 10:40:14.626135
+78 |     # ---- Runner ----
+2026-Feb-23 10:40:14.626135
+--------------------
+2026-Feb-23 10:40:14.626135
+ERROR: failed to build: failed to solve: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+2026-Feb-23 10:40:14.626135
+exit status 1
+2026-Feb-23 10:40:14.854302
+========================================
+2026-Feb-23 10:40:14.877967
+Deployment failed. Removing the new version of your application.
+2026-Feb-23 10:40:15.545593
+Gracefully shutting down build container: vgkk0c4ssg88ooo84go8o0w0
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The build failed because of a TypeScript error: "An object literal cannot have multiple properties with the same name." At line 239 we have:
+
+```
+minWidth: 0,
+flex: '1 1 0',
+minWidth: { xs: '100%', md: 260 },
+```
+
+So `minWidth` is defined twice in the same object - that's the duplicate property. I need to remove the first `minWidth: 0` and keep only the responsive one, or merge them. In MUI sx, we can have one minWidth that is an object for breakpoints. So I should remove `minWidth: 0` and keep `minWidth: { xs: '100%', md: 260 }`. But wait - we need minWidth: 0 for flex to allow shrinking. So the correct fix is to have a single minWidth that at xs is '100%', at md is 260, and we might need a base minWidth: 0 for the flex child to shrink. In MUI, when you use responsive object like { xs: '100%', md: 260 }, the base (default) might be applied first. So we could do minWidth: { xs: '100%', md: 260 } and that should work - on small screens 100%, on md and up 260. For the flex to not overflow we might need minWidth: 0 on the container or on the card. Actually the duplicate is just that we have two minWidth keys - so I'll remove the first one (minWidth: 0) and keep the responsive one. If we need minWidth: 0 for flex behavior we could add it in a different way, but typically the responsive object is enough.
+</details></think>
+
+---
+
+
+Doppelte Eigenschaft `minWidth` im selben Objekt entfernen.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Removed the duplicate minWidth. The responsive minWidth alone should be fine. If flex needs a minWidth: 0 to shrink below content size, we could add it inside the breakpoints - but actually in MUI sx, the default (no breakpoint) could be set. Let me check - for flex children that can shrink we often need minWidth: 0. So we could do:
+minWidth: { xs: '100%', md: 260 }
+
+On md, 260px is the min - so the card won't shrink below 260px. On xs we have 100% so one card takes full width. That's correct. We don't need minWidth: 0 here because we're not trying to shrink the card below 260px on desktop. So the fix is good.
+</details></think>
+
+---
+
+
+Der Fehler kam von **zwei `minWidth`-Angaben** im gleichen `sx`-Objekt (`minWidth: 0` und `minWidth: { xs: '100%', md: 260 }`). Die erste habe ich entfernt, es bleibt nur die responsive Variante:
+
+- **xs:** `100%` (eine Card auf Mobile)
+- **md+:** `260px` (mindestens 260px pro Card auf Desktop)
+
+Der Build sollte damit wieder durchlaufen.
 
 ---
 
