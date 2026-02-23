@@ -9,6 +9,20 @@
     "unknownError": "Unknown error",
     "info": "Information"
   },
+  "share": {
+    "alreadyShared": "Already shared",
+    "copyLink": "Copy link",
+    "copied": "Copied",
+    "revoke": "Revoke share",
+    "revokeConfirm": "Really revoke this share? The link will no longer work.",
+    "setPassword": "Set password",
+    "removePassword": "Remove password",
+    "passwordLabel": "Password (optional)",
+    "passwordPlaceholder": "Leave empty = no password",
+    "createShare": "Share",
+    "creating": "Creating…",
+    "protected": "Password protected"
+  },
   "nav": {
     "dashboard": "Dashboard",
     "newScan": "New Scan",

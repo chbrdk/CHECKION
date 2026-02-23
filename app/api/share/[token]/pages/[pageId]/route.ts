@@ -6,15 +6,19 @@
 
 import { NextResponse } from 'next/server';
 import { getCachedShareByToken, getCachedDomainScan, getCachedScan } from '@/lib/cache';
+import { canAccessShare } from '@/lib/share-access';
 
 export async function GET(
-    _request: Request,
+    request: Request,
     { params }: { params: Promise<{ token: string; pageId: string }> }
 ) {
     const { token, pageId } = await params;
     const share = await getCachedShareByToken(token);
     if (!share) {
         return NextResponse.json({ error: 'Share not found or expired' }, { status: 404 });
+    }
+    if (!canAccessShare(share.passwordHash, request, token)) {
+        return NextResponse.json({ error: 'Password required', requiresPassword: true }, { status: 403 });
     }
     if (share.resourceType !== 'domain') {
         return NextResponse.json({ error: 'Not a domain share' }, { status: 400 });

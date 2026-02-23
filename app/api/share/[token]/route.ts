@@ -1,21 +1,34 @@
 /* ------------------------------------------------------------------ */
-/*  CHECKION – GET /api/share/[token] (public, no auth)                */
-/* Returns { type: 'single'|'domain'|'journey', data } for the share.  */
+/*  CHECKION – GET /api/share/[token] (public, optional Bearer token)  */
+/* Returns { type, data } or 403 { requiresPassword: true }.          */
 /* ------------------------------------------------------------------ */
 
 import { NextResponse } from 'next/server';
 import { getCachedShareByToken, getCachedScan, getCachedDomainScan } from '@/lib/cache';
 import { getJourneyRun } from '@/lib/db/journey-runs';
 import { buildDomainSummary } from '@/lib/domain-summary';
+import { verifyShareAccessToken } from '@/lib/share-access';
 
 export async function GET(
-    _request: Request,
+    request: Request,
     { params }: { params: Promise<{ token: string }> }
 ) {
     const { token } = await params;
     const share = await getCachedShareByToken(token);
     if (!share) {
         return NextResponse.json({ error: 'Share not found or expired' }, { status: 404 });
+    }
+
+    if (share.passwordHash) {
+        const authHeader = request.headers.get('authorization');
+        const bearer = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+        const verified = bearer ? verifyShareAccessToken(bearer) : null;
+        if (!verified || verified.shareToken !== token) {
+            return NextResponse.json(
+                { error: 'Password required', requiresPassword: true },
+                { status: 403 }
+            );
+        }
     }
 
     if (share.resourceType === 'single') {
@@ -43,4 +56,55 @@ export async function GET(
     if (!domain) return NextResponse.json({ error: 'Domain scan not found' }, { status: 404 });
     const summary = buildDomainSummary(domain);
     return NextResponse.json({ type: 'domain' as const, data: summary });
+}
+
+/** DELETE /api/share/[token] – revoke share (auth required, must own share). */
+export async function DELETE(
+    _request: Request,
+    { params }: { params: Promise<{ token: string }> }
+) {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const { token } = await params;
+    const { deleteShare } = await import('@/lib/db/shares');
+    const { revalidateTag } = await import('next/cache');
+    const deleted = await deleteShare(token, session.user.id);
+    if (!deleted) {
+        return NextResponse.json({ error: 'Share not found or access denied' }, { status: 404 });
+    }
+    revalidateTag(`share-${token}`);
+    return NextResponse.json({ ok: true });
+}
+
+/** PATCH /api/share/[token] – set or remove password (auth required). Body: { password?: string | null }. */
+export async function PATCH(
+    request: Request,
+    { params }: { params: Promise<{ token: string }> }
+) {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const { token } = await params;
+    const { getShareByToken, updateSharePassword } = await import('@/lib/db/shares');
+    const { revalidateTag } = await import('next/cache');
+    const share = await getShareByToken(token);
+    if (!share || share.userId !== session.user.id) {
+        return NextResponse.json({ error: 'Share not found or access denied' }, { status: 404 });
+    }
+    let body: { password?: string | null };
+    try {
+        body = await request.json();
+    } catch {
+        return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
+    const password = body.password !== undefined ? (body.password === null || body.password === '' ? null : String(body.password)) : undefined;
+    if (password === undefined) {
+        return NextResponse.json({ error: 'Body must include password (string or null)' }, { status: 400 });
+    }
+    await updateSharePassword(token, session.user.id, password);
+    revalidateTag(`share-${token}`);
+    return NextResponse.json({ ok: true, hasPassword: password !== null });
 }

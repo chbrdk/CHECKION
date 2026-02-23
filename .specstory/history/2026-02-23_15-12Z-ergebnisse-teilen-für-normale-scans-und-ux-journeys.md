@@ -2723,3 +2723,1822 @@ Status: **completed**
 
 ---
 
+<think><details><summary>Thought Process</summary>
+
+Good, I found the share flow. The knowledge doc says:
+- resource_type can be 'single' | 'domain'
+- Single = single page scan, Domain = deep scan
+- Share page at /share/[token] shows either ShareDomainContent or ShareSingleContent
+
+So it seems like "single" (normal scan) is already supported in the share API and schema. Let me check:
+1. API share route - what types does it accept
+2. Where is the Share button on the results page (single scan) and domain page
+3. UX Journey - where is it and does it have any share
+
+I need to find:
+- API POST /api/share - does it already support single?
+- GET /api/share/[token] - does it return single scan data?
+- Share button on results/[id] (single scan) - is it there?
+- UX Journey page and whether we need to add share type "journey" and a new share view
+</details></think>
+
+---
+
+
+Share-API und -Schema genauer prüfen sowie UX-Journey-Seiten und Share-Buttons lokalisieren.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/[token]/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "share|Share",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "share|Share",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 16,
+  "topFiles": [
+    {
+      "uri": "app/results/[id]/page.tsx",
+      "matchCount": 16
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "journey-agent|journeyAgent",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "files_with_matches",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "journey-agent|journeyAgent",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "files_with_matches",
+  "totalFiles": 18,
+  "totalMatches": 18,
+  "topFiles": [
+    {
+      "uri": "./.specstory/history/2026-02-23_09-14Z-system-overview-and-implementation.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/journey-agent/[jobId]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./ux-journey-agent/test_live.py",
+      "matchCount": 1
+    },
+    {
+      "uri": "./ux-journey-agent/README.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./lib/types.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./lib/constants.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./knowledge/ux-journey-agent.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./knowledge/checkion-page-index.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./docs/deployment/coolify-ux-journey-agent.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/scan/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/api/scan/journey-agent/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/api/scan/journey-agent/history/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/api/scan/journey-agent/[jobId]/video/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/api/scan/journey-agent/[jobId]/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/api/scan/journey-agent/[jobId]/live/stream/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/api/scan/journey-agent/[jobId]/live/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/api/scan/domain/[id]/journey/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./Trace-20260219T213538.json",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So:
+1. **Normal scans (single)** – API already supports `type: 'single'` and the results page already has a Share button that posts `type: 'single', id: result.id`. The share landing page has `ShareSingleContent` for single. So the backend and share page already support normal scans! I need to verify the share page actually renders single correctly and if there's any UI missing on the results page.
+
+2. **UX Journey** – There's `journey-agent/[jobId]/page.tsx` and `journey_runs` table. We need to add `resource_type: 'journey'` (or similar) and support in API + share landing page.
+
+Let me read:
+- Share page full content to see ShareSingleContent and if it's complete
+- Journey agent page to see how results are displayed and what we need to expose for share
+- lib/db/shares.ts for ShareResourceType
+</details></think>
+
+---
+
+
+Share-Seite für Single-Content und Journey-Agent-Seite prüfen:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/shares.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "share|Share",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "share|Share",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 16,
+  "topFiles": [
+    {
+      "uri": "app/domain/[id]/page.tsx",
+      "matchCount": 16
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I have a clear picture:
+
+1. **Normal scans (single)**: The API already supports `type: 'single'` and the results page (`app/results/[id]/page.tsx`) already has a Share button that posts `type: 'single', id: result.id`. The share landing page has `ShareSingleContent` which shows the single scan. So **normal scans already support sharing** – the functionality is there. The user might not have noticed it, or maybe the Share button is not visible in some cases. I'll double-check the results page sends `type: 'single'`.
+
+2. **UX Journey**: There's no share for journey. We need to:
+   - Add `resource_type: 'journey'` in the schema (or keep it flexible – schema has `resource_type` as text, so we can add 'journey' without migration if we're not adding a constraint)
+   - In POST /api/share: accept type 'journey' and id = jobId (journey run id), validate that the journey run exists and user owns it
+   - In GET /api/share/[token]: when resourceType === 'journey', load journey run and return type + data for the share page
+   - Create a ShareJourneyContent component on the share page that shows the journey result (video, steps, etc.)
+   - Add Share button on journey-agent/[jobId] page
+
+Let me check the results page to see exactly what it sends when sharing:
+</details></think>
+
+---
+
+
+Ergebnisseite prüfen, ob der Share-Button `type: 'single'` sendet. Anschließend Journey-Run-Daten und API prüfen:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "journeyRuns|getJourneyRun|journey.*run",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "journeyRuns|getJourneyRun|journey.*run",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 12,
+  "totalMatches": 37,
+  "topFiles": [
+    {
+      "uri": "./.specstory/history/2026-02-23_09-14Z-system-overview-and-implementation.md",
+      "matchCount": 6
+    },
+    {
+      "uri": "./ux-journey-agent/README.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./locales/en.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "./lib/db/schema.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./lib/db/journey-runs.ts",
+      "matchCount": 11
+    },
+    {
+      "uri": "./knowledge/checkion-page-index.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./knowledge/checkion-journey-history.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/scan/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/api/scan/journey-agent/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/api/scan/journey-agent/history/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/api/scan/journey-agent/[jobId]/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./Trace-20260219T213538.json",
+      "matchCount": 6
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So:
+1. **Normal scans** – Already supported: results page sends `type: 'single', id: result.id` and the share page already has ShareSingleContent. So the user might want to make this more visible or the caption says "Deep Scan" only somewhere – I'll leave single as is and just confirm it works. Maybe the knowledge doc says "Seiten-Scan oder Deep Scan" so both are documented. So for "normale Scans" we're good – they already have share. I'll only add UX Journey share.
+
+2. **UX Journey** – Need to:
+   - Add type 'journey' to ShareResourceType in lib/db/shares.ts
+   - POST /api/share: accept type 'journey', id = jobId; validate with getJourneyRun(id, userId)
+   - GET /api/share/[token]: when resourceType === 'journey', load journey run (we need a way to get journey run by id without userId for public – we have share.userId from getShareByToken). So getJourneyRun(share.resourceId, share.userId) and return result data for the run (steps, videoUrl, task, url, etc.)
+   - Journey run result: the API journey-agent/[jobId] returns { status, result: { steps, success, taskDescription, siteDomain, videoUrl } }. So we need to store in share the jobId, and when fetching we get the run and build a payload that the share page can display. Video is at /api/scan/journey-agent/[jobId]/video – that might require auth. Let me check.
+   - Video route: need to check if video is public or auth. If it's behind auth, the share page would need a public video URL. Let me check the video route.
+</details></think>
+
+---
+
+
+Journey-API und Video-Route prüfen, damit wir die Share-Datenstruktur festlegen:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/journey-agent/[jobId]/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/journey-agent/[jobId]/video/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/journey-runs.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The video route requires auth. For the share page we have two options:
+1. Add a public video endpoint that accepts a share token and serves the video if the token is valid for that journey (e.g. GET /api/share/[token]/journey/video). That way the share page can show the video without requiring login.
+2. Or we don't show the video on the public share page (only steps and metadata). That would be simpler but less nice.
+
+I'll go with option 1: add GET /api/share/[token]/journey/video that checks the share token, verifies resourceType is 'journey' and resourceId matches, then proxies to the agent video using the share's userId to validate the run belongs to that user. So we need a route like:
+- GET /api/share/[token]/journey/video → 302 redirect or stream the video. Actually the current video route is auth and streams the blob. So we need a new route that: given a valid share token for a journey, fetches the video from the agent (using internal server-side fetch with the journey run's userId we don't need to pass auth to the agent - the agent's /run/[jobId]/video might be unauthenticated). Let me check - the CHECKION app calls the agent's video URL. So the flow is: Share page has token. We need a URL for the video that works without login. So: GET /api/share/[token]/video that returns the video stream. The handler checks getShareByToken(token), if resourceType !== 'journey' return 404. Then getJourneyRun(share.resourceId, share.userId) to get the run. If not complete or no result, 404. Then fetch the agent's video URL (server-side) and stream it back. So we need a new route: /api/share/[token]/video that only works for journey shares and streams the video.
+
+Let me implement:
+
+1. **lib/db/shares.ts**: Add 'journey' to ShareResourceType.
+
+2. **app/api/share/route.ts**: In POST, accept type: 'journey', id: jobId. Validate with getJourneyRun(id, session.user.id). Only allow share when status === 'complete' (so we have result and video).
+
+3. **app/api/share/[token]/route.ts**: When share.resourceType === 'journey', getJourneyRun(share.resourceId, share.userId), build payload { steps, success, taskDescription, siteDomain, videoUrl: `/api/share/${token}/video` } (so the share page uses this public video URL).
+
+4. **app/api/share/[token]/video/route.ts** (new): GET. Check share token, if journey get run, stream video from agent (server-side fetch and pipe).
+
+5. **app/share/[token]/page.tsx**: Add payload type 'journey' and ShareJourneyContent component. ShareJourneyContent shows title, task, site, video (using data.videoUrl), and steps list (reuse StepCard or a read-only version).
+
+6. **app/journey-agent/[jobId]/page.tsx**: Add Share button when status === 'complete', same pattern as domain/result page (POST /api/share with type: 'journey', id: jobId).
+
+7. **Locales**: Add shareCreating, shareCopied, share for journey if not already generic.
+
+Let me also add a cache for getJourneyRun by id for share (optional). And ensure middleware allows /api/share/.../video.
+
+Checking: middleware protected paths - share and api/share are public. So /api/share/[token]/video is under /api/share/ so it's likely public. Let me check middleware.
+</details></think>
+
+---
+
+
+Middleware prüfen und Implementierung starten.
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "share|api/share",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*middleware*",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "share|api/share",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 0,
+  "totalMatches": 0,
+  "topFiles": []
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "UxJourneyAgentStep",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts",
+  "contextBefore": 0,
+  "contextAfter": 15,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "UxJourneyAgentStep",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 2,
+  "topFiles": [
+    {
+      "uri": "lib/types.ts",
+      "matchCount": 32
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Now I have everything. Let me implement:
+
+1. **Normale Scans** – Die Funktionalität ist bereits da (Share-Button auf results/[id], type 'single', ShareSingleContent). Ich werde das in der Knowledge-Dokumentation klarstellen und ggf. die Überschrift auf der Share-Seite anpassen, damit "Geteilte Scan-Ergebnisse" sowohl Single als auch Domain und Journey umfasst. Kein Code-Change nötig für "normale Scans" – sie sind schon sharebar.
+
+2. **UX Journey Share** – Implementieren:
+   - lib/db/shares.ts: ShareResourceType = 'single' | 'domain' | 'journey'
+   - app/api/share/route.ts: accept type 'journey', id = jobId, validate getJourneyRun, only if status === 'complete'
+   - app/api/share/[token]/route.ts: if resourceType === 'journey', getJourneyRun(share.resourceId, share.userId), return { type: 'journey', data: { ...result, videoUrl: `/api/share/${token}/video` } }
+   - New route: app/api/share/[token]/video/route.ts: GET, validate share token, if journey fetch video from agent and stream
+   - app/share/[token]/page.tsx: Add SharePayload type 'journey', add ShareJourneyContent (similar to journey page but read-only, with video and steps)
+   - app/journey-agent/[jobId]/page.tsx: Add Share button when status === 'complete'
+
+For the video proxy: the share token is in the URL. So we have GET /api/share/[token]/video. We need to get the share by token, verify it's journey, get the journey run (share.resourceId = jobId, share.userId), then fetch from agent the video. The agent URL is internal so we can do a server-side fetch. So we don't need to expose the agent's URL to the client – we just stream the video in the response.
+
+Let me also add a getJourneyRunByIdForShare or we use getJourneyRun(share.resourceId, share.userId) – we have the userId from the share row. So we're good.
+
+Implementing.
+</details></think>
+
+---
+
+
+Kurzfassung:
+- Normale Scans (Single): Bereits unterstützt — Share-Button auf `/results/[id]` sendet `type: 'single'`, Share-Seite rendert `ShareSingleContent`. Keine Änderung nötig.
+- UX Journey: Share-Funktion fehlt. Wir erweitern die Share-Logik um den Typ `journey` und fügen die nötigen API-Routen, Share-Payload und UI hinzu.
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] Add 'journey' to ShareResourceType and POST /api/share
+- [ ] GET /api/share/[token] return journey payload + public video URL
+- [ ] Add GET /api/share/[token]/video to stream journey video without auth
+- [ ] Share page: ShareJourneyContent component and routing
+- [ ] Journey page: Share button when complete
+- [ ] Update knowledge doc + tests
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-share-links.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Implementing. First, update shares.ts and POST api/share, then GET api/share/[token], then new video route, then share page, then journey page Share button, then knowledge and tests.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/shares.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to fix the api/share/route - the original had "} else {" for domain, so after my change we have two branches: single, domain, journey. But I removed the "else" for domain and added "else if (type === 'domain')" and then "} else {" for journey. Let me check - the original was:
+  if (type === 'single') { ... } else { getDomainScan ... }
+So after my edit we have:
+  if (type === 'single') { ... } else if (type === 'domain') { ... } else { getJourneyRun ... }
+That's correct. Good.
+
+Now GET /api/share/[token] to return journey payload. The journey result has videoUrl set by the API to `/api/scan/journey-agent/${jobId}/video` which requires auth. So we need to return a share-scoped video URL like `/api/share/${token}/video` so the share page can embed it without auth.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add 'journey' to ShareResourceType and POST /api/share
+- [-] GET /api/share/[token] return journey payload + public video URL
+- [ ] Add GET /api/share/[token]/video to stream journey video without auth
+- [ ] Share page: ShareJourneyContent component and routing
+- [ ] Journey page: Share button when complete
+- [ ] Update knowledge doc + tests
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/[token]/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+For the share page, the client will fetch from relative path /api/share/[token] so the videoUrl we return should be relative so it works: just `/api/share/${token}/video` so the browser uses the same origin. So we don't need baseUrl for the share page - the page is on the same origin. Let me simplify: videoUrl: `/api/share/${encodeURIComponent(token)}/video` - but token might have special chars. Actually in the JSON we're sending token as-is; the URL path will be built by the client. So data.videoUrl = `/api/share/${token}/video` is fine (token is already in the URL so it's safe). Actually we need to be careful: in the route we have `token` from params - it's the raw token. So videoPath = `/api/share/${token}/video` - but if token contains / it could break. So we should use encodeURIComponent(token) in the path. So videoUrl: `/api/share/${encodeURIComponent(token)}/video`. Good.
+</details></think>
+
+---
+
+
+Video-URL relativ halten, damit sie im Frontend funktioniert:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/[token]/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now add the video route: GET /api/share/[token]/video that validates the share token, checks journey, then streams the video from the agent. We need to get the jobId from share.resourceId and then call the agent's video URL. But we don't have auth in that route - we're proxying. So we need to use the internal agent URL (ENV_UX_JOURNEY_AGENT_URL) and fetch with the jobId. So the handler: getShareByToken(token), if !share or share.resourceType !== 'journey' return 404. getJourneyRun(share.resourceId, share.userId), if !run return 404. Then fetch(agentBaseUrl + '/run/' + jobId + '/video'), stream the response back. We need to create the file app/api/share/[token]/video/route.ts.
+</details></think>
+
+---
+
+
+Neue Route zum Streamen des Journey-Videos ohne Auth anlegen:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "ENV_UX_JOURNEY",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "ENV_UX_JOURNEY",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 6,
+  "totalMatches": 11,
+  "topFiles": [
+    {
+      "uri": "./lib/constants.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/api/scan/journey-agent/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/api/scan/journey-agent/[jobId]/video/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/api/scan/journey-agent/[jobId]/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/api/scan/journey-agent/[jobId]/live/stream/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/api/scan/journey-agent/[jobId]/live/route.ts",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The env key is ENV_UX_JOURNEY_AGENT_URL = 'UX_JOURNEY_AGENT_URL', so process.env[ENV_UX_JOURNEY_AGENT_URL] or process.env.UX_JOURNEY_AGENT_URL. I'll use the constant. Now create the video route.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add 'journey' to ShareResourceType and POST /api/share
+- [x] GET /api/share/[token] return journey payload + public video URL
+- [-] Add GET /api/share/[token]/video to stream journey video without auth
+- [ ] Share page: ShareJourneyContent component and routing
+- [ ] Journey page: Share button when complete
+- [ ] Update knowledge doc + tests
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/[token]/video/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now add ShareJourneyContent to the share page and handle type 'journey' in the payload. I need to add the type to SharePayload and a component that shows journey result (task, url, video, steps). I'll reuse the same structure as the journey-agent page but in a read-only share style (no navigation back to app, same MSQDX cards). Steps can be rendered with a simplified StepCard or the same StepResultSections. Let me look at the journey page again for the exact structure of result (steps, success, taskDescription, siteDomain, videoUrl).
+</details></think>
+
+---
+
+
+Share-Seite um den Journey-Typ und die Komponente ShareJourneyContent erweitern:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add a type for the journey share data. The API returns { type: 'journey', data: { ...result, videoUrl, jobId } }. The result from journey run has steps, success, taskDescription?, siteDomain?, and we add videoUrl and jobId. So the type is something like:
+  type: 'journey', data: { steps?: UxJourneyAgentStep[], success?: boolean, taskDescription?: string, siteDomain?: string, videoUrl: string, jobId: string }I'll add SharePayload union with journey and a ShareJourneyContent component. ShareJourneyContent will show:
+- Title: "UX Journey" or "Geteilte UX Journey"
+- Task + Site
+- Video (using videoUrl from data)
+- Steps (list of step cards, simplified - we can use a simple list without the carousel)
+
+I'll reuse the same styling as the share page (MsqdxCard, etc.). For the video we need a component that works with the public video URL - same as JourneyVideoWithIntroLogo but without the router. I can copy the video box structure from the journey page. And for steps we need a simple read-only list - we can use a simplified StepCard that doesn't need the full i18n t() function, use German labels directly for the share page (or we could add a minimal locale context but the share page is currently German-only "Geteilte Scan-Ergebnisse"). So I'll use German labels for the journey share content.
+</details></think>
+
+---
+
+
+Share-Seite um Journey-Typ und ShareJourneyContent erweitern.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to add the ShareJourneyContent component. I'll add it after ShareDomainContent and before ShareSingleContent, or after ShareSingleContent. I'll add it after the closing of ShareDomainContent (after the Dialog and the fragment). So the order in the file is: ShareDomainContent, then ShareSingleContent, and I need to add ShareJourneyContent. The ShareSingleContent is used inside ShareDomainContent (in the dialog) so I need to add ShareJourneyContent as a new function. Let me add it right after the closing of ShareDomainContent (after the Dialog and the </>). So I need to find a good place to insert the ShareJourneyContent function. Looking at the file structure:
+- ShareDomainContent ends around line 355 (Dialog) then </>
+- Then function ShareSingleContent starts at 356
+
+So I'll add ShareJourneyContent between ShareDomainContent and ShareSingleContent. ShareJourneyContent needs to show:
+1. Title "UX Journey" 
+2. Task + Site (taskDescription, siteDomain)
+3. Success status
+4. Video (if videoUrl) - same style as journey page
+5. Steps list (simplified cards)
+
+I'll need to add a minimal video component for the share page - we can use a simple video tag with the videoUrl. And a simple step list. I'll avoid importing the full JourneyVideoWithIntroLogo from the journey page to keep the share page self-contained (no dependency on journey page). So I'll add a simple inline video block and step list.
+</details></think>
+
+---
+
+
+ShareJourneyContent-Komponente einfügen. Zuerst die genaue Einfügestelle suchen:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to find where ShareDomainContent ends and ShareSingleContent begins.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to find the exact line where the Dialog ends and the function ShareDomainContent ends, then ShareSingleContent starts.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add the ShareJourneyContent function between line 485 (closing of ShareDomainContent) and line 487 (start of ShareSingleContent).
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+MSQDX_STATUS.success might not exist - let me check. In the share page we have MSQDX_STATUS.error, MSQDX_STATUS.warning (from STATUS), and we use STATUS.good. Let me check the tokens - we have MSQDX_STATUS from the import. Let me use a safe fallback: STATUS.good for success. I used MSQDX_STATUS.success?.base ?? STATUS.good - that should be fine. Let me check if there's a success in MSQDX_STATUS - the grep showed STATUS.error, STATUS.warning. So we might not have success. I'll keep the optional chaining. Now add the Share button to the journey page.
+</details></think>
+
+---
+
+
+Share-Button auf der Journey-Seite hinzufügen (nur bei status === 'complete'):
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add 'journey' to ShareResourceType and POST /api/share
+- [x] GET /api/share/[token] return journey payload + public video URL
+- [x] Add GET /api/share/[token]/video to stream journey video without auth
+- [x] Share page: ShareJourneyContent component and routing
+- [-] Journey page: Share button when complete
+- [ ] Update knowledge doc + tests
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add Share2 icon import and share state (shareLoading, shareCopied) and the Share button. The actions in the first MsqdxMoleculeCard currently only have "Neue Journey". I'll add a Share button next to it. So in the actions prop we need two buttons: Share and New Journey. Let me add the Share button - we can put it in the actions as a fragment with two MsqdxButton, or add it somewhere visible. Looking at the domain page they have the Share button in the header area. I'll add share state and a Share button in the actions of the first card (next to "Neue Journey").
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I made a typo: `if !jobId` should be `if (!jobId`. Let me fix that.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The replacement might have broken the onClick - let me check. The original was:
+onClick={async () => {
+    if !jobId || shareLoading) return;
+So the opening brace after "if" was missing - it should be "if (!jobId || shareLoading) return;". I fixed that. Good. Now check if domainResult.share, shareCreating, shareCopied exist in locales for the journey page - they're used on domain and results pages. Let me verify locales have these keys.
+</details></think>
+
+---
+
+
+Locales prüfen und Knowledge-Dokumentation aktualisieren:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "shareCreating|shareCopied|\"share\"",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "shareCreating|shareCopied|\"share\"",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "outputMode": "content",
+  "totalFiles": 2,
+  "totalMatches": 12,
+  "topFiles": [
+    {
+      "uri": "locales/en.json",
+      "matchCount": 6
+    },
+    {
+      "uri": "locales/de.json",
+      "matchCount": 6
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/route.ts",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/[token]/route.ts"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/route.ts"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/[token]/route.ts"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The journey page uses t('domainResult.share'), t('domainResult.shareCreating'), t('domainResult.shareCopied'). Let me check - the locale structure might be results.share and domainResult.share. Let me grep for domainResult.share.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "domainResult\\.share",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "domainResult\\.share",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 3,
+  "totalMatches": 4,
+  "topFiles": [
+    {
+      "uri": "./app/journey-agent/[jobId]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/domain/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./Trace-20260219T213538.json",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+domainResult.share, shareCreating, shareCopied exist. Good. Now update the knowledge doc and add a test. Let me also fix the ShareJourneyContent - we're using MSQDX_STATUS.success which might not exist. Let me check the share page linter again and fix the STATUS for success. Looking at my ShareJourneyContent I used MSQDX_STATUS.success?.base - the tokens might export success. Let me check.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "MSQDX_STATUS|success",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "MSQDX_STATUS|success",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 14,
+  "topFiles": [
+    {
+      "uri": "app/share/[token]/page.tsx",
+      "matchCount": 14
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add 'journey' to ShareResourceType and POST /api/share
+- [x] GET /api/share/[token] return journey payload + public video URL
+- [x] Add GET /api/share/[token]/video to stream journey video without auth
+- [x] Share page: ShareJourneyContent component and routing
+- [x] Journey page: Share button when complete
+- [-] Update knowledge doc + tests
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+MSQDX_STATUS.success might not exist - the grep shows .success?.base. Let me check the tokens package or use STATUS.good for success. The share page uses STATUS.good elsewhere. I'll leave the optional chaining as is; if success is undefined we fall back to STATUS.good. Now update knowledge and add a simple test.
+</details></think>
+
+---
+
+
+Knowledge-Dokumentation aktualisieren und einen kurzen API-Test hinzufügen:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-share-links.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now add a test. Let me check if there are existing tests for the share API.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **2** results in **1** directory</summary>
+
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1** (2 files)
+
+| File |
+|------|
+| `knowledge/checkion-share-links.md` |
+| `lib/db/shares.ts` |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **2** results in **1** directory</summary>
+
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1** (2 files)
+
+| File |
+|------|
+| `lib/page-index.test.ts` |
+| `lib/domain-graph-data.test.ts` |
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+There are no share-specific tests. The project has unit tests in lib. I could add a test for the share logic - e.g. that createShare accepts 'journey' type or that getShareByToken returns the right type. But the shares.ts doesn't validate the resourceType value in createShare beyond the TypeScript type - the API route does the validation. So a simple unit test could be for the ShareResourceType or we could add an API test. Let me check if there are API tests.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "api/share|share.*route",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.test.*",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "api/share|share.*route",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 0,
+  "totalMatches": 0,
+  "topFiles": []
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+No API tests for share. I'll add a small unit test that verifies the share types and that createShare can be called with 'journey' - actually createShare is just a DB insert, the validation is in the route. A more useful test would be to ensure the GET /api/share/[token] returns the correct shape for journey. That would be an integration test. Given the user asked for "add always testing" I'll add a minimal test: e.g. a test that the ShareResourceType includes 'journey' and that the share link row structure is correct. Let me check the existing test style.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-graph-data.test.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Tests are run with npx tsx. I'll add a small test file for the share types and that the share module exports the expected types. Actually the simplest test is to ensure ShareResourceType includes 'journey' - we can do that by importing and checking that a valid value is accepted. Or we can test the build. Let me add a minimal test that the share API route logic would accept 'journey' - that's really in the route. A simpler test: createShare is called with resourceType 'journey' - but that would need a DB. So I'll add a test that verifies the type definition: e.g. a const array of valid resource types and assert 'journey' is in it. Let me add lib/db/shares.test.ts that checks the valid resource types.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/shares.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add a test file that asserts the valid share resource types include 'single', 'domain', and 'journey', so that regressions would be caught if someone removes 'journey'.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/shares.test.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Run the test to make sure it passes.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npx tsx lib/db/shares.test.ts</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npx tsx lib/db/shares.test.ts
+```
+
+```
+shares.test.ts: all assertions passed
+npm warn exec The following package was not found and will be installed: tsx@4.21.0
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Test passed. Let me mark the todo complete and give a short summary to the user. I should also fix the ShareSingleContent call - when we're in the domain share dialog we pass shareToken so that the single content can load screenshot via share token. For the main share page when type is single we call ShareSingleContent without shareToken - that's correct. All good.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add 'journey' to ShareResourceType and POST /api/share
+- [x] GET /api/share/[token] return journey payload + public video URL
+- [x] Add GET /api/share/[token]/video to stream journey video without auth
+- [x] Share page: ShareJourneyContent component and routing
+- [x] Journey page: Share button when complete
+- [x] Update knowledge doc + tests
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+All done. Let me provide a summary to the user in German.
+</details></think>
+
+---
+
+
+Kurzüberblick:
+
+## Normale Scans (Seiten-Scan)
+
+**Bereits umgesetzt:** Einzelseiten-Ergebnisse lassen sich schon teilen. Auf `/results/[id]` gibt es einen Share-Button, der `type: 'single'` an die API schickt; die Share-Seite rendert dafür `ShareSingleContent` (URL, Datum, Score, Issues, Video etc.). Es war keine Anpassung nötig.
+
+## UX Journey – neu teilen
+
+Share per Link ist für UX Journeys ergänzt:
+
+1. **Backend**
+   - **`lib/db/shares.ts`**: `ShareResourceType` um `'journey'` erweitert.
+   - **POST /api/share**: Akzeptiert `type: 'journey'` und `id: jobId`. Es wird geprüft, dass die Journey dem User gehört und `status === 'complete'` ist.
+   - **GET /api/share/[token]**: Liefert bei `resourceType === 'journey'` die Journey-Daten inkl. einer öffentlichen Video-URL (`/api/share/[token]/video`).
+   - **GET /api/share/[token]/video** (neu): Öffentliche Route (ohne Auth), die bei gültigem Journey-Share-Token das Video vom UX Journey Agent abruft und ausliefert.
+
+2. **Share-Seite `/share/[token]`**
+   - Neuer Payload-Typ `journey` und Komponente **ShareJourneyContent**:
+     - Titel „UX Journey“, Aufgabe, Site, Erfolgsstatus
+     - Video (über die öffentliche Video-URL)
+     - Liste aller Schritte (Aktion, Ziel, Reasoning)
+
+3. **Journey-Seite `/journey-agent/[jobId]`**
+   - Wenn die Journey abgeschlossen ist: neben „Neue Journey“ ein **Share-Button** (wie bei Domain/Results). Klick → POST /api/share mit `type: 'journey'` → Link wird kopiert, Meldung „Link kopiert“.
+
+4. **Doku & Test**
+   - **knowledge/checkion-share-links.md**: Um Journey-Sharing und die neue Video-Route ergänzt.
+   - **lib/db/shares.test.ts**: Unit-Test, der prüft, dass die Share-Typen `single`, `domain` und `journey` unterstützt werden.
+
+**Hinweis:** Die Tabelle `share_links` nutzt `resource_type` als Text; für `'journey'` ist keine Migration nötig. Optional: `npm run db:push`, falls ihr das Schema woanders strikt abgleicht.
+
+Zum Testen: Eine UX Journey bis zum Ende durchspielen, auf „Teilen“ klicken, den Link öffnen – die öffentliche Share-Seite zeigt dann Aufgabe, Video und Schritte ohne Login.
+
+---
+
+_**User**_
+
+könnnen wir das ganze sharing überall erweitern? kernpunkte sind das man sieht und bearbeiten kann wenn ein ergebnis bereits geteilt wird und ein passwortschutz den man optional anlegen kann, wäre auch sinnvoll
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants to extend the sharing functionality across the app with two main features:
+
+1. **Visibility and editing when a result is already shared** - Users should be able to see when a result (scan, domain, journey) has already been shared, and be able to manage/edit that (e.g. revoke, see the link, maybe set password).
+
+2. **Optional password protection** - When creating a share link, users can optionally set a password. When opening the share link, if a password was set, the viewer must enter it to see the content.
+
+Let me plan this:
+
+## 1. Database changes
+- **share_links** table: Add optional `passwordHash` (or we store a hash), and maybe `hasPassword` boolean. We need to store a hash, not plain text. So: `passwordHash: text('password_hash')` nullable. When creating share with password, we bcrypt/hash it.
+- No need for "shared_at" or "is_shared" on scans/domains/journeys - we derive "is this shared?" by checking if there's a share_links row for this resource (user_id, resource_type, resource_id). So we need an API or way to list shares by user or get "share for this resource" to show "Already shared" and allow edit/revoke.
+
+## 2. API changes
+- **POST /api/share**: Optional body field `password?: string`. If provided, hash and store in share_links.
+- **GET /api/share/[token]**: If the share has a password:
+  - Option A: Require a header or query param `?password=xxx` or header `X-Share-Password: xxx`. If missing or wrong, return 401 with a flag that password is required. The frontend share page would then show a password form, submit, and refetch with password.
+  - Option B: Always return 401 with `{ requiresPassword: true }` when password is set, and have a separate endpoint POST /api/share/[token]/unlock with body `{ password: string }` that returns a short-lived JWT or session cookie for that share, then GET /api/share/[token] checks that cookie. That's more complex.
+  - Simpler: GET /api/share/[token] accepts optional header `X-Share-Password: xxx` or query `password=xxx`. If share has password and none provided → 403 with `{ requiresPassword: true }`. If password provided but wrong → 403. If correct → return payload. Frontend: if 403 and requiresPassword, show password form; on submit, call GET /api/share/[token]?password=userInput (or POST to avoid password in logs - better POST /api/share/[token]/verify with body { password } that returns a token or sets cookie, then GET uses cookie). Actually for public share links, the simplest is: GET with query param password=... so the share page can do fetch(`/api/share/${token}?password=${encodeURIComponent(pw)}`) after user enters it. Or POST /api/share/[token]/verify with { password } that returns 200 and a short-lived JWT in body, then the share page stores it and sends Authorization: Bearer <jwt> on GET /api/share/[token]. The JWT approach is cleaner (password not in URL). So:
+  - **POST /api/share/[token]/verify**: Body `{ password: string }`. If share has no password, return 200 and a short-lived token (e.g. JWT with token+exp). If share has password and correct, return 200 and JWT. If wrong, 401. Frontend stores JWT in sessionStorage and sends it in header for GET /api/share/[token].
+  - **GET /api/share/[token]**: If share has passwordHash, require Authorization: Bearer <jwt> where JWT was from /verify. If no password on share, return data as now. If password protected and no valid JWT → 403 { requiresPassword: true }.
+
+  Actually simpler: GET /api/share/[token] can accept optional header `X-Share-Password: string`. If the share is password-protected and no header (or wrong), return 403 { requiresPassword: true }. If header present and correct, return data. So the share page URL is always the same; user enters password in a form, then we do fetch with the password in a header (or in body we'd need POST). GET with body is not standard. So either:
+  - GET /api/share/[token]?password=xxx (password in URL - not ideal for logs/referrer)
+  - POST /api/share/[token]/access with body { password } returning the payload directly (so one request to "unlock" and get data). Then the share page would: if no session, show password form; on submit POST /api/share/[token]/access { password }, get payload and display. No JWT needed. So:
+  - **GET /api/share/[token]**: If share has no password, return payload as now. If share has password, return 403 { requiresPassword: true } (no payload).
+  - **POST /api/share/[token]/access**: Body { password: string }. If share has no password, return 200 and same payload as GET. If has password, verify; if correct return 200 and payload; if wrong return 401. So the share page: first GET /api/share/[token]. If 200, show content. If 403 and requiresPassword, show password form. On submit POST /api/share/[token]/access with password, get payload and show. We don't persist "unlocked" state in cookie so if they refresh they'd need to enter password again - or we could return a short-lived JWT in the POST response and then GET accepts that JWT in header to avoid re-entering. For simplicity: POST /access returns the payload; user has to re-enter on refresh unless we use JWT. Let's go with JWT: POST /access returns { payload, accessToken } where accessToken is JWT valid 24h. Share page stores in sessionStorage, then GET /api/share/[token] accepts Authorization: Bearer <accessToken> and if valid and matches token, returns payload. So GET logic: if share has no password, return payload. If has password, check Authorization header for JWT; verify JWT (signature, expiry, token in payload); if valid return payload; else 403 requiresPassword.
+
+  I'll implement:
+  - Store password hash in share_links (nullable).
+  - POST /api/share: optional password in body, hash and store.
+  - GET /api/share/[token]: if no password on share → return payload. If password on share → require Authorization: Bearer <jwt>; verify JWT contains this token and is not expired; if valid return payload else 403 { requiresPassword: true }.
+  - POST /api/share/[token]/verify (or /access): body { password }. If no password on share, return { accessToken: jwt }. If password set, verify hash; if correct return { accessToken: jwt } else 401. JWT payload: { shareToken: token, exp: now+24h }.
+  - Share page: on load GET with no auth. If 403 and requiresPassword, show password form. On submit POST /verify with password, get accessToken, store sessionStorage, then GET with Authorization and display (or POST /access could return payload directly so we don't need second request - then we'd display that; on refresh we'd GET with stored accessToken). So: POST /access returns { payload, accessToken }. Share page: GET first. If 403 requiresPassword, show form. Submit → POST /access with password → get { payload, accessToken }; store accessToken; display payload. On refresh: GET with Authorization Bearer accessToken → get payload. So we need GET to accept Bearer token and return payload when password-protected. Good.
+
+## 3. "See and edit when already shared"
+- We need to know "has this resource (scan/domain/journey) been shared by me?" and if so, get the share link (token, url, optional password set).
+- Option: **GET /api/share/by-resource?type=single|domain|journey&id=xxx** (auth required). Returns existing share for this resource: { shared: true, token, url, hasPassword } or { shared: false }. So we need a DB query: get share_links where userId = current and resourceType = type and resourceId = id. If found return the share info (not the password hash).
+- **DELETE /api/share/[token]** (auth required): Revoke share (delete row). Already might exist - check. We have deleteShare in lib. So we need an API route DELETE /api/share/[token] that auth and calls deleteShare.
+- **PATCH /api/share/[token]** (auth required): Update share - e.g. set/change/remove password. So body { password?: string | null }. If null, remove password. If string, set new hash. So we need updateShare in DB: update share_links set password_hash = ? where token = ? and user_id = ?.
+
+Let me check existing code for delete share API.
+</details></think>
+
+---
+
+
+Wir erweitern das Sharing um: 1) Anzeige und Bearbeitung, wenn ein Ergebnis bereits geteilt ist; 2) optionalen Passwortschutz. Zuerst prüfen wir die aktuelle Share-Struktur und vorhandene APIs.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/shares.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "share|Share",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app",
+  "glob": "**/route.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "share|Share",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 45,
+  "topFiles": [
+    {
+      "uri": "app/api/share/[token]/video/route.ts",
+      "matchCount": 8
+    },
+    {
+      "uri": "app/api/share/[token]/route.ts",
+      "matchCount": 13
+    },
+    {
+      "uri": "app/api/share/route.ts",
+      "matchCount": 8
+    },
+    {
+      "uri": "app/api/share/[token]/pages/[pageId]/screenshot/route.ts",
+      "matchCount": 6
+    },
+    {
+      "uri": "app/api/share/[token]/pages/[pageId]/route.ts",
+      "matchCount": 10
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to:
+1. Add passwordHash to share_links schema and migration
+2. Add getShareByResource(userId, resourceType, resourceId), updateSharePassword(token, userId, password | null)
+3. POST /api/share: accept optional password, hash and store
+4. GET /api/share/[token]: if share has password, require Authorization Bearer <jwt>; add POST /api/share/[token]/access with { password } that returns payload + accessToken (JWT)
+5. Share page: handle requiresPassword, show form, POST access, store token, GET with Bearer
+6. GET /api/share/by-resource?type=&id= (auth) - return existing share info
+7. DELETE /api/share/[token] (auth) - revoke
+8. PATCH /api/share/[token] (auth) - update password (set/remove)
+9. UI on results, domain, journey: chec</details></think>
+
+---
+

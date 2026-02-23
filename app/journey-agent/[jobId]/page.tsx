@@ -5,7 +5,8 @@ import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { Box, CircularProgress, IconButton, useTheme, useMediaQuery } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxCard, MsqdxMoleculeCard, MsqdxChip } from '@msqdx/react';
 import { MSQDX_SPACING, MSQDX_BRAND_PRIMARY, MSQDX_STATUS } from '@msqdx/tokens';
-import { ChevronLeft, ChevronRight, Share2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { SharePanel } from '@/components/SharePanel';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { PDF_LOGO_PATH } from '@/lib/constants';
 import type { UxJourneyAgentStep } from '@/lib/types';
@@ -310,8 +311,6 @@ export default function JourneyAgentStatusPage() {
 
     const [status, setStatus] = useState<Status>('loading');
     const [error, setError] = useState<string | null>(null);
-    const [shareLoading, setShareLoading] = useState(false);
-    const [shareCopied, setShareCopied] = useState(false);
     const [result, setResult] = useState<{
         steps?: UxJourneyAgentStep[];
         success?: boolean;
@@ -515,37 +514,8 @@ export default function JourneyAgentStatusPage() {
                                 .join(' · ') || undefined
                         }
                         actions={
-                            <Box sx={{ display: 'flex', gap: 'var(--msqdx-spacing-xs)', flexWrap: 'wrap' }}>
-                                <MsqdxButton
-                                    variant="outlined"
-                                    size="small"
-                                    startIcon={<Share2 size={14} />}
-                                    disabled={shareLoading}
-                                    onClick={async () => {
-                                        if (!jobId || shareLoading) return;
-                                        setShareLoading(true);
-                                        setShareCopied(false);
-                                        try {
-                                            const res = await fetch('/api/share', {
-                                                method: 'POST',
-                                                headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify({ type: 'journey', id: jobId }),
-                                            });
-                                            const data = await res.json().catch(() => ({}));
-                                            if (!res.ok) throw new Error(data.error ?? 'Share fehlgeschlagen');
-                                            const url = data.url ?? `${typeof window !== 'undefined' ? window.location.origin : ''}/share/${data.token}`;
-                                            await navigator.clipboard.writeText(url);
-                                            setShareCopied(true);
-                                            setTimeout(() => setShareCopied(false), 2000);
-                                        } catch {
-                                            setShareCopied(false);
-                                        } finally {
-                                            setShareLoading(false);
-                                        }
-                                    }}
-                                >
-                                    {shareLoading ? t('domainResult.shareCreating') : shareCopied ? t('domainResult.shareCopied') : t('domainResult.share')}
-                                </MsqdxButton>
+                            <Box sx={{ display: 'flex', gap: 'var(--msqdx-spacing-xs)', flexWrap: 'wrap', alignItems: 'center' }}>
+                                {jobId && <SharePanel resourceType="journey" resourceId={jobId} labelNamespace="domainResult" />}
                                 <MsqdxButton variant="outlined" size="small" onClick={() => router.push('/scan')}>
                                     {t('scan.journeyNewJourney')}
                                 </MsqdxButton>

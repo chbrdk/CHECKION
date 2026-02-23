@@ -20,6 +20,7 @@ function run(): void {
         userId: 'user-1',
         resourceType: 'journey',
         resourceId: 'job-123',
+        passwordHash: null,
         createdAt: new Date(),
         expiresAt: null,
     };

@@ -7,6 +7,7 @@ import { NextResponse } from 'next/server';
 import { getShareByToken } from '@/lib/db/shares';
 import { getDomainScan } from '@/lib/db/scans';
 import { readScreenshot } from '@/lib/screenshot-storage';
+import { canAccessShare } from '@/lib/share-access';
 
 const PLACEHOLDER_SVG = Buffer.from(
     `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">
@@ -17,13 +18,16 @@ const PLACEHOLDER_SVG = Buffer.from(
 );
 
 export async function GET(
-    _request: Request,
+    request: Request,
     { params }: { params: Promise<{ token: string; pageId: string }> }
 ) {
     const { token, pageId } = await params;
     const share = await getShareByToken(token);
     if (!share || share.resourceType !== 'domain') {
         return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+    if (!canAccessShare(share.passwordHash, request, token)) {
+        return NextResponse.json({ error: 'Password required', requiresPassword: true }, { status: 403 });
     }
     const domain = await getDomainScan(share.resourceId, share.userId);
     if (!domain) return NextResponse.json({ error: 'Not found' }, { status: 404 });

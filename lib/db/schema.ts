@@ -35,12 +35,13 @@ export const domainScans = pgTable('domain_scans', {
     payload: jsonb('payload').notNull(), // DomainScanResult
 });
 
-/** Share links: public landing page for a scan (single or domain). Token in URL, no auth. */
+/** Share links: public landing page for a scan (single, domain, or journey). Token in URL, optional password. */
 export const shareLinks = pgTable('share_links', {
     token: text('token').primaryKey(),
     userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-    resourceType: text('resource_type').notNull(), // 'single' | 'domain'
+    resourceType: text('resource_type').notNull(), // 'single' | 'domain' | 'journey'
     resourceId: text('resource_id').notNull(),
+    passwordHash: text('password_hash'), // optional; if set, viewer must submit password to access
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     expiresAt: timestamp('expires_at', { withTimezone: true }),
 });

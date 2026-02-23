@@ -7,15 +7,19 @@ import { NextResponse } from 'next/server';
 import { getCachedShareByToken } from '@/lib/cache';
 import { getJourneyRun } from '@/lib/db/journey-runs';
 import { ENV_UX_JOURNEY_AGENT_URL } from '@/lib/constants';
+import { canAccessShare } from '@/lib/share-access';
 
 export async function GET(
-    _request: Request,
+    request: Request,
     { params }: { params: Promise<{ token: string }> }
 ) {
     const { token } = await params;
     const share = await getCachedShareByToken(token);
     if (!share || share.resourceType !== 'journey') {
         return NextResponse.json({ error: 'Share not found or not a journey share' }, { status: 404 });
+    }
+    if (!canAccessShare(share.passwordHash, request, token)) {
+        return NextResponse.json({ error: 'Password required', requiresPassword: true }, { status: 403 });
     }
 
     const run = await getJourneyRun(share.resourceId, share.userId);

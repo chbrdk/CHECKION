@@ -17,7 +17,8 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import type { JourneyResult, JourneyStep } from '@/lib/types';
 import type { DomainSummaryResponse } from '@/lib/domain-summary';
 import type { SlimPage } from '@/lib/types';
-import { ArrowLeft, Share2, AlertCircle, CheckCircle } from 'lucide-react';
+import { ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react';
+import { SharePanel } from '@/components/SharePanel';
 
 const DomainGraph = dynamic(
     () => import('@/components/DomainGraph').then((m) => ({ default: m.DomainGraph })),
@@ -66,8 +67,6 @@ export default function DomainResultPage() {
     const [journeySaving, setJourneySaving] = useState(false);
     const [journeySaved, setJourneySaved] = useState(false);
     const [journeySaveName, setJourneySaveName] = useState('');
-    const [shareLoading, setShareLoading] = useState(false);
-    const [shareCopied, setShareCopied] = useState(false);
 
     const searchParams = useSearchParams();
     const pages = (result?.pages ?? []) as SlimPage[];
@@ -150,35 +149,11 @@ export default function DomainResultPage() {
                     <MsqdxButton variant="outlined" startIcon={<ArrowLeft size={16} />} onClick={() => router.push('/')}>
                         {t('domainResult.back')}
                     </MsqdxButton>
-                    <MsqdxButton
-                        variant="contained"
-                        startIcon={<Share2 size={16} />}
-                        disabled={shareLoading}
-                        onClick={async () => {
-                            if (!params.id || shareLoading) return;
-                            setShareLoading(true);
-                            setShareCopied(false);
-                            try {
-                                const res = await fetch('/api/share', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ type: 'domain', id: params.id }),
-                                });
-                                const data = await res.json().catch(() => ({}));
-                                if (!res.ok) throw new Error(data.error ?? 'Share fehlgeschlagen');
-                                const url = data.url ?? `${window.location.origin}/share/${data.token}`;
-                                await navigator.clipboard.writeText(url);
-                                setShareCopied(true);
-                                setTimeout(() => setShareCopied(false), 2000);
-                            } catch {
-                                setShareCopied(false);
-                            } finally {
-                                setShareLoading(false);
-                            }
-                        }}
-                    >
-                        {shareLoading ? t('domainResult.shareCreating') : shareCopied ? t('domainResult.shareCopied') : t('domainResult.share')}
-                    </MsqdxButton>
+                    {params.id && (
+                        <Box sx={{ display: 'inline-flex' }}>
+                            <SharePanel resourceType="domain" resourceId={params.id} labelNamespace="domainResult" />
+                        </Box>
+                    )}
                 </Box>
             </Box>
 

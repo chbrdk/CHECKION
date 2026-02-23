@@ -89,7 +89,7 @@ import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { PaginationBar } from '@/components/PaginationBar';
 import { RESULTS_ISSUES_PAGE_SIZE } from '@/lib/constants';
-import { Share2 } from 'lucide-react';
+import { SharePanel } from '@/components/SharePanel';
 
 const SEVERITY_CONFIG: Record<IssueSeverity, { color: string; label: string }> = {
     error: { color: MSQDX_STATUS.error.base, label: 'Error' },
@@ -124,8 +124,6 @@ export default function ResultsPage() {
     const [summarizing, setSummarizing] = useState(false);
     const [summarizeError, setSummarizeError] = useState<string | null>(null);
     const [pdfExporting, setPdfExporting] = useState(false);
-    const [shareLoading, setShareLoading] = useState(false);
-    const [shareCopied, setShareCopied] = useState(false);
     const issueRefs = useRef<(HTMLDivElement | null)[]>([]);
 
     // Derived stats for WCAG levels
@@ -310,36 +308,7 @@ export default function ResultsPage() {
                         >
                             ← {t('results.dashboard')}
                         </MsqdxButton>
-                        <MsqdxButton
-                            variant="outlined"
-                            size="small"
-                            startIcon={<Share2 size={14} />}
-                            disabled={shareLoading}
-                            onClick={async () => {
-                                if (!result?.id || shareLoading) return;
-                                setShareLoading(true);
-                                setShareCopied(false);
-                                try {
-                                    const res = await fetch('/api/share', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ type: 'single', id: result.id }),
-                                    });
-                                    const data = await res.json().catch(() => ({}));
-                                    if (!res.ok) throw new Error(data.error ?? 'Share fehlgeschlagen');
-                                    const url = data.url ?? `${window.location.origin}/share/${data.token}`;
-                                    await navigator.clipboard.writeText(url);
-                                    setShareCopied(true);
-                                    setTimeout(() => setShareCopied(false), 2000);
-                                } catch {
-                                    setShareCopied(false);
-                                } finally {
-                                    setShareLoading(false);
-                                }
-                            }}
-                        >
-                            {shareLoading ? t('results.shareCreating') : shareCopied ? t('results.shareCopied') : t('results.share')}
-                        </MsqdxButton>
+                        {result?.id && <SharePanel resourceType="single" resourceId={result.id} labelNamespace="results" />}
                     </Box>
                     <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: MSQDX_SPACING.scale.xs }}>
                         <MsqdxTypography

@@ -7,7 +7,7 @@ import { auth } from '@/auth';
 import { getScan } from '@/lib/db/scans';
 import { getDomainScan } from '@/lib/db/scans';
 import { getJourneyRun } from '@/lib/db/journey-runs';
-import { createShare } from '@/lib/db/shares';
+import { createShare, getShareByResource } from '@/lib/db/shares';
 import type { ShareResourceType } from '@/lib/db/shares';
 import { SHARE_PATH } from '@/lib/constants';
 import { randomBytes } from 'crypto';
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     if (!session?.user?.id) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    let body: { type?: string; id?: string };
+    let body: { type?: string; id?: string; password?: string };
     try {
         body = await request.json();
     } catch {
@@ -29,6 +29,7 @@ export async function POST(request: Request) {
     }
     const type = body.type as ShareResourceType | undefined;
     const id = typeof body.id === 'string' ? body.id.trim() : '';
+    const password = typeof body.password === 'string' ? body.password : undefined;
     if (!id || (type !== 'single' && type !== 'domain' && type !== 'journey')) {
         return NextResponse.json(
             { error: 'Body must include type: "single" | "domain" | "journey" and id: string' },
@@ -50,13 +51,27 @@ export async function POST(request: Request) {
         }
     }
 
-    const token = generateToken();
-    await createShare(token, session.user.id, type, id);
-
     const origin = request.headers.get('x-forwarded-host') || request.headers.get('host') || '';
     const protocol = request.headers.get('x-forwarded-proto') === 'https' ? 'https' : 'http';
     const baseUrl = origin ? `${protocol}://${origin}` : '';
-    const shareUrl = baseUrl ? `${baseUrl}${SHARE_PATH}/${token}` : `${SHARE_PATH}/${token}`;
+    const buildUrl = (t: string) => (baseUrl ? `${baseUrl}${SHARE_PATH}/${encodeURIComponent(t)}` : `${SHARE_PATH}/${t}`);
 
-    return NextResponse.json({ token, url: shareUrl });
+    const existing = await getShareByResource(session.user.id, type, id);
+    if (existing) {
+        return NextResponse.json({
+            token: existing.token,
+            url: buildUrl(existing.token),
+            alreadyShared: true,
+            hasPassword: existing.hasPassword,
+        });
+    }
+
+    const token = generateToken();
+    await createShare(token, session.user.id, type, id, { password });
+    return NextResponse.json({
+        token,
+        url: buildUrl(token),
+        alreadyShared: false,
+        hasPassword: Boolean(password && password.trim()),
+    });
 }

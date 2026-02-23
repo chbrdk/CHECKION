@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Box, CircularProgress, alpha, Dialog, DialogTitle, DialogContent, IconButton, Button } from '@mui/material';
 import { MsqdxTypography, MsqdxCard, MsqdxChip } from '@msqdx/react';
@@ -136,27 +136,113 @@ type SharePayload =
     | { type: 'single'; data: ScanResult }
     | { type: 'journey'; data: ShareJourneyData };
 
+const SHARE_ACCESS_STORAGE_KEY = 'checkion_share_access';
+
 export default function ShareLandingPage() {
     const params = useParams();
     const token = params.token as string;
     const [payload, setPayload] = useState<SharePayload | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [requiresPassword, setRequiresPassword] = useState(false);
+    const [accessToken, setAccessToken] = useState<string | null>(null);
+    const [passwordError, setPasswordError] = useState<string | null>(null);
+    const [passwordSubmitting, setPasswordSubmitting] = useState(false);
+
+    const loadWithAuth = useCallback(
+        (authToken: string) => {
+            return fetch(`/api/share/${encodeURIComponent(token)}`, {
+                headers: { Authorization: `Bearer ${authToken}` },
+            })
+                .then((res) => {
+                    if (res.status === 403) {
+                        const clone = res.clone();
+                        return clone.json().then((b) => (b.requiresPassword ? Promise.reject(new Error('PASSWORD_REQUIRED')) : res));
+                    }
+                    if (!res.ok) throw new Error(res.status === 404 ? 'Link ungültig oder abgelaufen' : 'Fehler beim Laden');
+                    return res.json();
+                })
+                .then((data) => {
+                    setPayload(data);
+                    setError(null);
+                    setRequiresPassword(false);
+                });
+        },
+        [token]
+    );
 
     useEffect(() => {
         if (!token) return;
-        fetch(`/api/share/${encodeURIComponent(token)}`)
-            .then((res) => {
-                if (!res.ok) throw new Error(res.status === 404 ? 'Link ungültig oder abgelaufen' : 'Fehler beim Laden');
-                return res.json();
-            })
-            .then(setPayload)
-            .catch((e) => setError(e instanceof Error ? e.message : 'Fehler'));
-    }, [token]);
+        const stored = typeof window !== 'undefined' ? sessionStorage.getItem(SHARE_ACCESS_STORAGE_KEY + '_' + token) : null;
+        if (stored) {
+            setAccessToken(stored);
+            loadWithAuth(stored).catch(() => {
+                setAccessToken(null);
+                if (typeof window !== 'undefined') sessionStorage.removeItem(SHARE_ACCESS_STORAGE_KEY + '_' + token);
+                tryLoad();
+            });
+            return;
+        }
+        tryLoad();
 
-    if (error) {
+        function tryLoad() {
+            fetch(`/api/share/${encodeURIComponent(token)}`)
+                .then((res) => {
+                    if (res.status === 403) {
+                        return res.json().then((b) => {
+                            if (b.requiresPassword) {
+                                setRequiresPassword(true);
+                                setError(null);
+                                return;
+                            }
+                            setError('Zugriff verweigert');
+                        });
+                    }
+                    if (!res.ok) throw new Error(res.status === 404 ? 'Link ungültig oder abgelaufen' : 'Fehler beim Laden');
+                    return res.json().then(setPayload);
+                })
+                .catch((e) => setError(e instanceof Error ? e.message : 'Fehler'));
+        }
+    }, [token, loadWithAuth]);
+
+    const handlePasswordSubmit = useCallback(
+        (password: string) => {
+            setPasswordError(null);
+            setPasswordSubmitting(true);
+            fetch(`/api/share/${encodeURIComponent(token)}/access`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password }),
+            })
+                .then((res) => res.json())
+                .then((data) => {
+                    if (data.accessToken) {
+                        setAccessToken(data.accessToken);
+                        if (typeof window !== 'undefined') sessionStorage.setItem(SHARE_ACCESS_STORAGE_KEY + '_' + token, data.accessToken);
+                        return loadWithAuth(data.accessToken);
+                    }
+                    setPasswordError('Falsches Passwort');
+                })
+                .catch(() => setPasswordError('Falsches Passwort'))
+                .finally(() => setPasswordSubmitting(false));
+        },
+        [token, loadWithAuth]
+    );
+
+    if (error && !requiresPassword) {
         return (
             <Box sx={{ p: 4, maxWidth: 600, mx: 'auto', textAlign: 'center', bgcolor: '#fff', minHeight: '100vh' }}>
                 <MsqdxTypography variant="h6" sx={{ color: MSQDX_STATUS.error.base }}>{error}</MsqdxTypography>
+            </Box>
+        );
+    }
+    if (requiresPassword && !payload) {
+        return (
+            <Box sx={{ p: 4, maxWidth: 400, mx: 'auto', bgcolor: '#fff', minHeight: '100vh' }}>
+                <MsqdxTypography variant="h6" sx={{ mb: 2, textAlign: 'center' }}>Passwort erforderlich</MsqdxTypography>
+                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2, textAlign: 'center' }}>
+                    Dieser geteilte Link ist durch ein Passwort geschützt.
+                </MsqdxTypography>
+                <SharePasswordForm onSubmit={handlePasswordSubmit} error={passwordError} loading={passwordSubmitting} />
             </Box>
         );
     }
@@ -168,6 +254,8 @@ export default function ShareLandingPage() {
         );
     }
 
+    const authToken = accessToken ?? (typeof window !== 'undefined' ? sessionStorage.getItem(SHARE_ACCESS_STORAGE_KEY + '_' + token) : null);
+
     return (
         <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 900, mx: 'auto', bgcolor: '#fff', minHeight: '100vh' }} suppressHydrationWarning>
             <Box sx={{ mb: 3, textAlign: 'center' }}>
@@ -175,14 +263,55 @@ export default function ShareLandingPage() {
                     Geteilte Ergebnisse · CHECKION
                 </MsqdxTypography>
             </Box>
-            {payload.type === 'domain' && <ShareDomainContent data={payload.data} token={token} />}
-            {payload.type === 'single' && <ShareSingleContent data={payload.data} />}
-            {payload.type === 'journey' && <ShareJourneyContent data={payload.data} />}
+            {payload.type === 'domain' && <ShareDomainContent data={payload.data} token={token} accessToken={authToken} />}
+            {payload.type === 'single' && <ShareSingleContent data={payload.data} shareToken={token} accessToken={authToken} />}
+            {payload.type === 'journey' && <ShareJourneyContent data={payload.data} accessToken={authToken} />}
         </Box>
     );
 }
 
-function ShareDomainContent({ data, token }: { data: DomainSummaryResponse; token: string }) {
+function SharePasswordForm({
+    onSubmit,
+    error,
+    loading,
+}: {
+    onSubmit: (password: string) => void;
+    error: string | null;
+    loading: boolean;
+}) {
+    const [password, setPassword] = useState('');
+    return (
+        <Box
+            component="form"
+            onSubmit={(e) => {
+                e.preventDefault();
+                onSubmit(password);
+            }}
+            sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+        >
+            <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Passwort"
+                required
+                autoComplete="current-password"
+                style={{
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                    fontSize: 14,
+                }}
+            />
+            {error && <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.error.base }}>{error}</MsqdxTypography>}
+            <Button type="submit" variant="contained" disabled={loading} sx={{ alignSelf: 'flex-start' }}>
+                {loading ? 'Prüfe…' : 'Öffnen'}
+            </Button>
+        </Box>
+    );
+}
+
+function ShareDomainContent({ data, token, accessToken }: { data: DomainSummaryResponse; token: string; accessToken?: string | null }) {
     const pages = data.pages ?? [];
     const agg = data.aggregated;
     const [listPage, setListPage] = useState(1);
@@ -198,7 +327,9 @@ function ShareDomainContent({ data, token }: { data: DomainSummaryResponse; toke
         setLoadingDetail(true);
         setSelectedPageDetail(null);
         try {
-            const res = await fetch(`/api/share/${encodeURIComponent(token)}/pages/${encodeURIComponent(pageId)}`);
+            const headers: HeadersInit = {};
+            if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+            const res = await fetch(`/api/share/${encodeURIComponent(token)}/pages/${encodeURIComponent(pageId)}`, { headers });
             if (!res.ok) throw new Error('Laden fehlgeschlagen');
             const scanResult = (await res.json()) as ScanResult;
             setSelectedPageDetail(scanResult);
@@ -474,7 +605,7 @@ function ShareDomainContent({ data, token }: { data: DomainSummaryResponse; toke
                     )}
                     {selectedPageDetail && !loadingDetail && (
                         <Box sx={{ color: '#1a1a1a', '& .MuiTypography-root': { color: 'inherit' }, '& .MuiChip-root': { color: 'inherit' } }}>
-                            <ShareSingleContent data={selectedPageDetail} shareToken={token} />
+                            <ShareSingleContent data={selectedPageDetail} shareToken={token} accessToken={accessToken} />
                         </Box>
                     )}
                 </DialogContent>
@@ -483,12 +614,12 @@ function ShareDomainContent({ data, token }: { data: DomainSummaryResponse; toke
     );
 }
 
-function ShareJourneyContent({ data }: { data: ShareJourneyData }) {
+function ShareJourneyContent({ data, accessToken }: { data: ShareJourneyData; accessToken?: string | null }) {
     const steps = data.steps ?? [];
     const taskDescription = data.taskDescription ?? '';
     const siteDomain = data.siteDomain ?? '';
     const success = data.success ?? false;
-    const videoUrl = data.videoUrl;
+    const videoUrl = data.videoUrl ? (accessToken ? `${data.videoUrl}?access=${encodeURIComponent(accessToken)}` : data.videoUrl) : undefined;
 
     return (
         <>
@@ -580,7 +711,7 @@ function ShareJourneyContent({ data }: { data: ShareJourneyData }) {
     );
 }
 
-function ShareSingleContent({ data, shareToken }: { data: ScanResult; shareToken?: string }) {
+function ShareSingleContent({ data, shareToken, accessToken }: { data: ScanResult; shareToken?: string; accessToken?: string | null }) {
     const issueCount = (data.issues?.length ?? 0);
     const stats = data.stats ?? { errors: 0, warnings: 0, notices: 0 };
     const perf = data.performance;
@@ -606,7 +737,7 @@ function ShareSingleContent({ data, shareToken }: { data: ScanResult; shareToken
 
     // Im Share-Kontext immer Screenshot über API laden (liefert Bild oder Platzhalter)
     const screenshotSrc = shareToken
-        ? `/api/share/${encodeURIComponent(shareToken)}/pages/${encodeURIComponent(data.id)}/screenshot`
+        ? `/api/share/${encodeURIComponent(shareToken)}/pages/${encodeURIComponent(data.id)}/screenshot${accessToken ? `?access=${encodeURIComponent(accessToken)}` : ''}`
         : (data.screenshot || undefined);
 
     const hasVisualAnalysis = shareToken
