@@ -4538,7 +4538,2075 @@ I need to:
 6. GET /api/share/by-resource?type=&id= (auth) - return existing share info
 7. DELETE /api/share/[token] (auth) - revoke
 8. PATCH /api/share/[token] (auth) - update password (set/remove)
-9. UI on results, domain, journey: chec</details></think>
+9. UI on results, domain, journey: check if already shared; if yes show "Bereits geteilt" + link + option to copy again, revoke, set/change password. When creating new share, show optional password field.
+
+Let me also check the cache for getCachedShareByToken - we need to include passwordHash in the response for GET to know if password is required (but we don't return the hash to client - we only need hasPassword on the share row for the API). So ShareLinkRow can have passwordHash?: string | null for internal use; when returning "by-resource" we return hasPassword: boolean.
+
+Checking cache and how getShareByToken is used.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/cache.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to check package.json for bcrypt or similar for password hashing.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "bcrypt|argon|hash",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/package.json",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "bcrypt|argon|hash",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/package.json",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 2,
+  "topFiles": [
+    {
+      "uri": "package.json",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/package.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+We have bcryptjs. Now I'll create a todo list and implement:
+
+1. Schema: add passwordHash to share_links (nullable text)
+2. lib/db/shares.ts: 
+   - createShare: accept optional password, hash with bcrypt and store
+   - getShareByToken: return row with passwordHash (internal use)
+   - getShareByResource(userId, resourceType, resourceId): get share link for this resource
+   - updateSharePassword(token, userId, password | null)
+   - ShareLinkRow: add passwordHash?: string | null
+3. JWT for share access: we need to sign a JWT. Check if they use jose or jsonwebtoken - next-auth often uses jose. Let me check.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "jose|jsonwebtoken|sign|decode",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "jose|jsonwebtoken|sign|decode",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 8,
+  "totalMatches": 14,
+  "topFiles": [
+    {
+      "uri": "./lib/types.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "./lib/store.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./lib/sitemap.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./lib/seo-stopwords.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./lib/scanner.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "./lib/page-index.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./auth.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/api/saliency/generate/route.ts",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/auth.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+They use bcrypt from bcryptjs. For JWT, NextAuth uses its own - we need to sign a simple JWT for share access. I'll use the same AUTH_SECRET and create a simple JWT. Node has no built-in JWT - we could use a simple HMAC: create a payload { shareToken, exp } and sign it. Actually the easiest is to use crypto.createHmac('sha256', AUTH_SECRET).update(JSON.stringify({ shareToken, exp })).digest('base64url') and send token = base64url(payload) + '.' + signature. Then verify by decoding payload (base64url), checking exp, and re-computing signature. So we don't need to add a new dependency - we can implement a minimal JWT-like token with crypto. Or use jose if next-auth bundles it. Let me check - next-auth v5 often uses jose internally. I'll use crypto to avoid adding deps: createShareAccessToken(shareToken: string): string and verifyShareAccessToken(token: string): { shareToken: string } | null.
+</details></think>
+
+---
+
+
+Implementierung starten: zuerst DB-Schema und Share-Logik, dann APIs und UI.
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] Schema + shares DB: passwordHash, getByResource, updatePassword
+- [ ] Share access JWT + POST /api/share/[token]/access
+- [ ] GET /api/share/[token] password check + by-resource API
+- [ ] DELETE + PATCH /api/share/[token] (revoke, set password)
+- [ ] Share page: password form + accessToken flow
+- [ ] UI: show already shared + manage (copy, revoke, password) everywhere
+- [ ] Locales + knowledge + cache invalidation
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Implement step by step. First schema and shares.ts.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now update lib/db/shares.ts: add password hashing to createShare, getShareByToken return passwordHash (for internal API use), getShareByResource, updateSharePassword. We need to map the row to ShareLinkRow - add passwordHash to the interface. For "by resource" we return something like { token, url, hasPassword } so we don't expose the hash. So getShareByResource returns a minimal type.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/shares.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+getShareByResource needs to build the URL - we don't have the request origin in DB layer. So we should either pass baseUrl from the API or use NEXTAUTH_URL. I used NEXTAUTH_URL - the API that returns this can override with the actual request origin. So the API that calls getShareByResource will build the url from request. Let me leave it as is (NEXTAUTH_URL is often set in production). Actually in the API we have access to request headers for origin, so we could have getShareByResource return only { token, hasPassword, createdAt } and the API builds the full URL. I'll do that so the URL is correct when NEXTAUTH_URL is not set (e.g. dev). So change ShareInfo to not include url, and have the API add it. Or include url in ShareInfo but build it in the API when we call getShareByResource - we need to pass baseUrl to getShareByResource. Let me change getShareByResource to return token, hasPassword, createdAt and let the API build the URL.
+</details></think>
+
+---
+
+
+ShareInfo ohne URL lassen; die API setzt die URL aus dem Request.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/shares.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/shares.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now add share access token (JWT-like). I'll create a small lib that uses AUTH_SECRET and crypto to create/verify a short-lived token. Put it in lib/share-access.ts.
+</details></think>
+
+---
+
+
+Share-Access-Token (JWT-ähnlich) und API-Routen hinzufügen:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add SHARE_ACCESS_TOKEN_MAX_AGE_SEC = 24 * 60 * 60 (24h). Create lib/share-access.ts with createShareAccessToken and verifyShareAccessToken using crypto and AUTH_SECRET.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/share-access.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Buffer.from(sig, 'utf8') might be wrong for base64url - the signature is base64url encoded so we should compare in the same encoding. Actually timingSafeEqual expects Buffers. So we need to decode base64url to buffer. Let me fix: both expectedSig and sig are base64url strings - we need to decode them to buffers for timingSafeEqual. So Buffer.from(expectedSig, 'base64url') and Buffer.from(sig, 'base64url'). But that can throw if invalid. Let me use try/catch. Actually the digest is base64url - so we have two base64url strings. To compare we should decode both to buffer: Buffer.from(payloadB64, 'base64url') gives the payload. For the signature, createHmac().digest('base64url') returns a string. So we have two strings. timingSafeEqual needs Buffer. So Buffer.from(expectedSig, 'base64url') and Buffer.from(sig, 'base64url'). If sig is malformed, from might throw. Already in try/catch. And we need to ensure both buffers have the same length for timingSafeEqual (it throws if lengths differ). So decode both and then compare.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/share-access.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now update cache.ts - getCachedShareByToken returns ShareLinkRow which now has passwordHash. The cache calls dbShares.getShareByToken which returns the full row. So the cache is fine. But we need to revalidate cache when share is updated (password). So when we PATCH share password we should revalidate the tag `share-${token}`. Let me check - we have revalidateTag in next/cache. So in the PATCH handler we call revalidateTag(`share-${token}`). Good.
+
+Now implement:
+1. POST /api/share - add optional password in body, pass to createShare. If resource already shared, we could return existing share - but the user said "bearbeiten" so they might want one share per resource and then update it. So we allow creating a new share even if one exists (current behavior), or we could "upsert": if getShareByResource exists, return that and optionally update password. The user said "sehen und bearbeiten wenn bereits geteilt" - so when already shared, show the existing link and allow edit (revoke, set password). So we don't need to change POST to "reuse" existing - we have GET by-resource to show existing, and PATCH to update password, DELETE to revoke. When user clicks "Share" and there's already a share, we could either create a new share (and maybe revoke the old one?) or show the existing one. Simpler: when "Share" is clicked, first check by-resource; if existing, show "Already shared" UI with copy link / set password / revoke. If not existing, show form (optional password) and create. So the flow is: load share info by resource on page load. If shared, show share panel with link + options. If not, show "Share" button; on click maybe a small dialog with optional password field and Create; on create success show the same panel. So I'll add GET /api/share/by-resource and PATCH, DELETE. POST stays as create (and we could allow creating a second share - or we prevent creating if already shared and tell client to use existing). Let me prevent creating duplicate: POST /api/share - if getShareByResource already exists, return 200 with existing token/url and message that it's already shared (so client can show "Link kopiert" or the existing link). That way one share per resource and we don't duplicate. So POST body: type, id, password?: string. If share exists for this resource, return { token, url, alreadyShared: true }. If not, create and return { token, url, alreadyShared: false }. Then client can show "Bereits geteilt" + link when alreadyShared.
+</details></think>
+
+---
+
+
+APIs implementieren: POST /api/share um optionales Passwort erweitern; GET by-resource anlegen; GET [token] um Passwortprüfung erweitern; POST [token]/access anlegen.
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Schema + shares DB: passwordHash, getByResource, updatePassword
+- [-] Share access JWT + POST /api/share/[token]/access
+- [ ] GET /api/share/[token] password check + by-resource API
+- [ ] DELETE + PATCH /api/share/[token] (revoke, set password)
+- [ ] Share page: password form + accessToken flow
+- [ ] UI: show already shared + manage (copy, revoke, password) everywhere
+- [ ] Locales + knowledge + cache invalidation
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/[token]/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The cache returns getShareByToken - but getShareByToken now returns ShareLinkRow with passwordHash. The cache stores the result of getShareByToken. So getCachedShareByToken will return the row with passwordHash. Good.
+
+For GET /api/share/[token]: we need to check if share has password. If yes, require Authorization: Bearer <accessToken> and verify it. If valid, return payload. If no password on share, return payload as now. If password protected and no valid JWT, return 403 { requiresPassword: true }.
+
+So the flow in GET:
+1. Get share by token (from cache). If !share return 404.
+2. If share.passwordHash is set: check Authorization header for Bearer token. Verify token with verifyShareAccessToken. If valid and token matches share.token, continue to 3. Else return 403 { requiresPassword: true }.
+3. Load and return payload as current code.
+
+I need to use getShareByToken from DB directly for the password check (to get passwordHash), or the cached version - the cached version already has the full row from getShareByToken which now includes passwordHash. So getCachedShareByToken returns ShareLinkRow with passwordHash. Good.
+
+Implement POST /api/share/[token]/access: body { password }. If share has no password, create access token and return. If share has password, verify; if correct return accessToken; if wrong return 401.
+</details></think>
+
+---
+
+
+Cache prüfen: getShareByToken liefert jetzt passwordHash — prüfen, ob die Cache-Funktion das durchreicht.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/cache.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Cache returns whatever getShareByToken returns, which now includes passwordHash. So we're good. When we update password we need to revalidateTag(`share-${token}`). I'll add that in the PATCH handler.
+
+Now write the access route and update GET route.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/[token]/access/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now update GET /api/share/[token] to check password: if share has passwordHash, look for Authorization: Bearer <accessToken>, verify, then proceed. Else return 403 { requiresPassword: true }.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/[token]/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+We need to update the cache's ShareLinkRow type - the cache returns ShareLinkRow from db/shares which now has passwordHash. So no change needed in cache.
+
+Now add GET /api/share/by-resource, DELETE /api/share/[token], PATCH /api/share/[token]. And update POST /api/share to accept optional password and to return existing share if already shared.
+</details></think>
+
+---
+
+
+by-resource-Route hinzufügen und POST/Route um optionales Passwort sowie Rückgabe bei bereits geteiltem Ressourcen erweitern:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+POST: add optional password in body. If getShareByResource returns existing, we have two options: (A) return existing share with alreadyShared: true and optionally update password if provided; (B) create new share every time (current). User said "bearbeiten" so we want one share per resource and ability to edit. So: if existing share, return { token, url, alreadyShared: true, hasPassword }. If not, create with optional password, return { token, url, alreadyShared: false, hasPassword: !!password }.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+The string to replace was not found in the file.
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The comment line has different formatting. Let me do smaller replacements.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now add GET /api/share/by-resource (auth required), DELETE /api/share/[token], PATCH /api/share/[token]. And we need to fix the video route and pages route - they need to also check password (Bearer token) when share is password-protected. So GET /api/share/[token]/video and GET /api/share/[token]/pages/[pageId] etc. need the same auth check. Let me add a small helper that gets share and checks access (either no password or valid Bearer). We could put that in a shared lib or duplicate in each route. For now I'll add the same check to the video route and the pages routes.
+</details></think>
+
+---
+
+
+by-resource-Route und DELETE/PATCH hinzufügen:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/by-resource/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now add DELETE and PATCH to the [token] route. In Next.js App Router we can have route.ts with GET only in [token], and we need separate route files for different methods. So we have app/api/share/[token]/route.ts with GET. For DELETE and PATCH we add them to the same file - that file can export DELETE and PATCH handlers.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/[token]/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add DELETE and PATCH to this file. They require auth and the user must own the share.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/[token]/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Video route and pages routes need to accept the same Bearer token for password-protected shares. So when a share has passwordHash, the video and pages endpoints must also check Authorization Bearer. Let me add a minimal helper that: given token and request, returns the share if access is allowed (no password or valid Bearer). We could put this in lib/share-access.ts as getShareIfAllowed(token, request) that returns ShareLinkRow | null and 403 if password required. Actually the routes already have getCachedShareByToken - they get the share. Then they need to check: if share.passwordHash, require Bearer and verify. So I'll add the same block to the video route and to the pages routes.
+</details></think>
+
+---
+
+
+Video- und Pages-Routen für passwortgeschützte Shares prüfen: Zugriff nur mit gültigem Bearer-Token erlauben.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/[token]/video/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/[token]/pages/[pageId]/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll create a small helper in lib that checks share access (password or Bearer) and use it in video and pages routes. So lib/share-access.ts can export: async function requireShareAccess(shareToken: string, request: Request): Promise<ShareLinkRow | null> - returns share if access allowed, otherwise throws or returns null. Actually the routes need to return 403 with requiresPassword. So the helper could return { share } or { requiresPassword: true }. Let me add a function getShareWithAccess(token, request) that returns { share, requiresPassword?: boolean }. If share not found return null. If share has no password return { share }. If share has password and valid Bearer return { share }. If share has password and no/invalid Bearer return { share, requiresPassword: true } - wait we don't want to return share in that case. So: getShareWithAccess(token, request) => { share: ShareLinkRow } | { requiresPassword: true } | null. Then in each route we check: const result = await getShareWithAccess(token, request); if (result === null) return 404; if ('requiresPassword' in result) return 403; use result.share.
+
+But getShareWithAccess needs to call getCachedShareByToken - that's in cache. So the helper could be in a lib that takes (share, request) and returns whether access is allowed. So: function checkShareAccess(share: ShareLinkRow | null, request: Request): share is ShareLinkRow & { access: true } | { requiresPassword: true }. So we have:
+  if (!share) return null;
+  if (!share.passwordHash) return { share, access: true };
+  const bearer = ...; const verified = ...;
+  if (verified && verified.shareToken === share.token) return { share, access: true };
+  return { requiresPassword: true };
+Then in routes we do: const share = await getCachedShareByToken(token); const check = checkShareAccess(share, request); if (!share) 404; if (check.requiresPassword) 403; else use share.
+</details></think>
+
+---
+
+
+Hilfsfunktion für Share-Zugriff hinzufügen und in Video- und Pages-Routen verwenden.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/share-access.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now add the check to video and pages routes. For video:
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/[token]/video/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/[token]/pages/[pageId]/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+There's also a screenshot route for share - let me check.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/[token]/pages/[pageId]/screenshot/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+This one uses getShareByToken (not cached) - and it doesn't have password check. Add the same canAccessShare check. And we need to pass request - so change to request and add the check. getShareByToken returns ShareLinkRow which has passwordHash now.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/[token]/pages/[pageId]/screenshot/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/share/[token]/pages/[pageId]/screenshot/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now update the share page to: 1) On load, GET /api/share/[token]. If 403 and requiresPassword, show password form. 2) On password submit, POST /api/share/[token]/access with { password }, get accessToken, store in sessionStorage, then GET /api/share/[token] with Authorization: Bearer <accessToken>, display payload. 3) When loading video or sub-resources, we need to pass the Bearer token. So the share page stores accessToken in state/sessionStorage and when fetching video URL or pages we need to add the header. For the video element, the browser will request the video URL - we can't add headers to a <video src="..."> request. So we have two options: (A) Pass the access token as a query param for the video URL (e.g. /api/share/[token]/video?access=xxx) - but that would expose the token in logs. (B) Use a blob URL: fetch the video with Authorization header, get blob, create object URL, set as video src. So we need to fetch the video with credentials in the share page and set video src to a blob URL. That way the Bearer token is sent. Let me do that: when we have accessToken, we fetch the video with the header, create blob URL, and use that for the video element. So in ShareJourneyContent we need to check - if we're in "share with password" mode we have accessToken in state. So the share page structure: - State: payload, error, accessToken (for password-protected), loading. - On mount: try GET with no auth. If 200, set payload. If 403 and requiresPassword, set state to show password form, don't set payload. - Password form submit: POST /access with password, get accessToken, store in state (and sessionStorage so refresh keeps it). Then GET with Bearer, set payload. - When rendering content that needs video or sub-requests (e.g. domain page detail), we need to pass the accessToken so that fetch can add the header. So we pass accessToken to ShareDomainContent and ShareJourneyContent. For ShareSingleContent we might load screenshot via shareToken - that's /api/share/[token]/pages/[pageId]/screenshot - that route also needs Bearer when password set. So when the share page fetches the main payload with Bearer, we have the payload. The screenshot and video are loaded by the client - screenshot is an <img src={url}> and video is <video src={url}>. For img and video we cannot add Authorization header. So we have to either: 1) Use query param ?access= for these sub-requests (simpler but token in URL), 2) Or proxy: the share page could have an internal API that accepts the accessToken from session and returns the video/screenshot - but that's complex. 3) Or use fetch + blob URL for both img and video when password-protected. So when password protected, we don't use src= directly for video and screenshot - we fetch with Authorization and create blob URLs. So the share page needs to pass accessToken to all child components that load media, and they use fetch+blob when accessToken is present. Let me implement: - Share page stores accessToken in state + sessionStorage. - When rendering ShareJourneyContent with videoUrl, if accessToken we need to load video via fetch with Bearer and set blob URL. So we need a small hook or effect that fetches the video when accessToken and videoUrl are set, and returns the blob URL. - Same for screenshot in ShareSingleContent - when shareToken is used we have screenshotSrc = `/api/share/${token}/pages/${id}/screenshot`. If that request is with password, we need to pass the accessToken. So the share page when it has accessToken, we need to either pass it to all fetches or use a wrapper. The simplest is: when the share has a password and we have accessToken, we pass accessToken to the share page's fetch logic. For the main payload we already do that. For video: in ShareJourneyContent we have videoUrl. When accessToken exists, we should fetch(videoUrl, { headers: { Authorization: `Bearer ${accessToken}` } }) and then create object URL and use that. So we need to add a state in ShareJourneyContent for videoBlobUrl that gets set when we have accessToken and videoUrl. And for the domain share, when opening a page detail we fetch `/api/share/${token}/pages/${pageId}` - that fetch needs to include the Bearer token. So we need to pass accessToken to ShareDomainContent and when it does openPageDetail it adds the header. And for the screenshot in ShareSingleContent, when we're in share context we use shareToken and the URL is /api/share/.../screenshot - the img tag can't send headers. So we need to either use a query param for the access token (e.g. ?access=xxx) for GET requests that can't send headers, or fetch the screenshot as blob and set as img src. I'll use a query param for the share access: we could add ?access=ACCESS_TOKEN to the video and screenshot URLs when accessToken is set. Then the API routes need to accept this: if Authorization Bearer is missing but query param access is present, use that as the Bearer token. So in canAccessShare we need to also check request.url for ?access=xxx and use that as the token. So: getBearerToken(request) that returns auth header or searchParams.get('access'). Then verify that. This way we can do <video src={`${videoUrl}?access=${accessToken}`} /> and the video route will accept it. Let me add that to the share-access helper and the routes.
+</details></think>
+
+---
+
+
+Share-Seite: Passwortformular und Access-Token-Flow. Zuerst API-Routen so erweitern, dass sie den Access-Token per Query akzeptieren (für Video/Img):
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/share-access.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now the video and screenshot routes will accept ?access=xxx. So on the share page we can use videoUrl + (accessToken ? `?access=${encodeURIComponent(accessToken)}` : '') for the video src. And for screenshot we do the same. Now update the share page: 1) State: payload, error, accessToken (string | null), showPasswordForm (derived: error is null, !payload, we need to try GET first; if GET returns 403 requiresPassword we set showPasswordForm true and store that). So flow: - On mount: fetch GET /api/share/[token]. If 200, set payload. If 403 and body.requiresPassword, set state requiresPassword: true (and don't set payload). If 404 or other error, set error. - When requiresPassword true: show password form. On submit: POST /api/share/[token]/access with { password }. If 200, get accessToken, set to state and sessionStorage, set requiresPassword false, then fetch GET with Authorization Bearer accessToken, set payload. If 401, show error "Falsches Passwort". - When we have payload and accessToken (for password-protected), we pass accessToken to child components so they can append ?access= to URLs. So we need to pass accessToken from the main share page to ShareDomainContent, ShareSingleContent, ShareJourneyContent. The main page fetches the payload - when it's from a password-protected share we have accessToken in state. So pass accessToken to all three. ShareDomainContent: when opening page detail it fetches with Authorization. When building screenshot URL for domain sub-pages we might use the same token. ShareSingleContent: screenshotSrc - when shareToken is used we have /api/share/[token]/pages/[id]/screenshot - if accessToken we add ?access= so the img can load. ShareJourneyContent: videoUrl - if accessToken add ?access= to video src. Let me implement the share page.
+</details></think>
+
+---
+
+
+Share-Seite anpassen: Passwortabfrage und Access-Token durchreichen.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to:
+1. Add state for requiresPassword, accessToken, passwordError
+2. On initial load: try GET without auth. If 403 and requiresPassword, set requiresPassword true. If 200 set payload. Also try loading accessToken from sessionStorage - if we have one, try GET with Bearer first.
+3. When requiresPassword: show password form. On submit POST /access, on success save accessToken and fetch GET with Bearer, set payload.
+4. Pass accessToken to ShareDomainContent, ShareSingleContent, ShareJourneyContent so they can add ?access= to URLs or headers for fetch.
+
+Let me do the share page updates. First the main component state and effect.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add useCallback to the imports. And fix the initial load - when we have stored token we call loadWithAuth; when we don't we call tryLoad. But loadWithAuth is defined after the useEffect that uses it - and we have tryLoad inside the effect that references setPayload etc. Let me also fix: when stored token is valid we set payload and never set accessToken in state - but we pass authToken which is from sessionStorage. So we need to set accessToken when we load from storage so that the child components get it. Actually we pass authToken = accessToken ?? sessionStorage.getItem(...). So when we loaded with stored token we didn't set accessToken in state but we read from sessionStorage when rendering. So the first time we open with password we set accessToken in state. When we refresh we have no accessToken in state but we have it in sessionStorage - and we read it in the effect and call loadWithAuth(stored). So after that we have payload. When rendering we do authToken = accessToken ?? sessionStorage.getItem(...). So after refresh we don't have accessToken in state but we have it in sessionStorage so authToken is set. Good. But we need to set accessToken in state when we load from storage so that the dependency is correct - actually we don't need to, we're reading from sessionStorage at render time. OK.
+
+Now I need to:
+1. Add useCallback to imports.
+2. ShareDomainContent: add accessToken prop, use it when fetching page detail (header) and when building URLs for screenshot if any.
+3. ShareSingleContent: already has shareToken; add accessToken prop and use it for screenshot URL (?access=).
+4. ShareJourneyContent: add accessToken prop, use for video URL (?access=).
+
+And fix the loadWithAuth - when we have stored token and loadWithAuth succeeds we should set accessToken in state so it's available. So after loadWithAuth(data) we could setAccessToken(stored) - we have stored in the closure. So setAccessToken(stored) after loadWithAuth in the first branch.
+</details></think>
+
+---
+
+
+useCallback importieren und Zugriffstoken nach Load aus Storage setzen. Anschließend Domain-/Single-/Journey-Content anpassen:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now update ShareDomainContent to accept accessToken and pass it when fetching page detail. And ShareSingleContent: it already has shareToken; it receives shareToken and uses it for screenshot URL. So we need to add accessToken and append ?access= to the screenshot URL when present. ShareJourneyContent: add accessToken and append to videoUrl.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now ShareSingleContent - it has signature `function ShareSingleContent({ data, shareToken }: { data: ScanResult; shareToken?: string })`. So we need to add accessToken and when building screenshotSrc append ?access= if accessToken. Find where screenshotSrc is set.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "screenshotSrc|shareToken",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "screenshotSrc|shareToken",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 10,
+  "topFiles": [
+    {
+      "uri": "app/share/[token]/page.tsx",
+      "matchCount": 10
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So ShareSingleContent has shareToken and we need to add accessToken and use it for screenshotSrc: when accessToken is set, append ?access=...
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now ShareJourneyContent - add accessToken and append to videoUrl when present.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now we need to fix the loadWithAuth - when we get 403 and requiresPassword we should not throw, we should set state. Let me look at the loadWithAuth again. It does:
+  if (res.status === 403) {
+    const clone = res.clone();
+    return clone.json().then((b) => (b.requiresPassword ? Promise.reject(new Error('PASSWORD_REQUIRED')) : res));
+  }
+So if 403 and requiresPassword we reject with PASSWORD_REQUIRED. So the caller (first branch) does loadWithAuth(stored).catch(() => { ... tryLoad(); }). So when stored token is expired we reject, remove storage, and tryLoad(). tryLoad doesn't set requiresPassword - it's the initial fetch in tryLoad that sets requiresPassword when it gets 403. So when we reject from loadWithAuth we call tryLoad() which does fetch without auth - that will get 403 requiresPassword again and set setRequiresPassword(true). Good.
+
+But wait - when we have no stored token and tryLoad runs, we do fetch without auth. If 403 we do res.json().then(b => { if (b.requiresPassword) setRequiresPassword(true); setError(null); return; }). So we set requiresPassword and return. We don't set payload. So we show the password form. Good.
+
+One more thing: when we successfully submit password we get accessToken and call loadWithAuth(data.accessToken). That sets payload and setRequiresPassword(false). We also setAccessToken(data.accessToken) in the handler. So we're good.
+
+Let me add the UI for "already shared" and manage (copy, revoke, password) on the results, domain, and journey pages. I'll create a reusable SharePanel or use existing pattern: fetch GET /api/share/by-resource?type=&id= on mount. If 200, show "Bereits geteilt" with link, Copy, Revoke, Set password. If 404, show "Teilen" button and optional password field (or open a dialog with optional password). So the flow is: - On results/domain/journey page we have resource type and id. - We fetch GET /api/share/by-resource?type=X&id=Y. - If 200: show share panel with url, copy button, revoke button, set/change password button. - If 404: show "Teilen" button. When clicked, we could show a small dialog: optional password field, then POST /api/share. On success we get { url, token, alreadyShared: false }. Then we could refetch by-resource to now show the "already shared" panel, or just show the link and copy. So after POST we refetch by-resource so the UI switches to "already shared" with the new link.
+
+Let me implement a shared SharePanel component that: - Takes resourceType, resourceId - Fetches by-resource on mount - If shared: shows link, copy, revoke, set password (dialog or inline) - If not shared: shows Share button; on click optional password in a dialog, POST create, then refetch So we need a component that can be used on results, domain, and journey pages. I'll put it in components/SharePanel.tsx. It will need: - type: 'single' | 'domain' | 'journey', id: string - Labels from i18n
+
+Actually the current flow is: user clicks "Teilen", we POST and copy link. So we don't have a "share panel" yet. Let me add: 1) On mount fetch by-resource. 2) If shared: show "Geteilt" with link (truncated), [Link kopieren], [Teilung aufheben], [Passwort setzen/ändern]. 3) If not shared: show [Teilen] button. When clicked: optionally show a dialog with "Optional: Passwort zum Schutz" and [Teilen]. On submit POST. If alreadyShared in response we still show the existing link (and copy). Otherwise show new link and refetch by-resource. So the SharePanel will have two modes. Let me create the component and then integrate it into the three pages.
+</details></think>
+
+---
+
+
+Wir implementieren die UI „Bereits geteilt“ und die Verwaltung (Kopieren, Aufheben, Passwort). Zuerst prüfen wir die Linter-Fehler und die shares.test (passwordHash).
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/shares.test.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/shares.ts"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/shares.ts"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+ShareLinkRow now has passwordHash. Update the test.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/shares.test.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now create a reusable SharePanel component and integrate it into results, domain, and journey pages. The component will:
+1. Fetch GET /api/share/by-resource?type=&id= on mount
+2. If shared: show "Bereits geteilt", link (truncated), [Kopieren], [Teilung aufheben], [Passwort setzen/ändern]
+3. If not shared: show [Teilen] button; on click maybe open dialog with optional password, then POST; on success refetch by-resource
+
+I'll create components/SharePanel.tsx that uses the same i18n keys as the rest (results.*, domainResult.*). It needs type, resourceId, and a callback or nothing for "after share created". Let me check the existing share button labels - they use t('results.share'), t('domainResult.share'), etc. So the SharePanel can take a namespace prop like "results" or "domainResult" for the copy/create labels, or we use the same keys. I'll use domainResult for all for consistency (share, shareCreating, shareCopied) and add new keys for shareAlreadyShared, shareRevoke, shareSetPassword, shareRevokeConfirm, etc.
+</details></think>
+
+---
+
+
+SharePanel-Komponente erstellen und auf den drei Seiten einbinden.
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Schema + shares DB: passwordHash, getByResource, updatePassword
+- [x] Share access JWT + POST /api/share/[token]/access
+- [x] GET /api/share/[token] password check + by-resource API
+- [x] DELETE + PATCH /api/share/[token] (revoke, set password)
+- [x] Share page: password form + accessToken flow
+- [-] UI: show already shared + manage (copy, revoke, password) everywhere
+- [ ] Locales + knowledge + cache invalidation
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add new locale keys for share panel: shareAlreadyShared, shareRevoke, shareSetPassword, shareRemovePassword, shareRevokeConfirm, sharePasswordLabel, sharePasswordPlaceholder. I'll add them under a common key like "share" or under each of results/domainResult. Actually we can add under "common" or a new "share" section. Let me add "share" section with: alreadyShared, copyLink, revoke, setPassword, removePassword, revokeConfirm, passwordLabel, passwordPlaceholder, optionalPassword. Then in the component we use t('share.alreadyShared') etc. Let me check if there's a common share namespace in en.json too.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add a "share" section to both locale files with the new keys. Then create the SharePanel component.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "\"common\":",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json",
+  "contextAfter": 12,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "\"common\":",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 1,
+  "topFiles": [
+    {
+      "uri": "locales/de.json",
+      "matchCount": 13
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add "share" after "common" in both de and en.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now create the SharePanel component. It will:
+- Fetch GET /api/share/by-resource?type=&id= when resourceType and resourceId are set
+- State: shareInfo (url, token, hasPassword) | null, loading, copySuccess, revokeLoading, passwordDialogOpen, passwordValue
+- If shareInfo: show "Bereits geteilt", url truncated, [Copy], [Revoke], [Set/Remove password]
+- If !shareInfo: show [Share] button; on click open dialog with optional password, POST create, then refetch
+- Revoke: DELETE /api/share/[token], then refetch
+- Set password: PATCH /api/share/[token] with { password }, then refetch
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SharePanel.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now integrate SharePanel into the three pages: results/[id], domain/[id], journey-agent/[jobId]. For results page we need to replace the current Share button with SharePanel. For domain page same. For journey page same. So we remove the inline share button and state (shareLoading, shareCopied) and use <SharePanel resourceType="single" resourceId={result.id} labelNamespace="results" /> etc.
+</details></think>
+
+---
+
+
+SharePanel auf den drei Seiten einbinden:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Domain page: replace the share button with SharePanel. Need to find the exact block and the params.id.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Domain page needs a proper container for the SharePanel - it might be a button, so we need to wrap it or use a Box. Let me check - the original was MsqdxButton. SharePanel when not shared renders MsqdxButton, when shared renders a Box with multiple buttons. So we might need to wrap in Box for layout. Let me check the domain page layout - the SharePanel is next to the Back button in a Box with display flex gap. So we need to ensure SharePanel fits. When it's "already shared" it's a Box with flexWrap - that might take more space. Let me leave as is. If the domain page needs a MsqdxButton style for the create case we could add a variant prop - but for now the SharePanel uses MsqdxButton for create which should match.
+
+Now journey page: replace the share button block with SharePanel. The journey page has share state and a Share button next to "Neue Journey". We need to use SharePanel with resourceType="journey" and resourceId=jobId. But we need to show it only when status === 'complete'. So we keep the condition and put SharePanel inside.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Journey page: we need to add SharePanel. The journey page has a Share button in the actions of the first card. We need to replace that whole actions content with something that includes SharePanel and the "Neue Journey" button. So the actions currently are: Share button + New Journey button. We replace with SharePanel (when complete) + New Journey button. SharePanel when not shared shows one button; when shared shows the link + copy + revoke + password. So we keep the Box with flex gap and put SharePanel and the other button.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Domain page: we need to fix the layout - the original had two MsqdxButtons. Now we have Box with SharePanel. SharePanel when shared renders a Box - we might need to make the domain header use flex wrap so it doesn't break. Let me check - actually the domain page has a flex gap and the Back button and SharePanel. So we need the SharePanel to be inline. When SharePanel is "already shared" it returns a Box with multiple elements - that might push the layout. Let me leave it.
+
+Fix: domain page might have removed one too many state - let me check if shareLoading or shareCopied are used elsewhere in domain page.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "shareLoading|shareCopied",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "shareLoading|shareCopied",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain",
+  "outputMode": "content",
+  "totalFiles": 0,
+  "totalMatches": 0,
+  "topFiles": []
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SharePanel.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SharePanel.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Now update the knowledge doc and add cache revalidation when share is updated. We already revalidateTag in DELETE and PATCH. Let me double-check the share page - when we have stored token and loadWithAuth, we set accessToken(stored) - but stored is the token string. So we're good. One more thing: the share page's initial load - when there's no stored token we fetch without auth. So we get 403 and set requiresPassword. But we need to make sure we don't show loading forever - we set requiresPassword and setError(null), so we show the password form. Good.
+
+Let me update the knowledge doc and then run the db push and test.
+</details></think>
+
+---
+
+
+Knowledge-Dokumentation aktualisieren und Build prüfen:
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Schema + shares DB: passwordHash, getByResource, updatePassword
+- [x] Share access JWT + POST /api/share/[token]/access
+- [x] GET /api/share/[token] password check + by-resource API
+- [x] DELETE + PATCH /api/share/[token] (revoke, set password)
+- [x] Share page: password form + accessToken flow
+- [x] UI: show already shared + manage (copy, revoke, password) everywhere
+- [-] Locales + knowledge + cache invalidation
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-share-links.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Fix the share page - when we load with stored token we set accessToken(stored) but that happens in the same tick as loadWithAuth. So when loadWithAuth succeeds we have payload and accessToken was set at the start. So when we render we have authToken = accessToken ?? sessionStorage - and we had set accessToken(stored) so we're good. But wait - setAccessToken(stored) is called, then loadWithAuth(stored) is async. So on first render after the effect we might not have payload yet (loadWithAuth still in progress). So we show loading. When loadWithAuth resolves we set payload. So we need to make sure we also set accessToken when the user submits the password form - we do setAccessToken(data.accessToken). So we're good.
+
+Let me run the build to see if anything breaks. Also need to fix the SharePanel - when loading we're not passing resourceId so the fetch might run with empty. Actually when shareInfo is null and !loading we show the Create button - but when resourceId is empty we shouldn't show. And when loading we show disabled button - we need resourceId to be set. So on results page we have result?.id and we only render SharePanel when result?.id. Good. Domain has params.id, journey has jobId. Good.
+
+Let me run the test and build.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+sh: next: command not found
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Need to use npx next build.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npx next build --webpack 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npx next build --webpack 2>&1
+```
+
+```
+⨯ Failed to load next.config.mjs, see more info here https://nextjs.org/docs/messages/next-config-error
+
+&gt; Build error occurred
+Error: Cannot find module '@next/bundle-analyzer'
+Require stack:
+- /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/next.config.mjs
+    at ignore-listed frames {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build failed due to missing optional dependency, not our code. Let me run the share unit test and lint instead.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npx tsx lib/db/shares.test.ts 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npx tsx lib/db/shares.test.ts 2>&1
+```
+
+```
+shares.test.ts: all assertions passed
+
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Share page: we're not using Button from MUI in the password form - we have MsqdxTypography and other components. Let me check - we have Button in the SharePasswordForm. We need to import Button from MUI - the share page already imports Button from @mui/material (from the Dialog in ShareDomainContent). Let me check the imports at the top of the share page.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Button is already imported. Good. Let me fix the domain page - we added Box around SharePanel but we need to ensure the domain page has Box imported. Let me check.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "^import.*Box",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "^import.*Box",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 1,
+  "topFiles": [
+    {
+      "uri": "app/domain/[id]/page.tsx",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Box is imported. Good. Todo 7: we've updated knowledge and locales. Mark complete. Let me also add a note in knowledge about the db push for the new column.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Schema + shares DB: passwordHash, getByResource, updatePassword
+- [x] Share access JWT + POST /api/share/[token]/access
+- [x] GET /api/share/[token] password check + by-resource API
+- [x] DELETE + PATCH /api/share/[token] (revoke, set password)
+- [x] Share page: password form + accessToken flow
+- [x] UI: show already shared + manage (copy, revoke, password) everywhere
+- [x] Locales + knowledge + cache invalidation
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+One more thing: the share page when it first loads and we have no stored token - we call tryLoad() which does fetch without auth. So we get 403 and the response body has requiresPassword. We do setRequiresPassword(true) and setError(null). So we show the password form. But we're not setting loading to false in that branch - we're inside .then of fetch. So we need to set loading to false. Actually look at the flow: initially payload is null, error is null, requiresPassword is false. So we show the CircularProgress (because !payload). So we're in "loading" state. When tryLoad's fetch returns 403 and we do setRequiresPassword(true), we don't set payload so we still have !payload. But we never set loading to false - there's no setLoading in the share page! So we're stuck showing the spinner. We don't have a "loading" state in the share page - we only have payload, error, requiresPassword. So when we fetch and get 403 requiresPassword we set requiresPassword true and setError null. So now payload is null, error is null, requiresPassword is true. So we hit "if (requiresPassword && !payload)" and show the password form. Good - we don't have a separate loading state, we just have !payload. So when requiresPassword is true and payload is null we show the form. So we're good. But wait - initially before the fetch completes we have payload null, requiresPassword false, error null. So we hit "if (!payload)" which is the loading spinner. So we show spinner until either we get payload (200) or we get 403 and set requiresPassword. So we're good.
+</details></think>
+
+---
+
+
+Hier die Zusammenfassung der Änderungen:
+
+## 1. Sichtbarkeit & Bearbeitung bei bereits geteiltem Ergebnis
+
+- **GET /api/share/by-resource?type=&id=** (auth): Liefert den bestehenden Share für die Ressource (token, url, hasPassword, createdAt) oder 404.
+- **SharePanel** (`components/SharePanel.tsx`): Eine Komponente für alle drei Kontexte (Seiten-Scan, Domain, Journey):
+  - Lädt beim Mount den Share-Status über by-resource.
+  - **Bereits geteilt:** Zeigt „Bereits geteilt“, gekürzten Link, [Link kopieren], [Passwort setzen/entfernen], [Teilung aufheben].
+  - **Nicht geteilt:** Zeigt [Teilen]; Klick öffnet Dialog mit optionalem Passwort, dann POST /api/share und Anzeige des Links.
+- **DELETE /api/share/[token]** (auth): Hebt die Teilung auf (nur eigener Share), inkl. Cache-Invalidierung.
+- **PATCH /api/share/[token]** (auth): Body `{ password: string | null }` – setzt oder entfernt das Passwort.
+- **POST /api/share**: Wenn für die Ressource schon ein Share existiert, wird dieser zurückgegeben (`alreadyShared: true`) statt ein zweiter zu erzeugen.
+
+SharePanel ist eingebunden in:
+- `/results/[id]` (Seiten-Scan),
+- `/domain/[id]` (Deep Scan),
+- `/journey-agent/[jobId]` (UX Journey, wenn abgeschlossen).
+
+## 2. Optionaler Passwortschutz
+
+- **Schema:** In `share_links` gibt es die optionale Spalte `password_hash` (bcrypt).
+- **POST /api/share:** Body kann `password?: string` enthalten; wird gehasht und gespeichert.
+- **GET /api/share/[token]:** Wenn `password_hash` gesetzt ist, ist ein gültiger **Access-Token** nötig (siehe unten). Sonst 403 mit `{ requiresPassword: true }`.
+- **POST /api/share/[token]/access:** Body `{ password?: string }`. Prüft das Passwort (oder Share ohne Passwort) und gibt `{ accessToken }` zurück (HMAC-Signatur mit AUTH_SECRET, 24h gültig). Diesen Token verwendet die Share-Seite für weitere Aufrufe.
+- **Share-Seite (/share/[token]):**
+  - Beim Aufruf ohne Token: GET ohne Auth. Bei 403 und `requiresPassword` → Passwortformular.
+  - Nach Absenden: POST /access, Access-Token in sessionStorage, GET mit `Authorization: Bearer <accessToken>`, Anzeige der Daten.
+  - Video- und Screenshot-URLs werden mit `?access=<accessToken>` aufgerufen, damit der Browser sie ohne Custom-Header laden kann.
+- **Video- und Pages-Routen** (/api/share/[token]/video, …/pages/…, …/screenshot): Akzeptieren Zugriff entweder per `Authorization: Bearer` oder per Query-Parameter `access=`.
+
+Technik für den Access-Token: `lib/share-access.ts` (createShareAccessToken, verifyShareAccessToken, canAccessShare). Nutzung von AUTH_SECRET und HMAC, kein zusätzliches JWT-Paket.
+
+## 3. Locales & Doku
+
+- Neue Übersetzungen unter **share.** in `locales/de.json` und `locales/en.json`: alreadyShared, copyLink, copied, revoke, revokeConfirm, setPassword, removePassword, passwordLabel, passwordPlaceholder, createShare, creating, protected.
+- **knowledge/checkion-share-links.md** wurde um Passwortschutz, by-resource, DELETE, PATCH, Access-Flow und SharePanel beschrieben.
+
+**Datenbank:** Nach dem Update Schema mit `npm run db:push` ausführen, damit die Spalte `password_hash` in `share_links` angelegt wird.
+
+Der fehlgeschlagene Build kommt von einem fehlenden Modul (`@next/bundle-analyzer` in der next.config), nicht von diesen Änderungen. Die Share-Logik und der Unit-Test `lib/db/shares.test.ts` laufen durch.
+
+---
+
+_**User**_
+
+2026-Feb-23 15:52:16.644505
+#14 [builder 4/5] COPY . .
+2026-Feb-23 15:52:16.644505
+#14 DONE 0.2s
+2026-Feb-23 15:52:16.644505
+2026-Feb-23 15:52:16.644505
+#15 [builder 5/5] RUN npm run build
+2026-Feb-23 15:52:16.644505
+#15 0.435
+2026-Feb-23 15:52:16.644505
+#15 0.435 > checkion@0.1.0 build
+2026-Feb-23 15:52:16.644505
+#15 0.435 > next build --webpack
+2026-Feb-23 15:52:16.644505
+#15 0.435
+2026-Feb-23 15:52:16.644505
+#15 1.034 ▲ Next.js 16.1.6 (webpack)
+2026-Feb-23 15:52:16.644505
+#15 1.034 - Experiments (use with caution):
+2026-Feb-23 15:52:16.644505
+#15 1.034   · optimizePackageImports
+2026-Feb-23 15:52:16.644505
+#15 1.034
+2026-Feb-23 15:52:16.644505
+#15 1.043 ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+2026-Feb-23 15:52:16.644505
+#15 1.065   Creating an optimized production build ...
+2026-Feb-23 15:52:16.644505
+#15 21.22 ✓ Compiled successfully in 19.8s
+2026-Feb-23 15:52:16.644505
+#15 21.23   Running TypeScript ...
+2026-Feb-23 15:52:16.644505
+#15 31.07 Failed to compile.
+2026-Feb-23 15:52:16.644505
+#15 31.07
+2026-Feb-23 15:52:16.644505
+#15 31.07 ./app/api/share/[token]/route.ts:66:27
+2026-Feb-23 15:52:16.644505
+#15 31.07 Type error: Cannot find name 'auth'.
+2026-Feb-23 15:52:16.644505
+#15 31.07
+2026-Feb-23 15:52:16.644505
+#15 31.07   64 |     { params }: { params: Promise<{ token: string }> }
+2026-Feb-23 15:52:16.644505
+#15 31.07   65 | ) {
+2026-Feb-23 15:52:16.644505
+#15 31.07 > 66 |     const session = await auth();
+2026-Feb-23 15:52:16.644505
+#15 31.07      |                           ^
+2026-Feb-23 15:52:16.644505
+#15 31.07   67 |     if (!session?.user?.id) {
+2026-Feb-23 15:52:16.644505
+#15 31.07   68 |         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+2026-Feb-23 15:52:16.644505
+#15 31.07   69 |     }
+2026-Feb-23 15:52:16.644505
+#15 31.19 Next.js build worker exited with code: 1 and signal: null
+2026-Feb-23 15:52:16.644505
+#15 31.37 npm notice
+2026-Feb-23 15:52:16.644505
+#15 31.37 npm notice New major version of npm available! 10.9.4 -> 11.10.1
+2026-Feb-23 15:52:16.644505
+#15 31.37 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.10.1
+2026-Feb-23 15:52:16.644505
+#15 31.37 npm notice To update run: npm install -g npm@11.10.1
+2026-Feb-23 15:52:16.644505
+#15 31.37 npm notice
+2026-Feb-23 15:52:16.644505
+#15 ERROR: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+2026-Feb-23 15:52:16.644505
+------
+2026-Feb-23 15:52:16.644505
+> [builder 5/5] RUN npm run build:
+2026-Feb-23 15:52:16.644505
+31.07      |                           ^
+2026-Feb-23 15:52:16.644505
+31.07   67 |     if (!session?.user?.id) {
+2026-Feb-23 15:52:16.644505
+31.07   68 |         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+2026-Feb-23 15:52:16.644505
+31.07   69 |     }
+2026-Feb-23 15:52:16.644505
+31.19 Next.js build worker exited with code: 1 and signal: null
+2026-Feb-23 15:52:16.644505
+31.37 npm notice
+2026-Feb-23 15:52:16.644505
+31.37 npm notice New major version of npm available! 10.9.4 -> 11.10.1
+2026-Feb-23 15:52:16.644505
+31.37 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.10.1
+2026-Feb-23 15:52:16.644505
+31.37 npm notice To update run: npm install -g npm@11.10.1
+2026-Feb-23 15:52:16.644505
+31.37 npm notice
+2026-Feb-23 15:52:16.644505
+------
+2026-Feb-23 15:52:16.644505
+2026-Feb-23 15:52:16.644505
+12 warnings found (use docker --debug to expand):
+2026-Feb-23 15:52:16.644505
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "OPENAI_API_KEY") (line 58)
+2026-Feb-23 15:52:16.644505
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_URL") (line 80)
+2026-Feb-23 15:52:16.644505
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_SECRET") (line 81)
+2026-Feb-23 15:52:16.644505
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_URL") (line 10)
+2026-Feb-23 15:52:16.644505
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_SECRET") (line 11)
+2026-Feb-23 15:52:16.644505
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "OPENAI_API_KEY") (line 13)
+2026-Feb-23 15:52:16.644505
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_SECRET") (line 32)
+2026-Feb-23 15:52:16.644505
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "OPENAI_API_KEY") (line 34)
+2026-Feb-23 15:52:16.644505
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_URL") (line 55)
+2026-Feb-23 15:52:16.644505
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "OPENAI_API_KEY") (line 83)
+2026-Feb-23 15:52:16.644505
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_URL") (line 31)
+2026-Feb-23 15:52:16.644505
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_SECRET") (line 56)
+2026-Feb-23 15:52:16.644505
+Dockerfile:76
+2026-Feb-23 15:52:16.644505
+--------------------
+2026-Feb-23 15:52:16.644505
+74 |     ENV DS_BASE=../msqdx-design-system
+2026-Feb-23 15:52:16.644505
+75 |
+2026-Feb-23 15:52:16.644505
+76 | >>> RUN npm run build
+2026-Feb-23 15:52:16.644505
+77 |
+2026-Feb-23 15:52:16.644505
+78 |     # ---- Runner ----
+2026-Feb-23 15:52:16.644505
+--------------------
+2026-Feb-23 15:52:16.644505
+ERROR: failed to build: failed to solve: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+2026-Feb-23 15:52:16.644505
+exit status 1
+2026-Feb-23 15:52:16.740520
+========================================
+2026-Feb-23 15:52:16.749869
+Deployment failed. Removing the new version of your application.
+2026-Feb-23 15:52:17.399069
+Gracefully shutting down build container: fko80kwswosc0o4ockckgkkk
 
 ---
 

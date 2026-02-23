@@ -4,6 +4,7 @@
 /* ------------------------------------------------------------------ */
 
 import { NextResponse } from 'next/server';
+import { auth } from '@/auth';
 import { getCachedShareByToken, getCachedScan, getCachedDomainScan } from '@/lib/cache';
 import { getJourneyRun } from '@/lib/db/journey-runs';
 import { buildDomainSummary } from '@/lib/domain-summary';
