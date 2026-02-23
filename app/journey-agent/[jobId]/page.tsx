@@ -10,32 +10,28 @@ import { useI18n } from '@/components/i18n/I18nProvider';
 import { PDF_LOGO_PATH } from '@/lib/constants';
 import type { UxJourneyAgentStep } from '@/lib/types';
 
-/** Number of step cards visible at once: 1 on mobile, 3 on desktop. */
-const STEP_CARDS_DESKTOP = 3;
+/** Number of step cards visible at once: 1 on mobile, 2 on desktop. */
+const STEP_CARDS_DESKTOP = 2;
 const STEP_CARDS_MOBILE = 1;
 
 /**
  * Parses agent result string with key='value' pairs (e.g. thinking='...', memory='...', next_goal='...').
- * Values can be multiline. Keys and values are returned in order.
+ * Values can be multiline and may contain single quotes; we detect value end by the pattern ' followed by optional whitespace and next key='.
  */
 function parseStepResult(raw: string): Array<{ key: string; value: string }> {
     if (!raw?.trim()) return [];
     const pairs: Array<{ key: string; value: string }> = [];
-    const re = /(\w+)='/g;
+    const keyValueRe = /(\w+)='/g;
     let match: RegExpExecArray | null;
-    const matches: Array<{ key: string; start: number; valueStart: number }> = [];
-    while ((match = re.exec(raw)) !== null) {
-        matches.push({
-            key: match[1],
-            start: match.index,
-            valueStart: match.index + match[0].length,
-        });
-    }
-    for (let i = 0; i < matches.length; i++) {
-        const valueEnd = i < matches.length - 1 ? matches[i + 1].start - 1 : raw.length;
-        let value = raw.slice(matches[i].valueStart, valueEnd).trim();
-        if (value.endsWith("'")) value = value.slice(0, -1);
-        if (value) pairs.push({ key: matches[i].key, value });
+    while ((match = keyValueRe.exec(raw)) !== null) {
+        const key = match[1];
+        const valueStart = match.index + match[0].length;
+        const rest = raw.slice(valueStart);
+        // Value ends at a quote that is followed by optional whitespace and then the next key='
+        const closingMatch = rest.match(/'(\s*\w+=)/);
+        const valueLength = closingMatch ? closingMatch.index! : rest.length;
+        const value = rest.slice(0, valueLength).trim();
+        if (value) pairs.push({ key, value });
     }
     return pairs;
 }
@@ -43,7 +39,8 @@ function parseStepResult(raw: string): Array<{ key: string; value: string }> {
 const RESULT_SECTION_LABELS: Record<string, string> = {
     thinking: 'Thinking',
     memory: 'Memory',
-    next_goal: 'Next goal',
+    next_goal: 'Next step',
+    nextstep: 'Next step',
     evaluation_previous_goal: 'Previous goal evaluation',
     goal: 'Goal',
     evaluation: 'Evaluation',

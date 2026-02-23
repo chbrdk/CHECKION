@@ -2941,3 +2941,99 @@ Der Build sollte damit wieder durchlaufen.
 
 ---
 
+_**User**_
+
+okay lass uns nur zwei statt drei gleichzeitig zeigen und können wir den text wirklich nicht splitten und unterkategorien wie thinking, nextstep, memory? schau dir doch mal den text an: 
+
+
+thinking='Ich bin erfolgreich auf der Porsche-Website gelandet. Ich sehe die deutsche Porsche-Seite mit einem Taycan Turbo GT im Vordergrund. Mein Ziel ist es, Informationen über den Panamera GTS zu finden - speziell über goldmetallic Lackierung und Massagefunktionen in den Sitzen. \n\nIch sehe verschiedene Modelle auf der Seite, aber ich muss zum Panamera navigieren. Ich kann das Menü oben links verwenden oder nach unten scrollen, um zu sehen, ob der Panamera dort aufgelistet ist. Ich sehe bereits einige Modelle wie 911 und 718 am unteren Rand der Seite. \n\nDa der Benutzer explizit gesagt hat, keine Suche zu verwenden und die Optionen Schritt für Schritt auszuwählen, werde ich das Hauptmenü öffnen, um zu den Modellen zu navigieren und dann den Panamera zu finden.' evaluation_previous_goal='Erfolgreich zur Porsche-Website navigiert und die deutsche Seite geladen. Verdikt: Erfolg' memory='Bin auf der deutschen Porsche-Website gelandet. Muss jetzt zum Panamera GTS navigieren, um Informationen über goldmetallic Lackierung und Massagefunktionen zu finden. Sehe bereits einige Modelle auf der Startseite.' next_goal='Das Hauptmenü öffnen, um zu den Porsche-Modellen zu navigieren und den Panamera zu finden.'
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants two things:
+1. Show only 2 step cards at a time on desktop instead of 3.
+2. Fix the text splitting - they're saying the result text isn't being split properly into subcategories like thinking, next_goal, memory, evaluation_previous_goal. They've provided an example of the actual text format.
+
+Looking at the example:
+```
+thinking='Ich bin erfolgreich...' evaluation_previous_goal='Erfolgreich zur Porsche...' memory='Bin auf der deutschen...' next_goal='Das Hauptmenü öffnen...'
+```
+
+So the format is: `key='value'` where the value is in single quotes. The tricky part is that values can contain single quotes (e.g. "Benutzer explizit gesagt hat" - no quote in that example, but "I'm" would have one). So the value might contain escaped quotes or the pattern might be that we look for the next ` key='` (space, key, equals, quote) to find where the value ends.
+
+Let me look at the current parser in the code. The issue might be:
+1. The regex or parsing logic - maybe the keys have different format? In the example I see: thinking, evaluation_previous_goal, memory, next_goal. All use single quotes.
+2. Maybe the value contains a single quote and we're cutting too early? In the example text I don't see a single quote inside a value.
+3. Maybe the pattern is ` key='` (space before key) but the first key "thinking" has no space before it? So we need to find key=' where key is at start or preceded by space.
+
+Let me re-read the parser:
+
+```javascript
+function parseStepResult(raw: string): Array<{ key: string; value: string }> {
+    if (!raw?.trim()) return [];
+    const pairs: Array<{ key: string; value: string }> = [];
+    const re = /(\w+)='/g;
+    ...
+    while ((match = re.exec(raw)) !== null) {
+        matches.push({
+            key: match[1],
+            start: match.index,
+            valueStart: match.index + match[0].length,
+        });
+    }
+    for (let i = 0; i < matches.length; i++) {
+        const valueEnd = i < matches.length - 1 ? matches[i + 1].start - 1 : raw.length;
+        let value = raw.slice(matches[i].valueStart, valueEnd).trim();
+        if (value.endsWith("'")) value = value.slice(0, -1);
+        if (value) pairs.push({ key: matches[i].key, value });
+    }
+    return pairs;
+}
+```
+
+So we're matching (\w+)=' - so "thinking"=', "evaluation_previous_goal"=', etc. But wait - the regex \w+ matches word characters. So "evaluation_previous_goal" would match as one word (underscore is included in \w). Good.
+
+For the first key "thinking", valueStart is after "thinking='", so we're at the start of "Ich bin...". valueEnd for the first key would be matches[1].start - 1, which is the position of the space before "evaluation_previous_goal". So we'd slice from "I" to that position. That would include the closing quote of the thinking value! So we get "...Schritt auszuwählen, werde ich das Hauptmenü öffnen, um zu den Modellen zu navigieren und dann den Panamera zu finden.'" - and then we trim and remove trailing ', so we get the correct value. Good.
+
+Oh wait - valueEnd = matches[i+1].start - 1. So that's the index of the character BEFORE the next key. So if the next key "evaluation_previous_goal" starts at index 500, we slice to 499. So we include the closing quote in the slice (if the value ends with ' at position 499). Then we do "if (value.endsWith("'")) value = value.slice(0, -1)" - so we remove it. Good.
+
+One potential issue: what if there's a space between the closing quote and the next key? Like `' evaluation_previous_goal='`. So the value would be "...finden.' " (with a space before the quote). So after slice we get "...finden.' " and after trim we get "...finden.'" and after endsWith("'") we get "...finden." - good.
+
+Actually wait - if valueEnd is matches[i+1].start - 1, we're including the character at that position. So we have "...finden.'" and then space and "evaluation...". So the slice is from valueStart to 499 inclusive. So we get the value including the closing quote. Then we trim and remove trailing quote. So we get the correct value. Good.
+
+Maybe the issue is that the result is coming from the API in a different format? Like the result might be HTML-escaped or the keys might be different? Or maybe the component isn't being used? Let me check - we have StepResultSections which calls parseStepResult. So if the raw text is exactly as the user showed, it should work.
+
+Unless - maybe the step.result is sometimes the raw string and sometimes something else? Or maybe there's a bug in the display - like we're showing the raw text when sections.length > 0 but we're not rendering the sections? Let me look at StepResultSections again...
+
+```javascript
+function StepResultSections({ resultText }: { resultText: string }) {
+    const sections = useMemo(() => parseStepResult(resultText), [resultText]);
+    if (sections.length === 0) {
+        return (
+            <MsqdxTypography ...>
+                {resultText.length > 500 ? resultText.slice(0, 500) + '…' : resultText}
+            </MsqdxTypography>
+        );
+    }
+    return (
+        <Box ...>
+            {sections.map(({ key, value }) => (
+                ...
+            ))}
+        </Box>
+    );
+}
+```
+
+So when we parse and get sections, we show the labeled blocks. When we get 0 sections (parse failed or different format), we show raw text. So the parser might be returning 0 sections. Why?
+
+1. Maybe the key is not just \w+? Like if there's a hyphen in the key? "evaluation_previous_goal" has underscore which is \w. Good.
+2. Maybe the format uses double quotes sometimes? Then our regex (\w+)=' wouldn't match.
+3. Maybe the string has newlines: thinking='...\n\n...' - the</details></think>
+
+---
+
