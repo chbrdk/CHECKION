@@ -149,11 +149,14 @@ export default function DomainResultPage() {
                     <MsqdxButton variant="outlined" startIcon={<ArrowLeft size={16} />} onClick={() => router.push('/')}>
                         {t('domainResult.back')}
                     </MsqdxButton>
-                    {params.id && (
-                        <Box sx={{ display: 'inline-flex' }}>
-                            <SharePanel resourceType="domain" resourceId={params.id} labelNamespace="domainResult" />
-                        </Box>
-                    )}
+                    {(() => {
+                        const domainId = typeof params.id === 'string' ? params.id : params.id?.[0];
+                        return domainId ? (
+                            <Box sx={{ display: 'inline-flex' }}>
+                                <SharePanel resourceType="domain" resourceId={domainId} labelNamespace="domainResult" />
+                            </Box>
+                        ) : null;
+                    })()}
                 </Box>
             </Box>
 
