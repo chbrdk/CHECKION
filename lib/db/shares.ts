@@ -6,7 +6,7 @@ import { eq, and } from 'drizzle-orm';
 import { getDb } from './index';
 import { shareLinks } from './schema';
 
-export type ShareResourceType = 'single' | 'domain';
+export type ShareResourceType = 'single' | 'domain' | 'journey';
 
 export interface ShareLinkRow {
     token: string;

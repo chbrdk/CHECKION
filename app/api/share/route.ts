@@ -6,6 +6,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getScan } from '@/lib/db/scans';
 import { getDomainScan } from '@/lib/db/scans';
+import { getJourneyRun } from '@/lib/db/journey-runs';
 import { createShare } from '@/lib/db/shares';
 import type { ShareResourceType } from '@/lib/db/shares';
 import { SHARE_PATH } from '@/lib/constants';
@@ -28,9 +29,9 @@ export async function POST(request: Request) {
     }
     const type = body.type as ShareResourceType | undefined;
     const id = typeof body.id === 'string' ? body.id.trim() : '';
-    if (!id || (type !== 'single' && type !== 'domain')) {
+    if (!id || (type !== 'single' && type !== 'domain' && type !== 'journey')) {
         return NextResponse.json(
-            { error: 'Body must include type: "single" | "domain" and id: string' },
+            { error: 'Body must include type: "single" | "domain" | "journey" and id: string' },
             { status: 400 }
         );
     }
@@ -38,9 +39,15 @@ export async function POST(request: Request) {
     if (type === 'single') {
         const scan = await getScan(id, session.user.id);
         if (!scan) return NextResponse.json({ error: 'Scan not found' }, { status: 404 });
-    } else {
+    } else if (type === 'domain') {
         const domain = await getDomainScan(id, session.user.id);
         if (!domain) return NextResponse.json({ error: 'Domain scan not found' }, { status: 404 });
+    } else {
+        const run = await getJourneyRun(id, session.user.id);
+        if (!run) return NextResponse.json({ error: 'Journey not found' }, { status: 404 });
+        if (run.status !== 'complete') {
+            return NextResponse.json({ error: 'Journey must be complete to share' }, { status: 400 });
+        }
     }
 
     const token = generateToken();

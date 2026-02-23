@@ -10,8 +10,18 @@ import { PageIndexRegionsOverlay } from '@/components/PageIndexRegionsOverlay';
 import { FocusOrderOverlay } from '@/components/FocusOrderOverlay';
 import { PageIndexCard } from '@/components/PageIndexCard';
 import type { DomainSummaryResponse } from '@/lib/domain-summary';
-import type { ScanResult } from '@/lib/types';
+import type { ScanResult, UxJourneyAgentStep } from '@/lib/types';
 import { SHARE_DOMAIN_PAGES_PAGE_SIZE } from '@/lib/constants';
+
+/** Journey share payload (from GET /api/share/[token] when type=journey). */
+export interface ShareJourneyData {
+    steps?: UxJourneyAgentStep[];
+    success?: boolean;
+    taskDescription?: string;
+    siteDomain?: string;
+    videoUrl?: string;
+    jobId?: string;
+}
 
 // --- Status colors: sofort erkennen ob optimal oder nicht
 const STATUS = {
@@ -123,7 +133,8 @@ function MetricBox({ label, value, unit, statusColor }: { label: string; value: 
 
 type SharePayload =
     | { type: 'domain'; data: DomainSummaryResponse }
-    | { type: 'single'; data: ScanResult };
+    | { type: 'single'; data: ScanResult }
+    | { type: 'journey'; data: ShareJourneyData };
 
 export default function ShareLandingPage() {
     const params = useParams();
@@ -161,14 +172,12 @@ export default function ShareLandingPage() {
         <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 900, mx: 'auto', bgcolor: '#fff', minHeight: '100vh' }} suppressHydrationWarning>
             <Box sx={{ mb: 3, textAlign: 'center' }}>
                 <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                    Geteilte Scan-Ergebnisse · CHECKION
+                    Geteilte Ergebnisse · CHECKION
                 </MsqdxTypography>
             </Box>
-            {payload.type === 'domain' ? (
-                <ShareDomainContent data={payload.data} token={token} />
-            ) : (
-                <ShareSingleContent data={payload.data} />
-            )}
+            {payload.type === 'domain' && <ShareDomainContent data={payload.data} token={token} />}
+            {payload.type === 'single' && <ShareSingleContent data={payload.data} />}
+            {payload.type === 'journey' && <ShareJourneyContent data={payload.data} />}
         </Box>
     );
 }
@@ -470,6 +479,103 @@ function ShareDomainContent({ data, token }: { data: DomainSummaryResponse; toke
                     )}
                 </DialogContent>
             </Dialog>
+        </>
+    );
+}
+
+function ShareJourneyContent({ data }: { data: ShareJourneyData }) {
+    const steps = data.steps ?? [];
+    const taskDescription = data.taskDescription ?? '';
+    const siteDomain = data.siteDomain ?? '';
+    const success = data.success ?? false;
+    const videoUrl = data.videoUrl;
+
+    return (
+        <>
+            <MsqdxCard variant="flat" sx={{ p: 3, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
+                <MsqdxTypography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>UX Journey</MsqdxTypography>
+                <MsqdxTypography variant="body2" sx={{ color: STATUS.neutral, mb: 2 }}>
+                    {taskDescription && <span>{taskDescription}</span>}
+                    {siteDomain && (
+                        <span>
+                            {taskDescription ? ' · ' : ''}
+                            {siteDomain}
+                        </span>
+                    )}
+                </MsqdxTypography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <MsqdxChip
+                        size="small"
+                        label={success ? 'Erfolgreich abgeschlossen' : 'Abgeschlossen'}
+                        sx={{
+                            bgcolor: success ? alpha(STATUS.good, 0.12) : alpha(STATUS.neutral, 0.12),
+                            color: success ? STATUS.good : STATUS.neutral,
+                        }}
+                    />
+                    {steps.length > 0 && (
+                        <MsqdxTypography variant="caption" sx={{ color: STATUS.neutral }}>{steps.length} Schritte</MsqdxTypography>
+                    )}
+                </Box>
+            </MsqdxCard>
+
+            {videoUrl && (
+                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
+                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>Aufzeichnung</MsqdxTypography>
+                    <Box sx={{ width: '100%', maxWidth: 960, borderRadius: 1, overflow: 'hidden', bgcolor: '#000' }}>
+                        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                        <video controls playsInline style={{ width: '100%', display: 'block' }} src={videoUrl}>
+                            Video nicht verfügbar.
+                        </video>
+                    </Box>
+                </MsqdxCard>
+            )}
+
+            {steps.length > 0 && (
+                <MsqdxCard variant="flat" sx={{ p: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
+                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>Schritte ({steps.length})</MsqdxTypography>
+                    <Box component="ul" sx={{ m: 0, pl: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                        {steps.map((step, idx) => (
+                            <Box
+                                key={idx}
+                                component="li"
+                                sx={{
+                                    p: 1.5,
+                                    borderRadius: 1,
+                                    border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                                    bgcolor: 'var(--color-card-bg)',
+                                }}
+                            >
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                                    <MsqdxChip
+                                        size="small"
+                                        label={step.action === 'navigate' ? 'Seite' : step.action === 'click' ? 'Klick' : step.action === 'done' ? 'Abgeschlossen' : step.action}
+                                        sx={{
+                                            fontWeight: 600,
+                                            fontSize: '0.75rem',
+                                            ...(step.action === 'done'
+                                                ? { bgcolor: alpha(MSQDX_STATUS.success?.base ?? STATUS.good, 0.2), color: MSQDX_STATUS.success?.base ?? STATUS.good }
+                                                : step.action === 'navigate'
+                                                  ? { bgcolor: alpha(MSQDX_STATUS.info?.base ?? '#2196f3', 0.2), color: MSQDX_STATUS.info?.base ?? '#2196f3' }
+                                                  : { bgcolor: alpha(STATUS.good, 0.2), color: STATUS.good }),
+                                        }}
+                                    />
+                                    <MsqdxTypography variant="caption" sx={{ color: STATUS.neutral }}>Schritt {idx + 1}</MsqdxTypography>
+                                </Box>
+                                {step.target && step.target !== '—' && (
+                                    <MsqdxTypography variant="body2" sx={{ color: '#1a1a1a', wordBreak: 'break-word' }}>
+                                        {step.target.length > 200 ? step.target.slice(0, 200) + '…' : step.target}
+                                    </MsqdxTypography>
+                                )}
+                                {step.reasoning && (
+                                    <MsqdxTypography variant="caption" sx={{ color: STATUS.neutral, display: 'block', mt: 0.5, whiteSpace: 'pre-wrap' }}>
+                                        {step.reasoning.length > 300 ? step.reasoning.slice(0, 300) + '…' : step.reasoning}
+                                    </MsqdxTypography>
+                                )}
+                            </Box>
+                        ))}
+                    </Box>
+                </MsqdxCard>
+            )}
         </>
     );
 }

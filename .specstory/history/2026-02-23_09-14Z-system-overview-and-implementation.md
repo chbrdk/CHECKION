@@ -3033,7 +3033,417 @@ So when we parse and get sections, we show the labeled blocks. When we get 0 sec
 
 1. Maybe the key is not just \w+? Like if there's a hyphen in the key? "evaluation_previous_goal" has underscore which is \w. Good.
 2. Maybe the format uses double quotes sometimes? Then our regex (\w+)=' wouldn't match.
-3. Maybe the string has newlines: thinking='...\n\n...' - the</details></think>
+3. Maybe the string has newlines: thinking='...\n\n...' - the regex .exec doesn't care about newlines. Good.
+4. Maybe there's no equals sign? Like thinking('...')? Unlikely from user's example.
+
+Let me look at the user's example again. They have:
+thinking='...' evaluation_previous_goal='...' memory='...' next_goal='...'
+
+So there's a space between each key='value' pair. Our regex /(\w+)='/g should find all four. Unless - the result string in the API is actually escaped or encoded? Like the quotes might be &quot; or the equals might be something else? Let me assume the parser is correct and the issue might be that values can contain single quotes. For example if the text is "I'm here" inside a value, we'd have thinking='I'm here' next_goal='...'. So when we find the next key, we'd get value = "I'm here" - but wait, we're looking for the NEXT key=' which would be " next_goal='". So the value we extract would be "I'm here' next_goal" - no, valueEnd is matches[i+1].start - 1. So we go up to the character before " next_goal='". So we'd slice "I'm here' " (with space). So we'd get "I'm here' " and then trim and remove trailing quote giving "I'm here " - trim again would give "I'm here". So actually we'd get wrong because we're cutting at the first ' we encounter when looking for the next key. So the value "I'm here" would be cut at "I'" and we'd get "I" and the rest would be in the next segment. So the parser fails when values contain single quotes. For the user's German text I don't see a single quote inside a value. So maybe the parser works for their case.
+
+Let me try to make the parser more robust: the end of a value is when we see a space followed by word characters followed by '='. So we need to find the position of the last character of the value. That is: the character before the next " key='". So we need to find the pattern that starts the next key. So we could use a regex that finds " key='" or at start of string "key='". So the next key starts at match of /\s\w+='|^(\w+)='/. Actually the first key doesn't have a space before it. So we find all matches of /(\w+)='/g. So we get positions. For each match, the value runs from valueStart to (next match's index - 1). So we need to be careful: what if the value contains the string " next_goal='"? Then we'd wrongly split. So we need to find the next key=' that is not inside the value. The only way to know is to find the closing quote of the current value. So we need to handle quoted strings properly: start after ', then find the matching closing '. If we support escaped quotes (like \' or '') we need to handle that. For now let me assume values don't contain unescaped single quotes, so the value ends at the next '. So we could: from valueStart, find the next ' that is followed by space and then \w+=. So regex: /'(?=\s+\w+='|$)/g or something. So we look for ' that is followed by (\s+\w+=') or end of string. So we get the end of the value. Let me try: from valueStart, search for the pattern that ends the value: either ' at end of string, or ' followed by optional spaces and then word and '=. So the value ends at the index of that '. So value = raw.slice(valueStart, valueEndIndex). And we don't include the quote. So we need to find the index of the closing quote. So search from valueStart for /'(?=\s*$|\s+\w+=')/. So we need to find the first ' after valueStart that is either at end or followed by space and key='. So we can iterate: let pos = valueStart; let depth = 0; while (pos < raw.length) { find next ' or next " key='"; if we find " key='" first, then the value ends at the ' before that. So we need to find the position of " key='" or " key='". So search for \s\w+=' and the value ends at the ' that is right before that. So the value's closing quote is the last ' before the next \s\w+='. So we could do: const nextKeyMatch = raw.slice(valueStart).match(/\s\w+='/); if (nextKeyMatch) valueEnd = valueStart + nextKeyMatch.index - 1; else valueEnd = raw.length. So value = raw.slice(valueStart, valueEnd). And we need to remove the trailing quote from the value. So value = raw.slice(valueStart, valueEnd).trim(); if (value.endsWith("'")) value = value.slice(0, -1). So the value would be from the first character after the opening ' to the character before the next key's opening '. So we're including the closing ' in the slice (valueEnd is the index of the character before the space). So if nextKeyMatch.index points to the space, then valueEnd = valueStart + nextKeyMatch.index - 1. So we go up to and including the closing '. So value = raw.slice(valueStart, valueStart + nextKeyMatch.index). That would be "...value' " (with space). So we'd need to trim and remove the trailing quote. So value = raw.slice(valueStart, valueStart + nextKeyMatch.index).trim(); if (value.endsWith("'")) value = value.slice(0, -1). Good.
+
+But wait - what if the value contains " next_goal='"? Then we'd cut at the wrong place. So the robust approach is: find the closing quote by scanning. The value starts with ' (we're after it). So we need to find the matching closing '. If we don't allow escaped quotes, the value ends at the next '. So we could: find index of next ' after valueStart. That's the end of value. So value = raw.slice(valueStart, raw.indexOf("'", valueStart)). But then the next key would start after that quote. So we'd have value correctly. But then the next key might be " evaluation_previous_goal='". So we'd find the first ' after valueStart - but that might be inside the value if the value contains a quote! So we're back to the same problem. So for the user's format, the only way to get the right value is to know that the value ends when we see (quote followed by space and key=). So we need to find the position of ' that is followed by \s+\w+=. So we search for /'(?=\s+\w+=)/g from valueStart. So we get the index of that quote. So value = raw.slice(valueStart, thatIndex). So we don't include the quote. So we need a regex that gives us the index. In JavaScript we can use exec with lastIndex or we can use search: raw.slice(valueStart).search(/'(\s+\w+=)/) - but search returns the index of the match. So the index of the quote would be that. So endIndex = valueStart + raw.slice(valueStart).search(/'(\s+\w+=)/). So value = raw.slice(valueStart, endIndex). Good. So the parser could be:
+
+For each match of /(\w+)='/g:
+  key = match[1]
+  valueStart = match.index + match[0].length
+  rest = raw.slice(valueStart)
+  nextQuoteMatch = rest.match(/'(\s+\w+=)/)  // quote followed by space and key=
+  valueEnd = nextQuoteMatch ? valueStart + rest.indexOf("'", 0) : raw.length  // actually the index of the closing quote
+  So we need the index of the quote. rest.search(/'(\s+\w+=)/) returns the index of ' in rest. So valueEnd = valueStart + rest.search(/'(\s+\w+=)/). So value = raw.slice(valueStart, valueEnd).
+
+Let me implement this. So we find all key=' positions. For each, value runs from after the ' to the next ' that is followed by \s+\w+= or end of string. So:
+  valueStart = match.index + match[0].length
+  rest = raw.slice(valueStart)
+  idx = rest.search(/'(\s+\w+=)/)  // -1 if not found
+  valueEnd = idx >= 0 ? valueStart + idx : raw.length
+  value = raw.slice(valueStart, valueEnd)
+
+So we don't include the closing quote. Good. This way if the value contains "I'm", we'd have rest = "I'm here' next_goal='...". So rest.search(/'(\s+\w+=)/) would find the ' before " next_goal=", so we'd get value = "I'm here". So it works when the value contains a quote that is not followed by space and key=.
+
+Let me also add "nextstep" as a label if we see it (next_step vs next_goal - user said "nextstep"). We have next_goal. So we're good.
+
+I'll:
+1. Change STEP_CARDS_DESKTOP from 3 to 2.
+2. Rewrite the parser to find value end by looking for the pattern ' followed by \s+\w+= or end of string, so we correctly split even when values contain single quotes.
+</details></think>
+
+---
+
+
+Zwei Änderungen vornehmen: Desktop auf 2 Cards stellen und Parser so anpassen, dass Werte mit Anführungszeichen korrekt erkannt werden.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see the parser. The issue might be that we're using valueEnd = matches[i + 1].start - 1. So we're taking the character before the next key. So if the next key is " evaluation_previous_goal='", then matches[i+1].start is the index of the space before "evaluation". So we slice from valueStart to (that index - 1). So we're not including the space. So we'd include the closing single quote in the value. So we get "...finden.'" and then we trim and remove trailing ', so we get "...finden." - correct.
+
+But wait - what if the raw string has different formatting? Like what if there's a newline between the closing quote and the next key? So we have:
+thinking='...'
+ evaluation_previous_goal='...'
+
+Then matches[0] is thinking at index 0, valueStart = 10. matches[1] is evaluation_previous_goal at index say 500 (after newline and space). So valueEnd = 499. So we'd slice from 10 to 499. That would include the newline and the closing quote. So we'd get "...finden.'\n " or something. After trim we'd get "...finden.'" and after removing trailing quote we'd get "...finden." - good.
+
+Maybe the issue is that the key has a space in the regex? \w+ matches word characters. So "evaluation_previous_goal" - does \w match underscore? In JavaScript \w is [A-Za-z0-9_]. So we're good.
+
+Oh! I think I see a potential bug. What if the value contains the string " something_else='"? Then we'd have a false match for the next key. So when we find matches, we get key positions. But one of those might be inside a value! For example:
+thinking='I said next_goal='hello' and then left.'
+Then we'd have matches: thinking at 0, next_goal at some position inside the value. So we'd wrongly split. So we need to find the value end differently: the value ends at the first closing quote that is followed by (optional whitespace and then) a key='. So we need to scan from valueStart and find the pattern ' then optional whitespace then \w+=. So we look for the quote that starts the "end of value" pattern. So the value is from valueStart to that quote (exclusive). So:
+  rest = raw.slice(valueStart)
+  match = rest.match(/'(\s*\w+=)/)  // quote followed by optional space and key=
+  valueEndInRest = match ? match.index : rest.length  // match.index is the index of the quote in rest
+  value = rest.slice(0, valueEndInRest)
+
+So we get the value without the closing quote. And we handle values that contain ' by only considering a quote as "closing" if it's followed by optional whitespace and then \w+=. So we need a regex that finds that. In JavaScript: /'\s*\w+='/  would match ' followed by optional space and key=. So we search for that in rest. The index of the ' in that match is what we need. So:
+  const closingMatch = rest.match(/'(\s*\w+=')/);
+  if (closingMatch) value = rest.slice(0, closingMatch.index);
+  else value = rest;
+
+So we get the value. Let me update the parser to use this approach: for each key=' we find, we take the value as everything from after the opening ' until we hit a ' that is followed by optional whitespace and \w+='. This way we correctly handle values that contain single quotes (as long as they're not followed by space and key=).
+</details></think>
+
+---
+
+
+Desktop auf 2 Cards setzen und Parser robuster machen: Werte enden am ersten `'`, dem optional Leerzeichen und dann `key='` folgen.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The closing match pattern is `'(\s+\w+=)` - so we need a quote followed by one or more spaces and then word characters and equals. But in the user's example the format is `' evaluation_previous_goal='` - so there's a space after the quote. So we need \s+ after the quote. So the pattern matches the closing quote and the space and the start of the next key. So closingMatch.index is the index of the quote in `rest`. So value = rest.slice(0, closingMatch.index) gives us the value without the closing quote. Good.
+
+But wait - what if there's no space? Like `'evaluation_previous_goal='` (quote immediately followed by key). Then \s+ would require at least one space and we wouldn't match. So we'd treat the whole rest as value and we'd get wrong. Let me check the user's example again: "thinking='...' evaluation_previous_goal='...'" - so there's definitely a space between the closing quote and the next key. So we're good. I'll use \s* (optional whitespace) to be more flexible: `/'(\s*\w+=)/` so we match quote then optional space then key=.
+</details></think>
+
+---
+
+
+Pattern anpassen: optionales Leerzeichen nach dem Anführungszeichen zulassen (z. B. `'next_goal='`).
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Actually \s* means zero or more spaces. So we'd match "'next_goal=" or "' next_goal=". But we could also wrongly match "'" in the middle of a value if the value contains " next_goal=" - then we'd match that and cut there. So the value "I want to say next_goal= something" would be cut at " next_goal=". So we need to require that after the quote we have either whitespace or end of the "key" part. So the pattern for "next key starts" is: quote, then optional space, then word characters (the key), then equals. So /'\s*\w+='/  - the \w+ is the key. So we're looking for quote + optional space + key + '=. So if the value contains " next_goal=" as literal text, we'd wrongly split. But in practice the keys are things like thinking, memory, next_goal, evaluation_previous_goal - so they're specific. So it's unlikely the value would contain that exact string. I'll leave it as is.
+
+Let me also remove the 800 char limit on the value display so the user sees the full section content, or keep it but make it higher. I'll leave at 800 for now to avoid huge blocks.
+
+Let me verify there are no lint errors and that the logic is correct. closingMatch.index can be 0 if the value is empty and the next key starts immediately (e.g. thinking='' next_goal='...'). Then value = rest.slice(0, 0) = ''. We only push if (value), so we skip empty values. Good.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+TypeScript might complain about closingMatch.index! - the non-null assertion. If closingMatch is truthy, then match.index is defined. So we're good. Let me double-check: when closingMatch is found, closingMatch.index is the index of the ' in rest. So valueLength = closingMatch.index is correct. So value = rest.slice(0, valueLength) gives us the value without the closing quote. Good.
+</details></think>
+
+---
+
+
+Hier die Änderungen:
+
+## 1. Nur noch 2 Cards auf Desktop
+- **`STEP_CARDS_DESKTOP`** von 3 auf **2** gesetzt. Auf Desktop werden jetzt zwei Schritt-Cards nebeneinander angezeigt.
+
+## 2. Parser für Thinking / Memory / Next step / Previous goal
+- **Neue Logik:** Es wird nicht mehr vom nächsten `key='` rückwärts geschnitten. Stattdessen wird ab **nach** dem öffnenden `'` gesucht, wo das **Wert-Ende** ist: ein `'`, gefolgt von optionalem Leerzeichen und dem nächsten `key='` (Regex: `/'(\s*\w+=)/`). So bleibt der Wert korrekt, auch wenn er Zeilenumbrüche oder Anführungszeichen enthält.
+- **Labels:** Für **next_goal** wird jetzt „Next step“ angezeigt; zusätzlich **nextstep** als Alias mit demselben Label.
+- **Beispiel-Input:**  
+  `thinking='Ich bin erfolgreich...' evaluation_previous_goal='Erfolgreich...' memory='Bin auf der deutschen...' next_goal='Das Hauptmenü...'`  
+  wird in vier Blöcke aufgeteilt:
+  - **Thinking** – „Ich bin erfolgreich …“
+  - **Previous goal evaluation** – „Erfolgreich zur Porsche …“
+  - **Memory** – „Bin auf der deutschen …“
+  - **Next step** – „Das Hauptmenü …“
+
+Die Unterkategorien erscheinen weiterhin als kleine Bereiche mit Überschrift und farbigem linken Rand.
+
+---
+
+_**User**_
+
+leider immernoch nicht gemappt: 
+<div class="MuiBox-root css-1h3q3y3"><div class="MuiBox-root css-1y7yjw"><div class="MuiChip-root MuiChip-filled MuiChip-sizeMedium MuiChip-colorPrimary MuiChip-filledPrimary css-10drd1w"><span class="MuiChip-label MuiChip-labelMedium css-14vsv3w">Klick</span></div><span class="MuiTypography-root MuiTypography-caption css-zqte22">Schritt 2 / 14</span></div><p class="MuiTypography-root MuiTypography-body2 css-3358bk">open the menu</p><div class="MuiBox-root css-zv9mt7"><span class="MuiTypography-root MuiTypography-caption css-1skx3o1">Überlegung</span><div class="MuiBox-root css-1vrnc6m"><p class="MuiTypography-root MuiTypography-body2 css-dw1cgm">thinking='Ich bin erfolgreich auf der Porsche-Website gelandet. Ich sehe die deutsche Porsche-Seite mit einem Taycan Turbo GT im Vordergrund. Mein Ziel ist es, Informationen über den Panamera GTS zu finden - speziell über goldmetallic Lackierung und Massagefunktionen in den Sitzen. \n\nIch sehe verschiedene Modelle auf der Seite, aber ich muss zum Panamera navigieren. Ich kann das Menü oben links verwenden oder nach unten scrollen, um zu sehen, ob der Panamera dort aufgelistet ist. Ich sehe bereits einige Modelle wie 911 und 718 am unteren Rand der Seite. \n\nDa der Benutzer explizit gesagt hat, keine Suche zu verwenden und die Optionen Schritt für Schritt auszuwählen, werde ich das Hauptmenü öffnen, um zu den Modellen zu navigieren und dann den Panamera zu finden.' evaluation_previous_goal='Erfolgreich zur Porsche-Website navigiert und die deutsche Seite geladen. Verdikt: Erfolg' memory='Bin auf der deutschen Porsche-Website gelandet. Muss jetzt zum Panamera GTS navigieren, um Informationen über goldmetallic Lackierung und Massagefunktionen zu finden. Sehe bereits einige Modelle auf der Startseite.' next_goal='Das Hauptmenü öffnen, um zu den Porsche-Modellen zu navigieren und den Panamera zu finden.'</p></div></div></div>
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is saying the result text is still not being parsed/split - they're seeing the raw text "thinking='...' evaluation_previous_goal='...' memory='...' next_goal='...'" all in one block under "Überlegung" (Reasoning). So it seems like:
+
+1. The parsed sections might not be showing - maybe the content is in `step.reasoning` instead of `step.result`? So we're showing the reasoning block with the raw text, and the result (which might have the same or different content) is being parsed. So the UI shows "Überlegung" (Reasoning) with the raw key='value' string inside it - that's the reasoning field, not the result field!
+
+So the issue is: the agent is putting this key='value' text in the **reasoning** field, not the **result** field. So we need to run the same parsing and section display on **reasoning** when it looks like the key='value' format, not just on result.
+
+Let me check the StepCard component - we have:
+- step.reasoning -> shown in a box with "Überlegung" (journeyReasoning) and <ReasoningBlock text={step.reasoning} />
+- step.result -> <StepResultSections resultText={step.result} />
+
+So when the API sends this key='value' string in **reasoning** instead of **result**, we show it as plain text in ReasoningBlock. The fix is: when rendering reasoning, check if it looks like the key='value' format (e.g. contains " thinking=" or " memory=" or " next_goal=") and if so, use StepResultSections (parse and show as Thinking/Memory/Next step blocks) instead of ReasoningBlock. Or we could always try to parse reasoning with parseStepResult and if we get multiple sections, show them; otherwise show as ReasoningBlock.
+
+So the plan:
+1. In StepCard, when we have step.reasoning, first try parseStepResult(step.reasoning). If we get 2+ sections, render StepResultSections with step.reasoning. If we get 0 or 1 section, render ReasoningBlock as before (or if 1 section we could show that one section). So the logic: const sections = parseStepResult(step.reasoning); if (sections.length >= 2) return <StepResultSections resultText={step.reasoning} />; else return <ReasoningBlock text={step.reasoning} />;
+2. That way when the reasoning contains thinking='...' memory='...' etc., we'll parse and show the sections. When it's plain text we'll show ReasoningBlock.
+
+Let me implement that.
+</details></think>
+
+---
+
+
+Der Text mit `thinking='...'`, `memory='...'` usw. steht offenbar im Feld **reasoning**, nicht in **result**. Wir prüfen die StepCard und wenden den Parser auch auf **reasoning** an, wenn das Format passt.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see - the content is in `step.reasoning` and we're rendering it with ReasoningBlock. So we need to: when reasoning looks like the key='value' format, use StepResultSections instead of ReasoningBlock. I'll add a helper that checks if the text looks like that format (e.g. contains " evaluation_previous_goal=" or " memory=" or " next_goal=") or we could just always try parseStepResult and if we get 2+ sections use StepResultSections. That's cleaner.
+</details></think>
+
+---
+
+
+Reasoning enthält den Agent-Text; wir prüfen, ob er dem key='value'-Format entspricht, und rendern dann die Sektionen (Thinking, Memory, Next step).
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to check why the parser might return 0 sections for that string. The user's string is:
+thinking='Ich bin erfolgreich...' evaluation_previous_goal='Erfolgreich...' memory='Bin auf der deutschen...' next_goal='Das Hauptmenü...'
+
+So we have key='value' pairs. The regex /(\w+)='/g finds: thinking=', evaluation_previous_goal=', memory=', next_goal='. So we get 4 matches. For each we compute rest and closingMatch. For "thinking", rest starts with "Ich bin erfolgreich...' evaluation_previous_goal='...". So we need to find the pattern '(\s*\w+=). So we look for a quote followed by optional space and key=. So "' evaluation_previous_goal=" would match - the quote before " evaluation_previous_goal=". So closingMatch = rest.match(/'(\s*\w+=)/) - in JavaScript regex, the capture group is (\s*\w+=). So we need the index of the quote. In a match result, match.index is the index of the whole match, which starts at the quote. So closingMatch.index is correct. So valueLength = closingMatch.index, and value = rest.slice(0, valueLength) = "Ich bin erfolgreich...". Good.
+
+Wait - could the issue be that the regex doesn't match because of newlines? In the user's string we have \n\n inside the value. So after "thinking='", we have "Ich bin erfolgreich... \n\nIch sehe...". So the closing quote is before " evaluation_previous_goal". So rest = "Ich bin... \n\n...finden.' evaluation_previous_goal='...". So we need to find ' followed by optional whitespace (including newlines?) and \w+=. So \s* matches newlines. So "' evaluation_previous_goal=" - between the quote and "evaluation" we have a space. So \s* matches that. So we should match. Unless - the actual string has escaped newlines "\\n\\n" as literal backslash n? Then we'd have " ...' evaluation_previous_goal=". So we'd still match. Let me check if the regex is correct. The pattern is /'(\s*\w+=)/. So we need single quote, then optional whitespace, then word characters, then equals. So "' evaluation_previous_goal=" - the quote, then space, then evaluation_previous_goal, then =. So we match. So the parser should work. Unless - in the HTML the user shared, the text might be coming from step.reasoning and it might be that the API returns something slightly different? Like maybe the keys don't have underscores? Or the format is different? Let me look at the exact string again from the user's first message: "thinking='...' evaluation_previous_goal='...' memory='...' next_goal='...'"
+
+Oh! I see a potential bug. In the regex we have /'(\s*\w+=)/ - so after the quote we have \s*\w+=. So we're matching the quote and then optional space and then key and equals. So the full match is "' evaluation_previous_goal=" or "'evaluation_previous_goal=". So closingMatch.index is the index of the quote. So value = rest.slice(0, closingMatch.index). So we get everything before that quote. So we're good.
+
+One more possibility: maybe the string has double quotes or different quote character? Like thinking="..."? Then our keyValueRe /(\w+)='/g wouldn't match because we're looking for single quote after the equals. So we'd get zero matches. So parseStepResult would return []. So we'd show ReasoningBlock. So the fix of "try parse and if 2+ sections use StepResultSections" would mean we still show ReasoningBlock when the format uses double quotes. Let me add support for double quotes as well: match both key=' and key=". So we need to find key=' or key=", and then the value ends at the next ' or " that is followed by space and key=. So the parser gets more complex. For now the user said the format is thinking='...' so single quotes. So our parser should work. Let me verify - maybe the issue is that we're not exporting or the parseStepResult is not finding matches because of Unicode or something? Let me add a fallback: also try to split by the pattern that looks like " key='" - so we could try splitting the string by " '" and then parse each part? Actually the simpler fix is what I did: use parseStepResult on reasoning and if we get 2+ sections show the sections. So when the backend sends this in reasoning, we'll parse it. So we need to make sure the parser actually works. Let me re-read the parser.
+
+Actually re-reading the user message - they said "leider immernoch nicht gemappt" - still not mapped. So they're still seeing the raw text. So either:
+1. The parser returns 0 or 1 section for that string (so we're still showing ReasoningBlock with the raw text)
+2. Or the code path isn't being hit
+
+If the parser returns 0 sections, we'd show ReasoningBlock. So why would the parser return 0? Maybe the key has a character that \w doesn't match? \w in JavaScript is [A-Za-z0-9_]. So "evaluation_previous_goal" matches. Maybe the string has zero-width characters or BOM? Let me try making the parser more permissive. What if the format is "thinking = '..." with spaces around =? Then our regex /(\w+)='/g wouldn't match because we need =' with no space. So we could try /\w+\s*=\s*'/g to allow spaces. Let me try that.
+</details></think>
+
+---
+
+
+Parser prüfen — möglicherweise verhindern Leerzeichen um `=` (z. B. `thinking = '`) ein Match. Parser toleranter machen:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The regex keyValueRe = /(\w+)='/g looks for word chars then equals then quote. So "thinking='" matches. But what if the actual payload has a space: "thinking = '" ? Then we wouldn't match. Let me make it more permissive: /(\w+)\s*=\s*'/g so we allow optional spaces around =. And for the closing pattern, allow optional spaces: /'\s*(\w+)\s*=\s*'/ or we're looking for the quote that starts the next key's value. So the pattern for "end of value" is: a quote, then optional space, then key, then equals (and optionally quote). So /'(?=\s*\w+\s*=)/ would find a quote that is followed by optional space, key, equals. So we don't need to capture, just look for the quote. So valueLength = rest.search(/'(\s*\w+\s*=')/) - we need the index of the quote. So valueEndQuoteIndex = rest.search(/'(\s*\w+\s*=)/); if (valueEndQuoteIndex >= 0) value = rest.slice(0, valueEndQuoteIndex); else value = rest;
+
+Let me also allow optional spaces in the key part for the closing: /'\s*\w+\s*='/  so we match ' followed by optional space, key, optional space, equals, quote. So the closingMatch would be rest.match(/'(\s*\w+\s*=')/). So we find the quote that is followed by optional space, key, optional space, = and quote. So we need to include the =' part to avoid matching a quote in the middle of a sentence. So the pattern is: quote, then optional whitespace, then word characters (key), then optional whitespace, then equals and quote. So /'\s*\w+\s*='/. So closingMatch = rest.match(/'(\s*\w+\s*=')/). So we need to add the quote at the end. So /'\s*\w+\s*='/ - this matches the closing quote and the start of the next key. So closingMatch.index is the index of our value's closing quote. Good.
+
+Let me update the parser to:
+1. Allow optional spaces around = in key=': /(\w+)\s*=\s*'/g
+2. For closing: /'\s*\w+\s*='/ so we match quote then optional space then key then optional space then ='
+</details></think>
+
+---
+
+
+Parser robuster machen: optionale Leerzeichen um `=` erlauben und das Ende-Muster anpassen.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Wait - in the closing pattern we have /'(\s*\w+\s*=')/ - so we're matching: quote, then optional space, then key, then optional space, then = and quote. So the pattern expects the next key to be followed by =' (with quote). So we're looking for ' evaluation_previous_goal='. So the closing quote is the one before the space. So closingMatch.index is the index of that quote. So value = rest.slice(0, closingMatch.index). So we get the value without the closing quote. Good.
+
+But actually in the user's string there's no space before the = in the next key: " evaluation_previous_goal='". So we have space, key, equals, quote. So the pattern '(\s*\w+\s*=') - we need to match the quote that is followed by space, key, ='. So \s* matches the space, \w+ matches evaluation_previous_goal, \s* matches zero spaces, then =' matches. So we're good.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/journey-agent/[jobId]/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+One more thought: the closing pattern uses `='` at the end - so we're looking for a quote followed by ... and then ='. So the closing quote we want is the one that starts this pattern. So when we have "...finden.' evaluation_previous_goal='...", the match is "' evaluation_previous_goal='". So match.index points to the quote before the space. So value = rest.slice(0, match.index) gives us everything before that quote, i.e. the value without the closing quote. Good.
+</details></think>
+
+---
+
+
+Hier die Änderungen:
+
+## 1. **Reasoning wird auch geparst**
+
+Der Agent liefert den Text mit `thinking='...'`, `memory='...'` usw. im Feld **reasoning**, nicht in **result**.  
+
+In der StepCard wird jetzt:
+
+- **reasoning** mit `parseStepResult(step.reasoning)` geparst.
+- Wenn **mindestens 2 Sektionen** rauskommen → **StepResultSections** (Thinking, Memory, Next step, Previous goal evaluation als eigene Blöcke).
+- Wenn 0 oder 1 Sektion → wie bisher ein **ReasoningBlock** (eine „Überlegung“-Box).
+
+So erscheint der gleiche Text, sobald er im key='value'-Format vorliegt, als Unterkategorien.
+
+## 2. **Parser angepasst**
+
+- **Key-Erkennung:** Es wird `(\w+)\s*=\s*'` verwendet, also optional Leerzeichen um `=` (z. B. `thinking = '...'`).
+- **Ende des Werts:** Gesucht wird das Muster `'\s*\w+\s*='` (Anführungszeichen, optional Leerzeichen, nächster Key, optional Leerzeichen, `=`), damit das Ende des Werts auch bei Leerzeichen zuverlässig erkannt wird.
+
+Damit sollte der angezeigte Text in Thinking, Previous goal evaluation, Memory und Next step aufgeteilt werden, sobald das reasoning-Feld dieses Format hat.
 
 ---
 

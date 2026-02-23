@@ -1,10 +1,11 @@
 /* ------------------------------------------------------------------ */
 /*  CHECKION – GET /api/share/[token] (public, no auth)                */
-/* Returns { type: 'single'|'domain', data } for the share landing.   */
+/* Returns { type: 'single'|'domain'|'journey', data } for the share.  */
 /* ------------------------------------------------------------------ */
 
 import { NextResponse } from 'next/server';
 import { getCachedShareByToken, getCachedScan, getCachedDomainScan } from '@/lib/cache';
+import { getJourneyRun } from '@/lib/db/journey-runs';
 import { buildDomainSummary } from '@/lib/domain-summary';
 
 export async function GET(
@@ -21,6 +22,21 @@ export async function GET(
         const scan = await getCachedScan(share.resourceId, share.userId);
         if (!scan) return NextResponse.json({ error: 'Scan not found' }, { status: 404 });
         return NextResponse.json({ type: 'single' as const, data: scan });
+    }
+
+    if (share.resourceType === 'journey') {
+        const run = await getJourneyRun(share.resourceId, share.userId);
+        if (!run || run.status !== 'complete') return NextResponse.json({ error: 'Journey not found' }, { status: 404 });
+        const result = (run.result ?? {}) as Record<string, unknown>;
+        const videoPath = `/api/share/${encodeURIComponent(token)}/video`;
+        return NextResponse.json({
+            type: 'journey' as const,
+            data: {
+                ...result,
+                videoUrl: videoPath,
+                jobId: share.resourceId,
+            },
+        });
     }
 
     const domain = await getCachedDomainScan(share.resourceId, share.userId);
