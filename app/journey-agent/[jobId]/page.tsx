@@ -1,10 +1,11 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState, useRef } from 'react';
-import { Box, CircularProgress } from '@mui/material';
-import { MsqdxTypography, MsqdxButton, MsqdxCard } from '@msqdx/react';
-import { MSQDX_SPACING, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { Box, CircularProgress, IconButton } from '@mui/material';
+import { MsqdxTypography, MsqdxButton, MsqdxCard, MsqdxMoleculeCard, MsqdxChip } from '@msqdx/react';
+import { MSQDX_SPACING, MSQDX_BRAND_PRIMARY, MSQDX_STATUS } from '@msqdx/tokens';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { PDF_LOGO_PATH } from '@/lib/constants';
 import type { UxJourneyAgentStep } from '@/lib/types';
@@ -12,6 +13,7 @@ import type { UxJourneyAgentStep } from '@/lib/types';
 type Status = 'idle' | 'loading' | 'running' | 'complete' | 'error' | 'unavailable';
 
 const INTRO_OVERLAY_DURATION_SEC = 2;
+const VIDEO_MAX_WIDTH = 960;
 
 /** Video player with MSQDX logomark overlay at the start (floating) instead of the default placeholder. */
 function JourneyVideoWithIntroLogo({ videoUrl }: { videoUrl: string }) {
@@ -27,16 +29,16 @@ function JourneyVideoWithIntroLogo({ videoUrl }: { videoUrl: string }) {
     }, []);
 
     return (
-        <Box sx={{ mt: 2, mb: 2 }}>
-            <MsqdxTypography variant="subtitle2" sx={{ mb: 1 }}>
+        <Box sx={{ mt: 'var(--msqdx-spacing-md)', mb: 'var(--msqdx-spacing-md)' }}>
+            <MsqdxTypography variant="subtitle2" sx={{ mb: 'var(--msqdx-spacing-xs)', color: 'var(--color-text-on-light)' }}>
                 Aufzeichnung
             </MsqdxTypography>
             <Box
                 sx={{
                     position: 'relative',
                     width: '100%',
-                    maxWidth: 800,
-                    borderRadius: 1,
+                    maxWidth: VIDEO_MAX_WIDTH,
+                    borderRadius: 'var(--msqdx-radius-sm)',
                     bgcolor: '#000',
                     overflow: 'hidden',
                 }}
@@ -95,7 +97,7 @@ function ReasoningBlock({ text }: { text: string }) {
                     return (
                         <Box component="ul" key={idx} sx={{ m: 0, pl: 2.5, py: 0 }}>
                             {lines.map((line, i) => (
-                                <MsqdxTypography key={i} variant="body2" color="text.secondary" component="li" sx={{ mb: 0.25 }}>
+                                <MsqdxTypography key={i} variant="body2" component="li" sx={{ mb: 0.25, color: 'var(--color-text-muted-on-light)' }}>
                                     {line.replace(/^(\d+\.|[-*•])\s*/, '')}
                                 </MsqdxTypography>
                             ))}
@@ -103,13 +105,20 @@ function ReasoningBlock({ text }: { text: string }) {
                     );
                 }
                 return (
-                    <MsqdxTypography key={idx} variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                    <MsqdxTypography key={idx} variant="body2" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: 'var(--color-text-muted-on-light)' }}>
                         {lines.join('\n')}
                     </MsqdxTypography>
                 );
             })}
         </Box>
     );
+}
+
+function actionLabel(action: string): string {
+    if (action === 'navigate') return 'Seite';
+    if (action === 'click') return 'Klick';
+    if (action === 'done') return 'Abgeschlossen';
+    return action;
 }
 
 export default function JourneyAgentStatusPage() {
@@ -127,6 +136,18 @@ export default function JourneyAgentStatusPage() {
         siteDomain?: string;
         videoUrl?: string;
     } | null>(null);
+    const [activeStepIndex, setActiveStepIndex] = useState(0);
+
+    const steps = result?.steps ?? [];
+    const goToPrev = useCallback(() => {
+        setActiveStepIndex((i) => Math.max(0, i - 1));
+    }, []);
+    const goToNext = useCallback(() => {
+        setActiveStepIndex((i) => Math.min(steps.length - 1, i + 1));
+    }, [steps.length]);
+    const goTo = useCallback((index: number) => {
+        setActiveStepIndex((_) => Math.max(0, Math.min(index, steps.length - 1)));
+    }, [steps.length]);
 
     useEffect(() => {
         if (!jobId) return;
@@ -174,26 +195,34 @@ export default function JourneyAgentStatusPage() {
         };
     }, [jobId]);
 
+    useEffect(() => {
+        if (result?.steps?.length) setActiveStepIndex(0);
+    }, [result?.steps?.length]);
+
     if (!jobId) {
         return (
-            <Box sx={{ p: MSQDX_SPACING.scale.md, maxWidth: 800, mx: 'auto' }}>
-                <MsqdxTypography variant="body1" color="text.secondary">
+            <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 800, mx: 'auto' }}>
+                <MsqdxTypography variant="body1" sx={{ color: 'var(--color-text-on-light)' }}>
                     {t('results.errorNotFound')}
                 </MsqdxTypography>
             </Box>
         );
     }
 
+    const canGoPrev = steps.length > 0 && activeStepIndex > 0;
+    const canGoNext = steps.length > 0 && activeStepIndex < steps.length - 1;
+    const currentStep = steps[activeStepIndex];
+
     return (
-        <Box sx={{ p: MSQDX_SPACING.scale.md, maxWidth: 900, mx: 'auto' }}>
-            <MsqdxTypography variant="h5" sx={{ fontWeight: 600, mb: 2 }}>
+        <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: VIDEO_MAX_WIDTH + 48, mx: 'auto' }}>
+            <MsqdxTypography variant="h5" sx={{ fontWeight: 600, mb: 'var(--msqdx-spacing-md)', color: 'var(--color-text-on-light)' }}>
                 {t('scan.journeyTab')} – {jobId.slice(0, 8)}…
             </MsqdxTypography>
 
             {status === 'loading' && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 3 }}>
                     <CircularProgress size={24} sx={{ color: MSQDX_BRAND_PRIMARY.green }} />
-                    <MsqdxTypography variant="body2" color="text.secondary">
+                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-on-light)' }}>
                         Loading…
                     </MsqdxTypography>
                 </Box>
@@ -201,25 +230,25 @@ export default function JourneyAgentStatusPage() {
 
             {status === 'running' && (
                 <Box sx={{ py: 3 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 'var(--msqdx-spacing-md)' }}>
                         <CircularProgress size={24} sx={{ color: MSQDX_BRAND_PRIMARY.green }} />
-                        <MsqdxTypography variant="body2" color="text.secondary">
+                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-on-light)' }}>
                             {t('scan.journeyStatusRunning')}
                         </MsqdxTypography>
                     </Box>
-                    <Box sx={{ mb: 2 }}>
-                        <MsqdxTypography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                    <Box sx={{ mb: 'var(--msqdx-spacing-md)' }}>
+                        <MsqdxTypography variant="subtitle2" sx={{ mb: 'var(--msqdx-spacing-xs)', color: 'var(--color-text-on-light)' }}>
                             Live-Ansicht
                         </MsqdxTypography>
                         <Box
                             sx={{
                                 width: '100%',
-                                maxWidth: 800,
-                                borderRadius: 1,
+                                maxWidth: VIDEO_MAX_WIDTH,
+                                borderRadius: 'var(--msqdx-radius-sm)',
                                 overflow: 'hidden',
                                 border: '1px solid',
-                                borderColor: 'divider',
-                                bgcolor: '#f5f5f5',
+                                borderColor: 'var(--color-secondary-dx-grey-light-tint)',
+                                bgcolor: 'var(--color-card-bg)',
                                 minHeight: 200,
                             }}
                         >
@@ -235,8 +264,17 @@ export default function JourneyAgentStatusPage() {
             )}
 
             {status === 'unavailable' && (
-                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, bgcolor: '#fff' }}>
-                    <MsqdxTypography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                <MsqdxCard
+                    variant="flat"
+                    sx={{
+                        p: 'var(--msqdx-spacing-md)',
+                        mb: 'var(--msqdx-spacing-md)',
+                        bgcolor: 'var(--color-card-bg)',
+                        border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                        borderRadius: 'var(--msqdx-radius-sm)',
+                    }}
+                >
+                    <MsqdxTypography variant="body2" sx={{ mb: 1, color: 'var(--color-text-on-light)' }}>
                         {error || t('scan.journeyNotConfigured')}
                     </MsqdxTypography>
                     <MsqdxButton variant="outlined" size="small" onClick={() => router.push('/scan')}>
@@ -246,8 +284,18 @@ export default function JourneyAgentStatusPage() {
             )}
 
             {status === 'error' && (
-                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, bgcolor: '#fff', border: '1px solid', borderColor: 'error.light' }}>
-                    <MsqdxTypography variant="body2" color="error" sx={{ mb: 1 }}>
+                <MsqdxCard
+                    variant="flat"
+                    sx={{
+                        p: 'var(--msqdx-spacing-md)',
+                        mb: 'var(--msqdx-spacing-md)',
+                        bgcolor: 'var(--color-card-bg)',
+                        border: '1px solid',
+                        borderColor: MSQDX_STATUS.error.base,
+                        borderRadius: 'var(--msqdx-radius-sm)',
+                    }}
+                >
+                    <MsqdxTypography variant="body2" sx={{ mb: 1, color: MSQDX_STATUS.error.base }}>
                         {error}
                     </MsqdxTypography>
                     <MsqdxButton variant="outlined" size="small" onClick={() => router.push('/scan')}>
@@ -257,106 +305,175 @@ export default function JourneyAgentStatusPage() {
             )}
 
             {status === 'complete' && result && (
-                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, bgcolor: '#fff' }}>
-                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                        {result.success ? t('scan.journeyStatusComplete') : t('scan.journeyStatusFinished')}
-                    </MsqdxTypography>
-                    {result.taskDescription && (
-                        <MsqdxTypography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                            {t('scan.journeyTaskLabel')}: {result.taskDescription}
-                        </MsqdxTypography>
-                    )}
-                    {result.siteDomain && (
-                        <MsqdxTypography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                            Site: {result.siteDomain}
-                        </MsqdxTypography>
-                    )}
+                <>
+                    <MsqdxMoleculeCard
+                        variant="flat"
+                        borderRadius="lg"
+                        sx={{
+                            bgcolor: 'var(--color-card-bg)',
+                            border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                            mb: 'var(--msqdx-spacing-md)',
+                        }}
+                        title={result.success ? t('scan.journeyStatusComplete') : t('scan.journeyStatusFinished')}
+                        subtitle={
+                            [result.taskDescription && `${t('scan.journeyTaskLabel')}: ${result.taskDescription}`, result.siteDomain && `Site: ${result.siteDomain}`]
+                                .filter(Boolean)
+                                .join(' · ') || undefined
+                        }
+                        actions={
+                            <MsqdxButton variant="outlined" size="small" onClick={() => router.push('/scan')}>
+                                {t('scan.journeyNewJourney')}
+                            </MsqdxButton>
+                        }
+                    />
 
                     {result.videoUrl && (
                         <JourneyVideoWithIntroLogo videoUrl={result.videoUrl} />
                     )}
 
-                    {result.steps && result.steps.length > 0 && (
-                        <Box sx={{ mt: 2 }}>
-                            <MsqdxTypography variant="subtitle2" sx={{ mb: 1 }}>
-                                {t('scan.journeyStepsTitle')} ({result.steps.length})
-                            </MsqdxTypography>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                                {result.steps.map((s, i) => (
-                                    <Box
-                                        key={i}
-                                        sx={{
-                                            p: 1.5,
-                                            borderRadius: 1,
-                                            border: '1px solid',
-                                            borderColor: '#e0e0e0',
-                                            bgcolor: '#fafafa',
-                                        }}
-                                    >
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.5 }}>
-                                            <Box
-                                                component="span"
-                                                sx={{
-                                                    fontSize: 12,
-                                                    fontWeight: 600,
-                                                    px: 1,
-                                                    py: 0.25,
-                                                    borderRadius: 1,
-                                                    bgcolor: s.action === 'done' ? 'success.light' : s.action === 'navigate' ? 'info.light' : 'primary.light',
-                                                    color: s.action === 'done' ? 'success.dark' : s.action === 'navigate' ? 'info.dark' : 'primary.dark',
-                                                }}
-                                            >
-                                                {s.action === 'navigate' ? 'Seite' : s.action === 'click' ? 'Klick' : s.action === 'done' ? 'Abgeschlossen' : s.action}
-                                            </Box>
-                                            <MsqdxTypography variant="body2" sx={{ fontWeight: 500 }}>
-                                                {s.target && s.target !== '—' ? (s.target.length > 80 ? s.target.slice(0, 80) + '…' : s.target) : null}
-                                            </MsqdxTypography>
-                                        </Box>
-                                        {s.reasoning && (
-                                            <Box
-                                                sx={{
-                                                    mb: 1,
-                                                    p: 1.5,
-                                                    borderRadius: 1.5,
-                                                    bgcolor: 'grey.50',
-                                                    borderLeft: '4px solid',
-                                                    borderColor: 'primary.main',
-                                                    boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-                                                }}
-                                            >
-                                                <MsqdxTypography
-                                                    variant="caption"
+                    {steps.length > 0 && (
+                        <MsqdxMoleculeCard
+                            variant="flat"
+                            borderRadius="lg"
+                            sx={{
+                                bgcolor: 'var(--color-card-bg)',
+                                border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                                color: 'var(--color-text-on-light)',
+                            }}
+                            title={`${t('scan.journeyStepsTitle')} (${steps.length})`}
+                            headerActions={
+                                steps.length > 1 ? (
+                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                        {activeStepIndex + 1} / {steps.length}
+                                    </MsqdxTypography>
+                                ) : undefined
+                            }
+                        >
+                            <Box sx={{ display: 'flex', alignItems: 'stretch', gap: 'var(--msqdx-spacing-sm)' }}>
+                                <IconButton
+                                    size="small"
+                                    onClick={goToPrev}
+                                    disabled={!canGoPrev}
+                                    sx={{ flexShrink: 0, alignSelf: 'center', color: 'var(--color-text-on-light)' }}
+                                    aria-label={t('domainResult.journeyPrevStep')}
+                                >
+                                    <ChevronLeft size={24} />
+                                </IconButton>
+                                <Box sx={{ flex: 1, minWidth: 0 }}>
+                                    {currentStep && (
+                                        <Box
+                                            sx={{
+                                                p: 'var(--msqdx-spacing-md)',
+                                                borderRadius: 'var(--msqdx-radius-sm)',
+                                                border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                                                bgcolor: 'var(--color-card-bg)',
+                                            }}
+                                        >
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', flexWrap: 'wrap', mb: 'var(--msqdx-spacing-xs)' }}>
+                                                <MsqdxChip
+                                                    size="small"
+                                                    label={actionLabel(currentStep.action)}
                                                     sx={{
-                                                        fontWeight: 700,
-                                                        display: 'block',
-                                                        mb: 1,
-                                                        color: 'primary.dark',
-                                                        letterSpacing: '0.02em',
-                                                        textTransform: 'uppercase',
+                                                        fontWeight: 600,
+                                                        fontSize: '0.75rem',
+                                                        ...(currentStep.action === 'done'
+                                                            ? { bgcolor: `${MSQDX_STATUS.success.base}20`, color: MSQDX_STATUS.success.base }
+                                                            : currentStep.action === 'navigate'
+                                                              ? { bgcolor: `${MSQDX_STATUS.info.base}20`, color: MSQDX_STATUS.info.base }
+                                                              : { bgcolor: `${MSQDX_BRAND_PRIMARY.green}20`, color: MSQDX_BRAND_PRIMARY.green }),
+                                                    }}
+                                                />
+                                                <MsqdxTypography variant="body2" sx={{ fontWeight: 500, color: 'var(--color-text-on-light)' }}>
+                                                    {currentStep.target && currentStep.target !== '—'
+                                                        ? currentStep.target.length > 80
+                                                            ? currentStep.target.slice(0, 80) + '…'
+                                                            : currentStep.target
+                                                        : null}
+                                                </MsqdxTypography>
+                                            </Box>
+                                            {currentStep.reasoning && (
+                                                <Box
+                                                    sx={{
+                                                        mb: 'var(--msqdx-spacing-sm)',
+                                                        p: 'var(--msqdx-spacing-sm)',
+                                                        borderRadius: 'var(--msqdx-radius-sm)',
+                                                        bgcolor: 'var(--color-secondary-dx-grey-light-tint)',
+                                                        borderLeft: '4px solid',
+                                                        borderColor: 'var(--color-theme-accent)',
                                                     }}
                                                 >
-                                                    {t('scan.journeyReasoning')}
+                                                    <MsqdxTypography
+                                                        variant="caption"
+                                                        sx={{
+                                                            fontWeight: 700,
+                                                            display: 'block',
+                                                            mb: 'var(--msqdx-spacing-xs)',
+                                                            color: 'var(--color-text-on-light)',
+                                                            letterSpacing: '0.02em',
+                                                            textTransform: 'uppercase',
+                                                        }}
+                                                    >
+                                                        {t('scan.journeyReasoning')}
+                                                    </MsqdxTypography>
+                                                    <ReasoningBlock text={currentStep.reasoning} />
+                                                </Box>
+                                            )}
+                                            {currentStep.result && (
+                                                <MsqdxTypography
+                                                    variant="body2"
+                                                    sx={{
+                                                        whiteSpace: 'pre-wrap',
+                                                        wordBreak: 'break-word',
+                                                        color: 'var(--color-text-muted-on-light)',
+                                                    }}
+                                                >
+                                                    {currentStep.result.length > 400 ? currentStep.result.slice(0, 400) + '…' : currentStep.result}
                                                 </MsqdxTypography>
-                                                <ReasoningBlock text={s.reasoning} />
-                                            </Box>
-                                        )}
-                                        {s.result && (
-                                            <MsqdxTypography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                                                {s.result.length > 400 ? s.result.slice(0, 400) + '…' : s.result}
-                                            </MsqdxTypography>
-                                        )}
-                                    </Box>
-                                ))}
+                                            )}
+                                        </Box>
+                                    )}
+                                </Box>
+                                <IconButton
+                                    size="small"
+                                    onClick={goToNext}
+                                    disabled={!canGoNext}
+                                    sx={{ flexShrink: 0, alignSelf: 'center', color: 'var(--color-text-on-light)' }}
+                                    aria-label={t('domainResult.journeyNextStep')}
+                                >
+                                    <ChevronRight size={24} />
+                                </IconButton>
                             </Box>
-                        </Box>
+                            {steps.length > 1 && (
+                                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5, flexWrap: 'wrap', mt: 'var(--msqdx-spacing-sm)' }}>
+                                    {steps.map((_, i) => (
+                                        <Box
+                                            key={i}
+                                            onClick={() => goTo(i)}
+                                            role="button"
+                                            tabIndex={0}
+                                            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && goTo(i)}
+                                            sx={{
+                                                width: 8,
+                                                height: 8,
+                                                borderRadius: '50%',
+                                                bgcolor: i === activeStepIndex ? 'var(--color-theme-accent)' : 'var(--color-secondary-dx-grey-light-tint)',
+                                                cursor: 'pointer',
+                                            }}
+                                            aria-label={`Schritt ${i + 1}`}
+                                        />
+                                    ))}
+                                </Box>
+                            )}
+                        </MsqdxMoleculeCard>
                     )}
-                    <MsqdxButton variant="outlined" size="small" onClick={() => router.push('/scan')} sx={{ mt: 2 }}>
+
+                    <MsqdxButton variant="outlined" size="small" onClick={() => router.push('/scan')} sx={{ mt: 'var(--msqdx-spacing-md)' }}>
                         {t('scan.journeyNewJourney')}
                     </MsqdxButton>
-                </MsqdxCard>
+                </>
             )}
 
-            <MsqdxButton variant="text" size="small" onClick={() => router.push('/')}>
+            <MsqdxButton variant="text" size="small" onClick={() => router.push('/')} sx={{ mt: 'var(--msqdx-spacing-md)', color: 'var(--color-text-on-light)' }}>
                 {t('results.dashboard')}
             </MsqdxButton>
         </Box>
