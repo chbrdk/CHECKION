@@ -10,7 +10,7 @@ import { BrandColorInitializer } from './settings/BrandColorInitializer';
 import { THEME_ACCENT_WITH_FALLBACK } from '@/lib/theme-accent';
 
 const AUTH_PATHS = ['/login', '/register'];
-/** Share landing pages: no app layout, no navigation (public view). */
+/** Share landing pages: use app layout + logo but hide navigation. */
 const SHARE_PATHS = ['/share'];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -21,9 +21,11 @@ export function AppShell({ children }: { children: ReactNode }) {
     const isAuthPage = AUTH_PATHS.some(p => pathname === p || pathname?.startsWith(p + '/'));
     const isSharePage = SHARE_PATHS.some(p => pathname === p || pathname?.startsWith(p + '/'));
 
-    if (isAuthPage || isSharePage) {
+    if (isAuthPage) {
         return <>{children}</>;
     }
+
+    const showSidebar = !isSharePage;
 
     return (
         <>
@@ -34,7 +36,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 borderWidth="thin"
                 borderRadius="2xl"
                 innerBackground="grid"
-                sidebar={<Sidebar open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />}
+                sidebar={showSidebar ? <Sidebar open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} /> : null}
                 sx={{
                     '& > div:last-of-type': {
                         backgroundColor: `${THEME_ACCENT_WITH_FALLBACK.backgroundColor} !important`,
@@ -58,8 +60,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                     {children as any}
                 </Box>
             </MsqdxAppLayout>
-            {/* Mobile: floating menu button when sidebar is closed */}
-            {isMobile && !mobileNavOpen && (
+            {/* Mobile: floating menu button when sidebar is closed (only when sidebar is shown) */}
+            {showSidebar && isMobile && !mobileNavOpen && (
                 <IconButton
                     onClick={() => setMobileNavOpen(true)}
                     aria-label="Menü öffnen"

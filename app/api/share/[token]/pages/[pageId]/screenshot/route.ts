@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------ */
 /*  CHECKION – GET /api/share/[token]/pages/[pageId]/screenshot        */
-/*  Public: returns screenshot image for one page of shared domain.   */
+/*  Public: screenshot for one page of shared domain or shared single. */
 /* ------------------------------------------------------------------ */
 
 import { NextResponse } from 'next/server';
@@ -23,12 +23,30 @@ export async function GET(
 ) {
     const { token, pageId } = await params;
     const share = await getShareByToken(token);
-    if (!share || share.resourceType !== 'domain') {
+    if (!share) {
         return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
     if (!canAccessShare(share.passwordHash, request, token)) {
         return NextResponse.json({ error: 'Password required', requiresPassword: true }, { status: 403 });
     }
+
+    if (share.resourceType === 'single') {
+        if (pageId !== share.resourceId) {
+            return NextResponse.json({ error: 'Not found' }, { status: 404 });
+        }
+        const buffer = await readScreenshot(pageId);
+        if (buffer) {
+            return new NextResponse(new Uint8Array(buffer), {
+                headers: { 'Content-Type': 'image/jpeg' },
+            });
+        }
+        return new NextResponse(PLACEHOLDER_SVG, { headers: { 'Content-Type': 'image/svg+xml' } });
+    }
+
+    if (share.resourceType !== 'domain') {
+        return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
     const domain = await getDomainScan(share.resourceId, share.userId);
     if (!domain) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
