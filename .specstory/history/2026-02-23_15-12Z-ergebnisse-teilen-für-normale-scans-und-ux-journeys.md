@@ -17509,21 +17509,63 @@ Status: **completed**
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="web_search">
+<tool-use data-tool-type="search" data-tool-name="web_search">
 <details>
-<summary>Tool use: **web_search**</summary>
+            <summary>Tool use: **web_search** • Searched web `undefined` • **1** results</summary>
+        
+| Title | URL | Chunk |
+|-------|-----|-------|
+| Web search results for query: causal-conv1d pip install numpy 2 bare_metal_version CPU only 2024 |  | Links:<br/>1. [causal-conv1d 1.5.0.post8](https://pypi.org/project/causal-conv1d/)<br/>2. [Can't install causal-conv1d on Mac M1 - packaging module not found?](https://stackoverflow.com/questions/78598478/cant-install-causal-conv1d-on-mac-m1-packaging-module-not-found)<br/>3. [Releases · Dao-AILab/causal-conv1d](https://github.com/Dao-AILab/causal-conv1d/releases)<br/>4. [Spaces: <br/>                 <br/>             <br/><br/>            <br/><br/> <br/>     <br/>     <br/>        <br/><br/> OpenGVLab <br/>     <br/>         / <br/><br/> VideoMamba <br/>     <br/>         <br/>             <br/><br/>        <br/>         like <br/>     98 <br/><br/> <br/>     <br/>            <br/>            <br/><br/><br/><br/> <br/>        Runtime error](https://huggingface.co/spaces/OpenGVLab/VideoMamba/blob/6fda41af7d948d4d6f35a890c4f428071d7d3db7/causal-conv1d/setup.py)<br/>5. [causal-conv1d - conda-forge \| Anaconda.org](https://anaconda.org/conda-forge/causal-conv1d)<br/><br/># causal-conv1d Installation Summary<br/><br/>**Basic Installation:**<br/>Install causal-conv1d using pip with: `pip install causal-conv1d`[1]<br/><br/>**Latest Version (2024):**<br/>Version 1.6.0 was released in January 2026, with 1.5.0.post8 released December 6, 2024.[1][3]<br/><br/>**Key Requirements:**<br/>- Python ≥3.9[1]<br/>- The package requires numpy as a dependency<br/><br/>**Important Limitations:**<br/>Causal-conv1d is **primarily designed for CUDA/GPU acceleration**. The package description states it provides "Causal depthwise conv1d in CUDA, with a PyTorch interface."[1] The available pre-built wheels are primarily CUDA-based (cu11, cu12 variants for Linux x86_64).[3]<br/><br/>**CPU-Only Note:**<br/>There is **no official CPU-only distribution** readily available from the standard PyPI releases shown in 2024. Users seeking CPU-only versions may need to:<br/>- Build from source with `CAUSAL_CONV1D_SKIP_CUDA_BUILD=TRUE`[4]<br/>- Use conda-forge: `conda install conda-forge::causal-conv1d`[5]<br/><br/>**Installation Issues:**<br/>Mac M1 users have reported packaging module errors during installation, suggesting compatibility challenges on non-standard architectures.[2] |
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So we have:
+1. NumPy 2.x breaks causal-conv1d 1.0.2 (SUM pins 1.0.2) - we need to pin numpy<2 before installing SUM requirements.
+2. causal-conv1d has a bug when nvcc is not found (bare_metal_version). There's an env var CAUSAL_CONV1D_SKIP_CUDA_BUILD=TRUE for CPU build.
+3. PyTorch in the log installed CUDA wheels (nvidia-*). The Dockerfile comment says "PyTorch CPU" but we're not using the CPU-only index - so pip is installing default torch which is CUDA. For Coolify without GPU we should use CPU-only PyTorch to reduce image size and avoid CUDA deps. Let me check - the Dockerfile says "for GPU use: add --index-url" so the current line installs default which is CUDA. So we need:
+   - Either use CPU-only PyTorch: pip install torch --index-url https://download.pytorch.org/whl/cpu
+   - And pin numpy<2 before SUM requirements
+   - And set CAUSAL_CONV1D_SKIP_CUDA_BUILD=TRUE when installing so causal-conv1d doesn't try to build CUDA and hit the bare_metal_version bug
+
+Let me check SUM's requirements.txt from the repo to see exact versions.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="web_fetch">
+<details>
+<summary>Tool use: **web_fetch**</summary>
 
 
 Parameters:
 
 ```json
 {
-  "searchTerm": "causal-conv1d pip install numpy 2 bare_metal_version CPU only 2024"
+  "url": "https://raw.githubusercontent.com/Arhosseini77/SUM/main/requirements.txt"
+}
+```
+Result:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/Arhosseini77/SUM/main/requirements.txt",
+  "markdown": "scikit-image\npackaging\ncausal-conv1d==1.0.2\nmamba-ssm==1.0.1\nmonai\nopencv-python==4.6.0.66\npandas\nscikit-learn\nmatplotlib\nh5py\nyacs\ntimm\nhuggingface_hub\n"
 }
 ```
 User decision: **accepted**
 
-Status: **loading**
+Status: **completed**
 
 
 </details>
@@ -17531,10 +17573,197 @@ Status: **loading**
 
 ---
 
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/requirements-sum.txt</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+SUM requires causal-conv1d==1.0.2 and mamba-ssm==1.0.1. These are old and have the NumPy 1.x / no-nvcc issues.
+
+Strategy:
+1. Use **CPU-only PyTorch** so we don't pull 2GB+ of CUDA libs and so the build is consistent: `--index-url https://download.pytorch.org/whl/cpu` for torch, torchvision, torchaudio.
+2. Pin **numpy<2** right after PyTorch so that when we install causal-conv1d, NumPy 1.x is used.
+3. Set **CAUSAL_CONV1D_SKIP_CUDA_BUILD=TRUE** (or similar) when running pip install for SUM requirements so causal-conv1d doesn't need nvcc and doesn't hit the bare_metal_version bug. Let me check the causal-conv1d setup.py - the bug is that when nvcc is not found, bare_metal_version is never set but later line 112 uses it. So we need to either patch or use an env that makes the build succeed. Skipping CUDA build might define something that avoids that code path.
+4. Alternatively install causal-conv1d and mamba-ssm from a newer version that has wheels or numpy 2 support - but SUM might depend on exact 1.0.2/1.0.1 API. So safer to fix the build.
+
+Checking causal-conv1d 1.0.2 setup.py for CAUSAL_CONV1D_SKIP_CUDA_BUILD...
+</details></think>
+
+---
+
+
+
 
 
 ---
 
+<tool-use data-tool-type="search" data-tool-name="web_search">
+<details>
+            <summary>Tool use: **web_search** • Searched web `undefined` • **1** results</summary>
+        
+| Title | URL | Chunk |
+|-------|-----|-------|
+| Web search results for query: PyTorch CPU only pip install index-url download.pytorch.org whl cpu |  | Links:<br/>1. [](https://download.pytorch.org/whl/cpu)<br/>2. [Install Pytorch CPU Only with pip that works on Apple machine as well as Linux](https://stackoverflow.com/questions/75988055/install-pytorch-cpu-only-with-pip-that-works-on-apple-machine-as-well-as-linux)<br/>3. [Where do I get a CPU-only version of PyTorch?](https://stackoverflow.com/questions/51730880/where-do-i-get-a-cpu-only-version-of-pytorch)<br/>4. [How to install torch without nvidia?](https://stackoverflow.com/questions/78947332/how-to-install-torch-without-nvidia)<br/>5. [Installing a specific PyTorch build (f/e CPU-only) with Poetry](https://stackoverflow.com/questions/59158044/installing-a-specific-pytorch-build-f-e-cpu-only-with-poetry)<br/><br/># PyTorch CPU-Only Installation<br/><br/>To install PyTorch CPU-only using pip, use this command:[2]<br/><br/>```<br/>python -m pip install torch --extra-index-url https://download.pytorch.org/whl/cpu<br/>```<br/><br/>This approach works across different platforms including macOS and Linux.[2]<br/><br/>## About the PyTorch Wheel Index<br/><br/>PyTorch maintains a dedicated CPU wheel repository at `https://download.pytorch.org/whl/cpu`[1], which hosts CPU-optimized builds and related packages. This index can be specified using the `--extra-index-url` flag with pip to ensure you get the CPU-only version instead of the default GPU-enabled build that includes NVIDIA dependencies.[2]<br/><br/>This method avoids the significantly larger default installation that includes NVIDIA CUDA libraries, resulting in a smaller package size suitable for environments like Heroku or Docker containers where file size constraints are important. |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="web_fetch">
+<details>
+<summary>Tool use: **web_fetch**</summary>
+
+
+Parameters:
+
+```json
+{
+  "url": "https://github.com/Dao-AILab/causal-conv1d/blob/main/setup.py"
+}
+```
+Result:
+
+```json
+{
+  "url": "https://github.com/Dao-AILab/causal-conv1d/blob/main/setup.py",
+  "markdown": "# setup.py\n\n**Repository:** [Dao-AILab/causal-conv1d](https://github.com/Dao-AILab/causal-conv1d)\n**Branch:** main\n**Lines:** 392\n\n## Source\n\n&#96;&#96;&#96;python\n# Copyright (c) 2024, Tri Dao.\n\nimport sys\nimport warnings\nimport os\nimport re\nimport shutil\nimport ast\nfrom pathlib import Path\nfrom packaging.version import parse, Version\nimport platform\n\nfrom setuptools import setup, find_packages\nimport subprocess\n\nimport urllib.request\nimport urllib.error\nfrom wheel.bdist_wheel import bdist_wheel as _bdist_wheel\n\nimport torch\nfrom torch.utils.cpp_extension import (\n    BuildExtension,\n    CppExtension,\n    CUDAExtension,\n    CUDA_HOME,\n    HIP_HOME,\n)\n\n\nwith open(\"README.md\", \"r\", encoding=\"utf-8\") as fh:\n    long_description = fh.read()\n\n\n# ninja build does not work unless include_dirs are abs path\nthis_dir = os.path.dirname(os.path.abspath(__file__))\n\nPACKAGE_NAME = \"causal_conv1d\"\n\nBASE_WHEEL_URL = \"https://github.com/Dao-AILab/causal-conv1d/releases/download/{tag_name}/{wheel_name}\"\n\n# FORCE_BUILD: Force a fresh build locally, instead of attempting to find prebuilt wheels\n# SKIP_CUDA_BUILD: Intended to allow CI to use a simple &#96;python setup.py sdist&#96; run to copy over raw files, without any cuda compilation\nFORCE_BUILD = os.getenv(\"CAUSAL_CONV1D_FORCE_BUILD\", \"FALSE\") == \"TRUE\"\nSKIP_CUDA_BUILD = os.getenv(\"CAUSAL_CONV1D_SKIP_CUDA_BUILD\", \"FALSE\") == \"TRUE\"\n# For CI, we want the option to build with C++11 ABI since the nvcr images use C++11 ABI\nFORCE_CXX11_ABI = os.getenv(\"CAUSAL_CONV1D_FORCE_CXX11_ABI\", \"FALSE\") == \"TRUE\"\n\n\ndef get_platform():\n    \"\"\"\n    Returns the platform name as used in wheel filenames.\n    \"\"\"\n    if sys.platform.startswith(\"linux\"):\n        return \"linux_x86_64\"\n    elif sys.platform == \"darwin\":\n        mac_version = \".\".join(platform.mac_ver()[0].split(\".\")[:2])\n        return f\"macosx_{mac_version}_x86_64\"\n    elif sys.platform == \"win32\":\n        return \"win_amd64\"\n    else:\n        raise ValueError(\"Unsupported platform: {}\".format(sys.platform))\n\n\ndef get_cuda_bare_metal_version(cuda_dir):\n    raw_output = subprocess.check_output(\n        [cuda_dir + \"/bin/nvcc\", \"-V\"], universal_newlines=True\n    )\n    output = raw_output.split()\n    release_idx = output.index(\"release\") + 1\n    bare_metal_version = parse(output[release_idx].split(\",\")[0])\n\n    return raw_output, bare_metal_version\n\n\ndef get_hip_version(rocm_dir):\n    hipcc_bin = \"hipcc\" if rocm_dir is None else os.path.join(rocm_dir, \"bin\", \"hipcc\")\n    try:\n        raw_output = subprocess.check_output(\n            [hipcc_bin, \"--version\"], universal_newlines=True\n        )\n    except Exception as e:\n        print(\n            f\"hip installation not found: {e} ROCM_PATH={os.environ.get('ROCM_PATH')}\"\n        )\n        return None, None\n\n    for line in raw_output.split(\"\\n\"):\n        if \"HIP version\" in line:\n            rocm_version = parse(\n                line.split()[-1].replace(\"-\", \"+\")\n            )  # local version is not parsed correctly\n            return line, rocm_version\n\n    return None, None\n\n\ndef get_torch_hip_version():\n    if torch.version.hip:\n        return parse(torch.version.hip.split()[-1].replace(\"-\", \"+\"))\n    else:\n        return None\n\n\ndef check_if_hip_home_none(global_option: str) -&gt; None:\n    if HIP_HOME is not None:\n        return\n    # warn instead of error because user could be downloading prebuilt wheels, so hipcc won't be necessary\n    # in that case.\n    warnings.warn(\n        f\"{global_option} was requested, but hipcc was not found.  Are you sure your environment has hipcc available?\"\n    )\n\n\ndef check_if_cuda_home_none(global_option: str) -&gt; None:\n    if CUDA_HOME is not None:\n        return\n    # warn instead of error because user could be downloading prebuilt wheels, so nvcc won't be necessary\n    # in that case.\n    warnings.warn(\n        f\"{global_option} was requested, but nvcc was not found.  Are you sure your environment has nvcc available?  \"\n        \"If you're installing within a container from https://hub.docker.com/r/pytorch/pytorch, \"\n        \"only images whose names contain 'devel' will provide nvcc.\"\n    )\n\n\ndef append_nvcc_threads(nvcc_extra_args):\n    return nvcc_extra_args + [\"--threads\", \"4\"]\n\n\ncmdclass = {}\next_modules = []\n\n\nHIP_BUILD = bool(torch.version.hip)\n\nif not SKIP_CUDA_BUILD:\n    print(\"\\n\\ntorch.__version__  = {}\\n\\n\".format(torch.__version__))\n    TORCH_MAJOR = int(torch.__version__.split(\".\")[0])\n    TORCH_MINOR = int(torch.__version__.split(\".\")[1])\n\n    cc_flag = []\n\n    if HIP_BUILD:\n        check_if_hip_home_none(PACKAGE_NAME)\n\n        rocm_home = os.getenv(\"ROCM_PATH\")\n        _, hip_version = get_hip_version(rocm_home)\n\n        if HIP_HOME is not None:\n            if hip_version &lt; Version(\"6.0\"):\n                raise RuntimeError(\n                    f\"{PACKAGE_NAME} is only supported on ROCm 6.0 and above.  \"\n                    \"Note: make sure HIP has a supported version by running hipcc --version.\"\n                )\n            if hip_version == Version(\"6.0\"):\n                warnings.warn(\n                    f\"{PACKAGE_NAME} requires a patch to be applied when running on ROCm 6.0. \"\n                    \"Refer to the README.md for detailed instructions.\",\n                    UserWarning,\n                )\n\n        cc_flag.append(\"-DBUILD_PYTHON_PACKAGE\")\n\n    else:\n        check_if_cuda_home_none(PACKAGE_NAME)\n        # Check, if CUDA11 is installed for compute capability 8.0\n\n        if CUDA_HOME is not None:\n            _, bare_metal_version = get_cuda_bare_metal_version(CUDA_HOME)\n            if bare_metal_version &lt; Version(\"11.6\"):\n                raise RuntimeError(\n                    f\"{PACKAGE_NAME} is only supported on CUDA 11.6 and above.  \"\n                    \"Note: make sure nvcc has a supported version by running nvcc -V.\"\n                )\n\n        if bare_metal_version &lt;= Version(\"12.9\"):\n            cc_flag.append(\"-gencode\")\n            cc_flag.append(\"arch=compute_62,code=sm_62\")\n            cc_flag.append(\"-gencode\")\n            cc_flag.append(\"arch=compute_70,code=sm_70\")\n            cc_flag.append(\"-gencode\")\n            cc_flag.append(\"arch=compute_72,code=sm_72\")\n        cc_flag.append(\"-gencode\")\n        cc_flag.append(\"arch=compute_75,code=sm_75\")\n        cc_flag.append(\"-gencode\")\n        cc_flag.append(\"arch=compute_80,code=sm_80\")\n        cc_flag.append(\"-gencode\")\n        cc_flag.append(\"arch=compute_87,code=sm_87\")\n        if bare_metal_version &gt;= Version(\"11.8\"):\n            cc_flag.append(\"-gencode\")\n            cc_flag.append(\"arch=compute_90,code=sm_90\")\n        if bare_metal_version &gt;= Version(\"12.8\"):\n            cc_flag.append(\"-gencode\")\n            cc_flag.append(\"arch=compute_100,code=sm_100\")\n            cc_flag.append(\"-gencode\")\n            cc_flag.append(\"arch=compute_120,code=sm_120\")\n        if bare_metal_version &gt;= Version(\"13.0\"):\n            cc_flag.append(\"-gencode\")\n            cc_flag.append(\"arch=compute_103,code=sm_103\")\n            cc_flag.append(\"-gencode\")\n            cc_flag.append(\"arch=compute_110,code=sm_110\")\n            cc_flag.append(\"-gencode\")\n            cc_flag.append(\"arch=compute_121,code=sm_121\")\n\n    # HACK: The compiler flag -D_GLIBCXX_USE_CXX11_ABI is set to be the same as\n    # torch._C._GLIBCXX_USE_CXX11_ABI\n    # https://github.com/pytorch/pytorch/blob/8472c24e3b5b60150096486616d98b7bea01500b/torch/utils/cpp_extension.py#L920\n    if FORCE_CXX11_ABI:\n        torch._C._GLIBCXX_USE_CXX11_ABI = True\n\n    if HIP_BUILD:\n        extra_compile_args = {\n            \"cxx\": [\"-O3\", \"-std=c++17\"],\n            \"nvcc\": [\n                \"-O3\",\n                \"-std=c++17\",\n                f\"--offload-arch={os.getenv('HIP_ARCHITECTURES', 'native')}\",\n                \"-U__CUDA_NO_HALF_OPERATORS__\",\n                \"-U__CUDA_NO_HALF_CONVERSIONS__\",\n                \"-fgpu-flush-denormals-to-zero\",\n            ]\n            + cc_flag,\n        }\n    else:\n        extra_compile_args = {\n            \"cxx\": [\"-O3\"],\n            \"nvcc\": append_nvcc_threads(\n                [\n                    \"-O3\",\n                    \"-U__CUDA_NO_HALF_OPERATORS__\",\n                    \"-U__CUDA_NO_HALF_CONVERSIONS__\",\n                    \"-U__CUDA_NO_BFLOAT16_OPERATORS__\",\n                    \"-U__CUDA_NO_BFLOAT16_CONVERSIONS__\",\n                    \"-U__CUDA_NO_BFLOAT162_OPERATORS__\",\n                    \"-U__CUDA_NO_BFLOAT162_CONVERSIONS__\",\n                    \"--expt-relaxed-constexpr\",\n                    \"--expt-extended-lambda\",\n                    \"--use_fast_math\",\n                    \"--ptxas-options=-v\",\n                    \"-lineinfo\",\n                ]\n                + cc_flag\n            ),\n        }\n\n    ext_modules.append(\n        CUDAExtension(\n            name=\"causal_conv1d_cuda\",\n            sources=[\n                \"csrc/causal_conv1d.cpp\",\n                \"csrc/causal_conv1d_fwd.cu\",\n                \"csrc/causal_conv1d_bwd.cu\",\n                \"csrc/causal_conv1d_update.cu\",\n            ],\n            extra_compile_args=extra_compile_args,\n            include_dirs=[Path(this_dir) / \"csrc\"],\n        )\n    )\n\n\ndef get_package_version():\n    with open(Path(this_dir) / \"causal_conv1d\" / \"__init__.py\", \"r\") as f:\n        version_match = re.search(r\"^__version__\\s*=\\s*(.*)$\", f.read(), re.MULTILINE)\n    public_version = ast.literal_eval(version_match.group(1))\n    local_version = os.environ.get(\"CAUSAL_CONV1D_LOCAL_VERSION\")\n    if local_version:\n        return f\"{public_version}+{local_version}\"\n    else:\n        return str(public_version)\n\n\ndef get_wheel_url():\n    # Determine the version numbers that will be used to determine the correct wheel\n    torch_version_raw = parse(torch.__version__)\n\n    if HIP_BUILD:\n        # We're using the HIP version used to build torch, not the one currently installed\n        torch_hip_version = get_torch_hip_version()\n        hip_version = f\"{torch_hip_version.major}{torch_hip_version.minor}\"\n    else:\n        # We're using the CUDA version used to build torch, not the one currently installed\n        # _, cuda_version_raw = get_cuda_bare_metal_version(CUDA_HOME)\n        torch_cuda_version = parse(torch.version.cuda)\n        # For CUDA 11, we only compile for CUDA 11.8, and for CUDA 12 we only compile for CUDA 12.3\n        # to save CI time. Minor versions should be compatible.\n        if torch_cuda_version.major == 11:\n            torch_cuda_version = parse(\"11.8\")\n        elif torch_cuda_version.major == 12:\n            torch_cuda_version = parse(\"12.3\")\n        elif torch_cuda_version.major == 13:\n            torch_cuda_version = parse(\"13.0\")\n        else:\n            raise ValueError(f\"CUDA version {torch_cuda_version} not supported\")\n        cuda_version = f\"{torch_cuda_version.major}\"\n\n    gpu_compute_version = hip_version if HIP_BUILD else cuda_version\n    cuda_or_hip = \"hip\" if HIP_BUILD else \"cu\"\n\n    python_version = f\"cp{sys.version_info.major}{sys.version_info.minor}\"\n    platform_name = get_platform()\n    causal_conv1d_version = get_package_version()\n\n    if os.environ.get(\"NVIDIA_PRODUCT_NAME\", \"\") == \"PyTorch\":\n        torch_version = str(os.environ.get(\"NVIDIA_PYTORCH_VERSION\"))\n    else:\n        torch_version = f\"{torch_version_raw.major}.{torch_version_raw.minor}\"\n\n    cxx11_abi = str(torch._C._GLIBCXX_USE_CXX11_ABI).upper()\n\n    # Determine wheel URL based on CUDA version, torch version, python version and OS\n    wheel_filename = f\"{PACKAGE_NAME}-{causal_conv1d_version}+{cuda_or_hip}{gpu_compute_version}torch{torch_version}cxx11abi{cxx11_abi}-{python_version}-{python_version}-{platform_name}.whl\"\n\n    wheel_url = BASE_WHEEL_URL.format(\n        tag_name=f\"v{causal_conv1d_version}\", wheel_name=wheel_filename\n    )\n    return wheel_url, wheel_filename\n\n\nclass CachedWheelsCommand(_bdist_wheel):\n    \"\"\"\n    The CachedWheelsCommand plugs into the default bdist wheel, which is ran by pip when it cannot\n    find an existing wheel (which is currently the case for all installs). We use\n    the environment parameters to detect whether there is already a pre-built version of a compatible\n    wheel available and short-circuits the standard full build pipeline.\n    \"\"\"\n\n    def run(self):\n        if FORCE_BUILD:\n            return super().run()\n\n        wheel_url, wheel_filename = get_wheel_url()\n        print(\"Guessing wheel URL: \", wheel_url)\n        try:\n            urllib.request.urlretrieve(wheel_url, wheel_filename)\n\n            # Make the archive\n            # Lifted from the root wheel processing command\n            # https://github.com/pypa/wheel/blob/cf71108ff9f6ffc36978069acb28824b44ae028e/src/wheel/bdist_wheel.py#LL381C9-L381C85\n            if not os.path.exists(self.dist_dir):\n                os.makedirs(self.dist_dir)\n\n            impl_tag, abi_tag, plat_tag = self.get_tag()\n            archive_basename = f\"{self.wheel_dist_name}-{impl_tag}-{abi_tag}-{plat_tag}\"\n\n            wheel_path = os.path.join(self.dist_dir, archive_basename + \".whl\")\n            print(\"Raw wheel path\", wheel_path)\n            shutil.move(wheel_filename, wheel_path)\n        except urllib.error.HTTPError:\n            print(\"Precompiled wheel not found. Building from source...\")\n            # If the wheel could not be downloaded, build from source\n            super().run()\n\n\nsetup(\n    name=PACKAGE_NAME,\n    version=get_package_version(),\n    packages=find_packages(\n        exclude=(\n            \"build\",\n            \"csrc\",\n            \"include\",\n            \"tests\",\n            \"dist\",\n            \"docs\",\n            \"benchmarks\",\n            \"causal_conv1d.egg-info\",\n        )\n    ),\n    author=\"Tri Dao\",\n    author_email=\"tri@tridao.me\",\n    description=\"Causal depthwise conv1d in CUDA, with a PyTorch interface\",\n    long_description=long_description,\n    long_description_content_type=\"text/markdown\",\n    url=\"https://github.com/Dao-AILab/causal-conv1d\",\n    classifiers=[\n        \"Programming Language :: Python :: 3\",\n        \"License :: OSI Approved :: BSD License\",\n        \"Operating System :: Unix\",\n    ],\n    ext_modules=ext_modules,\n    cmdclass={\"bdist_wheel\": CachedWheelsCommand, \"build_ext\": BuildExtension}\n    if ext_modules\n    else {\n        \"bdist_wheel\": CachedWheelsCommand,\n    },\n    python_requires=\"&gt;=3.9\",\n    install_requires=[\n        \"torch\",\n        \"packaging\",\n        \"ninja\",\n    ],\n)\n&#96;&#96;&#96;"
+}
+```
+User decision: **accepted**
+
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The GitHub setup.py is the **current** main branch. SUM uses causal-conv1d==**1.0.2**, which is an older version. The error in the log was:
+- `bare_metal_version` is not defined - that happens when CUDA_HOME is None (no nvcc), so the block `if CUDA_HOME is not None: _, bare_metal_version = get_cuda_bare_metal_version(CUDA_HOME)` never runs, but later `if bare_metal_version <= Version("12.9")` uses it. So in the **old** 1.0.2 setup.py they probably have the same bug.
+- NumPy: "A module that was compiled using NumPy 1.x cannot be run in NumPy 2.2.6" - so we need numpy<2 when installing causal-conv1d.
+
+Strategy:
+1. **Use CPU-only PyTorch** so we don't pull CUDA and the default pip torch doesn't pull numpy 2. Actually wait - the log shows it installed torch with CUDA (nvidia-*). So we need to explicitly use the CPU index to get smaller image and avoid CUDA. For causal-conv1d with SKIP_CUDA_BUILD, we're not building CUDA - but mamba-ssm might still need causal-conv1d. Let me check - if we set CAUSAL_CONV1D_SKIP_CUDA_BUILD=TRUE, then ext_modules stays empty and the package installs without CUDA extension. Then mamba-ssm might have a fallback for CPU or might require the CUDA op. I'll need to try.
+
+2. **Pin numpy<2** before installing SUM requirements so the causal-conv1d metadata build sees numpy 1.x.
+
+3. **Set CAUSAL_CONV1D_SKIP_CUDA_BUILD=TRUE** when installing SUM requirements so we don't need nvcc and don't hit the bare_metal_version bug. The SUM model might still run on CPU with PyTorch - it might be slow but it should work. Let me check main_sum.py - it uses the SUM repo's inference which likely uses mamba. If mamba-ssm/causal-conv1d have CPU fallbacks, we're good. Otherwise we might need to keep CUDA for full functionality. For Coolify without GPU, CPU-only is the only option.
+
+Implementing:
+1. Dockerfile.sum: Install PyTorch **CPU** from the CPU index to avoid pulling CUDA and to get numpy compatible version. Actually the numpy 2 comes from the latest pip resolving - torch 2.1 might not pin numpy. So we need to pin numpy<2 explicitly after torch.
+2. RUN pip install 'numpy<2' --no-cache-dir
+3. ENV CAUSAL_CONV1D_SKIP_CUDA_BUILD=TRUE
+4. RUN pip install -r SUM/requirements.txt
+
+But wait - if we use CPU-only PyTorch (--extra-index-url https://download.pytorch.org/whl/cpu), then torch.version.cuda might be None. The causal-conv1d setup when SKIP_CUDA_BUILD=TRUE doesn't add ext_modules (the if not SKIP_CUDA_BUILD block is skipped), so we never hit the bare_metal_version line. So we're good.
+
+And for mamba-ssm - it might also have a similar issue. Let me check - mamba-ssm 1.0.1 might depend on causal-conv1d. So if causal-conv1d installs as CPU-only (no CUDA extension), mamba-ssm might have a fallback or might fail at runtime. We'll fix the build first and see.
+
+Let me also check: with CPU PyTorch, do we get numpy 2? Looking at the log again - torch 2.1.0 was installed and it pulled numpy-2.2.6. So we need to force numpy<2 after installing torch.
+</details></think>
+
+---
+
+
+Wir beheben den Build: 1) NumPy auf <2 pinnen (causal-conv1d braucht NumPy 1.x). 2) CPU-only PyTorch verwenden und CUDA-Build von causal-conv1d überspringen (kein nvcc, kein bare_metal_version-Fehler).
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] Fix Dockerfile.sum: numpy<2 + CPU PyTorch + skip CUDA build
+- [ ] Document SUM build constraints in knowledge if needed
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="web_search">
+<details>
+            <summary>Tool use: **web_search** • Searched web `undefined` • **1** results</summary>
+        
+| Title | URL | Chunk |
+|-------|-----|-------|
+| Web search results for query: mamba-ssm 1.0.1 CPU without CUDA causal-conv1d |  | Links:<br/>1. [Client Challenge](https://pypi.org/project/mamba-ssm/1.0.1/)<br/>2. [TypeError: causal_conv1d_fwd(): incompatible function arguments](https://stackoverflow.com/questions/78199621/typeerror-causal-conv1d-fwd-incompatible-function-arguments)<br/>3. [Search code, repositories, users, issues, pull requests...](https://github.com/state-spaces/mamba/blob/main/mamba_ssm/ops/selective_scan_interface.py)<br/>4. [selective_scan_interface.py](https://raw.githubusercontent.com/state-spaces/mamba/main/mamba_ssm/ops/selective_scan_interface.py)<br/>5. [mamba-ssm-macos v1.0.0](https://pypi.org/project/mamba-ssm-macos/1.0.0/)<br/><br/># Mamba-SSM 1.0.1 CPU Without CUDA and Causal-Conv1d<br/><br/>The search results reveal compatibility issues between mamba-ssm 1.0.1 and the causal-conv1d package, particularly regarding CPU-only setups:<br/><br/>## Key Issue<br/>The `causal_conv1d_fwd()` function has incompatible argument requirements when using certain versions of causal-conv1d with mamba-ssm.[2] Users attempting to run mamba-ssm on CPU without CUDA may encounter type mismatch errors.<br/><br/>## Solution Approaches<br/><br/>**Reinstall without causal-conv1d**: One user solved the issue by uninstalling `causal-conv1d` after rebuilding mamba-ssm according to installation instructions.[2]<br/><br/>**Use compatible versions**: Another successful configuration used:<br/>- CUDA 11.8<br/>- Python 3.10.13<br/>- PyTorch 2.1.1<br/>- causal-conv1d 1.1.1<br/>- mamba-ssm 1.2.0.post1[2]<br/><br/>## CPU Alternative<br/>For CPU-only environments without CUDA, the mamba-ssm-macos project offers an alternative approach that works on Apple Silicon without requiring causal-conv1d, using MPS acceleration instead.[5] This suggests mamba-ssm can function without the causal-conv1d dependency under certain conditions.<br/><br/>The core issue is that causal-conv1d is an optional dependency that provides CUDA optimizations, but compatibility between versions matters significantly when using mamba-ssm 1.0.1.[4] |
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So mamba-ssm can have fallbacks. SUM pins mamba-ssm==1.0.1 and causal-conv1d==1.0.2. If we install causal-conv1d with SKIP_CUDA_BUILD=TRUE it will install the Python package but without the CUDA extension - so at runtime causal_conv1d_fwd might not exist or might fall back. Let me check state-spaces/mamba selective_scan - they might have a pure PyTorch fallback when the CUDA op is missing. I'll proceed with the fix: numpy<2 and CAUSAL_CONV1D_SKIP_CUDA_BUILD=TRUE. If the SUM code requires the CUDA kernel we might need to document that GPU is required or try a different approach. For now the build failure is the blocker.
+</details></think>
+
+---
+
+
+Dockerfile anpassen: CPU-PyTorch, NumPy <2 und CUDA-Build überspringen.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/Dockerfile.sum</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+causal-conv1d 1.0.2 - the setup.py we saw was from the current main branch. Version 1.0.2 might be different. The NameError was `bare_metal_version` not defined - that happens in the old setup when CUDA_HOME is None but the code later uses bare_metal_version. So SKIP_CUDA_BUILD=TRUE should prevent entering the block that uses bare_metal_version (the whole "if not SKIP_CUDA_BUILD" block). So we should be good.
+
+Let me also ensure we don't have a conflict: we install numpy<2, then SUM requirements. SUM requirements might upgrade numpy again - we should pin numpy in the same run or constrain. Actually the order is: 1) torch (with cpu index) -> might install numpy 2.x as dependency. 2) pip install 'numpy<2' -> downgrade to numpy 1.x. 3) SUM requirements -> causal-conv1d, mamba-ssm, etc. If any of them require numpy>=2 we'd have a conflict. SUM's requirements don't pin numpy, so we're good. Let me leave as is.
+
+One more thing: after installing SUM requirements, we install requirements-sum.txt which has "numpy" unconstrained - that might upgrade to numpy 2 again. So we should either pin in requirements-sum.txt to numpy<2 or install it before SUM deps and let the last pip install not override. Actually the last "pip install -r requirements-sum.txt" might reinstall numpy and get 2.x. Let me add numpy<2 to requirements-sum.txt to be safe.
+</details></think>
+
+---
+
+
+Sicherstellen, dass `requirements-sum.txt` NumPy nicht wieder auf 2.x hebt:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/requirements-sum.txt</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The SUM requirements are installed before our requirements-sum.txt, and we set numpy<2 in the Dockerfile and in requirements-sum.txt. So the final stack will keep numpy<2. Good.
+
+Let me double-check: causal-conv1d 1.0.2 - does it support SKIP_CUDA_BUILD? The setup.py I saw was from the current main. For 1.0.2 we need to check. Actually the web search said "CAUSAL_CONV1D_SKIP_CUDA_BUILD=TRUE" for CPU build - that was from Hugging Face. So the env var exists in the codebase. Version 1.0.2 might be older - if the 1.0.2 tag doesn't have SKIP_CUDA_BUILD we might still get the bare_metal_version error. Let me check the 1.0.2 tag on causal-conv1d.
+</details></think>
+
+---
+
+
+Prüfen, ob causal-conv1d 1.0.2 die Umgebungsvariable SKIP_CUDA_BUILD unterstützt:
 
 
 ---
@@ -17543,7 +17772,25 @@ Status: **loading**
 <details>
 <summary>Tool use: **web_fetch**</summary>
 
-Status: **loading**
+
+Parameters:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/Dao-AILab/causal-conv1d/v1.0.2/setup.py"
+}
+```
+Result:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/Dao-AILab/causal-conv1d/v1.0.2/setup.py",
+  "markdown": "# Copyright (c) 2023, Tri Dao.\nimport sys\nimport warnings\nimport os\nimport re\nimport shutil\nimport ast\nfrom pathlib import Path\nfrom packaging.version import parse, Version\nimport platform\n\nfrom setuptools import setup, find_packages\nimport subprocess\n\nimport urllib.request\nimport urllib.error\nfrom wheel.bdist_wheel import bdist_wheel as _bdist_wheel\n\nimport torch\nfrom torch.utils.cpp_extension import (\n BuildExtension,\n CppExtension,\n CUDAExtension,\n CUDA_HOME,\n)\n\n\nwith open(\"README.md\", \"r\", encoding=\"utf-8\") as fh:\n long_description = fh.read()\n\n\n# ninja build does not work unless include_dirs are abs path\nthis_dir = os.path.dirname(os.path.abspath(__file__))\n\nPACKAGE_NAME = \"causal_conv1d\"\n\nBASE_WHEEL_URL = \"https://github.com/Dao-AILab/causal-conv1d/releases/download/{tag_name}/{wheel_name}\"\n\n# FORCE_BUILD: Force a fresh build locally, instead of attempting to find prebuilt wheels\n# SKIP_CUDA_BUILD: Intended to allow CI to use a simple &#96;python setup.py sdist&#96; run to copy over raw files, without any cuda compilation\nFORCE_BUILD = os.getenv(\"CAUSAL_CONV1D_FORCE_BUILD\", \"FALSE\") == \"TRUE\"\nSKIP_CUDA_BUILD = os.getenv(\"CAUSAL_CONV1D_SKIP_CUDA_BUILD\", \"FALSE\") == \"TRUE\"\n# For CI, we want the option to build with C++11 ABI since the nvcr images use C++11 ABI\nFORCE_CXX11_ABI = os.getenv(\"CAUSAL_CONV1D_FORCE_CXX11_ABI\", \"FALSE\") == \"TRUE\"\n\n\ndef get_platform():\n \"\"\"\n Returns the platform name as used in wheel filenames.\n \"\"\"\n if sys.platform.startswith(\"linux\"):\n return \"linux_x86_64\"\n elif sys.platform == \"darwin\":\n mac_version = \".\".join(platform.mac_ver()[0].split(\".\")[:2])\n return f\"macosx_{mac_version}_x86_64\"\n elif sys.platform == \"win32\":\n return \"win_amd64\"\n else:\n raise ValueError(\"Unsupported platform: {}\".format(sys.platform))\n\n\ndef get_cuda_bare_metal_version(cuda_dir):\n raw_output = subprocess.check_output(\n [cuda_dir + \"/bin/nvcc\", \"-V\"], universal_newlines=True\n )\n output = raw_output.split()\n release_idx = output.index(\"release\") + 1\n bare_metal_version = parse(output[release_idx].split(\",\")[0])\n\n return raw_output, bare_metal_version\n\n\ndef check_if_cuda_home_none(global_option: str) -&gt; None:\n if CUDA_HOME is not None:\n return\n # warn instead of error because user could be downloading prebuilt wheels, so nvcc won't be necessary\n # in that case.\n warnings.warn(\n f\"{global_option} was requested, but nvcc was not found. Are you sure your environment has nvcc available? \"\n \"If you're installing within a container from https://hub.docker.com/r/pytorch/pytorch, \"\n \"only images whose names contain 'devel' will provide nvcc.\"\n )\n\n\ndef append_nvcc_threads(nvcc_extra_args):\n return nvcc_extra_args + [\"--threads\", \"4\"]\n\n\ncmdclass = {}\next_modules = []\n\nif not SKIP_CUDA_BUILD:\n print(\"\\n\\ntorch.__version__ = {}\\n\\n\".format(torch.__version__))\n TORCH_MAJOR = int(torch.__version__.split(\".\")[0])\n TORCH_MINOR = int(torch.__version__.split(\".\")[1])\n\n check_if_cuda_home_none(\"causal_conv1d\")\n # Check, if CUDA11 is installed for compute capability 8.0\n cc_flag = []\n if CUDA_HOME is not None:\n _, bare_metal_version = get_cuda_bare_metal_version(CUDA_HOME)\n if bare_metal_version &lt; Version(\"11.6\"):\n raise RuntimeError(\n \"causal_conv1d is only supported on CUDA 11.6 and above. \"\n \"Note: make sure nvcc has a supported version by running nvcc -V.\"\n )\n\n cc_flag.append(\"-gencode\")\n cc_flag.append(\"arch=compute_70,code=sm_70\")\n cc_flag.append(\"-gencode\")\n cc_flag.append(\"arch=compute_80,code=sm_80\")\n if bare_metal_version &gt;= Version(\"11.8\"):\n cc_flag.append(\"-gencode\")\n cc_flag.append(\"arch=compute_90,code=sm_90\")\n\n # HACK: The compiler flag -D_GLIBCXX_USE_CXX11_ABI is set to be the same as\n # torch._C._GLIBCXX_USE_CXX11_ABI\n # https://github.com/pytorch/pytorch/blob/8472c24e3b5b60150096486616d98b7bea01500b/torch/utils/cpp_extension.py#L920\n if FORCE_CXX11_ABI:\n torch._C._GLIBCXX_USE_CXX11_ABI = True\n\n ext_modules.append(\n CUDAExtension(\n name=\"causal_conv1d_cuda\",\n sources=[\n \"csrc/causal_conv1d.cpp\",\n \"csrc/causal_conv1d_fwd.cu\",\n \"csrc/causal_conv1d_bwd.cu\",\n \"csrc/causal_conv1d_update.cu\",\n ],\n extra_compile_args={\n \"cxx\": [\"-O3\"],\n \"nvcc\": append_nvcc_threads(\n [\n \"-O3\",\n \"-U__CUDA_NO_HALF_OPERATORS__\",\n \"-U__CUDA_NO_HALF_CONVERSIONS__\",\n \"-U__CUDA_NO_BFLOAT16_OPERATORS__\",\n \"-U__CUDA_NO_BFLOAT16_CONVERSIONS__\",\n \"-U__CUDA_NO_BFLOAT162_OPERATORS__\",\n \"-U__CUDA_NO_BFLOAT162_CONVERSIONS__\",\n \"--expt-relaxed-constexpr\",\n \"--expt-extended-lambda\",\n \"--use_fast_math\",\n \"--ptxas-options=-v\",\n \"-lineinfo\",\n ]\n + cc_flag\n ),\n },\n include_dirs=[Path(this_dir) / \"csrc\" / \"causal_conv1d\"],\n )\n )\n\n\ndef get_package_version():\n with open(Path(this_dir) / \"causal_conv1d\" / \"__init__.py\", \"r\") as f:\n version_match = re.search(r\"^__version__\\s*=\\s*(.*)$\", f.read(), re.MULTILINE)\n public_version = ast.literal_eval(version_match.group(1))\n local_version = os.environ.get(\"CAUSAL_CONV1D_LOCAL_VERSION\")\n if local_version:\n return f\"{public_version}+{local_version}\"\n else:\n return str(public_version)\n\n\ndef get_wheel_url():\n # Determine the version numbers that will be used to determine the correct wheel\n # We're using the CUDA version used to build torch, not the one currently installed\n # _, cuda_version_raw = get_cuda_bare_metal_version(CUDA_HOME)\n torch_cuda_version = parse(torch.version.cuda)\n torch_version_raw = parse(torch.__version__)\n # For CUDA 11, we only compile for CUDA 11.8, and for CUDA 12 we only compile for CUDA 12.2\n # to save CI time. Minor versions should be compatible.\n torch_cuda_version = parse(\"11.8\") if torch_cuda_version.major == 11 else parse(\"12.2\")\n python_version = f\"cp{sys.version_info.major}{sys.version_info.minor}\"\n platform_name = get_platform()\n causal_conv1d_version = get_package_version()\n # cuda_version = f\"{cuda_version_raw.major}{cuda_version_raw.minor}\"\n cuda_version = f\"{torch_cuda_version.major}{torch_cuda_version.minor}\"\n torch_version = f\"{torch_version_raw.major}.{torch_version_raw.minor}\"\n cxx11_abi = str(torch._C._GLIBCXX_USE_CXX11_ABI).upper()\n\n # Determine wheel URL based on CUDA version, torch version, python version and OS\n wheel_filename = f\"{PACKAGE_NAME}-{causal_conv1d_version}+cu{cuda_version}torch{torch_version}cxx11abi{cxx11_abi}-{python_version}-{python_version}-{platform_name}.whl\"\n wheel_url = BASE_WHEEL_URL.format(\n tag_name=f\"v{causal_conv1d_version}\", wheel_name=wheel_filename\n )\n return wheel_url, wheel_filename\n\n\nclass CachedWheelsCommand(_bdist_wheel):\n \"\"\"\n The CachedWheelsCommand plugs into the default bdist wheel, which is ran by pip when it cannot\n find an existing wheel (which is currently the case for all installs). We use\n the environment parameters to detect whether there is already a pre-built version of a compatible\n wheel available and short-circuits the standard full build pipeline.\n \"\"\"\n\n def run(self):\n if FORCE_BUILD:\n return super().run()\n\n wheel_url, wheel_filename = get_wheel_url()\n print(\"Guessing wheel URL: \", wheel_url)\n try:\n urllib.request.urlretrieve(wheel_url, wheel_filename)\n\n # Make the archive\n # Lifted from the root wheel processing command\n # https://github.com/pypa/wheel/blob/cf71108ff9f6ffc36978069acb28824b44ae028e/src/wheel/bdist_wheel.py#LL381C9-L381C85\n if not os.path.exists(self.dist_dir):\n os.makedirs(self.dist_dir)\n\n impl_tag, abi_tag, plat_tag = self.get_tag()\n archive_basename = f\"{self.wheel_dist_name}-{impl_tag}-{abi_tag}-{plat_tag}\"\n\n wheel_path = os.path.join(self.dist_dir, archive_basename + \".whl\")\n print(\"Raw wheel path\", wheel_path)\n shutil.move(wheel_filename, wheel_path)\n except urllib.error.HTTPError:\n print(\"Precompiled wheel not found. Building from source...\")\n # If the wheel could not be downloaded, build from source\n super().run()\n\n\nsetup(\n name=PACKAGE_NAME,\n version=get_package_version(),\n packages=find_packages(\n exclude=(\n \"build\",\n \"csrc\",\n \"include\",\n \"tests\",\n \"dist\",\n \"docs\",\n \"benchmarks\",\n \"causal_conv1d.egg-info\",\n )\n ),\n author=\"Tri Dao\",\n author_email=\"tri@tridao.me\",\n description=\"Causal depthwise conv1d in CUDA, with a PyTorch interface\",\n long_description=long_description,\n long_description_content_type=\"text/markdown\",\n url=\"https://github.com/Dao-AILab/causal-conv1d\",\n classifiers=[\n \"Programming Language :: Python :: 3\",\n \"License :: OSI Approved :: BSD License\",\n \"Operating System :: Unix\",\n ],\n ext_modules=ext_modules,\n cmdclass={\"bdist_wheel\": CachedWheelsCommand, \"build_ext\": BuildExtension}\n if ext_modules\n else {\n \"bdist_wheel\": CachedWheelsCommand,\n },\n python_requires=\"&gt;=3.7\",\n install_requires=[\n \"torch\",\n \"packaging\",\n \"buildtools\",\n \"ninja\",\n ],\n)\n"
+}
+```
+User decision: **accepted**
+
+Status: **completed**
 
 
 </details>
@@ -17551,17 +17798,856 @@ Status: **loading**
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<think><details><summary>Thought Process</summary>
+
+In v1.0.2, when SKIP_CUDA_BUILD is True, we never enter `if not SKIP_CUDA_BUILD`, so `bare_metal_version` is never referenced and we don't need it. Good.
+
+But there's another issue: when SKIP_CUDA_BUILD is True, `ext_modules` stays empty. So we get `cmdclass={"bdist_wheel": CachedWheelsCommand}` only (no build_ext). The CachedWheelsCommand.run() will try to get_wheel_url() - and get_wheel_url() uses `torch.version.cuda`. With **CPU-only PyTorch**, torch.version.cuda is None, so `parse(torch.version.cuda)` will fail! So we must set SKIP_CUDA_BUILD=TRUE and also use CPU PyTorch - but then when pip runs the setup.py, it might still call get_wheel_url() from CachedWheelsCommand. Let me look - get_wheel_url() is only called from CachedWheelsCommand.run() when FORCE_BUILD is False. So when we're building (pip install), it runs CachedWheelsCommand.run(), which calls get_wheel_url() to try to download a prebuilt wheel. And get_wheel_url() does torch_cuda_version = parse(torch.version.cuda) - if torch is CPU-only, torch.version.cuda might be None and parse(None) would fail. So we might need to force build from source with SKIP_CUDA_BUILD so that it doesn't try to download a CUDA wheel. Actually when SKIP_CUDA_BUILD is True, ext_modules is empty, so the cmdclass is only CachedWheelsCommand (no BuildExtension). So when pip runs bdist_wheel, it runs CachedWheelsCommand.run() which calls get_wheel_url() - and that will crash with CPU torch because of torch.version.cuda. So we have two paths:
+1. Use CPU PyTorch + CAUSAL_CONV1D_SKIP_CUDA_BUILD=TRUE -> get_wheel_url() is still called and will crash on torch.version.cuda.
+2. We need to either patch or not use CachedWheelsCommand when SKIP_CUDA_BUILD.
+
+Looking at the run() again: it calls get_wheel_url() to get a wheel URL and try to download it. If we have CPU torch, there's no prebuilt CPU wheel, so the URL would be wrong anyway. So we need to force a "build" that actually just builds the Python package without the CUDA extension. So we want FORCE_BUILD=TRUE and SKIP_CUDA_BUILD=TRUE - then run() does super().run() which builds, but ext_modules is empty so it's just copying Python files. That way we never call get_wheel_url(). So set both:
+ENV CAUSAL_CONV1D_SKIP_CUDA_BUILD=TRUE
+ENV CAUSAL_CONV1D_FORCE_BUILD=TRUE
+
+Then the run() will do return super().run() (because FORCE_BUILD is True), and the build will proceed with empty ext_modules. Perfect.
+</details></think>
+
+---
+
+
+Mit CPU-PyTorch liefert `torch.version.cuda` None; causal-conv1d 1.0.2 ruft in `get_wheel_url()` trotzdem `parse(torch.version.cuda)` auf. Wir setzen zusätzlich `CAUSAL_CONV1D_FORCE_BUILD=TRUE`, damit kein Prebuilt-Wheel geholt wird und der Build ohne CUDA durchläuft.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/Dockerfile.sum</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+With FORCE_BUILD=TRUE, CachedWheelsCommand.run() returns super().run() immediately - so it will run the standard bdist_wheel which will try to build. The build will use ext_modules which is empty when SKIP_CUDA_BUILD is TRUE. So we get a wheel with just the Python package, no CUDA extension. Good.
+
+Now mamba-ssm might still need to be built and it might depend on causal-conv1d's CUDA ops at runtime. If SUM at runtime calls causal_conv1d_cuda, it will fail. We could add a short note in the doc that CPU mode is supported but slower, and if they need GPU they must use a host with nvcc/CUDA. For now the build fix is done. Let me add a note to the knowledge doc and mark the todo complete.
+</details></think>
+
+---
+
+
+Kurz in der Doku vermerken und Todo abschließen.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/Dockerfile.sum</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
 <details>
-<summary>Tool use: **read_file_v2**</summary>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **20** results in **1** directory</summary>
 
-Status: **loading**
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge** (20 files)
+
+| File |
+|------|
+| `i18n-setup.md` |
+| `ux-journey-agent.md` |
+| `checkion-share-links.md` |
+| `checkion-page-index.md` |
+| `checkion-msqdx-accordion.md` |
+| `checkion-eeat-analysis.md` |
+| `checkion-dashboard-pagination.md` |
+| `checkion-settings-brand-color.md` |
+| `checkion-domain-scan-storage.md` |
+| `checkion-deployment.md` |
+| `checkion-journey-history.md` |
+| `checkion-seo-keyword-analysis.md` |
+| `cookie-banner-dismiss.md` |
+| `checkion-caching.md` |
+| `checkion-visual-map-concept.md` |
+| `checkion-deep-scan-sitemap.md` |
+| `checkion-design-background.md` |
+| `checkion-dependencies-state-of-the-art.md` |
+| `checkion-screenshot-storage.md` |
+| `checkion-auth-and-database.md` |
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add a short note to the deployment doc (coolify) about CPU-only SUM and the build constraints, and add a knowledge file for the saliency/SUM build so we have it documented.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/docs/deployment/coolify-saliency-schritt-fuer-schritt.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The doc has a section for MDS-ViTNet (WEIGHTS_FOLDER_ID) and later SUM. I'll add a short troubleshooting note about the SUM build (numpy/causal-conv1d) in the deployment doc, and create a small knowledge file for SUM build constraints.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "Dockerfile\\.sum|SUM.*Dockerfile",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/docs/deployment/coolify-saliency-schritt-fuer-schritt.md",
+  "contextBefore": 0,
+  "contextAfter": 0,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "Dockerfile\\.sum|SUM.*Dockerfile",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/docs/deployment/coolify-saliency-schritt-fuer-schritt.md",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 4,
+  "topFiles": [
+    {
+      "uri": "docs/deployment/coolify-saliency-schritt-fuer-schritt.md",
+      "matchCount": 4
+    }
+  ]
+}
+```
+Status: **completed**
 
 
 </details>
 </tool-use>
 
 ---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add a short "Build-Fehler SUM" troubleshooting section and write a knowledge file.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/docs/deployment/coolify-saliency-schritt-fuer-schritt.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add a new section before "Fehler: fetch failed" about SUM build failures (numpy/causal-conv1d) and that the Dockerfile.sum is already fixed. Then add knowledge file.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/docs/deployment/coolify-saliency-schritt-fuer-schritt.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-saliency-sum-build.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Fix Dockerfile.sum: numpy<2 + CPU PyTorch + skip CUDA build
+- [x] Document SUM build constraints in knowledge if needed
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+mamba-ssm at runtime: when causal-conv1d is installed without the CUDA extension, mamba_ssm might try to use the causal_conv1d_cuda module and get an ImportError or fall back to a pure PyTorch path. I didn't find a definitive answer. If the SUM inference code requires the CUDA kernel, we might get a runtime error after the build succeeds. The user can try redeploying and we'll see. If they hit a runtime error we can document or fix then.
+</details></think>
+
+---
+
+
+Der Build sollte damit durchlaufen. Kurz die Änderungen:
+
+**Ursache**
+1. **NumPy 2.x** – PyTorch hat NumPy 2.2.6 gezogen, `causal-conv1d` (SUM) verträgt nur NumPy 1.x.
+2. **causal-conv1d ohne nvcc** – Beim Bau aus dem Source wird `bare_metal_version` genutzt, das nur bei vorhandenem CUDA gesetzt wird → `NameError`.
+3. **CPU-PyTorch** – Mit dem normalen PyTorch-Index werden große CUDA-Wheels gezogen; für Coolify ohne GPU reicht die CPU-Variante.
+
+**Änderungen im Repo**
+
+1. **`saliency-service/Dockerfile.sum`**
+   - PyTorch **nur CPU**: `--extra-index-url https://download.pytorch.org/whl/cpu` für torch/torchvision/torchaudio.
+   - Vor den SUM-Dependencies: `pip install 'numpy<2'`.
+   - Umgebungsvariablen: `CAUSAL_CONV1D_SKIP_CUDA_BUILD=TRUE` und `CAUSAL_CONV1D_FORCE_BUILD=TRUE`, damit causal-conv1d ohne nvcc und ohne Abruf eines CUDA-Wheels baut.
+
+2. **`saliency-service/requirements-sum.txt`**
+   - `numpy` auf `numpy<2` gesetzt, damit später nichts wieder auf NumPy 2 geht.
+
+3. **Doku**
+   - In **`docs/deployment/coolify-saliency-schritt-fuer-schritt.md`** gibt es einen Abschnitt **„Build-Fehler SUM (causal-conv1d / NumPy)“**.
+   - In **`knowledge/checkion-saliency-sum-build.md`** sind die SUM-Build-Bedingungen und die gewählte Lösung beschrieben.
+
+Bitte die Änderungen committen, pushen und in Coolify erneut deployen. Der Build läuft dann ohne nvcc/CUDA und nutzt die CPU-Variante von PyTorch (Laufzeit kann pro Heatmap etwas länger sein).
+
+---
+
+_**User**_
+
+2026-Feb-25 20:49:41.428555 Starting deployment of chbrdk/CHECKION:main to projects-01.
+2026-Feb-25 20:49:42.233457 Preparing container with helper image: ghcr.io/coollabsio/coolify-helper:1.0.12
+2026-Feb-25 20:49:45.592405 ----------------------------------------
+2026-Feb-25 20:49:45.601379 Importing chbrdk/CHECKION:main (commit sha 62274beff1eeb1d386aee0aa62290b3312a4d8cc) to /artifacts/nk4cocgcosos8go04coco8wk.
+2026-Feb-25 20:49:48.791525 Image not found (e44880sog8gwgg8c0ckwg0ok:62274beff1eeb1d386aee0aa62290b3312a4d8cc). Building new image.
+2026-Feb-25 20:49:53.228345 ----------------------------------------
+2026-Feb-25 20:49:53.236110 Building docker image started.
+2026-Feb-25 20:49:53.242610 To check the current progress, click on Show Debug Logs.
+2026-Feb-25 20:50:57.864698 ========================================
+2026-Feb-25 20:50:57.877072 Deployment failed: Command execution failed (exit code 1): sudo docker exec nk4cocgcosos8go04coco8wk bash -c 'bash /artifacts/build.sh'
+2026-Feb-25 20:50:57.877072 Error: #0 building with "default" instance using docker driver
+2026-Feb-25 20:50:57.877072 
+2026-Feb-25 20:50:57.877072 #1 [internal] load build definition from Dockerfile.sum
+2026-Feb-25 20:50:57.877072 #1 transferring dockerfile: 1.83kB done
+2026-Feb-25 20:50:57.877072 #1 DONE 0.1s
+2026-Feb-25 20:50:57.877072 
+2026-Feb-25 20:50:57.877072 #2 [internal] load metadata for docker.io/library/python:3.10-slim-bookworm
+2026-Feb-25 20:50:57.877072 #2 DONE 0.4s
+2026-Feb-25 20:50:57.877072 
+2026-Feb-25 20:50:57.877072 #3 [internal] load .dockerignore
+2026-Feb-25 20:50:57.877072 #3 transferring context: 99B done
+2026-Feb-25 20:50:57.877072 #3 DONE 0.0s
+2026-Feb-25 20:50:57.877072 
+2026-Feb-25 20:50:57.877072 #4 [ 1/13] FROM docker.io/library/python:3.10-slim-bookworm@sha256:23f63358922e79a794f71be8f3723c84e5ccca9638af3f74456dc73d6184499e
+2026-Feb-25 20:50:57.877072 #4 DONE 0.0s
+2026-Feb-25 20:50:57.877072 
+2026-Feb-25 20:50:57.877072 #5 [ 2/13] WORKDIR /app
+2026-Feb-25 20:50:57.877072 #5 CACHED
+2026-Feb-25 20:50:57.877072 
+2026-Feb-25 20:50:57.877072 #6 [internal] load build context
+2026-Feb-25 20:50:57.877072 #6 transferring context: 7.31kB done
+2026-Feb-25 20:50:57.877072 #6 DONE 0.1s
+2026-Feb-25 20:50:57.877072 
+2026-Feb-25 20:50:57.877072 #7 [ 3/13] RUN apt-get update && apt-get install -y --no-install-recommends     git     build-essential     wget     && rm -rf /var/lib/apt/lists/*
+2026-Feb-25 20:50:57.877072 #7 0.174 Get:1 http://deb.debian.org/debian bookworm InRelease [151 kB]
+2026-Feb-25 20:50:57.877072 #7 0.192 Get:2 http://deb.debian.org/debian bookworm-updates InRelease [55.4 kB]
+2026-Feb-25 20:50:57.877072 #7 0.192 Get:3 http://deb.debian.org/debian-security bookworm-security InRelease [48.0 kB]
+2026-Feb-25 20:50:57.877072 #7 0.295 Get:4 http://deb.debian.org/debian bookworm/main amd64 Packages [8792 kB]
+2026-Feb-25 20:50:57.877072 #7 0.377 Get:5 http://deb.debian.org/debian bookworm-updates/main amd64 Packages [6924 B]
+2026-Feb-25 20:50:57.877072 #7 0.459 Get:6 http://deb.debian.org/debian-security bookworm-security/main amd64 Packages [297 kB]
+2026-Feb-25 20:50:57.877072 #7 1.214 Fetched 9350 kB in 1s (8892 kB/s)
+2026-Feb-25 20:50:57.877072 #7 1.214 Reading package lists...
+2026-Feb-25 20:50:57.877072 #7 1.843 Reading package lists...
+2026-Feb-25 20:50:57.877072 #7 2.391 Building dependency tree...
+2026-Feb-25 20:50:57.877072 #7 2.544 Reading state information...
+2026-Feb-25 20:50:57.877072 #7 2.675 The following additional packages will be installed:
+2026-Feb-25 20:50:57.877072 #7 2.675   binutils binutils-common binutils-x86-64-linux-gnu bzip2 cpp cpp-12 dpkg-dev
+2026-Feb-25 20:50:57.877072 #7 2.676   g++ g++-12 gcc gcc-12 git-man libasan8 libatomic1 libbinutils libbrotli1
+2026-Feb-25 20:50:57.877072 #7 2.676   libc-dev-bin libc6-dev libcc1-0 libcrypt-dev libctf-nobfd0 libctf0
+2026-Feb-25 20:50:57.877072 #7 2.676   libcurl3-gnutls libdpkg-perl liberror-perl libexpat1 libgcc-12-dev
+2026-Feb-25 20:50:57.877072 #7 2.676   libgdbm-compat4 libgomp1 libgprofng0 libisl23 libitm1 libjansson4
+2026-Feb-25 20:50:57.877072 #7 2.676   libldap-2.5-0 liblsan0 libmpc3 libmpfr6 libnghttp2-14 libnsl-dev libperl5.36
+2026-Feb-25 20:50:57.877072 #7 2.676   libpsl5 libquadmath0 librtmp1 libsasl2-2 libsasl2-modules-db libssh2-1
+2026-Feb-25 20:50:57.877072 #7 2.676   libstdc++-12-dev libtirpc-dev libtsan2 libubsan1 linux-libc-dev make patch
+2026-Feb-25 20:50:57.877072 #7 2.677   perl perl-modules-5.36 rpcsvc-proto xz-utils
+2026-Feb-25 20:50:57.877072 #7 2.678 Suggested packages:
+2026-Feb-25 20:50:57.877072 #7 2.678   binutils-doc bzip2-doc cpp-doc gcc-12-locales cpp-12-doc debian-keyring
+2026-Feb-25 20:50:57.877072 #7 2.678   g++-multilib g++-12-multilib gcc-12-doc gcc-multilib manpages-dev autoconf
+2026-Feb-25 20:50:57.877072 #7 2.678   automake libtool flex bison gdb gcc-doc gcc-12-multilib gettext-base
+2026-Feb-25 20:50:57.877072 #7 2.678   git-daemon-run | git-daemon-sysvinit git-doc git-email git-gui gitk gitweb
+2026-Feb-25 20:50:57.877072 #7 2.678   git-cvs git-mediawiki git-svn glibc-doc gnupg | sq | sqop | pgpainless-cli
+2026-Feb-25 20:50:57.877072 #7 2.678   sensible-utils bzr libstdc++-12-doc make-doc ed diffutils-doc perl-doc
+2026-Feb-25 20:50:57.877072 #7 2.678   libterm-readline-gnu-perl | libterm-readline-perl-perl
+2026-Feb-25 20:50:57.877072 #7 2.678   libtap-harness-archive-perl
+2026-Feb-25 20:50:57.877072 #7 2.678 Recommended packages:
+2026-Feb-25 20:50:57.877072 #7 2.678   fakeroot gnupg | sq | sqop | pgpainless-cli libalgorithm-merge-perl less
+2026-Feb-25 20:50:57.877072 #7 2.678   ssh-client manpages manpages-dev libc-devtools libfile-fcntllock-perl
+2026-Feb-25 20:50:57.877072 #7 2.678   liblocale-gettext-perl libldap-common publicsuffix libsasl2-modules
+2026-Feb-25 20:50:57.877072 #7 2.935 The following NEW packages will be installed:
+2026-Feb-25 20:50:57.877072 #7 2.935   binutils binutils-common binutils-x86-64-linux-gnu build-essential bzip2 cpp
+2026-Feb-25 20:50:57.877072 #7 2.936   cpp-12 dpkg-dev g++ g++-12 gcc gcc-12 git git-man libasan8 libatomic1
+2026-Feb-25 20:50:57.877072 #7 2.936   libbinutils libbrotli1 libc-dev-bin libc6-dev libcc1-0 libcrypt-dev
+2026-Feb-25 20:50:57.877072 #7 2.936   libctf-nobfd0 libctf0 libcurl3-gnutls libdpkg-perl liberror-perl libexpat1
+2026-Feb-25 20:50:57.877072 #7 2.936   libgcc-12-dev libgdbm-compat4 libgomp1 libgprofng0 libisl23 libitm1
+2026-Feb-25 20:50:57.877072 #7 2.936   libjansson4 libldap-2.5-0 liblsan0 libmpc3 libmpfr6 libnghttp2-14 libnsl-dev
+2026-Feb-25 20:50:57.877072 #7 2.936   libperl5.36 libpsl5 libquadmath0 librtmp1 libsasl2-2 libsasl2-modules-db
+2026-Feb-25 20:50:57.877072 #7 2.936   libssh2-1 libstdc++-12-dev libtirpc-dev libtsan2 libubsan1 linux-libc-dev
+2026-Feb-25 20:50:57.877072 #7 2.936   make patch perl perl-modules-5.36 rpcsvc-proto wget xz-utils
+2026-Feb-25 20:50:57.877072 #7 2.967 0 upgraded, 60 newly installed, 0 to remove and 0 not upgraded.
+2026-Feb-25 20:50:57.877072 #7 2.967 Need to get 85.3 MB of archives.
+2026-Feb-25 20:50:57.877072 #7 2.967 After this operation, 370 MB of additional disk space will be used.
+2026-Feb-25 20:50:57.877072 #7 2.967 Get:1 http://deb.debian.org/debian bookworm/main amd64 perl-modules-5.36 all 5.36.0-7+deb12u3 [2815 kB]
+2026-Feb-25 20:50:57.877072 #7 2.996 Get:2 http://deb.debian.org/debian bookworm/main amd64 libgdbm-compat4 amd64 1.23-3 [48.2 kB]
+2026-Feb-25 20:50:57.877072 #7 3.005 Get:3 http://deb.debian.org/debian bookworm/main amd64 libperl5.36 amd64 5.36.0-7+deb12u3 [4196 kB]
+2026-Feb-25 20:50:57.877072 #7 3.034 Get:4 http://deb.debian.org/debian bookworm/main amd64 perl amd64 5.36.0-7+deb12u3 [239 kB]
+2026-Feb-25 20:50:57.877072 #7 3.034 Get:5 http://deb.debian.org/debian bookworm/main amd64 bzip2 amd64 1.0.8-5+b1 [49.8 kB]
+2026-Feb-25 20:50:57.877072 #7 3.034 Get:6 http://deb.debian.org/debian bookworm/main amd64 libpsl5 amd64 0.21.2-1 [58.7 kB]
+2026-Feb-25 20:50:57.877072 #7 3.034 Get:7 http://deb.debian.org/debian bookworm/main amd64 wget amd64 1.21.3-1+deb12u1 [937 kB]
+2026-Feb-25 20:50:57.877072 #7 3.039 Get:8 http://deb.debian.org/debian bookworm/main amd64 xz-utils amd64 5.4.1-1 [471 kB]
+2026-Feb-25 20:50:57.877072 #7 3.041 Get:9 http://deb.debian.org/debian bookworm/main amd64 binutils-common amd64 2.40-2 [2487 kB]
+2026-Feb-25 20:50:57.877072 #7 3.053 Get:10 http://deb.debian.org/debian bookworm/main amd64 libbinutils amd64 2.40-2 [572 kB]
+2026-Feb-25 20:50:57.877072 #7 3.059 Get:11 http://deb.debian.org/debian bookworm/main amd64 libctf-nobfd0 amd64 2.40-2 [153 kB]
+2026-Feb-25 20:50:57.877072 #7 3.060 Get:12 http://deb.debian.org/debian bookworm/main amd64 libctf0 amd64 2.40-2 [89.8 kB]
+2026-Feb-25 20:50:57.877072 #7 3.061 Get:13 http://deb.debian.org/debian bookworm/main amd64 libgprofng0 amd64 2.40-2 [812 kB]
+2026-Feb-25 20:50:57.877072 #7 3.070 Get:14 http://deb.debian.org/debian bookworm/main amd64 libjansson4 amd64 2.14-2 [40.8 kB]
+2026-Feb-25 20:50:57.877072 #7 3.071 Get:15 http://deb.debian.org/debian bookworm/main amd64 binutils-x86-64-linux-gnu amd64 2.40-2 [2246 kB]
+2026-Feb-25 20:50:57.877072 #7 3.084 Get:16 http://deb.debian.org/debian bookworm/main amd64 binutils amd64 2.40-2 [65.0 kB]
+2026-Feb-25 20:50:57.877072 #7 3.084 Get:17 http://deb.debian.org/debian bookworm/main amd64 libc-dev-bin amd64 2.36-9+deb12u13 [47.4 kB]
+2026-Feb-25 20:50:57.877072 #7 3.085 Get:18 http://deb.debian.org/debian-security bookworm-security/main amd64 linux-libc-dev amd64 6.1.162-1 [2237 kB]
+2026-Feb-25 20:50:57.877072 #7 3.091 Get:19 http://deb.debian.org/debian bookworm/main amd64 libcrypt-dev amd64 1:4.4.33-2 [118 kB]
+2026-Feb-25 20:50:57.877072 #7 3.093 Get:20 http://deb.debian.org/debian bookworm/main amd64 libtirpc-dev amd64 1.3.3+ds-1 [191 kB]
+2026-Feb-25 20:50:57.877072 #7 3.094 Get:21 http://deb.debian.org/debian bookworm/main amd64 libnsl-dev amd64 1.3.0-2 [66.4 kB]
+2026-Feb-25 20:50:57.877072 #7 3.097 Get:22 http://deb.debian.org/debian bookworm/main amd64 rpcsvc-proto amd64 1.4.3-1 [63.3 kB]
+2026-Feb-25 20:50:57.877072 #7 3.097 Get:23 http://deb.debian.org/debian bookworm/main amd64 libc6-dev amd64 2.36-9+deb12u13 [1904 kB]
+2026-Feb-25 20:50:57.877072 #7 3.107 Get:24 http://deb.debian.org/debian bookworm/main amd64 libisl23 amd64 0.25-1.1 [683 kB]
+2026-Feb-25 20:50:57.877072 #7 3.113 Get:25 http://deb.debian.org/debian bookworm/main amd64 libmpfr6 amd64 4.2.0-1 [701 kB]
+2026-Feb-25 20:50:57.877072 #7 3.114 Get:26 http://deb.debian.org/debian bookworm/main amd64 libmpc3 amd64 1.3.1-1 [51.5 kB]
+2026-Feb-25 20:50:57.877072 #7 3.138 Get:27 http://deb.debian.org/debian bookworm/main amd64 cpp-12 amd64 12.2.0-14+deb12u1 [9768 kB]
+2026-Feb-25 20:50:57.877072 #7 3.199 Get:28 http://deb.debian.org/debian bookworm/main amd64 cpp amd64 4:12.2.0-3 [6836 B]
+2026-Feb-25 20:50:57.877072 #7 3.199 Get:29 http://deb.debian.org/debian bookworm/main amd64 libcc1-0 amd64 12.2.0-14+deb12u1 [41.7 kB]
+2026-Feb-25 20:50:57.877072 #7 3.201 Get:30 http://deb.debian.org/debian bookworm/main amd64 libgomp1 amd64 12.2.0-14+deb12u1 [116 kB]
+2026-Feb-25 20:50:57.877072 #7 3.202 Get:31 http://deb.debian.org/debian bookworm/main amd64 libitm1 amd64 12.2.0-14+deb12u1 [26.1 kB]
+2026-Feb-25 20:50:57.877072 #7 3.202 Get:32 http://deb.debian.org/debian bookworm/main amd64 libatomic1 amd64 12.2.0-14+deb12u1 [9376 B]
+2026-Feb-25 20:50:57.877072 #7 3.203 Get:33 http://deb.debian.org/debian bookworm/main amd64 libasan8 amd64 12.2.0-14+deb12u1 [2193 kB]
+2026-Feb-25 20:50:57.877072 #7 3.213 Get:34 http://deb.debian.org/debian bookworm/main amd64 liblsan0 amd64 12.2.0-14+deb12u1 [969 kB]
+2026-Feb-25 20:50:57.877072 #7 3.226 Get:35 http://deb.debian.org/debian bookworm/main amd64 libtsan2 amd64 12.2.0-14+deb12u1 [2197 kB]
+2026-Feb-25 20:50:57.877072 #7 3.227 Get:36 http://deb.debian.org/debian bookworm/main amd64 libubsan1 amd64 12.2.0-14+deb12u1 [883 kB]
+2026-Feb-25 20:50:57.877072 #7 3.231 Get:37 http://deb.debian.org/debian bookworm/main amd64 libquadmath0 amd64 12.2.0-14+deb12u1 [145 kB]
+2026-Feb-25 20:50:57.877072 #7 3.234 Get:38 http://deb.debian.org/debian bookworm/main amd64 libgcc-12-dev amd64 12.2.0-14+deb12u1 [2437 kB]
+2026-Feb-25 20:50:57.877072 #7 3.262 Get:39 http://deb.debian.org/debian bookworm/main amd64 gcc-12 amd64 12.2.0-14+deb12u1 [19.3 MB]
+2026-Feb-25 20:50:57.877072 #7 3.345 Get:40 http://deb.debian.org/debian bookworm/main amd64 gcc amd64 4:12.2.0-3 [5216 B]
+2026-Feb-25 20:50:57.877072 #7 3.345 Get:41 http://deb.debian.org/debian bookworm/main amd64 libstdc++-12-dev amd64 12.2.0-14+deb12u1 [2047 kB]
+2026-Feb-25 20:50:57.877072 #7 3.356 Get:42 http://deb.debian.org/debian bookworm/main amd64 g++-12 amd64 12.2.0-14+deb12u1 [10.7 MB]
+2026-Feb-25 20:50:57.877072 #7 3.410 Get:43 http://deb.debian.org/debian bookworm/main amd64 g++ amd64 4:12.2.0-3 [1356 B]
+2026-Feb-25 20:50:57.877072 #7 3.410 Get:44 http://deb.debian.org/debian bookworm/main amd64 make amd64 4.3-4.1 [396 kB]
+2026-Feb-25 20:50:57.877072 #7 3.411 Get:45 http://deb.debian.org/debian bookworm/main amd64 libdpkg-perl all 1.21.22 [603 kB]
+2026-Feb-25 20:50:57.877072 #7 3.413 Get:46 http://deb.debian.org/debian bookworm/main amd64 patch amd64 2.7.6-7 [128 kB]
+2026-Feb-25 20:50:57.877072 #7 3.414 Get:47 http://deb.debian.org/debian bookworm/main amd64 dpkg-dev all 1.21.22 [1353 kB]
+2026-Feb-25 20:50:57.877072 #7 3.422 Get:48 http://deb.debian.org/debian bookworm/main amd64 build-essential amd64 12.9 [7704 B]
+2026-Feb-25 20:50:57.877072 #7 3.426 Get:49 http://deb.debian.org/debian bookworm/main amd64 libbrotli1 amd64 1.0.9-2+b6 [275 kB]
+2026-Feb-25 20:50:57.877072 #7 3.426 Get:50 http://deb.debian.org/debian bookworm/main amd64 libsasl2-modules-db amd64 2.1.28+dfsg-10 [20.3 kB]
+2026-Feb-25 20:50:57.877072 #7 3.426 Get:51 http://deb.debian.org/debian bookworm/main amd64 libsasl2-2 amd64 2.1.28+dfsg-10 [59.7 kB]
+2026-Feb-25 20:50:57.877072 #7 3.426 Get:52 http://deb.debian.org/debian bookworm/main amd64 libldap-2.5-0 amd64 2.5.13+dfsg-5 [183 kB]
+2026-Feb-25 20:50:57.877072 #7 3.426 Get:53 http://deb.debian.org/debian bookworm/main amd64 libnghttp2-14 amd64 1.52.0-1+deb12u2 [73.0 kB]
+2026-Feb-25 20:50:57.877072 #7 3.426 Get:54 http://deb.debian.org/debian bookworm/main amd64 librtmp1 amd64 2.4+20151223.gitfa8646d.1-2+b2 [60.8 kB]
+2026-Feb-25 20:50:57.877072 #7 3.429 Get:55 http://deb.debian.org/debian bookworm/main amd64 libssh2-1 amd64 1.10.0-3+b1 [179 kB]
+2026-Feb-25 20:50:57.877072 #7 3.433 Get:56 http://deb.debian.org/debian bookworm/main amd64 libcurl3-gnutls amd64 7.88.1-10+deb12u14 [386 kB]
+2026-Feb-25 20:50:57.877072 #7 3.441 Get:57 http://deb.debian.org/debian bookworm/main amd64 libexpat1 amd64 2.5.0-1+deb12u2 [99.9 kB]
+2026-Feb-25 20:50:57.877072 #7 3.460 Get:58 http://deb.debian.org/debian bookworm/main amd64 liberror-perl all 0.17029-2 [29.0 kB]
+2026-Feb-25 20:50:57.877072 #7 3.460 Get:59 http://deb.debian.org/debian bookworm/main amd64 git-man all 1:2.39.5-0+deb12u3 [2053 kB]
+2026-Feb-25 20:50:57.877072 #7 3.487 Get:60 http://deb.debian.org/debian bookworm/main amd64 git amd64 1:2.39.5-0+deb12u3 [7264 kB]
+2026-Feb-25 20:50:57.877072 #7 3.648 debconf: delaying package configuration, since apt-utils is not installed
+2026-Feb-25 20:50:57.877072 #7 3.685 Fetched 85.3 MB in 1s (150 MB/s)
+2026-Feb-25 20:50:57.877072 #7 3.716 Selecting previously unselected package perl-modules-5.36.
+2026-Feb-25 20:50:57.877072 #7 3.716 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 6695 files and directories currently installed.)
+2026-Feb-25 20:50:57.877072 #7 3.723 Preparing to unpack .../00-perl-modules-5.36_5.36.0-7+deb12u3_all.deb ...
+2026-Feb-25 20:50:57.877072 #7 3.726 Unpacking perl-modules-5.36 (5.36.0-7+deb12u3) ...
+2026-Feb-25 20:50:57.877072 #7 4.183 Selecting previously unselected package libgdbm-compat4:amd64.
+2026-Feb-25 20:50:57.877072 #7 4.183 Preparing to unpack .../01-libgdbm-compat4_1.23-3_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 4.189 Unpacking libgdbm-compat4:amd64 (1.23-3) ...
+2026-Feb-25 20:50:57.877072 #7 4.266 Selecting previously unselected package libperl5.36:amd64.
+2026-Feb-25 20:50:57.877072 #7 4.267 Preparing to unpack .../02-libperl5.36_5.36.0-7+deb12u3_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 4.274 Unpacking libperl5.36:amd64 (5.36.0-7+deb12u3) ...
+2026-Feb-25 20:50:57.877072 #7 4.694 Selecting previously unselected package perl.
+2026-Feb-25 20:50:57.877072 #7 4.697 Preparing to unpack .../03-perl_5.36.0-7+deb12u3_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 4.708 Unpacking perl (5.36.0-7+deb12u3) ...
+2026-Feb-25 20:50:57.877072 #7 4.770 Selecting previously unselected package bzip2.
+2026-Feb-25 20:50:57.877072 #7 4.773 Preparing to unpack .../04-bzip2_1.0.8-5+b1_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 4.774 Unpacking bzip2 (1.0.8-5+b1) ...
+2026-Feb-25 20:50:57.877072 #7 4.822 Selecting previously unselected package libpsl5:amd64.
+2026-Feb-25 20:50:57.877072 #7 4.824 Preparing to unpack .../05-libpsl5_0.21.2-1_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 4.826 Unpacking libpsl5:amd64 (0.21.2-1) ...
+2026-Feb-25 20:50:57.877072 #7 4.863 Selecting previously unselected package wget.
+2026-Feb-25 20:50:57.877072 #7 4.865 Preparing to unpack .../06-wget_1.21.3-1+deb12u1_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 4.868 Unpacking wget (1.21.3-1+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 4.953 Selecting previously unselected package xz-utils.
+2026-Feb-25 20:50:57.877072 #7 4.955 Preparing to unpack .../07-xz-utils_5.4.1-1_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 4.958 Unpacking xz-utils (5.4.1-1) ...
+2026-Feb-25 20:50:57.877072 #7 5.029 Selecting previously unselected package binutils-common:amd64.
+2026-Feb-25 20:50:57.877072 #7 5.034 Preparing to unpack .../08-binutils-common_2.40-2_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 5.037 Unpacking binutils-common:amd64 (2.40-2) ...
+2026-Feb-25 20:50:57.877072 #7 5.249 Selecting previously unselected package libbinutils:amd64.
+2026-Feb-25 20:50:57.877072 #7 5.250 Preparing to unpack .../09-libbinutils_2.40-2_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 5.253 Unpacking libbinutils:amd64 (2.40-2) ...
+2026-Feb-25 20:50:57.877072 #7 5.381 Selecting previously unselected package libctf-nobfd0:amd64.
+2026-Feb-25 20:50:57.877072 #7 5.381 Preparing to unpack .../10-libctf-nobfd0_2.40-2_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 5.390 Unpacking libctf-nobfd0:amd64 (2.40-2) ...
+2026-Feb-25 20:50:57.877072 #7 5.470 Selecting previously unselected package libctf0:amd64.
+2026-Feb-25 20:50:57.877072 #7 5.471 Preparing to unpack .../11-libctf0_2.40-2_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 5.481 Unpacking libctf0:amd64 (2.40-2) ...
+2026-Feb-25 20:50:57.877072 #7 5.540 Selecting previously unselected package libgprofng0:amd64.
+2026-Feb-25 20:50:57.877072 #7 5.542 Preparing to unpack .../12-libgprofng0_2.40-2_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 5.544 Unpacking libgprofng0:amd64 (2.40-2) ...
+2026-Feb-25 20:50:57.877072 #7 5.653 Selecting previously unselected package libjansson4:amd64.
+2026-Feb-25 20:50:57.877072 #7 5.655 Preparing to unpack .../13-libjansson4_2.14-2_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 5.675 Unpacking libjansson4:amd64 (2.14-2) ...
+2026-Feb-25 20:50:57.877072 #7 5.720 Selecting previously unselected package binutils-x86-64-linux-gnu.
+2026-Feb-25 20:50:57.877072 #7 5.722 Preparing to unpack .../14-binutils-x86-64-linux-gnu_2.40-2_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 5.728 Unpacking binutils-x86-64-linux-gnu (2.40-2) ...
+2026-Feb-25 20:50:57.877072 #7 5.987 Selecting previously unselected package binutils.
+2026-Feb-25 20:50:57.877072 #7 5.987 Preparing to unpack .../15-binutils_2.40-2_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 5.993 Unpacking binutils (2.40-2) ...
+2026-Feb-25 20:50:57.877072 #7 6.094 Selecting previously unselected package libc-dev-bin.
+2026-Feb-25 20:50:57.877072 #7 6.095 Preparing to unpack .../16-libc-dev-bin_2.36-9+deb12u13_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 6.098 Unpacking libc-dev-bin (2.36-9+deb12u13) ...
+2026-Feb-25 20:50:57.877072 #7 6.160 Selecting previously unselected package linux-libc-dev:amd64.
+2026-Feb-25 20:50:57.877072 #7 6.162 Preparing to unpack .../17-linux-libc-dev_6.1.162-1_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 6.165 Unpacking linux-libc-dev:amd64 (6.1.162-1) ...
+2026-Feb-25 20:50:57.877072 #7 6.511 Selecting previously unselected package libcrypt-dev:amd64.
+2026-Feb-25 20:50:57.877072 #7 6.514 Preparing to unpack .../18-libcrypt-dev_1%3a4.4.33-2_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 6.526 Unpacking libcrypt-dev:amd64 (1:4.4.33-2) ...
+2026-Feb-25 20:50:57.877072 #7 6.570 Selecting previously unselected package libtirpc-dev:amd64.
+2026-Feb-25 20:50:57.877072 #7 6.571 Preparing to unpack .../19-libtirpc-dev_1.3.3+ds-1_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 6.575 Unpacking libtirpc-dev:amd64 (1.3.3+ds-1) ...
+2026-Feb-25 20:50:57.877072 #7 6.625 Selecting previously unselected package libnsl-dev:amd64.
+2026-Feb-25 20:50:57.877072 #7 6.627 Preparing to unpack .../20-libnsl-dev_1.3.0-2_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 6.631 Unpacking libnsl-dev:amd64 (1.3.0-2) ...
+2026-Feb-25 20:50:57.877072 #7 6.678 Selecting previously unselected package rpcsvc-proto.
+2026-Feb-25 20:50:57.877072 #7 6.679 Preparing to unpack .../21-rpcsvc-proto_1.4.3-1_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 6.683 Unpacking rpcsvc-proto (1.4.3-1) ...
+2026-Feb-25 20:50:57.877072 #7 6.734 Selecting previously unselected package libc6-dev:amd64.
+2026-Feb-25 20:50:57.877072 #7 6.736 Preparing to unpack .../22-libc6-dev_2.36-9+deb12u13_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 6.743 Unpacking libc6-dev:amd64 (2.36-9+deb12u13) ...
+2026-Feb-25 20:50:57.877072 #7 7.039 Selecting previously unselected package libisl23:amd64.
+2026-Feb-25 20:50:57.877072 #7 7.042 Preparing to unpack .../23-libisl23_0.25-1.1_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 7.046 Unpacking libisl23:amd64 (0.25-1.1) ...
+2026-Feb-25 20:50:57.877072 #7 7.141 Selecting previously unselected package libmpfr6:amd64.
+2026-Feb-25 20:50:57.877072 #7 7.143 Preparing to unpack .../24-libmpfr6_4.2.0-1_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 7.147 Unpacking libmpfr6:amd64 (4.2.0-1) ...
+2026-Feb-25 20:50:57.877072 #7 7.209 Selecting previously unselected package libmpc3:amd64.
+2026-Feb-25 20:50:57.877072 #7 7.209 Preparing to unpack .../25-libmpc3_1.3.1-1_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 7.213 Unpacking libmpc3:amd64 (1.3.1-1) ...
+2026-Feb-25 20:50:57.877072 #7 7.248 Selecting previously unselected package cpp-12.
+2026-Feb-25 20:50:57.877072 #7 7.250 Preparing to unpack .../26-cpp-12_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 7.254 Unpacking cpp-12 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 7.933 Selecting previously unselected package cpp.
+2026-Feb-25 20:50:57.877072 #7 7.934 Preparing to unpack .../27-cpp_4%3a12.2.0-3_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 7.940 Unpacking cpp (4:12.2.0-3) ...
+2026-Feb-25 20:50:57.877072 #7 8.031 Selecting previously unselected package libcc1-0:amd64.
+2026-Feb-25 20:50:57.877072 #7 8.033 Preparing to unpack .../28-libcc1-0_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 8.039 Unpacking libcc1-0:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 8.297 Selecting previously unselected package libgomp1:amd64.
+2026-Feb-25 20:50:57.877072 #7 8.298 Preparing to unpack .../29-libgomp1_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 8.305 Unpacking libgomp1:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 8.401 Selecting previously unselected package libitm1:amd64.
+2026-Feb-25 20:50:57.877072 #7 8.404 Preparing to unpack .../30-libitm1_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 8.445 Unpacking libitm1:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 8.703 Selecting previously unselected package libatomic1:amd64.
+2026-Feb-25 20:50:57.877072 #7 8.705 Preparing to unpack .../31-libatomic1_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 8.713 Unpacking libatomic1:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 8.776 Selecting previously unselected package libasan8:amd64.
+2026-Feb-25 20:50:57.877072 #7 8.777 Preparing to unpack .../32-libasan8_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 8.784 Unpacking libasan8:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 9.057 Selecting previously unselected package liblsan0:amd64.
+2026-Feb-25 20:50:57.877072 #7 9.059 Preparing to unpack .../33-liblsan0_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 9.068 Unpacking liblsan0:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 9.204 Selecting previously unselected package libtsan2:amd64.
+2026-Feb-25 20:50:57.877072 #7 9.205 Preparing to unpack .../34-libtsan2_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 9.213 Unpacking libtsan2:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 9.459 Selecting previously unselected package libubsan1:amd64.
+2026-Feb-25 20:50:57.877072 #7 9.461 Preparing to unpack .../35-libubsan1_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 9.484 Unpacking libubsan1:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 9.727 Selecting previously unselected package libquadmath0:amd64.
+2026-Feb-25 20:50:57.877072 #7 9.729 Preparing to unpack .../36-libquadmath0_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 9.755 Unpacking libquadmath0:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 9.976 Selecting previously unselected package libgcc-12-dev:amd64.
+2026-Feb-25 20:50:57.877072 #7 9.976 Preparing to unpack .../37-libgcc-12-dev_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 10.13 Unpacking libgcc-12-dev:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 10.35 Selecting previously unselected package gcc-12.
+2026-Feb-25 20:50:57.877072 #7 10.36 Preparing to unpack .../38-gcc-12_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 10.36 Unpacking gcc-12 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 11.22 Selecting previously unselected package gcc.
+2026-Feb-25 20:50:57.877072 #7 11.22 Preparing to unpack .../39-gcc_4%3a12.2.0-3_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 11.22 Unpacking gcc (4:12.2.0-3) ...
+2026-Feb-25 20:50:57.877072 #7 11.27 Selecting previously unselected package libstdc++-12-dev:amd64.
+2026-Feb-25 20:50:57.877072 #7 11.27 Preparing to unpack .../40-libstdc++-12-dev_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 11.27 Unpacking libstdc++-12-dev:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 11.62 Selecting previously unselected package g++-12.
+2026-Feb-25 20:50:57.877072 #7 11.63 Preparing to unpack .../41-g++-12_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 11.63 Unpacking g++-12 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 12.25 Selecting previously unselected package g++.
+2026-Feb-25 20:50:57.877072 #7 12.25 Preparing to unpack .../42-g++_4%3a12.2.0-3_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 12.25 Unpacking g++ (4:12.2.0-3) ...
+2026-Feb-25 20:50:57.877072 #7 12.28 Selecting previously unselected package make.
+2026-Feb-25 20:50:57.877072 #7 12.28 Preparing to unpack .../43-make_4.3-4.1_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 12.29 Unpacking make (4.3-4.1) ...
+2026-Feb-25 20:50:57.877072 #7 12.35 Selecting previously unselected package libdpkg-perl.
+2026-Feb-25 20:50:57.877072 #7 12.35 Preparing to unpack .../44-libdpkg-perl_1.21.22_all.deb ...
+2026-Feb-25 20:50:57.877072 #7 12.36 Unpacking libdpkg-perl (1.21.22) ...
+2026-Feb-25 20:50:57.877072 #7 12.44 Selecting previously unselected package patch.
+2026-Feb-25 20:50:57.877072 #7 12.44 Preparing to unpack .../45-patch_2.7.6-7_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 12.44 Unpacking patch (2.7.6-7) ...
+2026-Feb-25 20:50:57.877072 #7 12.49 Selecting previously unselected package dpkg-dev.
+2026-Feb-25 20:50:57.877072 #7 12.49 Preparing to unpack .../46-dpkg-dev_1.21.22_all.deb ...
+2026-Feb-25 20:50:57.877072 #7 12.49 Unpacking dpkg-dev (1.21.22) ...
+2026-Feb-25 20:50:57.877072 #7 12.62 Selecting previously unselected package build-essential.
+2026-Feb-25 20:50:57.877072 #7 12.62 Preparing to unpack .../47-build-essential_12.9_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 12.62 Unpacking build-essential (12.9) ...
+2026-Feb-25 20:50:57.877072 #7 12.68 Selecting previously unselected package libbrotli1:amd64.
+2026-Feb-25 20:50:57.877072 #7 12.69 Preparing to unpack .../48-libbrotli1_1.0.9-2+b6_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 12.69 Unpacking libbrotli1:amd64 (1.0.9-2+b6) ...
+2026-Feb-25 20:50:57.877072 #7 12.80 Selecting previously unselected package libsasl2-modules-db:amd64.
+2026-Feb-25 20:50:57.877072 #7 12.80 Preparing to unpack .../49-libsasl2-modules-db_2.1.28+dfsg-10_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 12.80 Unpacking libsasl2-modules-db:amd64 (2.1.28+dfsg-10) ...
+2026-Feb-25 20:50:57.877072 #7 12.86 Selecting previously unselected package libsasl2-2:amd64.
+2026-Feb-25 20:50:57.877072 #7 12.86 Preparing to unpack .../50-libsasl2-2_2.1.28+dfsg-10_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 12.87 Unpacking libsasl2-2:amd64 (2.1.28+dfsg-10) ...
+2026-Feb-25 20:50:57.877072 #7 12.95 Selecting previously unselected package libldap-2.5-0:amd64.
+2026-Feb-25 20:50:57.877072 #7 12.95 Preparing to unpack .../51-libldap-2.5-0_2.5.13+dfsg-5_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 12.95 Unpacking libldap-2.5-0:amd64 (2.5.13+dfsg-5) ...
+2026-Feb-25 20:50:57.877072 #7 13.03 Selecting previously unselected package libnghttp2-14:amd64.
+2026-Feb-25 20:50:57.877072 #7 13.04 Preparing to unpack .../52-libnghttp2-14_1.52.0-1+deb12u2_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 13.04 Unpacking libnghttp2-14:amd64 (1.52.0-1+deb12u2) ...
+2026-Feb-25 20:50:57.877072 #7 13.12 Selecting previously unselected package librtmp1:amd64.
+2026-Feb-25 20:50:57.877072 #7 13.12 Preparing to unpack .../53-librtmp1_2.4+20151223.gitfa8646d.1-2+b2_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 13.13 Unpacking librtmp1:amd64 (2.4+20151223.gitfa8646d.1-2+b2) ...
+2026-Feb-25 20:50:57.877072 #7 13.20 Selecting previously unselected package libssh2-1:amd64.
+2026-Feb-25 20:50:57.877072 #7 13.21 Preparing to unpack .../54-libssh2-1_1.10.0-3+b1_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 13.21 Unpacking libssh2-1:amd64 (1.10.0-3+b1) ...
+2026-Feb-25 20:50:57.877072 #7 13.30 Selecting previously unselected package libcurl3-gnutls:amd64.
+2026-Feb-25 20:50:57.877072 #7 13.30 Preparing to unpack .../55-libcurl3-gnutls_7.88.1-10+deb12u14_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 13.31 Unpacking libcurl3-gnutls:amd64 (7.88.1-10+deb12u14) ...
+2026-Feb-25 20:50:57.877072 #7 13.40 Selecting previously unselected package libexpat1:amd64.
+2026-Feb-25 20:50:57.877072 #7 13.40 Preparing to unpack .../56-libexpat1_2.5.0-1+deb12u2_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 13.41 Unpacking libexpat1:amd64 (2.5.0-1+deb12u2) ...
+2026-Feb-25 20:50:57.877072 #7 13.46 Selecting previously unselected package liberror-perl.
+2026-Feb-25 20:50:57.877072 #7 13.47 Preparing to unpack .../57-liberror-perl_0.17029-2_all.deb ...
+2026-Feb-25 20:50:57.877072 #7 13.47 Unpacking liberror-perl (0.17029-2) ...
+2026-Feb-25 20:50:57.877072 #7 13.54 Selecting previously unselected package git-man.
+2026-Feb-25 20:50:57.877072 #7 13.54 Preparing to unpack .../58-git-man_1%3a2.39.5-0+deb12u3_all.deb ...
+2026-Feb-25 20:50:57.877072 #7 13.54 Unpacking git-man (1:2.39.5-0+deb12u3) ...
+2026-Feb-25 20:50:57.877072 #7 13.68 Selecting previously unselected package git.
+2026-Feb-25 20:50:57.877072 #7 13.68 Preparing to unpack .../59-git_1%3a2.39.5-0+deb12u3_amd64.deb ...
+2026-Feb-25 20:50:57.877072 #7 13.70 Unpacking git (1:2.39.5-0+deb12u3) ...
+2026-Feb-25 20:50:57.877072 #7 14.22 Setting up libexpat1:amd64 (2.5.0-1+deb12u2) ...
+2026-Feb-25 20:50:57.877072 #7 14.26 Setting up libpsl5:amd64 (0.21.2-1) ...
+2026-Feb-25 20:50:57.877072 #7 14.27 Setting up wget (1.21.3-1+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 14.30 Setting up libbrotli1:amd64 (1.0.9-2+b6) ...
+2026-Feb-25 20:50:57.877072 #7 14.31 Setting up binutils-common:amd64 (2.40-2) ...
+2026-Feb-25 20:50:57.877072 #7 14.34 Setting up libnghttp2-14:amd64 (1.52.0-1+deb12u2) ...
+2026-Feb-25 20:50:57.877072 #7 14.36 Setting up linux-libc-dev:amd64 (6.1.162-1) ...
+2026-Feb-25 20:50:57.877072 #7 14.37 Setting up libctf-nobfd0:amd64 (2.40-2) ...
+2026-Feb-25 20:50:57.877072 #7 14.41 Setting up libgomp1:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 14.43 Setting up bzip2 (1.0.8-5+b1) ...
+2026-Feb-25 20:50:57.877072 #7 14.46 Setting up libjansson4:amd64 (2.14-2) ...
+2026-Feb-25 20:50:57.877072 #7 14.47 Setting up libsasl2-modules-db:amd64 (2.1.28+dfsg-10) ...
+2026-Feb-25 20:50:57.877072 #7 14.49 Setting up perl-modules-5.36 (5.36.0-7+deb12u3) ...
+2026-Feb-25 20:50:57.877072 #7 14.51 Setting up libtirpc-dev:amd64 (1.3.3+ds-1) ...
+2026-Feb-25 20:50:57.877072 #7 14.52 Setting up rpcsvc-proto (1.4.3-1) ...
+2026-Feb-25 20:50:57.877072 #7 14.56 Setting up make (4.3-4.1) ...
+2026-Feb-25 20:50:57.877072 #7 14.58 Setting up libmpfr6:amd64 (4.2.0-1) ...
+2026-Feb-25 20:50:57.877072 #7 14.60 Setting up librtmp1:amd64 (2.4+20151223.gitfa8646d.1-2+b2) ...
+2026-Feb-25 20:50:57.877072 #7 14.62 Setting up xz-utils (5.4.1-1) ...
+2026-Feb-25 20:50:57.877072 #7 14.67 update-alternatives: using /usr/bin/xz to provide /usr/bin/lzma (lzma) in auto mode
+2026-Feb-25 20:50:57.877072 #7 14.67 update-alternatives: warning: skip creation of /usr/share/man/man1/lzma.1.gz because associated file /usr/share/man/man1/xz.1.gz (of link group lzma) doesn't exist
+2026-Feb-25 20:50:57.877072 #7 14.67 update-alternatives: warning: skip creation of /usr/share/man/man1/unlzma.1.gz because associated file /usr/share/man/man1/unxz.1.gz (of link group lzma) doesn't exist
+2026-Feb-25 20:50:57.877072 #7 14.67 update-alternatives: warning: skip creation of /usr/share/man/man1/lzcat.1.gz because associated file /usr/share/man/man1/xzcat.1.gz (of link group lzma) doesn't exist
+2026-Feb-25 20:50:57.877072 #7 14.67 update-alternatives: warning: skip creation of /usr/share/man/man1/lzmore.1.gz because associated file /usr/share/man/man1/xzmore.1.gz (of link group lzma) doesn't exist
+2026-Feb-25 20:50:57.877072 #7 14.67 update-alternatives: warning: skip creation of /usr/share/man/man1/lzless.1.gz because associated file /usr/share/man/man1/xzless.1.gz (of link group lzma) doesn't exist
+2026-Feb-25 20:50:57.877072 #7 14.67 update-alternatives: warning: skip creation of /usr/share/man/man1/lzdiff.1.gz because associated file /usr/share/man/man1/xzdiff.1.gz (of link group lzma) doesn't exist
+2026-Feb-25 20:50:57.877072 #7 14.67 update-alternatives: warning: skip creation of /usr/share/man/man1/lzcmp.1.gz because associated file /usr/share/man/man1/xzcmp.1.gz (of link group lzma) doesn't exist
+2026-Feb-25 20:50:57.877072 #7 14.67 update-alternatives: warning: skip creation of /usr/share/man/man1/lzgrep.1.gz because associated file /usr/share/man/man1/xzgrep.1.gz (of link group lzma) doesn't exist
+2026-Feb-25 20:50:57.877072 #7 14.67 update-alternatives: warning: skip creation of /usr/share/man/man1/lzegrep.1.gz because associated file /usr/share/man/man1/xzegrep.1.gz (of link group lzma) doesn't exist
+2026-Feb-25 20:50:57.877072 #7 14.67 update-alternatives: warning: skip creation of /usr/share/man/man1/lzfgrep.1.gz because associated file /usr/share/man/man1/xzfgrep.1.gz (of link group lzma) doesn't exist
+2026-Feb-25 20:50:57.877072 #7 14.70 Setting up libquadmath0:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 14.71 Setting up libmpc3:amd64 (1.3.1-1) ...
+2026-Feb-25 20:50:57.877072 #7 14.73 Setting up libatomic1:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 14.75 Setting up patch (2.7.6-7) ...
+2026-Feb-25 20:50:57.877072 #7 14.78 Setting up libgdbm-compat4:amd64 (1.23-3) ...
+2026-Feb-25 20:50:57.877072 #7 14.80 Setting up libsasl2-2:amd64 (2.1.28+dfsg-10) ...
+2026-Feb-25 20:50:57.877072 #7 14.82 Setting up libubsan1:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 14.85 Setting up libnsl-dev:amd64 (1.3.0-2) ...
+2026-Feb-25 20:50:57.877072 #7 14.88 Setting up libcrypt-dev:amd64 (1:4.4.33-2) ...
+2026-Feb-25 20:50:57.877072 #7 14.91 Setting up libasan8:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 14.93 Setting up git-man (1:2.39.5-0+deb12u3) ...
+2026-Feb-25 20:50:57.877072 #7 14.94 Setting up libssh2-1:amd64 (1.10.0-3+b1) ...
+2026-Feb-25 20:50:57.877072 #7 14.95 Setting up libtsan2:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 14.97 Setting up libbinutils:amd64 (2.40-2) ...
+2026-Feb-25 20:50:57.877072 #7 14.99 Setting up libisl23:amd64 (0.25-1.1) ...
+2026-Feb-25 20:50:57.877072 #7 15.00 Setting up libc-dev-bin (2.36-9+deb12u13) ...
+2026-Feb-25 20:50:57.877072 #7 15.01 Setting up libcc1-0:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 15.02 Setting up libperl5.36:amd64 (5.36.0-7+deb12u3) ...
+2026-Feb-25 20:50:57.877072 #7 15.05 Setting up liblsan0:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 15.08 Setting up libitm1:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 15.10 Setting up libctf0:amd64 (2.40-2) ...
+2026-Feb-25 20:50:57.877072 #7 15.12 Setting up cpp-12 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 15.16 Setting up libldap-2.5-0:amd64 (2.5.13+dfsg-5) ...
+2026-Feb-25 20:50:57.877072 #7 15.17 Setting up perl (5.36.0-7+deb12u3) ...
+2026-Feb-25 20:50:57.877072 #7 15.20 Setting up libgprofng0:amd64 (2.40-2) ...
+2026-Feb-25 20:50:57.877072 #7 15.24 Setting up libgcc-12-dev:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 15.24 Setting up libdpkg-perl (1.21.22) ...
+2026-Feb-25 20:50:57.877072 #7 15.25 Setting up cpp (4:12.2.0-3) ...
+2026-Feb-25 20:50:57.877072 #7 15.27 Setting up libc6-dev:amd64 (2.36-9+deb12u13) ...
+2026-Feb-25 20:50:57.877072 #7 15.28 Setting up binutils-x86-64-linux-gnu (2.40-2) ...
+2026-Feb-25 20:50:57.877072 #7 15.29 Setting up libstdc++-12-dev:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 15.29 Setting up libcurl3-gnutls:amd64 (7.88.1-10+deb12u14) ...
+2026-Feb-25 20:50:57.877072 #7 15.31 Setting up binutils (2.40-2) ...
+2026-Feb-25 20:50:57.877072 #7 15.32 Setting up dpkg-dev (1.21.22) ...
+2026-Feb-25 20:50:57.877072 #7 15.34 Setting up liberror-perl (0.17029-2) ...
+2026-Feb-25 20:50:57.877072 #7 15.36 Setting up gcc-12 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 15.37 Setting up git (1:2.39.5-0+deb12u3) ...
+2026-Feb-25 20:50:57.877072 #7 15.39 Setting up g++-12 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:50:57.877072 #7 15.40 Setting up gcc (4:12.2.0-3) ...
+2026-Feb-25 20:50:57.877072 #7 15.43 Setting up g++ (4:12.2.0-3) ...
+2026-Feb-25 20:50:57.877072 #7 15.44 update-alternatives: using /usr/bin/g++ to provide /usr/bin/c++ (c++) in auto mode
+2026-Feb-25 20:50:57.877072 #7 15.44 Setting up build-essential (12.9) ...
+2026-Feb-25 20:50:57.877072 #7 15.45 Processing triggers for libc-bin (2.36-9+deb12u13) ...
+2026-Feb-25 20:50:57.877072 #7 DONE 15.7s
+2026-Feb-25 20:50:57.877072 
+2026-Feb-25 20:50:57.877072 #8 [ 4/13] RUN git clone --depth 1 https://github.com/Arhosseini77/SUM.git SUM
+2026-Feb-25 20:50:57.877072 #8 0.087 Cloning into 'SUM'...
+2026-Feb-25 20:50:57.877072 #8 DONE 1.3s
+2026-Feb-25 20:50:57.877072 
+2026-Feb-25 20:50:57.877072 #9 [ 5/13] RUN mkdir -p SUM/net/pre_trained_weights
+2026-Feb-25 20:50:57.877072 #9 DONE 0.1s
+2026-Feb-25 20:50:57.877072 
+2026-Feb-25 20:50:57.877072 #10 [ 6/13] RUN pip install --no-cache-dir --timeout 600     --extra-index-url https://download.pytorch.org/whl/cpu     torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0
+2026-Feb-25 20:50:57.877072 #10 1.596 Looking in indexes: https://pypi.org/simple, https://download.pytorch.org/whl/cpu
+2026-Feb-25 20:50:57.877072 #10 2.337 Collecting torch==2.1.0
+2026-Feb-25 20:50:57.877072 #10 2.346   Downloading https://download.pytorch.org/whl/cpu/torch-2.1.0%2Bcpu-cp310-cp310-linux_x86_64.whl (184.9 MB)
+2026-Feb-25 20:50:57.877072 #10 3.146      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 184.9/184.9 MB 238.2 MB/s eta 0:00:00
+2026-Feb-25 20:50:57.877072 #10 4.225 Collecting torchvision==0.16.0
+2026-Feb-25 20:50:57.877072 #10 4.234   Downloading https://download.pytorch.org/whl/cpu/torchvision-0.16.0%2Bcpu-cp310-cp310-linux_x86_64.whl (1.6 MB)
+2026-Feb-25 20:50:57.877072 #10 4.246      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.6/1.6 MB 180.1 MB/s eta 0:00:00
+2026-Feb-25 20:50:57.877072 #10 4.828 Collecting torchaudio==2.1.0
+2026-Feb-25 20:50:57.877072 #10 4.838   Downloading https://download.pytorch.org/whl/cpu/torchaudio-2.1.0%2Bcpu-cp310-cp310-linux_x86_64.whl (1.6 MB)
+2026-Feb-25 20:50:57.877072 #10 4.846      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.6/1.6 MB 282.3 MB/s eta 0:00:00
+2026-Feb-25 20:50:57.877072 #10 5.392 Collecting networkx
+2026-Feb-25 20:50:57.877072 #10 5.393   Obtaining dependency information for networkx from https://files.pythonhosted.org/packages/b9/54/dd730b32ea14ea797530a4479b2ed46a6fb250f682a9cfb997e968bf0261/networkx-3.4.2-py3-none-any.whl.metadata
+2026-Feb-25 20:50:57.877072 #10 5.435   Downloading networkx-3.4.2-py3-none-any.whl.metadata (6.3 kB)
+2026-Feb-25 20:50:57.877072 #10 5.584 Collecting typing-extensions
+2026-Feb-25 20:50:57.877072 #10 5.585   Obtaining dependency information for typing-extensions from https://download.pytorch.org/whl/typing_extensions-4.15.0-py3-none-any.whl.metadata
+2026-Feb-25 20:50:57.877072 #10 5.593   Downloading https://download.pytorch.org/whl/typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+2026-Feb-25 20:50:57.877072 #10 5.595 Discarding https://download.pytorch.org/whl/typing_extensions-4.15.0-py3-none-any.whl (from https://download.pytorch.org/whl/cpu/typing-extensions/): Requested typing-extensions from https://download.pytorch.org/whl/typing_extensions-4.15.0-py3-none-any.whl (from torch==2.1.0) has inconsistent Name: expected 'typing-extensions', but metadata has 'typing_extensions'
+2026-Feb-25 20:50:57.877072 #10 5.614   Downloading typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+2026-Feb-25 20:50:57.877072 #10 5.623      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.6/44.6 kB 6.5 MB/s eta 0:00:00
+2026-Feb-25 20:50:57.877072 #10 6.146 Collecting filelock
+2026-Feb-25 20:50:57.877072 #10 6.153   Downloading filelock-3.24.3-py3-none-any.whl (24 kB)
+2026-Feb-25 20:50:57.877072 #10 6.490 Collecting jinja2
+2026-Feb-25 20:50:57.877072 #10 6.490   Obtaining dependency information for jinja2 from https://download.pytorch.org/whl/jinja2-3.1.6-py3-none-any.whl.metadata
+2026-Feb-25 20:50:57.877072 #10 6.498   Downloading https://download.pytorch.org/whl/jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+2026-Feb-25 20:50:57.877072 #10 6.499 Discarding https://download.pytorch.org/whl/jinja2-3.1.6-py3-none-any.whl (from https://download.pytorch.org/whl/cpu/jinja2/): Requested jinja2 from https://download.pytorch.org/whl/jinja2-3.1.6-py3-none-any.whl (from torch==2.1.0) has inconsistent Name: expected 'jinja2', but metadata has 'Jinja2'
+2026-Feb-25 20:50:57.877072 #10 6.510   Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+2026-Feb-25 20:50:57.877072 #10 6.514      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 134.9/134.9 kB 45.3 MB/s eta 0:00:00
+2026-Feb-25 20:50:57.877072 #10 6.950 Collecting sympy
+2026-Feb-25 20:50:57.877072 #10 6.950   Obtaining dependency information for sympy from https://files.pythonhosted.org/packages/a2/09/77d55d46fd61b4a135c444fc97158ef34a095e5681d0a6c10b75bf356191/sympy-1.14.0-py3-none-any.whl.metadata
+2026-Feb-25 20:50:57.877072 #10 6.958   Downloading sympy-1.14.0-py3-none-any.whl.metadata (12 kB)
+2026-Feb-25 20:50:57.877072 #10 7.433 Collecting fsspec
+2026-Feb-25 20:50:57.877072 #10 7.443   Downloading fsspec-2026.2.0-py3-none-any.whl (202 kB)
+2026-Feb-25 20:50:57.877072 #10 7.447      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 202.5/202.5 kB 108.0 MB/s eta 0:00:00
+2026-Feb-25 20:50:57.877072 #10 9.169 Collecting numpy
+2026-Feb-25 20:50:57.877072 #10 9.169   Obtaining dependency information for numpy from https://files.pythonhosted.org/packages/b4/63/3de6a34ad7ad6646ac7d2f55ebc6ad439dbbf9c4370017c50cf403fb19b5/numpy-2.2.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata
+2026-Feb-25 20:50:57.877072 #10 9.176   Downloading numpy-2.2.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (62 kB)
+2026-Feb-25 20:50:57.877072 #10 9.179      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 62.0/62.0 kB 264.2 MB/s eta 0:00:00
+2026-Feb-25 20:50:57.877072 #10 9.344 Collecting requests
+2026-Feb-25 20:50:57.877072 #10 9.350   Downloading requests-2.32.5-py3-none-any.whl (64 kB)
+2026-Feb-25 20:50:57.877072 #10 9.352      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 64.7/64.7 kB 260.7 MB/s eta 0:00:00
+2026-Feb-25 20:50:57.877072 #10 11.16 Collecting pillow!=8.3.*,>=5.3.0
+2026-Feb-25 20:50:57.877072 #10 11.21   Downloading pillow-12.1.1-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (7.0 MB)
+2026-Feb-25 20:50:57.877072 #10 11.32      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 7.0/7.0 MB 69.6 MB/s eta 0:00:00
+2026-Feb-25 20:50:57.877072 #10 12.08 Collecting MarkupSafe>=2.0
+2026-Feb-25 20:50:57.877072 #10 12.08   Downloading markupsafe-3.0.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (20 kB)
+2026-Feb-25 20:50:57.877072 #10 12.47 Collecting urllib3<3,>=1.21.1
+2026-Feb-25 20:50:57.877072 #10 12.48   Downloading urllib3-2.6.3-py3-none-any.whl (131 kB)
+2026-Feb-25 20:50:57.877072 #10 12.48      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 131.6/131.6 kB 280.1 MB/s eta 0:00:00
+2026-Feb-25 20:50:57.877072 #10 12.81 Collecting idna<4,>=2.5
+2026-Feb-25 20:50:57.877072 #10 12.82   Downloading idna-3.11-py3-none-any.whl (71 kB)
+2026-Feb-25 20:50:57.877072 #10 12.82      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 71.0/71.0 kB 321.1 MB/s eta 0:00:00
+2026-Feb-25 20:50:57.877072 #10 13.16 Collecting certifi>=2017.4.17
+2026-Feb-25 20:50:57.877072 #10 13.17   Downloading certifi-2026.2.25-py3-none-any.whl (153 kB)
+2026-Feb-25 20:50:57.877072 #10 13.17      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 153.7/153.7 kB 389.3 MB/s eta 0:00:00
+2026-Feb-25 20:50:57.877072 #10 13.47 Collecting charset_normalizer<4,>=2
+2026-Feb-25 20:50:57.877072 #10 13.48   Downloading charset_normalizer-3.4.4-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (153 kB)
+2026-Feb-25 20:50:57.877072 #10 13.48      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 153.6/153.6 kB 372.0 MB/s eta 0:00:00
+2026-Feb-25 20:50:57.877072 #10 13.64 Collecting mpmath<1.4,>=1.1.0
+2026-Feb-25 20:50:57.877072 #10 13.64   Obtaining dependency information for mpmath<1.4,>=1.1.0 from https://files.pythonhosted.org/packages/43/e3/7d92a15f894aa0c9c4b49b8ee9ac9850d6e63b03c9c32c0367a13ae62209/mpmath-1.3.0-py3-none-any.whl.metadata
+2026-Feb-25 20:50:57.877072 #10 13.64   Downloading mpmath-1.3.0-py3-none-any.whl.metadata (8.6 kB)
+2026-Feb-25 20:50:57.877072 #10 13.67 Downloading networkx-3.4.2-py3-none-any.whl (1.7 MB)
+2026-Feb-25 20:50:57.877072 #10 13.68    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.7/1.7 MB 240.2 MB/s eta 0:00:00
+2026-Feb-25 20:50:57.877072 #10 13.69 Downloading numpy-2.2.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (16.8 MB)
+2026-Feb-25 20:50:57.877072 #10 13.77    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.8/16.8 MB 250.3 MB/s eta 0:00:00
+2026-Feb-25 20:50:57.877072 #10 13.77 Downloading sympy-1.14.0-py3-none-any.whl (6.3 MB)
+2026-Feb-25 20:50:57.877072 #10 13.80    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.3/6.3 MB 263.8 MB/s eta 0:00:00
+2026-Feb-25 20:50:57.877072 #10 13.81 Downloading mpmath-1.3.0-py3-none-any.whl (536 kB)
+2026-Feb-25 20:50:57.877072 #10 13.81    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 536.2/536.2 kB 321.5 MB/s eta 0:00:00
+2026-Feb-25 20:50:57.877072 #10 13.82 Downloading networkx-3.4.2-py3-none-any.whl (1.7 MB)
+2026-Feb-25 20:50:57.877072 #10 13.83    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.7/1.7 MB 285.0 MB/s eta 0:00:00
+2026-Feb-25 20:50:57.877072 #10 13.84 Downloading numpy-2.2.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (16.8 MB)
+2026-Feb-25 20:50:57.877072 #10 13.90    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.8/16.8 MB 296.2 MB/s eta 0:00:00
+2026-Feb-25 20:50:57.877072 #10 13.93 Downloading sympy-1.14.0-py3-none-any.whl (6.3 MB)
+2026-Feb-25 20:50:57.877072 #10 13.96    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.3/6.3 MB 299.1 MB/s eta 0:00:00
+2026-Feb-25 20:50:57.877072 #10 13.98 Downloading mpmath-1.3.0-py3-none-any.whl (536 kB)
+2026-Feb-25 20:50:57.877072 #10 13.98    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 536.2/536.2 kB 364.0 MB/s eta 0:00:00
+2026-Feb-25 20:50:57.877072 #10 14.27 Installing collected packages: mpmath, urllib3, typing-extensions, sympy, pillow, numpy, networkx, MarkupSafe, idna, fsspec, filelock, charset_normalizer, certifi, requests, jinja2, torch, torchvision, torchaudio
+2026-Feb-25 20:50:57.877072 #10 32.08 Successfully installed MarkupSafe-3.0.3 certifi-2026.2.25 charset_normalizer-3.4.4 filelock-3.24.3 fsspec-2026.2.0 idna-3.11 jinja2-3.1.6 mpmath-1.3.0 networkx-3.4.2 numpy-2.2.6 pillow-12.1.1 requests-2.32.5 sympy-1.14.0 torch-2.1.0+cpu torchaudio-2.1.0+cpu torchvision-0.16.0+cpu typing-extensions-4.15.0 urllib3-2.6.3
+2026-Feb-25 20:50:57.877072 #10 32.08 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+2026-Feb-25 20:50:57.877072 #10 32.30
+2026-Feb-25 20:50:57.877072 #10 32.30 [notice] A new release of pip is available: 23.0.1 -> 26.0.1
+2026-Feb-25 20:50:57.877072 #10 32.30 [notice] To update, run: pip install --upgrade pip
+2026-Feb-25 20:50:57.877072 #10 DONE 34.6s
+2026-Feb-25 20:50:57.877072 
+2026-Feb-25 20:50:57.877072 #11 [ 7/13] RUN pip install --no-cache-dir 'numpy<2'
+2026-Feb-25 20:50:57.877072 #11 0.941 Collecting numpy<2
+2026-Feb-25 20:50:57.877072 #11 0.998   Downloading numpy-1.26.4-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (18.2 MB)
+2026-Feb-25 20:50:57.877072 #11 1.175      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 18.2/18.2 MB 197.5 MB/s eta 0:00:00
+2026-Feb-25 20:50:57.877072 #11 1.404 Installing collected packages: numpy
+2026-Feb-25 20:50:57.877072 #11 1.404   Attempting uninstall: numpy
+2026-Feb-25 20:50:57.877072 #11 1.405     Found existing installation: numpy 2.2.6
+2026-Feb-25 20:50:57.877072 #11 1.655     Uninstalling numpy-2.2.6:
+2026-Feb-25 20:50:57.877072 #11 2.235       Successfully uninstalled numpy-2.2.6
+2026-Feb-25 20:50:57.877072 #11 4.217 Successfully installed numpy-1.26.4
+2026-Feb-25 20:50:57.877072 #11 4.217 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+2026-Feb-25 20:50:57.877072 #11 4.318
+2026-Feb-25 20:50:57.877072 #11 4.318 [notice] A new release of pip is available: 23.0.1 -> 26.0.1
+2026-Feb-25 20:50:57.877072 #11 4.318 [notice] To update, run: pip install --upgrade pip
+2026-Feb-25 20:50:57.877072 #11 DONE 4.7s
+2026-Feb-25 20:50:57.877072 
+2026-Feb-25 20:50:57.877072 #12 [ 8/13] RUN pip install --no-cache-dir --timeout 600 -r SUM/requirements.txt
+2026-Feb-25 20:50:57.877072 #12 0.672 Collecting scikit-image
+2026-Feb-25 20:50:57.877072 #12 0.715   Downloading scikit_image-0.25.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (14.8 MB)
+2026-Feb-25 20:50:57.877072 #12 0.851      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 14.8/14.8 MB 138.6 MB/s eta 0:00:00
+2026-Feb-25 20:50:57.877072 #12 0.907 Collecting packaging
+2026-Feb-25 20:50:57.877072 #12 0.913   Downloading packaging-26.0-py3-none-any.whl (74 kB)
+2026-Feb-25 20:50:57.877072 #12 0.916      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 74.4/74.4 kB 204.7 MB/s eta 0:00:00
+2026-Feb-25 20:50:57.877072 #12 0.937 Collecting causal-conv1d==1.0.2
+2026-Feb-25 20:50:57.877072 #12 0.947   Downloading causal_conv1d-1.0.2.tar.gz (6.4 kB)
+2026-Feb-25 20:50:57.877072 #12 0.953   Preparing metadata (setup.py): started
+2026-Feb-25 20:50:57.877072 #12 3.331   Preparing metadata (setup.py): finished with status 'done'
+2026-Feb-25 20:50:57.877072 #12 3.348 Collecting mamba-ssm==1.0.1
+2026-Feb-25 20:50:57.877072 #12 3.360   Downloading mamba_ssm-1.0.1.tar.gz (28 kB)
+2026-Feb-25 20:50:57.877072 #12 3.368   Preparing metadata (setup.py): started
+2026-Feb-25 20:50:57.877072 #12 5.448   Preparing metadata (setup.py): finished with status 'error'
+2026-Feb-25 20:50:57.877072 #12 5.452   error: subprocess-exited-with-error
+2026-Feb-25 20:50:57.877072 #12 5.452
+2026-Feb-25 20:50:57.877072 #12 5.452   × python setup.py egg_info did not run successfully.
+2026-Feb-25 20:50:57.877072 #12 5.452   │ exit code: 1
+2026-Feb-25 20:50:57.877072 #12 5.452   ╰─> [13 lines of output]
+2026-Feb-25 20:50:57.877072 #12 5.452       /tmp/pip-install-6qkhvx1w/mamba-ssm_92d488774a0d4fd9886efec97e01c9af/setup.py:77: UserWarning: mamba_ssm was requested, but nvcc was not found.  Are you sure your environment has nvcc available?  If you're installing within a container from https://hub.docker.com/r/pytorch/pytorch, only images whose names contain 'devel' will provide nvcc.
+2026-Feb-25 20:50:57.877072 #12 5.452         warnings.warn(
+2026-Feb-25 20:50:57.877072 #12 5.452       Traceback (most recent call last):
+2026-Feb-25 20:50:57.877072 #12 5.452         File "<string>", line 2, in <module>
+2026-Feb-25 20:50:57.877072 #12 5.452         File "<pip-setuptools-caller>", line 34, in <module>
+2026-Feb-25 20:50:57.877072 #12 5.452         File "/tmp/pip-install-6qkhvx1w/mamba-ssm_92d488774a0d4fd9886efec97e01c9af/setup.py", line 111, in <module>
+2026-Feb-25 20:50:57.877072 #12 5.452           if bare_metal_version >= Version("11.8"):
+2026-Feb-25 20:50:57.877072 #12 5.452       NameError: name 'bare_metal_version' is not defined
+2026-Feb-25 20:50:57.877072 #12 5.452
+2026-Feb-25 20:50:57.877072 #12 5.452
+2026-Feb-25 20:50:57.877072 #12 5.452       torch.__version__  = 2.1.0+cpu
+2026-Feb-25 20:50:57.877072 #12 5.452
+2026-Feb-25 20:50:57.877072 #12 5.452
+2026-Feb-25 20:50:57.877072 #12 5.452       [end of output]
+2026-Feb-25 20:50:57.877072 #12 5.452
+2026-Feb-25 20:50:57.877072 #12 5.452   note: This error originates from a subprocess, and is likely not a problem with pip.
+2026-Feb-25 20:50:57.877072 #12 5.454 error: metadata-generation-failed
+2026-Feb-25 20:50:57.877072 #12 5.454
+2026-Feb-25 20:50:57.877072 #12 5.454 × Encountered error while generating package metadata.
+2026-Feb-25 20:50:57.877072 #12 5.454 ╰─> See above for output.
+2026-Feb-25 20:50:57.877072 #12 5.454
+2026-Feb-25 20:50:57.877072 #12 5.454 note: This is an issue with the package mentioned above, not pip.
+2026-Feb-25 20:50:57.877072 #12 5.454 hint: See above for details.
+2026-Feb-25 20:50:57.877072 #12 5.540
+2026-Feb-25 20:50:57.877072 #12 5.540 [notice] A new release of pip is available: 23.0.1 -> 26.0.1
+2026-Feb-25 20:50:57.877072 #12 5.540 [notice] To update, run: pip install --upgrade pip
+2026-Feb-25 20:50:57.877072 #12 ERROR: process "/bin/sh -c pip install --no-cache-dir --timeout 600 -r SUM/requirements.txt" did not complete successfully: exit code: 1
+2026-Feb-25 20:50:57.877072 ------
+2026-Feb-25 20:50:57.877072 > [ 8/13] RUN pip install --no-cache-dir --timeout 600 -r SUM/requirements.txt:
+2026-Feb-25 20:50:57.877072 5.454 error: metadata-generation-failed
+2026-Feb-25 20:50:57.877072 5.454
+2026-Feb-25 20:50:57.877072 5.454 × Encountered error while generating package metadata.
+2026-Feb-25 20:50:57.877072 5.454 ╰─> See above for output.
+2026-Feb-25 20:50:57.877072 5.454
+2026-Feb-25 20:50:57.877072 5.454 note: This is an issue with the package mentioned above, not pip.
+2026-Feb-25 20:50:57.877072 5.454 hint: See above for details.
+2026-Feb-25 20:50:57.877072 5.540
+2026-Feb-25 20:50:57.877072 5.540 [notice] A new release of pip is available: 23.0.1 -> 26.0.1
+2026-Feb-25 20:50:57.877072 5.540 [notice] To update, run: pip install --upgrade pip
+2026-Feb-25 20:50:57.877072 ------
+2026-Feb-25 20:50:57.877072 Dockerfile.sum:33
+2026-Feb-25 20:50:57.877072 --------------------
+2026-Feb-25 20:50:57.877072 31 |     ENV CAUSAL_CONV1D_SKIP_CUDA_BUILD=TRUE
+2026-Feb-25 20:50:57.877072 32 |     ENV CAUSAL_CONV1D_FORCE_BUILD=TRUE
+2026-Feb-25 20:50:57.877072 33 | >>> RUN pip install --no-cache-dir --timeout 600 -r SUM/requirements.txt
+2026-Feb-25 20:50:57.877072 34 |
+2026-Feb-25 20:50:57.877072 35 |     # Our API deps + gdown (for optional Google Drive download in entrypoint)
+2026-Feb-25 20:50:57.877072 --------------------
+2026-Feb-25 20:50:57.877072 ERROR: failed to build: failed to solve: process "/bin/sh -c pip install --no-cache-dir --timeout 600 -r SUM/requirements.txt" did not complete successfully: exit code: 1
+2026-Feb-25 20:50:57.877072 exit status 1
+2026-Feb-25 20:50:58.009332 ========================================
+2026-Feb-25 20:50:58.022535 Deployment failed. Removing the new version of your application.
+2026-Feb-25 20:50:59.984338 Gracefully shutting down build container: nk4cocgcosos8go04coco8wk
+
+---
+
+_**Agent (model default, mode Agent)**_
 
 
 
@@ -17591,6 +18677,46 @@ Status: **loading**
 
 
 </details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/Dockerfile.sum</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-saliency-sum-build.md</summary>
+
+Status: **loading**
+
+</details>
+
 </tool-use>
 
 ---

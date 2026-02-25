@@ -17,6 +17,10 @@
    - `CAUSAL_CONV1D_SKIP_CUDA_BUILD=TRUE` → kein nvcc, kein `bare_metal_version`-Fehler.  
    - `CAUSAL_CONV1D_FORCE_BUILD=TRUE` → kein Abruf eines CUDA-Prebuilt-Wheels (mit CPU-PyTorch würde `get_wheel_url()` ohnehin scheitern).
 
+4. **mamba-ssm ohne CUDA-Build**  
+   - `MAMBA_SKIP_CUDA_BUILD=TRUE` → gleicher `bare_metal_version`-Bug wie bei causal-conv1d wird umgangen.  
+   - `MAMBA_FORCE_BUILD=TRUE` → kein Abruf eines Prebuilt-Wheels (CPU-PyTorch hat kein `torch.version.cuda`).
+
 ## GPU-Nutzung (optional)
 
 Wenn du auf einem Server mit **CUDA/nvcc** baust und GPU nutzen willst:

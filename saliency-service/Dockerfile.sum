@@ -21,10 +21,12 @@ RUN pip install --no-cache-dir --timeout 600 \
     --extra-index-url https://download.pytorch.org/whl/cpu \
     torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0
 
-# causal-conv1d in SUM requires numpy<2; skip CUDA build for CPU-only (no nvcc)
+# causal-conv1d + mamba-ssm in SUM require numpy<2; skip CUDA build for CPU-only (no nvcc)
 RUN pip install --no-cache-dir 'numpy<2'
 ENV CAUSAL_CONV1D_SKIP_CUDA_BUILD=TRUE
 ENV CAUSAL_CONV1D_FORCE_BUILD=TRUE
+ENV MAMBA_SKIP_CUDA_BUILD=TRUE
+ENV MAMBA_FORCE_BUILD=TRUE
 RUN pip install --no-cache-dir --timeout 600 -r SUM/requirements.txt
 
 # Our API deps + gdown (for optional Google Drive download in entrypoint)
