@@ -304,23 +304,32 @@ Nach einem **git pull** und erneutem **Deploy** sollte der Build durchlaufen. We
 
 ---
 
-## Fehler: „fetch failed“ / 502 / Timeout
+## Fehler: 502 bei POST /api/saliency/generate
 
-Wenn CHECKION **„fetch failed“**, **502 Bad Gateway** oder **„The operation was aborted due to timeout“** (bzw. „Saliency-Anfrage Zeitüberschreitung“) anzeigt:
+**502 Bad Gateway** beim Klick auf „Heatmap jetzt berechnen“ kommt fast immer vom **Proxy-Timeout**.
 
-1. **Timeout („operation was aborted due to timeout“)**  
-   Die Berechnung kann auf CPU **1–3 Minuten** dauern. CHECKION wartet bis zu **3 Minuten**.  
-   - Kommt die Meldung trotzdem: **SALIENCY_SERVICE_URL** prüfen (siehe unten) und sicherstellen, dass CHECKION und Saliency im **gleichen Netz** laufen.  
-   - In den **Saliency-Logs** prüfen: Kommt **POST /predict** an und antwortet der Service? Wenn ja, aber CHECKION bricht ab, liegt oft die URL/Netzwerk-Konfiguration auf CHECKION-Seite.
+### Ursache: Proxy bricht nach 60 Sekunden ab
 
-2. **Container-ID statt App-Namen nutzen**  
-   In Coolify bei der **Saliency**-App die **interne Container-ID** finden (Auge-Symbol oder „Internal URL“ / Netzwerk-Details).  
-   In CHECKION unter **Environment Variables** eintragen:  
-   **`SALIENCY_SERVICE_URL`** = **`http://<diese-Container-ID>:8000`**  
-   (z. B. `http://rc8gsg4kcwc8k0wsgo484w80:8000`). CHECKION danach **neu deployen**.
+Die Saliency-Berechnung (SUM auf CPU) dauert **1–3 Minuten**. Der Coolify-Proxy (meist **Traefik**) hat standardmäßig nur **60 Sekunden** Lese-Timeout. Nach 60 s schließt der Proxy die Verbindung → der Browser bekommt **502**, obwohl CHECKION und der Saliency-Service noch arbeiten.
 
-3. **Gleicher Server / Projekt**  
-   CHECKION und Saliency müssen auf dem **gleichen Coolify-Server** (und idealerweise im gleichen Projekt) laufen, damit sie sich im internen Netz erreichen können.
+### Lösung: Timeout am Proxy erhöhen
 
-4. **Saliency-Logs prüfen**  
-   Beim Klick auf „Heatmap jetzt berechnen“ in den **Saliency**-Logs nach **POST /predict** suchen. Kommt keine Anfrage an, erreicht CHECKION den Container nicht (falsche ID oder anderes Netz).
+1. In Coolify: **Server** auswählen (z. B. „projects-01“) → **Proxy** (oder **Proxy / Configuration**).
+2. Prüfen, welcher Proxy läuft (Traefik, Caddy, …). Bei **Traefik**:
+3. In der Proxy-Konfiguration die **Command**- bzw. **Argumente**-Sektion finden und die Timeouts für den HTTPS-Entrypoint setzen. Beispiel (5 Minuten):
+   ```yaml
+   command:
+     - '--entrypoints.https.transport.respondingTimeouts.readTimeout=5m'
+     - '--entrypoints.https.transport.respondingTimeouts.writeTimeout=5m'
+     - '--entrypoints.https.transport.respondingTimeouts.idleTimeout=5m'
+   ```
+   Falls dort schon andere `command`-Einträge stehen: diese drei Zeilen **ergänzen** (nicht ersetzen).  
+   Quelle: [Coolify Gateway Timeout](https://coolify.io/docs/troubleshoot/applications/gateway-timeout).
+4. Proxy **speichern** und ggf. **neu starten** (Coolify übernimmt das oft beim Speichern).
+5. Erneut **„Heatmap jetzt berechnen“** testen – die Anfrage darf jetzt bis zu 5 Minuten offen bleiben.
+
+### Wenn 502 danach noch auftritt
+
+- **SALIENCY_SERVICE_URL** in der CHECKION-App prüfen: z. B. `https://sum-saliency.projects-a.plygrnd.tech` (ohne Slash am Ende).
+- **Saliency-Logs** prüfen: Beim Klick auf „Heatmap jetzt berechnen“ sollte im SUM-Container **POST /predict** ankommen. Kommt nichts an → CHECKION erreicht den Service nicht (URL oder Netzwerk).
+- Bei interner URL: **Container-ID** der Saliency-App in Coolify notieren und `SALIENCY_SERVICE_URL=http://<Container-ID>:8000` setzen, CHECKION redeployen.

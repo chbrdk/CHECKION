@@ -28,6 +28,12 @@ Wenn du auf einem Server mit **CUDA/nvcc** baust und GPU nutzen willst:
 - PyTorch mit CUDA-Index installieren (z. B. `--index-url https://download.pytorch.org/whl/cu121`).
 - Die beiden Env-Variablen `CAUSAL_CONV1D_SKIP_CUDA_BUILD` und `CAUSAL_CONV1D_FORCE_BUILD` weglassen (oder auf FALSE), damit das Prebuilt-Wheel oder der lokale CUDA-Build genutzt wird.
 
+## CPU-Laufzeit: selective_scan_fn is not defined
+
+Ohne CUDA-Build liefert mamba_ssm keine `selective_scan_cuda`-Extension. SUMs `vmamba.py` importiert `selective_scan_fn` in einem try/except mit `pass` – schlägt der Import fehl, ist der Name nie gesetzt, es kommt aber trotzdem zur Nutzung → **NameError: name 'selective_scan_fn' is not defined**.
+
+**Lösung im Repo:** Nach `pip install -r SUM/requirements.txt` wird `patch_mamba_ssm_cpu.py` ausgeführt. Es patcht die installierte Datei `mamba_ssm/ops/selective_scan_interface.py`: CUDA-Imports in try/except, CUDA-only Klassen/Funktionen in `if _have_cuda:`, am Ende `if not _have_cuda: selective_scan_fn = selective_scan_ref; mamba_inner_fn = mamba_inner_ref`. So läuft SUM auf CPU mit der langsamen Ref-Implementierung.
+
 ## Referenzen
 
 - SUM: https://github.com/Arhosseini77/SUM  
