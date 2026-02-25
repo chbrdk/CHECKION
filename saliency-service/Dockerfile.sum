@@ -22,9 +22,9 @@ RUN pip install --no-cache-dir --timeout 600 torch==2.1.0 torchvision==0.16.0 to
 # SUM dependencies (mamba-ssm may need build-essential)
 RUN pip install --no-cache-dir --timeout 600 -r SUM/requirements.txt
 
-# Our API deps
+# Our API deps + gdown (for optional Google Drive download in entrypoint)
 COPY requirements-sum.txt .
-RUN pip install --no-cache-dir -r requirements-sum.txt
+RUN pip install --no-cache-dir -r requirements-sum.txt gdown
 
 COPY main_sum.py .
 COPY entrypoint-sum.sh .
