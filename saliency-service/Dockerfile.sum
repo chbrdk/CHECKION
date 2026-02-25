@@ -29,6 +29,10 @@ ENV MAMBA_SKIP_CUDA_BUILD=TRUE
 ENV MAMBA_FORCE_BUILD=TRUE
 RUN pip install --no-cache-dir --timeout 600 -r SUM/requirements.txt
 
+# opencv-python pulls in libGL (GUI); headless variant works in server containers
+RUN pip uninstall -y opencv-python 2>/dev/null || true \
+    && pip install --no-cache-dir opencv-python-headless==4.6.0.66
+
 # Our API deps + gdown (for optional Google Drive download in entrypoint)
 COPY requirements-sum.txt .
 RUN pip install --no-cache-dir -r requirements-sum.txt gdown
