@@ -824,7 +824,7 @@ function ShareSingleContent({ data, shareToken, accessToken }: { data: ScanResul
                                         )}
                                         {data.pageIndex && (
                                             <PageIndexRegionsOverlay
-                                                regions={data.pageIndex.regions}
+                                                regions={Array.isArray(data.pageIndex?.regions) ? data.pageIndex.regions : []}
                                                 screenshotWidth={screenshotDimensions.width}
                                                 screenshotHeight={screenshotDimensions.height}
                                                 highlightedRegionId={hoveredRegionId}
@@ -836,7 +836,7 @@ function ShareSingleContent({ data, shareToken, accessToken }: { data: ScanResul
                             )}
                         </Box>
                     )}
-                    {data.pageIndex?.regions?.length ? (
+                    {Array.isArray(data.pageIndex?.regions) && data.pageIndex.regions.length > 0 ? (
                         <Box sx={{ mt: 1.5, p: 1.5, bgcolor: '#f5f5f5', borderRadius: 1 }}>
                             <MsqdxTypography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 1, color: '#555' }}>Regionen — Hover zum Hervorheben</MsqdxTypography>
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>

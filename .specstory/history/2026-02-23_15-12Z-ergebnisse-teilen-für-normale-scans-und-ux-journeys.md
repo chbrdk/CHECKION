@@ -14161,3 +14161,750 @@ Status: **completed**
 
 ---
 
+<think><details><summary>Thought Process</summary>
+
+SUM needs:
+- net/pre_trained_weights/sum_model.pth (and optionally vssmsmall_dp03_ckpt_epoch_238.pth for encoder - but inference.py only loads sum_model.pth)
+- The inference loads torch.load('net/pre_trained_weights/sum_model.pth') - so when we run from /app, we need /app/net/pre_trained_weights/sum_model.pth. So we need to clone SUM repo and have the net folder there. The config also references load_ckpt_path for the encoder - let me check if SUM.from_pretrained or the manual load loads everything. From inference.py they only load sum_model.pth into SUM(). So the full weights are in sum_model.pth.
+
+I'll create:
+1. saliency-service/main_sum.py - FastAPI app that uses SUM with condition=3. Decode base64 to temp file, load_and_preprocess_image(path), predict_saliency_map(..., 3, ...), then render heatmap to PNG bytes (we can use matplotlib/numpy/cv2 like write_heatmap_to_image but output to buffer), return base64.
+2. saliency-service/Dockerfile.sum - FROM python:3.10, clone SUM, pip install -r requirements.txt (SUM's), add our main_sum.py and a thin entrypoint that checks for sum_model.pth.
+3. requirements-sum.txt - our deps (fastapi, uvicorn, etc.) plus we'll install SUM's deps from their requirements.txt.
+4. knowledge or README update: document SUM option for website-focused heatmaps.
+
+For the heatmap output: SUM's write_heatmap_to_image uses matplotlib "hot" colormap, saves to buf, then opens and resizes. We need the same output format (PNG, same size as input) for our API. I'll implement a function that takes the numpy pred_saliency and orig_size, returns PNG bytes, using matplotlib or our own jet/hot colormap to match what we currently have (jet: blue low, red/yellow high). Actually our frontend expects the same style - we can use "hot" to match SUM's default or keep jet for consistency with current. I'll use the same colormap as our current service (jet) so the overlay looks consistent.
+</details></think>
+
+---
+
+
+Implementierung der SUM-Variante für Webseiten (Condition 3):
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] Add main_sum.py FastAPI service using SUM model condition=3 (UI)
+- [ ] Add Dockerfile.sum and entrypoint-sum.sh for SUM backend
+- [ ] Document SUM option and weights in README / knowledge
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+SUM's requirements include mamba-ssm, causal-conv1d, which may need CUDA or have specific build requirements. Let me check their requirements again and the Dockerfile approach. For a server we might want CPU-only to avoid GPU dependency - let me check if SUM runs on CPU. They use torch and model.to(device). So CPU should work, might be slower.
+
+I'll write main_sum.py to:
+1. Decode base64 image to PIL, save to tempfile, call load_and_preprocess_image(temp_path), get tensor and orig_size.
+2. predict_saliency_map(img, 3, model, device)  # 3 = UI
+3. Convert pred_saliency (numpy 256x256) to full-size heatmap PNG: resize to orig_size, apply colormap (jet to match our overlay), encode PNG to bytes.
+4. Return base64 PNG.
+
+We need to add sys.path so that the cloned SUM repo's `net` is importable. So we run from /app, and we clone SUM into /app/SUM_repo, then sys.path.insert(0, '/app/SUM_repo'). Then from net import SUM, load_and_preprocess_image, predict_saliency_map. But the config_setting has load_ckpt_path for the encoder - inference.py only loads sum_model.pth. Let me look at SUM model - maybe sum_model.pth contains the full state. Yes, inference just loads sum_model.pth into SUM().
+</details></think>
+
+---
+
+
+
+
+
+---
+
+Invalid arguments:
+path: Required
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I forgot to pass path to the Write tool. Let me fix.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/main_sum.py</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Remove the unused `import torchvision.transforms as transforms` and fix the load_model() - we're assigning to global `model` but the local variable shadows it. In load_model we do `model = SUM(...)` which creates a local variable. We need `global model` at the start and then assign to model. I already have `global model` at the top. Good.
+
+Now Dockerfile.sum and entrypoint-sum.sh. SUM needs: Python 3.10+, torch 2.1, their requirements. Their inference loads from 'net/pre_trained_weights/sum_model.pth' - path relative to CWD. So when we run main_sum.py from /app, we have SUM_ROOT = /app/SUM, and WEIGHTS_PATH = /app/SUM/net/pre_trained_weights/sum_model.pth. So we need to clone SUM into /app/SUM and put weights in /app/SUM/net/pre_trained_weights/sum_model.pth.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/main_sum.py</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Also need to fix load_model - we're modifying the global `model` so we need to assign to the global. In Python, when you do `model = SUM(...)` inside a function, you're creating a local variable unless you declared `global model`. I did declare `global model` at the start of load_model(). So the assignment `model = SUM(...)` will update the global. Good.
+
+Now add scipy to the SUM backend - we use scipy.ndimage.zoom in _heatmap_to_png_bytes. SUM's requirements might already have scipy (scikit-image often pulls it). I'll add scipy to our requirements-sum.txt to be safe.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add main_sum.py FastAPI service using SUM model condition=3 (UI)
+- [-] Add Dockerfile.sum and entrypoint-sum.sh for SUM backend
+- [ ] Document SUM option and weights in README / knowledge
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/main_sum.py</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+load_model() doesn't have `global model` - I thought I had it. Let me check. Looking at my write, I have:
+def load_model() -> None:
+    global model
+    if not WEIGHTS_PATH.exists():
+So we do have global model. Good.
+
+Now Dockerfile.sum. SUM requires torch 2.1, mamba-ssm, causal-conv1d, etc. Their README says:
+pip install torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu121
+pip install -r requirements.txt
+
+For CPU-only we could use cu118 or cpu. Let me use the same as they do but allow CPU for flexibility (no cu121 index so we get default which might be CPU or CUDA depending on build). Actually for Docker in Coolify many users don't have GPU, so let's use CPU wheel. PyTorch CPU: --index-url https://download.pytorch.org/whl/cpu with torch 2.1.0. Then pip install -r SUM/requirements.txt. Some of SUM's deps might need NVCC (mamba-ssm) - let me check. mamba-ssm often has prebuilt wheels for Linux. I'll try without special CUDA and see - if the Dockerfile fails we can add. Actually their README says "If you encounter NVCC problems during installation, see: NVCC Issue" - so mamba-ssm might need compilation. For Docker we could use a base image with cuda or use pre-built wheels. I'll use python:3.10-slim and pip install torch cpu, then SUM requirements. If mamba-ssm fails, we might need to use a different approach (e.g. install from prebuilt wheel). Let me try.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/requirements-sum.txt</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+Invalid arguments:
+path: Required
+
+---
+
+Invalid arguments:
+path: Required
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I forgot path again for the last two writes.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/entrypoint-sum.sh</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/Dockerfile.sum</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+SUM's config_setting references load_ckpt_path for the encoder (vssmsmall). Let me check - in inference they only load sum_model.pth. So the SUM() model might have the encoder built-in and sum_model.pth is the full state_dict. I'll leave as is; if there's an error at runtime we can fix.
+
+Now document in README and add knowledge. Also add a note that the default saliency service (MDS-ViTNet) is general-purpose while SUM with condition=3 is for websites.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add main_sum.py FastAPI service using SUM model condition=3 (UI)
+- [x] Add Dockerfile.sum and entrypoint-sum.sh for SUM backend
+- [-] Document SUM option and weights in README / knowledge
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/README.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add a new section "SUM backend (website/UI-optimized)" that describes the alternative model and Dockerfile.sum, and when to use it.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/README.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Add a short note in knowledge folder if there's a saliency or deployment doc.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **0** result in **1** directory</summary>
+
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge** (0 file)
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/docs/deployment/coolify-saliency-schritt-fuer-schritt.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add a short subsection to the Coolify saliency doc about the SUM option for website-optimized heatmaps.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/docs/deployment/coolify-saliency-schritt-fuer-schritt.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Fix load_model in main_sum.py - we need to assign to the global. Let me double-check: we have "global model" and then "model = SUM(...)". That updates the global. But we need to remove the duplicate config import that might pull in config_setting which has paths like ./net/... - when we run from /app, the SUM repo is at /app/SUM so the config's load_ckpt_path might be wrong. Let me check - in inference they only load sum_model.pth. The config has load_ckpt_path for the encoder - that might be used during model init. Let me look at SUM model init. Actually in inference.py they don't use config for loading - they just SUM(...) and load_state_dict(sum_model.pth). So the full model state is in sum_model.pth. The config's load_ckpt_path might be for training. I'll leave as is; if the model fails to load we might need to set working directory to SUM_ROOT or patch config. Let me add a note that when running main_sum.py, the current working directory doesn't need to be SUM because we use WEIGHTS_PATH = SUM_ROOT / "net" / "pre_trained_weights" / "sum_model.pth". Good.
+
+One more thing: config_setting has relative paths like './net/pre_trained_weights/vssmsmall...'. When we import from net.configs.config_setting, the working directory might be /app, so ./net would be /app/net which doesn't exist (SUM is at /app/SUM so it's /app/SUM/net). So the config might break. Let me check - do we need config_setting at all? We only need model_config (num_classes, input_channels, depths, depths_decoder, drop_path_rate). We don't need load_ckpt_path for inference - the inference.py only loads sum_model.pth. So we could avoid importing the full config and just define the model_config dict in main_sum.py to avoid path issues. Let me do that.
+</details></think>
+
+---
+
+
+Config von SUM könnte relative Pfade verwenden. Wir definieren die Modell-Config lokal, um Import-Probleme zu vermeiden:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="web_fetch">
+<details>
+<summary>Tool use: **web_fetch**</summary>
+
+
+Parameters:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/Arhosseini77/SUM/main/net/configs/config_setting.py"
+}
+```
+Result:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/Arhosseini77/SUM/main/net/configs/config_setting.py",
+  "markdown": "from torchvision import transforms \nfrom net.utils import * \n \nfrom datetime import datetime \n \n \nclass setting_config: \n \"\"\" \n the config of training setting. \n \"\"\" \n \n network = 'sum' \n model_config = { \n 'num_classes': 1, \n 'input_channels': 3, \n # ----- SUM ----- # \n 'depths': [2, 2, 27, 2], \n 'depths_decoder': [2, 2, 2, 1], \n 'drop_path_rate': 0.3, \n 'load_ckpt_path': './net/pre_trained_weights/vssmsmall_dp03_ckpt_epoch_238.pth', \n } \n \n datasets = 'isic18' \n if datasets == 'isic18': \n data_path = './data/isic2018/' \n elif datasets == 'isic17': \n data_path = './data/isic2017/' \n else: \n raise Exception('datasets in not right!') \n \n criterion = BceDiceLoss(wb=1, wd=1) \n \n pretrained_path = './pre_trained/' \n num_classes = 1 \n input_size_h = 256 \n input_size_w = 256 \n input_channels = 3 \n distributed = False \n local_rank = -1 \n num_workers = 0 \n seed = 42 \n world_size = None \n rank = None \n amp = False \n gpu_id = '0' \n batch_size = 32 \n epochs = 300 \n \n work_dir = 'results/' + network + '_' + datasets + '_' + datetime.now().strftime('%A_%d_%B_%Y_%Hh_%Mm_%Ss') + '/' \n \n print_interval = 20 \n val_interval = 30 \n save_interval = 100 \n threshold = 0.5 \n \n train_transformer = transforms.Compose([ \n myNormalize(datasets, train=True), \n myToTensor(), \n myRandomHorizontalFlip(p=0.5), \n myRandomVerticalFlip(p=0.5), \n myRandomRotation(p=0.5, degree=[0, 360]), \n myResize(input_size_h, input_size_w) \n ]) \n test_transformer = transforms.Compose([ \n myNormalize(datasets, train=False), \n myToTensor(), \n myResize(input_size_h, input_size_w) \n ]) \n \n opt = 'AdamW' \n assert opt in ['Adadelta', 'Adagrad', 'Adam', 'AdamW', 'Adamax', 'ASGD', 'RMSprop', 'Rprop', \n 'SGD'], 'Unsupported optimizer!' \n if opt == 'Adadelta': \n lr = 0.01 # default: 1.0 – coefficient that scale delta before it is applied to the parameters \n rho = 0.9 # default: 0.9 – coefficient used for computing a running average of squared gradients \n eps = 1e-6 # default: 1e-6 – term added to the denominator to improve numerical stability \n weight_decay = 0.05 # default: 0 – weight decay (L2 penalty) \n elif opt == 'Adagrad': \n lr = 0.01 # default: 0.01 – learning rate \n lr_decay = 0 # default: 0 – learning rate decay \n eps = 1e-10 # default: 1e-10 – term added to the denominator to improve numerical stability \n weight_decay = 0.05 # default: 0 – weight decay (L2 penalty) \n elif opt == 'Adam': \n lr = 0.001 # default: 1e-3 – learning rate \n betas = (0.9, \n 0.999) # default: (0.9, 0.999) – coefficients used for computing running averages of gradient and its square \n eps = 1e-8 # default: 1e-8 – term added to the denominator to improve numerical stability \n weight_decay = 0.0001 # default: 0 – weight decay (L2 penalty) \n amsgrad = False # default: False – whether to use the AMSGrad variant of this algorithm from the paper On the Convergence of Adam and Beyond \n elif opt == 'AdamW': \n lr = 0.001 # default: 1e-3 – learning rate \n betas = (0.9, \n 0.999) # default: (0.9, 0.999) – coefficients used for computing running averages of gradient and its square \n eps = 1e-8 # default: 1e-8 – term added to the denominator to improve numerical stability \n weight_decay = 1e-2 # default: 1e-2 – weight decay coefficient \n amsgrad = False # default: False – whether to use the AMSGrad variant of this algorithm from the paper On the Convergence of Adam and Beyond \n elif opt == 'Adamax': \n lr = 2e-3 # default: 2e-3 – learning rate \n betas = (0.9, \n 0.999) # default: (0.9, 0.999) – coefficients used for computing running averages of gradient and its square \n eps = 1e-8 # default: 1e-8 – term added to the denominator to improve numerical stability \n weight_decay = 0 # default: 0 – weight decay (L2 penalty) \n elif opt == 'ASGD': \n lr = 0.01 # default: 1e-2 – learning rate \n lambd = 1e-4 # default: 1e-4 – decay term \n alpha = 0.75 # default: 0.75 – power for eta update \n t0 = 1e6 # default: 1e6 – point at which to start averaging \n weight_decay = 0 # default: 0 – weight decay \n elif opt == 'RMSprop': \n lr = 1e-2 # default: 1e-2 – learning rate \n momentum = 0 # default: 0 – momentum factor \n alpha = 0.99 # default: 0.99 – smoothing constant \n eps = 1e-8 # default: 1e-8 – term added to the denominator to improve numerical stability \n centered = False # default: False – if True, compute the centered RMSProp, the gradient is normalized by an estimation of its variance \n weight_decay = 0 # default: 0 – weight decay (L2 penalty) \n elif opt == 'Rprop': \n lr = 1e-2 # default: 1e-2 – learning rate \n etas = (0.5, \n 1.2) # default: (0.5, 1.2) – pair of (etaminus, etaplis), that are multiplicative increase and decrease factors \n step_sizes = (1e-6, 50) # default: (1e-6, 50) – a pair of minimal and maximal allowed step sizes \n elif opt == 'SGD': \n lr = 0.01 # – learning rate \n momentum = 0.9 # default: 0 – momentum factor \n weight_decay = 0.05 # default: 0 – weight decay (L2 penalty) \n dampening = 0 # default: 0 – dampening for momentum \n nesterov = False # default: False – enables Nesterov momentum \n \n sch = 'CosineAnnealingLR' \n if sch == 'StepLR': \n step_size = epochs // 5 # – Period of learning rate decay. \n gamma = 0.5 # – Multiplicative factor of learning rate decay. Default: 0.1 \n last_epoch = -1 # – The index of last epoch. Default: -1. \n elif sch == 'MultiStepLR': \n milestones = [60, 120, 150] # – List of epoch indices. Must be increasing. \n gamma = 0.1 # – Multiplicative factor of learning rate decay. Default: 0.1. \n last_epoch = -1 # – The index of last epoch. Default: -1. \n elif sch == 'ExponentialLR': \n gamma = 0.99 # – Multiplicative factor of learning rate decay. \n last_epoch = -1 # – The index of last epoch. Default: -1. \n elif sch == 'CosineAnnealingLR': \n T_max = 50 # – Maximum number of iterations. Cosine function period. \n eta_min = 0.00001 # – Minimum learning rate. Default: 0. \n last_epoch = -1 # – The index of last epoch. Default: -1. \n elif sch == 'ReduceLROnPlateau': \n mode = 'min' # – One of min, max. In min mode, lr will be reduced when the quantity monitored has stopped decreasing; in max mode it will be reduced when the quantity monitored has stopped increasing. Default: ‘min’. \n factor = 0.1 # – Factor by which the learning rate will be reduced. new_lr = lr * factor. Default: 0.1. \n patience = 10 # – Number of epochs with no improvement after which learning rate will be reduced. For example, if patience = 2, then we will ignore the first 2 epochs with no improvement, and will only decrease the LR after the 3rd epoch if the loss still hasn’t improved then. Default: 10. \n threshold = 0.0001 # – Threshold for measuring the new optimum, to only focus on significant changes. Default: 1e-4. \n threshold_mode = 'rel' # – One of rel, abs. In rel mode, dynamic_threshold = best * ( 1 + threshold ) in ‘max’ mode or best * ( 1 - threshold ) in min mode. In abs mode, dynamic_threshold = best + threshold in max mode or best - threshold in min mode. Default: ‘rel’. \n cooldown = 0 # – Number of epochs to wait before resuming normal operation after lr has been reduced. Default: 0. \n min_lr = 0 # – A scalar or a list of scalars. A lower bound on the learning rate of all param groups or each group respectively. Default: 0. \n eps = 1e-08 # – Minimal decay applied to lr. If the difference between new and old lr is smaller than eps, the update is ignored. Default: 1e-8. \n elif sch == 'CosineAnnealingWarmRestarts': \n T_0 = 50 # – Number of iterations for the first restart. \n T_mult = 2 # – A factor increases T_{i} after a restart. Default: 1. \n eta_min = 1e-6 # – Minimum learning rate. Default: 0. \n last_epoch = -1 # – The index of last epoch. Default: -1. \n elif sch == 'WP_MultiStepLR': \n warm_up_epochs = 10 \n gamma = 0.1 \n milestones = [125, 225] \n elif sch == 'WP_CosineLR': \n warm_up_epochs = 20 \n \n"
+}
+```
+User decision: **accepted**
+
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The config imports from net.utils (BceDiceLoss, myNormalize, etc.) which might pull in a lot. The inference.py only uses model_config from config. So when we do "from net.configs.config_setting import setting_config", the module runs and may fail on the datasets/data_path or other stuff. Let me try importing only what we need. We could do:
+from net.configs import config_setting
+model_cfg = config_setting.setting_config.model_config
+But that still runs the whole module. Actually the SUM inference does "from net.configs.config_setting import setting_config" and then uses config.model_config. So the module gets loaded. The risky part is load_ckpt_path - when is it used? Probably when building the model - SUM() might load the encoder from that path. Let me check the SUM model constructor. If it needs the encoder checkpoint we'd have to either point it to the right path or use a version that doesn't. For now I'll leave the import as is; in Docker the working directory is /app and the SUM code is under /app/SUM, so when we sys.path.insert(0, "/app/SUM") and then "from net.configs.config_setting import setting_config", the "net" is /app/SUM/net, so load_ckpt_path './net/pre_trained_weights/...' would resolve to /app/SUM/net/pre_trained_weights/... which is correct! But wait - when Python resolves relative paths in config_setting, the current working directory is used, not the package location. So ./net is /app/net, not /app/SUM/net. So we have a problem. I'll define MODEL_CONFIG locally in main_sum.py and not import config_setting, and pass that to SUM(). That way we don't run the SUM config module at all.
+</details></think>
+
+---
+
+
+Modell-Config lokal setzen, damit keine relativen Pfade aus dem SUM-Config ausgeführt werden:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/main_sum.py</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/main_sum.py</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Todo 3: mark completed. Give user a short summary.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add main_sum.py FastAPI service using SUM model condition=3 (UI)
+- [x] Add Dockerfile.sum and entrypoint-sum.sh for SUM backend
+- [x] Document SUM option and weights in README / knowledge
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/main_sum.py"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/main_sum.py"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+All good. One more thing - SUM might need the encoder weights (vssmsmall) to be loaded separately. Let me check the SUM model class - does it load from load_ckpt_path in __init__? If yes, we might get an error. From the inference.py they only do model.load_state_dict(torch.load('sum_model.pth')). So the full state is in sum_model.pth. So we're good.
+</details></think>
+
+---
+
+
+Zusammenfassung der Änderungen:
+
+---
+
+**Neues Modell speziell für Webseiten: SUM (Condition „User Interface”)**
+
+Es gibt jetzt eine **SUM-Variante** des Saliency-Services, die für **Webseiten/UI** trainiert ist (Condition 3 = User Interface). SUM (Saliency Unification through Mamba, WACV 2025) ist u. a. auf Natural Scenes, E-Commerce und **UI/Webseiten** ausgelegt.
+
+**Neue/angepasste Dateien:**
+
+1. **`saliency-service/main_sum.py`**  
+   - FastAPI-Service mit derselben API wie `main.py` (POST `/predict` mit `image_base64`, Antwort `heatmap_base64`).  
+   - Nutzt SUM mit **condition=3 (UI)**.  
+   - Heatmap-Ausgabe wie bisher (Jet-Colormap, PNG), damit das CHECKION-Frontend unverändert bleibt.
+
+2. **`saliency-service/Dockerfile.sum`**  
+   - Baut das SUM-Repo ein (Clone, PyTorch 2.1, SUM-`requirements.txt`).  
+   - Kein MDS-ViTNet; reine SUM-UI-Variante.
+
+3. **`saliency-service/entrypoint-sum.sh`**  
+   - Prüft, ob `sum_model.pth` in `/app/SUM/net/pre_trained_weights/` liegt.  
+   - Optional: Env **`SUM_WEIGHTS_URL`** für direkten Download der Weights.
+
+4. **`saliency-service/requirements-sum.txt`**  
+   - Zusätzliche Abhängigkeiten für den SUM-Service (u. a. FastAPI, scipy).
+
+5. **Dokumentation**  
+   - **`saliency-service/README.md`**: Abschnitt „SUM backend (website/UI heatmaps)“ mit Build, Weights und Coolify-Hinweisen.  
+   - **`docs/deployment/coolify-saliency-schritt-fuer-schritt.md`**: Optionaler Abschnitt „SUM-Backend (speziell für Webseiten/UI)“.
+
+**Weights**
+
+- **SUM:** Eine Datei **`sum_model.pth`**  
+  - Download: [Google Drive (SUM)](https://drive.google.com/file/d/14ma_hLe8DrVNuHCSKoOz41Q-rB1Hbg6A/view)  
+  - Im Container: `/app/SUM/net/pre_trained_weights/sum_model.pth` (z. B. per Volume-Mount oder Download über `SUM_WEIGHTS_URL`).
+
+**Nutzung**
+
+- **Coolify:** Zweite Anwendung wie beim bestehenden Saliency-Service, aber  
+  - **Dockerfile Path:** `Dockerfile.sum`,  
+  - **Build Context:** weiterhin `saliency-service`.  
+  Volume auf `/app/SUM/net/pre_trained_weights` mit `sum_model.pth` legen (oder `SUM_WEIGHTS_URL` setzen).  
+  In CHECKION **`SALIENCY_SERVICE_URL`** auf die URL dieses neuen Services zeigen (z. B. `http://<sum-service>:8000`).  
+- **Lokal:**  
+  `cd saliency-service` → `docker build -f Dockerfile.sum -t checkion-saliency-sum .` → Container mit gemountetem `sum_model.pth` starten; CHECKION mit `SALIENCY_SERVICE_URL=http://localhost:8000` (oder entsprechender URL) verwenden.
+
+**Hinweis:** SUM verwendet u. a. `mamba-ssm`; der Docker-Build kann etwas länger dauern. Wenn es zu Build-Fehlern kommt, kann ein Base-Image mit passenden Build-Tools oder ein anderes PyTorch-/CUDA-Setup nötig sein – dann können wir den Dockerfile gezielt anpassen.
+
+---
+
+_**User**_
+
+im frontend kommt keine heathmap :
+Uncaught (in promise) TypeError: r.filter is not a function
+    at page-48a0a36fa30a1fe7.js:1:26681Understand this error
+/api/share/by-resource?type=single&id=bcbd0623-913e-47fe-9b7f-92ca868759f6:1  Failed to load resource: the server responded with a status of 404 ()
+
+im saliency log sehe ich erstmal keine fehler:
+Weights not found. Downloading from Google Drive (folder 10tZL7oNfaRkBHHTeqjog0ZIJacrr2Ya0)…
+Processing file 1680w5w2wGB9wV5m3rGOesFyECXpwlctd CNNMerge.pth
+Processing file 14P1jvfAK8gMFFcKRE3emr4EtlqHVRADI ViT_multidecoder.pth
+Weights downloaded. Starting service.
+INFO:     172.18.0.6:43014 - "POST /predict HTTP/1.1" 200 OK
+INFO:     172.18.0.6:43586 - "POST /predict HTTP/1.1" 200 OK
+INFO:     172.18.0.6:35100 - "GET / HTTP/1.1" 404 Not Found
+INFO:     172.18.0.6:49994 - "GET /robots.txt HTTP/1.1" 404 Not Found
+INFO:     172.18.0.6:49994 - "GET / HTTP/1.1" 404 Not Found
+INFO:     172.18.0.6:41378 - "GET /.env HTTP/1.1" 404 Not Found
+INFO:     172.18.0.6:46932 - "POST /predict HTTP/1.1" 200 OK
+INFO:     172.18.0.6:58876 - "POST /predict HTTP/1.1" 200 OK
+INFO:     172.18.0.6:49404 - "GET /robots.txt HTTP/1.1" 404 Not Found
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 23.0.1 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+Retrieving folder contents
+Retrieving folder contents completed
+Building directory structure
+Building directory structure completed
+Downloading...
+From: https://drive.google.com/uc?id=1680w5w2wGB9wV5m3rGOesFyECXpwlctd
+To: /app/mds_vitnet/weights/CNNMerge.pth
+  0%|          | 0.00/1.35M [00:00<?, ?B/s] 39%|███▊      | 524k/1.35M [00:00<00:00, 3.17MB/s] 77%|███████▋  | 1.05M/1.35M [00:00<00:00, 3.08MB/s]100%|██████████| 1.35M/1.35M [00:00<00:00, 3.15MB/s]
+Downloading...
+From (original): https://drive.google.com/uc?id=14P1jvfAK8gMFFcKRE3emr4EtlqHVRADI
+From (redirected): https://drive.google.com/uc?id=14P1jvfAK8gMFFcKRE3emr4EtlqHVRADI&confirm=t&uuid=b0f89415-58dc-466c-b8a0-3a2c47acda98
+To: /app/mds_vitnet/weights/ViT_multidecoder.pth
+  0%|          | 0.00/446M [00:00<?, ?B/s]  1%|          | 4.72M/446M [00:00<00:36, 12.2MB/s]  2%|▏         | 8.91M/446M [00:00<00:31, 13.7MB/s]  5%|▌         | 24.1M/446M [00:00<00:09, 42.3MB/s]  7%|▋         | 32.0M/446M [00:01<00:13, 31.5MB/s] 10%|▉         | 43.0M/446M [00:01<00:09, 43.8MB/s] 11%|█▏        | 50.3M/446M [00:01<00:13, 29.5MB/s] 14%|█▍        | 64.5M/446M [00:01<00:08, 45.1MB/s] 16%|█▋        | 72.9M/446M [00:02<00:12, 29.6MB/s] 20%|█▉        | 88.6M/446M [00:02<00:13, 27.4MB/s] 22%|██▏       | 98.6M/446M [00:03<00:11, 31.4MB/s] 23%|██▎       | 105M/446M [00:03<00:09, 34.7MB/s]  25%|██▍       | 111M/446M [00:03<00:09, 36.3MB/s] 27%|██▋       | 120M/446M [00:03<00:07, 42.8MB/s] 29%|██▊       | 127M/446M [00:03<00:09, 32.8MB/s] 31%|███       | 138M/446M [00:04<00:07, 39.9MB/s] 33%|███▎      | 146M/446M [00:04<00:08, 35.5MB/s] 34%|███▍      | 151M/446M [00:04<00:09, 32.0MB/s] 36%|███▌      | 159M/446M [00:04<00:07, 39.1MB/s] 37%|███▋      | 167M/446M [00:05<00:08, 33.2MB/s] 39%|███▊      | 172M/446M [00:05<00:08, 30.6MB/s] 41%|████      | 184M/446M [00:05<00:05, 44.8MB/s] 43%|████▎     | 190M/446M [00:05<00:09, 26.8MB/s] 47%|████▋     | 208M/446M [00:06<00:05, 41.8MB/s] 49%|████▉     | 218M/446M [00:06<00:04, 49.3MB/s] 50%|█████     | 225M/446M [00:06<00:05, 41.8MB/s] 54%|█████▍    | 242M/446M [00:06<00:03, 57.3MB/s] 56%|█████▌    | 250M/446M [00:06<00:03, 59.9MB/s] 59%|█████▊    | 262M/446M [00:06<00:02, 72.8MB/s] 61%|██████    | 272M/446M [00:06<00:02, 67.8MB/s] 63%|██████▎   | 280M/446M [00:07<00:02, 59.8MB/s] 66%|██████▌   | 295M/446M [00:07<00:01, 78.6MB/s] 68%|██████▊   | 305M/446M [00:07<00:02, 69.7MB/s] 70%|███████   | 314M/446M [00:07<00:01, 74.8MB/s] 74%|███████▎  | 328M/446M [00:07<00:01, 89.8MB/s] 76%|███████▌  | 339M/446M [00:07<00:01, 89.7MB/s] 78%|███████▊  | 349M/446M [00:07<00:01, 87.5MB/s] 81%|████████  | 362M/446M [00:07<00:00, 98.1MB/s] 83%|████████▎ | 372M/446M [00:08<00:00, 95.6MB/s] 86%|████████▌ | 383M/446M [00:08<00:00, 97.8MB/s] 88%|████████▊ | 393M/446M [00:08<00:00, 95.2MB/s] 91%|█████████ | 406M/446M [00:08<00:00, 105MB/s]  94%|█████████▎| 418M/446M [00:08<00:00, 107MB/s] 96%|█████████▌| 429M/446M [00:08<00:00, 105MB/s] 99%|█████████▊| 440M/446M [00:08<00:00, 97.7MB/s]100%|██████████| 446M/446M [00:08<00:00, 50.8MB/s]
+Download completed
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+/usr/local/lib/python3.10/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/usr/local/lib/python3.10/site-packages/torchvision/models/_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=Swin_T_Weights.IMAGENET1K_V1`. You can also use `weights=Swin_T_Weights.DEFAULT` to get the most up-to-date weights.
+  warnings.warn(msg)
+Downloading: "https://download.pytorch.org/models/swin_t-704ceda3.pth" to /root/.cache/torch/hub/checkpoints/swin_t-704ceda3.pth
+  0%|          | 0.00/108M [00:00<?, ?B/s]  9%|▊         | 9.42M/108M [00:00<00:01, 98.8MB/s] 19%|█▉        | 20.9M/108M [00:00<00:00, 111MB/s]  37%|███▋      | 40.2M/108M [00:00<00:00, 153MB/s] 51%|█████     | 54.7M/108M [00:00<00:00, 148MB/s] 74%|███████▍  | 79.9M/108M [00:00<00:00, 189MB/s]100%|██████████| 108M/108M [00:00<00:00, 193MB/s] 
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user has two issues:
+
+1. **Frontend error:** `Uncaught (in promise) TypeError: r.filter is not a function` at page-48a0a36fa30a1fe7.js - this suggests somewhere in the frontend code we're calling `.filter()` on something that isn't an array (e.g. it could be `undefined`, `null`, or an object).
+
+2. **404 on /api/share/by-resource** - when viewing a shared single scan, the by-resource API returns 404. That might be expected in some cases (e.g. the share doesn't exist for that resource), but the user mentioned it in the context of "keine heatmap" so they might be on a results page (not share page) where SharePanel fetches by-resource and gets 404.
+
+The heatmap not showing is likely the `r.filter is not a function` - something in the results page or share page that deals with saliency/heatmap or pageIndex regions is expecting an array and getting something else (e.g. the API returns an object where we expect an array, or pageIndex.regions is undefined).
+
+Let me search for .filter in the context of results page, share page, saliency, pageIndex, regions.
+</details></think>
+
+---
+
+
+Zwei Probleme: 1) `r.filter is not a function` — irgendwo wird `.filter()` auf einem Nicht-Array aufgerufen. 2) 404 von `/api/share/by-resource`. Suche nach `.filter`-Aufrufen und der Verwendung von `pageIndex`/`regions`:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "\\.filter\\(",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app",
+  "glob": "*.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "\\.filter\\(",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app",
+  "outputMode": "content",
+  "totalFiles": 6,
+  "totalMatches": 10,
+  "topFiles": [
+    {
+      "uri": "app/share/[token]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/domain/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/journey-agent/[jobId]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "app/results/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/settings/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/page.tsx",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "pageIndex|regions|saliencyHeatmap",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "pageIndex|regions|saliencyHeatmap",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 13,
+  "topFiles": [
+    {
+      "uri": "app/results/[id]/page.tsx",
+      "matchCount": 13
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "pageIndex|\\.regions|filter",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "pageIndex|\\.regions|filter",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 8,
+  "topFiles": [
+    {
+      "uri": "app/share/[token]/page.tsx",
+      "matchCount": 8
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+

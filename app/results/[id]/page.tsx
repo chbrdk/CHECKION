@@ -877,7 +877,7 @@ export default function ResultsPage() {
                             >
                                 {showTouchTargets ? 'Hide Touch Targets' : 'Show Touch Targets'}
                             </MsqdxButton>
-                            {result.pageIndex && result.pageIndex.regions.length > 0 && (
+                            {result.pageIndex && Array.isArray(result.pageIndex.regions) && result.pageIndex.regions.length > 0 && (
                                 <MsqdxButton
                                     variant={showRegionHighlight ? 'contained' : 'outlined'}
                                     size="small"
@@ -976,7 +976,7 @@ export default function ResultsPage() {
                                     )}
                                     {result.pageIndex && (
                                         <PageIndexRegionsOverlay
-                                            regions={result.pageIndex.regions}
+                                            regions={Array.isArray(result.pageIndex?.regions) ? result.pageIndex.regions : []}
                                             screenshotWidth={screenshotDimensions.width}
                                             screenshotHeight={screenshotDimensions.height}
                                             highlightedRegionId={hoveredRegionId}
@@ -1028,7 +1028,7 @@ export default function ResultsPage() {
                                     ))}
                                 </Box>
                             </Box>
-                            {showRegionHighlight && result.pageIndex && result.pageIndex.regions.length > 0 && (
+                            {showRegionHighlight && Array.isArray(result.pageIndex?.regions) && result.pageIndex.regions.length > 0 && (
                                 <Box sx={{ mt: 1.5, p: 1.5, bgcolor: 'var(--color-secondary-dx-grey-light-tint)', borderRadius: 1 }}>
                                     <MsqdxTypography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 1, color: 'var(--color-text-muted-on-light)' }}>
                                         {t('results.pageIndexTitle')} — {t('results.hoverToHighlight')}

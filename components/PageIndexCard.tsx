@@ -32,7 +32,8 @@ export interface PageIndexCardProps {
 export function PageIndexCard({ pageIndex, showSaliency = true }: PageIndexCardProps) {
     const { t } = useI18n();
 
-    if (!pageIndex?.regions?.length) {
+    const regions = Array.isArray(pageIndex?.regions) ? pageIndex.regions : [];
+    if (regions.length === 0) {
         return (
             <Box sx={{ p: 2, color: MSQDX_NEUTRAL[600] }}>
                 <MsqdxTypography variant="body2">{t('results.pageIndexNoData')}</MsqdxTypography>
@@ -59,7 +60,7 @@ export function PageIndexCard({ pageIndex, showSaliency = true }: PageIndexCardP
                     gap: 0.75,
                 }}
             >
-                {pageIndex.regions.map((r) => (
+                {regions.map((r) => (
                     <RegionRow key={r.id} region={r} showSaliency={showSaliency} t={t} />
                 ))}
             </Box>

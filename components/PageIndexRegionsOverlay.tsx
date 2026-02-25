@@ -30,6 +30,8 @@ export function PageIndexRegionsOverlay({
 }: PageIndexRegionsOverlayProps) {
     if (!visible || screenshotWidth <= 0 || screenshotHeight <= 0) return null;
 
+    const safeRegions = Array.isArray(regions) ? regions : [];
+
     return (
         <Box
             sx={{
@@ -42,8 +44,8 @@ export function PageIndexRegionsOverlay({
                 zIndex: 35,
             }}
         >
-            {regions
-                .filter((r) => r.rect)
+            {safeRegions
+                .filter((r) => r?.rect)
                 .map((r) => {
                     const rect = r.rect!;
                     const isHighlighted = r.id === highlightedRegionId;
