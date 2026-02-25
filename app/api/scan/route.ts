@@ -62,10 +62,11 @@ export async function POST(request: Request) {
         // Fire-and-forget: trigger async saliency heatmap generation per scan (only if service is configured)
         const saliencyUrl = process.env.SALIENCY_SERVICE_URL;
         if (saliencyUrl) {
-            const origin = new URL(request.url).origin;
+            const port = process.env.PORT || 3333;
+            const baseUrl = `http://127.0.0.1:${port}`;
             const cookie = request.headers.get('cookie') ?? '';
             for (const result of results) {
-                fetch(`${origin}/api/saliency/generate`, {
+                fetch(`${baseUrl}/api/saliency/generate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', Cookie: cookie },
                     body: JSON.stringify({ scanId: result.id }),

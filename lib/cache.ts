@@ -18,34 +18,22 @@ import type { UxCxSummary } from '@/lib/llm-summary-types';
 import type { ShareLinkRow } from '@/lib/db/shares';
 import type { SavedJourneyRow } from '@/lib/db/journeys';
 
-/** Cached: single scan by id (user-scoped). */
+/** Cached: single scan by id (user-scoped). Exceeds 2MB, skipping cache. */
 export async function getCachedScan(id: string, userId: string): Promise<ScanResult | null> {
-    return unstable_cache(
-        () => dbScans.getScan(id, userId),
-        ['scan', id, userId],
-        { revalidate: CACHE_REVALIDATE_SCAN, tags: [`scan-${id}`] }
-    )();
+    return dbScans.getScan(id, userId);
 }
 
-/** Cached: single scan with LLM summary. */
+/** Cached: single scan with LLM summary. Exceeds 2MB, skipping cache. */
 export async function getCachedScanWithSummary(
     id: string,
     userId: string
 ): Promise<{ result: ScanResult; llmSummary: UxCxSummary | null } | null> {
-    return unstable_cache(
-        () => dbScans.getScanWithSummary(id, userId),
-        ['scan-summary', id, userId],
-        { revalidate: CACHE_REVALIDATE_SCAN, tags: [`scan-${id}`] }
-    )();
+    return dbScans.getScanWithSummary(id, userId);
 }
 
-/** Cached: domain scan by id (user-scoped). */
+/** Cached: domain scan by id (user-scoped). Exceeds 2MB, skipping cache. */
 export async function getCachedDomainScan(id: string, userId: string): Promise<DomainScanResult | null> {
-    return unstable_cache(
-        () => dbScans.getDomainScan(id, userId),
-        ['domain', id, userId],
-        { revalidate: CACHE_REVALIDATE_DOMAIN, tags: [`domain-${id}`] }
-    )();
+    return dbScans.getDomainScan(id, userId);
 }
 
 /** Cached: share link by token (public). */
@@ -57,18 +45,14 @@ export async function getCachedShareByToken(token: string): Promise<ShareLinkRow
     )();
 }
 
-/** Cached: standalone scans list (paginated). */
+/** Cached: standalone scans list (paginated). Exceeds 2MB, skipping cache. */
 export async function listCachedStandaloneScans(
     userId: string,
     options?: { limit?: number; offset?: number }
 ): Promise<ScanResult[]> {
     const limit = options?.limit ?? 10000;
     const offset = options?.offset ?? 0;
-    return unstable_cache(
-        () => dbScans.listStandaloneScans(userId, { limit, offset }),
-        ['scans-standalone', userId, String(limit), String(offset)],
-        { revalidate: CACHE_REVALIDATE_LIST, tags: [`scans-list-${userId}`] }
-    )();
+    return dbScans.listStandaloneScans(userId, { limit, offset });
 }
 
 /** Cached: standalone scans count. */
@@ -80,18 +64,14 @@ export async function getCachedStandaloneScansCount(userId: string): Promise<num
     )();
 }
 
-/** Cached: domain scans list – full payload (for search). May exceed 2MB with many scans. */
+/** Cached: domain scans list – full payload (for search). May exceed 2MB with many scans, skipping cache. */
 export async function listCachedDomainScans(
     userId: string,
     options?: { limit?: number; offset?: number }
 ): Promise<DomainScanResult[]> {
     const limit = options?.limit ?? 10000;
     const offset = options?.offset ?? 0;
-    return unstable_cache(
-        () => dbScans.listDomainScans(userId, { limit, offset }),
-        ['domain-list', userId, String(limit), String(offset)],
-        { revalidate: CACHE_REVALIDATE_LIST, tags: [`domain-list-${userId}`] }
-    )();
+    return dbScans.listDomainScans(userId, { limit, offset });
 }
 
 /** Cached: domain scan summaries only (id, domain, timestamp, status, score, totalPages). Stays under 2MB. */

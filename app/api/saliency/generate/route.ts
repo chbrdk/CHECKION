@@ -9,7 +9,14 @@ import { invalidateScan } from '@/lib/cache';
 import { enrichPageIndexWithSaliency } from '@/lib/page-index';
 import { getScreenshotBase64 } from '@/lib/screenshot-storage';
 
-const SALIENCY_SERVICE_URL = process.env.SALIENCY_SERVICE_URL;
+/** Base URL of the saliency service. Normalized to http: internal services in Docker/Coolify typically do not use TLS. */
+function getSaliencyBaseUrl(): string | undefined {
+    const raw = process.env.SALIENCY_SERVICE_URL;
+    if (!raw?.trim()) return undefined;
+    const url = raw.replace(/\/$/, '').trim();
+    if (url.toLowerCase().startsWith('https://')) return url.replace(/^https:\/\//i, 'http://');
+    return url;
+}
 
 /** Timeout (ms) for saliency request. Model on CPU can take 1–3 min for large screenshots. */
 const SALIENCY_REQUEST_TIMEOUT_MS = 180_000;
@@ -20,7 +27,8 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!SALIENCY_SERVICE_URL) {
+    const saliencyBaseUrl = getSaliencyBaseUrl();
+    if (!saliencyBaseUrl) {
         return NextResponse.json(
             { error: 'Saliency service not configured (SALIENCY_SERVICE_URL).' },
             { status: 503 },
@@ -48,7 +56,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Scan has no screenshot or screenshot file missing.' }, { status: 400 });
     }
 
-    const predictUrl = SALIENCY_SERVICE_URL.replace(/\/$/, '') + '/predict';
+    const predictUrl = saliencyBaseUrl + '/predict';
     let res: Response;
     try {
         res = await fetch(predictUrl, {

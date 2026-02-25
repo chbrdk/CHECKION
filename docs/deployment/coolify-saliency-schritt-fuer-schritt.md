@@ -66,7 +66,7 @@ Eine Anleitung: **wo du in Coolify was eintragen musst.** (Gleiches GitHub-Repo,
 |------|------|
 | `SALIENCY_SERVICE_URL` | `http://<Container-ID-von-Saliency>:8000` |
 
-**Wichtig:** Statt des App-Namens die **Container-ID** aus Schritt 5.4 verwenden (z. B. `http://rc8gsg4kcwc8k0wsgo484w80:8000`). Der App-Name wie `checkion-saliency` funktioniert in Coolify oft nicht für Container-zu-Container-Verbindungen – nur die angezeigte interne ID.
+**Wichtig:** Statt des App-Namens die **Container-ID** aus Schritt 5.4 verwenden (z. B. `http://rc8gsg4kcwc8k0wsgo484w80:8000`). Der App-Name wie `checkion-saliency` funktioniert in Coolify oft nicht für Container-zu-Container-Verbindungen – nur die angezeigte interne ID. **Immer `http://` verwenden**, nicht `https://` – der Saliency-Container hat keinen TLS-Server; bei HTTPS entsteht im CHECKION-Log „SSL packet length too long“ und keine Heatmap.
 
 ### Schritt 8: CHECKION neu deployen
 

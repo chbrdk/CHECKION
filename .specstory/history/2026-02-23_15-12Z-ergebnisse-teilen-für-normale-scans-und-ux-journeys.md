@@ -14908,3 +14908,798 @@ Status: **completed**
 
 ---
 
+<think><details><summary>Thought Process</summary>
+
+The share page passes `result.pageIndex.regions` to components. If `regions` is not an array (e.g. undefined or an object), then when a component does `regions.filter(...)` it would throw "filter is not a function". Let me check PageIndexCard and PageIndexRegionsOverlay - they likely receive `regions` and call .filter on it.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "regions|\\.filter",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components",
+  "glob": "*.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "regions|\\.filter",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components",
+  "outputMode": "content",
+  "totalFiles": 4,
+  "totalMatches": 17,
+  "topFiles": [
+    {
+      "uri": "components/UxIssueList.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "components/PageIndexRegionsOverlay.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "components/PageIndexCard.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "components/JourneyFlowchart.tsx",
+      "matchCount": 6
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/PageIndexCard.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/PageIndexRegionsOverlay.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Found it. **PageIndexRegionsOverlay** does `regions.filter((r) => r.rect)` at line 45-46. If `regions` is not an array (e.g. `undefined` or an object from API), then `regions.filter` throws "filter is not a function".
+
+So the fix is to ensure we never pass non-array to PageIndexRegionsOverlay. The call sites are:
+- app/results/[id]/page.tsx: `regions={result.pageIndex.regions}` 
+- app/share/[token]/page.tsx: `regions={data.pageIndex.regions}` (or similar)
+
+If the API returns `pageIndex` with `regions` as something other than an array (e.g. missing, null, or an object), we get the error. So we should:
+1. In PageIndexRegionsOverlay: guard with `Array.isArray(regions) ? regions.filter(...) : []` so we never call .filter on non-array.
+2. In the parent components (results page, share page): ensure we only render PageIndexRegionsOverlay when `Array.isArray(result.pageIndex?.regions)` or pass `result.pageIndex?.regions ?? []`.
+
+The safest fix is in PageIndexRegionsOverlay - normalize regions to always be an array at the top of the component. That way any caller that passes undefined or wrong shape won't crash.
+</details></think>
+
+---
+
+
+PageIndexRegionsOverlay ruft `regions.filter()` auf; wenn `regions` kein Array ist (z. B. `undefined` oder Objekt), entsteht der Fehler. Wir machen die Komponente abwehrfähig:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/PageIndexRegionsOverlay.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now the 404 on /api/share/by-resource - that happens when the user is on a page that uses SharePanel (e.g. single scan results page) and that scan has not been shared yet. So the API returns 404 (no share for this resource). The SharePanel should handle 404 and show "create share" instead of "already shared". Let me check SharePanel - does it treat 404 as "no share" and not crash? If the 404 is expected (resource not shared), the frontend shouldn't break. The user said "keine heatmap" - so the main issue was the filter crash. The 404 might be unrelated (just a request that returns 404 when there's no share). Let me also ensure results page and share page pass arrays to PageIndexCard - actually PageIndexCard uses pageIndex.regions.map and checks pageIndex?.regions?.length, so if regions is undefined it would be falsy and length would be undefined, and undefined?.length would be undefined, so length > 0 would be false. So we'd get "no data" or we might not render the card. But if regions is an empty object {} then regions.length would be undefined and we might still try to map. Let me check - pageIndex.regions.map - if regions is {} then .map is undefined and we'd get "map is not a function". So the issue could also be in PageIndexCard if regions is {}. The safest is to make PageIndexRegionsOverlay defensive (done) and also ensure any place that passes regions to it uses a fallback. Let me also add a fallback when passing regions from results and share pages: regions={result.pageIndex?.regions ?? []} so we always pass an array.
+</details></think>
+
+---
+
+
+Aufrufer absichern, sodass immer ein Array übergeben wird:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "PageIndexRegionsOverlay|regions=\\{",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "PageIndexRegionsOverlay|regions=\\{",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app",
+  "outputMode": "content",
+  "totalFiles": 2,
+  "totalMatches": 7,
+  "topFiles": [
+    {
+      "uri": "app/share/[token]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "app/results/[id]/page.tsx",
+      "matchCount": 4
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "PageIndexCard.*pageIndex",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "PageIndexCard.*pageIndex",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app",
+  "outputMode": "content",
+  "totalFiles": 2,
+  "totalMatches": 2,
+  "topFiles": [
+    {
+      "uri": "app/share/[token]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/results/[id]/page.tsx",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So we have:
+- app/share/[token]/page.tsx line 827: regions={data.pageIndex.regions} - if data.pageIndex exists but regions is undefined or not array, crash. The parent condition is data.pageIndex && so we only render when pageIndex exists, but regions could still be undefined or wrong type.
+- app/results/[id]/page.tsx line 979: regions={result.pageIndex.regions} - same.
+
+Let me add fallback to [] in both places so we always pass an array. And PageIndexCard: it uses pageIndex.regions.map - if regions is {} then map is undefined. So PageIndexCard should also guard: use (pageIndex?.regions && Array.isArray(pageIndex.regions) ? pageIndex.regions : []) for the list.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/PageIndexCard.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Share page has another place where data.pageIndex.regions is used - the map for the region list. Let me check line 843.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The share page at 839 checks data.pageIndex?.regions?.length - so if regions is not an array, .length might be undefined and the condition would be falsy (no render of the map). But if for some reason regions is an object with a length property (e.g. { length: 1 }) we could still get into the block and then data.pageIndex.regions.map would fail. The results page at 1031 checks result.pageIndex && result.pageIndex.regions.length - so if regions is undefined, result.pageIndex.regions would throw when accessing .length. So we need to make that safe too: result.pageIndex?.regions?.length. Let me fix the results page condition to use optional chaining, and the .map to use a safe array.
+</details></think>
+
+---
+
+
+Ergebnisseite: Zugriff auf `regions` mit Optional Chaining absichern.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+There's another place in results page - line 880 area - result.pageIndex && result.pageIndex.regions.length. Let me search for all uses of .regions in results and share.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "\\.regions",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx",
+  "contextBefore": 0,
+  "contextAfter": 0,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "\\.regions",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 4,
+  "topFiles": [
+    {
+      "uri": "app/results/[id]/page.tsx",
+      "matchCount": 4
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "\\.regions",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "\\.regions",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 5,
+  "topFiles": [
+    {
+      "uri": "app/share/[token]/page.tsx",
+      "matchCount": 5
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Line 880 in results: result.pageIndex && result.pageIndex.regions.length > 0 - if regions is undefined, result.pageIndex.regions would be undefined and .length would throw. So we need to fix that to result.pageIndex && Array.isArray(result.pageIndex.regions) && result.pageIndex.regions.length > 0.
+Line 784 in share: data.pageIndex?.regions?.length - that's optional chaining so it's safe (undefined?.length is undefined). So that's ok.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Share page 784: data.pageIndex?.regions?.length - if regions is an object like {} then .length would be undefined, so the condition would be falsy. Good. We're done.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/PageIndexRegionsOverlay.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/PageIndexCard.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/PageIndexRegionsOverlay.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/PageIndexCard.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/share/[token]/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+All good. The 404 on /api/share/by-resource is expected when the resource (single scan) has not been shared yet - SharePanel fetches that to see if there's already a share. The frontend should handle 404 and show "create share" button. Let me check SharePanel - does it handle 404?
+</details></think>
+
+---
+
+
+SharePanel prüfen — ob 404 bei by-resource korrekt behandelt wird (kein Crash):
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SharePanel.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+SharePanel already handles 404 (returns null, sets shareInfo to null). So the 404 in the network tab is expected when the scan isn't shared yet. The only issue was the filter crash. We're good.
+</details></think>
+
+---
+
+
+Hier die Änderungen:
+
+**1. `r.filter is not a function`**
+
+Ursache: `pageIndex.regions` war an manchen Stellen kein Array (z. B. `undefined` oder anderes vom Backend), und es wurde trotzdem `.filter()` bzw. `.map()` darauf aufgerufen.
+
+**Anpassungen:**
+
+- **`components/PageIndexRegionsOverlay.tsx`**  
+  - `regions` wird mit `const safeRegions = Array.isArray(regions) ? regions : [];` abgesichert.  
+  - Es wird nur noch `safeRegions.filter(...)` verwendet, damit nie auf einem Nicht-Array `.filter` läuft.
+
+- **`components/PageIndexCard.tsx`**  
+  - `const regions = Array.isArray(pageIndex?.regions) ? pageIndex.regions : [];`  
+  - Nur noch `regions.length` und `regions.map(...)`, kein direkter Zugriff auf `pageIndex.regions` mehr.
+
+- **`app/results/[id]/page.tsx`**  
+  - Übergeben von `regions` an `PageIndexRegionsOverlay`: `regions={Array.isArray(result.pageIndex?.regions) ? result.pageIndex.regions : []}`  
+  - Alle Bedingungen, die `result.pageIndex.regions` nutzen, prüfen mit `Array.isArray(result.pageIndex?.regions) && result.pageIndex.regions.length > 0`.
+
+- **`app/share/[token]/page.tsx`**  
+  - `regions={Array.isArray(data.pageIndex?.regions) ? data.pageIndex.regions : []}`  
+  - Anzeige der Regionen-Liste nur, wenn `Array.isArray(data.pageIndex?.regions) && data.pageIndex.regions.length > 0`.
+
+Damit stürzt die Heatmap-/PageIndex-Ansicht nicht mehr ab, auch wenn `regions` fehlt oder kein Array ist.
+
+**2. 404 bei `/api/share/by-resource`**
+
+Der 404 ist erwartbar, wenn es für diese Ressource (z. B. diesen Einzelscan) noch keinen Share-Link gibt. Im `SharePanel` wird 404 bereits behandelt (`if (res.status === 404) return null`), es wird also kein Share angezeigt und der „Teilen“-Button zum Anlegen eines neuen Shares wird gezeigt. Es ist kein Bug, nur der normale Lauf bei „noch nicht geteilt“.
+
+**Saliency-Log**
+
+Dass der Saliency-Service startet, Weights lädt und `POST /predict` mit 200 beantwortet, passt. Die Heatmap sollte erscheinen, sobald das Frontend nicht mehr wegen `regions` crasht. Nach einem neuen Deploy/Refresh sollte die Heatmap wieder sichtbar sein.
+
+---
+
+_**User**_
+
+ich bekomme keine neue heathmap generiert. in saliency log sieht alles gut aus:
+Weights not found. Downloading from Google Drive (folder 10tZL7oNfaRkBHHTeqjog0ZIJacrr2Ya0)…
+Processing file 1680w5w2wGB9wV5m3rGOesFyECXpwlctd CNNMerge.pth
+Processing file 14P1jvfAK8gMFFcKRE3emr4EtlqHVRADI ViT_multidecoder.pth
+Weights downloaded. Starting service.
+INFO:     172.18.0.6:49180 - "POST /predict HTTP/1.1" 200 OK
+INFO:     172.18.0.6:39076 - "POST /predict HTTP/1.1" 200 OK
+INFO:     172.18.0.6:55164 - "POST /predict HTTP/1.1" 200 OK
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 23.0.1 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+Retrieving folder contents
+Retrieving folder contents completed
+Building directory structure
+Building directory structure completed
+Downloading...
+From: https://drive.google.com/uc?id=1680w5w2wGB9wV5m3rGOesFyECXpwlctd
+To: /app/mds_vitnet/weights/CNNMerge.pth
+  0%|          | 0.00/1.35M [00:00<?, ?B/s]100%|██████████| 1.35M/1.35M [00:00<00:00, 42.6MB/s]
+Downloading...
+From (original): https://drive.google.com/uc?id=14P1jvfAK8gMFFcKRE3emr4EtlqHVRADI
+From (redirected): https://drive.google.com/uc?id=14P1jvfAK8gMFFcKRE3emr4EtlqHVRADI&confirm=t&uuid=8031b573-f1b6-4bdb-92c2-bcd508c3c8aa
+To: /app/mds_vitnet/weights/ViT_multidecoder.pth
+  0%|          | 0.00/446M [00:00<?, ?B/s]  1%|          | 4.72M/446M [00:00<00:34, 12.7MB/s]  2%|▏         | 6.82M/446M [00:00<00:33, 13.0MB/s]  3%|▎         | 15.2M/446M [00:00<00:20, 21.0MB/s]  4%|▍         | 19.4M/446M [00:01<00:21, 20.0MB/s]  6%|▌         | 25.7M/446M [00:01<00:20, 20.8MB/s]  7%|▋         | 29.9M/446M [00:01<00:20, 20.5MB/s]  8%|▊         | 36.2M/446M [00:01<00:18, 22.3MB/s]  9%|▉         | 40.4M/446M [00:01<00:17, 23.5MB/s] 11%|█         | 48.8M/446M [00:02<00:17, 22.7MB/s] 12%|█▏        | 55.1M/446M [00:02<00:15, 25.2MB/s] 14%|█▎        | 61.3M/446M [00:02<00:14, 25.7MB/s] 15%|█▍        | 65.5M/446M [00:02<00:14, 26.5MB/s] 16%|█▋        | 73.4M/446M [00:02<00:10, 35.4MB/s] 18%|█▊        | 78.1M/446M [00:03<00:14, 25.0MB/s] 20%|█▉        | 88.6M/446M [00:03<00:12, 29.6MB/s] 21%|██        | 92.3M/446M [00:03<00:12, 29.2MB/s] 22%|██▏       | 98.6M/446M [00:03<00:09, 34.9MB/s] 23%|██▎       | 103M/446M [00:04<00:13, 25.8MB/s]  24%|██▍       | 107M/446M [00:04<00:12, 27.4MB/s] 25%|██▌       | 114M/446M [00:04<00:09, 33.8MB/s] 26%|██▋       | 118M/446M [00:04<00:11, 28.2MB/s] 27%|██▋       | 123M/446M [00:04<00:10, 31.5MB/s] 29%|██▉       | 129M/446M [00:04<00:08, 38.8MB/s] 30%|███       | 134M/446M [00:05<00:10, 30.5MB/s] 31%|███       | 139M/446M [00:05<00:08, 34.6MB/s] 33%|███▎      | 145M/446M [00:05<00:07, 39.6MB/s] 34%|███▎      | 150M/446M [00:05<00:10, 28.9MB/s] 36%|███▌      | 159M/446M [00:05<00:07, 38.3MB/s] 37%|███▋      | 167M/446M [00:06<00:08, 32.5MB/s] 38%|███▊      | 171M/446M [00:06<00:08, 32.2MB/s] 41%|████      | 184M/446M [00:06<00:07, 35.8MB/s] 42%|████▏     | 188M/446M [00:06<00:07, 35.2MB/s] 44%|████▍     | 198M/446M [00:06<00:05, 45.6MB/s] 46%|████▌     | 205M/446M [00:06<00:04, 51.0MB/s] 48%|████▊     | 212M/446M [00:06<00:04, 54.5MB/s] 49%|████▉     | 221M/446M [00:07<00:04, 51.3MB/s] 51%|█████     | 226M/446M [00:07<00:04, 47.0MB/s] 52%|█████▏    | 232M/446M [00:07<00:04, 46.2MB/s] 55%|█████▌    | 246M/446M [00:07<00:02, 67.2MB/s] 57%|█████▋    | 254M/446M [00:07<00:02, 68.6MB/s] 59%|█████▊    | 262M/446M [00:07<00:02, 68.7MB/s] 61%|██████    | 271M/446M [00:07<00:02, 69.4MB/s] 62%|██████▏   | 278M/446M [00:08<00:03, 51.0MB/s] 66%|██████▌   | 294M/446M [00:08<00:02, 71.8MB/s] 68%|██████▊   | 305M/446M [00:08<00:01, 76.6MB/s] 70%|███████   | 314M/446M [00:08<00:01, 71.3MB/s] 74%|███████▍  | 329M/446M [00:08<00:01, 90.9MB/s] 76%|███████▌  | 340M/446M [00:08<00:01, 74.0MB/s] 79%|███████▉  | 354M/446M [00:08<00:01, 89.0MB/s] 82%|████████▏ | 365M/446M [00:08<00:00, 92.6MB/s] 86%|████████▌ | 382M/446M [00:09<00:00, 112MB/s]  88%|████████▊ | 395M/446M [00:09<00:00, 111MB/s] 91%|█████████ | 407M/446M [00:09<00:00, 78.2MB/s] 95%|█████████▍| 424M/446M [00:09<00:00, 96.7MB/s] 98%|█████████▊| 436M/446M [00:09<00:00, 84.9MB/s]100%|██████████| 446M/446M [00:09<00:00, 45.5MB/s]
+Download completed
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+/usr/local/lib/python3.10/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/usr/local/lib/python3.10/site-packages/torchvision/models/_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=Swin_T_Weights.IMAGENET1K_V1`. You can also use `weights=Swin_T_Weights.DEFAULT` to get the most up-to-date weights.
+  warnings.warn(msg)
+Downloading: "https://download.pytorch.org/models/swin_t-704ceda3.pth" to /root/.cache/torch/hub/checkpoints/swin_t-704ceda3.pth
+  0%|          | 0.00/108M [00:00<?, ?B/s] 16%|█▌        | 17.0M/108M [00:00<00:00, 178MB/s] 34%|███▎      | 36.3M/108M [00:00<00:00, 193MB/s] 56%|█████▋    | 61.1M/108M [00:00<00:00, 223MB/s] 77%|███████▋  | 82.8M/108M [00:00<00:00, 225MB/s] 99%|█████████▉| 107M/108M [00:00<00:00, 236MB/s] 100%|██████████| 108M/108M [00:00<00:00, 225MB/s]
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+
+
+im allgemeinen log:
+[CHECKION] Running drizzle-kit push...
+No config path provided, using default 'drizzle.config.ts'
+Reading config file '/app/drizzle.config.ts'
+Using 'pg' driver for database querying
+[⣷] Pulling schema from database...
+KG[⣯] Pulling schema from database...
+KG[⣟] Pulling schema from database...
+KG[✓] Pulling schema from database...
+[i] No changes detected
+[CHECKION] Schema up to date.
+
+> checkion@0.1.0 start
+> next start --port 3333
+
+▲ Next.js 16.1.6
+- Local:         http://localhost:3333
+- Network:       http://172.18.0.3:3333
+
+✓ Starting...
+✓ Ready in 317ms
+Injecting axe-core...
+Axe injected via content. Running axe...
+Injecting axe-core...
+Axe injected via content. Running axe...
+Injecting axe-core...
+Axe injected via content. Running axe...
+Axe run complete.
+Found 30 passed rules.
+[UX] CLS Score for https://ksb.com/de-de: 0.2691210063651756
+Axe run complete.
+Found 30 passed rules.
+[UX] CLS Score for https://ksb.com/de-de: 0.12674397433966675
+Axe run complete.
+Found 30 passed rules.
+[UX] CLS Score for https://ksb.com/de-de: 0.08271408081054688
+npm notice
+npm notice New major version of npm available! 10.9.4 -> 11.10.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.10.1
+npm notice To update run: npm install -g npm@11.10.1
+npm notice
+Failed to set Next.js data cache for unstable_cache /api/scan/bcbd0623-913e-47fe-9b7f-92ca868759f6 3d887d7ede5509a50d1210faf95dc565c2cbf862a850b7b56e8cb1ff26172a0c, items over 2MB can not be cached (2404974 bytes)
+Failed to set Next.js data cache for unstable_cache /api/scan/bcbd0623-913e-47fe-9b7f-92ca868759f6 3d887d7ede5509a50d1210faf95dc565c2cbf862a850b7b56e8cb1ff26172a0c, items over 2MB can not be cached (2404974 bytes)
+[CHECKION] saliency fire-and-forget failed 49f1b94b-f51d-429f-ac21-1651ee0bea88 TypeError: fetch failed
+    at ignore-listed frames {
+  [cause]: [Error: C0AC9BAB8C790000:error:0A0000C6:SSL routines:tls_get_more_records:packet length too long:../deps/openssl/openssl/ssl/record/methods/tls_common.c:662:
+  ] {
+    library: 'SSL routines',
+    reason: 'packet length too long',
+    code: 'ERR_SSL_PACKET_LENGTH_TOO_LONG'
+  }
+}
+[CHECKION] saliency fire-and-forget failed 7f937060-3acb-4f4a-92f3-4844fa1eca1e TypeError: fetch failed
+    at ignore-listed frames {
+  [cause]: [Error: C0AC9BAB8C790000:error:0A0000C6:SSL routines:tls_get_more_records:packet length too long:../deps/openssl/openssl/ssl/record/methods/tls_common.c:662:
+  ] {
+    library: 'SSL routines',
+    reason: 'packet length too long',
+    code: 'ERR_SSL_PACKET_LENGTH_TOO_LONG'
+  }
+}
+[CHECKION] saliency fire-and-forget failed 7620946e-58f2-44c7-a300-832d794f9ed7 TypeError: fetch failed
+    at ignore-listed frames {
+  [cause]: [Error: C0AC9BAB8C790000:error:0A0000C6:SSL routines:tls_get_more_records:packet length too long:../deps/openssl/openssl/ssl/record/methods/tls_common.c:662:
+  ] {
+    library: 'SSL routines',
+    reason: 'packet length too long',
+    code: 'ERR_SSL_PACKET_LENGTH_TOO_LONG'
+  }
+}
+Failed to set Next.js data cache for unstable_cache /api/scan/49f1b94b-f51d-429f-ac21-1651ee0bea88 d63ebadc6fd96a8cc548418f31c5352ad8748e22fe4927eaf6aa295cca5b96d5, items over 2MB can not be cached (2458938 bytes)
+Failed to set Next.js data cache for unstable_cache /api/scan/49f1b94b-f51d-429f-ac21-1651ee0bea88 d63ebadc6fd96a8cc548418f31c5352ad8748e22fe4927eaf6aa295cca5b96d5, items over 2MB can not be cached (2458938 bytes)
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user's CHECKION app log shows the real problem:
+
+```
+[CHECKION] saliency fire-and-forget failed ... TypeError: fetch failed
+  [cause]: [Error: ... SSL routines:tls_get_more_records:packet length too long ...
+```
+
+This means CHECKION is trying to reach the saliency service via **HTTPS** (SSL/TLS), but the saliency service is plain HTTP. When you do `fetch('https://saliency-service:8000/...')` against a server that only speaks HTTP, you get "packet length too long" because the client sends a TLS ClientHello and the server responds with raw HTTP (e.g. "HTTP/1.1 400" or similar), which is not valid TLS - hence "packet length too long".
+
+So the issue is: **SALIENCY_SERVICE_URL** is probably set to something like `https://saliency-app:8000` instead of `http://saliency-app:8000`. In Coolify, the internal service URL might be generated with https by default, or the user might have set it with https.
+
+I need to:
+1. Find where SALIENCY_SERVICE_URL is used when calling the saliency service
+2. Ensure we always use HTTP for the internal request (or document that the URL must be http)
+3. Optionally: normalize the URL in code to use http when talking to the saliency service internally (strip https or force http for local/internal hostnames)
+
+Let me search for where we build the saliency request URL.
+</details></think>
+
+---
+
+
+Fehler im CHECKION-Log:
+
+```
+[CHECKION] saliency fire-and-forget failed ... TypeError: fetch failed
+[cause]: SSL routines:tls_get_more_records:packet length too long
+```
+
+Das bedeutet: CHECKION ruft den Saliency-Service per HTTPS auf, der Service antwortet nur per HTTP — dadurch entsteht d
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/saliency/generate/route.ts</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/saliency/generate/route.ts</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
