@@ -16521,7 +16521,1077 @@ Options to make it "all in Coolify":
 
 2. **Coolify "Files" feature** - Some Coolify versions let you manage files in a volume via the UI. If the user has that, we could document "go to Storages → Files, upload sum_model.pth". But the user said they can't find such things / only have terminal. So maybe their Coolify doesn't have a file browser for volumes, or we shouldn't rely on it.
 
-3. **Build-time download** - We could change the Dockerfile.sum to download the weights during build (e.g. RUN gdown ...). Then no volume needed </details></think>
+3. **Build-time download** - We could change the Dockerfile.sum to download the weights during build (e.g. RUN gdown ...). Then no volume needed for weights - they're in the image. Downsides: image gets huge, and Google Drive rate limits / auth might break builds. Possible but fragile.
+
+4. **Entrypoint downloads from Google Drive ID** - The most "all in Coolify" approach: in entrypoint-sum.sh (or a Python script), if sum_model.pth is missing and env SUM_WEIGHTS_GDRIVE_ID is set, run gdown to download it. Then the user only needs to:
+   - Set in Coolify Environment Variables: SUM_WEIGHTS_GDRIVE_ID=14ma_hLe8DrVNuHCSKoOz41Q-rB1Hbg6A
+   - Optionally mount a volume at /app/SUM/net/pre_trained_weights so the downloaded file persists across redeploys
+   So we need to:
+   - Add gdown to the SUM Docker image (or use curl/wget with a known working redirect - Google Drive is tricky)
+   - In entrypoint-sum.sh: if [ ! -f "$WEIGHTS_FILE" ] && [ -n "$SUM_WEIGHTS_GDRIVE_ID" ]; then pip install -q gdown && gdown "$SUM_WEIGHTS_GDRIVE_ID" -O "$WEIGHTS_FILE"; fi
+   - Document: In Coolify just set SUM_WEIGHTS_GDRIVE_ID=14ma_hLe8DrVNuHCSKoOz41Q-rB1Hbg6A, deploy, done. Optionally add volume so it persists.
+
+Let me implement the entrypoint change to support SUM_WEIGHTS_GDRIVE_ID (Google Drive file ID) so the container auto-downloads on first start. Then the user only sets one env var in Coolify - no terminal, no manual file copy.
+</details></think>
+
+---
+
+
+Container so anpassen, dass er die Weights bei Bedarf selbst von Google Drive lädt. Dann reicht in Coolify eine Umgebungsvariable — kein Terminal, kein manuelles Kopieren.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/entrypoint-sum.sh</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/Dockerfile.sum</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add support for SUM_WEIGHTS_GDRIVE_ID: when set, the entrypoint uses gdown to download from Google Drive by file ID. So we need:
+1. Install gdown in the image (in Dockerfile.sum) so entrypoint can use it
+2. In entrypoint: if WEIGHTS_FILE missing and SUM_WEIGHTS_GDRIVE_ID is set, run gdown "https://drive.google.com/uc?id=$SUM_WEIGHTS_GDRIVE_ID" -O "$WEIGHTS_FILE"
+3. Update the doc to say: In Coolify only set SUM_WEIGHTS_GDRIVE_ID=14ma_hLe8DrVNuHCSKoOz41Q-rB1Hbg6A (and optionally add a volume so it persists), then deploy. No terminal needed.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/Dockerfile.sum</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/entrypoint-sum.sh</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+gdown --fuzzy might need a different syntax - let me check. For a file ID, the usual is:
+gdown "https://drive.google.com/uc?id=FILE_ID" -O output.pth
+or
+gdown FILE_ID -O output.pth
+
+I used --fuzzy in case the link format varies. Let me check gdown - actually for just file ID, -O and the uc?id= URL should work. --fuzzy is for when the URL might be a sharing link. I'll leave it. If it fails we can remove --fuzzy.
+
+Now update the docs to say: everything in Coolify - just add SUM_WEIGHTS_GDRIVE_ID and optionally a volume for persistence.
+</details></think>
+
+---
+
+
+Dokumentation anpassen: Alles nur in Coolify — eine Env-Variable setzen:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/docs/deployment/coolify-saliency-schritt-fuer-schritt.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/docs/deployment/coolify-saliency-schritt-fuer-schritt.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/docs/deployment/coolify-saliency-schritt-fuer-schritt.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I should also update or remove the "Option C – per Terminal" section since we're pushing "all in Coolify". I'll keep it as a fallback but make it clear it's only needed if the Google Drive download fails. Let me find that section.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "SUM-Weights per Terminal|Option C",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/docs/deployment/coolify-saliency-schritt-fuer-schritt.md",
+  "contextBefore": 0,
+  "contextAfter": 2,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "SUM-Weights per Terminal|Option C",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/docs/deployment/coolify-saliency-schritt-fuer-schritt.md",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 1,
+  "topFiles": [
+    {
+      "uri": "docs/deployment/coolify-saliency-schritt-fuer-schritt.md",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add a short note at the top of that section saying this is only needed as fallback if the automatic Google Drive download doesn't work.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/docs/deployment/coolify-saliency-schritt-fuer-schritt.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add a short intro to that section: "Nur nötig, wenn der automatische Download über SUM_WEIGHTS_GDRIVE_ID nicht funktioniert (z. B. Netzwerk/Rate-Limit)."
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/docs/deployment/coolify-saliency-schritt-fuer-schritt.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me double-check gdown: the -O path should be the file path. For a directory we need to give the full path including filename. We have WEIGHTS_FILE="${WEIGHTS_DIR}/sum_model.pth" so -O "${WEIGHTS_FILE}" is correct.
+
+One more thing: gdown might need the file to be publicly shared. The SUM model from the paper is usually public. I'll leave as is. If the user has issues we can suggest making the file public or using the terminal fallback.
+
+I'll add the SUM_WEIGHTS_GDRIVE_ID to the knowledge doc if there is one for constants/env.
+</details></think>
+
+---
+
+
+Kurz prüfen, ob `gdown` mit der Google-Drive-ID zuverlässig funktioniert:
+
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="web_search">
+<details>
+            <summary>Tool use: **web_search** • Searched web `undefined` • **1** results</summary>
+        
+| Title | URL | Chunk |
+|-------|-----|-------|
+| Web search results for query: gdown download file by id Google Drive 2024 |  | Links:<br/>1. [Client Challenge](https://pypi.org/project/gdown/)<br/>2. [Search code, repositories, users, issues, pull requests...](https://github.com/wkentaro/gdown)<br/>3. [Download a Large File From Google Drive Using the CLI](https://www.baeldung.com/linux/download-large-file-gdrive-cli)<br/>4. [Revisions to wget/curl large file from google drive [closed]](https://stackoverflow.com/posts/50670037/revisions)<br/>5. [download file from google drive](https://gist.github.com/farhad0085/5cebbf42c9683057666b45f0acce2f1e)<br/><br/># Downloading Files from Google Drive by ID with gdown (2024)<br/><br/>## Installation<br/>Install gdown using pip:[3][4]<br/>```<br/>pip install gdown<br/>```<br/><br/>## Download by File ID<br/>You can download files from Google Drive by ID using several command formats:[4][5]<br/><br/>```<br/>gdown https://drive.google.com/uc?id=<file_id><br/>gdown <file_id><br/>python -m gdown <file_id><br/>```<br/><br/>## Finding the File ID<br/>Right-click on the file in Google Drive and select "Get link." The file ID is extracted from the shareable link format:[3][4]<br/>```<br/>https://drive.google.com/file/d/<file_id>/view?usp=sharing<br/>```<br/><br/>## Additional Options<br/>- **For folders**: `gdown --folder https://drive.google.com/drive/folders/<folder_id>`<br/>- **Alternative folder format**: `gdown --folder --id <folder_id>`<br/><br/>## Important Limitations<br/>Only works on open access files ("Anyone who has a link can View").[4] The tool is designed to work around limitations of traditional tools like curl and wget for large file downloads from Google Drive.[3] |
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good - gdown with id works. The file must be "Anyone who has the link can view". The SUM model from the paper is typically shared that way. We're good.
+
+I'll give the user a short summary.
+</details></think>
+
+---
+
+
+Ja, das geht jetzt **komplett in Coolify** – ohne Terminal und ohne manuelles Kopieren der Weights.
+
+**Änderungen:**
+
+1. **Neue Umgebungsvariable `SUM_WEIGHTS_GDRIVE_ID`**  
+   Der Container kann die Weights beim ersten Start selbst von Google Drive laden. Dafür nutzt der Entrypoint `gdown` mit der Google-Drive-Datei-ID.
+
+2. **Ablauf nur in Coolify**
+   - In der Saliency-App (SUM) unter **Environment Variables** hinzufügen:  
+     **Name:** `SUM_WEIGHTS_GDRIVE_ID`  
+     **Wert:** `14ma_hLe8DrVNuHCSKoOz41Q-rB1Hbg6A`
+   - **Deploy** starten → beim ersten Start lädt der Container `sum_model.pth` automatisch.
+   - **Optional:** Ein Volume mit Zielpfad `/app/SUM/net/pre_trained_weights` anlegen, damit die Datei nach Redeploys erhalten bleibt.
+
+3. **Doku**  
+   In `docs/deployment/coolify-saliency-schritt-fuer-schritt.md` ist der „nur Coolify“-Weg jetzt die Hauptvariante; die Terminal-Anleitung steht nur noch als Fallback (z. B. wenn der automatische Download scheitert).
+
+**Hinweis:** Die Google-Drive-Datei muss mit „Jeder mit dem Link kann ansehen“ freigegeben sein (bei dem SUM-Modell-Link normalerweise der Fall). Wenn der Download in deiner Umgebung nicht klappt, kannst du weiter die Terminal-Variante aus der Doku nutzen.
+
+---
+
+_**User**_
+
+2026-Feb-25 20:40:13.144689 Starting deployment of chbrdk/CHECKION:main to projects-01.
+2026-Feb-25 20:40:13.939221 Preparing container with helper image: ghcr.io/coollabsio/coolify-helper:1.0.12
+2026-Feb-25 20:40:17.380809 ----------------------------------------
+2026-Feb-25 20:40:17.387819 Importing chbrdk/CHECKION:main (commit sha e5b65fb66e22e01d051aeb33b398a0fcb94154f1) to /artifacts/o4g0wokk004s8ow088w8ws44.
+2026-Feb-25 20:40:20.568696 Image not found (e44880sog8gwgg8c0ckwg0ok:e5b65fb66e22e01d051aeb33b398a0fcb94154f1). Building new image.
+2026-Feb-25 20:40:24.959533 ----------------------------------------
+2026-Feb-25 20:40:24.967698 Building docker image started.
+2026-Feb-25 20:40:24.974172 To check the current progress, click on Show Debug Logs.
+2026-Feb-25 20:42:05.098976 ========================================
+2026-Feb-25 20:42:05.111614 Deployment failed: Command execution failed (exit code 1): sudo docker exec o4g0wokk004s8ow088w8ws44 bash -c 'bash /artifacts/build.sh'
+2026-Feb-25 20:42:05.111614 Error: #0 building with "default" instance using docker driver
+2026-Feb-25 20:42:05.111614 
+2026-Feb-25 20:42:05.111614 #1 [internal] load build definition from Dockerfile.sum
+2026-Feb-25 20:42:05.111614 #1 transferring dockerfile: 1.61kB done
+2026-Feb-25 20:42:05.111614 #1 DONE 0.0s
+2026-Feb-25 20:42:05.111614 
+2026-Feb-25 20:42:05.111614 #2 [internal] load metadata for docker.io/library/python:3.10-slim-bookworm
+2026-Feb-25 20:42:05.111614 #2 DONE 0.4s
+2026-Feb-25 20:42:05.111614 
+2026-Feb-25 20:42:05.111614 #3 [internal] load .dockerignore
+2026-Feb-25 20:42:05.111614 #3 transferring context: 99B done
+2026-Feb-25 20:42:05.111614 #3 DONE 0.0s
+2026-Feb-25 20:42:05.111614 
+2026-Feb-25 20:42:05.111614 #4 [ 1/12] FROM docker.io/library/python:3.10-slim-bookworm@sha256:23f63358922e79a794f71be8f3723c84e5ccca9638af3f74456dc73d6184499e
+2026-Feb-25 20:42:05.111614 #4 DONE 0.0s
+2026-Feb-25 20:42:05.111614 
+2026-Feb-25 20:42:05.111614 #5 [ 2/12] WORKDIR /app
+2026-Feb-25 20:42:05.111614 #5 CACHED
+2026-Feb-25 20:42:05.111614 
+2026-Feb-25 20:42:05.111614 #6 [internal] load build context
+2026-Feb-25 20:42:05.111614 #6 transferring context: 7.31kB done
+2026-Feb-25 20:42:05.111614 #6 DONE 0.1s
+2026-Feb-25 20:42:05.111614 
+2026-Feb-25 20:42:05.111614 #7 [ 3/12] RUN apt-get update && apt-get install -y --no-install-recommends     git     build-essential     wget     && rm -rf /var/lib/apt/lists/*
+2026-Feb-25 20:42:05.111614 #7 0.150 Get:1 http://deb.debian.org/debian bookworm InRelease [151 kB]
+2026-Feb-25 20:42:05.111614 #7 0.167 Get:2 http://deb.debian.org/debian bookworm-updates InRelease [55.4 kB]
+2026-Feb-25 20:42:05.111614 #7 0.167 Get:3 http://deb.debian.org/debian-security bookworm-security InRelease [48.0 kB]
+2026-Feb-25 20:42:05.111614 #7 0.255 Get:4 http://deb.debian.org/debian bookworm/main amd64 Packages [8792 kB]
+2026-Feb-25 20:42:05.111614 #7 0.326 Get:5 http://deb.debian.org/debian bookworm-updates/main amd64 Packages [6924 B]
+2026-Feb-25 20:42:05.111614 #7 0.398 Get:6 http://deb.debian.org/debian-security bookworm-security/main amd64 Packages [297 kB]
+2026-Feb-25 20:42:05.111614 #7 1.166 Fetched 9350 kB in 1s (9123 kB/s)
+2026-Feb-25 20:42:05.111614 #7 1.166 Reading package lists...
+2026-Feb-25 20:42:05.111614 #7 1.779 Reading package lists...
+2026-Feb-25 20:42:05.111614 #7 2.321 Building dependency tree...
+2026-Feb-25 20:42:05.111614 #7 2.466 Reading state information...
+2026-Feb-25 20:42:05.111614 #7 2.600 The following additional packages will be installed:
+2026-Feb-25 20:42:05.111614 #7 2.600   binutils binutils-common binutils-x86-64-linux-gnu bzip2 cpp cpp-12 dpkg-dev
+2026-Feb-25 20:42:05.111614 #7 2.600   g++ g++-12 gcc gcc-12 git-man libasan8 libatomic1 libbinutils libbrotli1
+2026-Feb-25 20:42:05.111614 #7 2.600   libc-dev-bin libc6-dev libcc1-0 libcrypt-dev libctf-nobfd0 libctf0
+2026-Feb-25 20:42:05.111614 #7 2.600   libcurl3-gnutls libdpkg-perl liberror-perl libexpat1 libgcc-12-dev
+2026-Feb-25 20:42:05.111614 #7 2.601   libgdbm-compat4 libgomp1 libgprofng0 libisl23 libitm1 libjansson4
+2026-Feb-25 20:42:05.111614 #7 2.601   libldap-2.5-0 liblsan0 libmpc3 libmpfr6 libnghttp2-14 libnsl-dev libperl5.36
+2026-Feb-25 20:42:05.111614 #7 2.601   libpsl5 libquadmath0 librtmp1 libsasl2-2 libsasl2-modules-db libssh2-1
+2026-Feb-25 20:42:05.111614 #7 2.601   libstdc++-12-dev libtirpc-dev libtsan2 libubsan1 linux-libc-dev make patch
+2026-Feb-25 20:42:05.111614 #7 2.602   perl perl-modules-5.36 rpcsvc-proto xz-utils
+2026-Feb-25 20:42:05.111614 #7 2.603 Suggested packages:
+2026-Feb-25 20:42:05.111614 #7 2.603   binutils-doc bzip2-doc cpp-doc gcc-12-locales cpp-12-doc debian-keyring
+2026-Feb-25 20:42:05.111614 #7 2.603   g++-multilib g++-12-multilib gcc-12-doc gcc-multilib manpages-dev autoconf
+2026-Feb-25 20:42:05.111614 #7 2.603   automake libtool flex bison gdb gcc-doc gcc-12-multilib gettext-base
+2026-Feb-25 20:42:05.111614 #7 2.603   git-daemon-run | git-daemon-sysvinit git-doc git-email git-gui gitk gitweb
+2026-Feb-25 20:42:05.111614 #7 2.603   git-cvs git-mediawiki git-svn glibc-doc gnupg | sq | sqop | pgpainless-cli
+2026-Feb-25 20:42:05.111614 #7 2.603   sensible-utils bzr libstdc++-12-doc make-doc ed diffutils-doc perl-doc
+2026-Feb-25 20:42:05.111614 #7 2.603   libterm-readline-gnu-perl | libterm-readline-perl-perl
+2026-Feb-25 20:42:05.111614 #7 2.603   libtap-harness-archive-perl
+2026-Feb-25 20:42:05.111614 #7 2.603 Recommended packages:
+2026-Feb-25 20:42:05.111614 #7 2.603   fakeroot gnupg | sq | sqop | pgpainless-cli libalgorithm-merge-perl less
+2026-Feb-25 20:42:05.111614 #7 2.603   ssh-client manpages manpages-dev libc-devtools libfile-fcntllock-perl
+2026-Feb-25 20:42:05.111614 #7 2.603   liblocale-gettext-perl libldap-common publicsuffix libsasl2-modules
+2026-Feb-25 20:42:05.111614 #7 2.860 The following NEW packages will be installed:
+2026-Feb-25 20:42:05.111614 #7 2.860   binutils binutils-common binutils-x86-64-linux-gnu build-essential bzip2 cpp
+2026-Feb-25 20:42:05.111614 #7 2.860   cpp-12 dpkg-dev g++ g++-12 gcc gcc-12 git git-man libasan8 libatomic1
+2026-Feb-25 20:42:05.111614 #7 2.860   libbinutils libbrotli1 libc-dev-bin libc6-dev libcc1-0 libcrypt-dev
+2026-Feb-25 20:42:05.111614 #7 2.860   libctf-nobfd0 libctf0 libcurl3-gnutls libdpkg-perl liberror-perl libexpat1
+2026-Feb-25 20:42:05.111614 #7 2.860   libgcc-12-dev libgdbm-compat4 libgomp1 libgprofng0 libisl23 libitm1
+2026-Feb-25 20:42:05.111614 #7 2.861   libjansson4 libldap-2.5-0 liblsan0 libmpc3 libmpfr6 libnghttp2-14 libnsl-dev
+2026-Feb-25 20:42:05.111614 #7 2.861   libperl5.36 libpsl5 libquadmath0 librtmp1 libsasl2-2 libsasl2-modules-db
+2026-Feb-25 20:42:05.111614 #7 2.861   libssh2-1 libstdc++-12-dev libtirpc-dev libtsan2 libubsan1 linux-libc-dev
+2026-Feb-25 20:42:05.111614 #7 2.861   make patch perl perl-modules-5.36 rpcsvc-proto wget xz-utils
+2026-Feb-25 20:42:05.111614 #7 2.890 0 upgraded, 60 newly installed, 0 to remove and 0 not upgraded.
+2026-Feb-25 20:42:05.111614 #7 2.890 Need to get 85.3 MB of archives.
+2026-Feb-25 20:42:05.111614 #7 2.890 After this operation, 370 MB of additional disk space will be used.
+2026-Feb-25 20:42:05.111614 #7 2.890 Get:1 http://deb.debian.org/debian bookworm/main amd64 perl-modules-5.36 all 5.36.0-7+deb12u3 [2815 kB]
+2026-Feb-25 20:42:05.111614 #7 2.920 Get:2 http://deb.debian.org/debian bookworm/main amd64 libgdbm-compat4 amd64 1.23-3 [48.2 kB]
+2026-Feb-25 20:42:05.111614 #7 2.921 Get:3 http://deb.debian.org/debian bookworm/main amd64 libperl5.36 amd64 5.36.0-7+deb12u3 [4196 kB]
+2026-Feb-25 20:42:05.111614 #7 2.982 Get:4 http://deb.debian.org/debian bookworm/main amd64 perl amd64 5.36.0-7+deb12u3 [239 kB]
+2026-Feb-25 20:42:05.111614 #7 2.986 Get:5 http://deb.debian.org/debian bookworm/main amd64 bzip2 amd64 1.0.8-5+b1 [49.8 kB]
+2026-Feb-25 20:42:05.111614 #7 2.988 Get:6 http://deb.debian.org/debian bookworm/main amd64 libpsl5 amd64 0.21.2-1 [58.7 kB]
+2026-Feb-25 20:42:05.111614 #7 2.988 Get:7 http://deb.debian.org/debian bookworm/main amd64 wget amd64 1.21.3-1+deb12u1 [937 kB]
+2026-Feb-25 20:42:05.111614 #7 3.000 Get:8 http://deb.debian.org/debian bookworm/main amd64 xz-utils amd64 5.4.1-1 [471 kB]
+2026-Feb-25 20:42:05.111614 #7 3.013 Get:9 http://deb.debian.org/debian bookworm/main amd64 binutils-common amd64 2.40-2 [2487 kB]
+2026-Feb-25 20:42:05.111614 #7 3.025 Get:10 http://deb.debian.org/debian bookworm/main amd64 libbinutils amd64 2.40-2 [572 kB]
+2026-Feb-25 20:42:05.111614 #7 3.028 Get:11 http://deb.debian.org/debian bookworm/main amd64 libctf-nobfd0 amd64 2.40-2 [153 kB]
+2026-Feb-25 20:42:05.111614 #7 3.029 Get:12 http://deb.debian.org/debian bookworm/main amd64 libctf0 amd64 2.40-2 [89.8 kB]
+2026-Feb-25 20:42:05.111614 #7 3.030 Get:13 http://deb.debian.org/debian bookworm/main amd64 libgprofng0 amd64 2.40-2 [812 kB]
+2026-Feb-25 20:42:05.111614 #7 3.038 Get:14 http://deb.debian.org/debian bookworm/main amd64 libjansson4 amd64 2.14-2 [40.8 kB]
+2026-Feb-25 20:42:05.111614 #7 3.047 Get:15 http://deb.debian.org/debian bookworm/main amd64 binutils-x86-64-linux-gnu amd64 2.40-2 [2246 kB]
+2026-Feb-25 20:42:05.111614 #7 3.058 Get:16 http://deb.debian.org/debian bookworm/main amd64 binutils amd64 2.40-2 [65.0 kB]
+2026-Feb-25 20:42:05.111614 #7 3.059 Get:17 http://deb.debian.org/debian bookworm/main amd64 libc-dev-bin amd64 2.36-9+deb12u13 [47.4 kB]
+2026-Feb-25 20:42:05.111614 #7 3.069 Get:18 http://deb.debian.org/debian-security bookworm-security/main amd64 linux-libc-dev amd64 6.1.162-1 [2237 kB]
+2026-Feb-25 20:42:05.111614 #7 3.080 Get:19 http://deb.debian.org/debian bookworm/main amd64 libcrypt-dev amd64 1:4.4.33-2 [118 kB]
+2026-Feb-25 20:42:05.111614 #7 3.081 Get:20 http://deb.debian.org/debian bookworm/main amd64 libtirpc-dev amd64 1.3.3+ds-1 [191 kB]
+2026-Feb-25 20:42:05.111614 #7 3.083 Get:21 http://deb.debian.org/debian bookworm/main amd64 libnsl-dev amd64 1.3.0-2 [66.4 kB]
+2026-Feb-25 20:42:05.111614 #7 3.084 Get:22 http://deb.debian.org/debian bookworm/main amd64 rpcsvc-proto amd64 1.4.3-1 [63.3 kB]
+2026-Feb-25 20:42:05.111614 #7 3.092 Get:23 http://deb.debian.org/debian bookworm/main amd64 libc6-dev amd64 2.36-9+deb12u13 [1904 kB]
+2026-Feb-25 20:42:05.111614 #7 3.101 Get:24 http://deb.debian.org/debian bookworm/main amd64 libisl23 amd64 0.25-1.1 [683 kB]
+2026-Feb-25 20:42:05.111614 #7 3.108 Get:25 http://deb.debian.org/debian bookworm/main amd64 libmpfr6 amd64 4.2.0-1 [701 kB]
+2026-Feb-25 20:42:05.111614 #7 3.111 Get:26 http://deb.debian.org/debian bookworm/main amd64 libmpc3 amd64 1.3.1-1 [51.5 kB]
+2026-Feb-25 20:42:05.111614 #7 3.129 Get:27 http://deb.debian.org/debian bookworm/main amd64 cpp-12 amd64 12.2.0-14+deb12u1 [9768 kB]
+2026-Feb-25 20:42:05.111614 #7 3.179 Get:28 http://deb.debian.org/debian bookworm/main amd64 cpp amd64 4:12.2.0-3 [6836 B]
+2026-Feb-25 20:42:05.111614 #7 3.179 Get:29 http://deb.debian.org/debian bookworm/main amd64 libcc1-0 amd64 12.2.0-14+deb12u1 [41.7 kB]
+2026-Feb-25 20:42:05.111614 #7 3.180 Get:30 http://deb.debian.org/debian bookworm/main amd64 libgomp1 amd64 12.2.0-14+deb12u1 [116 kB]
+2026-Feb-25 20:42:05.111614 #7 3.181 Get:31 http://deb.debian.org/debian bookworm/main amd64 libitm1 amd64 12.2.0-14+deb12u1 [26.1 kB]
+2026-Feb-25 20:42:05.111614 #7 3.181 Get:32 http://deb.debian.org/debian bookworm/main amd64 libatomic1 amd64 12.2.0-14+deb12u1 [9376 B]
+2026-Feb-25 20:42:05.111614 #7 3.181 Get:33 http://deb.debian.org/debian bookworm/main amd64 libasan8 amd64 12.2.0-14+deb12u1 [2193 kB]
+2026-Feb-25 20:42:05.111614 #7 3.190 Get:34 http://deb.debian.org/debian bookworm/main amd64 liblsan0 amd64 12.2.0-14+deb12u1 [969 kB]
+2026-Feb-25 20:42:05.111614 #7 3.195 Get:35 http://deb.debian.org/debian bookworm/main amd64 libtsan2 amd64 12.2.0-14+deb12u1 [2197 kB]
+2026-Feb-25 20:42:05.111614 #7 3.214 Get:36 http://deb.debian.org/debian bookworm/main amd64 libubsan1 amd64 12.2.0-14+deb12u1 [883 kB]
+2026-Feb-25 20:42:05.111614 #7 3.218 Get:37 http://deb.debian.org/debian bookworm/main amd64 libquadmath0 amd64 12.2.0-14+deb12u1 [145 kB]
+2026-Feb-25 20:42:05.111614 #7 3.219 Get:38 http://deb.debian.org/debian bookworm/main amd64 libgcc-12-dev amd64 12.2.0-14+deb12u1 [2437 kB]
+2026-Feb-25 20:42:05.111614 #7 3.251 Get:39 http://deb.debian.org/debian bookworm/main amd64 gcc-12 amd64 12.2.0-14+deb12u1 [19.3 MB]
+2026-Feb-25 20:42:05.111614 #7 3.332 Get:40 http://deb.debian.org/debian bookworm/main amd64 gcc amd64 4:12.2.0-3 [5216 B]
+2026-Feb-25 20:42:05.111614 #7 3.332 Get:41 http://deb.debian.org/debian bookworm/main amd64 libstdc++-12-dev amd64 12.2.0-14+deb12u1 [2047 kB]
+2026-Feb-25 20:42:05.111614 #7 3.354 Get:42 http://deb.debian.org/debian bookworm/main amd64 g++-12 amd64 12.2.0-14+deb12u1 [10.7 MB]
+2026-Feb-25 20:42:05.111614 #7 3.418 Get:43 http://deb.debian.org/debian bookworm/main amd64 g++ amd64 4:12.2.0-3 [1356 B]
+2026-Feb-25 20:42:05.111614 #7 3.418 Get:44 http://deb.debian.org/debian bookworm/main amd64 make amd64 4.3-4.1 [396 kB]
+2026-Feb-25 20:42:05.111614 #7 3.425 Get:45 http://deb.debian.org/debian bookworm/main amd64 libdpkg-perl all 1.21.22 [603 kB]
+2026-Feb-25 20:42:05.111614 #7 3.446 Get:46 http://deb.debian.org/debian bookworm/main amd64 patch amd64 2.7.6-7 [128 kB]
+2026-Feb-25 20:42:05.111614 #7 3.448 Get:47 http://deb.debian.org/debian bookworm/main amd64 dpkg-dev all 1.21.22 [1353 kB]
+2026-Feb-25 20:42:05.111614 #7 3.458 Get:48 http://deb.debian.org/debian bookworm/main amd64 build-essential amd64 12.9 [7704 B]
+2026-Feb-25 20:42:05.111614 #7 3.460 Get:49 http://deb.debian.org/debian bookworm/main amd64 libbrotli1 amd64 1.0.9-2+b6 [275 kB]
+2026-Feb-25 20:42:05.111614 #7 3.463 Get:50 http://deb.debian.org/debian bookworm/main amd64 libsasl2-modules-db amd64 2.1.28+dfsg-10 [20.3 kB]
+2026-Feb-25 20:42:05.111614 #7 3.464 Get:51 http://deb.debian.org/debian bookworm/main amd64 libsasl2-2 amd64 2.1.28+dfsg-10 [59.7 kB]
+2026-Feb-25 20:42:05.111614 #7 3.465 Get:52 http://deb.debian.org/debian bookworm/main amd64 libldap-2.5-0 amd64 2.5.13+dfsg-5 [183 kB]
+2026-Feb-25 20:42:05.111614 #7 3.471 Get:53 http://deb.debian.org/debian bookworm/main amd64 libnghttp2-14 amd64 1.52.0-1+deb12u2 [73.0 kB]
+2026-Feb-25 20:42:05.111614 #7 3.473 Get:54 http://deb.debian.org/debian bookworm/main amd64 librtmp1 amd64 2.4+20151223.gitfa8646d.1-2+b2 [60.8 kB]
+2026-Feb-25 20:42:05.111614 #7 3.479 Get:55 http://deb.debian.org/debian bookworm/main amd64 libssh2-1 amd64 1.10.0-3+b1 [179 kB]
+2026-Feb-25 20:42:05.111614 #7 3.482 Get:56 http://deb.debian.org/debian bookworm/main amd64 libcurl3-gnutls amd64 7.88.1-10+deb12u14 [386 kB]
+2026-Feb-25 20:42:05.111614 #7 3.484 Get:57 http://deb.debian.org/debian bookworm/main amd64 libexpat1 amd64 2.5.0-1+deb12u2 [99.9 kB]
+2026-Feb-25 20:42:05.111614 #7 3.485 Get:58 http://deb.debian.org/debian bookworm/main amd64 liberror-perl all 0.17029-2 [29.0 kB]
+2026-Feb-25 20:42:05.111614 #7 3.487 Get:59 http://deb.debian.org/debian bookworm/main amd64 git-man all 1:2.39.5-0+deb12u3 [2053 kB]
+2026-Feb-25 20:42:05.111614 #7 3.542 Get:60 http://deb.debian.org/debian bookworm/main amd64 git amd64 1:2.39.5-0+deb12u3 [7264 kB]
+2026-Feb-25 20:42:05.111614 #7 3.701 debconf: delaying package configuration, since apt-utils is not installed
+2026-Feb-25 20:42:05.111614 #7 3.737 Fetched 85.3 MB in 1s (120 MB/s)
+2026-Feb-25 20:42:05.111614 #7 3.761 Selecting previously unselected package perl-modules-5.36.
+2026-Feb-25 20:42:05.111614 #7 3.761 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 6695 files and directories currently installed.)
+2026-Feb-25 20:42:05.111614 #7 3.767 Preparing to unpack .../00-perl-modules-5.36_5.36.0-7+deb12u3_all.deb ...
+2026-Feb-25 20:42:05.111614 #7 3.770 Unpacking perl-modules-5.36 (5.36.0-7+deb12u3) ...
+2026-Feb-25 20:42:05.111614 #7 4.146 Selecting previously unselected package libgdbm-compat4:amd64.
+2026-Feb-25 20:42:05.111614 #7 4.146 Preparing to unpack .../01-libgdbm-compat4_1.23-3_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 4.151 Unpacking libgdbm-compat4:amd64 (1.23-3) ...
+2026-Feb-25 20:42:05.111614 #7 4.188 Selecting previously unselected package libperl5.36:amd64.
+2026-Feb-25 20:42:05.111614 #7 4.189 Preparing to unpack .../02-libperl5.36_5.36.0-7+deb12u3_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 4.192 Unpacking libperl5.36:amd64 (5.36.0-7+deb12u3) ...
+2026-Feb-25 20:42:05.111614 #7 4.529 Selecting previously unselected package perl.
+2026-Feb-25 20:42:05.111614 #7 4.530 Preparing to unpack .../03-perl_5.36.0-7+deb12u3_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 4.542 Unpacking perl (5.36.0-7+deb12u3) ...
+2026-Feb-25 20:42:05.111614 #7 4.600 Selecting previously unselected package bzip2.
+2026-Feb-25 20:42:05.111614 #7 4.601 Preparing to unpack .../04-bzip2_1.0.8-5+b1_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 4.626 Unpacking bzip2 (1.0.8-5+b1) ...
+2026-Feb-25 20:42:05.111614 #7 4.724 Selecting previously unselected package libpsl5:amd64.
+2026-Feb-25 20:42:05.111614 #7 4.726 Preparing to unpack .../05-libpsl5_0.21.2-1_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 4.739 Unpacking libpsl5:amd64 (0.21.2-1) ...
+2026-Feb-25 20:42:05.111614 #7 4.776 Selecting previously unselected package wget.
+2026-Feb-25 20:42:05.111614 #7 4.776 Preparing to unpack .../06-wget_1.21.3-1+deb12u1_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 4.779 Unpacking wget (1.21.3-1+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 4.853 Selecting previously unselected package xz-utils.
+2026-Feb-25 20:42:05.111614 #7 4.854 Preparing to unpack .../07-xz-utils_5.4.1-1_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 4.857 Unpacking xz-utils (5.4.1-1) ...
+2026-Feb-25 20:42:05.111614 #7 4.921 Selecting previously unselected package binutils-common:amd64.
+2026-Feb-25 20:42:05.111614 #7 4.922 Preparing to unpack .../08-binutils-common_2.40-2_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 4.925 Unpacking binutils-common:amd64 (2.40-2) ...
+2026-Feb-25 20:42:05.111614 #7 5.116 Selecting previously unselected package libbinutils:amd64.
+2026-Feb-25 20:42:05.111614 #7 5.117 Preparing to unpack .../09-libbinutils_2.40-2_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 5.120 Unpacking libbinutils:amd64 (2.40-2) ...
+2026-Feb-25 20:42:05.111614 #7 5.192 Selecting previously unselected package libctf-nobfd0:amd64.
+2026-Feb-25 20:42:05.111614 #7 5.192 Preparing to unpack .../10-libctf-nobfd0_2.40-2_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 5.195 Unpacking libctf-nobfd0:amd64 (2.40-2) ...
+2026-Feb-25 20:42:05.111614 #7 5.235 Selecting previously unselected package libctf0:amd64.
+2026-Feb-25 20:42:05.111614 #7 5.236 Preparing to unpack .../11-libctf0_2.40-2_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 5.239 Unpacking libctf0:amd64 (2.40-2) ...
+2026-Feb-25 20:42:05.111614 #7 5.277 Selecting previously unselected package libgprofng0:amd64.
+2026-Feb-25 20:42:05.111614 #7 5.278 Preparing to unpack .../12-libgprofng0_2.40-2_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 5.280 Unpacking libgprofng0:amd64 (2.40-2) ...
+2026-Feb-25 20:42:05.111614 #7 5.363 Selecting previously unselected package libjansson4:amd64.
+2026-Feb-25 20:42:05.111614 #7 5.364 Preparing to unpack .../13-libjansson4_2.14-2_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 5.367 Unpacking libjansson4:amd64 (2.14-2) ...
+2026-Feb-25 20:42:05.111614 #7 5.397 Selecting previously unselected package binutils-x86-64-linux-gnu.
+2026-Feb-25 20:42:05.111614 #7 5.398 Preparing to unpack .../14-binutils-x86-64-linux-gnu_2.40-2_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 5.401 Unpacking binutils-x86-64-linux-gnu (2.40-2) ...
+2026-Feb-25 20:42:05.111614 #7 5.598 Selecting previously unselected package binutils.
+2026-Feb-25 20:42:05.111614 #7 5.599 Preparing to unpack .../15-binutils_2.40-2_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 5.602 Unpacking binutils (2.40-2) ...
+2026-Feb-25 20:42:05.111614 #7 5.636 Selecting previously unselected package libc-dev-bin.
+2026-Feb-25 20:42:05.111614 #7 5.637 Preparing to unpack .../16-libc-dev-bin_2.36-9+deb12u13_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 5.640 Unpacking libc-dev-bin (2.36-9+deb12u13) ...
+2026-Feb-25 20:42:05.111614 #7 5.669 Selecting previously unselected package linux-libc-dev:amd64.
+2026-Feb-25 20:42:05.111614 #7 5.671 Preparing to unpack .../17-linux-libc-dev_6.1.162-1_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 5.673 Unpacking linux-libc-dev:amd64 (6.1.162-1) ...
+2026-Feb-25 20:42:05.111614 #7 5.909 Selecting previously unselected package libcrypt-dev:amd64.
+2026-Feb-25 20:42:05.111614 #7 5.910 Preparing to unpack .../18-libcrypt-dev_1%3a4.4.33-2_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 5.920 Unpacking libcrypt-dev:amd64 (1:4.4.33-2) ...
+2026-Feb-25 20:42:05.111614 #7 5.956 Selecting previously unselected package libtirpc-dev:amd64.
+2026-Feb-25 20:42:05.111614 #7 5.957 Preparing to unpack .../19-libtirpc-dev_1.3.3+ds-1_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 5.960 Unpacking libtirpc-dev:amd64 (1.3.3+ds-1) ...
+2026-Feb-25 20:42:05.111614 #7 6.000 Selecting previously unselected package libnsl-dev:amd64.
+2026-Feb-25 20:42:05.111614 #7 6.001 Preparing to unpack .../20-libnsl-dev_1.3.0-2_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 6.004 Unpacking libnsl-dev:amd64 (1.3.0-2) ...
+2026-Feb-25 20:42:05.111614 #7 6.038 Selecting previously unselected package rpcsvc-proto.
+2026-Feb-25 20:42:05.111614 #7 6.039 Preparing to unpack .../21-rpcsvc-proto_1.4.3-1_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 6.042 Unpacking rpcsvc-proto (1.4.3-1) ...
+2026-Feb-25 20:42:05.111614 #7 6.078 Selecting previously unselected package libc6-dev:amd64.
+2026-Feb-25 20:42:05.111614 #7 6.079 Preparing to unpack .../22-libc6-dev_2.36-9+deb12u13_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 6.082 Unpacking libc6-dev:amd64 (2.36-9+deb12u13) ...
+2026-Feb-25 20:42:05.111614 #7 6.273 Selecting previously unselected package libisl23:amd64.
+2026-Feb-25 20:42:05.111614 #7 6.274 Preparing to unpack .../23-libisl23_0.25-1.1_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 6.276 Unpacking libisl23:amd64 (0.25-1.1) ...
+2026-Feb-25 20:42:05.111614 #7 6.349 Selecting previously unselected package libmpfr6:amd64.
+2026-Feb-25 20:42:05.111614 #7 6.351 Preparing to unpack .../24-libmpfr6_4.2.0-1_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 6.353 Unpacking libmpfr6:amd64 (4.2.0-1) ...
+2026-Feb-25 20:42:05.111614 #7 6.406 Selecting previously unselected package libmpc3:amd64.
+2026-Feb-25 20:42:05.111614 #7 6.408 Preparing to unpack .../25-libmpc3_1.3.1-1_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 6.410 Unpacking libmpc3:amd64 (1.3.1-1) ...
+2026-Feb-25 20:42:05.111614 #7 6.440 Selecting previously unselected package cpp-12.
+2026-Feb-25 20:42:05.111614 #7 6.441 Preparing to unpack .../26-cpp-12_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 6.444 Unpacking cpp-12 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 7.020 Selecting previously unselected package cpp.
+2026-Feb-25 20:42:05.111614 #7 7.021 Preparing to unpack .../27-cpp_4%3a12.2.0-3_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 7.023 Unpacking cpp (4:12.2.0-3) ...
+2026-Feb-25 20:42:05.111614 #7 7.055 Selecting previously unselected package libcc1-0:amd64.
+2026-Feb-25 20:42:05.111614 #7 7.055 Preparing to unpack .../28-libcc1-0_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 7.058 Unpacking libcc1-0:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 7.091 Selecting previously unselected package libgomp1:amd64.
+2026-Feb-25 20:42:05.111614 #7 7.092 Preparing to unpack .../29-libgomp1_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 7.095 Unpacking libgomp1:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 7.136 Selecting previously unselected package libitm1:amd64.
+2026-Feb-25 20:42:05.111614 #7 7.137 Preparing to unpack .../30-libitm1_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 7.140 Unpacking libitm1:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 7.175 Selecting previously unselected package libatomic1:amd64.
+2026-Feb-25 20:42:05.111614 #7 7.176 Preparing to unpack .../31-libatomic1_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 7.179 Unpacking libatomic1:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 7.211 Selecting previously unselected package libasan8:amd64.
+2026-Feb-25 20:42:05.111614 #7 7.212 Preparing to unpack .../32-libasan8_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 7.215 Unpacking libasan8:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 7.388 Selecting previously unselected package liblsan0:amd64.
+2026-Feb-25 20:42:05.111614 #7 7.390 Preparing to unpack .../33-liblsan0_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 7.393 Unpacking liblsan0:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 7.484 Selecting previously unselected package libtsan2:amd64.
+2026-Feb-25 20:42:05.111614 #7 7.484 Preparing to unpack .../34-libtsan2_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 7.486 Unpacking libtsan2:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 7.649 Selecting previously unselected package libubsan1:amd64.
+2026-Feb-25 20:42:05.111614 #7 7.649 Preparing to unpack .../35-libubsan1_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 7.651 Unpacking libubsan1:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 7.736 Selecting previously unselected package libquadmath0:amd64.
+2026-Feb-25 20:42:05.111614 #7 7.736 Preparing to unpack .../36-libquadmath0_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 7.738 Unpacking libquadmath0:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 7.775 Selecting previously unselected package libgcc-12-dev:amd64.
+2026-Feb-25 20:42:05.111614 #7 7.775 Preparing to unpack .../37-libgcc-12-dev_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 7.777 Unpacking libgcc-12-dev:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 7.953 Selecting previously unselected package gcc-12.
+2026-Feb-25 20:42:05.111614 #7 7.954 Preparing to unpack .../38-gcc-12_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 7.956 Unpacking gcc-12 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 8.728 Selecting previously unselected package gcc.
+2026-Feb-25 20:42:05.111614 #7 8.729 Preparing to unpack .../39-gcc_4%3a12.2.0-3_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 8.732 Unpacking gcc (4:12.2.0-3) ...
+2026-Feb-25 20:42:05.111614 #7 8.765 Selecting previously unselected package libstdc++-12-dev:amd64.
+2026-Feb-25 20:42:05.111614 #7 8.766 Preparing to unpack .../40-libstdc++-12-dev_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 8.769 Unpacking libstdc++-12-dev:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 9.063 Selecting previously unselected package g++-12.
+2026-Feb-25 20:42:05.111614 #7 9.065 Preparing to unpack .../41-g++-12_12.2.0-14+deb12u1_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 9.069 Unpacking g++-12 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 9.696 Selecting previously unselected package g++.
+2026-Feb-25 20:42:05.111614 #7 9.697 Preparing to unpack .../42-g++_4%3a12.2.0-3_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 9.701 Unpacking g++ (4:12.2.0-3) ...
+2026-Feb-25 20:42:05.111614 #7 9.730 Selecting previously unselected package make.
+2026-Feb-25 20:42:05.111614 #7 9.731 Preparing to unpack .../43-make_4.3-4.1_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 9.735 Unpacking make (4.3-4.1) ...
+2026-Feb-25 20:42:05.111614 #7 9.789 Selecting previously unselected package libdpkg-perl.
+2026-Feb-25 20:42:05.111614 #7 9.791 Preparing to unpack .../44-libdpkg-perl_1.21.22_all.deb ...
+2026-Feb-25 20:42:05.111614 #7 9.794 Unpacking libdpkg-perl (1.21.22) ...
+2026-Feb-25 20:42:05.111614 #7 9.870 Selecting previously unselected package patch.
+2026-Feb-25 20:42:05.111614 #7 9.872 Preparing to unpack .../45-patch_2.7.6-7_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 9.876 Unpacking patch (2.7.6-7) ...
+2026-Feb-25 20:42:05.111614 #7 9.921 Selecting previously unselected package dpkg-dev.
+2026-Feb-25 20:42:05.111614 #7 9.922 Preparing to unpack .../46-dpkg-dev_1.21.22_all.deb ...
+2026-Feb-25 20:42:05.111614 #7 9.926 Unpacking dpkg-dev (1.21.22) ...
+2026-Feb-25 20:42:05.111614 #7 10.03 Selecting previously unselected package build-essential.
+2026-Feb-25 20:42:05.111614 #7 10.04 Preparing to unpack .../47-build-essential_12.9_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 10.05 Unpacking build-essential (12.9) ...
+2026-Feb-25 20:42:05.111614 #7 10.12 Selecting previously unselected package libbrotli1:amd64.
+2026-Feb-25 20:42:05.111614 #7 10.12 Preparing to unpack .../48-libbrotli1_1.0.9-2+b6_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 10.13 Unpacking libbrotli1:amd64 (1.0.9-2+b6) ...
+2026-Feb-25 20:42:05.111614 #7 10.19 Selecting previously unselected package libsasl2-modules-db:amd64.
+2026-Feb-25 20:42:05.111614 #7 10.19 Preparing to unpack .../49-libsasl2-modules-db_2.1.28+dfsg-10_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 10.20 Unpacking libsasl2-modules-db:amd64 (2.1.28+dfsg-10) ...
+2026-Feb-25 20:42:05.111614 #7 10.25 Selecting previously unselected package libsasl2-2:amd64.
+2026-Feb-25 20:42:05.111614 #7 10.25 Preparing to unpack .../50-libsasl2-2_2.1.28+dfsg-10_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 10.27 Unpacking libsasl2-2:amd64 (2.1.28+dfsg-10) ...
+2026-Feb-25 20:42:05.111614 #7 10.36 Selecting previously unselected package libldap-2.5-0:amd64.
+2026-Feb-25 20:42:05.111614 #7 10.36 Preparing to unpack .../51-libldap-2.5-0_2.5.13+dfsg-5_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 10.37 Unpacking libldap-2.5-0:amd64 (2.5.13+dfsg-5) ...
+2026-Feb-25 20:42:05.111614 #7 10.44 Selecting previously unselected package libnghttp2-14:amd64.
+2026-Feb-25 20:42:05.111614 #7 10.44 Preparing to unpack .../52-libnghttp2-14_1.52.0-1+deb12u2_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 10.44 Unpacking libnghttp2-14:amd64 (1.52.0-1+deb12u2) ...
+2026-Feb-25 20:42:05.111614 #7 10.52 Selecting previously unselected package librtmp1:amd64.
+2026-Feb-25 20:42:05.111614 #7 10.52 Preparing to unpack .../53-librtmp1_2.4+20151223.gitfa8646d.1-2+b2_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 10.53 Unpacking librtmp1:amd64 (2.4+20151223.gitfa8646d.1-2+b2) ...
+2026-Feb-25 20:42:05.111614 #7 10.61 Selecting previously unselected package libssh2-1:amd64.
+2026-Feb-25 20:42:05.111614 #7 10.61 Preparing to unpack .../54-libssh2-1_1.10.0-3+b1_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 10.63 Unpacking libssh2-1:amd64 (1.10.0-3+b1) ...
+2026-Feb-25 20:42:05.111614 #7 10.68 Selecting previously unselected package libcurl3-gnutls:amd64.
+2026-Feb-25 20:42:05.111614 #7 10.69 Preparing to unpack .../55-libcurl3-gnutls_7.88.1-10+deb12u14_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 10.69 Unpacking libcurl3-gnutls:amd64 (7.88.1-10+deb12u14) ...
+2026-Feb-25 20:42:05.111614 #7 10.75 Selecting previously unselected package libexpat1:amd64.
+2026-Feb-25 20:42:05.111614 #7 10.75 Preparing to unpack .../56-libexpat1_2.5.0-1+deb12u2_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 10.75 Unpacking libexpat1:amd64 (2.5.0-1+deb12u2) ...
+2026-Feb-25 20:42:05.111614 #7 10.79 Selecting previously unselected package liberror-perl.
+2026-Feb-25 20:42:05.111614 #7 10.79 Preparing to unpack .../57-liberror-perl_0.17029-2_all.deb ...
+2026-Feb-25 20:42:05.111614 #7 10.80 Unpacking liberror-perl (0.17029-2) ...
+2026-Feb-25 20:42:05.111614 #7 10.83 Selecting previously unselected package git-man.
+2026-Feb-25 20:42:05.111614 #7 10.84 Preparing to unpack .../58-git-man_1%3a2.39.5-0+deb12u3_all.deb ...
+2026-Feb-25 20:42:05.111614 #7 10.84 Unpacking git-man (1:2.39.5-0+deb12u3) ...
+2026-Feb-25 20:42:05.111614 #7 10.95 Selecting previously unselected package git.
+2026-Feb-25 20:42:05.111614 #7 10.95 Preparing to unpack .../59-git_1%3a2.39.5-0+deb12u3_amd64.deb ...
+2026-Feb-25 20:42:05.111614 #7 10.96 Unpacking git (1:2.39.5-0+deb12u3) ...
+2026-Feb-25 20:42:05.111614 #7 11.42 Setting up libexpat1:amd64 (2.5.0-1+deb12u2) ...
+2026-Feb-25 20:42:05.111614 #7 11.43 Setting up libpsl5:amd64 (0.21.2-1) ...
+2026-Feb-25 20:42:05.111614 #7 11.44 Setting up wget (1.21.3-1+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 11.45 Setting up libbrotli1:amd64 (1.0.9-2+b6) ...
+2026-Feb-25 20:42:05.111614 #7 11.46 Setting up binutils-common:amd64 (2.40-2) ...
+2026-Feb-25 20:42:05.111614 #7 11.47 Setting up libnghttp2-14:amd64 (1.52.0-1+deb12u2) ...
+2026-Feb-25 20:42:05.111614 #7 11.48 Setting up linux-libc-dev:amd64 (6.1.162-1) ...
+2026-Feb-25 20:42:05.111614 #7 11.48 Setting up libctf-nobfd0:amd64 (2.40-2) ...
+2026-Feb-25 20:42:05.111614 #7 11.49 Setting up libgomp1:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 11.50 Setting up bzip2 (1.0.8-5+b1) ...
+2026-Feb-25 20:42:05.111614 #7 11.51 Setting up libjansson4:amd64 (2.14-2) ...
+2026-Feb-25 20:42:05.111614 #7 11.51 Setting up libsasl2-modules-db:amd64 (2.1.28+dfsg-10) ...
+2026-Feb-25 20:42:05.111614 #7 11.52 Setting up perl-modules-5.36 (5.36.0-7+deb12u3) ...
+2026-Feb-25 20:42:05.111614 #7 11.53 Setting up libtirpc-dev:amd64 (1.3.3+ds-1) ...
+2026-Feb-25 20:42:05.111614 #7 11.54 Setting up rpcsvc-proto (1.4.3-1) ...
+2026-Feb-25 20:42:05.111614 #7 11.55 Setting up make (4.3-4.1) ...
+2026-Feb-25 20:42:05.111614 #7 11.55 Setting up libmpfr6:amd64 (4.2.0-1) ...
+2026-Feb-25 20:42:05.111614 #7 11.56 Setting up librtmp1:amd64 (2.4+20151223.gitfa8646d.1-2+b2) ...
+2026-Feb-25 20:42:05.111614 #7 11.57 Setting up xz-utils (5.4.1-1) ...
+2026-Feb-25 20:42:05.111614 #7 11.58 update-alternatives: using /usr/bin/xz to provide /usr/bin/lzma (lzma) in auto mode
+2026-Feb-25 20:42:05.111614 #7 11.58 update-alternatives: warning: skip creation of /usr/share/man/man1/lzma.1.gz because associated file /usr/share/man/man1/xz.1.gz (of link group lzma) doesn't exist
+2026-Feb-25 20:42:05.111614 #7 11.58 update-alternatives: warning: skip creation of /usr/share/man/man1/unlzma.1.gz because associated file /usr/share/man/man1/unxz.1.gz (of link group lzma) doesn't exist
+2026-Feb-25 20:42:05.111614 #7 11.58 update-alternatives: warning: skip creation of /usr/share/man/man1/lzcat.1.gz because associated file /usr/share/man/man1/xzcat.1.gz (of link group lzma) doesn't exist
+2026-Feb-25 20:42:05.111614 #7 11.58 update-alternatives: warning: skip creation of /usr/share/man/man1/lzmore.1.gz because associated file /usr/share/man/man1/xzmore.1.gz (of link group lzma) doesn't exist
+2026-Feb-25 20:42:05.111614 #7 11.58 update-alternatives: warning: skip creation of /usr/share/man/man1/lzless.1.gz because associated file /usr/share/man/man1/xzless.1.gz (of link group lzma) doesn't exist
+2026-Feb-25 20:42:05.111614 #7 11.58 update-alternatives: warning: skip creation of /usr/share/man/man1/lzdiff.1.gz because associated file /usr/share/man/man1/xzdiff.1.gz (of link group lzma) doesn't exist
+2026-Feb-25 20:42:05.111614 #7 11.58 update-alternatives: warning: skip creation of /usr/share/man/man1/lzcmp.1.gz because associated file /usr/share/man/man1/xzcmp.1.gz (of link group lzma) doesn't exist
+2026-Feb-25 20:42:05.111614 #7 11.58 update-alternatives: warning: skip creation of /usr/share/man/man1/lzgrep.1.gz because associated file /usr/share/man/man1/xzgrep.1.gz (of link group lzma) doesn't exist
+2026-Feb-25 20:42:05.111614 #7 11.58 update-alternatives: warning: skip creation of /usr/share/man/man1/lzegrep.1.gz because associated file /usr/share/man/man1/xzegrep.1.gz (of link group lzma) doesn't exist
+2026-Feb-25 20:42:05.111614 #7 11.58 update-alternatives: warning: skip creation of /usr/share/man/man1/lzfgrep.1.gz because associated file /usr/share/man/man1/xzfgrep.1.gz (of link group lzma) doesn't exist
+2026-Feb-25 20:42:05.111614 #7 11.59 Setting up libquadmath0:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 11.60 Setting up libmpc3:amd64 (1.3.1-1) ...
+2026-Feb-25 20:42:05.111614 #7 11.61 Setting up libatomic1:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 11.61 Setting up patch (2.7.6-7) ...
+2026-Feb-25 20:42:05.111614 #7 11.62 Setting up libgdbm-compat4:amd64 (1.23-3) ...
+2026-Feb-25 20:42:05.111614 #7 11.63 Setting up libsasl2-2:amd64 (2.1.28+dfsg-10) ...
+2026-Feb-25 20:42:05.111614 #7 11.64 Setting up libubsan1:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 11.64 Setting up libnsl-dev:amd64 (1.3.0-2) ...
+2026-Feb-25 20:42:05.111614 #7 11.65 Setting up libcrypt-dev:amd64 (1:4.4.33-2) ...
+2026-Feb-25 20:42:05.111614 #7 11.67 Setting up libasan8:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 11.67 Setting up git-man (1:2.39.5-0+deb12u3) ...
+2026-Feb-25 20:42:05.111614 #7 11.68 Setting up libssh2-1:amd64 (1.10.0-3+b1) ...
+2026-Feb-25 20:42:05.111614 #7 11.69 Setting up libtsan2:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 11.70 Setting up libbinutils:amd64 (2.40-2) ...
+2026-Feb-25 20:42:05.111614 #7 11.70 Setting up libisl23:amd64 (0.25-1.1) ...
+2026-Feb-25 20:42:05.111614 #7 11.71 Setting up libc-dev-bin (2.36-9+deb12u13) ...
+2026-Feb-25 20:42:05.111614 #7 11.72 Setting up libcc1-0:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 11.73 Setting up libperl5.36:amd64 (5.36.0-7+deb12u3) ...
+2026-Feb-25 20:42:05.111614 #7 11.73 Setting up liblsan0:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 11.74 Setting up libitm1:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 11.75 Setting up libctf0:amd64 (2.40-2) ...
+2026-Feb-25 20:42:05.111614 #7 11.75 Setting up cpp-12 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 11.76 Setting up libldap-2.5-0:amd64 (2.5.13+dfsg-5) ...
+2026-Feb-25 20:42:05.111614 #7 11.77 Setting up perl (5.36.0-7+deb12u3) ...
+2026-Feb-25 20:42:05.111614 #7 11.79 Setting up libgprofng0:amd64 (2.40-2) ...
+2026-Feb-25 20:42:05.111614 #7 11.80 Setting up libgcc-12-dev:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 11.80 Setting up libdpkg-perl (1.21.22) ...
+2026-Feb-25 20:42:05.111614 #7 11.81 Setting up cpp (4:12.2.0-3) ...
+2026-Feb-25 20:42:05.111614 #7 11.82 Setting up libc6-dev:amd64 (2.36-9+deb12u13) ...
+2026-Feb-25 20:42:05.111614 #7 11.83 Setting up binutils-x86-64-linux-gnu (2.40-2) ...
+2026-Feb-25 20:42:05.111614 #7 11.84 Setting up libstdc++-12-dev:amd64 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 11.85 Setting up libcurl3-gnutls:amd64 (7.88.1-10+deb12u14) ...
+2026-Feb-25 20:42:05.111614 #7 11.85 Setting up binutils (2.40-2) ...
+2026-Feb-25 20:42:05.111614 #7 11.86 Setting up dpkg-dev (1.21.22) ...
+2026-Feb-25 20:42:05.111614 #7 11.87 Setting up liberror-perl (0.17029-2) ...
+2026-Feb-25 20:42:05.111614 #7 11.88 Setting up gcc-12 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 11.89 Setting up git (1:2.39.5-0+deb12u3) ...
+2026-Feb-25 20:42:05.111614 #7 11.91 Setting up g++-12 (12.2.0-14+deb12u1) ...
+2026-Feb-25 20:42:05.111614 #7 11.91 Setting up gcc (4:12.2.0-3) ...
+2026-Feb-25 20:42:05.111614 #7 11.93 Setting up g++ (4:12.2.0-3) ...
+2026-Feb-25 20:42:05.111614 #7 11.94 update-alternatives: using /usr/bin/g++ to provide /usr/bin/c++ (c++) in auto mode
+2026-Feb-25 20:42:05.111614 #7 11.95 Setting up build-essential (12.9) ...
+2026-Feb-25 20:42:05.111614 #7 11.95 Processing triggers for libc-bin (2.36-9+deb12u13) ...
+2026-Feb-25 20:42:05.111614 #7 DONE 12.6s
+2026-Feb-25 20:42:05.111614 
+2026-Feb-25 20:42:05.111614 #8 [ 4/12] RUN git clone --depth 1 https://github.com/Arhosseini77/SUM.git SUM
+2026-Feb-25 20:42:05.111614 #8 0.083 Cloning into 'SUM'...
+2026-Feb-25 20:42:05.111614 #8 DONE 0.9s
+2026-Feb-25 20:42:05.111614 
+2026-Feb-25 20:42:05.111614 #9 [ 5/12] RUN mkdir -p SUM/net/pre_trained_weights
+2026-Feb-25 20:42:05.111614 #9 DONE 0.1s
+2026-Feb-25 20:42:05.111614 
+2026-Feb-25 20:42:05.111614 #10 [ 6/12] RUN pip install --no-cache-dir --timeout 600 torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0
+2026-Feb-25 20:42:05.111614 #10 1.812 Collecting torch==2.1.0
+2026-Feb-25 20:42:05.111614 #10 1.848   Downloading torch-2.1.0-cp310-cp310-manylinux1_x86_64.whl (670.2 MB)
+2026-Feb-25 20:42:05.111614 #10 7.762      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 670.2/670.2 MB 138.2 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 8.717 Collecting torchvision==0.16.0
+2026-Feb-25 20:42:05.111614 #10 8.726   Downloading torchvision-0.16.0-cp310-cp310-manylinux1_x86_64.whl (6.9 MB)
+2026-Feb-25 20:42:05.111614 #10 8.780      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.9/6.9 MB 134.8 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 8.877 Collecting torchaudio==2.1.0
+2026-Feb-25 20:42:05.111614 #10 8.885   Downloading torchaudio-2.1.0-cp310-cp310-manylinux1_x86_64.whl (3.3 MB)
+2026-Feb-25 20:42:05.111614 #10 8.910      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.3/3.3 MB 142.8 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 8.964 Collecting nvidia-nccl-cu12==2.18.1
+2026-Feb-25 20:42:05.111614 #10 8.973   Downloading nvidia_nccl_cu12-2.18.1-py3-none-manylinux1_x86_64.whl (209.8 MB)
+2026-Feb-25 20:42:05.111614 #10 10.47      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 209.8/209.8 MB 93.3 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 10.74 Collecting filelock
+2026-Feb-25 20:42:05.111614 #10 10.75   Downloading filelock-3.24.3-py3-none-any.whl (24 kB)
+2026-Feb-25 20:42:05.111614 #10 10.77 Collecting nvidia-cuda-cupti-cu12==12.1.105
+2026-Feb-25 20:42:05.111614 #10 10.78   Downloading nvidia_cuda_cupti_cu12-12.1.105-py3-none-manylinux1_x86_64.whl (14.1 MB)
+2026-Feb-25 20:42:05.111614 #10 10.92      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 14.1/14.1 MB 169.9 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 10.96 Collecting sympy
+2026-Feb-25 20:42:05.111614 #10 10.97   Downloading sympy-1.14.0-py3-none-any.whl (6.3 MB)
+2026-Feb-25 20:42:05.111614 #10 11.01      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.3/6.3 MB 176.1 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 11.04 Collecting nvidia-cuda-nvrtc-cu12==12.1.105
+2026-Feb-25 20:42:05.111614 #10 11.05   Downloading nvidia_cuda_nvrtc_cu12-12.1.105-py3-none-manylinux1_x86_64.whl (23.7 MB)
+2026-Feb-25 20:42:05.111614 #10 11.21      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 23.7/23.7 MB 164.4 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 11.26 Collecting jinja2
+2026-Feb-25 20:42:05.111614 #10 11.26   Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+2026-Feb-25 20:42:05.111614 #10 11.27      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 134.9/134.9 kB 353.4 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 11.29 Collecting nvidia-cublas-cu12==12.1.3.1
+2026-Feb-25 20:42:05.111614 #10 11.30   Downloading nvidia_cublas_cu12-12.1.3.1-py3-none-manylinux1_x86_64.whl (410.6 MB)
+2026-Feb-25 20:42:05.111614 #10 14.14      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 410.6/410.6 MB 103.1 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 14.61 Collecting nvidia-cuda-runtime-cu12==12.1.105
+2026-Feb-25 20:42:05.111614 #10 14.62   Downloading nvidia_cuda_runtime_cu12-12.1.105-py3-none-manylinux1_x86_64.whl (823 kB)
+2026-Feb-25 20:42:05.111614 #10 14.63      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 823.6/823.6 kB 324.3 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 14.66 Collecting networkx
+2026-Feb-25 20:42:05.111614 #10 14.67   Downloading networkx-3.4.2-py3-none-any.whl (1.7 MB)
+2026-Feb-25 20:42:05.111614 #10 14.68      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.7/1.7 MB 195.3 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 14.71 Collecting nvidia-cufft-cu12==11.0.2.54
+2026-Feb-25 20:42:05.111614 #10 14.72   Downloading nvidia_cufft_cu12-11.0.2.54-py3-none-manylinux1_x86_64.whl (121.6 MB)
+2026-Feb-25 20:42:05.111614 #10 15.82      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 121.6/121.6 MB 139.8 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 15.98 Collecting nvidia-curand-cu12==10.3.2.106
+2026-Feb-25 20:42:05.111614 #10 15.99   Downloading nvidia_curand_cu12-10.3.2.106-py3-none-manylinux1_x86_64.whl (56.5 MB)
+2026-Feb-25 20:42:05.111614 #10 16.32      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 56.5/56.5 MB 155.8 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 16.41 Collecting nvidia-cusparse-cu12==12.1.0.106
+2026-Feb-25 20:42:05.111614 #10 16.41   Downloading nvidia_cusparse_cu12-12.1.0.106-py3-none-manylinux1_x86_64.whl (196.0 MB)
+2026-Feb-25 20:42:05.111614 #10 17.77      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 196.0/196.0 MB 149.9 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 18.02 Collecting nvidia-cudnn-cu12==8.9.2.26
+2026-Feb-25 20:42:05.111614 #10 18.03   Downloading nvidia_cudnn_cu12-8.9.2.26-py3-none-manylinux1_x86_64.whl (731.7 MB)
+2026-Feb-25 20:42:05.111614 #10 22.69      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 731.7/731.7 MB 256.9 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 23.50 Collecting triton==2.1.0
+2026-Feb-25 20:42:05.111614 #10 23.52   Downloading triton-2.1.0-0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (89.2 MB)
+2026-Feb-25 20:42:05.111614 #10 24.27      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 89.2/89.2 MB 105.9 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 24.41 Collecting fsspec
+2026-Feb-25 20:42:05.111614 #10 24.41   Downloading fsspec-2026.2.0-py3-none-any.whl (202 kB)
+2026-Feb-25 20:42:05.111614 #10 24.41      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 202.5/202.5 kB 385.3 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 24.44 Collecting nvidia-nvtx-cu12==12.1.105
+2026-Feb-25 20:42:05.111614 #10 24.45   Downloading nvidia_nvtx_cu12-12.1.105-py3-none-manylinux1_x86_64.whl (99 kB)
+2026-Feb-25 20:42:05.111614 #10 24.45      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 99.1/99.1 kB 254.7 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 24.48 Collecting typing-extensions
+2026-Feb-25 20:42:05.111614 #10 24.48   Downloading typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+2026-Feb-25 20:42:05.111614 #10 24.48      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.6/44.6 kB 197.3 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 24.51 Collecting nvidia-cusolver-cu12==11.4.5.107
+2026-Feb-25 20:42:05.111614 #10 24.53   Downloading nvidia_cusolver_cu12-11.4.5.107-py3-none-manylinux1_x86_64.whl (124.2 MB)
+2026-Feb-25 20:42:05.111614 #10 25.55      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 124.2/124.2 MB 115.9 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 26.18 Collecting pillow!=8.3.*,>=5.3.0
+2026-Feb-25 20:42:05.111614 #10 26.21   Downloading pillow-12.1.1-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (7.0 MB)
+2026-Feb-25 20:42:05.111614 #10 26.28      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 7.0/7.0 MB 102.4 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 26.34 Collecting requests
+2026-Feb-25 20:42:05.111614 #10 26.35   Downloading requests-2.32.5-py3-none-any.whl (64 kB)
+2026-Feb-25 20:42:05.111614 #10 26.36      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 64.7/64.7 kB 171.8 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 26.86 Collecting numpy
+2026-Feb-25 20:42:05.111614 #10 26.87   Downloading numpy-2.2.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (16.8 MB)
+2026-Feb-25 20:42:05.111614 #10 27.13      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.8/16.8 MB 216.1 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 27.21 Collecting nvidia-nvjitlink-cu12
+2026-Feb-25 20:42:05.111614 #10 27.22   Downloading nvidia_nvjitlink_cu12-12.9.86-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl (39.7 MB)
+2026-Feb-25 20:42:05.111614 #10 27.49      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 39.7/39.7 MB 159.0 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 27.79 Collecting MarkupSafe>=2.0
+2026-Feb-25 20:42:05.111614 #10 27.80   Downloading markupsafe-3.0.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (20 kB)
+2026-Feb-25 20:42:05.111614 #10 27.85 Collecting idna<4,>=2.5
+2026-Feb-25 20:42:05.111614 #10 27.86   Downloading idna-3.11-py3-none-any.whl (71 kB)
+2026-Feb-25 20:42:05.111614 #10 27.86      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 71.0/71.0 kB 221.6 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 27.91 Collecting urllib3<3,>=1.21.1
+2026-Feb-25 20:42:05.111614 #10 27.92   Downloading urllib3-2.6.3-py3-none-any.whl (131 kB)
+2026-Feb-25 20:42:05.111614 #10 27.92      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 131.6/131.6 kB 277.0 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 28.17 Collecting charset_normalizer<4,>=2
+2026-Feb-25 20:42:05.111614 #10 28.18   Downloading charset_normalizer-3.4.4-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (153 kB)
+2026-Feb-25 20:42:05.111614 #10 28.18      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 153.6/153.6 kB 245.7 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 28.30 Collecting certifi>=2017.4.17
+2026-Feb-25 20:42:05.111614 #10 28.31   Downloading certifi-2026.2.25-py3-none-any.whl (153 kB)
+2026-Feb-25 20:42:05.111614 #10 28.31      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 153.7/153.7 kB 266.9 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 28.34 Collecting mpmath<1.4,>=1.1.0
+2026-Feb-25 20:42:05.111614 #10 28.35   Downloading mpmath-1.3.0-py3-none-any.whl (536 kB)
+2026-Feb-25 20:42:05.111614 #10 28.36      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 536.2/536.2 kB 212.0 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #10 28.83 Installing collected packages: mpmath, urllib3, typing-extensions, sympy, pillow, nvidia-nvtx-cu12, nvidia-nvjitlink-cu12, nvidia-nccl-cu12, nvidia-curand-cu12, nvidia-cufft-cu12, nvidia-cuda-runtime-cu12, nvidia-cuda-nvrtc-cu12, nvidia-cuda-cupti-cu12, nvidia-cublas-cu12, numpy, networkx, MarkupSafe, idna, fsspec, filelock, charset_normalizer, certifi, triton, requests, nvidia-cusparse-cu12, nvidia-cudnn-cu12, jinja2, nvidia-cusolver-cu12, torch, torchvision, torchaudio
+2026-Feb-25 20:42:05.111614 #10 77.00 Successfully installed MarkupSafe-3.0.3 certifi-2026.2.25 charset_normalizer-3.4.4 filelock-3.24.3 fsspec-2026.2.0 idna-3.11 jinja2-3.1.6 mpmath-1.3.0 networkx-3.4.2 numpy-2.2.6 nvidia-cublas-cu12-12.1.3.1 nvidia-cuda-cupti-cu12-12.1.105 nvidia-cuda-nvrtc-cu12-12.1.105 nvidia-cuda-runtime-cu12-12.1.105 nvidia-cudnn-cu12-8.9.2.26 nvidia-cufft-cu12-11.0.2.54 nvidia-curand-cu12-10.3.2.106 nvidia-cusolver-cu12-11.4.5.107 nvidia-cusparse-cu12-12.1.0.106 nvidia-nccl-cu12-2.18.1 nvidia-nvjitlink-cu12-12.9.86 nvidia-nvtx-cu12-12.1.105 pillow-12.1.1 requests-2.32.5 sympy-1.14.0 torch-2.1.0 torchaudio-2.1.0 torchvision-0.16.0 triton-2.1.0 typing-extensions-4.15.0 urllib3-2.6.3
+2026-Feb-25 20:42:05.111614 #10 77.00 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+2026-Feb-25 20:42:05.111614 #10 77.09
+2026-Feb-25 20:42:05.111614 #10 77.09 [notice] A new release of pip is available: 23.0.1 -> 26.0.1
+2026-Feb-25 20:42:05.111614 #10 77.09 [notice] To update, run: pip install --upgrade pip
+2026-Feb-25 20:42:05.111614 #10 DONE 80.4s
+2026-Feb-25 20:42:05.111614 
+2026-Feb-25 20:42:05.111614 #11 [ 7/12] RUN pip install --no-cache-dir --timeout 600 -r SUM/requirements.txt
+2026-Feb-25 20:42:05.111614 #11 0.626 Collecting scikit-image
+2026-Feb-25 20:42:05.111614 #11 0.666   Downloading scikit_image-0.25.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (14.8 MB)
+2026-Feb-25 20:42:05.111614 #11 0.838      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 14.8/14.8 MB 137.2 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #11 0.887 Collecting packaging
+2026-Feb-25 20:42:05.111614 #11 0.893   Downloading packaging-26.0-py3-none-any.whl (74 kB)
+2026-Feb-25 20:42:05.111614 #11 0.895      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 74.4/74.4 kB 260.4 MB/s eta 0:00:00
+2026-Feb-25 20:42:05.111614 #11 0.914 Collecting causal-conv1d==1.0.2
+2026-Feb-25 20:42:05.111614 #11 0.922   Downloading causal_conv1d-1.0.2.tar.gz (6.4 kB)
+2026-Feb-25 20:42:05.111614 #11 0.928   Preparing metadata (setup.py): started
+2026-Feb-25 20:42:05.111614 #11 3.690   Preparing metadata (setup.py): finished with status 'error'
+2026-Feb-25 20:42:05.111614 #11 3.693   error: subprocess-exited-with-error
+2026-Feb-25 20:42:05.111614 #11 3.693
+2026-Feb-25 20:42:05.111614 #11 3.693   × python setup.py egg_info did not run successfully.
+2026-Feb-25 20:42:05.111614 #11 3.693   │ exit code: 1
+2026-Feb-25 20:42:05.111614 #11 3.693   ╰─> [39 lines of output]
+2026-Feb-25 20:42:05.111614 #11 3.693
+2026-Feb-25 20:42:05.111614 #11 3.693       A module that was compiled using NumPy 1.x cannot be run in
+2026-Feb-25 20:42:05.111614 #11 3.693       NumPy 2.2.6 as it may crash. To support both 1.x and 2.x
+2026-Feb-25 20:42:05.111614 #11 3.693       versions of NumPy, modules must be compiled with NumPy 2.0.
+2026-Feb-25 20:42:05.111614 #11 3.693       Some module may need to rebuild instead e.g. with 'pybind11>=2.12'.
+2026-Feb-25 20:42:05.111614 #11 3.693
+2026-Feb-25 20:42:05.111614 #11 3.693       If you are a user of the module, the easiest solution will be to
+2026-Feb-25 20:42:05.111614 #11 3.693       downgrade to 'numpy<2' or try to upgrade the affected module.
+2026-Feb-25 20:42:05.111614 #11 3.693       We expect that some modules will need time to support NumPy 2.
+2026-Feb-25 20:42:05.111614 #11 3.693
+2026-Feb-25 20:42:05.111614 #11 3.693       Traceback (most recent call last):  File "<string>", line 2, in <module>
+2026-Feb-25 20:42:05.111614 #11 3.693         File "<pip-setuptools-caller>", line 34, in <module>
+2026-Feb-25 20:42:05.111614 #11 3.693         File "/tmp/pip-install-df9m7keq/causal-conv1d_5f3bce72f8b046908b2afecd97000c16/setup.py", line 19, in <module>
+2026-Feb-25 20:42:05.111614 #11 3.693           import torch
+2026-Feb-25 20:42:05.111614 #11 3.693         File "/usr/local/lib/python3.10/site-packages/torch/__init__.py", line 1382, in <module>
+2026-Feb-25 20:42:05.111614 #11 3.693           from .functional import *  # noqa: F403
+2026-Feb-25 20:42:05.111614 #11 3.693         File "/usr/local/lib/python3.10/site-packages/torch/functional.py", line 7, in <module>
+2026-Feb-25 20:42:05.111614 #11 3.693           import torch.nn.functional as F
+2026-Feb-25 20:42:05.111614 #11 3.693         File "/usr/local/lib/python3.10/site-packages/torch/nn/__init__.py", line 1, in <module>
+2026-Feb-25 20:42:05.111614 #11 3.693           from .modules import *  # noqa: F403
+2026-Feb-25 20:42:05.111614 #11 3.693         File "/usr/local/lib/python3.10/site-packages/torch/nn/modules/__init__.py", line 35, in <module>
+2026-Feb-25 20:42:05.111614 #11 3.693           from .transformer import TransformerEncoder, TransformerDecoder, \
+2026-Feb-25 20:42:05.111614 #11 3.693         File "/usr/local/lib/python3.10/site-packages/torch/nn/modules/transformer.py", line 20, in <module>
+2026-Feb-25 20:42:05.111614 #11 3.693           device: torch.device = torch.device(torch._C._get_default_device()),  # torch.device('cpu'),
+2026-Feb-25 20:42:05.111614 #11 3.693       /usr/local/lib/python3.10/site-packages/torch/nn/modules/transformer.py:20: UserWarning: Failed to initialize NumPy: _ARRAY_API not found (Triggered internally at ../torch/csrc/utils/tensor_numpy.cpp:84.)
+2026-Feb-25 20:42:05.111614 #11 3.693         device: torch.device = torch.device(torch._C._get_default_device()),  # torch.device('cpu'),
+2026-Feb-25 20:42:05.111614 #11 3.693       /tmp/pip-install-df9m7keq/causal-conv1d_5f3bce72f8b046908b2afecd97000c16/setup.py:78: UserWarning: causal_conv1d was requested, but nvcc was not found.  Are you sure your environment has nvcc available?  If you're installing within a container from https://hub.docker.com/r/pytorch/pytorch, only images whose names contain 'devel' will provide nvcc.
+2026-Feb-25 20:42:05.111614 #11 3.693         warnings.warn(
+2026-Feb-25 20:42:05.111614 #11 3.693       Traceback (most recent call last):
+2026-Feb-25 20:42:05.111614 #11 3.693         File "<string>", line 2, in <module>
+2026-Feb-25 20:42:05.111614 #11 3.693         File "<pip-setuptools-caller>", line 34, in <module>
+2026-Feb-25 20:42:05.111614 #11 3.693         File "/tmp/pip-install-df9m7keq/causal-conv1d_5f3bce72f8b046908b2afecd97000c16/setup.py", line 112, in <module>
+2026-Feb-25 20:42:05.111614 #11 3.693           if bare_metal_version >= Version("11.8"):
+2026-Feb-25 20:42:05.111614 #11 3.693       NameError: name 'bare_metal_version' is not defined
+2026-Feb-25 20:42:05.111614 #11 3.693
+2026-Feb-25 20:42:05.111614 #11 3.693
+2026-Feb-25 20:42:05.111614 #11 3.693       torch.__version__  = 2.1.0+cu121
+2026-Feb-25 20:42:05.111614 #11 3.693
+2026-Feb-25 20:42:05.111614 #11 3.693
+2026-Feb-25 20:42:05.111614 #11 3.693       [end of output]
+2026-Feb-25 20:42:05.111614 #11 3.693
+2026-Feb-25 20:42:05.111614 #11 3.693   note: This error originates from a subprocess, and is likely not a problem with pip.
+2026-Feb-25 20:42:05.111614 #11 3.694 error: metadata-generation-failed
+2026-Feb-25 20:42:05.111614 #11 3.694
+2026-Feb-25 20:42:05.111614 #11 3.694 × Encountered error while generating package metadata.
+2026-Feb-25 20:42:05.111614 #11 3.694 ╰─> See above for output.
+2026-Feb-25 20:42:05.111614 #11 3.694
+2026-Feb-25 20:42:05.111614 #11 3.694 note: This is an issue with the package mentioned above, not pip.
+2026-Feb-25 20:42:05.111614 #11 3.694 hint: See above for details.
+2026-Feb-25 20:42:05.111614 #11 3.798
+2026-Feb-25 20:42:05.111614 #11 3.798 [notice] A new release of pip is available: 23.0.1 -> 26.0.1
+2026-Feb-25 20:42:05.111614 #11 3.798 [notice] To update, run: pip install --upgrade pip
+2026-Feb-25 20:42:05.111614 #11 ERROR: process "/bin/sh -c pip install --no-cache-dir --timeout 600 -r SUM/requirements.txt" did not complete successfully: exit code: 1
+2026-Feb-25 20:42:05.111614 ------
+2026-Feb-25 20:42:05.111614 > [ 7/12] RUN pip install --no-cache-dir --timeout 600 -r SUM/requirements.txt:
+2026-Feb-25 20:42:05.111614 3.694 error: metadata-generation-failed
+2026-Feb-25 20:42:05.111614 3.694
+2026-Feb-25 20:42:05.111614 3.694 × Encountered error while generating package metadata.
+2026-Feb-25 20:42:05.111614 3.694 ╰─> See above for output.
+2026-Feb-25 20:42:05.111614 3.694
+2026-Feb-25 20:42:05.111614 3.694 note: This is an issue with the package mentioned above, not pip.
+2026-Feb-25 20:42:05.111614 3.694 hint: See above for details.
+2026-Feb-25 20:42:05.111614 3.798
+2026-Feb-25 20:42:05.111614 3.798 [notice] A new release of pip is available: 23.0.1 -> 26.0.1
+2026-Feb-25 20:42:05.111614 3.798 [notice] To update, run: pip install --upgrade pip
+2026-Feb-25 20:42:05.111614 ------
+2026-Feb-25 20:42:05.111614 Dockerfile.sum:28
+2026-Feb-25 20:42:05.111614 --------------------
+2026-Feb-25 20:42:05.111614 26 |
+2026-Feb-25 20:42:05.111614 27 |     # SUM dependencies (mamba-ssm may need build-essential)
+2026-Feb-25 20:42:05.111614 28 | >>> RUN pip install --no-cache-dir --timeout 600 -r SUM/requirements.txt
+2026-Feb-25 20:42:05.111614 29 |
+2026-Feb-25 20:42:05.111614 30 |     # Our API deps + gdown (for optional Google Drive download in entrypoint)
+2026-Feb-25 20:42:05.111614 --------------------
+2026-Feb-25 20:42:05.111614 ERROR: failed to build: failed to solve: process "/bin/sh -c pip install --no-cache-dir --timeout 600 -r SUM/requirements.txt" did not complete successfully: exit code: 1
+2026-Feb-25 20:42:05.111614 exit status 1
+2026-Feb-25 20:42:05.244488 ========================================
+2026-Feb-25 20:42:05.260372 Deployment failed. Removing the new version of your application.
+2026-Feb-25 20:42:06.928798 Gracefully shutting down build container: o4g0wokk004s8ow088w8ws44
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is getting a Docker build failure when deploying the SUM saliency service. The key errors are:
+
+1. **NumPy version conflict**: PyTorch 2.1.0 pulled in numpy 2.2.6, but `causal-conv1d` (a dependency from SUM's requirements.txt) was compiled with NumPy 1.x and fails with NumPy 2.x. The error says: "A module that was compiled using NumPy 1.x cannot be run in NumPy 2.2.6"
+
+2. **causal-conv1d setup.py bug**: There's also a `NameError: name 'bare_metal_version' is not defined` in causal-conv1d's setup.py - this is a bug in the package when building without nvcc (CPU-only build).
+
+3. **PyTorch pulled CUDA wheels**: The Dockerfile uses the default `pip install torch` which pulled CUDA-enabled PyTorch (nvidia-* packages). For a CPU-only Coolify deployment we might want CPU-only PyTorch to simplify, but the main issue is the SUM requirements.
+
+Solutions:
+1. Pin numpy to <2 before installing SUM requirements: `RUN pip install 'numpy<2'` after torch, then install SUM requirements. That way causal-conv1d's metadata build might work with numpy 1.x.
+2. Or install SUM requirements in an order that uses numpy<2: first `pip install 'numpy<2'` then torch (but torch 2.1 might want numpy 2 - need to check). Actually the error says "downgrade to 'numpy<2'" - so we can pin numpy<2 after torch and before SUM deps.
+3. causal-conv1d also has a bug (bare_metal_version not defined) when nvcc is not found - that's a separate issue. We might need to install a pre-built wheel for causal-conv1d if available, or patch/skip it. Let me check - mamba-ssm and causal-conv1d are often needed for Mamba models. SUM might require them.
+
+Looking at the SUM repo - it's a saliency model that uses Mamba. So we need causal-conv1d and mamba-ssm. Options:
+- Pin numpy<2 so the build proceeds; then causal-conv1d might still fail on the bare_metal_version NameError. That error is in setup.py line 112 - when nvcc is not found they don't set bare_metal_version. So we need either a CPU-only build of causal-conv1d or a way to skip the CUDA check.
+- Check if there's a pre-built wheel for causal-conv1d 1.0.2 for Linux CPU.
+- Or use an older PyTorch that ships with numpy<2 and see if that helps.
+
+Actually re-reading the log: the metadata generation fails because when setup.py runs it imports torch, and torch triggers numpy loading, and numpy 2.2 is incompatible with something. The "downgrade to numpy<2" message is from numpy itself. So if we install numpy<2 before installing SUM/requirements.txt, the causal-conv1d setup might get further. But then we hit the bare_metal_version NameError - that's in causal-conv1d's setup.py, so it's a bug in the package when building without CUDA.
+
+Let me search for causal-conv1d 1.0.2 and bare_metal_version or CPU build.
+</details></think>
+
+---
+
+
+Build schlägt fehl: Zwei Probleme — 1) NumPy 2.x inkompatibel mit `causal-conv1d` (SUM-Abhängigkeit). 2) `causal-conv1d`-Setup bricht ohne nvcc ab (`bare_metal_version` nicht gesetzt). Wir prüfen SUM-Requirements und Dockerfile und beheben beides.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/Dockerfile.sum</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "causal-conv1d|mamba-ssm|requirements",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "causal-conv1d|mamba-ssm|requirements",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service",
+  "outputMode": "content",
+  "totalFiles": 4,
+  "totalMatches": 11,
+  "topFiles": [
+    {
+      "uri": "saliency-service/README.md",
+      "matchCount": 2
+    },
+    {
+      "uri": "saliency-service/requirements.txt",
+      "matchCount": 1
+    },
+    {
+      "uri": "saliency-service/Dockerfile",
+      "matchCount": 3
+    },
+    {
+      "uri": "saliency-service/Dockerfile.sum",
+      "matchCount": 5
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="web_search">
+<details>
+<summary>Tool use: **web_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "searchTerm": "causal-conv1d pip install numpy 2 bare_metal_version CPU only 2024"
+}
+```
+User decision: **accepted**
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="web_fetch">
+<details>
+<summary>Tool use: **web_fetch**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="web_search">
+<details>
+<summary>Tool use: **web_search**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="web_fetch">
+<details>
+<summary>Tool use: **web_fetch**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
 
 ---
 

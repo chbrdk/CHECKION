@@ -291,6 +291,18 @@ Danach sollte der SUM-Service starten und die Heatmap nutzen.
 
 ---
 
+## Build-Fehler SUM (causal-conv1d / NumPy)
+
+Falls der Build von **Dockerfile.sum** mit Fehlern wie **„numpy 2.x“** oder **„bare_metal_version not defined“** abbricht: Das Image ist für **CPU-only** (ohne CUDA/nvcc) ausgelegt. Im Repo ist das bereits behoben:
+
+- **PyTorch** wird als CPU-Variante installiert (kleineres Image).
+- **NumPy** wird auf &lt;2 gepinnt (causal-conv1d 1.0.2 verträgt kein NumPy 2).
+- **causal-conv1d** wird ohne CUDA gebaut (`CAUSAL_CONV1D_SKIP_CUDA_BUILD=TRUE`), damit auf dem Build-Server kein nvcc nötig ist.
+
+Nach einem **git pull** und erneutem **Deploy** sollte der Build durchlaufen. Wenn du Änderungen am Dockerfile.sum lokal gemacht hast, diese mit der Repo-Version abgleichen.
+
+---
+
 ## Fehler: „fetch failed“ / 502 / Timeout
 
 Wenn CHECKION **„fetch failed“**, **502 Bad Gateway** oder **„The operation was aborted due to timeout“** (bzw. „Saliency-Anfrage Zeitüberschreitung“) anzeigt:

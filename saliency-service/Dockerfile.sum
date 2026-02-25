@@ -16,10 +16,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN git clone --depth 1 https://github.com/Arhosseini77/SUM.git SUM
 RUN mkdir -p SUM/net/pre_trained_weights
 
-# PyTorch CPU (for GPU use: add --index-url https://download.pytorch.org/whl/cu121)
-RUN pip install --no-cache-dir --timeout 600 torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0
+# PyTorch CPU-only (smaller image; for GPU use --index-url https://download.pytorch.org/whl/cu121)
+RUN pip install --no-cache-dir --timeout 600 \
+    --extra-index-url https://download.pytorch.org/whl/cpu \
+    torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0
 
-# SUM dependencies (mamba-ssm may need build-essential)
+# causal-conv1d in SUM requires numpy<2; skip CUDA build for CPU-only (no nvcc)
+RUN pip install --no-cache-dir 'numpy<2'
+ENV CAUSAL_CONV1D_SKIP_CUDA_BUILD=TRUE
+ENV CAUSAL_CONV1D_FORCE_BUILD=TRUE
 RUN pip install --no-cache-dir --timeout 600 -r SUM/requirements.txt
 
 # Our API deps + gdown (for optional Google Drive download in entrypoint)
