@@ -75,9 +75,10 @@ Laut [Coolify-Doku](https://coolify.io/docs/builds/packs/dockerfile) erscheint *
 
 | Name | Wert |
 |------|------|
-| `SALIENCY_SERVICE_URL` | `http://<Container-ID-von-Saliency>:8000` |
+| `SALIENCY_SERVICE_URL` | `http://<Container-ID>:8000` **oder** `https://sum-saliency.deine-domain.tech` |
 
-**Wichtig:** Statt des App-Namens die **Container-ID** aus Schritt 5.4 verwenden (z. B. `http://rc8gsg4kcwc8k0wsgo484w80:8000`). Der App-Name wie `checkion-saliency` funktioniert in Coolify oft nicht für Container-zu-Container-Verbindungen – nur die angezeigte interne ID. **Immer `http://` verwenden**, nicht `https://` – der Saliency-Container hat keinen TLS-Server; bei HTTPS entsteht im CHECKION-Log „SSL packet length too long“ und keine Heatmap.
+**Option 1 – Intern:** Container-ID aus Schritt 5.4 (z. B. `http://rc8gsg4kcwc8k0wsgo484w80:8000`). **Nur `http://`** – der Container hat keinen TLS-Server; bei HTTPS auf interner ID entsteht „SSL packet length too long“.  
+**Option 2 – Öffentliche Domain:** Wenn die Saliency-App eine eigene Domain hat (z. B. `https://sum-saliency.projects-a.plygrnd.tech`), diese **mit `https://`** eintragen. CHECKION lässt HTTPS bei Domains unverändert.
 
 ### Schritt 8: CHECKION neu deployen
 
@@ -158,7 +159,7 @@ Falls du MDS-ViTNet weiterlaufen lassen willst und **zusätzlich** SUM testen wi
 | 9 | **Deploy** | Ersten Deploy starten, bis Build durch und Container läuft. |
 | 10 | **Interne URL notieren** | In der neuen SUM-App: **Netzwerk** / **Internal URL** / Container-ID (👁) ablesen, z. B. `abc123xyz`. |
 | 11 | **CHECKION** öffnen | Deine CHECKION-Anwendung. |
-| 12 | **Environment Variables** | **`SALIENCY_SERVICE_URL`** auf **`http://<Container-ID-von-SUM>:8000`** setzen (z. B. `http://abc123xyz:8000`). Mit **http**, nicht https. |
+| 12 | **Environment Variables** | **`SALIENCY_SERVICE_URL`** = **`http://<Container-ID>:8000`** (intern) oder **`https://sum-saliency.deine-domain.tech`** (öffentliche Domain der SUM-App). |
 | 13 | **CHECKION Redeploy** | CHECKION neu deployen. |
 
 Ab dann generieren neue Scans die Heatmap mit **SUM** (UI/Webseiten-Modell).

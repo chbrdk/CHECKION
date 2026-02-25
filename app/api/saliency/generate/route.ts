@@ -9,13 +9,19 @@ import { invalidateScan } from '@/lib/cache';
 import { enrichPageIndexWithSaliency } from '@/lib/page-index';
 import { getScreenshotBase64 } from '@/lib/screenshot-storage';
 
-/** Base URL of the saliency service. Normalized to http: internal services in Docker/Coolify typically do not use TLS. */
+/** Base URL of the saliency service. Public domains (e.g. https://sum-saliency....) stay HTTPS; internal hostnames (no dot) use http to avoid TLS issues. */
 function getSaliencyBaseUrl(): string | undefined {
     const raw = process.env.SALIENCY_SERVICE_URL;
     if (!raw?.trim()) return undefined;
     const url = raw.replace(/\/$/, '').trim();
-    if (url.toLowerCase().startsWith('https://')) return url.replace(/^https:\/\//i, 'http://');
-    return url;
+    if (!url.toLowerCase().startsWith('https://')) return url;
+    try {
+        const host = new URL(url).hostname;
+        if (host.includes('.')) return url;
+    } catch {
+        /* keep url as-is if parse fails */
+    }
+    return url.replace(/^https:\/\//i, 'http://');
 }
 
 /** Timeout (ms) for saliency request. Model on CPU can take 1–3 min for large screenshots. */
