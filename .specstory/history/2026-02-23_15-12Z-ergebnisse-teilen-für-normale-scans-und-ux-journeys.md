@@ -20029,7 +20029,889 @@ Status: **completed**
 
 I see. The mamba_ssm 1.0.1 code:
 1. Imports `selective_scan_cuda` and `causal_conv1d_cuda` at module level - when we skip CUDA build, these modules don't exist, so the import would fail at startup. But the user said the service started and returned health - so maybe the import is lazy or the error happens only when /predict is called and the model runs.
-2. Actually re-reading the error: "name 'selective_scan_fn' is not defined" - that's a NameError, meaning the name isn't defined. In the file, selective_scan_fn is defined at the bottom. So the issue might be that when we have SKIP_CUDA_BUILD, the module fails to import (import selective_scan_cuda fails) and the module loading might be caught somewhere, or a different code path is used. Let me check - if import selective_scan_cuda fails, the whole selective_scan_interface.py would fail to load, so selective_scan_fn would never be defined. So somewhere in SUM or mamba the code might try to use selective_scan_fn w</details></think>
+2. Actually re-reading the error: "name 'selective_scan_fn' is not defined" - that's a NameError, meaning the name isn't defined. In the file, selective_scan_fn is defined at the bottom. So the issue might be that when we have SKIP_CUDA_BUILD, the module fails to import (import selective_scan_cuda fails) and the module loading might be caught somewhere, or a different code path is used. Let me check - if import selective_scan_cuda fails, the whole selective_scan_interface.py would fail to load, so selective_scan_fn would never be defined. So somewhere in SUM or mamba the code might try to use selective_scan_fn when the CUDA module failed to load - or there's a different version of the file that conditionally defines selective_scan_fn.
+
+Actually re-reading again: the error says "name 'selective_scan_fn' is not defined". So the code that's running is trying to reference selective_scan_fn but it's not defined. That could happen if:
+1. selective_scan_interface.py failed to load (due to import selective_scan_cuda failing), so a different stub or fallback module is used that doesn't define selective_scan_fn.
+2. Or there's a try/except that catches the import and then later code expects selective_scan_fn to exist.
+
+Let me check the main mamba_ssm __init__ or where selective_scan_fn is used - maybe they have a fallback that uses selective_scan_ref when cuda is not available. I'll search for where selective_scan_fn is set or imported in mamba.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "selective_scan_fn|selective_scan_ref",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "selective_scan_fn|selective_scan_ref",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 0,
+  "totalMatches": 0,
+  "topFiles": []
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="web_search">
+<details>
+            <summary>Tool use: **web_search** • Searched web `undefined` • **1** results</summary>
+        
+| Title | URL | Chunk |
+|-------|-----|-------|
+| Web search results for query: mamba-ssm 1.0.1 import selective_scan_cuda failed use selective_scan_ref |  | Links:<br/>1. [ImportError: /home/ubuntu/.local/lib/python3.10/site-packages/selective_scan_cuda.cpython-310-x86_64-linux-gnu.so: undefined symbol: _ZN2at4_ops10zeros_like4callERKNS_6TensorESt8optionalIN3c1010ScalarTypeEES5_INS6_6LayoutEES5_INS6_6DeviceEES5_IbES5_INS6_12MemoryFormatEE · Issue #576 · state-spaces/mamba](https://github.com/state-spaces/mamba/issues/576)<br/>2. [mamba-ssm v1.0.1](https://pypi.org/project/mamba-ssm/1.0.1/)<br/>3. [Search code, repositories, users, issues, pull requests...](https://github.com/state-spaces/mamba/issues/217)<br/>4. [It's simply a pain to build it regardless of which version of CUDA, gcc compiler, etc. you have · Issue #842 · state-spaces/mamba](https://github.com/state-spaces/mamba/issues/842)<br/>5. [Search code, repositories, users, issues, pull requests...](https://github.com/state-spaces/mamba/issues/652)<br/><br/># Mamba-SSM 1.0.1 Import Error Solutions<br/><br/>When `selective_scan_cuda` fails to import in mamba-ssm 1.0.1, you can use the reference implementation as a fallback. Here's what to know:<br/><br/>## The Problem<br/>The error occurs when importing `selective_scan_cuda` due to undefined symbols in the compiled CUDA extension.[1][3] This typically happens when there's a mismatch between your PyTorch, CUDA, and the pre-compiled wheel.[4]<br/><br/>## Solutions<br/><br/>**1. Use the Reference Implementation**<br/>The code includes a fallback to `selective_scan_ref` (the reference implementation) when the CUDA version fails to import. The selective scan interface in `mamba_ssm/ops/selective_scan_interface.py` should handle this gracefully, allowing you to use the slower CPU/reference version instead of the optimized CUDA kernel.<br/><br/>**2. Install the Correct Wheel**<br/>The most reliable fix is to download the correct pre-built wheel for your environment from the [GitHub releases page](https://github.com/state-spaces/mamba/releases). Ensure the wheel matches your:[4]<br/>- CUDA version (e.g., cu118, cu12)<br/>- PyTorch version (e.g., torch2.3)<br/>- Python version (e.g., cp310 for Python 3.10)<br/>- CXX11 ABI compatibility<br/><br/>**3. Build from Source**<br/>If wheels don't work, try building from source with `pip install . --no-build-isolation` to ensure compatibility with your environment.[2]<br/><br/>The reference implementation will work but will be significantly slower than the optimized CUDA version. |
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So the mamba_ssm 1.0.1 selective_scan_interface.py that I saw does NOT have a try/except fallback - it directly imports selective_scan_cuda. So when we install with SKIP_CUDA_BUILD, the selective_scan_cuda module doesn't exist. The import would fail when anything imports from mamba_ssm.ops.selective_scan_interface. So how does the SUM container even start? Maybe the SUM code or mamba imports this lazily - e.g. only when the model runs. So at startup (health check) nothing imports selective_scan_cuda, but when /predict is called and the model runs, it tries to use selective_scan_fn and at that point the module that defines it wasn't fully loaded because the import of selective_scan_cuda failed somewhere up the chain. So we need to patch the mamba-ssm package to use selective_scan_ref when selective_scan_cuda is not available. That would require either: 1. Installing a patched version of mamba-ssm that has try/except import and uses selective_scan_ref when cuda fails 2. Or monkey-patching at runtime in main_sum.py before importing SUM Let me check the state-spaces/mamba repo for a newer version that might have CPU fallback.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="web_fetch">
+<details>
+<summary>Tool use: **web_fetch**</summary>
+
+
+Parameters:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/state-spaces/mamba/main/mamba_ssm/ops/selective_scan_interface.py"
+}
+```
+Result:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/state-spaces/mamba/main/mamba_ssm/ops/selective_scan_interface.py",
+  "markdown": "# Copyright (c) 2023, Tri Dao, Albert Gu.\n\nimport torch\nimport torch.nn.functional as F\nfrom mamba_ssm.utils.torch import custom_bwd, custom_fwd\n\nfrom einops import rearrange, repeat\n\ntry:\n from causal_conv1d import causal_conv1d_fn\n from causal_conv1d.cpp_functions import causal_conv1d_fwd_function, causal_conv1d_bwd_function, causal_conv1d_update_function\nexcept ImportError:\n causal_conv1d_fn = None\n causal_conv1d_fwd_function = None\n causal_conv1d_bwd_function = None\n causal_conv1d_update_function = None\n\nfrom mamba_ssm.ops.triton.layer_norm import _layer_norm_fwd\n\nimport selective_scan_cuda\n\n\nclass SelectiveScanFn(torch.autograd.Function):\n\n @staticmethod\n def forward(ctx, u, delta, A, B, C, D=None, z=None, delta_bias=None, delta_softplus=False,\n return_last_state=False):\n if u.stride(-1) != 1:\n u = u.contiguous()\n if delta.stride(-1) != 1:\n delta = delta.contiguous()\n if D is not None:\n D = D.contiguous()\n if B.stride(-1) != 1:\n B = B.contiguous()\n if C.stride(-1) != 1:\n C = C.contiguous()\n if z is not None and z.stride(-1) != 1:\n z = z.contiguous()\n if B.dim() == 3:\n B = rearrange(B, \"b dstate l -&gt; b 1 dstate l\")\n ctx.squeeze_B = True\n if C.dim() == 3:\n C = rearrange(C, \"b dstate l -&gt; b 1 dstate l\")\n ctx.squeeze_C = True\n out, x, *rest = selective_scan_cuda.fwd(u, delta, A, B, C, D, z, delta_bias, delta_softplus)\n ctx.delta_softplus = delta_softplus\n ctx.has_z = z is not None\n last_state = x[:, :, -1, 1::2] # (batch, dim, dstate)\n if not ctx.has_z:\n ctx.save_for_backward(u, delta, A, B, C, D, delta_bias, x)\n return out if not return_last_state else (out, last_state)\n else:\n ctx.save_for_backward(u, delta, A, B, C, D, z, delta_bias, x, out)\n out_z = rest[0]\n return out_z if not return_last_state else (out_z, last_state)\n\n @staticmethod\n def backward(ctx, dout, *args):\n if not ctx.has_z:\n u, delta, A, B, C, D, delta_bias, x = ctx.saved_tensors\n z = None\n out = None\n else:\n u, delta, A, B, C, D, z, delta_bias, x, out = ctx.saved_tensors\n if dout.stride(-1) != 1:\n dout = dout.contiguous()\n # The kernel supports passing in a pre-allocated dz (e.g., in case we want to fuse the\n # backward of selective_scan_cuda with the backward of chunk).\n # Here we just pass in None and dz will be allocated in the C++ code.\n du, ddelta, dA, dB, dC, dD, ddelta_bias, *rest = selective_scan_cuda.bwd(\n u, delta, A, B, C, D, z, delta_bias, dout, x, out, None, ctx.delta_softplus,\n False # option to recompute out_z, not used here\n )\n dz = rest[0] if ctx.has_z else None\n dB = dB.squeeze(1) if getattr(ctx, \"squeeze_B\", False) else dB\n dC = dC.squeeze(1) if getattr(ctx, \"squeeze_C\", False) else dC\n return (du, ddelta, dA, dB, dC,\n dD if D is not None else None,\n dz,\n ddelta_bias if delta_bias is not None else None,\n None,\n None)\n\n\ndef rms_norm_forward(\n x,\n weight,\n bias,\n eps=1e-6,\n is_rms_norm=True,\n):\n # x (b l) d\n if x.stride(-1) != 1:\n x = x.contiguous()\n weight = weight.contiguous()\n if bias is not None:\n bias = bias.contiguous()\n y = _layer_norm_fwd(\n x, weight, bias, eps, None, residual_dtype=None, is_rms_norm=is_rms_norm\n )[0]\n # y (b l) d\n return y\n\n\ndef selective_scan_fn(u, delta, A, B, C, D=None, z=None, delta_bias=None, delta_softplus=False,\n return_last_state=False):\n \"\"\"if return_last_state is True, returns (out, last_state)\n last_state has shape (batch, dim, dstate). Note that the gradient of the last state is\n not considered in the backward pass.\n \"\"\"\n return SelectiveScanFn.apply(u, delta, A, B, C, D, z, delta_bias, delta_softplus, return_last_state)\n\n\ndef selective_scan_ref(u, delta, A, B, C, D=None, z=None, delta_bias=None, delta_softplus=False,\n return_last_state=False):\n \"\"\"\n u: r(B D L)\n delta: r(B D L)\n A: c(D N) or r(D N)\n B: c(D N) or r(B N L) or r(B N 2L) or r(B G N L) or (B G N L)\n C: c(D N) or r(B N L) or r(B N 2L) or r(B G N L) or (B G N L)\n D: r(D)\n z: r(B D L)\n delta_bias: r(D), fp32\n\n out: r(B D L)\n last_state (optional): r(B D dstate) or c(B D dstate)\n \"\"\"\n dtype_in = u.dtype\n u = u.float()\n delta = delta.float()\n if delta_bias is not None:\n delta = delta + delta_bias[..., None].float()\n if delta_softplus:\n delta = F.softplus(delta)\n batch, dim, dstate = u.shape[0], A.shape[0], A.shape[1]\n is_variable_B = B.dim() &gt;= 3\n is_variable_C = C.dim() &gt;= 3\n if A.is_complex():\n if is_variable_B:\n B = torch.view_as_complex(rearrange(B.float(), \"... (L two) -&gt; ... L two\", two=2))\n if is_variable_C:\n C = torch.view_as_complex(rearrange(C.float(), \"... (L two) -&gt; ... L two\", two=2))\n else:\n B = B.float()\n C = C.float()\n x = A.new_zeros((batch, dim, dstate))\n ys = []\n deltaA = torch.exp(torch.einsum('bdl,dn-&gt;bdln', delta, A))\n if not is_variable_B:\n deltaB_u = torch.einsum('bdl,dn,bdl-&gt;bdln', delta, B, u)\n else:\n if B.dim() == 3:\n deltaB_u = torch.einsum('bdl,bnl,bdl-&gt;bdln', delta, B, u)\n else:\n B = repeat(B, \"B G N L -&gt; B (G H) N L\", H=dim // B.shape[1])\n deltaB_u = torch.einsum('bdl,bdnl,bdl-&gt;bdln', delta, B, u)\n if is_variable_C and C.dim() == 4:\n C = repeat(C, \"B G N L -&gt; B (G H) N L\", H=dim // C.shape[1])\n last_state = None\n for i in range(u.shape[2]):\n x = deltaA[:, :, i] * x + deltaB_u[:, :, i]\n if not is_variable_C:\n y = torch.einsum('bdn,dn-&gt;bd', x, C)\n else:\n if C.dim() == 3:\n y = torch.einsum('bdn,bn-&gt;bd', x, C[:, :, i])\n else:\n y = torch.einsum('bdn,bdn-&gt;bd', x, C[:, :, :, i])\n if i == u.shape[2] - 1:\n last_state = x\n if y.is_complex():\n y = y.real * 2\n ys.append(y)\n y = torch.stack(ys, dim=2) # (batch dim L)\n out = y if D is None else y + u * rearrange(D, \"d -&gt; d 1\")\n if z is not None:\n out = out * F.silu(z)\n out = out.to(dtype=dtype_in)\n return out if not return_last_state else (out, last_state)\n\n\nclass MambaInnerFn(torch.autograd.Function):\n\n @staticmethod\n @custom_fwd\n def forward(ctx, xz, conv1d_weight, conv1d_bias, x_proj_weight, delta_proj_weight,\n out_proj_weight, out_proj_bias,\n A, B=None, C=None, D=None, delta_bias=None, B_proj_bias=None,\n C_proj_bias=None, delta_softplus=True, checkpoint_lvl=1, b_rms_weight=None, c_rms_weight= None, dt_rms_weight= None, b_c_dt_rms_eps=1e-6):\n \"\"\"\n xz: (batch, dim, seqlen)\n \"\"\"\n assert causal_conv1d_fwd_function is not None, \"causal_conv1d_cuda is not available. Please install causal-conv1d.\"\n assert checkpoint_lvl in [0, 1]\n L = xz.shape[-1]\n delta_rank = delta_proj_weight.shape[1]\n d_state = A.shape[-1] * (1 if not A.is_complex() else 2)\n if torch.is_autocast_enabled():\n x_proj_weight = x_proj_weight.to(dtype=torch.get_autocast_gpu_dtype())\n delta_proj_weight = delta_proj_weight.to(dtype=torch.get_autocast_gpu_dtype())\n out_proj_weight = out_proj_weight.to(dtype=torch.get_autocast_gpu_dtype())\n out_proj_bias = (out_proj_bias.to(dtype=torch.get_autocast_gpu_dtype())\n if out_proj_bias is not None else None)\n if xz.stride(-1) != 1:\n xz = xz.contiguous()\n conv1d_weight = rearrange(conv1d_weight, \"d 1 w -&gt; d w\")\n x, z = xz.chunk(2, dim=1)\n conv1d_bias = conv1d_bias.contiguous() if conv1d_bias is not None else None\n conv1d_out = causal_conv1d_fwd_function(\n x, conv1d_weight, conv1d_bias, None, None, None, True\n )\n # We're being very careful here about the layout, to avoid extra transposes.\n # We want delta to have d as the slowest moving dimension\n # and L as the fastest moving dimension, since those are what the ssm_scan kernel expects.\n x_dbl = F.linear(rearrange(conv1d_out, 'b d l -&gt; (b l) d'), x_proj_weight) # (bl d)\n delta = rearrange(delta_proj_weight @ x_dbl[:, :delta_rank].t(), \"d (b l) -&gt; b d l\", l = L)\n ctx.is_variable_B = B is None\n ctx.is_variable_C = C is None\n ctx.B_proj_bias_is_None = B_proj_bias is None\n ctx.C_proj_bias_is_None = C_proj_bias is None\n if B is None: # variable B\n B = x_dbl[:, delta_rank:delta_rank + d_state] # (bl dstate)\n if B_proj_bias is not None:\n B = B + B_proj_bias.to(dtype=B.dtype)\n if not A.is_complex():\n # B = rearrange(B, \"(b l) dstate -&gt; b dstate l\", l=L).contiguous()\n B = rearrange(B, \"(b l) dstate -&gt; b 1 dstate l\", l=L).contiguous()\n else:\n B = rearrange(B, \"(b l) (dstate two) -&gt; b 1 dstate (l two)\", l=L, two=2).contiguous()\n else:\n if B.stride(-1) != 1:\n B = B.contiguous()\n if C is None: # variable C\n C = x_dbl[:, -d_state:] # (bl dstate)\n if C_proj_bias is not None:\n C = C + C_proj_bias.to(dtype=C.dtype)\n if not A.is_complex():\n # C = rearrange(C, \"(b l) dstate -&gt; b dstate l\", l=L).contiguous()\n C = rearrange(C, \"(b l) dstate -&gt; b 1 dstate l\", l=L).contiguous()\n else:\n C = rearrange(C, \"(b l) (dstate two) -&gt; b 1 dstate (l two)\", l=L, two=2).contiguous()\n else:\n if C.stride(-1) != 1:\n C = C.contiguous()\n if D is not None:\n D = D.contiguous()\n \n if b_rms_weight is not None:\n B = rearrange(B, \"b 1 dstate l -&gt; (b l) dstate\", l=L).contiguous()\n B = rms_norm_forward(B, b_rms_weight, bias=None, eps=b_c_dt_rms_eps)\n B = rearrange(B, \"(b l) dstate -&gt; b 1 dstate l\", l=L).contiguous()\n if c_rms_weight is not None:\n C = rearrange(C, \"b 1 dstate l -&gt; (b l) dstate\", l=L).contiguous()\n C = rms_norm_forward(C, c_rms_weight, bias=None, eps=b_c_dt_rms_eps)\n C = rearrange(C, \"(b l) dstate -&gt; b 1 dstate l\", l=L).contiguous()\n if dt_rms_weight is not None:\n delta = rearrange(delta, \"b d l -&gt; (b l) d\", l=L).contiguous()\n delta = rms_norm_forward(delta, dt_rms_weight, bias=None, eps=b_c_dt_rms_eps)\n delta = rearrange(delta, \"(b l) d -&gt; b d l\", l=L).contiguous()\n \n out, scan_intermediates, out_z = selective_scan_cuda.fwd(\n conv1d_out, delta, A, B, C, D, z, delta_bias, delta_softplus\n )\n ctx.delta_softplus = delta_softplus\n ctx.out_proj_bias_is_None = out_proj_bias is None\n ctx.checkpoint_lvl = checkpoint_lvl\n ctx.b_rms_weight = b_rms_weight\n ctx.c_rms_weight = c_rms_weight\n ctx.dt_rms_weight = dt_rms_weight\n ctx.b_c_dt_rms_eps = b_c_dt_rms_eps\n if checkpoint_lvl &gt;= 1: # Will recompute conv1d_out and delta in the backward pass\n conv1d_out, delta = None, None\n ctx.save_for_backward(xz, conv1d_weight, conv1d_bias, x_dbl, x_proj_weight,\n delta_proj_weight, out_proj_weight, conv1d_out, delta,\n A, B, C, D, delta_bias, scan_intermediates, b_rms_weight, c_rms_weight, dt_rms_weight, out)\n return F.linear(rearrange(out_z, \"b d l -&gt; b l d\"), out_proj_weight, out_proj_bias)\n\n @staticmethod\n @custom_bwd\n def backward(ctx, dout):\n # dout: (batch, seqlen, dim)\n assert causal_conv1d_fwd_function is not None, \"causal_conv1d_cuda is not available. Please install causal-conv1d.\"\n (xz, conv1d_weight, conv1d_bias, x_dbl, x_proj_weight, delta_proj_weight, out_proj_weight,\n conv1d_out, delta, A, B, C, D, delta_bias, scan_intermediates, b_rms_weight, c_rms_weight, dt_rms_weight, out) = ctx.saved_tensors\n L = xz.shape[-1]\n delta_rank = delta_proj_weight.shape[1]\n d_state = A.shape[-1] * (1 if not A.is_complex() else 2)\n x, z = xz.chunk(2, dim=1)\n if dout.stride(-1) != 1:\n dout = dout.contiguous()\n if ctx.checkpoint_lvl == 1:\n conv1d_out = causal_conv1d_fwd_function(\n x, conv1d_weight, conv1d_bias, None, None, None, True\n )\n delta = rearrange(delta_proj_weight @ x_dbl[:, :delta_rank].t(),\n \"d (b l) -&gt; b d l\", l = L)\n if dt_rms_weight is not None:\n delta = rearrange(delta, \"b d l -&gt; (b l) d\", l=L).contiguous()\n delta = rms_norm_forward(delta, ctx.dt_rms_weight, None, ctx.b_c_dt_rms_eps)\n delta = rearrange(delta, \"(b l) d -&gt; b d l\", l=L).contiguous()\n if b_rms_weight is not None:\n # Recompute &amp; RMSNorm B\n B = rearrange(B, \"b 1 dstate l -&gt; (b l) dstate\", l=L).contiguous()\n B = rms_norm_forward(\n B, ctx.b_rms_weight, None, ctx.b_c_dt_rms_eps\n )\n B = rearrange(B, \"(b l) dstate -&gt; b 1 dstate l\", l=L).contiguous()\n if c_rms_weight is not None:\n # Recompute &amp; RMSNorm C\n C = rearrange(C, \"b 1 dstate l -&gt; (b l) dstate\", l=L).contiguous()\n C = rms_norm_forward(\n C, ctx.c_rms_weight, None, ctx.b_c_dt_rms_eps\n )\n C = rearrange(C, \"(b l) dstate -&gt; b 1 dstate l\", l=L).contiguous()\n \n # The kernel supports passing in a pre-allocated dz (e.g., in case we want to fuse the\n # backward of selective_scan_cuda with the backward of chunk).\n dxz = torch.empty_like(xz) # (batch, dim, seqlen)\n dx, dz = dxz.chunk(2, dim=1)\n dout = rearrange(dout, \"b l e -&gt; e (b l)\")\n dout_y = rearrange(out_proj_weight.t() @ dout, \"d (b l) -&gt; b d l\", l=L)\n dconv1d_out, ddelta, dA, dB, dC, dD, ddelta_bias, dz, out_z = selective_scan_cuda.bwd(\n conv1d_out, delta, A, B, C, D, z, delta_bias, dout_y, scan_intermediates, out, dz,\n ctx.delta_softplus,\n True # option to recompute out_z\n )\n dout_proj_weight = torch.einsum(\"eB,dB-&gt;ed\", dout, rearrange(out_z, \"b d l -&gt; d (b l)\"))\n dout_proj_bias = dout.sum(dim=(0, 1)) if not ctx.out_proj_bias_is_None else None\n dD = dD if D is not None else None\n dx_dbl = torch.empty_like(x_dbl)\n dB_proj_bias = None\n if ctx.is_variable_B:\n if not A.is_complex():\n dB = rearrange(dB, \"b 1 dstate l -&gt; (b l) dstate\").contiguous()\n else:\n dB = rearrange(dB, \"b 1 dstate (l two) -&gt; (b l) (dstate two)\", two=2).contiguous()\n dB_proj_bias = dB.sum(0) if not ctx.B_proj_bias_is_None else None\n dx_dbl[:, delta_rank:delta_rank + d_state] = dB # (bl d)\n dB = None\n dC_proj_bias = None\n if ctx.is_variable_C:\n if not A.is_complex():\n dC = rearrange(dC, \"b 1 dstate l -&gt; (b l) dstate\").contiguous()\n else:\n dC = rearrange(dC, \"b 1 dstate (l two) -&gt; (b l) (dstate two)\", two=2).contiguous()\n dC_proj_bias = dC.sum(0) if not ctx.C_proj_bias_is_None else None\n dx_dbl[:, -d_state:] = dC # (bl d)\n dC = None\n ddelta = rearrange(ddelta, \"b d l -&gt; d (b l)\")\n ddelta_proj_weight = torch.einsum(\"dB,Br-&gt;dr\", ddelta, x_dbl[:, :delta_rank])\n dx_dbl[:, :delta_rank] = torch.einsum(\"dB,dr-&gt;Br\", ddelta, delta_proj_weight)\n dconv1d_out = rearrange(dconv1d_out, \"b d l -&gt; d (b l)\")\n dx_proj_weight = torch.einsum(\"Br,Bd-&gt;rd\", dx_dbl, rearrange(conv1d_out, \"b d l -&gt; (b l) d\"))\n dconv1d_out = torch.addmm(dconv1d_out, x_proj_weight.t(), dx_dbl.t(), out=dconv1d_out)\n dconv1d_out = rearrange(dconv1d_out, \"d (b l) -&gt; b d l\", b=x.shape[0], l=x.shape[-1])\n # The kernel supports passing in a pre-allocated dx (e.g., in case we want to fuse the\n # backward of conv1d with the backward of chunk).\n dx, dconv1d_weight, dconv1d_bias, *_ = causal_conv1d_bwd_function(\n x, conv1d_weight, conv1d_bias, dconv1d_out, None, None, None, dx, False, True\n )\n dconv1d_bias = dconv1d_bias if conv1d_bias is not None else None\n dconv1d_weight = rearrange(dconv1d_weight, \"d w -&gt; d 1 w\")\n return (dxz, dconv1d_weight, dconv1d_bias, dx_proj_weight, ddelta_proj_weight,\n dout_proj_weight, dout_proj_bias,\n dA, dB, dC, dD,\n ddelta_bias if delta_bias is not None else None,\n # 6-None are delta_softplus, checkpoint_lvl, b_rms_weight, c_rms_weight, dt_rms_weight, b_c_dt_rms_eps\n dB_proj_bias, dC_proj_bias, None, None, None, None, None, None)\n\n\ndef mamba_inner_fn(\n xz, conv1d_weight, conv1d_bias, x_proj_weight, delta_proj_weight,\n out_proj_weight, out_proj_bias,\n A, B=None, C=None, D=None, delta_bias=None, B_proj_bias=None,\n C_proj_bias=None, delta_softplus=True, checkpoint_lvl=1, b_rms_weight= None, c_rms_weight= None, dt_rms_weight= None, b_c_dt_rms_eps=1e-6\n):\n return MambaInnerFn.apply(xz, conv1d_weight, conv1d_bias, x_proj_weight, delta_proj_weight,\n out_proj_weight, out_proj_bias,\n A, B, C, D, delta_bias, B_proj_bias, C_proj_bias, delta_softplus, checkpoint_lvl, b_rms_weight, c_rms_weight, dt_rms_weight, b_c_dt_rms_eps)\n\n\ndef mamba_inner_ref(\n xz, conv1d_weight, conv1d_bias, x_proj_weight, delta_proj_weight,\n out_proj_weight, out_proj_bias,\n A, B=None, C=None, D=None, delta_bias=None, B_proj_bias=None,\n C_proj_bias=None, delta_softplus=True\n):\n assert causal_conv1d_fn is not None, \"causal_conv1d_fn is not available. Please install causal-conv1d.\"\n L = xz.shape[-1]\n delta_rank = delta_proj_weight.shape[1]\n d_state = A.shape[-1] * (1 if not A.is_complex() else 2)\n x, z = xz.chunk(2, dim=1)\n x = causal_conv1d_fn(x, rearrange(conv1d_weight, \"d 1 w -&gt; d w\"), conv1d_bias, activation=\"silu\")\n # We're being very careful here about the layout, to avoid extra transposes.\n # We want delta to have d as the slowest moving dimension\n # and L as the fastest moving dimension, since those are what the ssm_scan kernel expects.\n x_dbl = F.linear(rearrange(x, 'b d l -&gt; (b l) d'), x_proj_weight) # (bl d)\n delta = delta_proj_weight @ x_dbl[:, :delta_rank].t()\n delta = rearrange(delta, \"d (b l) -&gt; b d l\", l=L)\n if B is None: # variable B\n B = x_dbl[:, delta_rank:delta_rank + d_state] # (bl d)\n if B_proj_bias is not None:\n B = B + B_proj_bias.to(dtype=B.dtype)\n if not A.is_complex():\n B = rearrange(B, \"(b l) dstate -&gt; b dstate l\", l=L).contiguous()\n else:\n B = rearrange(B, \"(b l) (dstate two) -&gt; b dstate (l two)\", l=L, two=2).contiguous()\n if C is None: # variable B\n C = x_dbl[:, -d_state:] # (bl d)\n if C_proj_bias is not None:\n C = C + C_proj_bias.to(dtype=C.dtype)\n if not A.is_complex():\n C = rearrange(C, \"(b l) dstate -&gt; b dstate l\", l=L).contiguous()\n else:\n C = rearrange(C, \"(b l) (dstate two) -&gt; b dstate (l two)\", l=L, two=2).contiguous()\n y = selective_scan_fn(x, delta, A, B, C, D, z=z, delta_bias=delta_bias, delta_softplus=True)\n return F.linear(rearrange(y, \"b d l -&gt; b l d\"), out_proj_weight, out_proj_bias)\n"
+}
+```
+User decision: **accepted**
+
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/main_sum.py</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So the issue is:
+1. SUM uses mamba-ssm 1.0.1 (pinned in SUM requirements)
+2. mamba-ssm 1.0.1's selective_scan_interface.py does `import selective_scan_cuda` at top level - no try/except. When we built with SKIP_CUDA_BUILD, the selective_scan_cuda module wasn't built, so it doesn't exist.
+3. So when would the error "selective_scan_fn is not defined" happen? It would happen if the module partially loads - e.g. maybe selective_scan_interface is imported from somewhere that catches the import error and then later code tries to use selective_scan_fn. Let me check where the error might come from. The error says "name 'selective_scan_fn' is not defined" - that could be in mamba_inner_ref which calls selective_scan_fn(x, delta, A, B, C, D, ...). So maybe there's a code path that uses mamba_inner_ref when CUDA is not available, and mamba_inner_ref calls selective_scan_fn - but if the module failed to load due to import selective_scan_cuda, then selective_scan_fn was never defined. So the flow might be: some other module (e.g. mamba_ssm/__init__.py or a block) does try: from .ops.selective_scan_interface import selective_scan_fn except: selective_scan_fn = None or use ref. Then later the model code uses mamba_inner_ref which internally calls selective_scan_fn - but that's the ref implementation's selective_scan_fn. So if the interface module failed to load, selective_scan_fn isn't defined anywhere. So we need to patch mamba_ssm so that when selective_scan_cuda is not available, we use selective_scan_ref as selective_scan_fn. The cleanest would be to add a small Python file in our saliency-service that we install or we inject before importing SUM - that monkey-patches mamba_ssm to use the ref implementation when cuda isn't available. Let me check how SUM imports mamba - it's through the SUM repo's net module. So the flow is: main_sum.py adds SUM to path, then "from net import SUM, ...". The SUM net code will import mamba_ssm. So we need to patch mamba_ssm before we do "from net import SUM". We can in main_sum.py: 1. sys.path.insert(0, str(SUM_ROOT)) 2. Patch mamba_ssm: try to import mamba_ssm.ops.selective_scan_interface - if it fails (ImportError), create a stub module that provides selective_scan_fn = selective_scan_ref and mamba_inner_fn = mamba_inner_ref, and inject it. But the ref implementation is inside the same file that failed to load. So we need a different approach: we need to patch the selective_scan_interface.py file in the installed mamba_ssm package so that it uses try/except around import selective_scan_cuda and if it fails, defines selective_scan_fn = selective_scan_ref. And MambaInnerFn would need to use the ref path too when cuda is not available - but MambaInnerFn directly uses selective_scan_cuda and causal_conv1d_cuda. So when CUDA is not available, the whole MambaInnerFn can't work - we'd need mamba_inner_ref. So the model (SUM) probably checks somewhere whether to use mamba_inner_fn or mamba_inner_ref. Let me search the SUM repo and mamba for where they choose between the two.
+</details></think>
+
+---
+
+
+SUM nutzt Mamba; ohne CUDA-Build fehlt `selective_scan_cuda`. Wir prüfen, wo SUM/Mamba zwischen CUDA und Ref umschaltet:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="web_fetch">
+<details>
+<summary>Tool use: **web_fetch**</summary>
+
+
+Parameters:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/Arhosseini77/SUM/main/net/__init__.py"
+}
+```
+Result:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/Arhosseini77/SUM/main/net/__init__.py",
+  "markdown": "# re-export the classes and functions from the other modules\nfrom .models.SUM import *\nfrom .inference_utils import *\n"
+}
+```
+User decision: **accepted**
+
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "mamba_inner|selective_scan",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "mamba_inner|selective_scan",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service",
+  "outputMode": "content",
+  "totalFiles": 0,
+  "totalMatches": 0,
+  "topFiles": []
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="web_search">
+<details>
+            <summary>Tool use: **web_search** • Searched web `undefined` • **1** results</summary>
+        
+| Title | URL | Chunk |
+|-------|-----|-------|
+| Web search results for query: state-spaces mamba use selective_scan_ref when cuda not available |  | Links:<br/>1. [Search code, repositories, users, issues, pull requests...](https://github.com/state-spaces/mamba/blob/main/mamba_ssm/ops/selective_scan_interface.py)<br/>2. [selective_scan_interface.py](https://raw.githubusercontent.com/state-spaces/mamba/main/mamba_ssm/ops/selective_scan_interface.py)<br/>3. [Search code, repositories, users, issues, pull requests...](https://github.com/state-spaces/mamba/pull/265/files)<br/>4. [Search code, repositories, users, issues, pull requests...](https://github.com/state-spaces/mamba/issues/605)<br/>5. [Search code, repositories, users, issues, pull requests...](https://github.com/state-spaces/mamba/issues/304)<br/><br/># Mamba Selective Scan Reference Implementation<br/><br/>The Mamba library includes a `selective_scan_ref` function as a reference implementation of the selective scan operation.[2] This reference function is used as a fallback when the optimized CUDA version is not available.<br/><br/>## Key Implementation Details<br/><br/>The `selective_scan_ref` function is defined in `selective_scan_interface.py` and accepts the same parameters as the CUDA-optimized version:[2]<br/><br/>- **Inputs**: u, delta, A, B, C, D (optional), z (optional), delta_bias (optional), delta_softplus flag<br/>- **Outputs**: out (and optionally last_state)<br/><br/>The reference implementation converts input tensors to float precision for computation and handles various tensor shapes and configurations.[2]<br/><br/>## CUDA Fallback Mechanism<br/><br/>The library uses `selective_scan_cuda.fwd()` and `selective_scan_cuda.bwd()` for the optimized forward and backward passes when CUDA is available.[2] The `SelectiveScanFn` class implements the autograd Function that calls these CUDA kernels.<br/><br/>When CUDA operations are not available or the user needs a pure PyTorch reference implementation, the `selective_scan_ref` function provides a differentiable alternative that can be used instead of the CUDA-accelerated version. |
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me check the mamba block that uses mamba_inner_fn vs mamba_inner_ref - there might be a try/except at a higher level that chooses.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="web_fetch">
+<details>
+<summary>Tool use: **web_fetch**</summary>
+
+
+Parameters:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/state-spaces/mamba/v1.0.1/mamba_ssm/modules/mamba_simple.py"
+}
+```
+Result:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/state-spaces/mamba/v1.0.1/mamba_ssm/modules/mamba_simple.py",
+  "markdown": "# Copyright (c) 2023, Tri Dao, Albert Gu.\n\nimport math\nfrom typing import Optional\n\nimport torch\nimport torch.nn as nn\nimport torch.nn.functional as F\nfrom torch import Tensor\n\nfrom einops import rearrange, repeat\n\ntry:\n from causal_conv1d import causal_conv1d_fn, causal_conv1d_update\nexcept ImportError:\n causal_conv1d_fn, causal_conv1d_update = None\n\ntry:\n from mamba_ssm.ops.selective_scan_interface import selective_scan_fn, mamba_inner_fn\nexcept ImportError:\n selective_scan_fn, mamba_inner_fn = None, None, None\n\ntry:\n from mamba_ssm.ops.triton.selective_state_update import selective_state_update\nexcept ImportError:\n selective_state_update = None\n\ntry:\n from mamba_ssm.ops.triton.layernorm import RMSNorm, layer_norm_fn, rms_norm_fn\nexcept ImportError:\n RMSNorm, layer_norm_fn, rms_norm_fn = None, None, None\n\n\nclass Mamba(nn.Module):\n def __init__(\n self,\n d_model,\n d_state=16,\n d_conv=4,\n expand=2,\n dt_rank=\"auto\",\n dt_min=0.001,\n dt_max=0.1,\n dt_init=\"random\",\n dt_scale=1.0,\n dt_init_floor=1e-4,\n conv_bias=True,\n bias=False,\n use_fast_path=True, # Fused kernel options\n layer_idx=None,\n device=None,\n dtype=None,\n ):\n factory_kwargs = {\"device\": device, \"dtype\": dtype}\n super().__init__()\n self.d_model = d_model\n self.d_state = d_state\n self.d_conv = d_conv\n self.expand = expand\n self.d_inner = int(self.expand * self.d_model)\n self.dt_rank = math.ceil(self.d_model / 16) if dt_rank == \"auto\" else dt_rank\n self.use_fast_path = use_fast_path\n self.layer_idx = layer_idx\n\n self.in_proj = nn.Linear(self.d_model, self.d_inner * 2, bias=bias, **factory_kwargs)\n\n self.conv1d = nn.Conv1d(\n in_channels=self.d_inner,\n out_channels=self.d_inner,\n bias=conv_bias,\n kernel_size=d_conv,\n groups=self.d_inner,\n padding=d_conv - 1,\n **factory_kwargs,\n )\n\n self.activation = \"silu\"\n self.act = nn.SiLU()\n\n self.x_proj = nn.Linear(\n self.d_inner, self.dt_rank + self.d_state * 2, bias=False, **factory_kwargs\n )\n self.dt_proj = nn.Linear(self.dt_rank, self.d_inner, bias=True, **factory_kwargs)\n\n # Initialize special dt projection to preserve variance at initialization\n dt_init_std = self.dt_rank**-0.5 * dt_scale\n if dt_init == \"constant\":\n nn.init.constant_(self.dt_proj.weight, dt_init_std)\n elif dt_init == \"random\":\n nn.init.uniform_(self.dt_proj.weight, -dt_init_std, dt_init_std)\n else:\n raise NotImplementedError\n\n # Initialize dt bias so that F.softplus(dt_bias) is between dt_min and dt_max\n dt = torch.exp(\n torch.rand(self.d_inner, **factory_kwargs) * (math.log(dt_max) - math.log(dt_min))\n + math.log(dt_min)\n ).clamp(min=dt_init_floor)\n # Inverse of softplus: https://github.com/pytorch/pytorch/issues/72759\n inv_dt = dt + torch.log(-torch.expm1(-dt))\n with torch.no_grad():\n self.dt_proj.bias.copy_(inv_dt)\n # Our initialization would set all Linear.bias to zero, need to mark this one as _no_reinit\n self.dt_proj.bias._no_reinit = True\n\n # S4D real initialization\n A = repeat(\n torch.arange(1, self.d_state + 1, dtype=torch.float32, device=device),\n \"n -&gt; d n\",\n d=self.d_inner,\n ).contiguous()\n A_log = torch.log(A) # Keep A_log in fp32\n self.A_log = nn.Parameter(A_log)\n self.A_log._no_weight_decay = True\n\n # D \"skip\" parameter\n self.D = nn.Parameter(torch.ones(self.d_inner, device=device)) # Keep in fp32\n self.D._no_weight_decay = True\n\n self.out_proj = nn.Linear(self.d_inner, self.d_model, bias=bias, **factory_kwargs)\n\n def forward(self, hidden_states, inference_params=None):\n \"\"\"\n hidden_states: (B, L, D)\n Returns: same shape as hidden_states\n \"\"\"\n batch, seqlen, dim = hidden_states.shape\n\n conv_state, ssm_state = None, None\n if inference_params is not None:\n conv_state, ssm_state = self._get_states_from_cache(inference_params, batch)\n if inference_params.seqlen_offset &gt; 0:\n # The states are updated inplace\n out, _, _ = self.step(hidden_states, conv_state, ssm_state)\n return out\n\n # We do matmul and transpose BLH -&gt; HBL at the same time\n xz = rearrange(\n self.in_proj.weight @ rearrange(hidden_states, \"b l d -&gt; d (b l)\"),\n \"d (b l) -&gt; b d l\",\n l=seqlen,\n )\n if self.in_proj.bias is not None:\n xz = xz + rearrange(self.in_proj.bias.to(dtype=xz.dtype), \"d -&gt; d 1\")\n\n A = -torch.exp(self.A_log.float()) # (d_inner, d_state)\n # In the backward pass we write dx and dz next to each other to avoid torch.cat\n if self.use_fast_path and inference_params is None: # Doesn't support outputting the states\n out = mamba_inner_fn(\n xz,\n self.conv1d.weight,\n self.conv1d.bias,\n self.x_proj.weight,\n self.dt_proj.weight,\n self.out_proj.weight,\n self.out_proj.bias,\n A,\n None, # input-dependent B\n None, # input-dependent C\n self.D.float(),\n delta_bias=self.dt_proj.bias.float(),\n delta_softplus=True,\n )\n else:\n x, z = xz.chunk(2, dim=1)\n # Compute short convolution\n if conv_state is not None:\n conv_state.copy_(x[:, :, -self.d_conv :]) # Update state (B D W)\n if causal_conv1d_fn is None:\n x = self.act(self.conv1d(x)[..., :seqlen])\n else:\n assert self.activation in [\"silu\", \"swish\"]\n x = causal_conv1d_fn(\n x,\n rearrange(self.conv1d.weight, \"d 1 w -&gt; d w\"),\n self.conv1d.bias,\n self.activation,\n )\n\n # We're careful here about the layout, to avoid extra transposes.\n # We want dt to have d as the slowest moving dimension\n # and L as the fastest moving dimension, since those are what the ssm_scan kernel expects.\n x_dbl = self.x_proj(rearrange(x, \"b d l -&gt; (b l) d\")) # (bl d)\n dt, B, C = torch.split(x_dbl, [self.dt_rank, self.d_state, self.d_state], dim=-1)\n dt = self.dt_proj.weight @ dt.t()\n dt = rearrange(dt, \"d (b l) -&gt; b d l\", l=seqlen)\n B = rearrange(B, \"(b l) dstate -&gt; b dstate l\", l=seqlen).contiguous()\n C = rearrange(C, \"(b l) dstate -&gt; b dstate l\", l=seqlen).contiguous()\n assert self.activation in [\"silu\", \"swish\"]\n y = selective_scan_fn(\n x,\n dt,\n A,\n B,\n C,\n self.D.float(),\n z=z,\n delta_bias=self.dt_proj.bias.float(),\n delta_softplus=True,\n return_last_state=ssm_state is not None,\n )\n if ssm_state is not None:\n y, last_state = y\n ssm_state.copy_(last_state)\n y = rearrange(y, \"b d l -&gt; b l d\")\n out = self.out_proj(y)\n return out\n\n def step(self, hidden_states, conv_state, ssm_state):\n dtype = hidden_states.dtype\n assert hidden_states.shape[1] == 1, \"Only support decoding with 1 token at a time for now\"\n xz = self.in_proj(hidden_states.squeeze(1)) # (B 2D)\n x, z = xz.chunk(2, dim=-1) # (B D)\n\n # Conv step\n if causal_conv1d_update is None:\n conv_state.copy_(torch.roll(conv_state, shifts=-1, dims=-1)) # Update state (B D W)\n conv_state[:, :, -1] = x\n x = torch.sum(conv_state * rearrange(self.conv1d.weight, \"d 1 w -&gt; d w\"), dim=-1) # (B D)\n if self.conv1d.bias is not None:\n x = x + self.conv1d.bias\n x = self.act(x).to(dtype=dtype)\n else:\n x = causal_conv1d_update(\n x,\n conv_state,\n rearrange(self.conv1d.weight, \"d 1 w -&gt; d w\"),\n self.conv1d.bias,\n self.activation,\n )\n\n x_db = self.x_proj(x) # (B dt_rank+2*d_state)\n dt, B, C = torch.split(x_db, [self.dt_rank, self.d_state, self.d_state], dim=-1)\n # Don't add dt_bias here\n dt = F.linear(dt, self.dt_proj.weight) # (B d_inner)\n A = -torch.exp(self.A_log.float()) # (d_inner, d_state)\n\n # SSM step\n if selective_state_update is None:\n # Discretize A and B\n dt = F.softplus(dt + self.dt_proj.bias.to(dtype=dt.dtype))\n dA = torch.exp(torch.einsum(\"bd,dn-&gt;bdn\", dt, A))\n dB = torch.einsum(\"bd,bn-&gt;bdn\", dt, B)\n ssm_state.copy_(ssm_state * dA + rearrange(x, \"b d -&gt; b d 1\") * dB)\n y = torch.einsum(\"bdn,bn-&gt;bd\", ssm_state.to(dtype), C)\n y = y + self.D.to(dtype) * x\n y = y * self.act(z) # (B D)\n else:\n y = selective_state_update(\n ssm_state, x, dt, A, B, C, self.D, z=z, dt_bias=self.dt_proj.bias, dt_softplus=True\n )\n\n out = self.out_proj(y)\n return out.unsqueeze(1), conv_state, ssm_state\n\n def allocate_inference_cache(self, batch_size, max_seqlen, dtype=None, **kwargs):\n device = self.out_proj.weight.device\n conv_dtype = self.conv1d.weight.dtype if dtype is None else dtype\n conv_state = torch.zeros(\n batch_size, self.d_model * self.expand, self.d_conv, device=device, dtype=conv_dtype\n )\n ssm_dtype = self.dt_proj.weight.dtype if dtype is None else dtype\n # ssm_dtype = torch.float32\n ssm_state = torch.zeros(\n batch_size, self.d_model * self.expand, self.d_state, device=device, dtype=ssm_dtype\n )\n return conv_state, ssm_state\n\n def _get_states_from_cache(self, inference_params, batch_size, initialize_states=False):\n assert self.layer_idx is not None\n if self.layer_idx not in inference_params.key_value_memory_dict:\n batch_shape = (batch_size,)\n conv_state = torch.zeros(\n batch_size,\n self.d_model * self.expand,\n self.d_conv,\n device=self.conv1d.weight.device,\n dtype=self.conv1d.weight.dtype,\n )\n ssm_state = torch.zeros(\n batch_size,\n self.d_model * self.expand,\n self.d_state,\n device=self.dt_proj.weight.device,\n dtype=self.dt_proj.weight.dtype,\n # dtype=torch.float32,\n )\n inference_params.key_value_memory_dict[self.layer_idx] = (conv_state, ssm_state)\n else:\n conv_state, ssm_state = inference_params.key_value_memory_dict[self.layer_idx]\n # TODO: What if batch size changes between generation, and we reuse the same states?\n if initialize_states:\n conv_state.zero_()\n ssm_state.zero_()\n return conv_state, ssm_state\n\n\nclass Block(nn.Module):\n def __init__(\n self, dim, mixer_cls, norm_cls=nn.LayerNorm, fused_add_norm=False, residual_in_fp32=False\n ):\n \"\"\"\n Simple block wrapping a mixer class with LayerNorm/RMSNorm and residual connection\"\n\n This Block has a slightly different structure compared to a regular\n prenorm Transformer block.\n The standard block is: LN -&gt; MHA/MLP -&gt; Add.\n [Ref: https://arxiv.org/abs/2002.04745]\n Here we have: Add -&gt; LN -&gt; Mixer, returning both\n the hidden_states (output of the mixer) and the residual.\n This is purely for performance reasons, as we can fuse add and LayerNorm.\n The residual needs to be provided (except for the very first block).\n \"\"\"\n super().__init__()\n self.residual_in_fp32 = residual_in_fp32\n self.fused_add_norm = fused_add_norm\n self.mixer = mixer_cls(dim)\n self.norm = norm_cls(dim)\n if self.fused_add_norm:\n assert RMSNorm is not None, \"RMSNorm import fails\"\n assert isinstance(\n self.norm, (nn.LayerNorm, RMSNorm)\n ), \"Only LayerNorm and RMSNorm are supported for fused_add_norm\"\n\n def forward(\n self, hidden_states: Tensor, residual: Optional[Tensor] = None, inference_params=None\n ):\n r\"\"\"Pass the input through the encoder layer.\n\n Args:\n hidden_states: the sequence to the encoder layer (required).\n residual: hidden_states = Mixer(LN(residual))\n \"\"\"\n if not self.fused_add_norm:\n residual = (hidden_states + residual) if residual is not None else hidden_states\n hidden_states = self.norm(residual.to(dtype=self.norm.weight.dtype))\n if self.residual_in_fp32:\n residual = residual.to(torch.float32)\n else:\n fused_add_norm_fn = rms_norm_fn if isinstance(self.norm, RMSNorm) else layer_norm_fn\n hidden_states, residual = fused_add_norm_fn(\n hidden_states,\n self.norm.weight,\n self.norm.bias,\n residual=residual,\n prenorm=True,\n residual_in_fp32=self.residual_in_fp32,\n eps=self.norm.eps,\n )\n hidden_states = self.mixer(hidden_states, inference_params=inference_params)\n return hidden_states, residual\n\n def allocate_inference_cache(self, batch_size, max_seqlen, dtype=None, **kwargs):\n return self.mixer.allocate_inference_cache(batch_size, max_seqlen, dtype=dtype, **kwargs)\n"
+}
+```
+User decision: **accepted**
+
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "mamba_inner_fn|mamba_inner_ref",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "mamba_inner_fn|mamba_inner_ref",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 1,
+  "topFiles": [
+    {
+      "uri": ".specstory/history/2026-02-23_15-12Z-ergebnisse-teilen-für-normale-scans-und-ux-journeys.md",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see! In mamba_simple.py:
+```python
+try:
+ from mamba_ssm.ops.selective_scan_interface import selective_scan_fn, mamba_inner_fn
+except ImportError:
+ selective_scan_fn, mamba_inner_fn = None, None, None  # BUG: three Nones for two names
+```
+
+So when the import fails (because selective_scan_interface.py fails to load due to `import selective_scan_cuda`), selective_scan_fn and mamba_inner_fn are set to None. Then in the forward(), when use_fast_path is True it calls mamba_inner_fn(...) - which would be None, so we'd get a different error. When use_fast_path is False it uses the else branch and calls selective_scan_fn(...) - also None. So we'd get "NoneType is not callable" or similar. But the user got "name 'selective_scan_fn' is not defined". So maybe the import doesn't fail - maybe selective_scan_interface.py loads from a different path? Like the SUM repo might ship its own copy of mamba or the SUM model code might import from somewhere that doesn't have the try/except. Let me check - the error "name 'selective_scan_fn' is not defined" - that's a NameError. So somewhere, code is running that references selective_scan_fn but it was never defined. That can happen if: 1. selective_scan_interface.py is loaded but fails mid-way (e.g. at "import selective_scan_cuda") - in that case the module would not complete loading and selective_scan_fn would never be defined. So any code that did "from mamba_ssm.ops.selective_scan_interface import selective_scan_fn" would get ImportError. So the import would fail. Unless... the SUM repo has its own copy of mamba_ssm or selective_scan_interface that has different structure. Let me check if SUM has a local mamba or ops. Actually the SUM repo might depend on mamba_ssm from pip - so the installed mamba_ssm (with SKIP_CUDA_BUILD) would have been installed. When we install with SKIP_CUDA_BUILD, the selective_scan_interface.py file is the one from the mamba_ssm package - and it does "import selective_scan_cuda" at the top. So when any code tries to import from selective_scan_interface, Python loads the file and executes it, and the first line that fails is "import selective_scan_cuda". So the module fails to load. So "from mamba_ssm.ops.selective_scan_interface import selective_scan_fn" would raise ImportError. So selective_scan_fn and mamba_inner_fn would be None in mamba_simple. So when we call mamba_inner_fn(...) we'd get TypeError: 'NoneType' object is not callable. Unless the error is coming from inside the selective_scan_interface.py file itself - like in mamba_inner_ref it calls selective_scan_fn(x, delta, A, B, C, D, ...). So if somehow the module loaded but selective_scan_cuda failed later (like at runtime when first used), then selective_scan_fn would be defined (it's defined in the same file). So the "selective_scan_fn is not defined" might be coming from a different place - maybe from the SUM repo's code that imports something and that something references selective_scan_fn. Let me search the SUM repo for selective_scan.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="web_fetch">
+<details>
+<summary>Tool use: **web_fetch**</summary>
+
+
+Parameters:
+
+```json
+{
+  "url": "https://github.com/Arhosseini77/SUM/search?q=selective_scan"
+}
+```
+Result:
+
+```json
+{
+  "url": "https://github.com/Arhosseini77/SUM/search?q=selective_scan",
+  "markdown": "Repository search results · GitHub\n\n## Filter by\n\n- [Wikis](https://github.com/search?q=repo%3AArhosseini77%2FSUM+selective_scan&amp;amp;type=wikis)\n- [Packages](https://github.com/search?q=repo%3AArhosseini77%2FSUM+selective_scan&amp;amp;type=registrypackages)\n- [Commits](https://github.com/search?q=repo%3AArhosseini77%2FSUM+selective_scan&amp;amp;type=commits)\n- [Discussions](https://github.com/search?q=repo%3AArhosseini77%2FSUM+selective_scan&amp;amp;type=discussions)\n- [Pull requests](https://github.com/search?q=repo%3AArhosseini77%2FSUM+selective_scan&amp;amp;type=pullrequests)\n- [Issues](https://github.com/search?q=repo%3AArhosseini77%2FSUM+selective_scan&amp;amp;type=issues)\n- [Code (...)](https://github.com/search?q=repo%3AArhosseini77%2FSUM+selective_scan&amp;amp;type=code)\n\nCode (...)\n\n0 files\n\n(54 ms)\n\nin [Arhosseini77/SUM (press backspace or delete to remove)](https://github.com/Arhosseini77/SUM)\n\nSort by: Best match\n\nFilter\n\n### Your search did not match any code\n\nTry one of the tips below to find more code\n\nSearch across repositoriesSearch across an organizationFind a particular file extensionWhy wasn't my code found?Regular expressionsSaved searches"
+}
+```
+User decision: **accepted**
+
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="web_fetch">
+<details>
+<summary>Tool use: **web_fetch**</summary>
+
+
+Parameters:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/Arhosseini77/SUM/main/net/models/SUM.py"
+}
+```
+Result:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/Arhosseini77/SUM/main/net/models/SUM.py",
+  "markdown": "from .vmamba import VSSM\nimport torch\nfrom torch import nn\nfrom huggingface_hub import PyTorchModelHubMixin\n\n\nclass SUM(nn.Module, PyTorchModelHubMixin):\n def __init__(self,\n input_channels=3,\n num_classes=1,\n depths=[2, 2, 9, 2],\n depths_decoder=[2, 9, 2, 2],\n drop_path_rate=0.2,\n load_ckpt_path=None,\n ):\n super().__init__()\n\n self.load_ckpt_path = load_ckpt_path\n self.num_classes = num_classes\n\n self.salu_mamba = VSSM(in_chans=input_channels,\n num_classes=num_classes,\n depths=depths,\n depths_decoder=depths_decoder,\n drop_path_rate=drop_path_rate,\n )\n\n def forward(self, x, condition):\n if x.size()[1] == 1:\n x = x.repeat(1, 3, 1, 1)\n logits = self.salu_mamba(x, condition)\n if self.num_classes == 1:\n return torch.sigmoid(logits)\n else:\n return logits\n\n def load_from(self):\n if self.load_ckpt_path is not None:\n modelCheckpoint = torch.load(self.load_ckpt_path)\n pretrained_dict = modelCheckpoint['model']\n\n # Load the state dictionary with strict=False\n self.salu_mamba.load_state_dict(pretrained_dict, strict=False)\n\n # Custom loading logic for pretrained layers, if needed\n model_dict = self.salu_mamba.state_dict()\n pretrained_odict = modelCheckpoint['model']\n pretrained_dict = {}\n for k, v in pretrained_odict.items():\n if 'layers.0' in k:\n new_k = k.replace('layers.0', 'layers_up.3')\n pretrained_dict[new_k] = v\n elif 'layers.1' in k:\n new_k = k.replace('layers.1', 'layers_up.2')\n pretrained_dict[new_k] = v\n elif 'layers.2' in k:\n new_k = k.replace('layers.2', 'layers_up.1')\n pretrained_dict[new_k] = v\n elif 'layers.3' in k:\n new_k = k.replace('layers.3', 'layers_up.0')\n pretrained_dict[new_k] = v\n new_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict.keys()}\n model_dict.update(new_dict)\n self.salu_mamba.load_state_dict(model_dict, strict=False)\n"
+}
+```
+User decision: **accepted**
+
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+SUM uses VSSM from .vmamba. So the chain is SUM -> VSSM -> ... -> mamba. The error "selective_scan_fn is not defined" - the only place that could happen in the mamba 1.0.1 codebase that we have is in mamba_inner_ref: `y = selective_scan_fn(x, delta, A, B, C, D, z=z, ...)`. So mamba_inner_ref is in the same file as selective_scan_fn. If the file failed to load at "import selective_scan_cuda", then neither selective_scan_fn nor mamba_inner_ref would be defined. So the only way we get "selective_scan_fn is not defined" is if: 1. A different code path loads a module that references selective_scan_fn but the module that defines it didn't load or didn't define it. For example, maybe there's a lazy import and selective_scan_fn is used in a function that gets called, but the name is not in the global scope of that module. So perhaps in mamba_inner_ref, which is in selective_scan_interface.py, we have "y = selective_scan_fn(...)". When we run mamba_inner_ref, we're inside that module - and selective_scan_fn should be defined in the same module. Unless - when import selective_scan_cuda failed, Python might have partially executed the module. Let me check: if "import selective_scan_cuda" raises ImportError, then the rest of the module (where selective_scan_fn is defined) never runs. So the module would be in a half-loaded state. Then if some other code does "from mamba_ssm.ops import selective_scan_interface" and then later calls something that uses selective_scan_interface.selective_scan_fn - but that was never defined because the module failed. So the error could be in a different file that does "from mamba_ssm.ops.selective_scan_interface import selective_scan_ref" (which might succeed if selective_scan_ref is defined before the import of selective_scan_cuda... no, the import is at the top). So in v1.0.1 the order is: import selective_scan_cuda (fails) -> module load fails. So nobody can import selective_scan_fn. So the only way to get "selective_scan_fn is not defined" is if the traceback is inside selective_scan_interface.py - i.e. the module loaded (so selective_scan_cuda was found? but we didn't build it...) Wait. When we install mamba-ssm with MAMBA_SKIP_CUDA_BUILD=TRUE, we don't build the selective_scan_cuda extension. So the package gets installed but the .so file doesn't exist. So when we "import selective_scan_cuda", it would fail with ImportError (module not found or undefined symbol). So the whole selective_scan_interface.py would fail to load. So the only way the service starts and responds to /health is if the import of selective_scan_interface is deferred - i.e. not at startup. So when we do "from net import SUM, ...", that eventually imports mamba_ssm. Does it import selective_scan_interface at that point? If so, the app would crash at startup. So maybe the import is lazy - when the first request comes in and the model runs, then we hit the code that uses mamba_inner_fn or selective_scan_fn, and at that point we try to import or we're in a code path where selective_scan_interface was imported with a try/except and set to None, and then some code path uses it without checking. Looking at mamba_simple again: when use_fast_path and inference_params is None, it calls mamba_inner_fn(...). If mamba_inner_fn is None (because import failed), we'd get TypeError: 'NoneType' object is not callable. So the error message would be different. So maybe the code path is the else branch: it calls selective_scan_fn(...). If selective_scan_fn is None we'd get TypeError. So "selective_scan_fn is not defined" suggests that in the scope where it's called, the name doesn't exist at all - like in Python when you reference a variable that was never assigned. So it might be that the code is in a file that does "from mamba_ssm.ops.selective_scan_interface import selective_scan_ref" (only ref) and then in that file or in a function, someone calls selective_scan_fn thinking it's in scope but it wasn't imported. So maybe SUM's vmamba or something imports selective_scan_ref and then somewhere calls selective_scan_fn. Let me check the SUM vmamba.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="web_fetch">
+<details>
+<summary>Tool use: **web_fetch**</summary>
+
+
+Parameters:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/Arhosseini77/SUM/main/net/models/vmamba.py"
+}
+```
+Result:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/Arhosseini77/SUM/main/net/models/vmamba.py",
+  "markdown": "import math\nfrom functools import partial\nfrom typing import Callable\n\nimport torch\nimport torch.nn as nn\nimport torch.nn.functional as F\nimport torch.utils.checkpoint as checkpoint\nfrom einops import rearrange, repeat\nfrom timm.models.layers import DropPath, trunc_normal_\n\ntry:\n from mamba_ssm.ops.selective_scan_interface import selective_scan_fn, selective_scan_ref\nexcept:\n pass\n\n# an alternative for mamba_ssm (in which causal_conv1d is needed)\ntry:\n from selective_scan import selective_scan_fn as selective_scan_fn_v1\n from selective_scan import selective_scan_ref as selective_scan_ref_v1\nexcept:\n pass\n\nDropPath.__repr__ = lambda self: f\"timm.DropPath({self.drop_prob})\"\n\n\ndef modulate(x, shift, scale):\n # Adjust the shape of shift and scale to match the input tensor\n # Shift and scale are expanded from [batch_size, 1] to [batch_size, 1, 1, 1]\n # to match the input tensor shape [batch_size, height, width, channels]\n shift = shift.view(shift.size(0), 1, 1, 1)\n scale = scale.view(scale.size(0), 1, 1, 1)\n\n return x * (1 + scale) + shift\n\n\ndef modulate_scale(x, scale):\n scale = scale.view(scale.size(0), 1, 1, 1)\n return x * (1 + scale)\n\n\ndef flops_selective_scan_ref(B=1, L=256, D=768, N=16, with_D=True, with_Z=False, with_Group=True, with_complex=False):\n \"\"\"\n u: r(B D L)\n delta: r(B D L)\n A: r(D N)\n B: r(B N L)\n C: r(B N L)\n D: r(D)\n z: r(B D L)\n delta_bias: r(D), fp32\n\n ignores:\n [.float(), +, .softplus, .shape, new_zeros, repeat, stack, to(dtype), silu]\n \"\"\"\n import numpy as np\n\n # fvcore.nn.jit_handles\n def get_flops_einsum(input_shapes, equation):\n np_arrs = [np.zeros(s) for s in input_shapes]\n optim = np.einsum_path(equation, *np_arrs, optimize=\"optimal\")[1]\n for line in optim.split(\"\\n\"):\n if \"optimized flop\" in line.lower():\n # divided by 2 because we count MAC (multiply-add counted as one flop)\n flop = float(np.floor(float(line.split(\":\")[-1]) / 2))\n return flop\n\n assert not with_complex\n\n flops = 0 # below code flops = 0\n if False:\n ...\n \"\"\"\n dtype_in = u.dtype\n u = u.float()\n delta = delta.float()\n if delta_bias is not None:\n delta = delta + delta_bias[..., None].float()\n if delta_softplus:\n delta = F.softplus(delta)\n batch, dim, dstate = u.shape[0], A.shape[0], A.shape[1]\n is_variable_B = B.dim() &gt;= 3\n is_variable_C = C.dim() &gt;= 3\n if A.is_complex():\n if is_variable_B:\n B = torch.view_as_complex(rearrange(B.float(), \"... (L two) -&gt; ... L two\", two=2))\n if is_variable_C:\n C = torch.view_as_complex(rearrange(C.float(), \"... (L two) -&gt; ... L two\", two=2))\n else:\n B = B.float()\n C = C.float()\n x = A.new_zeros((batch, dim, dstate))\n ys = []\n \"\"\"\n\n flops += get_flops_einsum([[B, D, L], [D, N]], \"bdl,dn-&gt;bdln\")\n if with_Group:\n flops += get_flops_einsum([[B, D, L], [B, N, L], [B, D, L]], \"bdl,bnl,bdl-&gt;bdln\")\n else:\n flops += get_flops_einsum([[B, D, L], [B, D, N, L], [B, D, L]], \"bdl,bdnl,bdl-&gt;bdln\")\n if False:\n ...\n \"\"\"\n deltaA = torch.exp(torch.einsum('bdl,dn-&gt;bdln', delta, A))\n if not is_variable_B:\n deltaB_u = torch.einsum('bdl,dn,bdl-&gt;bdln', delta, B, u)\n else:\n if B.dim() == 3:\n deltaB_u = torch.einsum('bdl,bnl,bdl-&gt;bdln', delta, B, u)\n else:\n B = repeat(B, \"B G N L -&gt; B (G H) N L\", H=dim // B.shape[1])\n deltaB_u = torch.einsum('bdl,bdnl,bdl-&gt;bdln', delta, B, u)\n if is_variable_C and C.dim() == 4:\n C = repeat(C, \"B G N L -&gt; B (G H) N L\", H=dim // C.shape[1])\n last_state = None\n \"\"\"\n\n in_for_flops = B * D * N\n if with_Group:\n in_for_flops += get_flops_einsum([[B, D, N], [B, D, N]], \"bdn,bdn-&gt;bd\")\n else:\n in_for_flops += get_flops_einsum([[B, D, N], [B, N]], \"bdn,bn-&gt;bd\")\n flops += L * in_for_flops\n if False:\n ...\n \"\"\"\n for i in range(u.shape[2]):\n x = deltaA[:, :, i] * x + deltaB_u[:, :, i]\n if not is_variable_C:\n y = torch.einsum('bdn,dn-&gt;bd', x, C)\n else:\n if C.dim() == 3:\n y = torch.einsum('bdn,bn-&gt;bd', x, C[:, :, i])\n else:\n y = torch.einsum('bdn,bdn-&gt;bd', x, C[:, :, :, i])\n if i == u.shape[2] - 1:\n last_state = x\n if y.is_complex():\n y = y.real * 2\n ys.append(y)\n y = torch.stack(ys, dim=2) # (batch dim L)\n \"\"\"\n\n if with_D:\n flops += B * D * L\n if with_Z:\n flops += B * D * L\n if False:\n ...\n \"\"\"\n out = y if D is None else y + u * rearrange(D, \"d -&gt; d 1\")\n if z is not None:\n out = out * F.silu(z)\n out = out.to(dtype=dtype_in)\n \"\"\"\n\n return flops\n\n\nclass PatchEmbed2D(nn.Module):\n r\"\"\" Image to Patch Embedding\n Args:\n patch_size (int): Patch token size. Default: 4.\n in_chans (int): Number of input image channels. Default: 3.\n embed_dim (int): Number of linear projection output channels. Default: 96.\n norm_layer (nn.Module, optional): Normalization layer. Default: None\n \"\"\"\n\n def __init__(self, patch_size=4, in_chans=3, embed_dim=96, norm_layer=None, **kwargs):\n super().__init__()\n if isinstance(patch_size, int):\n patch_size = (patch_size, patch_size)\n self.proj = nn.Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size)\n if norm_layer is not None:\n self.norm = norm_layer(embed_dim)\n else:\n self.norm = None\n\n def forward(self, x):\n x = self.proj(x).permute(0, 2, 3, 1)\n if self.norm is not None:\n x = self.norm(x)\n return x\n\n\nclass PatchMerging2D(nn.Module):\n r\"\"\" Patch Merging Layer.\n Args:\n input_resolution (tuple[int]): Resolution of input feature.\n dim (int): Number of input channels.\n norm_layer (nn.Module, optional): Normalization layer. Default: nn.LayerNorm\n \"\"\"\n\n def __init__(self, dim, norm_layer=nn.LayerNorm):\n super().__init__()\n self.dim = dim\n self.reduction = nn.Linear(4 * dim, 2 * dim, bias=False)\n self.norm = norm_layer(4 * dim)\n\n def forward(self, x):\n B, H, W, C = x.shape\n\n SHAPE_FIX = [-1, -1]\n if (W % 2 != 0) or (H % 2 != 0):\n print(f\"Warning, x.shape {x.shape} is not match even ===========\", flush=True)\n SHAPE_FIX[0] = H // 2\n SHAPE_FIX[1] = W // 2\n\n x0 = x[:, 0::2, 0::2, :] # B H/2 W/2 C\n x1 = x[:, 1::2, 0::2, :] # B H/2 W/2 C\n x2 = x[:, 0::2, 1::2, :] # B H/2 W/2 C\n x3 = x[:, 1::2, 1::2, :] # B H/2 W/2 C\n\n if SHAPE_FIX[0] &gt; 0:\n x0 = x0[:, :SHAPE_FIX[0], :SHAPE_FIX[1], :]\n x1 = x1[:, :SHAPE_FIX[0], :SHAPE_FIX[1], :]\n x2 = x2[:, :SHAPE_FIX[0], :SHAPE_FIX[1], :]\n x3 = x3[:, :SHAPE_FIX[0], :SHAPE_FIX[1], :]\n\n x = torch.cat([x0, x1, x2, x3], -1) # B H/2 W/2 4*C\n x = x.view(B, H // 2, W // 2, 4 * C) # B H/2*W/2 4*C\n\n x = self.norm(x)\n x = self.reduction(x)\n\n return x\n\n\nclass PatchExpand2D(nn.Module):\n def __init__(self, dim, dim_scale=2, norm_layer=nn.LayerNorm):\n super().__init__()\n self.dim = dim * 2\n self.dim_scale = dim_scale\n self.expand = nn.Linear(self.dim, dim_scale * self.dim, bias=False)\n self.norm = norm_layer(self.dim // dim_scale)\n\n def forward(self, x):\n B, H, W, C = x.shape\n x = self.expand(x)\n\n x = rearrange(x, 'b h w (p1 p2 c)-&gt; b (h p1) (w p2) c', p1=self.dim_scale, p2=self.dim_scale,\n c=C // self.dim_scale)\n x = self.norm(x)\n\n return x\n\n\nclass Final_PatchExpand2D(nn.Module):\n def __init__(self, dim, dim_scale=4, norm_layer=nn.LayerNorm):\n super().__init__()\n self.dim = dim\n self.dim_scale = dim_scale\n self.expand = nn.Linear(self.dim, dim_scale * self.dim, bias=False)\n self.norm = norm_layer(self.dim // dim_scale)\n\n def forward(self, x):\n B, H, W, C = x.shape\n x = self.expand(x)\n\n x = rearrange(x, 'b h w (p1 p2 c)-&gt; b (h p1) (w p2) c', p1=self.dim_scale, p2=self.dim_scale,\n c=C // self.dim_scale)\n x = self.norm(x)\n\n return x\n\n\nclass SS2D(nn.Module):\n def __init__(\n self,\n d_model,\n d_state=16,\n # d_state=\"auto\", # 20240109\n d_conv=3,\n expand=2,\n dt_rank=\"auto\",\n dt_min=0.001,\n dt_max=0.1,\n dt_init=\"random\",\n dt_scale=1.0,\n dt_init_floor=1e-4,\n dropout=0.,\n conv_bias=True,\n bias=False,\n device=None,\n dtype=None,\n **kwargs,\n ):\n factory_kwargs = {\"device\": device, \"dtype\": dtype}\n super().__init__()\n self.d_model = d_model\n self.d_state = d_state\n self.d_conv = d_conv\n self.expand = expand\n self.d_inner = int(self.expand * self.d_model)\n self.dt_rank = math.ceil(self.d_model / 16) if dt_rank == \"auto\" else dt_rank\n\n self.in_proj = nn.Linear(self.d_model, self.d_inner * 2, bias=bias, **factory_kwargs)\n self.conv2d = nn.Conv2d(\n in_channels=self.d_inner,\n out_channels=self.d_inner,\n groups=self.d_inner,\n bias=conv_bias,\n kernel_size=d_conv,\n padding=(d_conv - 1) // 2,\n **factory_kwargs,\n )\n self.act = nn.SiLU()\n\n self.x_proj = (\n nn.Linear(self.d_inner, (self.dt_rank + self.d_state * 2), bias=False, **factory_kwargs),\n nn.Linear(self.d_inner, (self.dt_rank + self.d_state * 2), bias=False, **factory_kwargs),\n nn.Linear(self.d_inner, (self.dt_rank + self.d_state * 2), bias=False, **factory_kwargs),\n nn.Linear(self.d_inner, (self.dt_rank + self.d_state * 2), bias=False, **factory_kwargs),\n )\n self.x_proj_weight = nn.Parameter(torch.stack([t.weight for t in self.x_proj], dim=0)) # (K=4, N, inner)\n del self.x_proj\n\n self.dt_projs = (\n self.dt_init(self.dt_rank, self.d_inner, dt_scale, dt_init, dt_min, dt_max, dt_init_floor,\n **factory_kwargs),\n self.dt_init(self.dt_rank, self.d_inner, dt_scale, dt_init, dt_min, dt_max, dt_init_floor,\n **factory_kwargs),\n self.dt_init(self.dt_rank, self.d_inner, dt_scale, dt_init, dt_min, dt_max, dt_init_floor,\n **factory_kwargs),\n self.dt_init(self.dt_rank, self.d_inner, dt_scale, dt_init, dt_min, dt_max, dt_init_floor,\n **factory_kwargs),\n )\n self.dt_projs_weight = nn.Parameter(torch.stack([t.weight for t in self.dt_projs], dim=0)) # (K=4, inner, rank)\n self.dt_projs_bias = nn.Parameter(torch.stack([t.bias for t in self.dt_projs], dim=0)) # (K=4, inner)\n del self.dt_projs\n\n self.A_logs = self.A_log_init(self.d_state, self.d_inner, copies=4, merge=True) # (K=4, D, N)\n self.Ds = self.D_init(self.d_inner, copies=4, merge=True) # (K=4, D, N)\n\n self.forward_core = self.forward_corev0\n\n self.out_norm = nn.LayerNorm(self.d_inner)\n self.out_proj = nn.Linear(self.d_inner, self.d_model, bias=bias, **factory_kwargs)\n self.dropout = nn.Dropout(dropout) if dropout &gt; 0. else None\n\n @staticmethod\n def dt_init(dt_rank, d_inner, dt_scale=1.0, dt_init=\"random\", dt_min=0.001, dt_max=0.1, dt_init_floor=1e-4,\n **factory_kwargs):\n dt_proj = nn.Linear(dt_rank, d_inner, bias=True, **factory_kwargs)\n\n # Initialize special dt projection to preserve variance at initialization\n dt_init_std = dt_rank ** -0.5 * dt_scale\n if dt_init == \"constant\":\n nn.init.constant_(dt_proj.weight, dt_init_std)\n elif dt_init == \"random\":\n nn.init.uniform_(dt_proj.weight, -dt_init_std, dt_init_std)\n else:\n raise NotImplementedError\n\n # Initialize dt bias so that F.softplus(dt_bias) is between dt_min and dt_max\n dt = torch.exp(\n torch.rand(d_inner, **factory_kwargs) * (math.log(dt_max) - math.log(dt_min))\n + math.log(dt_min)\n ).clamp(min=dt_init_floor)\n # Inverse of softplus: https://github.com/pytorch/pytorch/issues/72759\n inv_dt = dt + torch.log(-torch.expm1(-dt))\n with torch.no_grad():\n dt_proj.bias.copy_(inv_dt)\n # Our initialization would set all Linear.bias to zero, need to mark this one as _no_reinit\n dt_proj.bias._no_reinit = True\n\n return dt_proj\n\n @staticmethod\n def A_log_init(d_state, d_inner, copies=1, device=None, merge=True):\n # S4D real initialization\n A = repeat(\n torch.arange(1, d_state + 1, dtype=torch.float32, device=device),\n \"n -&gt; d n\",\n d=d_inner,\n ).contiguous()\n A_log = torch.log(A) # Keep A_log in fp32\n if copies &gt; 1:\n A_log = repeat(A_log, \"d n -&gt; r d n\", r=copies)\n if merge:\n A_log = A_log.flatten(0, 1)\n A_log = nn.Parameter(A_log)\n A_log._no_weight_decay = True\n return A_log\n\n @staticmethod\n def D_init(d_inner, copies=1, device=None, merge=True):\n # D \"skip\" parameter\n D = torch.ones(d_inner, device=device)\n if copies &gt; 1:\n D = repeat(D, \"n1 -&gt; r n1\", r=copies)\n if merge:\n D = D.flatten(0, 1)\n D = nn.Parameter(D) # Keep in fp32\n D._no_weight_decay = True\n return D\n\n def forward_corev0(self, x: torch.Tensor):\n self.selective_scan = selective_scan_fn\n\n B, C, H, W = x.shape\n L = H * W\n K = 4\n\n x_hwwh = torch.stack([x.view(B, -1, L), torch.transpose(x, dim0=2, dim1=3).contiguous().view(B, -1, L)],\n dim=1).view(B, 2, -1, L)\n xs = torch.cat([x_hwwh, torch.flip(x_hwwh, dims=[-1])], dim=1) # (b, k, d, l)\n\n x_dbl = torch.einsum(\"b k d l, k c d -&gt; b k c l\", xs.view(B, K, -1, L), self.x_proj_weight)\n # x_dbl = x_dbl + self.x_proj_bias.view(1, K, -1, 1)\n dts, Bs, Cs = torch.split(x_dbl, [self.dt_rank, self.d_state, self.d_state], dim=2)\n dts = torch.einsum(\"b k r l, k d r -&gt; b k d l\", dts.view(B, K, -1, L), self.dt_projs_weight)\n # dts = dts + self.dt_projs_bias.view(1, K, -1, 1)\n\n xs = xs.float().view(B, -1, L) # (b, k * d, l)\n dts = dts.contiguous().float().view(B, -1, L) # (b, k * d, l)\n Bs = Bs.float().view(B, K, -1, L) # (b, k, d_state, l)\n Cs = Cs.float().view(B, K, -1, L) # (b, k, d_state, l)\n Ds = self.Ds.float().view(-1) # (k * d)\n As = -torch.exp(self.A_logs.float()).view(-1, self.d_state) # (k * d, d_state)\n dt_projs_bias = self.dt_projs_bias.float().view(-1) # (k * d)\n\n out_y = self.selective_scan(\n xs, dts,\n As, Bs, Cs, Ds, z=None,\n delta_bias=dt_projs_bias,\n delta_softplus=True,\n return_last_state=False,\n ).view(B, K, -1, L)\n assert out_y.dtype == torch.float\n\n inv_y = torch.flip(out_y[:, 2:4], dims=[-1]).view(B, 2, -1, L)\n wh_y = torch.transpose(out_y[:, 1].view(B, -1, W, H), dim0=2, dim1=3).contiguous().view(B, -1, L)\n invwh_y = torch.transpose(inv_y[:, 1].view(B, -1, W, H), dim0=2, dim1=3).contiguous().view(B, -1, L)\n\n return out_y[:, 0], inv_y[:, 0], wh_y, invwh_y\n\n # an alternative to forward_corev1\n def forward_corev1(self, x: torch.Tensor):\n self.selective_scan = selective_scan_fn_v1\n\n B, C, H, W = x.shape\n L = H * W\n K = 4\n\n x_hwwh = torch.stack([x.view(B, -1, L), torch.transpose(x, dim0=2, dim1=3).contiguous().view(B, -1, L)],\n dim=1).view(B, 2, -1, L)\n xs = torch.cat([x_hwwh, torch.flip(x_hwwh, dims=[-1])], dim=1) # (b, k, d, l)\n\n x_dbl = torch.einsum(\"b k d l, k c d -&gt; b k c l\", xs.view(B, K, -1, L), self.x_proj_weight)\n # x_dbl = x_dbl + self.x_proj_bias.view(1, K, -1, 1)\n dts, Bs, Cs = torch.split(x_dbl, [self.dt_rank, self.d_state, self.d_state], dim=2)\n dts = torch.einsum(\"b k r l, k d r -&gt; b k d l\", dts.view(B, K, -1, L), self.dt_projs_weight)\n # dts = dts + self.dt_projs_bias.view(1, K, -1, 1)\n\n xs = xs.float().view(B, -1, L) # (b, k * d, l)\n dts = dts.contiguous().float().view(B, -1, L) # (b, k * d, l)\n Bs = Bs.float().view(B, K, -1, L) # (b, k, d_state, l)\n Cs = Cs.float().view(B, K, -1, L) # (b, k, d_state, l)\n Ds = self.Ds.float().view(-1) # (k * d)\n As = -torch.exp(self.A_logs.float()).view(-1, self.d_state) # (k * d, d_state)\n dt_projs_bias = self.dt_projs_bias.float().view(-1) # (k * d)\n\n out_y = self.selective_scan(\n xs, dts,\n As, Bs, Cs, Ds,\n delta_bias=dt_projs_bias,\n delta_softplus=True,\n ).view(B, K, -1, L)\n assert out_y.dtype == torch.float\n\n inv_y = torch.flip(out_y[:, 2:4], dims=[-1]).view(B, 2, -1, L)\n wh_y = torch.transpose(out_y[:, 1].view(B, -1, W, H), dim0=2, dim1=3).contiguous().view(B, -1, L)\n invwh_y = torch.transpose(inv_y[:, 1].view(B, -1, W, H), dim0=2, dim1=3).contiguous().view(B, -1, L)\n\n return out_y[:, 0], inv_y[:, 0], wh_y, invwh_y\n\n def forward(self, x: torch.Tensor, modulation_params: torch.Tensor = None, **kwargs):\n if modulation_params is not None:\n # Unpack modulation parameters\n shift1, scale1, shift2, scale2, scale3 = torch.chunk(modulation_params, 5, dim=-1)\n\n B, H, W, C = x.shape\n\n # Apply modulation after layer norm 1\n if modulation_params is not None:\n x = modulate(x, shift1, scale1)\n\n xz = self.in_proj(x)\n x, z = xz.chunk(2, dim=-1) # (b, h, w, d)\n\n x = x.permute(0, 3, 1, 2).contiguous()\n\n x = self.act(self.conv2d(x)) # (b, d, h, w)\n y1, y2, y3, y4 = self.forward_core(x)\n assert y1.dtype == torch.float32\n y = y1 + y2 + y3 + y4\n y = torch.transpose(y, dim0=1, dim1=2).contiguous().view(B, H, W, -1)\n\n # Apply modulation after SS2D block (only scale)\n if modulation_params is not None:\n y = modulate_scale(y, scale3)\n\n y = self.out_norm(y)\n\n # Apply modulation after last layer norm\n if modulation_params is not None:\n y = modulate(y, shift2, scale2)\n\n y = y * F.silu(z)\n\n out = self.out_proj(y)\n if self.dropout is not None:\n out = self.dropout(out)\n return out\n\n\nclass VSSBlock(nn.Module):\n def __init__(\n self,\n hidden_dim: int = 0,\n drop_path: float = 0,\n norm_layer: Callable[..., torch.nn.Module] = partial(nn.LayerNorm, eps=1e-6),\n attn_drop_rate: float = 0,\n d_state: int = 16,\n condition_size: int = 4,\n use_modulation: bool = False, # Flag to apply modulation and MLP\n **kwargs,\n ):\n super().__init__()\n num_class = 5\n self.use_modulation = use_modulation\n self.ln_1 = norm_layer(hidden_dim)\n self.self_attention = SS2D(d_model=hidden_dim, dropout=attn_drop_rate, d_state=d_state, **kwargs)\n self.drop_path = DropPath(drop_path)\n\n # Initialize condition as a learnable parameter if modulation is used\n if self.use_modulation:\n self.condition = nn.Parameter(torch.randn(condition_size, 128), requires_grad=True)\n self.mlp = nn.Sequential(\n nn.Linear(128, 128),\n nn.GELU(),\n nn.Linear(128, 64),\n nn.GELU(),\n nn.Linear(64, 5)\n )\n\n def forward(self, input: torch.Tensor, condition: torch.Tensor):\n selected_modulation = None\n if self.use_modulation:\n modulation_params = self.mlp(self.condition)\n indices = torch.argmax(condition, dim=1)\n selected_modulation = torch.stack([modulation_params[idx] for idx in indices])\n\n x = input + self.drop_path(self.self_attention(self.ln_1(input), modulation_params=selected_modulation))\n\n return x\n\n\nclass VSSLayer(nn.Module):\n \"\"\" A basic Swin Transformer layer for one stage.\n Args:\n dim (int): Number of input channels.\n depth (int): Number of blocks.\n drop (float, optional): Dropout rate. Default: 0.0\n attn_drop (float, optional): Attention dropout rate. Default: 0.0\n drop_path (float | tuple[float], optional): Stochastic depth rate. Default: 0.0\n norm_layer (nn.Module, optional): Normalization layer. Default: nn.LayerNorm\n downsample (nn.Module | None, optional): Downsample layer at the end of the layer. Default: None\n use_checkpoint (bool): Whether to use checkpointing to save memory. Default: False.\n \"\"\"\n\n def __init__(\n self,\n dim,\n depth,\n attn_drop=0.,\n drop_path=0.,\n norm_layer=nn.LayerNorm,\n downsample=None,\n use_checkpoint=False,\n d_state=16,\n **kwargs,\n ):\n super().__init__()\n self.dim = dim\n self.use_checkpoint = use_checkpoint\n\n self.blocks = nn.ModuleList([\n VSSBlock(\n hidden_dim=dim,\n drop_path=drop_path[i] if isinstance(drop_path, list) else drop_path,\n norm_layer=norm_layer,\n attn_drop_rate=attn_drop,\n d_state=d_state,\n )\n for i in range(depth)])\n\n if True: # is this really applied? Yes, but been overriden later in VSSM!\n def _init_weights(module: nn.Module):\n for name, p in module.named_parameters():\n if name in [\"out_proj.weight\"]:\n p = p.clone().detach_() # fake init, just to keep the seed ....\n nn.init.kaiming_uniform_(p, a=math.sqrt(5))\n\n self.apply(_init_weights)\n\n if downsample is not None:\n self.downsample = downsample(dim=dim, norm_layer=norm_layer)\n else:\n self.downsample = None\n\n def forward(self, x, condition):\n for blk in self.blocks:\n if self.use_checkpoint:\n x = checkpoint.checkpoint(blk, x)\n else:\n x = blk(x, condition)\n\n if self.downsample is not None:\n x = self.downsample(x)\n\n return x\n\n\nclass VSSLayer_up(nn.Module):\n \"\"\" A basic Swin Transformer layer for one stage.\n Args:\n dim (int): Number of input channels.\n depth (int): Number of blocks.\n drop (float, optional): Dropout rate. Default: 0.0\n attn_drop (float, optional): Attention dropout rate. Default: 0.0\n drop_path (float | tuple[float], optional): Stochastic depth rate. Default: 0.0\n norm_layer (nn.Module, optional): Normalization layer. Default: nn.LayerNorm\n downsample (nn.Module | None, optional): Downsample layer at the end of the layer. Default: None\n use_checkpoint (bool): Whether to use checkpointing to save memory. Default: False.\n \"\"\"\n\n def __init__(\n self,\n dim,\n depth,\n attn_drop=0.,\n drop_path=0.,\n norm_layer=nn.LayerNorm,\n upsample=None,\n use_checkpoint=False,\n d_state=16,\n **kwargs,\n ):\n super().__init__()\n self.dim = dim\n self.use_checkpoint = use_checkpoint\n\n # Initialization of blocks remains the same\n self.blocks = nn.ModuleList([\n VSSBlock(\n hidden_dim=dim,\n drop_path=drop_path[i] if isinstance(drop_path, list) else drop_path,\n norm_layer=norm_layer,\n attn_drop_rate=attn_drop,\n d_state=d_state,\n use_modulation=True, # Enable modulation\n )\n for i in range(depth)])\n\n if upsample is not None:\n self.upsample = upsample(dim=dim, norm_layer=norm_layer)\n else:\n self.upsample = None\n\n def forward(self, x, condition):\n if self.upsample is not None:\n x = self.upsample(x)\n\n for blk in self.blocks:\n if self.use_checkpoint:\n x = checkpoint.checkpoint(lambda x, cond: blk(x, cond), x, condition)\n else:\n x = blk(x, condition) # Pass the condition vector to each block\n\n return x\n\n\nclass VSSM(nn.Module):\n def __init__(self, patch_size=4, in_chans=3, num_classes=1000, depths=[2, 2, 9, 2], depths_decoder=[2, 9, 2, 2],\n dims=[96, 192, 384, 768], dims_decoder=[768, 384, 192, 96], d_state=16, drop_rate=0.,\n attn_drop_rate=0., drop_path_rate=0.1,\n norm_layer=nn.LayerNorm, patch_norm=True,\n use_checkpoint=False, **kwargs):\n super().__init__()\n self.num_classes = num_classes\n self.num_layers = len(depths)\n if isinstance(dims, int):\n dims = [int(dims * 2 ** i_layer) for i_layer in range(self.num_layers)]\n self.embed_dim = dims[0]\n self.num_features = dims[-1]\n self.dims = dims\n\n self.patch_embed = PatchEmbed2D(patch_size=patch_size, in_chans=in_chans, embed_dim=self.embed_dim,\n norm_layer=norm_layer if patch_norm else None)\n\n # WASTED absolute position embedding ======================\n self.ape = False\n # self.ape = False\n # drop_rate = 0.0\n if self.ape:\n self.patches_resolution = self.patch_embed.patches_resolution\n self.absolute_pos_embed = nn.Parameter(torch.zeros(1, *self.patches_resolution, self.embed_dim))\n trunc_normal_(self.absolute_pos_embed, std=.02)\n self.pos_drop = nn.Dropout(p=drop_rate)\n\n dpr = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))] # stochastic depth decay rule\n dpr_decoder = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths_decoder))][::-1]\n\n self.layers = nn.ModuleList()\n for i_layer in range(self.num_layers):\n layer = VSSLayer(\n dim=dims[i_layer],\n depth=depths[i_layer],\n d_state=math.ceil(dims[0] / 6) if d_state is None else d_state, # 20240109\n drop=drop_rate,\n attn_drop=attn_drop_rate,\n drop_path=dpr[sum(depths[:i_layer]):sum(depths[:i_layer + 1])],\n norm_layer=norm_layer,\n downsample=PatchMerging2D if (i_layer &lt; self.num_layers - 1) else None,\n use_checkpoint=use_checkpoint,\n )\n self.layers.append(layer)\n\n self.layers_up = nn.ModuleList()\n for i_layer in range(self.num_layers):\n layer = VSSLayer_up(\n dim=dims_decoder[i_layer],\n depth=depths_decoder[i_layer],\n d_state=math.ceil(dims[0] / 6) if d_state is None else d_state, # 20240109\n drop=drop_rate,\n attn_drop=attn_drop_rate,\n drop_path=dpr_decoder[sum(depths_decoder[:i_layer]):sum(depths_decoder[:i_layer + 1])],\n norm_layer=norm_layer,\n upsample=PatchExpand2D if (i_layer != 0) else None,\n use_checkpoint=use_checkpoint,\n )\n self.layers_up.append(layer)\n\n self.final_up = Final_PatchExpand2D(dim=dims_decoder[-1], dim_scale=4, norm_layer=norm_layer)\n self.final_conv = nn.Conv2d(dims_decoder[-1] // 4, num_classes, 1)\n self.apply(self._init_weights)\n\n def _init_weights(self, m: nn.Module):\n \"\"\"\n out_proj.weight which is previously initilized in VSSBlock, would be cleared in nn.Linear\n no fc.weight found in the any of the model parameters\n no nn.Embedding found in the any of the model parameters\n so the thing is, VSSBlock initialization is useless\n\n Conv2D is not intialized !!!\n \"\"\"\n if isinstance(m, nn.Linear):\n trunc_normal_(m.weight, std=.02)\n if isinstance(m, nn.Linear) and m.bias is not None:\n nn.init.constant_(m.bias, 0)\n elif isinstance(m, nn.LayerNorm):\n nn.init.constant_(m.bias, 0)\n nn.init.constant_(m.weight, 1.0)\n\n @torch.jit.ignore\n def no_weight_decay(self):\n return {'absolute_pos_embed'}\n\n @torch.jit.ignore\n def no_weight_decay_keywords(self):\n return {'relative_position_bias_table'}\n\n def forward_features(self, x, condition):\n skip_list = []\n x = self.patch_embed(x)\n if self.ape:\n x = x + self.absolute_pos_embed\n x = self.pos_drop(x)\n\n for layer in self.layers:\n skip_list.append(x)\n x = layer(x, condition)\n return x, skip_list\n\n def forward_features_up(self, x, skip_list, condition):\n # Ensure condition is passed to upsample layers\n for inx, layer_up in enumerate(self.layers_up):\n if inx == 0:\n x = layer_up(x, condition)\n else:\n x = layer_up(x + skip_list[-inx], condition) # Pass condition here\n return x\n\n def forward_final(self, x):\n x = self.final_up(x)\n x = x.permute(0, 3, 1, 2)\n x = self.final_conv(x)\n return x\n\n def forward_backbone(self, x):\n x = self.patch_embed(x)\n if self.ape:\n x = x + self.absolute_pos_embed\n x = self.pos_drop(x)\n\n for layer in self.layers:\n x = layer(x)\n return x\n\n def forward(self, x, condition):\n x, skip_list = self.forward_features(x, condition)\n x = self.forward_features_up(x, skip_list, condition)\n x = self.forward_final(x)\n\n return x"
+}
+```
+User decision: **accepted**
+
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The content was written to a file. Let me read it to find selective_scan usage.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "selective_scan|mamba_inner",
+  "path": "/Users/christoph.bordeck/.cursor/projects/Users-christoph-bordeck-Desktop-ANTIGRAVITY-CHECKION-1/agent-tools/daa2a860-792d-4d31-9d32-d6549abfc7a6.txt",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "selective_scan|mamba_inner",
+  "path": "/Users/christoph.bordeck/.cursor/projects/Users-christoph-bordeck-Desktop-ANTIGRAVITY-CHECKION-1/agent-tools/daa2a860-792d-4d31-9d32-d6549abfc7a6.txt",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 8,
+  "topFiles": [
+    {
+      "uri": "../../../.cursor/projects/Users-christoph-bordeck-Desktop-ANTIGRAVITY-CHECKION-1/agent-tools/daa2a860-792d-4d31-9d32-d6549abfc7a6.txt",
+      "matchCount": 8
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/.cursor/projects/Users-christoph-bordeck-Desktop-ANTIGRAVITY-CHECKION-1/agent-tools/daa2a860-792d-4d31-9d32-d6549abfc7a6.txt</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Found it! In SUM's vmamba.py:
+```python
+try:
+ from mamba_ssm.ops.selective_scan_interface import selective_scan_fn, selective_scan_ref
+except:
+ pass
+```
+So when the import fails (because selective_scan_interface.py has `import selective_scan_cuda` at top and that fails), the except just passes - so selective_scan_fn and selective_scan_ref are **never defined** in the vmamba module's scope. Then later at line 399: `self.selective_scan = selective_scan_fn` - but selective_scan_fn was never defined (the import failed and they did pass). So we get NameError: name 'selective_scan_fn' is not defined.
+
+So the fix is: we need to provide a fallback when the import fails. In the SUM repo we can't change the cloned code easily in the Dockerfile (we could patch the file after cloning). So we could:
+1. In our Dockerfile, after cloning SUM, patch SUM's net/models/vmamba.py to set selective_scan_fn = selective_scan_ref when the first import fails, and import selective_scan_ref from a local stub or from mamba_ssm. But the problem is selective_scan_ref is in the same file that fails to load (selective_scan_interface.py). So we can't get selective_scan_ref from there.
+2. We could patch mamba_ssm's selective_scan_interface.py to wrap the import of selective_scan_cuda in try/except and when it fails, set selective_scan_fn = selective_scan_ref (and we'd need to implement or get the ref version). The ref version is in the same file - so if we could get the file to load without the cuda import, we could define selective_scan_fn = selective_scan_ref. So we need to patch the mamba_ssm package's selective_scan_interface.py to do:
+   try:
+     import selective_scan_cuda
+   except ImportError:
+     selective_scan_cuda = None  # and then define SelectiveScanFn to use selective_scan_ref, and selective_scan_fn = selective_scan_ref
+   But the SelectiveScanFn class uses selective_scan_cuda.fwd and .bwd - so we'd need a different implementation. Actually the simpler approach: when ImportError, set selective_scan_fn = selective_scan_ref (and we need to not define SelectiveScanFn that uses cuda - we need a version that uses ref). So the patch would be: in selective_scan_interface.py, wrap "import selective_scan_cuda" in try/except. If it fails, then don't define SelectiveScanFn (or define it to use ref), and set selective_scan_fn = selective_scan_ref. The file already has selective_scan_ref defined - it's after the SelectiveScanFn class. So the order in the file is: import selective_scan_cuda, class SelectiveScanFn (uses selective_scan_cuda), def selective_scan_fn (returns SelectiveScanFn.apply), def selective_scan_ref. So if we change the top to:
+   try:
+     import selective_scan_cuda
+   except ImportError:
+     selective_scan_cuda = None
+   then we need SelectiveScanFn to use selective_scan_ref when selective_scan_cuda is None. That would require rewriting SelectiveScanFn. The easier approach: when selective_scan_cuda is None, define selective_scan_fn = selective_scan_ref. So we'd add at the end of the file (or after defining selective_scan_ref): 
+   if selective_scan_cuda is None:
+     selective_scan_fn = selective_scan_ref
+   So the patch would be:
+   1. Replace "import selective_scan_cuda" with try/except and set selective_scan_cuda = None on failure
+   2. Wrap the rest of the module (SelectiveScanFn class, etc.) in "if selective_scan_cuda is not None:" so they're only defined when we have cuda
+   3. Add "else: selective_scan_fn = selective_scan_ref" 
+   But MambaInnerFn also uses selective_scan_cuda and causal_conv1d_cuda - so we'd need mamba_inner_fn = mamba_inner_ref when cuda is not available. So the patch gets big. Alternatively we could patch the installed mamba_ssm in the Dockerfile after pip install: run a sed or Python script that modifies the selective_scan_interface.py. Let me create a patch file that we apply in the Dockerfile. Actually the cleanest would be: in main_sum.py, before we "from net import SUM", we monkey-patch the mamba_ssm.ops.selective_scan_interface module. We'd need to:
+ 1. Import the module with importlib, catching the ImportError
+ 2. If it fails, we create a minimal stub that defines selective_scan_fn and selective_scan_ref. But selective_scan_ref is a full implementation - we can't easily reimplement it. So we need to get it from somewhere. The only place is the same file that's failing to load. So we have to patch the file on disk. I'll create a Python script that we run in the Dockerfile after pip install - it patches the mamba_ssm selective_scan_interface.py to use try/except for the cuda import and when it fails, define selective_scan_fn = selective_scan_ref (and we need to make sure selective_scan_ref is defined - it's in the same file, so we need to not fail the whole file. So the fix is: change line 1 "import selective_scan_cuda" to:
+ try:
+     import selective_scan_cuda
+ except ImportError:
+     selective_scan_cuda = None
+ Then we need the rest of the file to only define SelectiveScanFn and selective_scan_fn when selective_scan_cuda is not None. And at the end define selective_scan_fn = selective_scan_ref when selective_scan_cuda is None. This is a significant patch. Let me look at the exact structure of the v1.0.1 file again. Actually a simpler approach: create our own small module that we put in the SUM repo or in the path before loading - that provides selective_scan_fn and selective_scan_ref. We'd implement selective_scan_ref in pure PyTorch (copy from the mamba repo). Then in main_sum, before importing SUM, we do:
+ import sys
+ sys.modules['mamba_ssm.ops.selective_scan_interface'] = our_stub_module
+ But then when vmamba does "from mamba_ssm.ops.selective_scan_interface import selective_scan_fn, selective_scan_ref", it would get our stub. We need our stub to have both. We can copy selective_scan_ref from the mamba source (it's pure Python). And we set selective_scan_fn = selective_scan_ref in our stub. So we need to implement or copy selective_scan_ref. It's about 60 lines. Let me create a patch that we apply to the installed mamba_ssm in the Dockerfile - replace the top-level "import selective_scan_cuda" with a try/except and add at the end "if selective_scan_cuda is None: selective_scan_fn = selective_scan_ref". And wrap the class SelectiveScanFn and def selective_scan_fn in "if selective_scan_cuda is not None:". That way when cuda is None, we only have selective_scan_ref defined and we set selective_scan_fn = selective_scan_ref. But MambaInnerFn still uses selective_scan_cuda - so the Mamba block would need to use mamba_inner_ref. So we also need to set mamba_inner_fn = mamba_inner_ref when cuda is None. So the patch needs to wrap the entire SelectiveScanFn and the first selective_scan_fn def and MambaInnerFn in "if selective_scan_cuda is not None" and add "else: selective_scan_fn = selective_scan_ref; mamba_inner_fn = mamba_inner_ref". Let me do that in the Dockerfile with a RUN that patches the file.
+</details></think>
+
+---
+
+
+Fehlerquelle: SUMs `vmamba.py` macht `from mamba_ssm.ops.selective_scan_interface import selective_scan_fn, selective_scan_ref` in einem try/except mit `pass`. Schlägt der Import fehl (weil `selective_scan_cuda` fehlt), sind die Namen nie gesetzt; später wird trotzdem `self.selective_scan = selective_scan_fn` verwendet → NameError.
+
+Wir patchen die installierte `mamba_ssm`-Datei im Dockerfile so, dass bei fehlendem CUDA `selective_scan_fn` und `mamba_inner_fn` auf die Ref-Implementierungen verweisen.
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="web_fetch">
+<details>
+<summary>Tool use: **web_fetch**</summary>
+
+
+Parameters:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/state-spaces/mamba/v1.0.1/mamba_ssm/ops/selective_scan_interface.py"
+}
+```
+Result:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/state-spaces/mamba/v1.0.1/mamba_ssm/ops/selective_scan_interface.py",
+  "markdown": "# Copyright (c) 2023, Tri Dao, Albert Gu.\n\nimport torch\nimport torch.nn.functional as F\nfrom torch.cuda.amp import custom_bwd, custom_fwd\n\nfrom einops import rearrange, repeat\n\nfrom causal_conv1d import causal_conv1d_fn\nimport causal_conv1d_cuda\nimport selective_scan_cuda\n\n\nclass SelectiveScanFn(torch.autograd.Function):\n\n @staticmethod\n def forward(ctx, u, delta, A, B, C, D=None, z=None, delta_bias=None, delta_softplus=False,\n return_last_state=False):\n if u.stride(-1) != 1:\n u = u.contiguous()\n if delta.stride(-1) != 1:\n delta = delta.contiguous()\n if D is not None:\n D = D.contiguous()\n if B.stride(-1) != 1:\n B = B.contiguous()\n if C.stride(-1) != 1:\n C = C.contiguous()\n if z is not None and z.stride(-1) != 1:\n z = z.contiguous()\n if B.dim() == 3:\n B = rearrange(B, \"b dstate l -&gt; b 1 dstate l\")\n ctx.squeeze_B = True\n if C.dim() == 3:\n C = rearrange(C, \"b dstate l -&gt; b 1 dstate l\")\n ctx.squeeze_C = True\n out, x, *rest = selective_scan_cuda.fwd(u, delta, A, B, C, D, z, delta_bias, delta_softplus)\n ctx.delta_softplus = delta_softplus\n ctx.has_z = z is not None\n last_state = x[:, :, -1, 1::2] # (batch, dim, dstate)\n if not ctx.has_z:\n ctx.save_for_backward(u, delta, A, B, C, D, delta_bias, x)\n return out if not return_last_state else (out, last_state)\n else:\n ctx.save_for_backward(u, delta, A, B, C, D, z, delta_bias, x, out)\n out_z = rest[0]\n return out_z if not return_last_state else (out_z, last_state)\n\n @staticmethod\n def backward(ctx, dout, *args):\n if not ctx.has_z:\n u, delta, A, B, C, D, delta_bias, x = ctx.saved_tensors\n z = None\n out = None\n else:\n u, delta, A, B, C, D, z, delta_bias, x, out = ctx.saved_tensors\n if dout.stride(-1) != 1:\n dout = dout.contiguous()\n # The kernel supports passing in a pre-allocated dz (e.g., in case we want to fuse the\n # backward of selective_scan_cuda with the backward of chunk).\n # Here we just pass in None and dz will be allocated in the C++ code.\n du, ddelta, dA, dB, dC, dD, ddelta_bias, *rest = selective_scan_cuda.bwd(\n u, delta, A, B, C, D, z, delta_bias, dout, x, out, None, ctx.delta_softplus,\n False # option to recompute out_z, not used here\n )\n dz = rest[0] if ctx.has_z else None\n dB = dB.squeeze(1) if getattr(ctx, \"squeeze_B\", False) else dB\n dC = dC.squeeze(1) if getattr(ctx, \"squeeze_C\", False) else dC\n return (du, ddelta, dA, dB, dC,\n dD if D is not None else None,\n dz,\n ddelta_bias if delta_bias is not None else None,\n None,\n None)\n\n\ndef selective_scan_fn(u, delta, A, B, C, D=None, z=None, delta_bias=None, delta_softplus=False,\n return_last_state=False):\n \"\"\"if return_last_state is True, returns (out, last_state)\n last_state has shape (batch, dim, dstate). Note that the gradient of the last state is\n not considered in the backward pass.\n \"\"\"\n return SelectiveScanFn.apply(u, delta, A, B, C, D, z, delta_bias, delta_softplus, return_last_state)\n\n\ndef selective_scan_ref(u, delta, A, B, C, D=None, z=None, delta_bias=None, delta_softplus=False,\n return_last_state=False):\n \"\"\"\n u: r(B D L)\n delta: r(B D L)\n A: c(D N) or r(D N)\n B: c(D N) or r(B N L) or r(B N 2L) or r(B G N L) or (B G N L)\n C: c(D N) or r(B N L) or r(B N 2L) or r(B G N L) or (B G N L)\n D: r(D)\n z: r(B D L)\n delta_bias: r(D), fp32\n\n out: r(B D L)\n last_state (optional): r(B D dstate) or c(B D dstate)\n \"\"\"\n dtype_in = u.dtype\n u = u.float()\n delta = delta.float()\n if delta_bias is not None:\n delta = delta + delta_bias[..., None].float()\n if delta_softplus:\n delta = F.softplus(delta)\n batch, dim, dstate = u.shape[0], A.shape[0], A.shape[1]\n is_variable_B = B.dim() &gt;= 3\n is_variable_C = C.dim() &gt;= 3\n if A.is_complex():\n if is_variable_B:\n B = torch.view_as_complex(rearrange(B.float(), \"... (L two) -&gt; ... L two\", two=2))\n if is_variable_C:\n C = torch.view_as_complex(rearrange(C.float(), \"... (L two) -&gt; ... L two\", two=2))\n else:\n B = B.float()\n C = C.float()\n x = A.new_zeros((batch, dim, dstate))\n ys = []\n deltaA = torch.exp(torch.einsum('bdl,dn-&gt;bdln', delta, A))\n if not is_variable_B:\n deltaB_u = torch.einsum('bdl,dn,bdl-&gt;bdln', delta, B, u)\n else:\n if B.dim() == 3:\n deltaB_u = torch.einsum('bdl,bnl,bdl-&gt;bdln', delta, B, u)\n else:\n B = repeat(B, \"B G N L -&gt; B (G H) N L\", H=dim // B.shape[1])\n deltaB_u = torch.einsum('bdl,bdnl,bdl-&gt;bdln', delta, B, u)\n if is_variable_C and C.dim() == 4:\n C = repeat(C, \"B G N L -&gt; B (G H) N L\", H=dim // C.shape[1])\n last_state = None\n for i in range(u.shape[2]):\n x = deltaA[:, :, i] * x + deltaB_u[:, :, i]\n if not is_variable_C:\n y = torch.einsum('bdn,dn-&gt;bd', x, C)\n else:\n if C.dim() == 3:\n y = torch.einsum('bdn,bn-&gt;bd', x, C[:, :, i])\n else:\n y = torch.einsum('bdn,bdn-&gt;bd', x, C[:, :, :, i])\n if i == u.shape[2] - 1:\n last_state = x\n if y.is_complex():\n y = y.real * 2\n ys.append(y)\n y = torch.stack(ys, dim=2) # (batch dim L)\n out = y if D is None else y + u * rearrange(D, \"d -&gt; d 1\")\n if z is not None:\n out = out * F.silu(z)\n out = out.to(dtype=dtype_in)\n return out if not return_last_state else (out, last_state)\n\n\nclass MambaInnerFn(torch.autograd.Function):\n\n @staticmethod\n @custom_fwd\n def forward(ctx, xz, conv1d_weight, conv1d_bias, x_proj_weight, delta_proj_weight,\n out_proj_weight, out_proj_bias,\n A, B=None, C=None, D=None, delta_bias=None, B_proj_bias=None,\n C_proj_bias=None, delta_softplus=True, checkpoint_lvl=1):\n \"\"\"\n xz: (batch, dim, seqlen)\n \"\"\"\n assert checkpoint_lvl in [0, 1]\n L = xz.shape[-1]\n delta_rank = delta_proj_weight.shape[1]\n d_state = A.shape[-1] * (1 if not A.is_complex() else 2)\n if torch.is_autocast_enabled():\n x_proj_weight = x_proj_weight.to(dtype=torch.get_autocast_gpu_dtype())\n delta_proj_weight = delta_proj_weight.to(dtype=torch.get_autocast_gpu_dtype())\n out_proj_weight = out_proj_weight.to(dtype=torch.get_autocast_gpu_dtype())\n out_proj_bias = (out_proj_bias.to(dtype=torch.get_autocast_gpu_dtype())\n if out_proj_bias is not None else None)\n if xz.stride(-1) != 1:\n xz = xz.contiguous()\n conv1d_weight = rearrange(conv1d_weight, \"d 1 w -&gt; d w\")\n x, z = xz.chunk(2, dim=1)\n conv1d_bias = conv1d_bias.contiguous() if conv1d_bias is not None else None\n conv1d_out = causal_conv1d_cuda.causal_conv1d_fwd(x, conv1d_weight, conv1d_bias, True)\n # We're being very careful here about the layout, to avoid extra transposes.\n # We want delta to have d as the slowest moving dimension\n # and L as the fastest moving dimension, since those are what the ssm_scan kernel expects.\n x_dbl = F.linear(rearrange(conv1d_out, 'b d l -&gt; (b l) d'), x_proj_weight) # (bl d)\n delta = rearrange(delta_proj_weight @ x_dbl[:, :delta_rank].t(), \"d (b l) -&gt; b d l\", l = L)\n ctx.is_variable_B = B is None\n ctx.is_variable_C = C is None\n ctx.B_proj_bias_is_None = B_proj_bias is None\n ctx.C_proj_bias_is_None = C_proj_bias is None\n if B is None: # variable B\n B = x_dbl[:, delta_rank:delta_rank + d_state] # (bl dstate)\n if B_proj_bias is not None:\n B = B + B_proj_bias.to(dtype=B.dtype)\n if not A.is_complex():\n # B = rearrange(B, \"(b l) dstate -&gt; b dstate l\", l=L).contiguous()\n B = rearrange(B, \"(b l) dstate -&gt; b 1 dstate l\", l=L).contiguous()\n else:\n B = rearrange(B, \"(b l) (dstate two) -&gt; b 1 dstate (l two)\", l=L, two=2).contiguous()\n else:\n if B.stride(-1) != 1:\n B = B.contiguous()\n if C is None: # variable C\n C = x_dbl[:, -d_state:] # (bl dstate)\n if C_proj_bias is not None:\n C = C + C_proj_bias.to(dtype=C.dtype)\n if not A.is_complex():\n # C = rearrange(C, \"(b l) dstate -&gt; b dstate l\", l=L).contiguous()\n C = rearrange(C, \"(b l) dstate -&gt; b 1 dstate l\", l=L).contiguous()\n else:\n C = rearrange(C, \"(b l) (dstate two) -&gt; b 1 dstate (l two)\", l=L, two=2).contiguous()\n else:\n if C.stride(-1) != 1:\n C = C.contiguous()\n if D is not None:\n D = D.contiguous()\n out, scan_intermediates, out_z = selective_scan_cuda.fwd(\n conv1d_out, delta, A, B, C, D, z, delta_bias, delta_softplus\n )\n ctx.delta_softplus = delta_softplus\n ctx.out_proj_bias_is_None = out_proj_bias is None\n ctx.checkpoint_lvl = checkpoint_lvl\n if checkpoint_lvl &gt;= 1: # Will recompute conv1d_out and delta in the backward pass\n conv1d_out, delta = None, None\n ctx.save_for_backward(xz, conv1d_weight, conv1d_bias, x_dbl, x_proj_weight,\n delta_proj_weight, out_proj_weight, conv1d_out, delta,\n A, B, C, D, delta_bias, scan_intermediates, out)\n return F.linear(rearrange(out_z, \"b d l -&gt; b l d\"), out_proj_weight, out_proj_bias)\n\n @staticmethod\n @custom_bwd\n def backward(ctx, dout):\n # dout: (batch, seqlen, dim)\n (xz, conv1d_weight, conv1d_bias, x_dbl, x_proj_weight, delta_proj_weight, out_proj_weight,\n conv1d_out, delta, A, B, C, D, delta_bias, scan_intermediates, out) = ctx.saved_tensors\n L = xz.shape[-1]\n delta_rank = delta_proj_weight.shape[1]\n d_state = A.shape[-1] * (1 if not A.is_complex() else 2)\n x, z = xz.chunk(2, dim=1)\n if dout.stride(-1) != 1:\n dout = dout.contiguous()\n if ctx.checkpoint_lvl == 1:\n conv1d_out = causal_conv1d_cuda.causal_conv1d_fwd(x, conv1d_weight, conv1d_bias, True)\n delta = rearrange(delta_proj_weight @ x_dbl[:, :delta_rank].t(),\n \"d (b l) -&gt; b d l\", l = L)\n # The kernel supports passing in a pre-allocated dz (e.g., in case we want to fuse the\n # backward of selective_scan_cuda with the backward of chunk).\n dxz = torch.empty_like(xz) # (batch, dim, seqlen)\n dx, dz = dxz.chunk(2, dim=1)\n dout = rearrange(dout, \"b l e -&gt; e (b l)\")\n dout_y = rearrange(out_proj_weight.t() @ dout, \"d (b l) -&gt; b d l\", l=L)\n dconv1d_out, ddelta, dA, dB, dC, dD, ddelta_bias, dz, out_z = selective_scan_cuda.bwd(\n conv1d_out, delta, A, B, C, D, z, delta_bias, dout_y, scan_intermediates, out, dz,\n ctx.delta_softplus,\n True # option to recompute out_z\n )\n dout_proj_weight = torch.einsum(\"eB,dB-&gt;ed\", dout, rearrange(out_z, \"b d l -&gt; d (b l)\"))\n dout_proj_bias = dout.sum(dim=(0, 1)) if not ctx.out_proj_bias_is_None else None\n dD = dD if D is not None else None\n dx_dbl = torch.empty_like(x_dbl)\n dB_proj_bias = None\n if ctx.is_variable_B:\n if not A.is_complex():\n dB = rearrange(dB, \"b 1 dstate l -&gt; (b l) dstate\").contiguous()\n else:\n dB = rearrange(dB, \"b 1 dstate (l two) -&gt; (b l) (dstate two)\", two=2).contiguous()\n dB_proj_bias = dB.sum(0) if not ctx.B_proj_bias_is_None else None\n dx_dbl[:, delta_rank:delta_rank + d_state] = dB # (bl d)\n dB = None\n dC_proj_bias = None\n if ctx.is_variable_C:\n if not A.is_complex():\n dC = rearrange(dC, \"b 1 dstate l -&gt; (b l) dstate\").contiguous()\n else:\n dC = rearrange(dC, \"b 1 dstate (l two) -&gt; (b l) (dstate two)\", two=2).contiguous()\n dC_proj_bias = dC.sum(0) if not ctx.C_proj_bias_is_None else None\n dx_dbl[:, -d_state:] = dC # (bl d)\n dC = None\n ddelta = rearrange(ddelta, \"b d l -&gt; d (b l)\")\n ddelta_proj_weight = torch.einsum(\"dB,Br-&gt;dr\", ddelta, x_dbl[:, :delta_rank])\n dx_dbl[:, :delta_rank] = torch.einsum(\"dB,dr-&gt;Br\", ddelta, delta_proj_weight)\n dconv1d_out = rearrange(dconv1d_out, \"b d l -&gt; d (b l)\")\n dx_proj_weight = torch.einsum(\"Br,Bd-&gt;rd\", dx_dbl, rearrange(conv1d_out, \"b d l -&gt; (b l) d\"))\n dconv1d_out = torch.addmm(dconv1d_out, x_proj_weight.t(), dx_dbl.t(), out=dconv1d_out)\n dconv1d_out = rearrange(dconv1d_out, \"d (b l) -&gt; b d l\", b=x.shape[0], l=x.shape[-1])\n # The kernel supports passing in a pre-allocated dx (e.g., in case we want to fuse the\n # backward of conv1d with the backward of chunk).\n dx, dconv1d_weight, dconv1d_bias = causal_conv1d_cuda.causal_conv1d_bwd(\n x, conv1d_weight, conv1d_bias, dconv1d_out, dx, True\n )\n dconv1d_bias = dconv1d_bias if conv1d_bias is not None else None\n dconv1d_weight = rearrange(dconv1d_weight, \"d w -&gt; d 1 w\")\n return (dxz, dconv1d_weight, dconv1d_bias, dx_proj_weight, ddelta_proj_weight,\n dout_proj_weight, dout_proj_bias,\n dA, dB, dC, dD,\n ddelta_bias if delta_bias is not None else None,\n dB_proj_bias, dC_proj_bias, None)\n\n\ndef mamba_inner_fn(\n xz, conv1d_weight, conv1d_bias, x_proj_weight, delta_proj_weight,\n out_proj_weight, out_proj_bias,\n A, B=None, C=None, D=None, delta_bias=None, B_proj_bias=None,\n C_proj_bias=None, delta_softplus=True\n):\n return MambaInnerFn.apply(xz, conv1d_weight, conv1d_bias, x_proj_weight, delta_proj_weight,\n out_proj_weight, out_proj_bias,\n A, B, C, D, delta_bias, B_proj_bias, C_proj_bias, delta_softplus)\n\n\ndef mamba_inner_ref(\n xz, conv1d_weight, conv1d_bias, x_proj_weight, delta_proj_weight,\n out_proj_weight, out_proj_bias,\n A, B=None, C=None, D=None, delta_bias=None, B_proj_bias=None,\n C_proj_bias=None, delta_softplus=True\n):\n L = xz.shape[-1]\n delta_rank = delta_proj_weight.shape[1]\n d_state = A.shape[-1] * (1 if not A.is_complex() else 2)\n x, z = xz.chunk(2, dim=1)\n x = causal_conv1d_fn(x, rearrange(conv1d_weight, \"d 1 w -&gt; d w\"), conv1d_bias, \"silu\")\n # We're being very careful here about the layout, to avoid extra transposes.\n # We want delta to have d as the slowest moving dimension\n # and L as the fastest moving dimension, since those are what the ssm_scan kernel expects.\n x_dbl = F.linear(rearrange(x, 'b d l -&gt; (b l) d'), x_proj_weight) # (bl d)\n delta = delta_proj_weight @ x_dbl[:, :delta_rank].t()\n delta = rearrange(delta, \"d (b l) -&gt; b d l\", l=L)\n if B is None: # variable B\n B = x_dbl[:, delta_rank:delta_rank + d_state] # (bl d)\n if B_proj_bias is not None:\n B = B + B_proj_bias.to(dtype=B.dtype)\n if not A.is_complex():\n B = rearrange(B, \"(b l) dstate -&gt; b dstate l\", l=L).contiguous()\n else:\n B = rearrange(B, \"(b l) (dstate two) -&gt; b dstate (l two)\", l=L, two=2).contiguous()\n if C is None: # variable B\n C = x_dbl[:, -d_state:] # (bl d)\n if C_proj_bias is not None:\n C = C + C_proj_bias.to(dtype=C.dtype)\n if not A.is_complex():\n C = rearrange(C, \"(b l) dstate -&gt; b dstate l\", l=L).contiguous()\n else:\n C = rearrange(C, \"(b l) (dstate two) -&gt; b dstate (l two)\", l=L, two=2).contiguous()\n y = selective_scan_fn(x, delta, A, B, C, D, z=z, delta_bias=delta_bias, delta_softplus=True)\n return F.linear(rearrange(y, \"b d l -&gt; b l d\"), out_proj_weight, out_proj_bias)\n"
+}
+```
+User decision: **accepted**
+
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So mamba_inner_ref uses causal_conv1d_fn (the Python fallback from causal_conv1d when CUDA is not built) and selective_scan_fn. When we have SKIP_CUDA_BUILD, causal_conv1d still installs and provides causal_conv1d_fn (the Python impl). So we need selective_scan_interface to load and provide selective_scan_fn = selective_scan_ref. The only way is to patch the file so that:
+1. try: import selective_scan_cuda / except: selective_scan_cuda = None
+2. Wrap everything that uses selective_scan_cuda or causal_conv1d_cuda in "if selective_scan_cuda is not None" (SelectiveScanFn, selective_scan_fn wrapper, MambaInnerFn, mamba_inner_fn)
+3. Add "else: selective_scan_fn = selective_scan_ref; mamba_inner_fn = mamba_inner_ref"
+
+But causal_conv1d_cuda is also imported at top - "import causal_conv1d_cuda". So when we have SKIP_CUDA_BUILD for causal_conv1d, that module doesn't exist either. So we need:
+try:
+    import causal_conv1d_cuda
+    import selective_scan_cuda
+except ImportError:
+    causal_conv1d_cuda = None
+    selective_scan_cuda = None
+
+Then wrap the CUDA-dependent parts and add the else branch. Let me create a patch script that we run in the Dockerfile. The script will find the site-packages mamba_ssm and patch the file.
+</details></think>
+
+---
+
+
+Patchen der installierten `mamba_ssm`-Datei im Build, damit bei fehlendem CUDA die Ref-Implementierungen verwendet werden:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/Dockerfile.sum</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll create a small Python patch script that we COPY and RUN in the Dockerfile. The script will:
+1. Find mamba_ssm.ops.selective_scan_interface path
+2. Read the file
+3. Replace "from causal_conv1d import causal_conv1d_fn\nimport causal_conv1d_cuda\nimport selective_scan_cuda" with a try/except that sets causal_conv1d_cuda and selective_scan_cuda to None on ImportError
+4. Then we need to wrap the CUDA-only classes and add fallbacks. This is complex. Simpler approach: replace the two import lines with:
+try:
+    from causal_conv1d import causal_conv1d_fn
+    import causal_conv1d_cuda
+    import selective_scan_cuda
+    _have_cuda = True
+except ImportError:
+    from causal_conv1d import causal_conv1d_fn
+    causal_conv1d_cuda = None
+    selective_scan_cuda = None
+    _have_cuda = False
+
+Then we need everything from "class SelectiveScanFn" through "def mamba_inner_fn" to be indented under "if _have_cuda:". And add:
+else:
+    selective_scan_fn = selective_scan_ref
+    mamba_inner_fn = mamba_inner_ref
+
+That's a lot of line changes. Easier: write a new version of the file that we copy over the installed one. I'll create a patched version of the file as saliency-service/patch_mamba_ssm_cpu.py that when run, patches the installed file. Actually the simplest is: create a file patch_selective_scan_interface.py that uses regex or line-by-line to do the patch. Let me try a minimal patch: 1. Replace "import causal_conv1d_cuda\nimport selective_scan_cuda" with "try:\n import causal_conv1d_cuda\n import selective_scan_cuda\nexcept ImportError:\n causal_conv1d_cuda = None\n selective_scan_cuda = None". That way the imports don't fail. But then SelectiveScanFn.forward uses selective_scan_cuda.fwd - so we'd get AttributeError when calling it. So we really need to either not define SelectiveScanFn when cuda is None, or make SelectiveScanFn use the ref when cuda is None. The cleanest is: when cuda is None, at the end of the file add "selective_scan_fn = selective_scan_ref" and "mamba_inner_fn = mamba_inner_ref". But then we must not define the CUDA-dependent SelectiveScanFn and selective_scan_fn and MambaInnerFn and mamba_inner_fn when cuda is None. So we need to wrap lines 15-301 (from "class SelectiveScanFn" to the end of "def mamba_inner_fn") in "if causal_conv1d_cuda is not None and selective_scan_cuda is not None:" and then add "else:\n    selective_scan_fn = selective_scan_ref\n    mamba_inner_fn = mamba_inner_ref". So the structure would be:
+... imports ...
+try:
+    import causal_conv1d_cuda
+    import selective_scan_cuda
+except ImportError:
+    causal_conv1d_cuda = None
+    selective_scan_cuda = None
+
+if causal_conv1d_cuda is not None and selective_scan_cuda is not None:
+    class SelectiveScanFn ...
+    def selective_scan_fn ...
+    class MambaInnerFn ...
+    def mamba_inner_fn ...
+else:
+    selective_scan_fn = selective_scan_ref  # defined below
+    mamba_inner_fn = mamba_inner_ref       # defined below
+
+def selective_scan_ref ...
+def mamba_inner_ref ...
+ 
+So we need to reorder: define selective_scan_ref and mamba_inner_ref first, then the if/else. That way in the else branch they're already defined. Let me create a Python script that does this patch by reading the file and writing the modified version.
+</details></think>
+
+---
+
+
+Patch-Skript erstellen und im Dockerfile ausführen:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/patch_mamba_ssm_cpu.py</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The string replacement for the block might be wrong because the "block" includes the def mamba_inner_ref( - no, I set idx_end so that we don't include "\n\ndef mamba_inner_ref(". So block ends at "delta_softplus)\n\n". Then we add the else branch and then "def mamba_inner_ref(" - but we're cutting from the original text "def mamba_inner_ref(" so we need to be careful. Let me re-read. idx_end = text.index(marker_end) + len(marker_end) - len("\n\ndef mamba_inner_ref("). So marker_end is " return MambaInnerFn.apply(...)\n\n\ndef mamba_inner_ref(". So we want the block to end right before "\n\ndef mamba_inner_ref(". So idx_end = text.index(marker_end). That would be the start of " return Mamba...". So the block would be from class SelectiveScanFn up to and including " return MambaInnerFn.apply(...)". So block = text[idx_start:idx_end] where idx_end = text.index(marker_end). Then we have " return MambaInnerFn..." in the block. So we need idx_end to be the position right after the end of mamba_inner_fn and before mamba_inner_ref. So idx_end = text.index("\n\ndef mamba_inner_ref("). That way block = text[idx_start:idx_end] is from class SelectiveScanFn through the end of def mamba_inner_fn. Good. Let me fix the script - use idx_end = text.index("\n\ndef mamba_inner_ref(") so the block doesn't include mamba_inner_ref. Then new_block = if _have_cuda: + indented + else branch. Then text = text[:idx_start] + new_block + text[idx_end:]. So we keep the rest of the file (def mamba_inner_ref ...) as is.
+</details></think>
+
+---
+
+
+Patch-Skript korrigieren: Blockgrenzen und Ersetzung präzise setzen.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/patch_mamba_ssm_cpu.py</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+But wait - selective_scan_ref and mamba_inner_ref are defined *after* the block we're wrapping. So when we do "else: selective_scan_fn = selective_scan_ref", at that point in the file selective_scan_ref hasn't been defined yet - it's defined later in the file. So we need to define the else branch after selective_scan_ref and mamba_inner_ref are defined. So the structure should be:
+
+if _have_cuda:
+    class SelectiveScanFn ...
+    def selective_scan_fn ...
+    class MambaInnerFn ...
+    def mamba_inner_fn ...
+def selective_scan_ref ...
+def mamba_inner_ref ...
+if not _have_cuda:
+    selective_scan_fn = selective_scan_ref
+    mamba_inner_fn = mamba_inner_ref
+
+So we need to add the fallback at the very end of the file instead of in the else right after the if _have_cuda block. Let me re-read the file structure. The order in the original is: imports, SelectiveScanFn, selective_scan_fn, selective_scan_ref, MambaInnerFn, mamba_inner_fn, mamba_inner_ref. So selective_scan_ref is defined before MambaInnerFn. So if we do:
+if _have_cuda:
+    SelectiveScanFn, selective_scan_fn, MambaInnerFn, mamba_inner_fn
+else:
+    selective_scan_fn = selective_scan_ref
+    mamba_inner_fn = mamba_inner_ref
+def selective_scan_ref ...
+def mamba_inner_ref ...
+
+Then in the else branch selective_scan_ref and mamba_inner_ref are not defined yet! So we must put the fallback after both ref functions. So the patch should be: 1) Wrap only the CUDA parts in if _have_cuda (SelectiveScanFn, selective_scan_fn, MambaInnerFn, mamba_inner_fn). 2) Leave selective_scan_ref and mamba_inner_ref as-is (they're always defined). 3) At the very end of the file add: if not _have_cuda: selective_scan_fn = selective_scan_ref; mamba_inner_fn = mamba_inner_ref.
+
+So we need two changes: 1) try/except imports, 2) wrap the block in if _have_cuda, 3) at end of file add the fallback. Let me update the script to add the fallback at the end of the file.
+</details></think>
+
+---
+
+
+Fallback ans Ende setzen, da `selective_scan_ref` und `mamba_inner_ref` erst danach definiert sind.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/patch_mamba_ssm_cpu.py</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now we need to add the patch to the Dockerfile: after pip install -r SUM/requirements.txt, run the patch script. We need to COPY the script and run it.
+</details></think>
+
+---
+
+
+Dockerfile um den Patch-Schritt erweitern:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/Dockerfile.sum</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The COPY will happen before the patch - but patch_mamba_ssm_cpu.py is in saliency-service/, and the Docker context is saliency-service (Base Directory), so COPY patch_mamba_ssm_cpu.py . will copy it to /app. Good. But we need to copy it after the SUM requirements are installed - we already have COPY main_sum.py etc later. So the COPY patch_mamba_ssm_cpu.py . is fine here. Run it and then remove it if we want to keep the image small, or leave it. I'll leave it for now.
+
+One more thing: mamba_inner_ref uses causal_conv1d_fn - when we have SKIP_CUDA_BUILD for causal_conv1d, does it still provide causal_conv1d_fn? Let me check - causal_conv1d when built without CUDA still has the Python package; it might have a causal_conv1d_fn that's a pure Python fallback. Let me check the causal-conv1d package - when SKIP_CUDA_BUILD, it doesn't add the CUDA extension but the package still has causal_conv1d_fn from somewhere. Looking at the causal-conv1d repo, there might be a causal_conv1d_fn in the Python code. So we're good. Let me double-check the patch script - the indentation for the block. The original file uses 1 space for class body (weird). So when we add "    " we get 4+1=5 spaces for those lines. That might break. Let me check the actual mamba file - it uses single space indentation for the class. So the file has:
+class SelectiveScanFn(torch.autograd.Function):
+ @staticmethod
+ def forward(ctx, ...
+So when we indent with 4 spaces we get "    class SelectiveScanFn" and "     @staticmethod" (5 spaces). That's wrong - we need to add 4 spaces to each line, so " " becomes "     " (5 spaces). So the indented block should add 4 spaces to the beginning of each line. So for a line that has " def forward", we get "     def forward". Good.
+</details></think>
+
+---
+
+
+Knowledge-Datei kurz ergänzen:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-saliency-sum-build.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me verify the patch script one more time. The mamba_ssm v1.0.1 file has 1-space indentation for class/function bodies (unusual). When we do "    " + line, we're adding 4 spaces. So a line that was " def forward" becomes "     def forward". Good. But what about empty lines - we have " line if line.strip() else """. So empty lines become "    " (4 spaces). That's fine. Let me also make sure the "if not _have_cuda" block is correct - we're appending to the end of the file. The file ends with mamba_inner_ref's last line (return F.linear(...)). So we append "\n\nif not _have_cuda:\n    ...". Good.
+</details></think>
+
+---
+
+
+Zusammenfassung der Änderungen:
+
+**Ursache:**  
+SUM nutzt in `vmamba.py` `selective_scan_fn` aus `mamba_ssm.ops.selective_scan_interface`. Der Import steht in einem `try/except: pass`. Ohne CUDA schlägt der Import fehl (weil `selective_scan_cuda` nicht gebaut wurde), die Namen werden nicht gesetzt, aber später wird trotzdem `self.selective_scan = selective_scan_fn` verwendet → **NameError: name 'selective_scan_fn' is not defined**.
+
+**Lösung:**
+
+1. **`saliency-service/patch_mamba_ssm_cpu.py`** (neu)  
+   - Setzt die CUDA-Imports in der installierten `mamba_ssm/ops/selective_scan_interface.py` in ein `try/except` und führt `_have_cuda = True/False`.  
+   - Alles, was nur mit CUDA läuft (SelectiveScanFn, selective_scan_fn, MambaInnerFn, mamba_inner_fn), wird in `if _have_cuda:` gepackt.  
+   - Am Ende der Datei wird ergänzt: `if not _have_cuda: selective_scan_fn = selective_scan_ref; mamba_inner_fn = mamba_inner_ref`.  
+   - Damit nutzt SUM auf CPU die bestehenden Ref-Implementierungen (reines PyTorch, langsamer, aber ohne CUDA).
+
+2. **`Dockerfile.sum`**  
+   - Nach `pip install -r SUM/requirements.txt` wird `COPY patch_mamba_ssm_cpu.py .` und `RUN python patch_mamba_ssm_cpu.py` ausgeführt.
+
+3. **`knowledge/checkion-saliency-sum-build.md`**  
+   - Abschnitt zu diesem CPU-Laufzeitfehler und der Patch-Lösung ergänzt.
+
+Bitte das Image neu bauen und den SUM-Service neu deployen (Redeploy in Coolify). Die erste Vorhersage kann auf CPU spürbar länger dauern (z. B. 1–3 Minuten), sollte aber durchlaufen.
+
+---
+
+_**User**_
+
+
+[CHECKION] saliency/generate: service returned 500 {"detail":"name 'selective_scan_fn' is not defined"}
+[CHECKION] saliency/generate: service returned 500 {"detail":"name 'selective_scan_fn' is not defined"}
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The patch we added didn't fix the issue - the user is still getting "name 'selective_scan_fn' is not defined". This could mean:
+
+1. The patch script didn't run correctly during the Docker build
+2. The patch script's logic was wrong (e.g. wrong string matching, indentation broke the file)
+3. SUM's vmamba.py imports from mamba_ssm.ops.selective_scan_interface - and when the import fails (because the original file still has "import selective_scan_cuda" at top and that fails), the vmamba.py does "except: pass" so selective_scan_fn is never defined in vmamba's scope. So the error might be happening in vmamba.py when it does "self.selective_scan = selective_scan_fn" - at that point selective_scan_fn was never imported because the import failed. So even if we patch selective_scan_interface.py to define selective_scan_fn when cuda is missing, the issue is that vmamba.py does:
+   try:
+     from mamba_ssm.ops.selective_scan_interface import selective_scan_fn, selective_scan_ref
+   except:
+     pass
+   So when selective_scan_interface.py fails to load (e.g. our patch didn't apply or the file still fails on import), the import in vmamba fails and we get no names. Then later vmamba uses selective_scan_fn and gets NameError.
+
+So the fix could be:
+1. Ensure our patch actually runs and produces a valid file that loads without ImportError. If the patch runs but produces broken Python (e.g. indentation wrong), the import would still fail.
+2. Or patch SUM's vmamba.py instead: when the import fails, set selective_scan_fn = selective_scan_ref by getting selective_scan_ref from somewhere. But selective_scan_ref is in the same file that fails to load. So we have to fix selective_scan_interface.py to load successfully.
+
+Let me re-check the patch script. The issue might be that we're replacing the imports but the original file has "from causal_conv1d import causal_conv1d_fn" and then "import causal_conv1d_cuda" and "import selective_scan_cuda" on separate lines. So when we run the patch, we need to make sure the resulting file doesn't have any remaining "import selective_scan_cuda" that would run at import time. We replaced that with try/except. So when the module loads:
+1. from causal_conv1d import causal_conv1d_fn - works (causal_conv1d is installed with Python fallback)
+2. try: import causal_conv1d_cuda, selective_scan_cuda -> except: _have_cuda = False
+3. if _have_cuda: ... (the big block) - skipped
+4. def selective_scan_ref ... def mamba_inner_ref ... - run
+5. if not _have_cuda: selective_scan_fn = selective_scan_ref; mamba_inner_fn = mamba_inner_ref - run
+
+So selective_scan_fn and mamba_inner_fn should be defined. Unless the patch didn't apply correctly. Maybe the exact string we're looking for in the file doesn't match (e.g. different line endings or the mamba_ssm version has slightly different formatting). Let me look at the patch script again and also consider applying the patch in a more robust way - e.g. read the actual installed file and do the replacement with more flexible matching.
+
+Another possibility: maybe the Docker build doesn't copy patch_mamba_ssm_cpu.py before running it? In the Dockerfile we have:
+COPY patch_mamba_ssm_cpu.py .
+RUN python patch_mamba_ssm_cpu.py
+
+But COPY is relative to build context. The build context is saliency-service (Base Directory). So we need to have patch_mamba_ssm_cpu.py in saliency-service. We created it at saliency-service/patch_mamba_ssm_cpu.py. So COPY patch_mamba_ssm_cpu.py . copies it to /app/patch_mamba_ssm_cpu.py. Good. But wait - the COPY happens in the same layer as previous COPYs. Actually we have:
+COPY requirements-sum.txt .
+...
+COPY main_sum.py .
+COPY entrypoint-sum.sh .
+
+So the first COPY in the Dockerfile that copies our files is "COPY requirements-sum.txt ." which is before the pip install. So when we added "COPY patch_mamba_ssm_cpu.py ." we put it after the RUN pip install -r SUM/requirements.txt. So at that point we're copying patch_mamba_ssm_cpu.py from the build context. So the file needs to be in the same directory as requirements-sum.txt etc. So it's in saliency-service/. And the Docker build context is saliency-service, so COPY patch_mamba_ssm_cpu.py . should work. So the script should be there. Maybe the script failed silently or the patch produced invalid Python. Let me try a different approach: instead of a complex patch script, we could add a minimal runtime fix in main_sum.py that runs before importing SUM - we inject a fake module that provides selective_scan_fn and selective_scan_ref. We'd need to implement selective_scan_ref in full (copy from mamba) and set selective_scan_fn = selective_scan_ref. Then we do sys.modules['mamba_ssm.ops.selective_scan_interface'] = our_module before any SUM import. That way when vmamba does "from mamba_ssm.ops.selective_scan_interface import selective_scan_fn, selective_scan_ref", it gets our module. We need to provide both names and they need to be callable. selective_scan_ref is ~60 lines of pure PyTorch. Let me try that approach - it's more self-contained and doesn't depend on patching the installed package.
+</details></think>
+
+---
+
+
+Patch greift offenbar nicht (Build oder Zeilenformat). Wir wechseln zu einem robusten Laufzeit-Fix: Vor dem SUM-Import einen Stub in `sys.modules` einspielen, der `selective_scan_fn` und `selective_scan_ref` bereitstellt.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/main_sum.py</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/patch_mamba_ssm_cpu.py</summary>
+
+</details>
+</tool-use>
 
 ---
 

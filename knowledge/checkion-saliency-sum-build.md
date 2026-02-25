@@ -30,9 +30,9 @@ Wenn du auf einem Server mit **CUDA/nvcc** baust und GPU nutzen willst:
 
 ## CPU-Laufzeit: selective_scan_fn is not defined
 
-Ohne CUDA-Build liefert mamba_ssm keine `selective_scan_cuda`-Extension. SUMs `vmamba.py` importiert `selective_scan_fn` in einem try/except mit `pass` – schlägt der Import fehl, ist der Name nie gesetzt, es kommt aber trotzdem zur Nutzung → **NameError: name 'selective_scan_fn' is not defined**.
+Ohne CUDA-Build liefert mamba_ssm keine `selective_scan_cuda`-Extension. SUMs `vmamba.py` importiert `selective_scan_fn` in einem try/except mit `pass` – schlägt der Import fehl, ist der Name nie gesetzt → **NameError: name 'selective_scan_fn' is not defined**.
 
-**Lösung im Repo:** Nach `pip install -r SUM/requirements.txt` wird `patch_mamba_ssm_cpu.py` ausgeführt. Es patcht die installierte Datei `mamba_ssm/ops/selective_scan_interface.py`: CUDA-Imports in try/except, CUDA-only Klassen/Funktionen in `if _have_cuda:`, am Ende `if not _have_cuda: selective_scan_fn = selective_scan_ref; mamba_inner_fn = mamba_inner_ref`. So läuft SUM auf CPU mit der langsamen Ref-Implementierung.
+**Lösung im Repo (Laufzeit-Stub):** In `main_sum.py` wird vor dem SUM-Import versucht, `mamba_ssm.ops.selective_scan_interface` zu importieren. Schlägt das fehl (ImportError), wird `selective_scan_cpu_stub.py` als Modul `mamba_ssm.ops.selective_scan_interface` in `sys.modules` eingetragen. Der Stub enthält die reine PyTorch-Implementierung `selective_scan_ref` und setzt `selective_scan_fn = selective_scan_ref`. Beim anschließenden Laden von SUM/vmamba wird dieser Stub verwendet, SUM läuft auf CPU (langsamer, aber ohne CUDA).
 
 ## Referenzen
 

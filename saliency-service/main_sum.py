@@ -27,6 +27,22 @@ if not SUM_ROOT.exists():
     )
 sys.path.insert(0, str(SUM_ROOT))
 
+# CPU-only: if mamba_ssm has no CUDA, its selective_scan_interface fails to load; inject stub before SUM import
+def _install_selective_scan_stub():
+    import importlib.util
+    stub_path = Path(__file__).resolve().parent / "selective_scan_cpu_stub.py"
+    spec = importlib.util.spec_from_file_location("mamba_ssm.ops.selective_scan_interface", stub_path)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["mamba_ssm.ops.selective_scan_interface"] = mod
+    spec.loader.exec_module(mod)
+
+
+try:
+    from mamba_ssm.ops.selective_scan_interface import selective_scan_fn  # noqa: F401
+except ImportError:
+    sys.modules.pop("mamba_ssm.ops.selective_scan_interface", None)
+    _install_selective_scan_stub()
+
 from net import SUM, load_and_preprocess_image, predict_saliency_map  # noqa: E402
 
 # SUM model config (from SUM net.configs.config_setting) – no relative paths

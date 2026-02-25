@@ -29,10 +29,6 @@ ENV MAMBA_SKIP_CUDA_BUILD=TRUE
 ENV MAMBA_FORCE_BUILD=TRUE
 RUN pip install --no-cache-dir --timeout 600 -r SUM/requirements.txt
 
-# CPU-only: mamba_ssm has no CUDA kernels; patch to use selective_scan_ref / mamba_inner_ref
-COPY patch_mamba_ssm_cpu.py .
-RUN python patch_mamba_ssm_cpu.py
-
 # opencv-python pulls in libGL (GUI); headless variant works in server containers
 RUN pip uninstall -y opencv-python 2>/dev/null || true \
     && pip install --no-cache-dir opencv-python-headless==4.6.0.66
@@ -41,7 +37,7 @@ RUN pip uninstall -y opencv-python 2>/dev/null || true \
 COPY requirements-sum.txt .
 RUN pip install --no-cache-dir -r requirements-sum.txt gdown
 
-COPY main_sum.py .
+COPY main_sum.py selective_scan_cpu_stub.py .
 COPY entrypoint-sum.sh .
 RUN chmod +x entrypoint-sum.sh
 
