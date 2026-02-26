@@ -34,6 +34,14 @@ Ohne CUDA-Build liefert mamba_ssm keine `selective_scan_cuda`-Extension. SUMs `v
 
 **Lösung im Repo (Laufzeit-Stub):** In `main_sum.py` wird vor dem SUM-Import versucht, `mamba_ssm.ops.selective_scan_interface` zu importieren. Schlägt das fehl (ImportError), wird `selective_scan_cpu_stub.py` als Modul `mamba_ssm.ops.selective_scan_interface` in `sys.modules` eingetragen. Der Stub enthält die reine PyTorch-Implementierung `selective_scan_ref` und setzt `selective_scan_fn = selective_scan_ref`. Beim anschließenden Laden von SUM/vmamba wird dieser Stub verwendet, SUM läuft auf CPU (langsamer, aber ohne CUDA).
 
+## EyeQuant-ähnliche Heatmap-Nachbearbeitung (SUM)
+
+SUM liefert oft eine starke Vertikalstruktur (oben hell, unten dunkel). Damit Headlines, CTAs und Spots sichtbar werden wie bei EyeQuant, wird die gleiche Nachbearbeitung wie in `main.py` (MDS-ViTNet) angewendet:
+
+- **Modul:** `heatmap_postprocess.py` → `postprocess_eyequant_style()`
+- **Schritte:** Vertikal-Baseline abziehen, globalen Gradienten entfernen, Perzentil 10–90 strecken, lokaler Kontrast, Unsharp, Gamma 0,38.
+- **Verwendung:** SUM-Pipeline in `main_sum.py` ruft die Funktion nach dem Resize und vor der Jet-Colormap auf. Tests: `saliency-service/tests/test_heatmap_postprocess.py`.
+
 ## Referenzen
 
 - SUM: https://github.com/Arhosseini77/SUM  

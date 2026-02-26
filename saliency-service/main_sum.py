@@ -69,14 +69,17 @@ def _jet_colormap_uint8() -> np.ndarray:
     return (np.stack([r, g, b], axis=1) * 255).astype(np.uint8)
 
 
+from heatmap_postprocess import postprocess_eyequant_style  # noqa: E402
+
+
 def _heatmap_to_png_bytes(heatmap: np.ndarray, out_w: int, out_h: int) -> bytes:
-    """Resize heatmap to (out_w, out_h), apply jet colormap, return PNG bytes."""
+    """Resize heatmap to (out_w, out_h), apply EyeQuant-style postprocess, jet colormap, return PNG bytes."""
     from scipy.ndimage import zoom
     h, w = heatmap.shape
     if (w, h) != (out_w, out_h):
         zoom_factors = (out_h / h, out_w / w)
         heatmap = zoom(heatmap, zoom_factors, order=1)
-    heatmap = np.clip(heatmap, 0, 1)
+    heatmap = postprocess_eyequant_style(heatmap, out_h, out_w)
     arr_u8 = (heatmap * 255).astype(np.uint8)
     cmap = _jet_colormap_uint8()
     rgb = cmap[arr_u8]  # (H, W, 3)

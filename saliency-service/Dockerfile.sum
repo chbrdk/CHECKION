@@ -37,7 +37,7 @@ RUN pip uninstall -y opencv-python 2>/dev/null || true \
 COPY requirements-sum.txt .
 RUN pip install --no-cache-dir -r requirements-sum.txt gdown
 
-COPY main_sum.py selective_scan_cpu_stub.py .
+COPY main_sum.py selective_scan_cpu_stub.py heatmap_postprocess.py .
 COPY entrypoint-sum.sh .
 RUN chmod +x entrypoint-sum.sh
 
