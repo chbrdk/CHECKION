@@ -7,7 +7,7 @@ import OpenAI from 'openai';
 import sharp from 'sharp';
 import { getOpenAIKey } from '@/lib/llm/config';
 
-const SALIENCY_VISION_MODEL = process.env.OPENAI_SALIENCY_MODEL ?? 'gpt-4o-mini';
+const SALIENCY_VISION_MODEL = process.env.OPENAI_SALIENCY_MODEL ?? 'gpt-5-mini';
 
 export interface AttentionRegion {
     top_pct: number;

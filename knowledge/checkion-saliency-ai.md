@@ -5,7 +5,7 @@ Statt des SUM-Saliency-Modells kann CHECKION eine **KI-basierte Aufmerksamkeits-
 ## Aktivierung
 
 - **Env:** `SALIENCY_USE_AI=true` (oder `1`) und `OPENAI_API_KEY` gesetzt.
-- Optional: `OPENAI_SALIENCY_MODEL` (Standard: `gpt-4o-mini`) – muss Vision unterstützen.
+- Optional: `OPENAI_SALIENCY_MODEL` (Standard: `gpt-5-mini`) – muss Vision unterstützen.
 
 ## Ablauf
 

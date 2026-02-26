@@ -85,7 +85,7 @@ Statt des SUM-Services kannst du eine **KI-basierte Heatmap** nutzen (OpenAI Vis
 | `SALIENCY_USE_AI` | `true` oder `1` |
 | `OPENAI_API_KEY` | dein OpenAI API-Key (bereits für Zusammenfassungen genutzt) |
 
-Optional: `OPENAI_SALIENCY_MODEL` (Standard: `gpt-4o-mini`) für das Vision-Modell. Wenn `SALIENCY_USE_AI` gesetzt ist, wird **kein** SUM-Container benötigt; die Heatmap wird direkt in CHECKION berechnet (ca. 10–30 s pro Screenshot).
+Optional: `OPENAI_SALIENCY_MODEL` (Standard: `gpt-5-mini`) für das Vision-Modell. Wenn `SALIENCY_USE_AI` gesetzt ist, wird **kein** SUM-Container benötigt; die Heatmap wird direkt in CHECKION berechnet (ca. 10–30 s pro Screenshot).
 
 **Option 1 – Intern:** Container-ID aus Schritt 5.4 (z. B. `http://rc8gsg4kcwc8k0wsgo484w80:8000`). **Nur `http://`** – der Container hat keinen TLS-Server; bei HTTPS auf interner ID entsteht „SSL packet length too long“.  
 **Option 2 – Öffentliche Domain:** Wenn die Saliency-App eine eigene Domain hat (z. B. `https://sum-saliency.projects-a.plygrnd.tech`), diese **mit `https://`** eintragen. CHECKION lässt HTTPS bei Domains unverändert.
