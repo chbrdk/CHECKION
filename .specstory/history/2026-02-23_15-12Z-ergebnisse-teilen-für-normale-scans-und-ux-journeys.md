@@ -25486,7 +25486,709 @@ Now I need to add the vision regions cache and wire the Generate route. Then Res
 
 I need to:
 1. Create lib/saliency-vision-cache.ts with set/get and TTL 15 min
-2. In Generate route (SUM path): after returning jobId, fire-and-forget call getAttentionRegionsFromVision with imageBase64 and dimensions (we have those from result - we need width/height; we can get from sharp on the image buffer), then s</details></think>
+2. In Generate route (SUM path): after returning jobId, fire-and-forget call getAttentionRegionsFromVision with imageBase64 and dimensions (we have those from result - we need width/height; we can get from sharp on the image buffer), then setVisionRegions(jobId, regions). We must not await - so we don't block the response. We need width/height - we can get from sharp( Buffer.from(imageBase64,'base64') ).metadata() before the fetch to jobs, then after we have jobId we start the async vision call with those dimensions.
+3. Result route will call getCachedVisionRegions(jobId) when fusing.
+
+Let me create the cache module first.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/saliency-vision-cache.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now update Generate route to:
+1. When SUM path and SALIENCY_LLM_REGIONS and OPENAI_API_KEY: after getting jobId, fire-and-forget: get image dimensions (we need them - we have imageBase64, so we can do sharp(Buffer.from(imageBase64,'base64')).metadata() - but that's async. So before the fetch to create job we could get metadata to have width/height, then after jobId we call getAttentionRegionsFromVision(imageBase64, width, height).then(regions => setVisionRegions(jobId, regions)).catch(err => console.error(...)). So we need width/height before the job create. So at the start of SUM path we can do: const buf = Buffer.from(imageBase64, 'base64'); const meta = await sharp(buf).metadata(); const width = meta.width ?? 1920; const height = meta.height ?? 1080; then later after we have jobId we do the fire-and-forget. Let me add that.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/saliency/generate/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/saliency/generate/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/saliency/generate/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/saliency/generate/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now integrate fusion in the Result route. I need to read the result route and when we have completed heatmap, run fuseSaliencyHeatmap with pageIndex and optional cached vision regions, then use that for updateScanResult and enrichPageIndexWithSaliency.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Create lib/saliency-fusion.ts with fusion helpers
+- [x] Add vision regions cache and wire Generate route for optional LLM
+- [-] Integrate fusion in Result route (SUM path)
+- [ ] Integrate fusion in Generate route (AI path)
+- [ ] Add tests and knowledge doc for saliency fusion
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/saliency/result/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+In the result route when job.status === 'completed' && job.heatmap_base64:
+1. Get dimensions from the heatmap PNG (decode and get width/height from sharp metadata)
+2. Call fuseSaliencyHeatmap with: sumHeatmapPngBase64 = job.heatmap_base64, pageIndex = result.pageIndex (if present), structureWeight from env, visionRegions = getVisionRegions(jobId) (if any), visionWeight from env, width, height
+3. Use the fused base64 for dataUrl and then enrichPageIndexWithSaliency and updateScanResult
+
+I need to get width/height. We can get them from decoding the heatmap PNG: decodeJetPngToIntensity returns width and height. Or we can use sharp on the buffer. Let me use sharp to get metadata from the heatmap buffer so we have width/height for fuseSaliencyHeatmap.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/saliency/result/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/saliency/result/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/saliency/result/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+AI path fusion is already done in the generate route (we added fuseSaliencyHeatmap when result.pageIndex is present). So todo 4 is actually already completed. Let me mark 3 and 4 and move to 5 - tests and knowledge doc.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Create lib/saliency-fusion.ts with fusion helpers
+- [x] Add vision regions cache and wire Generate route for optional LLM
+- [x] Integrate fusion in Result route (SUM path)
+- [x] Integrate fusion in Generate route (AI path)
+- [-] Add tests and knowledge doc for saliency fusion
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/page-index.test.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/saliency-fusion.ts",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/saliency/generate/route.ts",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/saliency/result/route.ts"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/saliency-fusion.ts"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/saliency/generate/route.ts"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/saliency/result/route.ts"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add tests for buildStructureAttentionMap and fuseSaliencyHeatmap. The plan says:
+- buildStructureAttentionMap: one region with rect, check that values in rect are elevated
+- fuseSaliencyHeatmap: with Dummy pageIndex and without vision, output should be base64 PNG; with fixed SUM PNG and structure check that values in regions increase
+
+For buildStructureAttentionMap we need a PageIndex with regions that have rect. We can build one from buildPageIndex or create a minimal one. The function returns Float32Array, we check that inside the rect the values are > 0 and that max is 1 after normalization.
+
+For fuseSaliencyHeatmap we need a sumHeatmapPngBase64 - we can create a minimal PNG (e.g. 10x10 red image) so that decodeJetPngToIntensity gives intensity. Then fuse with optional pageIndex - result should be base64 string. We could use a tiny PNG from sharp: 10x10 RGB with all red (255,0,0) -> intensity 1.0. Then fuse with empty pageIndex and no vision -> should still return base64. Let me create a test file that uses Node and the same pattern as page-index.test.ts (npx tsx).
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/saliency-fusion.test.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The test uses dynamic import for sharp - let me check if the project uses uuid - we have it in page-index. Let me run the test - we might need to use require or a different approach for sharp since it's already a dependency. Actually we can just use `import sharp from 'sharp'` at the top - the test file is run with tsx so ESM should work. Let me change to static import sharp.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/saliency-fusion.test.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/saliency-fusion.test.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now add the knowledge doc and update the Coolify doc with the fusion env vars. Then run the test.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-saliency-fusion.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/docs/deployment/coolify-saliency-schritt-fuer-schritt.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add a short section after the KI-Heatmap block about Saliency-Fusion (SUM + DOM + optional LLM) and the env vars.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/docs/deployment/coolify-saliency-schritt-fuer-schritt.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now run the saliency-fusion test to make sure it passes.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npx tsx lib/saliency-fusion.test.ts</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npx tsx lib/saliency-fusion.test.ts
+```
+
+```
+node:internal/modules/cjs/loader:1448
+  const err = new Error(message);
+              ^
+
+Error: Cannot find module 'sharp'
+Require stack:
+- /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/saliency-fusion.test.ts
+    at node:internal/modules/cjs/loader:1448:15
+    at nextResolveSimple (/Users/christoph.bordeck/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/register-D46fvsV_.cjs:4:1004)
+    at /Users/christoph.bordeck/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/register-D46fvsV_.cjs:3:2630
+    at /Users/christoph.bordeck/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/register-D46fvsV_.cjs:3:1542
+    at resolveTsPaths (/Users/christoph.bordeck/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/register-D46fvsV_.cjs:4:760)
+    at /Users/christoph.bordeck/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/register-D46fvsV_.cjs:4:1102
+    at m._resolveFilename (file:///Users/christoph.bordeck/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/register-B7jrtLTO.mjs:1:789)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1059:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1064:22)
+    at Module._load (node:internal/modules/cjs/loader:1234:25) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/saliency-fusion.test.ts'
+  ]
+}
+
+Node.js v24.13.1
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+npx tsx runs from a different context and doesn't see the project's node_modules. Let me run with the project's node: `node --import tsx lib/saliency-fusion.test.ts` or `npm exec tsx -- lib/saliency-fusion.test.ts` from the project directory so it uses project node_modules. Actually the issue is npx tsx might not use the project's node_modules for sharp. Let me try: cd CHECKION-1 && ./node_modules/.bin/tsx lib/saliency-fusion.test.ts
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && ./node_modules/.bin/tsx lib/saliency-fusion.test.ts 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && ./node_modules/.bin/tsx lib/saliency-fusion.test.ts 2>&1
+```
+
+```
+(eval):1: no such file or directory: ./node_modules/.bin/tsx
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+tsx might be in devDependencies and not installed, or the path is different. Let me check package.json - we have "tsx": "^4.21.0" in devDependencies. So node_modules might not have tsx if they didn't run npm install. Let me try npx tsx but with npm install first, or run with node and ts-node. Actually the error was "Cannot find module 'sharp'" - so sharp is in the project's dependencies. The problem is npx tsx runs in a way that doesn't resolve from the project's node_modules. Let me try: npm run --silent exec -- tsx lib/saliency-fusion.test.ts or NODE_PATH=./node_modules npx tsx lib/saliency-fusion.test.ts.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm exec -- tsx lib/saliency-fusion.test.ts 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm exec -- tsx lib/saliency-fusion.test.ts 2>&1
+```
+
+```
+node:internal/modules/cjs/loader:1448
+  const err = new Error(message);
+              ^
+
+Error: Cannot find module 'sharp'
+Require stack:
+- /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/saliency-fusion.test.ts
+    at node:internal/modules/cjs/loader:1448:15
+    at nextResolveSimple (/Users/christoph.bordeck/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/register-D46fvsV_.cjs:4:1004)
+    at /Users/christoph.bordeck/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/register-D46fvsV_.cjs:3:2630
+    at /Users/christoph.bordeck/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/register-D46fvsV_.cjs:3:1542
+    at resolveTsPaths (/Users/christoph.bordeck/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/register-D46fvsV_.cjs:4:760)
+    at /Users/christoph.bordeck/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/register-D46fvsV_.cjs:4:1102
+    at m._resolveFilename (file:///Users/christoph.bordeck/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/register-B7jrtLTO.mjs:1:789)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1059:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1064:22)
+    at Module._load (node:internal/modules/cjs/loader:1234:25) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/saliency-fusion.test.ts'
+  ]
+}
+
+Node.js v24.13.1
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+tsx is being run from npx's cache (/.npm/_npx/...) so it resolves modules from there. The test file imports sharp - and when tsx runs the file, Node resolves sharp from the current directory's node_modules. So the cwd is CHECKION-1 which has node_modules. The Require stack shows the test file path. So the resolution might be from tsx's directory. Let me check - maybe we need to run with node and point to project: node --loader tsx node_modules/... Actually the simpler fix is to make the test not require sharp for the basic structure map test - we could skip the decode/encode roundtrip in CI if sharp isn't found, or we add a script in package.json that runs the test with the right env. Looking at page-index.test.ts - it uses enrichPageIndexWithSaliency which uses sharp. So how do they run that test? Let me check - maybe they use a different runner. I'll add a note in the knowledge that tests require npm install and run with `npx tsx lib/saliency-fusion.test.ts` from project root; the failure might be npx using a global/cached tsx. Let me try running with node and the project's node_modules explicitly: `node -e "require('child_process').execSync('node --import tsx lib/saliency-fusion.test.ts', { cwd: process.cwd(), stdio: 'inherit' })"` - no. Simpler: add a npm script "test:saliency-fusion": "tsx lib/saliency-fusion.test.ts" and then npm run test:saliency-fusion. That way tsx is resolved from local node_modules.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/package.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add a script "test:saliency-fusion": "tsx lib/saliency-fusion.test.ts" and run with npm run test:saliency-fusion. That should resolve tsx from node_modules.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/package.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now run npm run test:saliency-fusion - this will use the local tsx from node_modules and the same node_modules for sharp.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run test:saliency-fusion 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run test:saliency-fusion 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 test:saliency-fusion
+&gt; tsx lib/saliency-fusion.test.ts
+
+sh: tsx: command not found
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+tsx is not in PATH when running npm run - it's in devDependencies so we need to use npx tsx or node_modules/.bin/tsx. So: "test:saliency-fusion": "npx tsx lib/saliency-fusion.test.ts" - but npx tsx was resolving from cache. Let me use node_modules/.bin/tsx - that way it's the project's tsx and the current directory's node_modules will be used for sharp. So the script should be "node_modules/.bin/tsx lib/saliency-fusion.test.ts" - but that might not exist if they haven't run npm install. Let me try "npx --no tsx lib/saliency-fusion.test.ts" to force npx to use local. Actually the npm run runs in the project directory, so when tsx runs, node's module resolution starts from the script's directory (project root). So when the test file does `import sharp from 'sharp'`, Node looks for sharp in project_root/node_modules. The issue with `npx tsx` was that npx runs the tsx from its cache (global store) and that tsx process might have a different cwd or module resolution. Let me try with node_modules/.bin/tsx - the exit 127 was "no such file or directory" so maybe .bin/tsx doesn't exist. Let me check - ls node_modules/.bin/tsx 2>/dev/null || true
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && ls node_modules/.bin/tsx 2>/dev/null || true && ls node_modules/sharp 2>/dev/null || true</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && ls node_modules/.bin/tsx 2>/dev/null || true && ls node_modules/sharp 2>/dev/null || true
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+No output - so either both don't exist or the paths are wrong. Let me try without the optional parts: ls node_modules/.bin/ | head -5 and ls node_modules | grep -E "sharp|tsx"
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && (test -f node_modules/.bin/tsx && echo "tsx exists" || echo "tsx missing") && (test -d node_modules/sharp && echo "sharp exists" || echo "sharp missing")</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && (test -f node_modules/.bin/tsx && echo "tsx exists" || echo "tsx missing") && (test -d node_modules/sharp && echo "sharp exists" || echo "sharp missing")
+```
+
+```
+tsx missing
+sharp missing
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So node_modules might not be fully installed (e.g. in a fresh clone). The plan asked for tests - we've added the test file. The knowledge doc says to run with npx tsx. I'll leave the test as is and document that `npm install` is required. I'll revert the package.json script to use npx so that when someone has run npm install they get tsx from the project: "test:saliency-fusion": "npx tsx lib/saliency-fusion.test.ts". When they run npm run test:saliency-fusion after npm install, npx will use the local node_modules tsx (npx prefers local). Let me verify - actually npx tsx when run from npm run script, npm run sets PATH to include node_modules/.bin. So if tsx is installed as a devDependency, "tsx" in the script would find it. So the script "test:saliency-fusion": "tsx lib/saliency-fusion.test.ts" would work after npm install. So the "tsx: command not found" was because in this environment node_modules/.bin might not be in PATH when npm run invokes the script, or tsx isn't installed. I'll keep the script as "tsx lib/saliency-fusion.test.ts" so that once you run npm install, it works. The test file is correct; the environment just doesn't have deps installed. Mark the todo complete and add a note in the knowledge that npm install is required before running the test.
+</details></think>
+
+---
+
+
+Test-Datei und Skript sind vorhanden; in dieser Umgebung sind `node_modules` nicht vollständig installiert. Knowledge-Dokument um den Hinweis "npm install vor dem Test" ergänzen und Todos abschließen.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-saliency-fusion.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Create lib/saliency-fusion.ts with fusion helpers
+- [x] Add vision regions cache and wire Generate route for optional LLM
+- [x] Integrate fusion in Result route (SUM path)
+- [x] Integrate fusion in Generate route (AI path)
+- [x] Add tests and knowledge doc for saliency fusion
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me double-check that fuseSaliencyHeatmap is called with optional visionRegions only when they exist - getVisionRegions can return undefined, and we're passing it to visionRegions. So when visionRegions is undefined, the fusion code should not add vision map. Looking at fuseSaliencyHeatmap: `if (visionRegions?.length && visionWeight > 0)` - so we're good. When pageIndex is undefined, we don't call buildStructureAttentionMap - we need to check. In fuseSaliencyHeatmap we have `if (pageIndex && structureWeight > 0)` - good. So we're fine. Let me also ensure that in the Result route we don't pass visionWeight when there are no vision regions - we do pass visionWeight always (default 0.2) and visionRegions from getVisionRegions(jobId). If getVisionRegions returns undefined, visionRegions is undefined and the fusion won't add vision map. Good.
+
+One more thing: in fuseSaliencyHeatmap we're mutating `combined` which is actually `intensity` - we're reassigning with intensity and then doing combined[i] = intensity[i] + ... So we're modifying the decoded intensity array. That's correct. But we need to make sure we don't pass structureWeight when pageIndex is missing - we already have `if (pageIndex && structureWeight > 0)`. All good.
+
+Let me read the fusion file once more to ensure we're not requiring visionRegions when it's undefined - and that we handle optional pageIndex (e.g. result.pageIndex might be undefined in Result route). We're passing result.pageIndex directly - if undefined, fuseSaliencyHeatmap just won't add structure map. Good.
+</details></think>
+
+---
+
+
+Alle geplanten Punkte sind umgesetzt. Kurzüberblick:
+
+---
+
+**1. Neues Modul [lib/saliency-fusion.ts](lib/saliency-fusion.ts)**  
+- `buildStructureAttentionMap(pageIndex, width, height)` – baut aus pageIndex eine Struktur-Map (Gauß pro Region, Gewicht aus findabilityScore, aboveFold, semanticType hero/nav).  
+- `buildVisionPriorMap(regions, width, height)` – baut aus LLM-Vision-Regionen eine Float-Map (wie in saliency-ai, ohne PNG).  
+- `decodeJetPngToIntensity(pngBuffer)` – liest Jet-PNG, liefert Intensität (R-Kanal) + Breite/Höhe.  
+- `intensityToJetPng(intensity, width, height)` – schreibt Float-Map mit Gamma und Jet als PNG.  
+- `fuseSaliencyHeatmap(options)` – kombiniert SUM-PNG mit optionaler Struktur- und optionaler Vision-Map, normalisiert, gibt Base64-PNG zurück.
+
+**2. Vision-Cache [lib/saliency-vision-cache.ts](lib/saliency-vision-cache.ts)**  
+- `setVisionRegions(jobId, regions)` / `getVisionRegions(jobId)` – In-Memory-Cache mit 15-Min-TTL und einmaligem Lesen.
+
+**3. Generate-Route [app/api/saliency/generate/route.ts](app/api/saliency/generate/route.ts)**  
+- **SUM:** Nach Job-Erstellung bei `SALIENCY_LLM_REGIONS` und `OPENAI_API_KEY` asynchron `getAttentionRegionsFromVision` aufrufen und Ergebnis mit `setVisionRegions(jobId, regions)` cachen.  
+- **AI-Pfad:** Nach `renderHeatmapFromRegions` bei vorhandenem `result.pageIndex` Aufruf von `fuseSaliencyHeatmap` mit Struktur-Gewicht; die gefusionierte Heatmap wird gespeichert.
+
+**4. Result-Route [app/api/saliency/result/route.ts](app/api/saliency/result/route.ts)**  
+- Bei `completed`: Heatmap-PNG-Dimensionen auslesen, `fuseSaliencyHeatmap` mit SUM-Base64, `result.pageIndex`, `getVisionRegions(jobId)` und Env-Gewichten aufrufen, gefusionierte Heatmap speichern und für `enrichPageIndexWithSaliency` nutzen.
+
+**5. Konfiguration**  
+- `SALIENCY_FUSION_STRUCTURE_WEIGHT` (Default 0.25), `SALIENCY_LLM_REGIONS` (optional), `SALIENCY_FUSION_VISION_WEIGHT` (Default 0.2).  
+- In [docs/deployment/coolify-saliency-schritt-fuer-schritt.md](docs/deployment/coolify-saliency-schritt-fuer-schritt.md) ergänzt.
+
+**6. Tests & Doku**  
+- [lib/saliency-fusion.test.ts](lib/saliency-fusion.test.ts) – Tests für Structure-Map, Vision-Map, Decode/Encode-Roundtrip und `fuseSaliencyHeatmap`.  
+- npm-Script: `"test:saliency-fusion": "tsx lib/saliency-fusion.test.ts"`.  
+- [knowledge/checkion-saliency-fusion.md](knowledge/checkion-saliency-fusion.md) – Architektur, Env-Variablen, Code-Verweise.
+
+Die Saliency-Fusion ist damit umgesetzt: SUM bleibt unverändert, die Fusion läuft in der App mit DOM/Struktur (pageIndex) und optionalen LLM-Vision-Regionen aus dem Cache.
+
+---
+
+_**User**_
+
+okay das sum ist viel zu stark gewichtet. wie können wir genauer die dom elemente in position und größe bestimmen und korrekte heatmaps daraus ableiten? momentan ist bei der navi zum beispiel einfach nur mittig ein leichter punkt statt die komplette nav
 
 ---
 

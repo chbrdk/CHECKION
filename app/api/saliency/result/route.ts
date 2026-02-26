@@ -26,7 +26,7 @@ function getSaliencyBaseUrl(): string | undefined {
 }
 
 const RESULT_FETCH_TIMEOUT_MS = 10_000;
-const STRUCTURE_WEIGHT = parseFloat(process.env.SALIENCY_FUSION_STRUCTURE_WEIGHT ?? '0.25');
+const STRUCTURE_WEIGHT = parseFloat(process.env.SALIENCY_FUSION_STRUCTURE_WEIGHT ?? '0.45');
 const VISION_WEIGHT = parseFloat(process.env.SALIENCY_FUSION_VISION_WEIGHT ?? '0.2');
 
 export async function GET(request: Request) {

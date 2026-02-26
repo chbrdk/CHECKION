@@ -51,6 +51,11 @@ async function run(): Promise<void> {
     const centerX = 10 + 30 / 2;
     const centerIdx = Math.floor(centerY) * w + Math.floor(centerX);
     assert.ok(structureMap[centerIdx] > 0.1, 'center of rect has elevated value');
+    const leftEdgeIdx = 15 * w + 12;
+    const rightEdgeIdx = 25 * w + 38;
+    assert.ok(structureMap[leftEdgeIdx] > 0.1, 'left edge of rect filled');
+    assert.ok(structureMap[rightEdgeIdx] > 0.1, 'right edge of rect filled (full rect)');
+    assert.strictEqual(structureMap[0], 0, 'pixel outside rect is zero');
 
     // buildVisionPriorMap: one region -> blob, normalized
     const visionRegions = [

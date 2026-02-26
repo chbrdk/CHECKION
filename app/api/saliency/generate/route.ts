@@ -33,7 +33,7 @@ const JOB_CREATE_TIMEOUT_MS = 15_000;
 
 const USE_AI_SALIENCY = process.env.SALIENCY_USE_AI === 'true' || process.env.SALIENCY_USE_AI === '1';
 const USE_LLM_REGIONS = process.env.SALIENCY_LLM_REGIONS === 'true' || process.env.SALIENCY_LLM_REGIONS === '1';
-const STRUCTURE_WEIGHT = parseFloat(process.env.SALIENCY_FUSION_STRUCTURE_WEIGHT ?? '0.25');
+const STRUCTURE_WEIGHT = parseFloat(process.env.SALIENCY_FUSION_STRUCTURE_WEIGHT ?? '0.45');
 
 export async function POST(request: Request) {
     const session = await auth();

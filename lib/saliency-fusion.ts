@@ -9,7 +9,8 @@ import type { AttentionRegion } from '@/lib/saliency-ai';
 
 const SEMANTIC_BOOST_HERO_NAV = 1.2;
 const ABOVE_FOLD_BOOST = 1.1;
-const DEFAULT_STRUCTURE_WEIGHT = 0.25;
+/** Higher default so DOM elements (nav, hero, headings) are clearly visible next to SUM. */
+const DEFAULT_STRUCTURE_WEIGHT = 0.45;
 const DEFAULT_VISION_WEIGHT = 0.2;
 const FUSION_GAMMA = 0.4;
 
@@ -23,8 +24,9 @@ function jetRgb(t: number): [number, number, number] {
 }
 
 /**
- * Build a structure attention map from pageIndex: soft Gaussian per region,
- * weight = findabilityScore * semanticBoost * (aboveFold ? 1.1 : 1). Normalized to [0,1].
+ * Build a structure attention map from pageIndex: fill each region's rect with attention
+ * (position and size from DOM). Weight = findabilityScore * semanticBoost * (aboveFold ? 1.1 : 1).
+ * Normalized to [0,1]. Rect coordinates are in the same space as the screenshot/heatmap.
  */
 export function buildStructureAttentionMap(
     pageIndex: PageIndex,
@@ -42,21 +44,14 @@ export function buildStructureAttentionMap(
         let weight = r.findabilityScore * (r.aboveFold ? ABOVE_FOLD_BOOST : 1);
         if (r.semanticType === 'hero' || r.semanticType === 'nav') weight *= SEMANTIC_BOOST_HERO_NAV;
 
-        const cx = rect.x + rect.width / 2;
-        const cy = rect.y + rect.height / 2;
-        const sigma = Math.min(rect.width, rect.height) * 0.35;
-        const sigma2 = 2 * sigma * sigma;
-
-        const x0 = Math.max(0, Math.floor(cx - sigma * 3));
-        const x1 = Math.min(w, Math.ceil(cx + sigma * 3));
-        const y0 = Math.max(0, Math.floor(cy - sigma * 3));
-        const y1 = Math.min(h, Math.ceil(cy + sigma * 3));
+        const x0 = Math.max(0, Math.floor(rect.x));
+        const x1 = Math.min(w, Math.ceil(rect.x + rect.width));
+        const y0 = Math.max(0, Math.floor(rect.y));
+        const y1 = Math.min(h, Math.ceil(rect.y + rect.height));
 
         for (let y = y0; y < y1; y++) {
             for (let x = x0; x < x1; x++) {
-                const dx = x - cx;
-                const dy = y - cy;
-                map[y * w + x] += weight * Math.exp(-(dx * dx + dy * dy) / sigma2);
+                map[y * w + x] += weight;
             }
         }
     }

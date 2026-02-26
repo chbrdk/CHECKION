@@ -92,7 +92,7 @@ Die Heatmap wird in CHECKION aus SUM-Output, DOM/Struktur (pageIndex) und option
 
 | Name | Bedeutung | Default |
 |------|------------|--------|
-| `SALIENCY_FUSION_STRUCTURE_WEIGHT` | Gewicht der DOM/Struktur-Map (0 = aus). | `0.25` |
+| `SALIENCY_FUSION_STRUCTURE_WEIGHT` | Gewicht der DOM/Struktur-Map (0 = aus). | `0.45` |
 | `SALIENCY_LLM_REGIONS` | `true`/`1`: Zusätzlich LLM Vision für Regionen (Kosten). | aus |
 | `SALIENCY_FUSION_VISION_WEIGHT` | Gewicht der LLM-Vision-Map. | `0.2` |
 
