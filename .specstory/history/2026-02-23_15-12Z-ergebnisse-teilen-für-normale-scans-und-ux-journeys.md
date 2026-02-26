@@ -24571,3 +24571,922 @@ kannst du auf gpt-5-mini stellen
 
 ---
 
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants to set the saliency AI model to GPT-5-mini. I need to find where the saliency vision model is configured and change the default from gpt-4o-mini to gpt-5-mini. That's in lib/saliency-ai.ts where we have OPENAI_SALIENCY_MODEL defaulting to 'gpt-4o-mini'. I'll change it to 'gpt-5-mini'.
+
+Note: The user's existing config (lib/llm/config.ts) already has OPENAI_MODEL defaulting to 'gpt5-mini' (without the hyphen - might be a typo there). I'll use gpt-5-mini with hyphen as that's the more standard naming. If the actual model name is different (e.g. gpt5-mini) the user can set OPENAI_SALIENCY_MODEL env var. I'll use "gpt-5-mini" as the user wrote it.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/saliency-ai.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I should also update the knowledge doc and the Coolify doc where we mention the default model.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-saliency-ai.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/docs/deployment/coolify-saliency-schritt-fuer-schritt.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Done. The default for the saliency AI model is now gpt-5-mini in lib/saliency-ai.ts, and the docs are updated.
+</details></think>
+
+---
+
+
+Erledigt. Das Standard-Vision-Modell für die KI-Heatmap ist jetzt **`gpt-5-mini`**:
+
+- **`lib/saliency-ai.ts`:** `OPENAI_SALIENCY_MODEL` nutzt standardmäßig `gpt-5-mini`.
+- **Doku** in `knowledge/checkion-saliency-ai.md` und `docs/deployment/coolify-saliency-schritt-fuer-schritt.md` ist angepasst.
+
+Wenn du ein anderes Modell nutzen willst, setze die Umgebungsvariable **`OPENAI_SALIENCY_MODEL`** (z. B. `gpt-4o-mini`).
+
+---
+
+_**User**_
+
+ich habe es wieder ausgestellt. hast du eine andere idee wie wir unser ergebnis näher an ein echtes eyetracking ergebnis bringen? betreib vielleicht ein research wie wir das bestmöglich für websiten einbauen können ohne eyequant zu nutzen sondern entweder opensource modelle oder halt große llms wie chatgpt etc. 
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user has turned off the AI saliency (probably SALIENCY_USE_AI) and is asking for other ideas to get closer to real eye-tracking results. They want me to do research on how to best implement this for websites without using EyeQuant - either with open-source models or with large LLMs like ChatGPT.
+
+I'm in Ask mode, so I should only do research (read-only, web search) and provide recommendations, not implement anything.
+
+Let me search for:
+1. Open-source saliency / attention prediction models for web UI or screenshots
+2. Research on predicting eye-tracking / attention on web pages
+3. LLM-based approaches for visual attention prediction
+4. Comparison of approaches (model-based vs LLM)
+</details></think>
+
+---
+
+
+Recherche zu offenen Modellen und LLM-Ansätzen für webbasierte Aufmerksamkeits-/Eyetracking-ähnliche Vorhersagen.
+
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="web_search">
+<details>
+            <summary>Tool use: **web_search** • Searched web `undefined` • **1** results</summary>
+        
+| Title | URL | Chunk |
+|-------|-----|-------|
+| Web search results for query: open source saliency prediction model webpage UI screenshot 2024 2025 |  | Links:<br/>1. [Search code, repositories, users, issues, pull requests...](https://github.com/XAITK/xaitk-saliency-web-demo)<br/>2. [Search code, repositories, users, issues, pull requests...](https://github.com/XAITK/xaitk-saliency)<br/>3. [Getting Started with xaitk-saliency ](https://xaitk-saliency.readthedocs.io/en/stable/getting_started.html)<br/>4. [Getting Started with xaitk-saliency — xaitk-saliency 0.14.2 documentation](https://xaitk-saliency.readthedocs.io/en/latest/getting_started.html)<br/>5. [Xaitk-Saliency: An Open Source Explainable AI Toolkit for Saliency](https://ojs.aaai.org/index.php/AAAI/article/view/26871)<br/><br/># Open Source Saliency Prediction Model UI<br/><br/>XAITK-Saliency is an open source explainable AI framework that includes a web UI for visualizing saliency predictions.[2] <br/><br/>## Web Demo Application<br/><br/>The **xaitk-saliency-web-demo** project provides a demonstration web application with a user interface built using the trame framework.[1][3][4] This local web application allows users to interactively explore saliency maps, which are visual explanations that highlight regions an AI model considers important for its predictions. The application demonstrates how saliency maps can be integrated into a UI to support model prediction exploration and reasoning.[3][4]<br/><br/>## Core Framework<br/><br/>XAITK-Saliency is an open source, explainable AI toolkit for visual saliency algorithm interfaces and implementations designed for analytics and autonomy applications.[2] The framework prioritizes black-box saliency techniques that don't require access to internal model states, making it suitable for testing and evaluation scenarios.[3][4]<br/><br/>The project includes both the core saliency algorithms library and the separate web demonstration UI, with documentation and examples available through GitHub and ReadTheDocs.[1][2][3] A peer-reviewed paper on the toolkit was published in 2024.[5] |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="web_search">
+<details>
+            <summary>Tool use: **web_search** • Searched web `undefined` • **1** results</summary>
+        
+| Title | URL | Chunk |
+|-------|-----|-------|
+| Web search results for query: eye-tracking prediction web pages attention map deep learning model research |  | Links:<br/>1. [[2507.19213] PRE-MAP: Personalized Reinforced Eye-tracking Multimodal LLM for High-Resolution Multi-Attribute Point Prediction](https://arxiv.org/abs/2507.19213)<br/>2. [UniAR: Unifying Human Attention and Response Prediction on Visual Content](https://browse.arxiv.org/html/2312.10175v1)<br/>3. [Computer Science > Computer Vision and Pattern Recognition](https://arxiv.org/abs/2407.02439)<br/>4. [Spatio-Temporal Modeling and Prediction of Visual Attention in Graphical User Interfaces](https://www.collaborative-ai.org/website/publications/xu16_chi.pdf)<br/>5. [](https://www.arxiv.org/pdf/2405.19501)<br/><br/># Eye-Tracking Prediction and Attention Map Research Using Deep Learning<br/><br/>Recent research has developed several advanced deep learning models for predicting visual attention and gaze behavior on web pages and digital content:<br/><br/>## Key Models and Approaches<br/><br/>**PRE-MAP** is a personalized eye-tracking model that uses multimodal large language models (MLLMs) combined with reinforcement learning to predict high-resolution attention points, accounting for individual differences in visual preferences.[1] It introduces Consistency Group Relative Policy Optimization to ensure accurate spatial point predictions while maintaining format correctness.<br/><br/>**UniAR** presents a unified model that predicts both implicit attention (through heatmaps and scanpaths) and explicit user preferences across diverse visual content including web pages, natural images, and graphic designs.[2] It uses a multimodal transformer with distinct prediction heads for different behavioral aspects.<br/><br/>For graphic design documents and web pages specifically, researchers have developed two-stage models that first predict component-level saliency maps and then use them for overall document attention prediction and scanpath forecasting.[3] These models leverage deep learning to outperform traditional approaches on web page attention prediction.<br/><br/>## Technical Advances<br/><br/>Recent architectures employ Vision Transformers rather than conventional CNNs, with encoder-decoder structures for improved attention map generation.[5] These models address limitations of CNN-based approaches by capturing long-range contextual information through multi-head self-attention mechanisms.<br/><br/>Spatio-temporal modeling approaches predict attention based on user interactions (mouse and keyboard input) without requiring eye-tracking equipment, enabling real-world UI evaluation.[4] |
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me search for more specific things: SUM model alternatives, UI-specific saliency datasets, and LLM vs traditional model comparison for this task.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="web_search">
+<details>
+            <summary>Tool use: **web_search** • Searched web `undefined` • **1** results</summary>
+        
+| Title | URL | Chunk |
+|-------|-----|-------|
+| Web search results for query: SUM saliency model alternative UI web MASSVIS dataset 2024 |  | Links:<br/>1. [SUM: Saliency Unification through Mamba for Visual Attention Modeling](https://openaccess.thecvf.com/content/WACV2025/papers/Hosseini_SUM_Saliency_Unification_through_Mamba_for_Visual_Attention_Modeling_WACV_2025_paper.pdf)<br/>2. [Visual Importance](https://predimportance.mit.edu/)<br/>3. [Computer Science > Computer Vision and Pattern Recognition](https://arxiv.org/abs/2406.17815)<br/>4. [](https://openreview.net/pdf/b05ec8e3a20594e536a9094189be758d805914b3.pdf)<br/>5. [](https://export.arxiv.org/pdf/2112.02340v2.pdf)<br/><br/># SUM Saliency Model and Related Work<br/><br/>## SUM Model Overview<br/>SUM (Saliency Unification through Mamba) is a novel visual attention modeling approach presented at WACV 2025 that addresses key limitations in existing saliency prediction models.[1][3] The model uses Mamba architecture integrated with U-Net to provide a unified approach for diverse image types, rather than requiring separate specialized models.[1]<br/><br/>## Key Features<br/>SUM employs a novel **Conditional Visual State Space (C-VSS) block** that dynamically adapts to various image types including natural scenes, web pages, and commercial imagery.[1][4] This addresses a major limitation of current models—that separate models are typically needed for each image type. The approach is computationally more efficient than Transformer-based alternatives while maintaining or exceeding their performance.[1]<br/><br/>## UI/Web Application<br/>The model specifically handles user interface (UI) designs, where attention patterns differ from natural images. In UI contexts, the upper-left quadrant typically attracts more attention due to eye movement patterns and left-to-right viewing bias.[1][4]<br/><br/>## Evaluation and Datasets<br/>SUM was evaluated across five benchmarks and consistently outperformed existing models.[1] Related work includes the MASSVIS dataset, which has been used for scanpath and saliency prediction on information visualizations.[5] Code and pretrained models for SUM are publicly available on GitHub.[4] |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="web_search">
+<details>
+            <summary>Tool use: **web_search** • Searched web `undefined` • **1** results</summary>
+        
+| Title | URL | Chunk |
+|-------|-----|-------|
+| Web search results for query: vision LLM attention heatmap webpage where users look first API |  | Links:<br/>1. [Where do Large Vision-Language Models Look at when Answering Questions?](https://huggingface.co/papers/2503.13891)<br/>2. [mivanit/pattern-lens](https://github.com/mivanit/pattern-lens)<br/>3. [API: Attention Prompting on Image for Large Vision-Language Models](https://yu-rp.github.io/api-prompting/)<br/>4. [LVLM Interpret: An Interpretability Tool for Large Vision-Language Models](https://intellabs.github.io/multimodal_cognitive_ai/lvlm_interpret/)<br/>5. [Where do Large Vision-Language Models Look at when Answering Questions?](https://paperswithcode.com/paper/where-do-large-vision-language-models-look-at)<br/><br/># Vision LLM Attention Heatmaps and Visual Focus Analysis<br/><br/>## Research on LVLM Visual Attention<br/><br/>A recent paper investigates where Large Vision-Language Models (LVLMs) focus when answering visual questions.[1] Researchers extended heatmap visualization methods to support LVLMs and analyze which image regions contribute to their responses. Their findings examine the relationship between focus regions and answer correctness, differences in visual attention across architectures, and how LLM scale impacts visual understanding.[1]<br/><br/>## Interpretability Tools<br/><br/>**LVLM-Interpret** is an interactive interpretability tool that visualizes the inner workings of Large Vision-Language models.[4] It provides:<br/>- Text-to-vision attention heatmaps showing which image regions the model attends to<br/>- Visualization of text-to-image patch attention<br/>- Relevancy heatmaps showing model grounding in images<br/>- A chatbot interface for multimodal queries[4]<br/><br/>**pattern-lens** is a tool for visualizing LLM attention patterns across different models and heads.[2] It features an interactive web interface where users can:<br/>- Filter and compare attention patterns across models, layers, and heads<br/>- View multiple patterns simultaneously in grid layout<br/>- Perform token-by-token analysis with interactive heatmaps[2]<br/><br/>## Attention-Based Prompting API<br/><br/>**API (Attention Prompting on Image)** is a method that uses attention mechanisms to enhance LVLM performance.[3] An auxiliary LVLM generates masks highlighting image regions relevant to queries—patches with low similarity to the question receive heavier masking while relevant regions remain unmasked, guiding the vision-language model's focus.[3] |
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me get more on: 1) MIT Visual Importance (predimportance.mit.edu), 2) UniAR and whether it's available, 3) combining DOM/structure with saliency for web-specific improvement.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="web_search">
+<details>
+            <summary>Tool use: **web_search** • Searched web `undefined` • **1** results</summary>
+        
+| Title | URL | Chunk |
+|-------|-----|-------|
+| Web search results for query: MIT Visual Importance prediction model download API |  | Links:<br/>1. [Visual Importance](https://predimportance.mit.edu/)<br/>2. [Search code, repositories, users, issues, pull requests...](https://github.com/diviz-mit/predimportance-public)<br/>3. [Search code, repositories, users, issues, pull requests...](https://github.com/cvzoya/visimportance)<br/>4. [Learning Visual Importance  for Graphic Designs and Data Visualizations](https://web.mit.edu/zoya/www/docs/predImportance_final.pdf)<br/>5. [<% title %>](https://massvis.mit.edu/)<br/><br/># MIT Visual Importance Prediction Model<br/><br/>The MIT Visual Importance prediction model is available through the official project website and can be accessed as follows:[1]<br/><br/>## Downloads<br/><br/>**Pretrained Model:** A pretrained model in Keras h5 format is available for direct download from the project website.[1]<br/><br/>**Code:** Python code for training and evaluating the model is available on GitHub at `github.com/diviz-mit/predimportance-public`.[1][2]<br/><br/>**Dataset:** The Imp1k dataset (1,000 designs covering webpages, posters, mobile UIs, infographics, and advertisements) is also available for download.[1]<br/><br/>## Model Details<br/><br/>The model is called UMSI (Unified Model of Saliency and Importance) and predicts visual importance across multiple graphic design types as well as natural images.[1] It was developed by researchers at MIT including Camilo Fosco, Zoya Bylinskii, and others, and is described in the paper "Predicting Visual Importance Across Graphic Design Types."[1]<br/><br/>The model uses a deep learning architecture (Xception-based with ASPP) trained simultaneously on different design classes, including posters, infographics, mobile UIs, and natural images, with an automatic classification module included.[1]<br/><br/>**Project Website:** https://predimportance.mit.edu/[1] |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="web_search">
+<details>
+            <summary>Tool use: **web_search** • Searched web `undefined` • **1** results</summary>
+        
+| Title | URL | Chunk |
+|-------|-----|-------|
+| Web search results for query: web page saliency DOM structure semantic combined model 2024 |  | Links:<br/>1. [VisualWebBench: How Far Have Multimodal LLMs Evolved in Web Page<br/>  Understanding and Grounding? \| alphaXiv](https://www.alphaxiv.org/resources/2404.05955v1)<br/>2. [[2404.05955] VisualWebBench: How Far Have Multimodal LLMs Evolved in Web Page Understanding and Grounding?](https://arxiv.org/abs/2404.05955)<br/>3. [](https://arxiv.org/pdf/2410.23555)<br/>4. [Search code, repositories, users, issues, pull requests...](https://github.com/X-LANCE/weblm)<br/>5. [](https://arxiv.org/pdf/2402.04476)<br/><br/># Web Page Saliency and DOM Structure in 2024<br/><br/>Recent 2024 research focuses on combining DOM structure with visual and semantic information for improved web page understanding:<br/><br/>## Key Approaches<br/><br/>**DOM-Based Element Selection:** Web navigation agents use two-stage processes that first identify salient DOM elements before processing.[3] Dense Markup Ranking (DMR) encodes DOM elements into vectors and ranks them by relevance to user queries, reducing full page HTML to candidate elements.[3]<br/><br/>**Multimodal Context Integration:** WebLM, presented at WSDM 2024, employs hierarchical multimodal pre-training that combines text, structure, and visual modalities of webpages.[4] Similarly, Dual-View Visual Contextualization (DUAL-VCR) contextualizes HTML elements using their bounding boxes and visual content from screenshots alongside textual features to create more informative element representations.[5]<br/><br/>**Semantic Enhancement:** These models leverage web developers' tendency to arrange task-related elements nearby on pages.[5] By combining HTML semantic information with visual positioning and neighbor context, agents better understand which elements are relevant for specific tasks.<br/><br/>## Performance Considerations<br/><br/>Current multimodal LLMs struggle with text-rich environments and low-resolution inputs when processing web pages.[2] Effective context management—particularly managing DOM representation, interaction history, and visual input—significantly improves agent generalization across unseen websites and domains.[3]<br/><br/>Human-curated benchmarks like VisualWebBench now evaluate fine-grained web understanding capabilities including OCR, element grounding, and task-specific reasoning.[2] |
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good - I have MIT predimportance (UMSI), SUM (which they already use), and the idea of combining DOM with visual. Let me search for one more: how to improve SUM results with post-processing or hybrid approaches, and whether there are lightweight models that work well for UI.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="web_search">
+<details>
+            <summary>Tool use: **web_search** • Searched web `undefined` • **1** results</summary>
+        
+| Title | URL | Chunk |
+|-------|-----|-------|
+| Web search results for query: improve saliency heatmap post-processing fix center bias web UI |  | Links:<br/>1. [Centre-Negative: An Effective and Efficient Solution to Centre Bias in Visual Saliency Evaluation \| OpenReview](https://openreview.net/forum?id=WoK6GGAfIs&noteId=4rc5uBXzrD)<br/>2. [Computer Science > Computer Vision and Pattern Recognition](https://arxiv.org/abs/2505.10169)<br/>3. [ICCV Poster Modeling Saliency Dataset Bias](https://iccv.thecvf.com/virtual/2025/poster/490)<br/>4. [Computer Science > Machine Learning](https://arxiv.org/abs/2503.00234)<br/>5. [](https://arxiv.org/pdf/2104.04945)<br/><br/># Improving Saliency Heatmap Post-Processing and Fixing Center Bias<br/><br/>## Center Bias in Saliency Evaluation<br/><br/>Center bias is a significant problem in visual saliency detection where models may artificially favor central image regions.[1] The "Centre-Negative" approach offers a metric-agnostic solution that can be combined with existing saliency metrics to overcome this bias while handling cases where fixations are densely distributed near the center.[1] This region-based method operates with O(1) time complexity, making it efficient for practical applications.[1]<br/><br/>## Dataset-Specific Center Bias Modeling<br/><br/>Recent research shows that center bias varies significantly across different saliency datasets, accounting for substantial generalization gaps when models transfer between datasets.[2][3] A novel architecture approach uses fewer than 20 dataset-specific parameters to govern interpretable mechanisms including center bias, multi-scale structure, and fixation spread.[2][3] This allows models to adapt to new datasets with minimal samples while improving performance across benchmark datasets.[2][3]<br/><br/>## Heatmap Post-Processing Enhancement<br/><br/>For improving heatmap quality itself, the "Gradual Extrapolation" technique enhances class activation mapping methods by sharpening saliency outputs.[5] Rather than producing coarse localization maps, this post-processing method propagates crude maps through preceding network layers to reveal specific shapes contributing to model predictions, significantly improving localization accuracy with minimal computational overhead.[5]<br/><br/>## Saliency Map Analysis for Debiasing<br/><br/>Saliency maps can also be analyzed using XAI-based metrics to assess and correct model biases, demonstrating how debiasing techniques systematically redirect model focus away from unwanted attributes.[4] |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/page-index.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I have a good picture. Let me also quickly check what CHECKION already has (pageIndex with regions/rects) - they could combine DOM regions with a saliency model. I'll summarize the research and give concrete recommendations.
+</details></think>
+
+---
+
+
+Hier die verdichtete **Recherche** und konkrete **Ideen**, um euer Ergebnis näher an echtes Eyetracking zu bringen – ohne EyeQuant, mit Open Source und/oder LLMs.
+
+---
+
+## 1. Stand der Dinge bei euch
+
+- Ihr nutzt **SUM** (Saliency Unification through Mamba) mit **Condition 3 (UI)** und kräftiger **Post-Processing-Pipeline** (Vertikal-Baseline, Global-Gradient, Perzentil, lokaler Kontrast, Gamma).
+- Zusätzlich habt ihr **pageIndex** mit Regionen und Rechtecken – also **DOM/Struktur** ist schon da.
+
+Echte Eyetracking-Unterschiede: Eyetracking ist **personen- und kontextabhängig**, hat **Scanpfade** und **Fixationsdauern**. Saliency-Modelle liefern nur eine **mittlere Aufmerksamkeits-Wahrscheinlichkeit**. Ihr könnt das Ergebnis aber „eyetracking-näher“ machen, indem ihr **mehr Signale kombiniert** und **UI-spezifisch** arbeitet.
+
+---
+
+## 2. Open-Source-Modelle & Forschung
+
+**SUM (bereits im Einsatz)**  
+- WACV 2025, explizit für **UI/Web** (Condition 3).  
+- Stärke: ein Modell für verschiedene Bildtypen; für Webscreenshots aktuell einer der relevantesten OS-Ansätze.
+
+**MIT Visual Importance (UMSI)**  
+- **predimportance.mit.edu** – „Unified Model of Saliency and Importance“.  
+- Trainiert auf **graphic design**: Webseiten, Poster, Mobile UIs, Infografiken, Ads (u. a. Imp1k).  
+- Code: `github.com/diviz-mit/predimportance-public`, Keras/h5.  
+- **Idee:** Als **Alternative oder Ergänzung** zu SUM testen (andere Architektur, anderes Training), ggf. **Ensemble** (z. B. Mittel aus SUM und UMSI) für stabilere, UI-nahe Karten.
+
+**UniAR (Unifying Attention and Response)**  
+- Ein Modell für **Attention (Heatmaps + Scanpaths)** und **Response (Präferenzen)** über verschiedene Inhalte inkl. **Web Pages**.  
+- Würde eher „echtes“ Eyetracking (Scanpfad, Reihenfolge) näher bringen; ob Code/Weights öffentlich und einfach integrierbar sind, müsste man prüfen.
+
+**XAITK-Saliency**  
+- Erklärbarkeit von **bestehenden** Modellen (z. B. „welche Regionen waren für die Klassifikation wichtig?“).  
+- Weniger ein **direkter** Ersatz für EyeQuant/SUM, eher für Analyse und ggf. für **zusätzliche“ Wichtigkeit“-Karten** pro Modell.
+
+---
+
+## 3. LLMs (ChatGPT & Co.) – sinnvolle Rolle
+
+- **Stärke:** Semantik („wo würden Nutzer zuerst hinschauen?“), Kontext (Headlines, CTAs, Bilder).  
+- **Schwäche:** Kein pixelgenaues, dichtes Saliency-Feld; eher **Regionen + Importance**.  
+
+**Pragmatischer Einsatz:**  
+- LLM **nur für Regionen + Wichtigkeit** (z. B. Bounding Boxes + Score), wie in eurer **KI-Heatmap** (`lib/saliency-ai.ts`).  
+- Diese Regionen **nicht ersetzen**, sondern **mit** einem OS-Saliency-Modell kombinieren:
+
+  - **Variante A – Boosting:** Heatmap von SUM (oder UMSI) als Basis; an den vom LLM genannten Regionen (Headlines, CTAs, Bilder) die Intensität **anheben** (z. B. Faktor oder zusätzlicher Gauß-Kern).  
+  - **Variante B – Priorität:** Zuerst LLM-Regionen, dann nur in „Rest“-Bereichen die Modell-Saliency anzeigen oder gewichten.  
+
+So bleibt die **räumliche Dichte** vom Modell, die **semantische Priorisierung** kommt vom LLM – näher an dem, was Nutzer erwarten („Headline/CTA sollte heiß sein“).
+
+---
+
+## 4. DOM/Struktur einbeziehen (euer Vorteil)
+
+Ihr habt schon **pageIndex** mit `rect` und Struktur (Headings, Landmarks). Das könnt ihr nutzen, um **eyetracking-typische** Effekte abzubilden:
+
+- **Above-the-fold / Viewport:** Regionen, die im ersten Viewport liegen, leicht anheben (typisches Eyetracking-Verhalten).  
+- **Headings (H1, H2, …):** Höhere Gewichtung als bei „normalem“ Fließtext.  
+- **Interaktive Elemente (Buttons, Links):** Leichtes Boost in der Heatmap.  
+- **Semantik aus pageIndex:** `findabilityScore` / semantische Typen (z. B. „hero“, „CTA“) als **zusätzlicher Kanal**: z. B. `final_score = alpha * saliency_pixel + (1-alpha) * structure_importance` pro Region, dann zurück auf die Karte abbilden.
+
+Das ist **ohne** neues Modell umsetzbar: reine Nutzung von **Saliency-Map + pageIndex** (und optional LLM-Regionen).
+
+---
+
+## 5. Post-Processing & Bias (Forschung)
+
+- **Center bias:** Viele Saliency-Modelle sind zu zentrumslastig; „Centre-Negative“-Ansätze und datensatzspezifische Anpassung können das reduzieren.  
+- Ihr macht bereits **starkes** Post-Processing (Vertikal, Global, Perzentil, Gamma).  
+- **Weitere Idee:**  
+  - **Scanpath-Priorität simulieren:** Leichte Gewichtung „oben → unten“ und „links → rechts“ (z. B. leichter Gradient), sodass frühere „Fixationen“ (oben/links) in der Karte etwas stärker zählen – optional und fein dosiert, um nicht wieder den alten „Streifen von oben nach unten“ zu erzeugen.
+
+---
+
+## 6. Konkrete Empfehlungen (ohne EyeQuant)
+
+| Richtung | Maßnahme | Aufwand |
+|----------|----------|--------|
+| **1. Anderes/zusätzliches Modell** | **MIT UMSI** (predimportance) als zweites Modell; Heatmaps von SUM und UMSI mitteln oder gewichtet kombinieren. | Mittel (neuer Service/Container, gleiche API wie SUM). |
+| **2. LLM + Modell hybrid** | LLM (z. B. gpt-5-mini) liefert nur Regionen + Importance; diese in die **bestehende** SUM-Heatmap einblenden (Boost in diesen Regionen). Kein reines „LLM-Heatmap“, sondern SUM bleibt Basis. | Gering–mittel (eure KI-Pipeline um „Boost-Maske“ erweitern). |
+| **3. DOM/Struktur** | **pageIndex** (rect, Heading-Level, above-fold, Typ) in die Heatmap einrechnen: z. B. pro Pixel/Region `saliency * (1 + beta * structure_weight)`. | Gering (nur in eurer Pipeline). |
+| **4. Ensemble** | SUM + UMSI (oder später UniAR, falls verfügbar) mitteln; optional mit DOM- oder LLM-Boost. | Mittel. |
+| **5. User-Studie / A/B** | Einige Screens mit eurer aktuellen Heatmap vs. EyeQuant (oder echten Eyetracking-Daten) vergleichen und Metriken (z. B. NSS, CC, oder subjektive „Ähnlichkeit“) einführen. | Höher, aber für „näher an Eyetracking“ sehr wertvoll. |
+
+---
+
+## 7. Kurzfassung
+
+- **Ohne EyeQuant** seid ihr mit **SUM (Condition 3)** schon gut aufgestellt; **MIT UMSI** ist der nächste sinnvolle Open-Source-Kandidat für UI.  
+- **LLMs** am besten **nicht** als alleinige Heatmap, sondern als **semantische Priorisierung** (Regionen + Wichtigkeit), die ihr mit der SUM- (oder UMSI-)Karte **kombiniert**.  
+- **DOM/Struktur (pageIndex)** solltet ihr explizit einbeziehen – das bringt euch mit wenig Aufwand näher an typisches Eyetracking-Verhalten („was ist wichtig und wo liegt es?“).  
+- **Post-Processing** könnt ihr um **struktur- und kontextabhängige Gewichte** (above-fold, Headings, LLM-Regionen) erweitern, statt nur globaler Filter.
+
+Wenn du willst, kann ich eine der Optionen (z. B. „DOM-Boost in der Heatmap“ oder „LLM-Regionen als Boost in SUM-Heatmap“) Schritt für Schritt für euren bestehenden Code (inkl. `page-index`, `heatmap_postprocess`, `saliency-ai`) ausarbeiten – dann im **Agent-Modus** umsetzbar.
+
+---
+
+_**User**_
+
+kannst du vielleicht eine state of the art lösung konzepieren die alles einbezieht das heißt sum kombinieren mit der dom und der struktur plus regions mit llm vision? regions würde ich denke erstmal als optional betrachten da vision sehr viel geld kostet. aber ich möchte alles erdenklliche was wir zur verfügung haben aus der seite, bestmöglich nutzen und kombinieren.
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants a state-of-the-art concept that combines:
+1. SUM (saliency model) - core
+2. DOM and structure (pageIndex, regions, etc.) - from the page
+3. LLM Vision regions - optional (due to cost)
+
+They want to use everything available from the page and combine it in the best possible way. LLM Vision should be optional.
+
+I need to:
+1. Understand the current data sources: SUM output, pageIndex (structure, regions, rects, findability, semantic types), and optionally LLM Vision regions
+2. Design a combination/fusion strategy that weights or merges these signals
+3. Keep LLM Vision as an optional add-on
+
+Let me explore the codebase to see exactly what we have: pageIndex structure, how saliency is used, where regions come from, etc.
+</details></think>
+
+---
+
+
+Codebase prüfen, um alle verfügbaren Datenquellen und deren Struktur zu erfassen.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "pageIndex|PageIndex|saliencyProminence|findabilityScore",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.{ts,tsx}",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "pageIndex|PageIndex|saliencyProminence|findabilityScore",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 15,
+  "totalMatches": 113,
+  "topFiles": [
+    {
+      "uri": "components/PageIndexRegionsOverlay.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "app/share/[token]/page.tsx",
+      "matchCount": 10
+    },
+    {
+      "uri": "lib/types.ts",
+      "matchCount": 8
+    },
+    {
+      "uri": "components/PageIndexCard.tsx",
+      "matchCount": 15
+    },
+    {
+      "uri": "lib/llm/journey-agent.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "lib/page-index.test.ts",
+      "matchCount": 12
+    },
+    {
+      "uri": "lib/domain-summary.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/results/[id]/page.tsx",
+      "matchCount": 13
+    },
+    {
+      "uri": "app/api/saliency/result/route.ts",
+      "matchCount": 6
+    },
+    {
+      "uri": "lib/scanner.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "app/api/saliency/generate/route.ts",
+      "matchCount": 6
+    },
+    {
+      "uri": "app/api/search/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/page-index.ts",
+      "matchCount": 18
+    },
+    {
+      "uri": "app/api/scan/domain/[id]/journey/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "components/JourneyFlowchart.tsx",
+      "matchCount": 7
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/page-index.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to see:
+1. StructureNode type (rect, level, tag, etc.)
+2. How the saliency pipeline works end-to-end (SUM → heatmap → enrichPageIndex)
+3. Where viewport/height comes from in the scan
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "StructureNode|structureMap|rect",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "StructureNode|structureMap|rect",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 12,
+  "topFiles": [
+    {
+      "uri": "lib/types.ts",
+      "matchCount": 12
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/page-index.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/heatmap_postprocess.py</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to see:
+1. Where the scan stores viewportHeight / structureMap (to know what we have at saliency time)
+2. The saliency flow: generate gets scan → screenshot → SUM or AI; result route gets job result and enriches pageIndex. So when we have the heatmap we also have result.pageIndex (with regions, rects, findabilityScore, semanticType, aboveFold).
+3. The AI saliency path (lib/saliency-ai.ts) - regions with top_pct, left_pct, etc.
+
+For the concept:
+- **SUM** produces a raw heatmap (HxW float). We already post-process it in heatmap_postprocess.py.
+- **DOM/Structure**: We have pageIndex with regions (rect, findabilityScore, level, aboveFold, semanticType). This is available in the scan result when we run saliency. So the fusion can happen:
+  - Option A: In the saliency service (Python): we'd need to pass pageIndex/regions to the service and do fusion there (SUM output + structure weights per pixel).
+  - Option B: In Next.js after we get the SUM heatmap: we have the heatmap image and pageIndex; we could compute a "structure prior" image (same size) and blend (e.g. weighted sum) with the SUM heatmap, then apply post-process.
+
+Option B is cleaner because pageIndex lives in the app layer; we don't need to change the SUM service contract. So:
+1. SUM returns heatmap (as now).
+2. In Next.js (or a shared lib): build a "structure attention" map from pageIndex (same dimensions as screenshot): for each region with rect, add a 2D blob (Gaussian or uniform) weighted by findabilityScore and optionally by semanticType (hero, nav get a bit more). Normalize to 0-1.
+3. Fuse: combined = alpha * sum_heatmap + (1-alpha) * structure_map, or multiplicative, or max. Then apply existing post-process to combined (or post-process SUM first then add structure boost in region rects).
+4. Optional: if SALIENCY_USE_AI or a new env SALIENCY_LLM_REGIONS=true, call LLM Vision to get regions; use those as additional boost (add Gaussian blobs at LLM regions with importance). Cost-controlled by making it optional.
+
+Let me check where we have viewport/screenshot dimensions when we run saliency.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/saliency/result/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/saliency-ai.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I now have a clear picture:
+
+1. **Scan result** has: `pageIndex` (url, viewportHeight, regions[]), each region has rect, findabilityScore, aboveFold, level, semanticType, etc. Screenshot dimensions we get from the image (sharp metadata) or could assume same as rect coordinate system.
+
+2. **Current flow (SUM)**:
+   - generate: POST /jobs with image → jobId
+   - result (poll): GET /jobs/{id} → heatmap_base64 → updateScanResult(saliencyHeatmap), enrichPageIndexWithSaliency(pageIndex, heatmap) → save
+
+3. **Fusion options**:
+   - **Server-side (Next.js) after we have SUM heatmap:** We have heatmap (PNG base64), pageIndex with rects. We can decode heatmap to raw intensity (e.g. R channel or grayscale), build a "structure map" from pageIndex (same dimensions), fuse (e.g. weighted sum or multiply), re-encode to PNG. Then save that as saliencyHeatmap and run enrichPageIndexWithSaliency on the fused heatmap. So the fusion happens in the result route (or in a lib function called from result route and from generate route for AI path).
+   - **Structure map:** For each region with rect, draw a Gaussian (or soft rectangle) with weight = f(findabilityScore, aboveFold, semanticType). Normalize so the structure map is 0-1. Then combined = (1 - beta) * sum_normalized + beta * structure_map, or combined = sum_normalized + gamma * structure_map then re-normalize.
+   - **LLM Vision (optional):** If enabled, call getAttentionRegionsFromVision, get regions; convert to a "prior" map (Gaussian blobs at importance); fuse with (SUM + structure) e.g. final = combined_sum_structure + delta * llm_map, then normalize. So we need a single fusion pipeline that accepts: base heatmap (from SUM), optional pageIndex (for structure), optional LLM regions (for vision boost).
+
+4. **Where to implement fusion:**
+   - Option A: New lib `lib/saliency-fusion.ts` that:
+     - `buildStructureAttentionMap(pageIndex, width, height): Float32Array` – from regions with rect + findabilityScore + optional semanticType boost
+     - `buildVisionPriorMap(regions: AttentionRegion[], width, height): Float32Array` – from LLM regions (reuse logic from saliency-ai renderHeatmapFromRegions but output raw float map)
+     - `fuseHeatmaps(sumHeatmapBase64, structureMap?, visionRegions?, options): string` – decode SUM heatmap to float, combine with structure and vision, apply post-process (or we keep post-process in Python and only do fusion in JS?), re-encode to PNG
+   - Problem: SUM heatmap is already post-processed (jet colormap). So we have two options: (1) Fusion in Python (SUM service returns raw float heatmap; we'd need a new endpoint or extend the contract). (2) Fusion in JS: we need the raw SUM output before post-process and before jet. That would require the SUM service to optionally return raw float array (e.g. base64 of float32 array) or we do fusion after the fact by decoding the jet image back to grayscale (lossy). So the cleanest is: (1) SUM service: add optional output "raw" heatmap (float32 numpy serialized or base64). Then Next.js: get raw SUM heatmap, build structure map, optionally get LLM regions and build vision map, fuse in float space, then apply post-process (we'd need to port postprocess_eyequant_style to JS or call a small Python script) and jet colormap in JS. That's a lot. (2) Simpler: Keep SUM as is (returns PNG with jet). In Next.js we decode the PNG to grayscale (R channel = intensity), build structure map (same size), fuse: combined = (1-beta)*sum_grayscale + beta*structure_map, re-apply jet and save. We lose the ability to re-run the full Python post-process on the fused map, but we can do a simple normalization + gamma in JS. Or (3) Fusion only as "boost": take the existing SUM heatmap (PNG), decode to intensity; take structure map; add boost: combined = sum_intensity + gamma * structure_map, clip and re-normalize, then jet. So we don't replace SUM but boost it where DOM says "important". That's the simplest and doesn't require changing SUM.
+
+   I'll go with (3) for the plan: decode SUM heatmap to single intensity channel (e.g. R from jet), build structure map from pageIndex, fuse by adding a weighted structure map and re-normalizing, then re-encode to PNG with jet. Optional: if LLM is enabled, get vision regions, build a small "vision prior" map (Gaussian blobs), add that to the combined map and normalize again. All in Next.js. No SUM service change.
+
+5. **Semantic weights for structure map:** We could give higher weight to hero, nav, button (level 7), H1, above-fold. E.g. structureWeight(region) = findabilityScore * (1 + 0.3 if semanticType === 'hero' | 'nav') * (1.2 if aboveFold). So we use findabilityScore as base and tweak by semantic and above-fold.
+
+6. **Data flow diagram:**
+   - Screenshot → SUM service → heatmap PNG (post-processed, jet)
+   - Scan has pageIndex (regions with rect, findabilityScore, aboveFold, semanticType)
+   - Optional: Screenshot → LLM Vision → attention regions (top_pct, etc.)
+   - Fusion (Next.js): heatmap_grayscale = decode(heatmapPNG).R; structure_map = buildStructureMap(pageIndex, w, h); [vision_map = buildVisionMap(llm_regions, w, h) if optional]; combined = heatmap_grayscale + alpha * structure_map [+ beta * vision_map]; normalize; jet; save. Then enrichPageIndexWithSaliency(pageIndex, combinedPNG).
+
+Let me also check: when we're in the result route we have result and the heatmap from the service. So we have result.pageIndex. We have dimensions from the heatmap image (we can get from the decoded buffer). So we have everything we need in the result route. For the AI path we don't have SUM; we only have LLM regions and we render. So for AI path we could also add structure map: renderHeatmapFromRegions(llm_regions) then fuse with structure map from pageIndex. So the fusion module (structure map + optional vision) can be used in both paths: SUM path = SUM heatmap + structure + optional LLM; AI path = LLM heatmap + structure (no SUM).
+
+Now I'll write the plan.
+</details></think>
+
+---
+
+
+Saliency-Pipeline und Schnittstellen prüfen:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/main_sum.py</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/saliency/generate/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+SUM returns a PNG (already post-processed + jet). So when we receive it we have RGB. To fuse we need to:
+1. Decode PNG to a single intensity (e.g. from Jet: we can approximate intensity from R,G,B - or we use the R channel as "heat" which is what meanSaliencyInRect does). So intensity from jet-encoded image: typically red = high, blue = low. We could use (R - B) normalized or a proper inverse jet. The page-index uses R/255 as prominence. So we can take R channel as intensity for fusion.
+2. Build structure map: same dimensions, float per pixel. For each region with rect, add a Gaussian (or soft rect) with weight = findabilityScore * semanticBoost * aboveFoldBoost.
+3. Fuse: combined = sum_intensity + alpha * structure_map, then normalize to 0-1, then apply gamma if desired, then jet encode.
+
+We don't have the raw pre-jet SUM output in Next.js; we only have the PNG. So we're fusing in "intensity space" approximated from the Jet PNG. That's acceptable for a boost.
+
+Plan structure:
+1. **Fusion module (lib)**  
+   - `buildStructureAttentionMap(pageIndex, width, height): Float32Array` – one float per pixel; for each region with rect, add Gaussian (or soft rectangle) with weight = f(findabilityScore, level, aboveFold, semanticType). Normalize to 0–1.  
+   - `buildVisionPriorMap(regions: AttentionRegion[], width, height): Float32Array` – extract from existing saliency-ai logic (Gaussian blobs).  
+   - `decodeJetPngToIntensity(pngBuffer): { intensity: Float32Array, width, height }` – decode PNG to single intensity (e.g. R channel or inverse jet).  
+   - `intensityToJetPng(intensity, width, height): Buffer` – port jet + gamma to JS or use simple mapping.  
+   - `fuseSaliencyHeatmap(sumHeatmapPngBase64, pageIndex, options?: { structureWeight, visionRegions?, visionWeight }): Promise<string>` – decode SUM, build structure map, optionally vision map, fuse, re-encode, return base64.
+
+2. **Integration**  
+   - **SUM path:** In result route, after getting heatmap from service: if result.pageIndex exists, call fuseSaliencyHeatmap(heatmap, result.pageIndex, { structureWeight: 0.3 }). If SALIENCY_LLM_REGIONS=true and OPENAI_API_KEY, call getAttentionRegionsFromVision, pass visionRegions + visionWeight to fuse. Save fused heatmap, then enrichPageIndexWithSaliency.  
+   - **AI path:** When using AI only: build heatmap from LLM regions (as now), then fuse with structure map from pageIndex (no SUM). So combined = vision_map + structureWeight * structure_map.
+
+3. **Config**  
+   - SALIENCY_FUSION_STRUCTURE_WEIGHT (default 0.25) – how much DOM/structure influences the final map.  
+   - SALIENCY_LLM_REGIONS (optional, default false) – whether to call Vision for extra regions and fuse them (cost).
+
+4. **Semantic/above-fold weights**  
+   - In buildStructureAttentionMap: weight = findabilityScore * (1.0 + 0.2 if hero/nav) * (1.1 if aboveFold). Normalize by max so map is 0–1.
+
+I'll now create the plan document.
+</details></think>
+
+---
+
+
+Konzept mit allen verfügbaren Signalen und optionalem LLM erstellt.
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="create_plan">
+<details>
+<summary>Tool use: **create_plan**</summary>
+
+
+Parameters:
+
+```json
+{
+  "plan": "# Saliency-Fusion: SUM + DOM/Struktur + optional LLM Vision\n\n## Ziel\n\nEine kombinierte Aufmerksamkeits-Heatmap, die:\n- **SUM** (bestehend) als pixelgenaue Basis nutzt,\n- **DOM/Struktur** (pageIndex: Regionen, Rect, findabilityScore, aboveFold, semanticType) als zusätzliches Signal einrechnet,\n- **LLM Vision** (Regionen + Importance) nur optional und konfigurierbar einsetzt (Kostenkontrolle).\n\nKeine Änderung am SUM-Service (weiterhin PNG mit Post-Processing + Jet). Fusion erfolgt in der App-Schicht (Next.js) nach Erhalt der SUM-Heatmap.\n\n---\n\n## Datenquellen (bereits vorhanden)\n\n| Quelle | Wo | Inhalt |\n|--------|-----|--------|\n| **SUM** | Saliency-Service → PNG (Jet) | Dichte Aufmerksamkeits-Karte, gleiche Auflösung wie Screenshot |\n| **pageIndex** | &#96;result.pageIndex&#96; ([lib/types.ts](lib/types.ts)) | &#96;regions[]&#96; mit &#96;rect&#96;, &#96;findabilityScore&#96;, &#96;aboveFold&#96;, &#96;level&#96;, &#96;semanticType&#96; (hero, nav, …) |\n| **LLM Vision** | Optional ([lib/saliency-ai.ts](lib/saliency-ai.ts)) | &#96;AttentionRegion[]&#96;: top_pct, left_pct, width_pct, height_pct, importance |\n\n&#96;pageIndex&#96; wird beim Scan aus &#96;structureMap&#96; gebaut ([lib/page-index.ts](lib/page-index.ts): &#96;buildPageIndex&#96;), &#96;findabilityScore&#96; aus above-fold, Heading-Level und Position. Es ist zum Zeitpunkt von Saliency/Result immer verfügbar, wenn der Scan Struktur-Daten hat.\n\n---\n\n## Architektur (Fusion in der App)\n\n&#96;&#96;&#96;mermaid\nflowchart LR\n    subgraph sum [SUM Service]\n        Screenshot --&gt; SUM\n        SUM --&gt; HeatmapPNG[Heatmap PNG]\n    end\n    subgraph app [Next.js]\n        HeatmapPNG --&gt; Decode[Decode to intensity]\n        PageIndex[pageIndex] --&gt; StructureMap[buildStructureMap]\n        Decode --&gt; Fuse[Fuse]\n        StructureMap --&gt; Fuse\n        optional[LLM Vision optional] --&gt; VisionMap[buildVisionMap]\n        VisionMap --&gt; Fuse\n        Fuse --&gt; Encode[Jet PNG]\n        Encode --&gt; Save[Save + enrichPageIndex]\n    end\n&#96;&#96;&#96;\n\n- **SUM-Pfad:** Wie bisher Job erstellen → Polling → Heatmap-PNG. Danach: Decode → ggf. Structure-Map aus &#96;pageIndex&#96; → ggf. Vision-Map aus LLM → Fuse → Encode → Speichern + &#96;enrichPageIndexWithSaliency&#96;.\n- **AI-only-Pfad:** Wie bisher Vision-Regionen → Heatmap aus Regionen; zusätzlich: Structure-Map aus &#96;pageIndex&#96; → Fuse (Vision + Struktur) → Speichern + Enrich.\n\n---\n\n## 1. Neues Modul: Fusion-Lib\n\n**Datei:** &#96;lib/saliency-fusion.ts&#96; (neu)\n\n- **&#96;buildStructureAttentionMap(pageIndex: PageIndex, width: number, height: number): Float32Array&#96;**\n  - Pro Pixel: Akkumulation über alle Regionen mit &#96;rect&#96;.\n  - Pro Region: Gewicht = &#96;findabilityScore * semanticBoost * (aboveFold ? 1.1 : 1)&#96;; &#96;semanticBoost&#96; z. B. 1.2 für &#96;hero&#96;/&#96;nav&#96;, 1.0 sonst.\n  - Pro Region: weiche Maske (2D-Gauß oder rechteckige Soft-Maske) in &#96;rect&#96; mit diesem Gewicht; Koordinaten aus &#96;rect&#96; (x, y, width, height) in Pixel.\n  - Nach allen Regionen: Normalisierung auf [0, 1] (z. B. durch Max-Wert).\n\n- **&#96;buildVisionPriorMap(regions: AttentionRegion[], width: number, height: number): Float32Array&#96;**\n  - Logik aus [lib/saliency-ai.ts](lib/saliency-ai.ts) (Gauß-Blobs pro Region, Importance 1–10) wiederverwenden: gleiche Formel, aber Ausgabe ein Float32Array (H*W) statt PNG-Rendering. Kein Sharp, nur reine Float-Map, danach auf [0,1] normalisieren.\n\n- **&#96;decodeJetPngToIntensity(pngBuffer: Buffer): { intensity: Float32Array; width: number; height: number }&#96;**\n  - PNG mit Sharp einlesen (raw RGB).\n  - Aus Jet: Intensität aus R-Kanal ableiten (wie in [lib/page-index.ts](lib/page-index.ts) für &#96;meanSaliencyInRect&#96;: R = „heat“). Einfach: &#96;intensity[i] = data[i*channels] / 255&#96; (R-Kanal), oder feinerer Jet-Inverse falls gewünscht.\n\n- **&#96;intensityToJetPng(intensity: Float32Array, width: number, height: number): Promise&lt;Buffer&gt;&#96;**\n  - Float [0,1] → Uint8 0–255 (optional Gamma z. B. 0.4 für Kontrast).\n  - Jet-Colormap (gleiche Formel wie in [saliency-service/main_sum.py](saliency-service/main_sum.py) oder [lib/saliency-ai.ts](lib/saliency-ai.ts) &#96;jetRgb&#96;) anwenden → RGB-Buffer → Sharp → PNG-Buffer.\n\n- **&#96;fuseSaliencyHeatmap(options: { sumHeatmapPngBase64: string; pageIndex?: PageIndex; structureWeight?: number; visionRegions?: AttentionRegion[]; visionWeight?: number; width: number; height: number }): Promise&lt;string&gt;&#96;**\n  - &#96;sumHeatmapPngBase64&#96;: Base64 des SUM-PNG (oder des AI-Heatmap-PNG, wenn man den AI-Pfad später auch durch diese Funktion schickt).\n  - Decode SUM → &#96;intensity&#96;.\n  - Wenn &#96;pageIndex&#96;: &#96;structureMap = buildStructureAttentionMap(pageIndex, width, height)&#96;; &#96;intensity = intensity + structureWeight * structureMap&#96; (default &#96;structureWeight&#96; z. B. 0.25).\n  - Wenn &#96;visionRegions&#96;: &#96;visionMap = buildVisionPriorMap(visionRegions, width, height)&#96;; &#96;intensity = intensity + visionWeight * visionMap&#96; (default &#96;visionWeight&#96; z. B. 0.2).\n  - Normalisierung: z. B. &#96;intensity = intensity / max(intensity)&#96; und auf [0,1] clippen.\n  - &#96;intensityToJetPng&#96; → PNG-Buffer → Base64 zurückgeben.\n\n- Typen: &#96;PageIndex&#96; und &#96;AttentionRegion&#96; aus bestehenden Modulen importieren ([lib/types.ts](lib/types.ts), [lib/saliency-ai.ts](lib/saliency-ai.ts)).\n\n---\n\n## 2. Integration SUM-Pfad (Result-Route)\n\n**Datei:** [app/api/saliency/result/route.ts](app/api/saliency/result/route.ts)\n\n- Nach Erhalt der Heatmap vom Saliency-Service (&#96;job.status === 'completed'&#96;, &#96;heatmap_base64&#96;):\n  - Bildmaße ermitteln: aus dem dekodierten PNG (Sharp metadata) &#96;width&#96;, &#96;height&#96;.\n  - Wenn &#96;result.pageIndex&#96; vorhanden: &#96;fuseSaliencyHeatmap&#96; aufrufen mit:\n    - &#96;sumHeatmapPngBase64 = heatmap_base64&#96;,\n    - &#96;pageIndex = result.pageIndex&#96;,\n    - &#96;structureWeight = parseFloat(process.env.SALIENCY_FUSION_STRUCTURE_WEIGHT ?? '0.25')&#96;,\n    - &#96;width&#96;, &#96;height&#96;.\n  - Optional (nur wenn &#96;SALIENCY_LLM_REGIONS === 'true'&#96; und &#96;OPENAI_API_KEY&#96; gesetzt):\n    - &#96;getAttentionRegionsFromVision(imageBase64, width, height)&#96; aufrufen (Screenshot-Base64 aus Scan; muss in dieser Route verfügbar sein – siehe unten).\n    - &#96;visionRegions&#96; und &#96;visionWeight&#96; (z. B. aus &#96;SALIENCY_FUSION_VISION_WEIGHT&#96;, default 0.2) an &#96;fuseSaliencyHeatmap&#96; übergeben.\n  - Ergebnis der Fusion als neues &#96;heatmap_base64&#96; / &#96;dataUrl&#96; verwenden und damit &#96;updateScanResult&#96; und &#96;enrichPageIndexWithSaliency&#96; wie bisher aufrufen.\n\n- **Screenshot in Result-Route:** Aktuell hat die Result-Route nur &#96;jobId&#96; und &#96;scanId&#96;; für LLM Vision braucht sie den Screenshot. Entweder:\n  - Screenshot-Base64 in der **Generate-Route** beim Anlegen des Jobs serverseitig cachen (z. B. kurzlebiger Store mit &#96;jobId&#96; als Key, TTL 15 Min), und in der Result-Route bei Bedarf (nur wenn LLM-Regionen aktiv) aus dem Cache holen, oder\n  - LLM-Vision-Aufruf in der **Generate-Route** ausführen, sobald der Job gestartet ist (Background), und die Vision-Regionen in einem kleinen Cache mit &#96;jobId&#96; speichern; Result-Route liest dann nur die gecachten Regionen und fügt sie in die Fusion ein. So bleibt die teure Vision-Anfrage nur einmal pro Generation und die Result-Route bleibt leicht.\n\nEmpfehlung: **Vision-Regionen in Generate-Route** (nach Job-Start, asynchron) berechnen und in einem **In-Memory-Cache (jobId → AttentionRegion[])** mit TTL ablegen; Result-Route bei Polling nur Cache lesen und bei &#96;completed&#96; SUM-Heatmap + pageIndex + gecachte Vision-Regionen fusionieren. Kein Screenshot in Result-Route nötig.\n\n---\n\n## 3. Integration AI-only-Pfad (Generate-Route)\n\n**Datei:** [app/api/saliency/generate/route.ts](app/api/saliency/generate/route.ts)\n\n- Im AI-Zweig (&#96;USE_AI_SALIENCY&#96; und &#96;OPENAI_API_KEY&#96;):\n  - Wie bisher: Vision-Regionen holen, &#96;renderHeatmapFromRegions(regions, width, height)&#96; → PNG-Base64.\n  - Neu: Wenn &#96;result.pageIndex&#96; vorhanden, diese PNG als „Basis“ behandeln und mit Struktur fusionieren:\n    - &#96;fuseSaliencyHeatmap({ sumHeatmapPngBase64: heatmapBase64, pageIndex: result.pageIndex, structureWeight, width, height })&#96; (ohne weitere Vision-Regionen, da bereits aus Vision erzeugt).\n  - Optional: &#96;structureWeight&#96; über Env (z. B. &#96;SALIENCY_FUSION_STRUCTURE_WEIGHT&#96;).\n  - Mit der gefusionierten Heatmap wie bisher &#96;updateScanResult&#96; und &#96;enrichPageIndexWithSaliency&#96; ausführen.\n\n---\n\n## 4. Optional: LLM Vision im SUM-Pfad (Generate + Cache + Result)\n\n- **Generate-Route:** Wenn &#96;SALIENCY_LLM_REGIONS === 'true'&#96; und &#96;OPENAI_API_KEY&#96; gesetzt:\n  - Nach dem Erstellen des SUM-Jobs (&#96;jobId&#96; erhalten): asynchron (ohne auf Antwort zu warten) &#96;getAttentionRegionsFromVision(imageBase64, width, height)&#96; aufrufen.\n  - Ergebnis &#96;AttentionRegion[]&#96; unter &#96;jobId&#96; in einem **In-Memory-Cache** speichern (z. B. &#96;Map&lt;string, { regions: AttentionRegion[]; timestamp: number }&gt;&#96;), TTL z. B. 15 Minuten.\n- **Result-Route:** Wenn Job &#96;completed&#96; und Fusion ausgeführt wird:\n  - Cache prüfen: &#96;getCachedVisionRegions(jobId)&#96;.\n  - Falls vorhanden: &#96;visionRegions&#96; und &#96;visionWeight&#96; an &#96;fuseSaliencyHeatmap&#96; übergeben; danach Cache-Eintrag entfernen oder verfallen lassen.\n\nSo wird Vision nur einmal pro „Analyse starten“ aufgerufen und nur wenn explizit aktiviert; Kosten bleiben kontrollierbar.\n\n---\n\n## 5. Konfiguration (Umgebungsvariablen)\n\n| Variable | Bedeutung | Default |\n|----------|------------|--------|\n| &#96;SALIENCY_FUSION_STRUCTURE_WEIGHT&#96; | Gewicht der DOM/Struktur-Map bei der Fusion (0 = ohne Struktur). | &#96;0.25&#96; |\n| &#96;SALIENCY_LLM_REGIONS&#96; | &#96;true&#96;/&#96;1&#96;: Im SUM-Pfad zusätzlich LLM Vision aufrufen und in Fusion einrechnen. | nicht gesetzt (aus) |\n| &#96;SALIENCY_FUSION_VISION_WEIGHT&#96; | Gewicht der LLM-Vision-Map (nur wenn LLM-Regionen aktiv). | &#96;0.2&#96; |\n\nDokumentation in [docs/deployment/coolify-saliency-schritt-fuer-schritt.md](docs/deployment/coolify-saliency-schritt-fuer-schritt.md) und ggf. [knowledge/checkion-saliency-ai.md](knowledge/checkion-saliency-ai.md) um einen Abschnitt „Saliency-Fusion (SUM + DOM + optional LLM)“ erweitern.\n\n---\n\n## 6. Ablaufübersicht\n\n1. **SUM-Pfad (Standard):**  \n   Generate → Job anlegen → Client pollt Result.  \n   Result: SUM-Heatmap abholen → (immer) mit pageIndex fusionieren, wenn vorhanden → (optional) gecachte LLM-Regionen hinzufügen → Fusion → Speichern + enrichPageIndex.\n\n2. **AI-Pfad:**  \n   Generate → Vision-Regionen → Heatmap aus Regionen rendern → (neu) mit pageIndex fusionieren → Speichern + enrichPageIndex.\n\n3. **pageIndex:**  \n   Wird nicht geändert; &#96;enrichPageIndexWithSaliency&#96; bleibt wie heute und berechnet &#96;saliencyProminence&#96; pro Region aus der **finalen** (gefusionierten) Heatmap.\n\n---\n\n## 7. Tests und Wissensdokumentation\n\n- **Tests:** Unit-Tests für &#96;buildStructureAttentionMap&#96; (z. B. eine Region mit rect, prüfen ob in rect erhöhte Werte) und für &#96;fuseSaliencyHeatmap&#96; (mit Dummy-pageIndex und ohne Vision: Ausgabe sollte Base64-PNG sein; mit festem SUM-PNG und Struktur prüfen ob sich Werte in Regionen erhöhen). Optional: &#96;decodeJetPngToIntensity&#96; / &#96;intensityToJetPng&#96; Roundtrip.\n- **Knowledge:** Kurzes Dokument (z. B. &#96;knowledge/checkion-saliency-fusion.md&#96;) mit Architektur, Env-Variablen und Hinweis auf LLM als optionale Kostenkomponente.\n\nDamit ist alles, was ihr aus der Seite habt (SUM, DOM/Struktur, optional LLM Vision), in einer konfigurierbaren Fusion vereint; LLM bleibt optional und kostentransparent.\n",
+  "name": "Saliency Fusion SUM DOM LLM",
+  "overview": "State-of-the-art Saliency-Pipeline: SUM als Basis mit DOM/Struktur (pageIndex) fusionieren und optional LLM-Vision-Regionen als Boost einblenden. Alle Fusionen und Gewichte konfigurierbar; LLM optional wegen Kosten."
+}
+```
+Additional data:
+
+```json
+{
+  "reviewData": {
+    "status": "Requested",
+    "selectedOption": "none",
+    "isShowingInput": false
+  },
+  "planUri": "file:///Users/christoph.bordeck/.cursor/plans/saliency_fusion_sum_dom_llm_e4046651.plan.md",
+  "hasOpenedEditor": true
+}
+```
+Result:
+
+```json
+{
+  "rejected": {}
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+_**User**_
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants me to implement the Saliency-Fusion plan. Let me check the plan again and the todo list. The plan specifies:
+
+1. **New module: lib/saliency-fusion.ts** with:
+   - buildStructureAttentionMap(pageIndex, width, height): Float32Array
+   - buildVisionPriorMap(regions, width, height): Float32Array
+   - decodeJetPngToIntensity(pngBuffer): { intensity, width, height }
+   - intensityToJetPng(intensity, width, height): Promise<Buffer>
+   - fuseSaliencyHeatmap(options): Promise<string>
+
+2. **Integration SUM path (result route):** After getting heatmap, fuse with pageIndex (and optional cached vision regions), then save.
+
+3. **Integration AI path (generate route):** After rendering vision heatmap, fuse with pageIndex if present.
+
+4. **Optional LLM Vision in SUM path:** Generate route - after job creation, async call getAttentionRegionsFromVision and cache by jobId. Result route - when completed, get cached regions and add to fusion.
+
+5. **Config:** Env vars SALIENCY_FUSION_STRUCTURE_WEIGHT, SALIENCY_LLM_REGIONS, SALIENCY_FUSION_VISION_WEIGHT.
+
+6. **Tests** for buildStructureAttentionMap and fuseSaliencyHeatmap.
+
+7. **Knowledge doc** checkion-saliency-fusion.md.
+
+Let me find the todos first - the user said they're already created. I'll need to look at the plan file or the todo list. The plan file shows `todos: []` in the frontmatter. So I might need to work through the plan sections as my todo list. I'll create a mental todo list and mark progress as I go:
+
+1. Create lib/saliency-fusion.ts (buildStructureAttentionMap, buildVisionPriorMap, decodeJetPngToIntensity, intensityToJetPng, fuseSaliencyHeatmap)
+2. Add vision regions cache (in-memory) and wire Generate route to call Vision async and cache
+3. Integrate fusion in Result route (SUM path)
+4. Integrate fusion in Generate route (AI path)
+5. Add env config / docs
+6. Add tests
+7. Add knowledge doc
+
+Let me start implementing. First I'll read the existing saliency-ai.ts to reuse the Gaussian blob logic for buildVisionPriorMap, and page-index for any shared types.
+</details></think>
+
+---
+
+
+Implementierung starten: Zuerst prüfen wir die Todos und die relevanten Dateien.
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] Create lib/saliency-fusion.ts with fusion helpers
+- [ ] Add vision regions cache and wire Generate route for optional LLM
+- [ ] Integrate fusion in Result route (SUM path)
+- [ ] Integrate fusion in Generate route (AI path)
+- [ ] Add tests and knowledge doc for saliency fusion
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/saliency-ai.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I have the types and the saliency-ai logic. I'll create lib/saliency-fusion.ts with:
+1. buildStructureAttentionMap - Gaussian or soft rect per region with weight = findabilityScore * semanticBoost * (aboveFold ? 1.1 : 1)
+2. buildVisionPriorMap - same Gaussian logic as in saliency-ai but output Float32Array, no gamma/jet
+3. decodeJetPngToIntensity - sharp raw RGB, use R channel
+4. intensityToJetPng - jet colormap + sharp, optional gamma
+5. fuseSaliencyHeatmap - orchestrate
+
+For buildStructureAttentionMap I need to draw a soft mask per region. I'll use a Gaussian centered in the rect (center of rect), with sigma based on rect size, and weight as specified.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/saliency-fusion.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to add the vision regions cache and wire the Generate route. Then Result route, then AI path in Generate, then tests and knowledge doc. Let me add a small cache module for vision regions - I'll put it in lib/saliency-vision-cache.ts or inline in a shared place. The plan says: Generate route after job creation, async call getAttentionRegionsFromVision and cache by jobId. Result route reads cache when job completed. I'll create a simple in-memory cache in lib/saliency-fusion.ts or a separate file. Separate is cleaner: lib/saliency-vision-cache.ts with setVisionRegions(jobId, regions), getVisionRegions(jobId) => regions | undefined, and TTL cleanup (e.g. on get we check timestamp and delete if > 15 min).
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Create lib/saliency-fusion.ts with fusion helpers
+- [-] Add vision regions cache and wire Generate route for optional LLM
+- [ ] Integrate fusion in Result route (SUM path)
+- [ ] Integrate fusion in Generate route (AI path)
+- [ ] Add tests and knowledge doc for saliency fusion
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/saliency/generate/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to:
+1. Create lib/saliency-vision-cache.ts with set/get and TTL 15 min
+2. In Generate route (SUM path): after returning jobId, fire-and-forget call getAttentionRegionsFromVision with imageBase64 and dimensions (we have those from result - we need width/height; we can get from sharp on the image buffer), then s</details></think>
+
+---
+

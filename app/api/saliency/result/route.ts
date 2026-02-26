@@ -3,10 +3,13 @@
 /* ------------------------------------------------------------------ */
 
 import { NextResponse } from 'next/server';
+import sharp from 'sharp';
 import { auth } from '@/auth';
 import { getScan, updateScanResult } from '@/lib/db/scans';
 import { invalidateScan } from '@/lib/cache';
+import { fuseSaliencyHeatmap } from '@/lib/saliency-fusion';
 import { enrichPageIndexWithSaliency } from '@/lib/page-index';
+import { getVisionRegions } from '@/lib/saliency-vision-cache';
 
 function getSaliencyBaseUrl(): string | undefined {
     const raw = process.env.SALIENCY_SERVICE_URL;
@@ -23,6 +26,8 @@ function getSaliencyBaseUrl(): string | undefined {
 }
 
 const RESULT_FETCH_TIMEOUT_MS = 10_000;
+const STRUCTURE_WEIGHT = parseFloat(process.env.SALIENCY_FUSION_STRUCTURE_WEIGHT ?? '0.25');
+const VISION_WEIGHT = parseFloat(process.env.SALIENCY_FUSION_VISION_WEIGHT ?? '0.2');
 
 export async function GET(request: Request) {
     const session = await auth();
@@ -107,7 +112,27 @@ export async function GET(request: Request) {
     }
 
     if (job.status === 'completed' && job.heatmap_base64) {
-        const dataUrl = `data:image/png;base64,${job.heatmap_base64}`;
+        let heatmapBase64 = job.heatmap_base64;
+        const buf = Buffer.from(heatmapBase64, 'base64');
+        const meta = await sharp(buf).metadata();
+        const width = meta.width ?? 1920;
+        const height = meta.height ?? 1080;
+
+        try {
+            heatmapBase64 = await fuseSaliencyHeatmap({
+                sumHeatmapPngBase64: heatmapBase64,
+                pageIndex: result.pageIndex,
+                structureWeight: STRUCTURE_WEIGHT,
+                visionRegions: getVisionRegions(jobId),
+                visionWeight: VISION_WEIGHT,
+                width,
+                height,
+            });
+        } catch (e) {
+            console.error('[CHECKION] saliency/result: fusion failed', e);
+        }
+
+        const dataUrl = `data:image/png;base64,${heatmapBase64}`;
         let pageIndexPatch: { pageIndex?: typeof result.pageIndex } = {};
         if (result.pageIndex) {
             try {

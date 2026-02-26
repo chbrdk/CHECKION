@@ -8,7 +8,9 @@ import { auth } from '@/auth';
 import { getScan, updateScanResult } from '@/lib/db/scans';
 import { invalidateScan } from '@/lib/cache';
 import { enrichPageIndexWithSaliency } from '@/lib/page-index';
+import { fuseSaliencyHeatmap } from '@/lib/saliency-fusion';
 import { getAttentionRegionsFromVision, renderHeatmapFromRegions } from '@/lib/saliency-ai';
+import { setVisionRegions } from '@/lib/saliency-vision-cache';
 import { getScreenshotBase64 } from '@/lib/screenshot-storage';
 
 /** Base URL of the saliency service. Public domains stay HTTPS; internal hostnames (no dot) use http. */
@@ -30,6 +32,8 @@ function getSaliencyBaseUrl(): string | undefined {
 const JOB_CREATE_TIMEOUT_MS = 15_000;
 
 const USE_AI_SALIENCY = process.env.SALIENCY_USE_AI === 'true' || process.env.SALIENCY_USE_AI === '1';
+const USE_LLM_REGIONS = process.env.SALIENCY_LLM_REGIONS === 'true' || process.env.SALIENCY_LLM_REGIONS === '1';
+const STRUCTURE_WEIGHT = parseFloat(process.env.SALIENCY_FUSION_STRUCTURE_WEIGHT ?? '0.25');
 
 export async function POST(request: Request) {
     const session = await auth();
@@ -74,7 +78,20 @@ export async function POST(request: Request) {
                 );
             }
 
-            const heatmapBase64 = await renderHeatmapFromRegions(regions, width, height);
+            let heatmapBase64 = await renderHeatmapFromRegions(regions, width, height);
+            if (result.pageIndex) {
+                try {
+                    heatmapBase64 = await fuseSaliencyHeatmap({
+                        sumHeatmapPngBase64: heatmapBase64,
+                        pageIndex: result.pageIndex,
+                        structureWeight: STRUCTURE_WEIGHT,
+                        width,
+                        height,
+                    });
+                } catch (e) {
+                    console.error('[CHECKION] saliency/generate (AI): fusion failed', e);
+                }
+            }
             const dataUrl = `data:image/png;base64,${heatmapBase64}`;
 
             let pageIndexPatch: { pageIndex?: typeof result.pageIndex } = {};
@@ -114,6 +131,11 @@ export async function POST(request: Request) {
             { status: 503 },
         );
     }
+
+    const buf = Buffer.from(imageBase64, 'base64');
+    const meta = await sharp(buf).metadata();
+    const imgWidth = meta.width ?? 1920;
+    const imgHeight = meta.height ?? 1080;
 
     const jobsUrl = saliencyBaseUrl + '/jobs';
     let res: Response;
@@ -159,6 +181,14 @@ export async function POST(request: Request) {
             { error: 'Saliency service did not return job_id.' },
             { status: 502 },
         );
+    }
+
+    if (USE_LLM_REGIONS && process.env.OPENAI_API_KEY?.trim()) {
+        getAttentionRegionsFromVision(imageBase64, imgWidth, imgHeight)
+            .then((regions) => {
+                setVisionRegions(jobId, regions);
+            })
+            .catch((err) => console.error('[CHECKION] saliency/generate: vision regions failed', err));
     }
 
     return NextResponse.json({ jobId });
