@@ -22,8 +22,8 @@ RUN pip install --no-cache-dir --timeout 600 -r requirements.txt
 # Optional: gdown for one-time weights download from Google Drive (set WEIGHTS_FOLDER_ID in Coolify)
 RUN pip install --no-cache-dir gdown
 
-# Our service
-COPY main.py .
+# Our service (heatmap_postprocess shared with SUM backend)
+COPY main.py heatmap_postprocess.py .
 COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh
 

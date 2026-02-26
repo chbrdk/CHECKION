@@ -39,7 +39,7 @@ Ohne CUDA-Build liefert mamba_ssm keine `selective_scan_cuda`-Extension. SUMs `v
 SUM liefert oft eine starke Vertikalstruktur (oben hell, unten dunkel). Damit Headlines, CTAs und Spots sichtbar werden wie bei EyeQuant, wird die gleiche Nachbearbeitung wie in `main.py` (MDS-ViTNet) angewendet:
 
 - **Modul:** `heatmap_postprocess.py` → `postprocess_eyequant_style()`
-- **Schritte:** Vertikal-Baseline abziehen, globalen Gradienten entfernen, Perzentil 10–90 strecken, lokaler Kontrast, Unsharp, Gamma 0,38.
+- **Schritte:** Volle Vertikal-Baseline (1.0), starker Global-Gradient-Abzug (0.99), Perzentil 5–95, starker lokaler Kontrast (Headline-/Bildmaßstab), Unsharp, Gamma 0,28. Konstanten in `heatmap_postprocess.py` anpassbar (feiner = mehr Fokus auf Headlines/Bilder).
 - **Verwendung:** SUM-Pipeline in `main_sum.py` ruft die Funktion nach dem Resize und vor der Jet-Colormap auf. Tests: `saliency-service/tests/test_heatmap_postprocess.py`.
 
 ## Referenzen
