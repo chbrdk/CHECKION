@@ -1,10 +1,14 @@
 /* ------------------------------------------------------------------ */
-/*  CHECKION – POST /api/saliency/generate (async: start job, returns jobId)  */
+/*  CHECKION – POST /api/saliency/generate (SUM job → jobId | AI → success)  */
 /* ------------------------------------------------------------------ */
 
 import { NextResponse } from 'next/server';
+import sharp from 'sharp';
 import { auth } from '@/auth';
-import { getScan } from '@/lib/db/scans';
+import { getScan, updateScanResult } from '@/lib/db/scans';
+import { invalidateScan } from '@/lib/cache';
+import { enrichPageIndexWithSaliency } from '@/lib/page-index';
+import { getAttentionRegionsFromVision, renderHeatmapFromRegions } from '@/lib/saliency-ai';
 import { getScreenshotBase64 } from '@/lib/screenshot-storage';
 
 /** Base URL of the saliency service. Public domains stay HTTPS; internal hostnames (no dot) use http. */
@@ -25,18 +29,12 @@ function getSaliencyBaseUrl(): string | undefined {
 /** Timeout for job creation only (short). */
 const JOB_CREATE_TIMEOUT_MS = 15_000;
 
+const USE_AI_SALIENCY = process.env.SALIENCY_USE_AI === 'true' || process.env.SALIENCY_USE_AI === '1';
+
 export async function POST(request: Request) {
     const session = await auth();
     if (!session?.user?.id) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const saliencyBaseUrl = getSaliencyBaseUrl();
-    if (!saliencyBaseUrl) {
-        return NextResponse.json(
-            { error: 'Saliency service not configured (SALIENCY_SERVICE_URL).' },
-            { status: 503 },
-        );
     }
 
     let body: { scanId?: string };
@@ -58,6 +56,63 @@ export async function POST(request: Request) {
     const imageBase64 = await getScreenshotBase64(result.screenshot, scanId);
     if (!imageBase64) {
         return NextResponse.json({ error: 'Scan has no screenshot or screenshot file missing.' }, { status: 400 });
+    }
+
+    // --- AI path: OpenAI Vision → regions → render heatmap (no SUM, no polling) ---
+    if (USE_AI_SALIENCY && process.env.OPENAI_API_KEY?.trim()) {
+        try {
+            const buf = Buffer.from(imageBase64, 'base64');
+            const meta = await sharp(buf).metadata();
+            const width = meta.width ?? 1920;
+            const height = meta.height ?? 1080;
+
+            const regions = await getAttentionRegionsFromVision(imageBase64, width, height);
+            if (regions.length === 0) {
+                return NextResponse.json(
+                    { error: 'AI could not detect attention regions. Try again or use SUM backend.' },
+                    { status: 502 },
+                );
+            }
+
+            const heatmapBase64 = await renderHeatmapFromRegions(regions, width, height);
+            const dataUrl = `data:image/png;base64,${heatmapBase64}`;
+
+            let pageIndexPatch: { pageIndex?: typeof result.pageIndex } = {};
+            if (result.pageIndex) {
+                try {
+                    pageIndexPatch.pageIndex = await enrichPageIndexWithSaliency(result.pageIndex, dataUrl);
+                } catch (e) {
+                    console.error('[CHECKION] saliency/generate (AI): enrichPageIndexWithSaliency failed', e);
+                }
+            }
+
+            const updated = await updateScanResult(scanId, session.user.id, {
+                saliencyHeatmap: dataUrl,
+                ...pageIndexPatch,
+            });
+            if (!updated) {
+                return NextResponse.json({ error: 'Failed to save heatmap to scan.' }, { status: 500 });
+            }
+            invalidateScan(scanId);
+            return NextResponse.json({ success: true });
+        } catch (e) {
+            const message = e instanceof Error ? e.message : 'AI saliency failed';
+            console.error('[CHECKION] saliency/generate (AI):', e);
+            return NextResponse.json({ error: message }, { status: 502 });
+        }
+    }
+
+    // --- SUM path: create job, return jobId (client polls /api/saliency/result) ---
+    const saliencyBaseUrl = getSaliencyBaseUrl();
+    if (!saliencyBaseUrl) {
+        return NextResponse.json(
+            {
+                error: USE_AI_SALIENCY
+                    ? 'AI saliency needs OPENAI_API_KEY. SUM needs SALIENCY_SERVICE_URL.'
+                    : 'Saliency not configured: set SALIENCY_SERVICE_URL or SALIENCY_USE_AI=1 and OPENAI_API_KEY.',
+            },
+            { status: 503 },
+        );
     }
 
     const jobsUrl = saliencyBaseUrl + '/jobs';

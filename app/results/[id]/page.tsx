@@ -148,8 +148,21 @@ export default function ResultsPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ scanId }),
             });
-            const createData = (await createRes.json().catch(() => ({}))) as { jobId?: string; error?: string };
+            const createData = (await createRes.json().catch(() => ({}))) as {
+                jobId?: string;
+                success?: boolean;
+                error?: string;
+            };
             if (!createRes.ok) throw new Error(createData.error ?? t('results.heatmapError'));
+            if (createData.success) {
+                const scanRes = await fetch(`/api/scan/${scanId}`);
+                if (scanRes.ok) {
+                    const updated = await scanRes.json();
+                    setResult((prev) => (prev?.id === scanId ? updated : prev));
+                    setShowSaliencyHeatmap(true);
+                }
+                return;
+            }
             const jobId = createData.jobId;
             if (!jobId) throw new Error(t('results.heatmapError'));
 
