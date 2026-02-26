@@ -306,7 +306,9 @@ Nach einem **git pull** und erneutem **Deploy** sollte der Build durchlaufen. We
 
 ## Fehler: 502 bei POST /api/saliency/generate
 
-**502 Bad Gateway** beim Klick auf „Heatmap jetzt berechnen“ kommt fast immer vom **Proxy-Timeout**.
+Seit der **async-Umstellung** (Job-API) antwortet `POST /api/saliency/generate` sofort mit `{ jobId }`; die Berechnung läuft im Saliency-Service im Hintergrund. Die App pollt `GET /api/saliency/result?jobId=…&scanId=…` alle paar Sekunden. Dadurch sind **lange offene Requests** und damit **502 durch Proxy-Timeout** deutlich seltener. Falls du dennoch 502 siehst:
+
+**502 Bad Gateway** beim Klick auf „Heatmap jetzt berechnen“ kann weiterhin vom **Proxy-Timeout** kommen (z. B. wenn der erste Request doch zu lange blockiert).
 
 ### Ursache: Proxy bricht nach 60 Sekunden ab
 

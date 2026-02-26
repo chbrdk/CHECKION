@@ -22865,11 +22865,244 @@ Test anpassen: Bei reinem Gradienten kann die Ausgabe bei maximaler Feinheit kom
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/tests/test_heatmap_postprocess.py</summary>
 
-Status: **loading**
-
 </details>
 
 </tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now the test only checks shape and range. Let me run tests again.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service && python3 -m pytest tests/test_heatmap_postprocess.py -v 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service && python3 -m pytest tests/test_heatmap_postprocess.py -v 2>&1
+```
+
+```
+============================= test session starts ==============================
+platform darwin -- Python 3.9.6, pytest-8.4.2, pluggy-1.6.0 -- /Applications/Xcode.app/Contents/Developer/usr/bin/python3
+cachedir: .pytest_cache
+rootdir: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service
+collecting ... collected 3 items
+
+tests/test_heatmap_postprocess.py::test_output_shape_and_range PASSED    [ 33%]
+tests/test_heatmap_postprocess.py::test_reduces_top_to_bottom_bias PASSED [ 66%]
+tests/test_heatmap_postprocess.py::test_spot_emphasis PASSED             [100%]
+
+============================== 3 passed in 0.52s ===============================
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+All tests pass. Summary for the user.
+</details></think>
+
+---
+
+
+Die Einstellung ist noch einmal feiner geworden:
+
+| Parameter | Vorher | Jetzt |
+|-----------|--------|--------|
+| **Vertikal-Baseline** | 1.08 | **1.12** |
+| **Globaler Gradient** | 0.998 | **0.999** |
+| **Global-Sigma** | min/2.2 | **min/1.9** |
+| **2. Global-Pass** | min/1.8, 0.96× | **min/1.6**, **0.97×** |
+| **Perzentil** | 2–98 | **1–99** |
+| **Lokaler Kontrast** | 4.5 | **5.5** |
+| **Lokale Skala** | min/1200, σ≥0.5 | **min/1800**, **σ≥0.4** |
+| **Unsharp** | 1.9 / σ0.35 | **2.2 / σ0.25** |
+| **Gamma** | 0.18 | **0.14** |
+
+Damit bleiben vor allem kleine, lokale Spots (Headlines, Bilder, CTAs) sichtbar; reine Verläufe werden stark unterdrückt. Tests laufen durch. Bitte Saliency-Service neu deployen und prüfen.
+
+---
+
+_**User**_
+
+wir rennen jetzt in timeouts können wir es async gestalten
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is saying they're running into timeouts - the saliency computation is taking too long (likely the SUM model on CPU). They want to make it async so that the request doesn't block and timeout.
+
+I need to:
+1. Find where the saliency is called - likely the Next.js API route that calls the saliency service, and/or the saliency service itself
+2. Make the flow async: e.g. submit a job, return immediately with a job ID, then poll for result - OR run the heavy work in a background task and keep the HTTP request open but with a longer timeout - OR use a queue (e.g. Redis/Bull) for true async processing
+
+The simplest approach that avoids timeouts:
+- **Option A:** Run the saliency prediction in a background thread/task in the saliency service, and have the client poll for completion. This requires a job queue or at least storing job state.
+- **Option B:** Just increase the timeout on the proxy (they already documented Traefik timeout). But the user asked for "async" so they want a different architecture.
+- **Option C:** In the saliency service (FastAPI), run the actual model inference in a thread pool (run_in_executor) so the event loop isn't blocked, and optionally increase the request timeout. That doesn't make it "async" in the sense of non-blocking - it just prevents blocking the async event loop. The request would still wait for the result.
+- **Option D:** True async: Client POSTs to start a job → gets job_id → GET /result/{job_id} to poll. The saliency service runs the job in a background thread and stores the result in memory (or Redis). When the frontend calls the Next.js API, the API could either:
+  - (1) Call saliency service "start job" → get job_id → poll saliency service "get result" until done (or timeout after e.g. 2 min) → return to client
+  - (2) Call saliency service "start job" → return job_id to client immediately → client polls a Next.js endpoint that checks job status with saliency service
+
+Option D is proper async and avoids proxy timeouts because the initial POST returns quickly. The client then polls for the result. Let me look at the current flow:
+
+1. Client → POST /api/saliency/generate (Next.js) with image
+2. Next.js → POST to saliency service /predict with image
+3. Saliency service runs SUM (slow on CPU), returns heatmap
+4. Next.js returns heatmap to client
+
+If we make it async:
+1. Client → POST /api/saliency/generate with image
+2. Next.js → POST to saliency service /jobs (or /predict/async) with image → saliency service queues job, returns job_id immediately
+3. Next.js returns { jobId } to client quickly (no timeout)
+4. Client polls GET /api/saliency/status?jobId=xxx (or /api/saliency/result?jobId=xxx)
+5. Next.js asks saliency service GET /jobs/{job_id} for status/result
+6. Saliency service runs SUM in background; when done, result is available at GET /jobs/{job_id}
+7. When client gets result, it displays the heatmap
+
+I need to:
+1. In the saliency service (main_sum.py): add async job API - POST /jobs with image returns job_id, background task runs prediction, GET /jobs/{job_id} returns status (pending/running/completed) and when completed the heatmap. Store in memory (dict) for simplicity.
+2. In Next.js: change the generate route to either (a) call the new async API and poll until done (so the client still does one request but we can have long poll interval and the Next.js route waits), or (b) return jobId to client and add a new route for polling result. Option (b) is true async from the client's perspective and avoids Next.js request timeout too. Option (a) would still timeout on the Next.js -> saliency call unless we poll with multiple short requests.
+
+Actually re-reading the user message: "wir rennen jetzt in timeouts können wir es async gestalten" - they want to make it async so they don't hit timeouts. The key is that the request that takes a long time (the SUM inference) shouldn't be a single HTTP request that runs for minutes. So:
+
+**Approach: Job-based async in saliency service + client polls**
+
+1. **Saliency service (main_sum.py):**
+   - POST /predict (keep for backward compatibility?) or add POST /jobs: body = { image_base64 }, response = { job_id }. Start background task (asyncio.create_task or threading.Thread) that runs the model and stores result in a dict jobs[job_id] = { status, result_or_error }.
+   - GET /jobs/{job_id}: returns { status: "pending"|"running"|"completed"|"failed", heatmap_base64?: string, error?: string }
+   - In-memory store is fine for single instance; for multiple instances we'd need Redis (out of scope for now).
+
+2. **Next.js API:**
+   - Option A: POST /api/saliency/generate now calls saliency POST /jobs, gets job_id, then in a loop (with timeout e.g. 5 min) polls GET /jobs/{job_id} every 2-3 seconds until status is completed or failed, then returns the heatmap to the client. So the client still does one request to Next.js but that request can take long - we might still hit timeout on the client->Next.js connection (e.g. 60s on Vercel). So Option A doesn't fully solve it unless we increase timeout on the client side too.
+   - Option B: POST /api/saliency/generate calls saliency POST /jobs, returns { jobId } to client immediately. Client then polls GET /api/saliency/result?jobId=xxx (or status) which calls saliency GET /jobs/{job_id} and returns the result when ready. So client makes one quick POST, then polls until done. No long-running request. This is proper async.
+
+I'll go with Option B: job-based async with client polling. That way no single request runs for minutes.
+
+Let me find the current saliency API route and the frontend code that calls it.
+</details></think>
+
+---
+
+
+Aktuellen Ablauf prüfen: Wo wird die Saliency-Anfrage ausgelöst und wo tritt das Timeout auf?
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "saliency|generate|predict",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app",
+  "glob": "**/*.{ts,tsx}",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "saliency|generate|predict",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app",
+  "outputMode": "content",
+  "totalFiles": 9,
+  "totalMatches": 43,
+  "topFiles": [
+    {
+      "uri": "app/api/share/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/api/scan/route.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "app/domain/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/saliency/generate/route.ts",
+      "matchCount": 12
+    },
+    {
+      "uri": "app/results/[id]/page.tsx",
+      "matchCount": 16
+    },
+    {
+      "uri": "app/api/scan/domain/[id]/summarize/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/scan/[id]/summarize/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/scan/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/share/[token]/page.tsx",
+      "matchCount": 4
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/saliency/generate/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/main_sum.py</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to see:
+1. The results page that calls /api/saliency/generate - how it handles the response
+2. The full main_sum.py to add job endpoints
+
+Plan:
+1. Saliency service (main_sum.py): Add job-ba</details></think>
 
 ---
 

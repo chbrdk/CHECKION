@@ -2,6 +2,7 @@
 CHECKION Saliency Service – SUM backend (website/UI-optimized).
 Uses SUM (Saliency Unification through Mamba) with condition=3 (User Interface images).
 Same API as main.py: POST /predict with image_base64, returns heatmap_base64.
+Async: POST /jobs returns job_id; GET /jobs/{job_id} returns status + heatmap when completed.
 """
 from __future__ import annotations
 
@@ -10,6 +11,8 @@ import io
 import os
 import sys
 import tempfile
+import threading
+import uuid
 from pathlib import Path
 
 import numpy as np
@@ -122,6 +125,27 @@ class PredictResponse(BaseModel):
     heatmap_base64: str
 
 
+# Async jobs: job_id -> { "status": "pending"|"running"|"completed"|"failed", "heatmap_base64"?: str, "error"?: str }
+_jobs: dict[str, dict] = {}
+_jobs_lock = threading.Lock()
+
+
+def _run_job(job_id: str, image_base64: str, width: int | None, height: int | None) -> None:
+    with _jobs_lock:
+        _jobs[job_id]["status"] = "running"
+    try:
+        img, orig_w, orig_h = decode_image(image_base64)
+        out_w = width if width is not None else orig_w
+        out_h = height if height is not None else orig_h
+        png_bytes = run_saliency_sum(img, out_w, out_h)
+        b64 = base64.b64encode(png_bytes).decode("ascii")
+        with _jobs_lock:
+            _jobs[job_id] = {"status": "completed", "heatmap_base64": b64}
+    except Exception as e:
+        with _jobs_lock:
+            _jobs[job_id] = {"status": "failed", "error": str(e)}
+
+
 def decode_image(b64: str) -> tuple[Image.Image, int, int]:
     raw = b64.strip()
     if raw.startswith("data:"):
@@ -184,6 +208,37 @@ def predict(req: PredictRequest) -> PredictResponse:
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     return PredictResponse(heatmap_base64=base64.b64encode(png_bytes).decode("ascii"))
+
+
+# --- Async job API (avoids long-running request timeouts) ---
+
+class JobCreateResponse(BaseModel):
+    job_id: str
+
+
+@app.post("/jobs", response_model=JobCreateResponse)
+def create_job(req: PredictRequest) -> JobCreateResponse:
+    if model is None:
+        raise HTTPException(status_code=503, detail="Model not loaded")
+    job_id = uuid.uuid4().hex
+    with _jobs_lock:
+        _jobs[job_id] = {"status": "pending"}
+    t = threading.Thread(
+        target=_run_job,
+        args=(job_id, req.image_base64, req.width, req.height),
+        daemon=True,
+    )
+    t.start()
+    return JobCreateResponse(job_id=job_id)
+
+
+@app.get("/jobs/{job_id}")
+def get_job(job_id: str) -> dict:
+    with _jobs_lock:
+        job = _jobs.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return job
 
 
 if __name__ == "__main__":

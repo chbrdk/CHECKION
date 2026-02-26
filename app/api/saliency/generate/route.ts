@@ -1,15 +1,13 @@
 /* ------------------------------------------------------------------ */
-/*  CHECKION – POST /api/saliency/generate (async heatmap from scan)  */
+/*  CHECKION – POST /api/saliency/generate (async: start job, returns jobId)  */
 /* ------------------------------------------------------------------ */
 
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { getScan, updateScanResult } from '@/lib/db/scans';
-import { invalidateScan } from '@/lib/cache';
-import { enrichPageIndexWithSaliency } from '@/lib/page-index';
+import { getScan } from '@/lib/db/scans';
 import { getScreenshotBase64 } from '@/lib/screenshot-storage';
 
-/** Base URL of the saliency service. Public domains (e.g. https://sum-saliency....) stay HTTPS; internal hostnames (no dot) use http to avoid TLS issues. */
+/** Base URL of the saliency service. Public domains stay HTTPS; internal hostnames (no dot) use http. */
 function getSaliencyBaseUrl(): string | undefined {
     const raw = process.env.SALIENCY_SERVICE_URL;
     if (!raw?.trim()) return undefined;
@@ -24,8 +22,8 @@ function getSaliencyBaseUrl(): string | undefined {
     return url.replace(/^https:\/\//i, 'http://');
 }
 
-/** Timeout (ms) for saliency request. Model on CPU can take 1–3 min for large screenshots. */
-const SALIENCY_REQUEST_TIMEOUT_MS = 180_000;
+/** Timeout for job creation only (short). */
+const JOB_CREATE_TIMEOUT_MS = 15_000;
 
 export async function POST(request: Request) {
     const session = await auth();
@@ -62,26 +60,23 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Scan has no screenshot or screenshot file missing.' }, { status: 400 });
     }
 
-    const predictUrl = saliencyBaseUrl + '/predict';
+    const jobsUrl = saliencyBaseUrl + '/jobs';
     let res: Response;
     try {
-        res = await fetch(predictUrl, {
+        res = await fetch(jobsUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ image_base64: imageBase64 }),
-            signal: AbortSignal.timeout(SALIENCY_REQUEST_TIMEOUT_MS),
+            signal: AbortSignal.timeout(JOB_CREATE_TIMEOUT_MS),
         });
     } catch (e) {
-        const isTimeout =
-            (e instanceof Error && e.name === 'AbortError') ||
-            (e instanceof Error && /timeout|aborted/i.test(e.message));
-        const message = isTimeout
-            ? `Saliency-Anfrage Zeitüberschreitung (${SALIENCY_REQUEST_TIMEOUT_MS / 1000}s). Service auf CPU kann länger brauchen. SALIENCY_SERVICE_URL prüfen, gleiches Netz wie Saliency-Container.`
-            : (e instanceof Error ? e.message : 'Saliency service request failed') +
-              ' (SALIENCY_SERVICE_URL prüfen, gleiches Netz wie Saliency-Container.)';
-        const detail = e instanceof Error ? String(e) : message;
-        console.error('[CHECKION] saliency/generate: fetch error', { url: predictUrl, error: detail });
-        return NextResponse.json({ error: message }, { status: 502 });
+        const message =
+            e instanceof Error ? e.message : 'Saliency service request failed';
+        console.error('[CHECKION] saliency/generate: create job error', { url: jobsUrl, error: message });
+        return NextResponse.json(
+            { error: message + ' (SALIENCY_SERVICE_URL prüfen.)' },
+            { status: 502 },
+        );
     }
 
     if (!res.ok) {
@@ -89,13 +84,13 @@ export async function POST(request: Request) {
         console.error('[CHECKION] saliency/generate: service returned', res.status, text);
         return NextResponse.json(
             { error: `Saliency service error: ${res.status}` },
-            { status: res.status >= 500 ? 502 : 502 },
+            { status: 502 },
         );
     }
 
-    let data: { heatmap_base64?: string };
+    let data: { job_id?: string };
     try {
-        data = (await res.json()) as { heatmap_base64?: string };
+        data = (await res.json()) as { job_id?: string };
     } catch {
         return NextResponse.json(
             { error: 'Invalid response from saliency service.' },
@@ -103,37 +98,13 @@ export async function POST(request: Request) {
         );
     }
 
-    const heatmapBase64 = data.heatmap_base64;
-    if (!heatmapBase64 || typeof heatmapBase64 !== 'string') {
+    const jobId = data.job_id;
+    if (!jobId || typeof jobId !== 'string') {
         return NextResponse.json(
-            { error: 'Saliency service did not return heatmap_base64.' },
+            { error: 'Saliency service did not return job_id.' },
             { status: 502 },
         );
     }
 
-    const dataUrl = `data:image/png;base64,${heatmapBase64}`;
-
-    let pageIndexPatch: { pageIndex?: typeof result.pageIndex } = {};
-    if (result.pageIndex) {
-        try {
-            pageIndexPatch.pageIndex = await enrichPageIndexWithSaliency(result.pageIndex, dataUrl);
-        } catch (e) {
-            console.error('[CHECKION] saliency/generate: enrichPageIndexWithSaliency failed', e);
-            // continue without enriched pageIndex
-        }
-    }
-
-    const updated = await updateScanResult(scanId, session.user.id, {
-        saliencyHeatmap: dataUrl,
-        ...pageIndexPatch,
-    });
-    if (!updated) {
-        return NextResponse.json(
-            { error: 'Failed to save heatmap to scan.' },
-            { status: 500 },
-        );
-    }
-    invalidateScan(scanId);
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ jobId });
 }

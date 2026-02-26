@@ -141,19 +141,43 @@ export default function ResultsPage() {
         if (!result?.id || saliencyGenerating) return;
         setSaliencyError(null);
         setSaliencyGenerating(true);
+        const scanId = result.id;
         try {
-            const res = await fetch('/api/saliency/generate', {
+            const createRes = await fetch('/api/saliency/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ scanId: result.id }),
+                body: JSON.stringify({ scanId }),
             });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.error ?? t('results.heatmapError'));
-            const scanRes = await fetch(`/api/scan/${result.id}`);
-            if (scanRes.ok) {
-                const updated = await scanRes.json();
-                setResult(updated);
-                setShowSaliencyHeatmap(true);
+            const createData = (await createRes.json().catch(() => ({}))) as { jobId?: string; error?: string };
+            if (!createRes.ok) throw new Error(createData.error ?? t('results.heatmapError'));
+            const jobId = createData.jobId;
+            if (!jobId) throw new Error(t('results.heatmapError'));
+
+            const pollIntervalMs = 2500;
+            const maxWaitMs = 10 * 60 * 1000; // 10 min
+            const started = Date.now();
+            for (;;) {
+                const res = await fetch(`/api/saliency/result?jobId=${encodeURIComponent(jobId)}&scanId=${encodeURIComponent(scanId)}`);
+                const data = (await res.json().catch(() => ({}))) as {
+                    status?: string;
+                    success?: boolean;
+                    heatmapDataUrl?: string;
+                    error?: string;
+                };
+                if (data.status === 'completed' && data.heatmapDataUrl) {
+                    setResult((prev) => (prev?.id === scanId ? { ...prev, saliencyHeatmap: data.heatmapDataUrl } : prev));
+                    setShowSaliencyHeatmap(true);
+                    break;
+                }
+                if (data.status === 'failed' || res.status === 404) {
+                    setSaliencyError(data.error ?? t('results.heatmapError'));
+                    break;
+                }
+                if (Date.now() - started > maxWaitMs) {
+                    setSaliencyError(t('results.heatmapError'));
+                    break;
+                }
+                await new Promise((r) => setTimeout(r, pollIntervalMs));
             }
         } catch (e) {
             setSaliencyError(e instanceof Error ? e.message : t('results.heatmapError'));
