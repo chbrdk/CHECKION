@@ -7,16 +7,16 @@ from __future__ import annotations
 
 import numpy as np
 
-# Preset: more sensitive to headlines/images (stronger baseline removal, tighter local contrast)
-ROW_BASELINE_FACTOR = 1.0  # full vertical baseline removal (was 0.85)
-GLOBAL_GRADIENT_FACTOR = 0.99  # strip almost all global gradient (was 0.97)
-GLOBAL_SIGMA_FRAC = 3  # denominator: min(h,w)/3 → larger blur, more removed (was 4)
-PERCENTILE_LO, PERCENTILE_HI = 5, 95  # tighter stretch so only real hotspots go hot (was 10, 90)
-LOCAL_CONTRAST_FACTOR = 2.8  # stronger local emphasis = clearer headlines/images (was 1.8)
-LOCAL_SIGMA_FRAC = 400  # min(h,w)/400 → headline-scale neighborhood (was 800)
-UNSHARP_FACTOR = 1.3  # crisper hotspots (was 0.9)
-UNSHARP_SIGMA = 0.6  # finer sharpening (was 0.8)
-GAMMA = 0.28  # push more into hot range so small differences visible (was 0.38)
+# Preset: maximum fine-grained – only small local spots (headlines, images, CTAs) visible
+ROW_BASELINE_FACTOR = 1.12  # strong oversubtract so no vertical bias
+GLOBAL_GRADIENT_FACTOR = 0.999  # strip virtually all global gradient
+GLOBAL_SIGMA_FRAC = 1.9  # very large blur → only fine local structure left
+PERCENTILE_LO, PERCENTILE_HI = 1, 99  # only the very strongest attention gets hot
+LOCAL_CONTRAST_FACTOR = 5.5  # very strong local emphasis → sharp spot boundaries
+LOCAL_SIGMA_FRAC = 1800  # min(h,w)/1800 → very small sigma = word/element scale
+UNSHARP_FACTOR = 2.2  # very crisp spot edges
+UNSHARP_SIGMA = 0.25  # very fine sharpening
+GAMMA = 0.14  # maximum sensitivity: tiny differences in attention visible
 
 
 def postprocess_eyequant_style(arr: np.ndarray, out_h: int, out_w: int) -> np.ndarray:
@@ -31,18 +31,23 @@ def postprocess_eyequant_style(arr: np.ndarray, out_h: int, out_w: int) -> np.nd
     row_baseline_2d = np.tile(row_baseline[:, np.newaxis], (1, out_w))
     arr = arr - ROW_BASELINE_FACTOR * row_baseline_2d
     arr = np.clip(arr, 0, 1)
-    # 2) Strong global gradient removal → only local structure (headlines, images) remains
+    # 2) Strong global gradient removal → only local structure remains
     sigma_global = max(40.0, min(out_h, out_w) / GLOBAL_SIGMA_FRAC)
     global_smooth = gaussian_filter(arr, sigma=sigma_global, mode="nearest")
     arr = arr - GLOBAL_GRADIENT_FACTOR * global_smooth
+    arr = np.clip(arr, 0, 1)
+    # 2b) Second pass: remove any remaining broad gradient (even finer result)
+    sigma_global2 = max(60.0, min(out_h, out_w) / 1.6)
+    global_smooth2 = gaussian_filter(arr, sigma=sigma_global2, mode="nearest")
+    arr = arr - 0.97 * global_smooth2
     arr = np.clip(arr, 0, 1)
     # 3) Tight percentile stretch so hotspots use full range
     lo, hi = np.percentile(arr, [PERCENTILE_LO, PERCENTILE_HI])
     if hi > lo:
         arr = (arr - lo) / (hi - lo)
     arr = np.clip(arr, 0, 1)
-    # 4) Strong local contrast at headline/image scale
-    sigma_local = max(2.0, min(out_h, out_w) / LOCAL_SIGMA_FRAC)
+    # 4) Very fine local contrast (small sigma = word/element scale)
+    sigma_local = max(0.4, min(out_h, out_w) / LOCAL_SIGMA_FRAC)
     local_mean = gaussian_filter(arr, sigma=sigma_local, mode="nearest")
     arr = arr + LOCAL_CONTRAST_FACTOR * (arr - local_mean)
     arr = np.clip(arr, 0, 1)
