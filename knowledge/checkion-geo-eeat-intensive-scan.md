@@ -29,6 +29,18 @@ Recherche-Stand 2025/2026: GEO zielt auf Zitation in KI-Antworten; E-E-A-T wird 
 
 ---
 
+## KI-Vorschläge für Konkurrenten & Fragen
+
+Im ersten Schritt (Scan-Formular) kann der Nutzer Konkurrenten und Suchanfragen per KI vorschlagen lassen:
+
+- **Button:** „Mit KI Konkurrenten & Fragen vorschlagen“ (sichtbar, wenn Competitive Benchmark aktiv und URL gesetzt).
+- **API:** **POST /api/scan/geo-eeat/suggest-competitors-queries**  
+  Body: `{ url }`. Antwort: `{ competitors: string[], queries: string[] }`.  
+  Nutzt dieselbe OpenAI-Konfiguration wie die GEO/E-E-A-T-Stufen; bei fehlendem API-Key: 503.
+- **Logik:** `lib/geo-eeat/suggest-parse.ts` – `extractHostname`, `parseSuggestResponse` (JSON aus LLM-Antwort extrahieren, Arrays begrenzen). Tests: `lib/geo-eeat/suggest-parse.test.ts`.
+
+---
+
 ## API
 
 - **POST /api/scan/geo-eeat**  

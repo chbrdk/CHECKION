@@ -44,7 +44,7 @@ export function SharePanel({ resourceType, resourceId, labelNamespace = 'results
                 throw new Error('Failed to load');
             })
             .then((data) => {
-                setShareInfo(data);
+                setShareInfo(data?.token && data?.url ? data : null);
             })
             .catch(() => setShareInfo(null))
             .finally(() => setLoading(false));

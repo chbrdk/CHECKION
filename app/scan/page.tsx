@@ -49,6 +49,8 @@ export default function ScanPage() {
     const [geoEeatCompetitive, setGeoEeatCompetitive] = useState(false);
     const [geoEeatCompetitors, setGeoEeatCompetitors] = useState('');
     const [geoEeatQueries, setGeoEeatQueries] = useState('');
+    const [geoEeatSuggesting, setGeoEeatSuggesting] = useState(false);
+    const [geoEeatSuggestError, setGeoEeatSuggestError] = useState<string | null>(null);
 
     useEffect(() => {
         if (scanMode !== 'journey') return;
@@ -270,6 +272,45 @@ export default function ScanPage() {
                             />
                             {geoEeatCompetitive && (
                                 <>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                                        <MsqdxButton
+                                            variant="outlined"
+                                            size="small"
+                                            disabled={!url.trim() || scanning || geoEeatSuggesting}
+                                            onClick={async () => {
+                                                if (!url.trim()) return;
+                                                setGeoEeatSuggestError(null);
+                                                setGeoEeatSuggesting(true);
+                                                try {
+                                                    const res = await fetch('/api/scan/geo-eeat/suggest-competitors-queries', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({ url: url.trim() }),
+                                                    });
+                                                    const data = await res.json();
+                                                    if (!res.ok) {
+                                                        setGeoEeatSuggestError(data.error || t('scan.geoEeatSuggestError'));
+                                                        return;
+                                                    }
+                                                    const comp = Array.isArray(data.competitors) ? data.competitors : [];
+                                                    const q = Array.isArray(data.queries) ? data.queries : [];
+                                                    setGeoEeatCompetitors(comp.join('\n'));
+                                                    setGeoEeatQueries(q.join('\n'));
+                                                } catch {
+                                                    setGeoEeatSuggestError(t('scan.networkError'));
+                                                } finally {
+                                                    setGeoEeatSuggesting(false);
+                                                }
+                                            }}
+                                        >
+                                            {geoEeatSuggesting ? t('scan.geoEeatSuggestLoading') : t('scan.geoEeatSuggestCta')}
+                                        </MsqdxButton>
+                                        {geoEeatSuggestError && (
+                                            <MsqdxTypography variant="caption" sx={{ color: MSQDX_STATUS.error.light }}>
+                                                {geoEeatSuggestError}
+                                            </MsqdxTypography>
+                                        )}
+                                    </Box>
                                     <MsqdxFormField
                                         label={t('scan.geoEeatCompetitorsLabel')}
                                         placeholder={t('scan.geoEeatCompetitorsPlaceholder')}

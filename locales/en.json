@@ -207,6 +207,9 @@
     "geoEeatCompetitorsPlaceholder": "competitor1.com\ncompetitor2.com",
     "geoEeatQueriesLabel": "Search queries (one per line)",
     "geoEeatQueriesPlaceholder": "Best providers for X in region Y",
+    "geoEeatSuggestCta": "Suggest competitors & queries with AI",
+    "geoEeatSuggestLoading": "AI suggesting…",
+    "geoEeatSuggestError": "Could not load suggestions.",
     "startCta": "Start scan",
     "scanningCta": "Scanning…",
     "error": "Scan failed",
@@ -425,7 +428,8 @@
     "experience": "Experience",
     "expertise": "Expertise",
     "shareOfVoice": "Share of voice",
-    "avgPosition": "Avg. position"
+    "avgPosition": "Avg. position",
+    "llmUnavailableHint": "E-E-A-T and GEO fitness scoring by AI was not run (e.g. OPENAI_API_KEY not set or error). Only the technical signals above are available."
   },
   "info": {
     "dashboard": "Overview of all WCAG accessibility checks you have run. Use \"New Scan\" to check a single page or an entire domain.",

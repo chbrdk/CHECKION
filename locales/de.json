@@ -207,6 +207,9 @@
     "geoEeatCompetitorsPlaceholder": "competitor1.com\ncompetitor2.com",
     "geoEeatQueriesLabel": "Suchanfragen (eine pro Zeile)",
     "geoEeatQueriesPlaceholder": "Beste Anbieter für X in Region Y",
+    "geoEeatSuggestCta": "Mit KI Konkurrenten & Fragen vorschlagen",
+    "geoEeatSuggestLoading": "KI schlägt vor…",
+    "geoEeatSuggestError": "Vorschläge konnten nicht geladen werden.",
     "startCta": "Scan starten",
     "scanningCta": "Scan läuft…",
     "error": "Scan fehlgeschlagen",
@@ -425,7 +428,8 @@
     "experience": "Experience",
     "expertise": "Expertise",
     "shareOfVoice": "Share of Voice",
-    "avgPosition": "Ø Position"
+    "avgPosition": "Ø Position",
+    "llmUnavailableHint": "E-E-A-T- und GEO-Fitness-Bewertung per KI wurden nicht durchgeführt (z. B. OPENAI_API_KEY nicht gesetzt oder Fehler). Nur die technischen Signale oben sind verfügbar."
   },
   "info": {
     "dashboard": "Hier siehst du alle durchgeführten WCAG-Barrierefreiheits-Checks. Ein Klick auf „Neuer Scan“ startet einen Check für eine einzelne Seite oder eine ganze Domain.",

@@ -26,7 +26,7 @@ export async function GET(request: Request) {
 
     const share = await getShareByResource(session.user.id, type, id);
     if (!share) {
-        return NextResponse.json({ error: 'No share for this resource' }, { status: 404 });
+        return NextResponse.json({ token: null, url: null, hasPassword: false, createdAt: null });
     }
 
     const origin = request.headers.get('x-forwarded-host') || request.headers.get('host') || '';
