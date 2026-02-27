@@ -6,7 +6,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import OpenAI from 'openai';
-import { OPENAI_MODEL, getOpenAIKey } from '@/lib/llm/config';
+import { getOpenAIKey } from '@/lib/llm/config';
+
+const SUGGEST_MODEL = process.env.OPENAI_SUGGEST_MODEL ?? 'gpt-5-nano';
 import { extractHostname, parseSuggestResponse } from '@/lib/geo-eeat/suggest-parse';
 
 const SYSTEM_PROMPT = `You are an expert in market research and SEO. Given a company website URL, you suggest:
@@ -61,12 +63,12 @@ export async function POST(request: NextRequest) {
 
     try {
         const completion = await openai.chat.completions.create({
-            model: OPENAI_MODEL,
+            model: SUGGEST_MODEL,
             messages: [
                 { role: 'system', content: SYSTEM_PROMPT },
                 { role: 'user', content: `Website URL: ${url}\nDomain: ${domain}\nSuggest 5 competitors and 10 typical LLM search queries for this company. Reply with JSON only.` },
             ],
-            max_completion_tokens: 800,
+            max_completion_tokens: 2048,
         });
 
         const raw = completion.choices[0]?.message?.content ?? '';

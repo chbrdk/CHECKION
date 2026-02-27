@@ -12718,11 +12718,586 @@ I'll add:
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/scan/page.tsx</summary>
 
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I used t('scan.geoEeatSuggestSuccess', { competitors: comp.length, queries: q.length }) - need to check if the i18n supports interpolation. Let me check the I18nProvider / useI18n.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "useI18n|\\.t\\(|replace",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/i18n",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "useI18n|\\.t\\(|replace",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/i18n",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 2,
+  "topFiles": [
+    {
+      "uri": "components/i18n/I18nProvider.tsx",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to check how t() works - does it support a second parameter for interpolation? Let me look at the I18nProvider.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/i18n/I18nProvider.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+t accepts (key, params?: Record<string, string | number>). So we need to see how createTranslator does interpolation - probably {{competitors}} and {{queries}} in the string.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+File not found
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me search for createTranslator.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "createTranslator|params",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.{ts,tsx}",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "createTranslator|params",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 30,
+  "totalMatches": 86,
+  "topFiles": [
+    {
+      "uri": "components/i18n/I18nProvider.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "app/journey-agent/[jobId]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "lib/i18n/server.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/share/[token]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/api/scan/journey-agent/[jobId]/video/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/api/scan/[id]/screenshot/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/api/scan/[id]/summarize/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/api/share/[token]/access/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/api/scan/domain/[id]/journey/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/api/scan/journey-agent/[jobId]/live/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/api/scan/domain/[id]/summarize/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/api/scan/domain/[id]/status/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/developers/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "app/api/share/[token]/pages/[pageId]/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/results/[id]/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "app/api/scans/domain/[id]/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/api/scan/geo-eeat/[jobId]/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "lib/i18n/index.ts",
+      "matchCount": 6
+    },
+    {
+      "uri": "app/api/scan/domain/[id]/summary/route.ts",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+lib/i18n/index.ts has interpolate - it replaces {{key}} with params[key]. Let me check the exact syntax.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/i18n/index.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So interpolation uses {key} (single braces), e.g. "{{competitors}}" would be wrong - the regex is \{(\w+)\} so it's {competitors} and {queries}. Let me add the locale strings with {competitors} and {queries}.
+</details></think>
+
+---
+
+
+i18n-Keys hinzufügen und prüfen, ob MSQDX_STATUS.success existiert:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "MSQDX_STATUS\\.success|success:",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "MSQDX_STATUS\\.success|success:",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 41,
+  "totalMatches": 91,
+  "topFiles": [
+    {
+      "uri": "knowledge/checkion-saliency-fusion.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/journey-agent/[jobId]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/types.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/saliency/result/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/share/[token]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "components/ThemeProvider.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "components/UxIssueList.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/tools/readability/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/scan/domain/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/scans/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "components/PerformanceCard.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "components/PrivacyCard.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": ".specstory/history/2026-02-23_09-14Z-system-overview-and-implementation.md",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/api/tools/contrast/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "components/TechnicalInsightsCard.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "app/api/scans/domain/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": ".specstory/history/2026-02-23_15-12Z-ergebnisse-teilen-für-normale-scans-und-ux-journeys.md",
+      "matchCount": 15
+    },
+    {
+      "uri": "components/UxCard.tsx",
+      "matchCount": 8
+    },
+    {
+      "uri": "app/api/tools/extract/route.ts",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/i18n/index.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The interpolation uses single braces: value.replace(/\{(\w+)\}/g, ...) so the key in the string should be {competitors} and {queries}. Let me add the locale keys. I used MSQDX_STATUS.success?.base in the scan page - that's safe. Now add the new keys.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The i18n uses single brace: \{(\w+)\} so the string should have {competitors} and {queries} - I used that in the JSON. Good.
+
+Let me double-check: in de "geoEeatSuggestSuccess": "{competitors} Konkurrenten und {queries} Fragen übernommen." - the replace in interpolate looks for {\w+} so {competitors} and {queries} will be replaced. Good.
+</details></think>
+
+---
+
+
+Logging in der API hinzufügen, um zu prüfen, ob die LLM-Antwort ankommt. Mögliche Ursache: leere oder abgeschnittene Antwort.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/geo-eeat/suggest-competitors-queries/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me also check - maybe the issue is that the API returns a finish_reason that indicates the response was cut off (e.g. "length") and we get truncated JSON. We could log finish_reason and if content is short. For now the user feedback (success/empty message) should help. Let me verify there are no lint errors and that the scan page has the correct key - we're using scan.geoEeatSuggestSuccess but the keys are under "scan" in the JSON so the key should be "scan.geoEeatSuggestSuccess". Let me check - in de.json the structure is "scan": { "geoEeatSuggestCta": ... } so the key is scan.geoEeatSuggestSuccess. Good.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/scan/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/scan/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+One more thing - maybe the response is never reaching the client because of middleware or the request is failing before we get a response. Let me ensure the success message box is visible - we're using a Box with full width and padding. The message should show. Let me also make sure we're not hiding the button text - when geoEeatSuggesting is true we show "KI schlägt vor…". All good.
+</details></think>
+
+---
+
+
+Hier die Änderungen im Überblick:
+
+### 1. **Immer sichtbares Feedback**
+- **Erfolg:** Unter dem Button erscheint eine Meldung wie: „5 Konkurrenten und 10 Fragen übernommen.“ (mit den tatsächlichen Anzahlen).
+- **Leere Vorschläge:** Wenn die API 200 mit leeren Arrays liefert: „Keine Vorschläge erhalten. Bitte erneut versuchen oder manuell eintragen.“
+- **Fehler:** Netzwerk-, Timeout- oder API-Fehler werden in derselben Box angezeigt (rot hinterlegt).
+
+### 2. **Timeout (60 s)**
+- Wenn der Request länger als 60 Sekunden dauert, wird abgebrochen und die Meldung „Anfrage hat zu lange gedauert. Bitte erneut versuchen.“ angezeigt.
+
+### 3. **Neue i18n-Keys** (DE/EN)
+- `scan.geoEeatSuggestEmpty`
+- `scan.geoEeatSuggestSuccess` (mit Platzhaltern `{competitors}` und `{queries}`)
+- `scan.geoEeatSuggestTimeout`
+
+### 4. **API-Logging**
+- Leere LLM-Antwort und Parse-Fehler werden auf der Konsole ausgegeben (`[CHECKION] suggest-competitors-queries: …`), damit du im Server-Log siehst, ob die KI nichts liefert oder das JSON abgeschnitten ist.
+
+Bitte noch einmal „Mit KI Konkurrenten & Fragen vorschlagen“ ausführen. Du solltest jetzt immer eine der drei Meldungen sehen (Erfolg mit Anzahl, „Keine Vorschläge…“ oder Fehler). Wenn weiterhin keine Vorschläge ankommen, im Server-Log nach `[CHECKION] suggest-competitors-queries` schauen – bei „LLM returned empty content“ oder „parse failed“ liegt es an der KI-Antwort (Modell, Token-Limit oder Rate-Limit).
+
+---
+
+_**User**_
+
+schraub das tokeb limit hoch
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/geo-eeat/suggest-competitors-queries/route.ts</summary>
+
 Status: **loading**
 
 </details>
 
 </tool-use>
+
+---
+
+
+
+---
+
+
 
 ---
 
