@@ -13253,9 +13253,14 @@ schraub das tokeb limit hoch
 
 _**Agent (model default, mode Agent)**_
 
+<think><details><summary>Thought Process</summary>
 
+The user wants to increase the token limit for the suggest-competitors-queries feature. Currently we use max_completion_tokens: 800. I'll increase it so the LLM has more room to return 5 competitors and 10 queries (and possibly markdown or extra text). 1500 or 2000 should be plenty.
+</details></think>
 
 ---
+
+
 
 
 
@@ -13265,13 +13270,205 @@ _**Agent (model default, mode Agent)**_
 <details>
 <summary>Tool use: **ripgrep_raw_search**</summary>
 
-Status: **loading**
+
+Parameters:
+
+```json
+{
+  "pattern": "max_completion_tokens|max_tokens",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "max_completion_tokens|max_tokens",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 18,
+  "topFiles": [
+    {
+      "uri": "lib/saliency-ai.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/scan/geo-eeat/suggest-competitors-queries/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/geo-eeat/run-llm-stages.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "lib/geo-eeat/competitive-benchmark.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": ".specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 11
+    }
+  ]
+}
+```
+Status: **completed**
 
 
 </details>
 </tool-use>
 
 ---
+
+<think><details><summary>Thought Process</summary>
+
+I'll increase the token limit in the suggest-competitors-queries route from 800 to something higher - 2048 is a common choice and gives plenty of room for the JSON response.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/geo-eeat/suggest-competitors-queries/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Done. 2048 tokens should be more than enough for 5 competitors + 10 queries in JSON format.
+</details></think>
+
+---
+
+
+Erledigt. Das Token-Limit für die KI-Vorschläge (Konkurrenten & Fragen) ist von **800** auf **2048** angehoben. Die Antwort sollte damit nicht mehr abgeschnitten werden.
+
+---
+
+_**User**_
+
+benutz als model gpt-5-nano
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants to use the model "gpt-5-nano" for the suggest-competitors-queries feature. I need to check how the model is configured - it's likely coming from lib/llm/config.ts (OPENAI_MODEL) which is used across the app. The user said "as model" so they might want it only for the suggest endpoint, or they might want to change the global default.
+
+Let me check the suggest route - it uses OPENAI_MODEL from config. So I have two options:
+1. Change the global OPENAI_MODEL default in lib/llm/config.ts to 'gpt-5-nano' - that would affect all geo-eeat and other LLM calls.
+2. Use a different model only in the suggest-competitors-queries route (e.g. read from env OPENAI_SUGGEST_MODEL or hardcode 'gpt-5-nano' for that route).
+
+The user said "benutz als model gpt-5-nano" - "use as model gpt-5-nano". So they want this model to be used. They didn't say "only for suggest" so they might mean globally. But changing the global default could affect other features. Safer is to use gpt-5-nano only in the suggest route unless the codebase has a single shared model everywhere.
+
+Looking at the config: OPENAI_MODEL = process.env.OPENAI_MODEL ?? 'gpt-5-mini'. So the default is gpt-5-mini (likely a typo for gpt-4o-mini or similar). The user wants gpt-5-nano for the suggest feature. I'll add an override in the suggest route to use 'gpt-5-nano' so only that endpoint uses it. If the user wanted it globally they can set OPENAI_MODEL=gpt-5-nano in env. I'll do the minimal change: use gpt-5-nano in the suggest-competitors-queries route. I can do that by either:
+A) Using a constant or env OPENAI_SUGGEST_MODEL in the route
+B) Just hardcoding the model in the route as 'gpt-5-nano'
+
+I'll use the model directly in the route for the suggest endpoint so it uses gpt-5-nano. That way we don't change the global config and other features keep their model.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/llm/config.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/geo-eeat/suggest-competitors-queries/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll use gpt-5-nano only for the suggest endpoint. I can add an env var OPENAI_SUGGEST_MODEL in config and use it in the route, or just use 'gpt-5-nano' in the route. The user said "benutz als model gpt-5-nano" - use gpt-5-nano as the model. I'll use it in the suggest route. I could add to config:
+
+export const OPENAI_SUGGEST_MODEL = process.env.OPENAI_SUGGEST_MODEL ?? 'gpt-5-nano';
+
+and use that in the route. That way it's configurable via env but defaults to gpt-5-nano. Or simply use the constant 'gpt-5-nano' in the route. I'll add a constant in the route for clarity: const SUGGEST_MODEL = 'gpt-5-nano' or read from env. Actually the user said "use gpt-5-nano" - so I'll set it in the suggest route. Keeping it in the route with optional env override is clean:
+
+const model = process.env.OPENAI_SUGGEST_MODEL ?? 'gpt-5-nano';
+
+Then use model instead of OPENAI_MODEL in the create call. That way they can override via env if needed. I'll do that.
+</details></think>
+
+---
+
+
+Suggest-Route auf das Modell `gpt-5-nano` umstellen (optional per Env überschreibbar):
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/geo-eeat/suggest-competitors-queries/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/geo-eeat/suggest-competitors-queries/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Done. The suggest endpoint now uses gpt-5-nano by default. Override via OPENAI_SUGGEST_MODEL if needed.
+</details></think>
+
+---
+
+
+Erledigt. Die KI-Vorschläge (Konkurrenten & Fragen) nutzen jetzt das Modell **gpt-5-nano**.
+
+- Standard: `gpt-5-nano`
+- Optional per Umgebungsvariable: `OPENAI_SUGGEST_MODEL` (z. B. in `.env`: `OPENAI_SUGGEST_MODEL=gpt-5-nano`)
+
+---
+
+_**User**_
+
+entfern das tokenlimit
+
+---
+
+_**Agent (model default, mode Agent)**_
 
 
 
