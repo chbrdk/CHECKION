@@ -7,7 +7,7 @@ import OpenAI from 'openai';
 import sharp from 'sharp';
 import { getOpenAIKey } from '@/lib/llm/config';
 
-const SALIENCY_VISION_MODEL = process.env.OPENAI_SALIENCY_MODEL ?? 'gpt-5-mini';
+const SALIENCY_VISION_MODEL = process.env.OPENAI_SALIENCY_MODEL ?? 'gpt-5-nano';
 /** Vision provider for attention regions: openai (default), claude, gcp. Only openai is implemented. */
 const SALIENCY_VISION_PROVIDER = (process.env.SALIENCY_VISION_PROVIDER ?? 'openai').toLowerCase();
 
@@ -74,7 +74,6 @@ export async function getAttentionRegionsFromVision(
 
     const res = await openai.chat.completions.create({
         model: SALIENCY_VISION_MODEL,
-        max_completion_tokens: 2048,
         messages: [
             { role: 'system', content: SALIENCY_SYSTEM_PROMPT },
             {

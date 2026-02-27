@@ -66,7 +66,6 @@ async function extractCitationsFromText(
                 { role: 'system', content: EXTRACT_CITATIONS_SYSTEM },
                 { role: 'user', content: userContent },
             ],
-            max_completion_tokens: 500,
         });
         const raw = res.choices[0]?.message?.content ?? '';
         const jsonStr = extractJsonFromResponse(raw);
@@ -134,7 +133,6 @@ export async function runCompetitiveBenchmark(
                     },
                     { role: 'user', content: query },
                 ],
-                max_completion_tokens: 800,
             });
             const answerText = res.choices[0]?.message?.content ?? '';
             const citations = await extractCitationsFromText(openai, answerText, allDomains);

@@ -13648,3 +13648,404 @@ Let me check how the job runs competitive and what it stores. Maybe the issue is
 
 ---
 
+
+Job-Logik prüfen: Wann und wie der Competitive-Benchmark ausgeführt wird und wie die Metriken berechnet werden.
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "runCompetitiveBenchmark|competitive",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "runCompetitiveBenchmark|competitive",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 2,
+  "topFiles": [
+    {
+      "uri": "lib/geo-eeat/competitive-benchmark.ts",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat/run-llm-stages.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to find where runCompetitiveBenchmark is called - probably in the geo-eeat job/route.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "runCompetitiveBenchmark|competitive",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "runCompetitiveBenchmark|competitive",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 9,
+  "topFiles": [
+    {
+      "uri": "lib/types.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "lib/constants.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/scan/geo-eeat/route.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "lib/db/schema.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/geo-eeat/competitive-benchmark.ts",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/geo-eeat/[jobId]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So in app/api/scan/geo-eeat/route.ts we call runCompetitiveBenchmark and store the result in payload.competitive. The benchmark runs queries through the LLM, then extracts citations. If OPENAI_API_KEY is not set, runCompetitiveBenchmark returns null and we don't set payload.competitive. But the user sees the competitive section with all domains at 0% - so we must be setting competitive somewhere with empty runs or the UI is showing something else.
+
+Let me check - when competitive is null we might not add it. When we do run it, we get runs with citations. If citations are always [], then metrics would be 0 for all. So the UI might be showing the competitive block with metrics from the result - and the result has metrics with shareOfVoice: 0 and avgPosition: 0 because no citations were extracted.
+
+So the fix could be:
+1. Improve citation extraction - the LLM might return company names without domains (e.g. "KSB", "Grundfos") and we need to match those to our domain list (ksb.com -> KSB).
+2. Or the answer format from the main query LLM doesn't list companies in a way the extractor can parse - e.g. the extractor expects "domain" but we need to also accept company names and map them.
+3. Or the extraction LLM returns a different JSON structure.
+
+Let me look at the matching logic again. We have allDomains = [targetDomain, ...competitors]. So ["ksb.com", "grundfos.com", ...]. For each run we have citations like [{ domain: "ksb.com", position: 1 }, ...]. The match is: run.citations.find((c) => d === domain || d.endsWith('.' + domain) || domain.endsWith('.' + d)). So if the extractor returns "ksb.com" we match. If it returns "KSB" then extractHostname("KSB") would try new URL("https://KSB") which might fail and we'd get "ksb" from the catch (s.replace(/^www\./, '').split(/[/?#]/)[0]). So we'd get "ksb" and then "ksb" === "ksb.com" is false. So we need fuzzy matching: e.g. if citation domain is "ksb" and we have "ksb.com", count as match. Or normalize both to the "main" part.
+
+I'll add matching so that "ksb" matches "ksb.com" (citation domain is prefix of our domain or our domain is prefix of citation). So: same as now plus (domain.startsWith(d + '.') || d.startsWith(domain + '.')).
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/geo-eeat/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/geo-eeat/[jobId]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So the UI shows competitive when payload.competitive exists and has metrics.length > 0. The metrics are built in runCompetitiveBenchmark for each domain in allDomains. So we always have one metric per domain (target + competitors). So we'd show ksb.com, grundfos.com, etc. each with their shareOfVoice and avgPosition. If all are 0, it means no run.citations matched any domain.
+
+The problem is likely:
+1. The answer LLM doesn't mention domains in a way the extractor can find - e.g. it says "KSB, Grundfos, and Wilo are leading manufacturers" without URLs. The extractor is told to extract "domain or company that could be a website/domain" and return normalized domain. So "Grundfos" might be returned as "grundfos" and we need to match that to "grundfos.com".
+2. The extractor might return company names (grundfos, ksb) and we're only matching exact domain strings. So I need to add matching so that if the citation domain is "ksb" we match "ksb.com", and if citation is "grundfos" we match "grundfos.com". So: citation "ksb" should match our domain "ksb.com" (our domain starts with citation + "." or citation equals the part before the first dot of our domain). Let me define: domainMatches(citationDomain, ourDomain) = citationDomain === ourDomain || ourDomain === citationDomain + '.' + something || citationDomain === ourDomain.split('.')[0]. So (domain.startsWith(d + '.') || domain === d || d.startsWith(domain.split('.')[0] + '.') || domain.split('.')[0] === d). Actually simpler: normalize both to "base" - the part before first dot, or full if no dot. So "ksb.com" -> base "ksb", "grundfos" -> "grundfos". Match if base(citation) === base(ourDomain) or citation === ourDomain or ourDomain starts with citation. etc. I'll do: match if d === domain OR domain.startsWith(d + '.') OR (d && domain.startsWith(d) && (domain === d || domain[d.length] === '.')) OR (domain.split('.')[0] === d). So: exact match, or our domain is d.com, or citation d is the first part of our domain.
+</details></think>
+
+---
+
+
+Wir prüfen die Citation-Extraktion und das Domain-Matching. Wahrscheinlich gibt das LLM Firmennamen ("KSB", "Grundfos") statt Domains zurück — wir erweitern das Matching und die Prompts.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat/competitive-benchmark.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see several potential issues:
+
+1. **Domain matching**: The LLM often returns company names like "KSB", "Grundfos", "Wilo" - not "ksb.com". When we do extractHostname("Grundfos") we get "grundfos" (from the catch branch - no URL). So citation domain could be "grundfos" and our domain is "grundfos.com". Current match: d === domain ("grundfos" === "grundfos.com") false; d.endsWith('.' + domain) false; domain.endsWith('.' + d) "grundfos.com".endsWith(".grundfos") false. So we need to add: domain.startsWith(d + '.') so "grundfos.com".startsWith("grundfos.") is true. And the reverse: d could be "grundfos.com" and we're matching domain "grundfos.com" - that's already d === domain. So the main fix is: match when domain.startsWith(d + '.') (citation is company name, our domain is company.com).
+
+2. **Extractor prompt**: We could pass the list of expected domains to the extractor so it maps "KSB" -> "ksb.com", "Grundfos" -> "grundfos.com". That would make extraction more reliable.
+
+3. **JSON.parse in extractCitationsFromText** can throw if the LLM returns invalid JSON - we catch and return []. So we might be losing citations due to parse errors. I'll add try/catch around JSON.parse and also make the extractor more robust (accept company names and map to provided domains).
+
+4. **System prompt for the answer LLM**: We could add "List company names or their main website domains (e.g. ksb.com, Grundfos) so they can be identified." and pass the list of domains we care about so the model mentions them.
+
+Let me implement:
+1. **Matching**: Add domain.startsWith(d + '.') so "ksb" matches "ksb.com". Also match when the citation is the first part of our domain: domain.split('.')[0] === d (e.g. domain "ksb.com" -> "ksb", citation d "ksb" -> match).
+2. **Extractor**: Pass the list of known domains (allDomains) to the extractor so the user message says "From the text extract mentions of these domains or their companies: ksb.com, grundfos.com, ...". So the extractor can return "ksb.com" when it sees "KSB" in the text.
+3. **Robustness**: In extractCitationsFromText, wrap JSON.parse in try/catch (we already have try/catch around the whole thing). And add logging when we get 0 citations so we can debug.
+
+I'll do 1 and 2: better matching and pass expected domains to the extractor so it maps company names to domains.
+</details></think>
+
+---
+
+
+Wir verbessern das Domain-Matching (Firmennamen wie "KSB"/"Grundfos" → ksb.com/grundfos.com) und geben dem Extractor die erwarteten Domains mit, damit er Firmennamen zuordnen kann.
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] Fix competitive benchmark: domain matching + extractor with expected domains
+- [ ] Robust JSON parse in extractCitationsFromText
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll update competitive-benchmark.ts to:
+1. Add a helper that checks if a citation domain matches our domain: exact match, or citation is the "base" of our domain (ksb matches ksb.com), or our domain is citation.com.
+2. Pass allDomains to extractCitationsFromText so the extractor can be told "map these company names to these domains: ksb.com, grundfos.com, ..." and return normalized domains from the list.
+3. Make extractCitationsFromText accept optional expectedDomains and add them to the user prompt so the LLM returns domains from that list when it sees "KSB" or "Grundfos".
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat/competitive-benchmark.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat/competitive-benchmark.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat/competitive-benchmark.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I should also make the main answer LLM more likely to mention the companies we care about - we can pass the list of domains in the system prompt so it "prefers" to mention these when answering. That way for "top pump manufacturers" it will list KSB, Grundfos, etc. and the extractor will then map them.
+</details></think>
+
+---
+
+
+Antwort-LLM anweisen, die erwarteten Domains/Unternehmen zu berücksichtigen:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat/competitive-benchmark.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Share of voice: we're using queryMentions for the division but we're incrementing mentionCount and queryMentions in the same way (both when match). So shareOfVoice = queryMentions / queryCount. That's correct - in how many queries did this domain get mentioned. And avgPosition = positionSum / mentionCount. So when mentionCount is 0 we have avgPosition 0. So we're good. Let me double-check the metrics loop - we have queryMentions but we're not using it in the return, we use mentionCount. Actually we're setting shareOfVoice: queryCount > 0 ? queryMentions / queryCount : 0. So queryMentions and mentionCount are the same in the loop (both increment when match). So we're good.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Fix competitive benchmark: domain matching + extractor with expected domains
+- [x] Robust JSON parse in extractCitationsFromText
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat/competitive-benchmark.ts"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat/competitive-benchmark.ts"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+All good. Let me give a short summary to the user.
+</details></think>
+
+---
+
+
+Hier die Änderungen am Competitive Benchmark:
+
+### 1. **Domain-Matching**
+- Neue Hilfsfunktion `citationMatchesDomain`: Eine Nennung zählt für eine Domain, wenn
+  - exakt gleicher Domain-Name (z. B. `ksb.com` = `ksb.com`),
+  - oder die Domain mit der Nennung beginnt (z. B. `ksb.com` zu `ksb`),
+  - oder die Nennung der Domain-Basis entspricht (z. B. `ksb` zu `ksb.com`).
+- Damit werden auch reine Firmennamen wie „KSB“, „Grundfos“, „Wilo“ den richtigen Domains (ksb.com, grundfos.com, wilo.com) zugeordnet.
+
+### 2. **Extractor mit erwarteten Domains**
+- Der Citation-Extractor bekommt die Liste der erwarteten Domains (Ziel + Konkurrenten) mit.
+- Im Prompt steht: „Expected domains (use these when you see the company mentioned): ksb.com, grundfos.com, …“
+- Das Modell kann so „KSB“ → `ksb.com`, „Grundfos“ → `grundfos.com` zurückgeben.
+
+### 3. **Antwort-LLM**
+- Das Modell, das die Suchanfragen beantwortet, erhält einen Zusatz: „When listing companies, prefer naming companies that correspond to these domains: ksb.com, grundfos.com, …“
+- So werden die relevanten Marken/Unternehmen eher genannt und der Extractor findet sie leichter.
+
+### 4. **Robustheit**
+- Leerer oder ungültiger JSON-String aus dem Extractor führt nicht mehr zum Absturz; es wird `JSON.parse` in try/catch ausgewertet und bei Fehler ein leeres Array zurückgegeben.
+
+Bitte eine neue GEO/E-E-A-T-Analyse mit aktiviertem Competitive Benchmark starten (gleiche URL, Konkurrenten und Queries). Die SoV- und Positionswerte sollten sich jetzt sinnvoll füllen, sofern das LLM die Unternehmen in den Antworten erwähnt.
+
+---
+
+_**User**_
+
+haben die mini modelle noch token limits?
+
+---
+

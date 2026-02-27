@@ -114,7 +114,6 @@ export async function runLlmStages(payload: GeoEeatIntensiveResult): Promise<Geo
                         }),
                     },
                 ],
-                max_completion_tokens: 600,
             });
             const eeatContent = eeatRes.choices[0]?.message?.content ?? '';
             const eeatScores = eeatContent ? parseEeatResponse(eeatContent) : null;
@@ -143,7 +142,6 @@ export async function runLlmStages(payload: GeoEeatIntensiveResult): Promise<Geo
                         }),
                     },
                 ],
-                max_completion_tokens: 400,
             });
             const geoContent = geoRes.choices[0]?.message?.content ?? '';
             const geoParsed = geoContent ? parseGeoFitnessResponse(geoContent) : null;
@@ -175,7 +173,6 @@ export async function runLlmStages(payload: GeoEeatIntensiveResult): Promise<Geo
                     { role: 'system', content: RECOMMENDATIONS_SYSTEM_PROMPT },
                     { role: 'user', content: buildRecommendationsUserPrompt(summary) },
                 ],
-                max_completion_tokens: 800,
             });
             const recContent = recRes.choices[0]?.message?.content ?? '';
             if (recContent) {
