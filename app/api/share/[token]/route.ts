@@ -7,6 +7,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getCachedShareByToken, getCachedScan, getCachedDomainScan } from '@/lib/cache';
 import { getJourneyRun } from '@/lib/db/journey-runs';
+import { getGeoEeatRun } from '@/lib/db/geo-eeat-runs';
 import { buildDomainSummary } from '@/lib/domain-summary';
 import { verifyShareAccessToken } from '@/lib/share-access';
 
@@ -49,6 +50,19 @@ export async function GET(
                 ...result,
                 videoUrl: videoPath,
                 jobId: share.resourceId,
+            },
+        });
+    }
+
+    if (share.resourceType === 'geo_eeat') {
+        const run = await getGeoEeatRun(share.resourceId, share.userId);
+        if (!run || run.status !== 'complete') return NextResponse.json({ error: 'GEO/E-E-A-T run not found' }, { status: 404 });
+        return NextResponse.json({
+            type: 'geo_eeat' as const,
+            data: {
+                jobId: run.id,
+                url: run.url,
+                payload: run.payload,
             },
         });
     }

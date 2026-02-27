@@ -17,9 +17,9 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type') as ShareResourceType | null;
     const id = searchParams.get('id')?.trim() ?? '';
-    if (!id || (type !== 'single' && type !== 'domain' && type !== 'journey')) {
+    if (!id || (type !== 'single' && type !== 'domain' && type !== 'journey' && type !== 'geo_eeat')) {
         return NextResponse.json(
-            { error: 'Query type (single|domain|journey) and id required' },
+            { error: 'Query type (single|domain|journey|geo_eeat) and id required' },
             { status: 400 }
         );
     }

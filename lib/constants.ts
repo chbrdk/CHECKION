@@ -46,3 +46,6 @@ export const ENV_SCREENSHOT_AWS_REGION = 'SCREENSHOT_AWS_REGION';
 
 /** Optional base URL for the UX Journey Agent (Python/Browser Use). If set, POST /api/scan/journey-agent forwards to this service. On Coolify: use internal service URL (e.g. http://ux-journey-agent:8320). */
 export const ENV_UX_JOURNEY_AGENT_URL = 'UX_JOURNEY_AGENT_URL';
+
+/** Optional base URL for GEO/E-E-A-T intensive + competitive benchmark service. If set, POST /api/scan/geo-eeat can delegate long-running jobs to this service. */
+export const ENV_GEO_EEAT_SERVICE_URL = 'GEO_EEAT_SERVICE_URL';

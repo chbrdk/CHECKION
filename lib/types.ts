@@ -538,6 +538,86 @@ export interface UxJourneyAgentResult {
     videoUrl?: string;
 }
 
+/** E-E-A-T dimension scores from LLM (1–5) with reasoning. */
+export interface EeatLlmScores {
+    trust: { score: number; reasoning: string };
+    experience: { score: number; reasoning: string };
+    expertise: { score: number; reasoning: string };
+    authoritativeness?: { score: number; reasoning: string };
+}
+
+/** One page result in GEO/E-E-A-T intensive analysis. */
+export interface GeoEeatPageResult {
+    url: string;
+    title?: string;
+    /** Technical signals from scan (generative, eeatSignals, seo, privacy, etc.). */
+    technical?: {
+        generative?: Partial<GenerativeEngineAudit>;
+        eeatSignals?: EeatPageSignals;
+        hasPrivacy?: boolean;
+        hasImpressum?: boolean;
+    };
+    bodyTextExcerpt?: string;
+    /** LLM-derived E-E-A-T scores (Stufe 2). */
+    eeatScores?: EeatLlmScores;
+    /** GEO fitness score 0–100 and reasoning (Stufe 3). */
+    geoFitnessScore?: number;
+    geoFitnessReasoning?: string;
+    missingGeoElements?: string[];
+}
+
+/** One recommendation from LLM (Stufe 4). */
+export interface GeoEeatRecommendation {
+    priority: number;
+    title: string;
+    description: string;
+    /** Affected URLs or "domain-wide". */
+    affectedUrls?: string[];
+    dimension?: 'trust' | 'experience' | 'expertise' | 'authoritativeness' | 'geo';
+}
+
+/** Citation of a domain in an LLM response for one query. */
+export interface CompetitiveCitation {
+    domain: string;
+    position: number;
+    context?: string;
+}
+
+/** One query run: provider + extracted citations. */
+export interface CompetitiveCitationRun {
+    queryId: string;
+    query: string;
+    provider: string;
+    citations: CompetitiveCitation[];
+    rawAnswerExcerpt?: string;
+}
+
+/** Per-domain metrics for competitive benchmark. */
+export interface CompetitiveMetrics {
+    domain: string;
+    shareOfVoice: number;
+    avgPosition: number;
+    queryCount: number;
+    mentionCount: number;
+}
+
+/** Competitive benchmark block inside GeoEeatIntensiveResult. */
+export interface CompetitiveBenchmarkResult {
+    queries: string[];
+    competitors: string[];
+    runs: CompetitiveCitationRun[];
+    metrics: CompetitiveMetrics[];
+}
+
+/** Full result of a GEO/E-E-A-T intensive run (Stufen 1–4 + optional Competitive). */
+export interface GeoEeatIntensiveResult {
+    pages: GeoEeatPageResult[];
+    recommendations: GeoEeatRecommendation[];
+    aggregated?: Record<string, unknown>;
+    competitive?: CompetitiveBenchmarkResult;
+    error?: string;
+}
+
 export interface TouchTargetIssue {
     selector: string;
     element: string;

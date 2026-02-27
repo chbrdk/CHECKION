@@ -53,3 +53,9 @@ Zusätzlich vorhanden, aber **nicht** in der E-E-A-T-Sektion:
 - **UI:** E-E-A-T als eigene Karte mit vier Bereichen (E, E, A, T) und klaren Ja/Nein- oder Score-Anzeigen.
 
 Wenn du willst, können wir als Nächstes eine konkrete Erweiterung (z. B. nur Trust-Block oder Experience-Heuristiken) umsetzen.
+
+---
+
+## GEO / E-E-A-T Intensivanalyse (eigenständiger Modus)
+
+Seit Implementierung der **GEO / E-E-A-T Intensivanalyse** gibt es einen vierten Scan-Modus, der E-E-A-T und GEO vertieft auswertet und optional einen **Competitive LLM Citation Benchmark** (Sichtbarkeit in LLMs vs. Konkurrenz) anbietet. Siehe **`knowledge/checkion-geo-eeat-intensive-scan.md`** für Ablauf, Datenmodell, API und UI.

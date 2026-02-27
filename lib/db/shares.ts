@@ -7,7 +7,7 @@ import bcrypt from 'bcryptjs';
 import { getDb } from './index';
 import { shareLinks } from './schema';
 
-export type ShareResourceType = 'single' | 'domain' | 'journey';
+export type ShareResourceType = 'single' | 'domain' | 'journey' | 'geo_eeat';
 
 export interface ShareLinkRow {
     token: string;

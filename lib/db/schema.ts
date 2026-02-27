@@ -35,11 +35,11 @@ export const domainScans = pgTable('domain_scans', {
     payload: jsonb('payload').notNull(), // DomainScanResult
 });
 
-/** Share links: public landing page for a scan (single, domain, or journey). Token in URL, optional password. */
+/** Share links: public landing page for a scan (single, domain, journey, or geo_eeat). Token in URL, optional password. */
 export const shareLinks = pgTable('share_links', {
     token: text('token').primaryKey(),
     userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-    resourceType: text('resource_type').notNull(), // 'single' | 'domain' | 'journey'
+    resourceType: text('resource_type').notNull(), // 'single' | 'domain' | 'journey' | 'geo_eeat'
     resourceId: text('resource_id').notNull(),
     passwordHash: text('password_hash'), // optional; if set, viewer must submit password to access
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -65,6 +65,19 @@ export const journeyRuns = pgTable('journey_runs', {
     task: text('task').notNull(),
     status: text('status').notNull(), // 'running' | 'complete' | 'error'
     result: jsonb('result'),
+    error: text('error'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** GEO / E-E-A-T intensive analysis runs (on-page + optional competitive benchmark). */
+export const geoEeatRuns = pgTable('geo_eeat_runs', {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    url: text('url').notNull(),
+    domainScanId: text('domain_scan_id').references(() => domainScans.id, { onDelete: 'set null' }),
+    status: text('status').notNull(), // 'queued' | 'running' | 'complete' | 'error'
+    payload: jsonb('payload'), // GeoEeatIntensiveResult when complete
     error: text('error'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

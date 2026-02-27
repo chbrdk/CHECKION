@@ -5,26 +5,27 @@
 import assert from 'node:assert';
 import type { ShareResourceType, ShareLinkRow } from './shares';
 
-const VALID_SHARE_RESOURCE_TYPES: ShareResourceType[] = ['single', 'domain', 'journey'];
+const VALID_SHARE_RESOURCE_TYPES: ShareResourceType[] = ['single', 'domain', 'journey', 'geo_eeat'];
 
 function run(): void {
-    // ShareResourceType includes all supported share targets (single scan, domain/deep scan, UX journey)
-    assert.strictEqual(VALID_SHARE_RESOURCE_TYPES.length, 3);
+    // ShareResourceType includes all supported share targets (single, domain, journey, geo_eeat)
+    assert.strictEqual(VALID_SHARE_RESOURCE_TYPES.length, 4);
     assert.ok(VALID_SHARE_RESOURCE_TYPES.includes('single'));
     assert.ok(VALID_SHARE_RESOURCE_TYPES.includes('domain'));
     assert.ok(VALID_SHARE_RESOURCE_TYPES.includes('journey'));
+    assert.ok(VALID_SHARE_RESOURCE_TYPES.includes('geo_eeat'));
 
-    // ShareLinkRow type allows journey as resourceType
+    // ShareLinkRow type allows geo_eeat as resourceType
     const row: ShareLinkRow = {
         token: 'test-token',
         userId: 'user-1',
-        resourceType: 'journey',
+        resourceType: 'geo_eeat',
         resourceId: 'job-123',
         passwordHash: null,
         createdAt: new Date(),
         expiresAt: null,
     };
-    assert.strictEqual(row.resourceType, 'journey');
+    assert.strictEqual(row.resourceType, 'geo_eeat');
     assert.strictEqual(row.resourceId, 'job-123');
 
     console.log('shares.test.ts: all assertions passed');

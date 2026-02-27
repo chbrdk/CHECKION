@@ -24,6 +24,13 @@ export interface ShareJourneyData {
     jobId?: string;
 }
 
+/** GEO/E-E-A-T share payload (from GET /api/share/[token] when type=geo_eeat). */
+export interface ShareGeoEeatData {
+    jobId: string;
+    url: string;
+    payload?: import('@/lib/types').GeoEeatIntensiveResult;
+}
+
 // --- Status colors: sofort erkennen ob optimal oder nicht
 const STATUS = {
     good: MSQDX_BRAND_PRIMARY.green,
@@ -135,7 +142,8 @@ function MetricBox({ label, value, unit, statusColor }: { label: string; value: 
 type SharePayload =
     | { type: 'domain'; data: DomainSummaryResponse }
     | { type: 'single'; data: ScanResult }
-    | { type: 'journey'; data: ShareJourneyData };
+    | { type: 'journey'; data: ShareJourneyData }
+    | { type: 'geo_eeat'; data: ShareGeoEeatData };
 
 const SHARE_ACCESS_STORAGE_KEY = 'checkion_share_access';
 
@@ -292,6 +300,7 @@ export default function ShareLandingPage() {
             {payload.type === 'domain' && <ShareDomainContent data={payload.data} token={token} accessToken={authToken} />}
             {payload.type === 'single' && <ShareSingleContent data={payload.data} shareToken={token} accessToken={authToken} />}
             {payload.type === 'journey' && <ShareJourneyContent data={payload.data} accessToken={authToken} />}
+            {payload.type === 'geo_eeat' && <ShareGeoEeatContent data={payload.data} />}
         </Box>
     );
 }
@@ -634,6 +643,58 @@ function ShareDomainContent({ data, token, accessToken }: { data: DomainSummaryR
                     )}
                 </DialogContent>
             </Dialog>
+        </>
+    );
+}
+
+function ShareGeoEeatContent({ data }: { data: ShareGeoEeatData }) {
+    const { t } = useI18n();
+    const payload = data.payload;
+    const pages = payload?.pages ?? [];
+    const recommendations = payload?.recommendations ?? [];
+    const competitive = payload?.competitive;
+
+    return (
+        <>
+            <MsqdxCard variant="flat" sx={{ p: 3, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
+                <MsqdxTypography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>{t('geoEeat.title')}</MsqdxTypography>
+                <MsqdxTypography variant="body2" sx={{ color: STATUS.neutral, wordBreak: 'break-all' }}>{data.url}</MsqdxTypography>
+            </MsqdxCard>
+            {pages.length > 0 && (
+                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
+                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>{t('geoEeat.onPageTitle')}</MsqdxTypography>
+                    {pages.map((page, idx) => (
+                        <Box key={idx} sx={{ py: 1, borderBottom: idx < pages.length - 1 ? '1px solid' : 'none', borderColor: 'divider' }}>
+                            <MsqdxTypography variant="body2" sx={{ wordBreak: 'break-all' }}>{page.title || page.url}</MsqdxTypography>
+                            {page.technical?.generative && <MsqdxChip size="small" label={`GEO: ${page.technical.generative.score}`} sx={{ mt: 0.5 }} />}
+                            {page.geoFitnessScore != null && <MsqdxTypography variant="caption" sx={{ display: 'block', color: STATUS.neutral }}>Fitness: {page.geoFitnessScore}</MsqdxTypography>}
+                        </Box>
+                    ))}
+                </MsqdxCard>
+            )}
+            {recommendations.length > 0 && (
+                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
+                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>{t('geoEeat.recommendationsTitle')}</MsqdxTypography>
+                    <Box component="ol" sx={{ m: 0, pl: 2.5 }}>
+                        {recommendations.map((rec, idx) => (
+                            <MsqdxTypography key={idx} component="li" variant="body2" sx={{ mb: 0.5 }}>{rec.title}: {rec.description}</MsqdxTypography>
+                        ))}
+                    </Box>
+                </MsqdxCard>
+            )}
+            {competitive?.metrics && competitive.metrics.length > 0 && (
+                <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
+                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>{t('geoEeat.competitiveTitle')}</MsqdxTypography>
+                    <Box component="ul" sx={{ m: 0, p: 0, listStyle: 'none' }}>
+                        {competitive.metrics.map((m, idx) => (
+                            <Box key={idx} component="li" sx={{ py: 0.5, display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+                                <MsqdxChip size="small" label={m.domain} />
+                                <MsqdxTypography variant="caption">SoV: {(m.shareOfVoice * 100).toFixed(0)}% · Ø Pos: {m.avgPosition.toFixed(1)}</MsqdxTypography>
+                            </Box>
+                        ))}
+                    </Box>
+                </MsqdxCard>
+            )}
         </>
     );
 }

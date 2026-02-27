@@ -7,6 +7,7 @@ import { auth } from '@/auth';
 import { getScan } from '@/lib/db/scans';
 import { getDomainScan } from '@/lib/db/scans';
 import { getJourneyRun } from '@/lib/db/journey-runs';
+import { getGeoEeatRun } from '@/lib/db/geo-eeat-runs';
 import { createShare, getShareByResource } from '@/lib/db/shares';
 import type { ShareResourceType } from '@/lib/db/shares';
 import { SHARE_PATH } from '@/lib/constants';
@@ -30,9 +31,9 @@ export async function POST(request: Request) {
     const type = body.type as ShareResourceType | undefined;
     const id = typeof body.id === 'string' ? body.id.trim() : '';
     const password = typeof body.password === 'string' ? body.password : undefined;
-    if (!id || (type !== 'single' && type !== 'domain' && type !== 'journey')) {
+    if (!id || (type !== 'single' && type !== 'domain' && type !== 'journey' && type !== 'geo_eeat')) {
         return NextResponse.json(
-            { error: 'Body must include type: "single" | "domain" | "journey" and id: string' },
+            { error: 'Body must include type: "single" | "domain" | "journey" | "geo_eeat" and id: string' },
             { status: 400 }
         );
     }
@@ -43,6 +44,12 @@ export async function POST(request: Request) {
     } else if (type === 'domain') {
         const domain = await getDomainScan(id, session.user.id);
         if (!domain) return NextResponse.json({ error: 'Domain scan not found' }, { status: 404 });
+    } else if (type === 'geo_eeat') {
+        const run = await getGeoEeatRun(id, session.user.id);
+        if (!run) return NextResponse.json({ error: 'GEO/E-E-A-T run not found' }, { status: 404 });
+        if (run.status !== 'complete') {
+            return NextResponse.json({ error: 'Run must be complete to share' }, { status: 400 });
+        }
     } else {
         const run = await getJourneyRun(id, session.user.id);
         if (!run) return NextResponse.json({ error: 'Journey not found' }, { status: 404 });
