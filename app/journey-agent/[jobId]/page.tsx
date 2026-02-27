@@ -8,7 +8,13 @@ import { MSQDX_SPACING, MSQDX_BRAND_PRIMARY, MSQDX_STATUS } from '@msqdx/tokens'
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { SharePanel } from '@/components/SharePanel';
 import { useI18n } from '@/components/i18n/I18nProvider';
-import { PDF_LOGO_PATH } from '@/lib/constants';
+import {
+    PDF_LOGO_PATH,
+    apiScanJourneyAgent,
+    apiScanJourneyAgentLiveStream,
+    PATH_SCAN,
+    PATH_HOME,
+} from '@/lib/constants';
 import type { UxJourneyAgentStep } from '@/lib/types';
 
 /** Number of step cards visible at once: 1 on mobile, 2 on desktop. */
@@ -207,10 +213,10 @@ function ReasoningBlock({ text }: { text: string }) {
     );
 }
 
-function actionLabel(action: string): string {
-    if (action === 'navigate') return 'Seite';
-    if (action === 'click') return 'Klick';
-    if (action === 'done') return 'Abgeschlossen';
+function actionLabel(action: string, t: (key: string) => string): string {
+    if (action === 'navigate') return t('share.stepLabelPage');
+    if (action === 'click') return t('share.stepLabelClick');
+    if (action === 'done') return t('share.stepLabelDone');
     return action;
 }
 
@@ -240,7 +246,7 @@ function StepCard({
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', flexWrap: 'wrap', mb: 'var(--msqdx-spacing-xs)' }}>
                 <MsqdxChip
                     size="small"
-                    label={actionLabel(step.action)}
+                    label={actionLabel(step.action, t)}
                     sx={{
                         fontWeight: 600,
                         fontSize: '0.75rem',
@@ -253,7 +259,7 @@ function StepCard({
                 />
                 {totalSteps > 1 && (
                     <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                        Schritt {stepNumber} / {totalSteps}
+                        {t('scan.journeyStepOf', { n: stepNumber, total: totalSteps })}
                     </MsqdxTypography>
                 )}
             </Box>
@@ -343,7 +349,7 @@ export default function JourneyAgentStatusPage() {
         let cancelled = false;
         const poll = async () => {
             try {
-                const res = await fetch(`/api/scan/journey-agent/${encodeURIComponent(jobId)}`);
+                const res = await fetch(apiScanJourneyAgent(jobId));
                 const data = await res.json();
                 if (cancelled) return;
 
@@ -447,7 +453,7 @@ export default function JourneyAgentStatusPage() {
                         >
                             <Box
                                 component="img"
-                                src={`/api/scan/journey-agent/${encodeURIComponent(jobId)}/live/stream`}
+                                src={apiScanJourneyAgentLiveStream(jobId)}
                                 alt="Agent-Browser Live-Ansicht"
                                 sx={{ display: 'block', width: '100%', height: 'auto', verticalAlign: 'top' }}
                             />
@@ -470,7 +476,7 @@ export default function JourneyAgentStatusPage() {
                     <MsqdxTypography variant="body2" sx={{ mb: 1, color: 'var(--color-text-on-light)' }}>
                         {error || t('scan.journeyNotConfigured')}
                     </MsqdxTypography>
-                    <MsqdxButton variant="outlined" size="small" onClick={() => router.push('/scan')}>
+                    <MsqdxButton variant="outlined" size="small" onClick={() => router.push(PATH_SCAN)}>
                         {t('scan.journeyBackToScan')}
                     </MsqdxButton>
                 </MsqdxCard>
@@ -491,7 +497,7 @@ export default function JourneyAgentStatusPage() {
                     <MsqdxTypography variant="body2" sx={{ mb: 1, color: MSQDX_STATUS.error.base }}>
                         {error}
                     </MsqdxTypography>
-                    <MsqdxButton variant="outlined" size="small" onClick={() => router.push('/scan')}>
+                    <MsqdxButton variant="outlined" size="small" onClick={() => router.push(PATH_SCAN)}>
                         {t('scan.journeyBackToScan')}
                     </MsqdxButton>
                 </MsqdxCard>
@@ -516,7 +522,7 @@ export default function JourneyAgentStatusPage() {
                         actions={
                             <Box sx={{ display: 'flex', gap: 'var(--msqdx-spacing-xs)', flexWrap: 'wrap', alignItems: 'center' }}>
                                 {jobId && <SharePanel resourceType="journey" resourceId={jobId} labelNamespace="domainResult" />}
-                                <MsqdxButton variant="outlined" size="small" onClick={() => router.push('/scan')}>
+                                <MsqdxButton variant="outlined" size="small" onClick={() => router.push(PATH_SCAN)}>
                                     {t('scan.journeyNewJourney')}
                                 </MsqdxButton>
                             </Box>
@@ -601,7 +607,7 @@ export default function JourneyAgentStatusPage() {
                                                 bgcolor: i === activeStepIndex ? 'var(--color-theme-accent)' : 'var(--color-secondary-dx-grey-light-tint)',
                                                 cursor: 'pointer',
                                             }}
-                                            aria-label={`Schritt ${i + 1}`}
+                                            aria-label={t('scan.journeyStepAria', { n: i + 1 })}
                                         />
                                     ))}
                                 </Box>
@@ -609,13 +615,13 @@ export default function JourneyAgentStatusPage() {
                         </MsqdxMoleculeCard>
                     )}
 
-                    <MsqdxButton variant="outlined" size="small" onClick={() => router.push('/scan')} sx={{ mt: 'var(--msqdx-spacing-md)' }}>
+                    <MsqdxButton variant="outlined" size="small" onClick={() => router.push(PATH_SCAN)} sx={{ mt: 'var(--msqdx-spacing-md)' }}>
                         {t('scan.journeyNewJourney')}
                     </MsqdxButton>
                 </>
             )}
 
-            <MsqdxButton variant="text" size="small" onClick={() => router.push('/')} sx={{ mt: 'var(--msqdx-spacing-md)', color: 'var(--color-text-on-light)' }}>
+            <MsqdxButton variant="text" size="small" onClick={() => router.push(PATH_HOME)} sx={{ mt: 'var(--msqdx-spacing-md)', color: 'var(--color-text-on-light)' }}>
                 {t('results.dashboard')}
             </MsqdxButton>
         </Box>

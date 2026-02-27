@@ -14,6 +14,7 @@ import {
 import { MSQDX_TYPOGRAPHY } from '@msqdx/tokens';
 import { AuthBrandColorSelector } from '@/components/auth/AuthBrandColorSelector';
 import { useI18n } from '@/components/i18n/I18nProvider';
+import { API_AUTH_REGISTER, PATH_LOGIN } from '@/lib/constants';
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -29,14 +30,14 @@ export default function RegisterPage() {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch('/api/auth/register', {
+            const res = await fetch(API_AUTH_REGISTER, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: name.trim() || undefined, email, password }),
             });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(data.error ?? t('auth.register.error'));
-            router.replace('/login');
+            router.replace(PATH_LOGIN);
             router.refresh();
         } catch (err) {
             setError(err instanceof Error ? err.message : t('auth.register.error'));
@@ -161,14 +162,19 @@ export default function RegisterPage() {
                                     required
                                     fullWidth
                                 />
-                                <MsqdxFormField
-                                    label={t('auth.register.password')}
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword((e.target as HTMLInputElement).value)}
-                                    required
-                                    fullWidth
-                                />
+                                <Box>
+                                    <MsqdxFormField
+                                        label={t('auth.register.password')}
+                                        type="password"
+                                        value={password}
+                                        onChange={(e) => setPassword((e.target as HTMLInputElement).value)}
+                                        required
+                                        fullWidth
+                                    />
+                                    <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'var(--color-text-muted-on-light)' }}>
+                                        {t('auth.register.passwordRequirements')}
+                                    </MsqdxTypography>
+                                </Box>
                                 <MsqdxButton
                                     type="submit"
                                     variant="contained"
@@ -191,7 +197,7 @@ export default function RegisterPage() {
 
                         <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-secondary)' }}>
                             {t('auth.register.prompt')}{' '}
-                            <Link href="/login" style={{ color: 'inherit', fontWeight: 600 }}>
+                            <Link href={PATH_LOGIN} style={{ color: 'inherit', fontWeight: 600 }}>
                                 {t('auth.register.link')}
                             </Link>
                         </MsqdxTypography>

@@ -82,9 +82,18 @@ export function SearchResultsList({ matches, loading, query, onSelectMatch }: Se
           {visibleMatches.map((match, idx) => (
         <Box
           component="li"
+          role="button"
+          tabIndex={0}
+          aria-label={t('dashboard.openSearchResultAria')}
           key={`${match.id}-${match.url}-${match.matchType}-${idx}`}
           sx={listItemSx}
           onClick={() => onSelectMatch(match)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onSelectMatch(match);
+            }
+          }}
         >
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.5 }}>

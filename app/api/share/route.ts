@@ -4,6 +4,7 @@
 
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getScan } from '@/lib/db/scans';
 import { getDomainScan } from '@/lib/db/scans';
 import { getJourneyRun } from '@/lib/db/journey-runs';
@@ -20,41 +21,38 @@ function generateToken(): string {
 export async function POST(request: Request) {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     let body: { type?: string; id?: string; password?: string };
     try {
         body = await request.json();
     } catch {
-        return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+        return apiError('Invalid JSON', API_STATUS.BAD_REQUEST);
     }
     const type = body.type as ShareResourceType | undefined;
     const id = typeof body.id === 'string' ? body.id.trim() : '';
     const password = typeof body.password === 'string' ? body.password : undefined;
     if (!id || (type !== 'single' && type !== 'domain' && type !== 'journey' && type !== 'geo_eeat')) {
-        return NextResponse.json(
-            { error: 'Body must include type: "single" | "domain" | "journey" | "geo_eeat" and id: string' },
-            { status: 400 }
-        );
+        return apiError('Body must include type: "single" | "domain" | "journey" | "geo_eeat" and id: string', API_STATUS.BAD_REQUEST);
     }
 
     if (type === 'single') {
         const scan = await getScan(id, session.user.id);
-        if (!scan) return NextResponse.json({ error: 'Scan not found' }, { status: 404 });
+        if (!scan) return apiError('Scan not found', API_STATUS.NOT_FOUND);
     } else if (type === 'domain') {
         const domain = await getDomainScan(id, session.user.id);
-        if (!domain) return NextResponse.json({ error: 'Domain scan not found' }, { status: 404 });
+        if (!domain) return apiError('Domain scan not found', API_STATUS.NOT_FOUND);
     } else if (type === 'geo_eeat') {
         const run = await getGeoEeatRun(id, session.user.id);
-        if (!run) return NextResponse.json({ error: 'GEO/E-E-A-T run not found' }, { status: 404 });
+        if (!run) return apiError('GEO/E-E-A-T run not found', API_STATUS.NOT_FOUND);
         if (run.status !== 'complete') {
-            return NextResponse.json({ error: 'Run must be complete to share' }, { status: 400 });
+            return apiError('Run must be complete to share', API_STATUS.BAD_REQUEST);
         }
     } else {
         const run = await getJourneyRun(id, session.user.id);
-        if (!run) return NextResponse.json({ error: 'Journey not found' }, { status: 404 });
+        if (!run) return apiError('Journey not found', API_STATUS.NOT_FOUND);
         if (run.status !== 'complete') {
-            return NextResponse.json({ error: 'Journey must be complete to share' }, { status: 400 });
+            return apiError('Journey must be complete to share', API_STATUS.BAD_REQUEST);
         }
     }
 

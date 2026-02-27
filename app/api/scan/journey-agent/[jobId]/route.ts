@@ -6,6 +6,7 @@
 
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { ENV_UX_JOURNEY_AGENT_URL } from '@/lib/constants';
 import { getJourneyRun, upsertJourneyRunResult } from '@/lib/db/journey-runs';
 
@@ -23,12 +24,12 @@ export async function GET(
 ) {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
 
     const { jobId } = await params;
     if (!jobId) {
-        return NextResponse.json({ error: 'jobId required.' }, { status: 400 });
+        return apiError('jobId required.', API_STATUS.BAD_REQUEST);
     }
 
     const userId = session.user.id;
@@ -44,10 +45,7 @@ export async function GET(
 
     const agentBaseUrl = process.env[ENV_UX_JOURNEY_AGENT_URL];
     if (!agentBaseUrl) {
-        return NextResponse.json(
-            { error: 'UX Journey Agent service is not configured.', status: 'unavailable' },
-            { status: 501 }
-        );
+        return apiError('UX Journey Agent service is not configured.', API_STATUS.NOT_IMPLEMENTED, { status: 'unavailable' });
     }
 
     const statusUrl = agentBaseUrl.replace(/\/$/, '') + '/run/' + encodeURIComponent(jobId);
@@ -55,10 +53,8 @@ export async function GET(
         const res = await fetch(statusUrl);
         const data = (await res.json()) as { result?: Record<string, unknown>; status?: string; error?: string };
         if (!res.ok) {
-            return NextResponse.json(
-                { error: data?.error || `Agent service error: ${res.status}`, status: 'error' },
-                { status: res.status >= 400 && res.status < 600 ? res.status : 502 }
-            );
+            const status = res.status >= 400 && res.status < 600 ? res.status : 502;
+            return apiError(data?.error || `Agent service error: ${res.status}`, status, { status: 'error' });
         }
         const status = data.status ?? 'running';
         if (status === 'complete' || status === 'error') {
@@ -75,9 +71,6 @@ export async function GET(
         return buildResponse(jobId, { status, result: data.result, error: data.error });
     } catch (e) {
         const message = e instanceof Error ? e.message : 'Failed to reach UX Journey Agent service.';
-        return NextResponse.json(
-            { error: message, status: 'error' },
-            { status: 502 }
-        );
+        return apiError(message, API_STATUS.BAD_GATEWAY, { status: 'error' });
     }
 }

@@ -5,6 +5,8 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { auth } from '@/auth';
+import { apiError, internalError, API_STATUS } from '@/lib/api-error-handler';
+import { parseApiBody, domainJourneyBodySchema } from '@/lib/api-schemas';
 import { getDomainScan, listScansByGroupId } from '@/lib/db/scans';
 import { getOpenAIKey } from '@/lib/llm/config';
 import { runJourneyAgent, runJourneyAgentStream, type JourneyStreamEvent } from '@/lib/llm/journey-agent';
@@ -18,20 +20,17 @@ export async function POST(
 ) {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
 
     const { id } = await params;
     const domainPayload = await getDomainScan(id, session.user.id);
     if (!domainPayload) {
-        return NextResponse.json({ error: 'Domain scan not found.' }, { status: 404 });
+        return apiError('Domain scan not found.', API_STATUS.NOT_FOUND);
     }
 
     if (domainPayload.status !== 'complete') {
-        return NextResponse.json(
-            { error: 'Domain scan must be complete before running a journey.' },
-            { status: 400 },
-        );
+        return apiError('Domain scan must be complete before running a journey.', API_STATUS.BAD_REQUEST);
     }
 
     /** Journey needs full ScanResult[] (pageIndex, allLinks, etc.). Load from scans table when stored payload has slim pages. */
@@ -43,27 +42,17 @@ export async function POST(
         domainResult = domainPayload as DomainScanResult & { pages: ScanResult[] };
     }
 
-    let body: { goal?: string; stream?: boolean };
-    try {
-        body = await request.json();
-    } catch {
-        return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 });
-    }
-    const goal = typeof body?.goal === 'string' ? body.goal.trim() : '';
-    if (!goal) {
-        return NextResponse.json({ error: 'Body must include goal (string).' }, { status: 400 });
-    }
-    const stream = body?.stream === true;
+    const parsed = await parseApiBody(request, domainJourneyBodySchema);
+    if (parsed instanceof NextResponse) return parsed;
+    const goal = parsed.goal;
+    const stream = parsed.stream === true;
 
     let openai: OpenAI;
     try {
         openai = new OpenAI({ apiKey: getOpenAIKey() });
     } catch (e) {
         console.error('[CHECKION] journey: OPENAI_API_KEY missing', e);
-        return NextResponse.json(
-            { error: 'OpenAI API key not configured.' },
-            { status: 500 },
-        );
+        return internalError('OpenAI API key not configured.');
     }
 
     if (stream) {

@@ -4,6 +4,7 @@
 
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getDb } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
@@ -11,7 +12,7 @@ import { eq } from 'drizzle-orm';
 export async function GET() {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     const db = getDb();
     const [user] = await db
@@ -27,7 +28,7 @@ export async function GET() {
         .where(eq(users.id, session.user.id))
         .limit(1);
     if (!user) {
-        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        return apiError('User not found', API_STATUS.NOT_FOUND);
     }
     return NextResponse.json({
         user: {
@@ -44,13 +45,13 @@ export async function GET() {
 export async function PATCH(request: Request) {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     let body: Record<string, unknown>;
     try {
         body = await request.json();
     } catch {
-        return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+        return apiError('Invalid JSON', API_STATUS.BAD_REQUEST);
     }
     const name = typeof body.name === 'string' ? body.name.trim() || null : undefined;
     const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : undefined;
@@ -61,11 +62,11 @@ export async function PATCH(request: Request) {
     const db = getDb();
     if (email !== undefined) {
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            return NextResponse.json({ error: 'Invalid email' }, { status: 400 });
+            return apiError('Invalid email', API_STATUS.BAD_REQUEST);
         }
         const existing = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
         if (existing.length > 0 && existing[0].id !== session.user.id) {
-            return NextResponse.json({ error: 'Email already in use' }, { status: 409 });
+            return apiError('Email already in use', API_STATUS.CONFLICT);
         }
     }
 
@@ -78,7 +79,7 @@ export async function PATCH(request: Request) {
 
     if (Object.keys(updates).length === 0) {
         const [u] = await db.select().from(users).where(eq(users.id, session.user.id)).limit(1);
-        if (!u) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        if (!u) return apiError('User not found', API_STATUS.NOT_FOUND);
         return NextResponse.json({
             user: {
                 id: u.id,
@@ -104,7 +105,7 @@ export async function PATCH(request: Request) {
             locale: users.locale,
         });
     if (!updated) {
-        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        return apiError('User not found', API_STATUS.NOT_FOUND);
     }
     return NextResponse.json({
         user: {

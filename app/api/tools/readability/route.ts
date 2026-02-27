@@ -1,22 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { parseApiBody, readabilityBodySchema } from '@/lib/api-schemas';
 
 export async function POST(req: NextRequest) {
-    let text = '';
-    try {
-        const body = await req.json();
-        text = body.text;
-    } catch {
-        return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
-    }
+    const parsed = await parseApiBody(req, readabilityBodySchema);
+    if (parsed instanceof NextResponse) return parsed;
 
-    if (!text) {
-        return NextResponse.json({ error: 'Text is required' }, { status: 400 });
-    }
-
-    const cleanText = text.replace(/\s+/g, ' ').trim();
-    if (cleanText.length === 0) {
-        return NextResponse.json({ error: 'Text is empty' }, { status: 400 });
-    }
+    const cleanText = parsed.text.replace(/\s+/g, ' ').trim();
 
     const sentences = cleanText.split(/[.!?]+/).length;
     const words = cleanText.split(/\s+/).length;

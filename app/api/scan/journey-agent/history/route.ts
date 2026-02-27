@@ -5,12 +5,13 @@
 
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { listJourneyRuns } from '@/lib/db/journey-runs';
 
 export async function GET(request: Request) {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
 
     const { searchParams } = new URL(request.url);

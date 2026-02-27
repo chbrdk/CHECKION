@@ -16,7 +16,19 @@ import { HistoryList, SingleScanRow, DomainScanRow, type DomainScanSummary } fro
 import { SearchResultsList } from '@/components/SearchResultsList';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
-import { DASHBOARD_SCANS_PAGE_SIZE, DASHBOARD_JOURNEYS_PAGE_SIZE } from '@/lib/constants';
+import {
+  DASHBOARD_SCANS_PAGE_SIZE,
+  DASHBOARD_JOURNEYS_PAGE_SIZE,
+  apiScanList,
+  apiScansDomainList,
+  apiJourneysList,
+  apiSearch,
+  apiScansDelete,
+  apiScansDomainDelete,
+  pathResults,
+  pathDomain,
+  PATH_SCAN,
+} from '@/lib/constants';
 import { PaginationBar } from '@/components/PaginationBar';
 
 const LIMIT = DASHBOARD_SCANS_PAGE_SIZE;
@@ -51,7 +63,7 @@ export default function DashboardPage() {
     setLastSearchedQuery(trimmed);
     setSearchLoading(true);
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(trimmed)}&limit=50`);
+      const res = await fetch(apiSearch(trimmed, 50));
       const data = await res.json();
       setSearchMatches(Array.isArray(data?.matches) ? data.matches : []);
     } catch {
@@ -74,9 +86,9 @@ export default function DashboardPage() {
   const handleSelectMatch = useCallback(
     (match: SearchMatch) => {
       if (match.type === 'single') {
-        router.push(`/results/${match.id}`);
+        router.push(pathResults(match.id));
       } else {
-        router.push(`/domain/${match.id}`);
+        router.push(pathDomain(match.id));
       }
     },
     [router]
@@ -85,7 +97,7 @@ export default function DashboardPage() {
   const handleDeleteScan = useCallback(async (id: string) => {
     if (!window.confirm(t('dashboard.deleteScanConfirm'))) return;
     try {
-      const res = await fetch(`/api/scans/${id}`, { method: 'DELETE' });
+      const res = await fetch(apiScansDelete(id), { method: 'DELETE' });
       if (res.ok) {
         setScans((prev) => prev.filter((s) => s.id !== id));
         if (scanPagination) {
@@ -100,7 +112,7 @@ export default function DashboardPage() {
   const handleDeleteDomainScan = useCallback(async (id: string) => {
     if (!window.confirm(t('dashboard.deleteDomainScanConfirm'))) return;
     try {
-      const res = await fetch(`/api/scans/domain/${id}`, { method: 'DELETE' });
+      const res = await fetch(apiScansDomainDelete(id), { method: 'DELETE' });
       if (res.ok) {
         setDomainScans((prev) => prev.filter((d) => d.id !== id));
         if (domainPagination) {
@@ -116,9 +128,9 @@ export default function DashboardPage() {
     setLoading(true);
     try {
       const [scanRes, domainRes, journeysRes] = await Promise.all([
-        fetch(`/api/scan?limit=${LIMIT}&page=${scanPage}`).then((r) => r.json()),
-        fetch(`/api/scans/domain?limit=${LIMIT}&page=${domainPage}`).then((r) => r.json()),
-        fetch(`/api/journeys?limit=${DASHBOARD_JOURNEYS_PAGE_SIZE}&page=${journeyPage}`, { credentials: 'same-origin' }).then((r) => r.json()),
+        fetch(apiScanList({ limit: LIMIT, page: scanPage })).then((r) => r.json()),
+        fetch(apiScansDomainList({ limit: LIMIT, page: domainPage })).then((r) => r.json()),
+        fetch(apiJourneysList({ limit: DASHBOARD_JOURNEYS_PAGE_SIZE, page: journeyPage }), { credentials: 'same-origin' }).then((r) => r.json()),
       ]);
       setScans(Array.isArray(scanRes?.data) ? scanRes.data : []);
       setScanPagination(scanRes?.pagination ?? null);
@@ -176,7 +188,7 @@ export default function DashboardPage() {
           brandColor="green"
           size="medium"
           startIcon="add"
-          onClick={() => router.push('/scan')}
+          onClick={() => router.push(PATH_SCAN)}
         >
           {t('dashboard.newScan')}
         </MsqdxButton>
@@ -264,13 +276,13 @@ export default function DashboardPage() {
               itemCount={scans.length}
               emptyMessage={t('dashboard.emptyMessage')}
               emptyActionLabel={t('dashboard.emptyCta')}
-              onEmptyAction={() => router.push('/scan')}
+              onEmptyAction={() => router.push(PATH_SCAN)}
             >
               {scans.map((scan) => (
                 <SingleScanRow
                   key={scan.id}
                   scan={scan}
-                  onClick={() => router.push(`/results/${scan.id}`)}
+                  onClick={() => router.push(pathResults(scan.id))}
                   onDelete={handleDeleteScan}
                 />
               ))}
@@ -299,13 +311,13 @@ export default function DashboardPage() {
               itemCount={domainScans.length}
               emptyMessage={t('dashboard.domainEmptyMessage')}
               emptyActionLabel={t('dashboard.domainEmptyCta')}
-              onEmptyAction={() => router.push('/scan')}
+              onEmptyAction={() => router.push(PATH_SCAN)}
             >
               {domainScans.map((ds) => (
                 <DomainScanRow
                   key={ds.id}
                   item={ds}
-                  onClick={() => router.push(`/domain/${ds.id}`)}
+                  onClick={() => router.push(pathDomain(ds.id))}
                   onDelete={handleDeleteDomainScan}
                 />
               ))}
@@ -360,7 +372,7 @@ export default function DashboardPage() {
                     <MsqdxButton
                       size="small"
                       variant="outlined"
-                      onClick={() => router.push(`/domain/${j.domainScanId}?restoreJourney=${j.id}`)}
+                      onClick={() => router.push(pathDomain(j.domainScanId, { restoreJourney: j.id }))}
                     >
                       {t('dashboard.journeyHistoryOpen')}
                     </MsqdxButton>

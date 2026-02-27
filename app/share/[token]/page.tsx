@@ -11,7 +11,13 @@ import { FocusOrderOverlay } from '@/components/FocusOrderOverlay';
 import { PageIndexCard } from '@/components/PageIndexCard';
 import type { DomainSummaryResponse } from '@/lib/domain-summary';
 import type { ScanResult, UxJourneyAgentStep } from '@/lib/types';
-import { SHARE_DOMAIN_PAGES_PAGE_SIZE } from '@/lib/constants';
+import {
+    SHARE_DOMAIN_PAGES_PAGE_SIZE,
+    apiShareToken,
+    apiShareTokenAccess,
+    apiShareTokenPages,
+    apiShareTokenPagesScreenshot,
+} from '@/lib/constants';
 import { useI18n } from '@/components/i18n/I18nProvider';
 
 /** Journey share payload (from GET /api/share/[token] when type=journey). */
@@ -160,7 +166,7 @@ export default function ShareLandingPage() {
 
     const loadWithAuth = useCallback(
         (authToken: string) => {
-            return fetch(`/api/share/${encodeURIComponent(token)}`, {
+            return fetch(apiShareToken(token), {
                 headers: { Authorization: `Bearer ${authToken}` },
             })
                 .then((res) => {
@@ -195,7 +201,7 @@ export default function ShareLandingPage() {
         tryLoad();
 
         function tryLoad() {
-            fetch(`/api/share/${encodeURIComponent(token)}`)
+            fetch(apiShareToken(token))
                 .then((res) => {
                     if (res.status === 403) {
                         return res.json().then((b) => {
@@ -218,7 +224,7 @@ export default function ShareLandingPage() {
         (password: string) => {
             setPasswordError(null);
             setPasswordSubmitting(true);
-            fetch(`/api/share/${encodeURIComponent(token)}/access`, {
+            fetch(apiShareTokenAccess(token), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ password }),
@@ -362,7 +368,7 @@ function ShareDomainContent({ data, token, accessToken }: { data: DomainSummaryR
         try {
             const headers: HeadersInit = {};
             if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
-            const res = await fetch(`/api/share/${encodeURIComponent(token)}/pages/${encodeURIComponent(pageId)}`, { headers });
+            const res = await fetch(apiShareTokenPages(token, pageId), { headers });
             if (!res.ok) throw new Error(t('share.loadFailed'));
             const scanResult = (await res.json()) as ScanResult;
             setSelectedPageDetail(scanResult);
@@ -824,7 +830,7 @@ function ShareSingleContent({ data, shareToken, accessToken }: { data: ScanResul
 
     // Im Share-Kontext immer Screenshot über API laden (liefert Bild oder Platzhalter)
     const screenshotSrc = shareToken
-        ? `/api/share/${encodeURIComponent(shareToken)}/pages/${encodeURIComponent(data.id)}/screenshot${accessToken ? `?access=${encodeURIComponent(accessToken)}` : ''}`
+        ? apiShareTokenPagesScreenshot(shareToken, data.id, accessToken)
         : (data.screenshot || undefined);
 
     const hasVisualAnalysis = shareToken

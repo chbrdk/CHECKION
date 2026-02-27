@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getDomainScan } from '@/lib/db/scans';
 
 export async function GET(
@@ -14,13 +15,13 @@ export async function GET(
 ) {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     const { id } = await params;
     const scan = await getDomainScan(id, session.user.id);
 
     if (!scan) {
-        return NextResponse.json({ error: 'Scan not found' }, { status: 404 });
+        return apiError('Scan not found', API_STATUS.NOT_FOUND);
     }
 
     return NextResponse.json({

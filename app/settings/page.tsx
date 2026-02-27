@@ -23,6 +23,7 @@ import type { SelectChangeEvent } from '@mui/material';
 import { BrandColorSelector } from '@/components/settings/BrandColorSelector';
 import { FORM_FIELD_ACCENT_SX } from '@/lib/theme-accent';
 import { useI18n } from '@/components/i18n/I18nProvider';
+import { API_AUTH_PROFILE, API_AUTH_CHANGE_PASSWORD, PATH_LOGIN } from '@/lib/constants';
 
 function useStandards(t: (k: string) => string): { value: WcagStandard; label: string; desc: string }[] {
     return useMemo(
@@ -93,7 +94,7 @@ export default function SettingsPage() {
 
     useEffect(() => {
         if (status !== 'authenticated' || !session?.user?.id) return;
-        fetch('/api/auth/profile')
+        fetch(API_AUTH_PROFILE)
             .then((res) => res.json())
             .then((data) => {
                 if (data.user) {
@@ -123,7 +124,7 @@ export default function SettingsPage() {
         setSuccess(null);
         setSavingProfile(true);
         try {
-            const res = await fetch('/api/auth/profile', {
+            const res = await fetch(API_AUTH_PROFILE, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -159,7 +160,7 @@ export default function SettingsPage() {
         }
         setSavingPassword(true);
         try {
-            const res = await fetch('/api/auth/change-password', {
+            const res = await fetch(API_AUTH_CHANGE_PASSWORD, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
@@ -179,7 +180,7 @@ export default function SettingsPage() {
 
     const handleLogout = async () => {
         await signOut({ redirect: false });
-        router.replace('/login');
+        router.replace(PATH_LOGIN);
         router.refresh();
     };
 
@@ -346,14 +347,19 @@ export default function SettingsPage() {
                             fullWidth
                             sx={FORM_FIELD_ACCENT_SX}
                         />
-                        <MsqdxFormField
-                            label={t('settings.password.new')}
-                            value={newPassword}
-                            onChange={(e) => setNewPassword((e.target as HTMLInputElement).value)}
-                            type="password"
-                            fullWidth
-                            sx={FORM_FIELD_ACCENT_SX}
-                        />
+                        <Box>
+                            <MsqdxFormField
+                                label={t('settings.password.new')}
+                                value={newPassword}
+                                onChange={(e) => setNewPassword((e.target as HTMLInputElement).value)}
+                                type="password"
+                                fullWidth
+                                sx={FORM_FIELD_ACCENT_SX}
+                            />
+                            <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'var(--color-text-muted-on-light)' }}>
+                                {t('settings.password.newRequirements')}
+                            </MsqdxTypography>
+                        </Box>
                         <MsqdxFormField
                             label={t('settings.password.confirm')}
                             value={confirmPassword}

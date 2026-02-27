@@ -6,51 +6,36 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { apiError, API_STATUS } from '@/lib/api-error-handler';
+import { parseApiBody, journeyAgentBodySchema } from '@/lib/api-schemas';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { ENV_UX_JOURNEY_AGENT_URL } from '@/lib/constants';
 import { insertJourneyRun } from '@/lib/db/journey-runs';
-
-function isValidUrl(s: string): boolean {
-    try {
-        const u = new URL(s);
-        return u.protocol === 'https:' || u.protocol === 'http:';
-    } catch {
-        return false;
-    }
-}
 
 export async function POST(request: NextRequest) {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
-
-    let body: { url?: string; task?: string };
-    try {
-        body = await request.json();
-    } catch {
-        return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 });
-    }
-
-    const url = typeof body?.url === 'string' ? body.url.trim() : '';
-    const task = typeof body?.task === 'string' ? body.task.trim() : '';
-    if (!url || !task) {
-        return NextResponse.json(
-            { error: 'Body must include url and task (non-empty strings).' },
-            { status: 400 }
+    const rl = checkRateLimit(`scan:${session.user.id}`);
+    if (!rl.allowed) {
+        return apiError(
+            'Too many requests. Please try again later.',
+            API_STATUS.TOO_MANY_REQUESTS,
+            rl.retryAfter ? { retryAfter: rl.retryAfter } : undefined
         );
     }
-    if (!isValidUrl(url)) {
-        return NextResponse.json({ error: 'Invalid URL.' }, { status: 400 });
-    }
+
+    const parsed = await parseApiBody(request, journeyAgentBodySchema);
+    if (parsed instanceof NextResponse) return parsed;
+    const { url, task } = parsed;
 
     const agentBaseUrl = process.env[ENV_UX_JOURNEY_AGENT_URL];
     if (!agentBaseUrl) {
-        return NextResponse.json(
-            {
-                error: 'UX Journey Agent service is not configured.',
-                hint: 'Set UX_JOURNEY_AGENT_URL to the base URL of the Browser Use agent service.',
-            },
-            { status: 501 }
+        return apiError(
+            'UX Journey Agent service is not configured.',
+            API_STATUS.NOT_IMPLEMENTED,
+            { hint: 'Set UX_JOURNEY_AGENT_URL to the base URL of the Browser Use agent service.' }
         );
     }
 
@@ -63,16 +48,11 @@ export async function POST(request: NextRequest) {
         });
         const data = (await res.json()) as { jobId?: string; error?: string };
         if (!res.ok) {
-            return NextResponse.json(
-                { error: data?.error || `Agent service error: ${res.status}` },
-                { status: res.status >= 400 && res.status < 600 ? res.status : 502 }
-            );
+            const status = res.status >= 400 && res.status < 600 ? res.status : 502;
+            return apiError(data?.error || `Agent service error: ${res.status}`, status);
         }
         if (!data?.jobId) {
-            return NextResponse.json(
-                { error: 'Agent service did not return a jobId.' },
-                { status: 502 }
-            );
+            return apiError('Agent service did not return a jobId.', API_STATUS.BAD_GATEWAY);
         }
         const jobId = data.jobId as string;
         try {
@@ -84,9 +64,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, jobId });
     } catch (e) {
         const message = e instanceof Error ? e.message : 'Failed to reach UX Journey Agent service.';
-        return NextResponse.json(
-            { error: message },
-            { status: 502 }
-        );
+        return apiError(message, API_STATUS.BAD_GATEWAY);
     }
 }

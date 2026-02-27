@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { apiError, API_STATUS } from '@/lib/api-error-handler';
+import { parseApiBody, scanDomainBodySchema } from '@/lib/api-schemas';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { runDomainScan } from '@/lib/spider';
 import { createDomainScan, updateDomainScan, getDomainScan, addScan } from '@/lib/db/scans';
 import { invalidateDomainScan, invalidateDomainList } from '@/lib/cache';
@@ -12,23 +15,22 @@ export const maxDuration = 10;
 export async function POST(req: NextRequest) {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
+    }
+    const rl = checkRateLimit(`scan:${session.user.id}`);
+    if (!rl.allowed) {
+        return apiError(
+            'Too many requests. Please try again later.',
+            API_STATUS.TOO_MANY_REQUESTS,
+            rl.retryAfter ? { retryAfter: rl.retryAfter } : undefined
+        );
     }
     const userId = session.user.id;
-    let url: string;
-    let useSitemap = true;
-    let maxPages: number | undefined;
-    try {
-        const body = await req.json();
-        url = body.url;
-        if (typeof body.useSitemap === 'boolean') useSitemap = body.useSitemap;
-        if (typeof body.maxPages === 'number' && body.maxPages >= 1) maxPages = body.maxPages;
-    } catch {
-        return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
-    }
-    if (!url) {
-        return NextResponse.json({ error: 'URL is required' }, { status: 400 });
-    }
+    const parsed = await parseApiBody(req, scanDomainBodySchema);
+    if (parsed instanceof NextResponse) return parsed;
+    const url = parsed.url;
+    const useSitemap = parsed.useSitemap ?? true;
+    const maxPages = parsed.maxPages;
 
     const id = uuidv4();
     const initial: DomainScanResult = {

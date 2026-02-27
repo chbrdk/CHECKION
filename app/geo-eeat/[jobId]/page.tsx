@@ -4,9 +4,10 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Box, CircularProgress, alpha } from '@mui/material';
-import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard, MsqdxChip } from '@msqdx/react';
+import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard, MsqdxChip, MsqdxAccordion, MsqdxAccordionItem, MsqdxTooltip } from '@msqdx/react';
 import { MSQDX_SPACING, MSQDX_BRAND_PRIMARY, MSQDX_STATUS } from '@msqdx/tokens';
 import { useI18n } from '@/components/i18n/I18nProvider';
+import { apiScanGeoEeat, PATH_SCAN } from '@/lib/constants';
 import { SharePanel } from '@/components/SharePanel';
 import type { GeoEeatIntensiveResult, GeoEeatPageResult, CompetitiveBenchmarkResult } from '@/lib/types';
 
@@ -31,11 +32,11 @@ export default function GeoEeatResultPage() {
 
         async function fetchRun() {
             try {
-                const res = await fetch(`/api/scan/geo-eeat/${jobId}`);
+                const res = await fetch(apiScanGeoEeat(jobId));
                 if (!res.ok) {
                     if (!cancelled) {
-                        if (res.status === 404) setError('Run not found.');
-                        else setError('Failed to load run.');
+                        if (res.status === 404) setError(t('geoEeat.runNotFound'));
+                        else setError(t('geoEeat.failedToLoadRun'));
                         setStatus('error');
                     }
                     return;
@@ -52,7 +53,7 @@ export default function GeoEeatResultPage() {
                 }
             } catch {
                 if (!cancelled) {
-                    setError('Network error.');
+                    setError(t('geoEeat.networkError'));
                     setStatus('error');
                     if (intervalId) clearInterval(intervalId);
                 }
@@ -66,15 +67,15 @@ export default function GeoEeatResultPage() {
             cancelled = true;
             if (intervalId) clearInterval(intervalId);
         };
-    }, [jobId]);
+    }, [jobId, t]);
 
     if (!jobId) {
         return (
             <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 900, mx: 'auto' }}>
                 <MsqdxTypography variant="body1" color="text.secondary">
-                    Missing job ID.
+                    {t('geoEeat.missingJobId')}
                 </MsqdxTypography>
-                <Link href="/scan">
+                <Link href={PATH_SCAN}>
                     <MsqdxButton variant="text" size="small" sx={{ mt: 1 }}>
                         {t('geoEeat.backToScan')}
                     </MsqdxButton>
@@ -106,10 +107,10 @@ export default function GeoEeatResultPage() {
                     sx={{ bgcolor: 'var(--color-card-bg)', borderColor: MSQDX_STATUS.error.base }}
                 >
                     <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                        {error || 'Unknown error'}
+                        {error || t('geoEeat.unknownError')}
                     </MsqdxTypography>
                     <Box sx={{ mt: 2 }}>
-                        <Link href="/scan">
+                        <Link href={PATH_SCAN}>
                             <MsqdxButton variant="outlined" size="medium">
                                 {t('geoEeat.backToScan')}
                             </MsqdxButton>
@@ -121,14 +122,14 @@ export default function GeoEeatResultPage() {
     }
 
     return (
-        <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1000, mx: 'auto' }}>
+        <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: payload?.competitive?.metrics?.length ? 1200 : 1000, mx: 'auto' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1, mb: 2 }}>
                 <MsqdxTypography variant="h5" sx={{ fontWeight: 700 }}>
                     {t('geoEeat.title')}
                 </MsqdxTypography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <SharePanel resourceType="geo_eeat" resourceId={jobId} />
-                    <Link href="/scan">
+                    <Link href={PATH_SCAN}>
                         <MsqdxButton variant="text" size="small">
                             {t('geoEeat.backToScan')}
                         </MsqdxButton>
@@ -165,26 +166,26 @@ export default function GeoEeatResultPage() {
                                 {/* Technical (Stufe 1): GEO / Schema / Crawl */}
                                 {gen && (
                                     <Box sx={{ mt: 1.5 }}>
-                                        <MsqdxTypography variant="caption" sx={{ fontWeight: 600, color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}>GEO & Technik</MsqdxTypography>
+                                        <MsqdxTypography variant="caption" sx={{ fontWeight: 600, color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}>{t('geoEeat.geoAndTech')}</MsqdxTypography>
                                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                                             <MsqdxChip size="small" label={`${t('geoEeat.geoScore')}: ${gen.score}`} />
                                             {gen.technical?.hasLlmsTxt != null && (
-                                                <MsqdxChip size="small" label={gen.technical.hasLlmsTxt ? 'llms.txt' : 'No llms.txt'} />
+                                                <MsqdxChip size="small" label={gen.technical.hasLlmsTxt ? t('geoEeat.hasLlmsTxt') : t('geoEeat.noLlmsTxt')} />
                                             )}
                                             {gen.technical?.hasRobotsAllowingAI != null && (
-                                                <MsqdxChip size="small" label={gen.technical.hasRobotsAllowingAI ? 'Robots: AI erlaubt' : 'Robots: AI eingeschränkt'} />
+                                                <MsqdxChip size="small" label={gen.technical.hasRobotsAllowingAI ? t('geoEeat.robotsAiAllowed') : t('geoEeat.robotsAiRestricted')} />
                                             )}
                                             {gen.technical?.schemaCoverage?.length ? (
-                                                <MsqdxChip size="small" label={`Schema: ${gen.technical.schemaCoverage.slice(0, 3).join(', ')}${gen.technical.schemaCoverage.length > 3 ? '…' : ''}`} />
+                                                <MsqdxChip size="small" label={`${t('geoEeat.schemaLabel')}: ${gen.technical.schemaCoverage.slice(0, 3).join(', ')}${gen.technical.schemaCoverage.length > 3 ? '…' : ''}`} />
                                             ) : null}
                                             {gen.content?.faqCount != null && gen.content.faqCount > 0 && (
-                                                <MsqdxChip size="small" label={`FAQ: ${gen.content.faqCount}`} />
+                                                <MsqdxChip size="small" label={`${t('geoEeat.faqLabel')}: ${gen.content.faqCount}`} />
                                             )}
                                             {gen.content?.citationDensity != null && (
-                                                <MsqdxChip size="small" label={`Zitate: ${typeof gen.content.citationDensity === 'number' ? gen.content.citationDensity.toFixed(1) : gen.content.citationDensity}`} />
+                                                <MsqdxChip size="small" label={`${t('geoEeat.citationsLabel')}: ${typeof gen.content.citationDensity === 'number' ? gen.content.citationDensity.toFixed(1) : gen.content.citationDensity}`} />
                                             )}
                                             {gen.expertise?.hasAuthorBio != null && (
-                                                <MsqdxChip size="small" label={gen.expertise.hasAuthorBio ? 'Autor-Bio' : 'Keine Autor-Bio'} />
+                                                <MsqdxChip size="small" label={gen.expertise.hasAuthorBio ? t('geoEeat.hasAuthorBio') : t('geoEeat.noAuthorBio')} />
                                             )}
                                         </Box>
                                     </Box>
@@ -193,13 +194,13 @@ export default function GeoEeatResultPage() {
                                 {/* E-E-A-T Signale (Stufe 1: regelbasiert) */}
                                 {(eeatSignals || tech?.hasImpressum != null || tech?.hasPrivacy != null) && (
                                     <Box sx={{ mt: 1 }}>
-                                        <MsqdxTypography variant="caption" sx={{ fontWeight: 600, color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}>E-E-A-T Signale (Seite)</MsqdxTypography>
+                                        <MsqdxTypography variant="caption" sx={{ fontWeight: 600, color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}>{t('geoEeat.eeatSignalsPage')}</MsqdxTypography>
                                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                            {eeatSignals?.hasImpressum != null && <MsqdxChip size="small" label={eeatSignals.hasImpressum ? 'Impressum' : 'Kein Impressum'} sx={eeatSignals.hasImpressum ? { bgcolor: alpha(MSQDX_STATUS.success.base, 0.12), color: MSQDX_STATUS.success.base } : {}} />}
-                                            {eeatSignals?.hasContact != null && <MsqdxChip size="small" label={eeatSignals.hasContact ? 'Kontakt' : 'Kein Kontakt'} sx={eeatSignals.hasContact ? { bgcolor: alpha(MSQDX_STATUS.success.base, 0.12), color: MSQDX_STATUS.success.base } : {}} />}
-                                            {eeatSignals?.hasAboutLink != null && <MsqdxChip size="small" label={eeatSignals.hasAboutLink ? 'Über uns' : 'Kein Über uns'} sx={eeatSignals.hasAboutLink ? { bgcolor: alpha(MSQDX_STATUS.success.base, 0.12), color: MSQDX_STATUS.success.base } : {}} />}
-                                            {eeatSignals?.hasTeamLink != null && <MsqdxChip size="small" label={eeatSignals.hasTeamLink ? 'Team' : 'Kein Team'} sx={eeatSignals.hasTeamLink ? { bgcolor: alpha(MSQDX_STATUS.success.base, 0.12), color: MSQDX_STATUS.success.base } : {}} />}
-                                            {tech?.hasPrivacy != null && <MsqdxChip size="small" label={tech.hasPrivacy ? 'Datenschutz' : 'Kein Datenschutz'} sx={tech.hasPrivacy ? { bgcolor: alpha(MSQDX_STATUS.success.base, 0.12), color: MSQDX_STATUS.success.base } : {}} />}
+                                            {eeatSignals?.hasImpressum != null && <MsqdxChip size="small" label={eeatSignals.hasImpressum ? t('geoEeat.hasImpressum') : t('geoEeat.noImpressum')} sx={eeatSignals.hasImpressum ? { bgcolor: alpha(MSQDX_STATUS.success.base, 0.12), color: MSQDX_STATUS.success.base } : {}} />}
+                                            {eeatSignals?.hasContact != null && <MsqdxChip size="small" label={eeatSignals.hasContact ? t('geoEeat.hasContact') : t('geoEeat.noContact')} sx={eeatSignals.hasContact ? { bgcolor: alpha(MSQDX_STATUS.success.base, 0.12), color: MSQDX_STATUS.success.base } : {}} />}
+                                            {eeatSignals?.hasAboutLink != null && <MsqdxChip size="small" label={eeatSignals.hasAboutLink ? t('geoEeat.hasAboutLink') : t('geoEeat.noAboutLink')} sx={eeatSignals.hasAboutLink ? { bgcolor: alpha(MSQDX_STATUS.success.base, 0.12), color: MSQDX_STATUS.success.base } : {}} />}
+                                            {eeatSignals?.hasTeamLink != null && <MsqdxChip size="small" label={eeatSignals.hasTeamLink ? t('geoEeat.hasTeamLink') : t('geoEeat.noTeamLink')} sx={eeatSignals.hasTeamLink ? { bgcolor: alpha(MSQDX_STATUS.success.base, 0.12), color: MSQDX_STATUS.success.base } : {}} />}
+                                            {tech?.hasPrivacy != null && <MsqdxChip size="small" label={tech.hasPrivacy ? t('geoEeat.hasPrivacy') : t('geoEeat.noPrivacy')} sx={tech.hasPrivacy ? { bgcolor: alpha(MSQDX_STATUS.success.base, 0.12), color: MSQDX_STATUS.success.base } : {}} />}
                                         </Box>
                                     </Box>
                                 )}
@@ -207,19 +208,34 @@ export default function GeoEeatResultPage() {
                                 {/* LLM: E-E-A-T Bewertung (Stufe 2) */}
                                 {page.eeatScores && (
                                     <Box sx={{ mt: 1 }}>
-                                        <MsqdxTypography variant="caption" sx={{ fontWeight: 600, color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}>E-E-A-T Bewertung (KI)</MsqdxTypography>
-                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                            <MsqdxChip size="small" label={`${t('geoEeat.trust')}: ${page.eeatScores.trust.score}/5`} />
-                                            <MsqdxChip size="small" label={`${t('geoEeat.experience')}: ${page.eeatScores.experience.score}/5`} />
-                                            <MsqdxChip size="small" label={`${t('geoEeat.expertise')}: ${page.eeatScores.expertise.score}/5`} />
-                                            {page.eeatScores.authoritativeness != null && (
-                                                <MsqdxChip size="small" label={`Authoritativeness: ${page.eeatScores.authoritativeness.score}/5`} />
-                                            )}
+                                        <MsqdxTypography variant="caption" sx={{ fontWeight: 600, color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}>{t('geoEeat.eeatEvalAi')}</MsqdxTypography>
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                                            {[
+                                                { key: 'trust', label: t('geoEeat.trust'), score: page.eeatScores.trust },
+                                                { key: 'experience', label: t('geoEeat.experience'), score: page.eeatScores.experience },
+                                                { key: 'expertise', label: t('geoEeat.expertise'), score: page.eeatScores.expertise },
+                                                ...(page.eeatScores.authoritativeness ? [{ key: 'authoritativeness', label: t('geoEeat.authoritativeness'), score: page.eeatScores.authoritativeness }] : []),
+                                            ].map(({ key, label, score }) => (
+                                                <Box key={key} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <MsqdxTypography variant="caption" sx={{ minWidth: 90 }}>{label}</MsqdxTypography>
+                                                    <Box sx={{ flex: 1, maxWidth: 120, height: 8, borderRadius: 1, bgcolor: 'var(--color-border)', overflow: 'hidden', display: 'flex' }}>
+                                                        <Box
+                                                            sx={{
+                                                                width: `${(score.score / 5) * 100}%`,
+                                                                height: '100%',
+                                                                bgcolor: score.score >= 4 ? MSQDX_STATUS.success.base : score.score >= 3 ? MSQDX_STATUS.warning.base : MSQDX_STATUS.error.base,
+                                                                borderRadius: 1,
+                                                            }}
+                                                        />
+                                                    </Box>
+                                                    <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>{score.score}/5</MsqdxTypography>
+                                                </Box>
+                                            ))}
                                         </Box>
                                         {(page.eeatScores.trust.reasoning || page.eeatScores.experience.reasoning) && (
                                             <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'var(--color-text-muted-on-light)' }}>
-                                                {page.eeatScores.trust.reasoning ? `Trust: ${page.eeatScores.trust.reasoning}` : ''}
-                                                {page.eeatScores.experience.reasoning ? ` · Experience: ${page.eeatScores.experience.reasoning}` : ''}
+                                                {page.eeatScores.trust.reasoning ? `${t('geoEeat.trustReasoningPrefix')}: ${page.eeatScores.trust.reasoning}` : ''}
+                                                {page.eeatScores.experience.reasoning ? ` · ${t('geoEeat.experienceReasoningPrefix')}: ${page.eeatScores.experience.reasoning}` : ''}
                                             </MsqdxTypography>
                                         )}
                                     </Box>
@@ -228,13 +244,26 @@ export default function GeoEeatResultPage() {
                                 {/* LLM: GEO-Fitness (Stufe 3) */}
                                 {page.geoFitnessScore != null && (
                                     <Box sx={{ mt: 1 }}>
-                                        <MsqdxTypography variant="caption" sx={{ fontWeight: 600, color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}>GEO-Fitness (KI)</MsqdxTypography>
+                                        <MsqdxTypography variant="caption" sx={{ fontWeight: 600, color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}>{t('geoEeat.geoFitnessAi')}</MsqdxTypography>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                                            <Box sx={{ flex: 1, maxWidth: 200, height: 12, borderRadius: 1, bgcolor: 'var(--color-border)', overflow: 'hidden', display: 'flex' }}>
+                                                <Box
+                                                    sx={{
+                                                        width: `${page.geoFitnessScore}%`,
+                                                        height: '100%',
+                                                        bgcolor: page.geoFitnessScore >= 60 ? MSQDX_STATUS.success.base : page.geoFitnessScore >= 30 ? MSQDX_STATUS.warning.base : MSQDX_STATUS.error.base,
+                                                        borderRadius: 1,
+                                                    }}
+                                                />
+                                            </Box>
+                                            <MsqdxTypography variant="body2" sx={{ fontWeight: 600 }}>{page.geoFitnessScore}/100</MsqdxTypography>
+                                        </Box>
                                         <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-on-light)' }}>
-                                            {page.geoFitnessScore}/100 — {page.geoFitnessReasoning ?? ''}
+                                            {page.geoFitnessReasoning ?? ''}
                                         </MsqdxTypography>
                                         {page.missingGeoElements && page.missingGeoElements.length > 0 && (
                                             <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'var(--color-text-muted-on-light)' }}>
-                                                Fehlend/schwach: {page.missingGeoElements.join(', ')}
+                                                {t('geoEeat.missingWeakLabel')}: {page.missingGeoElements.join(', ')}
                                             </MsqdxTypography>
                                         )}
                                     </Box>
@@ -258,44 +287,195 @@ export default function GeoEeatResultPage() {
                     sx={{ bgcolor: 'var(--color-card-bg)', mb: 2 }}
                     borderRadius="lg"
                 >
-                    <Box component="ol" sx={{ m: 0, pl: 2.5 }}>
+                    <MsqdxAccordion allowMultiple size="small" borderRadius="md" sx={{ border: 'none', background: 'transparent' }}>
                         {payload.recommendations.map((rec, idx) => (
-                            <MsqdxTypography key={idx} component="li" variant="body2" sx={{ mb: 0.5 }}>
-                                <strong>{rec.title}</strong>: {rec.description}
-                            </MsqdxTypography>
+                            <MsqdxAccordionItem
+                                key={idx}
+                                id={`rec-${idx}`}
+                                summary={
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <MsqdxChip size="small" label={`#${rec.priority ?? idx + 1}`} sx={{ minWidth: 32 }} />
+                                        <MsqdxTypography variant="body2" sx={{ fontWeight: 600 }}>{rec.title}</MsqdxTypography>
+                                    </Box>
+                                }
+                            >
+                                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-on-light)', pl: 1 }}>
+                                    {rec.description}
+                                </MsqdxTypography>
+                                {rec.affectedUrls && rec.affectedUrls.length > 0 && (
+                                    <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 0.5, pl: 1, color: 'var(--color-text-muted-on-light)' }}>
+                                        {t('geoEeat.urlsLabel')}: {rec.affectedUrls.slice(0, 3).join(', ')}{rec.affectedUrls.length > 3 ? '…' : ''}
+                                    </MsqdxTypography>
+                                )}
+                            </MsqdxAccordionItem>
                         ))}
-                    </Box>
+                    </MsqdxAccordion>
                 </MsqdxMoleculeCard>
             )}
 
-            {payload?.competitive && (payload.competitive as CompetitiveBenchmarkResult).metrics?.length > 0 && (
-                <MsqdxMoleculeCard
-                    title={t('geoEeat.competitiveTitle')}
-                    variant="flat"
-                    sx={{ bgcolor: 'var(--color-card-bg)' }}
-                    borderRadius="lg"
-                >
-                    <Box sx={{ overflowX: 'auto' }}>
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1 }}>
-                            {t('geoEeat.shareOfVoice')} / {t('geoEeat.avgPosition')}
-                        </MsqdxTypography>
-                        <Box component="ul" sx={{ m: 0, p: 0, listStyle: 'none' }}>
-                            {(payload.competitive as CompetitiveBenchmarkResult).metrics.map((m, idx) => (
-                                <Box key={idx} component="li" sx={{ py: 0.5, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                    <MsqdxChip size="small" label={m.domain} />
-                                    <MsqdxTypography variant="caption">
-                                        SoV: {(m.shareOfVoice * 100).toFixed(0)}% · Ø Pos: {m.avgPosition.toFixed(1)}
-                                    </MsqdxTypography>
-                                </Box>
-                            ))}
+            {payload?.competitive && (payload.competitive as CompetitiveBenchmarkResult).metrics?.length > 0 && (() => {
+                const comp = payload.competitive as CompetitiveBenchmarkResult;
+                const maxSoV = Math.max(...comp.metrics.map((m) => m.shareOfVoice), 0.01);
+                const DOMAIN_COLORS = [
+                    MSQDX_BRAND_PRIMARY.green,
+                    MSQDX_BRAND_PRIMARY.purple ?? '#7c3aed',
+                    '#0ea5e9',
+                    '#f59e0b',
+                    '#ef4444',
+                    '#ec4899',
+                    '#14b8a6',
+                    '#6366f1',
+                ];
+                return (
+                    <MsqdxMoleculeCard
+                        title={t('geoEeat.competitiveTitle')}
+                        variant="flat"
+                        sx={{ bgcolor: 'var(--color-card-bg)', mb: 2 }}
+                        borderRadius="lg"
+                    >
+                        <Box sx={{ mb: 3 }}>
+                            <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: 'var(--color-text-on-light)' }}>
+                                {t('geoEeat.competitiveOverview')}
+                            </MsqdxTypography>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                                {comp.metrics.map((m, idx) => (
+                                    <MsqdxTooltip
+                                        key={idx}
+                                        title={t('geoEeat.tooltipSoVDetail', {
+                                        domain: m.domain,
+                                        sov: (m.shareOfVoice * 100).toFixed(0),
+                                        avgPos: m.avgPosition > 0 ? m.avgPosition.toFixed(1) : '–',
+                                        mentions: m.mentionCount,
+                                        queries: m.queryCount,
+                                        queriesLabel: t('geoEeat.queriesLabel'),
+                                    })}
+                                        placement="top"
+                                    >
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 2,
+                                                flexWrap: 'wrap',
+                                                p: 1,
+                                                borderRadius: 1,
+                                                cursor: 'default',
+                                                '&:hover': { bgcolor: alpha(DOMAIN_COLORS[idx % DOMAIN_COLORS.length], 0.06) },
+                                            }}
+                                        >
+                                            <Box sx={{ minWidth: 140, flexShrink: 0 }}>
+                                                <MsqdxChip size="small" label={m.domain} sx={{ fontWeight: 600 }} />
+                                            </Box>
+                                            <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Box
+                                                    sx={{
+                                                        flex: 1,
+                                                        minWidth: 80,
+                                                        height: 28,
+                                                        borderRadius: 1,
+                                                        bgcolor: 'var(--color-border)',
+                                                        overflow: 'hidden',
+                                                        display: 'flex',
+                                                    }}
+                                                >
+                                                    <Box
+                                                        sx={{
+                                                            width: `${(m.shareOfVoice / maxSoV) * 100}%`,
+                                                            minWidth: m.shareOfVoice > 0 ? 4 : 0,
+                                                            height: '100%',
+                                                            bgcolor: DOMAIN_COLORS[idx % DOMAIN_COLORS.length],
+                                                            borderRadius: 1,
+                                                            transition: 'width 0.3s ease',
+                                                        }}
+                                                    />
+                                                </Box>
+                                                <MsqdxTypography variant="body2" sx={{ fontWeight: 600, minWidth: 48, color: 'var(--color-text-on-light)' }}>
+                                                    {(m.shareOfVoice * 100).toFixed(0)}%
+                                                </MsqdxTypography>
+                                            </Box>
+                                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', minWidth: 90 }}>
+                                                {t('geoEeat.avgPosition')}: {m.avgPosition > 0 ? m.avgPosition.toFixed(1) : '–'}
+                                            </MsqdxTypography>
+                                        </Box>
+                                    </MsqdxTooltip>
+                                ))}
+                            </Box>
                         </Box>
-                    </Box>
-                </MsqdxMoleculeCard>
-            )}
+
+                        {comp.runs && comp.runs.length > 0 && (
+                            <Box sx={{ mt: 3, pt: 3, borderTop: '1px solid var(--color-border)' }}>
+                                <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: 'var(--color-text-on-light)' }}>
+                                    {t('geoEeat.competitivePerQuery')}
+                                </MsqdxTypography>
+                                <MsqdxAccordion allowMultiple size="small" borderRadius="md" sx={{ border: '1px solid var(--color-border)' }}>
+                                    {comp.runs.map((run, runIdx) => (
+                                        <MsqdxAccordionItem
+                                            key={run.queryId ?? runIdx}
+                                            id={`query-${runIdx}`}
+                                            summary={
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                                                    <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>
+                                                        {t('geoEeat.queryN', { n: runIdx + 1 })}
+                                                    </MsqdxTypography>
+                                                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                        {run.query}
+                                                    </MsqdxTypography>
+                                                    {run.citations?.length ? (
+                                                        <MsqdxChip size="small" label={t('geoEeat.competitiveCitationsCount', { count: run.citations.length })} />
+                                                    ) : null}
+                                                </Box>
+                                            }
+                                        >
+                                            <Box sx={{ pt: 1 }}>
+                                                <MsqdxTypography variant="body2" sx={{ mb: 1.5, color: 'var(--color-text-on-light)' }}>
+                                                    {run.query}
+                                                </MsqdxTypography>
+                                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}>
+                                                    {t('geoEeat.citedDomains')}:
+                                                </MsqdxTypography>
+                                                {run.citations && run.citations.length > 0 ? (
+                                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, alignItems: 'center' }}>
+                                                        {[...run.citations]
+                                                            .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+                                                            .map((c, cIdx) => (
+                                                                <Box
+                                                                    key={cIdx}
+                                                                    sx={{
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        gap: 0.5,
+                                                                        px: 1,
+                                                                        py: 0.5,
+                                                                        borderRadius: 1,
+                                                                        bgcolor: 'var(--color-card-bg)',
+                                                                        border: '1px solid var(--color-border)',
+                                                                    }}
+                                                                >
+                                                                    <MsqdxTypography variant="caption" sx={{ fontWeight: 600, color: 'var(--color-text-muted-on-light)' }}>
+                                                                        {t('geoEeat.positionShort')} {c.position ?? cIdx + 1}
+                                                                    </MsqdxTypography>
+                                                                    <MsqdxChip size="small" label={c.domain} sx={{ height: 22 }} />
+                                                                </Box>
+                                                            ))}
+                                                    </Box>
+                                                ) : (
+                                                    <MsqdxTypography variant="caption" sx={{ fontStyle: 'italic', color: 'var(--color-text-muted-on-light)' }}>
+                                                        {t('geoEeat.noCitations')}
+                                                    </MsqdxTypography>
+                                                )}
+                                            </Box>
+                                        </MsqdxAccordionItem>
+                                    ))}
+                                </MsqdxAccordion>
+                            </Box>
+                        )}
+                    </MsqdxMoleculeCard>
+                );
+            })()}
 
             {payload && (!payload.pages || payload.pages.length === 0) && !payload.recommendations?.length && !payload.competitive?.metrics?.length && (
                 <MsqdxTypography variant="body2" color="text.secondary">
-                    No results to display.
+                    {t('geoEeat.noResultsDisplay')}
                 </MsqdxTypography>
             )}
         </Box>

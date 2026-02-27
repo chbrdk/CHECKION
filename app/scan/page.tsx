@@ -23,6 +23,19 @@ import {
 import type { ScanResult, WcagStandard, Runner } from '@/lib/types';
 import type { SelectChangeEvent } from '@mui/material';
 import { useI18n } from '@/components/i18n/I18nProvider';
+import {
+    apiScanDomainCreate,
+    apiScanJourneyAgentCreate,
+    apiScanJourneyAgentHistory,
+    apiScanGeoEeatCreate,
+    apiScanGeoEeatHistory,
+    apiScanGeoEeatSuggestQueries,
+    apiScanCreate,
+    pathGeoEeat,
+    pathJourneyAgent,
+    pathResults,
+    pathScanDomain,
+} from '@/lib/constants';
 
 export default function ScanPage() {
     const router = useRouter();
@@ -55,7 +68,7 @@ export default function ScanPage() {
 
     useEffect(() => {
         if (scanMode !== 'journey') return;
-        fetch('/api/scan/journey-agent/history?limit=15')
+        fetch(apiScanJourneyAgentHistory(15))
             .then((res) => res.ok ? res.json() : { runs: [] })
             .then((data: { runs?: Array<{ id: string; url: string; task: string; status: string; createdAt: string }> }) =>
                 setJourneyHistory(data.runs ?? [])
@@ -65,7 +78,7 @@ export default function ScanPage() {
 
     useEffect(() => {
         if (scanMode !== 'geoEeat') return;
-        fetch('/api/scan/geo-eeat/history?limit=15')
+        fetch(apiScanGeoEeatHistory(15))
             .then((res) => (res.ok ? res.json() : { runs: [] }))
             .then((data: { runs?: Array<{ id: string; url: string; status: string; createdAt: string }> }) =>
                 setGeoEeatHistory(data.runs ?? [])
@@ -87,7 +100,7 @@ export default function ScanPage() {
                     body.competitors = geoEeatCompetitors.trim().split(/\n/).map((s) => s.trim()).filter(Boolean);
                     body.queries = geoEeatQueries.trim().split(/\n/).map((s) => s.trim()).filter(Boolean);
                 }
-                const res = await fetch('/api/scan/geo-eeat', {
+                const res = await fetch(apiScanGeoEeatCreate, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body),
@@ -99,11 +112,11 @@ export default function ScanPage() {
                     return;
                 }
                 const jobId = data.jobId as string;
-                router.push(`/geo-eeat/${jobId}`);
+                router.push(pathGeoEeat(jobId));
                 return;
             }
             if (scanMode === 'journey') {
-                const res = await fetch('/api/scan/journey-agent', {
+                const res = await fetch(apiScanJourneyAgentCreate, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url: url.trim(), task: task.trim() }),
@@ -120,11 +133,11 @@ export default function ScanPage() {
                     return;
                 }
                 const jobId = data.jobId as string;
-                router.push(`/journey-agent/${jobId}`);
+                router.push(pathJourneyAgent(jobId));
                 return;
             }
             if (scanMode === 'single') {
-                const res = await fetch('/api/scan', {
+                const res = await fetch(apiScanCreate, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url: url.trim(), standard, runners: selectedRunners }),
@@ -146,7 +159,7 @@ export default function ScanPage() {
                 // Or better, start it here and redirect to /scan/domain?url=... which handles picking up the ID
 
                 // Let's trigger it directly via API to be cleaner
-                const res = await fetch('/api/scan/domain', {
+                const res = await fetch(apiScanDomainCreate, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url: url.trim() }),
@@ -162,7 +175,7 @@ export default function ScanPage() {
                 // Redirect to the Domain Scan Progress page
                 // We pass the URL parameter so the page knows what we are looking for, 
                 // but since we already started it, let's redirect to monitoring
-                router.push(`/scan/domain?url=${encodeURIComponent(url.trim())}`);
+                router.push(pathScanDomain({ url: url.trim() }));
             }
 
         } catch (err) {
@@ -286,7 +299,7 @@ export default function ScanPage() {
                                                 const controller = new AbortController();
                                                 const timeoutId = setTimeout(() => controller.abort(), 60000);
                                                 try {
-                                                    const res = await fetch('/api/scan/geo-eeat/suggest-competitors-queries', {
+                                                    const res = await fetch(apiScanGeoEeatSuggestQueries, {
                                                         method: 'POST',
                                                         headers: { 'Content-Type': 'application/json' },
                                                         body: JSON.stringify({ url: url.trim() }),
@@ -449,7 +462,7 @@ export default function ScanPage() {
                                                 {run.url} · {run.status === 'complete' ? t('scan.journeyStatusComplete') : run.status === 'error' ? t('scan.journeyStatusError') : t('scan.journeyStatusRunning')}
                                             </MsqdxTypography>
                                         </Box>
-                                        <Link href={`/journey-agent/${run.id}`} style={{ textDecoration: 'none' }}>
+                                        <Link href={pathJourneyAgent(run.id)} style={{ textDecoration: 'none' }}>
                                             <MsqdxButton variant="text" size="small">
                                                 {t('scan.journeyView')}
                                             </MsqdxButton>
@@ -495,7 +508,7 @@ export default function ScanPage() {
                                                 {run.status === 'complete' ? t('geoEeat.statusComplete') : run.status === 'error' ? t('geoEeat.statusError') : run.status === 'running' ? t('geoEeat.statusRunning') : run.status}
                                             </MsqdxTypography>
                                         </Box>
-                                        <Link href={`/geo-eeat/${run.id}`} style={{ textDecoration: 'none' }}>
+                                        <Link href={pathGeoEeat(run.id)} style={{ textDecoration: 'none' }}>
                                             <MsqdxButton variant="text" size="small">
                                                 {t('scan.geoEeatView')}
                                             </MsqdxButton>

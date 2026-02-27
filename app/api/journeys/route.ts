@@ -4,6 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { addSavedJourney } from '@/lib/db/journeys';
 import {
     getCachedDomainScan,
@@ -17,7 +18,7 @@ import { v4 as uuidv4 } from 'uuid';
 export async function GET(request: NextRequest) {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     const { searchParams } = new URL(request.url);
     const domainScanId = searchParams.get('domainScanId') ?? undefined;
@@ -38,27 +39,24 @@ export async function GET(request: NextRequest) {
 export async function POST(request: Request) {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     let body: { domainScanId?: string; goal?: string; result?: JourneyResult; name?: string };
     try {
         body = await request.json();
     } catch {
-        return NextResponse.json({ error: 'Invalid JSON.' }, { status: 400 });
+        return apiError('Invalid JSON.', API_STATUS.BAD_REQUEST);
     }
     const domainScanId = typeof body.domainScanId === 'string' ? body.domainScanId.trim() : '';
     const goal = typeof body.goal === 'string' ? body.goal.trim() : '';
     const result = body.result as JourneyResult | undefined;
     const name = typeof body.name === 'string' ? body.name.trim() || undefined : undefined;
     if (!domainScanId || !goal || !result || !Array.isArray(result.steps)) {
-        return NextResponse.json(
-            { error: 'Body must include domainScanId, goal, and result (JourneyResult with steps).' },
-            { status: 400 }
-        );
+        return apiError('Body must include domainScanId, goal, and result (JourneyResult with steps).', API_STATUS.BAD_REQUEST);
     }
     const domain = await getCachedDomainScan(domainScanId, session.user.id);
     if (!domain) {
-        return NextResponse.json({ error: 'Domain scan not found.' }, { status: 404 });
+        return apiError('Domain scan not found.', API_STATUS.NOT_FOUND);
     }
     const id = uuidv4();
     await addSavedJourney(id, session.user.id, domainScanId, goal, result, name);

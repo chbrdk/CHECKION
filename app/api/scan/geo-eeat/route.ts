@@ -5,6 +5,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { apiError, API_STATUS } from '@/lib/api-error-handler';
+import { parseApiBody, geoEeatBodySchema } from '@/lib/api-schemas';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { runScan } from '@/lib/scanner';
 import { insertGeoEeatRun, updateGeoEeatRun } from '@/lib/db/geo-eeat-runs';
 import { buildGeoEeatResultFromScan } from '@/lib/geo-eeat/stage1';
@@ -12,60 +15,29 @@ import { runLlmStages } from '@/lib/geo-eeat/run-llm-stages';
 import { runCompetitiveBenchmark } from '@/lib/geo-eeat/competitive-benchmark';
 import { v4 as uuidv4 } from 'uuid';
 
-function isValidUrl(s: string): boolean {
-    try {
-        const u = new URL(s);
-        return u.protocol === 'https:' || u.protocol === 'http:';
-    } catch {
-        return false;
-    }
-}
-
 export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
+    }
+    const rl = checkRateLimit(`scan:${session.user.id}`);
+    if (!rl.allowed) {
+        return apiError(
+            'Too many requests. Please try again later.',
+            API_STATUS.TOO_MANY_REQUESTS,
+            rl.retryAfter ? { retryAfter: rl.retryAfter } : undefined
+        );
     }
 
-    let body: {
-        url?: string;
-        domainScanId?: string | null;
-        runCompetitive?: boolean;
-        competitors?: string[];
-        queries?: string[];
-        generateQueries?: boolean;
-    };
-    try {
-        body = await request.json();
-    } catch {
-        return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 });
-    }
-
-    const url = typeof body?.url === 'string' ? body.url.trim() : '';
-    if (!url) {
-        return NextResponse.json({ error: 'URL is required.' }, { status: 400 });
-    }
-    if (!isValidUrl(url)) {
-        return NextResponse.json({ error: 'Invalid URL.' }, { status: 400 });
-    }
-
-    const runCompetitive = Boolean(body?.runCompetitive);
-    if (runCompetitive) {
-        const hasCompetitors = Array.isArray(body.competitors) && body.competitors.length > 0;
-        const hasQueries = Array.isArray(body.queries) && body.queries.length > 0;
-        if (!hasCompetitors && !hasQueries) {
-            return NextResponse.json(
-                { error: 'When runCompetitive is true, provide competitors and/or queries.' },
-                { status: 400 }
-            );
-        }
-    }
+    const parsed = await parseApiBody(request, geoEeatBodySchema);
+    if (parsed instanceof NextResponse) return parsed;
+    const { url, domainScanId, runCompetitive, competitors, queries } = parsed;
 
     const jobId = uuidv4();
     await insertGeoEeatRun(jobId, session.user.id, url, {
-        domainScanId: body.domainScanId ?? undefined,
+        domainScanId: domainScanId ?? undefined,
     });
 
     (async () => {
@@ -83,11 +55,11 @@ export async function POST(request: NextRequest) {
             } catch (e) {
                 console.error('[CHECKION] GEO/E-E-A-T LLM stages error:', e);
             }
-            if (runCompetitive && ((body.queries?.length ?? 0) > 0 || (body.competitors?.length ?? 0) > 0)) {
+            if (runCompetitive && ((queries?.length ?? 0) > 0 || (competitors?.length ?? 0) > 0)) {
                 const competitive = await runCompetitiveBenchmark(
                     url,
-                    body.competitors ?? [],
-                    body.queries ?? []
+                    competitors ?? [],
+                    queries ?? []
                 );
                 if (competitive) payload.competitive = competitive;
             }

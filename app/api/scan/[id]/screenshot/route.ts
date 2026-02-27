@@ -4,6 +4,7 @@
 
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getScan } from '@/lib/db/scans';
 import { isFileScreenshot, readScreenshot } from '@/lib/screenshot-storage';
 
@@ -24,7 +25,7 @@ export async function GET(
 ) {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     const { id } = await params;
     const result = await getScan(id, session.user.id);

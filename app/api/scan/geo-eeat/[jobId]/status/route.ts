@@ -4,6 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getGeoEeatRun } from '@/lib/db/geo-eeat-runs';
 
 export async function GET(
@@ -12,17 +13,17 @@ export async function GET(
 ) {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
 
     const { jobId } = await params;
     if (!jobId) {
-        return NextResponse.json({ error: 'jobId required.' }, { status: 400 });
+        return apiError('jobId required.', API_STATUS.BAD_REQUEST);
     }
 
     const run = await getGeoEeatRun(jobId, session.user.id);
     if (!run) {
-        return NextResponse.json({ error: 'Run not found.' }, { status: 404 });
+        return apiError('Run not found.', API_STATUS.NOT_FOUND);
     }
 
     return NextResponse.json({

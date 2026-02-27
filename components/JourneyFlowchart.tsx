@@ -6,6 +6,7 @@ import { MsqdxTypography, MsqdxChip } from '@msqdx/react';
 import { ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import type { JourneyStep } from '@/lib/types';
 import type { PageIndexRegion } from '@/lib/types';
+import { apiScanScreenshot } from '@/lib/constants';
 
 /** Minimal page info for screenshot + region lookup (from domain result pages). */
 export interface JourneyPageRef {
@@ -94,7 +95,7 @@ function StepScreenshot({
 }) {
     const [imgSize, setImgSize] = useState<{ w: number; h: number } | null>(null);
     const [failed, setFailed] = useState(false);
-    const src = `/api/scan/${scanId}/screenshot`;
+    const src = apiScanScreenshot(scanId);
     if (failed) {
         return (
             <Box sx={{ width: '100%', borderRadius: 1, bgcolor: 'var(--color-neutral-100)', aspectRatio: '16/10', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

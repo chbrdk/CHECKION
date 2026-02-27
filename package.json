@@ -9,6 +9,9 @@
     "start": "next start --port 3333",
     "lint": "eslint",
     "db:push": "drizzle-kit push",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:api": "vitest run __tests__/api",
     "test:saliency-fusion": "tsx lib/saliency-fusion.test.ts",
     "test:scanpath": "tsx lib/scanpath.test.ts"
   },
@@ -50,6 +53,8 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tsx": "^4.21.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.0.18"
   }
 }

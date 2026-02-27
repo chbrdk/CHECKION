@@ -28,6 +28,15 @@ import { PerformanceCard } from '@/components/PerformanceCard';
 import { ScanIssueList } from '@/components/ScanIssueList';
 import { UxCard } from '@/components/UxCard';
 import type { ScanResult, Issue, IssueSeverity } from '@/lib/types';
+import {
+    API_SALIENCY_GENERATE,
+    apiScan,
+    apiScanList,
+    apiScanSummarize,
+    apiSaliencyResult,
+    pathResults,
+    PATH_HOME,
+} from '@/lib/constants';
 
 const UxIssueList = dynamic(
     () => import('@/components/UxIssueList').then((m) => ({ default: m.UxIssueList })),
@@ -148,7 +157,7 @@ export default function ResultsPage() {
         setSaliencyGenerating(true);
         const scanId = result.id;
         try {
-            const createRes = await fetch('/api/saliency/generate', {
+            const createRes = await fetch(API_SALIENCY_GENERATE, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ scanId }),
@@ -160,7 +169,7 @@ export default function ResultsPage() {
             };
             if (!createRes.ok) throw new Error(createData.error ?? t('results.heatmapError'));
             if (createData.success) {
-                const scanRes = await fetch(`/api/scan/${scanId}`);
+                const scanRes = await fetch(apiScan(scanId));
                 if (scanRes.ok) {
                     const updated = await scanRes.json();
                     setResult((prev) => (prev?.id === scanId ? updated : prev));
@@ -175,7 +184,7 @@ export default function ResultsPage() {
             const maxWaitMs = 10 * 60 * 1000; // 10 min
             const started = Date.now();
             for (;;) {
-                const res = await fetch(`/api/saliency/result?jobId=${encodeURIComponent(jobId)}&scanId=${encodeURIComponent(scanId)}`);
+                const res = await fetch(apiSaliencyResult(jobId, scanId));
                 const data = (await res.json().catch(() => ({}))) as {
                     status?: string;
                     success?: boolean;
@@ -269,7 +278,7 @@ export default function ResultsPage() {
         if (!params.id) return;
 
         // Fetch current scan
-        fetch(`/api/scan/${params.id}`)
+        fetch(apiScan(params.id))
             .then((res) => {
                 if (!res.ok) throw new Error('Scan nicht gefunden');
                 return res.json();
@@ -280,7 +289,7 @@ export default function ResultsPage() {
                 // Fetch all scans to find siblings with same groupId
                 // (In a real app, we'd have an endpoint like /api/scan?groupId=...)
                 if (data.groupId) {
-                    fetch('/api/scan?limit=100')
+                    fetch(apiScanList({ limit: 100 }))
                         .then(res => res.json())
                         .then((response: { data?: ScanResult[]; pagination?: unknown }) => {
                             const list = Array.isArray(response?.data) ? response.data : [];
@@ -334,7 +343,7 @@ export default function ResultsPage() {
                     <MsqdxTypography variant="h5" sx={{ color: MSQDX_STATUS.error.light, mb: 'var(--msqdx-spacing-sm)' }}>
                         {error || t('results.errorNotFound')}
                     </MsqdxTypography>
-                    <MsqdxButton variant="outlined" onClick={() => router.push('/')}>
+                    <MsqdxButton variant="outlined" onClick={() => router.push(PATH_HOME)}>
                         ← {t('results.backToDashboard')}
                     </MsqdxButton>
                 </Box>
@@ -348,7 +357,7 @@ export default function ResultsPage() {
                         <MsqdxButton
                             variant="text"
                             size="small"
-                            onClick={() => router.push('/')}
+                            onClick={() => router.push(PATH_HOME)}
                             sx={{ color: 'var(--color-text-muted-on-light)' }}
                         >
                             ← {t('results.dashboard')}
@@ -499,7 +508,7 @@ export default function ResultsPage() {
                                             variant={result.device === d ? 'contained' : 'outlined'}
                                             brandColor={result.device === d ? 'green' : undefined}
                                             size="small"
-                                            onClick={() => router.push(`/results/${scan.id}`)}
+                                            onClick={() => router.push(pathResults(scan.id))}
                                             startIcon={
                                                 d === 'mobile' ? <MsqdxIcon name="Smartphone" size="sm" /> :
                                                 d === 'tablet' ? <MsqdxIcon name="TabletMac" size="sm" /> :
@@ -656,7 +665,7 @@ export default function ResultsPage() {
                                     setSummarizeError(null);
                                     setSummarizing(true);
                                     try {
-                                        const res = await fetch(`/api/scan/${result.id}/summarize`, { method: 'POST' });
+                                        const res = await fetch(apiScanSummarize(result.id), { method: 'POST' });
                                         const data = await res.json().catch(() => ({}));
                                         if (!res.ok) throw new Error(data.error ?? 'Fehler beim Generieren');
                                         setResult((prev) => (prev ? { ...prev, llmSummary: data } : null));

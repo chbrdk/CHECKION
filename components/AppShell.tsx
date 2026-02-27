@@ -8,10 +8,11 @@ import { MsqdxAppLayout, MsqdxIcon } from '@msqdx/react';
 import { Sidebar } from './Sidebar';
 import { BrandColorInitializer } from './settings/BrandColorInitializer';
 import { THEME_ACCENT_WITH_FALLBACK } from '@/lib/theme-accent';
+import { PATH_LOGIN, PATH_REGISTER, PATH_SHARE } from '@/lib/constants';
 
-const AUTH_PATHS = ['/login', '/register'];
+const AUTH_PATHS = [PATH_LOGIN, PATH_REGISTER];
 /** Share landing pages: use app layout + logo but hide navigation. */
-const SHARE_PATHS = ['/share'];
+const SHARE_PATHS = [PATH_SHARE];
 
 export function AppShell({ children }: { children: ReactNode }) {
     const pathname = usePathname();

@@ -5,6 +5,7 @@
 /* ------------------------------------------------------------------ */
 
 import { NextResponse } from 'next/server';
+import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getShareByToken, verifySharePassword } from '@/lib/db/shares';
 import { createShareAccessToken } from '@/lib/share-access';
 
@@ -15,7 +16,7 @@ export async function POST(
     const { token } = await params;
     const share = await getShareByToken(token);
     if (!share) {
-        return NextResponse.json({ error: 'Share not found or expired' }, { status: 404 });
+        return apiError('Share not found or expired', API_STATUS.NOT_FOUND);
     }
 
     if (!share.passwordHash) {
@@ -27,12 +28,12 @@ export async function POST(
     try {
         body = await request.json();
     } catch {
-        return NextResponse.json({ error: 'Invalid JSON', requiresPassword: true }, { status: 400 });
+        return apiError('Invalid JSON', API_STATUS.BAD_REQUEST, { requiresPassword: true });
     }
     const password = typeof body.password === 'string' ? body.password : '';
     const ok = await verifySharePassword(token, password);
     if (!ok) {
-        return NextResponse.json({ error: 'Invalid password', requiresPassword: true }, { status: 401 });
+        return apiError('Invalid password', API_STATUS.UNAUTHORIZED, { requiresPassword: true });
     }
     const accessToken = createShareAccessToken(token);
     return NextResponse.json({ accessToken });

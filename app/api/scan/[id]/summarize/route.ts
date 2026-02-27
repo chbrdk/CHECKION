@@ -5,6 +5,7 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { auth } from '@/auth';
+import { apiError, internalError, API_STATUS } from '@/lib/api-error-handler';
 import { getScan, updateScanSummary } from '@/lib/db/scans';
 import { invalidateScan } from '@/lib/cache';
 import { buildSummaryPayload } from '@/lib/llm/build-summary-payload';
@@ -25,13 +26,13 @@ export async function POST(
 ) {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
 
     const { id } = await params;
     const result = await getScan(id, session.user.id);
     if (!result) {
-        return NextResponse.json({ error: 'Scan result not found.' }, { status: 404 });
+        return apiError('Scan result not found.', API_STATUS.NOT_FOUND);
     }
 
     let openai: OpenAI;
@@ -39,10 +40,7 @@ export async function POST(
         openai = new OpenAI({ apiKey: getOpenAIKey() });
     } catch (e) {
         console.error('[CHECKION] summarize: OPENAI_API_KEY missing', e);
-        return NextResponse.json(
-            { error: 'OpenAI API key not configured.' },
-            { status: 500 },
-        );
+        return internalError('OpenAI API key not configured.');
     }
 
     const payload = buildSummaryPayload(result);
@@ -65,17 +63,11 @@ export async function POST(
     } catch (e) {
         const message = e instanceof Error ? e.message : 'LLM request failed';
         console.error('[CHECKION] summarize: OpenAI API error', e);
-        return NextResponse.json(
-            { error: message },
-            { status: 500 },
-        );
+        return apiError(message, API_STATUS.INTERNAL_ERROR);
     }
 
     if (!rawContent?.trim()) {
-        return NextResponse.json(
-            { error: 'Empty response from LLM.' },
-            { status: 500 },
-        );
+        return apiError('Empty response from LLM.', API_STATUS.INTERNAL_ERROR);
     }
 
     let parsed: unknown;
@@ -84,19 +76,13 @@ export async function POST(
         parsed = JSON.parse(jsonStr);
     } catch (e) {
         console.error('[CHECKION] summarize: JSON parse error', e);
-        return NextResponse.json(
-            { error: 'Invalid JSON in LLM response.' },
-            { status: 500 },
-        );
+        return apiError('Invalid JSON in LLM response.', API_STATUS.INTERNAL_ERROR);
     }
 
     const parsedResult = UxCxSummarySchema.safeParse(parsed);
     if (!parsedResult.success) {
         console.error('[CHECKION] summarize: validation failed', parsedResult.error.flatten());
-        return NextResponse.json(
-            { error: 'LLM response did not match expected schema.' },
-            { status: 500 },
-        );
+        return apiError('LLM response did not match expected schema.', API_STATUS.INTERNAL_ERROR);
     }
 
     const summary: UxCxSummary = {
@@ -107,10 +93,7 @@ export async function POST(
 
     const updated = await updateScanSummary(id, session.user.id, summary);
     if (!updated) {
-        return NextResponse.json(
-            { error: 'Failed to save summary.' },
-            { status: 500 },
-        );
+        return apiError('Failed to save summary.', API_STATUS.INTERNAL_ERROR);
     }
     invalidateScan(id);
 

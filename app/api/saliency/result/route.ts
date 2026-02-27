@@ -5,6 +5,7 @@
 import { NextResponse } from 'next/server';
 import sharp from 'sharp';
 import { auth } from '@/auth';
+import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getScan, updateScanResult } from '@/lib/db/scans';
 import { invalidateScan } from '@/lib/cache';
 import { fuseSaliencyHeatmap } from '@/lib/saliency-fusion';
@@ -33,30 +34,24 @@ const VISION_WEIGHT = parseFloat(process.env.SALIENCY_FUSION_VISION_WEIGHT ?? '0
 export async function GET(request: Request) {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
 
     const { searchParams } = new URL(request.url);
     const jobId = searchParams.get('jobId');
     const scanId = searchParams.get('scanId');
     if (!jobId || !scanId) {
-        return NextResponse.json(
-            { error: 'Missing jobId or scanId.' },
-            { status: 400 },
-        );
+        return apiError('Missing jobId or scanId.', API_STATUS.BAD_REQUEST);
     }
 
     const result = await getScan(scanId, session.user.id);
     if (!result) {
-        return NextResponse.json({ error: 'Scan not found.' }, { status: 404 });
+        return apiError('Scan not found.', API_STATUS.NOT_FOUND);
     }
 
     const saliencyBaseUrl = getSaliencyBaseUrl();
     if (!saliencyBaseUrl) {
-        return NextResponse.json(
-            { error: 'Saliency service not configured.' },
-            { status: 503 },
-        );
+        return apiError('Saliency service not configured.', API_STATUS.UNAVAILABLE);
     }
 
     const jobUrl = `${saliencyBaseUrl}/jobs/${jobId}`;
@@ -69,36 +64,24 @@ export async function GET(request: Request) {
     } catch (e) {
         const message = e instanceof Error ? e.message : 'Failed to fetch job status';
         console.error('[CHECKION] saliency/result: fetch error', { jobId, error: message });
-        return NextResponse.json(
-            { error: message, status: 'error' as const },
-            { status: 502 },
-        );
+        return apiError(message, API_STATUS.BAD_GATEWAY, { status: 'error' });
     }
 
     if (res.status === 404) {
-        return NextResponse.json(
-            { status: 'not_found' as const, error: 'Job not found or expired.' },
-            { status: 404 },
-        );
+        return apiError('Job not found or expired.', API_STATUS.NOT_FOUND, { status: 'not_found' });
     }
 
     if (!res.ok) {
         const text = await res.text();
         console.error('[CHECKION] saliency/result: service returned', res.status, text);
-        return NextResponse.json(
-            { error: `Saliency service error: ${res.status}`, status: 'error' as const },
-            { status: 502 },
-        );
+        return apiError(`Saliency service error: ${res.status}`, API_STATUS.BAD_GATEWAY, { status: 'error' });
     }
 
     let job: { status: string; heatmap_base64?: string; error?: string };
     try {
         job = (await res.json()) as { status: string; heatmap_base64?: string; error?: string };
     } catch {
-        return NextResponse.json(
-            { error: 'Invalid response from saliency service.', status: 'error' as const },
-            { status: 502 },
-        );
+        return apiError('Invalid response from saliency service.', API_STATUS.BAD_GATEWAY, { status: 'error' });
     }
 
     if (job.status === 'pending' || job.status === 'running') {
@@ -162,10 +145,7 @@ export async function GET(request: Request) {
             ...scanpathPatch,
         });
         if (!updated) {
-            return NextResponse.json(
-                { status: 'completed' as const, heatmapDataUrl: dataUrl, error: 'Failed to save heatmap to scan.' },
-                { status: 500 },
-            );
+            return apiError('Failed to save heatmap to scan.', API_STATUS.INTERNAL_ERROR, { status: 'completed', heatmapDataUrl: dataUrl });
         }
         invalidateScan(scanId);
         return NextResponse.json({

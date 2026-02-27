@@ -7,6 +7,7 @@ import NextLink from 'next/link';
 import { Box } from '@mui/material';
 import { THEME_ACCENT_WITH_FALLBACK } from '@/lib/theme-accent';
 import { useI18n } from '@/components/i18n/I18nProvider';
+import { PATH_HOME, PATH_SCAN, PATH_HISTORY, PATH_DEVELOPERS, PATH_SETTINGS } from '@/lib/constants';
 
 export type SidebarProps = {
     /** Mobile drawer open state (controlled by parent for close button + menu button). */
@@ -20,14 +21,14 @@ export function Sidebar({ open = true, onClose = () => {} }: SidebarProps) {
     const { t } = useI18n();
 
     const NAV_ITEMS: AdminNavItem[] = [
-        { label: t('nav.dashboard'), path: '/', icon: 'dashboard' },
-        { label: t('nav.newScan'), path: '/scan', icon: 'search' },
-        { label: t('nav.history'), path: '/history', icon: 'history' },
-        { label: t('nav.developers'), path: '/developers', icon: 'code' },
+        { label: t('nav.dashboard'), path: PATH_HOME, icon: 'dashboard' },
+        { label: t('nav.newScan'), path: PATH_SCAN, icon: 'search' },
+        { label: t('nav.history'), path: PATH_HISTORY, icon: 'history' },
+        { label: t('nav.developers'), path: PATH_DEVELOPERS, icon: 'code' },
     ];
 
     const EXTERNAL_ITEMS: AdminNavItem[] = [
-        { label: t('nav.settings'), path: '/settings', icon: 'settings' },
+        { label: t('nav.settings'), path: PATH_SETTINGS, icon: 'settings' },
     ];
 
     return (

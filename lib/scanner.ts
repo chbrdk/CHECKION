@@ -7,6 +7,7 @@ import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
 import { dismissCookieBanner } from './cookie-banner-dismiss';
+import { getRemediationUrl } from './remediation-urls';
 import { buildPageIndex } from './page-index';
 import { writeScreenshot } from './screenshot-storage';
 import type { Issue, Runner, ScanResult, ScanStats, WcagStandard, Device, ScanOptions, SeoAudit } from './types';
@@ -100,8 +101,8 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
     const scanId = uuidv4();
 
     // Dynamic import – pa11y is CommonJS and must stay server-only
-    // @ts-ignore
-    const pa11y = (await import('pa11y')).default;
+    const pa11yModule = await import('pa11y');
+    const pa11y = (pa11yModule as { default?: unknown }).default ?? pa11yModule;
 
     const pa11yRunners: string[] = [];
     if (runners.includes('axe')) pa11yRunners.push('axe');
@@ -331,14 +332,18 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                 }
             }
 
+            const code = raw.code || '';
+            const runner = detectRunner(code);
+            const helpUrl = raw.helpUrl ?? getRemediationUrl(code, runner);
             return {
-                code: raw.code || '',
+                code,
                 type: mapSeverity(raw.type as unknown as number | string),
                 message: raw.message || '',
                 context: raw.context || '',
                 selector: raw.selector || '',
-                runner: detectRunner(raw.code || ''),
-                wcagLevel: detectWcagLevel(raw.code || ''),
+                runner,
+                wcagLevel: detectWcagLevel(code),
+                helpUrl: helpUrl ?? undefined,
                 boundingBox,
             };
         });
@@ -369,12 +374,11 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
 
             // Run axe with APCA enabled
             const axeResults = await page.evaluate(async function () {
+                const g = typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : {});
+                const axe = (g as Record<string, unknown>)['axe'] as { configure: (o: object) => void; run: (o: object) => Promise<object> } | undefined;
                 try {
-                    // @ts-ignore
                     if (typeof axe === 'undefined') return { error: 'axe is undefined in page context' };
 
-                    // Enable experimental APCA rules
-                    // @ts-ignore
                     axe.configure({
                         rules: [{
                             id: 'color-contrast-enhanced',
@@ -382,7 +386,6 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                         }]
                     });
 
-                    // @ts-ignore
                     return await axe.run({
                         runOnly: {
                             type: 'tag',
@@ -425,8 +428,7 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
         // 1. CLS (Cumulative Layout Shift)
         // We'll trust the performance observer if it ran, or default to 0
         const clsScore = await page.evaluate(function () {
-            // @ts-ignore
-            return window.__cls_score || 0;
+            return (window as Window & { __cls_score?: number }).__cls_score ?? 0;
         });
         console.log(`[UX] CLS Score for ${url}:`, clsScore); // Debug log
 

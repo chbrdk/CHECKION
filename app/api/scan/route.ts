@@ -4,39 +4,33 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { apiError, handleApiError, API_STATUS } from '@/lib/api-error-handler';
+import { parseApiBody, scanBodySchema } from '@/lib/api-schemas';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { runScan } from '@/lib/scanner';
 import { addScan } from '@/lib/db/scans';
 import { listCachedStandaloneScans, getCachedStandaloneScansCount, invalidateScansList } from '@/lib/cache';
-import type { ScanRequest, Device } from '@/lib/types';
+import type { Device } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 import { DASHBOARD_SCANS_PAGE_SIZE } from '@/lib/constants';
 
 export async function POST(request: Request) {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
+    }
+    const rl = checkRateLimit(`scan:${session.user.id}`);
+    if (!rl.allowed) {
+        return apiError(
+            'Too many requests. Please try again later.',
+            API_STATUS.TOO_MANY_REQUESTS,
+            rl.retryAfter ? { retryAfter: rl.retryAfter } : undefined
+        );
     }
     try {
-        const body = (await request.json()) as ScanRequest;
-
-        if (!body.url || typeof body.url !== 'string') {
-            return NextResponse.json(
-                { error: 'Missing or invalid "url" field.' },
-                { status: 400 },
-            );
-        }
-
-        // Basic URL validation
-        try {
-            new URL(body.url);
-        } catch {
-            return NextResponse.json(
-                { error: 'Invalid URL format. Please provide a full URL including protocol (e.g. https://example.com).' },
-                { status: 400 },
-            );
-        }
-
-
+        const parsed = await parseApiBody(request, scanBodySchema);
+        if (parsed instanceof NextResponse) return parsed;
+        const body = parsed;
 
         const groupId = uuidv4();
         const devices: Device[] = ['desktop', 'tablet', 'mobile'];
@@ -69,19 +63,18 @@ export async function POST(request: Request) {
             data: desktopResult
         });
     } catch (err) {
-        console.error('[CHECKION] Scan failed:', err);
         const message = err instanceof Error ? err.message : 'Unknown error';
-        return NextResponse.json(
-            { error: `Scan failed: ${message}` },
-            { status: 500 },
-        );
+        return handleApiError(err, {
+            context: 'Scan failed',
+            publicMessage: `Scan failed: ${message}`,
+        });
     }
 }
 
 export async function GET(req: NextRequest) {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     const { searchParams } = new URL(req.url);
     const limit = Math.min(Math.max(1, Number(searchParams.get('limit')) || DASHBOARD_SCANS_PAGE_SIZE), 100);

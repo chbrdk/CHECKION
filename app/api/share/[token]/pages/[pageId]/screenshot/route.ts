@@ -4,6 +4,7 @@
 /* ------------------------------------------------------------------ */
 
 import { NextResponse } from 'next/server';
+import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getShareByToken } from '@/lib/db/shares';
 import { getDomainScan } from '@/lib/db/scans';
 import { readScreenshot } from '@/lib/screenshot-storage';
@@ -24,15 +25,15 @@ export async function GET(
     const { token, pageId } = await params;
     const share = await getShareByToken(token);
     if (!share) {
-        return NextResponse.json({ error: 'Not found' }, { status: 404 });
+        return apiError('Not found', API_STATUS.NOT_FOUND);
     }
     if (!canAccessShare(share.passwordHash, request, token)) {
-        return NextResponse.json({ error: 'Password required', requiresPassword: true }, { status: 403 });
+        return apiError('Password required', API_STATUS.FORBIDDEN, { requiresPassword: true });
     }
 
     if (share.resourceType === 'single') {
         if (pageId !== share.resourceId) {
-            return NextResponse.json({ error: 'Not found' }, { status: 404 });
+            return apiError('Not found', API_STATUS.NOT_FOUND);
         }
         const buffer = await readScreenshot(pageId);
         if (buffer) {
@@ -44,11 +45,11 @@ export async function GET(
     }
 
     if (share.resourceType !== 'domain') {
-        return NextResponse.json({ error: 'Not found' }, { status: 404 });
+        return apiError('Not found', API_STATUS.NOT_FOUND);
     }
 
     const domain = await getDomainScan(share.resourceId, share.userId);
-    if (!domain) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    if (!domain) return apiError('Not found', API_STATUS.NOT_FOUND);
 
     const inList = (domain.pages ?? []).some((p) => p.id === pageId);
     if (!inList) {

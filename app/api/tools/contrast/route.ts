@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { apiError, API_STATUS } from '@/lib/api-error-handler';
 
 function getLuminance(r: number, g: number, b: number) {
     const a = [r, g, b].map(v => {
@@ -23,14 +24,14 @@ export async function GET(req: NextRequest) {
     const b = searchParams.get('b'); // Background (without #)
 
     if (!f || !b) {
-        return NextResponse.json({ error: 'Missing parameters f (foreground) and b (background) hex codes.' }, { status: 400 });
+        return apiError('Missing parameters f (foreground) and b (background) hex codes.', API_STATUS.BAD_REQUEST);
     }
 
     const rgb1 = hexToRgb(f);
     const rgb2 = hexToRgb(b);
 
     if (!rgb1 || !rgb2) {
-        return NextResponse.json({ error: 'Invalid hex codes.' }, { status: 400 });
+        return apiError('Invalid hex codes.', API_STATUS.BAD_REQUEST);
     }
 
     const l1 = getLuminance(rgb1.r, rgb1.g, rgb1.b);

@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { PATH_SCAN, PATH_RESULTS, PATH_DOMAIN, PATH_SETTINGS, PATH_LOGIN, PATH_REGISTER } from '@/lib/constants';
 
-const protectedPaths = ['/scan', '/results', '/domain', '/settings'];
-const authPaths = ['/login', '/register'];
+const protectedPaths = [PATH_SCAN, PATH_RESULTS, PATH_DOMAIN, PATH_SETTINGS];
+const authPaths = [PATH_LOGIN, PATH_REGISTER];
 
 const SESSION_COOKIES = ['authjs.session-token', '__Secure-authjs.session-token'];
 
@@ -31,7 +32,7 @@ export function middleware(req: NextRequest) {
     }
 
     if ((isProtected(pathname) || pathname === '/') && !hasSession) {
-        return NextResponse.redirect(new URL('/login', req.url));
+        return NextResponse.redirect(new URL(PATH_LOGIN, req.url));
     }
 
     return NextResponse.next();

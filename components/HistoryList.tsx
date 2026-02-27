@@ -6,6 +6,7 @@ import { MsqdxTypography, MsqdxButton, MsqdxChip } from '@msqdx/react';
 import { MSQDX_BRAND_PRIMARY, MSQDX_STATUS } from '@msqdx/tokens';
 import { Trash2 } from 'lucide-react';
 import type { ScanResult } from '@/lib/types';
+import { useI18n } from '@/components/i18n/I18nProvider';
 
 export type DomainScanSummary = { id: string; domain: string; timestamp: string; status: string; score: number; totalPages: number };
 
@@ -32,12 +33,27 @@ export function SingleScanRow({
   onClick: () => void;
   onDelete?: (id: string) => void;
 }) {
+  const { t } = useI18n();
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     onDelete?.(scan.id);
   };
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onClick();
+    }
+  };
   return (
-    <Box component="li" sx={listItemSx} onClick={onClick}>
+    <Box
+      component="li"
+      role="button"
+      tabIndex={0}
+      aria-label={t('dashboard.openScanAria', { url: scan.url })}
+      sx={listItemSx}
+      onClick={onClick}
+      onKeyDown={handleKeyDown}
+    >
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <MsqdxTypography variant="body2" sx={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', mb: 0.5 }}>
           {scan.url}
@@ -61,7 +77,7 @@ export function SingleScanRow({
             variant="text"
             size="small"
             onClick={handleDelete}
-            aria-label="Scan löschen"
+            aria-label={t('dashboard.deleteScanAria')}
             sx={{ minWidth: 32, p: 0.5, color: 'var(--color-text-muted-on-light)' }}
           >
             <Trash2 size={16} />
@@ -82,12 +98,27 @@ export function DomainScanRow({
   onClick: () => void;
   onDelete?: (id: string) => void;
 }) {
+  const { t } = useI18n();
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     onDelete?.(item.id);
   };
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onClick();
+    }
+  };
   return (
-    <Box component="li" sx={listItemSx} onClick={onClick}>
+    <Box
+      component="li"
+      role="button"
+      tabIndex={0}
+      aria-label={t('dashboard.openDomainScanAria', { domain: item.domain })}
+      sx={listItemSx}
+      onClick={onClick}
+      onKeyDown={handleKeyDown}
+    >
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <MsqdxTypography variant="body2" sx={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', mb: 0.5 }}>
           {item.domain}
@@ -107,7 +138,7 @@ export function DomainScanRow({
             variant="text"
             size="small"
             onClick={handleDelete}
-            aria-label="Deep Scan löschen"
+            aria-label={t('dashboard.deleteDomainScanAria')}
             sx={{ minWidth: 32, p: 0.5, color: 'var(--color-text-muted-on-light)' }}
           >
             <Trash2 size={16} />

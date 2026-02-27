@@ -5,6 +5,7 @@
 
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { ENV_UX_JOURNEY_AGENT_URL } from '@/lib/constants';
 
 export async function GET(
@@ -13,24 +14,24 @@ export async function GET(
 ) {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
 
     const { jobId } = await params;
     if (!jobId) {
-        return NextResponse.json({ error: 'jobId required.' }, { status: 400 });
+        return apiError('jobId required.', API_STATUS.BAD_REQUEST);
     }
 
     const agentBaseUrl = process.env[ENV_UX_JOURNEY_AGENT_URL];
     if (!agentBaseUrl) {
-        return NextResponse.json({ error: 'UX Journey Agent not configured.' }, { status: 501 });
+        return apiError('UX Journey Agent not configured.', API_STATUS.NOT_IMPLEMENTED);
     }
 
     const videoUrl = agentBaseUrl.replace(/\/$/, '') + '/run/' + encodeURIComponent(jobId) + '/video';
     try {
         const res = await fetch(videoUrl);
         if (!res.ok) {
-            return NextResponse.json({ error: 'Video not found' }, { status: res.status });
+            return apiError('Video not found', res.status as number);
         }
         const blob = await res.blob();
         return new NextResponse(blob, {
@@ -41,6 +42,6 @@ export async function GET(
         });
     } catch (e) {
         const message = e instanceof Error ? e.message : 'Failed to fetch video.';
-        return NextResponse.json({ error: message }, { status: 502 });
+        return apiError(message, API_STATUS.BAD_GATEWAY);
     }
 }

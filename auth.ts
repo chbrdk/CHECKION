@@ -8,6 +8,7 @@ import { getDb } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
+import { PATH_LOGIN } from '@/lib/constants';
 
 const AUTH_SECRET = process.env.AUTH_SECRET;
 if (process.env.NODE_ENV === 'production' && (!AUTH_SECRET || AUTH_SECRET.length < 32)) {
@@ -42,7 +43,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }),
     ],
     session: { strategy: 'jwt', maxAge: 30 * 24 * 60 * 60 },
-    pages: { signIn: '/login' },
+    pages: { signIn: PATH_LOGIN },
     callbacks: {
         jwt({ token, user }) {
             if (user) {

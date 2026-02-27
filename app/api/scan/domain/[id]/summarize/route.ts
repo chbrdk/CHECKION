@@ -5,6 +5,7 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { auth } from '@/auth';
+import { apiError, internalError, API_STATUS } from '@/lib/api-error-handler';
 import { getDomainScan, updateDomainScan } from '@/lib/db/scans';
 import { invalidateDomainScan } from '@/lib/cache';
 import { buildDomainSummaryPayload } from '@/lib/llm/build-domain-summary-payload';
@@ -25,20 +26,17 @@ export async function POST(
 ) {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
 
     const { id } = await params;
     const domainResult = await getDomainScan(id, session.user.id);
     if (!domainResult) {
-        return NextResponse.json({ error: 'Domain scan not found.' }, { status: 404 });
+        return apiError('Domain scan not found.', API_STATUS.NOT_FOUND);
     }
 
     if (domainResult.status !== 'complete') {
-        return NextResponse.json(
-            { error: 'Domain scan must be complete before generating summary.' },
-            { status: 400 },
-        );
+        return apiError('Domain scan must be complete before generating summary.', API_STATUS.BAD_REQUEST);
     }
 
     let openai: OpenAI;
@@ -46,10 +44,7 @@ export async function POST(
         openai = new OpenAI({ apiKey: getOpenAIKey() });
     } catch (e) {
         console.error('[CHECKION] domain summarize: OPENAI_API_KEY missing', e);
-        return NextResponse.json(
-            { error: 'OpenAI API key not configured.' },
-            { status: 500 },
-        );
+        return internalError('OpenAI API key not configured.');
     }
 
     const payload = buildDomainSummaryPayload(domainResult);
@@ -72,17 +67,11 @@ export async function POST(
     } catch (e) {
         const message = e instanceof Error ? e.message : 'LLM request failed';
         console.error('[CHECKION] domain summarize: OpenAI API error', e);
-        return NextResponse.json(
-            { error: message },
-            { status: 500 },
-        );
+        return apiError(message, API_STATUS.INTERNAL_ERROR);
     }
 
     if (!rawContent?.trim()) {
-        return NextResponse.json(
-            { error: 'Empty response from LLM.' },
-            { status: 500 },
-        );
+        return apiError('Empty response from LLM.', API_STATUS.INTERNAL_ERROR);
     }
 
     let parsed: unknown;
@@ -91,19 +80,13 @@ export async function POST(
         parsed = JSON.parse(jsonStr);
     } catch (e) {
         console.error('[CHECKION] domain summarize: JSON parse error', e);
-        return NextResponse.json(
-            { error: 'Invalid JSON in LLM response.' },
-            { status: 500 },
-        );
+        return apiError('Invalid JSON in LLM response.', API_STATUS.INTERNAL_ERROR);
     }
 
     const parsedResult = UxCxSummarySchema.safeParse(parsed);
     if (!parsedResult.success) {
         console.error('[CHECKION] domain summarize: validation failed', parsedResult.error.flatten());
-        return NextResponse.json(
-            { error: 'LLM response did not match expected schema.' },
-            { status: 500 },
-        );
+        return apiError('LLM response did not match expected schema.', API_STATUS.INTERNAL_ERROR);
     }
 
     const summary: UxCxSummary = {
@@ -114,10 +97,7 @@ export async function POST(
 
     const updated = await updateDomainScan(id, session.user.id, { llmSummary: summary });
     if (!updated) {
-        return NextResponse.json(
-            { error: 'Failed to save summary.' },
-            { status: 500 },
-        );
+        return apiError('Failed to save summary.', API_STATUS.INTERNAL_ERROR);
     }
     invalidateDomainScan(id);
 

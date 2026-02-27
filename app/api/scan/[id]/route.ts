@@ -4,6 +4,7 @@
 
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getCachedScanWithSummary } from '@/lib/cache';
 
 export async function GET(
@@ -12,13 +13,13 @@ export async function GET(
 ) {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     const { id } = await params;
     const row = await getCachedScanWithSummary(id, session.user.id);
 
     if (!row) {
-        return NextResponse.json({ error: 'Scan result not found.' }, { status: 404 });
+        return apiError('Scan result not found.', API_STATUS.NOT_FOUND);
     }
 
     return NextResponse.json({ ...row.result, llmSummary: row.llmSummary });

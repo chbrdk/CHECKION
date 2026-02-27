@@ -6,6 +6,7 @@ import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard, MsqdxFormField } from 
 import { Share2, Copy, Trash2, Lock, LockOpen } from 'lucide-react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import type { ShareResourceType } from '@/lib/db/shares';
+import { API_SHARE, apiShareByResource, apiShareToken } from '@/lib/constants';
 
 interface ShareInfo {
     token: string;
@@ -37,7 +38,7 @@ export function SharePanel({ resourceType, resourceId, labelNamespace = 'results
     const fetchShare = useCallback(() => {
         if (!resourceId) return;
         setLoading(true);
-        fetch(`/api/share/by-resource?type=${encodeURIComponent(resourceType)}&id=${encodeURIComponent(resourceId)}`)
+        fetch(apiShareByResource(resourceType, resourceId))
             .then((res) => {
                 if (res.ok) return res.json();
                 if (res.status === 404) return null;
@@ -64,7 +65,7 @@ export function SharePanel({ resourceType, resourceId, labelNamespace = 'results
 
     const handleCreate = useCallback(() => {
         setCreateLoading(true);
-        fetch('/api/share', {
+        fetch(API_SHARE, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -95,7 +96,7 @@ export function SharePanel({ resourceType, resourceId, labelNamespace = 'results
     const handleRevoke = useCallback(() => {
         if (!shareInfo?.token || !window.confirm(t('share.revokeConfirm'))) return;
         setRevokeLoading(true);
-        fetch(`/api/share/${encodeURIComponent(shareInfo.token)}`, { method: 'DELETE' })
+        fetch(apiShareToken(shareInfo.token), { method: 'DELETE' })
             .then((res) => {
                 if (res.ok) setShareInfo(null);
             })
@@ -105,7 +106,7 @@ export function SharePanel({ resourceType, resourceId, labelNamespace = 'results
     const handlePatchPassword = useCallback(() => {
         if (!shareInfo?.token) return;
         setPatchLoading(true);
-        fetch(`/api/share/${encodeURIComponent(shareInfo.token)}`, {
+        fetch(apiShareToken(shareInfo.token), {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ password: passwordValue.trim() || null }),

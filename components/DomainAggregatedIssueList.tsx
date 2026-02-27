@@ -5,6 +5,7 @@ import { Box, alpha } from '@mui/material';
 import { MsqdxTypography, MsqdxChip } from '@msqdx/react';
 import { MSQDX_NEUTRAL, MSQDX_STATUS, MSQDX_BRAND_PRIMARY, MSQDX_THEME } from '@msqdx/tokens';
 import type { AggregatedIssue } from '@/lib/domain-aggregation';
+import { useI18n } from '@/components/i18n/I18nProvider';
 
 const SEVERITY_CONFIG: Record<string, { label: string; color: string }> = {
   error: { label: 'Error', color: MSQDX_STATUS.error.base },
@@ -21,6 +22,7 @@ export function DomainAggregatedIssueList({
   issues: AggregatedIssue[];
   onPageClick?: (url: string) => void;
 }) {
+  const { t } = useI18n();
   if (issues.length === 0) {
     return (
       <Box sx={{ textAlign: 'center', py: 3 }}>
@@ -138,14 +140,27 @@ export function DomainAggregatedIssueList({
                 <MsqdxTypography
                   component="button"
                   variant="caption"
+                  aria-label={t('domainResult.openPageAria', { url: firstUrl })}
                   sx={{ ml: 0.5, cursor: 'pointer', color: MSQDX_BRAND_PRIMARY.green, textDecoration: 'underline', border: 'none', background: 'none' }}
                   onClick={() => onPageClick(firstUrl)}
                 >
-                  Öffnen
+                  {t('domainResult.openPage')}
                 </MsqdxTypography>
               )}
             </Box>
-            <Box sx={{ px: 1, py: 1 }} />
+            <Box sx={{ px: 1, py: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+              {issue.helpUrl && (
+                <a
+                  href={issue.helpUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={t('results.fixDocsAria')}
+                  style={{ fontSize: '0.7rem', color: MSQDX_BRAND_PRIMARY.green, textDecoration: 'underline' }}
+                >
+                  {t('results.fixDocs')} →
+                </a>
+              )}
+            </Box>
           </Box>
         );
       })}

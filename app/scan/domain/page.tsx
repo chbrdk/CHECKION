@@ -15,6 +15,7 @@ import { MSQDX_COLORS, MSQDX_SPACING } from '@msqdx/tokens';
 import type { DomainScanStatus } from '@/lib/types';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
+import { apiScanDomainStatus, apiScanDomainCreate, pathDomain, pathScanDomain } from '@/lib/constants';
 
 function ScanContent() {
     const searchParams = useSearchParams();
@@ -49,7 +50,7 @@ function ScanContent() {
 
         const interval = setInterval(async () => {
             try {
-                const res = await fetch(`/api/scan/domain/${scanId}/status`);
+                const res = await fetch(apiScanDomainStatus(scanId));
                 if (res.ok) {
                     const data = await res.json();
 
@@ -72,7 +73,7 @@ function ScanContent() {
                         setLogs(prev => [...prev, t('domain.completeLog')]);
 
                         setTimeout(() => {
-                            router.push(`/domain/${data.id}`);
+                            router.push(pathDomain(data.id));
                         }, 1000);
                     } else if (data.status === 'error') {
                         setLogs(prev => [...prev, `${t('domain.errorLog')}: ${data.error || 'Unknown error'}`]);
@@ -91,7 +92,7 @@ function ScanContent() {
         setLogs([t('domain.initLog')]);
 
         try {
-            const response = await fetch('/api/scan/domain', {
+            const response = await fetch(apiScanDomainCreate, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url, maxPages: pageLimit ?? 1000 })
@@ -136,7 +137,7 @@ function ScanContent() {
                         const inputUrl = formData.get('url') as string;
                         if (inputUrl) {
                             const limit = maxPages;
-                            router.push(`/scan/domain?url=${encodeURIComponent(inputUrl)}&maxPages=${limit}`);
+                            router.push(pathScanDomain({ url: inputUrl, maxPages: limit }));
                         }
                     }}
                     sx={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--msqdx-spacing-md)', alignItems: 'flex-end' }}

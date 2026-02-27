@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import puppeteer from 'puppeteer';
+import { apiError, API_STATUS } from '@/lib/api-error-handler';
 
 export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
@@ -8,7 +9,7 @@ export async function GET(req: NextRequest) {
     const type = searchParams.get('type') || 'text'; // 'text' or 'html'
 
     if (!url) {
-        return NextResponse.json({ error: 'URL is required' }, { status: 400 });
+        return apiError('URL is required', API_STATUS.BAD_REQUEST);
     }
 
     try {
@@ -40,17 +41,20 @@ export async function GET(req: NextRequest) {
             }
         }
 
-        const data = await page.evaluate((sel, t) => {
-            const el = document.querySelector(sel);
-            if (!el) return null;
-            // @ts-ignore
-            return t === 'html' ? el.outerHTML : el.innerText;
-        }, selector, type);
+        const data = await page.evaluate(
+            (sel: string, t: string) => {
+                const el = document.querySelector(sel);
+                if (!el) return null;
+                return t === 'html' ? (el as HTMLElement).outerHTML : (el as HTMLElement).innerText;
+            },
+            selector,
+            type
+        );
 
         await browser.close();
 
         if (!data) {
-            return NextResponse.json({ error: 'Selector not found', selector }, { status: 404 });
+            return apiError('Selector not found', API_STATUS.NOT_FOUND, { selector });
         }
 
         return NextResponse.json({
@@ -64,6 +68,7 @@ export async function GET(req: NextRequest) {
         });
 
     } catch (e) {
-        return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+        const message = e instanceof Error ? e.message : 'Unknown error';
+        return apiError(message, API_STATUS.INTERNAL_ERROR);
     }
 }

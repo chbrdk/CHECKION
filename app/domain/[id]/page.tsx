@@ -36,7 +36,17 @@ const JourneyFlowchart = dynamic(
 );
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
-import { DOMAIN_PAGES_INITIAL, DOMAIN_PAGES_INCREMENT } from '@/lib/constants';
+import {
+    DOMAIN_PAGES_INITIAL,
+    DOMAIN_PAGES_INCREMENT,
+    apiScanDomainSummary,
+    apiScanDomainSummarize,
+    apiScanDomainJourney,
+    apiJourneys,
+    API_JOURNEYS,
+    pathResults,
+    PATH_HOME,
+} from '@/lib/constants';
 
 export default function DomainResultPage() {
     const params = useParams();
@@ -83,7 +93,7 @@ export default function DomainResultPage() {
         if (!params.id) return;
         setLoadError(null);
         setVisiblePageCount(DOMAIN_PAGES_INITIAL);
-        fetch(`/api/scan/domain/${params.id}/summary`)
+        fetch(apiScanDomainSummary(params.id))
             .then(res => {
                 if (!res.ok) {
                     setLoadError('not_found');
@@ -102,9 +112,9 @@ export default function DomainResultPage() {
     const restoreJourneyId = searchParams.get('restoreJourney');
     useEffect(() => {
         if (!restoreJourneyId || !params.id) return;
-        fetch(`/api/journeys/${restoreJourneyId}`)
+        fetch(apiJourneys(restoreJourneyId))
             .then(res => {
-                if (!res.ok) throw new Error('Journey not found');
+                if (!res.ok) throw new Error(t('domainResult.journeyNotFound'));
                 return res.json();
             })
             .then((row: { goal: string; result: JourneyResult }) => {
@@ -113,7 +123,7 @@ export default function DomainResultPage() {
                 setTabValue(10);
             })
             .catch(() => {});
-    }, [restoreJourneyId, params.id]);
+    }, [restoreJourneyId, params.id, t]);
 
     return (
         <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto', minHeight: 320 }}>
@@ -122,7 +132,7 @@ export default function DomainResultPage() {
                     <MsqdxTypography variant="h5" sx={{ color: 'var(--color-text-muted-on-light)', textAlign: 'center', maxWidth: 480 }}>
                         {t('domainResult.notFound')}
                     </MsqdxTypography>
-                    <MsqdxButton variant="contained" startIcon={<ArrowLeft size={16} />} onClick={() => router.push('/')}>
+                    <MsqdxButton variant="contained" startIcon={<ArrowLeft size={16} />} onClick={() => router.push(PATH_HOME)}>
                         {t('domainResult.back')}
                     </MsqdxButton>
                 </Box>
@@ -146,7 +156,7 @@ export default function DomainResultPage() {
                     </MsqdxTypography>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 'var(--msqdx-spacing-md)' }}>
-                    <MsqdxButton variant="outlined" startIcon={<ArrowLeft size={16} />} onClick={() => router.push('/')}>
+                    <MsqdxButton variant="outlined" startIcon={<ArrowLeft size={16} />} onClick={() => router.push(PATH_HOME)}>
                         {t('domainResult.back')}
                     </MsqdxButton>
                     {(() => {
@@ -220,10 +230,10 @@ export default function DomainResultPage() {
                                                 <MsqdxTypography variant="subtitle1" sx={{ color: 'var(--color-secondary-dx-pink)' }}>
                                                     {issue.title}
                                                 </MsqdxTypography>
-                                                <MsqdxChip label={`${issue.count} pages`} size="small" brandColor="pink" />
+                                                <MsqdxChip label={t('domainResult.issuePagesCount', { count: issue.count })} size="small" brandColor="pink" />
                                             </Box>
                                             <MsqdxTypography variant="body2" sx={{ mb: 'var(--msqdx-spacing-xs)' }}>
-                                                Fixing rule ({issue.issueId}) affects {issue.count} pages.
+                                                {t('domainResult.fixingRuleAffects', { issueId: issue.issueId, count: issue.count })}
                                             </MsqdxTypography>
                                         </Box>
                                     ))
@@ -299,7 +309,7 @@ export default function DomainResultPage() {
                                             justifyContent: 'space-between',
                                             gap: 'var(--msqdx-spacing-sm)'
                                         }}
-                                        onClick={() => router.push(`/results/${page.id}`)}
+                                        onClick={() => router.push(pathResults(page.id))}
                                     >
                                         <Box sx={{ flex: 1, minWidth: 0 }}>
                                             <MsqdxTypography variant="body2" sx={{ fontWeight: 600 }} noWrap>{page.url}</MsqdxTypography>
@@ -352,7 +362,7 @@ export default function DomainResultPage() {
                         issues={aggregated.issues.issues}
                         onPageClick={(url) => {
                             const page = pagesByUrl.get(url);
-                            if (page) router.push(`/results/${page.id}`);
+                            if (page) router.push(pathResults(page.id));
                         }}
                     />
                     {aggregated.issues.pagesByIssueCount.some((p) => p.errors > 0 || p.warnings > 0) && (
@@ -365,7 +375,7 @@ export default function DomainResultPage() {
                                     return (
                                         <li key={row.url}>
                                             {page ? (
-                                                <MsqdxButton size="small" variant="text" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>
+                                                <MsqdxButton size="small" variant="text" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>
                                                     {row.url} — {label}
                                                 </MsqdxButton>
                                             ) : (
@@ -458,7 +468,7 @@ export default function DomainResultPage() {
                                     setSummarizeError(null);
                                     setSummarizing(true);
                                     try {
-                                        const res = await fetch(`/api/scan/domain/${result.id}/summarize`, { method: 'POST' });
+                                        const res = await fetch(apiScanDomainSummarize(result.id), { method: 'POST' });
                                         const data = await res.json().catch(() => ({}));
                                         if (!res.ok) throw new Error(data.error ?? 'Fehler beim Generieren');
                                         setResult((prev) => (prev ? { ...prev, llmSummary: data } : null));
@@ -490,7 +500,7 @@ export default function DomainResultPage() {
                                         {aggregated.ux.focusOrderByPage.map(({ url, count }) => {
                                             const page = pagesByUrl.get(url);
                                             return page ? (
-                                                <MsqdxButton key={url} size="small" variant="outlined" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none' }}>
+                                                <MsqdxButton key={url} size="small" variant="outlined" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none' }}>
                                                     {url} ({count})
                                                 </MsqdxButton>
                                             ) : null;
@@ -505,7 +515,7 @@ export default function DomainResultPage() {
                                         {aggregated.ux.tapTargets.detailsByPage.map(({ url, count }) => {
                                             const page = pagesByUrl.get(url);
                                             return page ? (
-                                                <MsqdxButton key={url} size="small" variant="outlined" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none' }}>
+                                                <MsqdxButton key={url} size="small" variant="outlined" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none' }}>
                                                     {url} ({count} Probleme)
                                                 </MsqdxButton>
                                             ) : null;
@@ -519,7 +529,7 @@ export default function DomainResultPage() {
                     <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0, maxHeight: 200, overflow: 'auto' }}>
                         {visiblePages.map((page) => (
                             <Box key={page.id} component="li" sx={{ mb: 0.5 }}>
-                                <MsqdxButton size="small" variant="text" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>{page.url}</MsqdxButton>
+                                <MsqdxButton size="small" variant="text" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>{page.url}</MsqdxButton>
                             </Box>
                         ))}
                     </Box>
@@ -558,7 +568,7 @@ export default function DomainResultPage() {
                                         {aggregated.ux.pagesByScore.slice(0, 8).map(({ url, score, cls }) => {
                                             const page = pagesByUrl.get(url);
                                             return page ? (
-                                                <MsqdxButton key={url} size="small" variant="outlined" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none' }}>
+                                                <MsqdxButton key={url} size="small" variant="outlined" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none' }}>
                                                     {url} — Score {score}, CLS {cls}
                                                 </MsqdxButton>
                                             ) : null;
@@ -573,7 +583,7 @@ export default function DomainResultPage() {
                                         {aggregated.ux.consoleErrorsByPage.slice(0, 6).map(({ url, count }) => {
                                             const page = pagesByUrl.get(url);
                                             return page ? (
-                                                <MsqdxButton key={url} size="small" variant="text" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>
+                                                <MsqdxButton key={url} size="small" variant="text" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>
                                                     {url} ({count})
                                                 </MsqdxButton>
                                             ) : null;
@@ -588,7 +598,7 @@ export default function DomainResultPage() {
                                         {aggregated.ux.tapTargets.detailsByPage.slice(0, 6).map(({ url, count }) => {
                                             const page = pagesByUrl.get(url);
                                             return page ? (
-                                                <MsqdxButton key={url} size="small" variant="text" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>{url} ({count})</MsqdxButton>
+                                                <MsqdxButton key={url} size="small" variant="text" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>{url} ({count})</MsqdxButton>
                                             ) : null;
                                         })}
                                     </Box>
@@ -636,7 +646,7 @@ export default function DomainResultPage() {
                                 {aggregated.structure.pagesWithGoodStructure.map((url) => {
                                     const page = pagesByUrl.get(url);
                                     return page ? (
-                                        <MsqdxButton key={url} variant="outlined" size="small" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none' }}>{url}</MsqdxButton>
+                                        <MsqdxButton key={url} variant="outlined" size="small" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none' }}>{url}</MsqdxButton>
                                     ) : (
                                         <MsqdxTypography key={url} variant="caption">{url}</MsqdxTypography>
                                     );
@@ -651,7 +661,7 @@ export default function DomainResultPage() {
                                 {aggregated.structure.pagesWithMultipleH1.map((url) => {
                                     const page = pagesByUrl.get(url);
                                     return page ? (
-                                        <MsqdxButton key={url} variant="outlined" size="small" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none' }}>{url}</MsqdxButton>
+                                        <MsqdxButton key={url} variant="outlined" size="small" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none' }}>{url}</MsqdxButton>
                                     ) : (
                                         <MsqdxTypography key={url} variant="caption" sx={{ display: 'block' }}>{url}</MsqdxTypography>
                                     );
@@ -666,7 +676,7 @@ export default function DomainResultPage() {
                                 {aggregated.structure.pagesWithSkippedLevels.map((url) => {
                                     const page = pagesByUrl.get(url);
                                     return page ? (
-                                        <MsqdxButton key={url} variant="outlined" size="small" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none' }}>{url}</MsqdxButton>
+                                        <MsqdxButton key={url} variant="outlined" size="small" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none' }}>{url}</MsqdxButton>
                                     ) : (
                                         <MsqdxTypography key={url} variant="caption">{url}</MsqdxTypography>
                                     );
@@ -703,7 +713,7 @@ export default function DomainResultPage() {
                                             <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>Ohne Meta-Description:</MsqdxTypography>
                                             {aggregated.seo.missingMetaDescriptionUrls.slice(0, 5).map((url) => {
                                                 const page = pagesByUrl.get(url);
-                                                return page ? <Box key={url}><MsqdxButton size="small" variant="text" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>{url}</MsqdxButton></Box> : null;
+                                                return page ? <Box key={url}><MsqdxButton size="small" variant="text" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>{url}</MsqdxButton></Box> : null;
                                             })}
                                         </Box>
                                     )}
@@ -750,7 +760,7 @@ export default function DomainResultPage() {
                                                     }}
                                                 >
                                                     {page ? (
-                                                        <MsqdxButton size="small" variant="text" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none', fontSize: '0.75rem', flex: '1 1 auto', minWidth: 0, justifyContent: 'flex-start' }}>
+                                                        <MsqdxButton size="small" variant="text" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', fontSize: '0.75rem', flex: '1 1 auto', minWidth: 0, justifyContent: 'flex-start' }}>
                                                             {row.url}
                                                         </MsqdxButton>
                                                     ) : (
@@ -786,7 +796,7 @@ export default function DomainResultPage() {
                                                 return (
                                                     <li key={url}>
                                                         {page ? (
-                                                            <MsqdxButton size="small" variant="text" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>{url} — {count} kaputt</MsqdxButton>
+                                                            <MsqdxButton size="small" variant="text" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>{url} — {count} kaputt</MsqdxButton>
                                                         ) : (
                                                             <MsqdxTypography variant="caption">{url} — {count} kaputt</MsqdxTypography>
                                                         )}
@@ -824,7 +834,7 @@ export default function DomainResultPage() {
                                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
                                             {aggregated.infra.privacy.urlsWithPolicy.slice(0, 5).map((url) => {
                                                 const page = pagesByUrl.get(url);
-                                                return page ? <MsqdxButton key={url} size="small" variant="text" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none', fontSize: '0.7rem' }}>{url}</MsqdxButton> : null;
+                                                return page ? <MsqdxButton key={url} size="small" variant="text" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', fontSize: '0.7rem' }}>{url}</MsqdxButton> : null;
                                             })}
                                         </Box>
                                     )}
@@ -842,7 +852,7 @@ export default function DomainResultPage() {
                                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
                                         {aggregated.infra.security.urlsWithCsp.slice(0, 5).map((url) => {
                                             const page = pagesByUrl.get(url);
-                                            return page ? <MsqdxButton key={url} size="small" variant="text" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none', fontSize: '0.7rem' }}>{url}</MsqdxButton> : null;
+                                            return page ? <MsqdxButton key={url} size="small" variant="text" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', fontSize: '0.7rem' }}>{url}</MsqdxButton> : null;
                                         })}
                                     </Box>
                                 </Box>
@@ -881,7 +891,7 @@ export default function DomainResultPage() {
                             return (
                                 <li key={p.url}>
                                     {page ? (
-                                        <MsqdxButton size="small" variant="text" onClick={() => router.push(`/results/${page.id}`)} sx={{ textTransform: 'none', fontSize: '0.8rem' }}>
+                                        <MsqdxButton size="small" variant="text" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', fontSize: '0.8rem' }}>
                                             {p.url} — {badges || '—'}
                                         </MsqdxButton>
                                     ) : (
@@ -929,7 +939,7 @@ export default function DomainResultPage() {
                                     setJourneyResult(null);
                                     setJourneyLoading(true);
                                     try {
-                                        const res = await fetch(`/api/scan/domain/${params.id}/journey`, {
+                                                const res = await fetch(apiScanDomainJourney(params.id), {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
                                             body: JSON.stringify({ goal: journeyGoal.trim(), stream: true }),
@@ -995,7 +1005,7 @@ export default function DomainResultPage() {
                                     onStepClick={(step) => {
                                         const norm = (u: string) => { try { const x = new URL(u); return x.origin + (x.pathname.replace(/\/$/, '') || '/'); } catch { return u; } };
                                         const page = pagesByNormUrl.get(norm(step.pageUrl));
-                                        if (page) router.push(`/results/${page.id}`);
+                                        if (page) router.push(pathResults(page.id));
                                     }}
                                 />
                                 <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 2, flexWrap: 'wrap', pt: 1 }}>
@@ -1015,7 +1025,7 @@ export default function DomainResultPage() {
                                             if (!params.id || !journeyResult) return;
                                             setJourneySaving(true);
                                             try {
-                                                const res = await fetch('/api/journeys', {
+                                                const res = await fetch(API_JOURNEYS, {
                                                     method: 'POST',
                                                     headers: { 'Content-Type': 'application/json' },
                                                     body: JSON.stringify({

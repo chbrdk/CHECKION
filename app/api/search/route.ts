@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
 import { auth } from '@/auth';
+import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { listCachedStandaloneScans, listCachedDomainScans } from '@/lib/cache';
 import { listScansByGroupId } from '@/lib/db/scans';
 import { hasStoredAggregated } from '@/lib/domain-summary';
@@ -120,7 +121,7 @@ async function runSearch(
 export async function GET(req: NextRequest) {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
 
     const { searchParams } = new URL(req.url);

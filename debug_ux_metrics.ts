@@ -14,17 +14,12 @@ async function runDebug() {
 
     // Inject CLS Observer
     await page.evaluateOnNewDocument(() => {
-        // @ts-ignore
-        window.__cls_score = 0;
-        // @ts-ignore
+        (window as Window & { __cls_score: number }).__cls_score = 0;
         new PerformanceObserver((entryList) => {
-            for (const entry of entryList.getEntries()) {
-                // @ts-ignore
+            for (const entry of entryList.getEntries() as Array<{ hadRecentInput?: boolean; value?: number }>) {
                 if (!entry.hadRecentInput) {
-                    // @ts-ignore
-                    window.__cls_score += entry.value;
-                    // @ts-ignore
-                    console.log('CLS Entry:', entry.value, window.__cls_score);
+                    (window as Window & { __cls_score: number }).__cls_score += entry.value ?? 0;
+                    console.log('CLS Entry:', entry.value, (window as Window & { __cls_score: number }).__cls_score);
                 }
             }
         }).observe({ type: 'layout-shift', buffered: true });
@@ -51,8 +46,7 @@ async function runDebug() {
 
     // 1. Check CLS
     const clsScore = await page.evaluate(() => {
-        // @ts-ignore
-        return window.__cls_score || 0;
+        return (window as Window & { __cls_score?: number }).__cls_score ?? 0;
     });
     console.log('CLS Score:', clsScore);
 

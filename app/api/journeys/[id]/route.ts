@@ -4,6 +4,7 @@
 
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getSavedJourney, deleteSavedJourney } from '@/lib/db/journeys';
 import { invalidateJourneys } from '@/lib/cache';
 
@@ -13,12 +14,12 @@ export async function GET(
 ) {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     const { id } = await params;
     const row = await getSavedJourney(id, session.user.id);
     if (!row) {
-        return NextResponse.json({ error: 'Saved journey not found.' }, { status: 404 });
+        return apiError('Saved journey not found.', API_STATUS.NOT_FOUND);
     }
     return NextResponse.json(row);
 }
@@ -29,12 +30,12 @@ export async function DELETE(
 ) {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     const { id } = await params;
     const ok = await deleteSavedJourney(id, session.user.id);
     if (!ok) {
-        return NextResponse.json({ error: 'Saved journey not found.' }, { status: 404 });
+        return apiError('Saved journey not found.', API_STATUS.NOT_FOUND);
     }
     invalidateJourneys(session.user.id);
     return NextResponse.json({ success: true });

@@ -20,6 +20,8 @@ export interface Issue {
     runner: Runner;
     /** WCAG Level (A, AA, AAA) or Unknown */
     wcagLevel: 'A' | 'AA' | 'AAA' | 'APCA' | 'Unknown';
+    /** Optional URL to remediation docs (Deque/W3C) */
+    helpUrl?: string | null;
     boundingBox?: {
         x: number;
         y: number;

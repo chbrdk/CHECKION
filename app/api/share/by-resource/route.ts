@@ -5,6 +5,7 @@
 
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getShareByResource } from '@/lib/db/shares';
 import type { ShareResourceType } from '@/lib/db/shares';
 import { SHARE_PATH } from '@/lib/constants';
@@ -12,16 +13,13 @@ import { SHARE_PATH } from '@/lib/constants';
 export async function GET(request: Request) {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type') as ShareResourceType | null;
     const id = searchParams.get('id')?.trim() ?? '';
     if (!id || (type !== 'single' && type !== 'domain' && type !== 'journey' && type !== 'geo_eeat')) {
-        return NextResponse.json(
-            { error: 'Query type (single|domain|journey|geo_eeat) and id required' },
-            { status: 400 }
-        );
+        return apiError('Query type (single|domain|journey|geo_eeat) and id required', API_STATUS.BAD_REQUEST);
     }
 
     const share = await getShareByResource(session.user.id, type, id);

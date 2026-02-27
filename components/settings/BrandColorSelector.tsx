@@ -7,6 +7,7 @@ import {
     BRAND_COLOR_DEFAULT,
     applyBrandColorVars,
 } from '@/lib/brand-color-utils';
+import { useI18n } from '@/components/i18n/I18nProvider';
 
 const OPTIONS_META: {
     varName: string;
@@ -61,6 +62,8 @@ export function BrandColorSelector() {
                 return (
                     <button
                         key={option.varName}
+                        type="button"
+                        aria-label={t('settings.appearance.colorSelectAria', { label: option.label })}
                         onClick={() => handleColorSelect(option.varName)}
                         style={{
                             padding: '1.5rem',

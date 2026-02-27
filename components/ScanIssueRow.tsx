@@ -9,6 +9,7 @@ import {
     MSQDX_NEUTRAL,
 } from '@msqdx/tokens';
 import type { Issue } from '@/lib/types';
+import { useI18n } from '@/components/i18n/I18nProvider';
 
 const SEVERITY_CONFIG: Record<string, { label: string; color: string }> = {
     error: { label: 'Error', color: MSQDX_STATUS.error.base },
@@ -26,12 +27,13 @@ interface ScanIssueRowProps {
 
 /** Highlight is applied via parent CSS (data-highlighted-index + data-row-index) so this row never re-renders when highlight changes. */
 export const ScanIssueRow = memo(({ issue, index, registerRef }: ScanIssueRowProps) => {
+    const { t } = useI18n();
     const config = SEVERITY_CONFIG[issue.type] ?? SEVERITY_CONFIG.notice;
     const handleRef = React.useCallback((el: HTMLDivElement | null) => registerRef(index, el), [index, registerRef]);
 
     const levelLabel = issue.wcagLevel === 'Unknown' ? '–' : issue.wcagLevel === 'APCA' ? 'APCA' : `Level ${issue.wcagLevel}`;
     const codeShort = issue.code.length > 48 ? issue.code.slice(0, 48) + '…' : issue.code;
-    const hasDetails = Boolean(issue.selector || issue.context);
+    const hasDetails = Boolean(issue.selector || issue.context || issue.helpUrl);
 
     return (
         <Box
@@ -165,6 +167,23 @@ export const ScanIssueRow = memo(({ issue, index, registerRef }: ScanIssueRowPro
                                 <Box component="pre" sx={{ mt: 0.5, p: 1, borderRadius: 1, backgroundColor: MSQDX_NEUTRAL[100], color: MSQDX_THEME.light.text.primary, fontSize: '0.7rem', overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all', maxHeight: 180, overflowY: 'auto', border: `1px solid ${MSQDX_NEUTRAL[200]}` }}>
                                     {issue.context}
                                 </Box>
+                            </Box>
+                        )}
+                        {issue.helpUrl && (
+                            <Box sx={{ gridColumn: '1 / -1', pt: 1 }}>
+                                <a
+                                    href={issue.helpUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label={t('results.fixDocsAria')}
+                                    style={{
+                                        fontSize: '0.75rem',
+                                        color: MSQDX_BRAND_PRIMARY.green,
+                                        textDecoration: 'underline',
+                                    }}
+                                >
+                                    {t('results.fixDocs')} →
+                                </a>
                             </Box>
                         )}
                     </Box>

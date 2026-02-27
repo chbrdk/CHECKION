@@ -15,6 +15,7 @@ import {
 import { MSQDX_TYPOGRAPHY } from '@msqdx/tokens';
 import { AuthBrandColorSelector } from '@/components/auth/AuthBrandColorSelector';
 import { useI18n } from '@/components/i18n/I18nProvider';
+import { PATH_REGISTER } from '@/lib/constants';
 
 function LoginForm() {
     const router = useRouter();
@@ -208,7 +209,7 @@ function LoginForm() {
 
                         <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-secondary)' }}>
                             {t('auth.login.prompt')}{' '}
-                            <Link href="/register" style={{ color: 'inherit', fontWeight: 600 }}>
+                            <Link href={PATH_REGISTER} style={{ color: 'inherit', fontWeight: 600 }}>
                                 {t('auth.login.link')}
                             </Link>
                         </MsqdxTypography>

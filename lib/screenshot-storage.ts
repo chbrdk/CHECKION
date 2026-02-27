@@ -8,6 +8,8 @@ import fs from 'fs';
 import path from 'path';
 import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import {
+    API_SCAN,
+    apiScanScreenshot,
     ENV_SCREENSHOT_AWS_REGION,
     ENV_SCREENSHOT_S3_BUCKET,
     ENV_SCREENSHOT_S3_PREFIX,
@@ -78,7 +80,7 @@ export async function writeScreenshot(scanId: string, buffer: Buffer): Promise<s
                 ContentType: 'image/jpeg',
             })
         );
-        return `/api/scan/${scanId}/screenshot`;
+        return apiScanScreenshot(scanId);
     }
     const filePath = getScreenshotPath(scanId);
     fs.writeFileSync(filePath, buffer, 'binary');
@@ -113,7 +115,7 @@ export async function readScreenshot(scanId: string): Promise<Buffer | null> {
 
 /** Whether the scan result uses file-based screenshot (URL) vs inline base64. */
 export function isFileScreenshot(screenshot: string): boolean {
-    return typeof screenshot === 'string' && screenshot.startsWith('/api/scan/') && screenshot.endsWith('/screenshot');
+    return typeof screenshot === 'string' && screenshot.startsWith(API_SCAN + '/') && screenshot.endsWith('/screenshot');
 }
 
 /** Get screenshot as base64 for APIs that expect it (e.g. saliency). */

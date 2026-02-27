@@ -5,6 +5,8 @@
 import { NextResponse } from 'next/server';
 import sharp from 'sharp';
 import { auth } from '@/auth';
+import { apiError, API_STATUS } from '@/lib/api-error-handler';
+import { parseApiBody, saliencyGenerateBodySchema } from '@/lib/api-schemas';
 import { getScan, updateScanResult } from '@/lib/db/scans';
 import { invalidateScan } from '@/lib/cache';
 import { enrichPageIndexWithSaliency } from '@/lib/page-index';
@@ -42,28 +44,20 @@ const CONTRAST_WEIGHT = parseFloat(process.env.SALIENCY_FUSION_CONTRAST_WEIGHT ?
 export async function POST(request: Request) {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
 
-    let body: { scanId?: string };
-    try {
-        body = (await request.json()) as { scanId?: string };
-    } catch {
-        return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 });
-    }
-
-    const scanId = body.scanId;
-    if (!scanId || typeof scanId !== 'string') {
-        return NextResponse.json({ error: 'Missing or invalid "scanId".' }, { status: 400 });
-    }
+    const parsed = await parseApiBody(request, saliencyGenerateBodySchema);
+    if (parsed instanceof NextResponse) return parsed;
+    const scanId = parsed.scanId;
 
     const result = await getScan(scanId, session.user.id);
     if (!result) {
-        return NextResponse.json({ error: 'Scan not found.' }, { status: 404 });
+        return apiError('Scan not found.', API_STATUS.NOT_FOUND);
     }
     const imageBase64 = await getScreenshotBase64(result.screenshot, scanId);
     if (!imageBase64) {
-        return NextResponse.json({ error: 'Scan has no screenshot or screenshot file missing.' }, { status: 400 });
+        return apiError('Scan has no screenshot or screenshot file missing.', API_STATUS.BAD_REQUEST);
     }
 
     // --- AI path: OpenAI Vision → regions → render heatmap (no SUM, no polling) ---
@@ -76,10 +70,7 @@ export async function POST(request: Request) {
 
             const regions = await getAttentionRegionsFromVision(imageBase64, width, height);
             if (regions.length === 0) {
-                return NextResponse.json(
-                    { error: 'AI could not detect attention regions. Try again or use SUM backend.' },
-                    { status: 502 },
-                );
+                return apiError('AI could not detect attention regions. Try again or use SUM backend.', API_STATUS.BAD_GATEWAY);
             }
 
             let heatmapBase64 = await renderHeatmapFromRegions(regions, width, height);
@@ -127,14 +118,14 @@ export async function POST(request: Request) {
                 ...scanpathPatch,
             });
             if (!updated) {
-                return NextResponse.json({ error: 'Failed to save heatmap to scan.' }, { status: 500 });
+                return apiError('Failed to save heatmap to scan.', API_STATUS.INTERNAL_ERROR);
             }
             invalidateScan(scanId);
             return NextResponse.json({ success: true });
         } catch (e) {
             const message = e instanceof Error ? e.message : 'AI saliency failed';
             console.error('[CHECKION] saliency/generate (AI):', e);
-            return NextResponse.json({ error: message }, { status: 502 });
+            return apiError(message, API_STATUS.BAD_GATEWAY);
         }
     }
 
@@ -186,39 +177,31 @@ export async function POST(request: Request) {
                 ...scanpathPatch,
             });
             if (!updated) {
-                return NextResponse.json({ error: 'Failed to save heatmap to scan.' }, { status: 500 });
+                return apiError('Failed to save heatmap to scan.', API_STATUS.INTERNAL_ERROR);
             }
             invalidateScan(scanId);
             return NextResponse.json({ success: true });
         } catch (e) {
             console.error('[CHECKION] saliency/generate (structure-only):', e);
-            return NextResponse.json(
-                { error: e instanceof Error ? e.message : 'Structure-only heatmap failed' },
-                { status: 502 },
-            );
+            return apiError(e instanceof Error ? e.message : 'Structure-only heatmap failed', API_STATUS.BAD_GATEWAY);
         }
     }
 
     if (!USE_SUM_SALIENCY) {
-        return NextResponse.json(
-            {
-                error:
-                    'Structure-only saliency requires pageIndex. Run a scan that produces a structure map first.',
-            },
-            { status: 400 },
+        return apiError(
+            'Structure-only saliency requires pageIndex. Run a scan that produces a structure map first.',
+            API_STATUS.BAD_REQUEST
         );
     }
 
     // --- SUM path: create job, return jobId (client polls /api/saliency/result) ---
     const saliencyBaseUrl = getSaliencyBaseUrl();
     if (!saliencyBaseUrl) {
-        return NextResponse.json(
-            {
-                error: USE_AI_SALIENCY
-                    ? 'AI saliency needs OPENAI_API_KEY. SUM needs SALIENCY_SERVICE_URL.'
-                    : 'Saliency not configured: set SALIENCY_SERVICE_URL or SALIENCY_USE_AI=1 and OPENAI_API_KEY.',
-            },
-            { status: 503 },
+        return apiError(
+            USE_AI_SALIENCY
+                ? 'AI saliency needs OPENAI_API_KEY. SUM needs SALIENCY_SERVICE_URL.'
+                : 'Saliency not configured: set SALIENCY_SERVICE_URL or SALIENCY_USE_AI=1 and OPENAI_API_KEY.',
+            API_STATUS.UNAVAILABLE
         );
     }
 
@@ -240,37 +223,25 @@ export async function POST(request: Request) {
         const message =
             e instanceof Error ? e.message : 'Saliency service request failed';
         console.error('[CHECKION] saliency/generate: create job error', { url: jobsUrl, error: message });
-        return NextResponse.json(
-            { error: message + ' (SALIENCY_SERVICE_URL prüfen.)' },
-            { status: 502 },
-        );
+        return apiError(message + ' (SALIENCY_SERVICE_URL prüfen.)', API_STATUS.BAD_GATEWAY);
     }
 
     if (!res.ok) {
         const text = await res.text();
         console.error('[CHECKION] saliency/generate: service returned', res.status, text);
-        return NextResponse.json(
-            { error: `Saliency service error: ${res.status}` },
-            { status: 502 },
-        );
+        return apiError(`Saliency service error: ${res.status}`, API_STATUS.BAD_GATEWAY);
     }
 
     let data: { job_id?: string };
     try {
         data = (await res.json()) as { job_id?: string };
     } catch {
-        return NextResponse.json(
-            { error: 'Invalid response from saliency service.' },
-            { status: 502 },
-        );
+        return apiError('Invalid response from saliency service.', API_STATUS.BAD_GATEWAY);
     }
 
     const jobId = data.job_id;
     if (!jobId || typeof jobId !== 'string') {
-        return NextResponse.json(
-            { error: 'Saliency service did not return job_id.' },
-            { status: 502 },
-        );
+        return apiError('Saliency service did not return job_id.', API_STATUS.BAD_GATEWAY);
     }
 
     if (USE_LLM_REGIONS && process.env.OPENAI_API_KEY?.trim()) {
