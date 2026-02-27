@@ -22,13 +22,34 @@ LLM Vision ist optional und kostentransparent: wird nur bei gesetztem `SALIENCY_
 
 Die DOM-Struktur-Map füllt **jede Region mit ihrem vollen Rechteck** (Position und Größe aus dem Scan). Die Rect-Koordinaten stammen aus `getBoundingClientRect()` + Scroll im Scanner und sind identisch mit dem Screenshot-Koordinatensystem. So wird z. B. die komplette Nav-Leiste als Fläche erfasst, nicht nur ein Punkt in der Mitte. Gewicht pro Region: `findabilityScore * aboveFold-Boost * semanticBoost` (hero/nav stärker).
 
+## Scanpath (Blickreihenfolge)
+
+Wenn Heatmap und pageIndex vorhanden sind, wird automatisch ein **Scanpath** (geschätzte Fixationsreihenfolge) berechnet: lokale Maxima in der Heatmap, F-Pattern-Position, Regionengröße, Inhibition-of-Return. Ergebnis: `ScanResult.scanpath` (Array von `{ x, y, order, regionId?, saliency? }`). Auf der Ergebnis-Seite kann der Scanpath als nummerierte Punkte (1, 2, 3, …) eingeblendet werden.
+
+- **Code:** [lib/scanpath.ts](../lib/scanpath.ts) – `computeScanpath`; Integration in [app/api/saliency/result/route.ts](../app/api/saliency/result/route.ts) und [app/api/saliency/generate/route.ts](../app/api/saliency/generate/route.ts).
+- **UI:** [components/ScanpathOverlay.tsx](../components/ScanpathOverlay.tsx); Toggle „Scanpath anzeigen“ im Visual-Tab der Ergebnisseite.
+- **Konfiguration:** Default `maxFixations=8`, `iorRadius=100`; optional per Env erweiterbar.
+
+## Leichtes Backend (MSI-Net / ONNX)
+
+Neben SUM kann ein **ONNX-basiertes** Saliency-Backend betrieben werden (CPU-freundlich, ~1–3 s auf M-Chip): gleiche API (`POST /jobs`, `GET /jobs/{job_id}`). Build mit `Dockerfile.msinet`, Modell unter `MSINET_MODEL_PATH` (z. B. `/app/model.onnx`) bereitstellen. CHECKION zeigt mit `SALIENCY_SERVICE_URL` auf SUM oder auf den ONNX-Container.
+
+- **Service:** [saliency-service/main_msinet.py](../saliency-service/main_msinet.py), [saliency-service/Dockerfile.msinet](../saliency-service/Dockerfile.msinet).
+- **Hinweis:** MSI-Net ist nativ Keras; für ONNX muss ein Modell exportiert werden oder ein anderes ONNX-Saliency-Modell verwendet werden. OpenVINO: Für Intel-CPU kann ein Export auf OpenVINO zusätzlich 2–4× Speedup bringen (optional, keine Implementierung im Repo).
+
+## Optionale Erweiterungen
+
+- **MediaPipe (Face/Gaze):** In der Fusion unterstützt: `mediaPipeRects` (Rechtecke + Score in Pixel), `mediaPipeWeight`. Prior-Map `buildMediaPipePriorMap` in [lib/saliency-fusion.ts](../lib/saliency-fusion.ts). Die eigentliche Erkennung (MediaPipe im Service oder eigene Route) ist nicht implementiert; die Anbindung in der Fusion ist vorbereitet.
+- **Vision-Provider:** `SALIENCY_VISION_PROVIDER=openai|claude|gcp` – aktuell nur `openai` umgesetzt; `claude`/`gcp` liefern leere Regionen (Stub).
+
 ## Code
 
-- **Fusion:** [lib/saliency-fusion.ts](../lib/saliency-fusion.ts) – `buildStructureAttentionMap` (Rechteck-Füllung), `buildVisionPriorMap`, `decodeJetPngToIntensity`, `intensityToJetPng`, `fuseSaliencyHeatmap`.
+- **Fusion:** [lib/saliency-fusion.ts](../lib/saliency-fusion.ts) – `buildStructureAttentionMap` (Rechteck-Füllung), `buildVisionPriorMap`, `buildMediaPipePriorMap`, `decodeJetPngToIntensity`, `intensityToJetPng`, `fuseSaliencyHeatmap`.
 - **Vision-Cache:** [lib/saliency-vision-cache.ts](../lib/saliency-vision-cache.ts) – `setVisionRegions`, `getVisionRegions` (TTL 15 Min).
-- **Integration SUM:** [app/api/saliency/result/route.ts](../app/api/saliency/result/route.ts) – nach Erhalt der Heatmap Fusion mit pageIndex und gecachten Vision-Regionen.
-- **Integration AI:** [app/api/saliency/generate/route.ts](../app/api/saliency/generate/route.ts) – AI-Heatmap wird mit pageIndex fusioniert; optional im SUM-Pfad Fire-and-Forget Vision-Aufruf und Cache-Schreiben.
+- **Integration SUM:** [app/api/saliency/result/route.ts](../app/api/saliency/result/route.ts) – nach Erhalt der Heatmap Fusion mit pageIndex und gecachten Vision-Regionen; Scanpath-Berechnung.
+- **Integration AI:** [app/api/saliency/generate/route.ts](../app/api/saliency/generate/route.ts) – AI-Heatmap wird mit pageIndex fusioniert; optional im SUM-Pfad Fire-and-Forget Vision-Aufruf und Cache-Schreiben; Scanpath nach Fusion.
 
 ## Tests
 
 - Nach `npm install`: `npm run test:saliency-fusion` bzw. `npx tsx lib/saliency-fusion.test.ts` – Unit-Tests für Structure-Map, Vision-Map, Decode/Encode-Roundtrip und `fuseSaliencyHeatmap`.
+- `npm run test:scanpath` bzw. `npx tsx lib/scanpath.test.ts` – Unit-Tests für `computeScanpath` (Peaks, IoR, Reihenfolge).

@@ -26192,3 +26192,8257 @@ okay das sum ist viel zu stark gewichtet. wie können wir genauer die dom elemen
 
 ---
 
+_**Agent (model default, mode Agent)**_
+
+
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The user is saying that SUM is weighted too strongly in the fusion, and they want to more accurately determine DOM elements in position and size to derive correct heatmaps. Currently, for the nav for example, there's just a light point in the middle instead of the full nav being highlighted.
+
+So the issues are:
+1. SUM weight is too strong - need to adjust fusion weights so DOM/structure has more influence
+2. DOM element position and size need to be more accurate - the structure-based heatmap might be using wrong coordinates or the regions from pageIndex might not correctly represent the actual DOM elements (e.g. nav might be one region with a single rect that doesn't cover the full nav, or the heat is being drawn as a single point instead of filling the rect)
+
+Let me look at:
+1. How we build the structure attention map from pageIndex (saliency-fusion.ts) - how we map regions to the heatmap
+2. How regions/rects are defined in pageIndex - are they in relative coords, viewport coords?
+3. Fusion weights - where they're used and what the defaults are
+
+I'll need to read the saliency-fusion code and the types for PageIndex/regions to understand how we're drawing the DOM-based heat and why the nav might appear as a single point.
+</details></think>
+
+---
+
+
+Wir prüfen, wie die DOM-Struktur in der Fusion verwendet wird und warum die Navigation nur als Punkt erscheint.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/saliency-fusion.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "pageIndex|regions|rect",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "pageIndex|regions|rect",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types",
+  "outputMode": "content",
+  "totalFiles": 0,
+  "totalMatches": 0,
+  "topFiles": []
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-saliency-fusion.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see the issue. In `buildStructureAttentionMap` we're drawing a **Gaussian blob** centered on each region's rect (cx, cy) with sigma = min(width, height) * 0.35. So for a wide nav bar, we get:
+- cx = center x of nav
+- cy = center y of nav  
+- sigma = min(nav_width, nav_height) * 0.35 — for a nav that's say 1200x60, sigma = 21 pixels
+
+So the Gaussian only spreads ~3*sigma = 63 pixels from center. For a 1200px wide nav, that gives a small blob in the middle, not the full nav. The user is exactly right: we're not filling the actual DOM rect, we're just putting a soft blob at the center.
+
+To fix this we need to:
+1. **Fill the actual rect** for structure-based attention instead of (or in addition to) a center Gaussian. So for each region we should add weight to every pixel *inside* the rect, and optionally soften with a small blur so it's not a hard rectangle. That way the whole nav gets highlighted.
+2. Optionally reduce SUM weight / increase structure weight so the DOM elements are more visible. That could be via env or we could make the structure map "fill rects" so it's more impactful.
+
+Let me check how rect is defined (coordinates - viewport pixels? normalized?) and where pageIndex gets its regions from.
+</details></think>
+
+---
+
+
+Struktur-Map zeichnet nur eine Gauß-Blob in der Mitte jedes Rechtecks statt die gesamte Region zu füllen. Wir prüfen, wie `rect` und die Regionen definiert sind:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "rect|PageIndex|regions",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib",
+  "glob": "*.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "rect|PageIndex|regions",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib",
+  "outputMode": "content",
+  "totalFiles": 13,
+  "totalMatches": 151,
+  "topFiles": [
+    {
+      "uri": "lib/screenshot-storage.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/llm/build-summary-payload.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/scanner.ts",
+      "matchCount": 31
+    },
+    {
+      "uri": "lib/saliency-vision-cache.ts",
+      "matchCount": 6
+    },
+    {
+      "uri": "lib/types.ts",
+      "matchCount": 15
+    },
+    {
+      "uri": "lib/page-index.test.ts",
+      "matchCount": 31
+    },
+    {
+      "uri": "lib/domain-aggregation.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "lib/cookie-banner-dismiss.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "lib/saliency-fusion.ts",
+      "matchCount": 13
+    },
+    {
+      "uri": "lib/page-index.ts",
+      "matchCount": 26
+    },
+    {
+      "uri": "lib/saliency-fusion.test.ts",
+      "matchCount": 6
+    },
+    {
+      "uri": "lib/llm/journey-agent.ts",
+      "matchCount": 10
+    },
+    {
+      "uri": "lib/saliency-ai.ts",
+      "matchCount": 5
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="semantic_search_full">
+<details>
+<summary>Tool use: **semantic_search_full**</summary>
+
+
+Parameters:
+
+```json
+{
+  "query": "Where is pageIndex or regions with rect built from DOM or structureMap?",
+  "includePattern": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "topK": 10,
+  "explanation": ""
+}
+```
+Result:
+
+```json
+{
+  "codeResults": [
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./lib/page-index.ts",
+        "range": {
+          "startPosition": {
+            "line": 60,
+            "column": 1
+          },
+          "endPosition": {
+            "line": 103,
+            "column": 107
+          }
+        },
+        "signatures": {},
+        "detailedLines": [
+          {
+            "text": "/**",
+            "lineNumber": 63
+          },
+          {
+            "text": " * Build page index from structureMap and viewport height.",
+            "lineNumber": 64
+          },
+          {
+            "text": " * Each structure node becomes a region with findability and optional semantic type.",
+            "lineNumber": 65
+          },
+          {
+            "text": " */",
+            "lineNumber": 66
+          },
+          {
+            "text": "export function buildPageIndex(",
+            "lineNumber": 67,
+            "isSignature": true
+          },
+          {
+            "text": "    structureMap: StructureNode[],",
+            "lineNumber": 68,
+            "isSignature": true
+          },
+          {
+            "text": "    viewportHeight: number,",
+            "lineNumber": 69,
+            "isSignature": true
+          },
+          {
+            "text": "    url: string",
+            "lineNumber": 70,
+            "isSignature": true
+          },
+          {
+            "text": "): PageIndex {",
+            "lineNumber": 71,
+            "isSignature": true
+          },
+          {
+            "text": "    const regions: PageIndexRegion[] = (structureMap || []).map((node, indexInDocument) =&gt; {",
+            "lineNumber": 72
+          },
+          {
+            "text": "        const rect = node.rect;",
+            "lineNumber": 73
+          },
+          {
+            "text": "        const aboveFold = rect != null ? rect.y + rect.height &lt;= viewportHeight : false;",
+            "lineNumber": 74
+          },
+          {
+            "text": "        const level = node.level ?? 0;",
+            "lineNumber": 75
+          },
+          {
+            "text": "        const headingText = (node.text || '').slice(0, 200).trim();",
+            "lineNumber": 76
+          },
+          {
+            "text": "        const findabilityScore = computeFindabilityScore(aboveFold, level, indexInDocument);",
+            "lineNumber": 77
+          },
+          {
+            "text": "        const semanticType = inferSemanticType(node.tag, headingText);",
+            "lineNumber": 78
+          },
+          {
+            "text": "        const textSnippet = node.contentSnippet ?? undefined;",
+            "lineNumber": 79
+          },
+          {
+            "text": "        const links = (node.links?.length ? node.links as StructureLink[] : undefined);",
+            "lineNumber": 80
+          },
+          {
+            "lineNumber": 81
+          },
+          {
+            "text": "        return {",
+            "lineNumber": 82
+          },
+          {
+            "text": "            id: uuidv4(),",
+            "lineNumber": 83
+          },
+          {
+            "text": "            tag: node.tag,",
+            "lineNumber": 84
+          },
+          {
+            "text": "            headingText,",
+            "lineNumber": 85
+          },
+          {
+            "text": "            level,",
+            "lineNumber": 86
+          },
+          {
+            "text": "            rect,",
+            "lineNumber": 87
+          },
+          {
+            "text": "            indexInDocument,",
+            "lineNumber": 88
+          },
+          {
+            "text": "            aboveFold,",
+            "lineNumber": 89
+          },
+          {
+            "text": "            findabilityScore,",
+            "lineNumber": 90
+          },
+          {
+            "text": "            semanticType,",
+            "lineNumber": 91
+          },
+          {
+            "text": "            ...(textSnippet ? { textSnippet } : {}),",
+            "lineNumber": 92
+          },
+          {
+            "text": "            ...(links?.length ? { links } : {}),",
+            "lineNumber": 93
+          },
+          {
+            "text": "        };",
+            "lineNumber": 94
+          },
+          {
+            "text": "    });",
+            "lineNumber": 95
+          },
+          {
+            "lineNumber": 96
+          },
+          {
+            "text": "    return {",
+            "lineNumber": 97
+          },
+          {
+            "text": "        url,",
+            "lineNumber": 98
+          },
+          {
+            "text": "        viewportHeight,",
+            "lineNumber": 99
+          },
+          {
+            "text": "        regions,",
+            "lineNumber": 100
+          },
+          {
+            "text": "    };",
+            "lineNumber": 101
+          },
+          {
+            "text": "}",
+            "lineNumber": 102,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 103
+          },
+          {
+            "text": "/** Weight for saliency in combined findability: findabilityScore + SALIENCY_WEIGHT * saliencyProminence */",
+            "lineNumber": 104
+          }
+        ]
+      },
+      "score": 0.5233241319656372
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./lib/types.ts",
+        "range": {
+          "startPosition": {
+            "line": 435,
+            "column": 154
+          },
+          "endPosition": {
+            "line": 456,
+            "column": 86
+          }
+        },
+        "signatures": {},
+        "detailedLines": [
+          {
+            "text": "/** Single region in the page index: one landmark or heading from structureMap with findability and optional semantic label. */",
+            "lineNumber": 438
+          },
+          {
+            "text": "export interface PageIndexRegion {",
+            "lineNumber": 439,
+            "isSignature": true
+          },
+          {
+            "text": "    id: string;",
+            "lineNumber": 440
+          },
+          {
+            "text": "    tag: string;",
+            "lineNumber": 441
+          },
+          {
+            "text": "    headingText: string;",
+            "lineNumber": 442
+          },
+          {
+            "text": "    level: number;",
+            "lineNumber": 443
+          },
+          {
+            "text": "    rect?: { x: number; y: number; width: number; height: number };",
+            "lineNumber": 444
+          },
+          {
+            "text": "    indexInDocument: number;",
+            "lineNumber": 445
+          },
+          {
+            "text": "    aboveFold: boolean;",
+            "lineNumber": 446
+          },
+          {
+            "text": "    findabilityScore: number;",
+            "lineNumber": 447
+          },
+          {
+            "text": "    /** Optional: mean saliency (0–1) in this region from heatmap; set when saliency heatmap is available. */",
+            "lineNumber": 448
+          },
+          {
+            "text": "    saliencyProminence?: number;",
+            "lineNumber": 449
+          },
+          {
+            "text": "    semanticType?: PageIndexRegionType;",
+            "lineNumber": 450
+          },
+          {
+            "text": "    /** Plain-text content of this section (attention zone). */",
+            "lineNumber": 451
+          },
+          {
+            "text": "    textSnippet?: string;",
+            "lineNumber": 452
+          },
+          {
+            "text": "    /** Links inside this section/region (attention zone). */",
+            "lineNumber": 453
+          },
+          {
+            "text": "    links?: StructureLink[];",
+            "lineNumber": 454,
+            "isSignature": true
+          },
+          {
+            "text": "}",
+            "lineNumber": 455,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 456
+          },
+          {
+            "text": "/** Page index: what is where and how findable (for persona click-path evaluation). */",
+            "lineNumber": 457
+          }
+        ]
+      },
+      "score": 0.43098440766334534
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./lib/page-index.ts",
+        "range": {
+          "startPosition": {
+            "line": 133,
+            "column": 1
+          },
+          "endPosition": {
+            "line": 168,
+            "column": 1
+          }
+        },
+        "signatures": {},
+        "detailedLines": [
+          {
+            "text": "/**",
+            "lineNumber": 136
+          },
+          {
+            "text": " * Enrich page index with saliency prominence per region using the heatmap image.",
+            "lineNumber": 137
+          },
+          {
+            "text": " * Heatmap is assumed to be same dimensions as the page/screenshot (rects in same coordinate system).",
+            "lineNumber": 138
+          },
+          {
+            "text": " * Use after saliency heatmap is available (e.g. in saliency/generate route).",
+            "lineNumber": 139
+          },
+          {
+            "text": " */",
+            "lineNumber": 140
+          },
+          {
+            "text": "export async function enrichPageIndexWithSaliency(",
+            "lineNumber": 141,
+            "isSignature": true
+          },
+          {
+            "text": "    pageIndex: PageIndex,",
+            "lineNumber": 142,
+            "isSignature": true
+          },
+          {
+            "text": "    heatmapDataUrlOrBase64: string",
+            "lineNumber": 143,
+            "isSignature": true
+          },
+          {
+            "text": "): Promise&lt;PageIndex&gt; {",
+            "lineNumber": 144,
+            "isSignature": true
+          },
+          {
+            "text": "    let rawBase64 = heatmapDataUrlOrBase64.trim();",
+            "lineNumber": 145
+          },
+          {
+            "text": "    if (rawBase64.startsWith('data:')) {",
+            "lineNumber": 146
+          },
+          {
+            "text": "        const comma = rawBase64.indexOf(',');",
+            "lineNumber": 147
+          },
+          {
+            "text": "        rawBase64 = comma &gt;= 0 ? rawBase64.slice(comma + 1) : '';",
+            "lineNumber": 148
+          },
+          {
+            "text": "    }",
+            "lineNumber": 149
+          },
+          {
+            "text": "    if (!rawBase64) return pageIndex;",
+            "lineNumber": 150
+          },
+          {
+            "lineNumber": 151
+          },
+          {
+            "text": "    const buf = Buffer.from(rawBase64, 'base64');",
+            "lineNumber": 152
+          },
+          {
+            "text": "    const { data, info } = await sharp(buf)",
+            "lineNumber": 153
+          },
+          {
+            "text": "        .raw()",
+            "lineNumber": 154
+          },
+          {
+            "text": "        .toBuffer({ resolveWithObject: true });",
+            "lineNumber": 155
+          },
+          {
+            "text": "    const { width: imgWidth, height: imgHeight, channels } = info;",
+            "lineNumber": 156
+          },
+          {
+            "text": "    const arr = new Uint8Array(data);",
+            "lineNumber": 157
+          },
+          {
+            "lineNumber": 158
+          },
+          {
+            "text": "    const regions: PageIndexRegion[] = pageIndex.regions.map((r) =&gt; {",
+            "lineNumber": 159
+          },
+          {
+            "text": "        if (!r.rect) return r;",
+            "lineNumber": 160
+          },
+          {
+            "text": "        const saliencyProminence = meanSaliencyInRect(arr, imgWidth, imgHeight, channels, r.rect);",
+            "lineNumber": 161
+          },
+          {
+            "text": "        return { ...r, saliencyProminence };",
+            "lineNumber": 162
+          },
+          {
+            "text": "    });",
+            "lineNumber": 163
+          },
+          {
+            "lineNumber": 164
+          },
+          {
+            "text": "    return {",
+            "lineNumber": 165
+          },
+          {
+            "text": "        ...pageIndex,",
+            "lineNumber": 166
+          },
+          {
+            "text": "        regions,",
+            "lineNumber": 167
+          },
+          {
+            "text": "    };",
+            "lineNumber": 168
+          },
+          {
+            "text": "}",
+            "lineNumber": 169,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.40967345237731934
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./lib/page-index.test.ts",
+        "range": {
+          "startPosition": {},
+          "endPosition": {
+            "line": 66,
+            "column": 1
+          }
+        },
+        "signatures": {},
+        "detailedLines": [
+          {
+            "text": "/**",
+            "lineNumber": 1
+          },
+          {
+            "text": " * Simple tests for page-index. Run: npx tsx lib/page-index.test.ts",
+            "lineNumber": 2
+          },
+          {
+            "text": " */",
+            "lineNumber": 3
+          },
+          {
+            "text": "import assert from 'node:assert';",
+            "lineNumber": 4
+          },
+          {
+            "text": "import { buildPageIndex, enrichPageIndexWithSaliency } from './page-index';",
+            "lineNumber": 5
+          },
+          {
+            "text": "import type { StructureNode } from './types';",
+            "lineNumber": 6
+          },
+          {
+            "lineNumber": 7
+          },
+          {
+            "text": "const viewportHeight = 800;",
+            "lineNumber": 8
+          },
+          {
+            "text": "const url = 'https://example.com/';",
+            "lineNumber": 9
+          },
+          {
+            "lineNumber": 10
+          },
+          {
+            "text": "async function run(): Promise&lt;void&gt; {",
+            "lineNumber": 11,
+            "isSignature": true
+          },
+          {
+            "text": "    // Empty structureMap -&gt; empty regions",
+            "lineNumber": 12
+          },
+          {
+            "text": "    const empty = buildPageIndex([], viewportHeight, url);",
+            "lineNumber": 13
+          },
+          {
+            "text": "    assert.strictEqual(empty.url, url);",
+            "lineNumber": 14
+          },
+          {
+            "text": "    assert.strictEqual(empty.viewportHeight, viewportHeight);",
+            "lineNumber": 15
+          },
+          {
+            "text": "    assert.strictEqual(empty.regions.length, 0);",
+            "lineNumber": 16
+          },
+          {
+            "lineNumber": 17
+          },
+          {
+            "text": "    // One heading above the fold",
+            "lineNumber": 18
+          },
+          {
+            "text": "    const above: StructureNode[] = [",
+            "lineNumber": 19
+          },
+          {
+            "text": "        { tag: 'h1', text: 'Welcome', level: 1, rect: { x: 0, y: 100, width: 800, height: 80 } },",
+            "lineNumber": 20
+          },
+          {
+            "text": "    ];",
+            "lineNumber": 21
+          },
+          {
+            "text": "    const indexAbove = buildPageIndex(above, viewportHeight, url);",
+            "lineNumber": 22
+          },
+          {
+            "text": "    assert.strictEqual(indexAbove.regions.length, 1);",
+            "lineNumber": 23
+          },
+          {
+            "text": "    assert.strictEqual(indexAbove.regions[0].aboveFold, true);",
+            "lineNumber": 24
+          },
+          {
+            "text": "    assert.strictEqual(indexAbove.regions[0].headingText, 'Welcome');",
+            "lineNumber": 25
+          },
+          {
+            "text": "    assert.ok(indexAbove.regions[0].findabilityScore &gt; 0);",
+            "lineNumber": 26
+          },
+          {
+            "lineNumber": 27
+          },
+          {
+            "text": "    // Semantic type from heading text",
+            "lineNumber": 28
+          },
+          {
+            "text": "    const pricing: StructureNode[] = [",
+            "lineNumber": 29
+          },
+          {
+            "text": "        { tag: 'h2', text: 'Preisübersicht', level: 2, rect: { x: 0, y: 500, width: 800, height: 40 } },",
+            "lineNumber": 30
+          },
+          {
+            "text": "    ];",
+            "lineNumber": 31
+          },
+          {
+            "text": "    const indexPricing = buildPageIndex(pricing, viewportHeight, url);",
+            "lineNumber": 32
+          },
+          {
+            "text": "    assert.strictEqual(indexPricing.regions[0].semanticType, 'pricing');",
+            "lineNumber": 33
+          },
+          {
+            "lineNumber": 34
+          },
+          {
+            "text": "    // Landmark -&gt; semantic type",
+            "lineNumber": 35
+          },
+          {
+            "text": "    const nav: StructureNode[] = [",
+            "lineNumber": 36
+          },
+          {
+            "text": "        { tag: 'nav', text: 'Navigation', level: 0, rect: { x: 0, y: 0, width: 800, height: 60 } },",
+            "lineNumber": 37
+          },
+          {
+            "text": "    ];",
+            "lineNumber": 38
+          },
+          {
+            "text": "    const indexNav = buildPageIndex(nav, viewportHeight, url);",
+            "lineNumber": 39
+          },
+          {
+            "text": "    assert.strictEqual(indexNav.regions[0].semanticType, 'nav');",
+            "lineNumber": 40
+          },
+          {
+            "lineNumber": 41
+          },
+          {
+            "text": "    // Below the fold",
+            "lineNumber": 42
+          },
+          {
+            "text": "    const below: StructureNode[] = [",
+            "lineNumber": 43
+          },
+          {
+            "text": "        { tag: 'h2', text: 'FAQ', level: 2, rect: { x: 0, y: 900, width: 800, height: 40 } },",
+            "lineNumber": 44
+          },
+          {
+            "text": "    ];",
+            "lineNumber": 45
+          },
+          {
+            "text": "    const indexBelow = buildPageIndex(below, viewportHeight, url);",
+            "lineNumber": 46
+          },
+          {
+            "text": "    assert.strictEqual(indexBelow.regions[0].aboveFold, false);",
+            "lineNumber": 47
+          },
+          {
+            "text": "    assert.strictEqual(indexBelow.regions[0].semanticType, 'faq');",
+            "lineNumber": 48
+          },
+          {
+            "text": "}",
+            "lineNumber": 67,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.38199055194854736
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./components/PageIndexRegionsOverlay.tsx",
+        "range": {
+          "startPosition": {
+            "line": 21,
+            "column": 1
+          },
+          "endPosition": {
+            "line": 101,
+            "column": 1
+          }
+        },
+        "signatures": {},
+        "detailedLines": [
+          {
+            "text": "export function PageIndexRegionsOverlay({",
+            "lineNumber": 24,
+            "isSignature": true
+          },
+          {
+            "text": "    regions,",
+            "lineNumber": 25,
+            "isSignature": true
+          },
+          {
+            "text": "    screenshotWidth,",
+            "lineNumber": 26,
+            "isSignature": true
+          },
+          {
+            "text": "    screenshotHeight,",
+            "lineNumber": 27,
+            "isSignature": true
+          },
+          {
+            "text": "    highlightedRegionId,",
+            "lineNumber": 28,
+            "isSignature": true
+          },
+          {
+            "text": "    visible,",
+            "lineNumber": 29,
+            "isSignature": true
+          },
+          {
+            "text": "}: PageIndexRegionsOverlayProps) {",
+            "lineNumber": 30,
+            "isSignature": true
+          },
+          {
+            "text": "    if (!visible || screenshotWidth &lt;= 0 || screenshotHeight &lt;= 0) return null;",
+            "lineNumber": 31
+          },
+          {
+            "lineNumber": 32
+          },
+          {
+            "text": "    const safeRegions = Array.isArray(regions) ? regions : [];",
+            "lineNumber": 33
+          },
+          {
+            "lineNumber": 34
+          },
+          {
+            "text": "    return (",
+            "lineNumber": 35
+          },
+          {
+            "text": "        &lt;Box",
+            "lineNumber": 36
+          },
+          {
+            "text": "            sx={{",
+            "lineNumber": 37
+          },
+          {
+            "text": "                position: 'absolute',",
+            "lineNumber": 38
+          },
+          {
+            "text": "                top: 0,",
+            "lineNumber": 39
+          },
+          {
+            "text": "                left: 0,",
+            "lineNumber": 40
+          },
+          {
+            "text": "                width: '100%',",
+            "lineNumber": 41
+          },
+          {
+            "text": "                height: '100%',",
+            "lineNumber": 42
+          },
+          {
+            "text": "                pointerEvents: 'none',",
+            "lineNumber": 43
+          },
+          {
+            "text": "                zIndex: 35,",
+            "lineNumber": 44
+          },
+          {
+            "text": "            }}",
+            "lineNumber": 45
+          },
+          {
+            "text": "        &gt;",
+            "lineNumber": 46
+          },
+          {
+            "text": "            {safeRegions",
+            "lineNumber": 47
+          },
+          {
+            "text": "                .filter((r) =&gt; r?.rect)",
+            "lineNumber": 48
+          },
+          {
+            "text": "                .map((r) =&gt; {",
+            "lineNumber": 49
+          },
+          {
+            "text": "                    const rect = r.rect!;",
+            "lineNumber": 50
+          },
+          {
+            "text": "                    const isHighlighted = r.id === highlightedRegionId;",
+            "lineNumber": 51
+          },
+          {
+            "text": "                    const leftPct = (rect.x / screenshotWidth) * 100;",
+            "lineNumber": 52
+          },
+          {
+            "text": "                    const topPct = (rect.y / screenshotHeight) * 100;",
+            "lineNumber": 53
+          },
+          {
+            "text": "                    const widthPct = (rect.width / screenshotWidth) * 100;",
+            "lineNumber": 54
+          },
+          {
+            "text": "                    const heightPct = (rect.height / screenshotHeight) * 100;",
+            "lineNumber": 55
+          },
+          {
+            "text": "                }",
+            "lineNumber": 99
+          },
+          {
+            "text": "}",
+            "lineNumber": 102,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.381087988615036
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./lib/llm/journey-agent.ts",
+        "range": {
+          "startPosition": {
+            "line": 60,
+            "column": 1
+          },
+          "endPosition": {
+            "line": 179,
+            "column": 1
+          }
+        },
+        "signatures": {},
+        "detailedLines": [
+          {
+            "text": "/** Build a token-sparse page context for the LLM. Uses canonical matching (www = non-www) so start page links find scanned pages. */",
+            "lineNumber": 63
+          },
+          {
+            "text": "export function buildPageContexts(domainResult: DomainScanResultWithFullPages): Map&lt;string, PageContext&gt; {",
+            "lineNumber": 64,
+            "isSignature": true
+          },
+          {
+            "text": "    const nodes = domainResult.graph?.nodes ?? [];",
+            "lineNumber": 65
+          },
+          {
+            "text": "    const nodeIds = new Set(nodes.map((n) =&gt; normalizeUrl(n.id)));",
+            "lineNumber": 66
+          },
+          {
+            "text": "    const canonicalToStoredUrl = new Map&lt;string, string&gt;();",
+            "lineNumber": 67
+          },
+          {
+            "text": "    for (const n of nodes) {",
+            "lineNumber": 68
+          },
+          {
+            "text": "        const norm = normalizeUrl(n.id);",
+            "lineNumber": 69
+          },
+          {
+            "text": "        const key = canonicalKey(norm);",
+            "lineNumber": 70
+          },
+          {
+            "text": "        if (key != null) canonicalToStoredUrl.set(key, norm);",
+            "lineNumber": 71
+          },
+          {
+            "text": "    }",
+            "lineNumber": 72
+          },
+          {
+            "lineNumber": 73
+          },
+          {
+            "text": "    const map = new Map&lt;string, PageContext&gt;();",
+            "lineNumber": 74
+          },
+          {
+            "lineNumber": 75
+          },
+          {
+            "text": "    for (const page of domainResult.pages ?? []) {",
+            "lineNumber": 76
+          },
+          {
+            "text": "        const urlNorm = normalizeUrl(page.url);",
+            "lineNumber": 77
+          },
+          {
+            "text": "        const urlCanon = canonicalKey(urlNorm);",
+            "lineNumber": 78
+          },
+          {
+            "text": "        const regions = (page.pageIndex?.regions ?? [])",
+            "lineNumber": 79
+          },
+          {
+            "text": "            .slice(0, MAX_REGIONS_PER_PAGE)",
+            "lineNumber": 80
+          },
+          {
+            "text": "            .map((r) =&gt; ({",
+            "lineNumber": 81
+          },
+          {
+            "text": "                id: r.id,",
+            "lineNumber": 82
+          },
+          {
+            "text": "                headingText: r.headingText,",
+            "lineNumber": 83
+          },
+          {
+            "text": "                semanticType: r.semanticType,",
+            "lineNumber": 84
+          },
+          {
+            "text": "                textSnippet: r.textSnippet?.slice(0, 1200),",
+            "lineNumber": 85
+          },
+          {
+            "text": "                links: r.links?.length ? r.links.slice(0, 25) : undefined,",
+            "lineNumber": 86
+          },
+          {
+            "text": "            }));",
+            "lineNumber": 87
+          },
+          {
+            "text": "        const allLinks = page.allLinks ?? [];",
+            "lineNumber": 88
+          },
+          {
+            "text": "        const seen = new Set&lt;string&gt;();",
+            "lineNumber": 89
+          },
+          {
+            "text": "        const outboundLinks: string[] = [];",
+            "lineNumber": 90
+          },
+          {
+            "text": "        for (const href of allLinks) {",
+            "lineNumber": 91
+          },
+          {
+            "text": "            let norm: string;",
+            "lineNumber": 92
+          },
+          {
+            "text": "}",
+            "lineNumber": 180,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.3740837574005127
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./lib/types.ts",
+        "range": {
+          "startPosition": {
+            "line": 454,
+            "column": 1
+          },
+          "endPosition": {
+            "line": 464,
+            "column": 76
+          }
+        },
+        "signatures": {},
+        "detailedLines": [
+          {
+            "text": "/** Page index: what is where and how findable (for persona click-path evaluation). */",
+            "lineNumber": 457
+          },
+          {
+            "text": "export interface PageIndex {",
+            "lineNumber": 458,
+            "isSignature": true
+          },
+          {
+            "text": "    url: string;",
+            "lineNumber": 459
+          },
+          {
+            "text": "    viewportHeight: number;",
+            "lineNumber": 460
+          },
+          {
+            "text": "    regions: PageIndexRegion[];",
+            "lineNumber": 461,
+            "isSignature": true
+          },
+          {
+            "text": "}",
+            "lineNumber": 462,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 463
+          },
+          {
+            "text": "/** One search result from GET /api/search (dashboard search). */",
+            "lineNumber": 464
+          },
+          {
+            "text": "export type SearchMatchType = 'url' | 'region' | 'issue' | 'seo' | 'domain';",
+            "lineNumber": 465,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.36537253856658936
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./components/PageIndexCard.tsx",
+        "range": {
+          "startPosition": {
+            "line": 25
+          },
+          "endPosition": {
+            "line": 174,
+            "column": 1
+          }
+        },
+        "signatures": {},
+        "detailedLines": [
+          {
+            "text": ";",
+            "lineNumber": 29,
+            "isSignature": true
+          },
+          {
+            "text": "}",
+            "lineNumber": 30,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 31
+          },
+          {
+            "text": "export function PageIndexCard({ pageIndex, showSaliency = true }: PageIndexCardProps) {",
+            "lineNumber": 32,
+            "isSignature": true
+          },
+          {
+            "text": "    const { t } = useI18n();",
+            "lineNumber": 33
+          },
+          {
+            "lineNumber": 34
+          },
+          {
+            "text": "    const regions = Array.isArray(pageIndex?.regions) ? pageIndex.regions : [];",
+            "lineNumber": 35
+          },
+          {
+            "text": "    if (regions.length === 0) {",
+            "lineNumber": 36
+          },
+          {
+            "text": "        return (",
+            "lineNumber": 37
+          },
+          {
+            "text": "            &lt;Box sx={{ p: 2, color: MSQDX_NEUTRAL[600] }}&gt;",
+            "lineNumber": 38
+          },
+          {
+            "text": "                &lt;MsqdxTypography variant=\"body2\"&gt;{t('results.pageIndexNoData')}&lt;/MsqdxTypography&gt;",
+            "lineNumber": 39
+          },
+          {
+            "text": "            &lt;/Box&gt;",
+            "lineNumber": 40
+          },
+          {
+            "text": "        );",
+            "lineNumber": 41
+          },
+          {
+            "text": "    }",
+            "lineNumber": 42
+          },
+          {
+            "lineNumber": 43
+          },
+          {
+            "text": "    return (",
+            "lineNumber": 44
+          },
+          {
+            "text": "        &lt;Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}&gt;",
+            "lineNumber": 45
+          },
+          {
+            "text": "            &lt;Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}&gt;",
+            "lineNumber": 46
+          },
+          {
+            "text": "                &lt;MsqdxTypography variant=\"subtitle2\" sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}&gt;",
+            "lineNumber": 47
+          },
+          {
+            "text": "                    {t('results.pageIndexTitle')}",
+            "lineNumber": 48
+          },
+          {
+            "text": "                &lt;/MsqdxTypography&gt;",
+            "lineNumber": 49
+          },
+          {
+            "text": "                &lt;InfoTooltip title={t('info.pageIndex')} ariaLabel={t('common.info')} /&gt;",
+            "lineNumber": 50
+          },
+          {
+            "text": "            &lt;/Box&gt;",
+            "lineNumber": 51
+          },
+          {
+            "text": "            &lt;Box",
+            "lineNumber": 52
+          },
+          {
+            "text": "                component=\"ul\"",
+            "lineNumber": 53
+          },
+          {
+            "text": "                sx={{",
+            "lineNumber": 54
+          },
+          {
+            "text": "                    m: 0,",
+            "lineNumber": 55
+          },
+          {
+            "text": "                    p: 0,",
+            "lineNumber": 56
+          },
+          {
+            "text": "                    listStyle: 'none',",
+            "lineNumber": 57
+          },
+          {
+            "text": "                    display: 'flex',",
+            "lineNumber": 58
+          },
+          {
+            "text": "                    flexDirection: 'column',",
+            "lineNumber": 59
+          },
+          {
+            "text": "                    gap: 0.75,",
+            "lineNumber": 60
+          },
+          {
+            "text": "                }}",
+            "lineNumber": 61
+          },
+          {
+            "text": "            &gt;",
+            "lineNumber": 62
+          },
+          {
+            "text": "                {regions.map((r) =&gt; (",
+            "lineNumber": 63
+          },
+          {
+            "text": "                    &lt;RegionRow key={r.id} region={r} showSaliency={showSaliency} t={t} /&gt;",
+            "lineNumber": 64
+          },
+          {
+            "text": "                ))}",
+            "lineNumber": 65
+          },
+          {
+            "text": "            &lt;/Box&gt;",
+            "lineNumber": 66
+          },
+          {
+            "text": "        &lt;/Box&gt;",
+            "lineNumber": 67
+          },
+          {
+            "text": "    );",
+            "lineNumber": 68
+          },
+          {
+            "text": "}",
+            "lineNumber": 69,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 70
+          },
+          {
+            "text": "function RegionRow({",
+            "lineNumber": 71,
+            "isSignature": true
+          },
+          {
+            "text": "    region,",
+            "lineNumber": 72,
+            "isSignature": true
+          },
+          {
+            "text": "    showSaliency,",
+            "lineNumber": 73,
+            "isSignature": true
+          },
+          {
+            "text": "    t,",
+            "lineNumber": 74,
+            "isSignature": true
+          },
+          {
+            "text": "}: {",
+            "lineNumber": 75,
+            "isSignature": true
+          },
+          {
+            "text": "    region: PageIndexRegion;",
+            "lineNumber": 76,
+            "isSignature": true
+          },
+          {
+            "text": "    showSaliency: boolean;",
+            "lineNumber": 77,
+            "isSignature": true
+          },
+          {
+            "text": "    t: (key: string) =&gt; string;",
+            "lineNumber": 78,
+            "isSignature": true
+          },
+          {
+            "text": "}) {",
+            "lineNumber": 79,
+            "isSignature": true
+          },
+          {
+            "text": "    ",
+            "lineNumber": 80
+          },
+          {
+            "text": "}",
+            "lineNumber": 175,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.35732150077819824
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./knowledge/checkion-page-index.md",
+        "range": {
+          "startPosition": {},
+          "endPosition": {
+            "line": 27
+          }
+        },
+        "signatures": {},
+        "detailedLines": [
+          {
+            "text": "# CHECKION – Page Index („Was wo &amp; wie auffindbar“)",
+            "lineNumber": 1
+          },
+          {
+            "lineNumber": 2
+          },
+          {
+            "text": "## Stand",
+            "lineNumber": 3
+          },
+          {
+            "lineNumber": 4
+          },
+          {
+            "text": "- **Phase 1 (erledigt):** Regelbasierter Page-Index aus Quellcode",
+            "lineNumber": 5
+          },
+          {
+            "text": "  - Typen in &#96;lib/types.ts&#96;: &#96;PageIndex&#96;, &#96;PageIndexRegion&#96;, &#96;PageIndexRegionType&#96;",
+            "lineNumber": 6
+          },
+          {
+            "text": "  - &#96;lib/page-index.ts&#96;: &#96;buildPageIndex(structureMap, viewportHeight, url)&#96; – Regionen, Findability-Score, semantische Labels (Keyword/Regex + Landmark)",
+            "lineNumber": 7
+          },
+          {
+            "text": "  - Scanner-Integration: jeder Scan liefert &#96;result.pageIndex&#96;",
+            "lineNumber": 8
+          },
+          {
+            "text": "  - Tests: &#96;npx tsx lib/page-index.test.ts&#96;",
+            "lineNumber": 9
+          },
+          {
+            "lineNumber": 10
+          },
+          {
+            "text": "- **Phase 2 (erledigt):** Saliency-Anreicherung",
+            "lineNumber": 11
+          },
+          {
+            "text": "  - &#96;PageIndexRegion.saliencyProminence&#96; (0–1), optional, aus Heatmap-RGB (R-Kanal = „heiß“).",
+            "lineNumber": 12
+          },
+          {
+            "text": "  - &#96;enrichPageIndexWithSaliency(pageIndex, heatmapDataUrl)&#96; in &#96;lib/page-index.ts&#96; (sharp); Aufruf in &#96;POST /api/saliency/generate&#96; nach Speichern der Heatmap, Anreicherung wird mit persistiert.",
+            "lineNumber": 13
+          },
+          {
+            "text": "  - Kombinierter Findability: &#96;findabilityScore + SALIENCY_WEIGHT * saliencyProminence&#96; (SALIENCY_WEIGHT = 0.2), bei Darstellung nutzbar.",
+            "lineNumber": 14
+          },
+          {
+            "lineNumber": 15
+          },
+          {
+            "text": "## Dashboard-Darstellung (Plan &amp; Umsetzung)",
+            "lineNumber": 16
+          },
+          {
+            "lineNumber": 17
+          },
+          {
+            "text": "- **Ort:** Tab „Struktur &amp; Semantik“ (viewMode &#96;structure&#96;) – unter Document Outline und Structure Map.",
+            "lineNumber": 18
+          },
+          {
+            "text": "- **Inhalt:**",
+            "lineNumber": 19
+          },
+          {
+            "text": "  - **Liste „Seiten-Index (Auffindbarkeit)“:** Pro Region eine Zeile: Tag (z. B. h2, nav), Heading-Text (gekürzt), Above the fold (Ja/Nein), Findability-Score (Zahl), optional Saliency-Prominenz (Balken 0–1), semantischer Typ (Chip, z. B. pricing, faq, contact). Sortierung: indexInDocument oder nach Findability absteigend.",
+            "lineNumber": 20
+          },
+          {
+            "text": "  - **Umsetzung:** In der „Visuelle Analyse“-Ansicht: Toggle „Regionen hervorheben“; bei Aktivierung zeichnet &#96;PageIndexRegionsOverlay&#96; alle Region-Rects auf dem Screenshot, die hervorgehobene Region (bei Hover in der Liste) mit grünem Rahmen und Label. Kompakte Regionen-Liste unter dem Screenshot mit Hover → setzt &#96;hoveredRegionId&#96;.",
+            "lineNumber": 21
+          },
+          {
+            "text": "- **i18n:** Keys unter &#96;results.pageIndex.*&#96;, &#96;results.showRegionHighlight&#96;, &#96;results.hoverToHighlight&#96;, &#96;info.pageIndex&#96;.",
+            "lineNumber": 22
+          },
+          {
+            "lineNumber": 23
+          },
+          {
+            "text": "### Erweiterungen (Buttons &amp; Absätze, Auto-Heatmap)",
+            "lineNumber": 24
+          },
+          {
+            "lineNumber": 25
+          },
+          {
+            "text": "- **Structure Map:** Im Scanner erweitert um &#96;button&#96;, &#96;[role=\"button\"]&#96;, &#96;p&#96; (Level 7 = Button, 8 = Absatz), in Dokumentreihenfolge. Findability: Button 0.8, Absatz 0.4 – so ist erkennbar, wenn z. B. das Produkt nur im Absatz und nicht in der Headline vorkommt (Optimierungspotenzial).",
+            "lineNumber": 26
+          },
+          {
+            "text": "- **Heatmap automatisch:** Beim Laden der Ergebnis-Seite wird einmalig &#96;POST /api/saliency/generate&#96; ausgelöst, wenn &#96;screenshot&#96; vorhanden und &#96;saliencyHeatmap&#96; fehlt (Ref verhindert Doppelaufruf).",
+            "lineNumber": 27
+          }
+        ]
+      },
+      "score": 0.34690728783607483
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./lib/page-index.ts",
+        "range": {
+          "startPosition": {},
+          "endPosition": {
+            "line": 46,
+            "column": 3
+          }
+        },
+        "signatures": {},
+        "detailedLines": [
+          {
+            "text": "/* ------------------------------------------------------------------ */",
+            "lineNumber": 1
+          },
+          {
+            "text": "/*  CHECKION – Page index: what is where, how findable (rule-based)   */",
+            "lineNumber": 2
+          },
+          {
+            "text": "/* ------------------------------------------------------------------ */",
+            "lineNumber": 3
+          },
+          {
+            "lineNumber": 4
+          },
+          {
+            "text": "import { v4 as uuidv4 } from 'uuid';",
+            "lineNumber": 5
+          },
+          {
+            "text": "import sharp from 'sharp';",
+            "lineNumber": 6
+          },
+          {
+            "text": "import type { StructureNode, PageIndex, PageIndexRegion, PageIndexRegionType, StructureLink } from './types';",
+            "lineNumber": 7
+          },
+          {
+            "lineNumber": 8
+          },
+          {
+            "text": "/** Keyword/pattern rules for semantic type (DE + EN). Lowercase match on heading text. */",
+            "lineNumber": 9
+          },
+          {
+            "text": "const SEMANTIC_RULES: Array&lt;{ type: PageIndexRegionType; patterns: RegExp[] }&gt; = [",
+            "lineNumber": 10
+          },
+          {
+            "text": "    { type: 'pricing', patterns: [/preis/i, /pricing/i, /tarife/i, /pläne/i, /plans/i, /kosten/i, /preisübersicht/i] },",
+            "lineNumber": 11
+          },
+          {
+            "text": "    { type: 'faq', patterns: [/faq/i, /fragen/i, /questions/i, /häufig/i, /often asked/i, /hilfe/i] },",
+            "lineNumber": 12
+          },
+          {
+            "text": "    { type: 'contact', patterns: [/kontakt/i, /contact/i, /anfahrt/i, /impressum/i, /reach us/i] },",
+            "lineNumber": 13
+          },
+          {
+            "text": "    { type: 'hero', patterns: [/willkommen/i, /welcome/i, /start/i, /home/i, /^hero$/i] },",
+            "lineNumber": 14
+          },
+          {
+            "text": "    { type: 'product', patterns: [/produkt/i, /product/i, /feature/i, /funktionen/i, /lösung/i, /solution/i] },",
+            "lineNumber": 15
+          },
+          {
+            "text": "    { type: 'team', patterns: [/team/i, /über uns/i, /about us/i, /mitarbeiter/i] },",
+            "lineNumber": 16
+          },
+          {
+            "text": "    { type: 'about', patterns: [/about/i, /über uns/i, /wir/i, /company/i, /unternehmen/i] },",
+            "lineNumber": 17
+          },
+          {
+            "text": "];",
+            "lineNumber": 18
+          },
+          {
+            "lineNumber": 19
+          },
+          {
+            "text": "/** Landmark tag -&gt; semantic type. */",
+            "lineNumber": 20
+          },
+          {
+            "text": "const LANDMARK_TYPE: Record&lt;string, PageIndexRegionType&gt; = {",
+            "lineNumber": 21
+          },
+          {
+            "text": "    nav: 'nav',",
+            "lineNumber": 22
+          },
+          {
+            "text": "    main: 'main',",
+            "lineNumber": 23
+          },
+          {
+            "text": "    aside: 'aside',",
+            "lineNumber": 24
+          },
+          {
+            "text": "    footer: 'footer',",
+            "lineNumber": 25
+          },
+          {
+            "text": "    header: 'hero',",
+            "lineNumber": 26
+          },
+          {
+            "text": "};",
+            "lineNumber": 27
+          },
+          {
+            "lineNumber": 28
+          },
+          {
+            "text": "const ABOVE_FOLD_WEIGHT = 1;",
+            "lineNumber": 29
+          },
+          {
+            "text": "const LEVEL_WEIGHT = 0.5;   // (7 - level) * LEVEL_WEIGHT; H1 = 3, H2 = 2.5, ...",
+            "lineNumber": 30
+          },
+          {
+            "text": "const POSITION_DECAY = 0.02; // subtract indexInDocument * POSITION_DECAY so earlier regions score higher",
+            "lineNumber": 31
+          },
+          {
+            "lineNumber": 32
+          },
+          {
+            "text": "/**",
+            "lineNumber": 33
+          },
+          {
+            "text": " * Infer semantic type from heading text or landmark tag.",
+            "lineNumber": 34
+          },
+          {
+            "text": " */",
+            "lineNumber": 35
+          },
+          {
+            "text": "function inferSemanticType(tag: string, headingText: string): PageIndexRegionType | undefined {",
+            "lineNumber": 36,
+            "isSignature": true
+          },
+          {
+            "text": "    const lower = headingText.trim().toLowerCase();",
+            "lineNumber": 37
+          },
+          {
+            "text": "    if (LANDMARK_TYPE[tag]) return LANDMARK_TYPE[tag];",
+            "lineNumber": 38
+          },
+          {
+            "text": "    for (const { type, patterns } of SEMANTIC_RULES) {",
+            "lineNumber": 39
+          },
+          {
+            "text": "        if (patterns.some((p) =&gt; p.test(lower))) return type;",
+            "lineNumber": 40
+          },
+          {
+            "text": "    }",
+            "lineNumber": 41
+          },
+          {
+            "text": "    return undefined;",
+            "lineNumber": 42
+          },
+          {
+            "text": "}",
+            "lineNumber": 43,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 44
+          },
+          {
+            "text": "/**",
+            "lineNumber": 45
+          },
+          {
+            "text": " * Compute findability score (rule-based): above-fold bonus + heading level weight + position decay.",
+            "lineNumber": 46
+          },
+          {
+            "text": " */",
+            "lineNumber": 47
+          }
+        ]
+      },
+      "score": 0.33661824464797974
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 102
+          },
+          "endPosition": {
+            "line": 1251,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 16
+              }
+            },
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 16
+              },
+              "endPosition": {
+                "line": 104,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 997
+          },
+          {
+            "text": "                                                    screenshotWidth={screenshotDimensions.width}",
+            "lineNumber": 998
+          },
+          {
+            "text": "                                                    screenshotHeight={screenshotDimensions.height}",
+            "lineNumber": 999
+          },
+          {
+            "text": "                                                /&gt;",
+            "lineNumber": 1000
+          },
+          {
+            "text": "                                            )}",
+            "lineNumber": 1001
+          },
+          {
+            "text": "                                        &lt;/Box&gt;",
+            "lineNumber": 1002
+          },
+          {
+            "text": "                                    )}",
+            "lineNumber": 1003
+          },
+          {
+            "text": "                                    {result.saliencyHeatmap &amp;&amp; (",
+            "lineNumber": 1004
+          },
+          {
+            "text": "                                        &lt;Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 20 }}&gt;",
+            "lineNumber": 1005
+          },
+          {
+            "text": "                                            &lt;SaliencyHeatmapOverlay",
+            "lineNumber": 1006
+          },
+          {
+            "text": "                                                heatmapDataUrl={result.saliencyHeatmap}",
+            "lineNumber": 1007
+          },
+          {
+            "text": "                                                screenshotWidth={screenshotDimensions.width}",
+            "lineNumber": 1008
+          },
+          {
+            "text": "                                                screenshotHeight={screenshotDimensions.height}",
+            "lineNumber": 1009
+          },
+          {
+            "text": "                                                visible={showSaliencyHeatmap}",
+            "lineNumber": 1010
+          },
+          {
+            "text": "                                            /&gt;",
+            "lineNumber": 1011
+          },
+          {
+            "text": "                                        &lt;/Box&gt;",
+            "lineNumber": 1012
+          },
+          {
+            "text": "                                    )}",
+            "lineNumber": 1013
+          },
+          {
+            "text": "                                    {result.pageIndex &amp;&amp; (",
+            "lineNumber": 1014
+          },
+          {
+            "text": "                                        &lt;PageIndexRegionsOverlay",
+            "lineNumber": 1015
+          },
+          {
+            "text": "                                            regions={Array.isArray(result.pageIndex?.regions) ? result.pageIndex.regions : []}",
+            "lineNumber": 1016
+          },
+          {
+            "text": "                                            screenshotWidth={screenshotDimensions.width}",
+            "lineNumber": 1017
+          },
+          {
+            "text": "                                            screenshotHeight={screenshotDimensions.height}",
+            "lineNumber": 1018
+          },
+          {
+            "text": "                                            ",
+            "lineNumber": 1019
+          },
+          {
+            "text": "}",
+            "lineNumber": 1252,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.3272291421890259
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./components/JourneyFlowchart.tsx",
+        "range": {
+          "startPosition": {
+            "line": 139
+          },
+          "endPosition": {
+            "line": 337,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 140,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 140,
+                "column": 8
+              }
+            },
+            {
+              "startPosition": {
+                "line": 140,
+                "column": 8
+              },
+              "endPosition": {
+                "line": 149,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export function JourneyFlowchart({",
+            "lineNumber": 140,
+            "isSignature": true
+          },
+          {
+            "text": "    steps,",
+            "lineNumber": 141,
+            "isSignature": true
+          },
+          {
+            "text": "    goalReached,",
+            "lineNumber": 142,
+            "isSignature": true
+          },
+          {
+            "text": "    message,",
+            "lineNumber": 143,
+            "isSignature": true
+          },
+          {
+            "text": "    onStepClick,",
+            "lineNumber": 144,
+            "isSignature": true
+          },
+          {
+            "text": "    streaming,",
+            "lineNumber": 145,
+            "isSignature": true
+          },
+          {
+            "text": "    t,",
+            "lineNumber": 146,
+            "isSignature": true
+          },
+          {
+            "text": "    pages = [],",
+            "lineNumber": 147,
+            "isSignature": true
+          },
+          {
+            "text": "}: JourneyFlowchartProps) {",
+            "lineNumber": 148,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 192
+          },
+          {
+            "text": "                &lt;/IconButton&gt;",
+            "lineNumber": 193
+          },
+          {
+            "text": "                &lt;Box sx={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'center' }}&gt;",
+            "lineNumber": 194
+          },
+          {
+            "text": "                    {steps.map((step, i) =&gt; {",
+            "lineNumber": 195
+          },
+          {
+            "text": "                        if (i !== activeIndex) return null;",
+            "lineNumber": 196
+          },
+          {
+            "text": "                        const screenshotPageUrl = i === 0 ? step.pageUrl : steps[i - 1].pageUrl;",
+            "lineNumber": 197
+          },
+          {
+            "text": "                        const screenshotPage = pages.find((p) =&gt; normalizePageUrl(p.url) === normalizePageUrl(screenshotPageUrl));",
+            "lineNumber": 198
+          },
+          {
+            "text": "                        const highlightRect = i &gt; 0 &amp;&amp; screenshotPage?.pageIndex?.regions",
+            "lineNumber": 199
+          },
+          {
+            "text": "                            ? regionRectForTrigger(screenshotPage.pageIndex.regions, step.triggerLabel)",
+            "lineNumber": 200
+          },
+          {
+            "text": "                            : null;",
+            "lineNumber": 201
+          },
+          {
+            "text": "                        return (",
+            "lineNumber": 202
+          },
+          {
+            "text": "                            &lt;Box",
+            "lineNumber": 203
+          },
+          {
+            "text": "                                key={step.index}",
+            "lineNumber": 204
+          },
+          {
+            "text": "                                onClick={() =&gt; onStepClick?.(step)}",
+            "lineNumber": 205
+          },
+          {
+            "text": "                                sx={{",
+            "lineNumber": 206
+          },
+          {
+            "text": "                                    width: '100%',",
+            "lineNumber": 207
+          },
+          {
+            "text": "                                    maxWidth: 900,",
+            "lineNumber": 208
+          },
+          {
+            "text": "                                    borderRadius: 2,",
+            "lineNumber": 209
+          },
+          {
+            "text": "                                    border: '1px solid',",
+            "lineNumber": 210
+          },
+          {
+            "text": "                                    borderColor: goalReached &amp;&amp; i === steps.length - 1 ? 'var(--color-secondary-dx-green)' : 'var(--color-neutral-200, #e0e0e0)',",
+            "lineNumber": 211
+          },
+          {
+            "text": "                                    bgcolor: 'var(--color-background-on-light)',",
+            "lineNumber": 212
+          },
+          {
+            "text": "                                    p: 3,",
+            "lineNumber": 213
+          },
+          {
+            "text": "                                    cursor: onStepClick ? 'pointer' : 'default',",
+            "lineNumber": 214
+          },
+          {
+            "text": "                                    transition: 'box-shadow 0.2s, border-color 0.2s',",
+            "lineNumber": 215
+          },
+          {
+            "text": "                                    '&amp;:hover': onStepClick ? { boxShadow: 2, borderColor: 'var(--color-theme-accent, #1976d2)' } : {},",
+            "lineNumber": 216
+          },
+          {
+            "text": "                                }}",
+            "lineNumber": 217
+          },
+          {
+            "text": "                            &gt;",
+            "lineNumber": 218
+          },
+          {
+            "text": "                                {screenshotPage &amp;&amp; (",
+            "lineNumber": 219
+          },
+          {
+            "text": "                                    &lt;Box sx={{ mb: 2 }}&gt;",
+            "lineNumber": 220
+          },
+          {
+            "text": "                    }",
+            "lineNumber": 299
+          },
+          {
+            "text": "}",
+            "lineNumber": 338,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.3254849910736084
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/share/[token]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 336
+          },
+          "endPosition": {
+            "line": 638,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 477,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 478,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "function ShareDomainContent({ data, token, accessToken }: { data: DomainSummaryResponse; token: string; accessToken?: string | null }) {",
+            "lineNumber": 337,
+            "isSignature": true
+          },
+          {
+            "text": " data.eeat.expertise.totalPages)} /&gt;",
+            "lineNumber": 545
+          },
+          {
+            "text": "                    &lt;/Box&gt;",
+            "lineNumber": 546
+          },
+          {
+            "text": "                    &lt;MsqdxTypography variant=\"caption\" sx={{ color: STATUS.neutral, mt: 1 }}&gt;Ø Zitate/Seite: {data.eeat.expertise.avgCitationsPerPage.toFixed(1)}&lt;/MsqdxTypography&gt;",
+            "lineNumber": 547
+          },
+          {
+            "text": "                &lt;/MsqdxCard&gt;",
+            "lineNumber": 548
+          },
+          {
+            "text": "            )}",
+            "lineNumber": 549
+          },
+          {
+            "lineNumber": 550
+          },
+          {
+            "text": "            {agg?.generative &amp;&amp; (",
+            "lineNumber": 551
+          },
+          {
+            "text": "                &lt;MsqdxCard variant=\"flat\" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}&gt;",
+            "lineNumber": 552
+          },
+          {
+            "text": "                    &lt;MsqdxTypography variant=\"subtitle1\" sx={{ fontWeight: 600, mb: 1.5 }}&gt;Generative / GEO&lt;/MsqdxTypography&gt;",
+            "lineNumber": 553
+          },
+          {
+            "text": "                    &lt;Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'flex-start' }}&gt;",
+            "lineNumber": 554
+          },
+          {
+            "text": "                        &lt;ScoreRing score={agg.generative.score} size={52} label=\"Ø GEO-Score\" /&gt;",
+            "lineNumber": 555
+          },
+          {
+            "text": "                        &lt;Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}&gt;",
+            "lineNumber": 556
+          },
+          {
+            "text": "                            &lt;MetricBar label=\"Seiten mit LLMs.txt\" value={agg.generative.withLlmsTxt} total={agg.generative.pageCount} color={getRatioColor(agg.generative.withLlmsTxt / agg.generative.pageCount)} /&gt;",
+            "lineNumber": 557
+          },
+          {
+            "text": "                            &lt;MetricBar label=\"Robots erlauben AI\" value={agg.generative.withRobotsAllowingAi} total={agg.generative.pageCount} color={getRatioColor(agg.generative.withRobotsAllowingAi / agg.generative.pageCount)} /&gt;",
+            "lineNumber": 558
+          },
+          {
+            "text": "                        &lt;/Box&gt;",
+            "lineNumber": 559
+          },
+          {
+            "text": "                    &lt;/Box&gt;",
+            "lineNumber": 560
+          },
+          {
+            "text": "                &lt;/MsqdxCard&gt;",
+            "lineNumber": 561
+          },
+          {
+            "text": "            )}",
+            "lineNumber": 562
+          },
+          {
+            "lineNumber": 563
+          },
+          {
+            "text": "            {data.systemicIssues &amp;&amp; data.systemicIssues.length &gt; 0 &amp;&amp; (",
+            "lineNumber": 564
+          },
+          {
+            "text": "                &lt;MsqdxCard variant=\"flat\" sx={{ p: 2, mb: 2, borderRadius: 2, border: &#96;1px solid ${alpha(STATUS.error, 0.3)}&#96;, bgcolor: alpha(STATUS.error, 0.04) }}&gt;",
+            "lineNumber": 565
+          },
+          {
+            "text": "                    &lt;MsqdxTypography variant=\"subtitle1\" sx={{ fontWeight: 600, mb: 1, color: STATUS.error }}&gt;Systemische Issues&lt;/MsqdxTypography&gt;",
+            "lineNumber": 566
+          },
+          {
+            "text": "                    {data.systemicIssues.map((issue, idx) =&gt; (",
+            "lineNumber": 567
+          },
+          {
+            "text": "                        &lt;Box key={idx} sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}&gt;",
+            "lineNumber": 568
+          },
+          {
+            "text": "                            &lt;Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: STATUS.error }} /&gt;",
+            "lineNumber": 569
+          },
+          {
+            "text": "                            &lt;MsqdxTypography variant=\"body2\" sx={{ color: STATUS.error }}&gt;{issue.title} — {issue.count} Seiten&lt;/MsqdxTypography&gt;",
+            "lineNumber": 570
+          },
+          {
+            "text": "                        &lt;/Box&gt;",
+            "lineNumber": 571
+          },
+          {
+            "text": "                    ))}",
+            "lineNumber": 572
+          },
+          {
+            "text": "                &lt;/MsqdxCard&gt;",
+            "lineNumber": 573
+          },
+          {
+            "text": "            )}",
+            "lineNumber": 574
+          },
+          {
+            "lineNumber": 575
+          },
+          {
+            "text": "            &lt;MsqdxCard variant=\"flat\"",
+            "lineNumber": 576
+          },
+          {
+            "text": "}",
+            "lineNumber": 639,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.32545793056488037
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/share/[token]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 336
+          },
+          "endPosition": {
+            "line": 638,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 477,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 478,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "function ShareDomainContent({ data, token, accessToken }: { data: DomainSummaryResponse; token: string; accessToken?: string | null }) {",
+            "lineNumber": 337,
+            "isSignature": true
+          },
+          {
+            "text": "(issue, idx) =&gt; (",
+            "lineNumber": 567
+          },
+          {
+            "text": " Seiten&lt;/MsqdxTypography&gt;",
+            "lineNumber": 570
+          },
+          {
+            "text": "                        &lt;/Box&gt;",
+            "lineNumber": 571
+          },
+          {
+            "text": "                    ))}",
+            "lineNumber": 572
+          },
+          {
+            "text": "                &lt;/MsqdxCard&gt;",
+            "lineNumber": 573
+          },
+          {
+            "text": "            )}",
+            "lineNumber": 574
+          },
+          {
+            "lineNumber": 575
+          },
+          {
+            "text": "            &lt;MsqdxCard variant=\"flat\" sx={{ p: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}&gt;",
+            "lineNumber": 576
+          },
+          {
+            "text": "                &lt;MsqdxTypography variant=\"subtitle1\" sx={{ fontWeight: 600, mb: 1.5 }}&gt;{t('share.scannedPages', { count: String(pages.length) })}&lt;/MsqdxTypography&gt;",
+            "lineNumber": 577
+          },
+          {
+            "text": "                &lt;Box component=\"ul\" sx={{ m: 0, pl: 0, listStyle: 'none', maxHeight: 480, overflow: 'auto' }}&gt;",
+            "lineNumber": 578
+          },
+          {
+            "text": "                    {paginatedPages.map((p) =&gt; (",
+            "lineNumber": 579
+          },
+          {
+            "text": "                        &lt;li key={p.id}&gt;",
+            "lineNumber": 580
+          },
+          {
+            "text": "                            &lt;Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, py: 1, borderBottom: '1px solid', borderColor: 'divider' }}&gt;",
+            "lineNumber": 581
+          },
+          {
+            "text": "                                &lt;Box sx={{ flex: '1 1 200px', minWidth: 0 }}&gt;",
+            "lineNumber": 582
+          },
+          {
+            "text": "                                    &lt;MsqdxTypography variant=\"body2\" sx={{ wordBreak: 'break-all' }}&gt;{p.url}&lt;/MsqdxTypography&gt;",
+            "lineNumber": 583
+          },
+          {
+            "text": "                                    &lt;Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}&gt;",
+            "lineNumber": 584
+          },
+          {
+            "text": "                                        &lt;MsqdxTypography variant=\"caption\" sx={{ fontWeight: 600, color: getScoreColor(p.score) }}&gt;Score {p.score}&lt;/MsqdxTypography&gt;",
+            "lineNumber": 585
+          },
+          {
+            "text": "                                        {p.stats.errors &gt; 0 &amp;&amp; &lt;MsqdxChip size=\"small\" label={&#96;${p.stats.errors} E&#96;} sx={{ height: 20, fontSize: '0.7rem', bgcolor: alpha(STATUS.error, 0.12), color: STATUS.error }} /&gt;}",
+            "lineNumber": 586
+          },
+          {
+            "text": "                                        {p.stats.warnings &gt; 0 &amp;&amp; &lt;MsqdxChip size=\"small\" label={&#96;${p.stats.warnings} W&#96;} sx={{ height: 20, fontSize: '0.7rem', bgcolor: alpha(STATUS.warning, 0.12), color: STATUS.warning }} /&gt;}",
+            "lineNumber": 587
+          },
+          {
+            "text": "                                        {p.stats.notices &gt; 0 &amp;&amp; &lt;MsqdxChip size=\"small\" label={&#96;${p.stats.notices} N&#96;} sx={{ height: 20, fontSize: '0.7rem', bgcolor: alpha(MSQDX_STATUS.info.base, 0.12), color: MSQDX_STATUS.info.base }} /&gt;}",
+            "lineNumber": 588
+          },
+          {
+            "text": "                                    &lt;/Box&gt;",
+            "lineNumber": 589
+          },
+          {
+            "text": "                                &lt;/Box&gt;",
+            "lineNumber": 590
+          },
+          {
+            "text": "                                &lt;Button",
+            "lineNumber": 591
+          },
+          {
+            "text": "                                    size=\"small\"",
+            "lineNumber": 592
+          },
+          {
+            "text": "                                    variant=\"outlined\"",
+            "lineNumber": 593
+          },
+          {
+            "text": "                                    onClick={() =&gt; openPageDetail(p.id)}",
+            "lineNumber": 594
+          },
+          {
+            "text": "                                    disabled={loadingDetail &amp;&amp; loadingPageId === p.id}",
+            "lineNumber": 595
+          },
+          {
+            "text": "                                    sx={{ flexShrink: 0 }}",
+            "lineNumber": 596
+          },
+          {
+            "text": "                                &gt;",
+            "lineNumber": 597
+          },
+          {
+            "text": "                                    {loadingDetail &amp;&amp; loadingPageId === p.id ? t('share.loading') : t('share.showSingleScan')}",
+            "lineNumber": 598
+          },
+          {
+            "text": "                                &lt;/Button&gt;",
+            "lineNumber": 599
+          },
+          {
+            "text": "                            &lt;/Box&gt;",
+            "lineNumber": 600
+          },
+          {
+            "text": "                        &lt;/li&gt;",
+            "lineNumber": 601
+          },
+          {
+            "text": "                    ))}",
+            "lineNumber": 602
+          },
+          {
+            "text": "}",
+            "lineNumber": 639,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.31931889057159424
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I understand:
+
+1. **Rect coordinates**: From scanner we have `rect.x`, `rect.y`, `rect.width`, `rect.height` in **page/viewport coordinates** (from getBoundingClientRect + scroll). So they're in the same coordinate system as the screenshot.
+
+2. **Problem in buildStructureAttentionMap**: We're drawing a **Gaussian** centered at (cx, cy) with `sigma = Math.min(rect.width, rect.height) * 0.35`. For a nav that's 1200×60, sigma = 21. So we only get a blob of ~63px radius from center — the full width of the nav is 1200px but we're only painting a small circle in the middle. So the user is right: we need to **fill the whole rect** with the attention weight, not just a center blob.
+
+3. **Fix**: For structure-based attention we should:
+   - **Option A**: Fill the entire rect with a uniform (or softly edged) value, so the whole nav gets the heat. We can use the full rect bounds and set every pixel inside to the weight (or add a small blur so edges aren't hard).
+   - **Option B**: Use a much larger sigma so the Gaussian covers the whole rect — e.g. sigma = max(rect.width, rect.height) * 0.5 so the blob spans the rect. That would still be a blob shape, not the rect shape.
+   - Best: **Fill the rect** with the weight, then optionally apply a small Gaussian blur so it's not a hard rectangle. That way nav = full bar gets heat.
+
+4. **SUM too strong**: We can also increase the default structure weight and/or add a way to make the fusion more balanced. Currently we do:
+   - combined[i] = sum[i] + structureWeight * structureMap[i]
+   - then normalize by max. So if SUM has high values and structure has low values (because we only had a small blob), the structure barely shows. If we **fill the rect** we get more structure signal. We could also lower the effective SUM contribution by e.g. applying a gamma or scaling before fusion so structure has more relative weight. Let me re-read the fusion formula.
+
+   Actually re-reading: we add sum + structureWeight*structureMap + visionWeight*visionMap, then normalize. So if structureMap is only a small blob (low values everywhere except center), the structure contribution is tiny. If we fill the full rect with 1.0 (or normalized), then structure will contribute structureWeight * 1.0 over the whole nav area. So the fix is really: **fill the rect** for structure map.
+
+5. **Implementation**: In `buildStructureAttentionMap`, for each region instead of drawing a Gaussian at center:
+   - Map rect to pixel bounds (rect is in same coords as width/height - so we need to check: are width/height the full page height or viewport? The heatmap is from the screenshot which is typically viewport. So rect.x, rect.y are viewport-relative. Good.
+   - For each pixel (x,y) that lies inside the rect, add the weight. So:
+     x0 = floor(rect.x), x1 = ceil(rect.x + rect.width)
+     y0 = floor(rect.y), y1 = ceil(rect.y + rect.height)
+     Clamp to [0,w] and [0,h]
+     For each pixel in that rectangle: map[y*w+x] += weight
+   - Then we still normalize so max is 1. So we'll get full rects filled with the same weight. To avoid hard edges we could add a 1-pixel or 2-pixel soft edge (e.g. weight falls off at boundary). For now let's just do full rect fill — that's the main ask.
+
+6. **Edge softening (optional)**: We could soften the rect edges with a very small blur so it's not pixelated. Or we could use a "rounded" weight that's 1 inside the rect and 0 outside. I'll do full rect fill first; we can add a 1px feather or blur if needed.
+
+Let me also check: the rect might be in different coordinate system. From the scanner we have getBoundingClientRect() which gives viewport coordinates. The screenshot is typically viewport-sized. So rect.x, rect.y should match the image. But the image might be scaled down for the saliency model! So we have:
+- Screenshot dimensions: might be original viewport (e.g. 1920x1080) or scaled
+- Heatmap from SUM: same dimensions as the input image we sent to SUM
+- So width/height in fuseSaliencyHeatmap are the dimensions of the heatmap/screenshot. So when we build structure map we use the same width/height. The rect from pageIndex is in the same coordinate system as the screenshot when the scan was taken — so if the screenshot is 1920x1080, rect is in that space. When we save the scan we might resize the screenshot. I need to check: when we call fuseSaliencyHeatmap we pass width and height — where do they come from? From the screenshot dimensions. So the scan's screenshot and pageIndex rects are from the same capture. So rect.x, rect.y, rect.width, rect.height are in the same coordinate system as the screenshot. Good. So we can fill the rect in the structure map.
+
+Implementing:
+1. In buildStructureAttentionMap: for each region, instead of Gaussian at center, fill the entire rect with the weight (add weight to every pixel inside rect). Clamp rect to image bounds. Then normalize as before.
+2. Optionally: reduce SUM dominance. We could (a) increase default structure weight, (b) or scale SUM down before fusion. I'll increase the structure weight default a bit and document that they can tune it. Also I'll add a constant or env for "structure fill" so we use rect fill. Let me just do the rect fill and bump the default structure weight from 0.25 to something like 0.4 so DOM elements are more visible. Or we could keep 0.25 and the fix of filling rects might be enough. User said "SUM is much too strong" so I'll also increase structure weight default to 0.4 and maybe add a small note in knowledge.
+</details></think>
+
+---
+
+
+Scanner liefert `rect` in Viewport-Koordinaten; die Struktur-Map zeichnet nur eine Gauß-Blob in der Rechteckmitte (sigma = min(w,h)*0.35), daher bei breiter Nav nur ein Punkt. Wir füllen die gesamten DOM-Rechtecke und passen die Gewichtung an.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/saliency-fusion.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "STRUCTURE_WEIGHT|structureWeight|SALIENCY_FUSION_STRUCTURE",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "STRUCTURE_WEIGHT|structureWeight|SALIENCY_FUSION_STRUCTURE",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 7,
+  "totalMatches": 23,
+  "topFiles": [
+    {
+      "uri": "knowledge/checkion-saliency-fusion.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/saliency-fusion.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "lib/saliency-fusion.test.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/saliency/generate/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/api/saliency/result/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": ".specstory/history/2026-02-23_15-12Z-ergebnisse-teilen-für-normale-scans-und-ux-journeys.md",
+      "matchCount": 11
+    },
+    {
+      "uri": "docs/deployment/coolify-saliency-schritt-fuer-schritt.md",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll:
+1. Change `buildStructureAttentionMap` to **fill the full rect** for each region (every pixel inside the rect gets the weight), so the whole nav/hero/etc. is highlighted. Optionally add a 1px soft edge so overlapping regions don't look too harsh — we can use a simple fill first.
+2. Bump `DEFAULT_STRUCTURE_WEIGHT` from 0.25 to 0.45 so DOM has more impact (user said SUM is too strong).
+3. Update the test in saliency-fusion.test.ts: the current test checks that "center of rect has elevated value"; after the change the whole rect should have elevated value. I'll add a check that pixels inside the rect have the value and optionally that the rect is fully filled.
+
+Checking the test file for what needs to change.
+</details></think>
+
+---
+
+
+Struktur-Map auf Rechteck-Füllung umstellen und Gewichtung anpassen.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/saliency-fusion.test.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The test expects "center of rect has elevated value". After we fill the full rect, the whole rect (10,10) to (40,30) will have elevated value. So the centerIdx (25, 20) will still have elevated value. So the test should still pass. But I'll also add a check that a pixel at the edge of the rect (e.g. 15, 15) has elevated value and that a pixel outside the rect (e.g. 5, 5) has 0 or minimal value. That would make the test more robust for "rect fill" behavior.
+
+Actually for normalized map: after we fill rects, we normalize so max = 1. So all pixels inside any rect might be 1.0 (if one region) or we add weights from multiple regions. For one region, every pixel in the rect gets the same weight, then we normalize - so every pixel in the rect becomes 1.0. Pixels outside become 0. So the test "center of rect has elevated value" still holds (it's 1.0). And we could add "pixel at (15,15) is 1" and "pixel at (5,5) is 0".
+</details></think>
+
+---
+
+
+Implementierung: Rechtecke vollständig füllen und Strukturgewicht erhöhen.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/saliency-fusion.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Now I need to:
+1. Update the test to assert that the full rect is filled (e.g. a pixel at the left edge of the rect and a pixel at the right edge both have elevated value), and that a pixel outside the rect has 0.
+2. Update the default in the API routes from 0.25 to 0.45 so they use the new default when env is not set.
+3. Update knowledge and docs with the new default and the rect-fill behavior.
+
+Checking: the result route and generate route use `parseFloat(process.env.SALIENCY_FUSION_STRUCTURE_WEIGHT ?? '0.25')` - so I need to change the fallback string to '0.45'.
+</details></think>
+
+---
+
+
+API-Routen und Tests anpassen, Dokumentation aktualisieren.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/saliency/generate/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/saliency/result/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/saliency-fusion.test.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/saliency-fusion.test.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The rect in the test is { x: 10, y: 10, width: 30, height: 20 }. So:
+- x0=10, x1=40, y0=10, y1=30 (in pixel coords)
+- rightEdgeIdx = 25 * w + 38. So y=25, x=38. That's inside the rect (10..40, 10..30). Good.
+- leftEdgeIdx = 15 * w + 12. So y=15, x=12. Inside (10..40, 10..30). Good.
+- pixel (0,0) is outside the rect, so structureMap[0] should be 0. Good.
+
+Update the test that uses structureWeight: 0.25 to 0.45 for consistency (optional). I'll leave it as 0.25 in that test since it's just checking that the call works.
+
+Running the test might fail if the structure map is normalized: after filling, all pixels in the rect have the same value (weight), and after normalizing they become 1.0. So structureMap[0] should be 0. Good. Let me run the test.
+</details></think>
+
+---
+
+
+Test ausführen und Dokumentation anpassen:
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run test:saliency-fusion 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run test:saliency-fusion 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 test:saliency-fusion
+&gt; tsx lib/saliency-fusion.test.ts
+
+sh: tsx: command not found
+
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-saliency-fusion.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/docs/deployment/coolify-saliency-schritt-fuer-schritt.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+tsx not found - run with npx tsx
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npx tsx lib/saliency-fusion.test.ts 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npx tsx lib/saliency-fusion.test.ts 2>&1
+```
+
+```
+node:internal/modules/cjs/loader:1448
+  const err = new Error(message);
+              ^
+
+Error: Cannot find module 'sharp'
+Require stack:
+- /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/saliency-fusion.test.ts
+    at node:internal/modules/cjs/loader:1448:15
+    at nextResolveSimple (/Users/christoph.bordeck/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/register-D46fvsV_.cjs:4:1004)
+    at /Users/christoph.bordeck/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/register-D46fvsV_.cjs:3:2630
+    at /Users/christoph.bordeck/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/register-D46fvsV_.cjs:3:1542
+    at resolveTsPaths (/Users/christoph.bordeck/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/register-D46fvsV_.cjs:4:760)
+    at /Users/christoph.bordeck/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/register-D46fvsV_.cjs:4:1102
+    at m._resolveFilename (file:///Users/christoph.bordeck/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/register-B7jrtLTO.mjs:1:789)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1059:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1064:22)
+    at Module._load (node:internal/modules/cjs/loader:1234:25) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/saliency-fusion.test.ts'
+  ]
+}
+
+Node.js v24.13.1
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Need to run from project's node_modules - npm install first and then use ./node_modules/.bin/tsx or just node with ts-node. Let me try with npm run test:saliency-fusion after ensuring dependencies are installed - the script uses "tsx" which might be in devDependencies. So run npm install then npm run test:saliency-fusion - but tsx was not found, so maybe the script needs to be "npx tsx" in package.json. Let me check package.json for the test script.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "test:saliency-fusion|tsx",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/package.json",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "test:saliency-fusion|tsx",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/package.json",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 2,
+  "topFiles": [
+    {
+      "uri": "package.json",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+tsx is in devDependencies. So after npm install, the local node_modules/.bin/tsx should be used when running npm run test:saliency-fusion. The user might not have run npm install. Let me run npm install and then npm run test:saliency-fusion.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm install 2>&1 && ./node_modules/.bin/tsx lib/saliency-fusion.test.ts 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm install 2>&1 && ./node_modules/.bin/tsx lib/saliency-fusion.test.ts 2>&1
+```
+
+```
+npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+npm warn deprecated puppeteer@22.15.0: &lt; 24.15.0 is no longer supported
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+npm install is running. Let me fix the test - rightEdgeIdx: rect is x:10, width:30 so x goes 10..40. So x=38 is inside. But y=25 is inside 10..30. So (38,25) is inside. Good. Actually wait - we're using row-major: index = y * w + x. So rightEdgeIdx = 25 * 100 + 38 = 2538. That's correct.
+
+For "pixel outside rect is zero" - structureMap[0] is (0,0). Our rect is 10,10 to 40,30. So (0,0) is outside. After normalization, only pixels inside the rect have non-zero value. So map[0] could be 0. Good. But we're adding weight to overlapping regions - here we have only one region, so after normalization all pixels in rect get 1.0 and all outside get 0. So structureMap[0] === 0. Good.
+
+Let me also add a note in the knowledge about rect-fill and that DOM rects come from getBoundingClientRect in the scanner. And ensure the scanner actually sends rect in the same coordinate system as the screenshot. I'll add a short knowledge update.
+</details></think>
+
+---
+
+
+Knowledge-Datei um die Rechteck-Füllung und die Koordinatenherkunft ergänzen:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-saliency-fusion.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me verify the test logic once more. The test has rect { x: 10, y: 10, width: 30, height: 20 }. So pixels with x in [10, 40) and y in [10, 30) get the weight. So:
+- (12, 15) is inside -> leftEdgeIdx = 15 * 100 + 12 = 1512. Good.
+- (38, 25) is inside -> rightEdgeIdx = 25 * 100 + 38 = 2538. Good.
+- (0, 0) is outside -> structureMap[0] = 0. Good.
+
+Run the test again - maybe with a shorter path, just run the test file with node if they have ts-node or run after npm install completes. Let me read the terminal to see if npm install finished.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/.cursor/projects/Users-christoph-bordeck-Desktop-ANTIGRAVITY-CHECKION-1/terminals/876616.txt</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Still running. Let me run just the test with the project's tsx (assuming node_modules exists):
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && ./node_modules/.bin/tsx lib/saliency-fusion.test.ts 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && ./node_modules/.bin/tsx lib/saliency-fusion.test.ts 2>&1
+```
+
+```
+saliency-fusion tests passed
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+All tests passed. Let me provide a short summary to the user and mention that if the nav still appears as a single point, the issue might be that the scanner only has one structure node for the nav (one rect) - so we need to ensure the structureMap in the scanner actually contains the nav with correct rect. Let me double-check where the structureMap regions come from - they're from the scanner, and the rect is from getBoundingClientRect. So the rect should be the full element bounds. So with our change, the full rect is now filled. Good.
+</details></think>
+
+---
+
+
+Die Anpassungen sind umgesetzt. Kurzüberblick:
+
+## 1. **DOM-Struktur: ganze Rechtecke statt Gauß-Punkt**
+
+Die Struktur-Map nutzt jetzt die **volle Rechteckfläche** jeder Region aus dem Page-Index:
+
+- **Vorher:** Pro Region wurde nur eine Gauß-Blob um die Rechteckmitte gezeichnet (`sigma = min(width, height) * 0.35`). Bei einer breiten Nav (z. B. 1200×60 px) entstand nur ein kleiner Fleck in der Mitte.
+- **Jetzt:** Für jede Region werden alle Pixel **innerhalb** von `rect` (x, y, width, height) mit dem gleichen Gewicht befüllt. Die Nav erscheint als durchgehende Fläche über die volle Breite/Höhe.
+
+Die `rect`-Werte kommen weiterhin aus dem Scanner (`getBoundingClientRect()` + Scroll) und sind im gleichen Koordinatensystem wie der Screenshot.
+
+## 2. **Stärkere Gewichtung der DOM-Struktur**
+
+- **Default für Struktur:** `SALIENCY_FUSION_STRUCTURE_WEIGHT` von `0.25` auf **`0.45`** erhöht.
+- Die DOM-Elemente (Nav, Hero, Überschriften etc.) haben damit mehr Einfluss gegenüber dem SUM-Signal.
+
+## 3. **Geänderte/ergänzte Stellen**
+
+- **`lib/saliency-fusion.ts`:**  
+  - `buildStructureAttentionMap` füllt die Rechtecke pixelgenau (keine Gauß-Blobs mehr).  
+  - `DEFAULT_STRUCTURE_WEIGHT = 0.45`.
+- **`app/api/saliency/generate/route.ts`** und **`app/api/saliency/result/route.ts`:** Fallback für `SALIENCY_FUSION_STRUCTURE_WEIGHT` ist jetzt `0.45`.
+- **`lib/saliency-fusion.test.ts`:** Zusätzliche Assertions, dass die Rechteckränder gefüllt sind und außerhalb der Region 0 steht.
+- **Dokumentation:** `knowledge/checkion-saliency-fusion.md` und `docs/deployment/coolify-saliency-schritt-fuer-schritt.md` mit neuem Default und Beschreibung der Rechteck-Füllung angepasst.
+
+Die Saliency-Fusion-Tests laufen durch.
+
+**Feintuning:** Über die Umgebungsvariable `SALIENCY_FUSION_STRUCTURE_WEIGHT` kannst du die DOM-Stärke weiter anpassen (z. B. `0.5` oder `0.6`, wenn die Nav/Headlines noch dominanter sein sollen). Wenn die Nav im Scan nur als **ein** DOM-Knoten mit einem gemeinsamen `rect` vorkommt, wird dieses eine Rechteck jetzt vollständig gefüllt; wenn die Nav aus mehreren Elementen mit mehreren Regionen besteht, werden alle zugehörigen Rechtecke gefüllt.
+
+---
+
+_**User**_
+
+schau mal ich habe das hier an andere stelle recheriert, könnten wir das bei uns bestmöglich einbauen bzw. durchdenken?
+
+CPU-taugliche Strategien
+Option A: Leichtgewichtige Saliency-Modelle
+Einige Modelle laufen akzeptabel auf CPU:
+
+MobileNet-basierte Saliency (z.B. MSI-Net oder SimpleSalNet) – deutlich kleiner als DeepGaze, Inferenz in 1–3 Sekunden auf einem M-Chip
+ONNX Runtime – viele PyTorch-Modelle lassen sich nach ONNX exportieren und laufen dann deutlich schneller auf CPU, besonders auf Apple Silicon mit CoreML-Backend
+OpenVINO – Intels CPU-Optimierung, bringt nochmal 2–4x Speedup
+
+Auf deinem M4 Mac mini wäre ONNX + CoreML-Delegation realistisch performant.
+Option B: Vision-API als Inference-Backend
+Statt lokale Modelle zu betreiben, kannst du die schwere Arbeit an APIs delegieren:
+
+Claude Vision / GPT-4o – Screenshot hochladen, strukturierte Analyse anfordern: "Analysiere diese Website. Identifiziere die visuellen Hierarchie-Elemente, bewerte die Aufmerksamkeitsverteilung, gib AOI-Scores." Das ist überraschend gut für semantisches Verständnis, aber liefert keine pixelgenaue Heatmap.
+Google Cloud Vision – Label Detection + Object Localization als Zusatz-Signal
+Kombination: API für semantische Analyse + leichtes lokales Modell für die eigentliche Heatmap
+
+Option C: Hybrid-Ansatz (meine Empfehlung)
+Das Beste aus beiden Welten:
+KomponenteLösungWoScreenshotPlaywrightLokal (CPU)Saliency HeatmapMSI-Net via ONNXLokal (CPU, M-Chip)Face/Gaze DetectionMediaPipeLokal (CPU-optimiert)Semantische AOI-AnalyseClaude Vision APIAPI-CallScanpath-SchätzungHeuristik basierend auf Saliency + DOM-HierarchieLokal (kein ML nötig)Composite ScoringPython-LogikLokal
+So hast du die pixelgenaue Heatmap lokal (ohne GPU) und die intelligente Interpretation via API. Die API-Kosten pro Analyse wären minimal – ein Claude Sonnet Call mit einem Screenshot liegt bei ~0,01–0,03€.
+Scanpath ohne GPU
+Den Scanpath kannst du auch algorithmisch approximieren, ganz ohne ML:
+
+Saliency-Map berechnen (lokales Modell)
+Peaks extrahieren (lokale Maxima)
+Sortieren nach: Saliency-Wert × Positionsgewichtung (F-Pattern / Z-Pattern je nach Layout) × Größe des Elements
+Inhibition-of-Return simulieren – nach jedem "Fixationspunkt" wird die Umgebung abgewertet
+Das ergibt eine plausible Blickreihenfolge ohne Transformer-Modell
+
+Das ist natürlich weniger präzise als ein trainiertes Scanpath-Modell, aber für ein MVP und als Beratungstool absolut ausreichend.
+
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user has shared research they did elsewhere about CPU-friendly saliency strategies and wants to know how we could best integrate or think through these options in their CHECKION project. They're in Ask mode, so I should only analyze and recommend—no edits.
+
+Let me map what they have today vs. what the research suggests:
+
+**Current state (from context):**
+- They use SUM saliency (or MDS-ViTNet) with async jobs, fusion with DOM/pageIndex and optional LLM Vision
+- SUM runs in a Docker service (CPU with stub for mamba-ssm)
+- They have fusion: SUM + structure map (rect-fill from pageIndex) + optional LLM Vision regions
+- Screenshot from Playwright, heatmap stored/displayed in Next.js
+
+**Research options:**
+
+**Option A – Lightweight saliency models**
+- MSI-Net / SimpleSalNet (MobileNet-based) – smaller, 1–3s on M-chip
+- ONNX Runtime – export PyTorch to ONNX, faster on CPU, Apple Silicon + CoreML
+- OpenVINO – Intel CPU optimization, 2–4x speedup
+
+**Option B – Vision API as inference backend**
+- Claude/GPT-4o – semantic analysis, not pixel-accurate heatmap
+- Google Cloud Vision – labels + object localization
+- Combo: API for semantics + lightweight local model for heatmap
+
+**Option C – Hybrid (recommended in the research)**
+- Screenshot: Playwright (they have this)
+- Saliency heatmap: MSI-Net via ONNX (replace or complement SUM?)
+- Face/Gaze: MediaPipe
+- Semantic AOI: Claude Vision API
+- Scanpath: heuristic from saliency + DOM
+- Composite scoring: Python logic
+
+**Scanpath without GPU**
+- Saliency map → extract peaks (local maxima) → sort by saliency × position weight (F/Z pattern) × element size → inhibition-of-return → plausible fixation order
+
+I should:
+1. Summarize how this fits their current architecture
+2. Suggest where each piece could plug in (saliency service, fusion, scanpath)
+3. Mention trade-offs (SUM vs MSI-Net/ONNX, cost of Vision API, scanpath as new feature)
+4. Keep it concrete with their codebase (saliency-service, lib/saliency-fusion, pageIndex, etc.)
+</details></think>
+
+---
+
+
+Kurz den aktuellen Stand und dann, wie sich die Recherche bei euch einbauen bzw. durchdenken lässt.
+
+## Was ihr schon habt (Stichworte)
+
+- **Saliency:** SUM (oder MDS-ViTNet) als Service, async Jobs, CPU mit Stub.
+- **Fusion:** SUM-Heatmap + DOM/Struktur (pageIndex, Rechteck-Füllung) + optional LLM Vision (z. B. GPT-4o).
+- **Daten:** Screenshot von Playwright, `pageIndex` mit Regionen/Rect, Findability-Scores.
+
+Das deckt schon Teile von **Option B** (Vision-API für Semantik) und **Option C** (Hybrid: lokale Heatmap + API für Semantik) ab.
+
+---
+
+## Option A: Leichtgewichtige Saliency-Modelle
+
+**Idee:** SUM durch ein kleineres, CPU-freundliches Modell ergänzen oder ersetzen.
+
+- **MSI-Net / SimpleSalNet (MobileNet):**  
+  - Würde in eurem **saliency-service** (neben oder statt SUM) laufen.  
+  - Vorteil: 1–3 s auf M-Chip, kein schweres Backend nötig.  
+  - Einbau: neuer Endpoint (z. B. `/predict-msinet`) oder Konfig-Flag „Saliency-Backend: SUM vs. MSI-Net“.
+
+- **ONNX Runtime:**  
+  - SUM oder ein anderes Modell nach ONNX exportieren, mit ONNX Runtime (evtl. CoreML auf Apple Silicon) inferieren.  
+  - Würde die gleiche API-Struktur (z. B. Job mit PNG in/out) beibehalten, nur die Inferenz-Engine ändern.  
+  - Sinnvoll, wenn SUM zu langsam ist oder ihr auf M-Chip/Mini deployen wollt.
+
+- **OpenVINO:**  
+  - Relevant, wenn die Saliency-Inferenz auf Intel-CPUs (z. B. in Coolify) läuft; 2–4× Speedup möglich.  
+  - Würde ebenfalls nur den Inferenz-Teil im `saliency-service` betreffen.
+
+**Einbau bei euch:**  
+- Bestmöglich = **optional** ein zweites Backend (z. B. „MSI-Net via ONNX“) im selben Service oder als zweiter Container.  
+- Env-Flag wie `SALIENCY_BACKEND=sum|msinet` und weiterhin eine gemeinsame Fusion-Pipeline (SUM/MSI-Net-Heatmap + DOM + optional Vision-API) in der App.
+
+---
+
+## Option B: Vision-API als Inference-Backend
+
+**Ihr Stand:**  
+Ihr nutzt bereits **optional** LLM Vision (Regionen + Importance) und fusioniert mit SUM und DOM. Das ist genau die „API für semantische Analyse + lokale Heatmap“.
+
+- **Claude Vision / GPT-4o** für „visuelle Hierarchie, AOI-Scores“:  
+  - Könnte die **semantische Gewichtung** in der Fusion verbessern (z. B. zusätzliche „AOI-Scores“ pro Region, die ihr in `buildStructureAttentionMap` oder in einer zweiten „semantic prior“-Map einrechnet).  
+  - Kein Ersatz für die pixelgenaue Heatmap, aber sinnvolle Ergänzung zu eurer bestehenden Vision-Nutzung.
+
+- **Google Cloud Vision (Labels + Object Localization):**  
+  - Könnte als zusätzliches Signal in die Fusion: z. B. Rechtecke + Labels als weitere „Regionen“ mit Gewicht, analog zu den LLM-Vision-Regionen in `buildVisionPriorMap`.  
+  - Einbau: neuer Client in der Next.js-App, Ergebnis in die gleiche Fusion-Pipeline (z. B. `visionRegions` um GCP-Regionen erweitern oder eigene Map „GCP prior“).
+
+**Einbau:**  
+- Bestmöglich = **weiter optional** halten (Kosten), aber **einheitliches Fusion-Format**: alle API-Quellen (OpenAI, ggf. Claude, GCP) liefern „Regionen + Score“, die ihr in `lib/saliency-fusion.ts` zusammenführt.
+
+---
+
+## Option C: Hybrid (wie in der Recherche empfohlen)
+
+Ihr seid schon sehr nah dran:
+
+| Komponente | Recherche | Bei euch |
+|------------|-----------|----------|
+| Screenshot | Playwright | ✅ Playwright |
+| Saliency Heatmap | MSI-Net via ONNX | SUM (oder MDS-ViTNet) – könnte durch MSI-Net/ONNX ergänzt werden |
+| Face/Gaze | MediaPipe | ❌ nicht vorhanden – optional für „Gesichter/Blick“ als Zusatz-Signal |
+| Semantische AOI | Claude Vision API | ✅ optional LLM Vision (z. B. GPT-4o) |
+| Scanpath | Heuristik aus Saliency + DOM | ❌ noch nicht – siehe unten |
+| Composite Scoring | Python-Logik | ✅ Fusion in Next.js (SUM + DOM + Vision) |
+
+**Konkrete Einbau-Ideen:**
+
+1. **Saliency:**  
+   - Wenn SUM zu schwer/langsam ist: zweiten Backend-Pfad „MSI-Net/ONNX“ (wie oben).  
+   - Fusion bleibt unverändert: eine Heatmap (von SUM oder MSI-Net) + DOM + optional Vision.
+
+2. **MediaPipe (Face/Gaze):**  
+   - Nur sinnvoll, wenn ihr explizit „Gesichter/Blickrichtung“ auswerten wollt.  
+   - Würde als weiterer Prior in die Fusion passen (z. B. „face/gaze map“ mit Rechtecken/Heat um erkannte Gesichter).  
+   - Kann man später ergänzen, ohne die bestehende Fusion umzuwerfen.
+
+3. **Scanpath-Schätzung (ohne GPU):**  
+   - Passt sehr gut zu dem, was ihr schon habt:  
+     - Saliency-Map = eure (gefusionierte) Heatmap.  
+     - Peaks = lokale Maxima in dieser Map.  
+     - Sortierung = Saliency × Positionsgewicht (F-/Z-Pattern, z. B. abhängig von `rect.y`, `aboveFold`) × Größe (z. B. `rect.width`/`height` oder Fläche).  
+     - Inhibition-of-Return = nach jedem Fixationspunkt die Umgebung in der Map abwerten, dann nächsten Peak wählen.  
+   - **Einbau:**  
+     - Entweder im **saliency-service** (Python: Peaks aus Heatmap, dann Reihenfolge berechnen) oder in **Next.js** (z. B. in `lib/` nach dem Fusion-Schritt: Heatmap dekodieren, Peaks finden, Reihenfolge berechnen, mit `pageIndex.regions` verknüpfen).  
+   - Ergebnis: geordnete Liste von „Fixationspunkten“ oder Regionen-IDs für eine Reihenfolge (z. B. für UX-Beratung oder Visualisierung).
+
+4. **Composite Scoring:**  
+   - Eure Fusion ist schon ein Composite (SUM + DOM + Vision).  
+   - Erweiterbar um: MediaPipe-Signal, GCP Vision, oder explizite „AOI-Scores“ aus Claude/GPT (z. B. als zusätzliches Gewicht pro Region in `buildStructureAttentionMap`).
+
+---
+
+## Kurz durchdacht: Prioritäten
+
+- **Schnell und wenig Aufwand:**  
+  - **Scanpath-Heuristik** (Peaks aus Saliency + DOM, F/Z-Pattern, Inhibition-of-Return) nutzt eure bestehende Heatmap und pageIndex und bringt einen klaren Mehrwert („in welcher Reihenfolge wird geschaut?“).
+
+- **Wenn SUM zu langsam/schwer ist:**  
+  - **MSI-Net/ONNX** (oder anderes leichtes Modell) als alternatives Backend im gleichen Service/API-Design; Fusion bleibt, nur die Quelle der Heatmap wechselt.
+
+- **Semantik verbessern:**  
+  - Vision-API-Nutzung beibehalten oder um Claude/GCP erweitern, alles in ein gemeinsames „Regionen + Score“-Format und in die bestehende Fusion (z. B. `buildVisionPriorMap` oder ähnlich) einspeisen.
+
+- **Face/Gaze:**  
+  - Nur einbauen, wenn ihr das Produktziel „Gesichter/Blick“ explizit wollt; dann als weiteren Prior in die gleiche Fusion-Pipeline.
+
+Wenn du willst, können wir als Nächstes **nur** den Scanpath-Teil konkret durchgehen (Schritte, wo im Code, welche Datenstruktur für die Reihenfolge). Dafür reicht Ask-Mode; für die Implementierung wäre Agent-Mode nötig.
+
+---
+
+_**User**_
+
+ja plane alles genau so durch.
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants me to plan through everything we discussed: the CPU-friendly saliency strategies (Option A: lightweight models like MSI-Net/ONNX, Option B: Vision API, Option C: Hybrid) and specifically the scanpath heuristic. I need to create a comprehensive plan that covers:
+
+1. **Option A**: Lightweight saliency (MSI-Net/ONNX) as alternative backend
+2. **Option B**: Already partially there (LLM Vision); possibly extend with Claude/GCP Vision
+3. **Option C**: Hybrid - tie it together, MediaPipe optional, scanpath heuristic
+4. **Scanpath without GPU**: Peaks from saliency map, sort by saliency × position weight × size, inhibition-of-return
+
+I'm in Plan mode - I must NOT make any edits. I need to:
+- Search the codebase to understand current saliency flow, fusion, and where scanpath would plug in
+- Create a detailed plan with create_plan (or mcp_create_plan - the reminder says "calling the mcp_create_plan tool" but I don't see that tool in my list. I see "CreatePlan" in the initial tool list. Let me check - the system says "present your plan by calling the mcp_create_plan tool" - I don't have mcp_create_plan in my available tools. I have "CreatePlan" with parameters name, overview, plan, todos. I'll use CreatePlan.)
+
+Let me gather enough context to write a precise plan:
+- Current saliency service(s): main_sum.py, main.py (MDS-ViTNet), async jobs
+- Fusion: lib/saliency-fusion.ts, result route
+- pageIndex structure, enrichPageIndexWithSaliency
+- Where scanpath would be stored (scan result type?)
+- Env vars / config pattern
+
+I'll do some readonly searches to make the plan accurate.
+</details></think>
+
+---
+
+
+Codebase prüfen, um einen präzisen Plan zu erstellen.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/saliency/result/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "ScanResult|scanResult|pageIndex|saliency",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts",
+  "contextAfter": 0,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "ScanResult|scanResult|pageIndex|saliency",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 10,
+  "topFiles": [
+    {
+      "uri": "lib/types.ts",
+      "matchCount": 10
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to use list_dir or glob - let me use Glob for saliency-service and read types for ScanResult and PageIndexRegion to see if there's already a scanpath field.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **14** results in **1** directory</summary>
+
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service** (14 files)
+
+| File |
+|------|
+| `heatmap_postprocess.py` |
+| `entrypoint.sh` |
+| `main_sum.py` |
+| `requirements.txt` |
+| `requirements-sum.txt` |
+| `README.md` |
+| `.dockerignore` |
+| `selective_scan_cpu_stub.py` |
+| `Dockerfile.sum` |
+| `patch_mamba_ssm_cpu.py` |
+| `main.py` |
+| `entrypoint-sum.sh` |
+| `Dockerfile` |
+| `tests/test_heatmap_postprocess.py` |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Now I need:
+- How generate route chooses SUM vs AI and calls the service
+- Where we'd add scanpath (new field on ScanResult or pageIndex?)
+- Fusion decode/encode to get intensity for scanpath (we have decodeJetPngToIntensity in saliency-fusion)
+
+Let me check generate route and whether there's any existing "order" or "sequence" in the codebase.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/saliency/generate/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/saliency-service/main_sum.py</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "scanpath|fixation|order|sequence",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.{ts,tsx,py}",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "scanpath|fixation|order|sequence",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 51,
+  "totalMatches": 368,
+  "topFiles": [
+    {
+      "uri": "lib/db/journeys.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/developers/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "components/PageIndexRegionsOverlay.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "components/EcoCard.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "components/settings/BrandColorSelector.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "lib/brand-color-utils.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "app/login/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "components/TechnicalInsightsCard.tsx",
+      "matchCount": 8
+    },
+    {
+      "uri": "app/share/[token]/page.tsx",
+      "matchCount": 46
+    },
+    {
+      "uri": "components/Sidebar.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/scanner.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "ux-journey-agent/main.py",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/results/[id]/page.tsx",
+      "matchCount": 21
+    },
+    {
+      "uri": "components/auth/AuthBrandColorSelector.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "components/AppShell.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "components/PrivacyCard.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "components/JourneyFlowchart.tsx",
+      "matchCount": 12
+    },
+    {
+      "uri": "components/PageIndexCard.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "app/register/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "components/GenerativeOptimizerCard.tsx",
+      "matchCount": 6
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+No existing "scanpath" or "fixation" in the codebase. So we need to add a new concept. Let me check how the results page shows heatmap and regions so we know where scanpath would be displayed.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="semantic_search_full">
+<details>
+<summary>Tool use: **semantic_search_full**</summary>
+
+
+Parameters:
+
+```json
+{
+  "query": "Where is saliency heatmap or pageIndex regions displayed on results page?",
+  "includePattern": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results",
+  "topK": 10,
+  "explanation": ""
+}
+```
+Result:
+
+```json
+{
+  "codeResults": [
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 102
+          },
+          "endPosition": {
+            "line": 1251,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 16
+              }
+            },
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 16
+              },
+              "endPosition": {
+                "line": 104,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 997
+          },
+          {
+            "text": "                                                    screenshotWidth={screenshotDimensions.width}",
+            "lineNumber": 998
+          },
+          {
+            "text": "                                                    screenshotHeight={screenshotDimensions.height}",
+            "lineNumber": 999
+          },
+          {
+            "text": "                                                /&gt;",
+            "lineNumber": 1000
+          },
+          {
+            "text": "                                            )}",
+            "lineNumber": 1001
+          },
+          {
+            "text": "                                        &lt;/Box&gt;",
+            "lineNumber": 1002
+          },
+          {
+            "text": "                                    )}",
+            "lineNumber": 1003
+          },
+          {
+            "text": "                                    {result.saliencyHeatmap &amp;&amp; (",
+            "lineNumber": 1004
+          },
+          {
+            "text": "                                        &lt;Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 20 }}&gt;",
+            "lineNumber": 1005
+          },
+          {
+            "text": "                                            &lt;SaliencyHeatmapOverlay",
+            "lineNumber": 1006
+          },
+          {
+            "text": "                                                heatmapDataUrl={result.saliencyHeatmap}",
+            "lineNumber": 1007
+          },
+          {
+            "text": "                                                screenshotWidth={screenshotDimensions.width}",
+            "lineNumber": 1008
+          },
+          {
+            "text": "                                                screenshotHeight={screenshotDimensions.height}",
+            "lineNumber": 1009
+          },
+          {
+            "text": "                                                visible={showSaliencyHeatmap}",
+            "lineNumber": 1010
+          },
+          {
+            "text": "                                            /&gt;",
+            "lineNumber": 1011
+          },
+          {
+            "text": "                                        &lt;/Box&gt;",
+            "lineNumber": 1012
+          },
+          {
+            "text": "                                    )}",
+            "lineNumber": 1013
+          },
+          {
+            "text": "                                    {result.pageIndex &amp;&amp; (",
+            "lineNumber": 1014
+          },
+          {
+            "text": "                                        &lt;PageIndexRegionsOverlay",
+            "lineNumber": 1015
+          },
+          {
+            "text": "                                            regions={Array.isArray(result.pageIndex?.regions) ? result.pageIndex.regions : []}",
+            "lineNumber": 1016
+          },
+          {
+            "text": "                                            screenshotWidth={screenshotDimensions.width}",
+            "lineNumber": 1017
+          },
+          {
+            "text": "                                            screenshotHeight={screenshotDimensions.height}",
+            "lineNumber": 1018
+          },
+          {
+            "text": "                                            ",
+            "lineNumber": 1019
+          },
+          {
+            "text": "}",
+            "lineNumber": 1252,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.6810294985771179
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 102
+          },
+          "endPosition": {
+            "line": 1251,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 16
+              }
+            },
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 16
+              },
+              "endPosition": {
+                "line": 104,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 910
+          },
+          {
+            "text": "                                size=\"small\"",
+            "lineNumber": 911
+          },
+          {
+            "text": "                                onClick={() =&gt; setShowTouchTargets(!showTouchTargets)}",
+            "lineNumber": 912
+          },
+          {
+            "text": "                                brandColor={showTouchTargets ? 'green' : undefined}",
+            "lineNumber": 913
+          },
+          {
+            "text": "                            &gt;",
+            "lineNumber": 914
+          },
+          {
+            "text": "                                {showTouchTargets ? 'Hide Touch Targets' : 'Show Touch Targets'}",
+            "lineNumber": 915
+          },
+          {
+            "text": "                            &lt;/MsqdxButton&gt;",
+            "lineNumber": 916
+          },
+          {
+            "text": "                            {result.pageIndex &amp;&amp; Array.isArray(result.pageIndex.regions) &amp;&amp; result.pageIndex.regions.length &gt; 0 &amp;&amp; (",
+            "lineNumber": 917
+          },
+          {
+            "text": "                                &lt;MsqdxButton",
+            "lineNumber": 918
+          },
+          {
+            "text": "                                    variant={showRegionHighlight ? 'contained' : 'outlined'}",
+            "lineNumber": 919
+          },
+          {
+            "text": "                                    size=\"small\"",
+            "lineNumber": 920
+          },
+          {
+            "text": "                                    onClick={() =&gt; setShowRegionHighlight(!showRegionHighlight)}",
+            "lineNumber": 921
+          },
+          {
+            "text": "                                    brandColor={showRegionHighlight ? 'green' : undefined}",
+            "lineNumber": 922
+          },
+          {
+            "text": "                                &gt;",
+            "lineNumber": 923
+          },
+          {
+            "text": "                                    {showRegionHighlight ? t('results.hideRegionHighlight') : t('results.showRegionHighlight')}",
+            "lineNumber": 924
+          },
+          {
+            "text": "                                &lt;/MsqdxButton&gt;",
+            "lineNumber": 925
+          },
+          {
+            "text": "                            )}",
+            "lineNumber": 926
+          },
+          {
+            "text": "                            {result.saliencyHeatmap ? (",
+            "lineNumber": 927
+          },
+          {
+            "text": "                                &lt;Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}&gt;",
+            "lineNumber": 928
+          },
+          {
+            "text": "                                    &lt;InfoTooltip title={t('info.saliencyHeatmap')} ariaLabel={t('common.info')} /&gt;",
+            "lineNumber": 929
+          },
+          {
+            "text": "                                    &lt;MsqdxButton",
+            "lineNumber": 930
+          },
+          {
+            "text": "                                        variant={showSaliencyHeatmap ? 'contained' : 'outlined'}",
+            "lineNumber": 931
+          },
+          {
+            "text": "                                        size=\"small\"",
+            "lineNumber": 932
+          },
+          {
+            "text": "                                        onClick={() =&gt; setShowSaliencyHeatmap(!showSaliencyHeatmap)}",
+            "lineNumber": 933
+          },
+          {
+            "text": "                                        brandColor={showSaliencyHeatmap ? 'green' : undefined}",
+            "lineNumber": 934
+          },
+          {
+            "text": "                                    &gt;",
+            "lineNumber": 935
+          },
+          {
+            "text": "                                        {",
+            "lineNumber": 936
+          },
+          {
+            "text": "}",
+            "lineNumber": 1252,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.5509570240974426
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 102
+          },
+          "endPosition": {
+            "line": 1251,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 16
+              }
+            },
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 16
+              },
+              "endPosition": {
+                "line": 104,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 1066
+          },
+          {
+            "text": "                            &lt;/Box&gt;",
+            "lineNumber": 1067
+          },
+          {
+            "text": "                            {showRegionHighlight &amp;&amp; Array.isArray(result.pageIndex?.regions) &amp;&amp; result.pageIndex.regions.length &gt; 0 &amp;&amp; (",
+            "lineNumber": 1068
+          },
+          {
+            "text": "                                &lt;Box sx={{ mt: 1.5, p: 1.5, bgcolor: 'var(--color-secondary-dx-grey-light-tint)', borderRadius: 1 }}&gt;",
+            "lineNumber": 1069
+          },
+          {
+            "text": "                                    &lt;MsqdxTypography variant=\"caption\" sx={{ fontWeight: 600, display: 'block', mb: 1, color: 'var(--color-text-muted-on-light)' }}&gt;",
+            "lineNumber": 1070
+          },
+          {
+            "text": "                                        {t('results.pageIndexTitle')} — {t('results.hoverToHighlight')}",
+            "lineNumber": 1071
+          },
+          {
+            "text": "                                    &lt;/MsqdxTypography&gt;",
+            "lineNumber": 1072
+          },
+          {
+            "text": "                                    &lt;Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}&gt;",
+            "lineNumber": 1073
+          },
+          {
+            "text": "                                        {result.pageIndex.regions.map((r) =&gt; (",
+            "lineNumber": 1074
+          },
+          {
+            "text": "                                            &lt;Box",
+            "lineNumber": 1075
+          },
+          {
+            "text": "                                                key={r.id}",
+            "lineNumber": 1076
+          },
+          {
+            "text": "                                                component=\"span\"",
+            "lineNumber": 1077
+          },
+          {
+            "text": "                                                onMouseEnter={() =&gt; setHoveredRegionId(r.id)}",
+            "lineNumber": 1078
+          },
+          {
+            "text": "                                                onMouseLeave={() =&gt; setHoveredRegionId(null)}",
+            "lineNumber": 1079
+          },
+          {
+            "text": "                                                sx={{",
+            "lineNumber": 1080
+          },
+          {
+            "text": "                                                    display: 'inline-block',",
+            "lineNumber": 1081
+          },
+          {
+            "text": "                                                    px: 1,",
+            "lineNumber": 1082
+          },
+          {
+            "text": "                                                    py: 0.5,",
+            "lineNumber": 1083
+          },
+          {
+            "text": "                                                    borderRadius: 0.5,",
+            "lineNumber": 1084
+          },
+          {
+            "text": "                                                    fontSize: '0.75rem',",
+            "lineNumber": 1085
+          },
+          {
+            "text": "                                                    bgcolor: hoveredRegionId === r.id ? alpha(MSQDX_BRAND_PRIMARY.orange ?? '#ff6a3b', 0.25) : 'transparent',",
+            "lineNumber": 1086
+          },
+          {
+            "text": "                                                    border: hoveredRegionId === r.id ? &#96;2px solid ${MSQDX_BRAND_PRIMARY.orange ?? '#ff6a3b'}&#96; : '1px solid transparent',",
+            "lineNumber": 1087
+          },
+          {
+            "text": "                                                    cursor: 'pointer',",
+            "lineNumber": 1088
+          },
+          {
+            "text": "                                                    maxWidth: 220,",
+            "lineNumber": 1089
+          },
+          {
+            "text": "                                                    overflow: 'hidden',",
+            "lineNumber": 1090
+          },
+          {
+            "text": "                                                    textOverflow: 'ellipsis',",
+            "lineNumber": 1091
+          },
+          {
+            "text": "                                                    whiteSpace: 'nowrap',",
+            "lineNumber": 1092
+          },
+          {
+            "text": "                                                }}",
+            "lineNumber": 1093
+          },
+          {
+            "text": "                                        )",
+            "lineNumber": 1101
+          },
+          {
+            "text": "}",
+            "lineNumber": 1252,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.4934825003147125
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 102
+          },
+          "endPosition": {
+            "line": 1251,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 16
+              }
+            },
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 16
+              },
+              "endPosition": {
+                "line": 104,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "text": "(item, i) =&gt; (",
+            "lineNumber": 1143
+          },
+          {
+            "lineNumber": 1155
+          },
+          {
+            "text": "                                        &lt;/Box&gt;",
+            "lineNumber": 1156
+          },
+          {
+            "text": "                                        {' — '}",
+            "lineNumber": 1157
+          },
+          {
+            "text": "                                        {item.text || '(leer)'}",
+            "lineNumber": 1158
+          },
+          {
+            "text": "                                    &lt;/Box&gt;",
+            "lineNumber": 1159
+          },
+          {
+            "text": "                                ))}",
+            "lineNumber": 1160
+          },
+          {
+            "text": "                            &lt;/Box&gt;",
+            "lineNumber": 1161
+          },
+          {
+            "text": "                            {(!result.ux.headingHierarchy.hasSingleH1 || result.ux.headingHierarchy.skippedLevels.length &gt; 0) &amp;&amp; (",
+            "lineNumber": 1162
+          },
+          {
+            "text": "                                &lt;Box sx={{ mt: 1, p: 1, bgcolor: 'var(--color-secondary-dx-grey-light-tint)', borderRadius: 1 }}&gt;",
+            "lineNumber": 1163
+          },
+          {
+            "text": "                                    {!result.ux.headingHierarchy.hasSingleH1 &amp;&amp; (",
+            "lineNumber": 1164
+          },
+          {
+            "text": "                                        &lt;MsqdxTypography variant=\"caption\" sx={{ color: 'var(--color-warning)', display: 'block' }}&gt;",
+            "lineNumber": 1165
+          },
+          {
+            "text": "                                            Mehrere H1 auf der Seite ({result.ux.headingHierarchy.h1Count})",
+            "lineNumber": 1166
+          },
+          {
+            "text": "                                        &lt;/MsqdxTypography&gt;",
+            "lineNumber": 1167
+          },
+          {
+            "text": "                                    )}",
+            "lineNumber": 1168
+          },
+          {
+            "text": "                                    {result.ux.headingHierarchy.skippedLevels.length &gt; 0 &amp;&amp; (",
+            "lineNumber": 1169
+          },
+          {
+            "text": "                                        &lt;MsqdxTypography variant=\"caption\" sx={{ color: 'var(--color-warning)', display: 'block' }}&gt;",
+            "lineNumber": 1170
+          },
+          {
+            "text": "                                            Übersprungene Level: {result.ux.headingHierarchy.skippedLevels.map(s =&gt; &#96;H${s.from}→H${s.to}&#96;).join(', ')}",
+            "lineNumber": 1171
+          },
+          {
+            "text": "                                        &lt;/MsqdxTypography&gt;",
+            "lineNumber": 1172
+          },
+          {
+            "text": "                                    )}",
+            "lineNumber": 1173
+          },
+          {
+            "text": "                                &lt;/Box&gt;",
+            "lineNumber": 1174
+          },
+          {
+            "text": "                            )}",
+            "lineNumber": 1175
+          },
+          {
+            "text": "                        &lt;/Box&gt;",
+            "lineNumber": 1176
+          },
+          {
+            "text": "                    )}",
+            "lineNumber": 1177
+          },
+          {
+            "text": "                    {result.ux?.structureMap ? (",
+            "lineNumber": 1178
+          },
+          {
+            "text": "                        &lt;StructureMap nodes={result.ux.structureMap} /&gt;",
+            "lineNumber": 1179
+          },
+          {
+            "text": "                    ) : (",
+            "lineNumber": 1180
+          },
+          {
+            "text": "                        &lt;MsqdxTypography&gt;Keine Strukturdaten verfügbar.&lt;/MsqdxTypography&gt;",
+            "lineNumber": 1181
+          },
+          {
+            "text": "                    )}",
+            "lineNumber": 1182
+          },
+          {
+            "text": "                    {result.pageIndex &amp;&amp; (",
+            "lineNumber": 1183
+          },
+          {
+            "text": "                        &lt;Box sx={{ mt: 'var(--msqdx-spacing-md)', pt: 'var(--msqdx-spacing-md)', borderTop: '1px solid var(--color-secondary-dx-grey-light-tint)' }}&gt;",
+            "lineNumber": 1184
+          },
+          {
+            "text": "                            &lt;PageIndexCard pageIndex={result.pageIndex}",
+            "lineNumber": 1185
+          },
+          {
+            "text": "}",
+            "lineNumber": 1252,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.4882420301437378
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 100,
+            "column": 67
+          },
+          "endPosition": {
+            "line": 1251,
+            "column": 1
+          }
+        },
+        "signatures": {},
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "text": "    const params = useParams();",
+            "lineNumber": 104
+          },
+          {
+            "text": "    const router = useRouter();",
+            "lineNumber": 105
+          },
+          {
+            "text": "    const { t } = useI18n();",
+            "lineNumber": 106
+          },
+          {
+            "text": "    const [result, setResult] = useState&lt;ScanResult | null&gt;(null);",
+            "lineNumber": 107
+          },
+          {
+            "text": "    const [loading, setLoading] = useState(true);",
+            "lineNumber": 108
+          },
+          {
+            "text": "    const [error, setError] = useState&lt;string | null&gt;(null);",
+            "lineNumber": 109
+          },
+          {
+            "text": "    const [tab, setTab] = useState&lt;TabFilter&gt;('all');",
+            "lineNumber": 110
+          },
+          {
+            "text": "    const [levelFilter, setLevelFilter] = useState&lt;LevelFilter&gt;('all');",
+            "lineNumber": 111
+          },
+          {
+            "text": "    const [issuesPage, setIssuesPage] = useState(1);",
+            "lineNumber": 112
+          },
+          {
+            "text": "    const [viewMode, setViewMode] = useState&lt;'list' | 'summary' | 'visual' | 'ux' | 'structure' | 'seo' | 'infra' | 'generative'&gt;('list');",
+            "lineNumber": 113
+          },
+          {
+            "text": "    const [relatedScans, setRelatedScans] = useState&lt;ScanResult[]&gt;([]);",
+            "lineNumber": 114
+          },
+          {
+            "text": "    const [highlightedIndex, setHighlightedIndex] = useState&lt;number | null&gt;(null);",
+            "lineNumber": 115
+          },
+          {
+            "text": "    const [showFocusOrder, setShowFocusOrder] = useState(false);",
+            "lineNumber": 116
+          },
+          {
+            "text": "    const [showTouchTargets, setShowTouchTargets] = useState(false);",
+            "lineNumber": 117
+          },
+          {
+            "text": "    const [showSaliencyHeatmap, setShowSaliencyHeatmap] = useState(false);",
+            "lineNumber": 118
+          },
+          {
+            "text": "    const [saliencyGenerating, setSaliencyGenerating] = useState(false);",
+            "lineNumber": 119
+          },
+          {
+            "text": "    const [saliencyError, setSaliencyError] = useState&lt;string | null&gt;(null);",
+            "lineNumber": 120
+          },
+          {
+            "text": "    const [screenshotDimensions, setScreenshotDimensions] = useState&lt;{ width: number; height: number }&gt;({ width: 1920, height: 1080 });",
+            "lineNumber": 121
+          },
+          {
+            "text": "    const [showRegionHighlight, setShowRegionHighlight] = useState(false);",
+            "lineNumber": 122
+          },
+          {
+            "text": "    const [hoveredRegionId, setHoveredRegionId] = useState&lt;string | null&gt;(null);",
+            "lineNumber": 123
+          },
+          {
+            "text": "    const [summarizing, setSummarizing] = useState(false);",
+            "lineNumber": 124
+          },
+          {
+            "text": "    const [summarizeError, setSummarizeError] = useState&lt;string | null&gt;(null);",
+            "lineNumber": 125
+          },
+          {
+            "text": "    const [pdfExporting, setPdfExporting] = useState(false);",
+            "lineNumber": 126
+          },
+          {
+            "text": "    const issueRefs = useRef&lt;(HTMLDivElement | null)[]&gt;([]);",
+            "lineNumber": 127
+          },
+          {
+            "lineNumber": 128
+          },
+          {
+            "text": "    // Derived stats for WCAG levels",
+            "lineNumber": 129
+          },
+          {
+            "text": "    const [levelStats, setLevelStats] = useState({ A: 0, AA: 0, AAA: 0, APCA: 0, Unknown: 0 });",
+            "lineNumber": 130
+          },
+          {
+            "lineNumber": 131
+          },
+          {
+            "text": "    const handleHover = useCallback((index: number | null) =&gt; {",
+            "lineNumber": 132
+          },
+          {
+            "text": "        setHighlightedIndex(index);",
+            "lineNumber": 133
+          },
+          {
+            "text": "    }, []);",
+            "lineNumber": 134
+          },
+          {
+            "lineNumber": 135
+          },
+          {
+            "text": "    const handleRefRegister = useCallback",
+            "lineNumber": 136
+          },
+          {
+            "text": ";",
+            "lineNumber": 138
+          },
+          {
+            "text": "}",
+            "lineNumber": 1252,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.4571990966796875
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 102
+          },
+          "endPosition": {
+            "line": 1251,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 16
+              }
+            },
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 16
+              },
+              "endPosition": {
+                "line": 104,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 130
+          },
+          {
+            "lineNumber": 131
+          },
+          {
+            "text": "    const handleHover = useCallback((index: number | null) =&gt; {",
+            "lineNumber": 132
+          },
+          {
+            "text": "        setHighlightedIndex(index);",
+            "lineNumber": 133
+          },
+          {
+            "text": "    }, []);",
+            "lineNumber": 134
+          },
+          {
+            "lineNumber": 135
+          },
+          {
+            "text": "    const handleRefRegister = useCallback((index: number, el: HTMLDivElement | null) =&gt; {",
+            "lineNumber": 136
+          },
+          {
+            "text": "        issueRefs.current[index] = el;",
+            "lineNumber": 137
+          },
+          {
+            "text": "    }, []);",
+            "lineNumber": 138
+          },
+          {
+            "lineNumber": 139
+          },
+          {
+            "text": "    const handleGenerateSaliency = useCallback(async () =&gt; {",
+            "lineNumber": 140
+          },
+          {
+            "text": "        if (!result?.id || saliencyGenerating) return;",
+            "lineNumber": 141
+          },
+          {
+            "text": "        setSaliencyError(null);",
+            "lineNumber": 142
+          },
+          {
+            "text": "        setSaliencyGenerating(true);",
+            "lineNumber": 143
+          },
+          {
+            "text": "        const scanId = result.id;",
+            "lineNumber": 144
+          },
+          {
+            "text": "        try {",
+            "lineNumber": 145
+          },
+          {
+            "text": "            const createRes = await fetch('/api/saliency/generate', {",
+            "lineNumber": 146
+          },
+          {
+            "text": "                method: 'POST',",
+            "lineNumber": 147
+          },
+          {
+            "text": "                headers: { 'Content-Type': 'application/json' },",
+            "lineNumber": 148
+          },
+          {
+            "text": "                body: JSON.stringify({ scanId }),",
+            "lineNumber": 149
+          },
+          {
+            "text": "            });",
+            "lineNumber": 150
+          },
+          {
+            "text": "            const createData = (await createRes.json().catch(() =&gt; ({}))) as {",
+            "lineNumber": 151
+          },
+          {
+            "text": "                jobId?: string;",
+            "lineNumber": 152
+          },
+          {
+            "text": "                success?: boolean;",
+            "lineNumber": 153
+          },
+          {
+            "text": "                error?: string;",
+            "lineNumber": 154
+          },
+          {
+            "text": "            };",
+            "lineNumber": 155
+          },
+          {
+            "text": "            if (!createRes.ok) throw new Error(createData.error ?? t('results.heatmapError'));",
+            "lineNumber": 156
+          },
+          {
+            "text": "            if (createData.success) {",
+            "lineNumber": 157
+          },
+          {
+            "text": "                const scanRes = await fetch(&#96;/api/scan/${scanId}&#96;);",
+            "lineNumber": 158
+          },
+          {
+            "text": "                if (scanRes.ok) {",
+            "lineNumber": 159
+          },
+          {
+            "text": "                    const updated = await scanRes.json();",
+            "lineNumber": 160
+          },
+          {
+            "text": "                    setResult((prev) =&gt; (prev?.id === scanId ? updated : prev));",
+            "lineNumber": 161
+          },
+          {
+            "text": "                    setShowSaliencyHeatmap(true);",
+            "lineNumber": 162
+          },
+          {
+            "text": "                }",
+            "lineNumber": 163
+          },
+          {
+            "text": "                return;",
+            "lineNumber": 164
+          },
+          {
+            "text": "            }",
+            "lineNumber": 165
+          },
+          {
+            "text": "            const jobId = createData.jobId;",
+            "lineNumber": 166
+          },
+          {
+            "text": "            if (!jobId) throw new Error(t('results.heatmapError'));",
+            "lineNumber": 167
+          },
+          {
+            "lineNumber": 168
+          },
+          {
+            "text": "            const pollIntervalMs = 2500;",
+            "lineNumber": 169
+          },
+          {
+            "text": "            const maxWaitMs = 10 * 60 * 1000; // 10 min",
+            "lineNumber": 170
+          },
+          {
+            "text": "            const started = Date.now();",
+            "lineNumber": 171
+          },
+          {
+            "text": "            for (;;) {",
+            "lineNumber": 172
+          },
+          {
+            "text": "                const res = await fetch(&#96;/api/saliency/result?jobId=${encodeURIComponent(jobId)}&amp;scanId=${encodeURIComponent(scanId)}&#96;);",
+            "lineNumber": 173
+          },
+          {
+            "text": "                const data = (await res.json().catch(() =&gt; ({}))) as {",
+            "lineNumber": 174
+          },
+          {
+            "text": "                    status?: string;",
+            "lineNumber": 175
+          },
+          {
+            "text": "                    success?: boolean;",
+            "lineNumber": 176
+          },
+          {
+            "text": "                    heatmapDataUrl?: string;",
+            "lineNumber": 177
+          },
+          {
+            "text": "                    error?: string;",
+            "lineNumber": 178
+          },
+          {
+            "text": "                };",
+            "lineNumber": 179
+          },
+          {
+            "text": "                if (data.status === 'completed' &amp;&amp; data.heatmapDataUrl) {",
+            "lineNumber": 180
+          },
+          {
+            "text": "                    setResult((prev) =&gt; (prev?.id === scanId ? { ...prev, saliencyHeatmap: data.heatmapDataUrl } : prev));",
+            "lineNumber": 181
+          },
+          {
+            "text": "                    setShowSaliencyHeatmap(true);",
+            "lineNumber": 182
+          },
+          {
+            "text": "                    break;",
+            "lineNumber": 183
+          },
+          {
+            "text": "            }",
+            "lineNumber": 194
+          },
+          {
+            "text": "    };",
+            "lineNumber": 200
+          },
+          {
+            "text": "}",
+            "lineNumber": 1252,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.4367929697036743
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 102
+          },
+          "endPosition": {
+            "line": 1251,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 16
+              }
+            },
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 16
+              },
+              "endPosition": {
+                "line": 104,
+                "column": 5
+              }
+            },
+            {
+              "startPosition": {
+                "line": 1018,
+                "column": 38
+              },
+              "endPosition": {
+                "line": 1018,
+                "column": 38
+              }
+            },
+            {
+              "startPosition": {
+                "line": 1018,
+                "column": 57
+              },
+              "endPosition": {
+                "line": 1019,
+                "column": 41
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "text": "(issue, idx) =&gt; (",
+            "lineNumber": 1024
+          },
+          {
+            "lineNumber": 1052
+          },
+          {
+            "text": "                                                        pointerEvents: 'auto',",
+            "lineNumber": 1053
+          },
+          {
+            "text": "                                                        '&amp;:hover': {",
+            "lineNumber": 1054
+          },
+          {
+            "text": "                                                            backgroundColor: alpha(SEVERITY_CONFIG[issue.type].color, 0.4),",
+            "lineNumber": 1055
+          },
+          {
+            "text": "                                                            zIndex: 20,",
+            "lineNumber": 1056
+          },
+          {
+            "text": "                                                        }",
+            "lineNumber": 1057
+          },
+          {
+            "text": "                                                    }}",
+            "lineNumber": 1058
+          },
+          {
+            "text": "                                                    onClick={() =&gt; scrollToIssue(idx)}",
+            "lineNumber": 1059
+          },
+          {
+            "text": "                                                    onMouseEnter={() =&gt; setHighlightedIndex(idx)}",
+            "lineNumber": 1060
+          },
+          {
+            "text": "                                                    onMouseLeave={() =&gt; setHighlightedIndex(null)}",
+            "lineNumber": 1061
+          },
+          {
+            "text": "                                                /&gt;",
+            "lineNumber": 1062
+          },
+          {
+            "text": "                                            &lt;/MsqdxTooltip&gt;",
+            "lineNumber": 1063
+          },
+          {
+            "text": "                                        )",
+            "lineNumber": 1064
+          },
+          {
+            "text": "                                    ))}",
+            "lineNumber": 1065
+          },
+          {
+            "text": "                                &lt;/Box&gt;",
+            "lineNumber": 1066
+          },
+          {
+            "text": "                            &lt;/Box&gt;",
+            "lineNumber": 1067
+          },
+          {
+            "text": "                            {",
+            "lineNumber": 1068
+          },
+          {
+            "text": "}",
+            "lineNumber": 1252,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.4359802007675171
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 102
+          },
+          "endPosition": {
+            "line": 1251,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 16
+              }
+            },
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 16
+              },
+              "endPosition": {
+                "line": 104,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 975
+          },
+          {
+            "text": "                                    onLoad={(e) =&gt; {",
+            "lineNumber": 976
+          },
+          {
+            "text": "                                        const el = e.currentTarget;",
+            "lineNumber": 977
+          },
+          {
+            "text": "                                        setScreenshotDimensions({ width: el.naturalWidth, height: el.naturalHeight });",
+            "lineNumber": 978
+          },
+          {
+            "text": "                                    }}",
+            "lineNumber": 979
+          },
+          {
+            "text": "                                /&gt;",
+            "lineNumber": 980
+          },
+          {
+            "text": "                                {/* Overlay layer: same size as image (100% × 100%) so positioning scales with screenshot */}",
+            "lineNumber": 981
+          },
+          {
+            "text": "                                &lt;Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 10 }}&gt;",
+            "lineNumber": 982
+          },
+          {
+            "text": "                                    {result.ux?.focusOrder &amp;&amp; (",
+            "lineNumber": 983
+          },
+          {
+            "text": "                                        &lt;Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 40 }}&gt;",
+            "lineNumber": 984
+          },
+          {
+            "text": "                                            &lt;FocusOrderOverlay",
+            "lineNumber": 985
+          },
+          {
+            "text": "                                                items={result.ux.focusOrder}",
+            "lineNumber": 986
+          },
+          {
+            "text": "                                                screenshotWidth={screenshotDimensions.width}",
+            "lineNumber": 987
+          },
+          {
+            "text": "                                                screenshotHeight={screenshotDimensions.height}",
+            "lineNumber": 988
+          },
+          {
+            "text": "                                                visible={showFocusOrder}",
+            "lineNumber": 989
+          },
+          {
+            "text": "                                            /&gt;",
+            "lineNumber": 990
+          },
+          {
+            "text": "                                        &lt;/Box&gt;",
+            "lineNumber": 991
+          },
+          {
+            "text": "                                    )}",
+            "lineNumber": 992
+          },
+          {
+            "text": "                                    {result.ux?.tapTargets?.details &amp;&amp; (",
+            "lineNumber": 993
+          },
+          {
+            "text": "                                        &lt;Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 45 }}&gt;",
+            "lineNumber": 994
+          },
+          {
+            "text": "                                            {showTouchTargets &amp;&amp; (",
+            "lineNumber": 995
+          },
+          {
+            "text": "                                                &lt;TouchTargetOverlay",
+            "lineNumber": 996
+          },
+          {
+            "text": "                                                    issues={result.ux.tapTargets.details}",
+            "lineNumber": 997
+          },
+          {
+            "text": "                                                    screenshotWidth={screenshotDimensions.width}",
+            "lineNumber": 998
+          },
+          {
+            "text": "                                                    ",
+            "lineNumber": 999
+          },
+          {
+            "text": "}",
+            "lineNumber": 1252,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.41928720474243164
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 102
+          },
+          "endPosition": {
+            "line": 1251,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 16
+              }
+            },
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 16
+              },
+              "endPosition": {
+                "line": 104,
+                "column": 5
+              }
+            },
+            {
+              "startPosition": {
+                "line": 1018,
+                "column": 38
+              },
+              "endPosition": {
+                "line": 1018,
+                "column": 38
+              }
+            },
+            {
+              "startPosition": {
+                "line": 1018,
+                "column": 57
+              },
+              "endPosition": {
+                "line": 1019,
+                "column": 41
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "text": "(issue, idx) =&gt; (",
+            "lineNumber": 1024
+          },
+          {
+            "lineNumber": 1033
+          },
+          {
+            "text": "                                                        &lt;/Box&gt;",
+            "lineNumber": 1034
+          },
+          {
+            "text": "                                                        &lt;MsqdxTypography variant=\"caption\" sx={{ display: 'block', mt: 0.5 }}&gt;{issue.selector}&lt;/MsqdxTypography&gt;",
+            "lineNumber": 1035
+          },
+          {
+            "text": "                                                    &lt;/Box&gt;",
+            "lineNumber": 1036
+          },
+          {
+            "text": "                                                }",
+            "lineNumber": 1037
+          },
+          {
+            "text": "                                                brandColor={SEVERITY_CONFIG[issue.type].label === 'Error' ? 'pink' : SEVERITY_CONFIG[issue.type].label === 'Warning' ? 'yellow' : 'purple'}",
+            "lineNumber": 1038
+          },
+          {
+            "text": "                                            &gt;",
+            "lineNumber": 1039
+          },
+          {
+            "text": "                                                &lt;Box",
+            "lineNumber": 1040
+          },
+          {
+            "text": "                                                    sx={{",
+            "lineNumber": 1041
+          },
+          {
+            "text": "                                                        position: 'absolute',",
+            "lineNumber": 1042
+          },
+          {
+            "text": "                                                        left: &#96;${(issue.boundingBox.x / screenshotDimensions.width) * 100}%&#96;,",
+            "lineNumber": 1043
+          },
+          {
+            "text": "                                                        top: &#96;${(issue.boundingBox.y / screenshotDimensions.height) * 100}%&#96;,",
+            "lineNumber": 1044
+          },
+          {
+            "text": "                                                        width: &#96;${(issue.boundingBox.width / screenshotDimensions.width) * 100}%&#96;,",
+            "lineNumber": 1045
+          },
+          {
+            "text": "                                                        height: &#96;${(issue.boundingBox.height / screenshotDimensions.height) * 100}%&#96;,",
+            "lineNumber": 1046
+          },
+          {
+            "text": "                                                        border: highlightedIndex === idx ? &#96;4px solid ${SEVERITY_CONFIG[issue.type].color}&#96; : &#96;3px solid ${SEVERITY_CONFIG[issue.type].color}&#96;,",
+            "lineNumber": 1047
+          },
+          {
+            "text": "                                                        backgroundColor: highlightedIndex === idx ? alpha(SEVERITY_CONFIG[issue.type].color, 0.5) : alpha(SEVERITY_CONFIG[issue.type].color, 0.2),",
+            "lineNumber": 1048
+          },
+          {
+            "text": "                                                        cursor: 'pointer',",
+            "lineNumber": 1049
+          },
+          {
+            "text": "                                                        zIndex: highlightedIndex === idx ? 30 : 10,",
+            "lineNumber": 1050
+          },
+          {
+            "text": "                                                        transition: 'all 0.2s',",
+            "lineNumber": 1051
+          },
+          {
+            "text": "                                                        boxShadow: highlightedIndex === idx ? &#96;0 0 0 4px ${alpha(SEVERITY_CONFIG[issue.type].color, 0.4)}&#96; : 'none',",
+            "lineNumber": 1052
+          },
+          {
+            "text": "                                                        pointerEvents: 'auto',",
+            "lineNumber": 1053
+          },
+          {
+            "text": "                                                        ",
+            "lineNumber": 1054
+          },
+          {
+            "text": "                                    )",
+            "lineNumber": 1065
+          },
+          {
+            "text": "}",
+            "lineNumber": 1252,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.41739165782928467
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 102
+          },
+          "endPosition": {
+            "line": 1251,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 16
+              }
+            },
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 16
+              },
+              "endPosition": {
+                "line": 104,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 1017
+          },
+          {
+            "text": "                                            screenshotHeight={screenshotDimensions.height}",
+            "lineNumber": 1018
+          },
+          {
+            "text": "                                            highlightedRegionId={hoveredRegionId}",
+            "lineNumber": 1019
+          },
+          {
+            "text": "                                            visible={showRegionHighlight}",
+            "lineNumber": 1020
+          },
+          {
+            "text": "                                        /&gt;",
+            "lineNumber": 1021
+          },
+          {
+            "text": "                                    )}",
+            "lineNumber": 1022
+          },
+          {
+            "text": "                                    {/* Issue boxes: percentage-based so they stay aligned when screenshot is scaled */}",
+            "lineNumber": 1023
+          },
+          {
+            "text": "                                    {filteredIssues.map((issue, idx) =&gt; (",
+            "lineNumber": 1024
+          },
+          {
+            "text": "                                        issue.boundingBox &amp;&amp; (",
+            "lineNumber": 1025
+          },
+          {
+            "text": "                                            &lt;MsqdxTooltip",
+            "lineNumber": 1026
+          },
+          {
+            "text": "                                                key={idx}",
+            "lineNumber": 1027
+          },
+          {
+            "text": "                                                title={",
+            "lineNumber": 1028
+          },
+          {
+            "text": "                                                    &lt;Box&gt;",
+            "lineNumber": 1029
+          },
+          {
+            "text": "                                                        &lt;MsqdxTypography variant=\"subtitle2\" sx={{ fontWeight: 'bold' }}&gt;{issue.message}&lt;/MsqdxTypography&gt;",
+            "lineNumber": 1030
+          },
+          {
+            "text": "                                                        &lt;Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}&gt;",
+            "lineNumber": 1031
+          },
+          {
+            "text": "                                                            &lt;MsqdxChip label={issue.type} size=\"small\" sx={{ height: 16, fontSize: '0.6rem', bgcolor: SEVERITY_CONFIG[issue.type].color, color: '#000' }} /&gt;",
+            "lineNumber": 1032
+          },
+          {
+            "text": "                                                            {issue.wcagLevel &amp;&amp; issue.wcagLevel !== 'Unknown' &amp;&amp; &lt;MsqdxChip label={issue.wcagLevel === 'APCA' ? 'APCA' : &#96;Level ${issue.wcagLevel}&#96;} size=\"small\" sx={{ height: 16, fontSize: '0.6rem', bgcolor: issue.wcagLevel === 'APCA' ? MSQDX_BRAND_PRIMARY.purple : MSQDX_BRAND_PRIMARY.green, color: '#fff' }} /&gt;}",
+            "lineNumber": 1033
+          },
+          {
+            "text": "                                                        &lt;/Box&gt;",
+            "lineNumber": 1034
+          },
+          {
+            "text": "                                                        ",
+            "lineNumber": 1035
+          },
+          {
+            "text": "                                    )",
+            "lineNumber": 1065
+          },
+          {
+            "text": "}",
+            "lineNumber": 1252,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.4030745029449463
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 102
+          },
+          "endPosition": {
+            "line": 1251,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 16
+              }
+            },
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 16
+              },
+              "endPosition": {
+                "line": 104,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 1201
+          },
+          {
+            "lineNumber": 1202
+          },
+          {
+            "text": "                    {result.links ? (",
+            "lineNumber": 1203
+          },
+          {
+            "text": "                        &lt;LinkAuditCard links={result.links} /&gt;",
+            "lineNumber": 1204
+          },
+          {
+            "text": "                    ) : (",
+            "lineNumber": 1205
+          },
+          {
+            "text": "                        &lt;MsqdxMoleculeCard title=\"Link Audit\" subtitle=\"No Link data.\" sx={{ bgcolor: 'var(--color-card-bg)' }}&gt;&lt;MsqdxTypography&gt;Keine Link Daten verfügbar.&lt;/MsqdxTypography&gt;&lt;/MsqdxMoleculeCard&gt;",
+            "lineNumber": 1206
+          },
+          {
+            "text": "                    )}",
+            "lineNumber": 1207
+          },
+          {
+            "text": "                &lt;/Box&gt;",
+            "lineNumber": 1208
+          },
+          {
+            "text": "            )}",
+            "lineNumber": 1209
+          },
+          {
+            "lineNumber": 1210
+          },
+          {
+            "text": "            {viewMode === 'infra' &amp;&amp; (",
+            "lineNumber": 1211
+          },
+          {
+            "text": "                &lt;Box sx={{",
+            "lineNumber": 1212
+          },
+          {
+            "text": "                    display: 'grid',",
+            "lineNumber": 1213
+          },
+          {
+            "text": "                    gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',",
+            "lineNumber": 1214
+          },
+          {
+            "text": "                    gap: 'var(--msqdx-spacing-md)'",
+            "lineNumber": 1215
+          },
+          {
+            "text": "                }}&gt;",
+            "lineNumber": 1216
+          },
+          {
+            "text": "                    {result.geo ? (",
+            "lineNumber": 1217
+          },
+          {
+            "text": "                        &lt;InfraCard geo={result.geo} /&gt;",
+            "lineNumber": 1218
+          },
+          {
+            "text": "                    ) : (",
+            "lineNumber": 1219
+          },
+          {
+            "text": "                        &lt;MsqdxMoleculeCard title=\"Infrastruktur\" subtitle=\"No data.\" sx={{ bgcolor: 'var(--color-card-bg)' }}&gt;&lt;MsqdxTypography&gt;Keine Infrastruktur-Daten verfügbar.&lt;/MsqdxTypography&gt;&lt;/MsqdxMoleculeCard&gt;",
+            "lineNumber": 1220
+          },
+          {
+            "text": "                    )}",
+            "lineNumber": 1221
+          },
+          {
+            "lineNumber": 1222
+          },
+          {
+            "text": "                    {result.privacy ? (",
+            "lineNumber": 1223
+          },
+          {
+            "text": "                        &lt;PrivacyCard privacy={result.privacy} /&gt;",
+            "lineNumber": 1224
+          },
+          {
+            "text": "                    ) : (",
+            "lineNumber": 1225
+          },
+          {
+            "text": "                        &lt;MsqdxMoleculeCard title=\"Privacy Audit\" subtitle=\"No Privacy data.\" sx={{ bgcolor: 'var(--color-card-bg)' }}&gt;&lt;MsqdxTypography&gt;Keine Privacy-Daten verfügbar.&lt;/MsqdxTypography&gt;&lt;/MsqdxMoleculeCard&gt;",
+            "lineNumber": 1226
+          },
+          {
+            "text": "                    )}",
+            "lineNumber": 1227
+          },
+          {
+            "lineNumber": 1228
+          },
+          {
+            "text": "                    {result.security ? (",
+            "lineNumber": 1229
+          },
+          {
+            "text": "                        &lt;SecurityCard security={result.security} /&gt;",
+            "lineNumber": 1230
+          },
+          {
+            "text": "                    ) : null}",
+            "lineNumber": 1231
+          },
+          {
+            "lineNumber": 1232
+          },
+          {
+            "text": "                    {result.technicalInsights ? (",
+            "lineNumber": 1233
+          },
+          {
+            "text": "                        &lt;TechnicalInsightsCard insights={result.technicalInsights} /&gt;",
+            "lineNumber": 1234
+          },
+          {
+            "text": "                    ) : null}",
+            "lineNumber": 1235
+          },
+          {
+            "text": "                &lt;/Box&gt;",
+            "lineNumber": 1236
+          },
+          {
+            "text": "            )}",
+            "lineNumber": 1237
+          },
+          {
+            "lineNumber": 1238
+          },
+          {
+            "text": "            {viewMode === 'generative' &amp;&amp; (",
+            "lineNumber": 1239
+          },
+          {
+            "text": "                &lt;&gt;",
+            "lineNumber": 1240
+          },
+          {
+            "text": "                    {result.generative ? (",
+            "lineNumber": 1241
+          },
+          {
+            "text": "                        &lt;GenerativeOptimizerCard data={result.generative} /&gt;",
+            "lineNumber": 1242
+          },
+          {
+            "text": "                    ) : (",
+            "lineNumber": 1243
+          },
+          {
+            "text": "                        &lt;MsqdxMoleculeCard title=\"GEO-Analyse\" subtitle=\"Keine Daten.\" sx={{ bgcolor: 'var(--color-card-bg)' }}&gt;&lt;MsqdxTypography&gt;Keine GEO-Daten verfügbar.&lt;/MsqdxTypography&gt;&lt;/MsqdxMoleculeCard&gt;",
+            "lineNumber": 1244
+          },
+          {
+            "text": "                    )}",
+            "lineNumber": 1245
+          },
+          {
+            "text": "                &lt;/&gt;",
+            "lineNumber": 1246
+          },
+          {
+            "text": "            )}",
+            "lineNumber": 1247
+          },
+          {
+            "text": "        &lt;/Box&gt;",
+            "lineNumber": 1248
+          },
+          {
+            "text": "            )}",
+            "lineNumber": 1249
+          },
+          {
+            "text": "        &lt;/Box&gt;",
+            "lineNumber": 1250
+          },
+          {
+            "text": "    );",
+            "lineNumber": 1251
+          },
+          {
+            "text": "}",
+            "lineNumber": 1252,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.3985227942466736
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 102
+          },
+          "endPosition": {
+            "line": 1251,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 16
+              }
+            },
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 16
+              },
+              "endPosition": {
+                "line": 104,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 960
+          },
+          {
+            "text": "                                    )}",
+            "lineNumber": 961
+          },
+          {
+            "text": "                                &lt;/Box&gt;",
+            "lineNumber": 962
+          },
+          {
+            "text": "                            )}",
+            "lineNumber": 963
+          },
+          {
+            "text": "                        &lt;/Box&gt;",
+            "lineNumber": 964
+          },
+          {
+            "text": "                    }",
+            "lineNumber": 965
+          },
+          {
+            "text": "                &gt;",
+            "lineNumber": 966
+          },
+          {
+            "text": "                    {result.screenshot ? (",
+            "lineNumber": 967
+          },
+          {
+            "text": "                        &lt;Box sx={{ overflow: 'auto', position: 'relative', width: '100%', maxWidth: '100%', border: &#96;1px solid ${MSQDX_NEUTRAL[800]}&#96;, borderRadius: MSQDX_SPACING.borderRadius.xs }}&gt;",
+            "lineNumber": 968
+          },
+          {
+            "text": "                            {/* Screenshot + overlays: one fluid-width container so image fits and overlays align via % */}",
+            "lineNumber": 969
+          },
+          {
+            "text": "                            &lt;Box sx={{ position: 'relative', width: '100%', bgcolor: '#fff' }}&gt;",
+            "lineNumber": 970
+          },
+          {
+            "text": "                                {/* eslint-disable-next-line @next/next/no-img-element */}",
+            "lineNumber": 971
+          },
+          {
+            "text": "                                &lt;img",
+            "lineNumber": 972
+          },
+          {
+            "text": "                                    src={result.screenshot}",
+            "lineNumber": 973
+          },
+          {
+            "text": "                                    alt=\"Scan Screenshot\"",
+            "lineNumber": 974
+          },
+          {
+            "text": "                                    style={{ width: '100%', display: 'block', verticalAlign: 'top' }}",
+            "lineNumber": 975
+          },
+          {
+            "text": "                                    onLoad={(e) =&gt; {",
+            "lineNumber": 976
+          },
+          {
+            "text": "                                        const el = e.currentTarget;",
+            "lineNumber": 977
+          },
+          {
+            "text": "                                    }",
+            "lineNumber": 979
+          },
+          {
+            "text": "}",
+            "lineNumber": 1252,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.3874155879020691
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {},
+          "endPosition": {
+            "line": 54,
+            "column": 1
+          }
+        },
+        "signatures": {},
+        "detailedLines": [
+          {
+            "text": "'use client';",
+            "lineNumber": 1
+          },
+          {
+            "lineNumber": 2
+          },
+          {
+            "text": "import { useEffect, useState, useRef, useCallback, useMemo } from 'react';",
+            "lineNumber": 3
+          },
+          {
+            "text": "import dynamic from 'next/dynamic';",
+            "lineNumber": 4
+          },
+          {
+            "text": "import { useParams, useRouter } from 'next/navigation';",
+            "lineNumber": 5
+          },
+          {
+            "text": "import { Box, alpha, Collapse, CircularProgress } from '@mui/material';",
+            "lineNumber": 6
+          },
+          {
+            "text": "import {",
+            "lineNumber": 7
+          },
+          {
+            "text": "    MsqdxTypography,",
+            "lineNumber": 8
+          },
+          {
+            "text": "    MsqdxButton,",
+            "lineNumber": 9
+          },
+          {
+            "text": "    MsqdxChip,",
+            "lineNumber": 10
+          },
+          {
+            "text": "    MsqdxCard,",
+            "lineNumber": 11
+          },
+          {
+            "text": "    MsqdxMoleculeCard,",
+            "lineNumber": 12
+          },
+          {
+            "text": "    MsqdxTabs,",
+            "lineNumber": 13
+          },
+          {
+            "text": "    MsqdxTooltip,",
+            "lineNumber": 14
+          },
+          {
+            "text": "    MsqdxAccordion,",
+            "lineNumber": 15
+          },
+          {
+            "text": "    MsqdxAccordionItem,",
+            "lineNumber": 16
+          },
+          {
+            "text": "    MsqdxIcon,",
+            "lineNumber": 17
+          },
+          {
+            "text": "} from '@msqdx/react';",
+            "lineNumber": 18
+          },
+          {
+            "text": "import {",
+            "lineNumber": 19
+          },
+          {
+            "text": "    MSQDX_SPACING,",
+            "lineNumber": 20
+          },
+          {
+            "text": "    MSQDX_THEME,",
+            "lineNumber": 21
+          },
+          {
+            "text": "    MSQDX_BRAND_PRIMARY,",
+            "lineNumber": 22
+          },
+          {
+            "text": "    MSQDX_NEUTRAL,",
+            "lineNumber": 23
+          },
+          {
+            "text": "    MSQDX_STATUS,",
+            "lineNumber": 24
+          },
+          {
+            "text": "} from '@msqdx/tokens';",
+            "lineNumber": 25
+          },
+          {
+            "text": "import { EcoCard } from '@/components/EcoCard';",
+            "lineNumber": 26
+          },
+          {
+            "text": "import { PerformanceCard } from '@/components/PerformanceCard';",
+            "lineNumber": 27
+          },
+          {
+            "text": "import { ScanIssueList } from '@/components/ScanIssueList';",
+            "lineNumber": 28
+          },
+          {
+            "text": "import { UxCard } from '@/components/UxCard';",
+            "lineNumber": 29
+          },
+          {
+            "text": "import type { ScanResult, Issue, IssueSeverity } from '@/lib/types';",
+            "lineNumber": 30
+          },
+          {
+            "lineNumber": 31
+          },
+          {
+            "text": "const UxIssueList = dynamic(",
+            "lineNumber": 32
+          },
+          {
+            "text": "    () =&gt; import('@/components/UxIssueList').then((m) =&gt; ({ default: m.UxIssueList })),",
+            "lineNumber": 33
+          },
+          {
+            "text": "    { ssr: false, loading: () =&gt; &lt;Box sx={{ py: 2, display: 'flex', justifyContent: 'center' }}&gt;&lt;CircularProgress size={24} /&gt;&lt;/Box&gt; }",
+            "lineNumber": 34
+          },
+          {
+            "text": ");",
+            "lineNumber": 35
+          },
+          {
+            "text": "const FocusOrderOverlay = dynamic(",
+            "lineNumber": 36
+          },
+          {
+            "text": "    () =&gt; import('@/components/FocusOrderOverlay').then((m) =&gt; ({ default: m.FocusOrderOverlay })),",
+            "lineNumber": 37
+          },
+          {
+            "text": "    { ssr: false }",
+            "lineNumber": 38
+          },
+          {
+            "text": ");",
+            "lineNumber": 39
+          },
+          {
+            "text": "const StructureMap = dynamic(",
+            "lineNumber": 40
+          },
+          {
+            "text": "    () =&gt; import('@/components/StructureMap').then((m) =&gt; ({ default: m.StructureMap })),",
+            "lineNumber": 41
+          },
+          {
+            "text": "    { ssr: false, loading: () =&gt; &lt;Box sx={{ py: 2 }}&gt;&lt;CircularProgress size={24} /&gt;&lt;/Box&gt; }",
+            "lineNumber": 42
+          },
+          {
+            "text": ");",
+            "lineNumber": 43
+          },
+          {
+            "text": "const PageIndexCard = dynamic(",
+            "lineNumber": 44
+          },
+          {
+            "text": "    () =&gt; import('@/components/PageIndexCard').then((m) =&gt; ({ default: m.PageIndexCard })),",
+            "lineNumber": 45
+          },
+          {
+            "text": "    { ssr: false, loading: () =&gt; &lt;Box sx={{ py: 1 }}&gt;&lt;CircularProgress size={20} /&gt;&lt;/Box&gt; }",
+            "lineNumber": 46
+          },
+          {
+            "text": ");",
+            "lineNumber": 47
+          },
+          {
+            "text": "const PageIndexRegionsOverlay = dynamic(",
+            "lineNumber": 48
+          },
+          {
+            "text": "    () =&gt; import('@/components/PageIndexRegionsOverlay').then((m) =&gt; ({ default: m.PageIndexRegionsOverlay })),",
+            "lineNumber": 49
+          },
+          {
+            "text": "    { ssr: false }",
+            "lineNumber": 50
+          },
+          {
+            "text": ");",
+            "lineNumber": 51
+          },
+          {
+            "text": "const TouchTargetOverlay = dynamic(",
+            "lineNumber": 52
+          },
+          {
+            "text": "    () =&gt; import('@/components/TouchTargetOverlay')",
+            "lineNumber": 53
+          },
+          {
+            "text": ";",
+            "lineNumber": 55
+          }
+        ]
+      },
+      "score": 0.3760598301887512
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 102
+          },
+          "endPosition": {
+            "line": 1251,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 16
+              }
+            },
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 16
+              },
+              "endPosition": {
+                "line": 104,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 933
+          },
+          {
+            "text": "                                        brandColor={showSaliencyHeatmap ? 'green' : undefined}",
+            "lineNumber": 934
+          },
+          {
+            "text": "                                    &gt;",
+            "lineNumber": 935
+          },
+          {
+            "text": "                                        {showSaliencyHeatmap ? t('results.hideAttentionHeatmap') : t('results.showAttentionHeatmap')}",
+            "lineNumber": 936
+          },
+          {
+            "text": "                                    &lt;/MsqdxButton&gt;",
+            "lineNumber": 937
+          },
+          {
+            "text": "                                &lt;/Box&gt;",
+            "lineNumber": 938
+          },
+          {
+            "text": "                            ) : (",
+            "lineNumber": 939
+          },
+          {
+            "text": "                                &lt;Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}&gt;",
+            "lineNumber": 940
+          },
+          {
+            "text": "                                    &lt;InfoTooltip title={t('info.saliencyHeatmap')} ariaLabel={t('common.info')} /&gt;",
+            "lineNumber": 941
+          },
+          {
+            "text": "                                    &lt;MsqdxButton",
+            "lineNumber": 942
+          },
+          {
+            "text": "                                        variant=\"outlined\"",
+            "lineNumber": 943
+          },
+          {
+            "text": "                                        size=\"small\"",
+            "lineNumber": 944
+          },
+          {
+            "text": "                                        disabled={saliencyGenerating}",
+            "lineNumber": 945
+          },
+          {
+            "text": "                                        onClick={handleGenerateSaliency}",
+            "lineNumber": 946
+          },
+          {
+            "text": "                                    &gt;",
+            "lineNumber": 947
+          },
+          {
+            "text": "                                        {saliencyGenerating ? (",
+            "lineNumber": 948
+          },
+          {
+            "text": "                                            &lt;&gt;",
+            "lineNumber": 949
+          },
+          {
+            "text": "                                                &lt;CircularProgress size={14} sx={{ mr: 0.5 }} /&gt;",
+            "lineNumber": 950
+          },
+          {
+            "text": "                                                {t('results.generatingHeatmap')}",
+            "lineNumber": 951
+          },
+          {
+            "text": "                                            &lt;/&gt;",
+            "lineNumber": 952
+          },
+          {
+            "text": "                                        ) : (",
+            "lineNumber": 953
+          },
+          {
+            "text": "                                            t('results.generateAttentionHeatmap')",
+            "lineNumber": 954
+          },
+          {
+            "text": "                                        )}",
+            "lineNumber": 955
+          },
+          {
+            "text": "                                    &lt;/MsqdxButton&gt;",
+            "lineNumber": 956
+          },
+          {
+            "text": "                                    {saliencyError &amp;&amp; (",
+            "lineNumber": 957
+          },
+          {
+            "text": "                                        &lt;MsqdxTypography variant=\"caption\" sx={{ color: MSQDX_STATUS.error.base, ml: 0.5 }}&gt;",
+            "lineNumber": 958
+          },
+          {
+            "text": "                                            {saliencyError}",
+            "lineNumber": 959
+          },
+          {
+            "text": "                                        &lt;/MsqdxTypography&gt;",
+            "lineNumber": 960
+          },
+          {
+            "text": "                                    )}",
+            "lineNumber": 961
+          },
+          {
+            "text": "                                &lt;/Box&gt;",
+            "lineNumber": 962
+          },
+          {
+            "text": "}",
+            "lineNumber": 1252,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.3713521361351013
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 102
+          },
+          "endPosition": {
+            "line": 1251,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 16
+              }
+            },
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 16
+              },
+              "endPosition": {
+                "line": 104,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 522
+          },
+          {
+            "text": "                    &lt;MiniStat label=\"Level AA\" value={levelStats.AA} color={MSQDX_NEUTRAL[400]} /&gt;",
+            "lineNumber": 523
+          },
+          {
+            "text": "                    &lt;MiniStat label=\"Level AAA\" value={levelStats.AAA} color={MSQDX_NEUTRAL[400]} /&gt;",
+            "lineNumber": 524
+          },
+          {
+            "text": "                &lt;/Box&gt;",
+            "lineNumber": 525
+          },
+          {
+            "text": "            &lt;/MsqdxMoleculeCard&gt;",
+            "lineNumber": 526
+          },
+          {
+            "lineNumber": 527
+          },
+          {
+            "text": "            {/* Eco &amp; Performance Grid */}",
+            "lineNumber": 528
+          },
+          {
+            "text": "            {(result.eco || result.performance) &amp;&amp; (",
+            "lineNumber": 529
+          },
+          {
+            "text": "                &lt;Box sx={{",
+            "lineNumber": 530
+          },
+          {
+            "text": "                    display: 'grid',",
+            "lineNumber": 531
+          },
+          {
+            "text": "                    gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',",
+            "lineNumber": 532
+          },
+          {
+            "text": "                    gap: 'var(--msqdx-spacing-md)',",
+            "lineNumber": 533
+          },
+          {
+            "text": "                    mb: 'var(--msqdx-spacing-md)',",
+            "lineNumber": 534
+          },
+          {
+            "text": "                }}&gt;",
+            "lineNumber": 535
+          },
+          {
+            "text": "                    {result.eco &amp;&amp; (",
+            "lineNumber": 536
+          },
+          {
+            "text": "                        &lt;Box sx={{ minHeight: '100%' }}&gt;",
+            "lineNumber": 537
+          },
+          {
+            "text": "                            &lt;EcoCard eco={result.eco} /&gt;",
+            "lineNumber": 538
+          },
+          {
+            "text": "                        &lt;/Box&gt;",
+            "lineNumber": 539
+          },
+          {
+            "text": "                    )}",
+            "lineNumber": 540
+          },
+          {
+            "text": "                    {result.performance &amp;&amp; (",
+            "lineNumber": 541
+          },
+          {
+            "text": "                        &lt;Box sx={{ minHeight: '100%' }}&gt;",
+            "lineNumber": 542
+          },
+          {
+            "text": "                            &lt;PerformanceCard perf={result.performance} /&gt;",
+            "lineNumber": 543
+          },
+          {
+            "text": "                        &lt;/Box&gt;",
+            "lineNumber": 544
+          },
+          {
+            "text": "                    )}",
+            "lineNumber": 545
+          },
+          {
+            "text": "                    {result.ux &amp;&amp; (",
+            "lineNumber": 546
+          },
+          {
+            "text": "                        &lt;Box sx={{ minHeight: '100%' }}&gt;",
+            "lineNumber": 547
+          },
+          {
+            "text": "                            &lt;UxCard ux={result.ux} /&gt;",
+            "lineNumber": 548
+          },
+          {
+            "text": "                        &lt;/Box&gt;",
+            "lineNumber": 549
+          },
+          {
+            "text": "                    )}",
+            "lineNumber": 550
+          },
+          {
+            "text": "                &lt;/Box&gt;",
+            "lineNumber": 551
+          },
+          {
+            "text": "            )}",
+            "lineNumber": 552
+          },
+          {
+            "text": "}",
+            "lineNumber": 1252,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.3510971963405609
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 102
+          },
+          "endPosition": {
+            "line": 1251,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 16
+              }
+            },
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 16
+              },
+              "endPosition": {
+                "line": 104,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "text": " (",
+            "lineNumber": 1183
+          },
+          {
+            "text": "                        &lt;Box sx={{ mt: 'var(--msqdx-spacing-md)', pt: 'var(--msqdx-spacing-md)', borderTop: '1px solid var(--color-secondary-dx-grey-light-tint)' }}&gt;",
+            "lineNumber": 1184
+          },
+          {
+            "text": "                            &lt;PageIndexCard pageIndex={result.pageIndex} showSaliency={true} /&gt;",
+            "lineNumber": 1185
+          },
+          {
+            "text": "                        &lt;/Box&gt;",
+            "lineNumber": 1186
+          },
+          {
+            "text": "                    )}",
+            "lineNumber": 1187
+          },
+          {
+            "text": "                &lt;/MsqdxMoleculeCard&gt;",
+            "lineNumber": 1188
+          },
+          {
+            "text": "            )}",
+            "lineNumber": 1189
+          },
+          {
+            "lineNumber": 1190
+          },
+          {
+            "text": "            {viewMode === 'seo' &amp;&amp; (",
+            "lineNumber": 1191
+          },
+          {
+            "text": "                &lt;Box sx={{",
+            "lineNumber": 1192
+          },
+          {
+            "text": "                    display: 'grid',",
+            "lineNumber": 1193
+          },
+          {
+            "text": "                    gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',",
+            "lineNumber": 1194
+          },
+          {
+            "text": "                    gap: 'var(--msqdx-spacing-md)'",
+            "lineNumber": 1195
+          },
+          {
+            "text": "                }}&gt;",
+            "lineNumber": 1196
+          },
+          {
+            "text": "                    {result.seo ? (",
+            "lineNumber": 1197
+          },
+          {
+            "text": "                        &lt;SeoCard seo={result.seo} /&gt;",
+            "lineNumber": 1198
+          },
+          {
+            "text": "                    ) : (",
+            "lineNumber": 1199
+          },
+          {
+            "text": "                        &lt;MsqdxMoleculeCard title=\"SEO Audit\" subtitle=\"No SEO data.\" sx={{ bgcolor: 'var(--color-card-bg)' }}&gt;&lt;MsqdxTypography&gt;Keine SEO Daten verfügbar.&lt;/MsqdxTypography&gt;&lt;/MsqdxMoleculeCard&gt;",
+            "lineNumber": 1200
+          },
+          {
+            "text": "                    )}",
+            "lineNumber": 1201
+          },
+          {
+            "lineNumber": 1202
+          },
+          {
+            "text": "                    {result.links ? (",
+            "lineNumber": 1203
+          },
+          {
+            "text": "                        &lt;LinkAuditCard links={result.links} /&gt;",
+            "lineNumber": 1204
+          },
+          {
+            "text": "                    ) : (",
+            "lineNumber": 1205
+          },
+          {
+            "text": "                        &lt;MsqdxMoleculeCard",
+            "lineNumber": 1206
+          },
+          {
+            "text": "}",
+            "lineNumber": 1252,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.3425697982311249
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 102
+          },
+          "endPosition": {
+            "line": 1251,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 16
+              }
+            },
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 16
+              },
+              "endPosition": {
+                "line": 104,
+                "column": 5
+              }
+            },
+            {
+              "startPosition": {
+                "line": 748,
+                "column": 34
+              },
+              "endPosition": {
+                "line": 748,
+                "column": 34
+              }
+            },
+            {
+              "startPosition": {
+                "line": 748,
+                "column": 52
+              },
+              "endPosition": {
+                "line": 749,
+                "column": 37
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "text": "(pass, idx) =&gt; {",
+            "lineNumber": 754
+          },
+          {
+            "text": "maxHeight: '300px',",
+            "lineNumber": 819
+          },
+          {
+            "text": "                                                    overflowY: 'auto',",
+            "lineNumber": 820
+          },
+          {
+            "text": "                                                    p: MSQDX_SPACING.scale.xs,",
+            "lineNumber": 821
+          },
+          {
+            "text": "                                                    borderRadius: MSQDX_SPACING.scale.xs,",
+            "lineNumber": 822
+          },
+          {
+            "text": "                                                    backgroundColor: 'var(--color-secondary-dx-grey-light-tint)',",
+            "lineNumber": 823
+          },
+          {
+            "text": "                                                    border: &#96;1px solid ${'var(--color-secondary-dx-grey-light-tint)'}&#96;",
+            "lineNumber": 824
+          },
+          {
+            "text": "                                                }}&gt;",
+            "lineNumber": 825
+          },
+          {
+            "text": "                                                    {pass.nodes.slice(0, 50).map((node: any, nodeIdx: number) =&gt; (",
+            "lineNumber": 826
+          },
+          {
+            "text": "                                                        &lt;Box key={nodeIdx} sx={{",
+            "lineNumber": 827
+          },
+          {
+            "text": "                                                            p: MSQDX_SPACING.scale.xs,",
+            "lineNumber": 828
+          },
+          {
+            "text": "                                                            borderBottom: nodeIdx &lt; pass.nodes.length - 1 ? &#96;1px solid ${'var(--color-secondary-dx-grey-light-tint)'}&#96; : 'none'",
+            "lineNumber": 829
+          },
+          {
+            "text": "                                                        }}&gt;",
+            "lineNumber": 830
+          },
+          {
+            "text": "                                                            &lt;code style={{",
+            "lineNumber": 831
+          },
+          {
+            "text": "                                                                fontSize: '0.75rem',",
+            "lineNumber": 832
+          },
+          {
+            "text": "                                                                color: MSQDX_BRAND_PRIMARY.green,",
+            "lineNumber": 833
+          },
+          {
+            "text": "                                                                fontFamily: 'monospace',",
+            "lineNumber": 834
+          },
+          {
+            "text": "                                                                display: 'block',",
+            "lineNumber": 835
+          },
+          {
+            "text": "                                                                wordBreak: 'break-all'",
+            "lineNumber": 836
+          },
+          {
+            "text": "                                                            }}&gt;",
+            "lineNumber": 837
+          },
+          {
+            "text": "                                                                {node.html}",
+            "lineNumber": 838
+          },
+          {
+            "text": "                                                            &lt;/code&gt;",
+            "lineNumber": 839
+          },
+          {
+            "text": "                                                        &lt;/Box&gt;",
+            "lineNumber": 840
+          },
+          {
+            "text": "                                                    ))}",
+            "lineNumber": 841
+          },
+          {
+            "text": "                                                &lt;/Box&gt;",
+            "lineNumber": 842
+          },
+          {
+            "text": "                                            &lt;/Box&gt;",
+            "lineNumber": 843
+          },
+          {
+            "text": "                                        &lt;/MsqdxAccordionItem&gt;",
+            "lineNumber": 844
+          },
+          {
+            "text": "                                }",
+            "lineNumber": 846
+          },
+          {
+            "text": "}",
+            "lineNumber": 1252,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.33530211448669434
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 102
+          },
+          "endPosition": {
+            "line": 1251,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 16
+              }
+            },
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 16
+              },
+              "endPosition": {
+                "line": 104,
+                "column": 5
+              }
+            },
+            {
+              "startPosition": {
+                "line": 1068,
+                "column": 42
+              },
+              "endPosition": {
+                "line": 1068,
+                "column": 42
+              }
+            },
+            {
+              "startPosition": {
+                "line": 1068,
+                "column": 71
+              },
+              "endPosition": {
+                "line": 1069,
+                "column": 45
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "text": "(r) =&gt; (",
+            "lineNumber": 1074
+          },
+          {
+            "lineNumber": 1091
+          },
+          {
+            "text": "                                                    whiteSpace: 'nowrap',",
+            "lineNumber": 1092
+          },
+          {
+            "text": "                                                }}",
+            "lineNumber": 1093
+          },
+          {
+            "text": "                                            &gt;",
+            "lineNumber": 1094
+          },
+          {
+            "text": "                                                &lt;Box component=\"span\" sx={{ fontWeight: 600, color: 'var(--color-text-muted-on-light)', mr: 0.5 }}&gt;",
+            "lineNumber": 1095
+          },
+          {
+            "text": "                                                    {r.tag}",
+            "lineNumber": 1096
+          },
+          {
+            "text": "                                                &lt;/Box&gt;",
+            "lineNumber": 1097
+          },
+          {
+            "text": "                                                {(r.headingText || '').slice(0, 35)}",
+            "lineNumber": 1098
+          },
+          {
+            "text": "                                                {(r.headingText || '').length &gt; 35 ? '…' : ''}",
+            "lineNumber": 1099
+          },
+          {
+            "text": "                                            &lt;/Box&gt;",
+            "lineNumber": 1100
+          },
+          {
+            "text": "                                        ))}",
+            "lineNumber": 1101
+          },
+          {
+            "text": "                                    &lt;/Box&gt;",
+            "lineNumber": 1102
+          },
+          {
+            "text": "                                &lt;/Box&gt;",
+            "lineNumber": 1103
+          },
+          {
+            "text": "                            )}",
+            "lineNumber": 1104
+          },
+          {
+            "text": "                        &lt;/Box&gt;",
+            "lineNumber": 1105
+          },
+          {
+            "text": "                    ) : (",
+            "lineNumber": 1106
+          },
+          {
+            "text": "                        &lt;Box sx={{ textAlign: 'center', py: 8 }}&gt;",
+            "lineNumber": 1107
+          },
+          {
+            "text": "                            &lt;MsqdxTypography variant=\"body1\" sx={{ color: 'var(--color-text-muted-on-light)' }}&gt;",
+            "lineNumber": 1108
+          },
+          {
+            "text": "                                Kein Screenshot verfügbar. (Scans vor dem Update haben keine visuellen Daten)",
+            "lineNumber": 1109
+          },
+          {
+            "text": "                            &lt;/MsqdxTypography&gt;",
+            "lineNumber": 1110
+          },
+          {
+            "text": "                        &lt;/Box&gt;",
+            "lineNumber": 1111
+          },
+          {
+            "text": "                    )}",
+            "lineNumber": 1112
+          },
+          {
+            "text": "                &lt;/MsqdxMoleculeCard&gt;",
+            "lineNumber": 1113
+          },
+          {
+            "text": "            )}",
+            "lineNumber": 1114
+          },
+          {
+            "text": "            {viewMode === 'ux' &amp;&amp; (",
+            "lineNumber": 1115
+          },
+          {
+            "text": "                &lt;MsqdxMoleculeCard",
+            "lineNumber": 1116
+          },
+          {
+            "text": "                    title=\"User Experience Issues\"",
+            "lineNumber": 1117
+          },
+          {
+            "text": "                    headerActions={&lt;InfoTooltip title={t('info.uxIssues')} ariaLabel={t('common.info')} /&gt;}",
+            "lineNumber": 1118
+          },
+          {
+            "text": "                    subtitle=\"User Experience Issues\"",
+            "lineNumber": 1119
+          },
+          {
+            "text": "                    sx={{ bgcolor: 'var(--color-card-bg)' }}",
+            "lineNumber": 1120
+          },
+          {
+            "text": "                &gt;",
+            "lineNumber": 1121
+          },
+          {
+            "text": "                    {result.ux ? (",
+            "lineNumber": 1122
+          },
+          {
+            "text": "                        &lt;UxIssueList ux={result.ux} /&gt;",
+            "lineNumber": 1123
+          },
+          {
+            "text": "                    ) : (",
+            "lineNumber": 1124
+          },
+          {
+            "text": "                        &lt;MsqdxTypography&gt;",
+            "lineNumber": 1125
+          },
+          {
+            "text": "}",
+            "lineNumber": 1252,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.3347233533859253
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 102
+          },
+          "endPosition": {
+            "line": 1251,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 16
+              }
+            },
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 16
+              },
+              "endPosition": {
+                "line": 104,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 565
+          },
+          {
+            "text": "                        { value: 'seo', label: 'Links &amp; SEO' },",
+            "lineNumber": 566
+          },
+          {
+            "text": "                        { value: 'infra', label: 'Infrastruktur &amp; Privacy' },",
+            "lineNumber": 567
+          },
+          {
+            "text": "                        { value: 'generative', label: 'Generative Search (GEO)' },",
+            "lineNumber": 568
+          },
+          {
+            "text": "                    ]}",
+            "lineNumber": 569
+          },
+          {
+            "text": "                /&gt;",
+            "lineNumber": 570
+          },
+          {
+            "text": "            &lt;/Box&gt;",
+            "lineNumber": 571
+          },
+          {
+            "lineNumber": 572
+          },
+          {
+            "text": "            {viewMode === 'summary' &amp;&amp; (",
+            "lineNumber": 573
+          },
+          {
+            "text": "                &lt;MsqdxMoleculeCard",
+            "lineNumber": 574
+          },
+          {
+            "text": "                    title=\"UX/CX Check\"",
+            "lineNumber": 575
+          },
+          {
+            "text": "                    headerActions={&lt;InfoTooltip title={t('info.uxCxCheck')} ariaLabel={t('common.info')} /&gt;}",
+            "lineNumber": 576
+          },
+          {
+            "text": "                    subtitle=\"Bewertung und Handlungsempfehlungen auf Basis aller Scan-Kategorien\"",
+            "lineNumber": 577
+          },
+          {
+            "text": "                    variant=\"flat\"",
+            "lineNumber": 578
+          },
+          {
+            "text": "                    sx={{ bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}",
+            "lineNumber": 579
+          },
+          {
+            "text": "                    borderRadius=\"lg\"",
+            "lineNumber": 580
+          },
+          {
+            "text": "                &gt;",
+            "lineNumber": 581
+          },
+          {
+            "text": "                    {result.llmSummary ? (",
+            "lineNumber": 582
+          },
+          {
+            "text": "                        &lt;Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-md)' }}&gt;",
+            "lineNumber": 583
+          },
+          {
+            "text": "                            {result.llmSummary.overallGrade &amp;&amp; (",
+            "lineNumber": 584
+          },
+          {
+            "text": "                                &lt;MsqdxChip",
+            "lineNumber": 585
+          },
+          {
+            "text": "                                    label={result.llmSummary.overallGrade}",
+            "lineNumber": 586
+          },
+          {
+            "text": "                                    size=\"small\"",
+            "lineNumber": 587
+          },
+          {
+            "text": "                                    sx={{ alignSelf: 'flex-start', fontWeight: 600 }}",
+            "lineNumber": 588
+          },
+          {
+            "text": "                                /&gt;",
+            "lineNumber": 589
+          },
+          {
+            "text": "}",
+            "lineNumber": 1252,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.3172895312309265
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 102
+          },
+          "endPosition": {
+            "line": 1251,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 16
+              }
+            },
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 16
+              },
+              "endPosition": {
+                "line": 104,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 367
+          },
+          {
+            "text": "                    &gt;",
+            "lineNumber": 368
+          },
+          {
+            "text": "                        {result.url}",
+            "lineNumber": 369
+          },
+          {
+            "text": "                    &lt;/MsqdxTypography&gt;",
+            "lineNumber": 370
+          },
+          {
+            "text": "                &lt;/Box&gt;",
+            "lineNumber": 371
+          },
+          {
+            "lineNumber": 372
+          },
+          {
+            "text": "                {/* Score Gauge */}",
+            "lineNumber": 373
+          },
+          {
+            "text": "                &lt;Box sx={{ position: 'relative', display: 'inline-flex', mr: 'var(--msqdx-spacing-sm)' }}&gt;",
+            "lineNumber": 374
+          },
+          {
+            "text": "                    &lt;CircularProgress",
+            "lineNumber": 375
+          },
+          {
+            "text": "                        variant=\"determinate\"",
+            "lineNumber": 376
+          },
+          {
+            "text": "                        value={100}",
+            "lineNumber": 377
+          },
+          {
+            "text": "                        size={80}",
+            "lineNumber": 378
+          },
+          {
+            "text": "                        thickness={4}",
+            "lineNumber": 379
+          },
+          {
+            "text": "                        sx={{ color: MSQDX_NEUTRAL[800], position: 'absolute' }}",
+            "lineNumber": 380
+          },
+          {
+            "text": "                    /&gt;",
+            "lineNumber": 381
+          },
+          {
+            "text": "                    &lt;CircularProgress",
+            "lineNumber": 382
+          },
+          {
+            "text": "                        variant=\"determinate\"",
+            "lineNumber": 383
+          },
+          {
+            "text": "                        value={result.score}",
+            "lineNumber": 384
+          },
+          {
+            "text": "                        size={80}",
+            "lineNumber": 385
+          },
+          {
+            "text": "                        thickness={4}",
+            "lineNumber": 386
+          },
+          {
+            "text": "                        sx={{ color: scoreColor }}",
+            "lineNumber": 387
+          },
+          {
+            "text": "                    /&gt;",
+            "lineNumber": 388
+          },
+          {
+            "text": "                    &lt;Box",
+            "lineNumber": 389
+          },
+          {
+            "text": "                        sx={{",
+            "lineNumber": 390
+          },
+          {
+            "text": "                            top: 0,",
+            "lineNumber": 391
+          },
+          {
+            "text": "                            left: 0,",
+            "lineNumber": 392
+          },
+          {
+            "text": "                            bottom: 0,",
+            "lineNumber": 393
+          },
+          {
+            "text": "                            right: 0,",
+            "lineNumber": 394
+          },
+          {
+            "text": "                            position: 'absolute',",
+            "lineNumber": 395
+          },
+          {
+            "text": "                            display: 'flex',",
+            "lineNumber": 396
+          },
+          {
+            "text": "                            alignItems: 'center',",
+            "lineNumber": 397
+          },
+          {
+            "text": "                            justifyContent: 'center',",
+            "lineNumber": 398
+          },
+          {
+            "text": "                            flexDirection: 'column',",
+            "lineNumber": 399
+          },
+          {
+            "text": "                        }}",
+            "lineNumber": 400
+          },
+          {
+            "text": "                    &gt;",
+            "lineNumber": 401
+          },
+          {
+            "text": "                        &lt;MsqdxTypography variant=\"h4\" sx={{ fontWeight: 800, color: scoreColor, lineHeight: 1 }}&gt;",
+            "lineNumber": 402
+          },
+          {
+            "text": "                            {result.score}",
+            "lineNumber": 403
+          },
+          {
+            "text": "                        &lt;/MsqdxTypography&gt;",
+            "lineNumber": 404
+          },
+          {
+            "text": "                        &lt;Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}&gt;",
+            "lineNumber": 405
+          },
+          {
+            "text": "                            &lt;MsqdxTypography variant=\"caption\" sx={{ fontSize: '0.6rem', color: 'var(--color-text-muted-on-light)' }}&gt;",
+            "lineNumber": 406
+          },
+          {
+            "text": "                                {t('results.score')}",
+            "lineNumber": 407
+          },
+          {
+            "text": "                            &lt;/MsqdxTypography&gt;",
+            "lineNumber": 408
+          },
+          {
+            "text": "                            &lt;InfoTooltip title={t('info.score')} ariaLabel={t('common.info')} placement=\"bottom\" /&gt;",
+            "lineNumber": 409
+          },
+          {
+            "text": "                        &lt;/Box&gt;",
+            "lineNumber": 410
+          },
+          {
+            "text": "                    &lt;/Box&gt;",
+            "lineNumber": 411
+          },
+          {
+            "text": "                &lt;/Box&gt;",
+            "lineNumber": 412
+          },
+          {
+            "text": "            &lt;/Box&gt;",
+            "lineNumber": 413
+          },
+          {
+            "text": "}",
+            "lineNumber": 1252,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.3163261115550995
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 102
+          },
+          "endPosition": {
+            "line": 1251,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 16
+              }
+            },
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 16
+              },
+              "endPosition": {
+                "line": 104,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 883
+          },
+          {
+            "text": "                                    t={t}",
+            "lineNumber": 884
+          },
+          {
+            "text": "                                /&gt;",
+            "lineNumber": 885
+          },
+          {
+            "text": "                            )}",
+            "lineNumber": 886
+          },
+          {
+            "text": "                        &lt;/&gt;",
+            "lineNumber": 887
+          },
+          {
+            "text": "                    )}",
+            "lineNumber": 888
+          },
+          {
+            "text": "                &lt;/MsqdxMoleculeCard&gt;",
+            "lineNumber": 889
+          },
+          {
+            "text": "            )}",
+            "lineNumber": 890
+          },
+          {
+            "lineNumber": 891
+          },
+          {
+            "text": "            {viewMode === 'visual' &amp;&amp; (",
+            "lineNumber": 892
+          },
+          {
+            "text": "                &lt;MsqdxMoleculeCard",
+            "lineNumber": 893
+          },
+          {
+            "text": "                    title=\"Visuelle Analyse\"",
+            "lineNumber": 894
+          },
+          {
+            "text": "                    variant=\"flat\"",
+            "lineNumber": 895
+          },
+          {
+            "text": "                    sx={{ bgcolor: 'var(--color-card-bg)', mb: 'var(--msqdx-spacing-md)' }}",
+            "lineNumber": 896
+          },
+          {
+            "text": "                    borderRadius=\"xs\"",
+            "lineNumber": 897
+          },
+          {
+            "text": "                    headerActions={",
+            "lineNumber": 898
+          },
+          {
+            "text": "                        &lt;Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}&gt;",
+            "lineNumber": 899
+          },
+          {
+            "text": "                            &lt;InfoTooltip title={t('info.visualAnalysis')} ariaLabel={t('common.info')} /&gt;",
+            "lineNumber": 900
+          },
+          {
+            "text": "                            &lt;MsqdxButton",
+            "lineNumber": 901
+          },
+          {
+            "text": "                                variant={showFocusOrder ? 'contained' : 'outlined'}",
+            "lineNumber": 902
+          },
+          {
+            "text": "                                size=\"small\"",
+            "lineNumber": 903
+          },
+          {
+            "text": "                                onClick={() =&gt; setShowFocusOrder(!showFocusOrder)}",
+            "lineNumber": 904
+          },
+          {
+            "text": "                                brandColor={showFocusOrder ? 'green' : undefined}",
+            "lineNumber": 905
+          },
+          {
+            "text": "                            &gt;",
+            "lineNumber": 906
+          },
+          {
+            "text": "                                {showFocusOrder ? 'Hide Focus Order' : 'Show Focus Order'}",
+            "lineNumber": 907
+          },
+          {
+            "text": "                            &lt;/MsqdxButton&gt;",
+            "lineNumber": 908
+          },
+          {
+            "text": "                            &lt;MsqdxButton",
+            "lineNumber": 909
+          },
+          {
+            "text": "                                variant={showTouchTargets ? 'contained' : 'outlined'}",
+            "lineNumber": 910
+          },
+          {
+            "text": "                                size=\"small\"",
+            "lineNumber": 911
+          },
+          {
+            "text": "                                onClick={() =&gt; setShowTouchTargets(!showTouchTargets)}",
+            "lineNumber": 912
+          },
+          {
+            "text": "}",
+            "lineNumber": 1252,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.3153040111064911
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 102
+          },
+          "endPosition": {
+            "line": 1251,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 16
+              }
+            },
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 16
+              },
+              "endPosition": {
+                "line": 104,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 864
+          },
+          {
+            "text": "                            }}",
+            "lineNumber": 865
+          },
+          {
+            "text": "                        &gt;",
+            "lineNumber": 866
+          },
+          {
+            "text": "                            &lt;MsqdxTypography variant=\"h6\" sx={{ color: MSQDX_BRAND_PRIMARY.green }}&gt;",
+            "lineNumber": 867
+          },
+          {
+            "text": "                                ✓ Keine Issues gefunden",
+            "lineNumber": 868
+          },
+          {
+            "text": "                            &lt;/MsqdxTypography&gt;",
+            "lineNumber": 869
+          },
+          {
+            "text": "                        &lt;/Box&gt;",
+            "lineNumber": 870
+          },
+          {
+            "text": "                    ) : (",
+            "lineNumber": 871
+          },
+          {
+            "text": "                        &lt;&gt;",
+            "lineNumber": 872
+          },
+          {
+            "text": "                            &lt;ScanIssueList",
+            "lineNumber": 873
+          },
+          {
+            "text": "                                issues={paginatedIssues}",
+            "lineNumber": 874
+          },
+          {
+            "text": "                                highlightedIndex={highlightedIndex}",
+            "lineNumber": 875
+          },
+          {
+            "text": "                                registerRef={handleRefRegister}",
+            "lineNumber": 876
+          },
+          {
+            "text": "                            /&gt;",
+            "lineNumber": 877
+          },
+          {
+            "text": "                            {filteredIssues.length &gt; RESULTS_ISSUES_PAGE_SIZE &amp;&amp; (",
+            "lineNumber": 878
+          },
+          {
+            "text": "                                &lt;PaginationBar",
+            "lineNumber": 879
+          },
+          {
+            "text": "                                    page={issuesPage}",
+            "lineNumber": 880
+          },
+          {
+            "text": "                                    totalPages={issuesTotalPages}",
+            "lineNumber": 881
+          },
+          {
+            "text": "                                    onPrev={() =&gt; setIssuesPage((p) =&gt; Math.max(1, p - 1))}",
+            "lineNumber": 882
+          },
+          {
+            "text": "                                    onNext={() =&gt; setIssuesPage((p) =&gt; Math.min(issuesTotalPages, p + 1))}",
+            "lineNumber": 883
+          },
+          {
+            "text": "                                    t={t}",
+            "lineNumber": 884
+          },
+          {
+            "text": "                                /&gt;",
+            "lineNumber": 885
+          },
+          {
+            "text": "                            )}",
+            "lineNumber": 886
+          },
+          {
+            "text": "                        &lt;/&gt;",
+            "lineNumber": 887
+          },
+          {
+            "text": "}",
+            "lineNumber": 1252,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.309328556060791
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 102
+          },
+          "endPosition": {
+            "line": 1251,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 16
+              }
+            },
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 16
+              },
+              "endPosition": {
+                "line": 104,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 547
+          },
+          {
+            "text": "                            &lt;UxCard ux={result.ux} /&gt;",
+            "lineNumber": 548
+          },
+          {
+            "text": "                        &lt;/Box&gt;",
+            "lineNumber": 549
+          },
+          {
+            "text": "                    )}",
+            "lineNumber": 550
+          },
+          {
+            "text": "                &lt;/Box&gt;",
+            "lineNumber": 551
+          },
+          {
+            "text": "            )}",
+            "lineNumber": 552
+          },
+          {
+            "lineNumber": 553
+          },
+          {
+            "text": "            {/* View Toggle &amp; Filters */}",
+            "lineNumber": 554
+          },
+          {
+            "text": "            &lt;Box sx={{ mb: 'var(--msqdx-spacing-md)', display: 'flex', alignItems: 'center', gap: 1 }}&gt;",
+            "lineNumber": 555
+          },
+          {
+            "text": "                &lt;InfoTooltip title={t('info.viewModes')} ariaLabel={t('common.info')} placement=\"bottom\" /&gt;",
+            "lineNumber": 556
+          },
+          {
+            "text": "                &lt;MsqdxTabs",
+            "lineNumber": 557
+          },
+          {
+            "text": "                    value={viewMode}",
+            "lineNumber": 558
+          },
+          {
+            "text": "                    onChange={(v: string) =&gt; setViewMode(v as any)}",
+            "lineNumber": 559
+          },
+          {
+            "text": "                    tabs={[",
+            "lineNumber": 560
+          },
+          {
+            "text": "                        { value: 'list', label: 'Liste &amp; Details' },",
+            "lineNumber": 561
+          },
+          {
+            "text": "                        { value: 'summary', label: 'UX/CX Check' },",
+            "lineNumber": 562
+          },
+          {
+            "text": "                        { value: 'visual', label: 'Visuelle Analyse' },",
+            "lineNumber": 563
+          },
+          {
+            "text": "                        { value: 'ux', label: 'UX Audit' },",
+            "lineNumber": 564
+          },
+          {
+            "text": "                        { value: 'structure', label: 'Struktur &amp; Semantik' },",
+            "lineNumber": 565
+          },
+          {
+            "text": "                        { value: 'seo', label: 'Links &amp; SEO' },",
+            "lineNumber": 566
+          },
+          {
+            "text": "                        { value: 'infra', label: 'Infrastruktur &amp; Privacy' },",
+            "lineNumber": 567
+          },
+          {
+            "text": "}",
+            "lineNumber": 1252,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.30509936809539795
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 50,
+            "column": 2
+          },
+          "endPosition": {
+            "line": 90,
+            "column": 40
+          }
+        },
+        "signatures": {},
+        "detailedLines": [
+          {
+            "text": "const TouchTargetOverlay = dynamic(",
+            "lineNumber": 52
+          },
+          {
+            "text": "    () =&gt; import('@/components/TouchTargetOverlay').then((m) =&gt; ({ default: m.TouchTargetOverlay })),",
+            "lineNumber": 53
+          },
+          {
+            "text": "    { ssr: false }",
+            "lineNumber": 54
+          },
+          {
+            "text": ");",
+            "lineNumber": 55
+          },
+          {
+            "text": "const SaliencyHeatmapOverlay = dynamic(",
+            "lineNumber": 56
+          },
+          {
+            "text": "    () =&gt; import('@/components/SaliencyHeatmapOverlay').then((m) =&gt; ({ default: m.SaliencyHeatmapOverlay })),",
+            "lineNumber": 57
+          },
+          {
+            "text": "    { ssr: false }",
+            "lineNumber": 58
+          },
+          {
+            "text": ");",
+            "lineNumber": 59
+          },
+          {
+            "text": "const SeoCard = dynamic(",
+            "lineNumber": 60
+          },
+          {
+            "text": "    () =&gt; import('@/components/SeoCard').then((m) =&gt; ({ default: m.SeoCard })),",
+            "lineNumber": 61
+          },
+          {
+            "text": "    { ssr: false, loading: () =&gt; &lt;Box sx={{ py: 2 }}&gt;&lt;CircularProgress size={24} /&gt;&lt;/Box&gt; }",
+            "lineNumber": 62
+          },
+          {
+            "text": ");",
+            "lineNumber": 63
+          },
+          {
+            "text": "const LinkAuditCard = dynamic(",
+            "lineNumber": 64
+          },
+          {
+            "text": "    () =&gt; import('@/components/LinkAuditCard').then((m) =&gt; ({ default: m.LinkAuditCard })),",
+            "lineNumber": 65
+          },
+          {
+            "text": "    { ssr: false, loading: () =&gt; &lt;Box sx={{ py: 2 }}&gt;&lt;CircularProgress size={24} /&gt;&lt;/Box&gt; }",
+            "lineNumber": 66
+          },
+          {
+            "text": ");",
+            "lineNumber": 67
+          },
+          {
+            "text": "const InfraCard = dynamic(",
+            "lineNumber": 68
+          },
+          {
+            "text": "    () =&gt; import('@/components/InfraCard').then((m) =&gt; ({ default: m.InfraCard })),",
+            "lineNumber": 69
+          },
+          {
+            "text": "    { ssr: false, loading: () =&gt; &lt;Box sx={{ py: 2 }}&gt;&lt;CircularProgress size={24} /&gt;&lt;/Box&gt; }",
+            "lineNumber": 70
+          },
+          {
+            "text": ");",
+            "lineNumber": 71
+          },
+          {
+            "text": "const PrivacyCard = dynamic(",
+            "lineNumber": 72
+          },
+          {
+            "text": "    () =&gt; import('@/components/PrivacyCard').then((m) =&gt; ({ default: m.PrivacyCard })),",
+            "lineNumber": 73
+          },
+          {
+            "text": "    { ssr: false, loading: () =&gt; &lt;Box sx={{ py: 2 }}&gt;&lt;CircularProgress size={24} /&gt;&lt;/Box&gt; }",
+            "lineNumber": 74
+          },
+          {
+            "text": ");",
+            "lineNumber": 75
+          },
+          {
+            "text": "const SecurityCard = dynamic(",
+            "lineNumber": 76
+          },
+          {
+            "text": "    () =&gt; import('@/components/SecurityCard').then((m) =&gt; ({ default: m.SecurityCard })),",
+            "lineNumber": 77
+          },
+          {
+            "text": "    { ssr: false, loading: () =&gt; &lt;Box sx={{ py: 2 }}&gt;&lt;CircularProgress size={24} /&gt;&lt;/Box&gt; }",
+            "lineNumber": 78
+          },
+          {
+            "text": ");",
+            "lineNumber": 79
+          },
+          {
+            "text": "const TechnicalInsightsCard = dynamic(",
+            "lineNumber": 80
+          },
+          {
+            "text": "    () =&gt; import('@/components/TechnicalInsightsCard').then((m) =&gt; ({ default: m.TechnicalInsightsCard })),",
+            "lineNumber": 81
+          },
+          {
+            "text": "    { ssr: false, loading: () =&gt; &lt;Box sx={{ py: 2 }}&gt;&lt;CircularProgress size={24} /&gt;&lt;/Box&gt; }",
+            "lineNumber": 82
+          },
+          {
+            "text": ");",
+            "lineNumber": 83
+          },
+          {
+            "text": "const GenerativeOptimizerCard = dynamic(",
+            "lineNumber": 84
+          },
+          {
+            "text": "    () =&gt; import('@/components/GenerativeOptimizerCard').then((m) =&gt; ({ default: m.GenerativeOptimizerCard })),",
+            "lineNumber": 85
+          },
+          {
+            "text": "    { ssr: false, loading: () =&gt; &lt;Box sx={{ py: 2 }}&gt;&lt;CircularProgress size={24} /&gt;&lt;/Box&gt; }",
+            "lineNumber": 86
+          },
+          {
+            "text": ");",
+            "lineNumber": 87
+          },
+          {
+            "text": "import { useI18n } from '@/components/i18n/I18nProvider';",
+            "lineNumber": 88
+          },
+          {
+            "text": "import { InfoTooltip } from '@/components/InfoTooltip';",
+            "lineNumber": 89
+          },
+          {
+            "text": "import { PaginationBar } from '@/components/PaginationBar';",
+            "lineNumber": 90
+          },
+          {
+            "text": "import { RESULTS_ISSUES_PAGE_SIZE } from",
+            "lineNumber": 91
+          }
+        ]
+      },
+      "score": 0.3044075071811676
+    },
+    {
+      "codeBlock": {
+        "relativeWorkspacePath": "./app/results/[id]/page.tsx",
+        "range": {
+          "startPosition": {
+            "line": 102
+          },
+          "endPosition": {
+            "line": 1251,
+            "column": 1
+          }
+        },
+        "signatures": {
+          "ranges": [
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 1
+              },
+              "endPosition": {
+                "line": 103,
+                "column": 16
+              }
+            },
+            {
+              "startPosition": {
+                "line": 103,
+                "column": 16
+              },
+              "endPosition": {
+                "line": 104,
+                "column": 5
+              }
+            }
+          ]
+        },
+        "detailedLines": [
+          {
+            "text": "export default function ResultsPage() {",
+            "lineNumber": 103,
+            "isSignature": true
+          },
+          {
+            "lineNumber": 504
+          },
+          {
+            "text": "                            &lt;/&gt;",
+            "lineNumber": 505
+          },
+          {
+            "text": "                        )}",
+            "lineNumber": 506
+          },
+          {
+            "text": "                    &lt;/Box&gt;",
+            "lineNumber": 507
+          },
+          {
+            "text": "                }",
+            "lineNumber": 508
+          },
+          {
+            "text": "            &gt;",
+            "lineNumber": 509
+          },
+          {
+            "text": "                {/* Stats Grid: Current + WCAG Levels */}",
+            "lineNumber": 510
+          },
+          {
+            "text": "                &lt;Box",
+            "lineNumber": 511
+          },
+          {
+            "text": "                    sx={{",
+            "lineNumber": 512
+          },
+          {
+            "text": "                        display: 'grid',",
+            "lineNumber": 513
+          },
+          {
+            "text": "                        gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',",
+            "lineNumber": 514
+          },
+          {
+            "text": "                        gap: 'var(--msqdx-spacing-sm)',",
+            "lineNumber": 515
+          },
+          {
+            "text": "                    }}",
+            "lineNumber": 516
+          },
+          {
+            "text": "                &gt;",
+            "lineNumber": 517
+          },
+          {
+            "text": "                    &lt;MiniStat label=\"Errors\" value={result.stats.errors} color={MSQDX_STATUS.error.base} /&gt;",
+            "lineNumber": 518
+          },
+          {
+            "text": "                    &lt;MiniStat label=\"Warnings\" value={result.stats.warnings} color={MSQDX_STATUS.warning.base} /&gt;",
+            "lineNumber": 519
+          },
+          {
+            "text": "                    &lt;MiniStat label=\"Notices\" value={result.stats.notices} color={MSQDX_STATUS.info.base} /&gt;",
+            "lineNumber": 520
+          },
+          {
+            "text": "                    {/* Divider or Spacer could be here, but grid handles it */}",
+            "lineNumber": 521
+          },
+          {
+            "text": "                    &lt;MiniStat label=\"Level A\" value={levelStats.A} color={MSQDX_NEUTRAL[400]} /&gt;",
+            "lineNumber": 522
+          },
+          {
+            "text": "                    &lt;MiniStat label=\"Level AA\" value={levelStats.AA} color={MSQDX_NEUTRAL[400]} /&gt;",
+            "lineNumber": 523
+          },
+          {
+            "text": "                    &lt;MiniStat label=\"Level AAA\"",
+            "lineNumber": 524
+          },
+          {
+            "text": "}",
+            "lineNumber": 1252,
+            "isSignature": true
+          }
+        ]
+      },
+      "score": 0.3034098148345947
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/saliency-fusion.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I have enough context. Let me also quickly check:
+1. How env vars are centralized (paths/urls)
+2. Whether there's an existing config for "which saliency backend"
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "SALIENCY_SERVICE_URL|SALIENCY_USE_AI|SALIENCY_BACKEND",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "SALIENCY_SERVICE_URL|SALIENCY_USE_AI|SALIENCY_BACKEND",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 8,
+  "totalMatches": 107,
+  "topFiles": [
+    {
+      "uri": "app/api/saliency/result/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/saliency/generate/route.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "saliency-service/Dockerfile.sum",
+      "matchCount": 1
+    },
+    {
+      "uri": "knowledge/checkion-saliency-ai.md",
+      "matchCount": 2
+    },
+    {
+      "uri": ".specstory/history/2026-02-23_15-12Z-ergebnisse-teilen-für-normale-scans-und-ux-journeys.md",
+      "matchCount": 83
+    },
+    {
+      "uri": ".specstory/history/2026-02-23_09-14Z-system-overview-and-implementation.md",
+      "matchCount": 4
+    },
+    {
+      "uri": "saliency-service/README.md",
+      "matchCount": 3
+    },
+    {
+      "uri": "docs/deployment/coolify-saliency-schritt-fuer-schritt.md",
+      "matchCount": 8
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/saliency/result/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I have a clear picture. Now I need to create a comprehensive plan that covers:
+
+1. **Option A – Lightweight saliency (MSI-Net/ONNX)**
+   - Add optional backend: either new service (second Docker image) or same service with env SALIENCY_BACKEND=sum|msinet. Research suggests ONNX + CoreML for Apple Silicon. For Coolify (likely Linux), ONNX Runtime on CPU. So we need:
+   - New Python service or extend main_sum.py to support "msinet" path: load MSI-Net (or SimpleSalNet) via ONNX, same API (image in → heatmap PNG out). Or a separate Dockerfile.msinet.
+   - CHECKION: env SALIENCY_BACKEND or second URL SALIENCY_MSINET_SERVICE_URL? Simpler: one service URL, backend chosen by env in the service. So deploy either SUM container or MSI-Net container; CHECKION just calls SALIENCY_SERVICE_URL. So the "lightweight" option is a separate deployment (Dockerfile.msinet + main_msinet.py) that exposes same /jobs and /predict API. Then we document: for CPU/low latency deploy MSI-Net image and point SALIENCY_SERVICE_URL to it.
+   - Need to find or define MSI-Net/SimpleSalNet ONNX model. I'll plan: add saliency-service variant (MSI-Net via ONNX), same async job API, same fusion in CHECKION.
+
+2. **Option B – Vision API**
+   - Already have optional LLM Vision. Optional: add Claude or GCP Vision as alternative/additional. Plan: optional second provider (e.g. CLIENT_SALIENCY_VISION_PROVIDER=openai|claude|gcp), or just document that they can use OpenAI; Claude could be added later. Keep it minimal: document that Vision is optional and can be extended.
+
+3. **Option C – Hybrid**
+   - Already in place. MediaPipe: add optional face/gaze detection that outputs regions; feed into fusion as another prior. Plan: optional MediaPipe step (e.g. in Python service or separate Node script). If we add MediaPipe, it would run on the screenshot and produce "face regions" or "gaze regions" that we add to the fusion. So: new optional component that runs on screenshot, returns list of rects + scores, fusion in CHECKION adds them like vision regions.
+
+4. **Scanpath (heuristic, no GPU)**
+   - Algorithm: decode heatmap to intensity (we have decodeJetPngToIntensity); find local maxima (peaks); sort by saliency × position weight (F-pattern: top-left bias, or Z-pattern) × element size; inhibition-of-return (after picking a fixation, reduce saliency in a radius around it, then pick next). Output: ordered list of fixation points (x, y) or region IDs. We can map fixations to pageIndex regions by "which region contains this point". So scanpath = array of { x, y, regionId?, order }.
+   - Where to compute: in Next.js after fusion (we have intensity array in memory when we do fusion) or in a small lib that takes heatmap + pageIndex and returns scanpath. So: new lib/scanpath.ts (or saliency-scanpath.ts) that: takes heatmap PNG base64 + pageIndex + dimensions; decodes to intensity; finds peaks (e.g. 2d local max with threshold); applies IoR and ordering; returns list of fixations. Then in result route after we have the fused heatmap, we call computeScanpath(heatmapBase64, pageIndex, width, height) and store on result (new field scanpath?: ScanpathFixation[]).
+   - Type: ScanpathFixation = { x: number; y: number; regionId?: string; order: number } or similar. Store on ScanResult.
+
+5. **Composite scoring**
+   - Already have fusion. No change needed except possibly adding MediaPipe or GCP as additional signals.
+
+6. **OpenVINO**
+   - Only relevant if we run on Intel CPU in the saliency service. Plan: document that for Intel deployments, consider exporting SUM/MSI-Net to OpenVINO for 2-4x speedup; optional future improvement.
+
+Let me structure the plan with todos. Scope for "plan everything":
+- Phase 1: Scanpath heuristic (no new backend) – clear value, uses existing data.
+- Phase 2: Lightweight saliency backend (MSI-Net/ONNX) – new Docker variant, same API.
+- Phase 3: Optional MediaPipe face/gaze – optional prior in fusion.
+- Phase 4: Optional second Vision provider (Claude/GCP) – config/code for multiple providers.
+
+I'll create one plan that covers all, with explicit phases and file references.
+</details></think>
+
+---
+
+
+Alle relevanten Stellen erfasst. Plan erstellen:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="create_plan">
+<details>
+<summary>Tool use: **create_plan**</summary>
+
+
+Parameters:
+
+```json
+{
+  "plan": "# Saliency Hybrid + Scanpath – Implementierungsplan\n\n## Ausgangslage\n\n- **Saliency:** SUM-Service (async Jobs), Fusion in Next.js: SUM-Heatmap + DOM (Rechteck-Füllung aus [lib/saliency-fusion.ts](lib/saliency-fusion.ts)) + optional LLM Vision ([lib/saliency-vision-cache.ts](lib/saliency-vision-cache.ts)).\n- **API:** [app/api/saliency/generate/route.ts](app/api/saliency/generate/route.ts) (POST → jobId oder AI sofort), [app/api/saliency/result/route.ts](app/api/saliency/result/route.ts) (GET → Fusion + Enrich + Update Scan).\n- **Typen:** [lib/types.ts](lib/types.ts) – &#96;ScanResult&#96; mit &#96;saliencyHeatmap&#96;, &#96;pageIndex&#96;; keine Scanpath-Struktur bisher.\n\n---\n\n## Phase 1: Scanpath-Heuristik (ohne GPU)\n\n**Ziel:** Aus der gefusionierten Heatmap eine plausible Blickreihenfolge ableiten (Fixationspunkte), ohne zusätzliches ML. Nutzt bestehende Daten (Heatmap + pageIndex).\n\n### Algorithmus\n\n1. **Intensität:** Gefusionierte Heatmap (PNG) mit bestehendem &#96;decodeJetPngToIntensity&#96; in [lib/saliency-fusion.ts](lib/saliency-fusion.ts) zu Float32-Intensität dekodieren.\n2. **Peaks:** Lokale Maxima finden (z.B. Fenster 5×5 oder 9×9, Schwellwert z.B. 0.1), oder alternativ pro &#96;pageIndex&#96;-Region den Pixel mit maximaler Saliency in der Region als Kandidat.\n3. **Sortierung:** Kandidaten bewerten mit  \n   &#96;score = saliency × positionWeight × sizeWeight&#96;  \n   - **positionWeight:** F-Pattern / Z-Pattern (z.B. &#96;1 / (1 + 0.3 * (y/height))&#96; für leichten Top-Bias, oder explizit oben/links bevorzugt).  \n   - **sizeWeight:** z.B. &#96;log(1 + area)&#96; oder Fläche der Region aus &#96;pageIndex.regions[].rect&#96;.\n4. **Inhibition-of-Return (IoR):** Nach Wahl eines Fixationspunkts einen Radius (z.B. 80–120 px) um diesen Punkt in der Intensitäts-Kopie abwerten (z.B. auf 0 oder linear abfallend), dann nächsten Peak wählen. Wiederholen bis N Fixationen (z.B. 5–10) oder keine Kandidaten mehr.\n5. **Ausgabe:** Geordnete Liste von Fixationen, optional mit Zuordnung zu &#96;pageIndex.regions&#96; (welche Region enthält (x,y)).\n\n### Datenmodell\n\n- **Neuer Typ** in [lib/types.ts](lib/types.ts): z.B.  \n  &#96;ScanpathFixation = { x: number; y: number; order: number; regionId?: string; saliency?: number }&#96;  \n  und  \n  &#96;ScanResult.scanpath?: ScanpathFixation[]&#96;\n- **Speicherung:** Scanpath nur setzen, wenn &#96;pageIndex&#96; und &#96;saliencyHeatmap&#96; vorhanden sind; Berechnung in der Result-Route nach der Fusion.\n\n### Implementierung\n\n- **Neues Modul** &#96;lib/scanpath.ts&#96; (oder &#96;lib/saliency-scanpath.ts&#96;):\n  - &#96;computeScanpath(options: { heatmapPngBase64: string; pageIndex: PageIndex; width: number; height: number; maxFixations?: number; iorRadius?: number }) =&gt; Promise&lt;ScanpathFixation[]&gt;&#96;\n  - Darin: &#96;decodeJetPngToIntensity&#96; (aus saliency-fusion) aufrufen, Peaks finden (auf Intensitäts-Array), Bewertung + IoR in einer Schleife, optional Zuordnung zu Regionen (Punkt-in-Rechteck für &#96;pageIndex.regions&#96;).\n- **Integration** in [app/api/saliency/result/route.ts](app/api/saliency/result/route.ts): Nach &#96;fuseSaliencyHeatmap&#96; und &#96;enrichPageIndexWithSaliency&#96; die gefusionierte Heatmap-Base64 + &#96;result.pageIndex&#96; + Breite/Höhe an &#96;computeScanpath&#96; übergeben; Ergebnis in &#96;updateScanResult(..., { saliencyHeatmap, pageIndex, scanpath })&#96; schreiben.\n- **AI-Pfad** in [app/api/saliency/generate/route.ts](app/api/saliency/generate/route.ts): Nach dem gleichen Muster nach Fusion und Enrich den Scanpath berechnen und mit speichern.\n- **Frontend:** Optional neue UI auf der Ergebnisseite (z.B. Toggle „Scanpath anzeigen“), die &#96;result.scanpath&#96; als nummerierte Kreise/Punkte auf dem Screenshot overlayt (Reihenfolge 1, 2, 3, …). Dafür z.B. neue Komponente &#96;ScanpathOverlay&#96; oder Erweiterung von [app/results/[id]/page.tsx](app/results/[id]/page.tsx) / [components/PageIndexRegionsOverlay.tsx](components/PageIndexRegionsOverlay.tsx).\n\n### Konfiguration\n\n- Env oder Konstanten für &#96;maxFixations&#96; (z.B. 8), &#96;iorRadius&#96; (z.B. 100), Peak-Schwellwert – in &#96;lib/scanpath.ts&#96; mit sinnvollen Defaults; optional aus Env lesen.\n\n---\n\n## Phase 2: Leichtgewichtiges Saliency-Backend (MSI-Net / ONNX)\n\n**Ziel:** Optional ein zweites, CPU-freundliches Backend (1–3 s auf M-Chip), gleiche API wie SUM (Jobs + Heatmap-PNG), damit Coolify wahlweise SUM oder MSI-Net betreiben kann.\n\n### Architektur\n\n- **Zwei Deployment-Varianten:** Wie heute: entweder SUM-Image (Dockerfile.sum) oder neues **MSI-Net-Image** (z.B. &#96;Dockerfile.msinet&#96;). CHECKION ruft weiterhin &#96;SALIENCY_SERVICE_URL&#96; auf; kein zweiter URL-Parameter nötig.\n- **Gleiche API:**  \n  - &#96;POST /jobs&#96; mit &#96;image_base64&#96; → &#96;job_id&#96;  \n  - &#96;GET /jobs/{job_id}&#96; → &#96;status&#96;, bei &#96;completed&#96; → &#96;heatmap_base64&#96;  \n  So bleibt [app/api/saliency/generate/route.ts](app/api/saliency/generate/route.ts) und [app/api/saliency/result/route.ts](app/api/saliency/result/route.ts) unverändert bezüglich Aufruflogik; nur die Service-URL zeigt auf SUM oder MSI-Net.\n\n### Service-Seite (saliency-service)\n\n- **Neues Dockerfile** &#96;saliency-service/Dockerfile.msinet&#96;:  \n  - Python 3.10+, ONNX Runtime (CPU), ggf. keine schweren PyTorch/CUDA-Abhängigkeiten falls Modell nur ONNX ist.  \n  - Eigenes &#96;main_msinet.py&#96; (oder &#96;main_onnx.py&#96;): FastAPI, gleiche Endpoints wie [saliency-service/main_sum.py](saliency-service/main_sum.py) (&#96;POST /jobs&#96;, &#96;GET /jobs/{job_id}&#96;), optional weiterhin &#96;POST /predict&#96; für Rückwärtskompatibilität.  \n  - Modell: MSI-Net oder SimpleSalNet als ONNX-Modell (z.B. aus öffentlichen Repos exportieren oder vorkonvertiert ablegen). Gewichte/ONNX-Datei per Build-Arg oder Volume/Umgebungsvariable (z.B. &#96;MSINET_WEIGHTS_PATH&#96;), analog zu SUM-Weights.\n- **Inferenz:** Bild base64 → decode → Preprocessing (Resize, Normalisierung wie im Original-Modell) → ONNX Session run → Post-Processing (z.B. Resize auf Ausgabegröße, gleiche Jet/Colormap wie SUM). Optional [saliency-service/heatmap_postprocess.py](saliency-service/heatmap_postprocess.py) für EyeQuant-Style nutzen.\n- **Dokumentation:** In [docs/deployment/coolify-saliency-schritt-fuer-schritt.md](docs/deployment/coolify-saliency-schritt-fuer-schritt.md) Abschnitt „MSI-Net (leichtes Backend)“: Build mit &#96;Dockerfile.msinet&#96;, &#96;SALIENCY_SERVICE_URL&#96; auf diesen Container setzen; Hinweis auf 1–3 s Latenz und CPU-Tauglichkeit.\n\n### Recherche/Abhängigkeit\n\n- Konkrete ONNX-Modelle: MSI-Net/SimpleSalNet – Quellen (z.B. GitHub, Paper-Repos) ermitteln; falls nur PyTorch verfügbar, einmalig Export-Skript (PyTorch → ONNX) vorschlagen und ONNX-Datei im Repo oder über GDrive/URL bereitstellen.\n\n---\n\n## Phase 3: Optionale Erweiterungen\n\n### 3a) MediaPipe Face/Gaze (optional)\n\n- **Idee:** Screenshot an MediaPipe übergeben (Face Detection / Gaze), Rechtecke + ggf. Scores als weiteres „Prior“-Signal in die Fusion.\n- **Ort:** Entweder im Saliency-Service (Python: &#96;mediapipe&#96;) oder in Next.js (z.B. separater API-Route oder in generate/result). Ausgabe: Liste von &#96;{ rect, score }&#96; analog zu Vision-Regionen.\n- **Fusion:** In [lib/saliency-fusion.ts](lib/saliency-fusion.ts) eine weitere Prior-Map (z.B. &#96;buildMediaPipePriorMap&#96;) und optionalen Parameter &#96;mediaPipeRects?, mediaPipeWeight?&#96; in &#96;fuseSaliencyHeatmap&#96;; gleiche Normalisierung und Addition wie bei Vision.\n- **Konfiguration:** Env z.B. &#96;SALIENCY_MEDIAPIPE_ENABLED=true&#96;; nur wenn gesetzt, MediaPipe ausführen und Gewicht (z.B. 0.15) anwenden. Geringe Priorität, da „nice-to-have“.\n\n### 3b) Zweiter Vision-Provider (Claude / GCP) (optional)\n\n- **Idee:** Semantische AOI-Analyse nicht nur über OpenAI, sondern wahlweise Claude Vision oder Google Cloud Vision (Labels + Object Localization).\n- **Umsetzung:** Abstraktion „Vision-Provider“ in [lib/saliency-ai.ts](lib/saliency-ai.ts) (oder neues &#96;lib/saliency-vision-providers.ts&#96;): gemeinsames Interface &#96;getAttentionRegions(imageBase64, width, height) =&gt; Promise&lt;AttentionRegion[]&gt;&#96;. Implementierungen: &#96;openai&#96;, &#96;claude&#96;, &#96;gcp&#96;. Env z.B. &#96;SALIENCY_VISION_PROVIDER=openai|claude|gcp&#96; und entsprechende API-Keys. Bestehende OpenAI-Nutzung als Default beibehalten.\n- **Fusion:** Unverändert; alle Provider liefern dasselbe &#96;AttentionRegion&#96;-Format, das bereits in &#96;buildVisionPriorMap&#96; und im Vision-Cache verwendet wird.\n\n---\n\n## Phase 4: Dokumentation und Konfiguration\n\n- **Knowledge:** [knowledge/checkion-saliency-fusion.md](knowledge/checkion-saliency-fusion.md) um Scanpath, MSI-Net-Option und optionale Erweiterungen (MediaPipe, zweiter Vision-Provider) ergänzen.\n- **Coolify-Doku:** [docs/deployment/coolify-saliency-schritt-fuer-schritt.md](docs/deployment/coolify-saliency-schritt-fuer-schritt.md):  \n  - Scanpath: automatisch aktiv wenn Heatmap + pageIndex vorhanden; ggf. Env für &#96;maxFixations&#96;/&#96;iorRadius&#96;.  \n  - MSI-Net: Build &amp; Deploy mit Dockerfile.msinet, &#96;SALIENCY_SERVICE_URL&#96; zeigen.  \n  - OpenVINO: Kurz erwähnen als mögliche spätere Optimierung für Intel-CPU (2–4× Speedup), ohne konkrete Implementierung.\n\n---\n\n## Abhängigkeiten und Reihenfolge\n\n&#96;&#96;&#96;mermaid\nflowchart LR\n    subgraph phase1 [Phase 1]\n        A[decodeJetPngToIntensity]\n        B[Peaks + IoR + Sort]\n        C[computeScanpath]\n        D[ScanpathFixation type]\n        E[result route + generate route]\n        F[ScanpathOverlay UI]\n    end\n    subgraph phase2 [Phase 2]\n        G[Dockerfile.msinet]\n        H[main_msinet.py ONNX]\n        I[Doc]\n    end\n    subgraph phase3 [Phase 3 optional]\n        J[MediaPipe prior]\n        K[Vision provider abstraction]\n    end\n    A --&gt; B --&gt; C\n    D --&gt; C\n    C --&gt; E --&gt; F\n    G --&gt; H --&gt; I\n&#96;&#96;&#96;\n\n- **Phase 1** ist unabhängig und bringt sofort Mehrwert (Scanpath aus bestehender Heatmap + DOM).\n- **Phase 2** erfordert Beschaffung/Export eines ONNX-Modells (MSI-Net/SimpleSalNet).\n- **Phase 3** kann nach Bedarf umgesetzt werden.\n\n---\n\n## Tests\n\n- **Scanpath:** Unit-Tests in &#96;lib/scanpath.test.ts&#96;: feste Heatmap (z.B. zwei getrennte Hotspots) + Mock-pageIndex; erwartete Reihenfolge und ungefähre Koordinaten prüfen; IoR prüfen (zweiter Peak nicht im Radius des ersten).\n- **Fusion:** Bestehende Tests in [lib/saliency-fusion.test.ts](lib/saliency-fusion.test.ts) beibehalten; bei MediaPipe-Erweiterung optionale Tests für &#96;buildMediaPipePriorMap&#96; bzw. erweiterte &#96;fuseSaliencyHeatmap&#96;-Aufrufe.\n- **MSI-Net:** Integrationstest im Service (optional): ein Testbild durchreichen, prüfen dass PNG zurückkommt und Dimensionen stimmen.\n\n---\n\n## Kurzfassung der betroffenen Dateien\n\n| Bereich | Dateien (neu/geändert) |\n|--------|--------------------------|\n| Scanpath | Neu: &#96;lib/scanpath.ts&#96;, &#96;lib/scanpath.test.ts&#96;; Typen in &#96;lib/types.ts&#96;; Integration in &#96;app/api/saliency/result/route.ts&#96;, &#96;app/api/saliency/generate/route.ts&#96;; optional UI in &#96;app/results/[id]/page.tsx&#96; + &#96;components/ScanpathOverlay.tsx&#96; |\n| MSI-Net | Neu: &#96;saliency-service/Dockerfile.msinet&#96;, &#96;saliency-service/main_msinet.py&#96;; Doku in &#96;docs/deployment/...&#96; |\n| MediaPipe / Vision | Optional: &#96;lib/saliency-fusion.ts&#96; (MediaPipe-Prior), &#96;lib/saliency-vision-providers.ts&#96; oder Erweiterung &#96;lib/saliency-ai.ts&#96; |\n| Doku | &#96;knowledge/checkion-saliency-fusion.md&#96;, &#96;docs/deployment/coolify-saliency-schritt-fuer-schritt.md&#96; |\n",
+  "name": "Saliency Hybrid Scanpath Plan",
+  "overview": "Plan zur Integration der recherchierten CPU-tauglichen Saliency-Strategien: (1) Scanpath-Heuristik aus Heatmap + DOM, (2) optionales leichtes Saliency-Backend (MSI-Net/ONNX), (3) optionale Erweiterungen (MediaPipe Face/Gaze, zweiter Vision-Provider). Die bestehende Fusion (SUM + DOM + optional LLM Vision) bleibt zentral; neue Komponenten bauen darauf auf."
+}
+```
+Additional data:
+
+```json
+{
+  "reviewData": {
+    "status": "Requested",
+    "selectedOption": "none",
+    "isShowingInput": false
+  },
+  "planUri": "file:///Users/christoph.bordeck/.cursor/plans/saliency_hybrid_scanpath_plan_c8e37ea4.plan.md",
+  "hasOpenedEditor": true
+}
+```
+Result:
+
+```json
+{
+  "rejected": {}
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+_**User**_
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants me to implement the full plan from the attached file. Let me first check what todos exist - the plan says "To-do's from the plan have already been created" but the attached plan shows `todos: []`. I'll need to look at the actual todo list and then implement everything.
+
+Let me start by:
+1. Finding/reading the todos
+2. Implementing Phase 1: Scanpath (types, lib/scanpath.ts, integration in result + generate routes, optional UI)
+3. Phase 2: MSI-Net/ONNX backend (Dockerfile.msinet, main_msinet.py)
+4. Phase 3: Optional MediaPipe and Vision provider - the plan says "optional" and "can be done as needed" - I'll implement the structure so it's extensible
+5. Phase 4: Documentation
+
+I'll need to search for where todos are stored and then implement step by step, marking them in progress and completed.
+</details></think>
+
+---
+
+
+Implementierung starten: Zuerst prüfen wir die To-dos und den aktuellen Stand.
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "scanpath|Scanpath|todo",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.{md,ts,tsx,json}",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "scanpath|Scanpath|todo",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 3,
+  "totalMatches": 100,
+  "topFiles": [
+    {
+      "uri": "lib/cookie-banner-dismiss.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": ".specstory/history/2026-02-23_15-12Z-ergebnisse-teilen-für-normale-scans-und-ux-journeys.md",
+      "matchCount": 85
+    },
+    {
+      "uri": ".specstory/history/2026-02-23_09-14Z-system-overview-and-implementation.md",
+      "matchCount": 12
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/saliency-fusion.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The plan says todos are already created but the plan file shows todos: []. I'll create a todo list based on the plan phases and then implement. Let me start with Phase 1 and work through.
+
+Phase 1:
+1. Add ScanpathFixation type and scanpath to ScanResult in lib/types.ts
+2. Create lib/scanpath.ts with computeScanpath
+3. Export decodeJetPngToIntensity from saliency-fusion if needed (it's not exported - I need to check)
+4. Integrate in result route and generate route
+5. Create ScanpathOverlay component and add toggle in results page
+6. Add lib/scanpath.test.ts
+
+Let me check if decodeJetPngToIntensity is exported from saliency-fusion.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "decodeJetPngToIntensity|export",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/saliency-fusion.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "decodeJetPngToIntensity|export",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/saliency-fusion.ts",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 7,
+  "topFiles": [
+    {
+      "uri": "lib/saliency-fusion.ts",
+      "matchCount": 7
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/saliency/result/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/saliency/generate/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+decodeJetPngToIntensity is exported. It takes a Buffer - I'll need to pass base64 decoded to Buffer in scanpath. So in computeScanpath I need to decode base64 to buffer and call decodeJetPngToIntensity with that buffer. Let me implement.
+
+I'll create todos from the plan and then implement in order:
+1. Phase 1 - Types + lib/scanpath.ts
+2. Phase 1 - Integration result + generate routes
+3. Phase 1 - ScanpathOverlay + results page toggle
+4. Phase 1 - lib/scanpath.test.ts
+5. Phase 2 - Dockerfile.msinet + main_msinet.py
+6. Phase 3 - Optional: MediaPipe + Vision provider (plan says optional - I'll add minimal structure for MediaPipe and vision provider so it's extensible, or skip if plan says "can be done as needed")
+7. Phase 4 - Documentation
+
+Actually the user said "To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work."
+So I should not create todo</details></think>
+
+---
+

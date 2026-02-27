@@ -8,6 +8,8 @@ import sharp from 'sharp';
 import { getOpenAIKey } from '@/lib/llm/config';
 
 const SALIENCY_VISION_MODEL = process.env.OPENAI_SALIENCY_MODEL ?? 'gpt-5-mini';
+/** Vision provider for attention regions: openai (default), claude, gcp. Only openai is implemented. */
+const SALIENCY_VISION_PROVIDER = (process.env.SALIENCY_VISION_PROVIDER ?? 'openai').toLowerCase();
 
 export interface AttentionRegion {
     top_pct: number;
@@ -62,6 +64,9 @@ export async function getAttentionRegionsFromVision(
     imageWidth: number,
     imageHeight: number
 ): Promise<AttentionRegion[]> {
+    if (SALIENCY_VISION_PROVIDER !== 'openai') {
+        return [];
+    }
     const openai = new OpenAI({ apiKey: getOpenAIKey() });
     const url = imageBase64.startsWith('data:')
         ? imageBase64

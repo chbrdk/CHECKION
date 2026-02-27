@@ -57,6 +57,10 @@ const SaliencyHeatmapOverlay = dynamic(
     () => import('@/components/SaliencyHeatmapOverlay').then((m) => ({ default: m.SaliencyHeatmapOverlay })),
     { ssr: false }
 );
+const ScanpathOverlay = dynamic(
+    () => import('@/components/ScanpathOverlay').then((m) => ({ default: m.ScanpathOverlay })),
+    { ssr: false }
+);
 const SeoCard = dynamic(
     () => import('@/components/SeoCard').then((m) => ({ default: m.SeoCard })),
     { ssr: false, loading: () => <Box sx={{ py: 2 }}><CircularProgress size={24} /></Box> }
@@ -116,6 +120,7 @@ export default function ResultsPage() {
     const [showFocusOrder, setShowFocusOrder] = useState(false);
     const [showTouchTargets, setShowTouchTargets] = useState(false);
     const [showSaliencyHeatmap, setShowSaliencyHeatmap] = useState(false);
+    const [showScanpath, setShowScanpath] = useState(false);
     const [saliencyGenerating, setSaliencyGenerating] = useState(false);
     const [saliencyError, setSaliencyError] = useState<string | null>(null);
     const [screenshotDimensions, setScreenshotDimensions] = useState<{ width: number; height: number }>({ width: 1920, height: 1080 });
@@ -925,7 +930,7 @@ export default function ResultsPage() {
                                 </MsqdxButton>
                             )}
                             {result.saliencyHeatmap ? (
-                                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
                                     <InfoTooltip title={t('info.saliencyHeatmap')} ariaLabel={t('common.info')} />
                                     <MsqdxButton
                                         variant={showSaliencyHeatmap ? 'contained' : 'outlined'}
@@ -935,6 +940,16 @@ export default function ResultsPage() {
                                     >
                                         {showSaliencyHeatmap ? t('results.hideAttentionHeatmap') : t('results.showAttentionHeatmap')}
                                     </MsqdxButton>
+                                    {result.scanpath && result.scanpath.length > 0 && (
+                                        <MsqdxButton
+                                            variant={showScanpath ? 'contained' : 'outlined'}
+                                            size="small"
+                                            onClick={() => setShowScanpath(!showScanpath)}
+                                            brandColor={showScanpath ? 'green' : undefined}
+                                        >
+                                            {showScanpath ? t('results.hideScanpath') : t('results.showScanpath')}
+                                        </MsqdxButton>
+                                    )}
                                 </Box>
                             ) : (
                                 <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
@@ -1008,6 +1023,16 @@ export default function ResultsPage() {
                                                 screenshotWidth={screenshotDimensions.width}
                                                 screenshotHeight={screenshotDimensions.height}
                                                 visible={showSaliencyHeatmap}
+                                            />
+                                        </Box>
+                                    )}
+                                    {result.scanpath && result.scanpath.length > 0 && (
+                                        <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 25 }}>
+                                            <ScanpathOverlay
+                                                fixations={result.scanpath}
+                                                screenshotWidth={screenshotDimensions.width}
+                                                screenshotHeight={screenshotDimensions.height}
+                                                visible={showScanpath}
                                             />
                                         </Box>
                                     )}

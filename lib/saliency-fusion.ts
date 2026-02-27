@@ -64,6 +64,51 @@ export function buildStructureAttentionMap(
     return map;
 }
 
+/** Rect + score for MediaPipe (face/gaze) or other detectors; pixel coordinates. */
+export interface MediaPipeRect {
+    rect: { x: number; y: number; width: number; height: number };
+    score: number;
+}
+
+/**
+ * Build a prior map from MediaPipe-style rects (e.g. face/gaze detection). Gaussian at center, normalized [0,1].
+ */
+export function buildMediaPipePriorMap(
+    rects: MediaPipeRect[],
+    width: number,
+    height: number
+): Float32Array {
+    const w = Math.max(1, Math.min(4096, width));
+    const h = Math.max(1, Math.min(4096, height));
+    const size = w * h;
+    const map = new Float32Array(size);
+    for (const r of rects) {
+        const rect = r.rect;
+        const cx = rect.x + rect.width / 2;
+        const cy = rect.y + rect.height / 2;
+        const sigma = Math.min(rect.width, rect.height) * 0.4;
+        const sigma2 = 2 * sigma * sigma;
+        const amp = Math.min(1, r.score);
+        const x0 = Math.max(0, Math.floor(cx - sigma * 3));
+        const x1 = Math.min(w, Math.ceil(cx + sigma * 3));
+        const y0 = Math.max(0, Math.floor(cy - sigma * 3));
+        const y1 = Math.min(h, Math.ceil(cy + sigma * 3));
+        for (let y = y0; y < y1; y++) {
+            for (let x = x0; x < x1; x++) {
+                const dx = x - cx;
+                const dy = y - cy;
+                map[y * w + x] += amp * Math.exp(-(dx * dx + dy * dy) / sigma2);
+            }
+        }
+    }
+    let maxVal = 0;
+    for (let i = 0; i < size; i++) if (map[i] > maxVal) maxVal = map[i];
+    if (maxVal > 0) {
+        for (let i = 0; i < size; i++) map[i] /= maxVal;
+    }
+    return map;
+}
+
 /**
  * Build vision prior map from LLM attention regions (Gaussian blobs, same logic as saliency-ai).
  * Returns Float32Array normalized to [0,1].
@@ -159,6 +204,9 @@ export interface FuseSaliencyOptions {
     structureWeight?: number;
     visionRegions?: AttentionRegion[];
     visionWeight?: number;
+    /** Optional: MediaPipe face/gaze or other detector rects (pixel coords). */
+    mediaPipeRects?: MediaPipeRect[];
+    mediaPipeWeight?: number;
     width: number;
     height: number;
 }
@@ -174,6 +222,8 @@ export async function fuseSaliencyHeatmap(options: FuseSaliencyOptions): Promise
         structureWeight = DEFAULT_STRUCTURE_WEIGHT,
         visionRegions,
         visionWeight = DEFAULT_VISION_WEIGHT,
+        mediaPipeRects,
+        mediaPipeWeight = 0.15,
         width,
         height,
     } = options;
@@ -195,6 +245,13 @@ export async function fuseSaliencyHeatmap(options: FuseSaliencyOptions): Promise
         const visionMap = buildVisionPriorMap(visionRegions, w, h);
         for (let i = 0; i < combined.length; i++) {
             combined[i] = combined[i] + visionWeight * visionMap[i];
+        }
+    }
+
+    if (mediaPipeRects?.length && mediaPipeWeight > 0) {
+        const mediaMap = buildMediaPipePriorMap(mediaPipeRects, w, h);
+        for (let i = 0; i < combined.length; i++) {
+            combined[i] = combined[i] + mediaPipeWeight * mediaMap[i];
         }
     }
 

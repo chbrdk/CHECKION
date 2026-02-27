@@ -11,6 +11,7 @@ import { enrichPageIndexWithSaliency } from '@/lib/page-index';
 import { fuseSaliencyHeatmap } from '@/lib/saliency-fusion';
 import { getAttentionRegionsFromVision, renderHeatmapFromRegions } from '@/lib/saliency-ai';
 import { setVisionRegions } from '@/lib/saliency-vision-cache';
+import { computeScanpath } from '@/lib/scanpath';
 import { getScreenshotBase64 } from '@/lib/screenshot-storage';
 
 /** Base URL of the saliency service. Public domains stay HTTPS; internal hostnames (no dot) use http. */
@@ -102,10 +103,25 @@ export async function POST(request: Request) {
                     console.error('[CHECKION] saliency/generate (AI): enrichPageIndexWithSaliency failed', e);
                 }
             }
+            let scanpathPatch: { scanpath?: typeof result.scanpath } = {};
+            if (result.pageIndex) {
+                try {
+                    const scanpath = await computeScanpath({
+                        heatmapPngBase64: heatmapBase64,
+                        pageIndex: result.pageIndex,
+                        width,
+                        height,
+                    });
+                    if (scanpath.length > 0) scanpathPatch.scanpath = scanpath;
+                } catch (e) {
+                    console.error('[CHECKION] saliency/generate (AI): computeScanpath failed', e);
+                }
+            }
 
             const updated = await updateScanResult(scanId, session.user.id, {
                 saliencyHeatmap: dataUrl,
                 ...pageIndexPatch,
+                ...scanpathPatch,
             });
             if (!updated) {
                 return NextResponse.json({ error: 'Failed to save heatmap to scan.' }, { status: 500 });

@@ -163,6 +163,8 @@ export type ScanResult = {
     llmSummary?: LlmSummary | null;
     /** Page index: regions (what where), findability, optional semantic types (for persona click-path evaluation). */
     pageIndex?: PageIndex;
+    /** Estimated scanpath (fixation order) from saliency + DOM heuristic; set when saliency heatmap and pageIndex exist. */
+    scanpath?: ScanpathFixation[];
     /** Plain-text excerpt of the page body (for journey agent content evaluation). Capped at ~6k chars. */
     bodyTextExcerpt?: string;
 }
@@ -459,6 +461,15 @@ export interface PageIndex {
     url: string;
     viewportHeight: number;
     regions: PageIndexRegion[];
+}
+
+/** Single fixation in the estimated scanpath (gaze order from saliency + DOM heuristic). */
+export interface ScanpathFixation {
+    x: number;
+    y: number;
+    order: number;
+    regionId?: string;
+    saliency?: number;
 }
 
 /** One search result from GET /api/search (dashboard search). */

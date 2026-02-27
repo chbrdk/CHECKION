@@ -1,0 +1,24 @@
+# CHECKION Saliency Service – lightweight ONNX backend (e.g. MSI-Net/SimpleSalNet exported to ONNX)
+# Same API as SUM: POST /jobs, GET /jobs/{job_id}. CPU-friendly, ~1–3 s on M-chip.
+# Provide ONNX model via MSINET_MODEL_PATH or mount at /app/model.onnx.
+FROM python:3.11-slim-bookworm
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements-msinet.txt .
+RUN pip install --no-cache-dir -r requirements-msinet.txt
+
+COPY main_msinet.py heatmap_postprocess.py .
+
+# Optional: set at runtime or mount volume with model.onnx
+ENV MSINET_MODEL_PATH=/app/model.onnx
+ENV MSINET_INPUT_SIZE=224
+
+EXPOSE 8000
+
+CMD ["python", "main_msinet.py"]

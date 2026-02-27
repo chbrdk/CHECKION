@@ -196,6 +196,28 @@ Ab dann generieren neue Scans die Heatmap mit **SUM** (UI/Webseiten-Modell).
 
 ---
 
+## MSI-Net / ONNX (leichtes Backend, CPU)
+
+Statt SUM kannst du ein **ONNX-basiertes** Saliency-Backend nutzen (weniger Ressourcen, typisch 1–3 s Latenz auf M-Chip). Gleiche API wie SUM (`POST /jobs`, `GET /jobs/{job_id}`); CHECKION zeigt mit **`SALIENCY_SERVICE_URL`** einfach auf diesen Container.
+
+| Wo in Coolify | Wert |
+|---------------|------|
+| **Build** | **Dockerfile Path** = **`Dockerfile.msinet`** (Base Directory = **`saliency-service`**). |
+| **Port** | **`8000`** |
+| **Storages** (optional) | Volume mit **Destination** `/app` und **Mount** einer Datei **`model.onnx`** nach `/app/model.onnx`, damit das ONNX-Modell im Container liegt. Alternativ **Environment Variable** **`MSINET_MODEL_PATH`** auf den Pfad der Modell-Datei setzen (z. B. nach Volume-Mount). |
+| **Environment Variables** | **`MSINET_MODEL_PATH`** = `/app/model.onnx` (oder eigener Pfad). **`MSINET_INPUT_SIZE`** = `224` (optional, je nach Modell). |
+
+**Hinweis:** Ein fertiges ONNX-Saliency-Modell muss bereitgestellt werden (z. B. aus einem Repo exportieren oder vorkonvertiert ablegen). Der Container startet **nur**, wenn die Modell-Datei unter `MSINET_MODEL_PATH` existiert.  
+**OpenVINO:** Für Intel-CPU kann ein Export des Modells auf OpenVINO zusätzlich 2–4× Speedup bringen (optional, außerhalb dieser Anleitung).
+
+---
+
+## Scanpath (Blickreihenfolge)
+
+Sobald eine Heatmap und ein Seiten-Index (pageIndex) vorliegen, berechnet CHECKION automatisch einen **Scanpath** (geschätzte Blickreihenfolge 1, 2, 3, …). Keine zusätzliche Konfiguration nötig; auf der Ergebnis-Seite im Tab **Visual** erscheint nach der Heatmap ein Toggle **„Scanpath anzeigen“**, sobald Scanpath-Daten vorhanden sind.
+
+---
+
 ## SUM-Weights per Terminal in den Volume legen (Fallback)
 
 Nur nötig, wenn der **automatische Download** über **`SUM_WEIGHTS_GDRIVE_ID`** in Coolify nicht funktioniert (z. B. Netzwerk oder Google-Rate-Limit). Ansonsten reicht die Env-Variable in Coolify. Wenn du **nur per Terminal** (SSH oder Coolify-Shell) auf den Server kannst: So kommt **sum_model.pth** in den richtigen Ordner.

@@ -10,6 +10,7 @@ import { invalidateScan } from '@/lib/cache';
 import { fuseSaliencyHeatmap } from '@/lib/saliency-fusion';
 import { enrichPageIndexWithSaliency } from '@/lib/page-index';
 import { getVisionRegions } from '@/lib/saliency-vision-cache';
+import { computeScanpath } from '@/lib/scanpath';
 
 function getSaliencyBaseUrl(): string | undefined {
     const raw = process.env.SALIENCY_SERVICE_URL;
@@ -141,9 +142,24 @@ export async function GET(request: Request) {
                 console.error('[CHECKION] saliency/result: enrichPageIndexWithSaliency failed', e);
             }
         }
+        let scanpathPatch: { scanpath?: typeof result.scanpath } = {};
+        if (result.pageIndex) {
+            try {
+                const scanpath = await computeScanpath({
+                    heatmapPngBase64: heatmapBase64,
+                    pageIndex: result.pageIndex,
+                    width,
+                    height,
+                });
+                if (scanpath.length > 0) scanpathPatch.scanpath = scanpath;
+            } catch (e) {
+                console.error('[CHECKION] saliency/result: computeScanpath failed', e);
+            }
+        }
         const updated = await updateScanResult(scanId, session.user.id, {
             saliencyHeatmap: dataUrl,
             ...pageIndexPatch,
+            ...scanpathPatch,
         });
         if (!updated) {
             return NextResponse.json(

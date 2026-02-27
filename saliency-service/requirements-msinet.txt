@@ -1,0 +1,7 @@
+# Lightweight saliency service: ONNX Runtime (CPU), no PyTorch
+onnxruntime>=1.16.0
+Pillow>=10.0.0
+numpy<2
+scipy>=1.10.0
+fastapi>=0.100.0
+uvicorn[standard]>=0.22.0

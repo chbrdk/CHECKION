@@ -298,6 +298,8 @@
     "tabValidated": "Passed",
     "showAttentionHeatmap": "Show Attention heatmap",
     "hideAttentionHeatmap": "Hide Attention heatmap",
+    "showScanpath": "Show scanpath",
+    "hideScanpath": "Hide scanpath",
     "attentionHeatmapComputing": "Computing…",
     "generateAttentionHeatmap": "Generate heatmap now",
     "generatingHeatmap": "Generating…",
