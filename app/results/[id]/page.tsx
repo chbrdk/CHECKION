@@ -1276,7 +1276,7 @@ export default function ResultsPage() {
             {viewMode === 'generative' && (
                 <>
                     {result.generative ? (
-                        <GenerativeOptimizerCard data={result.generative} />
+                        <GenerativeOptimizerCard data={result.generative} ymyl={result.ymyl} geo={result.geo} />
                     ) : (
                         <MsqdxMoleculeCard title="GEO-Analyse" subtitle="Keine Daten." sx={{ bgcolor: 'var(--color-card-bg)' }}><MsqdxTypography>Keine GEO-Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
                     )}

@@ -71,12 +71,16 @@
 - hreflang, sprachspezifische Inhalte, E-E-A-T pro Sprache  
 - Nutzen: Internationale SEO und Barrierefreiheit  
 
-### 4. Team-Kollaboration
+### 4. Weitere Feature-Ideen (GEO, LLM, Domain, Free APIs)
+
+- Siehe **`knowledge/checkion-feature-ideas-geo-llm-domain.md`** – strukturierte Liste mit Priorisierung, inkl. SSL Labs, PageSpeed, Wappalyzer, Wayback Machine, llms.txt-Spec-Validierung, Tech-Stack, Geo-Targeting, etc.
+
+### 5. Team-Kollaboration
 
 - Kommentare zu Issues, Zuweisung, ggf. Live-Updates  
 - Nutzen: Arbeit in Teams, Verantwortlichkeit  
 
-### 5. Compliance-Report (PDF/CSV)
+### 6. Compliance-Report (PDF/CSV)
 
 - WCAG ↔ Section 508 ↔ EN 301 549, Audit-Bericht, CSV-Export  
 - Nutzen: Rechtssicherheit, Compliance-Audits  

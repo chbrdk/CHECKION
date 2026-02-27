@@ -33,6 +33,7 @@ export const scanBodySchema = z.object({
   url: urlSchema,
   standard: wcagStandardSchema,
   runners: runnersSchema,
+  targetRegion: z.string().max(10).optional(),
 });
 
 /** POST /api/scan/domain */

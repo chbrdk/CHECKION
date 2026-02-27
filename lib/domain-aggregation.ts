@@ -63,11 +63,13 @@ export function aggregateIssues(pages: ScanResult[]): AggregatedIssuesResult {
     }
   }
 
-  const issues: AggregatedIssue[] = Array.from(byKey.entries()).map(([, v]) => ({
-    ...v.issue,
-    pageCount: v.pageUrls.size,
-    pageUrls: Array.from(v.pageUrls),
-  }));
+  const issues: AggregatedIssue[] = Array.from(byKey.entries())
+    .map(([, v]) => ({
+      ...v.issue,
+      pageCount: v.pageUrls.size,
+      pageUrls: Array.from(v.pageUrls),
+    }))
+    .sort((a, b) => b.pageCount - a.pageCount);
 
   const stats = mergeStats(pages);
   const pagesByIssueCount = pages.map((p) => ({

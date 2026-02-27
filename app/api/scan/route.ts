@@ -43,7 +43,8 @@ export async function POST(request: Request) {
                     standard: body.standard,
                     runners: body.runners,
                     device,
-                    groupId
+                    groupId,
+                    targetRegion: body.targetRegion,
                 })
             )
         );

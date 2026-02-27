@@ -52,6 +52,18 @@ function computeStats(issues: Issue[]): ScanStats {
     return stats;
 }
 
+/** Check if server country matches target region (e.g. DE, EU). */
+function matchesTargetRegion(countryCode: string, targetRegion: string): boolean {
+    const code = countryCode.toUpperCase();
+    const region = targetRegion.toUpperCase().trim();
+    if (code === region) return true;
+    if (region === 'EU') {
+        const euCodes = ['DE', 'AT', 'FR', 'IT', 'ES', 'NL', 'BE', 'PT', 'IE', 'PL', 'RO', 'CZ', 'HU', 'SE', 'DK', 'FI', 'GR', 'BG', 'HR', 'SK', 'EE', 'LV', 'LT', 'SI', 'CY', 'LU', 'MT'];
+        return euCodes.includes(code);
+    }
+    return false;
+}
+
 /** Same origin or same domain (www vs non-www) for internal link detection */
 function isInternalLink(href: string, pageOrigin: string): boolean {
     if (!href.startsWith('http')) return false;
@@ -96,8 +108,8 @@ function calculateScore(counts: ScanStats): number {
     return Math.max(0, Math.round(100 - deductions));
 }
 
-export async function runScan(options: ScanOptions & { groupId?: string }): Promise<ScanResult> {
-    const { url, standard = 'WCAG2AA', runners = ['axe', 'htmlcs'], device = 'desktop', groupId } = options;
+export async function runScan(options: ScanOptions & { groupId?: string; targetRegion?: string }): Promise<ScanResult> {
+    const { url, standard = 'WCAG2AA', runners = ['axe', 'htmlcs'], device = 'desktop', groupId, targetRegion } = options;
     const scanId = uuidv4();
 
     // Dynamic import – pa11y is CommonJS and must stay server-only
@@ -682,6 +694,11 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
             const skinnyContent = bodyWordCount < 300;
             const citations = (bodyText.match(/\[\d+\]|source:|quelle:|statist\w+|%/gi) || []).length;
             const hasAuthorBio = !!document.querySelector('.author-bio, [itemprop="author"], .byline, .author-info') || bodyText.toLowerCase().includes('about the author');
+            const citationContainers = document.querySelectorAll('blockquote, figure, [itemprop="citation"]');
+            let citationsWithLinks = 0;
+            citationContainers.forEach(function(el) {
+                if (el.querySelector('a[href^="http"]')) citationsWithLinks++;
+            });
 
             const titleStr = document.title || '';
             const metaDesc = getMeta('description') || '';
@@ -846,6 +863,7 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                     listCount: lists,
                     faqCount: faqSegments,
                     citationCount: citations,
+                    citationsWithLinks: citationsWithLinks,
                     hasAuthorBio: hasAuthorBio,
                     listDensity: Number((lists / (document.querySelectorAll('div, section, article').length || 1)).toFixed(2))
                 },
@@ -875,13 +893,14 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
         const isPublicIp = ip && typeof ip === 'string' && ip !== '' && !ip.startsWith('127.') && !ip.startsWith('192.168.');
         if (isPublicIp) {
             try {
-                // Using ip-api.com (Free for demo/dev)
-                const geoRes = await fetch(`http://ip-api.com/json/${ip}`);
+                const { API_IP_API_BASE } = await import('./external-apis');
+                const geoRes = await fetch(`${API_IP_API_BASE}/json/${ip}`);
                 const geoJson: any = await geoRes.json();
                 if (geoJson.status === 'success') {
                     locationData = {
                         city: geoJson.city,
                         country: geoJson.country,
+                        countryCode: geoJson.countryCode,
                         continent: geoJson.timezone?.split('/')[0] || 'Unknown',
                         region: geoJson.regionName
                     };
@@ -913,6 +932,9 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
         else if (h['server']?.includes('Akamai')) cdnProvider = 'Akamai';
         else if (h['x-cdn']) cdnProvider = h['x-cdn'];
 
+        const countryCode = locationData?.countryCode ?? null;
+        const targetRegionMismatch = !!targetRegion && !!countryCode && !matchesTargetRegion(countryCode, targetRegion);
+
         const geoAudit = {
             serverIp,
             location: locationData,
@@ -920,7 +942,9 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                 detected: !!cdnProvider,
                 provider: cdnProvider
             },
-            languages: seoAndMeta.geo
+            languages: seoAndMeta.geo,
+            ...(targetRegionMismatch && { targetRegionMismatch: true }),
+            ...(targetRegion && { targetRegion })
         };
 
         // Security Headers Audit (main resource headers; Puppeteer returns lowercase keys)
@@ -976,34 +1000,41 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
         let hasRobotsAllowingAI = true; // Default to true if fine, or if robots.txt is missing
         let robotsTxtPresent = false;
         let sitemapUrl: string | null = null;
-        let llmsTxtSections: string[] = [];
-        let llmsTxtHasSitemap = false;
+        let llmsParsed: import('./llms-txt-parse').LlmsTxtParsed | null = null;
         const aiBotList = ['GPTBot', 'PerplexityBot', 'CCBot', 'GoogleOther', 'Anthropic-AI', 'Claude-Web'];
         const aiBotStatus: Array<{ bot: string; status: 'allowed' | 'blocked' }> = [];
+        const llmsTxtRobotsConsistencyWarnings: string[] = [];
+        let llmsTxtMarkdownUrlsReachable: Array<{ url: string; status: number }> = [];
 
         try {
             const origin = new URL(url).origin;
 
-            // GET llms.txt to parse content (sections + sitemap)
             const llmsTxtRes = await fetch(`${origin}/llms.txt`);
             if (llmsTxtRes.ok) {
                 hasLlmsTxt = true;
                 const llmsBody = await llmsTxtRes.text();
-                // Common section headers: "Description:", "Rules:", "Allow:", "Block:", "Sitemap:", or "## Section"
-                const sectionNames = ['Description', 'Rules', 'Allow', 'Block', 'Sitemap', 'Contact', 'Policy'];
-                sectionNames.forEach(name => {
-                    if (new RegExp('^\\s*' + name + '\\s*:', 'im').test(llmsBody) || llmsBody.includes('## ' + name)) {
-                        llmsTxtSections.push(name);
-                    }
-                });
-                llmsTxtHasSitemap = /^\s*Sitemap:\s*https?:\/\//im.test(llmsBody) || /\bhttps?:\/\/[^\s]+\/sitemap[^\s]*/i.test(llmsBody);
+                const { parseLlmsTxt } = await import('./llms-txt-parse');
+                llmsParsed = parseLlmsTxt(llmsBody, origin);
+                if (llmsParsed.markdownUrls.length > 0) {
+                    const results = await Promise.all(
+                        llmsParsed.markdownUrls.slice(0, 5).map(async (mdUrl) => {
+                            try {
+                                const r = await fetch(mdUrl, { method: 'HEAD', signal: AbortSignal.timeout(3000) });
+                                return { url: mdUrl, status: r.status };
+                            } catch {
+                                return { url: mdUrl, status: 0 };
+                            }
+                        })
+                    );
+                    llmsTxtMarkdownUrlsReachable = results;
+                }
             }
 
             const robotsRes = await fetch(`${origin}/robots.txt`);
+            let robotsTxt = '';
             if (robotsRes.ok) {
                 robotsTxtPresent = true;
-                const robotsTxt = await robotsRes.text();
-                // Per-bot: find User-agent: BotName, then until next User-agent check for Disallow: /
+                robotsTxt = await robotsRes.text();
                 aiBotList.forEach(bot => {
                     const uaMatch = robotsTxt.match(new RegExp('User-agent:\\s*' + bot.replace(/[.*+?^${}()|[\]\\]/g, '\\$0') + '\\s*([\\s\\S]*?)(?=User-agent:|$)', 'i'));
                     const block = uaMatch ? /Disallow:\\s*\/\s*(\s|$)/m.test(uaMatch[1]) : false;
@@ -1015,47 +1046,67 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
                     sitemapUrl = sitemapMatch[1].trim();
                 }
             }
+
+            if (hasLlmsTxt && llmsParsed && llmsParsed.allowPaths.length > 0) {
+                for (const bot of aiBotList) {
+                    const uaMatch = robotsTxt.match(new RegExp('User-agent:\\s*' + bot.replace(/[.*+?^${}()|[\]\\]/g, '\\$0') + '\\s*([\\s\\S]*?)(?=User-agent:|$)', 'i'));
+                    const blocked = uaMatch ? /Disallow:\\s*\/\s*(\s|$)/m.test(uaMatch[1]) : false;
+                    if (blocked) {
+                        llmsTxtRobotsConsistencyWarnings.push(`robots.txt blockiert ${bot}, llms.txt erlaubt jedoch Pfade (Allow)`);
+                        break;
+                    }
+                }
+            }
         } catch (e) {
             // Ignore fetch errors
         }
 
         seoAudit = { ...seoAudit, robotsTxtPresent, sitemapUrl };
 
-        // Calculate GEO Score (0-100)
-        let geoScore = 50; // Starting point
+        // Calculate GEO Score (0-100) with breakdown
+        let geoScore = 50;
         const g = seoAndMeta.generative;
+        const breakdown: Array<{ factor: string; points: number }> = [{ factor: 'Basis', points: 50 }];
 
-        if (hasLlmsTxt) geoScore += 10;
-        if (!hasRobotsAllowingAI) geoScore -= 20;
-        if (g.schemaCoverage.length > 0) geoScore += 10;
-        if (g.tableCount > 0) geoScore += 5;
-        if (g.faqCount > 0) geoScore += 10;
-        if (g.citationCount > 5) geoScore += 10;
-        if (g.hasAuthorBio) geoScore += 5;
+        if (hasLlmsTxt) { geoScore += 10; breakdown.push({ factor: 'llms.txt', points: 10 }); }
+        if (!hasRobotsAllowingAI) { geoScore -= 20; breakdown.push({ factor: 'Robots blockieren AI', points: -20 }); }
+        if (g.schemaCoverage.length > 0) { geoScore += 10; breakdown.push({ factor: 'Schema.org', points: 10 }); }
+        if (g.tableCount > 0) { geoScore += 5; breakdown.push({ factor: 'Tabellen', points: 5 }); }
+        if (g.faqCount > 0) { geoScore += 10; breakdown.push({ factor: 'FAQs', points: 10 }); }
+        if (g.citationCount > 5) { geoScore += 10; breakdown.push({ factor: 'Zitate', points: 10 }); }
+        if (g.hasAuthorBio) { geoScore += 5; breakdown.push({ factor: 'Autoren-Bio', points: 5 }); }
 
         geoScore = Math.max(0, Math.min(100, geoScore));
 
+        const citationsWithLinks = (seoAndMeta.generative as { citationsWithLinks?: number }).citationsWithLinks ?? 0;
+
         const generativeAudit = {
             score: geoScore,
+            scoreBreakdown: breakdown,
             technical: {
                 hasLlmsTxt,
                 hasRobotsAllowingAI,
                 schemaCoverage: g.schemaCoverage,
                 jsonLdErrors: g.schemaParseErrors,
-                llmsTxtSections: llmsTxtSections.length > 0 ? llmsTxtSections : undefined,
-                llmsTxtHasSitemap,
+                llmsTxtSections: llmsParsed?.sections?.length ? llmsParsed.sections : undefined,
+                llmsTxtHasSitemap: llmsParsed?.hasSitemap,
                 aiBotStatus: aiBotStatus.length > 0 ? aiBotStatus : undefined,
                 metaRobotsContent: g.metaRobotsContent ?? undefined,
                 metaRobotsIndexable: g.metaRobotsIndexable,
                 recommendedSchemaTypesFound: g.recommendedSchemaTypesFound,
                 missingRecommendedSchemaTypes: g.missingRecommendedSchemaTypes,
-                articleSchemaQuality: g.articleSchemaQuality
+                articleSchemaQuality: g.articleSchemaQuality,
+                llmsTxtRulesContent: llmsParsed?.rulesContent,
+                llmsTxtRobotsConsistencyWarnings: llmsTxtRobotsConsistencyWarnings.length > 0 ? llmsTxtRobotsConsistencyWarnings : undefined,
+                llmsTxtSpecCompliant: llmsParsed ? { hasTitle: llmsParsed.hasTitle, hasDescription: llmsParsed.hasDescription } : undefined,
+                llmsTxtMarkdownUrlsReachable: llmsTxtMarkdownUrlsReachable.length > 0 ? llmsTxtMarkdownUrlsReachable : undefined,
             },
             content: {
                 faqCount: g.faqCount,
                 tableCount: g.tableCount,
                 listDensity: g.listDensity,
-                citationDensity: g.citationCount
+                citationDensity: g.citationCount,
+                citationsWithLinks: citationsWithLinks > 0 ? citationsWithLinks : undefined,
             },
             expertise: {
                 hasAuthorBio: g.hasAuthorBio,
@@ -1483,6 +1534,14 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
             url
         );
 
+        const { detectYmyl } = await import('./ymyl-heuristic');
+        const ymylResult = detectYmyl(
+            url,
+            seoAudit.title,
+            (bodyTextExcerpt ?? '').toLowerCase(),
+            seoAudit.metaDescription ?? ''
+        );
+
         return {
             id: scanId,
             groupId,
@@ -1515,7 +1574,8 @@ export async function runScan(options: ScanOptions & { groupId?: string }): Prom
             security: securityAudit,
             technicalInsights,
             pageIndex,
-            ...(bodyTextExcerpt != null && bodyTextExcerpt !== '' ? { bodyTextExcerpt } : {})
+            ...(bodyTextExcerpt != null && bodyTextExcerpt !== '' ? { bodyTextExcerpt } : {}),
+            ymyl: ymylResult
         };
     } finally {
         await browser.close();

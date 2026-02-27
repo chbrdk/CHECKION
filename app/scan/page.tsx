@@ -52,6 +52,7 @@ export default function ScanPage() {
     const [url, setUrl] = useState('');
     const [standard, setStandard] = useState<WcagStandard>('WCAG2AA');
     const [selectedRunners, setSelectedRunners] = useState<Runner[]>(['axe', 'htmlcs']);
+    const [targetRegion, setTargetRegion] = useState('');
     const [scanning, setScanning] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -140,7 +141,7 @@ export default function ScanPage() {
                 const res = await fetch(apiScanCreate, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: url.trim(), standard, runners: selectedRunners }),
+                    body: JSON.stringify({ url: url.trim(), standard, runners: selectedRunners, ...(targetRegion.trim() && { targetRegion: targetRegion.trim() }) }),
                 });
 
                 const data = await res.json();
@@ -259,6 +260,20 @@ export default function ScanPage() {
                             fullWidth
                         />
                     </Box>
+
+                    {/* Target Region (optional, single scan only) */}
+                    {scanMode === 'single' && (
+                        <Box sx={{ gridColumn: { xs: '1 / -1', md: '1 / -1' } }}>
+                            <MsqdxFormField
+                                label={t('scan.targetRegionLabel')}
+                                placeholder={t('scan.targetRegionPlaceholder')}
+                                value={targetRegion}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTargetRegion(e.target.value)}
+                                disabled={scanning}
+                                fullWidth
+                            />
+                        </Box>
+                    )}
 
                     {/* Task (only for UX Journey) */}
                     {scanMode === 'journey' && (

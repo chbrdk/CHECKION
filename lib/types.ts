@@ -169,6 +169,8 @@ export type ScanResult = {
     scanpath?: ScanpathFixation[];
     /** Plain-text excerpt of the page body (for journey agent content evaluation). Capped at ~6k chars. */
     bodyTextExcerpt?: string;
+    /** YMYL classification – stricter E-E-A-T for finance/health/legal. */
+    ymyl?: YmylResult;
 }
 
 export interface TechnicalInsights {
@@ -257,17 +259,29 @@ export interface GenerativeEngineAudit {
             hasDateModified: boolean;
             hasAuthor: boolean;
         };
+        /** Parsed Rules: section content (truncated) */
+        llmsTxtRulesContent?: string;
+        /** Warnings when robots.txt and llms.txt contradict (e.g. robots blocks GPTBot, llms Allow) */
+        llmsTxtRobotsConsistencyWarnings?: string[];
+        /** Spec required: Title (H1) and Description (blockquote) present */
+        llmsTxtSpecCompliant?: { hasTitle: boolean; hasDescription: boolean };
+        /** Markdown URLs in llms.txt and their reachability (200 = ok) */
+        llmsTxtMarkdownUrlsReachable?: Array<{ url: string; status: number }>;
     };
     content: {
         faqCount: number;
         tableCount: number;
         listDensity: number;
         citationDensity: number;
+        /** Citations that have external links (blockquote+cite or link to http) */
+        citationsWithLinks?: number;
     };
     expertise: {
         hasAuthorBio: boolean;
         hasExpertCitations: boolean;
     };
+    /** Human-readable score breakdown for GEO tooltip */
+    scoreBreakdown?: Array<{ factor: string; points: number }>;
 }
 
 export interface GeoAudit {
@@ -275,6 +289,7 @@ export interface GeoAudit {
     location: {
         city: string | null;
         country: string | null;
+        countryCode?: string | null;
         continent: string | null;
         region?: string | null;
     } | null;
@@ -286,6 +301,17 @@ export interface GeoAudit {
         htmlLang: string | null;
         hreflangs: Array<{ lang: string; href: string }>;
     };
+    /** True if server country/region does not match target (when targetRegion provided) */
+    targetRegionMismatch?: boolean;
+    /** Optional target region (e.g. DE, EU) from scan params */
+    targetRegion?: string | null;
+}
+
+/** YMYL page classification – stricter E-E-A-T for finance/health/legal. */
+export interface YmylResult {
+    isYmyl: boolean;
+    confidence: 'high' | 'medium' | 'low';
+    signals: string[];
 }
 
 export interface PrivacyAudit {

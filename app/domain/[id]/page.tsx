@@ -34,6 +34,11 @@ const JourneyFlowchart = dynamic(
     () => import('@/components/JourneyFlowchart').then((m) => ({ default: m.JourneyFlowchart })),
     { ssr: false, loading: () => <Box sx={{ py: 2 }}><CircularProgress size={24} /></Box> }
 );
+
+const DomainToolsCard = dynamic(
+    () => import('@/components/DomainToolsCard').then((m) => ({ default: m.DomainToolsCard })),
+    { ssr: false }
+);
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import {
@@ -50,6 +55,7 @@ import {
 
 export default function DomainResultPage() {
     const params = useParams();
+    const domainId = typeof params.id === 'string' ? params.id : params.id?.[0] ?? null;
     const router = useRouter();
     const { t } = useI18n();
     const DOMAIN_TABS = [
@@ -90,10 +96,10 @@ export default function DomainResultPage() {
     const hasMorePages = pages.length > visiblePageCount;
 
     useEffect(() => {
-        if (!params.id) return;
+        if (!domainId) return;
         setLoadError(null);
         setVisiblePageCount(DOMAIN_PAGES_INITIAL);
-        fetch(apiScanDomainSummary(params.id))
+        fetch(apiScanDomainSummary(domainId))
             .then(res => {
                 if (!res.ok) {
                     setLoadError('not_found');
@@ -105,13 +111,13 @@ export default function DomainResultPage() {
                 if (data) setResult(data);
             })
             .catch(() => setLoadError('not_found'));
-    }, [params.id]);
+    }, [domainId]);
 
     const loadMorePages = () => setVisiblePageCount((n) => Math.min(pages.length, n + DOMAIN_PAGES_INCREMENT));
 
     const restoreJourneyId = searchParams.get('restoreJourney');
     useEffect(() => {
-        if (!restoreJourneyId || !params.id) return;
+        if (!restoreJourneyId || !domainId) return;
         fetch(apiJourneys(restoreJourneyId))
             .then(res => {
                 if (!res.ok) throw new Error(t('domainResult.journeyNotFound'));
@@ -123,7 +129,7 @@ export default function DomainResultPage() {
                 setTabValue(10);
             })
             .catch(() => {});
-    }, [restoreJourneyId, params.id, t]);
+    }, [restoreJourneyId, domainId, t]);
 
     return (
         <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto', minHeight: 320 }}>
@@ -159,14 +165,11 @@ export default function DomainResultPage() {
                     <MsqdxButton variant="outlined" startIcon={<ArrowLeft size={16} />} onClick={() => router.push(PATH_HOME)}>
                         {t('domainResult.back')}
                     </MsqdxButton>
-                    {(() => {
-                        const domainId = typeof params.id === 'string' ? params.id : params.id?.[0];
-                        return domainId ? (
-                            <Box sx={{ display: 'inline-flex' }}>
-                                <SharePanel resourceType="domain" resourceId={domainId} labelNamespace="domainResult" />
-                            </Box>
-                        ) : null;
-                    })()}
+                    {domainId ? (
+                        <Box sx={{ display: 'inline-flex' }}>
+                            <SharePanel resourceType="domain" resourceId={domainId} labelNamespace="domainResult" />
+                        </Box>
+                    ) : null}
                 </Box>
             </Box>
 
@@ -818,7 +821,9 @@ export default function DomainResultPage() {
             )}
 
             {tabValue === 8 && (
-                aggregated?.infra ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-md)' }}>
+                {result?.domain && <DomainToolsCard domainUrl={`https://${result.domain}`} />}
+                {aggregated?.infra ? (
                 <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'var(--msqdx-spacing-md)' }}>
                     <MsqdxMoleculeCard title="Privacy (Domain)" headerActions={<InfoTooltip title={t('info.infraPrivacy')} ariaLabel={t('common.info')} />} variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -864,7 +869,8 @@ export default function DomainResultPage() {
                     <MsqdxMoleculeCard title="Infrastruktur & Privacy (Domain)" headerActions={<InfoTooltip title={t('info.infraPrivacy')} ariaLabel={t('common.info')} />} variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
                         <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>Keine Infrastruktur-Daten verfügbar.</MsqdxTypography>
                     </MsqdxMoleculeCard>
-                )
+                )}
+                </Box>
             )}
 
             {tabValue === 9 && (
@@ -934,12 +940,12 @@ export default function DomainResultPage() {
                                 brandColor="green"
                                 disabled={journeyLoading || !journeyGoal.trim()}
                                 onClick={async () => {
-                                    if (!params.id || !journeyGoal.trim()) return;
+                                    if (!domainId || !journeyGoal.trim()) return;
                                     setJourneyError(null);
                                     setJourneyResult(null);
                                     setJourneyLoading(true);
                                     try {
-                                                const res = await fetch(apiScanDomainJourney(params.id), {
+                                        const res = await fetch(apiScanDomainJourney(domainId), {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
                                             body: JSON.stringify({ goal: journeyGoal.trim(), stream: true }),
@@ -1022,14 +1028,14 @@ export default function DomainResultPage() {
                                         variant="outlined"
                                         disabled={journeySaving || journeySaved}
                                         onClick={async () => {
-                                            if (!params.id || !journeyResult) return;
+                                            if (!domainId || !journeyResult) return;
                                             setJourneySaving(true);
                                             try {
                                                 const res = await fetch(API_JOURNEYS, {
                                                     method: 'POST',
                                                     headers: { 'Content-Type': 'application/json' },
                                                     body: JSON.stringify({
-                                                        domainScanId: params.id,
+                                                        domainScanId: domainId,
                                                         goal: journeyGoal,
                                                         result: journeyResult,
                                                         name: journeySaveName.trim() || undefined,
@@ -1038,8 +1044,8 @@ export default function DomainResultPage() {
                                                 if (!res.ok) throw new Error('Save failed');
                                                 const data = await res.json().catch(() => ({}));
                                                 setJourneySaved(true);
-                                                if (data?.id && params.id) {
-                                                    router.replace(`/domain/${params.id}?restoreJourney=${data.id}`, { scroll: false });
+                                                if (data?.id && domainId) {
+                                                    router.replace(`/domain/${domainId}?restoreJourney=${data.id}`, { scroll: false });
                                                 }
                                             } catch {
                                                 setJourneyError(t('domainResult.journeySaveError'));

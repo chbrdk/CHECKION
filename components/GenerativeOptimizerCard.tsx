@@ -3,12 +3,21 @@ import {
     MsqdxTypography,
     MsqdxMoleculeCard,
     MsqdxChip,
+    MsqdxTooltip,
 } from '@msqdx/react';
 import { MSQDX_SPACING, MSQDX_THEME, MSQDX_STATUS, MSQDX_BRAND_PRIMARY, MSQDX_NEUTRAL } from '@msqdx/tokens';
-import type { GenerativeEngineAudit } from '@/lib/types';
-import { Brain, FileText, Database, Quote, UserCheck, Bot, CheckCircle2, XCircle } from 'lucide-react';
+import type { GenerativeEngineAudit, YmylResult, GeoAudit } from '@/lib/types';
+import { Brain, FileText, Database, Quote, UserCheck, Bot, CheckCircle2, XCircle, Info, AlertTriangle } from 'lucide-react';
 
-export function GenerativeOptimizerCard({ data }: { data: GenerativeEngineAudit }) {
+export function GenerativeOptimizerCard({
+    data,
+    ymyl,
+    geo,
+}: {
+    data: GenerativeEngineAudit;
+    ymyl?: YmylResult;
+    geo?: GeoAudit;
+}) {
     if (!data) return null;
 
     const getScoreColor = (score: number) => {
@@ -29,14 +38,54 @@ export function GenerativeOptimizerCard({ data }: { data: GenerativeEngineAudit 
             sx={{ bgcolor: MSQDX_THEME.light.surface.primary, color: textPrimary, height: '100%' }}
         >
             <Box sx={{ display: 'grid', gap: 'var(--msqdx-spacing-sm)' }}>
-                {/* Global Score */}
+                {/* Page context: YMYL, Geo-Targeting */}
+                {(ymyl?.isYmyl || geo?.targetRegionMismatch) && (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--msqdx-spacing-xs)' }}>
+                        {ymyl?.isYmyl && (
+                            <MsqdxChip
+                                label={`YMYL (${ymyl.confidence})`}
+                                size="small"
+                                sx={{ bgcolor: alpha(MSQDX_STATUS.warning.base, 0.12), color: MSQDX_STATUS.warning.base, fontWeight: 600 }}
+                            />
+                        )}
+                        {geo?.targetRegionMismatch && (
+                            <MsqdxChip
+                                icon={<AlertTriangle size={14} />}
+                                label={`Server-Standort weicht von Zielregion ${geo.targetRegion ?? ''} ab`}
+                                size="small"
+                                sx={{ bgcolor: alpha(MSQDX_STATUS.warning.base, 0.12), color: MSQDX_STATUS.warning.base }}
+                            />
+                        )}
+                    </Box>
+                )}
+
+                {/* Global Score + Breakdown Tooltip */}
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 'var(--msqdx-spacing-sm)', bgcolor: alpha(getScoreColor(data.score), 0.08), borderRadius: 2, border: `1px solid ${alpha(getScoreColor(data.score), 0.25)}` }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-sm)' }}>
                         <Brain size={32} color={getScoreColor(data.score)} />
                         <Box>
-                            <MsqdxTypography variant="h5" sx={{ fontWeight: 800, color: getScoreColor(data.score) }}>
-                                {data.score}/100
-                            </MsqdxTypography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <MsqdxTypography variant="h5" sx={{ fontWeight: 800, color: getScoreColor(data.score) }}>
+                                    {data.score}/100
+                                </MsqdxTypography>
+                                {data.scoreBreakdown && data.scoreBreakdown.length > 0 && (
+                                    <MsqdxTooltip
+                                        title={
+                                            <Box component="ul" sx={{ m: 0, pl: 1.5, fontSize: '0.75rem' }}>
+                                                {data.scoreBreakdown.map((b, i) => (
+                                                    <li key={i} style={{ marginBottom: 4 }}>
+                                                        {b.factor}: {b.points > 0 ? '+' : ''}{b.points}
+                                                    </li>
+                                                ))}
+                                            </Box>
+                                        }
+                                    >
+                                        <Box component="span" sx={{ display: 'inline-flex', cursor: 'help' }}>
+                                            <Info size={16} style={{ color: textTertiary }} aria-label="Score-Berechnung" />
+                                        </Box>
+                                    </MsqdxTooltip>
+                                )}
+                            </Box>
                             <MsqdxTypography variant="caption" sx={{ color: textTertiary, fontWeight: 600, textTransform: 'uppercase' }}>
                                 Score für KI-Auswertbarkeit
                             </MsqdxTypography>
@@ -67,6 +116,51 @@ export function GenerativeOptimizerCard({ data }: { data: GenerativeEngineAudit 
                         )}
                         {data.technical.hasLlmsTxt && data.technical.llmsTxtHasSitemap !== undefined && !data.technical.llmsTxtHasSitemap && (
                             <MsqdxTypography variant="caption" sx={{ color: MSQDX_STATUS.warning.base }}>llms.txt enthält keine Sitemap-URL</MsqdxTypography>
+                        )}
+                        {data.technical.llmsTxtRulesContent && (
+                            <Box sx={{ p: 1, borderRadius: 1, bgcolor: MSQDX_NEUTRAL[50], border: `1px solid ${MSQDX_NEUTRAL[200]}` }}>
+                                <MsqdxTypography variant="caption" sx={{ color: textTertiary, display: 'block', mb: 0.5 }}>Rules-Inhalt (llms.txt)</MsqdxTypography>
+                                <MsqdxTypography variant="caption" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                                    {data.technical.llmsTxtRulesContent}
+                                </MsqdxTypography>
+                            </Box>
+                        )}
+                        {data.technical.llmsTxtRobotsConsistencyWarnings && data.technical.llmsTxtRobotsConsistencyWarnings.length > 0 && (
+                            <Box sx={{ p: 1, borderRadius: 1, bgcolor: alpha(MSQDX_STATUS.warning.base, 0.08), border: `1px solid ${alpha(MSQDX_STATUS.warning.base, 0.3)}` }}>
+                                <MsqdxTypography variant="caption" sx={{ color: MSQDX_STATUS.warning.base, fontWeight: 600, display: 'block', mb: 0.5 }}>Robots vs. llms.txt</MsqdxTypography>
+                                {data.technical.llmsTxtRobotsConsistencyWarnings.map((w, i) => (
+                                    <MsqdxTypography key={i} variant="caption" sx={{ display: 'block' }}>• {w}</MsqdxTypography>
+                                ))}
+                            </Box>
+                        )}
+                        {data.technical.llmsTxtSpecCompliant && (
+                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                <MsqdxChip
+                                    icon={data.technical.llmsTxtSpecCompliant.hasTitle ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
+                                    label="Title (H1)"
+                                    size="small"
+                                    sx={{ height: 20, fontSize: '0.65rem' }}
+                                />
+                                <MsqdxChip
+                                    icon={data.technical.llmsTxtSpecCompliant.hasDescription ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
+                                    label="Description"
+                                    size="small"
+                                    sx={{ height: 20, fontSize: '0.65rem' }}
+                                />
+                            </Box>
+                        )}
+                        {data.technical.llmsTxtMarkdownUrlsReachable && data.technical.llmsTxtMarkdownUrlsReachable.length > 0 && (
+                            <Box>
+                                <MsqdxTypography variant="caption" sx={{ color: textTertiary, mb: 0.5, display: 'block' }}>Markdown-URLs (llms.txt)</MsqdxTypography>
+                                {data.technical.llmsTxtMarkdownUrlsReachable.map((u, i) => (
+                                    <MsqdxChip
+                                        key={i}
+                                        label={`${u.url.slice(0, 40)}…: ${u.status}`}
+                                        size="small"
+                                        sx={{ height: 20, fontSize: '0.6rem', mr: 0.5, mb: 0.5 }}
+                                    />
+                                ))}
+                            </Box>
                         )}
                         <StatusRow label="KI-Bot-Zugriff (Robots.txt)" status={data.technical.hasRobotsAllowingAI} textTertiary={textTertiary} />
                         {data.technical.aiBotStatus && data.technical.aiBotStatus.length > 0 && (
@@ -181,6 +275,7 @@ export function GenerativeOptimizerCard({ data }: { data: GenerativeEngineAudit 
                         <MetricItem label="Tabellen" value={data.content.tableCount} status={data.content.tableCount > 0} textPrimary={textPrimary} textTertiary={textTertiary} />
                         <MetricItem label="FAQ-Abschnitte" value={data.content.faqCount} status={data.content.faqCount > 0} textPrimary={textPrimary} textTertiary={textTertiary} />
                         <MetricItem label="Zitate" value={data.content.citationDensity} status={data.content.citationDensity > 2} textPrimary={textPrimary} textTertiary={textTertiary} />
+                        <MetricItem label="Zitate mit Links" value={data.content.citationsWithLinks ?? 0} status={(data.content.citationsWithLinks ?? 0) > 0} textPrimary={textPrimary} textTertiary={textTertiary} />
                         <MetricItem label="Listen-Dichte" value={data.content.listDensity} status={data.content.listDensity > 0.5} textPrimary={textPrimary} textTertiary={textTertiary} />
                     </Box>
                 </Box>

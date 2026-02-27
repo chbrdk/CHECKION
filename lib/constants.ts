@@ -132,6 +132,16 @@ export const apiShareTokenPagesScreenshot = (token: string, pageId: string, acce
   return accessToken ? `${base}?access=${encodeURIComponent(accessToken)}` : base;
 };
 
+/** Build: GET /api/tools/ssl-labs?host= */
+export const apiToolsSslLabs = (host: string) => `/api/tools/ssl-labs?host=${encodeURIComponent(host)}`;
+/** Build: GET /api/tools/pagespeed?url= */
+export const apiToolsPageSpeed = (url: string) => `/api/tools/pagespeed?url=${encodeURIComponent(url)}`;
+/** Build: GET /api/tools/wayback?url= */
+/** Build: GET /api/tools/wayback?url= */
+export const apiToolsWayback = (url: string) => `/api/tools/wayback?url=${encodeURIComponent(url)}`;
+/** Build: GET /api/tools/tech-stack?url= */
+export const apiToolsTechStack = (url: string) => `/api/tools/tech-stack?url=${encodeURIComponent(url)}`;
+
 /** Build: GET /api/search?q=&limit= */
 export const apiSearch = (q: string, limit?: number) => {
   const params = new URLSearchParams({ q });
