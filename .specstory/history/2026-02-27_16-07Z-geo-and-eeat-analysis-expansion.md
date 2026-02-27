@@ -13470,9 +13470,14 @@ entfern das tokenlimit
 
 _**Agent (model default, mode Agent)**_
 
+<think><details><summary>Thought Process</summary>
 
+The user wants to remove the token limit from the suggest-competitors-queries API. So I need to remove the max_completion_tokens parameter from the OpenAI chat completion call in that route.
+</details></think>
 
 ---
+
+
 
 
 
@@ -13482,19 +13487,164 @@ _**Agent (model default, mode Agent)**_
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/geo-eeat/suggest-competitors-queries/route.ts</summary>
 
-Status: **loading**
-
 </details>
 
 </tool-use>
 
 ---
 
+<think><details><summary>Thought Process</summary>
 
+Done. Removed max_completion_tokens so the model uses its default max output length.
+</details></think>
 
 ---
 
 
+Erledigt. Das Token-Limit ist aus dem Suggest-Endpoint entfernt; die Antwortlänge richtet sich jetzt nach den Modell-Standardwerten.
+
+---
+
+_**User**_
+
+n-Page (E-E-A-T + GEO)
+KSB - Einer der führenden Pumpenhersteller seit 150 Jahren | KSB
+https://www.ksb.com/de-de
+GEO & Technik
+GEO-Score: 50
+No llms.txt
+Robots: AI erlaubt
+Zitate: 0.0
+Keine Autor-Bio
+E-E-A-T Signale (Seite)
+Impressum
+Kontakt
+Kein Über uns
+Kein Team
+Datenschutz
+E-E-A-T- und GEO-Fitness-Bewertung per KI wurden nicht durchgeführt (z. B. OPENAI_API_KEY nicht gesetzt oder Fehler). Nur die technischen Signale oben sind verfügbar.
+Competitive Benchmark
+Share of Voice / Ø Position
+ksb.com
+SoV: 0% · Ø Pos: 0.0
+grundfos.com
+SoV: 0% · Ø Pos: 0.0
+sulzer.com
+SoV: 0% · Ø Pos: 0.0
+wilo.com
+SoV: 0% · Ø Pos: 0.0
+flowserve.com
+SoV: 0% · Ø Pos: 0.0
+xylem.com
+SoV: 0% · Ø Pos: 0.0
+
+da stimmt was nicht mit competitive benchmark
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is showing a GEO/E-E-A-T result page where the Competitive Benchmark shows all domains (ksb.com, grundfos.com, sulzer.com, etc.) with 0% Share of Voice and 0.0 average position. The user says "da stimmt was nicht" - something's wrong with the competitive benchmark.
+
+So the issue could be:
+1. The benchmark isn't actually running the LLM queries and getting citations
+2. The citation extraction is failing
+3. The metrics calculation is wrong
+4. The display is wrong
+
+Let me look at how the competitive benchmark works: it should send queries to an LLM, get responses, extract citations from the responses, and then compute Share of Voice and average position per domain. If everything shows 0%, either:
+- No citations are being extracted (LLM not returning citations, or parsing failing)
+- The queries aren't being run
+- The response format from the LLM doesn't include citations in a way we parse
+
+I need to look at the competitive benchmark logic: lib/geo-eeat/competitive-benchmark.ts and how it's invoked and how results are displayed.
+</details></think>
+
+---
+
+
+Competitive-Benchmark prüfen: Ablauf und Citation-Extraktion untersuchen.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat/competitive-benchmark.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "competitive|runCompetitive|citation",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "competitive|runCompetitive|citation",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat",
+  "outputMode": "content",
+  "totalFiles": 2,
+  "totalMatches": 13,
+  "topFiles": [
+    {
+      "uri": "lib/geo-eeat/run-llm-stages.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/geo-eeat/competitive-benchmark.ts",
+      "matchCount": 12
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see the flow:
+1. For each query, we call the LLM to answer the query (e.g. "best pump manufacturers").
+2. We get the answer text.
+3. We call extractCitationsFromText(openai, answerText) which uses a second LLM call to parse the answer and extract citations as { domain, position }.
+4. We match citations to our list of domains (target + competitors) and compute share of voice and avg position.
+
+Possible issues:
+1. **Domain matching**: We're comparing `c.domain` (from the extraction LLM) with our `domain` (e.g. "ksb.com"). The extraction might return "ksb" or "KSB" or "www.ksb.com" - we normalize with extractHostname. But the matching logic is: `d === domain || d.endsWith('.' + domain) || domain.endsWith('.' + d)`. So "ksb.com" should match "ksb.com". If the LLM returns "ksb" without .com, then domain.endsWith('.' + d) would be "ksb.com".endsWith(".ksb") = false. So we need to also match when the citation is just "ksb" and domain is "ksb.com" or vice versa. Let me check - we have extractHostname on the citation domain, so "KSB" might become "ksb" (no, extractHostname does new URL which would fail on "KSB"). So c.domain could be "ksb.com" from the parser. The parser says "Use only lowercase, no protocol". So we get "ksb.com". Our allDomains include "ksb.com" (target). So match should work.
+
+2. **extractCitationsFromText** might be returning [] always - e.g. if the extraction LLM returns something that doesn't parse, or returns citations in different format. Let me check - we have max_completion_tokens: 500 for the extraction. Maybe the model we use (OPENAI_MODEL) doesn't support max_completion_tokens? We fixed that elsewhere to use max_completion_tokens. So that should be fine.
+
+3. **Share of voice calculation**: We're doing queryMentions / queryCount. So if we have 10 queries and ksb.com was mentioned in 0, we get 0. So the issue is really that citations are always empty - either the answer doesn't mention domains in a way the extractor finds, or the extractor LLM fails to parse, or the main answer LLM doesn't mention the companies.
+
+4. **Maybe the competitive benchmark isn't being run at all?** The user said "E-E-A-T- und GEO-Fitness-Bewertung per KI wurden nicht durchgeführt" - so the main LLM stages weren't run (no API key or error). If OPENAI_API_KEY is not set, runCompetitiveBenchmark would hit getOpenAIKey() and throw, and we return null. So we wouldn't show the competitive section at all... Unless we do show it with empty metrics? Let me check where competitive is run and how the result is displayed.
+
+Actually re-reading the user message - they're showing the page WITH the competitive benchmark section, with domains listed (ksb.com, grundfos.com, etc.) and SoV 0%, Ø Pos 0.0. So the competitive benchmark *was* run (we have a result with metrics), but every domain has 0% and 0.0. So either:
+- runCompetitiveBenchmark is returning metrics with all zeros (citations are empty for every run)
+- Or the job runs competitive with empty queries? Then we'd have 0 queryCount and metrics would be 0/0
+
+Let me check how the job runs competitive and what it stores. Maybe the issue is that when we have no OPENAI_API_KEY we still build an empty competitive result structure for display? Let me look at the job flow.
+</details></think>
 
 ---
 

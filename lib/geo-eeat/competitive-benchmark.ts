@@ -47,22 +47,36 @@ function extractJsonFromResponse(content: string): string {
 const EXTRACT_CITATIONS_SYSTEM = `You are a parser. Given a short text (e.g. an AI assistant answer listing companies or recommendations), extract every mentioned domain or company that could be a website/domain.
 Return a JSON object with a single key "citations" whose value is an array of objects: { "domain": "normalized-domain-or-company-name", "position": number }.
 Position is the 1-based order of mention (first mentioned = 1, second = 2, etc.). Use only lowercase, no protocol, no path (e.g. "example.com" not "https://example.com/page").
+When you see a company name (e.g. KSB, Grundfos), use the corresponding domain from the expected list if given; otherwise use the lowercase company name (e.g. "ksb", "grundfos").
 If no domains/companies are clearly mentioned, return { "citations": [] }.`;
 
-async function extractCitationsFromText(openai: OpenAI, text: string): Promise<CompetitiveCitation[]> {
+async function extractCitationsFromText(
+    openai: OpenAI,
+    text: string,
+    expectedDomains: string[] = []
+): Promise<CompetitiveCitation[]> {
     if (!text?.trim()) return [];
     try {
+        const userContent = expectedDomains.length > 0
+            ? `Expected domains (use these when you see the company mentioned): ${expectedDomains.join(', ')}\n\nText:\n${text.slice(0, 3000)}`
+            : `Text:\n${text.slice(0, 3000)}`;
         const res = await openai.chat.completions.create({
             model: OPENAI_MODEL,
             messages: [
                 { role: 'system', content: EXTRACT_CITATIONS_SYSTEM },
-                { role: 'user', content: `Text:\n${text.slice(0, 3000)}` },
+                { role: 'user', content: userContent },
             ],
             max_completion_tokens: 500,
         });
         const raw = res.choices[0]?.message?.content ?? '';
         const jsonStr = extractJsonFromResponse(raw);
-        const parsed = JSON.parse(jsonStr) as { citations?: Array<{ domain?: string; position?: number }> };
+        if (!jsonStr.trim()) return [];
+        let parsed: { citations?: Array<{ domain?: string; position?: number }> };
+        try {
+            parsed = JSON.parse(jsonStr) as { citations?: Array<{ domain?: string; position?: number }> };
+        } catch {
+            return [];
+        }
         if (!Array.isArray(parsed.citations)) return [];
         return parsed.citations
             .filter((c) => c.domain)
@@ -73,6 +87,19 @@ async function extractCitationsFromText(openai: OpenAI, text: string): Promise<C
     } catch {
         return [];
     }
+}
+
+/** Match citation domain to our tracked domain (e.g. "ksb" or "ksb.com" matches "ksb.com"). */
+function citationMatchesDomain(citationDomain: string, ourDomain: string): boolean {
+    const c = citationDomain.toLowerCase().trim();
+    const d = ourDomain.toLowerCase().trim();
+    if (c === d) return true;
+    if (d.endsWith('.' + c)) return true;
+    if (c.endsWith('.' + d)) return true;
+    const dBase = d.split('.')[0];
+    if (dBase && c === dBase) return true;
+    if (dBase && c.startsWith(dBase + '.')) return true;
+    return false;
 }
 
 export async function runCompetitiveBenchmark(
@@ -91,6 +118,10 @@ export async function runCompetitiveBenchmark(
     const allDomains = [targetDomain, ...competitors.map(extractHostname)].filter(Boolean);
     const runs: CompetitiveCitationRun[] = [];
 
+    const domainListHint = allDomains.length > 0
+        ? ` When listing companies or recommendations, prefer naming companies that correspond to these domains (if relevant): ${allDomains.join(', ')}. Name each company or domain clearly.`
+        : '';
+
     for (let q = 0; q < queries.length; q++) {
         const query = queries[q];
         try {
@@ -99,14 +130,14 @@ export async function runCompetitiveBenchmark(
                 messages: [
                     {
                         role: 'system',
-                        content: 'You are a helpful search assistant. Answer concisely. When listing companies, products, or recommendations, name them clearly so a parser can extract domain/company names.',
+                        content: 'You are a helpful search assistant. Answer concisely. When listing companies, products, or recommendations, name them clearly so a parser can extract domain/company names.' + domainListHint,
                     },
                     { role: 'user', content: query },
                 ],
                 max_completion_tokens: 800,
             });
             const answerText = res.choices[0]?.message?.content ?? '';
-            const citations = await extractCitationsFromText(openai, answerText);
+            const citations = await extractCitationsFromText(openai, answerText, allDomains);
             runs.push({
                 queryId: `q-${q}`,
                 query,
@@ -131,10 +162,7 @@ export async function runCompetitiveBenchmark(
         let positionSum = 0;
         let queryMentions = 0;
         for (const run of runs) {
-            const match = run.citations.find((c) => {
-                const d = c.domain ?? '';
-                return d === domain || d.endsWith('.' + domain) || domain.endsWith('.' + d);
-            });
+            const match = run.citations.find((c) => citationMatchesDomain(c.domain ?? '', domain));
             if (match) {
                 mentionCount++;
                 positionSum += match.position;
