@@ -12206,3 +12206,523 @@ Status: **completed**
 
 ---
 
+<think><details><summary>Thought Process</summary>
+
+The "Unexpected end of JSON input" can happen in two places:
+
+1. **Frontend (scan page line 290):** `const data = await res.json();` - If the API returns an empty body (e.g. 500 with no body, or a redirect, or network error), `res.json()` throws "Unexpected end of JSON input".
+
+2. **Backend (suggest-parse.ts):** `JSON.parse(jsonStr)` - If the LLM returns empty content or content without a valid JSON object, jsonStr could be "{}" or empty, or the regex might not find a match and we'd parse trimmed which could be empty.
+
+Let me fix both:
+
+1. **Frontend:** Check response has body and catch json parse errors. Use something like:
+   - Only call res.json() if there's content, or wrap in try/catch and show a generic error.
+   - Or: const text = await res.text(); then if (!text.trim()) set error; else try { data = JSON.parse(text) } catch { set error }
+
+2. **Backend parseSuggestResponse:** If raw is empty or no JSON object is found, don't call JSON.parse - return empty arrays. And if the regex matches something that isn't valid JSON (e.g. truncated), catch and return empty arrays.
+
+I'll make both robust.
+</details></think>
+
+---
+
+
+Wahrscheinlich: leere API-Antwort (Frontend) oder leere/ungültige LLM-Antwort (Backend). Beides absichern:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/scan/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll:
+1. Frontend: use res.text() first, then only parse if non-empty; catch JSON parse and show geoEeatSuggestError.
+2. Backend: in parseSuggestResponse, if raw is empty or no JSON object found or JSON.parse throws, return { competitors: [], queries: [] } instead of throwing.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/scan/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat/suggest-parse.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I should also ensure the API route always returns a proper JSON body on error (500), so the frontend can parse it. Let me check - when we catch in the route we do NextResponse.json({ error: message }, { status: 500 }), so we do send JSON. The "Unexpected end of JSON input" often happens when the server crashes or returns non-JSON (e.g. HTML error page) or empty body. So the frontend fix (text() then parse with try/catch) handles that. The backend fix handles empty or truncated LLM output so we don't throw from parseSuggestResponse. Let me run the suggest-parse tests to ensure the new empty/invalid handling still passes.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npx tsx lib/geo-eeat/suggest-parse.test.ts</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npx tsx lib/geo-eeat/suggest-parse.test.ts
+```
+
+```
+suggest-parse.test.ts: all assertions passed
+
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/scan/page.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat/suggest-parse.ts"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/scan/page.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat/suggest-parse.ts"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Add a quick test for the new empty/invalid behavior in suggest-parse.test.ts so we don't regress.
+</details></think>
+
+---
+
+
+Tests um leere und ungültige Eingaben erweitern:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat/suggest-parse.test.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+parseSuggestResponse('{"incomplete":') - the regex \{[\s\S]*\} would match from the first { to the last } in the string. So for '{"incomplete":' there's no closing }, so the regex might not match (because [\s\S]* is greedy it would need to find a }). Actually in "{\"incomplete\":" the pattern \{[s\S]*\} doesn't find a }, so jsonMatch would be null (regex fails). Then jsonStr = trimmed = '{"incomplete":', and JSON.parse('{"incomplete":') throws. So we return { competitors: [], queries: [] }. Good.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npx tsx lib/geo-eeat/suggest-parse.test.ts</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npx tsx lib/geo-eeat/suggest-parse.test.ts
+```
+
+```
+suggest-parse.test.ts: all assertions passed
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+All tests pass. Summary for the user.
+</details></think>
+
+---
+
+
+Änderungen sind umgesetzt, „Unexpected end of JSON input“ wird so vermieden:
+
+**1. Frontend (`app/scan/page.tsx`)**  
+- Statt direkt `res.json()` wird zuerst `res.text()` gelesen.  
+- Nur bei nicht leerem Text wird `JSON.parse(text)` ausgeführt.  
+- Fällt das Parsen fehl oder ist der Body leer, erscheint die Meldung aus `scan.geoEeatSuggestError` statt eines Absturzes.
+
+**2. Backend (`lib/geo-eeat/suggest-parse.ts`)**  
+- Leerer oder nur aus Leerzeichen bestehender LLM-Output → Rückgabe von `{ competitors: [], queries: [] }`.  
+- Wirft `JSON.parse` (z. B. bei abgeschnittenem oder ungültigem JSON), wird ebenfalls `{ competitors: [], queries: [] }` zurückgegeben statt eines Fehlers.
+
+**3. Tests**  
+- In `suggest-parse.test.ts` sind Fälle für leeren String, Leerzeichen, „not json“ und abgebrochenes JSON ergänzt; alle Tests laufen durch.
+
+Damit gibt es keine ungefangenen JSON-Parse-Fehler mehr, und bei leerem oder kaputtem LLM-Output bekommst du leere Vorschlagslisten statt eines Crashs.
+
+---
+
+_**User**_
+
+
+[CHECKION] suggest-competitors-queries: SyntaxError: Unexpected end of JSON input
+at JSON.parse ()
+at e (.next/server/app/api/scan/geo-eeat/suggest-competitors-queries/route.js:12:2445)
+at k (.next/server/app/api/scan/geo-eeat/suggest-competitors-queries/route.js:12:198)
+at async k (.next/server/app/api/scan/geo-eeat/suggest-competitors-queries/route.js:12:6470)
+at async j (.next/server/app/api/scan/geo-eeat/suggest-competitors-queries/route.js:12:7482)
+at async Module.y (.next/server/app/api/scan/geo-eeat/suggest-competitors-queries/route.js:12:8549)
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is still getting "Unexpected end of JSON input" but now the stack trace shows it's in the suggest-competitors-queries route - so it's on the backend. The error is at JSON.parse() in the route. That could be:
+
+1. `body = await request.json()` - if the request body is empty or invalid
+2. Inside `parseSuggestResponse(raw)` - we already wrapped that in try/catch and return empty arrays, so the parse is inside suggest-parse.ts. But the stack says "route.js" so it might be the route's own JSON.parse.
+
+Let me look at the route again. We have:
+- request.json() - can throw if body is empty or not JSON
+- parseSuggestResponse(raw) - we added try/catch inside parseSuggestResponse, so JSON.parse there shouldn't throw to the route. Unless... the route is still using an old bundled version that doesn't have the try/catch? Or the error is from request.json()?
+
+Actually re-reading the stack: "at JSON.parse ()" and "at e (...route.js:12:2445)" - the line numbers are in the bundled file. So it could be either request.json() or parseSuggestResponse. The most likely is request.json() - when the client sends an empty body or the body gets lost, request.json() throws "Unexpected end of JSON input". So I should wrap request.json() in a try/catch and return 400 with a clear message when the body is empty or invalid.
+
+Let me read the route again and add defensive handling for request.json().
+</details></think>
+
+---
+
+
+Fehler tritt in der Route auf — vermutlich bei `request.json()` bei leerem oder ungültigem Request-Body. Wir machen das Parsen des Request-Bodys abgesichert:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/geo-eeat/suggest-competitors-queries/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+We already have try/catch around request.json() and return 400. So the "Unexpected end of JSON input" must be coming from parseSuggestResponse - i.e. the parseSuggestResponse in the bundled route.js might be the inlined code from suggest-parse.ts, and the try/catch we added in parseSuggestResponse might not be in the build yet, or there's another code path.
+
+Wait - in Next.js the route is bundled. So the stack trace "at e (...route.js:12:2445)" could be the minified name for parseSuggestResponse, and the JSON.parse inside it. We did add try/catch in parseSuggestResponse - so either:
+1. The build is stale and the user needs to rebuild
+2. There's something else - e.g. the regex match returns something that when parsed still throws. Like if the LLM returns multiple JSON objects and our regex matches from first { to last }, we could get invalid JSON in between. Unlikely to be "end of JSON input" though.
+3. The error could be from request.json() - e.g. in some edge runtimes or when body is empty, the catch might not be catching it properly (e.g. if it's a different error type). Let me check - "Unexpected end of JSON input" is the exact message from JSON.parse when given empty string. So request.json() with empty body would throw that. We do have try/catch around request.json(). So either the catch isn't working (unlikely) or the throw is coming from somewhere else.
+
+Actually re-read the stack: "at async Module.y" and "at async j" - these are async. So the throw could be in the async flow. In our route we have:
+1. await request.json() - can throw
+2. parseSuggestResponse(raw) - we added try/catch inside so it shouldn't throw
+
+Unless - in the built bundle, the suggest-parse module might be inlined and the line numbers point to JSON.parse. So the throw is from parseSuggestResponse's JSON.parse. That would mean our try/catch in parseSuggestResponse isn't in the build. Let me double-check suggest-parse.ts - we have try { parsed = JSON.parse(jsonStr) } catch { return { competitors: [], queries: [] }; }. So we should never throw. Unless the build is old.
+
+I'll do two things:
+1. In the route, read body as text first and parse manually, so we never throw on empty body and always return 400 with a message.
+2. In the route, wrap the parseSuggestResponse call in try/catch and on failure return empty arrays (so we're defensive even if the inlined parseSuggestResponse somehow threw).
+
+That way we're safe regardless of build state.
+</details></think>
+
+---
+
+
+Request-Body als Text lesen und manuell parsen; zusätzlich die LLM-Antwort-Verarbeitung in der Route absichern.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/geo-eeat/suggest-competitors-queries/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/geo-eeat/suggest-competitors-queries/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Now the route: 1) uses request.text() so we never get "Unexpected end of JSON input" from an empty body - we check trim and return 400; 2) uses JSON.parse(text) in try/catch for the body; 3) wraps parseSuggestResponse in try/catch so even if the library throws (e.g. old build), we return empty arrays. No more uncaught SyntaxError in the route.
+</details></think>
+
+---
+
+
+Erledigt. Zwei Anpassungen in der Route:
+
+**1. Request-Body**
+- Statt `request.json()` wird `request.text()` verwendet.
+- Ist der Body leer oder nur Leerzeichen → sofort **400** mit `"Request body is empty."`.
+- Anschließend wird `JSON.parse(text)` in einem try/catch ausgeführt → bei ungültigem JSON **400** mit `"Invalid JSON body."`, kein "Unexpected end of JSON input" mehr.
+
+**2. LLM-Antwort**
+- Das Ergebnis von `parseSuggestResponse(raw)` wird in einem try/catch verwendet.
+- Wirft die Funktion (z. B. durch abgeschnittenes JSON), liefert die Route trotzdem **200** mit leeren Arrays `competitors` und `queries` statt eines 500-Fehlers.
+
+Damit sollte der `SyntaxError: Unexpected end of JSON input` in dieser Route nicht mehr auftreten. Bitte den Ablauf (z. B. „Mit KI Konkurrenten & Fragen vorschlagen“) erneut testen.
+
+---
+
+_**User**_
+
+ich sehe keinerlei vorschläge aber auch kkeine fehlermeldung oder überhaupt response
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user says they see no suggestions, no error message, and no response at all. So the UI isn't showing the suggested competitors/queries, and also isn't showing an error. That could mean:
+
+1. The API returns 200 but with empty arrays (competitors: [], queries: []) - so we'd set empty strings in the fields and the user sees nothing and no error.
+2. The API fails silently - e.g. no response (timeout, network), and we might not be handling it properly.
+3. The button/layout might be hiding the error or the filled fields.
+
+Let me check:
+- When we get empty arrays we do setGeoEeatCompetitors('') and setGeoEeatQueries('') - so the fields stay empty. We should show a message like "Keine Vorschläge gefunden" when the response is 200 but both arrays are empty.
+- When the API returns an error we set geoEeatSuggestError - but maybe the error message isn't visible (styling, or we're not showing it in the right place).
+- When fetch throws (network error) we set geoEeatSuggestError to networkError - so that should show.
+
+I'll:
+1. Add a user-visible message when the API returns success but empty arrays ("Keine Vorschläge gefunden" / "No suggestions found. Try again or enter manually.").
+2. Ensure the error state is always cleared when starting a new request and that we handle all response paths (including empty success).
+3. Maybe add a small toast or inline message that stays visible when we get 200 with empty data.
+
+Let me look at the scan page again for the suggest button and how we handle the response.
+</details></think>
+
+---
+
+
+Wir prüfen den Ablauf und verbessern das Feedback: leere Vorschläge anzeigen und Fehler sichtbar machen.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/scan/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/geo-eeat/suggest-competitors-queries/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Possible causes for "no suggestions, no error, no response":
+
+1. **Empty response from API** – LLM returns empty or unparseable content → we return 200 with `{ competitors: [], queries: [] }`. Frontend sets empty strings in the fields. User sees nothing and no error. Fix: Show a message when we get success but both arrays empty: "Keine Vorschläge erhalten. Bitte erneut versuchen oder manuell eintragen."
+
+2. **Response not reaching the client** – e.g. timeout, or the fetch fails without throwing (e.g. res.ok false but we're not showing it?). Actually we do set geoEeatSuggestError when !res.ok. So if res is 500 we'd have data.error. Unless text is empty and we don't parse - then data = {} and we'd set error to data.error || t('scan.geoEeatSuggestError') which would be the i18n key. Good.
+
+3. **Loading state never ends** – If something in the try block throws before we get to finally, we'd still run finally and set geoEeatSuggesting(false). Unless the throw is in the fetch or res.text() and we catch in the catch block - we set network error and finally runs. So loading should end.
+
+4. **Error message not visible** – The error is shown in a caption next to the button. Maybe it's too small or the color doesn't stand out. I'll make the "empty result" and error more visible: add a small info box below the button that shows either success (X Konkurrenten, Y Fragen übernommen) or empty (Keine Vorschläge...) or the error.
+
+5. **API might be returning something that doesn't get to the client** – For example CORS or middleware stripping the body. Unlikely in same-origin. Or the request never completes (hanging). Then the user would see the loading state forever. So maybe the request is hanging? Let me add a timeout to the fetch so we don't hang forever, and show "Request timed out" or similar.
+
+I'll:
+1. Add state for a "suggest result message" (success with count, or empty, or error) so we always show feedback.
+2. When we get 200 with empty arrays, set a message "Keine Vorschläge gefunden" and show it.
+3. When we get 200 with data, set a message "5 Konkurrenten und 10 Fragen übernommen" (or actual counts).
+4. Ensure errors (network, !res.ok) are clearly shown in the same place.
+5. Optionally add a fetch timeout (e.g. 60s) so we don't hang forever.
+</details></think>
+
+---
+
+
+Wir verbessern das Feedback: Erfolg mit Anzahl anzeigen, bei leeren Vorschlägen einen Hinweis anzeigen und Fehler sichtbar machen.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/scan/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "geoEeatSuggest",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "geoEeatSuggest",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "outputMode": "content",
+  "totalFiles": 2,
+  "totalMatches": 6,
+  "topFiles": [
+    {
+      "uri": "locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "locales/de.json",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add:
+1. A state for "suggest message" that can be success (with counts), empty, or null. Or we can reuse/expand: keep geoEeatSuggestError for errors, add geoEeatSuggestMessage for success/empty info.
+2. When success with data: set message "5 Konkurrenten, 10 Fragen übernommen" (with actual counts), clear error.
+3. When success with empty: set message "Keine Vorschläge gefunden. Bitte erneut versuchen oder manuell eintragen.", clear error.
+4. When error: set error as now, clear message.
+5. Show a small box below the button that displays either the success/empty message (neutral or success color) or the error (error color). So we need one place that shows: loading state on button, and below that either success message, empty message, or error message.
+6. Add fetch timeout (e.g. 60000 ms) so if the API hangs we show "Request timed out" after 60s.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/scan/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/scan/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/scan/page.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+

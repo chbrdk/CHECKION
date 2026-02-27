@@ -51,6 +51,7 @@ export default function ScanPage() {
     const [geoEeatQueries, setGeoEeatQueries] = useState('');
     const [geoEeatSuggesting, setGeoEeatSuggesting] = useState(false);
     const [geoEeatSuggestError, setGeoEeatSuggestError] = useState<string | null>(null);
+    const [geoEeatSuggestMessage, setGeoEeatSuggestMessage] = useState<string | null>(null);
 
     useEffect(() => {
         if (scanMode !== 'journey') return;
@@ -280,13 +281,18 @@ export default function ScanPage() {
                                             onClick={async () => {
                                                 if (!url.trim()) return;
                                                 setGeoEeatSuggestError(null);
+                                                setGeoEeatSuggestMessage(null);
                                                 setGeoEeatSuggesting(true);
+                                                const controller = new AbortController();
+                                                const timeoutId = setTimeout(() => controller.abort(), 60000);
                                                 try {
                                                     const res = await fetch('/api/scan/geo-eeat/suggest-competitors-queries', {
                                                         method: 'POST',
                                                         headers: { 'Content-Type': 'application/json' },
                                                         body: JSON.stringify({ url: url.trim() }),
+                                                        signal: controller.signal,
                                                     });
+                                                    clearTimeout(timeoutId);
                                                     const text = await res.text();
                                                     let data: { error?: string; competitors?: string[]; queries?: string[] } = {};
                                                     if (text.trim()) {
@@ -305,8 +311,18 @@ export default function ScanPage() {
                                                     const q = Array.isArray(data.queries) ? data.queries : [];
                                                     setGeoEeatCompetitors(comp.join('\n'));
                                                     setGeoEeatQueries(q.join('\n'));
-                                                } catch {
-                                                    setGeoEeatSuggestError(t('scan.networkError'));
+                                                    if (comp.length === 0 && q.length === 0) {
+                                                        setGeoEeatSuggestMessage(t('scan.geoEeatSuggestEmpty'));
+                                                    } else {
+                                                        setGeoEeatSuggestMessage(t('scan.geoEeatSuggestSuccess', { competitors: comp.length, queries: q.length }));
+                                                    }
+                                                } catch (err) {
+                                                    clearTimeout(timeoutId);
+                                                    if (err instanceof Error && err.name === 'AbortError') {
+                                                        setGeoEeatSuggestError(t('scan.geoEeatSuggestTimeout'));
+                                                    } else {
+                                                        setGeoEeatSuggestError(t('scan.networkError'));
+                                                    }
                                                 } finally {
                                                     setGeoEeatSuggesting(false);
                                                 }
@@ -314,10 +330,26 @@ export default function ScanPage() {
                                         >
                                             {geoEeatSuggesting ? t('scan.geoEeatSuggestLoading') : t('scan.geoEeatSuggestCta')}
                                         </MsqdxButton>
-                                        {geoEeatSuggestError && (
-                                            <MsqdxTypography variant="caption" sx={{ color: MSQDX_STATUS.error.light }}>
-                                                {geoEeatSuggestError}
-                                            </MsqdxTypography>
+                                        {(geoEeatSuggestError || geoEeatSuggestMessage) && (
+                                            <Box
+                                                sx={{
+                                                    width: '100%',
+                                                    py: 0.5,
+                                                    px: 1,
+                                                    borderRadius: 1,
+                                                    backgroundColor: geoEeatSuggestError
+                                                        ? alpha(MSQDX_STATUS.error.base, 0.1)
+                                                        : alpha(MSQDX_STATUS.success?.base ?? MSQDX_BRAND_PRIMARY, 0.08),
+                                                    border: `1px solid ${geoEeatSuggestError ? alpha(MSQDX_STATUS.error.base, 0.25) : alpha(MSQDX_STATUS.success?.base ?? MSQDX_BRAND_PRIMARY, 0.2)}`,
+                                                }}
+                                            >
+                                                <MsqdxTypography
+                                                    variant="body2"
+                                                    sx={{ color: geoEeatSuggestError ? MSQDX_STATUS.error.light : 'var(--color-text-secondary)' }}
+                                                >
+                                                    {geoEeatSuggestError ?? geoEeatSuggestMessage}
+                                                </MsqdxTypography>
+                                            </Box>
                                         )}
                                     </Box>
                                     <MsqdxFormField

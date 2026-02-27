@@ -70,13 +70,17 @@ export async function POST(request: NextRequest) {
         });
 
         const raw = completion.choices[0]?.message?.content ?? '';
+        if (!raw?.trim()) {
+            console.warn('[CHECKION] suggest-competitors-queries: LLM returned empty content');
+        }
         let competitors: string[];
         let queries: string[];
         try {
             const result = parseSuggestResponse(raw);
             competitors = result.competitors;
             queries = result.queries;
-        } catch {
+        } catch (e) {
+            console.warn('[CHECKION] suggest-competitors-queries: parse failed', e);
             competitors = [];
             queries = [];
         }
