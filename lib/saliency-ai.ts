@@ -74,7 +74,7 @@ export async function getAttentionRegionsFromVision(
 
     const res = await openai.chat.completions.create({
         model: SALIENCY_VISION_MODEL,
-        max_tokens: 2048,
+        max_completion_tokens: 2048,
         messages: [
             { role: 'system', content: SALIENCY_SYSTEM_PROMPT },
             {

@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
                 { role: 'system', content: SYSTEM_PROMPT },
                 { role: 'user', content: `Website URL: ${url}\nDomain: ${domain}\nSuggest 5 competitors and 10 typical LLM search queries for this company. Reply with JSON only.` },
             ],
-            max_tokens: 800,
+            max_completion_tokens: 800,
         });
 
         const raw = completion.choices[0]?.message?.content ?? '';

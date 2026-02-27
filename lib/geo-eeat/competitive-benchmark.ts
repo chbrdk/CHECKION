@@ -58,7 +58,7 @@ async function extractCitationsFromText(openai: OpenAI, text: string): Promise<C
                 { role: 'system', content: EXTRACT_CITATIONS_SYSTEM },
                 { role: 'user', content: `Text:\n${text.slice(0, 3000)}` },
             ],
-            max_tokens: 500,
+            max_completion_tokens: 500,
         });
         const raw = res.choices[0]?.message?.content ?? '';
         const jsonStr = extractJsonFromResponse(raw);
@@ -103,7 +103,7 @@ export async function runCompetitiveBenchmark(
                     },
                     { role: 'user', content: query },
                 ],
-                max_tokens: 800,
+                max_completion_tokens: 800,
             });
             const answerText = res.choices[0]?.message?.content ?? '';
             const citations = await extractCitationsFromText(openai, answerText);
