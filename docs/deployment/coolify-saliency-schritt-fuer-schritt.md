@@ -93,8 +93,18 @@ Die Heatmap wird in CHECKION aus SUM-Output, DOM/Struktur (pageIndex) und option
 | Name | Bedeutung | Default |
 |------|------------|--------|
 | `SALIENCY_FUSION_STRUCTURE_WEIGHT` | Gewicht der DOM/Struktur-Map (0 = aus). | `0.45` |
+| `SALIENCY_FUSION_CONTRAST_WEIGHT` | Gewicht der Kontrast-Map (Element vs. Hintergrund; nur bei Struktur-only). | `0.25` |
 | `SALIENCY_LLM_REGIONS` | `true`/`1`: Zusätzlich LLM Vision für Regionen (Kosten). | aus |
 | `SALIENCY_FUSION_VISION_WEIGHT` | Gewicht der LLM-Vision-Map. | `0.2` |
+
+**SUM temporär deaktivieren (Struktur-only, volle Seite):**  
+Wenn die Heatmap „nicht rund“ wirkt oder unten viel Grau bleibt, kannst du SUM abschalten und nur Struktur + Kontrast nutzen (kein externer Service, volle Seitenabdeckung):
+
+| Name | Wert |
+|------|------|
+| `SALIENCY_USE_SUM` | `false` |
+
+Dann wird **kein** Saliency-Container aufgerufen; die Heatmap entsteht aus pageIndex (DOM) und Kontrast (Luminanz pro Region). Voraussetzung: Scan liefert `pageIndex`. Optional: `SALIENCY_FUSION_CONTRAST_WEIGHT` (z. B. `0.25`) für Kontrast-Gewicht.
 
 Details: `knowledge/checkion-saliency-fusion.md`.
 

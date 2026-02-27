@@ -12,7 +12,14 @@ const ABOVE_FOLD_BOOST = 1.1;
 /** Higher default so DOM elements (nav, hero, headings) are clearly visible next to SUM. */
 const DEFAULT_STRUCTURE_WEIGHT = 0.45;
 const DEFAULT_VISION_WEIGHT = 0.2;
+/** Weight for contrast-based attention (element vs background luminance difference). */
+const DEFAULT_CONTRAST_WEIGHT = 0.25;
 const FUSION_GAMMA = 0.4;
+
+/** Relative luminance (sRGB) for a single pixel. */
+function luminance(R: number, G: number, B: number): number {
+    return 0.299 * R + 0.587 * G + 0.114 * B;
+}
 
 /** Jet colormap: 0 = blue, 0.5 = green, 1 = red (match Python/saliency-ai). */
 function jetRgb(t: number): [number, number, number] {
@@ -52,6 +59,110 @@ export function buildStructureAttentionMap(
         for (let y = y0; y < y1; y++) {
             for (let x = x0; x < x1; x++) {
                 map[y * w + x] += weight;
+            }
+        }
+    }
+
+    let maxVal = 0;
+    for (let i = 0; i < size; i++) if (map[i] > maxVal) maxVal = map[i];
+    if (maxVal > 0) {
+        for (let i = 0; i < size; i++) map[i] /= maxVal;
+    }
+    return map;
+}
+
+/**
+ * Build a contrast-based attention map from the screenshot: for each pageIndex region,
+ * sample mean luminance inside the rect and in a 2px border around it; compute
+ * relative contrast (Michelson-style: (L_max - L_min) / (L_max + L_min + eps)).
+ * High-contrast elements (e.g. text on background, CTAs) get higher values.
+ * Returns Float32Array [0,1] same size as image; regions without rect or too small are skipped.
+ */
+export async function buildContrastAttentionMap(
+    imageBuffer: Buffer,
+    pageIndex: PageIndex,
+    width: number,
+    height: number
+): Promise<Float32Array> {
+    const w = Math.max(1, Math.min(4096, width));
+    const h = Math.max(1, Math.min(4096, height));
+    const size = w * h;
+    const map = new Float32Array(size);
+
+    let raw: Buffer;
+    let imgW: number;
+    let imgH: number;
+    let channels: number;
+    try {
+        const result = await sharp(imageBuffer)
+            .raw()
+            .toBuffer({ resolveWithObject: true });
+        raw = result.data;
+        imgW = result.info.width ?? w;
+        imgH = result.info.height ?? h;
+        channels = result.info.channels ?? 3;
+    } catch {
+        return map;
+    }
+
+    const getL = (x: number, y: number): number => {
+        if (x < 0 || x >= imgW || y < 0 || y >= imgH) return NaN;
+        const i = (y * imgW + x) * channels;
+        return luminance(raw[i], raw[i + 1], raw[i + 2]);
+    };
+
+    for (const r of pageIndex.regions) {
+        if (!r.rect) continue;
+        const { x: rx, y: ry, width: rw, height: rh } = r.rect;
+        const x0 = Math.max(0, Math.floor(rx));
+        const x1 = Math.min(imgW, Math.ceil(rx + rw));
+        const y0 = Math.max(0, Math.floor(ry));
+        const y1 = Math.min(imgH, Math.ceil(ry + rh));
+        if (x1 <= x0 + 1 || y1 <= y0 + 1) continue;
+
+        let sumL = 0;
+        let count = 0;
+        for (let y = y0; y < y1; y++) {
+            for (let x = x0; x < x1; x++) {
+                const L = getL(x, y);
+                if (!Number.isNaN(L)) {
+                    sumL += L;
+                    count++;
+                }
+            }
+        }
+        const LInside = count > 0 ? sumL / count : 0;
+
+        const borderPad = 2;
+        const bx0 = Math.max(0, x0 - borderPad);
+        const bx1 = Math.min(imgW, x1 + borderPad);
+        const by0 = Math.max(0, y0 - borderPad);
+        const by1 = Math.min(imgH, y1 + borderPad);
+        let borderSum = 0;
+        let borderCount = 0;
+        for (let y = by0; y < by1; y++) {
+            for (let x = bx0; x < bx1; x++) {
+                const inInner = x >= x0 && x < x1 && y >= y0 && y < y1;
+                if (inInner) continue;
+                const L = getL(x, y);
+                if (!Number.isNaN(L)) {
+                    borderSum += L;
+                    borderCount++;
+                }
+            }
+        }
+        const LBorder = borderCount > 0 ? borderSum / borderCount : LInside;
+        const LMax = Math.max(LInside, LBorder);
+        const LMin = Math.min(LInside, LBorder);
+        const contrast = LMax + LMin > 1e-3 ? (LMax - LMin) / (LMax + LMin + 1e-6) : 0;
+
+        const outX0 = Math.max(0, Math.floor(rx));
+        const outX1 = Math.min(w, Math.ceil(rx + rw));
+        const outY0 = Math.max(0, Math.floor(ry));
+        const outY1 = Math.min(h, Math.ceil(ry + rh));
+        for (let y = outY0; y < outY1; y++) {
+            for (let x = outX0; x < outX1; x++) {
+                map[y * w + x] = Math.max(map[y * w + x], contrast);
             }
         }
     }
@@ -209,6 +320,67 @@ export interface FuseSaliencyOptions {
     mediaPipeWeight?: number;
     width: number;
     height: number;
+}
+
+export interface RenderStructureOnlyOptions {
+    pageIndex: PageIndex;
+    width: number;
+    height: number;
+    structureWeight?: number;
+    visionRegions?: AttentionRegion[];
+    visionWeight?: number;
+    /** Screenshot buffer for contrast-based attention (element vs background). */
+    imageBuffer?: Buffer;
+    contrastWeight?: number;
+}
+
+/**
+ * Build a heatmap from structure (pageIndex) only, no SUM. Covers the full page.
+ * Optionally adds vision prior and/or contrast-based attention from the screenshot.
+ * Returns base64 PNG string.
+ */
+export async function renderStructureOnlyHeatmap(options: RenderStructureOnlyOptions): Promise<string> {
+    const {
+        pageIndex,
+        width,
+        height,
+        structureWeight = 1,
+        visionRegions,
+        visionWeight = DEFAULT_VISION_WEIGHT,
+        imageBuffer,
+        contrastWeight = DEFAULT_CONTRAST_WEIGHT,
+    } = options;
+
+    const w = Math.max(1, Math.min(4096, width));
+    const h = Math.max(1, Math.min(4096, height));
+    const size = w * h;
+
+    const structureMap = buildStructureAttentionMap(pageIndex, w, h);
+    let combined = new Float32Array(size);
+    for (let i = 0; i < size; i++) combined[i] = structureWeight * structureMap[i];
+
+    if (visionRegions?.length && visionWeight > 0) {
+        const visionMap = buildVisionPriorMap(visionRegions, w, h);
+        for (let i = 0; i < size; i++) combined[i] += visionWeight * visionMap[i];
+    }
+
+    if (imageBuffer && contrastWeight > 0 && pageIndex.regions?.length) {
+        try {
+            const contrastMap = await buildContrastAttentionMap(imageBuffer, pageIndex, w, h);
+            for (let i = 0; i < size; i++) combined[i] += contrastWeight * contrastMap[i];
+        } catch (e) {
+            // ignore contrast failure (e.g. image decode)
+        }
+    }
+
+    let maxVal = 0;
+    for (let i = 0; i < size; i++) if (combined[i] > maxVal) maxVal = combined[i];
+    if (maxVal > 0) {
+        for (let i = 0; i < size; i++) combined[i] = Math.min(1, combined[i] / maxVal);
+    }
+
+    const outPng = await intensityToJetPng(combined, w, h);
+    return outPng.toString('base64');
 }
 
 /**

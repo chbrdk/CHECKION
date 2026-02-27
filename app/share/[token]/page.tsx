@@ -737,7 +737,8 @@ function ShareJourneyContent({ data, accessToken }: { data: ShareJourneyData; ac
 }
 
 function ShareSingleContent({ data, shareToken, accessToken }: { data: ScanResult; shareToken?: string; accessToken?: string | null }) {
-    const issueCount = (data.issues?.length ?? 0);
+    const dataIssues = Array.isArray(data?.issues) ? data.issues : [];
+    const issueCount = dataIssues.length;
     const stats = data.stats ?? { errors: 0, warnings: 0, notices: 0 };
     const perf = data.performance;
     const eco = data.eco;
@@ -1033,7 +1034,7 @@ function ShareSingleContent({ data, shareToken, accessToken }: { data: ScanResul
                 <MsqdxCard variant="flat" sx={{ p: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
                     <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 1, color: textPrimary }}>Issues ({issueCount})</MsqdxTypography>
                     <Box component="ul" sx={{ m: 0, pl: 2, maxHeight: 300, overflow: 'auto' }}>
-                        {(data.issues ?? []).slice(0, 50).map((issue, idx) => (
+                        {dataIssues.slice(0, 50).map((issue, idx) => (
                             <li key={idx}>
                                 <MsqdxTypography variant="body2" sx={{ color: textPrimary }}>[{issue.type}] {issue.message}</MsqdxTypography>
                             </li>

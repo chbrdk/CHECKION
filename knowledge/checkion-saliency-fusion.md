@@ -12,7 +12,9 @@ Die Aufmerksamkeits-Heatmap kombiniert mehrere Signale in der App-Schicht (Next.
 
 | Variable | Bedeutung | Default |
 |----------|------------|--------|
+| `SALIENCY_USE_SUM` | `false`: SUM deaktivieren – Heatmap nur aus Struktur + Kontrast (volle Seitenabdeckung, kein externer Service). | `true` |
 | `SALIENCY_FUSION_STRUCTURE_WEIGHT` | Gewicht der DOM/Struktur-Map bei der Fusion (0 = aus). | `0.45` |
+| `SALIENCY_FUSION_CONTRAST_WEIGHT` | Gewicht der Kontrast-Map (Element vs. Hintergrund-Helligkeit); nur bei Struktur-only bzw. wenn Kontrast aktiv. | `0.25` |
 | `SALIENCY_LLM_REGIONS` | `true`/`1`: Im SUM-Pfad zusätzlich LLM Vision aufrufen und Regionen in Fusion einrechnen. | aus |
 | `SALIENCY_FUSION_VISION_WEIGHT` | Gewicht der LLM-Vision-Map (nur wenn LLM-Regionen aktiv). | `0.2` |
 
@@ -21,6 +23,14 @@ LLM Vision ist optional und kostentransparent: wird nur bei gesetztem `SALIENCY_
 ## Struktur-Map: Rechteck-Füllung
 
 Die DOM-Struktur-Map füllt **jede Region mit ihrem vollen Rechteck** (Position und Größe aus dem Scan). Die Rect-Koordinaten stammen aus `getBoundingClientRect()` + Scroll im Scanner und sind identisch mit dem Screenshot-Koordinatensystem. So wird z. B. die komplette Nav-Leiste als Fläche erfasst, nicht nur ein Punkt in der Mitte. Gewicht pro Region: `findabilityScore * aboveFold-Boost * semanticBoost` (hero/nav stärker).
+
+## SUM temporär deaktivieren (Struktur-only, volle Seite)
+
+Wenn `SALIENCY_USE_SUM=false`: Es wird **kein** SUM-Service aufgerufen. Die Heatmap entsteht nur aus **Struktur (pageIndex)** und optional **Kontrast** – sie deckt die **gesamte Seite** ab (Screenshot-Maße), unten gibt es kein Grau mehr. Der Aufruf ist synchron (kein Job, kein Polling); der Client erhält `success: true` und lädt den Scan neu. Voraussetzung: Scan muss `pageIndex` haben (Struktur-Map).
+
+## Kontrast-basierte Attention
+
+Aus dem Screenshot wird pro pageIndex-Region die **relative Helligkeit** (Luminanz) im Rechteck und in einem 2px-Rand (Hintergrund) ermittelt. **Kontrast** = Michelson-ähnlich: `(L_max - L_min) / (L_max + L_min)`. Hoher Kontrast (z. B. Text auf Hintergrund, CTAs) erhöht den Attention-Wert der Region. Die Kontrast-Map wird mit `SALIENCY_FUSION_CONTRAST_WEIGHT` in die Struktur-only-Heatmap eingemischt. Implementierung: `buildContrastAttentionMap` in [lib/saliency-fusion.ts](../lib/saliency-fusion.ts).
 
 ## Scanpath (Blickreihenfolge)
 

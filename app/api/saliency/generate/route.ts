@@ -8,7 +8,7 @@ import { auth } from '@/auth';
 import { getScan, updateScanResult } from '@/lib/db/scans';
 import { invalidateScan } from '@/lib/cache';
 import { enrichPageIndexWithSaliency } from '@/lib/page-index';
-import { fuseSaliencyHeatmap } from '@/lib/saliency-fusion';
+import { fuseSaliencyHeatmap, renderStructureOnlyHeatmap } from '@/lib/saliency-fusion';
 import { getAttentionRegionsFromVision, renderHeatmapFromRegions } from '@/lib/saliency-ai';
 import { setVisionRegions } from '@/lib/saliency-vision-cache';
 import { computeScanpath } from '@/lib/scanpath';
@@ -33,8 +33,11 @@ function getSaliencyBaseUrl(): string | undefined {
 const JOB_CREATE_TIMEOUT_MS = 15_000;
 
 const USE_AI_SALIENCY = process.env.SALIENCY_USE_AI === 'true' || process.env.SALIENCY_USE_AI === '1';
+/** When false, SUM is skipped and heatmap is built from structure + optional contrast only (full-page coverage). */
+const USE_SUM_SALIENCY = process.env.SALIENCY_USE_SUM !== 'false';
 const USE_LLM_REGIONS = process.env.SALIENCY_LLM_REGIONS === 'true' || process.env.SALIENCY_LLM_REGIONS === '1';
 const STRUCTURE_WEIGHT = parseFloat(process.env.SALIENCY_FUSION_STRUCTURE_WEIGHT ?? '0.45');
+const CONTRAST_WEIGHT = parseFloat(process.env.SALIENCY_FUSION_CONTRAST_WEIGHT ?? '0.25');
 
 export async function POST(request: Request) {
     const session = await auth();
@@ -133,6 +136,77 @@ export async function POST(request: Request) {
             console.error('[CHECKION] saliency/generate (AI):', e);
             return NextResponse.json({ error: message }, { status: 502 });
         }
+    }
+
+    // --- Structure-only path: no SUM, full-page heatmap from DOM + contrast (no jobId) ---
+    if (!USE_SUM_SALIENCY && result.pageIndex) {
+        try {
+            const buf = Buffer.from(imageBase64, 'base64');
+            const meta = await sharp(buf).metadata();
+            const imgWidth = meta.width ?? 1920;
+            const imgHeight = meta.height ?? 1080;
+            const visionRegions =
+                USE_LLM_REGIONS && process.env.OPENAI_API_KEY?.trim()
+                    ? await getAttentionRegionsFromVision(imageBase64, imgWidth, imgHeight).catch(() => [])
+                    : undefined;
+            const heatmapBase64 = await renderStructureOnlyHeatmap({
+                pageIndex: result.pageIndex,
+                width: imgWidth,
+                height: imgHeight,
+                structureWeight: 1,
+                visionRegions: visionRegions?.length ? visionRegions : undefined,
+                visionWeight: 0.2,
+                imageBuffer: buf,
+                contrastWeight: CONTRAST_WEIGHT,
+            });
+            const dataUrl = `data:image/png;base64,${heatmapBase64}`;
+            let pageIndexPatch: { pageIndex?: typeof result.pageIndex } = {};
+            if (result.pageIndex) {
+                try {
+                    pageIndexPatch.pageIndex = await enrichPageIndexWithSaliency(result.pageIndex, dataUrl);
+                } catch {
+                    /* ignore */
+                }
+            }
+            let scanpathPatch: { scanpath?: typeof result.scanpath } = {};
+            try {
+                const scanpath = await computeScanpath({
+                    heatmapPngBase64: heatmapBase64,
+                    pageIndex: result.pageIndex!,
+                    width: imgWidth,
+                    height: imgHeight,
+                });
+                if (scanpath.length > 0) scanpathPatch.scanpath = scanpath;
+            } catch {
+                /* ignore */
+            }
+            const updated = await updateScanResult(scanId, session.user.id, {
+                saliencyHeatmap: dataUrl,
+                ...pageIndexPatch,
+                ...scanpathPatch,
+            });
+            if (!updated) {
+                return NextResponse.json({ error: 'Failed to save heatmap to scan.' }, { status: 500 });
+            }
+            invalidateScan(scanId);
+            return NextResponse.json({ success: true });
+        } catch (e) {
+            console.error('[CHECKION] saliency/generate (structure-only):', e);
+            return NextResponse.json(
+                { error: e instanceof Error ? e.message : 'Structure-only heatmap failed' },
+                { status: 502 },
+            );
+        }
+    }
+
+    if (!USE_SUM_SALIENCY) {
+        return NextResponse.json(
+            {
+                error:
+                    'Structure-only saliency requires pageIndex. Run a scan that produces a structure map first.',
+            },
+            { status: 400 },
+        );
     }
 
     // --- SUM path: create job, return jobId (client polls /api/saliency/result) ---

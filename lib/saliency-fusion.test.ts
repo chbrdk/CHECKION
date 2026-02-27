@@ -6,10 +6,12 @@ import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
 import {
     buildStructureAttentionMap,
+    buildContrastAttentionMap,
     buildVisionPriorMap,
     decodeJetPngToIntensity,
     fuseSaliencyHeatmap,
     intensityToJetPng,
+    renderStructureOnlyHeatmap,
 } from './saliency-fusion';
 import type { PageIndex } from './types';
 
@@ -104,6 +106,54 @@ async function run(): Promise<void> {
         height: h,
     });
     assert.ok(fusedWithStructure.length > 0 && /^[A-Za-z0-9+/=]+$/.test(fusedWithStructure));
+
+    // buildContrastAttentionMap: small image + one region -> map same size, normalized
+    const smallW = 20;
+    const smallH = 20;
+    const smallRgb = Buffer.alloc(smallW * smallH * 3);
+    for (let i = 0; i < smallW * smallH; i++) {
+        smallRgb[i * 3] = 100;
+        smallRgb[i * 3 + 1] = 100;
+        smallRgb[i * 3 + 2] = 100;
+    }
+    const smallPng = await sharp(smallRgb, { raw: { width: smallW, height: smallH, channels: 3 } })
+        .png()
+        .toBuffer();
+    const pageIndexSmall: PageIndex = {
+        url,
+        viewportHeight: 400,
+        regions: [
+            {
+                id: uuidv4(),
+                tag: 'h1',
+                headingText: 'Test',
+                level: 1,
+                rect: { x: 2, y: 2, width: 8, height: 8 },
+                indexInDocument: 0,
+                aboveFold: true,
+                findabilityScore: 1,
+            },
+        ],
+    };
+    const contrastMap = await buildContrastAttentionMap(smallPng, pageIndexSmall, smallW, smallH);
+    assert.strictEqual(contrastMap.length, smallW * smallH);
+    let contrastMax = 0;
+    for (let i = 0; i < contrastMap.length; i++) if (contrastMap[i] > contrastMax) contrastMax = contrastMap[i];
+    assert.ok(contrastMax <= 1 + 1e-6, 'contrast map normalized');
+
+    // renderStructureOnlyHeatmap: no SUM, structure only -> full-page base64 PNG
+    const structureOnlyB64 = await renderStructureOnlyHeatmap({
+        pageIndex,
+        width: w,
+        height: h,
+        structureWeight: 1,
+    });
+    assert.strictEqual(typeof structureOnlyB64, 'string');
+    assert.ok(structureOnlyB64.length > 0);
+    assert.ok(/^[A-Za-z0-9+/=]+$/.test(structureOnlyB64), 'structure-only yields valid base64');
+    const decoded = await decodeJetPngToIntensity(Buffer.from(structureOnlyB64, 'base64'));
+    assert.strictEqual(decoded.width, w);
+    assert.strictEqual(decoded.height, h);
 
     console.log('saliency-fusion tests passed');
 }

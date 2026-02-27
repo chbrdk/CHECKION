@@ -204,14 +204,15 @@ export default function ResultsPage() {
         }
     }, [result?.id, saliencyGenerating, t]);
 
+    const issues = Array.isArray(result?.issues) ? result.issues : [];
     const filteredIssues = useMemo(() => {
         if (!result) return [];
-        return result.issues.filter((i) => {
+        return issues.filter((i) => {
             const typeMatch = tab === 'all' || i.type === tab;
             const levelMatch = levelFilter === 'all' || i.wcagLevel === levelFilter;
             return typeMatch && levelMatch;
         });
-    }, [result, tab, levelFilter]);
+    }, [result, issues, tab, levelFilter]);
 
     useEffect(() => {
         setIssuesPage(1);
@@ -289,7 +290,8 @@ export default function ResultsPage() {
 
                 // Compute level stats
                 const stats = { A: 0, AA: 0, AAA: 0, APCA: 0, Unknown: 0 };
-                data.issues.forEach(issue => {
+                const dataIssues = Array.isArray(data?.issues) ? data.issues : [];
+                dataIssues.forEach(issue => {
                     if (issue.wcagLevel === 'A') stats.A++;
                     else if (issue.wcagLevel === 'AA') stats.AA++;
                     else if (issue.wcagLevel === 'AAA') stats.AAA++;
@@ -307,7 +309,7 @@ export default function ResultsPage() {
 
     const TABS: { key: TabFilter | 'passed'; label: string; count: number; color: string }[] = result
         ? [
-            { key: 'all', label: t('results.tabAll'), count: result.issues.length, color: MSQDX_BRAND_PRIMARY.green },
+            { key: 'all', label: t('results.tabAll'), count: issues.length, color: MSQDX_BRAND_PRIMARY.green },
             { key: 'error', label: t('results.tabErrors'), count: result.stats.errors, color: MSQDX_STATUS.error.base },
             { key: 'warning', label: t('results.tabWarnings'), count: result.stats.warnings, color: MSQDX_STATUS.warning.base },
             { key: 'notice', label: t('results.tabNotices'), count: result.stats.notices, color: MSQDX_STATUS.info.base },
