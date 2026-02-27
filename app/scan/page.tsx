@@ -287,7 +287,16 @@ export default function ScanPage() {
                                                         headers: { 'Content-Type': 'application/json' },
                                                         body: JSON.stringify({ url: url.trim() }),
                                                     });
-                                                    const data = await res.json();
+                                                    const text = await res.text();
+                                                    let data: { error?: string; competitors?: string[]; queries?: string[] } = {};
+                                                    if (text.trim()) {
+                                                        try {
+                                                            data = JSON.parse(text) as typeof data;
+                                                        } catch {
+                                                            setGeoEeatSuggestError(t('scan.geoEeatSuggestError'));
+                                                            return;
+                                                        }
+                                                    }
                                                     if (!res.ok) {
                                                         setGeoEeatSuggestError(data.error || t('scan.geoEeatSuggestError'));
                                                         return;

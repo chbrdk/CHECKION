@@ -20,12 +20,19 @@ export interface SuggestResult {
 /**
  * Parse LLM raw text into competitors and queries arrays.
  * Expects JSON object with "competitors" and "queries" arrays; extracts first JSON object if wrapped in markdown.
+ * Returns empty arrays if input is empty or JSON is invalid/truncated.
  */
 export function parseSuggestResponse(raw: string): SuggestResult {
     const trimmed = raw.trim();
+    if (!trimmed) return { competitors: [], queries: [] };
     const jsonMatch = trimmed.match(/\{[\s\S]*\}/);
     const jsonStr = jsonMatch ? jsonMatch[0] : trimmed;
-    const parsed = JSON.parse(jsonStr) as { competitors?: unknown; queries?: unknown };
+    let parsed: { competitors?: unknown; queries?: unknown };
+    try {
+        parsed = JSON.parse(jsonStr) as { competitors?: unknown; queries?: unknown };
+    } catch {
+        return { competitors: [], queries: [] };
+    }
 
     const competitors = Array.isArray(parsed.competitors)
         ? parsed.competitors.slice(0, 10).filter((c): c is string => typeof c === 'string').map((c) => c.trim()).filter(Boolean)

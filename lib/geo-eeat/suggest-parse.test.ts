@@ -42,6 +42,12 @@ function run(): void {
     assert.deepStrictEqual(mixed.competitors, ['ok', 'yes']);
     assert.deepStrictEqual(mixed.queries, ['q', 'q2']);
 
+    // parseSuggestResponse – empty or invalid returns empty arrays
+    assert.deepStrictEqual(parseSuggestResponse(''), { competitors: [], queries: [] });
+    assert.deepStrictEqual(parseSuggestResponse('   '), { competitors: [], queries: [] });
+    assert.deepStrictEqual(parseSuggestResponse('not json'), { competitors: [], queries: [] });
+    assert.deepStrictEqual(parseSuggestResponse('{"incomplete":'), { competitors: [], queries: [] });
+
     console.log('suggest-parse.test.ts: all assertions passed');
 }
 

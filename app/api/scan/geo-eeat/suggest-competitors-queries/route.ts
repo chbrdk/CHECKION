@@ -28,7 +28,11 @@ export async function POST(request: NextRequest) {
 
     let body: { url?: string };
     try {
-        body = await request.json();
+        const text = await request.text();
+        if (!text?.trim()) {
+            return NextResponse.json({ error: 'Request body is empty.' }, { status: 400 });
+        }
+        body = JSON.parse(text) as { url?: string };
     } catch {
         return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 });
     }
@@ -66,7 +70,16 @@ export async function POST(request: NextRequest) {
         });
 
         const raw = completion.choices[0]?.message?.content ?? '';
-        const { competitors, queries } = parseSuggestResponse(raw);
+        let competitors: string[];
+        let queries: string[];
+        try {
+            const result = parseSuggestResponse(raw);
+            competitors = result.competitors;
+            queries = result.queries;
+        } catch {
+            competitors = [];
+            queries = [];
+        }
         return NextResponse.json({ competitors, queries });
     } catch (e) {
         const message = e instanceof Error ? e.message : 'Suggestion failed';
