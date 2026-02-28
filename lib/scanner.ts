@@ -412,9 +412,10 @@ export async function runScan(options: ScanOptions & { groupId?: string; targetR
             });
 
             console.log("Axe run complete.");
-            if (axeResults && axeResults.passes) {
-                console.log(`Found ${axeResults.passes.length} passed rules.`);
-                passes = axeResults.passes.map((p: any) => ({
+            const axe = axeResults as { passes?: Array<{ id: string; description: string; help: string; nodes: Array<{ html: string; target: string[]; failureSummary?: string }> }>; error?: string } | null;
+            if (axe && axe.passes) {
+                console.log(`Found ${axe.passes.length} passed rules.`);
+                passes = axe.passes.map((p: any) => ({
                     id: p.id,
                     description: p.description,
                     help: p.help,
@@ -424,10 +425,10 @@ export async function runScan(options: ScanOptions & { groupId?: string; targetR
                         failureSummary: n.failureSummary
                     }))
                 }));
-            } else if (axeResults && axeResults.error) {
-                console.error("Axe run returned error:", axeResults.error);
+            } else if (axe && axe.error) {
+                console.error("Axe run returned error:", axe.error);
             } else {
-                console.warn("Axe results structure unexpected:", Object.keys(axeResults));
+                console.warn("Axe results structure unexpected:", axe ? Object.keys(axe) : []);
             }
         } catch (e) {
             console.error('Failed to capture passed audits:', e);
