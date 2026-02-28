@@ -12,7 +12,7 @@ import { runScan } from '@/lib/scanner';
 import { insertGeoEeatRun, updateGeoEeatRun } from '@/lib/db/geo-eeat-runs';
 import { buildGeoEeatResultFromScan } from '@/lib/geo-eeat/stage1';
 import { runLlmStages } from '@/lib/geo-eeat/run-llm-stages';
-import { runCompetitiveBenchmark } from '@/lib/geo-eeat/competitive-benchmark';
+import { runCompetitiveBenchmarkMultiModel } from '@/lib/geo-eeat/competitive-benchmark';
 import { v4 as uuidv4 } from 'uuid';
 
 export const maxDuration = 60;
@@ -56,12 +56,12 @@ export async function POST(request: NextRequest) {
                 console.error('[CHECKION] GEO/E-E-A-T LLM stages error:', e);
             }
             if (runCompetitive && ((queries?.length ?? 0) > 0 || (competitors?.length ?? 0) > 0)) {
-                const competitive = await runCompetitiveBenchmark(
+                const competitiveByModel = await runCompetitiveBenchmarkMultiModel(
                     url,
                     competitors ?? [],
                     queries ?? []
                 );
-                if (competitive) payload.competitive = competitive;
+                if (Object.keys(competitiveByModel).length > 0) payload.competitiveByModel = competitiveByModel;
             }
             await updateGeoEeatRun(jobId, session.user.id, {
                 status: 'complete',

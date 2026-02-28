@@ -1,6 +1,7 @@
 /**
- * Competitive LLM citation benchmark: run queries through LLM, extract cited domains, compute metrics.
- * Uses OpenAI. If OPENAI_API_KEY is not set, returns empty competitive result.
+ * Competitive LLM citation benchmark: run queries through LLM, get structured recommendations, compute metrics.
+ * Uses OpenAI Structured Outputs (one call per query, schema: { citations: [{ domain, position }] }).
+ * Recommended: OPENAI_MODEL=gpt-4o-mini or gpt-4o (see https://developers.openai.com/api/docs/guides/structured-outputs/).
  */
 
 import OpenAI from 'openai';
@@ -10,7 +11,36 @@ import type {
     CompetitiveCitation,
     CompetitiveMetrics,
 } from '@/lib/types';
-import { OPENAI_MODEL, getOpenAIKey } from '@/lib/llm/config';
+import { OPENAI_MODEL, getOpenAIKey, COMPETITIVE_BENCHMARK_MODELS } from '@/lib/llm/config';
+
+/** JSON schema for Structured Outputs: citations list for position metrics. */
+const CITATIONS_RESPONSE_FORMAT = {
+    type: 'json_schema' as const,
+    json_schema: {
+        name: 'competitive_citations',
+        strict: true,
+        schema: {
+            type: 'object',
+            properties: {
+                citations: {
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            domain: { type: 'string', description: 'Normalized domain or company name (lowercase, no protocol)' },
+                            position: { type: 'integer', description: '1-based order of mention' },
+                        },
+                        required: ['domain', 'position'],
+                        additionalProperties: false,
+                    },
+                    description: 'Companies/domains recommended in answer order',
+                },
+            },
+            required: ['citations'],
+            additionalProperties: false,
+        },
+    },
+};
 
 function extractHostname(input: string): string {
     const s = input.trim().toLowerCase();
@@ -22,66 +52,17 @@ function extractHostname(input: string): string {
     }
 }
 
-function extractJsonFromResponse(content: string): string {
-    const trimmed = content.trim();
-    const codeBlock = trimmed.match(/^```(?:json)?\s*([\s\S]*?)```$/m);
-    if (codeBlock) return codeBlock[1].trim();
-    const firstBrace = trimmed.indexOf('[');
-    const firstCurly = trimmed.indexOf('{');
-    const start = firstBrace >= 0 && (firstCurly < 0 || firstBrace <= firstCurly) ? firstBrace : firstCurly;
-    if (start >= 0) {
-        const open = trimmed[start];
-        const close = open === '[' ? ']' : '}';
-        let depth = 0;
-        for (let i = start; i < trimmed.length; i++) {
-            if (trimmed[i] === open) depth++;
-            else if (trimmed[i] === close) {
-                depth--;
-                if (depth === 0) return trimmed.slice(start, i + 1);
-            }
-        }
-    }
-    return trimmed;
-}
-
-const EXTRACT_CITATIONS_SYSTEM = `You are a parser. Given a short text (e.g. an AI assistant answer listing companies or recommendations), extract every mentioned domain or company that could be a website/domain.
-Return a JSON object with a single key "citations" whose value is an array of objects: { "domain": "normalized-domain-or-company-name", "position": number }.
-Position is the 1-based order of mention (first mentioned = 1, second = 2, etc.). Use only lowercase, no protocol, no path (e.g. "example.com" not "https://example.com/page").
-When you see a company name (e.g. KSB, Grundfos), use the corresponding domain from the expected list if given; otherwise use the lowercase company name (e.g. "ksb", "grundfos").
-If no domains/companies are clearly mentioned, return { "citations": [] }.`;
-
-async function extractCitationsFromText(
-    openai: OpenAI,
-    text: string,
-    expectedDomains: string[] = []
-): Promise<CompetitiveCitation[]> {
-    if (!text?.trim()) return [];
+function parseStructuredCitations(content: string): CompetitiveCitation[] {
+    const raw = content?.trim();
+    if (!raw) return [];
     try {
-        const userContent = expectedDomains.length > 0
-            ? `Expected domains (use these when you see the company mentioned): ${expectedDomains.join(', ')}\n\nText:\n${text.slice(0, 3000)}`
-            : `Text:\n${text.slice(0, 3000)}`;
-        const res = await openai.chat.completions.create({
-            model: OPENAI_MODEL,
-            messages: [
-                { role: 'system', content: EXTRACT_CITATIONS_SYSTEM },
-                { role: 'user', content: userContent },
-            ],
-        });
-        const raw = res.choices[0]?.message?.content ?? '';
-        const jsonStr = extractJsonFromResponse(raw);
-        if (!jsonStr.trim()) return [];
-        let parsed: { citations?: Array<{ domain?: string; position?: number }> };
-        try {
-            parsed = JSON.parse(jsonStr) as { citations?: Array<{ domain?: string; position?: number }> };
-        } catch {
-            return [];
-        }
+        const parsed = JSON.parse(raw) as { citations?: Array<{ domain?: string; position?: number }> };
         if (!Array.isArray(parsed.citations)) return [];
         return parsed.citations
-            .filter((c) => c.domain)
+            .filter((c) => c.domain != null && String(c.domain).trim() !== '')
             .map((c, i) => ({
                 domain: extractHostname(String(c.domain)),
-                position: typeof c.position === 'number' && c.position >= 1 ? c.position : i + 1,
+                position: typeof c.position === 'number' && c.position >= 1 ? Math.floor(c.position) : i + 1,
             }));
     } catch {
         return [];
@@ -104,7 +85,8 @@ function citationMatchesDomain(citationDomain: string, ourDomain: string): boole
 export async function runCompetitiveBenchmark(
     targetUrl: string,
     competitors: string[],
-    queries: string[]
+    queries: string[],
+    modelOverride?: string
 ): Promise<CompetitiveBenchmarkResult | null> {
     let openai: OpenAI;
     try {
@@ -113,35 +95,35 @@ export async function runCompetitiveBenchmark(
         return null;
     }
 
+    const model = modelOverride ?? OPENAI_MODEL;
     const targetDomain = extractHostname(targetUrl);
     const allDomains = [targetDomain, ...competitors.map(extractHostname)].filter(Boolean);
     const runs: CompetitiveCitationRun[] = [];
 
-    const domainListHint = allDomains.length > 0
-        ? ` When listing companies or recommendations, prefer naming companies that correspond to these domains (if relevant): ${allDomains.join(', ')}. Name each company or domain clearly.`
-        : '';
+    const systemPrompt =
+        'You are a helpful search assistant. For the user\'s query, respond with a JSON object containing a single key "citations": an array of companies or domains you would recommend, in order of relevance. Each item must have "domain" (lowercase, no protocol, e.g. example.com or company name) and "position" (1-based index). When a company matches one of these known domains, use that domain: ' +
+        (allDomains.length > 0 ? allDomains.join(', ') : 'none') +
+        '. If no relevant companies or domains, return {"citations":[]}.';
 
     for (let q = 0; q < queries.length; q++) {
         const query = queries[q];
         try {
             const res = await openai.chat.completions.create({
-                model: OPENAI_MODEL,
+                model,
                 messages: [
-                    {
-                        role: 'system',
-                        content: 'You are a helpful search assistant. Answer concisely. When listing companies, products, or recommendations, name them clearly so a parser can extract domain/company names.' + domainListHint,
-                    },
+                    { role: 'system', content: systemPrompt },
                     { role: 'user', content: query },
                 ],
+                response_format: CITATIONS_RESPONSE_FORMAT,
             });
-            const answerText = res.choices[0]?.message?.content ?? '';
-            const citations = await extractCitationsFromText(openai, answerText, allDomains);
+            const rawContent = res.choices[0]?.message?.content ?? '';
+            const citations = parseStructuredCitations(rawContent);
             runs.push({
                 queryId: `q-${q}`,
                 query,
                 provider: 'openai',
                 citations,
-                rawAnswerExcerpt: answerText.slice(0, 500),
+                rawAnswerExcerpt: rawContent.slice(0, 500),
             });
         } catch (e) {
             console.error('[CHECKION] Competitive benchmark query error:', e);
@@ -182,4 +164,19 @@ export async function runCompetitiveBenchmark(
         runs,
         metrics,
     };
+}
+
+/** Run competitive benchmark with multiple models; returns results keyed by model name. */
+export async function runCompetitiveBenchmarkMultiModel(
+    targetUrl: string,
+    competitors: string[],
+    queries: string[],
+    models: readonly string[] = COMPETITIVE_BENCHMARK_MODELS
+): Promise<Record<string, CompetitiveBenchmarkResult>> {
+    const out: Record<string, CompetitiveBenchmarkResult> = {};
+    for (const model of models) {
+        const result = await runCompetitiveBenchmark(targetUrl, competitors, queries, model);
+        if (result) out[model] = result;
+    }
+    return out;
 }

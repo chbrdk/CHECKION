@@ -1,18 +1,16 @@
 /**
- * Run LLM stages 2–4 for GEO/E-E-A-T: E-E-A-T scores, GEO fitness, recommendations.
- * Uses OpenAI. If OPENAI_API_KEY is not set, returns payload unchanged.
+ * Run LLM stages 2–3 for GEO/E-E-A-T: E-E-A-T scores, GEO fitness.
+ * Recommendations (Stufe 4) are no longer requested.
  */
 
 import OpenAI from 'openai';
-import type { GeoEeatIntensiveResult, GeoEeatPageResult, EeatLlmScores, GeoEeatRecommendation } from '@/lib/types';
+import type { GeoEeatIntensiveResult, GeoEeatPageResult, EeatLlmScores } from '@/lib/types';
 import { OPENAI_MODEL, getOpenAIKey } from '@/lib/llm/config';
 import {
     EEAT_SYSTEM_PROMPT,
     buildEeatUserPrompt,
     GEO_FITNESS_SYSTEM_PROMPT,
     buildGeoFitnessUserPrompt,
-    RECOMMENDATIONS_SYSTEM_PROMPT,
-    buildRecommendationsUserPrompt,
 } from '@/lib/llm/geo-eeat-prompts';
 
 function extractJsonFromResponse(content: string): string {
@@ -61,23 +59,6 @@ function parseGeoFitnessResponse(content: string): { score: number; reasoning: s
         };
     } catch {
         return null;
-    }
-}
-
-function parseRecommendationsResponse(content: string): GeoEeatRecommendation[] {
-    try {
-        const jsonStr = extractJsonFromResponse(content);
-        const o = JSON.parse(jsonStr) as { recommendations?: Array<{ priority?: number; title?: string; description?: string; affectedUrls?: string[]; dimension?: string }> };
-        if (!Array.isArray(o.recommendations)) return [];
-        return o.recommendations.slice(0, 5).map((r, i) => ({
-            priority: typeof r.priority === 'number' ? r.priority : i + 1,
-            title: typeof r.title === 'string' ? r.title : `Recommendation ${i + 1}`,
-            description: typeof r.description === 'string' ? r.description : '',
-            affectedUrls: Array.isArray(r.affectedUrls) ? r.affectedUrls : undefined,
-            dimension: ['trust', 'experience', 'expertise', 'authoritativeness', 'geo'].includes(r.dimension ?? '') ? r.dimension as GeoEeatRecommendation['dimension'] : undefined,
-        }));
-    } catch {
-        return [];
     }
 }
 
@@ -158,35 +139,9 @@ export async function runLlmStages(payload: GeoEeatIntensiveResult): Promise<Geo
         }
     }
 
-    let recommendations = payload.recommendations ?? [];
-    if (pages.length > 0) {
-        const summary = pages
-            .map(
-                (p) =>
-                    `- ${p.url}: GEO score ${p.technical?.generative?.score ?? 'n/a'}, fitness ${p.geoFitnessScore ?? 'n/a'}, E-E-A-T trust/exp/exp ${p.eeatScores?.trust?.score ?? 'n/a'}/${p.eeatScores?.experience?.score ?? 'n/a'}/${p.eeatScores?.expertise?.score ?? 'n/a'}`
-            )
-            .join('\n');
-        try {
-            const recRes = await openai.chat.completions.create({
-                model,
-                messages: [
-                    { role: 'system', content: RECOMMENDATIONS_SYSTEM_PROMPT },
-                    { role: 'user', content: buildRecommendationsUserPrompt(summary) },
-                ],
-            });
-            const recContent = recRes.choices[0]?.message?.content ?? '';
-            if (recContent) {
-                const parsed = parseRecommendationsResponse(recContent);
-                if (parsed.length > 0) recommendations = parsed;
-            }
-        } catch (e) {
-            console.error('[CHECKION] GEO/E-E-A-T recommendations LLM error:', e);
-        }
-    }
-
     return {
         ...payload,
         pages,
-        recommendations,
+        recommendations: payload.recommendations ?? [],
     };
 }

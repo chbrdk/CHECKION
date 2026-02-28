@@ -642,7 +642,10 @@ export interface GeoEeatIntensiveResult {
     pages: GeoEeatPageResult[];
     recommendations: GeoEeatRecommendation[];
     aggregated?: Record<string, unknown>;
+    /** Single-model competitive result (legacy). */
     competitive?: CompetitiveBenchmarkResult;
+    /** Per-model competitive benchmark (gpt-5-nano, gpt-5-mini, gpt-5). */
+    competitiveByModel?: Record<string, CompetitiveBenchmarkResult>;
     error?: string;
 }
 

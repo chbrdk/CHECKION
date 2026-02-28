@@ -497,6 +497,7 @@
     "noCitations": "Keine Nennungen",
     "positionShort": "Pos.",
     "competitiveCitationsCount": "{count} Nennungen",
+    "competitiveModelLabel": "Modell: {model}",
     "noResultsDisplay": "Keine Ergebnisse zum Anzeigen.",
     "llmUnavailableHint": "E-E-A-T- und GEO-Fitness-Bewertung per KI wurden nicht durchgeführt (z. B. OPENAI_API_KEY nicht gesetzt oder Fehler). Nur die technischen Signale oben sind verfügbar."
   },
