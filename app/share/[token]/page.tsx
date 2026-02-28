@@ -197,14 +197,14 @@ export default function ShareLandingPage() {
             loadWithAuth(stored).catch(() => {
                 setAccessToken(null);
                 if (typeof window !== 'undefined') sessionStorage.removeItem(SHARE_ACCESS_STORAGE_KEY + '_' + tokenStr);
-                tryLoad();
+                tryLoad(tokenStr);
             });
             return;
         }
-        tryLoad();
+        tryLoad(tokenStr);
 
-        function tryLoad() {
-            fetch(apiShareToken(tokenStr))
+        function tryLoad(t: string) {
+            fetch(apiShareToken(t))
                 .then((res) => {
                     if (res.status === 403) {
                         return res.json().then((b) => {
