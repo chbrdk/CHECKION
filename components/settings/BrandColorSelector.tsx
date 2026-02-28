@@ -27,6 +27,7 @@ const OPTIONS_META: {
 ];
 
 export function BrandColorSelector() {
+    const { t } = useI18n();
     const [selectedColor, setSelectedColor] = useState('');
     const [mounted, setMounted] = useState(false);
     const themeMode = 'dark';
