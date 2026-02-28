@@ -15,7 +15,6 @@ const POLL_INTERVAL_MS = 2500;
 
 export default function GeoEeatResultPage() {
     const params = useParams();
-    const router = useRouter();
     const { t } = useI18n();
     const rawJobId = params?.jobId;
     const jobId = typeof rawJobId === 'string' ? rawJobId : Array.isArray(rawJobId) ? rawJobId[0] : undefined;
