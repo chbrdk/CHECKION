@@ -17,7 +17,8 @@ export default function GeoEeatResultPage() {
     const params = useParams();
     const router = useRouter();
     const { t } = useI18n();
-    const jobId = params?.jobId as string | undefined;
+    const rawJobId = params?.jobId;
+    const jobId = typeof rawJobId === 'string' ? rawJobId : Array.isArray(rawJobId) ? rawJobId[0] : undefined;
 
     const [status, setStatus] = useState<'loading' | 'running' | 'complete' | 'error'>('loading');
     const [payload, setPayload] = useState<GeoEeatIntensiveResult | null>(null);
@@ -26,13 +27,14 @@ export default function GeoEeatResultPage() {
 
     useEffect(() => {
         if (!jobId) return;
+        const id = jobId;
 
         let cancelled = false;
         let intervalId: ReturnType<typeof setInterval> | null = null;
 
         async function fetchRun() {
             try {
-                const res = await fetch(apiScanGeoEeat(jobId));
+                const res = await fetch(apiScanGeoEeat(id));
                 if (!res.ok) {
                     if (!cancelled) {
                         if (res.status === 404) setError(t('geoEeat.runNotFound'));
