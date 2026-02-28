@@ -156,7 +156,7 @@ const SHARE_ACCESS_STORAGE_KEY = 'checkion_share_access';
 export default function ShareLandingPage() {
     const { t } = useI18n();
     const params = useParams();
-    const token = params.token as string;
+    const token = typeof params.token === 'string' ? params.token : Array.isArray(params.token) ? params.token[0] : undefined;
     const [payload, setPayload] = useState<SharePayload | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [requiresPassword, setRequiresPassword] = useState(false);
@@ -244,6 +244,13 @@ export default function ShareLandingPage() {
         [token, loadWithAuth, t]
     );
 
+    if (!token) {
+        return (
+            <Box sx={{ p: 4, maxWidth: 600, mx: 'auto', textAlign: 'center', bgcolor: '#fff', minHeight: '100vh' }}>
+                <MsqdxTypography variant="h6" sx={{ color: MSQDX_STATUS.error.base }}>{t('share.linkInvalidOrExpired')}</MsqdxTypography>
+            </Box>
+        );
+    }
     if (error && !requiresPassword) {
         return (
             <Box sx={{ p: 4, maxWidth: 600, mx: 'auto', textAlign: 'center', bgcolor: '#fff', minHeight: '100vh' }}>

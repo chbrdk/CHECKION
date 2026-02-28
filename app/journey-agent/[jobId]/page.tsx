@@ -313,7 +313,7 @@ export default function JourneyAgentStatusPage() {
     const { t } = useI18n();
     const theme = useTheme();
     const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
-    const jobId = params.jobId as string;
+    const jobId = typeof params.jobId === 'string' ? params.jobId : Array.isArray(params.jobId) ? params.jobId[0] : undefined;
 
     const [status, setStatus] = useState<Status>('loading');
     const [error, setError] = useState<string | null>(null);
