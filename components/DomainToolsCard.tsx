@@ -14,7 +14,7 @@ type ToolId = 'ssl' | 'pagespeed' | 'wayback';
 export function DomainToolsCard({ domainUrl }: { domainUrl: string }) {
     const [loading, setLoading] = useState<ToolId | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [data, setData] = useState<Record<ToolId, unknown> | null>(null);
+    const [data, setData] = useState<Partial<Record<ToolId, unknown>> | null>(null);
 
     const runTool = async (id: ToolId) => {
         setLoading(id);
@@ -38,10 +38,10 @@ export function DomainToolsCard({ domainUrl }: { domainUrl: string }) {
             const json = await res.json();
             if (!res.ok) throw new Error(json.error ?? 'Request failed');
 
-            setData((prev) => ({ ...prev, [id]: json.data ?? json }));
+            setData((prev) => ({ ...prev ?? {}, [id]: json.data ?? json }));
         } catch (e) {
             setError(e instanceof Error ? e.message : 'Unknown error');
-            setData((prev) => ({ ...prev, [id]: null }));
+            setData((prev) => ({ ...prev ?? {}, [id]: null }));
         } finally {
             setLoading(null);
         }
