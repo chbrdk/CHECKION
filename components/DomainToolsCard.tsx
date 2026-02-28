@@ -91,7 +91,7 @@ export function DomainToolsCard({ domainUrl }: { domainUrl: string }) {
                 </MsqdxTypography>
             )}
 
-            {data?.ssl && (
+            {data?.ssl != null && (
                 <Box sx={{ p: 1.5, mb: 1, border: tableBorder, borderRadius: 1 }}>
                     <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>SSL Labs</MsqdxTypography>
                     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 0.5 }}>
@@ -105,7 +105,7 @@ export function DomainToolsCard({ domainUrl }: { domainUrl: string }) {
                 </Box>
             )}
 
-            {data?.pagespeed && (
+            {data?.pagespeed != null && (
                 <Box sx={{ p: 1.5, mb: 1, border: tableBorder, borderRadius: 1 }}>
                     <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>PageSpeed</MsqdxTypography>
                     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 0.5 }}>
@@ -116,7 +116,7 @@ export function DomainToolsCard({ domainUrl }: { domainUrl: string }) {
                 </Box>
             )}
 
-            {data?.wayback && (
+            {data?.wayback != null && (
                 <Box sx={{ p: 1.5, mb: 1, border: tableBorder, borderRadius: 1 }}>
                     <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>Wayback</MsqdxTypography>
                     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 0.5 }}>
