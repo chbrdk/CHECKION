@@ -203,8 +203,8 @@ export default function ShareLandingPage() {
         }
         tryLoad(tokenStr);
 
-        function tryLoad(t: string) {
-            fetch(apiShareToken(t))
+        function tryLoad(tokenParam: string) {
+            fetch(apiShareToken(tokenParam))
                 .then((res) => {
                     if (res.status === 403) {
                         return res.json().then((b) => {
