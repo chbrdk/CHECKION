@@ -274,11 +274,13 @@ export default function ResultsPage() {
         }
     }, [result]);
 
+    const scanId = typeof params.id === 'string' ? params.id : Array.isArray(params.id) ? params.id[0] : undefined;
+
     useEffect(() => {
-        if (!params.id) return;
+        if (!scanId) return;
 
         // Fetch current scan
-        fetch(apiScan(params.id))
+        fetch(apiScan(scanId))
             .then((res) => {
                 if (!res.ok) throw new Error('Scan nicht gefunden');
                 return res.json();
@@ -315,7 +317,7 @@ export default function ResultsPage() {
                 setError(err.message);
                 setLoading(false);
             });
-    }, [params.id]);
+    }, [scanId]);
 
     const TABS: { key: TabFilter | 'passed'; label: string; count: number; color: string }[] = result
         ? [
