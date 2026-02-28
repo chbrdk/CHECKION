@@ -166,7 +166,9 @@ export default function ShareLandingPage() {
 
     const loadWithAuth = useCallback(
         (authToken: string) => {
-            return fetch(apiShareToken(token), {
+            const tokenStr = token;
+            if (!tokenStr) return Promise.reject(new Error('No token'));
+            return fetch(apiShareToken(tokenStr), {
                 headers: { Authorization: `Bearer ${authToken}` },
             })
                 .then((res) => {
@@ -187,13 +189,14 @@ export default function ShareLandingPage() {
     );
 
     useEffect(() => {
-        if (!token) return;
-        const stored = typeof window !== 'undefined' ? sessionStorage.getItem(SHARE_ACCESS_STORAGE_KEY + '_' + token) : null;
+        const tokenStr = token;
+        if (!tokenStr) return;
+        const stored = typeof window !== 'undefined' ? sessionStorage.getItem(SHARE_ACCESS_STORAGE_KEY + '_' + tokenStr) : null;
         if (stored) {
             setAccessToken(stored);
             loadWithAuth(stored).catch(() => {
                 setAccessToken(null);
-                if (typeof window !== 'undefined') sessionStorage.removeItem(SHARE_ACCESS_STORAGE_KEY + '_' + token);
+                if (typeof window !== 'undefined') sessionStorage.removeItem(SHARE_ACCESS_STORAGE_KEY + '_' + tokenStr);
                 tryLoad();
             });
             return;
@@ -201,7 +204,7 @@ export default function ShareLandingPage() {
         tryLoad();
 
         function tryLoad() {
-            fetch(apiShareToken(token))
+            fetch(apiShareToken(tokenStr))
                 .then((res) => {
                     if (res.status === 403) {
                         return res.json().then((b) => {
@@ -222,9 +225,11 @@ export default function ShareLandingPage() {
 
     const handlePasswordSubmit = useCallback(
         (password: string) => {
+            const tokenStr = token;
+            if (!tokenStr) return;
             setPasswordError(null);
             setPasswordSubmitting(true);
-            fetch(apiShareTokenAccess(token), {
+            fetch(apiShareTokenAccess(tokenStr), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ password }),
@@ -233,7 +238,7 @@ export default function ShareLandingPage() {
                 .then((data) => {
                     if (data.accessToken) {
                         setAccessToken(data.accessToken);
-                        if (typeof window !== 'undefined') sessionStorage.setItem(SHARE_ACCESS_STORAGE_KEY + '_' + token, data.accessToken);
+                        if (typeof window !== 'undefined') sessionStorage.setItem(SHARE_ACCESS_STORAGE_KEY + '_' + tokenStr, data.accessToken);
                         return loadWithAuth(data.accessToken);
                     }
                     setPasswordError(t('share.wrongPassword'));
