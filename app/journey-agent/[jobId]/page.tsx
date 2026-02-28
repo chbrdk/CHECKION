@@ -213,7 +213,7 @@ function ReasoningBlock({ text }: { text: string }) {
     );
 }
 
-function actionLabel(action: string, t: (key: string) => string): string {
+function actionLabel(action: string, t: (key: string, params?: Record<string, string | number>) => string): string {
     if (action === 'navigate') return t('share.stepLabelPage');
     if (action === 'click') return t('share.stepLabelClick');
     if (action === 'done') return t('share.stepLabelDone');
@@ -230,7 +230,7 @@ function StepCard({
     step: UxJourneyAgentStep;
     stepNumber: number;
     totalSteps: number;
-    t: (key: string) => string;
+    t: (key: string, params?: Record<string, string | number>) => string;
 }) {
     return (
         <Box
