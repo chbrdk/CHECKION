@@ -114,7 +114,8 @@ export async function runScan(options: ScanOptions & { groupId?: string; targetR
 
     // Dynamic import – pa11y is CommonJS and must stay server-only
     const pa11yModule = await import('pa11y');
-    const pa11y = (pa11yModule as { default?: unknown }).default ?? pa11yModule;
+    type Pa11yFn = (url: string, options?: Record<string, unknown>) => Promise<{ documentTitle: string; pageUrl: string; issues: unknown[] }>;
+    const pa11y = ((pa11yModule as { default?: Pa11yFn }).default ?? pa11yModule) as Pa11yFn;
 
     const pa11yRunners: string[] = [];
     if (runners.includes('axe')) pa11yRunners.push('axe');
