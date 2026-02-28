@@ -498,6 +498,9 @@
     "positionShort": "Pos.",
     "competitiveCitationsCount": "{count} Nennungen",
     "competitiveModelLabel": "Modell: {model}",
+    "rerunCompetitiveButton": "Fragenanalyse neu ausführen",
+    "rerunCompetitiveRunning": "Läuft…",
+    "rerunCompetitiveError": "Fragenanalyse konnte nicht neu gestartet werden.",
     "noResultsDisplay": "Keine Ergebnisse zum Anzeigen.",
     "llmUnavailableHint": "E-E-A-T- und GEO-Fitness-Bewertung per KI wurden nicht durchgeführt (z. B. OPENAI_API_KEY nicht gesetzt oder Fehler). Nur die technischen Signale oben sind verfügbar."
   },

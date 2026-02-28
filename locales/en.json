@@ -498,6 +498,9 @@
     "positionShort": "Pos.",
     "competitiveCitationsCount": "{count} citations",
     "competitiveModelLabel": "Model: {model}",
+    "rerunCompetitiveButton": "Re-run questions analysis",
+    "rerunCompetitiveRunning": "Running…",
+    "rerunCompetitiveError": "Could not re-run questions analysis.",
     "noResultsDisplay": "No results to display.",
     "llmUnavailableHint": "E-E-A-T and GEO fitness scoring by AI was not run (e.g. OPENAI_API_KEY not set or error). Only the technical signals above are available."
   },

@@ -7,7 +7,7 @@ import { Box, CircularProgress, alpha } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard, MsqdxChip, MsqdxAccordion, MsqdxAccordionItem, MsqdxTooltip, MsqdxTabs } from '@msqdx/react';
 import { MSQDX_SPACING, MSQDX_BRAND_PRIMARY, MSQDX_STATUS } from '@msqdx/tokens';
 import { useI18n } from '@/components/i18n/I18nProvider';
-import { apiScanGeoEeat, PATH_SCAN } from '@/lib/constants';
+import { apiScanGeoEeat, apiScanGeoEeatRerunCompetitive, PATH_SCAN } from '@/lib/constants';
 import { SharePanel } from '@/components/SharePanel';
 import type { GeoEeatIntensiveResult, GeoEeatPageResult, CompetitiveBenchmarkResult } from '@/lib/types';
 
@@ -24,6 +24,7 @@ export default function GeoEeatResultPage() {
     const [error, setError] = useState<string | null>(null);
     const [url, setUrl] = useState<string>('');
     const [competitiveModelIndex, setCompetitiveModelIndex] = useState(0);
+    const [rerunLoading, setRerunLoading] = useState(false);
 
     useEffect(() => {
         if (!jobId) return;
@@ -70,6 +71,16 @@ export default function GeoEeatResultPage() {
             if (intervalId) clearInterval(intervalId);
         };
     }, [jobId, t]);
+
+    const competitiveByModel = payload?.competitiveByModel;
+    const hasMultiModel = competitiveByModel && Object.keys(competitiveByModel).length > 0;
+    const competitiveModels = hasMultiModel ? Object.keys(competitiveByModel) : [];
+
+    useEffect(() => {
+        if (hasMultiModel && competitiveModels.length > 0 && competitiveModelIndex >= competitiveModels.length) {
+            setCompetitiveModelIndex(competitiveModels.length - 1);
+        }
+    }, [hasMultiModel, competitiveModels.length, competitiveModelIndex]);
 
     if (!jobId) {
         return (
@@ -124,16 +135,29 @@ export default function GeoEeatResultPage() {
     }
 
     const hasCompetitive = payload?.competitive?.metrics?.length;
-    const competitiveByModel = payload?.competitiveByModel;
-    const hasMultiModel = competitiveByModel && Object.keys(competitiveByModel).length > 0;
-    const competitiveModels = hasMultiModel ? Object.keys(competitiveByModel) : [];
     const maxWidth = hasCompetitive || hasMultiModel ? 1200 : 1000;
+    const canRerunCompetitive = (hasMultiModel || hasCompetitive) && jobId;
 
-    useEffect(() => {
-        if (hasMultiModel && competitiveModels.length > 0 && competitiveModelIndex >= competitiveModels.length) {
-            setCompetitiveModelIndex(competitiveModels.length - 1);
+    const handleRerunCompetitive = async () => {
+        if (!jobId || rerunLoading) return;
+        setRerunLoading(true);
+        try {
+            const res = await fetch(apiScanGeoEeatRerunCompetitive(jobId), { method: 'POST' });
+            if (res.ok) {
+                setError(null);
+                setStatus('running');
+            } else {
+                const err = await res.json().catch(() => ({}));
+                setError((err as { error?: string })?.error ?? t('geoEeat.rerunCompetitiveError'));
+                setStatus('error');
+            }
+        } catch {
+            setError(t('geoEeat.rerunCompetitiveError'));
+            setStatus('error');
+        } finally {
+            setRerunLoading(false);
         }
-    }, [hasMultiModel, competitiveModels.length, competitiveModelIndex]);
+    };
 
     return (
         <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth, mx: 'auto' }}>
@@ -142,6 +166,24 @@ export default function GeoEeatResultPage() {
                     {t('geoEeat.title')}
                 </MsqdxTypography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {canRerunCompetitive && (
+                        <MsqdxButton
+                            variant="outlined"
+                            size="small"
+                            onClick={handleRerunCompetitive}
+                            disabled={rerunLoading}
+                            sx={{ minWidth: rerunLoading ? 140 : undefined }}
+                        >
+                            {rerunLoading ? (
+                                <>
+                                    <CircularProgress size={14} sx={{ mr: 0.5, color: 'inherit' }} />
+                                    {t('geoEeat.rerunCompetitiveRunning')}
+                                </>
+                            ) : (
+                                t('geoEeat.rerunCompetitiveButton')
+                            )}
+                        </MsqdxButton>
+                    )}
                     <SharePanel resourceType="geo_eeat" resourceId={jobId} />
                     <Link href={PATH_SCAN}>
                         <MsqdxButton variant="text" size="small">

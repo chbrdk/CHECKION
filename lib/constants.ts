@@ -109,6 +109,9 @@ export const apiScanGeoEeatHistory = (limit?: number) =>
 export const apiScanGeoEeatSuggestQueries = `${API_SCAN_GEO_EEAT}/suggest-competitors-queries`;
 /** Build: GET /api/scan/geo-eeat/[jobId] */
 export const apiScanGeoEeat = (jobId: string) => `${API_SCAN_GEO_EEAT}/${encodeURIComponent(jobId)}`;
+/** Build: POST /api/scan/geo-eeat/[jobId]/rerun-competitive (re-run questions analysis only) */
+export const apiScanGeoEeatRerunCompetitive = (jobId: string) =>
+    `${API_SCAN_GEO_EEAT}/${encodeURIComponent(jobId)}/rerun-competitive`;
 
 /** Build: GET /api/saliency/result?jobId=&scanId= */
 export const apiSaliencyResult = (jobId: string, scanId: string) =>
