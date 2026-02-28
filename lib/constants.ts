@@ -139,9 +139,6 @@ export const apiToolsPageSpeed = (url: string) => `/api/tools/pagespeed?url=${en
 /** Build: GET /api/tools/wayback?url= */
 /** Build: GET /api/tools/wayback?url= */
 export const apiToolsWayback = (url: string) => `/api/tools/wayback?url=${encodeURIComponent(url)}`;
-/** Build: GET /api/tools/tech-stack?url= */
-export const apiToolsTechStack = (url: string) => `/api/tools/tech-stack?url=${encodeURIComponent(url)}`;
-
 /** Build: GET /api/search?q=&limit= */
 export const apiSearch = (q: string, limit?: number) => {
   const params = new URLSearchParams({ q });

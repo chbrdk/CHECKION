@@ -37,7 +37,6 @@ export default function DevelopersPage() {
                     <Endpoint method="GET" path="/api/tools/ssl-labs" desc={t('developers.sslLabsDesc')} params="?host=example.com" />
                     <Endpoint method="GET" path="/api/tools/pagespeed" desc={t('developers.pagespeedDesc')} params="?url=https://example.com" />
                     <Endpoint method="GET" path="/api/tools/wayback" desc={t('developers.waybackDesc')} params="?url=https://example.com" />
-                    <Endpoint method="GET" path="/api/tools/tech-stack" desc={t('developers.techStackDesc')} params="?url=https://example.com" />
                 </MsqdxCard>
 
                 <MsqdxCard variant="flat" sx={{ bgcolor: 'var(--color-card-bg)', p: 'var(--msqdx-spacing-lg)', borderRadius: 'var(--msqdx-radius-sm)', border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>

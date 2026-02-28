@@ -4,12 +4,12 @@ import React, { useState } from 'react';
 import { Box, alpha } from '@mui/material';
 import { MsqdxTypography, MsqdxMoleculeCard, MsqdxChip, MsqdxButton } from '@msqdx/react';
 import { MSQDX_NEUTRAL, MSQDX_STATUS, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
-import { apiToolsSslLabs, apiToolsPageSpeed, apiToolsWayback, apiToolsTechStack } from '@/lib/constants';
-import { Shield, Gauge, History, Cpu, Loader2 } from 'lucide-react';
+import { apiToolsSslLabs, apiToolsPageSpeed, apiToolsWayback } from '@/lib/constants';
+import { Shield, Gauge, History, Loader2 } from 'lucide-react';
 
 const tableBorder = `1px solid ${MSQDX_NEUTRAL[200]}`;
 
-type ToolId = 'ssl' | 'pagespeed' | 'wayback' | 'techstack';
+type ToolId = 'ssl' | 'pagespeed' | 'wayback';
 
 export function DomainToolsCard({ domainUrl }: { domainUrl: string }) {
     const [loading, setLoading] = useState<ToolId | null>(null);
@@ -32,7 +32,7 @@ export function DomainToolsCard({ domainUrl }: { domainUrl: string }) {
             } else if (id === 'wayback') {
                 res = await fetch(base + apiToolsWayback(url));
             } else {
-                res = await fetch(base + apiToolsTechStack(url));
+                throw new Error('Unknown tool');
             }
 
             const json = await res.json();
@@ -50,7 +50,7 @@ export function DomainToolsCard({ domainUrl }: { domainUrl: string }) {
     return (
         <MsqdxMoleculeCard
             title="Erweiterte Domain-Analyse"
-            subtitle="Externe Tools per Klick laden (SSL Labs, PageSpeed, Wayback, Tech-Stack)"
+            subtitle="Externe Tools per Klick laden (SSL Labs, PageSpeed, Wayback)"
             variant="flat"
             sx={{ bgcolor: 'var(--color-card-bg)' }}
             borderRadius="lg"
@@ -82,15 +82,6 @@ export function DomainToolsCard({ domainUrl }: { domainUrl: string }) {
                     startIcon={loading === 'wayback' ? <Loader2 size={14} /> : <History size={14} />}
                 >
                     Wayback
-                </MsqdxButton>
-                <MsqdxButton
-                    size="small"
-                    variant="outlined"
-                    onClick={() => runTool('techstack')}
-                    disabled={loading !== null}
-                    startIcon={loading === 'techstack' ? <Loader2 size={14} /> : <Cpu size={14} />}
-                >
-                    Tech-Stack
                 </MsqdxButton>
             </Box>
 
@@ -139,19 +130,6 @@ export function DomainToolsCard({ domainUrl }: { domainUrl: string }) {
                 </Box>
             )}
 
-            {data?.techstack && (
-                <Box sx={{ p: 1.5, mb: 1, border: tableBorder, borderRadius: 1 }}>
-                    <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>Tech-Stack</MsqdxTypography>
-                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
-                        {((data.techstack as { technologies?: Array<{ name?: string }> }).technologies ?? []).slice(0, 12).map((t, i) => (
-                            <MsqdxChip key={i} label={t.name ?? '?'} size="small" variant="outlined" sx={{ fontSize: '0.65rem' }} />
-                        ))}
-                        {((data.techstack as { technologies?: unknown[] }).technologies?.length ?? 0) > 12 && (
-                            <MsqdxTypography variant="caption" sx={{ color: MSQDX_NEUTRAL[500] }}>…und weitere</MsqdxTypography>
-                        )}
-                    </Box>
-                </Box>
-            )}
         </MsqdxMoleculeCard>
     );
 }

@@ -23,7 +23,6 @@
     "@msqdx/tokens": "file:../msqdx-design-system/packages/tokens",
     "@mui/material": "^7.3.5",
     "@react-pdf/renderer": "^4.3.2",
-    "@ryntab/wappalyzer-node": "^2.1.4",
     "axe-core": "^4.11.1",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.1",
