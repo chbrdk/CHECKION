@@ -842,7 +842,7 @@ function ShareSingleContent({ data, shareToken, accessToken }: { data: ScanResul
 
     // Im Share-Kontext immer Screenshot über API laden (liefert Bild oder Platzhalter)
     const screenshotSrc = shareToken
-        ? apiShareTokenPagesScreenshot(shareToken, data.id, accessToken)
+        ? apiShareTokenPagesScreenshot(shareToken, data.id, accessToken ?? undefined)
         : (data.screenshot || undefined);
 
     const hasVisualAnalysis = shareToken
