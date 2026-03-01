@@ -12,10 +12,17 @@ import {
     ResponsiveContainer,
     Cell,
 } from 'recharts';
-import { Box } from '@mui/material';
+import { Box, alpha } from '@mui/material';
 import { MsqdxTypography } from '@msqdx/react';
-import { MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
+import { MSQDX_BRAND_PRIMARY, MSQDX_SPACING, MSQDX_NEUTRAL, MSQDX_THEME } from '@msqdx/tokens';
 import type { CompetitiveBenchmarkResult } from '@/lib/types';
+
+const TABLE_BORDER = `1px solid ${MSQDX_NEUTRAL[200]}`;
+const br = MSQDX_SPACING.borderRadius as Record<string, number> | undefined;
+const TOOLTIP_RADIUS = br?.sm ?? 8;
+const TABLE_RADIUS = br?.sm ?? 4;
+const BAR_RADIUS = br?.xs ?? 2;
+const spacingSm = (MSQDX_SPACING.scale as Record<string, number> | undefined)?.sm ?? 12;
 
 function extractHostname(input: string): string {
     const s = input.trim().toLowerCase();
@@ -128,52 +135,57 @@ export function CompetitivePositionDiagram({
         )
     );
 
+    const textPrimary = MSQDX_THEME?.light?.text?.primary ?? 'var(--color-text-on-light)';
+    const textTertiary = MSQDX_THEME?.light?.text?.tertiary ?? 'var(--color-text-muted-on-light)';
+    const surfacePrimary = MSQDX_THEME?.light?.surface?.primary ?? 'var(--color-card-bg)';
+    const borderColor = MSQDX_NEUTRAL[200] ?? 'var(--color-border)';
+
     return (
-        <Box sx={{ mb: 3 }}>
+        <Box sx={{ mb: 'var(--msqdx-spacing-md)' }}>
             <MsqdxTypography
                 variant="subtitle1"
-                sx={{ fontWeight: 600, mb: 2, color: 'var(--color-text-on-light)' }}
+                sx={{ fontWeight: 600, mb: 'var(--msqdx-spacing-sm)', color: textPrimary }}
             >
                 {t('geoEeat.positionDiagramTitle')}
             </MsqdxTypography>
             <MsqdxTypography
                 variant="body2"
-                sx={{ color: 'var(--color-text-muted-on-light)', mb: 2, display: 'block' }}
+                sx={{ color: textTertiary, mb: 'var(--msqdx-spacing-sm)', display: 'block' }}
             >
                 {t('geoEeat.positionDiagramDescription')}
             </MsqdxTypography>
 
-            <Box sx={{ width: '100%', height: 320, mb: 3 }}>
+            <Box sx={{ width: '100%', height: 320, mb: 'var(--msqdx-spacing-md)' }}>
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                         data={rows}
-                        margin={{ top: 12, right: 12, left: 8, bottom: 8 }}
+                        margin={{ top: spacingSm, right: spacingSm, left: spacingSm, bottom: spacingSm }}
                     >
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                        <CartesianGrid strokeDasharray="3 3" stroke={borderColor} />
                         <XAxis
                             dataKey="queryLabel"
-                            tick={{ fill: 'var(--color-text-muted-on-light)', fontSize: 12 }}
-                            stroke="var(--color-border)"
+                            tick={{ fill: textTertiary, fontSize: 12 }}
+                            stroke={borderColor}
                         />
                         <YAxis
                             domain={[0, maxPos]}
                             allowDataOverflow
-                            tick={{ fill: 'var(--color-text-muted-on-light)', fontSize: 12 }}
-                            stroke="var(--color-border)"
+                            tick={{ fill: textTertiary, fontSize: 12 }}
+                            stroke={borderColor}
                             label={{
                                 value: t('geoEeat.positionDiagramYLabel'),
                                 angle: -90,
                                 position: 'insideLeft',
-                                style: { fill: 'var(--color-text-muted-on-light)', fontSize: 11 },
+                                style: { fill: textTertiary, fontSize: 12 },
                             }}
                         />
                         <Tooltip
                             contentStyle={{
-                                backgroundColor: 'var(--color-card-bg)',
-                                border: '1px solid var(--color-border)',
-                                borderRadius: 8,
+                                backgroundColor: surfacePrimary,
+                                border: TABLE_BORDER,
+                                borderRadius: TOOLTIP_RADIUS,
                             }}
-                            labelStyle={{ color: 'var(--color-text-on-light)' }}
+                            labelStyle={{ color: textPrimary }}
                             formatter={(value, name) => {
                                 const num = typeof value === 'number' ? value : undefined;
                                 if (num == null || num === 0) {
@@ -197,7 +209,7 @@ export function CompetitivePositionDiagram({
                                 dataKey={modelId}
                                 name={modelId}
                                 fill={CHART_COLORS[idx % CHART_COLORS.length]}
-                                radius={[2, 2, 0, 0]}
+                                radius={[BAR_RADIUS, BAR_RADIUS, 0, 0]}
                                 maxBarSize={48}
                                 isAnimationActive={true}
                             >
@@ -208,7 +220,7 @@ export function CompetitivePositionDiagram({
                                             key={`${modelId}-${i}`}
                                             fill={
                                                 num === 0
-                                                    ? 'var(--color-border)'
+                                                    ? borderColor
                                                     : CHART_COLORS[idx % CHART_COLORS.length]
                                             }
                                             opacity={num === 0 ? 0.4 : 1}
@@ -224,29 +236,30 @@ export function CompetitivePositionDiagram({
             <Box sx={{ overflowX: 'auto' }}>
                 <MsqdxTypography
                     variant="caption"
-                    sx={{ fontWeight: 600, color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1 }}
+                    sx={{ fontWeight: 600, color: textTertiary, display: 'block', mb: 'var(--msqdx-spacing-xxs)' }}
                 >
                     {t('geoEeat.positionDiagramTableCaption')}
                 </MsqdxTypography>
-                <Box
-                    component="table"
-                    sx={{
-                        width: '100%',
-                        borderCollapse: 'collapse',
-                        fontSize: 12,
+                <Box sx={{ border: TABLE_BORDER, borderRadius: `${TABLE_RADIUS}px`, overflow: 'hidden' }}>
+                    <Box
+                        component="table"
+                        sx={{
+                            width: '100%',
+                            borderCollapse: 'collapse',
+                        fontSize: 'var(--msqdx-font-size-sm, 12px)',
                         '& th, & td': {
-                            border: '1px solid var(--color-border)',
-                            px: 1,
-                            py: 0.75,
+                            border: TABLE_BORDER,
+                            px: 'var(--msqdx-spacing-sm)',
+                            py: 'var(--msqdx-spacing-xs)',
                             textAlign: 'left',
                         },
                         '& th': {
-                            bgcolor: 'var(--color-card-bg)',
-                            color: 'var(--color-text-muted-on-light)',
+                            bgcolor: MSQDX_NEUTRAL[100],
+                            color: textTertiary,
                             fontWeight: 600,
                         },
-                        '& td': { color: 'var(--color-text-on-light)' },
-                        '& tr:hover td': { bgcolor: 'var(--color-border)' },
+                        '& td': { color: textPrimary },
+                        '& tr:hover td': { bgcolor: MSQDX_NEUTRAL[100] },
                     }}
                 >
                     <thead>
@@ -270,13 +283,14 @@ export function CompetitivePositionDiagram({
                                 {modelIds.map((modelId) => {
                                     const pos = row[modelId];
                                     const num = typeof pos === 'number' && pos > 0 ? pos : null;
+                                    const green = MSQDX_BRAND_PRIMARY?.green ?? '#22c55e';
                                     const bg =
                                         num === 1
-                                            ? 'rgba(34, 197, 94, 0.15)'
+                                            ? alpha(green, 0.15)
                                             : num === 2
-                                              ? 'rgba(34, 197, 94, 0.08)'
+                                              ? alpha(green, 0.08)
                                               : num != null && num <= 3
-                                                ? 'rgba(245, 158, 11, 0.08)'
+                                                ? alpha(MSQDX_BRAND_PRIMARY?.yellow ?? '#f59e0b', 0.08)
                                                 : undefined;
                                     return (
                                         <td key={modelId} style={{ backgroundColor: bg }}>
@@ -287,6 +301,7 @@ export function CompetitivePositionDiagram({
                             </tr>
                         ))}
                     </tbody>
+                    </Box>
                 </Box>
             </Box>
         </Box>
