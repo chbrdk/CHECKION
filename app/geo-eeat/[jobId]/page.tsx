@@ -462,7 +462,8 @@ export default function GeoEeatResultPage() {
                 const textTertiary = MSQDX_THEME?.light?.text?.tertiary ?? 'var(--color-text-muted-on-light)';
                 const surfacePrimary = MSQDX_THEME?.light?.surface?.primary ?? 'var(--color-card-bg)';
                 const tableBorder = `1px solid ${borderColor}`;
-                const radiusSm = (MSQDX_SPACING.borderRadius as Record<string, number> | undefined)?.sm ?? 4;
+                const brSpacing = MSQDX_SPACING.borderRadius as Record<string, unknown> | undefined;
+                const radiusSm = typeof brSpacing?.sm === 'number' ? brSpacing.sm : 4;
 
                 return (
                     <MsqdxMoleculeCard

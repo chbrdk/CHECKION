@@ -18,11 +18,12 @@ import { MSQDX_BRAND_PRIMARY, MSQDX_SPACING, MSQDX_NEUTRAL, MSQDX_THEME } from '
 import type { CompetitiveBenchmarkResult } from '@/lib/types';
 
 const TABLE_BORDER = `1px solid ${MSQDX_NEUTRAL[200]}`;
-const br = MSQDX_SPACING.borderRadius as Record<string, number> | undefined;
-const TOOLTIP_RADIUS = br?.sm ?? 8;
-const TABLE_RADIUS = br?.sm ?? 4;
-const BAR_RADIUS = br?.xs ?? 2;
-const spacingSm = (MSQDX_SPACING.scale as Record<string, number> | undefined)?.sm ?? 12;
+const br = MSQDX_SPACING.borderRadius as Record<string, unknown> | undefined;
+const TOOLTIP_RADIUS = typeof br?.sm === 'number' ? br.sm : 8;
+const TABLE_RADIUS = typeof br?.sm === 'number' ? br.sm : 4;
+const BAR_RADIUS = typeof br?.xs === 'number' ? br.xs : 2;
+const scale = MSQDX_SPACING.scale as Record<string, unknown> | undefined;
+const spacingSm = typeof scale?.sm === 'number' ? scale.sm : 12;
 
 function extractHostname(input: string): string {
     const s = input.trim().toLowerCase();
