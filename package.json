@@ -16,6 +16,7 @@
     "test:scanpath": "tsx lib/scanpath.test.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
     "@aws-sdk/client-s3": "^3.991.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",

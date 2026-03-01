@@ -1,12 +1,19 @@
 /**
- * LLM config: model and API key.
- * OPENAI_API_KEY is required; OPENAI_MODEL defaults to gpt-5-nano.
+ * LLM config: model and API keys.
+ * OPENAI_API_KEY is required for GEO/EEAT; ANTHROPIC_API_KEY optional for Claude benchmark.
  */
 
 export const OPENAI_MODEL = process.env.OPENAI_MODEL ?? 'gpt-5-nano';
 
-/** Models used for competitive benchmark multi-model comparison (each query run with each model). */
+/** OpenAI models for competitive benchmark (each query run with each model). */
 export const COMPETITIVE_BENCHMARK_MODELS = ['gpt-5-nano', 'gpt-5-mini', 'gpt-5'] as const;
+
+/** Claude models for competitive benchmark (stand 1.3.2026: latest Opus, Sonnet, Haiku). */
+export const COMPETITIVE_BENCHMARK_MODELS_CLAUDE = [
+    'claude-opus-4-6',
+    'claude-sonnet-4-6',
+    'claude-haiku-4-5-20251001',
+] as const;
 
 export function getOpenAIKey(): string {
     const key = process.env.OPENAI_API_KEY;
@@ -14,4 +21,10 @@ export function getOpenAIKey(): string {
         throw new Error('OPENAI_API_KEY is not set');
     }
     return key.trim();
+}
+
+/** Returns Anthropic API key or null if not set (Claude benchmark is then skipped). */
+export function getAnthropicKey(): string | null {
+    const key = process.env.ANTHROPIC_API_KEY;
+    return key?.trim() ?? null;
 }

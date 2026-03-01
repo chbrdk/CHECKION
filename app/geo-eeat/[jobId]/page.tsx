@@ -438,7 +438,16 @@ export default function GeoEeatResultPage() {
                                 <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: 'var(--color-text-on-light)' }}>
                                     {t('geoEeat.competitivePerQuery')}
                                 </MsqdxTypography>
-                                <MsqdxAccordion allowMultiple size="small" borderRadius="md" sx={{ border: '1px solid var(--color-border)' }}>
+                                <MsqdxAccordion
+                                    allowMultiple
+                                    size="small"
+                                    borderRadius="md"
+                                    sx={{
+                                        border: '1px solid var(--color-border)',
+                                        bgcolor: 'var(--color-card-bg)',
+                                        background: 'var(--color-card-bg)',
+                                    }}
+                                >
                                     {comp.runs.map((run, runIdx) => (
                                         <MsqdxAccordionItem
                                             key={run.queryId ?? runIdx}

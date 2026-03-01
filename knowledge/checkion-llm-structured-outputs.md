@@ -35,9 +35,10 @@ Für den **Competitive Benchmark** und andere GEO/EEAT-LLM-Calls: `OPENAI_MODEL=
 
 ## Multi-Model Competitive Benchmark ✅ umgesetzt
 
-- Jede Frage wird mit **gpt-5-nano**, **gpt-5-mini** und **gpt-5** ausgeführt (konfigurierbar über `COMPETITIVE_BENCHMARK_MODELS` in `lib/llm/config.ts`).
-- API speichert `competitiveByModel: Record<string, CompetitiveBenchmarkResult>` (ein Ergebnis pro Modell).
-- Dashboard: Tabs pro Modell, gleiche SoV-Übersicht und „Pro Frage“-Details je Modell. Vergleich der durchschnittlichen Position/Share of Voice zwischen den Modellen möglich.
+- **OpenAI:** Jede Frage wird mit `gpt-5-nano`, `gpt-5-mini`, `gpt-5` ausgeführt (`COMPETITIVE_BENCHMARK_MODELS` in `lib/llm/config.ts`). Erfordert `OPENAI_API_KEY`.
+- **Claude (Anthropic):** Zusätzlich werden bei gesetztem `ANTHROPIC_API_KEY` die Modelle `claude-opus-4-6`, `claude-sonnet-4-6`, `claude-haiku-4-5-20251001` abgefragt (Stand 1.3.2026, `COMPETITIVE_BENCHMARK_MODELS_CLAUDE`). Claude nutzt prompt-basiertes JSON (kein Structured Output).
+- API speichert `competitiveByModel: Record<string, CompetitiveBenchmarkResult>` (ein Eintrag pro Modell, OpenAI + Claude).
+- Dashboard: Tabs pro Modell, gleiche SoV-Übersicht und „Pro Frage“-Details je Modell.
 
 ## E-E-A-T / GEO / Empfehlungen – mögliche Schemas
 
