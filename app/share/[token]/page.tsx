@@ -743,21 +743,21 @@ function ShareGeoEeatContent({ data }: { data: ShareGeoEeatData }) {
                     sx={{ bgcolor: surfacePrimary, mb: 2 }}
                     borderRadius="lg"
                 >
-                    {hasMultiModel && (
-                        <Box sx={{ borderBottom: tableBorder, mb: 0 }}>
-                            <MsqdxTabs
-                                value={currentModelIndex}
-                                onChange={(v) => setModelIndex(Number(v))}
-                                tabs={competitiveModelsFromSource.map((model, i) => ({ label: model, value: i }))}
-                            />
-                        </Box>
-                    )}
                     {sourceByModel && Object.keys(sourceByModel).length > 0 && data.url && (
                         <CompetitivePositionDiagram
                             competitiveByModel={sourceByModel}
                             targetUrl={data.url}
                             t={t}
                         />
+                    )}
+                    {hasMultiModel && (
+                        <Box sx={{ borderBottom: tableBorder, mt: 'var(--msqdx-spacing-sm)' }}>
+                            <MsqdxTabs
+                                value={currentModelIndex}
+                                onChange={(v) => setModelIndex(Number(v))}
+                                tabs={competitiveModelsFromSource.map((model, i) => ({ label: model, value: i }))}
+                            />
+                        </Box>
                     )}
                     {hasMultiModel && (
                         <MsqdxTypography variant="caption" sx={{ color: textTertiary, display: 'block', mt: 'var(--msqdx-spacing-sm)', mb: 'var(--msqdx-spacing-xxs)' }}>

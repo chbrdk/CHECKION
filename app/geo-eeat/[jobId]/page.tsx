@@ -518,15 +518,6 @@ export default function GeoEeatResultPage() {
                                         </MsqdxTypography>
                                     </Box>
                                 )}
-                                {hasMultiModelFromSource && competitiveModelsFromSource.length > 0 && (
-                                    <Box>
-                                        <MsqdxTabs
-                                            value={modelIndex}
-                                            onChange={(v) => setCompetitiveModelIndex(Number(v))}
-                                            tabs={competitiveModelsFromSource.map((model, i) => ({ label: model, value: i }))}
-                                        />
-                                    </Box>
-                                )}
                             </Box>
                         )}
                         {hasMultiModelFromSource && sourceByModel && url && (
@@ -535,6 +526,15 @@ export default function GeoEeatResultPage() {
                                 targetUrl={url}
                                 t={t}
                             />
+                        )}
+                        {hasMultiModelFromSource && competitiveModelsFromSource.length > 0 && (
+                            <Box sx={{ borderBottom: tableBorder, mt: 'var(--msqdx-spacing-sm)' }}>
+                                <MsqdxTabs
+                                    value={modelIndex}
+                                    onChange={(v) => setCompetitiveModelIndex(Number(v))}
+                                    tabs={competitiveModelsFromSource.map((model, i) => ({ label: model, value: i }))}
+                                />
+                            </Box>
                         )}
                         {currentModelLabel && (
                             <MsqdxTypography variant="caption" sx={{ color: textTertiary, display: 'block', mt: 'var(--msqdx-spacing-sm)', mb: 'var(--msqdx-spacing-xxs)' }}>
