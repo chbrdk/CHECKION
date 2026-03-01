@@ -69,6 +69,7 @@ export async function POST(
                 prev.queries,
                 undefined,
                 undefined,
+                undefined,
                 {
                     onModelComplete: async (_, partial) => {
                         await updateGeoEeatRun(jobId, userId, {

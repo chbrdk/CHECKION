@@ -15,6 +15,15 @@ export const COMPETITIVE_BENCHMARK_MODELS_CLAUDE = [
     'claude-haiku-4-5-20251001',
 ] as const;
 
+/** Gemini models for competitive benchmark (stand 01.03.2026: 2.5/3.x family). */
+export const COMPETITIVE_BENCHMARK_MODELS_GEMINI = [
+    'gemini-2.5-flash',
+    'gemini-2.5-pro',
+    'gemini-2.5-flash-lite',
+    'gemini-3-flash-preview',
+    'gemini-3.1-pro-preview',
+] as const;
+
 export function getOpenAIKey(): string {
     const key = process.env.OPENAI_API_KEY;
     if (!key?.trim()) {
@@ -26,5 +35,11 @@ export function getOpenAIKey(): string {
 /** Returns Anthropic API key or null if not set (Claude benchmark is then skipped). */
 export function getAnthropicKey(): string | null {
     const key = process.env.ANTHROPIC_API_KEY;
+    return key?.trim() ?? null;
+}
+
+/** Returns Google Gemini API key or null if not set (Gemini benchmark is then skipped). */
+export function getGeminiKey(): string | null {
+    const key = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
     return key?.trim() ?? null;
 }

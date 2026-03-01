@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
                     qs,
                     undefined,
                     undefined,
+                    undefined,
                     {
                         onModelComplete: async (_, partial) => {
                             await updateGeoEeatRun(jobId, userId, {

@@ -62,6 +62,8 @@ Im ersten Schritt (Scan-Formular) kann der Nutzer Konkurrenten und Suchanfragen 
 ## Konfiguration
 
 - **OPENAI_API_KEY:** Für Stufen 2–4 und Competitive (Citation-Extraktion). Wenn nicht gesetzt, werden LLM-Stufen übersprungen bzw. Competitive liefert leeres Ergebnis.
+- **ANTHROPIC_API_KEY** (optional): Für zusätzliche Claude-Modelle im SoV-Benchmark.
+- **GEMINI_API_KEY** (optional): Für zusätzliche Gemini-Modelle im SoV-Benchmark (Stand 01.03.2026: gemini-2.5-flash, gemini-2.5-pro, gemini-2.5-flash-lite, gemini-3-flash-preview, gemini-3.1-pro-preview).
 - **GEO_EEAT_SERVICE_URL** (optional): Für zukünftigen externen Service; aktuell läuft alles in Next.js.
 
 ---

@@ -37,7 +37,8 @@ Für den **Competitive Benchmark** und andere GEO/EEAT-LLM-Calls: `OPENAI_MODEL=
 
 - **OpenAI:** Jede Frage wird mit `gpt-5-nano`, `gpt-5-mini`, `gpt-5` ausgeführt (`COMPETITIVE_BENCHMARK_MODELS` in `lib/llm/config.ts`). Erfordert `OPENAI_API_KEY`.
 - **Claude (Anthropic):** Zusätzlich werden bei gesetztem `ANTHROPIC_API_KEY` die Modelle `claude-opus-4-6`, `claude-sonnet-4-6`, `claude-haiku-4-5-20251001` abgefragt (Stand 1.3.2026, `COMPETITIVE_BENCHMARK_MODELS_CLAUDE`). Claude nutzt prompt-basiertes JSON (kein Structured Output).
-- API speichert `competitiveByModel: Record<string, CompetitiveBenchmarkResult>` (ein Eintrag pro Modell, OpenAI + Claude).
+- **Gemini (Google):** Zusätzlich werden bei gesetztem `GEMINI_API_KEY` die Modelle `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.5-flash-lite`, `gemini-3-flash-preview`, `gemini-3.1-pro-preview` abgefragt (Stand 01.03.2026, `COMPETITIVE_BENCHMARK_MODELS_GEMINI`). Gemini nutzt prompt-basiertes JSON mit `responseMimeType: application/json`.
+- API speichert `competitiveByModel: Record<string, CompetitiveBenchmarkResult>` (ein Eintrag pro Modell, OpenAI + Claude + Gemini).
 - Dashboard: Tabs pro Modell, gleiche SoV-Übersicht und „Pro Frage“-Details je Modell.
 
 ## E-E-A-T / GEO / Empfehlungen – mögliche Schemas
