@@ -19,7 +19,7 @@ import type { CompetitiveBenchmarkResult } from '@/lib/types';
 
 const TABLE_BORDER = `1px solid ${MSQDX_NEUTRAL[200]}`;
 const br = MSQDX_SPACING.borderRadius as Record<string, unknown> | undefined;
-const TOOLTIP_RADIUS = typeof br?.sm === 'number' ? br.sm : 8;
+const TOOLTIP_RADIUS = typeof br?.md === 'number' ? br.md : 12;
 const TABLE_RADIUS = typeof br?.sm === 'number' ? br.sm : 4;
 const BAR_RADIUS = typeof br?.xs === 'number' ? br.xs : 2;
 const scale = MSQDX_SPACING.scale as Record<string, unknown> | undefined;
@@ -182,11 +182,14 @@ export function CompetitivePositionDiagram({
                         />
                         <Tooltip
                             contentStyle={{
-                                backgroundColor: surfacePrimary,
+                                backgroundColor: '#ffffff',
                                 border: TABLE_BORDER,
                                 borderRadius: TOOLTIP_RADIUS,
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+                                padding: '10px 14px',
+                                fontSize: 11,
                             }}
-                            labelStyle={{ color: textPrimary }}
+                            labelStyle={{ color: textPrimary, fontSize: 11 }}
                             formatter={(value, name) => {
                                 const num = typeof value === 'number' ? value : undefined;
                                 if (num == null || num === 0) {

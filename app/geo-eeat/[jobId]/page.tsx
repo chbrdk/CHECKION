@@ -465,6 +465,29 @@ export default function GeoEeatResultPage() {
                 const brSpacing = MSQDX_SPACING.borderRadius as Record<string, unknown> | undefined;
                 const radiusSm = typeof brSpacing?.sm === 'number' ? brSpacing.sm : 4;
 
+                const runTabIndex = selectedCompetitiveRunId == null
+                    ? 0
+                    : competitiveHistory.findIndex((r) => r.id === selectedCompetitiveRunId) + 1;
+                const runTabs = [
+                    { label: t('geoEeat.competitiveRunCurrentLabel'), value: 0 },
+                    ...competitiveHistory.map((run, i) => {
+                        const dateStr = run.started_at
+                            ? new Date(run.started_at).toLocaleString(undefined, {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                            })
+                            : '';
+                        return {
+                            label: dateStr || run.id.slice(0, 8),
+                            value: i + 1,
+                        };
+                    }),
+                ];
+                const effectiveRunTabIndex = runTabIndex >= 0 && runTabIndex < runTabs.length ? runTabIndex : 0;
+
                 return (
                     <MsqdxMoleculeCard
                         title={t('geoEeat.competitiveTitle')}
@@ -473,46 +496,22 @@ export default function GeoEeatResultPage() {
                         borderRadius="lg"
                     >
                         {(competitiveHistory.length > 0 || hasMultiModelFromSource) && (
-                            <Box sx={{ mb: 'var(--msqdx-spacing-sm)' }}>
-                                <MsqdxTypography variant="caption" sx={{ fontWeight: 600, color: textTertiary, display: 'block', mb: 'var(--msqdx-spacing-xxs)' }}>
-                                    {t('geoEeat.competitiveRunHistoryLabel')}
-                                </MsqdxTypography>
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-sm)' }}>
-                                    <MsqdxChip
-                                        size="small"
-                                        label={t('geoEeat.competitiveRunCurrentLabel')}
-                                        onClick={() => setSelectedCompetitiveRunId(null)}
-                                        sx={{
-                                            cursor: 'pointer',
-                                            bgcolor: selectedCompetitiveRunId == null ? borderColor : undefined,
-                                        }}
-                                    />
-                                    {competitiveHistory.map((run) => {
-                                        const dateStr = run.started_at
-                                            ? new Date(run.started_at).toLocaleString(undefined, {
-                                                day: '2-digit',
-                                                month: '2-digit',
-                                                year: 'numeric',
-                                                hour: '2-digit',
-                                                minute: '2-digit',
-                                            })
-                                            : '';
-                                        return (
-                                            <MsqdxChip
-                                                key={run.id}
-                                                size="small"
-                                                label={dateStr ? t('geoEeat.competitiveRunFromDate', { date: dateStr }) : run.id.slice(0, 8)}
-                                                onClick={() => setSelectedCompetitiveRunId(run.id)}
-                                                sx={{
-                                                    cursor: 'pointer',
-                                                    bgcolor: selectedCompetitiveRunId === run.id ? borderColor : undefined,
-                                                }}
-                                            />
-                                        );
-                                    })}
-                                </Box>
+                            <Box sx={{ borderBottom: tableBorder, mb: 0 }}>
+                                {runTabs.length > 0 && (
+                                    <Box sx={{ borderBottom: runTabs.length > 1 ? tableBorder : 'none' }}>
+                                        <MsqdxTabs
+                                            value={effectiveRunTabIndex}
+                                            onChange={(v) => {
+                                                const i = Number(v);
+                                                if (i === 0) setSelectedCompetitiveRunId(null);
+                                                else if (competitiveHistory[i - 1]) setSelectedCompetitiveRunId(competitiveHistory[i - 1]!.id);
+                                            }}
+                                            tabs={runTabs}
+                                        />
+                                    </Box>
+                                )}
                                 {historyLoading && selectedCompetitiveRunId != null && (
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-xs)' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', py: 'var(--msqdx-spacing-xs)', px: 'var(--msqdx-spacing-sm)' }}>
                                         <CircularProgress size={16} sx={{ color: MSQDX_BRAND_PRIMARY.green }} />
                                         <MsqdxTypography variant="caption" sx={{ color: textTertiary }}>
                                             {t('geoEeat.competitiveHistoryLoading')}
@@ -520,7 +519,7 @@ export default function GeoEeatResultPage() {
                                     </Box>
                                 )}
                                 {hasMultiModelFromSource && competitiveModelsFromSource.length > 0 && (
-                                    <Box sx={{ borderBottom: tableBorder, mb: 'var(--msqdx-spacing-sm)' }}>
+                                    <Box>
                                         <MsqdxTabs
                                             value={modelIndex}
                                             onChange={(v) => setCompetitiveModelIndex(Number(v))}
@@ -530,17 +529,17 @@ export default function GeoEeatResultPage() {
                                 )}
                             </Box>
                         )}
-                        {currentModelLabel && (
-                            <MsqdxTypography variant="caption" sx={{ color: textTertiary, display: 'block', mb: 'var(--msqdx-spacing-xs)' }}>
-                                {t('geoEeat.competitiveModelLabel', { model: currentModelLabel })}
-                            </MsqdxTypography>
-                        )}
                         {hasMultiModelFromSource && sourceByModel && url && (
                             <CompetitivePositionDiagram
                                 competitiveByModel={sourceByModel}
                                 targetUrl={url}
                                 t={t}
                             />
+                        )}
+                        {currentModelLabel && (
+                            <MsqdxTypography variant="caption" sx={{ color: textTertiary, display: 'block', mt: 'var(--msqdx-spacing-sm)', mb: 'var(--msqdx-spacing-xxs)' }}>
+                                {t('geoEeat.competitiveModelLabel', { model: currentModelLabel })}
+                            </MsqdxTypography>
                         )}
                         <Box sx={{ mb: 'var(--msqdx-spacing-md)' }}>
                             <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 'var(--msqdx-spacing-sm)', color: textPrimary }}>
