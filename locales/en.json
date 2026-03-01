@@ -506,7 +506,14 @@
     "competitiveRunFromDate": "Run from {date}",
     "competitiveHistoryLoading": "Loading runs…",
     "noResultsDisplay": "No results to display.",
-    "llmUnavailableHint": "E-E-A-T and GEO fitness scoring by AI was not run (e.g. OPENAI_API_KEY not set or error). Only the technical signals above are available."
+    "llmUnavailableHint": "E-E-A-T and GEO fitness scoring by AI was not run (e.g. OPENAI_API_KEY not set or error). Only the technical signals above are available.",
+    "positionDiagramTitle": "Position per question and LLM",
+    "positionDiagramDescription": "For each question, the rank of your domain in each model's answer is shown (1 = best).",
+    "positionDiagramYLabel": "Position",
+    "positionDiagramTableCaption": "Table: position per question and model",
+    "positionDiagramQuery": "Question",
+    "positionDiagramQueryIndex": "No.",
+    "positionNotCited": "Not cited"
   },
   "info": {
     "dashboard": "Overview of all WCAG accessibility checks you have run. Use \"New Scan\" to check a single page or an entire domain.",

@@ -15,6 +15,7 @@ import {
     PATH_SCAN,
 } from '@/lib/constants';
 import { SharePanel } from '@/components/SharePanel';
+import { CompetitivePositionDiagram } from '@/components/CompetitivePositionDiagram';
 import type { GeoEeatIntensiveResult, GeoEeatPageResult, CompetitiveBenchmarkResult } from '@/lib/types';
 
 const POLL_INTERVAL_MS = 2500;
@@ -525,6 +526,13 @@ export default function GeoEeatResultPage() {
                             <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1 }}>
                                 {t('geoEeat.competitiveModelLabel', { model: currentModelLabel })}
                             </MsqdxTypography>
+                        )}
+                        {hasMultiModelFromSource && sourceByModel && url && (
+                            <CompetitivePositionDiagram
+                                competitiveByModel={sourceByModel}
+                                targetUrl={url}
+                                t={t}
+                            />
                         )}
                         <Box sx={{ mb: 3 }}>
                             <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: 'var(--color-text-on-light)' }}>
