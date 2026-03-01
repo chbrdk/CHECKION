@@ -174,11 +174,12 @@ export function CompetitivePositionDiagram({
                                 borderRadius: 8,
                             }}
                             labelStyle={{ color: 'var(--color-text-on-light)' }}
-                            formatter={(value: number | null, name: string, props: { payload?: PositionMatrixRow }) => {
-                                if (value == null || value === 0) {
+                            formatter={(value, name) => {
+                                const num = typeof value === 'number' ? value : undefined;
+                                if (num == null || num === 0) {
                                     return [t('geoEeat.positionNotCited'), name];
                                 }
-                                return [t('geoEeat.positionShort') + ' ' + value, name];
+                                return [t('geoEeat.positionShort') + ' ' + num, name];
                             }}
                             labelFormatter={(_label, payload) => {
                                 const p = payload?.[0]?.payload as PositionMatrixRow | undefined;
