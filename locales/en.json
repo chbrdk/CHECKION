@@ -501,6 +501,10 @@
     "rerunCompetitiveButton": "Re-run questions analysis",
     "rerunCompetitiveRunning": "Running…",
     "rerunCompetitiveError": "Could not re-run questions analysis.",
+    "competitiveRunCurrentLabel": "Current run",
+    "competitiveRunHistoryLabel": "Run",
+    "competitiveRunFromDate": "Run from {date}",
+    "competitiveHistoryLoading": "Loading runs…",
     "noResultsDisplay": "No results to display.",
     "llmUnavailableHint": "E-E-A-T and GEO fitness scoring by AI was not run (e.g. OPENAI_API_KEY not set or error). Only the technical signals above are available."
   },

@@ -7,11 +7,27 @@ import { Box, CircularProgress, alpha } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard, MsqdxChip, MsqdxAccordion, MsqdxAccordionItem, MsqdxTooltip, MsqdxTabs } from '@msqdx/react';
 import { MSQDX_SPACING, MSQDX_BRAND_PRIMARY, MSQDX_STATUS } from '@msqdx/tokens';
 import { useI18n } from '@/components/i18n/I18nProvider';
-import { apiScanGeoEeat, apiScanGeoEeatRerunCompetitive, PATH_SCAN } from '@/lib/constants';
+import {
+    apiScanGeoEeat,
+    apiScanGeoEeatRerunCompetitive,
+    apiScanGeoEeatCompetitiveHistory,
+    apiScanGeoEeatCompetitiveRun,
+    PATH_SCAN,
+} from '@/lib/constants';
 import { SharePanel } from '@/components/SharePanel';
 import type { GeoEeatIntensiveResult, GeoEeatPageResult, CompetitiveBenchmarkResult } from '@/lib/types';
 
 const POLL_INTERVAL_MS = 2500;
+
+interface CompetitiveHistoryRun {
+    id: string;
+    started_at: string;
+    completed_at: string | null;
+    status: string;
+    queryCount: number;
+    competitorCount: number;
+    modelCount?: number;
+}
 
 export default function GeoEeatResultPage() {
     const params = useParams();
@@ -25,6 +41,10 @@ export default function GeoEeatResultPage() {
     const [url, setUrl] = useState<string>('');
     const [competitiveModelIndex, setCompetitiveModelIndex] = useState(0);
     const [rerunLoading, setRerunLoading] = useState(false);
+    const [competitiveHistory, setCompetitiveHistory] = useState<CompetitiveHistoryRun[]>([]);
+    const [selectedCompetitiveRunId, setSelectedCompetitiveRunId] = useState<string | null>(null);
+    const [historyCompetitiveByModel, setHistoryCompetitiveByModel] = useState<Record<string, CompetitiveBenchmarkResult> | null>(null);
+    const [historyLoading, setHistoryLoading] = useState(false);
 
     useEffect(() => {
         if (!jobId) return;
@@ -72,15 +92,63 @@ export default function GeoEeatResultPage() {
         };
     }, [jobId, t]);
 
-    const competitiveByModel = payload?.competitiveByModel;
-    const hasMultiModel = competitiveByModel && Object.keys(competitiveByModel).length > 0;
-    const competitiveModels = hasMultiModel ? Object.keys(competitiveByModel) : [];
+    const sourceByModel =
+        selectedCompetitiveRunId != null ? historyCompetitiveByModel : payload?.competitiveByModel;
+    const hasMultiModelFromSource = sourceByModel && Object.keys(sourceByModel).length > 0;
+    const competitiveModelsFromSource = hasMultiModelFromSource ? Object.keys(sourceByModel!) : [];
 
     useEffect(() => {
-        if (hasMultiModel && competitiveModels.length > 0 && competitiveModelIndex >= competitiveModels.length) {
-            setCompetitiveModelIndex(competitiveModels.length - 1);
+        if (hasMultiModelFromSource && competitiveModelsFromSource.length > 0 && competitiveModelIndex >= competitiveModelsFromSource.length) {
+            setCompetitiveModelIndex(competitiveModelsFromSource.length - 1);
         }
-    }, [hasMultiModel, competitiveModels.length, competitiveModelIndex]);
+    }, [hasMultiModelFromSource, competitiveModelsFromSource.length, competitiveModelIndex]);
+
+    useEffect(() => {
+        if (!jobId || status !== 'complete') return;
+        const hasCompetitiveData =
+            (payload?.competitiveByModel && Object.keys(payload.competitiveByModel).length > 0) ||
+            !!payload?.competitive?.metrics?.length;
+        if (!hasCompetitiveData) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch(apiScanGeoEeatCompetitiveHistory(jobId, 20));
+                if (!res.ok || cancelled) return;
+                const data = await res.json();
+                if (cancelled) return;
+                setCompetitiveHistory(data.runs ?? []);
+            } catch {
+                if (!cancelled) setCompetitiveHistory([]);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [jobId, status, payload?.competitiveByModel, payload?.competitive?.metrics?.length]);
+
+    useEffect(() => {
+        if (!jobId || selectedCompetitiveRunId == null) {
+            setHistoryCompetitiveByModel(null);
+            return;
+        }
+        setHistoryLoading(true);
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch(apiScanGeoEeatCompetitiveRun(jobId, selectedCompetitiveRunId));
+                if (!res.ok || cancelled) {
+                    if (!cancelled) setHistoryCompetitiveByModel(null);
+                    return;
+                }
+                const data = await res.json();
+                if (cancelled) return;
+                setHistoryCompetitiveByModel(data.competitiveByModel ?? null);
+            } catch {
+                if (!cancelled) setHistoryCompetitiveByModel(null);
+            } finally {
+                if (!cancelled) setHistoryLoading(false);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [jobId, selectedCompetitiveRunId]);
 
     if (!jobId) {
         return (
@@ -135,8 +203,9 @@ export default function GeoEeatResultPage() {
     }
 
     const hasCompetitive = payload?.competitive?.metrics?.length;
-    const maxWidth = hasCompetitive || hasMultiModel ? 1200 : 1000;
-    const canRerunCompetitive = (hasMultiModel || hasCompetitive) && jobId;
+    const hasAnyCompetitive = hasCompetitive || (sourceByModel && Object.keys(sourceByModel).length > 0);
+    const maxWidth = hasAnyCompetitive ? 1200 : 1000;
+    const canRerunCompetitive = hasAnyCompetitive && jobId;
 
     const handleRerunCompetitive = async () => {
         if (!jobId || rerunLoading) return;
@@ -336,12 +405,46 @@ export default function GeoEeatResultPage() {
                 </MsqdxMoleculeCard>
             )}
 
-            {(hasMultiModel || hasCompetitive) && (() => {
-                const modelIndex = hasMultiModel ? Math.min(competitiveModelIndex, competitiveModels.length - 1) : 0;
-                const comp: CompetitiveBenchmarkResult = hasMultiModel && competitiveByModel
-                    ? competitiveByModel[competitiveModels[modelIndex]!]!
-                    : (payload!.competitive as CompetitiveBenchmarkResult);
-                const currentModelLabel = hasMultiModel ? competitiveModels[modelIndex] ?? '' : null;
+            {(hasMultiModelFromSource || hasCompetitive) && (() => {
+                if (selectedCompetitiveRunId != null && historyLoading) {
+                    return (
+                        <MsqdxMoleculeCard
+                            title={t('geoEeat.competitiveTitle')}
+                            variant="flat"
+                            sx={{ bgcolor: 'var(--color-card-bg)', mb: 2 }}
+                            borderRadius="lg"
+                        >
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 2 }}>
+                                <CircularProgress size={24} sx={{ color: MSQDX_BRAND_PRIMARY.green }} />
+                                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                    {t('geoEeat.competitiveHistoryLoading')}
+                                </MsqdxTypography>
+                            </Box>
+                        </MsqdxMoleculeCard>
+                    );
+                }
+                const modelIndex = hasMultiModelFromSource
+                    ? Math.min(competitiveModelIndex, competitiveModelsFromSource.length - 1)
+                    : 0;
+                const comp: CompetitiveBenchmarkResult | undefined =
+                    hasMultiModelFromSource && sourceByModel
+                        ? sourceByModel[competitiveModelsFromSource[modelIndex]!]
+                        : (payload?.competitive as CompetitiveBenchmarkResult | undefined);
+                const currentModelLabel = hasMultiModelFromSource ? competitiveModelsFromSource[modelIndex] ?? '' : null;
+                if (!comp?.metrics) {
+                    return (
+                        <MsqdxMoleculeCard
+                            title={t('geoEeat.competitiveTitle')}
+                            variant="flat"
+                            sx={{ bgcolor: 'var(--color-card-bg)', mb: 2 }}
+                            borderRadius="lg"
+                        >
+                            <MsqdxTypography variant="body2" color="text.secondary">
+                                {selectedCompetitiveRunId != null ? t('geoEeat.noResultsDisplay') : t('geoEeat.noResultsDisplay')}
+                            </MsqdxTypography>
+                        </MsqdxMoleculeCard>
+                    );
+                }
                 const maxSoV = Math.max(...comp.metrics.map((m) => m.shareOfVoice), 0.01);
                 const DOMAIN_COLORS = [
                     MSQDX_BRAND_PRIMARY.green,
@@ -360,13 +463,62 @@ export default function GeoEeatResultPage() {
                         sx={{ bgcolor: 'var(--color-card-bg)', mb: 2 }}
                         borderRadius="lg"
                     >
-                        {hasMultiModel && competitiveModels.length > 0 && (
-                            <Box sx={{ borderBottom: '1px solid var(--color-border)', mb: 2 }}>
-                                <MsqdxTabs
-                                    value={modelIndex}
-                                    onChange={(v) => setCompetitiveModelIndex(Number(v))}
-                                    tabs={competitiveModels.map((model, i) => ({ label: model, value: i }))}
-                                />
+                        {(competitiveHistory.length > 0 || hasMultiModelFromSource) && (
+                            <Box sx={{ mb: 2 }}>
+                                <MsqdxTypography variant="caption" sx={{ fontWeight: 600, color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}>
+                                    {t('geoEeat.competitiveRunHistoryLabel')}
+                                </MsqdxTypography>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, mb: 2 }}>
+                                    <MsqdxChip
+                                        size="small"
+                                        label={t('geoEeat.competitiveRunCurrentLabel')}
+                                        onClick={() => setSelectedCompetitiveRunId(null)}
+                                        sx={{
+                                            cursor: 'pointer',
+                                            bgcolor: selectedCompetitiveRunId == null ? 'var(--color-border)' : undefined,
+                                        }}
+                                    />
+                                    {competitiveHistory.map((run) => {
+                                        const dateStr = run.started_at
+                                            ? new Date(run.started_at).toLocaleString(undefined, {
+                                                day: '2-digit',
+                                                month: '2-digit',
+                                                year: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit',
+                                            })
+                                            : '';
+                                        return (
+                                            <MsqdxChip
+                                                key={run.id}
+                                                size="small"
+                                                label={dateStr ? t('geoEeat.competitiveRunFromDate', { date: dateStr }) : run.id.slice(0, 8)}
+                                                onClick={() => setSelectedCompetitiveRunId(run.id)}
+                                                sx={{
+                                                    cursor: 'pointer',
+                                                    bgcolor: selectedCompetitiveRunId === run.id ? 'var(--color-border)' : undefined,
+                                                }}
+                                            />
+                                        );
+                                    })}
+                                </Box>
+                                {historyLoading && selectedCompetitiveRunId != null && (
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                        <CircularProgress size={16} sx={{ color: MSQDX_BRAND_PRIMARY.green }} />
+                                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                            {t('geoEeat.competitiveHistoryLoading')}
+                                        </MsqdxTypography>
+                                    </Box>
+                                )}
+                                {hasMultiModelFromSource && competitiveModelsFromSource.length > 0 && (
+                                    <Box sx={{ borderBottom: '1px solid var(--color-border)', mb: 2 }}>
+                                        <MsqdxTabs
+                                            value={modelIndex}
+                                            onChange={(v) => setCompetitiveModelIndex(Number(v))}
+                                            tabs={competitiveModelsFromSource.map((model, i) => ({ label: model, value: i }))}
+                                        />
+                                    </Box>
+                                )}
                             </Box>
                         )}
                         {currentModelLabel && (
@@ -513,7 +665,7 @@ export default function GeoEeatResultPage() {
                 );
             })()}
 
-            {payload && (!payload.pages || payload.pages.length === 0) && !hasCompetitive && !hasMultiModel && (
+            {payload && (!payload.pages || payload.pages.length === 0) && !hasCompetitive && !hasMultiModelFromSource && (
                 <MsqdxTypography variant="body2" color="text.secondary">
                     {t('geoEeat.noResultsDisplay')}
                 </MsqdxTypography>

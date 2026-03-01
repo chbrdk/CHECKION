@@ -10,6 +10,7 @@ import { parseApiBody, geoEeatBodySchema } from '@/lib/api-schemas';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { runScan } from '@/lib/scanner';
 import { insertGeoEeatRun, updateGeoEeatRun } from '@/lib/db/geo-eeat-runs';
+import { insertCompetitiveRun, updateCompetitiveRun } from '@/lib/db/geo-eeat-competitive-runs';
 import { buildGeoEeatResultFromScan } from '@/lib/geo-eeat/stage1';
 import { runLlmStages } from '@/lib/geo-eeat/run-llm-stages';
 import { runCompetitiveBenchmarkMultiModel } from '@/lib/geo-eeat/competitive-benchmark';
@@ -56,12 +57,32 @@ export async function POST(request: NextRequest) {
                 console.error('[CHECKION] GEO/E-E-A-T LLM stages error:', e);
             }
             if (runCompetitive && ((queries?.length ?? 0) > 0 || (competitors?.length ?? 0) > 0)) {
+                const qs = queries ?? [];
+                const comps = competitors ?? [];
+                const competitiveRunId = uuidv4();
+                const userId = session.user.id;
+                await insertCompetitiveRun(competitiveRunId, jobId, userId, qs, comps);
                 const competitiveByModel = await runCompetitiveBenchmarkMultiModel(
                     url,
-                    competitors ?? [],
-                    queries ?? []
+                    comps,
+                    qs,
+                    undefined,
+                    undefined,
+                    {
+                        onModelComplete: async (_, partial) => {
+                            await updateGeoEeatRun(jobId, userId, {
+                                status: 'running',
+                                payload: { ...payload, competitiveByModel: partial },
+                            });
+                        },
+                    }
                 );
                 if (Object.keys(competitiveByModel).length > 0) payload.competitiveByModel = competitiveByModel;
+                await updateCompetitiveRun(competitiveRunId, userId, {
+                    status: 'complete',
+                    completedAt: new Date(),
+                    competitiveByModel: Object.keys(competitiveByModel).length > 0 ? competitiveByModel : null,
+                });
             }
             await updateGeoEeatRun(jobId, session.user.id, {
                 status: 'complete',

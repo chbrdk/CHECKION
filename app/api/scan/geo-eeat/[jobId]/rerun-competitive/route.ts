@@ -4,9 +4,11 @@
 /* ------------------------------------------------------------------ */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { v4 as uuidv4 } from 'uuid';
 import { auth } from '@/auth';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getGeoEeatRun, updateGeoEeatRun } from '@/lib/db/geo-eeat-runs';
+import { insertCompetitiveRun, updateCompetitiveRun } from '@/lib/db/geo-eeat-competitive-runs';
 import { runCompetitiveBenchmarkMultiModel } from '@/lib/geo-eeat/competitive-benchmark';
 import type { GeoEeatIntensiveResult, CompetitiveBenchmarkResult } from '@/lib/types';
 
@@ -53,20 +55,39 @@ export async function POST(
     }
 
     const currentPayload: GeoEeatIntensiveResult = run.payload ?? { pages: [], recommendations: [] };
+    const competitiveRunId = uuidv4();
+    const userId = session.user.id;
+
+    await insertCompetitiveRun(competitiveRunId, jobId, userId, prev.queries, prev.competitors);
+    await updateGeoEeatRun(jobId, userId, { status: 'running' });
 
     (async () => {
         try {
-            await updateGeoEeatRun(jobId, session.user.id, { status: 'running' });
             const competitiveByModel = await runCompetitiveBenchmarkMultiModel(
                 run.url,
                 prev.competitors,
-                prev.queries
+                prev.queries,
+                undefined,
+                undefined,
+                {
+                    onModelComplete: async (_, partial) => {
+                        await updateGeoEeatRun(jobId, userId, {
+                            status: 'running',
+                            payload: { ...currentPayload, competitiveByModel: partial },
+                        });
+                    },
+                }
             );
             const nextPayload: GeoEeatIntensiveResult = {
                 ...currentPayload,
                 competitiveByModel: Object.keys(competitiveByModel).length > 0 ? competitiveByModel : currentPayload.competitiveByModel,
             };
-            await updateGeoEeatRun(jobId, session.user.id, {
+            await updateCompetitiveRun(competitiveRunId, userId, {
+                status: 'complete',
+                completedAt: new Date(),
+                competitiveByModel: Object.keys(competitiveByModel).length > 0 ? competitiveByModel : null,
+            });
+            await updateGeoEeatRun(jobId, userId, {
                 status: 'complete',
                 payload: nextPayload,
                 error: null,
@@ -74,12 +95,16 @@ export async function POST(
         } catch (e) {
             const message = e instanceof Error ? e.message : String(e);
             console.error('[CHECKION] GEO/E-E-A-T rerun competitive failed:', e);
-            await updateGeoEeatRun(jobId, session.user.id, {
+            await updateCompetitiveRun(competitiveRunId, userId, {
+                status: 'error',
+                error: message,
+            });
+            await updateGeoEeatRun(jobId, userId, {
                 status: 'error',
                 error: message,
             });
         }
     })();
 
-    return NextResponse.json({ success: true, status: 'running' }, { status: 202 });
+    return NextResponse.json({ success: true, status: 'running', competitiveRunId }, { status: 202 });
 }

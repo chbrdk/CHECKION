@@ -132,8 +132,7 @@ export async function runCompetitiveBenchmark(
         (allDomains.length > 0 ? allDomains.join(', ') : 'none') +
         '. If no relevant companies or domains, return {"citations":[]}.';
 
-    for (let q = 0; q < queries.length; q++) {
-        const query = queries[q];
+    const runPromises = queries.map(async (query, q) => {
         try {
             const res = await openai.chat.completions.create({
                 model,
@@ -145,23 +144,25 @@ export async function runCompetitiveBenchmark(
             });
             const rawContent = res.choices[0]?.message?.content ?? '';
             const citations = parseStructuredCitations(rawContent);
-            runs.push({
+            return {
                 queryId: `q-${q}`,
                 query,
-                provider: 'openai',
+                provider: 'openai' as const,
                 citations,
                 rawAnswerExcerpt: rawContent.slice(0, 500),
-            });
+            };
         } catch (e) {
             console.error('[CHECKION] Competitive benchmark query error:', e);
-            runs.push({
+            return {
                 queryId: `q-${q}`,
                 query,
-                provider: 'openai',
+                provider: 'openai' as const,
                 citations: [],
-            });
+            };
         }
-    }
+    });
+    const runResults = await Promise.all(runPromises);
+    runs.push(...runResults);
 
     const queryCount = runs.length;
     const metrics: CompetitiveMetrics[] = allDomains.map((domain) => {
@@ -219,8 +220,7 @@ export async function runCompetitiveBenchmarkClaude(
         (allDomains.length > 0 ? allDomains.join(', ') : 'none') +
         '. If no relevant companies or domains, return {"citations":[]}. Reply with only the JSON, no markdown or explanation.';
 
-    for (let q = 0; q < queries.length; q++) {
-        const query = queries[q];
+    const runPromises = queries.map(async (query, q) => {
         try {
             const res = await client.messages.create({
                 model,
@@ -232,23 +232,25 @@ export async function runCompetitiveBenchmarkClaude(
                 (res.content as Array<{ type: string; text?: string }>) ?? []
             );
             const citations = parseStructuredCitations(rawContent);
-            runs.push({
+            return {
                 queryId: `q-${q}`,
                 query,
-                provider: 'anthropic',
+                provider: 'anthropic' as const,
                 citations,
                 rawAnswerExcerpt: rawContent.slice(0, 500),
-            });
+            };
         } catch (e) {
             console.error('[CHECKION] Competitive benchmark Claude query error:', e);
-            runs.push({
+            return {
                 queryId: `q-${q}`,
                 query,
-                provider: 'anthropic',
+                provider: 'anthropic' as const,
                 citations: [],
-            });
+            };
         }
-    }
+    });
+    const runResults = await Promise.all(runPromises);
+    runs.push(...runResults);
 
     const queryCount = runs.length;
     const metrics: CompetitiveMetrics[] = allDomains.map((domain) => {
@@ -280,25 +282,41 @@ export async function runCompetitiveBenchmarkClaude(
     };
 }
 
+export interface CompetitiveBenchmarkMultiModelOptions {
+    /** Called after each model completes with the accumulated partial results. */
+    onModelComplete?: (
+        modelId: string,
+        partial: Record<string, CompetitiveBenchmarkResult>
+    ) => void | Promise<void>;
+}
+
 /** Run competitive benchmark with multiple models (OpenAI + Claude). Returns results keyed by model name. */
 export async function runCompetitiveBenchmarkMultiModel(
     targetUrl: string,
     competitors: string[],
     queries: string[],
     openaiModels: readonly string[] = COMPETITIVE_BENCHMARK_MODELS,
-    claudeModels: readonly string[] = COMPETITIVE_BENCHMARK_MODELS_CLAUDE
+    claudeModels: readonly string[] = COMPETITIVE_BENCHMARK_MODELS_CLAUDE,
+    options?: CompetitiveBenchmarkMultiModelOptions
 ): Promise<Record<string, CompetitiveBenchmarkResult>> {
     const out: Record<string, CompetitiveBenchmarkResult> = {};
+    const onModelComplete = options?.onModelComplete;
 
     for (const model of openaiModels) {
         const result = await runCompetitiveBenchmark(targetUrl, competitors, queries, model);
-        if (result) out[model] = result;
+        if (result) {
+            out[model] = result;
+            await onModelComplete?.(model, { ...out });
+        }
     }
 
     if (getAnthropicKey()) {
         for (const model of claudeModels) {
             const result = await runCompetitiveBenchmarkClaude(targetUrl, competitors, queries, model);
-            if (result) out[model] = result;
+            if (result) {
+                out[model] = result;
+                await onModelComplete?.(model, { ...out });
+            }
         }
     }
 

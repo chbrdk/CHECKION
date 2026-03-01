@@ -112,6 +112,14 @@ export const apiScanGeoEeat = (jobId: string) => `${API_SCAN_GEO_EEAT}/${encodeU
 /** Build: POST /api/scan/geo-eeat/[jobId]/rerun-competitive (re-run questions analysis only) */
 export const apiScanGeoEeatRerunCompetitive = (jobId: string) =>
     `${API_SCAN_GEO_EEAT}/${encodeURIComponent(jobId)}/rerun-competitive`;
+/** Build: GET /api/scan/geo-eeat/[jobId]/competitive-history?limit= */
+export const apiScanGeoEeatCompetitiveHistory = (jobId: string, limit?: number) => {
+    const base = `${API_SCAN_GEO_EEAT}/${encodeURIComponent(jobId)}/competitive-history`;
+    return limit != null ? `${base}?limit=${limit}` : base;
+};
+/** Build: GET /api/scan/geo-eeat/[jobId]/competitive-history/[runId] */
+export const apiScanGeoEeatCompetitiveRun = (jobId: string, runId: string) =>
+    `${API_SCAN_GEO_EEAT}/${encodeURIComponent(jobId)}/competitive-history/${encodeURIComponent(runId)}`;
 
 /** Build: GET /api/saliency/result?jobId=&scanId= */
 export const apiSaliencyResult = (jobId: string, scanId: string) =>

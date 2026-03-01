@@ -82,3 +82,17 @@ export const geoEeatRuns = pgTable('geo_eeat_runs', {
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** One competitive benchmark run (questions analysis) per geo_eeat run. */
+export const geoEeatCompetitiveRuns = pgTable('geo_eeat_competitive_runs', {
+    id: text('id').primaryKey(),
+    geoEeatRunId: text('geo_eeat_run_id').notNull().references(() => geoEeatRuns.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    status: text('status').notNull(), // 'running' | 'complete' | 'error'
+    competitiveByModel: jsonb('competitive_by_model'), // Record<string, CompetitiveBenchmarkResult>
+    queries: jsonb('queries').notNull(), // string[]
+    competitors: jsonb('competitors').notNull(), // string[]
+    error: text('error'),
+});
