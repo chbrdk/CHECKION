@@ -189,6 +189,303 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
+    server.registerTool('checkion/tools_ssl', {
+        title: 'SSL Labs check',
+        description: 'Run SSL Labs check for a host (grade, endpoints).',
+        inputSchema: z.object({ host: z.string().describe('Hostname (e.g. example.com)') }),
+    }, async (args) => {
+        const { host } = args;
+        const res = await base(`/api/tools/ssl-labs?host=${encodeURIComponent(host)}`);
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    server.registerTool('checkion/tools_pagespeed', {
+        title: 'PageSpeed check',
+        description: 'Run PageSpeed Insights for a URL (performance, accessibility, SEO).',
+        inputSchema: z.object({ url: z.string().describe('Page URL') }),
+    }, async (args) => {
+        const { url } = args;
+        const res = await base(`/api/tools/pagespeed?url=${encodeURIComponent(url)}`);
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    server.registerTool('checkion/tools_wayback', {
+        title: 'Wayback check',
+        description: 'Check Wayback Machine availability for a URL.',
+        inputSchema: z.object({ url: z.string().describe('Page URL') }),
+    }, async (args) => {
+        const { url } = args;
+        const res = await base(`/api/tools/wayback?url=${encodeURIComponent(url)}`);
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    server.registerTool('checkion/tools_readability', {
+        title: 'Readability check',
+        description: 'Get readability score for a text (Flesch-Kincaid grade).',
+        inputSchema: z.object({ text: z.string().describe('Text to analyze') }),
+    }, async (args) => {
+        const { text } = args;
+        const res = await base('/api/tools/readability', { method: 'POST', body: JSON.stringify({ text }) });
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    // --- projects: update, delete ---
+    server.registerTool('checkion/project_update', {
+        title: 'Update project',
+        description: 'Update a project (name, domain).',
+        inputSchema: z.object({
+            id: z.string().describe('Project ID'),
+            name: z.string().optional().describe('Project name'),
+            domain: z.string().nullable().optional().describe('Domain'),
+        }),
+    }, async (args) => {
+        const { id, name, domain } = args;
+        const body = {};
+        if (name !== undefined)
+            body.name = name;
+        if (domain !== undefined)
+            body.domain = domain;
+        const res = await base(`/api/projects/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(body) });
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    server.registerTool('checkion/project_delete', {
+        title: 'Delete project',
+        description: 'Delete a project by ID.',
+        inputSchema: z.object({ id: z.string().describe('Project ID') }),
+    }, async (args) => {
+        const { id } = args;
+        const res = await base(`/api/projects/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    // --- assign to project ---
+    server.registerTool('checkion/scan_assign_project', {
+        title: 'Assign single scan to project',
+        description: 'Assign or unassign a single-page scan to a project.',
+        inputSchema: z.object({
+            scanId: z.string().describe('Scan result ID'),
+            projectId: z.string().nullable().describe('Project ID or null to unassign'),
+        }),
+    }, async (args) => {
+        const { scanId, projectId } = args;
+        const res = await base(`/api/scan/${encodeURIComponent(scanId)}/project`, { method: 'PATCH', body: JSON.stringify({ projectId }) });
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    server.registerTool('checkion/scan_domain_assign_project', {
+        title: 'Assign domain scan to project',
+        description: 'Assign or unassign a domain scan to a project.',
+        inputSchema: z.object({
+            domainScanId: z.string().describe('Domain scan ID'),
+            projectId: z.string().nullable().describe('Project ID or null to unassign'),
+        }),
+    }, async (args) => {
+        const { domainScanId, projectId } = args;
+        const res = await base(`/api/scans/domain/${encodeURIComponent(domainScanId)}/project`, { method: 'PATCH', body: JSON.stringify({ projectId }) });
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    server.registerTool('checkion/scan_journey_assign_project', {
+        title: 'Assign journey run to project',
+        description: 'Assign or unassign a journey-agent run to a project.',
+        inputSchema: z.object({
+            jobId: z.string().describe('Journey job ID'),
+            projectId: z.string().nullable().describe('Project ID or null to unassign'),
+        }),
+    }, async (args) => {
+        const { jobId, projectId } = args;
+        const res = await base(`/api/scan/journey-agent/${encodeURIComponent(jobId)}/project`, { method: 'PATCH', body: JSON.stringify({ projectId }) });
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    server.registerTool('checkion/scan_geo_eeat_assign_project', {
+        title: 'Assign GEO/E-E-A-T run to project',
+        description: 'Assign or unassign a GEO/E-E-A-T run to a project.',
+        inputSchema: z.object({
+            jobId: z.string().describe('GEO/E-E-A-T job ID'),
+            projectId: z.string().nullable().describe('Project ID or null to unassign'),
+        }),
+    }, async (args) => {
+        const { jobId, projectId } = args;
+        const res = await base(`/api/scan/geo-eeat/${encodeURIComponent(jobId)}/project`, { method: 'PATCH', body: JSON.stringify({ projectId }) });
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    // --- journeys (saved) ---
+    server.registerTool('checkion/journeys_list', {
+        title: 'List saved journeys',
+        description: 'List saved journey runs with optional pagination.',
+        inputSchema: z.object({
+            limit: z.number().min(1).max(100).optional(),
+            page: z.number().min(1).optional(),
+        }),
+    }, async (args) => {
+        const { limit, page } = args;
+        const params = new URLSearchParams();
+        if (limit != null)
+            params.set('limit', String(limit));
+        if (page != null)
+            params.set('page', String(page));
+        const q = params.toString();
+        const res = await base(`/api/journeys${q ? `?${q}` : ''}`);
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    server.registerTool('checkion/journey_get', {
+        title: 'Get saved journey',
+        description: 'Get a saved journey by ID.',
+        inputSchema: z.object({ id: z.string().describe('Journey ID') }),
+    }, async (args) => {
+        const { id } = args;
+        const res = await base(`/api/journeys/${encodeURIComponent(id)}`);
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    server.registerTool('checkion/journey_delete', {
+        title: 'Delete saved journey',
+        description: 'Delete a saved journey by ID.',
+        inputSchema: z.object({ id: z.string().describe('Journey ID') }),
+    }, async (args) => {
+        const { id } = args;
+        const res = await base(`/api/journeys/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    // --- GEO / E-E-A-T ---
+    server.registerTool('checkion/geo_eeat_suggest_queries', {
+        title: 'Suggest competitors and queries',
+        description: 'AI-suggest ~5 competitors and ~10 LLM search queries for a URL.',
+        inputSchema: z.object({ url: z.string().describe('Company or site URL') }),
+    }, async (args) => {
+        const { url } = args;
+        const res = await base('/api/scan/geo-eeat/suggest-competitors-queries', { method: 'POST', body: JSON.stringify({ url }) });
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    server.registerTool('checkion/geo_eeat_history', {
+        title: 'GEO/E-E-A-T history',
+        description: 'List GEO/E-E-A-T runs with optional filters.',
+        inputSchema: z.object({
+            limit: z.number().min(1).max(100).optional(),
+            projectId: z.string().optional(),
+        }),
+    }, async (args) => {
+        const { limit, projectId } = args;
+        const params = new URLSearchParams();
+        if (limit != null)
+            params.set('limit', String(limit));
+        if (projectId !== undefined)
+            params.set('projectId', projectId ?? '');
+        const q = params.toString();
+        const res = await base(`/api/scan/geo-eeat/history${q ? `?${q}` : ''}`);
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    server.registerTool('checkion/geo_eeat_get', {
+        title: 'Get GEO/E-E-A-T run',
+        description: 'Get a GEO/E-E-A-T run result by job ID.',
+        inputSchema: z.object({ jobId: z.string().describe('Job ID') }),
+    }, async (args) => {
+        const { jobId } = args;
+        const res = await base(`/api/scan/geo-eeat/${encodeURIComponent(jobId)}`);
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    server.registerTool('checkion/geo_eeat_rerun_competitive', {
+        title: 'Rerun competitive benchmark',
+        description: 'Re-run only the competitive benchmark for an existing GEO/E-E-A-T job.',
+        inputSchema: z.object({ jobId: z.string().describe('GEO/E-E-A-T job ID') }),
+    }, async (args) => {
+        const { jobId } = args;
+        const res = await base(`/api/scan/geo-eeat/${encodeURIComponent(jobId)}/rerun-competitive`, { method: 'POST' });
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    // --- search ---
+    server.registerTool('checkion/search', {
+        title: 'Search scans',
+        description: 'Search across single and domain scans (dashboard search).',
+        inputSchema: z.object({
+            q: z.string().describe('Search query'),
+            limit: z.number().min(1).max(100).optional(),
+        }),
+    }, async (args) => {
+        const { q, limit } = args;
+        const params = new URLSearchParams({ q });
+        if (limit != null)
+            params.set('limit', String(limit));
+        const res = await base(`/api/search?${params.toString()}`);
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    // --- share ---
+    server.registerTool('checkion/share_create', {
+        title: 'Create share link',
+        description: 'Create a share link for a single scan, domain scan, journey, or GEO/E-E-A-T run.',
+        inputSchema: z.object({
+            type: z.enum(['single', 'domain', 'journey', 'geo_eeat']).describe('Resource type'),
+            id: z.string().describe('Resource ID'),
+            password: z.string().optional().describe('Optional password protection'),
+        }),
+    }, async (args) => {
+        const body = args;
+        const res = await base('/api/share', { method: 'POST', body: JSON.stringify(body) });
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    server.registerTool('checkion/share_get', {
+        title: 'Get share link',
+        description: 'Get share link metadata by token.',
+        inputSchema: z.object({ token: z.string().describe('Share token') }),
+    }, async (args) => {
+        const { token } = args;
+        const res = await base(`/api/share/${encodeURIComponent(token)}`);
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    server.registerTool('checkion/share_revoke', {
+        title: 'Revoke share link',
+        description: 'Revoke a share link by token (auth required, must own share).',
+        inputSchema: z.object({ token: z.string().describe('Share token') }),
+    }, async (args) => {
+        const { token } = args;
+        const res = await base(`/api/share/${encodeURIComponent(token)}`, { method: 'DELETE' });
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    // --- user ---
+    server.registerTool('checkion/user_profile', {
+        title: 'Get user profile',
+        description: 'Get the authenticated user profile (read-only).',
+        inputSchema: z.object({}),
+    }, async () => {
+        const res = await base('/api/auth/profile');
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
     // --- health ---
     server.registerTool('checkion/health', {
         title: 'Health check',

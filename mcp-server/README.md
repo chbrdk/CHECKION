@@ -99,8 +99,9 @@ Wenn du das CHECKION-Repo ohnehin auf dem Rechner hast, kann Claude den MCP-Serv
 
 **Warum überhaupt etwas „lokal“?** Claude Desktop unterstützt nur **stdio** (einen Befehl starten). Er kann keine reine Remote-URL eintragen. Bei Variante A startet Claude nur den **Proxy** (`uvx mcp-proxy …`), der mit deinem remote laufenden MCP-Server spricht – dann muss auf deinem System nichts vom CHECKION-Projekt liegen.
 
-## Tools (first set)
+## Tools
 
+### Scans
 | Tool | Description |
 |------|-------------|
 | `checkion/scan_single` | Start single-page scan (url, optional projectId) |
@@ -110,11 +111,57 @@ Wenn du das CHECKION-Repo ohnehin auf dem Rechner hast, kann Claude den MCP-Serv
 | `checkion/scan_domain_status` | Domain scan status by ID |
 | `checkion/scan_domain_summary` | Domain scan summary by ID |
 | `checkion/scans_domain_list` | List domain scans |
+| `checkion/scan_assign_project` | Assign single scan to project (scanId, projectId) |
+| `checkion/scan_domain_assign_project` | Assign domain scan to project (domainScanId, projectId) |
+| `checkion/scan_journey_assign_project` | Assign journey run to project (jobId, projectId) |
+| `checkion/scan_geo_eeat_assign_project` | Assign GEO/E-E-A-T run to project (jobId, projectId) |
+
+### Projects
+| Tool | Description |
+|------|-------------|
 | `checkion/projects_list` | List projects |
 | `checkion/project_get` | Get project by ID |
 | `checkion/project_create` | Create project (name, optional domain) |
+| `checkion/project_update` | Update project (id, name?, domain?) |
+| `checkion/project_delete` | Delete project by ID |
+
+### Checks / Tools
+| Tool | Description |
+|------|-------------|
 | `checkion/tools_contrast` | WCAG contrast (f, b hex colors) |
 | `checkion/tools_extract` | Extract content by URL and selector |
+| `checkion/tools_ssl` | SSL Labs check (host) |
+| `checkion/tools_pagespeed` | PageSpeed Insights (url) |
+| `checkion/tools_wayback` | Wayback availability (url) |
+| `checkion/tools_readability` | Readability score for text |
+
+### Journeys (saved)
+| Tool | Description |
+|------|-------------|
+| `checkion/journeys_list` | List saved journeys (limit, page) |
+| `checkion/journey_get` | Get saved journey by ID |
+| `checkion/journey_delete` | Delete saved journey by ID |
+
+### GEO / E-E-A-T
+| Tool | Description |
+|------|-------------|
+| `checkion/geo_eeat_suggest_queries` | AI-suggest competitors and LLM queries (url) |
+| `checkion/geo_eeat_history` | List GEO/E-E-A-T runs (limit, projectId) |
+| `checkion/geo_eeat_get` | Get GEO/E-E-A-T run by jobId |
+| `checkion/geo_eeat_rerun_competitive` | Rerun competitive benchmark (jobId) |
+
+### Search & Share
+| Tool | Description |
+|------|-------------|
+| `checkion/search` | Search across scans (q, limit?) |
+| `checkion/share_create` | Create share link (type, id, password?) |
+| `checkion/share_get` | Get share metadata (token) |
+| `checkion/share_revoke` | Revoke share link (token) |
+
+### User & Health
+| Tool | Description |
+|------|-------------|
+| `checkion/user_profile` | Get authenticated user profile (read-only) |
 | `checkion/health` | CHECKION API health check |
 
 ## Client configuration (e.g. Cursor)

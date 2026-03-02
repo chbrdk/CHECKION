@@ -167,6 +167,13 @@ export const apiShareTokenPagesScreenshot = (token: string, pageId: string, acce
   return accessToken ? `${base}?access=${encodeURIComponent(accessToken)}` : base;
 };
 
+/** Check namespace (proxy to /api/tools/*). */
+export const API_CHECKS_CONTRAST = '/api/checks/contrast';
+export const API_CHECKS_SSL = '/api/checks/ssl';
+export const API_CHECKS_PAGESPEED = '/api/checks/pagespeed';
+export const API_CHECKS_WAYBACK = '/api/checks/wayback';
+export const API_CHECKS_READABILITY = '/api/checks/readability';
+
 /** Build: GET /api/tools/ssl-labs?host= */
 export const apiToolsSslLabs = (host: string) => `/api/tools/ssl-labs?host=${encodeURIComponent(host)}`;
 /** Build: GET /api/tools/pagespeed?url= */
