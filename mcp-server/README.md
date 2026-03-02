@@ -44,32 +44,60 @@ MCP_TRANSPORT=stdio CHECKION_API_URL=https://checkion.example.com CHECKION_API_T
 
 ## Claude Desktop
 
-Add the CHECKION MCP server so Claude can use CHECKION tools (scans, projects, contrast, etc.) directly.
+Claude Desktop kann nur lokale Prozesse starten (stdio). Du hast **zwei Wege**:
 
-1. **Build once** (in this repo): `cd mcp-server && npm install && npm run build`
-2. **Open Claude config**: Claude Desktop → **Settings** → **Developer** → **Edit Config**  
-   File: `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows).
-3. **Add the server** (replace the path and env values with yours):
+### Variante A: Nichts vom Projekt auf deinem Rechner (empfohlen)
+
+MCP-Server läuft **remote** (z. B. auf Coolify). Auf dem Rechner mit Claude brauchst du **kein CHECKION-Repo, kein Node, keinen Build** – nur einen kleinen Proxy, den Claude startet und der zur Remote-URL verbindet.
+
+1. **MCP-Server irgendwo deployen** (z. B. Coolify), mit `CHECKION_API_URL` und `CHECKION_API_TOKEN`. Öffentliche URL merken, z. B. `https://checkion-mcp.deine-domain.de`.
+2. **Lokal:** [uv](https://docs.astral.sh/uv/) installieren (für `uvx`), falls noch nicht vorhanden.
+3. **Claude-Config:** Einstellungen → Developer → Edit Config. Dort z. B.:
 
 ```json
 {
   "mcpServers": {
     "checkion": {
-      "command": "node",
-      "args": ["/ABSOLUTE/PATH/TO/checkion-1/mcp-server/dist/index.js"],
+      "command": "uvx",
+      "args": [
+        "mcp-proxy",
+        "--transport",
+        "streamablehttp",
+        "https://DEINE-MCP-SERVER-URL"
+      ]
+    }
+  }
+}
+```
+
+4. Claude Desktop komplett neu starten. Fertig – **auf dem Rechner liegt nur der Proxy-Aufruf**, der eigentliche Server und der Token laufen remote.
+
+### Variante B: Server lokal starten (mit Repo auf dem Rechner)
+
+Wenn du das CHECKION-Repo ohnehin auf dem Rechner hast, kann Claude den MCP-Server **lokal** als Subprozess starten (stdio). Dann läuft der Server auf deiner Maschine und ruft nur die CHECKION-API (remote) auf.
+
+1. **Einmalig** im Repo: `cd mcp-server && npm install`
+2. **Claude-Config** (absoluter Pfad zu `mcp-server/src/index.ts` und Token anpassen):
+
+```json
+{
+  "mcpServers": {
+    "checkion": {
+      "command": "npx",
+      "args": ["tsx", "/ABSOLUTE/PFAD/ZU/checkion-1/mcp-server/src/index.ts"],
       "env": {
         "MCP_TRANSPORT": "stdio",
         "CHECKION_API_URL": "https://checkion.projects-a.plygrnd.tech",
-        "CHECKION_API_TOKEN": "checkion_YOUR_TOKEN_FROM_SETTINGS"
+        "CHECKION_API_TOKEN": "checkion_DEIN_TOKEN_AUS_EINSTELLUNGEN"
       }
     }
   }
 }
 ```
 
-- Use the **absolute path** to `mcp-server/dist/index.js` (e.g. `/Users/you/Desktop/ANTIGRAVITY/CHECKION-1/mcp-server/dist/index.js` on macOS).
-4. **Restart Claude Desktop** completely (quit from dock/tray, then reopen).
-5. In Claude, open the **🔨 Tools** list; you should see the CHECKION tools (e.g. `checkion/health`, `checkion/projects_list`, `checkion/scan_single`).
+3. Claude Desktop neu starten.
+
+**Warum überhaupt etwas „lokal“?** Claude Desktop unterstützt nur **stdio** (einen Befehl starten). Er kann keine reine Remote-URL eintragen. Bei Variante A startet Claude nur den **Proxy** (`uvx mcp-proxy …`), der mit deinem remote laufenden MCP-Server spricht – dann muss auf deinem System nichts vom CHECKION-Projekt liegen.
 
 ## Tools (first set)
 
