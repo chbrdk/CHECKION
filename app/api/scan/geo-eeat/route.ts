@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     const { url, domainScanId, projectId, runCompetitive, competitors, queries } = parsed;
 
     const jobId = uuidv4();
-    await insertGeoEeatRun(jobId, session.user.id, url, {
+    await insertGeoEeatRun(jobId, user.id, url, {
         domainScanId: domainScanId ?? undefined,
         projectId: projectId ?? undefined,
     });
