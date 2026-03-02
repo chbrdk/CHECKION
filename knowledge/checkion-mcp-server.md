@@ -2,7 +2,10 @@
 
 ## Purpose
 
-The CHECKION MCP Server is a **remote MCP (Model Context Protocol) server** that exposes CHECKION APIs as MCP tools. It is intended to run on **Coolify** (or any Node host) and to be used by MCP clients (e.g. Cursor, other agents) that connect via **Streamable HTTP**.
+The CHECKION MCP Server is an **MCP (Model Context Protocol) server** that exposes CHECKION APIs as MCP tools. It supports two transports:
+
+- **Streamable HTTP** (default): for Cursor, Coolify, or any HTTP-based MCP client.
+- **stdio**: for **Claude Desktop**; Claude starts the server as a subprocess (`MCP_TRANSPORT=stdio`). See `mcp-server/README.md` → "Claude Desktop" for config.
 
 ## Architecture
 
@@ -31,4 +34,4 @@ Point the MCP client to the server URL (e.g. `https://mcp.your-domain.com` or `h
 ## Relevant code
 
 - **API token auth (CHECKION)**: `lib/auth-api-token.ts` (`getRequestUser`), `lib/db/api-tokens.ts`, `app/api/auth/tokens/`
-- **MCP server**: `mcp-server/src/index.ts` (HTTP + Streamable HTTP transport), `mcp-server/src/tools.ts` (tool definitions), `mcp-server/src/checkion-client.ts` (HTTP client to CHECKION)
+- **MCP server**: `mcp-server/src/index.ts` (HTTP or stdio transport via `MCP_TRANSPORT`), `mcp-server/src/tools.ts` (tool definitions), `mcp-server/src/checkion-client.ts` (HTTP client to CHECKION)

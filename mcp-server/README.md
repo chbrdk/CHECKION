@@ -1,6 +1,9 @@
 # CHECKION MCP Server
 
-Remote MCP (Model Context Protocol) server that exposes CHECKION APIs as tools. Designed to run on Coolify (or any Node host) and to be used by MCP clients (e.g. Cursor) that connect via Streamable HTTP.
+MCP (Model Context Protocol) server that exposes CHECKION APIs as tools. Supports two transports:
+
+- **Streamable HTTP** (default): for Cursor, Coolify, or any HTTP-based MCP client.
+- **stdio**: for Claude Desktop; Claude starts the server as a subprocess and talks over stdin/stdout.
 
 ## Requirements
 
@@ -13,10 +16,13 @@ Remote MCP (Model Context Protocol) server that exposes CHECKION APIs as tools. 
 |----------|----------|-------------|
 | `CHECKION_API_URL` | Yes | Base URL of the CHECKION app (e.g. `https://checkion.example.com` or `http://checkion:3333`) |
 | `CHECKION_API_TOKEN` | Yes | API token (Bearer) created in CHECKION Settings → API access |
-| `MCP_PORT` | No | Port to listen on (default: `3100`) |
-| `MCP_STATELESS` | No | Set to `true` or `1` for stateless mode (no session IDs) |
+| `MCP_TRANSPORT` | No | `stdio` for Claude Desktop; omit or `http` for Streamable HTTP |
+| `MCP_PORT` | No | Port for HTTP mode (default: `3100`) |
+| `MCP_STATELESS` | No | Set to `true` or `1` for stateless HTTP mode (no session IDs) |
 
 ## Running locally
+
+**HTTP mode** (e.g. for Cursor or test client):
 
 ```bash
 npm install
@@ -27,6 +33,43 @@ npm run dev
 ```
 
 Server listens on `http://localhost:3100` (or `MCP_PORT`). All MCP requests (GET/POST) go to the root path.
+
+**stdio mode** (for Claude Desktop – run via Claude config, see below):
+
+```bash
+npm run build
+MCP_TRANSPORT=stdio CHECKION_API_URL=https://checkion.example.com CHECKION_API_TOKEN=checkion_xxx node dist/index.js
+# or: npm run start:stdio  (then set CHECKION_API_URL and CHECKION_API_TOKEN in Claude config env)
+```
+
+## Claude Desktop
+
+Add the CHECKION MCP server so Claude can use CHECKION tools (scans, projects, contrast, etc.) directly.
+
+1. **Build once** (in this repo): `cd mcp-server && npm install && npm run build`
+2. **Open Claude config**: Claude Desktop → **Settings** → **Developer** → **Edit Config**  
+   File: `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows).
+3. **Add the server** (replace the path and env values with yours):
+
+```json
+{
+  "mcpServers": {
+    "checkion": {
+      "command": "node",
+      "args": ["/ABSOLUTE/PATH/TO/checkion-1/mcp-server/dist/index.js"],
+      "env": {
+        "MCP_TRANSPORT": "stdio",
+        "CHECKION_API_URL": "https://checkion.projects-a.plygrnd.tech",
+        "CHECKION_API_TOKEN": "checkion_YOUR_TOKEN_FROM_SETTINGS"
+      }
+    }
+  }
+}
+```
+
+- Use the **absolute path** to `mcp-server/dist/index.js` (e.g. `/Users/you/Desktop/ANTIGRAVITY/CHECKION-1/mcp-server/dist/index.js` on macOS).
+4. **Restart Claude Desktop** completely (quit from dock/tray, then reopen).
+5. In Claude, open the **🔨 Tools** list; you should see the CHECKION tools (e.g. `checkion/health`, `checkion/projects_list`, `checkion/scan_single`).
 
 ## Tools (first set)
 
