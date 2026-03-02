@@ -126,7 +126,7 @@ export default function ProjectDetailPage() {
 
             <MsqdxTabs
                 value={tab}
-                onChange={(_, v) => setTab(typeof v === 'number' ? v : 0)}
+                onChange={(v) => setTab(typeof v === 'number' ? v : 0)}
                 tabs={tabs}
                 sx={{ mb: 2 }}
             />
