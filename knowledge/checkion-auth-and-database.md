@@ -49,5 +49,7 @@ npx drizzle-kit push
 
 Falls CHECKION bereits Nutzer in einer eigenen `users`-Tabelle hat:
 
-1. **User nach PLEXON kopieren:** Im PLEXON-Projekt `npm run migrate:checkion-users` ausführen. Dafür `MIGRATION_SOURCE_DATABASE_URL` auf die CHECKION-DB und `DATABASE_URL` auf die PLEXON-DB setzen. Die User-IDs bleiben unverändert, damit Projekte/Scans weiterhin dem richtigen User zugeordnet sind.
+1. **User nach PLEXON kopieren:**
+   - **Automatisch (Coolify/Docker):** Bei der PLEXON-Application `MIGRATION_SOURCE_DATABASE_URL` auf die CHECKION-DB-URL setzen. Beim nächsten Container-Start führt PLEXON die Migration aus (idempotent). Siehe `knowledge/coolify-vollstaendige-anleitung.md`.
+   - **Manuell:** Im PLEXON-Projekt `MIGRATION_SOURCE_DATABASE_URL` (CHECKION-DB) und `DATABASE_URL` (PLEXON-DB) setzen, dann `npm run migrate:checkion-users` oder `node scripts/migrate-checkion-users-to-plexon.mjs` ausführen. Die User-IDs bleiben unverändert.
 2. **CHECKION auf PLEXON-Auth umstellen:** `PLEXON_AUTH_URL` und `PLEXON_SERVICE_SECRET` in CHECKION setzen. Ab dann erfolgt der Login über die PLEXON-API; die CHECKION-DB kann weiterhin nur App-Daten (Scans, Projekte) enthalten.
