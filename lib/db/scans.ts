@@ -10,11 +10,12 @@ import type { ScanResult, DomainScanResult } from '@/lib/types';
 export type DomainScanSummaryRow = { id: string; domain: string; timestamp: string; status: string; score: number; totalPages: number };
 import type { UxCxSummary } from '@/lib/llm-summary-types';
 
-export async function addScan(userId: string, result: ScanResult): Promise<void> {
+export async function addScan(userId: string, result: ScanResult, options?: { projectId?: string | null }): Promise<void> {
     const db = getDb();
     await db.insert(scans).values({
         id: result.id,
         userId,
+        projectId: options?.projectId ?? null,
         url: result.url,
         device: result.device,
         groupId: result.groupId ?? null,
@@ -30,17 +31,19 @@ export async function getScan(id: string, userId: string): Promise<ScanResult | 
     return rows[0].result as unknown as ScanResult;
 }
 
-/** Returns scan result plus llm_summary for API response. */
-export async function getScanWithSummary(id: string, userId: string): Promise<{ result: ScanResult; llmSummary: UxCxSummary | null } | null> {
+/** Returns scan result plus llm_summary and projectId for API response. */
+export async function getScanWithSummary(id: string, userId: string): Promise<{ result: ScanResult; llmSummary: UxCxSummary | null; projectId: string | null } | null> {
     const db = getDb();
     const rows = await db.select({
         result: scans.result,
         llmSummary: scans.llmSummary,
+        projectId: scans.projectId,
     }).from(scans).where(and(eq(scans.id, id), eq(scans.userId, userId))).limit(1);
     if (rows.length === 0) return null;
     return {
         result: rows[0].result as unknown as ScanResult,
         llmSummary: (rows[0].llmSummary as UxCxSummary | null) ?? null,
+        projectId: rows[0].projectId ?? null,
     };
 }
 
@@ -71,10 +74,15 @@ export async function listScans(userId: string): Promise<ScanResult[]> {
     return rows.map(r => r.result as unknown as ScanResult);
 }
 
-/** Only scans that are not part of a domain scan (standalone single-URL scans). */
-export async function listStandaloneScans(userId: string, options?: { limit?: number; offset?: number }): Promise<ScanResult[]> {
+/** Only scans that are not part of a domain scan (standalone single-URL scans). Optional projectId filter. */
+export async function listStandaloneScans(userId: string, options?: { limit?: number; offset?: number; projectId?: string | null }): Promise<ScanResult[]> {
     const db = getDb();
-    const base = db.select({ result: scans.result }).from(scans).where(and(eq(scans.userId, userId), isNull(scans.groupId))).orderBy(desc(scans.timestamp));
+    const whereCond = options?.projectId === undefined
+        ? and(eq(scans.userId, userId), isNull(scans.groupId))
+        : options.projectId === null
+            ? and(eq(scans.userId, userId), isNull(scans.groupId), isNull(scans.projectId))
+            : and(eq(scans.userId, userId), isNull(scans.groupId), eq(scans.projectId, options.projectId));
+    const base = db.select({ result: scans.result }).from(scans).where(whereCond).orderBy(desc(scans.timestamp));
     const rows = options?.limit != null || options?.offset != null
         ? await base.limit(options.limit ?? 10000).offset(options.offset ?? 0)
         : await base;
@@ -90,10 +98,21 @@ export async function listScansByGroupId(userId: string, groupId: string): Promi
     return rows.map(r => r.result as unknown as ScanResult);
 }
 
-export async function getStandaloneScansCount(userId: string): Promise<number> {
+export async function getStandaloneScansCount(userId: string, projectId?: string | null): Promise<number> {
     const db = getDb();
-    const rows = await db.select({ count: count() }).from(scans).where(and(eq(scans.userId, userId), isNull(scans.groupId)));
+    const whereCond = projectId === undefined
+        ? and(eq(scans.userId, userId), isNull(scans.groupId))
+        : projectId === null
+            ? and(eq(scans.userId, userId), isNull(scans.groupId), isNull(scans.projectId))
+            : and(eq(scans.userId, userId), isNull(scans.groupId), eq(scans.projectId, projectId));
+    const rows = await db.select({ count: count() }).from(scans).where(whereCond);
     return Number(rows[0]?.count ?? 0);
+}
+
+export async function updateScanProject(scanId: string, userId: string, projectId: string | null): Promise<boolean> {
+    const db = getDb();
+    const updated = await db.update(scans).set({ projectId }).where(and(eq(scans.id, scanId), eq(scans.userId, userId)));
+    return (updated.rowCount ?? 0) > 0;
 }
 
 export async function deleteScan(id: string, userId: string): Promise<boolean> {
@@ -102,11 +121,12 @@ export async function deleteScan(id: string, userId: string): Promise<boolean> {
     return (deleted.rowCount ?? 0) > 0;
 }
 
-export async function createDomainScan(userId: string, scan: DomainScanResult): Promise<void> {
+export async function createDomainScan(userId: string, scan: DomainScanResult, options?: { projectId?: string | null }): Promise<void> {
     const db = getDb();
     await db.insert(domainScans).values({
         id: scan.id,
         userId,
+        projectId: options?.projectId ?? null,
         domain: scan.domain,
         status: scan.status,
         timestamp: scan.timestamp,
@@ -130,9 +150,32 @@ export async function getDomainScan(id: string, userId: string): Promise<DomainS
     return rows[0].payload as unknown as DomainScanResult;
 }
 
-/** List only summary fields (no payload) to keep response small for list/cache. */
-export async function listDomainScanSummaries(userId: string, options?: { limit?: number; offset?: number }): Promise<DomainScanSummaryRow[]> {
+/** Returns domain scan payload and projectId for API response. */
+export async function getDomainScanWithProjectId(id: string, userId: string): Promise<{ result: DomainScanResult; projectId: string | null } | null> {
     const db = getDb();
+    const rows = await db.select({ payload: domainScans.payload, projectId: domainScans.projectId })
+        .from(domainScans).where(and(eq(domainScans.id, id), eq(domainScans.userId, userId))).limit(1);
+    if (rows.length === 0) return null;
+    return {
+        result: rows[0].payload as unknown as DomainScanResult,
+        projectId: rows[0].projectId ?? null,
+    };
+}
+
+export async function updateDomainScanProject(id: string, userId: string, projectId: string | null): Promise<boolean> {
+    const db = getDb();
+    const updated = await db.update(domainScans).set({ projectId }).where(and(eq(domainScans.id, id), eq(domainScans.userId, userId)));
+    return (updated.rowCount ?? 0) > 0;
+}
+
+/** List only summary fields (no payload) to keep response small for list/cache. Optional projectId filter. */
+export async function listDomainScanSummaries(userId: string, options?: { limit?: number; offset?: number; projectId?: string | null }): Promise<DomainScanSummaryRow[]> {
+    const db = getDb();
+    const whereCond = options?.projectId === undefined
+        ? eq(domainScans.userId, userId)
+        : options.projectId === null
+            ? and(eq(domainScans.userId, userId), isNull(domainScans.projectId))
+            : and(eq(domainScans.userId, userId), eq(domainScans.projectId, options.projectId));
     const base = db
         .select({
             id: domainScans.id,
@@ -143,7 +186,7 @@ export async function listDomainScanSummaries(userId: string, options?: { limit?
             totalPages: sql<number>`(${domainScans.payload}->>'totalPages')::int`,
         })
         .from(domainScans)
-        .where(eq(domainScans.userId, userId))
+        .where(whereCond)
         .orderBy(desc(domainScans.timestamp));
     const rows = options?.limit != null || options?.offset != null
         ? await base.limit(options.limit ?? 10000).offset(options.offset ?? 0)
@@ -158,18 +201,28 @@ export async function listDomainScanSummaries(userId: string, options?: { limit?
     }));
 }
 
-export async function listDomainScans(userId: string, options?: { limit?: number; offset?: number }): Promise<DomainScanResult[]> {
+export async function listDomainScans(userId: string, options?: { limit?: number; offset?: number; projectId?: string | null }): Promise<DomainScanResult[]> {
     const db = getDb();
-    const base = db.select({ payload: domainScans.payload }).from(domainScans).where(eq(domainScans.userId, userId)).orderBy(desc(domainScans.timestamp));
+    const whereCond = options?.projectId === undefined
+        ? eq(domainScans.userId, userId)
+        : options.projectId === null
+            ? and(eq(domainScans.userId, userId), isNull(domainScans.projectId))
+            : and(eq(domainScans.userId, userId), eq(domainScans.projectId, options.projectId));
+    const base = db.select({ payload: domainScans.payload }).from(domainScans).where(whereCond).orderBy(desc(domainScans.timestamp));
     const rows = options?.limit != null || options?.offset != null
         ? await base.limit(options.limit ?? 10000).offset(options.offset ?? 0)
         : await base;
     return rows.map(r => r.payload as unknown as DomainScanResult);
 }
 
-export async function getDomainScansCount(userId: string): Promise<number> {
+export async function getDomainScansCount(userId: string, projectId?: string | null): Promise<number> {
     const db = getDb();
-    const rows = await db.select({ count: count() }).from(domainScans).where(eq(domainScans.userId, userId));
+    const whereCond = projectId === undefined
+        ? eq(domainScans.userId, userId)
+        : projectId === null
+            ? and(eq(domainScans.userId, userId), isNull(domainScans.projectId))
+            : and(eq(domainScans.userId, userId), eq(domainScans.projectId, projectId));
+    const rows = await db.select({ count: count() }).from(domainScans).where(whereCond);
     return Number(rows[0]?.count ?? 0);
 }
 

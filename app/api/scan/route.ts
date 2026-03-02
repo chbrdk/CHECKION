@@ -50,7 +50,11 @@ export async function POST(request: Request) {
         );
 
         for (const result of results) {
-            await addScan(session.user.id, result);
+            await addScan(
+                session.user.id,
+                result,
+                body.projectId !== undefined ? { projectId: body.projectId } : undefined
+            );
         }
         invalidateScansList(session.user.id);
 
@@ -81,9 +85,11 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(Math.max(1, Number(searchParams.get('limit')) || DASHBOARD_SCANS_PAGE_SIZE), 100);
     const page = Math.max(1, Number(searchParams.get('page')) || 1);
     const offset = (page - 1) * limit;
+    const projectIdParam = searchParams.get('projectId');
+    const projectId = projectIdParam === '' || projectIdParam === null ? null : projectIdParam ?? undefined;
     const [list, total] = await Promise.all([
-        listCachedStandaloneScans(session.user.id, { limit, offset }),
-        getCachedStandaloneScansCount(session.user.id),
+        listCachedStandaloneScans(session.user.id, { limit, offset, projectId }),
+        getCachedStandaloneScansCount(session.user.id, projectId),
     ]);
     const totalPages = Math.ceil(total / limit) || 1;
     return NextResponse.json({

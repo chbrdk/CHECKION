@@ -15,9 +15,20 @@ export const users = pgTable('users', {
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+/** User projects: group domain/scans/journeys/geo-runs for a customer or domain. */
+export const projects = pgTable('projects', {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    domain: text('domain'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const scans = pgTable('scans', {
     id: text('id').primaryKey(),
     userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    projectId: text('project_id').references(() => projects.id, { onDelete: 'set null' }),
     url: text('url').notNull(),
     device: text('device').notNull(),
     groupId: text('group_id'),
@@ -29,6 +40,7 @@ export const scans = pgTable('scans', {
 export const domainScans = pgTable('domain_scans', {
     id: text('id').primaryKey(),
     userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    projectId: text('project_id').references(() => projects.id, { onDelete: 'set null' }),
     domain: text('domain').notNull(),
     status: text('status').notNull(),
     timestamp: text('timestamp').notNull(),
@@ -61,6 +73,7 @@ export const savedJourneys = pgTable('saved_journeys', {
 export const journeyRuns = pgTable('journey_runs', {
     id: text('id').primaryKey(),
     userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    projectId: text('project_id').references(() => projects.id, { onDelete: 'set null' }),
     url: text('url').notNull(),
     task: text('task').notNull(),
     status: text('status').notNull(), // 'running' | 'complete' | 'error'
@@ -74,6 +87,7 @@ export const journeyRuns = pgTable('journey_runs', {
 export const geoEeatRuns = pgTable('geo_eeat_runs', {
     id: text('id').primaryKey(),
     userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    projectId: text('project_id').references(() => projects.id, { onDelete: 'set null' }),
     url: text('url').notNull(),
     domainScanId: text('domain_scan_id').references(() => domainScans.id, { onDelete: 'set null' }),
     status: text('status').notNull(), // 'queued' | 'running' | 'complete' | 'error'

@@ -23,6 +23,7 @@ function run(): void {
     const row: GeoEeatRunRow = {
         id: 'run-1',
         userId: 'user-1',
+        projectId: null,
         url: 'https://example.com',
         domainScanId: null,
         status: 'complete',

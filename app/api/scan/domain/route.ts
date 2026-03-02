@@ -45,7 +45,11 @@ export async function POST(req: NextRequest) {
         graph: { nodes: [], links: [] },
         systemicIssues: []
     };
-    await createDomainScan(userId, initial);
+    await createDomainScan(
+        userId,
+        initial,
+        parsed.projectId !== undefined ? { projectId: parsed.projectId } : undefined
+    );
     invalidateDomainList(userId);
 
     (async () => {

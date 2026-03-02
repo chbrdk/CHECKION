@@ -34,6 +34,7 @@ export const scanBodySchema = z.object({
   standard: wcagStandardSchema,
   runners: runnersSchema,
   targetRegion: z.string().max(10).optional(),
+  projectId: z.string().uuid().nullable().optional(),
 });
 
 /** POST /api/scan/domain */
@@ -41,12 +42,14 @@ export const scanDomainBodySchema = z.object({
   url: urlSchema,
   useSitemap: z.boolean().optional(),
   maxPages: z.number().int().min(1).optional(),
+  projectId: z.string().uuid().nullable().optional(),
 });
 
 /** POST /api/scan/journey-agent */
 export const journeyAgentBodySchema = z.object({
   url: urlSchema,
   task: z.string().min(1, 'Task is required'),
+  projectId: z.string().uuid().nullable().optional(),
 });
 
 /** POST /api/scan/domain/[id]/journey */
@@ -59,6 +62,7 @@ export const domainJourneyBodySchema = z.object({
 export const geoEeatBodySchema = z.object({
   url: urlSchema,
   domainScanId: z.string().nullable().optional(),
+  projectId: z.string().uuid().nullable().optional(),
   runCompetitive: z.boolean().optional(),
   competitors: z.array(z.string()).optional(),
   queries: z.array(z.string()).optional(),
@@ -145,6 +149,23 @@ export const journeysBodySchema = z.object({
     steps: z.array(z.unknown()),
   }),
   name: z.string().optional(),
+});
+
+/** POST /api/projects (create project) */
+export const projectCreateBodySchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  domain: z.string().optional().nullable(),
+});
+
+/** PATCH /api/projects/[id] (update project) */
+export const projectUpdateBodySchema = z.object({
+  name: z.string().min(1).optional(),
+  domain: z.string().optional().nullable(),
+});
+
+/** PATCH .../project (assign resource to project) */
+export const projectAssignmentBodySchema = z.object({
+  projectId: z.string().uuid().nullable(),
 });
 
 function formatZodError(err: z.ZodError): string {

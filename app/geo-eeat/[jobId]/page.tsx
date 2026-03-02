@@ -15,6 +15,7 @@ import {
     PATH_SCAN,
 } from '@/lib/constants';
 import { SharePanel } from '@/components/SharePanel';
+import { AddToProject } from '@/components/AddToProject';
 import { CompetitivePositionDiagram } from '@/components/CompetitivePositionDiagram';
 import type { GeoEeatIntensiveResult, GeoEeatPageResult, CompetitiveBenchmarkResult } from '@/lib/types';
 
@@ -40,6 +41,7 @@ export default function GeoEeatResultPage() {
     const [payload, setPayload] = useState<GeoEeatIntensiveResult | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [url, setUrl] = useState<string>('');
+    const [projectId, setProjectId] = useState<string | null>(null);
     const [competitiveModelIndex, setCompetitiveModelIndex] = useState(0);
     const [rerunLoading, setRerunLoading] = useState(false);
     const [competitiveHistory, setCompetitiveHistory] = useState<CompetitiveHistoryRun[]>([]);
@@ -68,6 +70,7 @@ export default function GeoEeatResultPage() {
                 const data = await res.json();
                 if (cancelled) return;
                 setUrl(data.url ?? '');
+                if (data.projectId !== undefined) setProjectId(data.projectId ?? null);
                 const nextStatus = data.status === 'queued' ? 'running' : data.status;
                 setStatus(nextStatus);
                 if (data.payload) setPayload(data.payload);
@@ -254,6 +257,7 @@ export default function GeoEeatResultPage() {
                             )}
                         </MsqdxButton>
                     )}
+                    <AddToProject resourceType="geo_eeat" resourceId={jobId} currentProjectId={projectId} onAssigned={() => fetch(apiScanGeoEeat(jobId)).then((r) => r.json()).then((d: { projectId?: string | null }) => setProjectId(d.projectId ?? null))} />
                     <SharePanel resourceType="geo_eeat" resourceId={jobId} />
                     <Link href={PATH_SCAN}>
                         <MsqdxButton variant="text" size="small">

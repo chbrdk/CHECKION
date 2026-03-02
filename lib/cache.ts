@@ -23,11 +23,11 @@ export async function getCachedScan(id: string, userId: string): Promise<ScanRes
     return dbScans.getScan(id, userId);
 }
 
-/** Cached: single scan with LLM summary. Exceeds 2MB, skipping cache. */
+/** Cached: single scan with LLM summary and projectId. Exceeds 2MB, skipping cache. */
 export async function getCachedScanWithSummary(
     id: string,
     userId: string
-): Promise<{ result: ScanResult; llmSummary: UxCxSummary | null } | null> {
+): Promise<{ result: ScanResult; llmSummary: UxCxSummary | null; projectId: string | null } | null> {
     return dbScans.getScanWithSummary(id, userId);
 }
 
@@ -45,54 +45,54 @@ export async function getCachedShareByToken(token: string): Promise<ShareLinkRow
     )();
 }
 
-/** Cached: standalone scans list (paginated). Exceeds 2MB, skipping cache. */
+/** Cached: standalone scans list (paginated). Optional projectId filter. Exceeds 2MB, skipping cache. */
 export async function listCachedStandaloneScans(
     userId: string,
-    options?: { limit?: number; offset?: number }
+    options?: { limit?: number; offset?: number; projectId?: string | null }
 ): Promise<ScanResult[]> {
     const limit = options?.limit ?? 10000;
     const offset = options?.offset ?? 0;
-    return dbScans.listStandaloneScans(userId, { limit, offset });
+    return dbScans.listStandaloneScans(userId, { limit, offset, projectId: options?.projectId });
 }
 
-/** Cached: standalone scans count. */
-export async function getCachedStandaloneScansCount(userId: string): Promise<number> {
+/** Cached: standalone scans count. Optional projectId filter. */
+export async function getCachedStandaloneScansCount(userId: string, projectId?: string | null): Promise<number> {
     return unstable_cache(
-        () => dbScans.getStandaloneScansCount(userId),
-        ['scans-count', userId],
+        () => dbScans.getStandaloneScansCount(userId, projectId),
+        ['scans-count', userId, projectId ?? 'all'],
         { revalidate: CACHE_REVALIDATE_LIST, tags: [`scans-list-${userId}`] }
     )();
 }
 
-/** Cached: domain scans list – full payload (for search). May exceed 2MB with many scans, skipping cache. */
+/** Cached: domain scans list – full payload (for search). Optional projectId filter. May exceed 2MB with many scans, skipping cache. */
 export async function listCachedDomainScans(
     userId: string,
-    options?: { limit?: number; offset?: number }
+    options?: { limit?: number; offset?: number; projectId?: string | null }
 ): Promise<DomainScanResult[]> {
     const limit = options?.limit ?? 10000;
     const offset = options?.offset ?? 0;
-    return dbScans.listDomainScans(userId, { limit, offset });
+    return dbScans.listDomainScans(userId, { limit, offset, projectId: options?.projectId });
 }
 
-/** Cached: domain scan summaries only (id, domain, timestamp, status, score, totalPages). Stays under 2MB. */
+/** Cached: domain scan summaries only (id, domain, timestamp, status, score, totalPages). Optional projectId filter. Stays under 2MB. */
 export async function listCachedDomainScanSummaries(
     userId: string,
-    options?: { limit?: number; offset?: number }
+    options?: { limit?: number; offset?: number; projectId?: string | null }
 ): Promise<Array<{ id: string; domain: string; timestamp: string; status: string; score: number; totalPages: number }>> {
     const limit = options?.limit ?? 100;
     const offset = options?.offset ?? 0;
     return unstable_cache(
-        () => dbScans.listDomainScanSummaries(userId, { limit, offset }),
-        ['domain-summaries', userId, String(limit), String(offset)],
+        () => dbScans.listDomainScanSummaries(userId, { limit, offset, projectId: options?.projectId }),
+        ['domain-summaries', userId, String(limit), String(offset), options?.projectId ?? 'all'],
         { revalidate: CACHE_REVALIDATE_LIST, tags: [`domain-list-${userId}`] }
     )();
 }
 
-/** Cached: domain scans count. */
-export async function getCachedDomainScansCount(userId: string): Promise<number> {
+/** Cached: domain scans count. Optional projectId filter. */
+export async function getCachedDomainScansCount(userId: string, projectId?: string | null): Promise<number> {
     return unstable_cache(
-        () => dbScans.getDomainScansCount(userId),
-        ['domain-count', userId],
+        () => dbScans.getDomainScansCount(userId, projectId),
+        ['domain-count', userId, projectId ?? 'all'],
         { revalidate: CACHE_REVALIDATE_LIST, tags: [`domain-list-${userId}`] }
     )();
 }

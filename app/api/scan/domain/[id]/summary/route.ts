@@ -6,7 +6,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
-import { getCachedDomainScan } from '@/lib/cache';
+import { getDomainScanWithProjectId } from '@/lib/db/scans';
 import { buildDomainSummary } from '@/lib/domain-summary';
 
 export async function GET(
@@ -18,10 +18,10 @@ export async function GET(
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     const { id } = await params;
-    const scan = await getCachedDomainScan(id, session.user.id);
-    if (!scan) {
+    const row = await getDomainScanWithProjectId(id, session.user.id);
+    if (!row) {
         return apiError('Scan not found', API_STATUS.NOT_FOUND);
     }
-    const summary = buildDomainSummary(scan);
-    return NextResponse.json(summary);
+    const summary = buildDomainSummary(row.result);
+    return NextResponse.json({ ...summary, projectId: row.projectId });
 }

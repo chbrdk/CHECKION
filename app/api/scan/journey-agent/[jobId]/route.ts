@@ -36,10 +36,16 @@ export async function GET(
 
     const row = await getJourneyRun(jobId, userId);
     if (row && (row.status === 'complete' || row.status === 'error')) {
-        return buildResponse(jobId, {
+        const result = row.result ?? undefined;
+        if (result && typeof result === 'object' && jobId) {
+            (result as Record<string, unknown>).videoUrl = `/api/scan/journey-agent/${encodeURIComponent(jobId)}/video`;
+        }
+        return NextResponse.json({
+            jobId,
             status: row.status,
-            result: row.result ?? undefined,
+            result,
             error: row.error ?? undefined,
+            projectId: row.projectId ?? null,
         });
     }
 

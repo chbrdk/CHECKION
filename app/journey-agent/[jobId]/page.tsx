@@ -7,6 +7,7 @@ import { MsqdxTypography, MsqdxButton, MsqdxCard, MsqdxMoleculeCard, MsqdxChip }
 import { MSQDX_SPACING, MSQDX_BRAND_PRIMARY, MSQDX_STATUS } from '@msqdx/tokens';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { SharePanel } from '@/components/SharePanel';
+import { AddToProject } from '@/components/AddToProject';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import {
     PDF_LOGO_PATH,
@@ -317,6 +318,7 @@ export default function JourneyAgentStatusPage() {
 
     const [status, setStatus] = useState<Status>('loading');
     const [error, setError] = useState<string | null>(null);
+    const [projectId, setProjectId] = useState<string | null>(null);
     const [result, setResult] = useState<{
         steps?: UxJourneyAgentStep[];
         success?: boolean;
@@ -364,6 +366,7 @@ export default function JourneyAgentStatusPage() {
                     return;
                 }
 
+                if (data.projectId !== undefined) setProjectId(data.projectId ?? null);
                 const st = data.status as string;
                 if (st === 'complete' || data.result) {
                     setStatus('complete');
@@ -521,7 +524,12 @@ export default function JourneyAgentStatusPage() {
                         }
                         actions={
                             <Box sx={{ display: 'flex', gap: 'var(--msqdx-spacing-xs)', flexWrap: 'wrap', alignItems: 'center' }}>
-                                {jobId && <SharePanel resourceType="journey" resourceId={jobId} labelNamespace="domainResult" />}
+                                {jobId && (
+                                    <>
+                                        <AddToProject resourceType="journey" resourceId={jobId} currentProjectId={projectId} onAssigned={() => fetch(apiScanJourneyAgent(jobId)).then((r) => r.json()).then((d: { projectId?: string | null }) => setProjectId(d.projectId ?? null))} />
+                                        <SharePanel resourceType="journey" resourceId={jobId} labelNamespace="domainResult" />
+                                    </>
+                                )}
                                 <MsqdxButton variant="outlined" size="small" onClick={() => router.push(PATH_SCAN)}>
                                     {t('scan.journeyNewJourney')}
                                 </MsqdxButton>

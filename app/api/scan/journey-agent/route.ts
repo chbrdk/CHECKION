@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     const parsed = await parseApiBody(request, journeyAgentBodySchema);
     if (parsed instanceof NextResponse) return parsed;
-    const { url, task } = parsed;
+    const { url, task, projectId } = parsed;
 
     const agentBaseUrl = process.env[ENV_UX_JOURNEY_AGENT_URL];
     if (!agentBaseUrl) {
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
         }
         const jobId = data.jobId as string;
         try {
-            await insertJourneyRun(jobId, session.user.id, url, task);
+            await insertJourneyRun(jobId, session.user.id, url, task, projectId !== undefined ? { projectId } : undefined);
         } catch (err) {
             // non-fatal: history unavailable if table missing or DB error
             console.warn('[journey-agent] Could not save run to history:', err instanceof Error ? err.message : err);

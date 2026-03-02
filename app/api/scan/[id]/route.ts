@@ -22,5 +22,5 @@ export async function GET(
         return apiError('Scan result not found.', API_STATUS.NOT_FOUND);
     }
 
-    return NextResponse.json({ ...row.result, llmSummary: row.llmSummary });
+    return NextResponse.json({ ...row.result, llmSummary: row.llmSummary, projectId: row.projectId ?? null });
 }

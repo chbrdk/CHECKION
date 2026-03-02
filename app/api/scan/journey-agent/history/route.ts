@@ -16,7 +16,9 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const limit = Math.min(Math.max(parseInt(searchParams.get('limit') ?? '50', 10), 1), 100);
+    const projectIdParam = searchParams.get('projectId');
+    const projectId = projectIdParam === '' || projectIdParam === null ? null : projectIdParam ?? undefined;
 
-    const runs = await listJourneyRuns(session.user.id, limit);
-    return NextResponse.json({ runs });
+    const runs = await listJourneyRuns(session.user.id, limit, projectId !== undefined ? { projectId } : undefined);
+    return NextResponse.json({ data: runs, runs });
 }

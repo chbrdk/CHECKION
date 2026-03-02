@@ -34,11 +34,12 @@ export async function POST(request: NextRequest) {
 
     const parsed = await parseApiBody(request, geoEeatBodySchema);
     if (parsed instanceof NextResponse) return parsed;
-    const { url, domainScanId, runCompetitive, competitors, queries } = parsed;
+    const { url, domainScanId, projectId, runCompetitive, competitors, queries } = parsed;
 
     const jobId = uuidv4();
     await insertGeoEeatRun(jobId, session.user.id, url, {
         domainScanId: domainScanId ?? undefined,
+        projectId: projectId ?? undefined,
     });
 
     (async () => {

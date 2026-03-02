@@ -19,6 +19,7 @@ import type { DomainSummaryResponse } from '@/lib/domain-summary';
 import type { SlimPage } from '@/lib/types';
 import { ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react';
 import { SharePanel } from '@/components/SharePanel';
+import { AddToProject } from '@/components/AddToProject';
 
 const DomainGraph = dynamic(
     () => import('@/components/DomainGraph').then((m) => ({ default: m.DomainGraph })),
@@ -72,6 +73,7 @@ export default function DomainResultPage() {
         { label: t('domainResult.tabJourney'), value: 10 },
     ];
     const [result, setResult] = useState<DomainSummaryResponse | null>(null);
+    const [projectId, setProjectId] = useState<string | null>(null);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [tabValue, setTabValue] = useState(0);
     const [summarizing, setSummarizing] = useState(false);
@@ -107,8 +109,11 @@ export default function DomainResultPage() {
                 }
                 return res.json();
             })
-            .then(data => {
-                if (data) setResult(data);
+            .then((data: DomainSummaryResponse & { projectId?: string | null }) => {
+                if (data) {
+                    setResult(data);
+                    setProjectId(data.projectId ?? null);
+                }
             })
             .catch(() => setLoadError('not_found'));
     }, [domainId]);
@@ -166,7 +171,8 @@ export default function DomainResultPage() {
                         {t('domainResult.back')}
                     </MsqdxButton>
                     {domainId ? (
-                        <Box sx={{ display: 'inline-flex' }}>
+                        <Box sx={{ display: 'inline-flex', gap: 'var(--msqdx-spacing-sm)' }}>
+                            <AddToProject resourceType="domain" resourceId={domainId} currentProjectId={projectId} onAssigned={() => fetch(apiScanDomainSummary(domainId!)).then((r) => r.json()).then((d: { projectId?: string | null }) => setProjectId(d.projectId ?? null))} />
                             <SharePanel resourceType="domain" resourceId={domainId} labelNamespace="domainResult" />
                         </Box>
                     ) : null}

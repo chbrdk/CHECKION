@@ -31,6 +31,7 @@ import {
     apiScanGeoEeatHistory,
     apiScanGeoEeatSuggestQueries,
     apiScanCreate,
+    apiProjectsList,
     pathGeoEeat,
     pathJourneyAgent,
     pathResults,
@@ -66,10 +67,19 @@ export default function ScanPage() {
     const [geoEeatSuggesting, setGeoEeatSuggesting] = useState(false);
     const [geoEeatSuggestError, setGeoEeatSuggestError] = useState<string | null>(null);
     const [geoEeatSuggestMessage, setGeoEeatSuggestMessage] = useState<string | null>(null);
+    const [projects, setProjects] = useState<Array<{ id: string; name: string }>>([]);
+    const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+
+    useEffect(() => {
+        fetch(apiProjectsList, { credentials: 'same-origin' })
+            .then((r) => r.json())
+            .then((data) => setProjects(Array.isArray(data?.data) ? data.data : []))
+            .catch(() => setProjects([]));
+    }, []);
 
     useEffect(() => {
         if (scanMode !== 'journey') return;
-        fetch(apiScanJourneyAgentHistory(15))
+        fetch(apiScanJourneyAgentHistory({ limit: 15 }))
             .then((res) => res.ok ? res.json() : { runs: [] })
             .then((data: { runs?: Array<{ id: string; url: string; task: string; status: string; createdAt: string }> }) =>
                 setJourneyHistory(data.runs ?? [])
@@ -79,7 +89,7 @@ export default function ScanPage() {
 
     useEffect(() => {
         if (scanMode !== 'geoEeat') return;
-        fetch(apiScanGeoEeatHistory(15))
+        fetch(apiScanGeoEeatHistory({ limit: 15 }))
             .then((res) => (res.ok ? res.json() : { runs: [] }))
             .then((data: { runs?: Array<{ id: string; url: string; status: string; createdAt: string }> }) =>
                 setGeoEeatHistory(data.runs ?? [])
@@ -95,12 +105,13 @@ export default function ScanPage() {
 
         try {
             if (scanMode === 'geoEeat') {
-                const body: { url: string; runCompetitive?: boolean; competitors?: string[]; queries?: string[] } = { url: url.trim() };
+                const body: { url: string; runCompetitive?: boolean; competitors?: string[]; queries?: string[]; projectId?: string | null } = { url: url.trim() };
                 if (geoEeatCompetitive) {
                     body.runCompetitive = true;
                     body.competitors = geoEeatCompetitors.trim().split(/\n/).map((s) => s.trim()).filter(Boolean);
                     body.queries = geoEeatQueries.trim().split(/\n/).map((s) => s.trim()).filter(Boolean);
                 }
+                if (selectedProjectId) body.projectId = selectedProjectId;
                 const res = await fetch(apiScanGeoEeatCreate, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -120,7 +131,7 @@ export default function ScanPage() {
                 const res = await fetch(apiScanJourneyAgentCreate, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: url.trim(), task: task.trim() }),
+                    body: JSON.stringify({ url: url.trim(), task: task.trim(), ...(selectedProjectId && { projectId: selectedProjectId }) }),
                 });
                 const data = await res.json();
                 if (res.status === 501) {
@@ -141,7 +152,7 @@ export default function ScanPage() {
                 const res = await fetch(apiScanCreate, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: url.trim(), standard, runners: selectedRunners, ...(targetRegion.trim() && { targetRegion: targetRegion.trim() }) }),
+                    body: JSON.stringify({ url: url.trim(), standard, runners: selectedRunners, ...(targetRegion.trim() && { targetRegion: targetRegion.trim() }), ...(selectedProjectId && { projectId: selectedProjectId }) }),
                 });
 
                 const data = await res.json();
@@ -163,7 +174,7 @@ export default function ScanPage() {
                 const res = await fetch(apiScanDomainCreate, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: url.trim() }),
+                    body: JSON.stringify({ url: url.trim(), ...(selectedProjectId && { projectId: selectedProjectId }) }),
                 });
 
                 const data = await res.json();
@@ -425,6 +436,18 @@ export default function ScanPage() {
                             value={selectedRunners}
                             onChange={(val) => setSelectedRunners(val as Runner[])}
                         // row -- Vertical might be better in this layout if we have multiple
+                        />
+                    </Box>
+
+                    {/* Project (optional) */}
+                    <Box sx={{ minWidth: 200 }}>
+                        <MsqdxSelect
+                            label={t('projects.optionalProject')}
+                            value={selectedProjectId ?? ''}
+                            onChange={(e: SelectChangeEvent<unknown>) => setSelectedProjectId((e.target.value as string) || null)}
+                            options={[{ value: '', label: '—' }, ...projects.map((p) => ({ value: p.id, label: p.name }))]}
+                            disabled={scanning}
+                            fullWidth
                         />
                     </Box>
                 </Box>

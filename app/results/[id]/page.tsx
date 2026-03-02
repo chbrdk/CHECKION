@@ -103,6 +103,7 @@ import { InfoTooltip } from '@/components/InfoTooltip';
 import { PaginationBar } from '@/components/PaginationBar';
 import { RESULTS_ISSUES_PAGE_SIZE } from '@/lib/constants';
 import { SharePanel } from '@/components/SharePanel';
+import { AddToProject } from '@/components/AddToProject';
 
 const SEVERITY_CONFIG: Record<IssueSeverity, { color: string; label: string }> = {
     error: { color: MSQDX_STATUS.error.base, label: 'Error' },
@@ -118,6 +119,7 @@ export default function ResultsPage() {
     const router = useRouter();
     const { t } = useI18n();
     const [result, setResult] = useState<ScanResult | null>(null);
+    const [projectId, setProjectId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [tab, setTab] = useState<TabFilter>('all');
@@ -285,8 +287,9 @@ export default function ResultsPage() {
                 if (!res.ok) throw new Error('Scan nicht gefunden');
                 return res.json();
             })
-            .then((data: ScanResult) => {
+            .then((data: ScanResult & { projectId?: string | null }) => {
                 setResult(data);
+                setProjectId(data.projectId ?? null);
 
                 // Fetch all scans to find siblings with same groupId
                 // (In a real app, we'd have an endpoint like /api/scan?groupId=...)
@@ -364,7 +367,12 @@ export default function ResultsPage() {
                         >
                             ← {t('results.dashboard')}
                         </MsqdxButton>
-                        {result?.id && <SharePanel resourceType="single" resourceId={result.id} labelNamespace="results" />}
+                        {result?.id && (
+                            <>
+                                <AddToProject resourceType="single" resourceId={result.id} currentProjectId={projectId} onAssigned={() => result?.id && fetch(apiScan(result.id)).then((r) => r.json()).then((d: ScanResult & { projectId?: string | null }) => setProjectId(d.projectId ?? null))} />
+                                <SharePanel resourceType="single" resourceId={result.id} labelNamespace="results" />
+                            </>
+                        )}
                     </Box>
                     <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: MSQDX_SPACING.scale.xs }}>
                         <MsqdxTypography

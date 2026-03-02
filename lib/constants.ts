@@ -17,6 +17,7 @@ export const PATH_REGISTER = '/register';
 export const PATH_SETTINGS = '/settings';
 export const PATH_HISTORY = '/history';
 export const PATH_DEVELOPERS = '/developers';
+export const PATH_PROJECTS = '/projects';
 
 /** Build app route: /results/[id] */
 export const pathResults = (id: string) => `${PATH_RESULTS}/${encodeURIComponent(id)}`;
@@ -33,6 +34,8 @@ export const pathDomain = (id: string, query?: Record<string, string>) => {
 export const pathJourneyAgent = (jobId: string) => `${PATH_JOURNEY_AGENT}/${encodeURIComponent(jobId)}`;
 /** Build app route: /geo-eeat/[jobId] */
 export const pathGeoEeat = (jobId: string) => `${PATH_GEO_EEAT}/${encodeURIComponent(jobId)}`;
+/** Build app route: /projects/[id] */
+export const pathProject = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}`;
 /** Build app route: /share/[token] */
 export const pathShare = (token: string) => `${PATH_SHARE}/${encodeURIComponent(token)}`;
 /** Build app route: /scan/domain?url=...&maxPages=... */
@@ -58,20 +61,24 @@ export const API_SALIENCY_RESULT = '/api/saliency/result';
 export const API_SHARE = '/api/share';
 export const API_SEARCH = '/api/search';
 export const API_JOURNEYS = '/api/journeys';
+export const API_PROJECTS = '/api/projects';
 
 /** POST /api/scan (single-page scan) */
 export const apiScanCreate = API_SCAN;
 
-/** Build: GET /api/scan?limit=&page= */
-export const apiScanList = (params?: { limit?: number; page?: number }) => {
+/** Build: GET /api/scan?limit=&page=&projectId= */
+export const apiScanList = (params?: { limit?: number; page?: number; projectId?: string | null }) => {
   const search = new URLSearchParams();
   if (params?.limit != null) search.set('limit', String(params.limit));
   if (params?.page != null) search.set('page', String(params.page));
+  if (params?.projectId !== undefined) search.set('projectId', params.projectId ?? '');
   return search.toString() ? `${API_SCAN}?${search.toString()}` : API_SCAN;
 };
 
 /** Build: GET/DELETE /api/scan/[id] */
 export const apiScan = (id: string) => `${API_SCAN}/${encodeURIComponent(id)}`;
+/** Build: PATCH /api/scan/[id]/project (assign scan to project) */
+export const apiScanProject = (id: string) => `${apiScan(id)}/project`;
 /** Build: POST /api/scan/[id]/summarize */
 export const apiScanSummarize = (id: string) => `${apiScan(id)}/summarize`;
 /** Build: /api/scan/[id]/screenshot */
@@ -90,11 +97,18 @@ export const apiScanDomainJourney = (id: string) => `${API_SCAN_DOMAIN}/${encode
 
 /** Build: POST /api/scan/journey-agent */
 export const apiScanJourneyAgentCreate = API_SCAN_JOURNEY_AGENT;
-/** Build: GET /api/scan/journey-agent/history */
-export const apiScanJourneyAgentHistory = (limit?: number) =>
-  limit != null ? `${API_SCAN_JOURNEY_AGENT}/history?limit=${limit}` : `${API_SCAN_JOURNEY_AGENT}/history`;
+/** Build: GET /api/scan/journey-agent/history?limit=&projectId= */
+export const apiScanJourneyAgentHistory = (params?: { limit?: number; projectId?: string | null }) => {
+  const search = new URLSearchParams();
+  if (params?.limit != null) search.set('limit', String(params.limit));
+  if (params?.projectId !== undefined) search.set('projectId', params.projectId ?? '');
+  const q = search.toString();
+  return q ? `${API_SCAN_JOURNEY_AGENT}/history?${q}` : `${API_SCAN_JOURNEY_AGENT}/history`;
+};
 /** Build: GET /api/scan/journey-agent/[jobId] */
 export const apiScanJourneyAgent = (jobId: string) => `${API_SCAN_JOURNEY_AGENT}/${encodeURIComponent(jobId)}`;
+/** Build: PATCH /api/scan/journey-agent/[jobId]/project (assign journey run to project) */
+export const apiScanJourneyAgentProject = (jobId: string) => `${apiScanJourneyAgent(jobId)}/project`;
 /** Build: /api/scan/journey-agent/[jobId]/video */
 export const apiScanJourneyAgentVideo = (jobId: string) => `${apiScanJourneyAgent(jobId)}/video`;
 /** Build: /api/scan/journey-agent/[jobId]/live/stream */
@@ -102,9 +116,14 @@ export const apiScanJourneyAgentLiveStream = (jobId: string) => `${apiScanJourne
 
 /** Build: POST /api/scan/geo-eeat */
 export const apiScanGeoEeatCreate = API_SCAN_GEO_EEAT;
-/** Build: GET /api/scan/geo-eeat/history */
-export const apiScanGeoEeatHistory = (limit?: number) =>
-  limit != null ? `${API_SCAN_GEO_EEAT}/history?limit=${limit}` : `${API_SCAN_GEO_EEAT}/history`;
+/** Build: GET /api/scan/geo-eeat/history?limit=&projectId= */
+export const apiScanGeoEeatHistory = (params?: { limit?: number; projectId?: string | null }) => {
+  const search = new URLSearchParams();
+  if (params?.limit != null) search.set('limit', String(params.limit));
+  if (params?.projectId !== undefined) search.set('projectId', params.projectId ?? '');
+  const q = search.toString();
+  return q ? `${API_SCAN_GEO_EEAT}/history?${q}` : `${API_SCAN_GEO_EEAT}/history`;
+};
 /** Build: POST /api/scan/geo-eeat/suggest-competitors-queries */
 export const apiScanGeoEeatSuggestQueries = `${API_SCAN_GEO_EEAT}/suggest-competitors-queries`;
 /** Build: GET /api/scan/geo-eeat/[jobId] */
@@ -120,6 +139,8 @@ export const apiScanGeoEeatCompetitiveHistory = (jobId: string, limit?: number) 
 /** Build: GET /api/scan/geo-eeat/[jobId]/competitive-history/[runId] */
 export const apiScanGeoEeatCompetitiveRun = (jobId: string, runId: string) =>
     `${API_SCAN_GEO_EEAT}/${encodeURIComponent(jobId)}/competitive-history/${encodeURIComponent(runId)}`;
+/** Build: PATCH /api/scan/geo-eeat/[jobId]/project (assign geo-eeat run to project) */
+export const apiScanGeoEeatProject = (jobId: string) => `${API_SCAN_GEO_EEAT}/${encodeURIComponent(jobId)}/project`;
 
 /** Build: GET /api/saliency/result?jobId=&scanId= */
 export const apiSaliencyResult = (jobId: string, scanId: string) =>
@@ -159,15 +180,18 @@ export const apiSearch = (q: string, limit?: number) => {
 
 /** Build: DELETE /api/scans/[id] */
 export const apiScansDelete = (id: string) => `${API_SCANS}/${encodeURIComponent(id)}`;
-/** Build: GET /api/scans/domain?limit=&page= */
-export const apiScansDomainList = (params?: { limit?: number; page?: number }) => {
+/** Build: GET /api/scans/domain?limit=&page=&projectId= */
+export const apiScansDomainList = (params?: { limit?: number; page?: number; projectId?: string | null }) => {
   const search = new URLSearchParams();
   if (params?.limit != null) search.set('limit', String(params.limit));
   if (params?.page != null) search.set('page', String(params.page));
+  if (params?.projectId !== undefined) search.set('projectId', params.projectId ?? '');
   return search.toString() ? `${API_SCANS_DOMAIN}?${search.toString()}` : API_SCANS_DOMAIN;
 };
 /** Build: DELETE /api/scans/domain/[id] */
 export const apiScansDomainDelete = (id: string) => `${API_SCANS_DOMAIN}/${encodeURIComponent(id)}`;
+/** Build: PATCH /api/scans/domain/[id]/project (assign domain scan to project) */
+export const apiScansDomainProject = (id: string) => `${API_SCANS_DOMAIN}/${encodeURIComponent(id)}/project`;
 
 /** Build: GET/POST /api/journeys?limit=&page= */
 export const apiJourneysList = (params?: { limit?: number; page?: number }) => {
@@ -178,6 +202,13 @@ export const apiJourneysList = (params?: { limit?: number; page?: number }) => {
 };
 /** Build: GET/DELETE /api/journeys/[id] */
 export const apiJourneys = (id: string) => `${API_JOURNEYS}/${encodeURIComponent(id)}`;
+
+/** Build: GET /api/projects */
+export const apiProjectsList = API_PROJECTS;
+/** Build: POST /api/projects */
+export const apiProjectsCreate = API_PROJECTS;
+/** Build: GET/PATCH/DELETE /api/projects/[id] */
+export const apiProject = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}`;
 
 // ─── Other Paths ───────────────────────────────────────────────────────────
 /** Public path for the black MSQDX logo (PDF reports, print). Resolve with origin in browser: `${window.location.origin}${PDF_LOGO_PATH}` */

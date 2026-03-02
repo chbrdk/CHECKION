@@ -32,6 +32,7 @@ export async function GET(
         status: run.status,
         payload: run.payload,
         error: run.error,
+        projectId: run.projectId ?? null,
         createdAt: run.createdAt,
         updatedAt: run.updatedAt,
     });
