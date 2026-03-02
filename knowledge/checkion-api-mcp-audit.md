@@ -127,17 +127,44 @@ Stand: Nach Prüfung der Codebasis (API-Routen, MCP-Tools, Features).
 
 ---
 
-## 2. MCP-Tools (vollständig, Stand nach Erweiterung)
+## 2. MCP-Tools (bestehend)
 
 Scans: scan_single, scan_get, scans_list, scan_domain, scan_domain_status, scan_domain_summary, scans_domain_list, scan_assign_project, scan_domain_assign_project, scan_journey_assign_project, scan_geo_eeat_assign_project.  
 Projekte: projects_list, project_get, project_create, project_update, project_delete.  
 Checks/Tools: tools_contrast, tools_extract, tools_ssl, tools_pagespeed, tools_wayback, tools_readability.  
-Journeys: journeys_list, journey_get, journey_delete.  
+Journeys (gespeichert): journeys_list, journey_get, journey_delete.  
 GEO/E-E-A-T: geo_eeat_suggest_queries, geo_eeat_history, geo_eeat_get, geo_eeat_rerun_competitive.  
 Suche & Share: search, share_create, share_get, share_revoke.  
 User & Health: user_profile, health.  
 
 Vollständige Liste und Parameter siehe `mcp-server/README.md`.
+
+---
+
+## 2b. Noch fehlende MCP-Tools (API vorhanden, kein Tool)
+
+**Umgesetzt (Stand):** scan_journey_start, scan_journey_get, scan_journey_history, geo_eeat_start, geo_eeat_status, geo_eeat_competitive_history, geo_eeat_competitive_run_get, scan_delete, scan_domain_delete, share_by_resource.
+
+| Priorität | API | Tool-Name | Status |
+|-----------|-----|-----------|--------|
+| ~~Hoch~~ | POST `/api/scan/journey-agent` | `checkion/scan_journey_start` | ✅ |
+| ~~Hoch~~ | GET `/api/scan/journey-agent/[jobId]` | `checkion/scan_journey_get` | ✅ |
+| ~~Hoch~~ | GET `/api/scan/journey-agent/history` | `checkion/scan_journey_history` | ✅ |
+| ~~Hoch~~ | POST `/api/scan/geo-eeat` | `checkion/geo_eeat_start` | ✅ |
+| ~~Hoch~~ | GET `/api/scan/geo-eeat/[jobId]/status` | `checkion/geo_eeat_status` | ✅ |
+| ~~Mittel~~ | GET `.../competitive-history` | `checkion/geo_eeat_competitive_history` | ✅ |
+| ~~Mittel~~ | GET `.../competitive-history/[runId]` | `checkion/geo_eeat_competitive_run_get` | ✅ |
+| ~~Mittel~~ | DELETE `/api/scans/[id]` | `checkion/scan_delete` | ✅ |
+| ~~Mittel~~ | DELETE `/api/scans/domain/[id]` | `checkion/scan_domain_delete` | ✅ |
+| ~~Mittel~~ | GET `/api/share/by-resource` | `checkion/share_by_resource` | ✅ |
+| **Niedrig** | POST `/api/scan/[id]/summarize` | `checkion/scan_summarize` | offen |
+| **Niedrig** | POST `/api/scan/domain/[id]/summarize` | `checkion/scan_domain_summarize` | offen |
+| **Niedrig** | POST `/api/scan/domain/[id]/journey` | `checkion/scan_domain_journey_start` | offen |
+| **Niedrig** | POST `/api/journeys` | `checkion/journey_save` | offen |
+| **Nische** | GET `/api/scan/[id]/screenshot` | `checkion/scan_screenshot` | offen |
+| **Nische** | Saliency | `checkion/saliency_*` | offen |
+
+Nicht als MCP abgebildet (bewusst/sensibel): Auth (register, change-password, tokens CRUD), PATCH profile.
 
 ---
 

@@ -107,10 +107,15 @@ Wenn du das CHECKION-Repo ohnehin auf dem Rechner hast, kann Claude den MCP-Serv
 | `checkion/scan_single` | Start single-page scan (url, optional projectId) |
 | `checkion/scan_get` | Get scan result by ID |
 | `checkion/scans_list` | List single-page scans (limit, page, projectId) |
+| `checkion/scan_delete` | Delete single-page scan by ID |
 | `checkion/scan_domain` | Start domain scan (url, useSitemap, maxPages, projectId) |
 | `checkion/scan_domain_status` | Domain scan status by ID |
 | `checkion/scan_domain_summary` | Domain scan summary by ID |
 | `checkion/scans_domain_list` | List domain scans |
+| `checkion/scan_domain_delete` | Delete domain scan by ID |
+| `checkion/scan_journey_start` | Start journey-agent run (url, task, optional projectId) |
+| `checkion/scan_journey_get` | Get journey-agent run result by jobId |
+| `checkion/scan_journey_history` | List journey-agent runs (limit, projectId) |
 | `checkion/scan_assign_project` | Assign single scan to project (scanId, projectId) |
 | `checkion/scan_domain_assign_project` | Assign domain scan to project (domainScanId, projectId) |
 | `checkion/scan_journey_assign_project` | Assign journey run to project (jobId, projectId) |
@@ -145,15 +150,20 @@ Wenn du das CHECKION-Repo ohnehin auf dem Rechner hast, kann Claude den MCP-Serv
 ### GEO / E-E-A-T
 | Tool | Description |
 |------|-------------|
+| `checkion/geo_eeat_start` | Start GEO/E-E-A-T scan (url, projectId?, runCompetitive?, competitors?, queries?) |
+| `checkion/geo_eeat_status` | Get GEO/E-E-A-T job status by jobId (for polling) |
 | `checkion/geo_eeat_suggest_queries` | AI-suggest competitors and LLM queries (url) |
 | `checkion/geo_eeat_history` | List GEO/E-E-A-T runs (limit, projectId) |
 | `checkion/geo_eeat_get` | Get GEO/E-E-A-T run by jobId |
 | `checkion/geo_eeat_rerun_competitive` | Rerun competitive benchmark (jobId) |
+| `checkion/geo_eeat_competitive_history` | List competitive benchmark runs for a job (jobId, limit?) |
+| `checkion/geo_eeat_competitive_run_get` | Get one competitive run by jobId and runId |
 
 ### Search & Share
 | Tool | Description |
 |------|-------------|
 | `checkion/search` | Search across scans (q, limit?) |
+| `checkion/share_by_resource` | Get existing share link for a resource (type, id) |
 | `checkion/share_create` | Create share link (type, id, password?) |
 | `checkion/share_get` | Get share metadata (token) |
 | `checkion/share_revoke` | Revoke share link (token) |

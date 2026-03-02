@@ -124,6 +124,78 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
+    server.registerTool('checkion/scan_delete', {
+        title: 'Delete single-page scan',
+        description: 'Delete a single-page scan by ID.',
+        inputSchema: z.object({ id: z.string().describe('Scan result ID') }),
+    }, async (args) => {
+        const { id } = args;
+        const res = await base(`/api/scans/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    server.registerTool('checkion/scan_domain_delete', {
+        title: 'Delete domain scan',
+        description: 'Delete a domain scan by ID.',
+        inputSchema: z.object({ id: z.string().describe('Domain scan ID') }),
+    }, async (args) => {
+        const { id } = args;
+        const res = await base(`/api/scans/domain/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    // --- journey agent (runs) ---
+    server.registerTool('checkion/scan_journey_start', {
+        title: 'Start journey-agent run',
+        description: 'Start a UX journey-agent run (URL + natural language task). Returns jobId; poll with checkion/scan_journey_get.',
+        inputSchema: z.object({
+            url: z.string().describe('Page URL to start from'),
+            task: z.string().min(1).describe('Natural language task (e.g. "Find the contact form")'),
+            projectId: z.string().optional().describe('Optional project ID to assign'),
+        }),
+    }, async (args) => {
+        const { url, task, projectId } = args;
+        const body = { url, task };
+        if (projectId !== undefined)
+            body.projectId = projectId;
+        const res = await base('/api/scan/journey-agent', { method: 'POST', body: JSON.stringify(body) });
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    server.registerTool('checkion/scan_journey_get', {
+        title: 'Get journey-agent run result',
+        description: 'Get a journey-agent run result by job ID.',
+        inputSchema: z.object({ jobId: z.string().describe('Journey job ID') }),
+    }, async (args) => {
+        const { jobId } = args;
+        const res = await base(`/api/scan/journey-agent/${encodeURIComponent(jobId)}`);
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    server.registerTool('checkion/scan_journey_history', {
+        title: 'List journey-agent runs',
+        description: 'List journey-agent runs with optional project filter and limit.',
+        inputSchema: z.object({
+            limit: z.number().min(1).max(100).optional(),
+            projectId: z.string().optional(),
+        }),
+    }, async (args) => {
+        const { limit, projectId } = args;
+        const params = new URLSearchParams();
+        if (limit != null)
+            params.set('limit', String(limit));
+        if (projectId !== undefined)
+            params.set('projectId', projectId ?? '');
+        const q = params.toString();
+        const res = await base(`/api/scan/journey-agent/history${q ? `?${q}` : ''}`);
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
     // --- projects ---
     server.registerTool('checkion/projects_list', {
         title: 'List projects',
@@ -366,6 +438,35 @@ export function registerCheckionTools(server) {
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
     // --- GEO / E-E-A-T ---
+    server.registerTool('checkion/geo_eeat_start', {
+        title: 'Start GEO/E-E-A-T scan',
+        description: 'Start a GEO/E-E-A-T intensive scan (technical + LLM stages). Optionally run competitive benchmark with competitors and queries. Returns jobId.',
+        inputSchema: z.object({
+            url: z.string().describe('Page URL to analyze'),
+            projectId: z.string().optional().describe('Optional project ID'),
+            domainScanId: z.string().optional().describe('Optional domain scan ID'),
+            runCompetitive: z.boolean().optional().describe('Run competitive benchmark (requires competitors and/or queries)'),
+            competitors: z.array(z.string()).optional().describe('Competitor domains for benchmark'),
+            queries: z.array(z.string()).optional().describe('LLM search queries for benchmark'),
+        }),
+    }, async (args) => {
+        const body = args;
+        const res = await base('/api/scan/geo-eeat', { method: 'POST', body: JSON.stringify(body) });
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    server.registerTool('checkion/geo_eeat_status', {
+        title: 'GEO/E-E-A-T job status',
+        description: 'Get status of a GEO/E-E-A-T run (e.g. for polling).',
+        inputSchema: z.object({ jobId: z.string().describe('GEO/E-E-A-T job ID') }),
+    }, async (args) => {
+        const { jobId } = args;
+        const res = await base(`/api/scan/geo-eeat/${encodeURIComponent(jobId)}/status`);
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
     server.registerTool('checkion/geo_eeat_suggest_queries', {
         title: 'Suggest competitors and queries',
         description: 'AI-suggest ~5 competitors and ~10 LLM search queries for a URL.',
@@ -419,6 +520,38 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
+    server.registerTool('checkion/geo_eeat_competitive_history', {
+        title: 'List competitive benchmark runs',
+        description: 'List competitive benchmark runs for a GEO/E-E-A-T job.',
+        inputSchema: z.object({
+            jobId: z.string().describe('GEO/E-E-A-T job ID'),
+            limit: z.number().min(1).max(100).optional().describe('Max number of runs to return'),
+        }),
+    }, async (args) => {
+        const { jobId, limit } = args;
+        const params = new URLSearchParams();
+        if (limit != null)
+            params.set('limit', String(limit));
+        const q = params.toString();
+        const res = await base(`/api/scan/geo-eeat/${encodeURIComponent(jobId)}/competitive-history${q ? `?${q}` : ''}`);
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    server.registerTool('checkion/geo_eeat_competitive_run_get', {
+        title: 'Get competitive benchmark run',
+        description: 'Get a specific competitive benchmark run by jobId and runId.',
+        inputSchema: z.object({
+            jobId: z.string().describe('GEO/E-E-A-T job ID'),
+            runId: z.string().describe('Competitive run ID'),
+        }),
+    }, async (args) => {
+        const { jobId, runId } = args;
+        const res = await base(`/api/scan/geo-eeat/${encodeURIComponent(jobId)}/competitive-history/${encodeURIComponent(runId)}`);
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
     // --- search ---
     server.registerTool('checkion/search', {
         title: 'Search scans',
@@ -438,6 +571,20 @@ export function registerCheckionTools(server) {
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
     // --- share ---
+    server.registerTool('checkion/share_by_resource', {
+        title: 'Get share link by resource',
+        description: 'Get existing share link for a resource (single scan, domain scan, journey, or GEO/E-E-A-T run). Returns token, url, hasPassword, createdAt or null.',
+        inputSchema: z.object({
+            type: z.enum(['single', 'domain', 'journey', 'geo_eeat']).describe('Resource type'),
+            id: z.string().describe('Resource ID (scan id, domain scan id, journey id, or geo job id)'),
+        }),
+    }, async (args) => {
+        const { type, id } = args;
+        const res = await base(`/api/share/by-resource?type=${encodeURIComponent(type)}&id=${encodeURIComponent(id)}`);
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
     server.registerTool('checkion/share_create', {
         title: 'Create share link',
         description: 'Create a share link for a single scan, domain scan, journey, or GEO/E-E-A-T run.',
