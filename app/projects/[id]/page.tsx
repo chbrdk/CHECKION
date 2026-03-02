@@ -124,12 +124,13 @@ export default function ProjectDetailPage() {
                 )}
             </Box>
 
-            <MsqdxTabs
-                value={tab}
-                onChange={(v) => setTab(typeof v === 'number' ? v : 0)}
-                tabs={tabs}
-                sx={{ mb: 2 }}
-            />
+            <Box sx={{ mb: 2 }}>
+                <MsqdxTabs
+                    value={tab}
+                    onChange={(v) => setTab(typeof v === 'number' ? v : 0)}
+                    tabs={tabs}
+                />
+            </Box>
 
             <MsqdxMoleculeCard variant="flat" borderRadius="lg" footerDivider={false} sx={{ bgcolor: 'var(--color-card-bg)' }}>
                 {listsLoading ? (
