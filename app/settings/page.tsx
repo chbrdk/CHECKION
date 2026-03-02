@@ -505,9 +505,9 @@ export default function SettingsPage() {
                         <MsqdxTypography variant="body2" color="text.secondary">{t('settings.apiTokens.empty')}</MsqdxTypography>
                     ) : (
                         <Stack spacing={0.5}>
-                            {apiTokens.map((t) => (
+                            {apiTokens.map((token) => (
                                 <Box
-                                    key={t.id}
+                                    key={token.id}
                                     sx={{
                                         display: 'flex',
                                         alignItems: 'center',
@@ -517,12 +517,12 @@ export default function SettingsPage() {
                                     }}
                                 >
                                     <Box>
-                                        <MsqdxTypography variant="body2">{t.name || t.id.slice(0, 8)}</MsqdxTypography>
+                                        <MsqdxTypography variant="body2">{token.name || token.id.slice(0, 8)}</MsqdxTypography>
                                         <MsqdxTypography variant="caption" color="text.secondary">
-                                            {new Date(t.createdAt).toLocaleString()}
+                                            {new Date(token.createdAt).toLocaleString()}
                                         </MsqdxTypography>
                                     </Box>
-                                    <MsqdxButton variant="text" size="small" color="error" onClick={() => handleRevokeToken(t.id)}>
+                                    <MsqdxButton variant="text" size="small" color="error" onClick={() => handleRevokeToken(token.id)}>
                                         {t('settings.apiTokens.revoke')}
                                     </MsqdxButton>
                                 </Box>
