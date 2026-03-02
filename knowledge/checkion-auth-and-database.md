@@ -34,3 +34,20 @@ npx drizzle-kit push
 ## Session-Cookie
 - Name: `authjs.session-token` (NextAuth v5)
 - Middleware prüft nur Cookie-Anwesenheit (kein DB-Zugriff im Edge)
+
+## Zentrale Auth über PLEXON (empfohlen: getrennte DBs)
+
+- **PLEXON-DB nur für User:** PLEXON hat die einzige User-Datenbank (klein). CHECKION kann eine **eigene** DB nur für Scans, Projekte, Domain-Scans usw. haben – keine riesige gemeinsame DB.
+- **Login über API:** Setze `PLEXON_AUTH_URL` (z. B. `https://plexon.example.com`) und `PLEXON_SERVICE_SECRET` (gleich wie in PLEXON). Beim Login ruft CHECKION `POST /api/auth/validate-credentials` auf; PLEXON prüft E-Mail/Passwort und liefert `{ user: { id, email, name } }`. CHECKION legt die Session an und speichert in eigenen Tabellen nur die `user_id`.
+- **Registrierung:** Nur in PLEXON. Optional `NEXT_PUBLIC_PLEXON_REGISTER_URL` setzen, dann erscheint auf der Register-Seite „In PLEXON registrieren“.
+
+### Alternative: Gemeinsame DB
+
+- Statt Auth-API: `DATABASE_URL` in CHECKION auf dieselbe PostgreSQL wie PLEXON setzen. Dann nutzt CHECKION die gleiche `users`-Tabelle (Login wie bisher). Eine DB für alles; für getrennte DBs die Auth-API nutzen.
+
+## Migration bestehender User nach PLEXON
+
+Falls CHECKION bereits Nutzer in einer eigenen `users`-Tabelle hat:
+
+1. **User nach PLEXON kopieren:** Im PLEXON-Projekt `npm run migrate:checkion-users` ausführen. Dafür `MIGRATION_SOURCE_DATABASE_URL` auf die CHECKION-DB und `DATABASE_URL` auf die PLEXON-DB setzen. Die User-IDs bleiben unverändert, damit Projekte/Scans weiterhin dem richtigen User zugeordnet sind.
+2. **CHECKION auf PLEXON-Auth umstellen:** `PLEXON_AUTH_URL` und `PLEXON_SERVICE_SECRET` in CHECKION setzen. Ab dann erfolgt der Login über die PLEXON-API; die CHECKION-DB kann weiterhin nur App-Daten (Scans, Projekte) enthalten.

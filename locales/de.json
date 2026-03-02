@@ -133,7 +133,9 @@
       "ctaLoading": "Erstellen…",
       "error": "Registrierung fehlgeschlagen",
       "prompt": "Bereits ein Konto?",
-      "link": "Anmelden"
+      "link": "Anmelden",
+      "centralHint": "Ein Konto für alle Dienste?",
+      "centralLink": "In PLEXON registrieren"
     }
   },
   "settings": {

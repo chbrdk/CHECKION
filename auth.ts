@@ -1,6 +1,8 @@
 /* ------------------------------------------------------------------ */
 /*  CHECKION – NextAuth v5 (Auth.js) with Credentials                 */
 /* ------------------------------------------------------------------ */
+/* Mit PLEXON_AUTH_URL: Login nur über PLEXON (zentrale User-DB).
+   Ohne: Login gegen lokale CHECKION-DB (users-Tabelle). */
 
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
@@ -9,6 +11,7 @@ import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { PATH_LOGIN } from '@/lib/constants';
+import { isPlexonAuthConfigured, validateCredentialsWithPlexon } from '@/lib/plexon-auth';
 
 const AUTH_SECRET = process.env.AUTH_SECRET;
 if (process.env.NODE_ENV === 'production' && (!AUTH_SECRET || AUTH_SECRET.length < 32)) {
@@ -27,12 +30,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             },
             async authorize(credentials) {
                 if (!credentials?.email || !credentials?.password) return null;
+                const email = String(credentials.email).trim().toLowerCase();
+                const password = String(credentials.password);
+
+                if (isPlexonAuthConfigured()) {
+                    const user = await validateCredentialsWithPlexon(email, password);
+                    return user ? { id: user.id, email: user.email, name: user.name ?? undefined } : null;
+                }
+
                 try {
-                    const email = String(credentials.email).trim().toLowerCase();
                     const db = getDb();
                     const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
                     if (!user) return null;
-                    const ok = await bcrypt.compare(String(credentials.password), user.passwordHash);
+                    const ok = await bcrypt.compare(password, user.passwordHash);
                     if (!ok) return null;
                     return { id: user.id, email: user.email, name: user.name ?? undefined };
                 } catch (e) {
