@@ -145,9 +145,10 @@ pre {
   opacity: 0.8;
 }
 
+/* Labels: gesetzte Brand-Farbe (wie Navigation/Buttons), --color-input-label wird von Brand-Color-Utils gesetzt */
 [data-checkion-content] .MuiFormLabel-root,
 [data-checkion-content] .MuiInputLabel-root {
-  color: var(--color-text-muted-on-light) !important;
+  color: var(--color-input-label, var(--color-theme-accent)) !important;
 }
 [data-checkion-content] .MuiFormLabel-root.Mui-focused,
 [data-checkion-content] .MuiInputLabel-root.Mui-focused {
@@ -155,10 +156,10 @@ pre {
 }
 
 [data-checkion-content] .MuiTab-root {
-  color: var(--color-text-muted-on-light) !important;
+  color: var(--color-input-label, var(--color-theme-accent)) !important;
 }
 [data-checkion-content] .MuiTab-root.Mui-selected {
-  color: var(--color-text-on-light) !important;
+  color: var(--color-theme-accent) !important;
 }
 [data-checkion-content] .MuiTabs-indicator {
   background-color: var(--color-theme-accent) !important;
@@ -176,13 +177,13 @@ pre {
 }
 
 [data-checkion-content] .MuiCheckbox-root {
-  color: var(--color-text-muted-on-light) !important;
+  color: var(--color-input-label, var(--color-theme-accent)) !important;
 }
 [data-checkion-content] .MuiCheckbox-root.Mui-checked {
   color: var(--color-theme-accent) !important;
 }
 [data-checkion-content] .MuiFormControlLabel-label {
-  color: var(--color-text-on-light) !important;
+  color: var(--color-input-label, var(--color-theme-accent)) !important;
 }
 
 [data-checkion-content] .MuiAccordion-root {
@@ -221,6 +222,24 @@ pre {
 }
 [data-checkion-content] .MuiCircularProgress-root {
   color: var(--color-theme-accent) !important;
+}
+
+/* ========== Buttons: gesetzte Brand-Farbe (wie Navigation) ========== */
+[data-checkion-content] .MuiButton-root.MuiButton-contained:not(.MuiButton-colorError):not(.MuiButton-colorWarning) {
+  background-color: var(--color-theme-accent) !important;
+  color: var(--color-theme-accent-contrast, #000000) !important;
+}
+[data-checkion-content] .MuiButton-root.MuiButton-contained:not(.MuiButton-colorError):not(.MuiButton-colorWarning):hover {
+  background-color: var(--color-theme-accent-tint) !important;
+  filter: brightness(1.05);
+}
+[data-checkion-content] .MuiButton-root.MuiButton-outlined:not(.MuiButton-colorError):not(.MuiButton-colorWarning) {
+  border-color: var(--color-theme-accent) !important;
+  color: var(--color-theme-accent) !important;
+}
+[data-checkion-content] .MuiButton-root.MuiButton-outlined:not(.MuiButton-colorError):not(.MuiButton-colorWarning):hover {
+  border-color: var(--color-theme-accent) !important;
+  background-color: var(--color-theme-accent-tint) !important;
 }
 
 [data-checkion-content] .MuiMenuItem-root {
