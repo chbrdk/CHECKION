@@ -39,6 +39,7 @@ npx drizzle-kit push
 
 - **PLEXON-DB nur für User:** PLEXON hat die einzige User-Datenbank (klein). CHECKION kann eine **eigene** DB nur für Scans, Projekte, Domain-Scans usw. haben – keine riesige gemeinsame DB.
 - **Login über API:** Setze `PLEXON_AUTH_URL` (z. B. `https://plexon.example.com`) und `PLEXON_SERVICE_SECRET` (gleich wie in PLEXON). Beim Login ruft CHECKION `POST /api/auth/validate-credentials` auf; PLEXON prüft E-Mail/Passwort und liefert `{ user: { id, email, name } }`. CHECKION legt die Session an und speichert in eigenen Tabellen nur die `user_id`.
+- **Profil (Settings):** Wenn PLEXON konfiguriert ist, liefern **GET /api/auth/profile** und **PATCH /api/auth/profile** die Daten aus PLEXON (Name, Unternehmen, Avatar, Sprache). Änderungen werden in PLEXON gespeichert und sind damit zentral für alle Dienste.
 - **Registrierung:** Nur in PLEXON. Optional `NEXT_PUBLIC_PLEXON_REGISTER_URL` setzen, dann erscheint auf der Register-Seite „In PLEXON registrieren“.
 
 ### Alternative: Gemeinsame DB

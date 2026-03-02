@@ -130,6 +130,16 @@ In Coolify unter **CHECKION** → **Environment Variables** eintragen:
 
 ---
 
+## 4. AUDION in Coolify (PLEXON-Auth)
+
+AUDION nutzt ein separates Persona-Backend; die **Web-App** kann den Login wie CHECKION über PLEXON validieren.
+
+- **Umgebungsvariablen (AUDION Web-App):** `PLEXON_AUTH_URL` (PLEXON-URL ohne trailing slash), `PLEXON_SERVICE_SECRET` (gleich wie bei PLEXON). Optional: `NEXT_PUBLIC_PLEXON_REGISTER_URL` für den Link „In PLEXON registrieren“ auf der Register-Seite.
+- **Ablauf:** Login wird zuerst bei PLEXON validiert; bei Erfolg meldet die Web-App den User mit einem abgeleiteten Passwort beim Persona-Backend an (Login oder einmalig Register). Das Backend bleibt unverändert.
+- Doku: AUDION-Repo `knowledge/audion-plexon-auth.md`.
+
+---
+
 ## 5. Migration (CHECKION-User → PLEXON) – automatisch im Container-Start
 
 Die User-Migration läuft **automatisch** beim Start des PLEXON-Containers, wenn **`MIGRATION_SOURCE_DATABASE_URL`** in Coolify bei der PLEXON-Application gesetzt ist.
@@ -162,5 +172,7 @@ Die User-Migration läuft **automatisch** beim Start des PLEXON-Containers, wenn
 | **PLEXON → Port** | 3000 |
 | **CHECKION → Env** | `DATABASE_URL`, `AUTH_SECRET`, `NEXTAUTH_URL`, `PLEXON_AUTH_URL`, `PLEXON_SERVICE_SECRET`; optional `NEXT_PUBLIC_PLEXON_REGISTER_URL`, `CHECKION_ADMIN_API_KEY`, OpenAI, Saliency, S3, … |
 | **CHECKION → Port** | 3333 |
+| **AUDION (Web) → Env** | `PLEXON_AUTH_URL`, `PLEXON_SERVICE_SECRET` (wie CHECKION); optional `NEXT_PUBLIC_PLEXON_REGISTER_URL`. Persona-Backend-URLs wie bisher. |
+| **AUDION (Persona-Backend/API) → Env** | `PLEXON_SERVICE_SECRET` (gleich wie PLEXON/Web), damit `POST /auth/plexon-sync` bei 409 funktioniert. |
 | **Datenbanken** | Pro App eine PostgreSQL (oder eine gemeinsame); Connection-URL in der jeweiligen App als `DATABASE_URL` |
 | **Migration** | Optional: `MIGRATION_SOURCE_DATABASE_URL` bei PLEXON setzen → Migration läuft beim Container-Start automatisch |

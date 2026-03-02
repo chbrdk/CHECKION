@@ -1,6 +1,7 @@
 /* ------------------------------------------------------------------ */
 /*  CHECKION – GET/PATCH /api/auth/profile (authenticated user)       */
 /* ------------------------------------------------------------------ */
+/* Mit PLEXON_AUTH_URL: Profil aus PLEXON lesen/schreiben (Name, Firma, Avatar, Sprache). */
 
 import { NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth-api-token';
@@ -8,11 +9,19 @@ import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getDb } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { isPlexonAuthConfigured, getPlexonProfile, patchPlexonProfile } from '@/lib/plexon-auth';
 
 export async function GET(request: Request) {
     const requestUser = await getRequestUser(request);
     if (!requestUser) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
+    }
+    if (isPlexonAuthConfigured()) {
+        const profile = await getPlexonProfile(requestUser.id);
+        if (profile) {
+            return NextResponse.json({ user: profile });
+        }
+        return apiError('Profile service unavailable', 503);
     }
     const db = getDb();
     const [user] = await db
@@ -58,6 +67,14 @@ export async function PATCH(request: Request) {
     const company = typeof body.company === 'string' ? body.company.trim() || null : undefined;
     const avatar_url = typeof body.avatar_url === 'string' ? body.avatar_url.trim() || null : body.avatar_url === null ? null : undefined;
     const locale = typeof body.locale === 'string' ? body.locale.trim() || null : undefined;
+
+    if (isPlexonAuthConfigured()) {
+        const updated = await patchPlexonProfile(requestUser.id, { name, email, company, avatar_url, locale });
+        if (updated) {
+            return NextResponse.json({ user: updated });
+        }
+        return apiError('Profile service unavailable', 503);
+    }
 
     const db = getDb();
     if (email !== undefined) {
