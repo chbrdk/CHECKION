@@ -5,7 +5,7 @@
 /* ------------------------------------------------------------------ */
 
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { ENV_UX_JOURNEY_AGENT_URL } from '@/lib/constants';
 import { getJourneyRun, upsertJourneyRunResult } from '@/lib/db/journey-runs';
@@ -19,11 +19,11 @@ function buildResponse(jobId: string, data: { status: string; result?: Record<st
 }
 
 export async function GET(
-    _request: Request,
+    request: Request,
     { params }: { params: Promise<{ jobId: string }> }
 ) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await getRequestUser(request);
+    if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
 
@@ -32,7 +32,7 @@ export async function GET(
         return apiError('jobId required.', API_STATUS.BAD_REQUEST);
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
 
     const row = await getJourneyRun(jobId, userId);
     if (row && (row.status === 'complete' || row.status === 'error')) {

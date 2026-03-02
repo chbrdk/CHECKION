@@ -5,7 +5,7 @@
 /* ------------------------------------------------------------------ */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { parseApiBody, journeyAgentBodySchema } from '@/lib/api-schemas';
 import { checkRateLimit } from '@/lib/rate-limit';
@@ -13,11 +13,11 @@ import { ENV_UX_JOURNEY_AGENT_URL } from '@/lib/constants';
 import { insertJourneyRun } from '@/lib/db/journey-runs';
 
 export async function POST(request: NextRequest) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await getRequestUser(request);
+    if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
-    const rl = checkRateLimit(`scan:${session.user.id}`);
+    const rl = checkRateLimit(`scan:${user.id}`);
     if (!rl.allowed) {
         return apiError(
             'Too many requests. Please try again later.',
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
         }
         const jobId = data.jobId as string;
         try {
-            await insertJourneyRun(jobId, session.user.id, url, task, projectId !== undefined ? { projectId } : undefined);
+            await insertJourneyRun(jobId, user.id, url, task, projectId !== undefined ? { projectId } : undefined);
         } catch (err) {
             // non-fatal: history unavailable if table missing or DB error
             console.warn('[journey-agent] Could not save run to history:', err instanceof Error ? err.message : err);

@@ -4,15 +4,15 @@
 /* ------------------------------------------------------------------ */
 
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getShareByResource } from '@/lib/db/shares';
 import type { ShareResourceType } from '@/lib/db/shares';
 import { SHARE_PATH } from '@/lib/constants';
 
 export async function GET(request: Request) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await getRequestUser(request);
+    if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     const { searchParams } = new URL(request.url);
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
         return apiError('Query type (single|domain|journey|geo_eeat) and id required', API_STATUS.BAD_REQUEST);
     }
 
-    const share = await getShareByResource(session.user.id, type, id);
+    const share = await getShareByResource(user.id, type, id);
     if (!share) {
         return NextResponse.json({ token: null, url: null, hasPassword: false, createdAt: null });
     }

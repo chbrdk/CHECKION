@@ -168,6 +168,22 @@
       "cta": "Passwort ändern",
       "ctaSaving": "Wird geändert…"
     },
+    "apiTokens": {
+      "title": "API-Zugang",
+      "subtitle": "API-Tokens für programmatischen Zugriff (z. B. MCP-Server). Token nur einmal sichtbar – sicher aufbewahren.",
+      "create": "Token erstellen",
+      "creating": "Wird erstellt…",
+      "namePlaceholder": "z. B. MCP Server",
+      "nameLabel": "Name (optional)",
+      "listTitle": "Deine API-Tokens",
+      "empty": "Noch keine Tokens. Erstelle einen für API- oder MCP-Zugriff.",
+      "revoke": "Widerrufen",
+      "revokeConfirm": "Token wirklich widerrufen? Er kann danach nicht mehr genutzt werden.",
+      "newTokenTitle": "Neuer Token",
+      "newTokenCopy": "Kopieren",
+      "newTokenCopied": "Kopiert",
+      "newTokenWarning": "Dieser Token wird nur einmal angezeigt. Speichere ihn sicher."
+    },
     "session": {
       "title": "Sitzung",
       "subtitle": "Dich von diesem Gerät abmelden.",

@@ -4,7 +4,7 @@
 
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { auth } from '@/auth';
+import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, internalError, API_STATUS } from '@/lib/api-error-handler';
 import { getScan, updateScanSummary } from '@/lib/db/scans';
 import { invalidateScan } from '@/lib/cache';
@@ -21,16 +21,16 @@ function extractJsonFromResponse(content: string): string {
 }
 
 export async function POST(
-    _request: Request,
+    request: Request,
     { params }: { params: Promise<{ id: string }> },
 ) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await getRequestUser(request);
+    if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
 
     const { id } = await params;
-    const result = await getScan(id, session.user.id);
+    const result = await getScan(id, user.id);
     if (!result) {
         return apiError('Scan result not found.', API_STATUS.NOT_FOUND);
     }
@@ -91,7 +91,7 @@ export async function POST(
         generatedAt: new Date().toISOString(),
     };
 
-    const updated = await updateScanSummary(id, session.user.id, summary);
+    const updated = await updateScanSummary(id, user.id, summary);
     if (!updated) {
         return apiError('Failed to save summary.', API_STATUS.INTERNAL_ERROR);
     }

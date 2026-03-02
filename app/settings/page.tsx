@@ -23,7 +23,7 @@ import type { SelectChangeEvent } from '@mui/material';
 import { BrandColorSelector } from '@/components/settings/BrandColorSelector';
 import { FORM_FIELD_ACCENT_SX } from '@/lib/theme-accent';
 import { useI18n } from '@/components/i18n/I18nProvider';
-import { API_AUTH_PROFILE, API_AUTH_CHANGE_PASSWORD, PATH_LOGIN } from '@/lib/constants';
+import { API_AUTH_PROFILE, API_AUTH_CHANGE_PASSWORD, API_AUTH_TOKENS, apiAuthTokenRevoke, PATH_LOGIN } from '@/lib/constants';
 
 function useStandards(t: (k: string) => string): { value: WcagStandard; label: string; desc: string }[] {
     return useMemo(
@@ -92,6 +92,24 @@ export default function SettingsPage() {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
 
+    type ApiTokenRow = { id: string; name?: string; createdAt: string };
+    const [apiTokens, setApiTokens] = useState<ApiTokenRow[]>([]);
+    const [loadingTokens, setLoadingTokens] = useState(false);
+    const [creatingToken, setCreatingToken] = useState(false);
+    const [tokenName, setTokenName] = useState('');
+    const [newToken, setNewToken] = useState<string | null>(null);
+
+    const fetchApiTokens = () => {
+        setLoadingTokens(true);
+        fetch(API_AUTH_TOKENS)
+            .then((res) => res.json())
+            .then((data) => {
+                if (Array.isArray(data?.data)) setApiTokens(data.data);
+            })
+            .catch(() => setApiTokens([]))
+            .finally(() => setLoadingTokens(false));
+    };
+
     useEffect(() => {
         if (status !== 'authenticated' || !session?.user?.id) return;
         fetch(API_AUTH_PROFILE)
@@ -107,6 +125,7 @@ export default function SettingsPage() {
                 }
             })
             .catch(() => setProfile(null));
+        fetchApiTokens();
     }, [status, session?.user?.id]);
 
     const initials = useMemo(() => {
@@ -176,6 +195,48 @@ export default function SettingsPage() {
         } finally {
             setSavingPassword(false);
         }
+    };
+
+    const handleCreateToken = async () => {
+        setError(null);
+        setCreatingToken(true);
+        try {
+            const res = await fetch(API_AUTH_TOKENS, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: tokenName.trim() || undefined }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error ?? t('settings.messages.profileError'));
+            setNewToken(data.token);
+            setTokenName('');
+            fetchApiTokens();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : t('settings.messages.profileError'));
+        } finally {
+            setCreatingToken(false);
+        }
+    };
+
+    const handleRevokeToken = async (id: string) => {
+        if (!window.confirm(t('settings.apiTokens.revokeConfirm'))) return;
+        setError(null);
+        try {
+            const res = await fetch(apiAuthTokenRevoke(id), { method: 'DELETE' });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error ?? 'Failed');
+            }
+            setApiTokens((prev) => prev.filter((t) => t.id !== id));
+            if (newToken) setNewToken(null);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : t('settings.messages.profileError'));
+        }
+    };
+
+    const handleCopyToken = () => {
+        if (!newToken) return;
+        void navigator.clipboard.writeText(newToken).then(() => setSuccess(t('settings.apiTokens.newTokenCopied')));
     };
 
     const handleLogout = async () => {
@@ -372,6 +433,102 @@ export default function SettingsPage() {
                             {savingPassword ? t('settings.password.ctaSaving') : t('settings.password.cta')}
                         </MsqdxButton>
                     </Stack>
+                </MsqdxCard>
+
+                {/* API-Tokens (MCP / programmatischer Zugriff) */}
+                <MsqdxCard
+                    variant="flat"
+                    borderRadius="button"
+                    sx={{ p: 'var(--msqdx-spacing-md)', border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}
+                >
+                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-xs)' }}>
+                        <MsqdxTypography variant="h6" weight="semibold">
+                            {t('settings.apiTokens.title')}
+                        </MsqdxTypography>
+                        <InfoTooltip title={t('settings.apiTokens.subtitle')} ariaLabel={t('common.info')} />
+                    </Box>
+                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-secondary)', mb: 'var(--msqdx-spacing-md)' }}>
+                        {t('settings.apiTokens.subtitle')}
+                    </MsqdxTypography>
+                    {newToken ? (
+                        <Stack spacing={1} sx={{ mb: 'var(--msqdx-spacing-md)' }}>
+                            <MsqdxTypography variant="subtitle2" weight="semibold">
+                                {t('settings.apiTokens.newTokenTitle')}
+                            </MsqdxTypography>
+                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                                <Box
+                                    component="code"
+                                    sx={{
+                                        flex: 1,
+                                        minWidth: 200,
+                                        p: 1,
+                                        borderRadius: 1,
+                                        bgcolor: 'var(--color-bg-subtle)',
+                                        fontSize: '0.85rem',
+                                        wordBreak: 'break-all',
+                                    }}
+                                >
+                                    {newToken}
+                                </Box>
+                                <MsqdxButton variant="outlined" size="small" onClick={handleCopyToken}>
+                                    {t('settings.apiTokens.newTokenCopy')}
+                                </MsqdxButton>
+                            </Box>
+                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                {t('settings.apiTokens.newTokenWarning')}
+                            </MsqdxTypography>
+                            <MsqdxButton variant="text" size="small" onClick={() => setNewToken(null)}>
+                                {t('common.close')}
+                            </MsqdxButton>
+                        </Stack>
+                    ) : (
+                        <Stack direction="row" spacing={1} sx={{ mb: 'var(--msqdx-spacing-md)' }} alignItems="center" flexWrap="wrap">
+                            <MsqdxFormField
+                                label={t('settings.apiTokens.nameLabel')}
+                                value={tokenName}
+                                onChange={(e) => setTokenName((e.target as HTMLInputElement).value)}
+                                placeholder={t('settings.apiTokens.namePlaceholder')}
+                                size="small"
+                                sx={{ minWidth: 200, ...FORM_FIELD_ACCENT_SX }}
+                            />
+                            <MsqdxButton variant="contained" onClick={handleCreateToken} disabled={creatingToken} sx={{ mt: 1 }}>
+                                {creatingToken ? t('settings.apiTokens.creating') : t('settings.apiTokens.create')}
+                            </MsqdxButton>
+                        </Stack>
+                    )}
+                    <MsqdxTypography variant="subtitle2" weight="semibold" sx={{ mb: 1 }}>
+                        {t('settings.apiTokens.listTitle')}
+                    </MsqdxTypography>
+                    {loadingTokens ? (
+                        <MsqdxTypography variant="body2" color="text.secondary">{t('common.loading')}</MsqdxTypography>
+                    ) : apiTokens.length === 0 ? (
+                        <MsqdxTypography variant="body2" color="text.secondary">{t('settings.apiTokens.empty')}</MsqdxTypography>
+                    ) : (
+                        <Stack spacing={0.5}>
+                            {apiTokens.map((t) => (
+                                <Box
+                                    key={t.id}
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        py: 0.5,
+                                        borderBottom: '1px solid var(--color-border-subtle)',
+                                    }}
+                                >
+                                    <Box>
+                                        <MsqdxTypography variant="body2">{t.name || t.id.slice(0, 8)}</MsqdxTypography>
+                                        <MsqdxTypography variant="caption" color="text.secondary">
+                                            {new Date(t.createdAt).toLocaleString()}
+                                        </MsqdxTypography>
+                                    </Box>
+                                    <MsqdxButton variant="text" size="small" color="error" onClick={() => handleRevokeToken(t.id)}>
+                                        {t('settings.apiTokens.revoke')}
+                                    </MsqdxButton>
+                                </Box>
+                            ))}
+                        </Stack>
+                    )}
                 </MsqdxCard>
 
                 {/* Session – Abmelden (1:1 AUDION) */}

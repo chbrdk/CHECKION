@@ -3,21 +3,21 @@
 /* ------------------------------------------------------------------ */
 
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getSavedJourney, deleteSavedJourney } from '@/lib/db/journeys';
 import { invalidateJourneys } from '@/lib/cache';
 
 export async function GET(
-    _request: Request,
+    request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await getRequestUser(request);
+    if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     const { id } = await params;
-    const row = await getSavedJourney(id, session.user.id);
+    const row = await getSavedJourney(id, user.id);
     if (!row) {
         return apiError('Saved journey not found.', API_STATUS.NOT_FOUND);
     }
@@ -25,18 +25,18 @@ export async function GET(
 }
 
 export async function DELETE(
-    _request: Request,
+    request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await getRequestUser(request);
+    if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     const { id } = await params;
-    const ok = await deleteSavedJourney(id, session.user.id);
+    const ok = await deleteSavedJourney(id, user.id);
     if (!ok) {
         return apiError('Saved journey not found.', API_STATUS.NOT_FOUND);
     }
-    invalidateJourneys(session.user.id);
+    invalidateJourneys(user.id);
     return NextResponse.json({ success: true });
 }

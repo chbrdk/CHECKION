@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { listCachedDomainScanSummaries, getCachedDomainScansCount } from '@/lib/cache';
 import { DASHBOARD_SCANS_PAGE_SIZE } from '@/lib/constants';
 
 export async function GET(req: NextRequest) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await getRequestUser(req);
+    if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     const { searchParams } = new URL(req.url);
@@ -16,8 +16,8 @@ export async function GET(req: NextRequest) {
     const projectIdParam = searchParams.get('projectId');
     const projectId = projectIdParam === '' || projectIdParam === null ? null : projectIdParam ?? undefined;
     const [data, total] = await Promise.all([
-        listCachedDomainScanSummaries(session.user.id, { limit, offset, projectId }),
-        getCachedDomainScansCount(session.user.id, projectId),
+        listCachedDomainScanSummaries(user.id, { limit, offset, projectId }),
+        getCachedDomainScansCount(user.id, projectId),
     ]);
     const totalPages = Math.ceil(total / limit) || 1;
     return NextResponse.json({

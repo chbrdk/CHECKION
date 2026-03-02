@@ -4,13 +4,13 @@
 /* ------------------------------------------------------------------ */
 
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { listJourneyRuns } from '@/lib/db/journey-runs';
 
 export async function GET(request: Request) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await getRequestUser(request);
+    if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
 
@@ -19,6 +19,6 @@ export async function GET(request: Request) {
     const projectIdParam = searchParams.get('projectId');
     const projectId = projectIdParam === '' || projectIdParam === null ? null : projectIdParam ?? undefined;
 
-    const runs = await listJourneyRuns(session.user.id, limit, projectId !== undefined ? { projectId } : undefined);
+    const runs = await listJourneyRuns(user.id, limit, projectId !== undefined ? { projectId } : undefined);
     return NextResponse.json({ data: runs, runs });
 }

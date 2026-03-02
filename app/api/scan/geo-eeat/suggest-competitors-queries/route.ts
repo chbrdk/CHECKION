@@ -4,7 +4,7 @@
 /* ------------------------------------------------------------------ */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import OpenAI from 'openai';
 import { getOpenAIKey } from '@/lib/llm/config';
@@ -24,8 +24,8 @@ Required structure:
 }`;
 
 export async function POST(request: NextRequest) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await getRequestUser(request);
+    if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
 

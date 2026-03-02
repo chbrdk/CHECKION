@@ -15,6 +15,15 @@ export const users = pgTable('users', {
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+/** API tokens for programmatic access (e.g. MCP server). Bearer token → user. */
+export const apiTokens = pgTable('api_tokens', {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    tokenHash: text('token_hash').notNull(),
+    name: text('name'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 /** User projects: group domain/scans/journeys/geo-runs for a customer or domain. */
 export const projects = pgTable('projects', {
     id: text('id').primaryKey(),

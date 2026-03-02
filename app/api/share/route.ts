@@ -3,7 +3,7 @@
 /* ------------------------------------------------------------------ */
 
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getScan } from '@/lib/db/scans';
 import { getDomainScan } from '@/lib/db/scans';
@@ -19,8 +19,8 @@ function generateToken(): string {
 }
 
 export async function POST(request: Request) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await getRequestUser(request);
+    if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     let body: { type?: string; id?: string; password?: string };
@@ -37,19 +37,19 @@ export async function POST(request: Request) {
     }
 
     if (type === 'single') {
-        const scan = await getScan(id, session.user.id);
+        const scan = await getScan(id, user.id);
         if (!scan) return apiError('Scan not found', API_STATUS.NOT_FOUND);
     } else if (type === 'domain') {
-        const domain = await getDomainScan(id, session.user.id);
+        const domain = await getDomainScan(id, user.id);
         if (!domain) return apiError('Domain scan not found', API_STATUS.NOT_FOUND);
     } else if (type === 'geo_eeat') {
-        const run = await getGeoEeatRun(id, session.user.id);
+        const run = await getGeoEeatRun(id, user.id);
         if (!run) return apiError('GEO/E-E-A-T run not found', API_STATUS.NOT_FOUND);
         if (run.status !== 'complete') {
             return apiError('Run must be complete to share', API_STATUS.BAD_REQUEST);
         }
     } else {
-        const run = await getJourneyRun(id, session.user.id);
+        const run = await getJourneyRun(id, user.id);
         if (!run) return apiError('Journey not found', API_STATUS.NOT_FOUND);
         if (run.status !== 'complete') {
             return apiError('Journey must be complete to share', API_STATUS.BAD_REQUEST);
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     const baseUrl = origin ? `${protocol}://${origin}` : '';
     const buildUrl = (t: string) => (baseUrl ? `${baseUrl}${SHARE_PATH}/${encodeURIComponent(t)}` : `${SHARE_PATH}/${t}`);
 
-    const existing = await getShareByResource(session.user.id, type, id);
+    const existing = await getShareByResource(user.id, type, id);
     if (existing) {
         return NextResponse.json({
             token: existing.token,
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
     }
 
     const token = generateToken();
-    await createShare(token, session.user.id, type, id, { password });
+    await createShare(token, user.id, type, id, { password });
     return NextResponse.json({
         token,
         url: buildUrl(token),

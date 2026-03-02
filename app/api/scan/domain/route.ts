@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { parseApiBody, scanDomainBodySchema } from '@/lib/api-schemas';
 import { checkRateLimit } from '@/lib/rate-limit';
@@ -13,11 +13,11 @@ import type { DomainScanResult } from '@/lib/types';
 export const maxDuration = 10;
 
 export async function POST(req: NextRequest) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await getRequestUser(req);
+    if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
-    const rl = checkRateLimit(`scan:${session.user.id}`);
+    const rl = checkRateLimit(`scan:${user.id}`);
     if (!rl.allowed) {
         return apiError(
             'Too many requests. Please try again later.',
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
             rl.retryAfter ? { retryAfter: rl.retryAfter } : undefined
         );
     }
-    const userId = session.user.id;
+    const userId = user.id;
     const parsed = await parseApiBody(req, scanDomainBodySchema);
     if (parsed instanceof NextResponse) return parsed;
     const url = parsed.url;

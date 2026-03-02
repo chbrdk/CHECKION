@@ -4,16 +4,16 @@
 /* ------------------------------------------------------------------ */
 
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { ENV_UX_JOURNEY_AGENT_URL } from '@/lib/constants';
 
 export async function GET(
-    _request: Request,
+    request: Request,
     { params }: { params: Promise<{ jobId: string }> }
 ) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await getRequestUser(request);
+    if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
 

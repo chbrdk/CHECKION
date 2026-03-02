@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import { auth } from '@/auth';
+import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getGeoEeatRun, updateGeoEeatRun } from '@/lib/db/geo-eeat-runs';
 import { insertCompetitiveRun, updateCompetitiveRun } from '@/lib/db/geo-eeat-competitive-runs';
@@ -28,11 +28,11 @@ function getQueriesAndCompetitors(payload: GeoEeatIntensiveResult | null): { que
 }
 
 export async function POST(
-    _request: NextRequest,
+    request: NextRequest,
     { params }: { params: Promise<{ jobId: string }> }
 ) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await getRequestUser(request);
+    if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
 
@@ -41,7 +41,7 @@ export async function POST(
         return apiError('jobId required.', API_STATUS.BAD_REQUEST);
     }
 
-    const run = await getGeoEeatRun(jobId, session.user.id);
+    const run = await getGeoEeatRun(jobId, user.id);
     if (!run) {
         return apiError('Run not found.', API_STATUS.NOT_FOUND);
     }
@@ -56,7 +56,7 @@ export async function POST(
 
     const currentPayload: GeoEeatIntensiveResult = run.payload ?? { pages: [], recommendations: [] };
     const competitiveRunId = uuidv4();
-    const userId = session.user.id;
+    const userId = user.id;
 
     await insertCompetitiveRun(competitiveRunId, jobId, userId, prev.queries, prev.competitors);
     await updateGeoEeatRun(jobId, userId, { status: 'running' });

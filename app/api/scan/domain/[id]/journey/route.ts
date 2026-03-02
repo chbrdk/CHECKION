@@ -4,7 +4,7 @@
 
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { auth } from '@/auth';
+import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, internalError, API_STATUS } from '@/lib/api-error-handler';
 import { parseApiBody, domainJourneyBodySchema } from '@/lib/api-schemas';
 import { getDomainScan, listScansByGroupId } from '@/lib/db/scans';
@@ -18,13 +18,13 @@ export async function POST(
     request: Request,
     { params }: { params: Promise<{ id: string }> },
 ) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await getRequestUser(request);
+    if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
 
     const { id } = await params;
-    const domainPayload = await getDomainScan(id, session.user.id);
+    const domainPayload = await getDomainScan(id, user.id);
     if (!domainPayload) {
         return apiError('Domain scan not found.', API_STATUS.NOT_FOUND);
     }
@@ -36,7 +36,7 @@ export async function POST(
     /** Journey needs full ScanResult[] (pageIndex, allLinks, etc.). Load from scans table when stored payload has slim pages. */
     let domainResult: DomainScanResult & { pages: ScanResult[] };
     if (hasStoredAggregated(domainPayload)) {
-        const fullPages = await listScansByGroupId(session.user.id, id);
+        const fullPages = await listScansByGroupId(user.id, id);
         domainResult = { ...domainPayload, pages: fullPages };
     } else {
         domainResult = domainPayload as DomainScanResult & { pages: ScanResult[] };

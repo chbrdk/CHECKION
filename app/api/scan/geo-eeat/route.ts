@@ -4,7 +4,7 @@
 /* ------------------------------------------------------------------ */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { parseApiBody, geoEeatBodySchema } from '@/lib/api-schemas';
 import { checkRateLimit } from '@/lib/rate-limit';
@@ -19,11 +19,11 @@ import { v4 as uuidv4 } from 'uuid';
 export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await getRequestUser(request);
+    if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
-    const rl = checkRateLimit(`scan:${session.user.id}`);
+    const rl = checkRateLimit(`scan:${user.id}`);
     if (!rl.allowed) {
         return apiError(
             'Too many requests. Please try again later.',
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
 
     (async () => {
         try {
-            await updateGeoEeatRun(jobId, session.user.id, { status: 'running' });
+            await updateGeoEeatRun(jobId, user.id, { status: 'running' });
             const scan = await runScan({
                 url,
                 standard: 'WCAG2AA',
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
                 const qs = queries ?? [];
                 const comps = competitors ?? [];
                 const competitiveRunId = uuidv4();
-                const userId = session.user.id;
+                const userId = user.id;
                 await insertCompetitiveRun(competitiveRunId, jobId, userId, qs, comps);
                 const competitiveByModel = await runCompetitiveBenchmarkMultiModel(
                     url,
@@ -86,14 +86,14 @@ export async function POST(request: NextRequest) {
                     competitiveByModel: Object.keys(competitiveByModel).length > 0 ? competitiveByModel : null,
                 });
             }
-            await updateGeoEeatRun(jobId, session.user.id, {
+            await updateGeoEeatRun(jobId, user.id, {
                 status: 'complete',
                 payload,
             });
         } catch (e) {
             const message = e instanceof Error ? e.message : String(e);
             console.error('[CHECKION] GEO/E-E-A-T run failed:', e);
-            await updateGeoEeatRun(jobId, session.user.id, {
+            await updateGeoEeatRun(jobId, user.id, {
                 status: 'error',
                 error: message,
             });

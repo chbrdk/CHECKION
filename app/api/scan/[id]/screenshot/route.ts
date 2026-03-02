@@ -3,7 +3,7 @@
 /* ------------------------------------------------------------------ */
 
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getScan } from '@/lib/db/scans';
 import { isFileScreenshot, readScreenshot } from '@/lib/screenshot-storage';
@@ -20,15 +20,15 @@ const PLACEHOLDER_SVG = Buffer.from(
 );
 
 export async function GET(
-    _request: Request,
+    request: Request,
     { params }: { params: Promise<{ id: string }> },
 ) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await getRequestUser(request);
+    if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     const { id } = await params;
-    const result = await getScan(id, session.user.id);
+    const result = await getScan(id, user.id);
 
     if (!result || !result.screenshot) {
         return new NextResponse(null, { status: 404 });

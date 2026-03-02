@@ -3,7 +3,7 @@
 /* ------------------------------------------------------------------ */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, handleApiError, API_STATUS } from '@/lib/api-error-handler';
 import { parseApiBody, scanBodySchema } from '@/lib/api-schemas';
 import { checkRateLimit } from '@/lib/rate-limit';
@@ -15,11 +15,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { DASHBOARD_SCANS_PAGE_SIZE } from '@/lib/constants';
 
 export async function POST(request: Request) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await getRequestUser(request);
+    if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
-    const rl = checkRateLimit(`scan:${session.user.id}`);
+    const rl = checkRateLimit(`scan:${user.id}`);
     if (!rl.allowed) {
         return apiError(
             'Too many requests. Please try again later.',
@@ -51,12 +51,12 @@ export async function POST(request: Request) {
 
         for (const result of results) {
             await addScan(
-                session.user.id,
+                user.id,
                 result,
                 body.projectId !== undefined ? { projectId: body.projectId } : undefined
             );
         }
-        invalidateScansList(session.user.id);
+        invalidateScansList(user.id);
 
         // Saliency heatmap: user starts it on the result page (POST /api/saliency/generate → jobId → poll /api/saliency/result) to avoid timeouts.
 
@@ -77,8 +77,8 @@ export async function POST(request: Request) {
 }
 
 export async function GET(req: NextRequest) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await getRequestUser(req);
+    if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     const { searchParams } = new URL(req.url);
@@ -88,8 +88,8 @@ export async function GET(req: NextRequest) {
     const projectIdParam = searchParams.get('projectId');
     const projectId = projectIdParam === '' || projectIdParam === null ? null : projectIdParam ?? undefined;
     const [list, total] = await Promise.all([
-        listCachedStandaloneScans(session.user.id, { limit, offset, projectId }),
-        getCachedStandaloneScansCount(session.user.id, projectId),
+        listCachedStandaloneScans(user.id, { limit, offset, projectId }),
+        getCachedStandaloneScansCount(user.id, projectId),
     ]);
     const totalPages = Math.ceil(total / limit) || 1;
     return NextResponse.json({

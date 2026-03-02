@@ -5,20 +5,20 @@
 /* ------------------------------------------------------------------ */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getDomainScan } from '@/lib/db/scans';
 
 export async function GET(
-    _req: NextRequest,
+    request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await getRequestUser(request);
+    if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     const { id } = await params;
-    const scan = await getDomainScan(id, session.user.id);
+    const scan = await getDomainScan(id, user.id);
 
     if (!scan) {
         return apiError('Scan not found', API_STATUS.NOT_FOUND);

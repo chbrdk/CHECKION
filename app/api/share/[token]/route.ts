@@ -4,7 +4,7 @@
 /* ------------------------------------------------------------------ */
 
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getCachedShareByToken, getCachedScan, getCachedDomainScan } from '@/lib/cache';
 import { getJourneyRun } from '@/lib/db/journey-runs';
@@ -74,17 +74,17 @@ export async function GET(
 
 /** DELETE /api/share/[token] – revoke share (auth required, must own share). */
 export async function DELETE(
-    _request: Request,
+    request: Request,
     { params }: { params: Promise<{ token: string }> }
 ) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await getRequestUser(request);
+    if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     const { token } = await params;
     const { deleteShare } = await import('@/lib/db/shares');
     const { invalidateShare } = await import('@/lib/cache');
-    const deleted = await deleteShare(token, session.user.id);
+    const deleted = await deleteShare(token, user.id);
     if (!deleted) {
         return apiError('Share not found or access denied', API_STATUS.NOT_FOUND);
     }
@@ -97,15 +97,15 @@ export async function PATCH(
     request: Request,
     { params }: { params: Promise<{ token: string }> }
 ) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await getRequestUser(request);
+    if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     const { token } = await params;
     const { getShareByToken, updateSharePassword } = await import('@/lib/db/shares');
     const { invalidateShare } = await import('@/lib/cache');
     const share = await getShareByToken(token);
-    if (!share || share.userId !== session.user.id) {
+    if (!share || share.userId !== user.id) {
         return apiError('Share not found or access denied', API_STATUS.NOT_FOUND);
     }
     let body: { password?: string | null };
@@ -118,7 +118,7 @@ export async function PATCH(
     if (password === undefined) {
         return apiError('Body must include password (string or null)', API_STATUS.BAD_REQUEST);
     }
-    await updateSharePassword(token, session.user.id, password);
+    await updateSharePassword(token, user.id, password);
     invalidateShare(token);
     return NextResponse.json({ ok: true, hasPassword: password !== null });
 }

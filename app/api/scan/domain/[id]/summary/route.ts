@@ -4,21 +4,21 @@
 /* ------------------------------------------------------------------ */
 
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getDomainScanWithProjectId } from '@/lib/db/scans';
 import { buildDomainSummary } from '@/lib/domain-summary';
 
 export async function GET(
-    _request: Request,
+    request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await getRequestUser(request);
+    if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     const { id } = await params;
-    const row = await getDomainScanWithProjectId(id, session.user.id);
+    const row = await getDomainScanWithProjectId(id, user.id);
     if (!row) {
         return apiError('Scan not found', API_STATUS.NOT_FOUND);
     }

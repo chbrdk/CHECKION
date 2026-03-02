@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
-import { auth } from '@/auth';
+import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { listCachedStandaloneScans, listCachedDomainScans } from '@/lib/cache';
 import { listScansByGroupId } from '@/lib/db/scans';
@@ -119,8 +119,8 @@ async function runSearch(
 }
 
 export async function GET(req: NextRequest) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await getRequestUser(req);
+    if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
 
@@ -135,9 +135,9 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(100, Math.max(1, Number(searchParams.get('limit')) || 50));
 
     const getCachedSearch = unstable_cache(
-        () => runSearch(session.user.id, q, typeFilter, limit),
-        ['search', session.user.id, q, typeFilter, String(limit)],
-        { revalidate: CACHE_REVALIDATE_LIST, tags: [`scans-list-${session.user.id}`, `domain-list-${session.user.id}`] }
+        () => runSearch(user.id, q, typeFilter, limit),
+        ['search', user.id, q, typeFilter, String(limit)],
+        { revalidate: CACHE_REVALIDATE_LIST, tags: [`scans-list-${user.id}`, `domain-list-${user.id}`] }
     );
 
     const capped = await getCachedSearch();

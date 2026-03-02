@@ -4,7 +4,7 @@
 
 import { NextResponse } from 'next/server';
 import sharp from 'sharp';
-import { auth } from '@/auth';
+import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { parseApiBody, saliencyGenerateBodySchema } from '@/lib/api-schemas';
 import { getScan, updateScanResult } from '@/lib/db/scans';
@@ -42,8 +42,8 @@ const STRUCTURE_WEIGHT = parseFloat(process.env.SALIENCY_FUSION_STRUCTURE_WEIGHT
 const CONTRAST_WEIGHT = parseFloat(process.env.SALIENCY_FUSION_CONTRAST_WEIGHT ?? '0.25');
 
 export async function POST(request: Request) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await getRequestUser(request);
+    if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
 
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
     if (parsed instanceof NextResponse) return parsed;
     const scanId = parsed.scanId;
 
-    const result = await getScan(scanId, session.user.id);
+    const result = await getScan(scanId, user.id);
     if (!result) {
         return apiError('Scan not found.', API_STATUS.NOT_FOUND);
     }
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
                 }
             }
 
-            const updated = await updateScanResult(scanId, session.user.id, {
+            const updated = await updateScanResult(scanId, user.id, {
                 saliencyHeatmap: dataUrl,
                 ...pageIndexPatch,
                 ...scanpathPatch,
@@ -171,7 +171,7 @@ export async function POST(request: Request) {
             } catch {
                 /* ignore */
             }
-            const updated = await updateScanResult(scanId, session.user.id, {
+            const updated = await updateScanResult(scanId, user.id, {
                 saliencyHeatmap: dataUrl,
                 ...pageIndexPatch,
                 ...scanpathPatch,

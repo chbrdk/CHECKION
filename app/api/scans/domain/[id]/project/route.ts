@@ -3,7 +3,7 @@
 /* ------------------------------------------------------------------ */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { parseApiBody, projectAssignmentBodySchema } from '@/lib/api-schemas';
 import { updateDomainScanProject } from '@/lib/db/scans';
@@ -13,8 +13,8 @@ export async function PATCH(
     request: NextRequest,
     context: { params: Promise<{ id: string }> }
 ) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await getRequestUser(request);
+    if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     const resolved = await context.params;
@@ -25,12 +25,12 @@ export async function PATCH(
     const parsed = await parseApiBody(request, projectAssignmentBodySchema);
     if (parsed instanceof NextResponse) return parsed;
     if (parsed.projectId !== null) {
-        const project = await getProject(parsed.projectId, session.user.id);
+        const project = await getProject(parsed.projectId, user.id);
         if (!project) {
             return apiError('Project not found', API_STATUS.NOT_FOUND);
         }
     }
-    const updated = await updateDomainScanProject(id, session.user.id, parsed.projectId);
+    const updated = await updateDomainScanProject(id, user.id, parsed.projectId);
     if (!updated) {
         return apiError('Domain scan not found', API_STATUS.NOT_FOUND);
     }

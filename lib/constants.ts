@@ -50,6 +50,9 @@ export const API_HEALTH = '/api/health';
 export const API_AUTH_REGISTER = '/api/auth/register';
 export const API_AUTH_PROFILE = '/api/auth/profile';
 export const API_AUTH_CHANGE_PASSWORD = '/api/auth/change-password';
+export const API_AUTH_TOKENS = '/api/auth/tokens';
+/** DELETE /api/auth/tokens/[id] */
+export const apiAuthTokenRevoke = (id: string) => `${API_AUTH_TOKENS}/${encodeURIComponent(id)}`;
 export const API_SCAN = '/api/scan';
 export const API_SCANS = '/api/scans';
 export const API_SCANS_DOMAIN = '/api/scans/domain';

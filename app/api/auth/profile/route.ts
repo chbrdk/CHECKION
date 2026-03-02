@@ -3,15 +3,15 @@
 /* ------------------------------------------------------------------ */
 
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getDb } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
-export async function GET() {
-    const session = await auth();
-    if (!session?.user?.id) {
+export async function GET(request: Request) {
+    const requestUser = await getRequestUser(request);
+    if (!requestUser) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     const db = getDb();
@@ -25,7 +25,7 @@ export async function GET() {
             locale: users.locale,
         })
         .from(users)
-        .where(eq(users.id, session.user.id))
+        .where(eq(users.id, requestUser.id))
         .limit(1);
     if (!user) {
         return apiError('User not found', API_STATUS.NOT_FOUND);
@@ -43,8 +43,8 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const requestUser = await getRequestUser(request);
+    if (!requestUser) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     let body: Record<string, unknown>;
@@ -65,7 +65,7 @@ export async function PATCH(request: Request) {
             return apiError('Invalid email', API_STATUS.BAD_REQUEST);
         }
         const existing = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
-        if (existing.length > 0 && existing[0].id !== session.user.id) {
+        if (existing.length > 0 && existing[0].id !== requestUser.id) {
             return apiError('Email already in use', API_STATUS.CONFLICT);
         }
     }
@@ -78,7 +78,7 @@ export async function PATCH(request: Request) {
     if (locale !== undefined) updates.locale = locale;
 
     if (Object.keys(updates).length === 0) {
-        const [u] = await db.select().from(users).where(eq(users.id, session.user.id)).limit(1);
+        const [u] = await db.select().from(users).where(eq(users.id, requestUser.id)).limit(1);
         if (!u) return apiError('User not found', API_STATUS.NOT_FOUND);
         return NextResponse.json({
             user: {
@@ -95,7 +95,7 @@ export async function PATCH(request: Request) {
     const [updated] = await db
         .update(users)
         .set(updates)
-        .where(eq(users.id, session.user.id))
+        .where(eq(users.id, requestUser.id))
         .returning({
             id: users.id,
             email: users.email,

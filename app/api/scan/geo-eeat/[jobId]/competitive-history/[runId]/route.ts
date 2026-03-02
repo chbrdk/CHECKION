@@ -4,17 +4,17 @@
 /* ------------------------------------------------------------------ */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getGeoEeatRun } from '@/lib/db/geo-eeat-runs';
 import { getCompetitiveRun } from '@/lib/db/geo-eeat-competitive-runs';
 
 export async function GET(
-    _request: NextRequest,
+    request: NextRequest,
     { params }: { params: Promise<{ jobId: string; runId: string }> }
 ) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const user = await getRequestUser(request);
+    if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
 
@@ -23,12 +23,12 @@ export async function GET(
         return apiError('jobId and runId required.', API_STATUS.BAD_REQUEST);
     }
 
-    const run = await getGeoEeatRun(jobId, session.user.id);
+    const run = await getGeoEeatRun(jobId, user.id);
     if (!run) {
         return apiError('Run not found.', API_STATUS.NOT_FOUND);
     }
 
-    const competitiveRun = await getCompetitiveRun(runId, session.user.id);
+    const competitiveRun = await getCompetitiveRun(runId, user.id);
     if (!competitiveRun || competitiveRun.geoEeatRunId !== jobId) {
         return apiError('Competitive run not found.', API_STATUS.NOT_FOUND);
     }

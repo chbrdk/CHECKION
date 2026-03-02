@@ -3,7 +3,7 @@
 /* ------------------------------------------------------------------ */
 
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { parseApiBody, changePasswordBodySchema } from '@/lib/api-schemas';
 import { getDb } from '@/lib/db';
@@ -14,8 +14,8 @@ import bcrypt from 'bcryptjs';
 const SALT_ROUNDS = 10;
 
 export async function POST(request: Request) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const requestUser = await getRequestUser(request);
+    if (!requestUser) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     const parsed = await parseApiBody(request, changePasswordBodySchema);
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     const newPassword = parsed.new_password;
 
     const db = getDb();
-    const [user] = await db.select({ passwordHash: users.passwordHash }).from(users).where(eq(users.id, session.user.id)).limit(1);
+    const [user] = await db.select({ passwordHash: users.passwordHash }).from(users).where(eq(users.id, requestUser.id)).limit(1);
     if (!user) {
         return apiError('User not found', API_STATUS.NOT_FOUND);
     }
@@ -33,6 +33,6 @@ export async function POST(request: Request) {
         return apiError('Current password is incorrect', API_STATUS.BAD_REQUEST);
     }
     const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
-    await db.update(users).set({ passwordHash }).where(eq(users.id, session.user.id));
+    await db.update(users).set({ passwordHash }).where(eq(users.id, requestUser.id));
     return NextResponse.json({ success: true });
 }
