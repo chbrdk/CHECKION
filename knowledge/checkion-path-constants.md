@@ -43,6 +43,12 @@ pathShare(token)          // /share/[token]
 
 ## API-Routen
 
+### Base-URL (Subpath-Deployment)
+
+Wenn die App unter einem Subpath läuft (z. B. `https://example.com/checkion`), setze **`NEXT_PUBLIC_APP_BASE_URL=/checkion`**. Dann bauen alle API-Pfade in `lib/constants.ts` die volle URL mit diesem Prefix (z. B. `/checkion/api/scan/domain/…/summary`). Ohne die Variable ist der Wert leer, die Pfade bleiben relativ (`/api/...`).
+
+**404 auf GET /api/scan/domain/[id]/summary:** Die Route antwortet mit 404 und `{ "error": "Scan not found", "code": "DOMAIN_SCAN_NOT_FOUND" }`, wenn für die aktuelle User-ID kein Domain-Scan mit dieser ID existiert (gelöscht, falsche ID oder anderer User). Bei Deployment unter Subpath: `NEXT_PUBLIC_APP_BASE_URL` setzen, damit der Request den richtigen Pfad trifft.
+
 ### Basis-URLs
 
 | Konstante        | Wert                 |

@@ -10,6 +10,7 @@ import { parseApiBody, domainJourneyBodySchema } from '@/lib/api-schemas';
 import { getDomainScan, listScansByGroupId } from '@/lib/db/scans';
 import { getOpenAIKey } from '@/lib/llm/config';
 import { runJourneyAgent, runJourneyAgentStream, type JourneyStreamEvent } from '@/lib/llm/journey-agent';
+import { reportUsage } from '@/lib/usage-report';
 import { hasStoredAggregated } from '@/lib/domain-summary';
 import type { DomainScanResult } from '@/lib/types';
 import type { ScanResult } from '@/lib/types';
@@ -68,6 +69,14 @@ export async function POST(
                     controller.enqueue(encoder.encode('data: ' + JSON.stringify({ type: 'error', message: msg } as JourneyStreamEvent) + '\n\n'));
                     controller.enqueue(encoder.encode('data: ' + JSON.stringify({ type: 'done', result: { steps: [], goalReached: false, message: msg } } as JourneyStreamEvent) + '\n\n'));
                 } finally {
+                    try {
+                        reportUsage({
+                            userId: user.id,
+                            eventType: 'journey_agent',
+                            rawUnits: { runs: 1 },
+                            idempotencyKey: `domain-journey-stream:${id}:${Date.now()}`,
+                        });
+                    } catch { /* ignore */ }
                     controller.close();
                 }
             },
@@ -82,5 +91,13 @@ export async function POST(
     }
 
     const result = await runJourneyAgent(openai, goal, domainResult);
+    try {
+        reportUsage({
+            userId: user.id,
+            eventType: 'journey_agent',
+            rawUnits: { runs: 1 },
+            idempotencyKey: `domain-journey:${id}:${goal.slice(0, 50)}:${Date.now()}`,
+        });
+    } catch { /* never affect response */ }
     return NextResponse.json(result);
 }

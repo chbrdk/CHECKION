@@ -8,6 +8,7 @@ import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import OpenAI from 'openai';
 import { getOpenAIKey } from '@/lib/llm/config';
+import { reportUsage } from '@/lib/usage-report';
 
 const SUGGEST_MODEL = process.env.OPENAI_SUGGEST_MODEL ?? 'gpt-5-nano';
 import { extractHostname, parseSuggestResponse } from '@/lib/geo-eeat/suggest-parse';
@@ -72,6 +73,20 @@ export async function POST(request: NextRequest) {
         if (!raw?.trim()) {
             console.warn('[CHECKION] suggest-competitors-queries: LLM returned empty content');
         }
+        try {
+            const usage = completion.usage;
+            if (usage && user.id) {
+                reportUsage({
+                    userId: user.id,
+                    eventType: 'llm_request',
+                    rawUnits: {
+                        input_tokens: usage.prompt_tokens,
+                        output_tokens: usage.completion_tokens,
+                    },
+                    idempotencyKey: `suggest-queries:${url}:${Date.now()}`,
+                });
+            }
+        } catch { /* never affect response */ }
         let competitors: string[];
         let queries: string[];
         try {

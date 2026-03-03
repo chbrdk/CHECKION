@@ -43,6 +43,7 @@ In Coolify unter **PLEXON** → **Environment Variables** / **Env** eintragen:
 | `PLEXON_DEMO_PASSWORD` | Optional | Demo-Passwort (nur mit `PLEXON_DEMO_EMAIL`) |
 | `BASE_PATH` | Optional | Nur wenn Coolify einen URL-Prefix setzt (z. B. `/plexon`) |
 | `MIGRATION_SOURCE_DATABASE_URL` | Optional (einmalig) | CHECKION-DB-URL; wenn gesetzt, führt der Container-Start die User-Migration (CHECKION → PLEXON) aus (idempotent) |
+| `PLEXON_ADMIN_EMAIL` | Optional | E-Mail-Adresse, die beim nächsten Login als **Admin** gesetzt wird. Admins sehen alle Nutzer und den Token-Verbrauch aller Nutzer und können Rollen bearbeiten. |
 
 **Wichtig:** `NEXTAUTH_URL` muss exakt die URL sein, unter der PLEXON im Browser erreichbar ist (inkl. `https://`), sonst schlägt der Login-Callback fehl.
 

@@ -10,6 +10,7 @@ import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getGeoEeatRun, updateGeoEeatRun } from '@/lib/db/geo-eeat-runs';
 import { insertCompetitiveRun, updateCompetitiveRun } from '@/lib/db/geo-eeat-competitive-runs';
 import { runCompetitiveBenchmarkMultiModel } from '@/lib/geo-eeat/competitive-benchmark';
+import { reportUsage } from '@/lib/usage-report';
 import type { GeoEeatIntensiveResult, CompetitiveBenchmarkResult } from '@/lib/types';
 
 export const maxDuration = 300;
@@ -93,6 +94,14 @@ export async function POST(
                 payload: nextPayload,
                 error: null,
             });
+            try {
+                reportUsage({
+                    userId,
+                    eventType: 'competitive_benchmark',
+                    rawUnits: { queries: prev.queries.length, runs: 1 },
+                    idempotencyKey: `competitive-rerun:${competitiveRunId}`,
+                });
+            } catch { /* never affect response */ }
         } catch (e) {
             const message = e instanceof Error ? e.message : String(e);
             console.error('[CHECKION] GEO/E-E-A-T rerun competitive failed:', e);

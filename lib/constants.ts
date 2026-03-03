@@ -3,6 +3,9 @@
  * Do not hardcode paths in components – reference these constants.
  */
 
+/** When the app is served under a subpath (e.g. /checkion), set NEXT_PUBLIC_APP_BASE_URL to that path so API fetches hit the correct origin path. */
+const APP_BASE_URL = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_APP_BASE_URL) ? process.env.NEXT_PUBLIC_APP_BASE_URL.replace(/\/$/, '') : '';
+
 // ─── App Routes (pages) ────────────────────────────────────────────────────
 export const PATH_HOME = '/';
 export const PATH_SCAN = '/scan';
@@ -46,25 +49,27 @@ export const pathScanDomain = (params: { url: string; maxPages?: number }) => {
 };
 
 // ─── API Routes ────────────────────────────────────────────────────────────
-export const API_HEALTH = '/api/health';
-export const API_AUTH_REGISTER = '/api/auth/register';
-export const API_AUTH_PROFILE = '/api/auth/profile';
-export const API_AUTH_CHANGE_PASSWORD = '/api/auth/change-password';
-export const API_AUTH_TOKENS = '/api/auth/tokens';
+/** Base path for API URLs (e.g. '' or '/checkion' when app is under subpath). Use for client-side fetch. */
+export const getApiBase = () => APP_BASE_URL;
+export const API_HEALTH = `${APP_BASE_URL}/api/health`;
+export const API_AUTH_REGISTER = `${APP_BASE_URL}/api/auth/register`;
+export const API_AUTH_PROFILE = `${APP_BASE_URL}/api/auth/profile`;
+export const API_AUTH_CHANGE_PASSWORD = `${APP_BASE_URL}/api/auth/change-password`;
+export const API_AUTH_TOKENS = `${APP_BASE_URL}/api/auth/tokens`;
 /** DELETE /api/auth/tokens/[id] */
-export const apiAuthTokenRevoke = (id: string) => `${API_AUTH_TOKENS}/${encodeURIComponent(id)}`;
-export const API_SCAN = '/api/scan';
-export const API_SCANS = '/api/scans';
-export const API_SCANS_DOMAIN = '/api/scans/domain';
-export const API_SCAN_DOMAIN = '/api/scan/domain';
-export const API_SCAN_JOURNEY_AGENT = '/api/scan/journey-agent';
-export const API_SCAN_GEO_EEAT = '/api/scan/geo-eeat';
-export const API_SALIENCY_GENERATE = '/api/saliency/generate';
-export const API_SALIENCY_RESULT = '/api/saliency/result';
-export const API_SHARE = '/api/share';
-export const API_SEARCH = '/api/search';
-export const API_JOURNEYS = '/api/journeys';
-export const API_PROJECTS = '/api/projects';
+export const apiAuthTokenRevoke = (id: string) => `${APP_BASE_URL}/api/auth/tokens/${encodeURIComponent(id)}`;
+export const API_SCAN = `${APP_BASE_URL}/api/scan`;
+export const API_SCANS = `${APP_BASE_URL}/api/scans`;
+export const API_SCANS_DOMAIN = `${APP_BASE_URL}/api/scans/domain`;
+export const API_SCAN_DOMAIN = `${APP_BASE_URL}/api/scan/domain`;
+export const API_SCAN_JOURNEY_AGENT = `${APP_BASE_URL}/api/scan/journey-agent`;
+export const API_SCAN_GEO_EEAT = `${APP_BASE_URL}/api/scan/geo-eeat`;
+export const API_SALIENCY_GENERATE = `${APP_BASE_URL}/api/saliency/generate`;
+export const API_SALIENCY_RESULT = `${APP_BASE_URL}/api/saliency/result`;
+export const API_SHARE = `${APP_BASE_URL}/api/share`;
+export const API_SEARCH = `${APP_BASE_URL}/api/search`;
+export const API_JOURNEYS = `${APP_BASE_URL}/api/journeys`;
+export const API_PROJECTS = `${APP_BASE_URL}/api/projects`;
 
 /** POST /api/scan (single-page scan) */
 export const apiScanCreate = API_SCAN;
@@ -168,19 +173,18 @@ export const apiShareTokenPagesScreenshot = (token: string, pageId: string, acce
 };
 
 /** Check namespace (proxy to /api/tools/*). */
-export const API_CHECKS_CONTRAST = '/api/checks/contrast';
-export const API_CHECKS_SSL = '/api/checks/ssl';
-export const API_CHECKS_PAGESPEED = '/api/checks/pagespeed';
-export const API_CHECKS_WAYBACK = '/api/checks/wayback';
-export const API_CHECKS_READABILITY = '/api/checks/readability';
+export const API_CHECKS_CONTRAST = `${APP_BASE_URL}/api/checks/contrast`;
+export const API_CHECKS_SSL = `${APP_BASE_URL}/api/checks/ssl`;
+export const API_CHECKS_PAGESPEED = `${APP_BASE_URL}/api/checks/pagespeed`;
+export const API_CHECKS_WAYBACK = `${APP_BASE_URL}/api/checks/wayback`;
+export const API_CHECKS_READABILITY = `${APP_BASE_URL}/api/checks/readability`;
 
 /** Build: GET /api/tools/ssl-labs?host= */
-export const apiToolsSslLabs = (host: string) => `/api/tools/ssl-labs?host=${encodeURIComponent(host)}`;
+export const apiToolsSslLabs = (host: string) => `${APP_BASE_URL}/api/tools/ssl-labs?host=${encodeURIComponent(host)}`;
 /** Build: GET /api/tools/pagespeed?url= */
-export const apiToolsPageSpeed = (url: string) => `/api/tools/pagespeed?url=${encodeURIComponent(url)}`;
+export const apiToolsPageSpeed = (url: string) => `${APP_BASE_URL}/api/tools/pagespeed?url=${encodeURIComponent(url)}`;
 /** Build: GET /api/tools/wayback?url= */
-/** Build: GET /api/tools/wayback?url= */
-export const apiToolsWayback = (url: string) => `/api/tools/wayback?url=${encodeURIComponent(url)}`;
+export const apiToolsWayback = (url: string) => `${APP_BASE_URL}/api/tools/wayback?url=${encodeURIComponent(url)}`;
 /** Build: GET /api/search?q=&limit= */
 export const apiSearch = (q: string, limit?: number) => {
   const params = new URLSearchParams({ q });

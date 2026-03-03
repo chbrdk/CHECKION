@@ -18,9 +18,12 @@ export async function GET(
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     const { id } = await params;
+    if (!id?.trim()) {
+        return apiError('Domain scan id is required', API_STATUS.BAD_REQUEST);
+    }
     const row = await getDomainScanWithProjectId(id, user.id);
     if (!row) {
-        return apiError('Scan not found', API_STATUS.NOT_FOUND);
+        return apiError('Scan not found', API_STATUS.NOT_FOUND, { code: 'DOMAIN_SCAN_NOT_FOUND' });
     }
     const summary = buildDomainSummary(row.result);
     return NextResponse.json({ ...summary, projectId: row.projectId });
