@@ -64,6 +64,25 @@ export async function getPlexonProfile(userId: string): Promise<PlexonProfile | 
   }
 }
 
+/** Profil per E-Mail aus PLEXON (Fallback wenn Abfrage per user_id fehlschlägt). */
+export async function getPlexonProfileByEmail(email: string): Promise<PlexonProfile | null> {
+  if (!PLEXON_AUTH_URL.trim() || !PLEXON_SERVICE_SECRET.trim()) return null;
+  const base = PLEXON_AUTH_URL.replace(/\/$/, '');
+  const normalized = email?.trim()?.toLowerCase();
+  if (!normalized) return null;
+  try {
+    const res = await fetch(`${base}/api/services/profile?email=${encodeURIComponent(normalized)}`, {
+      headers: { 'X-Service-Secret': PLEXON_SERVICE_SECRET },
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { user?: PlexonProfile };
+    return data?.user ?? null;
+  } catch (e) {
+    console.error('[CHECKION] PLEXON getProfileByEmail error:', e);
+    return null;
+  }
+}
+
 export async function patchPlexonProfile(
   userId: string,
   updates: { name?: string | null; email?: string; company?: string | null; avatar_url?: string | null; locale?: string | null }

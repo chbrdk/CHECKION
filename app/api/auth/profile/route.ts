@@ -4,12 +4,29 @@
 /* Mit PLEXON_AUTH_URL: Profil aus PLEXON lesen/schreiben (Name, Firma, Avatar, Sprache). */
 
 import { NextResponse } from 'next/server';
+import { auth } from '@/auth';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getDb } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { isPlexonAuthConfigured, getPlexonProfile, patchPlexonProfile } from '@/lib/plexon-auth';
+import { isPlexonAuthConfigured, getPlexonProfile, getPlexonProfileByEmail, patchPlexonProfile } from '@/lib/plexon-auth';
+
+/** Minimales Profil aus Session (nur wenn PLEXON nicht konfiguriert und lokale DB fehlt). */
+async function minimalProfile(id: string) {
+    const session = await auth();
+    const u = session?.user;
+    return NextResponse.json({
+        user: {
+            id,
+            email: (u?.email as string | undefined) ?? undefined,
+            name: (u?.name as string | undefined) ?? undefined,
+            company: undefined,
+            avatar_url: undefined,
+            locale: undefined,
+        },
+    });
+}
 
 export async function GET(request: Request) {
     const requestUser = await getRequestUser(request);
@@ -17,38 +34,49 @@ export async function GET(request: Request) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     if (isPlexonAuthConfigured()) {
-        const profile = await getPlexonProfile(requestUser.id);
+        let profile = await getPlexonProfile(requestUser.id);
+        if (!profile) {
+            const session = await auth();
+            const email = session?.user?.email;
+            if (typeof email === 'string') {
+                profile = await getPlexonProfileByEmail(email);
+            }
+        }
         if (profile) {
             return NextResponse.json({ user: profile });
         }
-        return apiError('Profile service unavailable', 503);
+        return apiError('Profile service unavailable. Ensure PLEXON is reachable and user exists in PLEXON.', 503);
     }
-    const db = getDb();
-    const [user] = await db
-        .select({
-            id: users.id,
-            email: users.email,
-            name: users.name,
-            company: users.company,
-            avatarUrl: users.avatarUrl,
-            locale: users.locale,
-        })
-        .from(users)
-        .where(eq(users.id, requestUser.id))
-        .limit(1);
-    if (!user) {
-        return apiError('User not found', API_STATUS.NOT_FOUND);
+    try {
+        const db = getDb();
+        const [user] = await db
+            .select({
+                id: users.id,
+                email: users.email,
+                name: users.name,
+                company: users.company,
+                avatarUrl: users.avatarUrl,
+                locale: users.locale,
+            })
+            .from(users)
+            .where(eq(users.id, requestUser.id))
+            .limit(1);
+        if (user) {
+            return NextResponse.json({
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    name: user.name ?? undefined,
+                    company: user.company ?? undefined,
+                    avatar_url: user.avatarUrl ?? undefined,
+                    locale: user.locale ?? undefined,
+                },
+            });
+        }
+    } catch {
+        /* DATABASE_URL fehlt oder DB-Fehler: minimales Profil nur wenn PLEXON nicht im Einsatz */
     }
-    return NextResponse.json({
-        user: {
-            id: user.id,
-            email: user.email,
-            name: user.name ?? undefined,
-            company: user.company ?? undefined,
-            avatar_url: user.avatarUrl ?? undefined,
-            locale: user.locale ?? undefined,
-        },
-    });
+    return await minimalProfile(requestUser.id);
 }
 
 export async function PATCH(request: Request) {
@@ -73,7 +101,7 @@ export async function PATCH(request: Request) {
         if (updated) {
             return NextResponse.json({ user: updated });
         }
-        return apiError('Profile service unavailable', 503);
+        return apiError('Profile service unavailable. Ensure PLEXON is reachable.', 503);
     }
 
     const db = getDb();
