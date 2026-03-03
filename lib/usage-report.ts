@@ -18,29 +18,34 @@ export function isUsageReportingConfigured(): boolean {
 }
 
 /**
- * Report a usage event to PLEXON. Non-blocking; failures are logged only.
+ * Report a usage event to PLEXON. Non-blocking; never throws. Failures are logged only.
  */
 export function reportUsage(params: UsageReportParams): void {
-  if (!PLEXON_AUTH_URL.trim() || !PLEXON_SERVICE_SECRET.trim()) return;
+  try {
+    if (!PLEXON_AUTH_URL.trim() || !PLEXON_SERVICE_SECRET.trim()) return;
+    if (!params?.userId || !params?.eventType) return;
 
-  const url = `${PLEXON_AUTH_URL.replace(/\/$/, '')}/api/services/usage/events`;
-  const body = {
-    user_id: params.userId,
-    service: 'checkion' as const,
-    event_type: params.eventType,
-    raw_units: params.rawUnits ?? {},
-    ...(params.idempotencyKey && { idempotency_key: params.idempotencyKey }),
-  };
+    const url = `${PLEXON_AUTH_URL.replace(/\/$/, '')}/api/services/usage/events`;
+    const body = {
+      user_id: params.userId,
+      service: 'checkion' as const,
+      event_type: params.eventType,
+      raw_units: params.rawUnits ?? {},
+      ...(params.idempotencyKey && { idempotency_key: params.idempotencyKey }),
+    };
 
-  fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Service-Secret': PLEXON_SERVICE_SECRET,
-    },
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(5000),
-  }).catch((e) => {
-    console.warn('[CHECKION] usage report failed:', e?.message ?? e);
-  });
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Service-Secret': PLEXON_SERVICE_SECRET,
+      },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(5000),
+    }).catch((e) => {
+      console.warn('[CHECKION] usage report failed:', e?.message ?? e);
+    });
+  } catch (e) {
+    console.warn('[CHECKION] usage report setup failed:', e instanceof Error ? e.message : e);
+  }
 }

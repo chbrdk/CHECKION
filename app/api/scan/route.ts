@@ -59,11 +59,15 @@ export async function POST(request: Request) {
         }
         invalidateScansList(user.id);
 
-        reportUsage({
-          userId: user.id,
-          eventType: 'scan_wcag',
-          rawUnits: { scans: results.length },
-        });
+        try {
+          reportUsage({
+            userId: user.id,
+            eventType: 'scan_wcag',
+            rawUnits: { scans: results.length },
+          });
+        } catch {
+          // never let usage reporting affect the response
+        }
 
         // Saliency heatmap: user starts it on the result page (POST /api/saliency/generate → jobId → poll /api/saliency/result) to avoid timeouts.
 
