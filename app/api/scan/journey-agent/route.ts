@@ -62,12 +62,14 @@ export async function POST(request: NextRequest) {
             // non-fatal: history unavailable if table missing or DB error
             console.warn('[journey-agent] Could not save run to history:', err instanceof Error ? err.message : err);
         }
-        reportUsage({
-          userId: user.id,
-          eventType: 'journey_agent',
-          rawUnits: { job: 1 },
-          idempotencyKey: `journey_agent:${jobId}`,
-        });
+        try {
+          reportUsage({
+            userId: user.id,
+            eventType: 'journey_agent',
+            rawUnits: { job: 1 },
+            idempotencyKey: `journey_agent:${jobId}`,
+          });
+        } catch { /* never affect response */ }
         return NextResponse.json({ success: true, jobId });
     } catch (e) {
         const message = e instanceof Error ? e.message : 'Failed to reach UX Journey Agent service.';

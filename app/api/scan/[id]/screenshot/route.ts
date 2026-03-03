@@ -42,7 +42,9 @@ export async function GET(
                 headers: { 'Content-Type': 'image/svg+xml', 'X-Screenshot': 'placeholder' },
             });
         }
-        reportUsage({ userId: user.id, eventType: 'scan_screenshot', rawUnits: { pages: 1 } });
+        try {
+          reportUsage({ userId: user.id, eventType: 'scan_screenshot', rawUnits: { pages: 1 } });
+        } catch { /* never affect response */ }
         return new NextResponse(new Uint8Array(buffer), {
             headers: { 'Content-Type': 'image/jpeg' },
         });
@@ -54,7 +56,9 @@ export async function GET(
         const contentType = match[1];
         const base64 = match[2];
         const buffer = Buffer.from(base64, 'base64');
-        reportUsage({ userId: user.id, eventType: 'scan_screenshot', rawUnits: { pages: 1 } });
+        try {
+          reportUsage({ userId: user.id, eventType: 'scan_screenshot', rawUnits: { pages: 1 } });
+        } catch { /* never affect response */ }
         return new NextResponse(new Uint8Array(buffer), {
             headers: { 'Content-Type': contentType },
         });

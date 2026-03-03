@@ -38,7 +38,9 @@ export async function GET(req: NextRequest) {
         const seo = (cats.seo?.score ?? 0) * 100;
 
         if (user) {
-            reportUsage({ userId: user.id, eventType: 'scan_pagespeed', rawUnits: { requests: 1 } });
+            try {
+              reportUsage({ userId: user.id, eventType: 'scan_pagespeed', rawUnits: { requests: 1 } });
+            } catch { /* never affect response */ }
         }
 
         return NextResponse.json({

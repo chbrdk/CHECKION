@@ -103,15 +103,17 @@ export async function POST(
     }
     invalidateDomainScan(id);
 
-    reportUsage({
-      userId: user.id,
-      eventType: 'llm_request',
-      rawUnits: {
-        input_tokens: completion.usage?.prompt_tokens ?? 0,
-        output_tokens: completion.usage?.completion_tokens ?? 0,
-      },
-      idempotencyKey: `domain_summarize:${id}`,
-    });
+    try {
+      reportUsage({
+        userId: user.id,
+        eventType: 'llm_request',
+        rawUnits: {
+          input_tokens: completion.usage?.prompt_tokens ?? 0,
+          output_tokens: completion.usage?.completion_tokens ?? 0,
+        },
+        idempotencyKey: `domain_summarize:${id}`,
+      });
+    } catch { /* never affect response */ }
 
     return NextResponse.json(summary);
 }

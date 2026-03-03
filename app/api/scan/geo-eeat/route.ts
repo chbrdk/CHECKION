@@ -91,12 +91,14 @@ export async function POST(request: NextRequest) {
                 status: 'complete',
                 payload,
             });
-            reportUsage({
-              userId: user.id,
-              eventType: 'geo_eeat',
-              rawUnits: { job: 1 },
-              idempotencyKey: `geo_eeat:${jobId}`,
-            });
+            try {
+              reportUsage({
+                userId: user.id,
+                eventType: 'geo_eeat',
+                rawUnits: { job: 1 },
+                idempotencyKey: `geo_eeat:${jobId}`,
+              });
+            } catch { /* never affect response */ }
         } catch (e) {
             const message = e instanceof Error ? e.message : String(e);
             console.error('[CHECKION] GEO/E-E-A-T run failed:', e);

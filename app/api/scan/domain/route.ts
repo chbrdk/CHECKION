@@ -84,12 +84,14 @@ export async function POST(req: NextRequest) {
                     });
                     await updateDomainScan(id, userId, stored);
                     invalidateDomainScan(id);
-                    reportUsage({
-                      userId,
-                      eventType: 'domain_scan',
-                      rawUnits: { pages: fullPages.length },
-                      idempotencyKey: `domain_scan:${id}`,
-                    });
+                    try {
+                      reportUsage({
+                        userId,
+                        eventType: 'domain_scan',
+                        rawUnits: { pages: fullPages.length },
+                        idempotencyKey: `domain_scan:${id}`,
+                      });
+                    } catch { /* never affect response */ }
                 }
             }
             await updateDomainScan(id, userId, { status: 'complete' });

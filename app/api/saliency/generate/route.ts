@@ -122,12 +122,14 @@ export async function POST(request: Request) {
                 return apiError('Failed to save heatmap to scan.', API_STATUS.INTERNAL_ERROR);
             }
             invalidateScan(scanId);
-            reportUsage({
-              userId: user.id,
-              eventType: 'saliency_ai',
-              rawUnits: {},
-              idempotencyKey: `saliency_ai:${scanId}`,
-            });
+            try {
+              reportUsage({
+                userId: user.id,
+                eventType: 'saliency_ai',
+                rawUnits: {},
+                idempotencyKey: `saliency_ai:${scanId}`,
+              });
+            } catch { /* never affect response */ }
             return NextResponse.json({ success: true });
         } catch (e) {
             const message = e instanceof Error ? e.message : 'AI saliency failed';
@@ -188,12 +190,14 @@ export async function POST(request: Request) {
             }
             invalidateScan(scanId);
             if (USE_LLM_REGIONS && visionRegions?.length) {
-                reportUsage({
-                  userId: user.id,
-                  eventType: 'saliency_ai',
-                  rawUnits: {},
-                  idempotencyKey: `saliency_structure_llm:${scanId}`,
-                });
+                try {
+                  reportUsage({
+                    userId: user.id,
+                    eventType: 'saliency_ai',
+                    rawUnits: {},
+                    idempotencyKey: `saliency_structure_llm:${scanId}`,
+                  });
+                } catch { /* never affect response */ }
             }
             return NextResponse.json({ success: true });
         } catch (e) {
@@ -267,12 +271,14 @@ export async function POST(request: Request) {
             .catch((err) => console.error('[CHECKION] saliency/generate: vision regions failed', err));
     }
 
-    reportUsage({
-      userId: user.id,
-      eventType: 'saliency_ai',
-      rawUnits: { job: 1 },
-      idempotencyKey: `saliency_sum:${scanId}:${jobId}`,
-    });
+    try {
+      reportUsage({
+        userId: user.id,
+        eventType: 'saliency_ai',
+        rawUnits: { job: 1 },
+        idempotencyKey: `saliency_sum:${scanId}:${jobId}`,
+      });
+    } catch { /* never affect response */ }
 
     return NextResponse.json({ jobId });
 }
