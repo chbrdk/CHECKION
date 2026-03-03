@@ -80,6 +80,8 @@ export async function POST(request: Request) {
         });
     } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
+        const stack = err instanceof Error ? err.stack : undefined;
+        console.error('[CHECKION] POST /api/scan failed:', message, stack ?? '');
         return handleApiError(err, {
             context: 'Scan failed',
             publicMessage: `Scan failed: ${message}`,

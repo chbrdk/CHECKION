@@ -18,7 +18,7 @@ export const users = pgTable('users', {
 /** API tokens for programmatic access (e.g. MCP server). Bearer token → user. */
 export const apiTokens = pgTable('api_tokens', {
     id: text('id').primaryKey(),
-    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull(), // PLEXON user id when using central auth; no FK so PLEXON users don't need a row in CHECKION users
     tokenHash: text('token_hash').notNull(),
     name: text('name'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -27,7 +27,7 @@ export const apiTokens = pgTable('api_tokens', {
 /** User projects: group domain/scans/journeys/geo-runs for a customer or domain. */
 export const projects = pgTable('projects', {
     id: text('id').primaryKey(),
-    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull(), // PLEXON user id when using central auth
     name: text('name').notNull(),
     domain: text('domain'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -36,7 +36,7 @@ export const projects = pgTable('projects', {
 
 export const scans = pgTable('scans', {
     id: text('id').primaryKey(),
-    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull(), // PLEXON user id when using central auth
     projectId: text('project_id').references(() => projects.id, { onDelete: 'set null' }),
     url: text('url').notNull(),
     device: text('device').notNull(),
@@ -48,7 +48,7 @@ export const scans = pgTable('scans', {
 
 export const domainScans = pgTable('domain_scans', {
     id: text('id').primaryKey(),
-    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull(), // PLEXON user id when using central auth
     projectId: text('project_id').references(() => projects.id, { onDelete: 'set null' }),
     domain: text('domain').notNull(),
     status: text('status').notNull(),
@@ -59,7 +59,7 @@ export const domainScans = pgTable('domain_scans', {
 /** Share links: public landing page for a scan (single, domain, journey, or geo_eeat). Token in URL, optional password. */
 export const shareLinks = pgTable('share_links', {
     token: text('token').primaryKey(),
-    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull(), // PLEXON user id when using central auth
     resourceType: text('resource_type').notNull(), // 'single' | 'domain' | 'journey' | 'geo_eeat'
     resourceId: text('resource_id').notNull(),
     passwordHash: text('password_hash'), // optional; if set, viewer must submit password to access
@@ -70,7 +70,7 @@ export const shareLinks = pgTable('share_links', {
 /** Saved user journeys (goal + result) for history and restore. */
 export const savedJourneys = pgTable('saved_journeys', {
     id: text('id').primaryKey(),
-    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull(), // PLEXON user id when using central auth
     domainScanId: text('domain_scan_id').notNull().references(() => domainScans.id, { onDelete: 'cascade' }),
     name: text('name'),
     goal: text('goal').notNull(),
@@ -81,7 +81,7 @@ export const savedJourneys = pgTable('saved_journeys', {
 /** UX Journey Agent runs (browser-use): history of started/completed journeys. */
 export const journeyRuns = pgTable('journey_runs', {
     id: text('id').primaryKey(),
-    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull(), // PLEXON user id when using central auth
     projectId: text('project_id').references(() => projects.id, { onDelete: 'set null' }),
     url: text('url').notNull(),
     task: text('task').notNull(),
@@ -95,7 +95,7 @@ export const journeyRuns = pgTable('journey_runs', {
 /** GEO / E-E-A-T intensive analysis runs (on-page + optional competitive benchmark). */
 export const geoEeatRuns = pgTable('geo_eeat_runs', {
     id: text('id').primaryKey(),
-    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull(), // PLEXON user id when using central auth
     projectId: text('project_id').references(() => projects.id, { onDelete: 'set null' }),
     url: text('url').notNull(),
     domainScanId: text('domain_scan_id').references(() => domainScans.id, { onDelete: 'set null' }),
@@ -110,7 +110,7 @@ export const geoEeatRuns = pgTable('geo_eeat_runs', {
 export const geoEeatCompetitiveRuns = pgTable('geo_eeat_competitive_runs', {
     id: text('id').primaryKey(),
     geoEeatRunId: text('geo_eeat_run_id').notNull().references(() => geoEeatRuns.id, { onDelete: 'cascade' }),
-    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull(), // PLEXON user id when using central auth
     startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
     completedAt: timestamp('completed_at', { withTimezone: true }),
     status: text('status').notNull(), // 'running' | 'complete' | 'error'

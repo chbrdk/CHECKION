@@ -99,6 +99,7 @@ In Coolify unter **CHECKION** → **Environment Variables** eintragen:
 - Eigene **PostgreSQL**-Datenbank für CHECKION anlegen (nur Scans, Projekte, domain_scans, …).
 - **Connection-URL** als `DATABASE_URL` bei der CHECKION-Application eintragen.
 - Beim Start führt CHECKION `drizzle-kit push` aus und legt die Tabellen an. Wenn ihr **nur** PLEXON-Auth nutzt, kann die `users`-Tabelle in dieser DB leer bleiben; die User liegen in PLEXON.
+- **Migration 0004 (PLEXON):** Beim Start führt CHECKION automatisch die Migration `0004_drop_user_id_fk_for_plexon.sql` aus. Sie entfernt die Foreign-Key-Constraints von `user_id` auf `users`, damit Scans/Projekte etc. mit PLEXON-User-IDs gespeichert werden können, ohne dass ein Eintrag in CHECKIONs `users`-Tabelle existiert. Ohne diese Migration führt z. B. „Scan starten“ zu „Failed query: insert into scans …“ (FK-Verletzung).
 
 ### 3.4 Port in Coolify
 
