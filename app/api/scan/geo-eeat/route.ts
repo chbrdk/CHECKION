@@ -15,6 +15,7 @@ import { buildGeoEeatResultFromScan } from '@/lib/geo-eeat/stage1';
 import { runLlmStages } from '@/lib/geo-eeat/run-llm-stages';
 import { runCompetitiveBenchmarkMultiModel } from '@/lib/geo-eeat/competitive-benchmark';
 import { v4 as uuidv4 } from 'uuid';
+import { reportUsage } from '@/lib/usage-report';
 
 export const maxDuration = 60;
 
@@ -89,6 +90,12 @@ export async function POST(request: NextRequest) {
             await updateGeoEeatRun(jobId, user.id, {
                 status: 'complete',
                 payload,
+            });
+            reportUsage({
+              userId: user.id,
+              eventType: 'geo_eeat',
+              rawUnits: { job: 1 },
+              idempotencyKey: `geo_eeat:${jobId}`,
             });
         } catch (e) {
             const message = e instanceof Error ? e.message : String(e);

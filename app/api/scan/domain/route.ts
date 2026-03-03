@@ -9,6 +9,7 @@ import { invalidateDomainScan, invalidateDomainList } from '@/lib/cache';
 import { buildStoredDomainPayload } from '@/lib/domain-summary';
 import { v4 as uuidv4 } from 'uuid';
 import type { DomainScanResult } from '@/lib/types';
+import { reportUsage } from '@/lib/usage-report';
 
 export const maxDuration = 10;
 
@@ -83,6 +84,12 @@ export async function POST(req: NextRequest) {
                     });
                     await updateDomainScan(id, userId, stored);
                     invalidateDomainScan(id);
+                    reportUsage({
+                      userId,
+                      eventType: 'domain_scan',
+                      rawUnits: { pages: fullPages.length },
+                      idempotencyKey: `domain_scan:${id}`,
+                    });
                 }
             }
             await updateDomainScan(id, userId, { status: 'complete' });

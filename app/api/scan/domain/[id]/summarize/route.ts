@@ -12,6 +12,7 @@ import { buildDomainSummaryPayload } from '@/lib/llm/build-domain-summary-payloa
 import { OPENAI_MODEL, getOpenAIKey } from '@/lib/llm/config';
 import { DOMAIN_SYSTEM_PROMPT, buildDomainUserPrompt } from '@/lib/llm/prompts';
 import { UxCxSummarySchema, type UxCxSummary } from '@/lib/llm-summary-types';
+import { reportUsage } from '@/lib/usage-report';
 
 function extractJsonFromResponse(content: string): string {
     const trimmed = content.trim();
@@ -53,9 +54,10 @@ export async function POST(
 
     let rawContent: string;
     let modelUsed = OPENAI_MODEL;
+    let completion: Awaited<ReturnType<OpenAI['chat']['completions']['create']>>;
 
     try {
-        const completion = await openai.chat.completions.create({
+        completion = await openai.chat.completions.create({
             model: OPENAI_MODEL,
             messages: [
                 { role: 'system', content: DOMAIN_SYSTEM_PROMPT },
@@ -100,6 +102,16 @@ export async function POST(
         return apiError('Failed to save summary.', API_STATUS.INTERNAL_ERROR);
     }
     invalidateDomainScan(id);
+
+    reportUsage({
+      userId: user.id,
+      eventType: 'llm_request',
+      rawUnits: {
+        input_tokens: completion.usage?.prompt_tokens ?? 0,
+        output_tokens: completion.usage?.completion_tokens ?? 0,
+      },
+      idempotencyKey: `domain_summarize:${id}`,
+    });
 
     return NextResponse.json(summary);
 }

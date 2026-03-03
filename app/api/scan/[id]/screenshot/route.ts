@@ -7,6 +7,7 @@ import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getScan } from '@/lib/db/scans';
 import { isFileScreenshot, readScreenshot } from '@/lib/screenshot-storage';
+import { reportUsage } from '@/lib/usage-report';
 
 /** Visible placeholder when screenshot file is missing (e.g. other instance wrote it). */
 const PLACEHOLDER_SVG = Buffer.from(
@@ -41,6 +42,7 @@ export async function GET(
                 headers: { 'Content-Type': 'image/svg+xml', 'X-Screenshot': 'placeholder' },
             });
         }
+        reportUsage({ userId: user.id, eventType: 'scan_screenshot', rawUnits: { pages: 1 } });
         return new NextResponse(new Uint8Array(buffer), {
             headers: { 'Content-Type': 'image/jpeg' },
         });
@@ -52,6 +54,7 @@ export async function GET(
         const contentType = match[1];
         const base64 = match[2];
         const buffer = Buffer.from(base64, 'base64');
+        reportUsage({ userId: user.id, eventType: 'scan_screenshot', rawUnits: { pages: 1 } });
         return new NextResponse(new Uint8Array(buffer), {
             headers: { 'Content-Type': contentType },
         });

@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { API_PAGESPEED_BASE } from '@/lib/external-apis';
+import { reportUsage } from '@/lib/usage-report';
 
 export async function GET(req: NextRequest) {
+    const user = await getRequestUser(req);
     const urlParam = req.nextUrl.searchParams.get('url');
     if (!urlParam) {
         return apiError('url is required', API_STATUS.BAD_REQUEST);
@@ -33,6 +36,10 @@ export async function GET(req: NextRequest) {
         const accessibility = (cats.accessibility?.score ?? 0) * 100;
         const bestPractices = (cats['best-practices']?.score ?? 0) * 100;
         const seo = (cats.seo?.score ?? 0) * 100;
+
+        if (user) {
+            reportUsage({ userId: user.id, eventType: 'scan_pagespeed', rawUnits: { requests: 1 } });
+        }
 
         return NextResponse.json({
             success: true,

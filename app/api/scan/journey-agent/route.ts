@@ -11,6 +11,7 @@ import { parseApiBody, journeyAgentBodySchema } from '@/lib/api-schemas';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { ENV_UX_JOURNEY_AGENT_URL } from '@/lib/constants';
 import { insertJourneyRun } from '@/lib/db/journey-runs';
+import { reportUsage } from '@/lib/usage-report';
 
 export async function POST(request: NextRequest) {
     const user = await getRequestUser(request);
@@ -61,6 +62,12 @@ export async function POST(request: NextRequest) {
             // non-fatal: history unavailable if table missing or DB error
             console.warn('[journey-agent] Could not save run to history:', err instanceof Error ? err.message : err);
         }
+        reportUsage({
+          userId: user.id,
+          eventType: 'journey_agent',
+          rawUnits: { job: 1 },
+          idempotencyKey: `journey_agent:${jobId}`,
+        });
         return NextResponse.json({ success: true, jobId });
     } catch (e) {
         const message = e instanceof Error ? e.message : 'Failed to reach UX Journey Agent service.';

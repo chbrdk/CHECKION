@@ -176,3 +176,14 @@ Die User-Migration läuft **automatisch** beim Start des PLEXON-Containers, wenn
 | **AUDION (Persona-Backend/API) → Env** | `PLEXON_SERVICE_SECRET` (gleich wie PLEXON/Web), damit `POST /auth/plexon-sync` bei 409 funktioniert. |
 | **Datenbanken** | Pro App eine PostgreSQL (oder eine gemeinsame); Connection-URL in der jeweiligen App als `DATABASE_URL` |
 | **Migration** | Optional: `MIGRATION_SOURCE_DATABASE_URL` bei PLEXON setzen → Migration läuft beim Container-Start automatisch |
+
+---
+
+## 8. Usage-Tracking (Tokens zentral in PLEXON)
+
+CHECKION und AUDION senden Nutzungs-Events (z. B. LLM-Tokens, WCAG-Scans, PageSpeed) an PLEXON. PLEXON rechnet sie in eine Token-Währung um und speichert sie in `usage_events` / `usage_aggregated`. Das Dashboard zeigt die Nutzung pro Dienst und Monat.
+
+- **Keine zusätzlichen Env-Variablen:** Es werden dieselben Werte genutzt wie für Auth:
+  - **CHECKION:** `PLEXON_AUTH_URL` + `PLEXON_SERVICE_SECRET` (bereits für Login nötig).
+  - **AUDION (Persona-Backend):** `PLEXON_AUTH_URL` + `PLEXON_SERVICE_SECRET` (bereits für Profil-Sync/plexon-sync).
+- **PLEXON:** Nach dem ersten Deploy mit `DATABASE_URL` legt PLEXON die Tabellen `usage_events` und `usage_aggregated` an (per `drizzle-kit push`). Die Nutzungs-Sektion erscheint auf dem Dashboard.

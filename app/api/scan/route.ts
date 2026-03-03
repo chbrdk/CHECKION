@@ -13,6 +13,7 @@ import { listCachedStandaloneScans, getCachedStandaloneScansCount, invalidateSca
 import type { Device } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 import { DASHBOARD_SCANS_PAGE_SIZE } from '@/lib/constants';
+import { reportUsage } from '@/lib/usage-report';
 
 export async function POST(request: Request) {
     const user = await getRequestUser(request);
@@ -57,6 +58,12 @@ export async function POST(request: Request) {
             );
         }
         invalidateScansList(user.id);
+
+        reportUsage({
+          userId: user.id,
+          eventType: 'scan_wcag',
+          rawUnits: { scans: results.length },
+        });
 
         // Saliency heatmap: user starts it on the result page (POST /api/saliency/generate → jobId → poll /api/saliency/result) to avoid timeouts.
 

@@ -15,6 +15,7 @@ import { getAttentionRegionsFromVision, renderHeatmapFromRegions } from '@/lib/s
 import { setVisionRegions } from '@/lib/saliency-vision-cache';
 import { computeScanpath } from '@/lib/scanpath';
 import { getScreenshotBase64 } from '@/lib/screenshot-storage';
+import { reportUsage } from '@/lib/usage-report';
 
 /** Base URL of the saliency service. Public domains stay HTTPS; internal hostnames (no dot) use http. */
 function getSaliencyBaseUrl(): string | undefined {
@@ -121,6 +122,12 @@ export async function POST(request: Request) {
                 return apiError('Failed to save heatmap to scan.', API_STATUS.INTERNAL_ERROR);
             }
             invalidateScan(scanId);
+            reportUsage({
+              userId: user.id,
+              eventType: 'saliency_ai',
+              rawUnits: {},
+              idempotencyKey: `saliency_ai:${scanId}`,
+            });
             return NextResponse.json({ success: true });
         } catch (e) {
             const message = e instanceof Error ? e.message : 'AI saliency failed';
@@ -180,6 +187,14 @@ export async function POST(request: Request) {
                 return apiError('Failed to save heatmap to scan.', API_STATUS.INTERNAL_ERROR);
             }
             invalidateScan(scanId);
+            if (USE_LLM_REGIONS && visionRegions?.length) {
+                reportUsage({
+                  userId: user.id,
+                  eventType: 'saliency_ai',
+                  rawUnits: {},
+                  idempotencyKey: `saliency_structure_llm:${scanId}`,
+                });
+            }
             return NextResponse.json({ success: true });
         } catch (e) {
             console.error('[CHECKION] saliency/generate (structure-only):', e);
@@ -251,6 +266,13 @@ export async function POST(request: Request) {
             })
             .catch((err) => console.error('[CHECKION] saliency/generate: vision regions failed', err));
     }
+
+    reportUsage({
+      userId: user.id,
+      eventType: 'saliency_ai',
+      rawUnits: { job: 1 },
+      idempotencyKey: `saliency_sum:${scanId}:${jobId}`,
+    });
 
     return NextResponse.json({ jobId });
 }
