@@ -93,6 +93,7 @@ async function handleStatelessRequest(
   };
 
   const mcpServer = createStatelessMcpServer();
+  log('Stateless new server for ' + String((message as { method?: string }).method));
   try {
     await mcpServer.connect(transport as Parameters<McpServer['connect']>[0]);
   } catch (e) {
