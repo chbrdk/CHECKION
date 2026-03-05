@@ -40,6 +40,34 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
+    server.registerTool('checkion/scan_summarize', {
+        title: 'Summarize single-page scan',
+        description: 'Generate LLM UX/CX summary for a single-page scan. Requires OpenAI to be configured.',
+        inputSchema: z.object({ id: z.string().describe('Scan result ID') }),
+    }, async (args) => {
+        const { id } = args;
+        const res = await base(`/api/scan/${encodeURIComponent(id)}/summarize`, { method: 'POST' });
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    server.registerTool('checkion/scan_screenshot', {
+        title: 'Get scan screenshot URL',
+        description: 'Return the URL to fetch the screenshot image for a single-page scan. GET the URL with the same Bearer token to retrieve the image.',
+        inputSchema: z.object({ id: z.string().describe('Scan result ID') }),
+    }, async (args) => {
+        const { id } = args;
+        const baseUrl = process.env.CHECKION_API_URL ?? '';
+        const url = baseUrl ? `${baseUrl.replace(/\/$/, '')}/api/scan/${encodeURIComponent(id)}/screenshot` : '';
+        return {
+            content: [
+                {
+                    type: 'text',
+                    text: url ? JSON.stringify({ screenshotUrl: url, note: 'GET with same Bearer token to retrieve image' }) : 'CHECKION_API_URL not set',
+                },
+            ],
+        };
+    });
     server.registerTool('checkion/scans_list', {
         title: 'List single-page scans',
         description: 'List single-page scans with optional project filter and pagination.',
@@ -97,6 +125,38 @@ export function registerCheckionTools(server) {
     }, async (args) => {
         const { id } = args;
         const res = await base(`/api/scan/domain/${encodeURIComponent(id)}/summary`);
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    server.registerTool('checkion/scan_domain_summarize', {
+        title: 'Summarize domain scan',
+        description: 'Generate LLM domain summary for a completed domain scan. Requires OpenAI.',
+        inputSchema: z.object({ id: z.string().describe('Domain scan ID') }),
+    }, async (args) => {
+        const { id } = args;
+        const res = await base(`/api/scan/domain/${encodeURIComponent(id)}/summarize`, { method: 'POST' });
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    server.registerTool('checkion/scan_domain_journey_start', {
+        title: 'Start journey from domain scan',
+        description: 'Run the journey agent for a completed domain scan (goal-based). Returns steps or stream.',
+        inputSchema: z.object({
+            id: z.string().describe('Domain scan ID'),
+            goal: z.string().min(1).describe('Goal for the journey (e.g. "Find contact form")'),
+            stream: z.boolean().optional().describe('If true, stream events'),
+        }),
+    }, async (args) => {
+        const { id, goal, stream } = args;
+        const body = { goal };
+        if (stream === true)
+            body.stream = true;
+        const res = await base(`/api/scan/domain/${encodeURIComponent(id)}/journey`, {
+            method: 'POST',
+            body: JSON.stringify(body),
+        });
         if (isCheckionError(res))
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
@@ -437,6 +497,22 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
+    server.registerTool('checkion/journey_save', {
+        title: 'Save journey',
+        description: 'Save a journey run (domainScanId, goal, result with steps array, optional name). Result must be a JourneyResult object with at least a steps array.',
+        inputSchema: z.object({
+            domainScanId: z.string().describe('Domain scan ID this journey belongs to'),
+            goal: z.string().min(1).describe('Journey goal'),
+            result: z.record(z.unknown()).describe('Journey result object (must include steps array)'),
+            name: z.string().optional().describe('Optional display name'),
+        }),
+    }, async (args) => {
+        const body = args;
+        const res = await base('/api/journeys', { method: 'POST', body: JSON.stringify(body) });
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
     // --- GEO / E-E-A-T ---
     server.registerTool('checkion/geo_eeat_start', {
         title: 'Start GEO/E-E-A-T scan',
@@ -629,6 +705,32 @@ export function registerCheckionTools(server) {
         inputSchema: z.object({}),
     }, async () => {
         const res = await base('/api/auth/profile');
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    // --- saliency ---
+    server.registerTool('checkion/saliency_generate', {
+        title: 'Start saliency job',
+        description: 'Start a saliency/heatmap job for a single-page scan. Returns jobId; poll with checkion/saliency_result.',
+        inputSchema: z.object({ scanId: z.string().describe('Scan result ID') }),
+    }, async (args) => {
+        const { scanId } = args;
+        const res = await base('/api/saliency/generate', { method: 'POST', body: JSON.stringify({ scanId }) });
+        if (isCheckionError(res))
+            return { content: [{ type: 'text', text: JSON.stringify(res) }] };
+        return { content: [{ type: 'text', text: toTextContent(res) }] };
+    });
+    server.registerTool('checkion/saliency_result', {
+        title: 'Get saliency result',
+        description: 'Get saliency/heatmap result for a job (jobId from saliency_generate, scanId).',
+        inputSchema: z.object({
+            jobId: z.string().describe('Saliency job ID'),
+            scanId: z.string().describe('Scan result ID'),
+        }),
+    }, async (args) => {
+        const { jobId, scanId } = args;
+        const res = await base(`/api/saliency/result?jobId=${encodeURIComponent(jobId)}&scanId=${encodeURIComponent(scanId)}`);
         if (isCheckionError(res))
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };

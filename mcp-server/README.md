@@ -106,11 +106,15 @@ Wenn du das CHECKION-Repo ohnehin auf dem Rechner hast, kann Claude den MCP-Serv
 |------|-------------|
 | `checkion/scan_single` | Start single-page scan (url, optional projectId) |
 | `checkion/scan_get` | Get scan result by ID |
+| `checkion/scan_summarize` | Generate LLM summary for single-page scan (id) |
+| `checkion/scan_screenshot` | Get screenshot URL for scan (id); GET with Bearer for image |
 | `checkion/scans_list` | List single-page scans (limit, page, projectId) |
 | `checkion/scan_delete` | Delete single-page scan by ID |
 | `checkion/scan_domain` | Start domain scan (url, useSitemap, maxPages, projectId) |
 | `checkion/scan_domain_status` | Domain scan status by ID |
 | `checkion/scan_domain_summary` | Domain scan summary by ID |
+| `checkion/scan_domain_summarize` | Generate LLM domain summary (id) |
+| `checkion/scan_domain_journey_start` | Start journey from domain scan (id, goal, stream?) |
 | `checkion/scans_domain_list` | List domain scans |
 | `checkion/scan_domain_delete` | Delete domain scan by ID |
 | `checkion/scan_journey_start` | Start journey-agent run (url, task, optional projectId) |
@@ -145,6 +149,7 @@ Wenn du das CHECKION-Repo ohnehin auf dem Rechner hast, kann Claude den MCP-Serv
 |------|-------------|
 | `checkion/journeys_list` | List saved journeys (limit, page) |
 | `checkion/journey_get` | Get saved journey by ID |
+| `checkion/journey_save` | Save journey (domainScanId, goal, result with steps, name?) |
 | `checkion/journey_delete` | Delete saved journey by ID |
 
 ### GEO / E-E-A-T
@@ -167,6 +172,12 @@ Wenn du das CHECKION-Repo ohnehin auf dem Rechner hast, kann Claude den MCP-Serv
 | `checkion/share_create` | Create share link (type, id, password?) |
 | `checkion/share_get` | Get share metadata (token) |
 | `checkion/share_revoke` | Revoke share link (token) |
+
+### Saliency
+| Tool | Description |
+|------|-------------|
+| `checkion/saliency_generate` | Start saliency/heatmap job (scanId); returns jobId |
+| `checkion/saliency_result` | Get saliency result (jobId, scanId) |
 
 ### User & Health
 | Tool | Description |

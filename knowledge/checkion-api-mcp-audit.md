@@ -143,7 +143,7 @@ Vollständige Liste und Parameter siehe `mcp-server/README.md`.
 
 ## 2b. Noch fehlende MCP-Tools (API vorhanden, kein Tool)
 
-**Umgesetzt (Stand):** scan_journey_start, scan_journey_get, scan_journey_history, geo_eeat_start, geo_eeat_status, geo_eeat_competitive_history, geo_eeat_competitive_run_get, scan_delete, scan_domain_delete, share_by_resource.
+**Umgesetzt (Stand):** Alle unten genannten Tools sind implementiert.
 
 | Priorität | API | Tool-Name | Status |
 |-----------|-----|-----------|--------|
@@ -157,12 +157,12 @@ Vollständige Liste und Parameter siehe `mcp-server/README.md`.
 | ~~Mittel~~ | DELETE `/api/scans/[id]` | `checkion/scan_delete` | ✅ |
 | ~~Mittel~~ | DELETE `/api/scans/domain/[id]` | `checkion/scan_domain_delete` | ✅ |
 | ~~Mittel~~ | GET `/api/share/by-resource` | `checkion/share_by_resource` | ✅ |
-| **Niedrig** | POST `/api/scan/[id]/summarize` | `checkion/scan_summarize` | offen |
-| **Niedrig** | POST `/api/scan/domain/[id]/summarize` | `checkion/scan_domain_summarize` | offen |
-| **Niedrig** | POST `/api/scan/domain/[id]/journey` | `checkion/scan_domain_journey_start` | offen |
-| **Niedrig** | POST `/api/journeys` | `checkion/journey_save` | offen |
-| **Nische** | GET `/api/scan/[id]/screenshot` | `checkion/scan_screenshot` | offen |
-| **Nische** | Saliency | `checkion/saliency_*` | offen |
+| ~~Niedrig~~ | POST `/api/scan/[id]/summarize` | `checkion/scan_summarize` | ✅ |
+| ~~Niedrig~~ | POST `/api/scan/domain/[id]/summarize` | `checkion/scan_domain_summarize` | ✅ |
+| ~~Niedrig~~ | POST `/api/scan/domain/[id]/journey` | `checkion/scan_domain_journey_start` | ✅ |
+| ~~Niedrig~~ | POST `/api/journeys` | `checkion/journey_save` | ✅ |
+| ~~Nische~~ | GET `/api/scan/[id]/screenshot` | `checkion/scan_screenshot` | ✅ (URL) |
+| ~~Nische~~ | POST/GET Saliency | `checkion/saliency_generate`, `checkion/saliency_result` | ✅ |
 
 Nicht als MCP abgebildet (bewusst/sensibel): Auth (register, change-password, tokens CRUD), PATCH profile.
 
