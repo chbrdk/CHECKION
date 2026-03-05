@@ -226,3 +226,8 @@ CHECKION leitet `/mcp` an den MCP-Server weiter – eine Domain für App + MCP.
    - **MCP-URL für Clients:** `https://checkion.projects-a.plygrnd.tech/mcp`
 
 In Claude/Cursor dann z. B. `https://checkion.projects-a.plygrnd.tech/mcp` (mit mcp-proxy) oder in Cursor die gleiche URL eintragen.
+
+## Troubleshooting
+
+- **500 on `tools/list` (stateless)**  
+  The MCP SDK does not allow reusing a stateless Streamable HTTP transport for a second request. With `MCP_STATELESS=true`, the server now creates a **new transport per request** and serializes handling so `initialize` and `tools/list` (and later `tools/call`) each get a fresh transport and respond with 200 and a proper JSON body.

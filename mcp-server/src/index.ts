@@ -59,16 +59,43 @@ async function main() {
     return;
   }
 
-  const transport = new StreamableHTTPServerTransport({
-    sessionIdGenerator: STATELESS ? undefined : () => randomUUID(),
-    enableJsonResponse: true,
-  });
-  transport.onerror = (err) => log('Transport error: ' + String(err));
-  await mcpServer.connect(transport);
-
   process.on('unhandledRejection', (reason) => {
     log('Unhandled rejection: ' + String(reason));
   });
+
+  /** Stateless: one transport per request (SDK forbids reuse). Serialize to avoid concurrent connect(). */
+  let requestQueue: Promise<void> = Promise.resolve();
+  const sharedTransport = STATELESS
+    ? null
+    : new StreamableHTTPServerTransport({
+        sessionIdGenerator: () => randomUUID(),
+        enableJsonResponse: true,
+      });
+
+  if (sharedTransport) {
+    sharedTransport.onerror = (err) => log('Transport error: ' + String(err));
+    await mcpServer.connect(sharedTransport);
+  }
+
+  const handleWithTransport = async (
+    req: IncomingMessage,
+    res: ServerResponse,
+    parsedBody: unknown,
+    transport: StreamableHTTPServerTransport
+  ): Promise<void> => {
+    const origWriteHead = res.writeHead.bind(res) as (a: number, b?: unknown, c?: unknown) => ServerResponse;
+    (res as { writeHead: (a: number, b?: unknown, c?: unknown) => ServerResponse }).writeHead = function (statusOrCode: number, b?: unknown, c?: unknown) {
+      log('writeHead status=' + statusOrCode);
+      return origWriteHead(statusOrCode, b, c);
+    };
+    const origEnd = res.end.bind(res) as (...a: unknown[]) => ServerResponse;
+    (res as { end: (...a: unknown[]) => ServerResponse }).end = function (...args: unknown[]) {
+      const len = args[0] === undefined ? 0 : typeof args[0] === 'string' ? args[0].length : (args[0] as Buffer)?.length ?? 0;
+      log('end chunkLen=' + len);
+      return origEnd(...args);
+    };
+    await transport.handleRequest(req as Parameters<typeof transport.handleRequest>[0], res, parsedBody);
+  };
 
   const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
     log(`${req.method} ${req.url ?? '/'}`);
@@ -78,18 +105,21 @@ async function main() {
       if (method) log('Body method: ' + method);
       res.once('error', (e) => log('res error: ' + String(e)));
       res.once('close', () => { if (!res.writableEnded) log('res close before end'); });
-      const origWriteHead = res.writeHead.bind(res) as (a: number, b?: unknown, c?: unknown) => ServerResponse;
-      (res as { writeHead: (a: number, b?: unknown, c?: unknown) => ServerResponse }).writeHead = function (statusOrCode: number, b?: unknown, c?: unknown) {
-        log('writeHead status=' + statusOrCode);
-        return origWriteHead(statusOrCode, b, c);
-      };
-      const origEnd = res.end.bind(res) as (...a: unknown[]) => ServerResponse;
-      (res as { end: (...a: unknown[]) => ServerResponse }).end = function (...args: unknown[]) {
-        const len = args[0] === undefined ? 0 : typeof args[0] === 'string' ? args[0].length : (args[0] as Buffer)?.length ?? 0;
-        log('end chunkLen=' + len);
-        return origEnd(...args);
-      };
-      await transport.handleRequest(req as Parameters<typeof transport.handleRequest>[0], res, parsedBody);
+
+      if (STATELESS) {
+        requestQueue = requestQueue.then(async () => {
+          const transport = new StreamableHTTPServerTransport({
+            sessionIdGenerator: undefined,
+            enableJsonResponse: true,
+          });
+          transport.onerror = (err) => log('Transport error: ' + String(err));
+          await mcpServer.connect(transport);
+          await handleWithTransport(req, res, parsedBody, transport);
+        });
+        await requestQueue;
+      } else {
+        await handleWithTransport(req, res, parsedBody, sharedTransport!);
+      }
     } catch (err) {
       log('Request error: ' + String(err));
       if (!res.headersSent) {
