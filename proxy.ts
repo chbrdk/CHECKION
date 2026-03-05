@@ -18,7 +18,7 @@ function hasSessionCookie(req: NextRequest): boolean {
     return SESSION_COOKIES.some(name => req.cookies.has(name));
 }
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
     const { pathname } = req.nextUrl;
     const hasSession = hasSessionCookie(req);
 
