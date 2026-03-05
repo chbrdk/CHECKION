@@ -34,9 +34,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY package.json package-lock.json* ./
 COPY . .
 
-# Optional: use design system path for Next (turbopack alias in dev; build uses node_modules)
+# Ensure file:../msqdx-design-system resolves from /app (npm may link relative to /app)
+RUN ln -snf /msqdx-design-system /app/msqdx-design-system 2>/dev/null || true
 ENV DS_BASE=../msqdx-design-system
-
 RUN npm run build
 
 # ---- Runner ----
