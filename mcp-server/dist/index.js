@@ -55,7 +55,11 @@ async function main() {
         sessionIdGenerator: STATELESS ? undefined : () => randomUUID(),
     });
     await mcpServer.connect(transport);
+    process.on('unhandledRejection', (reason) => {
+        log('Unhandled rejection: ' + String(reason));
+    });
     const server = createServer(async (req, res) => {
+        log(`${req.method} ${req.url ?? '/'}`);
         try {
             const parsedBody = req.method === 'POST' ? await parseBody(req) : undefined;
             await transport.handleRequest(req, res, parsedBody);

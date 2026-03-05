@@ -64,7 +64,12 @@ async function main() {
   });
   await mcpServer.connect(transport);
 
+  process.on('unhandledRejection', (reason) => {
+    log('Unhandled rejection: ' + String(reason));
+  });
+
   const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
+    log(`${req.method} ${req.url ?? '/'}`);
     try {
       const parsedBody = req.method === 'POST' ? await parseBody(req) : undefined;
       await transport.handleRequest(req as Parameters<typeof transport.handleRequest>[0], res, parsedBody);
