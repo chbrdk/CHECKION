@@ -75,6 +75,19 @@ async function main() {
       const parsedBody = req.method === 'POST' ? await parseBody(req) : undefined;
       const method = parsedBody && typeof parsedBody === 'object' && 'method' in parsedBody ? String((parsedBody as { method?: unknown }).method) : '';
       if (method) log('Body method: ' + method);
+      res.once('error', (e) => log('res error: ' + String(e)));
+      res.once('close', () => { if (!res.writableEnded) log('res close before end'); });
+      const origWriteHead = res.writeHead.bind(res) as (a: number, b?: unknown, c?: unknown) => ServerResponse;
+      (res as { writeHead: (a: number, b?: unknown, c?: unknown) => ServerResponse }).writeHead = function (statusOrCode: number, b?: unknown, c?: unknown) {
+        log('writeHead status=' + statusOrCode);
+        return origWriteHead(statusOrCode, b, c);
+      };
+      const origEnd = res.end.bind(res) as (...a: unknown[]) => ServerResponse;
+      (res as { end: (...a: unknown[]) => ServerResponse }).end = function (...args: unknown[]) {
+        const len = args[0] === undefined ? 0 : typeof args[0] === 'string' ? args[0].length : (args[0] as Buffer)?.length ?? 0;
+        log('end chunkLen=' + len);
+        return origEnd(...args);
+      };
       await transport.handleRequest(req as Parameters<typeof transport.handleRequest>[0], res, parsedBody);
     } catch (err) {
       log('Request error: ' + String(err));

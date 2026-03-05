@@ -66,6 +66,20 @@ async function main() {
             const method = parsedBody && typeof parsedBody === 'object' && 'method' in parsedBody ? String(parsedBody.method) : '';
             if (method)
                 log('Body method: ' + method);
+            res.once('error', (e) => log('res error: ' + String(e)));
+            res.once('close', () => { if (!res.writableEnded)
+                log('res close before end'); });
+            const origWriteHead = res.writeHead.bind(res);
+            res.writeHead = function (statusOrCode, b, c) {
+                log('writeHead status=' + statusOrCode);
+                return origWriteHead(statusOrCode, b, c);
+            };
+            const origEnd = res.end.bind(res);
+            res.end = function (...args) {
+                const len = args[0] === undefined ? 0 : typeof args[0] === 'string' ? args[0].length : args[0]?.length ?? 0;
+                log('end chunkLen=' + len);
+                return origEnd(...args);
+            };
             await transport.handleRequest(req, res, parsedBody);
         }
         catch (err) {
