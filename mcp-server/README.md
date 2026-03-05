@@ -18,7 +18,7 @@ MCP (Model Context Protocol) server that exposes CHECKION APIs as tools. Support
 | `CHECKION_API_TOKEN` | Yes | API token (Bearer) created in CHECKION Settings → API access |
 | `MCP_TRANSPORT` | No | `stdio` for Claude Desktop; omit or `http` for Streamable HTTP |
 | `MCP_PORT` | No | Port for HTTP mode (default: `3100`) |
-| `MCP_STATELESS` | No | Set to `true` or `1` for stateless HTTP mode (no session IDs) |
+| `MCP_STATELESS` | No | Set to `true` or `1` for stateless HTTP mode (no session IDs). **Recommended when MCP is behind a proxy** (e.g. CHECKION rewrites `/mcp` → MCP server), because the proxy may not forward `Mcp-Session-Id` to the client and the client would then get "Mcp-Session-Id header is required". |
 
 ## Running locally
 
@@ -218,10 +218,11 @@ docker run -e CHECKION_API_URL=https://checkion.example.com -e CHECKION_API_TOKE
 CHECKION leitet `/mcp` an den MCP-Server weiter – eine Domain für App + MCP.
 
 1. **Zwei Services in Coolify:** CHECKION (Haupt-App) + MCP (eigenes Deployment, gleiches Repo, Dockerfile `mcp-server/Dockerfile`). MCP braucht keine öffentliche Domain.
-2. **CHECKION-App:** In den Umgebungsvariablen der **CHECKION**-Application setzen:
+2. **MCP-Service:** Env **`MCP_STATELESS=true`** setzen. Hinter dem Proxy werden Response-Header wie `Mcp-Session-Id` oft nicht an den Client durchgereicht; ohne Stateless bekommen Clients sonst „Mcp-Session-Id header is required“. Mit Stateless braucht der Client keine Session.
+3. **CHECKION-App:** In den Umgebungsvariablen der **CHECKION**-Application setzen:
    - `MCP_SERVER_URL=http://<mcp-service-name>:3100`  
      (Service-Name = der interne Name des MCP-Containers in Coolify, z. B. der App-Name oder Hostname des MCP-Services.)
-3. Nach Deployment ist der MCP erreichbar unter:
+4. Nach Deployment ist der MCP erreichbar unter:
    - **MCP-URL für Clients:** `https://checkion.projects-a.plygrnd.tech/mcp`
 
 In Claude/Cursor dann z. B. `https://checkion.projects-a.plygrnd.tech/mcp` (mit mcp-proxy) oder in Cursor die gleiche URL eintragen.

@@ -56,8 +56,25 @@ async function main() {
     });
     await mcpServer.connect(transport);
     const server = createServer(async (req, res) => {
-        const parsedBody = req.method === 'POST' ? await parseBody(req) : undefined;
-        await transport.handleRequest(req, res, parsedBody);
+        try {
+            const parsedBody = req.method === 'POST' ? await parseBody(req) : undefined;
+            await transport.handleRequest(req, res, parsedBody);
+        }
+        catch (err) {
+            log('Request error: ' + String(err));
+            if (!res.headersSent) {
+                res.statusCode = 500;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({
+                    jsonrpc: '2.0',
+                    id: null,
+                    error: {
+                        code: -32603,
+                        message: err instanceof Error ? err.message : String(err),
+                    },
+                }));
+            }
+        }
     });
     server.listen(PORT, () => {
         log(`Server listening on port ${PORT} (stateless=${STATELESS})`);

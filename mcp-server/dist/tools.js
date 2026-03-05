@@ -13,9 +13,9 @@ function toTextContent(value) {
 export function registerCheckionTools(server) {
     const base = (path, options) => checkionFetch(path, options);
     // --- scan ---
-    server.registerTool('checkion/scan_single', {
+    server.registerTool('checkion.scan_single', {
         title: 'Start single-page scan',
-        description: 'Start a single-page accessibility scan (desktop, tablet, mobile). Returns the desktop result ID; use checkion/scan_get to fetch full result.',
+        description: 'Start a single-page accessibility scan (desktop, tablet, mobile). Returns the desktop result ID; use checkion.scan_get to fetch full result.',
         inputSchema: z.object({
             url: z.string().describe('Page URL to scan'),
             projectId: z.string().optional().describe('Optional project ID to assign'),
@@ -29,7 +29,7 @@ export function registerCheckionTools(server) {
         const data = res;
         return { content: [{ type: 'text', text: toTextContent(data) }] };
     });
-    server.registerTool('checkion/scan_get', {
+    server.registerTool('checkion.scan_get', {
         title: 'Get scan result',
         description: 'Fetch a single-page scan result by ID.',
         inputSchema: z.object({ id: z.string().describe('Scan result ID') }),
@@ -40,7 +40,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/scan_summarize', {
+    server.registerTool('checkion.scan_summarize', {
         title: 'Summarize single-page scan',
         description: 'Generate LLM UX/CX summary for a single-page scan. Requires OpenAI to be configured.',
         inputSchema: z.object({ id: z.string().describe('Scan result ID') }),
@@ -51,7 +51,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/scan_screenshot', {
+    server.registerTool('checkion.scan_screenshot', {
         title: 'Get scan screenshot URL',
         description: 'Return the URL to fetch the screenshot image for a single-page scan. GET the URL with the same Bearer token to retrieve the image.',
         inputSchema: z.object({ id: z.string().describe('Scan result ID') }),
@@ -68,7 +68,7 @@ export function registerCheckionTools(server) {
             ],
         };
     });
-    server.registerTool('checkion/scans_list', {
+    server.registerTool('checkion.scans_list', {
         title: 'List single-page scans',
         description: 'List single-page scans with optional project filter and pagination.',
         inputSchema: z.object({
@@ -91,9 +91,9 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/scan_domain', {
+    server.registerTool('checkion.scan_domain', {
         title: 'Start domain scan',
-        description: 'Start an async domain (deep) scan. Returns scan ID; poll checkion/scan_domain_status or checkion/scan_domain_summary.',
+        description: 'Start an async domain (deep) scan. Returns scan ID; poll checkion.scan_domain_status or checkion.scan_domain_summary.',
         inputSchema: z.object({
             url: z.string().describe('Domain URL (e.g. https://example.com)'),
             useSitemap: z.boolean().optional().describe('Use sitemap if available'),
@@ -107,7 +107,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/scan_domain_status', {
+    server.registerTool('checkion.scan_domain_status', {
         title: 'Domain scan status',
         description: 'Get status/progress of a domain scan.',
         inputSchema: z.object({ id: z.string().describe('Domain scan ID') }),
@@ -118,7 +118,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/scan_domain_summary', {
+    server.registerTool('checkion.scan_domain_summary', {
         title: 'Domain scan summary',
         description: 'Get stored summary of a completed domain scan.',
         inputSchema: z.object({ id: z.string().describe('Domain scan ID') }),
@@ -129,7 +129,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/scan_domain_summarize', {
+    server.registerTool('checkion.scan_domain_summarize', {
         title: 'Summarize domain scan',
         description: 'Generate LLM domain summary for a completed domain scan. Requires OpenAI.',
         inputSchema: z.object({ id: z.string().describe('Domain scan ID') }),
@@ -140,7 +140,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/scan_domain_journey_start', {
+    server.registerTool('checkion.scan_domain_journey_start', {
         title: 'Start journey from domain scan',
         description: 'Run the journey agent for a completed domain scan (goal-based). Returns steps or stream.',
         inputSchema: z.object({
@@ -161,7 +161,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/scans_domain_list', {
+    server.registerTool('checkion.scans_domain_list', {
         title: 'List domain scans',
         description: 'List domain scans with optional project filter and pagination.',
         inputSchema: z.object({
@@ -184,7 +184,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/scan_delete', {
+    server.registerTool('checkion.scan_delete', {
         title: 'Delete single-page scan',
         description: 'Delete a single-page scan by ID.',
         inputSchema: z.object({ id: z.string().describe('Scan result ID') }),
@@ -195,7 +195,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/scan_domain_delete', {
+    server.registerTool('checkion.scan_domain_delete', {
         title: 'Delete domain scan',
         description: 'Delete a domain scan by ID.',
         inputSchema: z.object({ id: z.string().describe('Domain scan ID') }),
@@ -207,9 +207,9 @@ export function registerCheckionTools(server) {
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
     // --- journey agent (runs) ---
-    server.registerTool('checkion/scan_journey_start', {
+    server.registerTool('checkion.scan_journey_start', {
         title: 'Start journey-agent run',
-        description: 'Start a UX journey-agent run (URL + natural language task). Returns jobId; poll with checkion/scan_journey_get.',
+        description: 'Start a UX journey-agent run (URL + natural language task). Returns jobId; poll with checkion.scan_journey_get.',
         inputSchema: z.object({
             url: z.string().describe('Page URL to start from'),
             task: z.string().min(1).describe('Natural language task (e.g. "Find the contact form")'),
@@ -225,7 +225,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/scan_journey_get', {
+    server.registerTool('checkion.scan_journey_get', {
         title: 'Get journey-agent run result',
         description: 'Get a journey-agent run result by job ID.',
         inputSchema: z.object({ jobId: z.string().describe('Journey job ID') }),
@@ -236,7 +236,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/scan_journey_history', {
+    server.registerTool('checkion.scan_journey_history', {
         title: 'List journey-agent runs',
         description: 'List journey-agent runs with optional project filter and limit.',
         inputSchema: z.object({
@@ -257,7 +257,7 @@ export function registerCheckionTools(server) {
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
     // --- projects ---
-    server.registerTool('checkion/projects_list', {
+    server.registerTool('checkion.projects_list', {
         title: 'List projects',
         description: 'List CHECKION projects for the authenticated user.',
         inputSchema: z.object({}),
@@ -267,7 +267,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/project_get', {
+    server.registerTool('checkion.project_get', {
         title: 'Get project',
         description: 'Get a single project by ID with counts.',
         inputSchema: z.object({ id: z.string().describe('Project ID') }),
@@ -278,7 +278,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/project_create', {
+    server.registerTool('checkion.project_create', {
         title: 'Create project',
         description: 'Create a new CHECKION project.',
         inputSchema: z.object({
@@ -293,7 +293,7 @@ export function registerCheckionTools(server) {
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
     // --- micro-tools ---
-    server.registerTool('checkion/tools_contrast', {
+    server.registerTool('checkion.tools_contrast', {
         title: 'Contrast check',
         description: 'Get WCAG contrast ratio between two hex colors.',
         inputSchema: z.object({
@@ -307,7 +307,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/tools_extract', {
+    server.registerTool('checkion.tools_extract', {
         title: 'Extract content',
         description: 'Extract content from a URL by CSS selector.',
         inputSchema: z.object({
@@ -321,7 +321,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/tools_ssl', {
+    server.registerTool('checkion.tools_ssl', {
         title: 'SSL Labs check',
         description: 'Run SSL Labs check for a host (grade, endpoints).',
         inputSchema: z.object({ host: z.string().describe('Hostname (e.g. example.com)') }),
@@ -332,7 +332,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/tools_pagespeed', {
+    server.registerTool('checkion.tools_pagespeed', {
         title: 'PageSpeed check',
         description: 'Run PageSpeed Insights for a URL (performance, accessibility, SEO).',
         inputSchema: z.object({ url: z.string().describe('Page URL') }),
@@ -343,7 +343,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/tools_wayback', {
+    server.registerTool('checkion.tools_wayback', {
         title: 'Wayback check',
         description: 'Check Wayback Machine availability for a URL.',
         inputSchema: z.object({ url: z.string().describe('Page URL') }),
@@ -354,7 +354,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/tools_readability', {
+    server.registerTool('checkion.tools_readability', {
         title: 'Readability check',
         description: 'Get readability score for a text (Flesch-Kincaid grade).',
         inputSchema: z.object({ text: z.string().describe('Text to analyze') }),
@@ -366,7 +366,7 @@ export function registerCheckionTools(server) {
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
     // --- projects: update, delete ---
-    server.registerTool('checkion/project_update', {
+    server.registerTool('checkion.project_update', {
         title: 'Update project',
         description: 'Update a project (name, domain).',
         inputSchema: z.object({
@@ -386,7 +386,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/project_delete', {
+    server.registerTool('checkion.project_delete', {
         title: 'Delete project',
         description: 'Delete a project by ID.',
         inputSchema: z.object({ id: z.string().describe('Project ID') }),
@@ -398,7 +398,7 @@ export function registerCheckionTools(server) {
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
     // --- assign to project ---
-    server.registerTool('checkion/scan_assign_project', {
+    server.registerTool('checkion.scan_assign_project', {
         title: 'Assign single scan to project',
         description: 'Assign or unassign a single-page scan to a project.',
         inputSchema: z.object({
@@ -412,7 +412,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/scan_domain_assign_project', {
+    server.registerTool('checkion.scan_domain_assign_project', {
         title: 'Assign domain scan to project',
         description: 'Assign or unassign a domain scan to a project.',
         inputSchema: z.object({
@@ -426,7 +426,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/scan_journey_assign_project', {
+    server.registerTool('checkion.scan_journey_assign_project', {
         title: 'Assign journey run to project',
         description: 'Assign or unassign a journey-agent run to a project.',
         inputSchema: z.object({
@@ -440,7 +440,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/scan_geo_eeat_assign_project', {
+    server.registerTool('checkion.scan_geo_eeat_assign_project', {
         title: 'Assign GEO/E-E-A-T run to project',
         description: 'Assign or unassign a GEO/E-E-A-T run to a project.',
         inputSchema: z.object({
@@ -455,7 +455,7 @@ export function registerCheckionTools(server) {
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
     // --- journeys (saved) ---
-    server.registerTool('checkion/journeys_list', {
+    server.registerTool('checkion.journeys_list', {
         title: 'List saved journeys',
         description: 'List saved journey runs with optional pagination.',
         inputSchema: z.object({
@@ -475,7 +475,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/journey_get', {
+    server.registerTool('checkion.journey_get', {
         title: 'Get saved journey',
         description: 'Get a saved journey by ID.',
         inputSchema: z.object({ id: z.string().describe('Journey ID') }),
@@ -486,7 +486,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/journey_delete', {
+    server.registerTool('checkion.journey_delete', {
         title: 'Delete saved journey',
         description: 'Delete a saved journey by ID.',
         inputSchema: z.object({ id: z.string().describe('Journey ID') }),
@@ -497,7 +497,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/journey_save', {
+    server.registerTool('checkion.journey_save', {
         title: 'Save journey',
         description: 'Save a journey run (domainScanId, goal, result with steps array, optional name). Result must be a JourneyResult object with at least a steps array.',
         inputSchema: z.object({
@@ -514,7 +514,7 @@ export function registerCheckionTools(server) {
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
     // --- GEO / E-E-A-T ---
-    server.registerTool('checkion/geo_eeat_start', {
+    server.registerTool('checkion.geo_eeat_start', {
         title: 'Start GEO/E-E-A-T scan',
         description: 'Start a GEO/E-E-A-T intensive scan (technical + LLM stages). Optionally run competitive benchmark with competitors and queries. Returns jobId.',
         inputSchema: z.object({
@@ -532,7 +532,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/geo_eeat_status', {
+    server.registerTool('checkion.geo_eeat_status', {
         title: 'GEO/E-E-A-T job status',
         description: 'Get status of a GEO/E-E-A-T run (e.g. for polling).',
         inputSchema: z.object({ jobId: z.string().describe('GEO/E-E-A-T job ID') }),
@@ -543,7 +543,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/geo_eeat_suggest_queries', {
+    server.registerTool('checkion.geo_eeat_suggest_queries', {
         title: 'Suggest competitors and queries',
         description: 'AI-suggest ~5 competitors and ~10 LLM search queries for a URL.',
         inputSchema: z.object({ url: z.string().describe('Company or site URL') }),
@@ -554,7 +554,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/geo_eeat_history', {
+    server.registerTool('checkion.geo_eeat_history', {
         title: 'GEO/E-E-A-T history',
         description: 'List GEO/E-E-A-T runs with optional filters.',
         inputSchema: z.object({
@@ -574,7 +574,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/geo_eeat_get', {
+    server.registerTool('checkion.geo_eeat_get', {
         title: 'Get GEO/E-E-A-T run',
         description: 'Get a GEO/E-E-A-T run result by job ID.',
         inputSchema: z.object({ jobId: z.string().describe('Job ID') }),
@@ -585,7 +585,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/geo_eeat_rerun_competitive', {
+    server.registerTool('checkion.geo_eeat_rerun_competitive', {
         title: 'Rerun competitive benchmark',
         description: 'Re-run only the competitive benchmark for an existing GEO/E-E-A-T job.',
         inputSchema: z.object({ jobId: z.string().describe('GEO/E-E-A-T job ID') }),
@@ -596,7 +596,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/geo_eeat_competitive_history', {
+    server.registerTool('checkion.geo_eeat_competitive_history', {
         title: 'List competitive benchmark runs',
         description: 'List competitive benchmark runs for a GEO/E-E-A-T job.',
         inputSchema: z.object({
@@ -614,7 +614,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/geo_eeat_competitive_run_get', {
+    server.registerTool('checkion.geo_eeat_competitive_run_get', {
         title: 'Get competitive benchmark run',
         description: 'Get a specific competitive benchmark run by jobId and runId.',
         inputSchema: z.object({
@@ -629,7 +629,7 @@ export function registerCheckionTools(server) {
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
     // --- search ---
-    server.registerTool('checkion/search', {
+    server.registerTool('checkion.search', {
         title: 'Search scans',
         description: 'Search across single and domain scans (dashboard search).',
         inputSchema: z.object({
@@ -647,7 +647,7 @@ export function registerCheckionTools(server) {
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
     // --- share ---
-    server.registerTool('checkion/share_by_resource', {
+    server.registerTool('checkion.share_by_resource', {
         title: 'Get share link by resource',
         description: 'Get existing share link for a resource (single scan, domain scan, journey, or GEO/E-E-A-T run). Returns token, url, hasPassword, createdAt or null.',
         inputSchema: z.object({
@@ -661,7 +661,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/share_create', {
+    server.registerTool('checkion.share_create', {
         title: 'Create share link',
         description: 'Create a share link for a single scan, domain scan, journey, or GEO/E-E-A-T run.',
         inputSchema: z.object({
@@ -676,7 +676,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/share_get', {
+    server.registerTool('checkion.share_get', {
         title: 'Get share link',
         description: 'Get share link metadata by token.',
         inputSchema: z.object({ token: z.string().describe('Share token') }),
@@ -687,7 +687,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/share_revoke', {
+    server.registerTool('checkion.share_revoke', {
         title: 'Revoke share link',
         description: 'Revoke a share link by token (auth required, must own share).',
         inputSchema: z.object({ token: z.string().describe('Share token') }),
@@ -699,7 +699,7 @@ export function registerCheckionTools(server) {
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
     // --- user ---
-    server.registerTool('checkion/user_profile', {
+    server.registerTool('checkion.user_profile', {
         title: 'Get user profile',
         description: 'Get the authenticated user profile (read-only).',
         inputSchema: z.object({}),
@@ -710,9 +710,9 @@ export function registerCheckionTools(server) {
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
     // --- saliency ---
-    server.registerTool('checkion/saliency_generate', {
+    server.registerTool('checkion.saliency_generate', {
         title: 'Start saliency job',
-        description: 'Start a saliency/heatmap job for a single-page scan. Returns jobId; poll with checkion/saliency_result.',
+        description: 'Start a saliency/heatmap job for a single-page scan. Returns jobId; poll with checkion.saliency_result.',
         inputSchema: z.object({ scanId: z.string().describe('Scan result ID') }),
     }, async (args) => {
         const { scanId } = args;
@@ -721,7 +721,7 @@ export function registerCheckionTools(server) {
             return { content: [{ type: 'text', text: JSON.stringify(res) }] };
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
-    server.registerTool('checkion/saliency_result', {
+    server.registerTool('checkion.saliency_result', {
         title: 'Get saliency result',
         description: 'Get saliency/heatmap result for a job (jobId from saliency_generate, scanId).',
         inputSchema: z.object({
@@ -736,7 +736,7 @@ export function registerCheckionTools(server) {
         return { content: [{ type: 'text', text: toTextContent(res) }] };
     });
     // --- health ---
-    server.registerTool('checkion/health', {
+    server.registerTool('checkion.health', {
         title: 'Health check',
         description: 'Check CHECKION API health (optional; may require auth).',
         inputSchema: z.object({}),
