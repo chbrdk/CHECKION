@@ -110,7 +110,8 @@ async function main() {
         requestQueue = requestQueue.then(async () => {
           const transport = new StreamableHTTPServerTransport({
             sessionIdGenerator: undefined,
-            enableJsonResponse: true,
+            // SSE mode: SDK writes response to stream so body is non-empty; client already parses SSE.
+            enableJsonResponse: false,
           });
           transport.onerror = (err) => log('Transport error: ' + String(err));
           await mcpServer.connect(transport);
