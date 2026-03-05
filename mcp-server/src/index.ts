@@ -43,6 +43,14 @@ async function parseBody(req: IncomingMessage): Promise<unknown> {
   });
 }
 
+function sendJson(res: ServerResponse, status: number, body: unknown): void {
+  const raw = JSON.stringify(body);
+  res.statusCode = status;
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Content-Length', Buffer.byteLength(raw, 'utf8'));
+  res.end(raw);
+}
+
 /** Stateless: minimal transport that captures the first response and we write it directly to res. No SDK Streamable HTTP. */
 async function handleStatelessRequest(
   mcpServer: McpServer,
@@ -52,9 +60,7 @@ async function handleStatelessRequest(
 ): Promise<void> {
   const message = parsedBody && typeof parsedBody === 'object' && 'method' in parsedBody ? parsedBody : undefined;
   if (!message || typeof (message as { method?: unknown }).method !== 'string') {
-    res.statusCode = 400;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Invalid JSON-RPC' } }));
+    sendJson(res, 400, { jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Invalid JSON-RPC' } });
     return;
   }
 
@@ -77,24 +83,67 @@ async function handleStatelessRequest(
     },
   };
 
-  await mcpServer.close().catch(() => {});
-  await mcpServer.connect(transport as Parameters<McpServer['connect']>[0]);
+  try {
+    await mcpServer.close().catch(() => {});
+    await mcpServer.connect(transport as Parameters<McpServer['connect']>[0]);
+  } catch (e) {
+    log('Stateless connect error: ' + String(e));
+    sendJson(res, 500, {
+      jsonrpc: '2.0',
+      id: (message as { id?: unknown }).id ?? null,
+      error: { code: -32603, message: 'Server connect error: ' + String(e) },
+    });
+    return;
+  }
 
   const baseUrl = `http://localhost:${PORT}`;
   const requestInfo = {
     headers: (req.headers as Record<string, string | string[] | undefined>) ?? {},
     url: new URL(req.url ?? '/', baseUrl),
   };
-  transport.onmessage!(message, { requestInfo });
+  try {
+    transport.onmessage!(message, { requestInfo });
+  } catch (e) {
+    log('Stateless onmessage error: ' + String(e));
+    sendJson(res, 500, {
+      jsonrpc: '2.0',
+      id: (message as { id?: unknown }).id ?? null,
+      error: { code: -32603, message: 'Server error: ' + String(e) },
+    });
+    return;
+  }
 
   const timeout = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error('MCP response timeout')), 30000)
+    setTimeout(() => reject(new Error('MCP response timeout')), 15000)
   );
-  const response = await Promise.race([responsePromise, timeout]);
+  let response: unknown;
+  try {
+    response = await Promise.race([responsePromise, timeout]);
+  } catch (e) {
+    log('Stateless response error: ' + String(e));
+    sendJson(res, 500, {
+      jsonrpc: '2.0',
+      id: (message as { id?: unknown }).id ?? null,
+      error: { code: -32603, message: String(e instanceof Error ? e.message : e) },
+    });
+    return;
+  }
 
-  res.statusCode = 200;
-  res.setHeader('Content-Type', 'application/json');
-  res.end(JSON.stringify(response));
+  try {
+    const body = JSON.stringify(response);
+    log('Stateless sending 200 bodyLen=' + body.length);
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Length', Buffer.byteLength(body, 'utf8'));
+    res.end(body);
+  } catch (e) {
+    log('Stateless send error: ' + String(e));
+    sendJson(res, 500, {
+      jsonrpc: '2.0',
+      id: (message as { id?: unknown }).id ?? null,
+      error: { code: -32603, message: 'Response serialize error' },
+    });
+  }
 }
 
 async function main() {
