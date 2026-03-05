@@ -4,6 +4,7 @@
  * Env:
  * - MCP_TRANSPORT=stdio  → stdio (Claude Desktop: command + args in config)
  * - MCP_TRANSPORT=http   → Streamable HTTP on MCP_PORT (default 3100)
+ * - MCP_STATELESS=true   → stateless HTTP: one JSON-RPC request → one JSON response (no SDK Streamable transport)
  *
  * Always set: CHECKION_API_URL, CHECKION_API_TOKEN
  */
@@ -42,6 +43,60 @@ async function parseBody(req: IncomingMessage): Promise<unknown> {
   });
 }
 
+/** Stateless: minimal transport that captures the first response and we write it directly to res. No SDK Streamable HTTP. */
+async function handleStatelessRequest(
+  mcpServer: McpServer,
+  req: IncomingMessage,
+  res: ServerResponse,
+  parsedBody: unknown
+): Promise<void> {
+  const message = parsedBody && typeof parsedBody === 'object' && 'method' in parsedBody ? parsedBody : undefined;
+  if (!message || typeof (message as { method?: unknown }).method !== 'string') {
+    res.statusCode = 400;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Invalid JSON-RPC' } }));
+    return;
+  }
+
+  let resolveResponse!: (value: unknown) => void;
+  const responsePromise = new Promise<unknown>((resolve) => {
+    resolveResponse = resolve;
+  });
+
+  const transport = {
+    onmessage: null as ((msg: unknown, extra?: unknown) => void) | null,
+    send(msg: unknown): Promise<void> {
+      resolveResponse(msg);
+      return Promise.resolve();
+    },
+    start(): Promise<void> {
+      return Promise.resolve();
+    },
+    close(): Promise<void> {
+      return Promise.resolve();
+    },
+  };
+
+  await mcpServer.close().catch(() => {});
+  await mcpServer.connect(transport as Parameters<McpServer['connect']>[0]);
+
+  const baseUrl = `http://localhost:${PORT}`;
+  const requestInfo = {
+    headers: (req.headers as Record<string, string | string[] | undefined>) ?? {},
+    url: new URL(req.url ?? '/', baseUrl),
+  };
+  transport.onmessage!(message, { requestInfo });
+
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error('MCP response timeout')), 30000)
+  );
+  const response = await Promise.race([responsePromise, timeout]);
+
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify(response));
+}
+
 async function main() {
   const mcpServer = new McpServer(
     { name: 'checkion-mcp', version: '1.0.0' },
@@ -63,7 +118,6 @@ async function main() {
     log('Unhandled rejection: ' + String(reason));
   });
 
-  /** Stateless: one transport per request (SDK forbids reuse). Serialize to avoid concurrent connect(). */
   let requestQueue: Promise<void> = Promise.resolve();
   const sharedTransport = STATELESS
     ? null
@@ -83,17 +137,6 @@ async function main() {
     parsedBody: unknown,
     transport: StreamableHTTPServerTransport
   ): Promise<void> => {
-    const origWriteHead = res.writeHead.bind(res) as (a: number, b?: unknown, c?: unknown) => ServerResponse;
-    (res as { writeHead: (a: number, b?: unknown, c?: unknown) => ServerResponse }).writeHead = function (statusOrCode: number, b?: unknown, c?: unknown) {
-      log('writeHead status=' + statusOrCode);
-      return origWriteHead(statusOrCode, b, c);
-    };
-    const origEnd = res.end.bind(res) as (...a: unknown[]) => ServerResponse;
-    (res as { end: (...a: unknown[]) => ServerResponse }).end = function (...args: unknown[]) {
-      const len = args[0] === undefined ? 0 : typeof args[0] === 'string' ? args[0].length : (args[0] as Buffer)?.length ?? 0;
-      log('end chunkLen=' + len);
-      return origEnd(...args);
-    };
     await transport.handleRequest(req as Parameters<typeof transport.handleRequest>[0], res, parsedBody);
   };
 
@@ -103,19 +146,10 @@ async function main() {
       const parsedBody = req.method === 'POST' ? await parseBody(req) : undefined;
       const method = parsedBody && typeof parsedBody === 'object' && 'method' in parsedBody ? String((parsedBody as { method?: unknown }).method) : '';
       if (method) log('Body method: ' + method);
-      res.once('error', (e) => log('res error: ' + String(e)));
-      res.once('close', () => { if (!res.writableEnded) log('res close before end'); });
 
       if (STATELESS) {
         requestQueue = requestQueue.then(async () => {
-          const transport = new StreamableHTTPServerTransport({
-            sessionIdGenerator: undefined,
-            // SSE mode: SDK writes response to stream so body is non-empty; client already parses SSE.
-            enableJsonResponse: false,
-          });
-          transport.onerror = (err) => log('Transport error: ' + String(err));
-          await mcpServer.connect(transport);
-          await handleWithTransport(req, res, parsedBody, transport);
+          await handleStatelessRequest(mcpServer, req, res, parsedBody);
         });
         await requestQueue;
       } else {
