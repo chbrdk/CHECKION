@@ -54,6 +54,7 @@ async function main() {
     const transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: STATELESS ? undefined : () => randomUUID(),
     });
+    transport.onerror = (err) => log('Transport error: ' + String(err));
     await mcpServer.connect(transport);
     process.on('unhandledRejection', (reason) => {
         log('Unhandled rejection: ' + String(reason));
@@ -62,6 +63,9 @@ async function main() {
         log(`${req.method} ${req.url ?? '/'}`);
         try {
             const parsedBody = req.method === 'POST' ? await parseBody(req) : undefined;
+            const method = parsedBody && typeof parsedBody === 'object' && 'method' in parsedBody ? String(parsedBody.method) : '';
+            if (method)
+                log('Body method: ' + method);
             await transport.handleRequest(req, res, parsedBody);
         }
         catch (err) {
