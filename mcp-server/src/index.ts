@@ -69,7 +69,13 @@ async function handleStatelessRequest(
     resolveResponse = resolve;
   });
 
-  const transport = {
+  const transport: {
+    onmessage: ((msg: unknown, extra?: unknown) => void) | null;
+    onclose?: () => void;
+    send(msg: unknown): Promise<void>;
+    start(): Promise<void>;
+    close(): Promise<void>;
+  } = {
     onmessage: null as ((msg: unknown, extra?: unknown) => void) | null,
     send(msg: unknown): Promise<void> {
       resolveResponse(msg);
@@ -78,8 +84,9 @@ async function handleStatelessRequest(
     start(): Promise<void> {
       return Promise.resolve();
     },
-    close(): Promise<void> {
-      return Promise.resolve();
+    async close(): Promise<void> {
+      // Protocol only clears _transport when transport invokes onclose (see SDK Protocol._onclose).
+      if (typeof transport.onclose === 'function') transport.onclose();
     },
   };
 
