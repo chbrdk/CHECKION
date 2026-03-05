@@ -51,9 +51,18 @@ function sendJson(res: ServerResponse, status: number, body: unknown): void {
   res.end(raw);
 }
 
-/** Stateless: minimal transport that captures the first response and we write it directly to res. No SDK Streamable HTTP. */
+/** Returns a new McpServer with tools registered. Used for stateless so we never reuse a connected server. */
+function createStatelessMcpServer(): McpServer {
+  const server = new McpServer(
+    { name: 'checkion-mcp', version: '1.0.0' },
+    { capabilities: {} }
+  );
+  registerCheckionTools(server);
+  return server;
+}
+
+/** Stateless: one server instance per request (avoids "Already connected"); minimal transport captures response and we write it to res. */
 async function handleStatelessRequest(
-  mcpServer: McpServer,
   req: IncomingMessage,
   res: ServerResponse,
   parsedBody: unknown
@@ -69,13 +78,7 @@ async function handleStatelessRequest(
     resolveResponse = resolve;
   });
 
-  const transport: {
-    onmessage: ((msg: unknown, extra?: unknown) => void) | null;
-    onclose?: () => void;
-    send(msg: unknown): Promise<void>;
-    start(): Promise<void>;
-    close(): Promise<void>;
-  } = {
+  const transport = {
     onmessage: null as ((msg: unknown, extra?: unknown) => void) | null,
     send(msg: unknown): Promise<void> {
       resolveResponse(msg);
@@ -84,14 +87,13 @@ async function handleStatelessRequest(
     start(): Promise<void> {
       return Promise.resolve();
     },
-    async close(): Promise<void> {
-      // Protocol only clears _transport when transport invokes onclose (see SDK Protocol._onclose).
-      if (typeof transport.onclose === 'function') transport.onclose();
+    close(): Promise<void> {
+      return Promise.resolve();
     },
   };
 
+  const mcpServer = createStatelessMcpServer();
   try {
-    await mcpServer.close().catch(() => {});
     await mcpServer.connect(transport as Parameters<McpServer['connect']>[0]);
   } catch (e) {
     log('Stateless connect error: ' + String(e));
@@ -205,7 +207,7 @@ async function main() {
 
       if (STATELESS) {
         requestQueue = requestQueue.then(async () => {
-          await handleStatelessRequest(mcpServer, req, res, parsedBody);
+          await handleStatelessRequest(req, res, parsedBody);
         });
         await requestQueue;
       } else {
