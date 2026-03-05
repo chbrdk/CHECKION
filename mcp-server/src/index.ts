@@ -22,26 +22,6 @@ function log(msg: string): void {
   (USE_STDIO ? process.stderr : process.stdout).write(`[CHECKION MCP] ${msg}\n`);
 }
 
-async function parseBody(req: IncomingMessage): Promise<unknown> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    req.on('data', (chunk) => chunks.push(chunk));
-    req.on('end', () => {
-      const raw = Buffer.concat(chunks).toString('utf8');
-      if (!raw.trim()) {
-        resolve(undefined);
-        return;
-      }
-      try {
-        resolve(JSON.parse(raw));
-      } catch {
-        resolve(undefined);
-      }
-    });
-    req.on('error', reject);
-  });
-}
-
 async function main() {
   const mcpServer = new McpServer(
     { name: 'checkion-mcp', version: '1.0.0' },
@@ -71,8 +51,9 @@ async function main() {
   const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
     log(`${req.method} ${req.url ?? '/'}`);
     try {
-      const parsedBody = req.method === 'POST' ? await parseBody(req) : undefined;
-      await transport.handleRequest(req as Parameters<typeof transport.handleRequest>[0], res, parsedBody);
+      // Do not read req body here – the transport builds a Web Request from req and reads the body itself.
+      // Pre-reading (parseBody) consumed the stream and caused 500 with empty body when the transport tried to read.
+      await transport.handleRequest(req as Parameters<typeof transport.handleRequest>[0], res, undefined);
     } catch (err) {
       log('Request error: ' + String(err));
       if (!res.headersSent) {
