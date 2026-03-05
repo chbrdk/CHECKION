@@ -1,4 +1,6 @@
 # CHECKION MCP Server – Node 20, Streamable HTTP
+# Build context MUST be mcp-server/ (so COPY sees package.json and src/).
+# Coolify: Dockerfile path = mcp-server/Dockerfile, Build context = mcp-server (or ./mcp-server).
 FROM node:20-alpine AS builder
 
 WORKDIR /app

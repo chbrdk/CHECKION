@@ -104,86 +104,86 @@ Wenn du das CHECKION-Repo ohnehin auf dem Rechner hast, kann Claude den MCP-Serv
 ### Scans
 | Tool | Description |
 |------|-------------|
-| `checkion/scan_single` | Start single-page scan (url, optional projectId) |
-| `checkion/scan_get` | Get scan result by ID |
-| `checkion/scan_summarize` | Generate LLM summary for single-page scan (id) |
-| `checkion/scan_screenshot` | Get screenshot URL for scan (id); GET with Bearer for image |
-| `checkion/scans_list` | List single-page scans (limit, page, projectId) |
-| `checkion/scan_delete` | Delete single-page scan by ID |
-| `checkion/scan_domain` | Start domain scan (url, useSitemap, maxPages, projectId) |
-| `checkion/scan_domain_status` | Domain scan status by ID |
-| `checkion/scan_domain_summary` | Domain scan summary by ID |
-| `checkion/scan_domain_summarize` | Generate LLM domain summary (id) |
-| `checkion/scan_domain_journey_start` | Start journey from domain scan (id, goal, stream?) |
-| `checkion/scans_domain_list` | List domain scans |
-| `checkion/scan_domain_delete` | Delete domain scan by ID |
-| `checkion/scan_journey_start` | Start journey-agent run (url, task, optional projectId) |
-| `checkion/scan_journey_get` | Get journey-agent run result by jobId |
-| `checkion/scan_journey_history` | List journey-agent runs (limit, projectId) |
-| `checkion/scan_assign_project` | Assign single scan to project (scanId, projectId) |
-| `checkion/scan_domain_assign_project` | Assign domain scan to project (domainScanId, projectId) |
-| `checkion/scan_journey_assign_project` | Assign journey run to project (jobId, projectId) |
-| `checkion/scan_geo_eeat_assign_project` | Assign GEO/E-E-A-T run to project (jobId, projectId) |
+| `checkion.scan_single` | Start single-page scan (url, optional projectId) |
+| `checkion.scan_get` | Get scan result by ID |
+| `checkion.scan_summarize` | Generate LLM summary for single-page scan (id) |
+| `checkion.scan_screenshot` | Get screenshot URL for scan (id); GET with Bearer for image |
+| `checkion.scans_list` | List single-page scans (limit, page, projectId) |
+| `checkion.scan_delete` | Delete single-page scan by ID |
+| `checkion.scan_domain` | Start domain scan (url, useSitemap, maxPages, projectId) |
+| `checkion.scan_domain_status` | Domain scan status by ID |
+| `checkion.scan_domain_summary` | Domain scan summary by ID |
+| `checkion.scan_domain_summarize` | Generate LLM domain summary (id) |
+| `checkion.scan_domain_journey_start` | Start journey from domain scan (id, goal, stream?) |
+| `checkion.scans_domain_list` | List domain scans |
+| `checkion.scan_domain_delete` | Delete domain scan by ID |
+| `checkion.scan_journey_start` | Start journey-agent run (url, task, optional projectId) |
+| `checkion.scan_journey_get` | Get journey-agent run result by jobId |
+| `checkion.scan_journey_history` | List journey-agent runs (limit, projectId) |
+| `checkion.scan_assign_project` | Assign single scan to project (scanId, projectId) |
+| `checkion.scan_domain_assign_project` | Assign domain scan to project (domainScanId, projectId) |
+| `checkion.scan_journey_assign_project` | Assign journey run to project (jobId, projectId) |
+| `checkion.scan_geo_eeat_assign_project` | Assign GEO/E-E-A-T run to project (jobId, projectId) |
 
 ### Projects
 | Tool | Description |
 |------|-------------|
-| `checkion/projects_list` | List projects |
-| `checkion/project_get` | Get project by ID |
-| `checkion/project_create` | Create project (name, optional domain) |
-| `checkion/project_update` | Update project (id, name?, domain?) |
-| `checkion/project_delete` | Delete project by ID |
+| `checkion.projects_list` | List projects |
+| `checkion.project_get` | Get project by ID |
+| `checkion.project_create` | Create project (name, optional domain) |
+| `checkion.project_update` | Update project (id, name?, domain?) |
+| `checkion.project_delete` | Delete project by ID |
 
 ### Checks / Tools
 | Tool | Description |
 |------|-------------|
-| `checkion/tools_contrast` | WCAG contrast (f, b hex colors) |
-| `checkion/tools_extract` | Extract content by URL and selector |
-| `checkion/tools_ssl` | SSL Labs check (host) |
-| `checkion/tools_pagespeed` | PageSpeed Insights (url) |
-| `checkion/tools_wayback` | Wayback availability (url) |
-| `checkion/tools_readability` | Readability score for text |
+| `checkion.tools_contrast` | WCAG contrast (f, b hex colors) |
+| `checkion.tools_extract` | Extract content by URL and selector |
+| `checkion.tools_ssl` | SSL Labs check (host) |
+| `checkion.tools_pagespeed` | PageSpeed Insights (url) |
+| `checkion.tools_wayback` | Wayback availability (url) |
+| `checkion.tools_readability` | Readability score for text |
 
 ### Journeys (saved)
 | Tool | Description |
 |------|-------------|
-| `checkion/journeys_list` | List saved journeys (limit, page) |
-| `checkion/journey_get` | Get saved journey by ID |
-| `checkion/journey_save` | Save journey (domainScanId, goal, result with steps, name?) |
-| `checkion/journey_delete` | Delete saved journey by ID |
+| `checkion.journeys_list` | List saved journeys (limit, page) |
+| `checkion.journey_get` | Get saved journey by ID |
+| `checkion.journey_save` | Save journey (domainScanId, goal, result with steps, name?) |
+| `checkion.journey_delete` | Delete saved journey by ID |
 
 ### GEO / E-E-A-T
 | Tool | Description |
 |------|-------------|
-| `checkion/geo_eeat_start` | Start GEO/E-E-A-T scan (url, projectId?, runCompetitive?, competitors?, queries?) |
-| `checkion/geo_eeat_status` | Get GEO/E-E-A-T job status by jobId (for polling) |
-| `checkion/geo_eeat_suggest_queries` | AI-suggest competitors and LLM queries (url) |
-| `checkion/geo_eeat_history` | List GEO/E-E-A-T runs (limit, projectId) |
-| `checkion/geo_eeat_get` | Get GEO/E-E-A-T run by jobId |
-| `checkion/geo_eeat_rerun_competitive` | Rerun competitive benchmark (jobId) |
-| `checkion/geo_eeat_competitive_history` | List competitive benchmark runs for a job (jobId, limit?) |
-| `checkion/geo_eeat_competitive_run_get` | Get one competitive run by jobId and runId |
+| `checkion.geo_eeat_start` | Start GEO/E-E-A-T scan (url, projectId?, runCompetitive?, competitors?, queries?) |
+| `checkion.geo_eeat_status` | Get GEO/E-E-A-T job status by jobId (for polling) |
+| `checkion.geo_eeat_suggest_queries` | AI-suggest competitors and LLM queries (url) |
+| `checkion.geo_eeat_history` | List GEO/E-E-A-T runs (limit, projectId) |
+| `checkion.geo_eeat_get` | Get GEO/E-E-A-T run by jobId |
+| `checkion.geo_eeat_rerun_competitive` | Rerun competitive benchmark (jobId) |
+| `checkion.geo_eeat_competitive_history` | List competitive benchmark runs for a job (jobId, limit?) |
+| `checkion.geo_eeat_competitive_run_get` | Get one competitive run by jobId and runId |
 
 ### Search & Share
 | Tool | Description |
 |------|-------------|
-| `checkion/search` | Search across scans (q, limit?) |
-| `checkion/share_by_resource` | Get existing share link for a resource (type, id) |
-| `checkion/share_create` | Create share link (type, id, password?) |
-| `checkion/share_get` | Get share metadata (token) |
-| `checkion/share_revoke` | Revoke share link (token) |
+| `checkion.search` | Search across scans (q, limit?) |
+| `checkion.share_by_resource` | Get existing share link for a resource (type, id) |
+| `checkion.share_create` | Create share link (type, id, password?) |
+| `checkion.share_get` | Get share metadata (token) |
+| `checkion.share_revoke` | Revoke share link (token) |
 
 ### Saliency
 | Tool | Description |
 |------|-------------|
-| `checkion/saliency_generate` | Start saliency/heatmap job (scanId); returns jobId |
-| `checkion/saliency_result` | Get saliency result (jobId, scanId) |
+| `checkion.saliency_generate` | Start saliency/heatmap job (scanId); returns jobId |
+| `checkion.saliency_result` | Get saliency result (jobId, scanId) |
 
 ### User & Health
 | Tool | Description |
 |------|-------------|
-| `checkion/user_profile` | Get authenticated user profile (read-only) |
-| `checkion/health` | CHECKION API health check |
+| `checkion.user_profile` | Get authenticated user profile (read-only) |
+| `checkion.health` | CHECKION API health check |
 
 ## Client configuration (e.g. Cursor)
 
@@ -202,9 +202,13 @@ docker run -e CHECKION_API_URL=https://checkion.example.com -e CHECKION_API_TOKE
 
 ## Coolify
 
+**Build:** Wenn der Build mit `"/src": not found` fehlschlägt, liegt der Build-Context im Repo-Root. Entweder **Context auf `mcp-server`** setzen (Dockerfile: `mcp-server/Dockerfile`) **oder** Dockerfile **`Dockerfile.mcp-server`** im Repo-Root nutzen und Context auf `.` lassen (Standard).
+
 ### Option A: Eigene Domain für MCP
 
-1. MCP als **eigenes** Application deployen (Dockerfile: `mcp-server/Dockerfile`, Context z. B. `mcp-server/`).
+1. MCP als **eigenes** Application deployen:
+   - **Variante 1:** Dockerfile `mcp-server/Dockerfile`, **Build context** = `mcp-server` (oder `./mcp-server`).
+   - **Variante 2:** Dockerfile `Dockerfile.mcp-server`, Build context = `.` (Repo-Root).
 2. Eigene Domain vergeben (z. B. `checkion-mcp.projects-a.plygrnd.tech`).
 3. Env: `CHECKION_API_URL`, `CHECKION_API_TOKEN`; Port 3100 exponieren.
 4. **MCP-URL für Clients:** `https://checkion-mcp.projects-a.plygrnd.tech`

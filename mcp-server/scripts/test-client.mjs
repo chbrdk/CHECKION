@@ -35,11 +35,11 @@ async function main() {
     const healthResult = await client.request(
       {
         method: 'tools/call',
-        params: { name: 'checkion/health', arguments: {} },
+        params: { name: 'checkion.health', arguments: {} },
       },
       CallToolResultSchema
     );
-    console.log('checkion/health result:');
+    console.log('checkion.health result:');
     healthResult.content.forEach((c) => {
       if (c.type === 'text') console.log(c.text);
     });
