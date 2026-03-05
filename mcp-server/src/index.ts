@@ -61,6 +61,7 @@ async function main() {
 
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: STATELESS ? undefined : () => randomUUID(),
+    enableJsonResponse: true,
   });
   transport.onerror = (err) => log('Transport error: ' + String(err));
   await mcpServer.connect(transport);
