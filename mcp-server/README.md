@@ -202,6 +202,22 @@ docker run -e CHECKION_API_URL=https://checkion.example.com -e CHECKION_API_TOKE
 
 ## Coolify
 
-1. New application, build from Dockerfile; context `mcp-server/` (or repo root with Dockerfile path `mcp-server/Dockerfile`).
-2. Set env: `CHECKION_API_URL`, `CHECKION_API_TOKEN`; optional `MCP_PORT`, `MCP_STATELESS`.
-3. Expose port 3100 (or your chosen port) for the MCP client.
+### Option A: Eigene Domain für MCP
+
+1. MCP als **eigenes** Application deployen (Dockerfile: `mcp-server/Dockerfile`, Context z. B. `mcp-server/`).
+2. Eigene Domain vergeben (z. B. `checkion-mcp.projects-a.plygrnd.tech`).
+3. Env: `CHECKION_API_URL`, `CHECKION_API_TOKEN`; Port 3100 exponieren.
+4. **MCP-URL für Clients:** `https://checkion-mcp.projects-a.plygrnd.tech`
+
+### Option B: MCP unter derselben Domain (Proxy)
+
+CHECKION leitet `/mcp` an den MCP-Server weiter – eine Domain für App + MCP.
+
+1. **Zwei Services in Coolify:** CHECKION (Haupt-App) + MCP (eigenes Deployment, gleiches Repo, Dockerfile `mcp-server/Dockerfile`). MCP braucht keine öffentliche Domain.
+2. **CHECKION-App:** In den Umgebungsvariablen der **CHECKION**-Application setzen:
+   - `MCP_SERVER_URL=http://<mcp-service-name>:3100`  
+     (Service-Name = der interne Name des MCP-Containers in Coolify, z. B. der App-Name oder Hostname des MCP-Services.)
+3. Nach Deployment ist der MCP erreichbar unter:
+   - **MCP-URL für Clients:** `https://checkion.projects-a.plygrnd.tech/mcp`
+
+In Claude/Cursor dann z. B. `https://checkion.projects-a.plygrnd.tech/mcp` (mit mcp-proxy) oder in Cursor die gleiche URL eintragen.

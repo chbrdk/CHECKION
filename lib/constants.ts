@@ -271,3 +271,6 @@ export const ENV_UX_JOURNEY_AGENT_URL = 'UX_JOURNEY_AGENT_URL';
 
 /** Optional base URL for GEO/E-E-A-T intensive + competitive benchmark service. If set, POST /api/scan/geo-eeat can delegate long-running jobs to this service. */
 export const ENV_GEO_EEAT_SERVICE_URL = 'GEO_EEAT_SERVICE_URL';
+
+/** If set, Next.js rewrites /mcp and /mcp/* to this URL (MCP server). Enables single-domain deployment: origin/mcp → MCP. Use internal URL in Coolify (e.g. http://checkion-mcp:3100). */
+export const ENV_MCP_SERVER_URL = 'MCP_SERVER_URL';

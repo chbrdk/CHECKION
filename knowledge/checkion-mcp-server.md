@@ -27,6 +27,10 @@ So: the MCP server does not store user data; it only forwards requests to CHECKI
 - **Docker**: see `mcp-server/Dockerfile` and `mcp-server/README.md`
 - **Coolify**: New app from Dockerfile (context `mcp-server/`), set `CHECKION_API_URL` and `CHECKION_API_TOKEN`, expose port 3100 (or `MCP_PORT`)
 
+## Same-domain proxy (optional)
+
+To expose the MCP under the CHECKION domain (e.g. `https://checkion.example.com/mcp`), set **`MCP_SERVER_URL`** in the **CHECKION** app’s environment to the internal MCP server URL (e.g. `http://checkion-mcp:3100` when the MCP service is named `checkion-mcp` in Coolify). Next.js rewrites `/mcp` and `/mcp/*` to that URL (see `next.config.mjs` and `lib/constants.ts` → `ENV_MCP_SERVER_URL`). Then the MCP URL for clients is `https://checkion.example.com/mcp`.
+
 ## Connecting an agent / Cursor
 
 Point the MCP client to the server URL (e.g. `https://mcp.your-domain.com` or `http://localhost:3100`). No client-side token is required; the server uses `CHECKION_API_TOKEN` when calling CHECKION.
