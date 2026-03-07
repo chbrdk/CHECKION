@@ -16,12 +16,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # ---- Design system (needed for file:../msqdx-design-system) ----
 FROM base AS deps
-# Clone and build msqdx-design-system so file:../msqdx-design-system resolves from /app
+# Clone and build msqdx-design-system so file:../msqdx-design-system resolves from /app.
+# Ensure https://github.com/chbrdk/msqdx-design-system is up to date (incl. PrismionKind 'tool', ToolCard, etc.),
+# or the Next.js build may fail with type/compile errors around line 114.
 ARG DESIGN_SYSTEM_REPO=https://github.com/chbrdk/msqdx-design-system.git
 RUN git clone --depth 1 ${DESIGN_SYSTEM_REPO} /msqdx-design-system \
     && cd /msqdx-design-system && npm install && npm run build
 
-# Install app deps (design system is at /msqdx-design-system); need devDeps for build
+# So file:../msqdx-design-system resolves from /app (npm uses this for symlink target)
+RUN ln -snf /msqdx-design-system /app/msqdx-design-system
+# Install app deps (design system is at /msqdx-design-system); need devDeps for build.
+# Prefer npm ci; if lock file is out of sync (e.g. Missing: yaml@x), fall back to npm install.
 COPY package.json package-lock.json* ./
 RUN --mount=type=cache,target=/root/.npm \
     (test -f package-lock.json && npm ci --ignore-scripts) || npm install --ignore-scripts
@@ -34,8 +39,12 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY package.json package-lock.json* ./
 COPY . .
 
-# Ensure file:../msqdx-design-system resolves from /app (npm may link relative to /app)
-RUN ln -snf /msqdx-design-system /app/msqdx-design-system 2>/dev/null || true
+# Replace @msqdx symlinks with built package content so TypeScript/Next resolve @msqdx/react (no symlink reliance)
+RUN mkdir -p ./node_modules/@msqdx \
+  && rm -rf ./node_modules/@msqdx/react ./node_modules/@msqdx/tokens ./node_modules/@msqdx/graph \
+  && cp -r /msqdx-design-system/packages/react ./node_modules/@msqdx/react \
+  && cp -r /msqdx-design-system/packages/tokens ./node_modules/@msqdx/tokens \
+  && cp -r /msqdx-design-system/packages/graph ./node_modules/@msqdx/graph
 ENV DS_BASE=../msqdx-design-system
 RUN npm run build
 
