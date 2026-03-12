@@ -123,7 +123,8 @@
     "device": "Gerät (optional)",
     "devicePlaceholder": "z. B. desktop",
     "deleteKeyword": "Entfernen",
-    "rankingsUnconfigured": "Rank-Tracking ist nicht konfiguriert (SERP_API_KEY fehlt)."
+    "rankingsUnconfigured": "Rank-Tracking ist nicht konfiguriert (SERP_API_KEY fehlt).",
+    "rankingsRefresh502": "Rank-Aktualisierung fehlgeschlagen. SERP_API_KEY und SERP_API_PROVIDER (serper oder scrapingrobot) prüfen."
   },
   "auth": {
     "login": {

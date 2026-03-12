@@ -1,5 +1,7 @@
 /* ------------------------------------------------------------------ */
 /*  CHECKION – POST /api/rank-tracking/refresh                         */
+/*  Returns 502 (Bad Gateway) when: SERP_API_KEY is missing, or the  */
+/*  external SERP API (Serper/ScrapingRobot) fails or times out.     */
 /* ------------------------------------------------------------------ */
 
 import { NextRequest, NextResponse } from 'next/server';

@@ -67,6 +67,7 @@ export default function ProjectDetailPage() {
     const [addKeywordDevice, setAddKeywordDevice] = useState('');
     const [addKeywordSubmitting, setAddKeywordSubmitting] = useState(false);
     const [refreshLoading, setRefreshLoading] = useState(false);
+    const [refreshError, setRefreshError] = useState<string | null>(null);
 
     const loadProject = useCallback(async () => {
         if (!id) return;
@@ -149,6 +150,7 @@ export default function ProjectDetailPage() {
 
     const handleRefreshRankings = useCallback(async () => {
         if (!id) return;
+        setRefreshError(null);
         setRefreshLoading(true);
         try {
             const res = await fetch(apiRankTrackingRefresh(), {
@@ -157,17 +159,23 @@ export default function ProjectDetailPage() {
                 credentials: 'same-origin',
                 body: JSON.stringify({ projectId: id }),
             });
-            const data = await res.json();
-            if (data?.success) {
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data?.success) {
                 loadProject();
                 const listRes = await fetch(apiRankTrackingKeywords(id), { credentials: 'same-origin' });
                 const listData = await listRes.json();
                 setRankKeywords(Array.isArray(listData?.data) ? listData.data : []);
+            } else if (!res.ok && typeof data?.error === 'string') {
+                setRefreshError(data.error);
+            } else if (!res.ok) {
+                setRefreshError(res.status === 502 ? t('projects.rankingsRefresh502') : t('common.error'));
             }
+        } catch {
+            setRefreshError(t('common.error'));
         } finally {
             setRefreshLoading(false);
         }
-    }, [id, loadProject]);
+    }, [id, loadProject, t]);
 
     const handleDeleteKeyword = useCallback(async (keywordId: string) => {
         if (!id) return;
@@ -389,6 +397,11 @@ export default function ProjectDetailPage() {
                                     {refreshLoading ? t('common.loading') : t('projects.refreshRankings')}
                                 </MsqdxButton>
                             </Box>
+                            {refreshError && (
+                                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-status-error, #b71c1c)', mb: 2 }}>
+                                    {refreshError}
+                                </MsqdxTypography>
+                            )}
                             <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
                                 {rankKeywords.map((k) => (
                                     <Box
