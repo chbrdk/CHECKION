@@ -14,3 +14,12 @@ export const API_PAGESPEED_BASE = 'https://pagespeedonline.googleapis.com/pagesp
 
 /** Wayback Machine – Domain availability/history. Free. */
 export const API_WAYBACK_AVAILABLE = 'https://archive.org/wayback/available';
+
+/** Serper – Google SERP API for rank tracking. Free tier ~2,500 requests/month. Base URL from env or default. */
+export const API_SERP_BASE =
+    (typeof process !== 'undefined' && process.env?.SERP_API_BASE)
+        ? process.env.SERP_API_BASE.replace(/\/$/, '')
+        : 'https://google.serper.dev';
+
+/** ScrapingRobot – Google SERP API. Free tier ~5,000 requests/month. Single endpoint. */
+export const API_SCRAPINGROBOT_BASE = 'https://api.scrapingrobot.com';

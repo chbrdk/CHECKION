@@ -2,7 +2,7 @@
 /*  CHECKION – Database schema (Drizzle + PostgreSQL)                 */
 /* ------------------------------------------------------------------ */
 
-import { pgTable, text, timestamp, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, jsonb, integer } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
     id: text('id').primaryKey(),
@@ -118,4 +118,25 @@ export const geoEeatCompetitiveRuns = pgTable('geo_eeat_competitive_runs', {
     queries: jsonb('queries').notNull(), // string[]
     competitors: jsonb('competitors').notNull(), // string[]
     error: text('error'),
+});
+
+/** Rank tracking: keywords per project for SERP position monitoring. */
+export const rankTrackingKeywords = pgTable('rank_tracking_keywords', {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull(),
+    projectId: text('project_id').references(() => projects.id, { onDelete: 'set null' }),
+    domain: text('domain').notNull(),
+    keyword: text('keyword').notNull(),
+    country: text('country'),
+    device: text('device'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Rank tracking: position history per keyword (1–100 or null if not in top 100). */
+export const rankTrackingPositions = pgTable('rank_tracking_positions', {
+    id: text('id').primaryKey(),
+    keywordId: text('keyword_id').notNull().references(() => rankTrackingKeywords.id, { onDelete: 'cascade' }),
+    position: integer('position'), // 1–100 or null
+    recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull().defaultNow(),
 });

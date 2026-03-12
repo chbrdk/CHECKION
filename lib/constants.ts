@@ -70,6 +70,21 @@ export const API_SHARE = `${APP_BASE_URL}/api/share`;
 export const API_SEARCH = `${APP_BASE_URL}/api/search`;
 export const API_JOURNEYS = `${APP_BASE_URL}/api/journeys`;
 export const API_PROJECTS = `${APP_BASE_URL}/api/projects`;
+export const API_RANK_TRACKING_KEYWORDS = `${APP_BASE_URL}/api/rank-tracking/keywords`;
+export const API_RANK_TRACKING_REFRESH = `${APP_BASE_URL}/api/rank-tracking/refresh`;
+
+/** Build: GET /api/rank-tracking/keywords?projectId= */
+export const apiRankTrackingKeywords = (projectId: string) =>
+  `${API_RANK_TRACKING_KEYWORDS}?projectId=${encodeURIComponent(projectId)}`;
+/** Build: GET/DELETE /api/rank-tracking/keywords/[id] */
+export const apiRankTrackingKeyword = (id: string) => `${API_RANK_TRACKING_KEYWORDS}/${encodeURIComponent(id)}`;
+/** Build: GET /api/rank-tracking/keywords/[id]/positions?limit= */
+export const apiRankTrackingKeywordPositions = (id: string, limit?: number) => {
+  const base = `${API_RANK_TRACKING_KEYWORDS}/${encodeURIComponent(id)}/positions`;
+  return limit != null ? `${base}?limit=${limit}` : base;
+};
+/** Build: POST /api/rank-tracking/refresh */
+export const apiRankTrackingRefresh = () => API_RANK_TRACKING_REFRESH;
 
 /** POST /api/scan (single-page scan) */
 export const apiScanCreate = API_SCAN;

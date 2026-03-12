@@ -108,7 +108,22 @@
     "cancel": "Abbrechen",
     "creating": "Wird erstellt…",
     "createProject": "Projekt anlegen",
-    "optionalProject": "Projekt (optional)"
+    "optionalProject": "Projekt (optional)",
+    "rankings": "Rankings",
+    "rankTrackingKeywords": "Rankings",
+    "emptyRankings": "Keine Rank-Tracking-Keywords in diesem Projekt.",
+    "addKeyword": "Keyword hinzufügen",
+    "refreshRankings": "Rankings aktualisieren",
+    "keyword": "Keyword",
+    "keywordPlaceholder": "z. B. Suchbegriff",
+    "lastPosition": "Position",
+    "lastUpdate": "Letzte Aktualisierung",
+    "country": "Land (optional)",
+    "countryPlaceholder": "z. B. de",
+    "device": "Gerät (optional)",
+    "devicePlaceholder": "z. B. desktop",
+    "deleteKeyword": "Entfernen",
+    "rankingsUnconfigured": "Rank-Tracking ist nicht konfiguriert (SERP_API_KEY fehlt)."
   },
   "auth": {
     "login": {

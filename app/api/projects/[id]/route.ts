@@ -11,6 +11,7 @@ import { getDomainScansCount } from '@/lib/db/scans';
 import { listJourneyRuns } from '@/lib/db/journey-runs';
 import { listGeoEeatRuns } from '@/lib/db/geo-eeat-runs';
 import { getStandaloneScansCount } from '@/lib/db/scans';
+import { getKeywordsCountByProject } from '@/lib/db/rank-tracking-keywords';
 
 export async function GET(
     request: NextRequest,
@@ -28,11 +29,12 @@ export async function GET(
     if (!project) {
         return apiError('Project not found', API_STATUS.NOT_FOUND);
     }
-    const [domainScansCount, journeyRunsCount, geoEeatRunsCount, singleScansCount] = await Promise.all([
+    const [domainScansCount, journeyRunsCount, geoEeatRunsCount, singleScansCount, rankTrackingKeywordsCount] = await Promise.all([
         getDomainScansCount(user.id, id),
         listJourneyRuns(user.id, 10000, { projectId: id }).then((r) => r.length),
         listGeoEeatRuns(user.id, 10000, { projectId: id }).then((r) => r.length),
         getStandaloneScansCount(user.id, id),
+        getKeywordsCountByProject(id),
     ]);
     return NextResponse.json({
         success: true,
@@ -43,6 +45,7 @@ export async function GET(
                 journeyRuns: journeyRunsCount,
                 geoEeatRuns: geoEeatRunsCount,
                 singleScans: singleScansCount,
+                rankTrackingKeywords: rankTrackingKeywordsCount,
             },
         },
     });

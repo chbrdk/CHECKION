@@ -168,6 +168,23 @@ export const projectAssignmentBodySchema = z.object({
   projectId: z.string().uuid().nullable(),
 });
 
+/** POST /api/rank-tracking/keywords */
+export const rankTrackingKeywordCreateBodySchema = z.object({
+  projectId: z.string().uuid().min(1, 'projectId is required'),
+  domain: z.string().min(1, 'domain is required'),
+  keyword: z.string().min(1, 'keyword is required'),
+  country: z.string().max(10).optional().nullable(),
+  device: z.string().max(20).optional().nullable(),
+});
+
+/** POST /api/rank-tracking/refresh */
+export const rankTrackingRefreshBodySchema = z.object({
+  keywordId: z.string().uuid().optional(),
+  projectId: z.string().uuid().optional(),
+}).refine((d) => d.keywordId != null || d.projectId != null, {
+  message: 'Provide keywordId or projectId',
+});
+
 function formatZodError(err: z.ZodError): string {
   const first = err.issues[0];
   if (!first) return 'Validation failed';

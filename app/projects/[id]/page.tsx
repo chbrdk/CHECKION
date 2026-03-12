@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Box } from '@mui/material';
+import { Box, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import {
     MsqdxTypography,
     MsqdxButton,
     MsqdxMoleculeCard,
     MsqdxTabs,
+    MsqdxFormField,
 } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import {
@@ -16,6 +17,10 @@ import {
     apiScanJourneyAgentHistory,
     apiScanGeoEeatHistory,
     apiScanList,
+    API_RANK_TRACKING_KEYWORDS,
+    apiRankTrackingKeywords,
+    apiRankTrackingKeyword,
+    apiRankTrackingRefresh,
     pathDomain,
     pathJourneyAgent,
     pathGeoEeat,
@@ -24,11 +29,21 @@ import {
     PATH_SCAN_DOMAIN,
 } from '@/lib/constants';
 
+interface RankKeywordItem {
+    id: string;
+    domain: string;
+    keyword: string;
+    country?: string;
+    device?: string;
+    lastPosition?: number;
+    lastRecordedAt?: string;
+}
+
 interface ProjectData {
     id: string;
     name: string;
     domain: string | null;
-    counts: { domainScans: number; journeyRuns: number; geoEeatRuns: number; singleScans: number };
+    counts: { domainScans: number; journeyRuns: number; geoEeatRuns: number; singleScans: number; rankTrackingKeywords: number };
 }
 
 export default function ProjectDetailPage() {
@@ -43,7 +58,15 @@ export default function ProjectDetailPage() {
     const [journeyRuns, setJourneyRuns] = useState<Array<{ id: string; url: string; task: string; status: string; createdAt: string }>>([]);
     const [geoRuns, setGeoRuns] = useState<Array<{ id: string; url: string; status: string; createdAt: string }>>([]);
     const [singleScans, setSingleScans] = useState<Array<{ id: string; url: string; timestamp: string }>>([]);
+    const [rankKeywords, setRankKeywords] = useState<RankKeywordItem[]>([]);
     const [listsLoading, setListsLoading] = useState(false);
+    const [addKeywordOpen, setAddKeywordOpen] = useState(false);
+    const [addKeywordDomain, setAddKeywordDomain] = useState('');
+    const [addKeywordKeyword, setAddKeywordKeyword] = useState('');
+    const [addKeywordCountry, setAddKeywordCountry] = useState('');
+    const [addKeywordDevice, setAddKeywordDevice] = useState('');
+    const [addKeywordSubmitting, setAddKeywordSubmitting] = useState(false);
+    const [refreshLoading, setRefreshLoading] = useState(false);
 
     const loadProject = useCallback(async () => {
         if (!id) return;
@@ -72,21 +95,92 @@ export default function ProjectDetailPage() {
             fetch(apiScanJourneyAgentHistory({ limit: 100, projectId: id }), { credentials: 'same-origin' }).then((r) => r.json()),
             fetch(apiScanGeoEeatHistory({ limit: 100, projectId: id }), { credentials: 'same-origin' }).then((r) => r.json()),
             fetch(apiScanList({ limit: 100, page: 1, projectId: id }), { credentials: 'same-origin' }).then((r) => r.json()),
+            fetch(apiRankTrackingKeywords(id), { credentials: 'same-origin' }).then((r) => r.json()),
         ])
-            .then(([domainRes, journeyRes, geoRes, scanRes]) => {
+            .then(([domainRes, journeyRes, geoRes, scanRes, rankRes]) => {
                 setDomainScans(Array.isArray(domainRes?.data) ? domainRes.data : []);
                 setJourneyRuns(Array.isArray(journeyRes?.runs) ? journeyRes.runs : Array.isArray(journeyRes?.data) ? journeyRes.data : []);
                 setGeoRuns(Array.isArray(geoRes?.runs) ? geoRes.runs : Array.isArray(geoRes?.data) ? geoRes.data : []);
                 setSingleScans(Array.isArray(scanRes?.data) ? scanRes.data : []);
+                setRankKeywords(Array.isArray(rankRes?.data) ? rankRes.data : []);
             })
             .catch(() => {
                 setDomainScans([]);
                 setJourneyRuns([]);
                 setGeoRuns([]);
                 setSingleScans([]);
+                setRankKeywords([]);
             })
             .finally(() => setListsLoading(false));
     }, [id]);
+
+    const handleAddKeyword = useCallback(async () => {
+        if (!id || !addKeywordDomain.trim() || !addKeywordKeyword.trim()) return;
+        setAddKeywordSubmitting(true);
+        try {
+            const res = await fetch(API_RANK_TRACKING_KEYWORDS, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    projectId: id,
+                    domain: addKeywordDomain.trim(),
+                    keyword: addKeywordKeyword.trim(),
+                    country: addKeywordCountry.trim() || undefined,
+                    device: addKeywordDevice.trim() || undefined,
+                }),
+            });
+            const data = await res.json();
+            if (data?.success) {
+                setAddKeywordOpen(false);
+                setAddKeywordDomain('');
+                setAddKeywordKeyword('');
+                setAddKeywordCountry('');
+                setAddKeywordDevice('');
+                loadProject();
+                const listRes = await fetch(apiRankTrackingKeywords(id), { credentials: 'same-origin' });
+                const listData = await listRes.json();
+                setRankKeywords(Array.isArray(listData?.data) ? listData.data : []);
+            }
+        } finally {
+            setAddKeywordSubmitting(false);
+        }
+    }, [id, addKeywordDomain, addKeywordKeyword, addKeywordCountry, addKeywordDevice, loadProject]);
+
+    const handleRefreshRankings = useCallback(async () => {
+        if (!id) return;
+        setRefreshLoading(true);
+        try {
+            const res = await fetch(apiRankTrackingRefresh(), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ projectId: id }),
+            });
+            const data = await res.json();
+            if (data?.success) {
+                loadProject();
+                const listRes = await fetch(apiRankTrackingKeywords(id), { credentials: 'same-origin' });
+                const listData = await listRes.json();
+                setRankKeywords(Array.isArray(listData?.data) ? listData.data : []);
+            }
+        } finally {
+            setRefreshLoading(false);
+        }
+    }, [id, loadProject]);
+
+    const handleDeleteKeyword = useCallback(async (keywordId: string) => {
+        if (!id) return;
+        try {
+            const res = await fetch(apiRankTrackingKeyword(keywordId), { method: 'DELETE', credentials: 'same-origin' });
+            if (res.ok) {
+                loadProject();
+                setRankKeywords((prev) => prev.filter((k) => k.id !== keywordId));
+            }
+        } catch {
+            // ignore
+        }
+    }, [id, loadProject]);
 
     if (!id) {
         return (
@@ -104,11 +198,13 @@ export default function ProjectDetailPage() {
         );
     }
 
+    const rankCount = 'rankTrackingKeywords' in project.counts ? project.counts.rankTrackingKeywords : 0;
     const tabs = [
         { label: `${t('projects.domainScans')} (${project.counts.domainScans})`, value: 0 },
         { label: `${t('projects.journeyRuns')} (${project.counts.journeyRuns})`, value: 1 },
         { label: `${t('projects.geoEeatRuns')} (${project.counts.geoEeatRuns})`, value: 2 },
         { label: `${t('projects.singleScans')} (${project.counts.singleScans})`, value: 3 },
+        { label: `${t('projects.rankings')} (${rankCount})`, value: 4 },
     ];
 
     return (
@@ -238,7 +334,7 @@ export default function ProjectDetailPage() {
                             ))}
                         </Box>
                     )
-                ) : (
+                ) : tab === 3 ? (
                     singleScans.length === 0 ? (
                         <Box sx={{ py: 4, textAlign: 'center' }}>
                             <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
@@ -273,8 +369,111 @@ export default function ProjectDetailPage() {
                             ))}
                         </Box>
                     )
+                ) : (
+                    rankKeywords.length === 0 ? (
+                        <Box sx={{ py: 4, textAlign: 'center' }}>
+                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
+                                {t('projects.emptyRankings')}
+                            </MsqdxTypography>
+                            <MsqdxButton variant="contained" brandColor="green" onClick={() => setAddKeywordOpen(true)}>
+                                {t('projects.addKeyword')}
+                            </MsqdxButton>
+                        </Box>
+                    ) : (
+                        <Box sx={{ p: 1.5 }}>
+                            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                                <MsqdxButton variant="contained" brandColor="green" size="small" onClick={() => setAddKeywordOpen(true)}>
+                                    {t('projects.addKeyword')}
+                                </MsqdxButton>
+                                <MsqdxButton variant="outlined" size="small" onClick={handleRefreshRankings} disabled={refreshLoading}>
+                                    {refreshLoading ? t('common.loading') : t('projects.refreshRankings')}
+                                </MsqdxButton>
+                            </Box>
+                            <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
+                                {rankKeywords.map((k) => (
+                                    <Box
+                                        key={k.id}
+                                        component="li"
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            flexWrap: 'wrap',
+                                            gap: 1,
+                                            py: 1,
+                                            px: 1.5,
+                                            borderBottom: '1px solid var(--color-border-subtle, #eee)',
+                                        }}
+                                    >
+                                        <Box sx={{ minWidth: 0, flex: '1 1 200px' }}>
+                                            <MsqdxTypography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {k.domain} — {k.keyword}
+                                            </MsqdxTypography>
+                                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                                {t('projects.lastPosition')}: {k.lastPosition != null ? k.lastPosition : '—'} · {t('projects.lastUpdate')}: {k.lastRecordedAt ? new Date(k.lastRecordedAt).toLocaleDateString() : '—'}
+                                            </MsqdxTypography>
+                                        </Box>
+                                        <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                            <MsqdxButton variant="outlined" size="small" color="error" onClick={() => handleDeleteKeyword(k.id)}>
+                                                {t('projects.deleteKeyword')}
+                                            </MsqdxButton>
+                                        </Box>
+                                    </Box>
+                                ))}
+                            </Box>
+                        </Box>
+                    )
                 )}
             </MsqdxMoleculeCard>
+
+            <Dialog open={addKeywordOpen} onClose={() => setAddKeywordOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 'var(--msqdx-spacing-md, 8px)' } }}>
+                <DialogTitle sx={{ fontWeight: 600 }}>{t('projects.addKeyword')}</DialogTitle>
+                <DialogContent>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 320, pt: 0.5 }}>
+                        <MsqdxFormField
+                            label={t('projects.domain')}
+                            placeholder={t('projects.domainPlaceholder')}
+                            value={addKeywordDomain}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddKeywordDomain(e.target.value)}
+                            fullWidth
+                        />
+                        <MsqdxFormField
+                            label={t('projects.keyword')}
+                            placeholder={t('projects.keywordPlaceholder')}
+                            value={addKeywordKeyword}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddKeywordKeyword(e.target.value)}
+                            fullWidth
+                        />
+                        <MsqdxFormField
+                            label={t('projects.country')}
+                            placeholder={t('projects.countryPlaceholder')}
+                            value={addKeywordCountry}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddKeywordCountry(e.target.value)}
+                            fullWidth
+                        />
+                        <MsqdxFormField
+                            label={t('projects.device')}
+                            placeholder={t('projects.devicePlaceholder')}
+                            value={addKeywordDevice}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddKeywordDevice(e.target.value)}
+                            fullWidth
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ px: 2, pb: 2 }}>
+                    <MsqdxButton variant="outlined" onClick={() => setAddKeywordOpen(false)}>
+                        {t('projects.cancel')}
+                    </MsqdxButton>
+                    <MsqdxButton
+                        variant="contained"
+                        brandColor="green"
+                        onClick={handleAddKeyword}
+                        disabled={!addKeywordDomain.trim() || !addKeywordKeyword.trim() || addKeywordSubmitting}
+                    >
+                        {addKeywordSubmitting ? t('projects.creating') : t('projects.save')}
+                    </MsqdxButton>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }
