@@ -41,10 +41,9 @@ COPY . .
 
 # Replace @msqdx symlinks with built package content so TypeScript/Next resolve @msqdx/react (no symlink reliance)
 RUN mkdir -p ./node_modules/@msqdx \
-  && rm -rf ./node_modules/@msqdx/react ./node_modules/@msqdx/tokens ./node_modules/@msqdx/graph \
+  && rm -rf ./node_modules/@msqdx/react ./node_modules/@msqdx/tokens \
   && cp -r /msqdx-design-system/packages/react ./node_modules/@msqdx/react \
-  && cp -r /msqdx-design-system/packages/tokens ./node_modules/@msqdx/tokens \
-  && cp -r /msqdx-design-system/packages/graph ./node_modules/@msqdx/graph
+  && cp -r /msqdx-design-system/packages/tokens ./node_modules/@msqdx/tokens
 ENV DS_BASE=../msqdx-design-system
 RUN npm run build
 
