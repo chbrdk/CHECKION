@@ -173,14 +173,14 @@ export function RankTrackingChart({
                 <MsqdxTypography variant="caption" sx={{ color: textMuted }}>
                     {keywordLabel}
                 </MsqdxTypography>
-                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                <Box sx={{ display: 'flex', gap: 0.25 }}>
                     {TIME_RANGES.map((tr, idx) => (
                         <MsqdxButton
                             key={tr.label}
                             variant={timeRangeIndex === idx ? 'contained' : 'outlined'}
                             size="small"
                             onClick={() => setTimeRangeIndex(idx)}
-                            sx={{ minWidth: 40 }}
+                            sx={{ minWidth: 32, px: 0.75, py: 0.25, fontSize: 11, lineHeight: 1.2 }}
                         >
                             {tr.label}
                         </MsqdxButton>
@@ -191,7 +191,7 @@ export function RankTrackingChart({
                 <ResponsiveContainer width="100%" height="100%">
                     <LineChart
                         data={chartData}
-                        margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
+                        margin={{ top: 8, right: 8, left: 0, bottom: 8 }}
                     >
                         <CartesianGrid strokeDasharray="3 3" stroke={borderColor} />
                         <XAxis
@@ -205,12 +205,7 @@ export function RankTrackingChart({
                             allowDataOverflow
                             tick={{ fill: textMuted, fontSize: 11 }}
                             stroke={borderColor}
-                            label={{
-                                value: t('projects.rankChartYAxis'),
-                                angle: -90,
-                                position: 'insideLeft',
-                                style: { fill: textMuted, fontSize: 11 },
-                            }}
+                            width={28}
                         />
                         <Tooltip
                             contentStyle={tooltipContentStyle}

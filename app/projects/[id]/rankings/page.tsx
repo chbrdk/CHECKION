@@ -10,7 +10,9 @@ import {
     MsqdxCard,
     MsqdxFormField,
     MsqdxChip,
+    MsqdxIconButton,
 } from '@msqdx/react';
+import { Trash2 } from 'lucide-react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import Link from 'next/link';
 import {
@@ -410,9 +412,15 @@ export default function ProjectRankingsPage() {
                                         <MsqdxTypography variant="subtitle2" weight="semibold" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
                                             {k.domain} — {k.keyword}
                                         </MsqdxTypography>
-                                        <MsqdxButton variant="outlined" size="small" color="error" onClick={() => handleDeleteKeyword(k.id)} sx={{ flexShrink: 0 }}>
-                                            {t('projects.deleteKeyword')}
-                                        </MsqdxButton>
+                                        <MsqdxIconButton
+                                            size="xs"
+                                            color="error"
+                                            onClick={() => handleDeleteKeyword(k.id)}
+                                            aria-label={t('projects.deleteKeyword')}
+                                            sx={{ flexShrink: 0 }}
+                                        >
+                                            <Trash2 size={14} />
+                                        </MsqdxIconButton>
                                     </Box>
                                     <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1.5 }}>
                                         {k.country && k.language ? `${k.country}/${k.language} · ` : ''}
