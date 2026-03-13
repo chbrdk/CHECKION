@@ -242,6 +242,8 @@ export const apiProject = (id: string) => `${API_PROJECTS}/${encodeURIComponent(
 export const apiProjectSuggestCompetitors = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/suggest-competitors`;
 /** Build: POST /api/projects/[id]/suggest-keywords */
 export const apiProjectSuggestKeywords = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/suggest-keywords`;
+/** Build: POST /api/projects/[id]/research */
+export const apiProjectResearch = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/research`;
 
 // ─── Other Paths ───────────────────────────────────────────────────────────
 /** Public path for the black MSQDX logo (PDF reports, print). Resolve with origin in browser: `${window.location.origin}${PDF_LOGO_PATH}` */

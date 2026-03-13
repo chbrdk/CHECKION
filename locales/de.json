@@ -151,7 +151,20 @@
     "addSelectedKeywords": "Ausgewählte hinzufügen",
     "activity": "Aktivität",
     "rankingsUnconfigured": "Rank-Tracking ist nicht konfiguriert (SERP_API_KEY fehlt).",
-    "rankingsRefresh502": "Rank-Aktualisierung fehlgeschlagen. SERP_API_KEY und SERP_API_PROVIDER (serper oder scrapingrobot) prüfen."
+    "rankingsRefresh502": "Rank-Aktualisierung fehlgeschlagen. SERP_API_KEY und SERP_API_PROVIDER (serper oder scrapingrobot) prüfen.",
+    "research": "Projekt-Research",
+    "researchDescription": "Strukturierte Erkenntnisse für Zielgruppen, SEO und GEO. Einmal ausführen, dann bearbeiten und in die Projektfelder übernehmen.",
+    "researchStart": "Research starten",
+    "researchTargetGroups": "Zielgruppen",
+    "researchValueProposition": "Value Proposition",
+    "researchSeoKeywords": "SEO-Keywords",
+    "researchGeoQueries": "GEO-Fragen",
+    "researchCompetitors": "Wettbewerber",
+    "researchAdd": "Hinzufügen",
+    "researchApplyCompetitors": "Zu Wettbewerbern übernehmen",
+    "researchApplyGeoQueries": "Zu GEO-Fragen übernehmen",
+    "researchApplyKeywords": "Als Rank-Keywords übernehmen",
+    "researchEmpty": "Noch kein Research. Klicke auf \"Research starten\"."
   },
   "auth": {
     "login": {

@@ -20396,7 +20396,1328 @@ Gracefully shutting down build container: zos4qio0n7i77tgo9vpwqxd1
 
 _**Agent (model default, mode Agent)**_
 
+<think><details><summary>Thought Process</summary>
 
+The error keeps pointing to the same area - line 213-215, with the caret at line 213. The error message doesn't show the actual TypeScript/compilation error text - just the line numbers. So the issue might not be the arrow functions per se but something about the Tooltip component or its props that the build doesn't like.
+
+Possibilities:
+1. Recharts Tooltip might have different or stricter types in the Docker environment - e.g. `formatter` or `labelFormatter` might expect different signatures.
+2. There could be a conflict between Recharts types and the way we're passing props.
+3. The `contentStyle` object with CSS variables might be causing an issue in some build/type check.
+
+Let me try a different approach: simplify the Tooltip drastically. Remove custom formatter and labelFormatter entirely (use defaults), and/or remove the contentStyle object or move it. If the build passes with a minimal Tooltip, we know the issue is with one of those props.
+
+Actually, re-reading the errors - the caret is at line 213, which is `labelFormatter={formatTooltipLabel}`. So the parser/compiler is complaining about something on that line. Could it be that Recharts' Tooltip doesn't accept `labelFormatter` in the way we're using it, or the type of `formatTooltipLabel` doesn't match? In Recharts v2/v3, Tooltip's labelFormatter can be (label: any) => ReactNode. So (label: string) => string should be compatible.
+
+Another thought: maybe the issue is that the build is using an older or different version of the TypeScript compiler that's stricter, and the Recharts type definitions expect something different. Let me check - we could try removing both formatter and labelFormatter from Tooltip completely and see if the file compiles. That would confirm the error is in the Tooltip props.
+</details></think>
+
+---
+
+
+Fehler bleibt bei der Tooltip-Zeile. Wir vereinfachen den Tooltip stark (formatter/labelFormatter entfernen), um zu prüfen, ob das den Build behebt:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see there's also a Legend with `formatter={(value) => value}` - another inline arrow. The error might be coming from the Tooltip's types. Let me try:
+
+1. Use a custom content component for Tooltip instead of formatter/labelFormatter - that way we have full control and no prop type issues.
+2. Or strip Tooltip to the minimum: no formatter, no labelFormatter, no contentStyle - just <Tooltip />.
+
+I'll try the nuclear option first: replace the entire Tooltip with just `<Tooltip />` and also fix the Legend formatter to a named function. If the build still fails at the same line, then the issue might be the Tooltip component itself (e.g. recharts export).
+
+Actually re-reading again - the caret is under line 213. So the compiler is pointing at `labelFormatter={formatTooltipLabel}`. Perhaps the type of formatTooltipLabel (label: string) => string doesn't match what Recharts expects. In recharts, TooltipProps might have labelFormatter?: (label: any) => ReactNode. So returning string should be fine as ReactNode.
+
+Let me try removing the Tooltip custom props entirely - use default Tooltip without formatter, labelFormatter, contentStyle, labelStyle. And extract Legend formatter to a named function too.
+</details></think>
+
+---
+
+
+Tooltip auf das Nötigste reduzieren und die Legend-Formatter-Funktion auslagern — mögliche Typkonflikte mit Recharts vermeiden.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me try using the Recharts Tooltip's `content` prop with a custom component instead of formatter/labelFormatter. That way we avoid any type mismatch. Or we could try spreading the style from a variable to avoid inline objects.
+
+Actually, the simplest fix that often works with strict/build issues: use a type assertion. So we could do formatter={formatPositionTooltip as any} or we could remove the custom props and use default Tooltip.
+
+Let me try removing formatter and labelFormatter completely from Tooltip (and simplify contentStyle to a variable outside JSX), and also fix Legend formatter. If the error is really about those props, removing them should make the build pass.
+</details></think>
+
+---
+
+
+Tooltip ohne `formatter`/`labelFormatter` und mit ausgelagerten Style-Objekten; Legend-Formatter in eine benannte Funktion auslagern.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I introduced tooltipContentStyle and tooltipLabelStyle but they're not defined - they need to be either constants or we need to define them. The issue is that borderColor is a variable inside the component. Let me define these inside the component and use them in the Tooltip. I need to add the variables in the component body.
+</details></think>
+
+---
+
+
+Style-Variablen im Component definieren, da sie `borderColor` verwenden:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to find where borderColor and textMuted are defined and add tooltipContentStyle and tooltipLabelStyle there.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add tooltipContentStyle and tooltipLabelStyle after borderColor. They use borderColor and a generic style.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The build was failing at the Tooltip line. Maybe the real issue is that Recharts' Tooltip in the version they use doesn't accept `formatter` or `labelFormatter` with those types - or there's a conflict. Let me try removing formatter and labelFormatter from Tooltip entirely so the Tooltip has no function props at all. That way we can see if the build passes. If it does, we know the issue is with one of those two props and we might need to use a different approach (e.g. custom content component).
+</details></think>
+
+---
+
+
+Vermutung: Recharts-Typen lehnen die Formatter ab. Tooltip ohne `formatter` und `labelFormatter` testen — Standard-Tooltip verwenden:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now the Tooltip has no formatter or labelFormatter. The default Recharts tooltip will still show the data. If the build passes, we know the issue was with those two props - possibly a type incompatibility in the Docker/Next build. We can leave it without custom formatter for now (tooltip will still work, just with default formatting) or later try using a custom content component.
+</details></think>
+
+---
+
+
+Der Tooltip hat jetzt keine `formatter`- oder `labelFormatter`-Props mehr; die Anzeige übernimmt der Standard-Tooltip von Recharts.
+
+Bitte den **Docker-Build erneut ausführen**. Wenn er durchläuft, lag das Problem an den Formatter-Props (z. B. Typen/Recharts-Version). Die Tooltip-Darstellung funktioniert weiterhin, nur ohne unsere Anpassung (Position als Zahl, „—“ wenn nicht vorhanden). Wenn du die Anpassung wiederhaben willst, können wir sie später über eine eigene Tooltip-`content`-Komponente umsetzen.
+
+---
+
+_**User**_
+
+okay können wir als erstes bei der projektseite einen oder mehrere research agenten einbauen die strukturiert die speziell für uns wichtigsten informationen rausfinden, infos die uns helfe klare target-groups, seo und geo keywords und fragen später ableiten zu können. 
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is asking about adding one or more "research agents" to the project page that would systematically find the most important information for them - information that helps derive clear target groups, SEO and GEO keywords and questions later.
+
+I'm in Ask mode, so I can only provide information and guidance, not implement. I should:
+1. Understand the current project page structure and what data is already there
+2. Think about what "research agents" could mean in this context (AI-powered research that analyzes a project's domain/context and outputs structured insights)
+3. Outline how this could be integrated and what the flow might look like
+4. Suggest structure and where it could live
+
+Let me look at the project page and related APIs to give a concrete answer.
+</details></think>
+
+---
+
+
+Projektseite und bestehende Struktur prüfen, um eine konkrete Empfehlung zu geben.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "suggest-competitors|suggest-keywords|geo",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "suggest-competitors|suggest-keywords|geo",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 210,
+  "totalMatches": 1200,
+  "topFiles": [
+    {
+      "uri": "./app/api/projects/[id]/suggest-competitors/route.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "./__tests__/api/project-suggest-keywords.test.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "./app/api/projects/[id]/suggest-keywords/route.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "./lib/geo-eeat/suggest-parse.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./lib/constants.ts",
+      "matchCount": 17
+    },
+    {
+      "uri": "./lib/db/projects.test.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/api/projects/[id]/route.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "./lib/api-schemas.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "./lib/db/projects.ts",
+      "matchCount": 10
+    },
+    {
+      "uri": "./lib/db/schema.ts",
+      "matchCount": 8
+    },
+    {
+      "uri": "./mcp-server/src/tools.ts",
+      "matchCount": 23
+    },
+    {
+      "uri": "./app/api/scan/geo-eeat/[jobId]/rerun-competitive/route.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "./app/api/scan/geo-eeat/suggest-competitors-queries/route.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "./app/api/scan/geo-eeat/route.ts",
+      "matchCount": 10
+    },
+    {
+      "uri": "./mcp-server/node_modules/hono/dist/types/middleware/secure-headers/permissions-policy.d.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./mcp-server/node_modules/typescript/lib/lib.webworker.d.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./mcp-server/node_modules/typescript/lib/lib.dom.d.ts",
+      "matchCount": 13
+    },
+    {
+      "uri": "./mcp-server/node_modules/iconv-lite/types/encodings.d.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/api/scan/geo-eeat/[jobId]/competitive-history/[runId]/route.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "./app/api/scan/geo-eeat/[jobId]/competitive-history/route.ts",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-projects-feature.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I have a good picture. The user wants to add one or more "research agents" to the project page that systematically find the most important information to help derive:
+- clear target groups
+- SEO and GEO keywords and questions
+
+Currently they have:
+- suggest-competitors (returns competitors + queries)
+- suggest-keywords (returns SEO keywords for rank tracking)
+- GEO queries stored on project
+
+The idea of "research agents" would be a step above: not just "suggest X" but a structured research run that outputs a coherent set of insights: target groups, SEO keywords, GEO questions, maybe competitors, value props, etc. – all in one structured result that can then be used to populate the project.
+
+I'll outline how this could be designed and where it would fit, without implementing (Ask mode).
+</details></think>
+
+---
+
+
+Die Projektseite hat bereits AI-Suggestions für Competitors (+ GEO-Queries) und Keywords. Ein oder mehrere **Research-Agenten** würden das erweitern: Sie laufen einmal (oder on-demand), analysieren Domain/Projektkontext und liefern **strukturierte Erkenntnisse**, aus denen ihr dann Zielgruppen, SEO/GEO-Keywords und -Fragen ableitet.
+
+---
+
+## Was ihr schon habt (als Basis)
+
+- **Suggest Competitors** → `competitors[]` + `queries[]` (GEO-Fragen)
+- **Suggest Keywords** → SEO-Keywords für Rank-Tracking
+- Projekt-Daten: `name`, `domain`, `competitors`, `geoQueries`
+
+Das sind punktuelle Suggestions. Ein Research-Agent würde **ein zusammenhängendes Research-Ergebnis** liefern, das genau die Infos bündelt, die für Zielgruppen, SEO und GEO wichtig sind.
+
+---
+
+## Konzept: Research-Agent(en) auf der Projektseite
+
+### 1. Ein „Projekt-Research“-Agent (empfohlen zum Einstieg)
+
+**Ein** Agent, der pro Lauf ein **strukturiertes Research-Objekt** erzeugt, z. B.:
+
+- **Target groups** – wen die Seite anspricht (Demografie, Bedürfnisse, Jobs-to-be-done, ggf. Persona-Kurzbeschreibungen)
+- **Value proposition / USPs** – was die Seite/das Angebot ausmacht (für Formulierung von Keywords und GEO-Fragen)
+- **SEO keywords** – 10–15 Begriffe für Rank-Tracking (wie bisher, aber im Kontext des Research)
+- **GEO/E-E-A-T questions** – 5–10 Suchanfragen, die zu Expertise/Trust passen
+- **Competitors** – 5–10 Domains (wie bisher)
+- Optional: **Themencluster** oder **Content-Ideen** als kurze Liste
+
+Eingaben: `projectId` (daraus: name, domain, ggf. bereits vorhandene competitors/geoQueries). Optional: Body mit z. B. `focus` (z. B. „B2B“, „Local SEO“) oder `url` für eine konkrete Start-URL.
+
+Ausgabe: ein JSON-Schema (z. B. in `lib/api-schemas.ts` oder eigener Typ), das die Frontend-Cards und PATCH-APIs befüllt.
+
+### 2. Mehrere spezialisierte Agenten (später)
+
+Statt einem großen Agenten könnt ihr später trennen:
+
+- **Target-Group-Research** → Zielgruppen + Personas
+- **SEO-Research** → Keywords + thematische Schwerpunkte
+- **GEO/E-E-A-T-Research** → Fragen + ggf. Competitor-Queries
+
+Pro Agent ein eigener Endpoint (z. B. `POST /api/projects/[id]/research/target-groups`, `.../research/seo`, `.../research/geo`). Die Projektseite zeigt dann pro Agent eine Card mit „Research starten“ und Anzeige des letzten Ergebnisses.
+
+---
+
+## Wo es technisch reinkommt
+
+- **Backend**
+  - Neuer Route-Handler, z. B. `POST /api/projects/[id]/research` (oder `/research/full`).
+  - Auth + Projekt-Zugehörigkeit wie bei `suggest-competitors`/`suggest-keywords`.
+  - Aufruf von OpenAI (oder anderem LLM) mit System-Prompt + Projektkontext (name, domain, optional competitors/geoQueries).
+  - Antwort parsen (JSON) und validieren (z. B. mit Zod), dann als strukturiertes Objekt zurückgeben.
+  - Optional: Research-Ergebnis in DB speichern (neue Tabelle `project_research_runs` mit `project_id`, `payload` (jsonb), `created_at`), damit man „Letzter Research“ anzeigen und ggf. erneut anwenden kann.
+
+- **Frontend (Projektseite)**
+  - Eine neue Card z. B. **„Projekt-Research“** oder **„Research-Agent“** (z. B. zwischen Unternehmensinfos und Competitors).
+  - Inhalt: Button „Research starten“ → POST auf den neuen Endpoint → Loading-State → Anzeige des Ergebnisses (Target Groups, Keywords, GEO-Fragen, Competitors).
+  - Buttons wie „Competitors übernehmen“, „Keywords übernehmen“, „GEO-Fragen übernehmen“, die die bestehenden PATCH-/Keyword-APIs mit den Research-Daten füttern (wie bisher bei Suggest, nur mit Daten aus dem Research-Objekt).
+
+- **Konstanten**
+  - In `lib/constants.ts` z. B. `apiProjectResearch(id)` für `POST /api/projects/[id]/research`.
+
+---
+
+## Struktur des Research-Outputs (Vorschlag)
+
+Ein festes Schema hält die UI und die „Übernehmen“-Logik einfach:
+
+```ts
+// Beispiel-Schema (nur zur Orientierung)
+{
+  targetGroups: string[];           // oder { name, description, demographics? }[]
+  valueProposition?: string;       // optional, 1–2 Sätze
+  seoKeywords: string[];
+  geoQueries: string[];
+  competitors: string[];
+  // optional: themes: string[]; contentIdeas: string[];
+}
+```
+
+Der LLM-Prompt würde explizit verlangen: „Return only valid JSON matching this schema“, plus kurze Anweisungen zu Zielgruppen (klar abgrenzbar, für uns nutzbar für Targeting), zu SEO-Keywords (suchrelevant, für Rank-Tracking) und zu GEO-Fragen (intent: Expertise/Trust, suchmaschinenrelevant).
+
+---
+
+## Kurzfassung
+
+- **Ja, sinnvoll:** Ein (oder mehrere) Research-Agenten auf der Projektseite, die strukturiert die Infos liefern, die ihr für Zielgruppen, SEO- und GEO-Keywords braucht.
+- **Pragmatischer Einstieg:** Ein Agent „Projekt-Research“ mit einem klaren JSON-Schema; eine neue Card auf der Projektseite mit „Research starten“ und „Ergebnis übernehmen“ in die bestehenden Felder (Competitors, Keywords, GEO-Fragen).
+- **Später:** Weitere Agenten (Target-Group-only, SEO-only, GEO-only) als eigene Endpoints und Cards, wenn ihr die Schritte trennen wollt.
+
+Wenn du willst, kann ich im nächsten Schritt ein detailliertes **API-Schema (Zod + TypeScript)** und einen **Prompt-Entwurf** für den einen „Projekt-Research“-Agenten ausformulieren (zum Copy-Pasten in euren Code). Dafür müsste ich ggf. noch eure bestehenden Suggest-Prompts in `suggest-competitors`/`suggest-keywords` und `lib/geo-eeat/suggest-parse.ts` ansehen. Soll ich das tun?
+
+---
+
+_**User**_
+
+open ai ermöglicht bereits json output bitte schau dir das in jedem fall an bevor wir was bauen. wir nutzen ja model gpt5-mini und plane bitte eine saubere darstellung der einzelnen kategorien im msqdx componenten und leicht für den user editierbar.
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants me to:
+1. Look at OpenAI's JSON output capability before we build anything
+2. They use model "gpt5-mini" (they might mean gpt-4o-mini or similar - I'll check the codebase)
+3. Plan a clean display of the research categories using MSQDX components
+4. Make it easily editable for the user
+
+Let me search for:
+1. How OpenAI is used in the project (which model, how responses are parsed)
+2. OpenAI's JSON mode / response_format
+3. MSQDX components used on the project page for similar editable lists (competitors, keywords, geo queries)
+4. Current suggest-competitors/suggest-keywords implementation for the pattern
+</details></think>
+
+---
+
+
+OpenAI-JSON-Output und die aktuelle Nutzung im Projekt prüfen; anschließend die Darstellung mit MSQDX planen.
+
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="web_search">
+<details>
+            <summary>Tool use: **web_search** • Searched web `undefined` • **1** results</summary>
+        
+| Title | URL | Chunk |
+|-------|-----|-------|
+| Web search results for query: OpenAI API JSON mode response_format json_schema 2024 2025 |  | Links:<br/>1. [Structured model outputs \| OpenAI API](https://platform.openai.com/docs/guides/structured-outputs?api-mode=responses)<br/>2. [Structured model outputs \| OpenAI API](https://platform.openai.com/docs/guides/json-mode)<br/>3. [Introducing Structured Outputs in the API \| OpenAI](https://openai.com/index/introducing-structured-outputs-in-the-api)<br/>4. [Introduction to Structured Outputs](https://cookbook.openai.com/examples/structured_outputs_intro)<br/>5. [Client side JSON Schema in `response_format` validation for  structured outputs · Issue #1950 · openai/openai-python](https://github.com/openai/openai-python/issues/1950)<br/><br/># OpenAI API JSON Schema and Structured Outputs (2024-2025)<br/><br/>## Structured Outputs Overview<br/><br/>OpenAI introduced **Structured Outputs** as an evolution of JSON mode, ensuring model responses strictly adhere to developer-supplied JSON Schemas.[1] This feature guarantees 100% schema compliance, compared to JSON mode which only ensures valid JSON format.[1]<br/><br/>## Key Features<br/><br/>**Benefits:**[1]<br/>- Simpler prompting without needing strongly worded instructions<br/>- Explicit, programmatically detectable safety-based refusals<br/>- Reliable type-safety with no need for validation or retries<br/><br/>**Supported Models:**[1]<br/>- `gpt-4o-2024-08-06` and later<br/>- `gpt-4o-mini` and `gpt-4o-mini-2024-07-18`<br/>- Older models like `gpt-4-turbo` can use JSON mode instead<br/><br/>## Implementation Methods<br/><br/>Structured Outputs available in two forms:[1][3]<br/><br/>1. **`response_format` with `json_schema` type** - for structuring model responses to users<br/>2. **Function calling with `strict: true`** - for connecting models to tools and functions<br/><br/>## Usage<br/><br/>Enable via the `response_format` parameter:[1][4]<br/>- Set `type: "json_schema"` with a defined schema<br/>- Include `strict: true` to enforce schema adherence<br/>- Works with Chat Completions API, Assistants API, Fine-tuning API, and Batch API[1]<br/><br/>**Note:** Schema validation occurs server-side through the OpenAI API rather than client-side validation.[5] |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "openai|OpenAI|gpt-4|gpt-5|model:",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "openai|OpenAI|gpt-4|gpt-5|model:",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 110,
+  "totalMatches": 610,
+  "topFiles": [
+    {
+      "uri": "./app/api/projects/[id]/suggest-competitors/route.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "./__tests__/api/project-suggest-keywords.test.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/api/projects/[id]/suggest-keywords/route.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "./mcp-server/src/tools.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/api/scan/domain/[id]/journey/route.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "./app/api/scan/geo-eeat/suggest-competitors-queries/route.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "./app/api/scan/[id]/summarize/route.ts",
+      "matchCount": 9
+    },
+    {
+      "uri": "./app/api/scan/domain/[id]/summarize/route.ts",
+      "matchCount": 9
+    },
+    {
+      "uri": "./app/api/saliency/generate/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./mcp-server/node_modules/@modelcontextprotocol/sdk/dist/esm/types.d.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "./mcp-server/node_modules/@modelcontextprotocol/sdk/dist/cjs/types.d.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "./mcp-server/node_modules/@modelcontextprotocol/sdk/dist/esm/spec.types.d.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./mcp-server/node_modules/@modelcontextprotocol/sdk/dist/cjs/spec.types.d.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./mcp-server/node_modules/hono/dist/types/adapter/aws-lambda/types.d.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./mcp-server/node_modules/@types/node/os.d.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "./lib/geo-eeat/competitive-benchmark.ts",
+      "matchCount": 13
+    },
+    {
+      "uri": "./lib/llm/config.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "./components/CompetitivePositionDiagram.test.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "./lib/geo-eeat/run-llm-stages.ts",
+      "matchCount": 6
+    },
+    {
+      "uri": "./lib/types.ts",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/suggest-competitors/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/suggest-keywords/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I have:
+1. OpenAI supports `response_format: { type: "json_schema", json_schema: {...}, strict: true }` for structured outputs - no manual JSON parsing needed, schema guaranteed.
+2. Project uses OPENAI_SUGGEST_MODEL (suggest-keywords: gpt-4o-mini, suggest-competitors: gpt-5-nano). User said "gpt5-mini" - likely they mean gpt-4o-mini or a typo for gpt-5-nano. I'll reference env OPENAI_SUGGEST_MODEL and note gpt-4o-mini supports structured outputs.
+3. Current suggest routes don't use response_format at all - they use text + parseSuggestResponse/parseKeywordsResponse.
+
+I need to:
+- Check OpenAI Node SDK for response_format / json_schema usage
+- Look at project page UI for competitors/keywords/geo - which MSQDX components make lists editable (chips, form fields, etc.)
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="web_fetch">
+<details>
+<summary>Tool use: **web_fetch**</summary>
+
+
+Parameters:
+
+```json
+{
+  "url": "https://platform.openai.com/docs/guides/structured-outputs"
+}
+```
+Result:
+
+```json
+{
+  "url": "https://platform.openai.com/docs/guides/structured-outputs",
+  "markdown": "# Structured model outputs\n\nJSON is one of the most widely used formats in the world for applications to exchange data.\n\nStructured Outputs is a feature that ensures the model will always generate responses that adhere to your supplied [JSON Schema](https://json-schema.org/overview/what-is-jsonschema), so you don't need to worry about the model omitting a required key, or hallucinating an invalid enum value.\n\nSome benefits of Structured Outputs include:\n\n1. Simpler prompting: No need for strongly worded prompts to achieve consistent formatting\n2. Explicit refusals: Safety-based model refusals are now programmatically detectable\n3. Reliable type-safety: No need to validate or retry incorrectly formatted responses\n\nIn addition to supporting JSON Schema in the REST API, the OpenAI SDKs for [Python](https://github.com/openai/openai-python/blob/main/helpers.md#structured-outputs-parsing-helpers) and [JavaScript](https://github.com/openai/openai-node/blob/master/helpers.md#structured-outputs-parsing-helpers) also make it easy to define object schemas using [Pydantic](https://docs.pydantic.dev/latest/) and [Zod](https://zod.dev/) respectively. Below, you can see how to extract information from unstructured text that conforms to a schema defined in code.\n\n### Supported models\n\nStructured Outputs is available in our [latest large language models](https://developers.openai.com/api/docs/models), starting with GPT-4o. Older models like &#96;gpt-4-turbo&#96; and earlier may use [JSON mode](https://platform.openai.com/docs/guides/structured-outputs#json-mode) instead.\n\nWhen to use Structured Outputs via function calling vs via{\" \"}\ntext.format\n\nStructured Outputs is available in two forms in the OpenAI API:\n\n1. When using a &#96;json_schema&#96; response format\n2. When using [function calling](https://developers.openai.com/api/docs/guides/function-calling)\n\nFunction calling is useful when you are building an application that bridges the models and functionality of your application.\n\nFor example, you can give the model access to functions that query a database in order to build an AI assistant that can help users with their orders, or functions that can interact with the UI.\n\nConversely, Structured Outputs via &#96;response_format&#96; are more suitable when you want to indicate a structured schema for use when the model responds to the user, rather than when the model calls a tool.\n\nFor example, if you are building a math tutoring application, you might want the assistant to respond to your user using a specific JSON Schema so that you can generate a UI that displays different parts of the model's output in distinct ways.\n\nPut simply:\n\n- If you are connecting the model to tools, functions, data, etc. in your\nsystem, then you should use function calling - If you want to structure the\nmodel's output when it responds to the user, then you should use a structured\n&#96;text.format&#96;\n\nThe remainder of this guide will focus on non-function calling use cases in\nthe Responses API. To learn more about how to use Structured Outputs with\nfunction calling, check out the{\" \"}\n[Function Calling](https://developers.openai.com/api/docs/guides/function-calling#function-calling-with-structured-outputs){\" \"}\nguide.\n\n### Structured Outputs vs JSON mode\n\nStructured Outputs is the evolution of [JSON mode](https://platform.openai.com/docs/guides/structured-outputs#json-mode). While both ensure valid JSON is produced, only Structured Outputs ensure schema adherence. Both Structured Outputs and JSON mode are supported in the Responses API, Chat Completions API, Assistants API, Fine-tuning API and Batch API.\n\nWe recommend always using Structured Outputs instead of JSON mode when possible.\n\nHowever, Structured Outputs with &#96;response_format: {type: \"json_schema\", ...}&#96; is only supported with the &#96;gpt-4o-mini&#96;, &#96;gpt-4o-mini-2024-07-18&#96;, and &#96;gpt-4o-2024-08-06&#96; model snapshots and later.\n\n| | Structured Outputs | JSON Mode |\n| --- | --- | --- |\n| Outputs valid JSON | Yes | Yes |\n| Adheres to schema | Yes (see [supported schemas](https://platform.openai.com/docs/guides/structured-outputs#supported-schemas)) | No |\n| Compatible models | &#96;gpt-4o-mini&#96;, &#96;gpt-4o-2024-08-06&#96;, and later | &#96;gpt-3.5-turbo&#96;, &#96;gpt-4-*&#96; and &#96;gpt-4o-*&#96; models |\n| Enabling | &#96;text: { format: { type: \"json_schema\", \"strict\": true, \"schema\": ... } }&#96; | &#96;text: { format: { type: \"json_object\" } }&#96; |\n\n## Examples\n\nChain of thought\n\nStructured data extraction\n\nUI generation\n\nModeration\n\nHow to use Structured Outputs with text.format\n\nRefusals with Structured Outputs\n\nWhen using Structured Outputs with user-generated input, OpenAI models may occasionally refuse to fulfill the request for safety reasons. Since a refusal does not necessarily follow the schema you have supplied in &#96;response_format&#96;, the API response will include a new field called &#96;refusal&#96; to indicate that the model refused to fulfill the request.\n\nWhen the &#96;refusal&#96; property appears in your output object, you might present the refusal in your UI, or include conditional logic in code that consumes the response to handle the case of a refused request.\n\nThe API response from a refusal will look something like this:\n\nTips and best practices\n\n#### Handling user-generated input\n\nIf your application is using user-generated input, make sure your prompt includes instructions on how to handle situations where the input cannot result in a valid response.\n\nThe model will always try to adhere to the provided schema, which can result in hallucinations if the input is completely unrelated to the schema.\n\nYou could include language in your prompt to specify that you want to return empty parameters, or a specific sentence, if the model detects that the input is incompatible with the task.\n\n#### Handling mistakes\n\nStructured Outputs can still contain mistakes. If you see mistakes, try adjusting your instructions, providing examples in the system instructions, or splitting tasks into simpler subtasks. Refer to the [prompt engineering guide](https://developers.openai.com/api/docs/guides/prompt-engineering) for more guidance on how to tweak your inputs.\n\n#### Avoid JSON schema divergence\n\nTo prevent your JSON Schema and corresponding types in your programming language from diverging, we strongly recommend using the native Pydantic/zod sdk support.\n\nIf you prefer to specify the JSON schema directly, you could add CI rules that flag when either the JSON schema or underlying data objects are edited, or add a CI step that auto-generates the JSON Schema from type definitions (or vice-versa).\n\n## Streaming\n\n## Supported schemas\n\n## JSON mode\n\nJSON mode is a more basic version of the Structured Outputs feature. While\nJSON mode ensures that model output is valid JSON, Structured Outputs reliably\nmatches the model's output to the schema you specify. We recommend you use\nStructured Outputs if it is supported for your use case.\n\nWhen JSON mode is turned on, the model's output is ensured to be valid JSON, except for in some edge cases that you should detect and handle appropriately.\n\nTo turn on JSON mode with the Responses API you can set the &#96;text.format&#96; to &#96;{ \"type\": \"json_object\" }&#96;. If you are using function calling, JSON mode is always turned on.\n\nImportant notes:\n\n- Your application must detect and handle the edge cases that can result in the model output not being a complete JSON object (see below)\n- JSON mode will not guarantee the output matches any specific schema, only that it is valid and parses without errors. You should use Structured Outputs to ensure it matches your schema, or if that is not possible, you should use a validation library and potentially retries to ensure that the output matches your desired schema.\n- When using JSON mode, you must always instruct the model to produce JSON via some message in the conversation, for example via your system message. If you don't include an explicit instruction to generate JSON, the model may generate an unending stream of whitespace and the request may run continually until it reaches the token limit. To help ensure you don't forget, the API will throw an error if the string \"JSON\" does not appear somewhere in the context.\n\nHandling edge cases\n\n## Resources\n\nTo learn more about Structured Outputs, we recommend browsing the following resources:\n\n- Learn [how to build multi-agent systems](https://developers.openai.com/cookbook/examples/structured_outputs_multi_agent) with Structured Outputs\n- Check out our [introductory cookbook](https://developers.openai.com/cookbook/examples/structured_outputs_intro) on Structured Outputs"
+}
+```
+User decision: **accepted**
+
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/llm/config.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat/suggest-parse.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need:
+1. OpenAI Node SDK - how to pass response_format with json_schema. The doc said "text: { format: { type: "json_schema", strict: true, schema: ... } }" - I need the exact API for openai-node.
+2. More of the project page to see how Competitors/Keywords/GEO are rendered (chips, editable) and what MSQDX components exist.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="web_search">
+<details>
+            <summary>Tool use: **web_search** • Searched web `undefined` • **1** results</summary>
+        
+| Title | URL | Chunk |
+|-------|-----|-------|
+| Web search results for query: openai-node response_format json_schema structured outputs ChatCompletion |  | Links:<br/>1. [Responses API Structured Output - Invalid schema for response_format · Issue #1597 · openai/openai-node](https://github.com/openai/openai-node/issues/1597)<br/>2. [Structured model outputs \| OpenAI API](https://platform.openai.com/docs/guides/structured-outputs?api-mode=responses&lang=javascript)<br/>3. [Introducing Structured Outputs in the API \| OpenAI](https://openai.com/index/introducing-structured-outputs-in-the-api)<br/>4. [Introduction to Structured Outputs](https://developers.openai.com/cookbook/examples/structured_outputs_intro)<br/>5. [Using Structured Outputs throws `body used already for: https://api.openai.com/v1/chat/completions` in 4.59.0 · Issue #1102 · openai/openai-node](https://github.com/openai/openai-node/issues/1102)<br/><br/># OpenAI Node: Structured Outputs with `response_format` and `json_schema`<br/><br/>## Overview<br/>Structured Outputs in the openai-node library allows you to ensure model responses conform to JSON Schemas using the `response_format` parameter with `json_schema` type.[2] The library provides helper functions like `zodResponseFormat` to integrate with Zod validation schemas.[5]<br/><br/>## Key Features<br/>- **Schema Enforcement**: Guarantees model outputs match your supplied JSON Schema, with perfect reliability (100% in evals for gpt-4o-2024-08-06).[3]<br/>- **Benefits**: Simpler prompting, explicit refusals, and reliable type-safety without validation or retries.[2]<br/>- **Supported Models**: Available in gpt-4o and later models; gpt-4-turbo and earlier should use JSON mode instead.[2]<br/><br/>## Two Forms of Structured Outputs<br/>1. **Function calling**: Set `strict: true` in function definitions (works with all tool-supporting models)[3]<br/>2. **Response format**: Use `response_format: \{type: "json_schema", ...\}` for structuring model responses to users[2]<br/><br/>## Known Issues<br/>- **Bug with `zodTextFormat`**: The Responses API's `zodTextFormat` helper has a bug where it generates invalid schemas with `type: "string"` instead of `type: "object"`, causing 400 errors.[1] A workaround exists using `z.toJSONSchema` instead of `zodToJsonSchema`.[1]<br/>- **Regression in v4.59.0**: Using structured outputs with `zodResponseFormat` in Chat Completions caused "body used already" errors, though this has been addressed in later versions.[5]<br/><br/>## Recommended Approach<br/>For structuring model output responses (rather than function calling), use `response_format` with `json_schema` type via the Chat Completions API.[2] |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "MsqdxFormField|MsqdxChip|MsqdxMoleculeCard|MsqdxAccordion",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app",
+  "outputMode": "content",
+  "contextBefore": 0,
+  "contextAfter": 0,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "MsqdxFormField|MsqdxChip|MsqdxMoleculeCard|MsqdxAccordion",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app",
+  "outputMode": "content",
+  "totalFiles": 70,
+  "totalMatches": 1360,
+  "topFiles": [
+    {
+      "uri": "app/projects/[id]/page.tsx",
+      "matchCount": 31
+    },
+    {
+      "uri": "app/register/page.tsx",
+      "matchCount": 7
+    },
+    {
+      "uri": "app/settings/page.tsx",
+      "matchCount": 14
+    },
+    {
+      "uri": "app/scan/page.tsx",
+      "matchCount": 9
+    },
+    {
+      "uri": "app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 30
+    },
+    {
+      "uri": "app/journey-agent/[jobId]/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "app/domain/[id]/page.tsx",
+      "matchCount": 60
+    },
+    {
+      "uri": "app/results/[id]/page.tsx",
+      "matchCount": 37
+    },
+    {
+      "uri": "app/projects/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "app/share/[token]/page.tsx",
+      "matchCount": 49
+    },
+    {
+      "uri": "app/developers/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/scan/domain/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "app/login/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "app/page.tsx",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 31
+    },
+    {
+      "uri": "../CHECKION-1/app/register/page.tsx",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/app/settings/page.tsx",
+      "matchCount": 14
+    },
+    {
+      "uri": "../CHECKION-1/app/scan/page.tsx",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 30
+    },
+    {
+      "uri": "../CHECKION-1/app/journey-agent/[jobId]/page.tsx",
+      "matchCount": 5
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I have a good picture. Let me get the exact OpenAI Node SDK parameter for response_format (Responses API vs Chat Completions - the doc said "text: { format: { type: "json_schema", strict: true, schema: ... } }"). I'll check the openai package in the project for version and then look at the correct param name.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="web_fetch">
+<details>
+<summary>Tool use: **web_fetch**</summary>
+
+
+Parameters:
+
+```json
+{
+  "url": "https://platform.openai.com/docs/guides/structured-outputs?api-mode=responses&amp;lang=javascript"
+}
+```
+Result:
+
+```json
+{
+  "url": "https://platform.openai.com/docs/guides/structured-outputs?api-mode=responses&amp;lang=javascript",
+  "markdown": "# Structured model outputs\n\nJSON is one of the most widely used formats in the world for applications to exchange data.\n\nStructured Outputs is a feature that ensures the model will always generate responses that adhere to your supplied [JSON Schema](https://json-schema.org/overview/what-is-jsonschema), so you don't need to worry about the model omitting a required key, or hallucinating an invalid enum value.\n\nSome benefits of Structured Outputs include:\n\n1. Simpler prompting: No need for strongly worded prompts to achieve consistent formatting\n2. Explicit refusals: Safety-based model refusals are now programmatically detectable\n3. Reliable type-safety: No need to validate or retry incorrectly formatted responses\n\nIn addition to supporting JSON Schema in the REST API, the OpenAI SDKs for [Python](https://github.com/openai/openai-python/blob/main/helpers.md#structured-outputs-parsing-helpers) and [JavaScript](https://github.com/openai/openai-node/blob/master/helpers.md#structured-outputs-parsing-helpers) also make it easy to define object schemas using [Pydantic](https://docs.pydantic.dev/latest/) and [Zod](https://zod.dev/) respectively. Below, you can see how to extract information from unstructured text that conforms to a schema defined in code.\n\n### Supported models\n\nStructured Outputs is available in our [latest large language models](https://developers.openai.com/api/docs/models), starting with GPT-4o. Older models like &#96;gpt-4-turbo&#96; and earlier may use [JSON mode](https://platform.openai.com/docs/guides/structured-outputs?api-mode=responses&amp;lang=javascript#json-mode) instead.\n\nWhen to use Structured Outputs via function calling vs via{\" \"}\ntext.format\n\nStructured Outputs is available in two forms in the OpenAI API:\n\n1. When using a &#96;json_schema&#96; response format\n2. When using [function calling](https://developers.openai.com/api/docs/guides/function-calling)\n\nFunction calling is useful when you are building an application that bridges the models and functionality of your application.\n\nFor example, you can give the model access to functions that query a database in order to build an AI assistant that can help users with their orders, or functions that can interact with the UI.\n\nConversely, Structured Outputs via &#96;response_format&#96; are more suitable when you want to indicate a structured schema for use when the model responds to the user, rather than when the model calls a tool.\n\nFor example, if you are building a math tutoring application, you might want the assistant to respond to your user using a specific JSON Schema so that you can generate a UI that displays different parts of the model's output in distinct ways.\n\nPut simply:\n\n- If you are connecting the model to tools, functions, data, etc. in your\nsystem, then you should use function calling - If you want to structure the\nmodel's output when it responds to the user, then you should use a structured\n&#96;text.format&#96;\n\nThe remainder of this guide will focus on non-function calling use cases in\nthe Responses API. To learn more about how to use Structured Outputs with\nfunction calling, check out the{\" \"}\n[Function Calling](https://developers.openai.com/api/docs/guides/function-calling#function-calling-with-structured-outputs){\" \"}\nguide.\n\n### Structured Outputs vs JSON mode\n\nStructured Outputs is the evolution of [JSON mode](https://platform.openai.com/docs/guides/structured-outputs?api-mode=responses&amp;lang=javascript#json-mode). While both ensure valid JSON is produced, only Structured Outputs ensure schema adherence. Both Structured Outputs and JSON mode are supported in the Responses API, Chat Completions API, Assistants API, Fine-tuning API and Batch API.\n\nWe recommend always using Structured Outputs instead of JSON mode when possible.\n\nHowever, Structured Outputs with &#96;response_format: {type: \"json_schema\", ...}&#96; is only supported with the &#96;gpt-4o-mini&#96;, &#96;gpt-4o-mini-2024-07-18&#96;, and &#96;gpt-4o-2024-08-06&#96; model snapshots and later.\n\n| | Structured Outputs | JSON Mode |\n| --- | --- | --- |\n| Outputs valid JSON | Yes | Yes |\n| Adheres to schema | Yes (see [supported schemas](https://platform.openai.com/docs/guides/structured-outputs?api-mode=responses&amp;lang=javascript#supported-schemas)) | No |\n| Compatible models | &#96;gpt-4o-mini&#96;, &#96;gpt-4o-2024-08-06&#96;, and later | &#96;gpt-3.5-turbo&#96;, &#96;gpt-4-*&#96; and &#96;gpt-4o-*&#96; models |\n| Enabling | &#96;text: { format: { type: \"json_schema\", \"strict\": true, \"schema\": ... } }&#96; | &#96;text: { format: { type: \"json_object\" } }&#96; |\n\n## Examples\n\nChain of thought\n\nStructured data extraction\n\nUI generation\n\nModeration\n\nHow to use Structured Outputs with text.format\n\nRefusals with Structured Outputs\n\nWhen using Structured Outputs with user-generated input, OpenAI models may occasionally refuse to fulfill the request for safety reasons. Since a refusal does not necessarily follow the schema you have supplied in &#96;response_format&#96;, the API response will include a new field called &#96;refusal&#96; to indicate that the model refused to fulfill the request.\n\nWhen the &#96;refusal&#96; property appears in your output object, you might present the refusal in your UI, or include conditional logic in code that consumes the response to handle the case of a refused request.\n\nThe API response from a refusal will look something like this:\n\nTips and best practices\n\n#### Handling user-generated input\n\nIf your application is using user-generated input, make sure your prompt includes instructions on how to handle situations where the input cannot result in a valid response.\n\nThe model will always try to adhere to the provided schema, which can result in hallucinations if the input is completely unrelated to the schema.\n\nYou could include language in your prompt to specify that you want to return empty parameters, or a specific sentence, if the model detects that the input is incompatible with the task.\n\n#### Handling mistakes\n\nStructured Outputs can still contain mistakes. If you see mistakes, try adjusting your instructions, providing examples in the system instructions, or splitting tasks into simpler subtasks. Refer to the [prompt engineering guide](https://developers.openai.com/api/docs/guides/prompt-engineering) for more guidance on how to tweak your inputs.\n\n#### Avoid JSON schema divergence\n\nTo prevent your JSON Schema and corresponding types in your programming language from diverging, we strongly recommend using the native Pydantic/zod sdk support.\n\nIf you prefer to specify the JSON schema directly, you could add CI rules that flag when either the JSON schema or underlying data objects are edited, or add a CI step that auto-generates the JSON Schema from type definitions (or vice-versa).\n\n## Streaming\n\n## Supported schemas\n\n## JSON mode\n\nJSON mode is a more basic version of the Structured Outputs feature. While\nJSON mode ensures that model output is valid JSON, Structured Outputs reliably\nmatches the model's output to the schema you specify. We recommend you use\nStructured Outputs if it is supported for your use case.\n\nWhen JSON mode is turned on, the model's output is ensured to be valid JSON, except for in some edge cases that you should detect and handle appropriately.\n\nTo turn on JSON mode with the Responses API you can set the &#96;text.format&#96; to &#96;{ \"type\": \"json_object\" }&#96;. If you are using function calling, JSON mode is always turned on.\n\nImportant notes:\n\n- Your application must detect and handle the edge cases that can result in the model output not being a complete JSON object (see below)\n- JSON mode will not guarantee the output matches any specific schema, only that it is valid and parses without errors. You should use Structured Outputs to ensure it matches your schema, or if that is not possible, you should use a validation library and potentially retries to ensure that the output matches your desired schema.\n- When using JSON mode, you must always instruct the model to produce JSON via some message in the conversation, for example via your system message. If you don't include an explicit instruction to generate JSON, the model may generate an unending stream of whitespace and the request may run continually until it reaches the token limit. To help ensure you don't forget, the API will throw an error if the string \"JSON\" does not appear somewhere in the context.\n\nHandling edge cases\n\n## Resources\n\nTo learn more about Structured Outputs, we recommend browsing the following resources:\n\n- Learn [how to build multi-agent systems](https://developers.openai.com/cookbook/examples/structured_outputs_multi_agent) with Structured Outputs\n- Check out our [introductory cookbook](https://developers.openai.com/cookbook/examples/structured_outputs_intro) on Structured Outputs"
+}
+```
+User decision: **accepted**
+
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/package.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/api-schemas.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+OpenAI SDK: The doc says "Responses API" uses `text: { format: { type: "json_schema", strict: true, schema: ... } }`. But CHECKION uses Chat Completions API (openai.chat.completions.create). I need to check the Chat Completions API parameter name - it might be `response_format` in the request body. Let me check the openai-node helpers for zod.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "response_format|json_schema|zodResponseFormat",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/node_modules/openai",
+  "outputMode": "files_with_matches",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "response_format|json_schema|zodResponseFormat",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/node_modules/openai",
+  "outputMode": "files_with_matches",
+  "totalFiles": 265,
+  "totalMatches": 265,
+  "topFiles": [
+    {
+      "uri": "node_modules/openai/src/resources/beta/threads/runs/runs.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "node_modules/openai/src/resources/evals/runs/runs.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "node_modules/openai/src/resources/chat/completions/completions.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "node_modules/openai/src/resources/beta/threads/threads.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "node_modules/openai/resources/beta/threads/runs/runs.d.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "node_modules/openai/resources/beta/threads/runs/runs.d.mts",
+      "matchCount": 1
+    },
+    {
+      "uri": "node_modules/openai/src/resources/responses/responses.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "node_modules/openai/src/resources/responses/input-tokens.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "node_modules/openai/src/resources/beta/assistants.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "node_modules/openai/src/resources/audio/translations.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "node_modules/openai/src/resources/audio/transcriptions.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "node_modules/openai/src/resources/audio/speech.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "node_modules/openai/resources/evals/runs/runs.d.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "node_modules/openai/resources/evals/runs/runs.d.mts",
+      "matchCount": 1
+    },
+    {
+      "uri": "node_modules/openai/resources/chat/completions/completions.d.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "node_modules/openai/resources/chat/completions/completions.d.mts",
+      "matchCount": 1
+    },
+    {
+      "uri": "node_modules/openai/resources/beta/threads/threads.d.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "node_modules/openai/resources/beta/threads/threads.d.mts",
+      "matchCount": 1
+    },
+    {
+      "uri": "node_modules/openai/src/resources/shared.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "node_modules/openai/src/resources/images.ts",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/api-schemas.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me read the chat completions type and the zod helper to see the exact API for structured outputs in openai-node.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/node_modules/openai/resources/chat/completions/completions.d.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/node_modules/openai/helpers/zod.d.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So openai-node has:
+- `zodResponseFormat(zodObject, name, props?)` for Chat Completions - pass to `response_format`
+- `.parse()` method that accepts this and returns `message.parsed`
+
+So the flow is: use `response_format: zodResponseFormat(myZodSchema, 'research_result')` and either use `.parse()` to get parsed output or `.create()` and parse JSON manually. The doc says Structured Outputs is supported for gpt-4o-mini and gpt-4o-2024-08-06 and later. The user said they use "gpt5-mini" - in the codebase I see OPENAI_SUGGEST_MODEL defaulting to 'gpt-5-nano' or 'gpt-4o-mini'. I'll plan for gpt-4o-mini as the model for the research endpoint (Structured Outputs supported) and note that OPENAI_SUGGEST_MODEL can be used.
+
+Now I'll create the plan:
+1. OpenAI JSON/Structured Output: Use `response_format` with Zod schema via `zodResponseFormat` and optionally `completions.parse()` for type-safe parsed result. Model: gpt-4o-mini (or OPENAI_SUGGEST_MODEL) since Structured Outputs is supported there.
+2. Research agent API: POST /api/projects/[id]/research - returns one structured object: targetGroups, valueProposition?, seoKeywords, geoQueries, competitors.
+3. Frontend: One new card "Projekt-Research" with:
+   - Button "Research starten"
+   - After run: display each category in its own section (MsqdxMoleculeCard or sections inside one card), each category editable: list items as MsqdxChip with onDelete, add via MsqdxFormField + Add button; valueProposition as MsqdxFormField multiline or text field. "Übernehmen" buttons per category to push to project (competitors, geoQueries) or to keyword flow (seoKeywords). Target groups could be new - we might need to store them on project or just show and let user copy.
+4. Storage: Optionally persist last research in DB (project_research_runs) so we can show "last run" and re-apply; or keep only in client state after run.
+
+Let me check if there's a project field for target groups or if we need a new one.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "ChatCompletionCreateParams|response_format",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/node_modules/openai",
+  "outputMode": "content",
+  "contextBefore": 0,
+  "contextAfter": 0,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "ChatCompletionCreateParams|response_format",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/node_modules/openai",
+  "outputMode": "content",
+  "totalFiles": 25,
+  "totalMatches": 1335,
+  "topFiles": [
+    {
+      "uri": "node_modules/openai/src/resources/beta/threads/runs/runs.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "node_modules/openai/src/resources/evals/runs/runs.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "node_modules/openai/src/resources/chat/completions/index.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "node_modules/openai/src/resources/chat/completions/completions.ts",
+      "matchCount": 22
+    },
+    {
+      "uri": "node_modules/openai/src/resources/beta/threads/threads.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/openai/src/resources/beta/threads/runs/runs.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/openai/src/resources/evals/runs/runs.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/openai/src/resources/chat/completions/index.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/openai/src/resources/chat/completions/completions.ts",
+      "matchCount": 22
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/openai/src/resources/beta/threads/threads.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/openai/src/resources/beta/threads/runs/runs.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/openai/src/resources/evals/runs/runs.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/openai/src/resources/chat/completions/index.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/openai/src/resources/chat/completions/completions.ts",
+      "matchCount": 22
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/openai/src/resources/beta/threads/threads.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/openai/src/resources/beta/threads/runs/runs.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/openai/src/resources/evals/runs/runs.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/openai/src/resources/chat/completions/index.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/openai/src/resources/chat/completions/completions.ts",
+      "matchCount": 22
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/openai/src/resources/beta/threads/threads.ts",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I have enough. Projects table has no targetGroups field - we can either add a new jsonb column for target_groups or keep research result only in memory / in a separate store. For the plan I'll keep the research result as API response and optionally allow "apply to project" for competitors, geoQueries, and keywords. Target groups could be displayed in the Research card and later we could add a project field if needed.
+
+Creating the plan now.
+</details></think>
+
+---
+
+
+Alle nötigen Infos gesammelt. Plan erstellen:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="create_plan">
+<details>
+<summary>Tool use: **create_plan**</summary>
+
+
+Parameters:
+
+```json
+{
+  "plan": "# Projekt-Research-Agent mit OpenAI JSON Output und MSQDX-UI\n\n## 1. OpenAI JSON / Structured Outputs (Stand der Doku)\n\n- **Structured Outputs** garantieren, dass die Antwort dem angegebenen JSON-Schema entspricht (kein manuelles Parsen, keine Retries wegen Format).\n- **Unterstützte Modelle**: &#96;gpt-4o-mini&#96;, &#96;gpt-4o-mini-2024-07-18&#96;, &#96;gpt-4o-2024-08-06&#96; und neuere. Für ältere Modelle gibt es nur den einfachen **JSON-Mode** (&#96;type: \"json_object\"&#96;) ohne Schema.\n- **openai-node (v6)**: Über &#96;response_format&#96; mit **&#96;zodResponseFormat(zodSchema, 'name')&#96;** aus &#96;openai/helpers/zod&#96; kann ein Zod-Schema übergeben werden. Optional kann **&#96;client.chat.completions.parse({ ... response_format: zodResponseFormat(...) })&#96;** genutzt werden; dann liefert &#96;message.parsed&#96; das bereits typisierte Objekt.\n- **Hinweis Modell**: Im Projekt wird teils &#96;OPENAI_SUGGEST_MODEL&#96; (z. B. &#96;gpt-5-nano&#96;, &#96;gpt-4o-mini&#96;) genutzt. Structured Outputs mit &#96;json_schema&#96; funktionieren nur mit den oben genannten Modellen. Für den Research-Endpoint sollte ein Modell gewählt werden, das Structured Outputs unterstützt (z. B. &#96;gpt-4o-mini&#96; oder über Env &#96;OPENAI_SUGGEST_MODEL&#96;, falls ihr dort ein unterstütztes Modell setzt).\n\n**Konkrete Umsetzung**: Zod-Schema für das Research-Ergebnis definieren, im Route-Handler &#96;response_format: zodResponseFormat(researchResultSchema, 'project_research')&#96; übergeben und entweder &#96;.parse()&#96; nutzen (empfohlen) oder &#96;.create()&#96; und Antwort mit demselben Zod-Schema validieren.\n\n---\n\n## 2. API: POST &#96;/api/projects/[id]/research&#96;\n\n- **Auth &amp; Projekt**: Wie bei [suggest-competitors](app/api/projects/[id]/suggest-competitors/route.ts) und [suggest-keywords](app/api/projects/[id]/suggest-keywords/route.ts): User aus Request, Projekt per &#96;getProject(projectId, user.id)&#96;.\n- **Eingabe**: Projekt-Context (name, domain); optional Body &#96;{ url?: string }&#96; für alternative Start-URL.\n- **LLM-Aufruf**:\n  - System-Prompt: Klare Rolle (Research für Zielgruppen, SEO, GEO, Wettbewerb); Anweisung, nur die strukturierten Felder zu füllen; Sprache an Domain/Projekt orientieren.\n  - User-Prompt: URL/Domain, Projektname, ggf. bestehende competitors/geoQueries als Kontext.\n  - **response_format**: &#96;zodResponseFormat(researchResultSchema, 'project_research')&#96; (Schema siehe unten).\n  - Modell: z. B. &#96;process.env.OPENAI_SUGGEST_MODEL ?? 'gpt-4o-mini'&#96; (Structured Outputs fähig).\n- **Response**: JSON &#96;{ targetGroups, valueProposition, seoKeywords, geoQueries, competitors }&#96; (alle Arrays/String wie im Schema). Kein Persistieren des Research-Ergebnisses in der DB nötig für MVP; Frontend hält den letzten Lauf im State.\n\n**Zod-Schema (Beispiel)** – zentral z. B. in &#96;lib/api-schemas.ts&#96; oder &#96;lib/research/schema.ts&#96;:\n\n&#96;&#96;&#96;ts\n// Struktur für Research-Ergebnis (OpenAI Structured Output)\nexport const projectResearchResultSchema = z.object({\n  targetGroups: z.array(z.string().trim()).min(1).max(15),      // Zielgruppen-Beschreibungen\n  valueProposition: z.string().trim().max(500).optional(),     // 1–2 Sätze USPs\n  seoKeywords: z.array(z.string().trim()).min(5).max(20),\n  geoQueries: z.array(z.string().trim()).min(5).max(15),         // GEO/E-E-A-T Suchanfragen\n  competitors: z.array(z.string().trim()).min(3).max(10),       // Domains\n});\nexport type ProjectResearchResult = z.infer&lt;typeof projectResearchResultSchema&gt;;\n&#96;&#96;&#96;\n\nDie genauen Min/Max und Beschreibungen können im Prompt und ggf. in Schema-Descriptions festgelegt werden. OpenAI-Structured-Outputs unterstützen nur einen Teil von JSON Schema; die openai-node-Zod-Helper wandeln das Schema in das von der API erwartete Format um.\n\n---\n\n## 3. Frontend: Projektseite – Research-Card und Darstellung\n\n- **Platzierung**: Eine neue Card **„Projekt-Research“** (oder „Research-Agent“) auf [app/projects/[id]/page.tsx](app/projects/[id]/page.tsx), z. B. direkt unter der Card „Unternehmensinformationen“, damit der Research-Kontext oben sichtbar ist.\n- **Komponenten** (durchgängig MSQDX wie auf der restlichen Projektseite):\n  - **Container**: &#96;MsqdxMoleculeCard&#96; mit Titel „Projekt-Research“, Beschreibung (z. B. „Strukturierte Erkenntnisse für Zielgruppen, SEO und GEO“).\n  - **Aktion**: Button „Research starten“ → &#96;POST apiProjectResearch(id)&#96;; Loading-State; bei Fehler Fehlermeldung anzeigen.\n  - **Nach erfolgreichem Lauf**: Research-Ergebnis im State halten und **pro Kategorie einen eigenen, klar abgegrenzten Bereich** anzeigen (keine zweite Ebene MsqdxMoleculeCard nötig; Überschriften mit &#96;MsqdxTypography&#96; + Listen reichen).\n\n**Saubere Darstellung pro Kategorie (editierbar)**:\n\n| Kategorie           | Darstellung                                                                 | Editierbarkeit                                                                 |\n|---------------------|-----------------------------------------------------------------------------|-------------------------------------------------------------------------------|\n| Target Groups       | Liste als Chips oder kurze Zeilen                                          | Pro Eintrag: Chip mit &#96;onDelete&#96;; neuer Eintrag: &#96;MsqdxFormField&#96; + „Hinzufügen“ (lokaler State). |\n| Value Proposition   | Einzeiliger oder mehrzeiliger Text                                          | &#96;MsqdxFormField&#96; (multiline) mit value/onChange, im lokalen Research-State.  |\n| SEO Keywords        | Chips                                                                      | Chips mit &#96;onDelete&#96;; &#96;MsqdxFormField&#96; + „Hinzufügen“; Button „Als Rank-Keywords übernehmen“. |\n| GEO-Queries         | Chips                                                                      | Wie bereits bei GEO-Fragen: Chips mit &#96;onDelete&#96;; Input + „Hinzufügen“; Button „Zu GEO-Fragen übernehmen“. |\n| Competitors         | Chips                                                                      | Chips mit &#96;onDelete&#96;; Input + „Hinzufügen“; Button „Zu Competitors übernehmen“. |\n\n- **State**: Ein Objekt &#96;researchResult: ProjectResearchResult | null&#96; (plus &#96;researchLoading&#96;, &#96;researchError&#96;). Nach dem Lauf wird &#96;researchResult&#96; gesetzt; alle Bearbeitungen (Hinzufügen/Löschen von Einträgen, Änderung valueProposition) ändern nur diesen State, bis der User „Übernehmen“ nutzt oder einen neuen Research startet.\n- **„Übernehmen“-Aktionen**:\n  - **Competitors übernehmen**: PATCH &#96;apiProject(id)&#96; mit &#96;competitors: [...project.competitors, ...researchResult.competitors]&#96; (oder Merge ohne Duplikate); danach &#96;loadProject()&#96;.\n  - **GEO-Queries übernehmen**: PATCH mit &#96;geoQueries: [...project.geoQueries, ...researchResult.geoQueries]&#96;; danach &#96;loadProject()&#96;.\n  - **SEO Keywords übernehmen**: Gleicher Flow wie beim bestehenden „Suggest keywords with AI“ – aus &#96;researchResult.seoKeywords&#96; auswählbar (Chips toggle) und „Ausgewählte hinzufügen“ ruft die bestehende Logik auf (POST Rank-Tracking-Keywords für Projekt + Domain).\n- **i18n**: Neue Keys unter &#96;projects.*&#96; für Research-Card (Titel, Beschreibung, Button „Research starten“, Kategorien-Labels, „Hinzufügen“, „Übernehmen“ pro Kategorie, leere Zustände).\n\nSo bleibt die Darstellung pro Kategorie einheitlich (Chips + optional Input), klar lesbar und leicht editierbar; Übernahme in die bestehenden Projekt-Daten erfolgt explizit pro Kategorie.\n\n---\n\n## 4. Konstanten und Tests\n\n- **Constants**: In [lib/constants.ts](lib/constants.ts) &#96;apiProjectResearch(id)&#96; für &#96;POST /api/projects/[id]/research&#96; ergänzen.\n- **Tests**: Unit-Test für den neuen Route-Handler (auth, project not found, success mit gemocktem OpenAI); bei Success prüfen, dass die Response dem &#96;projectResearchResultSchema&#96; entspricht (z. B. mit &#96;projectResearchResultSchema.safeParse(data)&#96;).\n\n---\n\n## 5. Ablauf (Überblick)\n\n&#96;&#96;&#96;mermaid\nsequenceDiagram\n  participant User\n  participant ProjectPage\n  participant API\n  participant OpenAI\n\n  User-&gt;&gt;ProjectPage: \"Research starten\"\n  ProjectPage-&gt;&gt;API: POST /api/projects/[id]/research\n  API-&gt;&gt;API: getProject, getOpenAIKey\n  API-&gt;&gt;OpenAI: chat.completions.parse(response_format: zodResponseFormat(schema))\n  OpenAI--&gt;&gt;API: parsed ProjectResearchResult\n  API--&gt;&gt;ProjectPage: 200 { targetGroups, valueProposition, seoKeywords, geoQueries, competitors }\n  ProjectPage-&gt;&gt;ProjectPage: setResearchResult(data), Kategorien anzeigen\n  User-&gt;&gt;ProjectPage: Edit (Chips/Input), dann \"Competitors übernehmen\" / \"GEO übernehmen\" / \"Keywords übernehmen\"\n  ProjectPage-&gt;&gt;API: PATCH project oder POST rank-tracking keywords\n  API--&gt;&gt;ProjectPage: ok\n  ProjectPage-&gt;&gt;ProjectPage: loadProject / refresh keyword list\n&#96;&#96;&#96;\n\n---\n\n## 6. Dateien (kurz)\n\n| Bereich | Datei |\n|--------|--------|\n| Schema + Typ | Neues Modul z. B. &#96;lib/research/schema.ts&#96; oder Erweiterung &#96;lib/api-schemas.ts&#96; |\n| API Route | &#96;app/api/projects/[id]/research/route.ts&#96; (POST) |\n| Constants | &#96;lib/constants.ts&#96; – &#96;apiProjectResearch(id)&#96; |\n| Projektseite | &#96;app/projects/[id]/page.tsx&#96; – Research-Card, State, Kategorien-UI, Übernehmen-Logik |\n| i18n | &#96;locales/de.json&#96;, &#96;locales/en.json&#96; – &#96;projects.research*&#96; |\n| Tests | &#96;__tests__/api/project-research.test.ts&#96; (optional: Mock OpenAI + parse) |\n| Doku | &#96;knowledge/checkion-projects-feature.md&#96; – Research-Endpoint und UI ergänzen |\n\n---\n\n## 7. Optionale Erweiterungen (nicht im ersten Schritt)\n\n- Letztes Research-Ergebnis pro Projekt in DB speichern (&#96;project_research_runs&#96; oder ein jsonb-Feld am Projekt), um „Letzter Research“ ohne erneuten Lauf anzuzeigen.\n- Target Groups dauerhaft am Projekt speichern (neues Feld &#96;target_groups&#96; jsonb), sobald ihr sie für Personas oder Targeting nutzen wollt.\n",
+  "name": "Project Research Agent",
+  "overview": "Add a single project research agent that uses OpenAI Structured Outputs (JSON schema) to return target groups, value proposition, SEO keywords, GEO queries, and competitors in one run, with a clean MSQDX card-based UI where each category is displayed and easily editable before applying to the project."
+}
+```
+Additional data:
+
+```json
+{
+  "reviewData": {
+    "status": "Requested",
+    "selectedOption": "none",
+    "isShowingInput": false
+  },
+  "planUri": "file:///Users/christoph.bordeck/.cursor/plans/project_research_agent_0a9e8343.plan.md",
+  "hasOpenedEditor": true
+}
+```
+Result:
+
+```json
+{
+  "rejected": {}
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+_**User**_
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
 
 ---
 

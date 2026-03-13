@@ -16,6 +16,7 @@ import {
 import { useI18n } from '@/components/i18n/I18nProvider';
 import {
     apiProject,
+    apiProjectResearch,
     apiProjectSuggestCompetitors,
     apiProjectSuggestKeywords,
     apiScansDomainList,
@@ -35,6 +36,7 @@ import {
 } from '@/lib/constants';
 import { SERP_MAIN_MARKETS } from '@/lib/serp-markets';
 import { RankTrackingChart } from '@/components/RankTrackingChart';
+import type { ProjectResearchResult } from '@/lib/research/schema';
 
 interface RankKeywordItem {
     id: string;
@@ -89,6 +91,14 @@ export default function ProjectDetailPage() {
     const [suggestedKeywords, setSuggestedKeywords] = useState<string[]>([]);
     const [selectedSuggestedKeywords, setSelectedSuggestedKeywords] = useState<Set<string>>(new Set());
     const [chartExpandedKeywordId, setChartExpandedKeywordId] = useState<string | null>(null);
+    const [researchResult, setResearchResult] = useState<ProjectResearchResult | null>(null);
+    const [researchLoading, setResearchLoading] = useState(false);
+    const [researchError, setResearchError] = useState<string | null>(null);
+    const [selectedResearchKeywords, setSelectedResearchKeywords] = useState<Set<string>>(new Set());
+    const [researchAddTargetGroup, setResearchAddTargetGroup] = useState('');
+    const [researchAddKeyword, setResearchAddKeyword] = useState('');
+    const [researchAddGeoQuery, setResearchAddGeoQuery] = useState('');
+    const [researchAddCompetitor, setResearchAddCompetitor] = useState('');
 
     const loadProject = useCallback(async () => {
         if (!id) return;
@@ -448,6 +458,123 @@ export default function ProjectDetailPage() {
         }
     }, [id, loadProject]);
 
+    const handleRunResearch = useCallback(async () => {
+        if (!id) return;
+        setResearchError(null);
+        setResearchLoading(true);
+        try {
+            const res = await fetch(apiProjectResearch(id), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({}),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data && Array.isArray(data.targetGroups)) {
+                setResearchResult(data as ProjectResearchResult);
+                setSelectedResearchKeywords(new Set());
+            } else if (!res.ok && typeof data?.error === 'string') {
+                setResearchError(data.error);
+            } else if (!res.ok) {
+                setResearchError(t('common.error'));
+            }
+        } catch {
+            setResearchError(t('common.error'));
+        } finally {
+            setResearchLoading(false);
+        }
+    }, [id, t]);
+
+    const updateResearchArray = useCallback(
+        (key: 'targetGroups' | 'seoKeywords' | 'geoQueries' | 'competitors', add: string | null, remove?: string) => {
+            setResearchResult((prev) => {
+                if (!prev) return prev;
+                const arr = [...(prev[key] ?? [])];
+                if (remove !== undefined) {
+                    const i = arr.indexOf(remove);
+                    if (i !== -1) arr.splice(i, 1);
+                }
+                if (add?.trim()) {
+                    const trimmed = add.trim();
+                    if (!arr.includes(trimmed)) arr.push(trimmed);
+                }
+                return { ...prev, [key]: arr };
+            });
+        },
+        []
+    );
+
+    const handleApplyResearchCompetitors = useCallback(async () => {
+        if (!id || !researchResult?.competitors?.length) return;
+        const merged = [...new Set([...competitors, ...researchResult.competitors])];
+        try {
+            const res = await fetch(apiProject(id), {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ competitors: merged }),
+            });
+            if (res.ok) loadProject();
+        } catch {
+            // ignore
+        }
+    }, [id, researchResult?.competitors, competitors, loadProject]);
+
+    const handleApplyResearchGeoQueries = useCallback(async () => {
+        if (!id || !researchResult?.geoQueries?.length) return;
+        const merged = [...new Set([...geoQueries, ...researchResult.geoQueries])];
+        try {
+            const res = await fetch(apiProject(id), {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ geoQueries: merged }),
+            });
+            if (res.ok) loadProject();
+        } catch {
+            // ignore
+        }
+    }, [id, researchResult?.geoQueries, geoQueries, loadProject]);
+
+    const handleApplyResearchKeywords = useCallback(async () => {
+        if (!id || !project?.domain || selectedResearchKeywords.size === 0) return;
+        const market = SERP_MAIN_MARKETS[0];
+        const [country, language] = market ? [market.country, market.language] : ['de', 'de'];
+        const domain = project.domain.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0] ?? project.domain;
+        for (const keyword of selectedResearchKeywords) {
+            try {
+                await fetch(API_RANK_TRACKING_KEYWORDS, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        projectId: id,
+                        domain,
+                        keyword: keyword.trim(),
+                        country,
+                        language,
+                    }),
+                });
+            } catch {
+                // continue
+            }
+        }
+        setSelectedResearchKeywords(new Set());
+        loadProject();
+        const listRes = await fetch(apiRankTrackingKeywords(id), { credentials: 'same-origin' });
+        const listData = await listRes.json();
+        setRankKeywords(Array.isArray(listData?.data) ? listData.data : []);
+    }, [id, project?.domain, selectedResearchKeywords, loadProject]);
+
+    const handleToggleResearchKeyword = useCallback((kw: string) => {
+        setSelectedResearchKeywords((prev) => {
+            const next = new Set(prev);
+            if (next.has(kw)) next.delete(kw);
+            else next.add(kw);
+            return next;
+        });
+    }, []);
+
     if (!id) {
         return (
             <Box sx={{ p: 'var(--msqdx-spacing-md)' }}>
@@ -494,6 +621,214 @@ export default function ProjectDetailPage() {
                         </MsqdxTypography>
                     )}
                 </MsqdxCard>
+
+                {/* Card: Projekt-Research */}
+                <MsqdxMoleculeCard
+                    title={t('projects.research')}
+                    variant="flat"
+                    borderRadius="lg"
+                    footerDivider={false}
+                    sx={{ bgcolor: 'var(--color-card-bg)' }}
+                >
+                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1.5 }}>
+                        {t('projects.researchDescription')}
+                    </MsqdxTypography>
+                    <MsqdxButton
+                        variant="contained"
+                        brandColor="green"
+                        size="small"
+                        onClick={handleRunResearch}
+                        disabled={researchLoading || !project.domain}
+                    >
+                        {researchLoading ? t('common.loading') : t('projects.researchStart')}
+                    </MsqdxButton>
+                    {researchError && (
+                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-status-error)', display: 'block', mt: 1 }}>
+                            {researchError}
+                        </MsqdxTypography>
+                    )}
+                    {!researchResult && !researchLoading && (
+                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mt: 2 }}>
+                            {t('projects.researchEmpty')}
+                        </MsqdxTypography>
+                    )}
+                    {researchResult && (
+                        <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            {/* Target groups */}
+                            <Box>
+                                <MsqdxTypography variant="subtitle2" weight="semibold" sx={{ mb: 0.5 }}>
+                                    {t('projects.researchTargetGroups')}
+                                </MsqdxTypography>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 0.5 }}>
+                                    {(researchResult.targetGroups ?? []).map((item) => (
+                                        <MsqdxChip
+                                            key={item}
+                                            label={item}
+                                            onDelete={() => updateResearchArray('targetGroups', null, item)}
+                                            size="small"
+                                        />
+                                    ))}
+                                </Box>
+                                <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
+                                    <MsqdxFormField
+                                        placeholder={t('projects.researchAdd')}
+                                        value={researchAddTargetGroup}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setResearchAddTargetGroup(e.target.value)}
+                                        sx={{ minWidth: 180, flex: '1 1 180px' }}
+                                    />
+                                    <MsqdxButton
+                                        variant="outlined"
+                                        size="small"
+                                        onClick={() => {
+                                            updateResearchArray('targetGroups', researchAddTargetGroup);
+                                            setResearchAddTargetGroup('');
+                                        }}
+                                        disabled={!researchAddTargetGroup.trim()}
+                                    >
+                                        {t('projects.researchAdd')}
+                                    </MsqdxButton>
+                                </Box>
+                            </Box>
+                            {/* Value proposition */}
+                            <Box>
+                                <MsqdxTypography variant="subtitle2" weight="semibold" sx={{ mb: 0.5 }}>
+                                    {t('projects.researchValueProposition')}
+                                </MsqdxTypography>
+                                <MsqdxFormField
+                                    multiline
+                                    minRows={2}
+                                    value={researchResult.valueProposition ?? ''}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                        setResearchResult((prev) => (prev ? { ...prev, valueProposition: e.target.value } : prev))
+                                    }
+                                    sx={{ width: '100%' }}
+                                />
+                            </Box>
+                            {/* SEO keywords */}
+                            <Box>
+                                <MsqdxTypography variant="subtitle2" weight="semibold" sx={{ mb: 0.5 }}>
+                                    {t('projects.researchSeoKeywords')}
+                                </MsqdxTypography>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 0.5 }}>
+                                    {(researchResult.seoKeywords ?? []).map((kw) => (
+                                        <MsqdxChip
+                                            key={kw}
+                                            label={kw}
+                                            onClick={() => handleToggleResearchKeyword(kw)}
+                                            color={selectedResearchKeywords.has(kw) ? 'primary' : 'default'}
+                                            variant={selectedResearchKeywords.has(kw) ? 'filled' : 'outlined'}
+                                            size="small"
+                                            sx={{ cursor: 'pointer' }}
+                                        />
+                                    ))}
+                                </Box>
+                                <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
+                                    <MsqdxFormField
+                                        placeholder={t('projects.researchAdd')}
+                                        value={researchAddKeyword}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setResearchAddKeyword(e.target.value)}
+                                        sx={{ minWidth: 180, flex: '1 1 180px' }}
+                                    />
+                                    <MsqdxButton
+                                        variant="outlined"
+                                        size="small"
+                                        onClick={() => {
+                                            updateResearchArray('seoKeywords', researchAddKeyword);
+                                            setResearchAddKeyword('');
+                                        }}
+                                        disabled={!researchAddKeyword.trim()}
+                                    >
+                                        {t('projects.researchAdd')}
+                                    </MsqdxButton>
+                                    <MsqdxButton
+                                        variant="contained"
+                                        size="small"
+                                        onClick={handleApplyResearchKeywords}
+                                        disabled={selectedResearchKeywords.size === 0}
+                                    >
+                                        {t('projects.researchApplyKeywords')} ({selectedResearchKeywords.size})
+                                    </MsqdxButton>
+                                </Box>
+                            </Box>
+                            {/* GEO queries */}
+                            <Box>
+                                <MsqdxTypography variant="subtitle2" weight="semibold" sx={{ mb: 0.5 }}>
+                                    {t('projects.researchGeoQueries')}
+                                </MsqdxTypography>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 0.5 }}>
+                                    {(researchResult.geoQueries ?? []).map((q) => (
+                                        <MsqdxChip
+                                            key={q}
+                                            label={q}
+                                            onDelete={() => updateResearchArray('geoQueries', null, q)}
+                                            size="small"
+                                        />
+                                    ))}
+                                </Box>
+                                <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
+                                    <MsqdxFormField
+                                        placeholder={t('projects.researchAdd')}
+                                        value={researchAddGeoQuery}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setResearchAddGeoQuery(e.target.value)}
+                                        sx={{ minWidth: 180, flex: '1 1 180px' }}
+                                    />
+                                    <MsqdxButton
+                                        variant="outlined"
+                                        size="small"
+                                        onClick={() => {
+                                            updateResearchArray('geoQueries', researchAddGeoQuery);
+                                            setResearchAddGeoQuery('');
+                                        }}
+                                        disabled={!researchAddGeoQuery.trim()}
+                                    >
+                                        {t('projects.researchAdd')}
+                                    </MsqdxButton>
+                                    <MsqdxButton variant="contained" size="small" onClick={handleApplyResearchGeoQueries}>
+                                        {t('projects.researchApplyGeoQueries')}
+                                    </MsqdxButton>
+                                </Box>
+                            </Box>
+                            {/* Competitors */}
+                            <Box>
+                                <MsqdxTypography variant="subtitle2" weight="semibold" sx={{ mb: 0.5 }}>
+                                    {t('projects.researchCompetitors')}
+                                </MsqdxTypography>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 0.5 }}>
+                                    {(researchResult.competitors ?? []).map((c) => (
+                                        <MsqdxChip
+                                            key={c}
+                                            label={c}
+                                            onDelete={() => updateResearchArray('competitors', null, c)}
+                                            size="small"
+                                        />
+                                    ))}
+                                </Box>
+                                <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
+                                    <MsqdxFormField
+                                        placeholder={t('projects.researchAdd')}
+                                        value={researchAddCompetitor}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setResearchAddCompetitor(e.target.value)}
+                                        sx={{ minWidth: 180, flex: '1 1 180px' }}
+                                    />
+                                    <MsqdxButton
+                                        variant="outlined"
+                                        size="small"
+                                        onClick={() => {
+                                            updateResearchArray('competitors', researchAddCompetitor);
+                                            setResearchAddCompetitor('');
+                                        }}
+                                        disabled={!researchAddCompetitor.trim()}
+                                    >
+                                        {t('projects.researchAdd')}
+                                    </MsqdxButton>
+                                    <MsqdxButton variant="contained" size="small" onClick={handleApplyResearchCompetitors}>
+                                        {t('projects.researchApplyCompetitors')}
+                                    </MsqdxButton>
+                                </Box>
+                            </Box>
+                        </Box>
+                    )}
+                </MsqdxMoleculeCard>
 
                 {/* Card 2: Competitors */}
                 <MsqdxMoleculeCard

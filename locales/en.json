@@ -151,7 +151,20 @@
     "addSelectedKeywords": "Add selected",
     "activity": "Activity",
     "rankingsUnconfigured": "Rank tracking is not configured (SERP_API_KEY missing).",
-    "rankingsRefresh502": "Rank refresh failed. Check SERP_API_KEY and SERP_API_PROVIDER (serper or scrapingrobot)."
+    "rankingsRefresh502": "Rank refresh failed. Check SERP_API_KEY and SERP_API_PROVIDER (serper or scrapingrobot).",
+    "research": "Project research",
+    "researchDescription": "Structured insights for target groups, SEO and GEO. Run once, then edit and apply to project fields.",
+    "researchStart": "Start research",
+    "researchTargetGroups": "Target groups",
+    "researchValueProposition": "Value proposition",
+    "researchSeoKeywords": "SEO keywords",
+    "researchGeoQueries": "GEO queries",
+    "researchCompetitors": "Competitors",
+    "researchAdd": "Add",
+    "researchApplyCompetitors": "Apply to competitors",
+    "researchApplyGeoQueries": "Apply to GEO queries",
+    "researchApplyKeywords": "Apply as rank keywords",
+    "researchEmpty": "No research yet. Click \"Start research\"."
   },
   "auth": {
     "login": {

@@ -26,6 +26,7 @@ Projekte gruppieren Scans und Analysen pro Kunde/Domain. Scans können weiterhin
 - **GET/PATCH/DELETE** `/api/projects/[id]` – Detail, Bearbeiten (name, domain, competitors, geoQueries), Löschen (setzt projectId bei Ressourcen auf null)
 - **POST** `/api/projects/[id]/suggest-competitors` – AI suggests competitor domains and GEO queries (uses project domain or body `url`). Returns `{ competitors: string[], queries: string[] }`; frontend can merge competitors or queries into project and PATCH.
 - **POST** `/api/projects/[id]/suggest-keywords` – AI suggests SEO keywords for rank tracking (uses project domain/name). Returns `{ keywords: string[] }`; frontend lets user select and add to rank-tracking keywords.
+- **POST** `/api/projects/[id]/research` – Project research agent: one LLM run with OpenAI Structured Outputs (JSON schema). Returns `{ targetGroups, valueProposition?, seoKeywords, geoQueries, competitors }`. Uses `gpt-4o-mini` (or `OPENAI_SUGGEST_MODEL`). Frontend shows result in a Research card; user can edit and apply categories to project (competitors, geoQueries, rank keywords).
 - **PATCH** `/api/scan/[id]/project` – Single-Scan zuordnen (body: `{ projectId: string | null }`)
 - **PATCH** `/api/scans/domain/[id]/project` – Domain-Scan zuordnen
 - **PATCH** `/api/scan/journey-agent/[jobId]/project` – Journey-Run zuordnen
@@ -36,12 +37,13 @@ Listen-Endpunkte (GET) unterstützen optionalen Query-Parameter `projectId` zur 
 ## Frontend
 
 - **Seiten**: `/projects` (Liste), `/projects/[id]` (Detail: card-based layout, MSQDX only)
-- **Projekt-Detail** (`/projects/[id]`): Five cards in a vertical stack (no tabs):
+- **Projekt-Detail** (`/projects/[id]`): Six cards in a vertical stack (no tabs):
   1. **Company info** (MsqdxCard): Project name, domain.
-  2. **Competitors** (MsqdxMoleculeCard): Input + Add, "Suggest with AI"; list as MsqdxChip with onDelete.
-  3. **Keywords (Rank-Tracking)** (MsqdxMoleculeCard): Add keyword (dialog), "Suggest keywords with AI" (calls suggest-keywords; user selects chips and "Add selected"); Refresh rankings; list with last position and competitor positions.
-  4. **GEO-Fragen** (MsqdxMoleculeCard): Stored queries as MsqdxChip; input + Add, "Suggest with AI" (calls suggest-competitors and merges `queries` into project.geoQueries).
-  5. **Aktivität** (MsqdxMoleculeCard): MsqdxAccordion with Domain Scans, Journey Runs, GEO Runs, Single Scans; each section lists items and empty-state CTA.
+  2. **Projekt-Research** (MsqdxMoleculeCard): "Research starten" runs POST `/api/projects/[id]/research`. Result shown as editable categories (target groups, value proposition, SEO keywords, GEO queries, competitors). Per-category add/remove chips; "Apply to competitors", "Apply to GEO queries", "Apply as rank keywords" merge into project.
+  3. **Competitors** (MsqdxMoleculeCard): Input + Add, "Suggest with AI"; list as MsqdxChip with onDelete.
+  4. **Keywords (Rank-Tracking)** (MsqdxMoleculeCard): Add keyword (dialog), "Suggest keywords with AI" (calls suggest-keywords; user selects chips and "Add selected"); Refresh rankings; list with last position and competitor positions.
+  5. **GEO-Fragen** (MsqdxMoleculeCard): Stored queries as MsqdxChip; input + Add, "Suggest with AI" (calls suggest-competitors and merges `queries` into project.geoQueries).
+  6. **Aktivität** (MsqdxMoleculeCard): MsqdxAccordion with Domain Scans, Journey Runs, GEO Runs, Single Scans; each section lists items and empty-state CTA.
 - **Komponente**: `AddToProject` – Menü „Zu Projekt hinzufügen“ / „Projekt ändern“ auf Ergebnis-Seiten (Single, Domain, Journey, GEO)
 - **Scan-Start**: Optionale Projektauswahl auf `/scan` (alle Modi: Single, Deep, Journey, GEO)
 
