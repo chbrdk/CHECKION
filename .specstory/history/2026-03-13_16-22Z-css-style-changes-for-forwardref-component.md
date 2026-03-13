@@ -11143,3 +11143,92 @@ ProjectHeaderNav-Container mit `marginLeft: 'auto'` versehen, damit er rechts an
 
 ---
 
+<think><details><summary>Thought Process</summary>
+
+I'll add marginLeft: 'auto' to the root Box of ProjectHeaderNav so it sticks to the right. I'll also ensure the header in AppShell has justifyContent: 'flex-end' (it already does) - and the inner div will be pushed right with marginLeft: 'auto'.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ProjectHeaderNav.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+That should do it. If the header parent has display: flex, the marginLeft: 'auto' on the only child will push it to the right. Let me also double-check the header in AppShell - it has justifyContent: 'flex-end'. So the child should already go to the right. With marginLeft: 'auto' on the ProjectHeaderNav root, we're making sure the block itself is pushed to the right (it takes only the space it needs and then marginLeft: auto fills the remaining space on the left, effectively pushing it right). Good.
+</details></think>
+
+---
+
+
+Erledigt. Am äußeren Container von `ProjectHeaderNav` steht jetzt `marginLeft: 'auto'`. Dadurch wird der Block („← testprojekt“, Übersicht, Rankings, GEO, …) im Header nach rechts geschoben und liegt rechtsbündig.
+
+---
+
+_**User**_
+
+DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > header.MuiBox-root c.-16czz9o > div.MuiBox-root c.-nv0rup
+Position: top=19px, left=88px, width=841px, height=100px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-nv0rup" data-cursor-element-id="cursor-el-53">← testprojekt Übersicht Rankings GEO Research Performance (Demnächst) WCAG (Demnächst)</div> ich meinte eigentlich alles in dem div rechtsbündig aber auf einer horizontalen eben
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants everything inside that div to be right-aligned but on a single horizontal line. So the content (← testprojekt, Übersicht, Rankings, GEO, Research, etc.) should be in one row and aligned to the right - i.e. the flex container should have justifyContent: 'flex-end' so the items sit on the right side of the container, and we should avoid wrapping (flexWrap: 'nowrap' or ensure single line). So:
+1. Keep the Box as a flex row (it already is)
+2. Add justifyContent: 'flex-end' so the items (back button + tabs) are grouped to the right
+3. flexWrap: 'nowrap' so it stays on one horizontal line (or we could leave wrap for very small screens - but user said "auf einer horizontalen ebene" so one horizontal line)
+
+Let me update ProjectHeaderNav: the outer Box should have justifyContent: 'flex-end' so the content is right-aligned within the box, and flexWrap: 'nowrap' to keep everything on one line. If the container has marginLeft: 'auto' it's already pushed to the right of the header. So the inner content (back button + tabs) - the user wants that whole group to be right-aligned. So the Box containing the button and tabs should have justifyContent: 'flex-end'. That way the flex items (Link+Button, and Tabs) will be at the end (right) of the container. So we need justifyContent: 'flex-end' on that Box. And for "horizontal line" we need flexWrap: 'nowrap' so the tabs don't wrap to the next line.
+</details></think>
+
+---
+
+
+Inhalt des Blocks (Zurück-Button + Tabs) rechtsbündig und in einer horizontalen Zeile anordnen:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ProjectHeaderNav.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Tabs can be scrollable when they don't fit - we have variant="scrollable" and scrollButtons="auto", so on small screens the tabs will scroll horizontally rather than wrap. So nowrap is good. The content (back button + tabs) will sit on the right side of the container in one row.
+</details></think>
+
+---
+
+
+Erledigt. Ich habe zwei Anpassungen gemacht:
+
+1. **`justifyContent: 'flex-end'`** – Der Inhalt (← testprojekt, Übersicht, Rankings, GEO, …) liegt jetzt rechtsbündig im Container.
+2. **`flexWrap: 'nowrap'`** – Alles bleibt in einer horizontalen Zeile; die Tabs nutzen bei wenig Platz weiterhin `scrollable` und scrollen horizontal.
+
+---
+

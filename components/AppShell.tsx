@@ -94,6 +94,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                             alignItems: 'center',
                             justifyContent: 'flex-end',
                             padding: { xs: '0.75rem 1rem', md: '1rem 1.5rem' },
+                            paddingLeft: { xs: 240, md: 260 },
                             minHeight: { xs: HEADER_HEIGHT_XS, md: HEADER_HEIGHT_MD },
                             backgroundColor: 'transparent',
                             overflow: 'visible',

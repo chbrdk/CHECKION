@@ -43,7 +43,18 @@ export function ProjectHeaderNav() {
         : 'overview';
 
     return (
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 2, flexWrap: 'nowrap', marginLeft: 'auto' }}>
+        <Box
+            sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                gap: 2,
+                flexWrap: 'nowrap',
+                marginLeft: 'auto',
+                marginLeft: 'auto',
+                minWidth: 0,
+            }}
+        >
             <Link href={id ? pathProject(id) : '/projects'} style={{ textDecoration: 'none' }}>
                 <MsqdxButton
                     variant="outlined"
