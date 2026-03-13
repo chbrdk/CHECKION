@@ -18011,7 +18011,2855 @@ From the plan, the implementation order is:
 5. Activity: compact activity block on dashboard or move to /projects/[id]/activity.
 6. i18n: Add locale keys.
 
-The user said "To-do's from the plan hav</details></think>
+The user said "To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work." So I should look for existing todos - they might be in the plan file or in the todo system. The attached plan shows `todos: []` so the list might be empty. I'll proceed with the implementation and use todo_write to track - I'll create todos based on the plan sections and mark them in progress as I go. Actually the user said "Do not create them again" - so they might exist somewhere. I'll start implementing and use merge: true when updating todos with the IDs that might have been created from the plan. Let me start with step 1 and create/update todos as needed.
+
+I'll start by:
+1. Reading the current state of the files I need to modify
+2. Implementing in the order specified
+
+Let me begin with the schema and value proposition.
+</details></think>
+
+---
+
+
+Implementing the plan step by step. Checking existing todos, then starting with the first task.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/.cursor/plans/project_dashboard_and_subpages_ece49ec7.plan.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/projects.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The plan says "To-do's from the plan have already been created" but the plan file shows todos: []. I'll create todos for tracking and mark them in progress. Let me start implementing.
+
+Step 1: Schema + API for value proposition
+- Add valueProposition to schema
+- Create migration
+- Update ProjectRow and projects.ts (getProject, listProjects, insertProject, updateProject)
+- Update api-schemas and route PATCH
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] Schema + API for value proposition (migration, projects CRUD, PATCH)
+- [ ] Ranking summary API and GEO summary API
+- [ ] Dashboard layout: two-column, company/competitors/scores cards
+- [ ] Subpages: rankings, geo, research + path helpers
+- [ ] Activity on dashboard + i18n keys
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **9** results in **1** directory</summary>
+
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/migrations** (9 files)
+
+| File |
+|------|
+| `0008_project_geo_queries.sql` |
+| `0007_project_competitors_and_position_competitors.sql` |
+| `0006_rank_tracking_language.sql` |
+| `0005_rank_tracking.sql` |
+| `0004_drop_user_id_fk_for_plexon.sql` |
+| `0003_api_tokens.sql` |
+| `0002_projects.sql` |
+| `0001_geo_eeat_runs.sql` |
+| `0000_add_llm_summary.sql` |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/api-schemas.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I'll implement:
+1. Add valueProposition to schema
+2. Create migration 0009_project_value_proposition.sql
+3. Update projects.ts - ProjectRow, getProject, listProjects, insertProject, updateProject
+4. Update projectUpdateBodySchema and PATCH handler
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/migrations/0008_project_geo_queries.sql</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now create migration 0009 for value_proposition and update projects.ts.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/migrations/0009_project_value_proposition.sql</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/projects.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/projects.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/projects.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/projects.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/projects.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now update api-schemas and PATCH handler for valueProposition.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/api-schemas.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Projects tests might reference ProjectRow - need to add valueProposition to test mocks. Let me check.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "ProjectRow|domain:.*null|competitors:.*\\[\\]",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/projects.test.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "ProjectRow|domain:.*null|competitors:.*\\[\\]",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/projects.test.ts",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 15,
+  "topFiles": [
+    {
+      "uri": "lib/db/projects.test.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/projects.test.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/projects.test.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/projects.test.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/projects.test.ts",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/projects.test.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add valueProposition to the test row.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/projects.test.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Schema + API for value proposition (migration, projects CRUD, PATCH)
+- [-] Ranking summary API and GEO summary API
+- [ ] Dashboard layout: two-column, company/competitors/scores cards
+- [ ] Subpages: rankings, geo, research + path helpers
+- [ ] Activity on dashboard + i18n keys
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now implement ranking-summary and geo-summary APIs. I need:
+1. GET /api/projects/[id]/ranking-summary - get keywords for project, get last position per keyword, compute score (position 1->100, 2->90,... 10->10, 11+ -> 0), return { score, keywordCount, lastUpdated }
+2. GET /api/projects/[id]/geo-summary - listGeoEeatRuns(projectId), get latest completed run with competitive data, compute score from project domain's shareOfVoice or avgPosition
+
+For ranking I need to list keywords by project - getKeywordsByProject or similar. Let me check rank-tracking-keywords.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/rank-tracking-keywords.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/rank-tracking-positions.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I have listKeywordsByProject(userId, projectId) and getLastPositionsByKeywordIds(keywordIds). So for ranking-summary:
+1. getProject(id, userId) to ensure project exists
+2. listKeywordIdsByProject(projectId) - but that doesn't take userId. I need listKeywordsByProject(userId, projectId) to get keyword ids (and it returns full rows). So listKeywordsByProject, get keyword ids, then getLastPositionsByKeywordIds(ids), then compute score.
+3. Score: for each keyword with position, points = position <= 10 ? 110 - 10*position : 0. Score = average of points. lastUpdated = max(recordedAt) or null.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/ranking-summary/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now GEO summary. I need to get latest completed runs for project, then from the most recent one with competitive data get the project domain's metrics. CompetitiveMetrics has domain, shareOfVoice, avgPosition. Project domain might be in run.url - I need to extract domain from run URL or use project.domain. I'll use project.domain for matching. Score = shareOfVoice * 100 (if 0-1) or invert avgPosition. Let me check CompetitiveMetrics again - shareOfVoice is a number. I'll use shareOfVoice * 100 capped at 100, or if not present use avgPosition inversion.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/geo-eeat-runs.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to normalize domain for comparison (e.g. strip protocol and www). Project has project.domain. Run has run.url - I can extract hostname. CompetitiveMetrics has domain - might be hostname. I'll normalize project domain and run url to hostname and match against metrics[].domain. Score from shareOfVoice: if it's 0-1, * 100. Else use avgPosition: 1->100, 2->90, etc.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/geo-summary/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now add path helpers in constants and then implement dashboard layout and subpages. Let me read lib/constants.ts for path helpers.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to read more of the project page to understand the full structure before refactoring. Let me also add the path helpers and API URLs for ranking-summary and geo-summary. Then I'll implement the dashboard layout and subpages.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to read the rest of the page to see the JSX structure - company card, competitors, keywords, GEO, research, activity. Then I'll:
+1. Refactor the dashboard to two-column layout with company card left, competitors/ranking summary/GEO summary right
+2. Remove research, keywords, full GEO questions from dashboard; add links to subpages
+3. Create rankings, geo, research subpages
+
+Let me read more of the page.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I have a full picture. The research API returns `data` with the research result - the handler in the page checks `data.targetGroups` but the API returns `{ success: true, data: validated.data }`. So the frontend might be using `data` as the full response - I need to check. Looking at handleRunResearch: `if (res.ok && data && Array.isArray(data.targetGroups))` - so it expects `data` to be the parsed body. The API returns `NextResponse.json({ success: true, data: validated.data })` so the frontend gets `data.data` from res.json(). So it should be `data?.data` and then `data.data.targetGroups`. Let me check the project research API response. Actually in the page it's `const data = await res.json()` so data = { success, data: { targetGroups, ... } }. So the check should be `data?.data && Array.isArray(data.data.targetGroups)` and setResearchResult(data.data). I'll leave that as is since it might already be correct (perhaps the API returns the result at top level in some cases). I'll focus on the dashboard refactor.
+
+Plan:
+1. Add ranking summary and geo summary state + fetch in useEffect on dashboard.
+2. Change layout to two-column grid: left company card (with valueProposition, link to research), right: competitors card (compact), ranking summary card, GEO summary card, activity (compact).
+3. Remove from dashboard: full research card, full keywords card, full GEO questions card. Replace with links to subpages.
+4. Create subpages that contain the moved content.
+
+ProjectData interface needs valueProposition. Let me add it.
+</details></think>
+
+---
+
+
+Implementing the dashboard layout and creating the three subpages. Checking the project research API response shape:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "NextResponse\\.json|data\\.targetGroups|data\\.data",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "NextResponse\\.json|data\\.targetGroups|data\\.data",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects",
+  "outputMode": "content",
+  "totalFiles": 35,
+  "totalMatches": 60,
+  "topFiles": [
+    {
+      "uri": "app/api/projects/[id]/geo-summary/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/projects/[id]/ranking-summary/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/api/projects/[id]/route.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "app/api/projects/[id]/suggest-keywords/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/projects/[id]/suggest-competitors/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/projects/[id]/research/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/api/projects/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/geo-summary/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/ranking-summary/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/route.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/suggest-keywords/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/suggest-competitors/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/research/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/geo-summary/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/ranking-summary/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/route.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/suggest-keywords/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/suggest-competitors/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/research/route.ts",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/research/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Research API returns `NextResponse.json(validated.data)` so the response body is the research result directly (no wrapper). So in the page, `const data = await res.json()` gives the research result, and `data.targetGroups` is correct. Good.
+
+Now implement:
+1. Fix research API response - actually it returns validated.data so the frontend's `if (res.ok && data && Array.isArray(data.targetGroups))` and `setResearchResult(data)` is correct.
+
+2. Dashboard: Add ProjectData.valueProposition, add rankingSummary and geoSummary state, fetch them. Layout: Grid 2 columns, left company card (name, domain, valueProposition, link to research), right: competitors (compact), ranking summary card, GEO summary card, activity accordion (compact). Remove research card, keywords card, GEO questions card from dashboard.
+
+3. Create rankings page - move keywords block there.
+4. Create geo page - move GEO questions + start GEO + history there.
+5. Create research page - move research card there.
+
+Let me also fix the research handler - it expects `data` to be the result; the API returns the result directly. So we're good.
+
+Implementing the dashboard refactor. I need to be careful: the project API returns project with counts - does it include valueProposition? The GET returns ...project which comes from getProject, and we added valueProposition to the schema and ProjectRow. So the API response will include valueProposition once the frontend fetches. The ProjectData interface in the page has domain and name but not valueProposition - I need to add it.
+
+Let me do the full dashboard rewrite. I'll need to:
+1. Extend ProjectData with valueProposition
+2. Add rankingSummary: { score, keywordCount, lastUpdated } | null and geoSummary: { score, runs } | null state
+3. In useEffect, also fetch apiProjectRankingSummary(id) and apiProjectGeoSummary(id)
+4. Replace the return JSX with two-column layout and the new cards; remove research card, keywords card, GEO questions card; add ranking summary and GEO summary cards with links to subpages
+5. Keep activity card but make it compact (or keep as is)
+6. Add Link to research subpage in company card
+
+Then create the three subpages. I'll need to extract the logic for rankings (keywords, suggest, refresh, chart, delete) into the rankings page - and that page will need to load project and keywords etc. Same for geo and research.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Schema + API for value proposition (migration, projects CRUD, PATCH)
+- [x] Ranking summary API and GEO summary API
+- [-] Dashboard layout: two-column, company/competitors/scores cards
+- [ ] Subpages: rankings, geo, research + path helpers
+- [ ] Activity on dashboard + i18n keys
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Fixing research API - it returns validated.data directly. The frontend does setResearchResult(data) where data = await res.json(), so that's correct.
+
+Now I need to add Grid from MUI to the project page. Let me check if Grid is used elsewhere in the app.
+</details></think>
+
+---
+
+
+Implementing the dashboard: adding `valueProposition` to the project interface and implementing the two-column layout with summary cards.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+The string to replace was not found in the file.
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The second replace removed apiProjectResearch, apiProjectSuggestKeywords - but we still need apiProjectSuggestCompetitors. Let me read the current state of the imports.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add pathProjectRankings, pathProjectGeo, pathProjectResearch to the imports. And I removed ProjectResearchResultForm - the dashboard will not show the research form anymore (it moves to research subpage). But the dashboard page might still have references to research state/handlers if we keep a minimal "start research" link. Let me add the path imports and then update ProjectData and the rest. Actually the plan says: "Replace with link 'Research starten' in company card or in a thin bar, which navigates to /projects/[id]/research". So we remove the research card and add a link. We can remove research state and handlers from the dashboard entirely - they'll live only on the research subpage. So I need to remove: researchResult, researchLoading, researchError, selectedResearchKeywords, researchAdd*, all handleResearch*, projectResearchResultFormProps, researchFormNode, and the Research card. And add: rankingSummary, geoSummary state and fetch. And add valueProposition to ProjectData.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to:
+1. Add state for rankingSummary and geoSummary
+2. Remove research-related state (researchResult, researchLoading, researchError, selectedResearchKeywords, researchAdd*, etc.) - actually the dashboard will still have the Activity card which might reference handleStartGeoEeat. And we'll have competitors card with add/suggest. So we keep: addCompetitorValue, suggestCompetitors*, handleAddCompetitor, handleRemoveCompetitor, handleSuggestCompetitors. We remove: researchResult, researchLoading, researchError, selectedResearchKeywords, researchAdd*, all research handlers, suggestKeywords*, addKeyword*, refresh*, chartExpandedKeywordId, rankKeywords (we remove the full keywords list from dashboard but we might still need rankKeywords for something - no, we don't on dashboard). We remove: addGeoQueryValue, suggestGeoQueries*, handleAddGeoQuery, handleRemoveGeoQuery, handleSuggestGeoQueries - those move to geo page. So on dashboard we need: project, loading, domainScans, journeyRuns, geoRuns, singleScans, listsLoading, addCompetitorValue, suggestCompetitorsLoading/Error, rankingSummary, geoSummary, geoStartLoading, geoStartError (for activity card start GEO button). We can keep rankKeywords only if we need it for something on dashboard - we don't. We remove the Dialog for add keyword (that moves to rankings page). So we need to remove a lot of state and handlers and the entire Keywords card, GEO questions card, Research card. And add rankingSummary, geoSummary and their fetch. And refactor the layout to two-column with the new cards.
+
+Let me do this in steps. First add rankingSummary and geoSummary state and fetch them in useEffect. Then replace the layout and cards. I'll need to remove the research-related state and the keyword/geo state that's only used in the removed cards - but the Activity card still uses domainScans, journeyRuns, geoRuns, singleScans, listsLoading, handleStartGeoEeat, geoStartLoading, geoStartError. And the Competitors card uses addCompetitorValue, suggestCompetitors*, handleAddCompetitor, handleRemoveCompetitor, handleSuggestCompetitors, competitors. So I'll remove: researchResult, researchLoading, researchError, selectedResearchKeywords, researchAddTargetGroup, researchAddKeyword, researchAddGeoQuery, researchAddCompetitor, and all the research handlers. Remove: addKeywordOpen, addKeywordDomain, addKeywordKeyword, addKeywordMarket, addKeywordDevice, addKeywordSubmitting, refreshLoading, refreshError, addGeoQueryValue, suggestGeoQueriesLoading, suggestGeoQueriesError, suggestKeywordsLoading, suggestKeywordsError, suggestedKeywords, selectedSuggestedKeywords, chartExpandedKeywordId, rankKeywords. And remove handlers: handleSuggestKeywords, handleToggleSuggestedKeyword, handleAddSelectedKeywords, handleAddKeyword, handleRefreshRankings, handleDeleteKeyword, handleRunResearch, updateResearchArray, handleApplyResearch*, all handleResearch* input/handlers, handleAddGeoQuery, handleRemoveGeoQuery, handleSuggestGeoQueries. Keep: handleStartGeoEeat for the Activity card.
+
+Actually re-reading the plan: the dashboard keeps a compact Activity section. So we still load domainScans, journeyRuns, geoRuns, singleScans. We still need the add keyword Dialog if we have it on the dashboard - we don't, we remove the keywords card entirely and the Dialog moves to rankings page. So we remove the Dialog from dashboard. Good.
+
+Let me add rankingSummary and geoSummary state and the fetch. Then I'll do a large replace of the return section to the new layout, and remove unused state/handlers in a follow-up.
+</details></think>
+
+---
+
+
+Adding ranking and GEO summary state and fetch, then refactoring the layout. Checking the geo-summary API response shape:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/geo-summary/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Geo summary returns { success: true, data: { score, runs } }. Ranking summary returns { success: true, data: { score, keywordCount, lastUpdated } } for the non-empty case, and { success: true, data: { score: null, keywordCount: 0, lastUpdated: null } } for empty. So when fetching we need to use data.data for both.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to remove the other state variables that were for keywords, research, geo queries: suggestCompetitorsError, addGeoQueryValue, suggestGeoQueriesLoading, suggestGeoQueriesError, suggestKeywordsLoading, suggestKeywordsError, suggestedKeywords, selectedSuggestedKeywords, chartExpandedKeywordId, researchResult, researchLoading, researchError, selectedResearchKeywords, researchAddTargetGroup, researchAddKeyword, researchAddGeoQuery, researchAddCompetitor, geoStartLoading, geoStartError. Wait - we keep suggestCompetitorsError, geoStartLoading, geoStartError for the competitors card and activity card. So remove: suggestGeoQueriesLoading, suggestGeoQueriesError, addGeoQueryValue, suggestKeywordsLoading, suggestKeywordsError, suggestedKeywords, selectedSuggestedKeywords, chartExpandedKeywordId, researchResult, researchLoading, researchError, selectedResearchKeywords, researchAddTargetGroup, researchAddKeyword, researchAddGeoQuery, researchAddCompetitor.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to remove the handlers and useEffects that are only for research, keywords, geo queries. And update the useEffect that loads lists to also fetch ranking summary and geo summary, and to not set rankKeywords. Let me find and remove:
+- handleAddGeoQuery, handleRemoveGeoQuery, handleSuggestGeoQueries
+- handleSuggestKeywords, handleToggleSuggestedKeyword, handleAddSelectedKeywords
+- handleAddKeyword, handleRefreshRankings, handleDeleteKeyword
+- handleRunResearch, updateResearchArray, handleApplyResearchCompetitors, handleApplyResearchGeoQueries, handleApplyResearchKeywords, handleToggleResearchKeyword
+- all handleResearch* (input change and add/remove)
+- And update the useEffect that fetches lists: remove apiRankTrackingKeywords from the Promise.all, add apiProjectRankingSummary and apiProjectGeoSummary. Set rankingSummary and geoSummary from those. Don't set rankKeywords.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to remove the rest of the handlers: handleAddKeyword, handleRefreshRankings, handleDeleteKeyword, handleRunResearch, updateResearchArray, handleApplyResearch*, handleToggleResearchKeyword, all handleResearch* input handlers. And update the useEffect for lists to add ranking-summary and geo-summary fetch and remove rankKeywords.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to replace the entire return JSX: remove Research card, Keywords card, GEO questions card; add two-column layout with company card (left), right column: competitors, ranking summary, GEO summary, activity. And remove the Add Keyword Dialog. Let me do the layout and cards replacement.
+</details></think>
+
+---
+
+
+Replacing the main return block with the two-column dashboard layout and new cards:
+
+
+---
+
+The string to replace was not found in the file.
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The file still has the old content - the first replace removed the handlers but the JSX still references handleRunResearch, researchLoading, researchResult, researchFormNode, setAddKeywordOpen, handleSuggestKeywords, suggestKeywordsLoading, rankKeywords, chartExpandedKeywordId, handleDeleteKeyword, addGeoQueryValue, handleAddGeoQuery, handleSuggestGeoQueries, suggestGeoQueriesLoading, suggestGeoQueriesError, geoQueries, handleRemoveGeoQuery. So the file is in an inconsistent state: we removed the state and handlers but the JSX still uses them. I need to do the layout replacement. The fuzzy match shows the file doesn't have "onCompetitorChange" in projectResearchResultFormProps - it has "onAddCompetitorChange". So the exact string I had was wrong. Let me read the current file to get the exact content for the block to replace, and do it in smaller chunks. First, let me remove the research form props and researchFormNode and the Research card and replace the opening of the return with the Grid layout and company card. I'll do multiple search_replace operations.
+</details></think>
+
+---
+
+
+Reading the file and applying the layout change in smaller chunks.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "Grid size|gridTemplateColumns",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "Grid size|gridTemplateColumns",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 110,
+  "totalMatches": 320,
+  "topFiles": [
+    {
+      "uri": "./.specstory/history/2026-03-12_20-42Z-integration-von-serpbear-bei-checkion.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./.specstory/history/2026-03-09_10-17Z-persona-creation-error-in-audion.md",
+      "matchCount": 15
+    },
+    {
+      "uri": "./.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 9
+    },
+    {
+      "uri": "./app/settings/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./mcp-server/node_modules/typescript/lib/lib.dom.d.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/scan/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/domain/[id]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/results/[id]/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "./app/share/[token]/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "./components/settings/BrandColorSelector.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/developers/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/GenerativeOptimizerCard.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/DomainAggregatedIssueList.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./components/ScanIssueRow.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./.specstory/history/2026-02-27_20-37Z-checkion-project-improvement-opportunities.md",
+      "matchCount": 2
+    },
+    {
+      "uri": "./.specstory/history/2026-02-23_15-12Z-ergebnisse-teilen-für-normale-scans-und-ux-journeys.md",
+      "matchCount": 4
+    },
+    {
+      "uri": "./components/ScanIssueList.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/PerformanceCard.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/LinkAuditCard.tsx",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The dashboard page still has all the old handlers and state references in the JSX. The problem is I removed the state and handlers but the JSX still references them. So the page would have errors. I need to:
+1. Remove the projectResearchResultFormProps and researchFormNode block (they reference removed handlers)
+2. Replace the return from Stack to Grid two-column layout
+3. Remove Research card, Keywords card, GEO card; add Ranking summary and GEO summary cards; keep Company (with valueProposition and link to research), Competitors, Activity
+4. Remove the Add Keyword Dialog at the end
+
+MUI Grid v2 uses `size` prop: <Grid size={{ xs: 12, md: 4 }}>. Let me check the CHECKION-1 package for MUI version.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "\"@mui/material\"",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/package.json",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "\"@mui/material\"",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/package.json",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 5,
+  "topFiles": [
+    {
+      "uri": "package.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/package.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/package.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/package.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/package.json",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/package.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+MUI v7 uses Grid with `size` prop. Let me do the replacement in steps. First remove the projectResearchResultFormProps and researchFormNode (they reference deleted handlers). Then replace the opening return and first two cards with the new layout. Then remove the Research card. Then remove the Keywords card and GEO card and insert Ranking summary and GEO summary. Then at the end remove the Dialog. I'll use Box with display grid for compatibility in case Grid API is different.
+</details></think>
+
+---
+
+
+Removing the research form block and replacing the layout in smaller steps:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Now I need to remove the competitors description line (optional per plan - "Remove long description text to keep card compact") and then remove the Keywords card and GEO card and add Ranking summary and GEO summary cards. Let me remove the competitors description and then replace the whole Keywords card + GEO card block with the Ranking summary and GEO summary cards.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to replace the entire "Card 3: Keywords" through "Card 4: GEO-Fragen" with the Ranking summary and GEO summary cards. Let me find the exact block.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to close the Stack and the outer Box (grid) properly. The Activity card is inside the Stack, and after the Activity card we had </Stack> and then the Dialog. So I need to change the closing from </Stack> to </Stack></Box> and remove the Dialog. Let me find the end of the Activity card and the Dialog.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now remove unused imports: Dialog, DialogTitle, DialogContent, DialogActions, API_RANK_TRACKING_KEYWORDS, apiRankTrackingKeyword, apiRankTrackingRefresh, RankTrackingChart, SERP_MAIN_MARKETS. And remove the ProjectResearchResult type if not used - we still have the interface RankKeywordItem which might be unused now. Let me check - we removed rankKeywords so RankKeywordItem is unused on this page. We can leave it for now or remove it. Let me remove unused imports and the Grid import if we're not using Grid (we used Box with display grid). Remove Grid from imports. And add the i18n keys for rankingScore, geoScore, viewAllRankings, viewGeo, keywordCount (with param).
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Add i18n keys for rankingScore, geoScore, viewAllRankings, viewGeo, keywordCount. Then create the three subpages. First add the locale keys.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "\"projects\":",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json",
+  "contextAfter": 80,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "\"projects\":",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 10,
+  "topFiles": [
+    {
+      "uri": "locales/de.json",
+      "matchCount": 85
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 85
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 85
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 85
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 85
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add the new keys. The i18n might use a different format for params - e.g. "keywordCount": "{{count}} Keywords" or "keywordCount": "{count} Keywords". Let me check how t() is used with params in the codebase.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "t\\(['\\\"].*\\{.*\\}",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "t\\(['\\\"].*\\{.*\\}",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 110,
+  "totalMatches": 775,
+  "topFiles": [
+    {
+      "uri": "./app/projects/[id]/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "./components/ProjectResearchResultForm.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/register/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/settings/page.tsx",
+      "matchCount": 8
+    },
+    {
+      "uri": "./app/scan/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 17
+    },
+    {
+      "uri": "./app/journey-agent/[jobId]/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "./app/domain/[id]/page.tsx",
+      "matchCount": 38
+    },
+    {
+      "uri": "./app/results/[id]/page.tsx",
+      "matchCount": 28
+    },
+    {
+      "uri": "./components/AddToProject.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/share/[token]/page.tsx",
+      "matchCount": 15
+    },
+    {
+      "uri": "./components/settings/BrandColorSelector.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/developers/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "./components/DomainAggregatedIssueList.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/JourneyFlowchart.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "./app/scan/domain/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "./app/login/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/page.tsx",
+      "matchCount": 8
+    },
+    {
+      "uri": "./components/SearchResultsList.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/HistoryList.tsx",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see the locale uses simple keys. For params, the scan page uses `t('scan.geoEeatSuggestSuccess', { competitors: comp.length, queries: q.length })`. Let me check how the i18n replaces params - likely {{count}} or {count}.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "geoEeatSuggestSuccess|assignedTo",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "geoEeatSuggestSuccess|assignedTo",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 20,
+  "topFiles": [
+    {
+      "uri": "locales/en.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "locales/de.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/i18n/I18nProvider.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So params use {name}, {count}, etc. in the JSON. I need to add:
+- projects.rankingScore
+- projects.geoScore
+- projects.viewAllRankings
+- projects.viewGeo
+- projects.keywordCount (with {count})
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Add the same keys to en.json.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Check how the i18n lib replaces params - it might expect a specific format. Let me check lib/i18n.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+Path does not exist: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/i18n.ts
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me find the i18n implementation.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **2** results in **1** directory</summary>
+
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1** (2 files)
+
+| File |
+|------|
+| `knowledge/i18n-setup.md` |
+| `components/i18n/I18nProvider.tsx` |
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The I18nProvider imports createTranslator from @/lib/i18n. So there must be a lib/i18n file - maybe .tsx or in a different path.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "createTranslator",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "createTranslator",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 30,
+  "totalMatches": 80,
+  "topFiles": [
+    {
+      "uri": "./.specstory/history/2026-03-02_13-53Z-frontend-structure-for-plexon.md",
+      "matchCount": 3
+    },
+    {
+      "uri": "./.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 7
+    },
+    {
+      "uri": "./lib/i18n/server.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./lib/i18n/index.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./knowledge/i18n-setup.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/i18n/I18nProvider.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-03-02_13-53Z-frontend-structure-for-plexon.md",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/lib/i18n/server.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/i18n/index.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/knowledge/i18n-setup.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/i18n/I18nProvider.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-03-02_13-53Z-frontend-structure-for-plexon.md",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/lib/i18n/server.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/i18n/index.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/knowledge/i18n-setup.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/i18n/I18nProvider.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-03-02_13-53Z-frontend-structure-for-plexon.md",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 7
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The existing locale strings use {name}, {competitors}, {queries} - so the format is correct. Now create the three subpages. I'll need to create:
+1. app/projects/[id]/rankings/page.tsx - full rankings UI (keywords list, add, suggest, refresh, charts) - move from old dashboard
+2. app/projects/[id]/geo/page.tsx - GEO questions list, add/suggest, start GEO, history
+3. app/projects/[id]/research/page.tsx - run research, ProjectResearchResultForm, apply
+
+I have the logic from the original page - but I removed it. So I need to re-implement it in each subpage by copying the relevant handlers and UI from the conversation history or by re-reading the plan and building from the existing components. The dashboard page no longer has the keyword/rank logic, so I need to create the rankings page with that logic. I'll create the three subpages by extracting the relevant blocks. For the rankings page I need: load project, load keywords, add keyword (dialog), suggest keywords, refresh, list keywords with chart expand and delete. I can reference the code we had before it was removed - it's in the summary. Let me create the rankings page first with all the logic from the plan.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Schema + API for value proposition (migration, projects CRUD, PATCH)
+- [x] Ranking summary API and GEO summary API
+- [x] Dashboard layout: two-column, company/competitors/scores cards
+- [-] Subpages: rankings, geo, research + path helpers
+- [ ] Activity on dashboard + i18n keys
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Creating the three subpages. I'll need to read the current project page again to see what we have for the activity section and any remaining structure, then create rankings, geo, and research pages. The rankings page needs: project fetch, keywords fetch, add keyword dialog, suggest keywords, refresh rankings, list with chart and delete. I'll copy the logic from the conversation summary and the plan.
+</details></think>
+
+---
+
+
+Creating the three subpages. Checking the project page structure and creating the rankings page:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+RankTrackingChart expects `t: (key: string) => string` but we have `t: (key: string, params?: Record<string, string | number>) => string`. So we can pass t. Now create the rankings page with the full keyword list, add dialog, suggest, refresh, charts. I'll need API_RANK_TRACKING_KEYWORDS, apiRankTrackingKeywords, apiRankTrackingKeyword, apiRankTrackingRefresh, SERP_MAIN_MARKETS from constants.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Need to add MsqdxChip to the rankings page imports. Let me check - I used MsqdxChip in the suggested keywords. I need to add it to the import.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now create the GEO page and the Research page.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now create the research page with run research, ProjectResearchResultForm, and apply handlers. I need to use the same pattern as before - all the research state and handlers, and the form with props.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ProjectResearchResultForm.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to create the research page with all the state and handlers for the research form, and when applying value proposition we should PATCH project with valueProposition. The plan said: "When user applies research (value proposition) from the research result, persist it via PATCH project". So when they click "Apply" for value proposition we need to PATCH. Looking at the form, it has onApplyKeywords, onApplyGeoQueries, onApplyCompetitors - no explicit "Apply value proposition" button. So value proposition is just edited in the form and we could either save on blur or add a "Save to project" for value proposition. For simplicity I'll add applying value proposition when user edits it and we could persist on a "Save company info" or we persist when they apply other things. Actually the plan said store when user explicitly saves company info or from research apply. The form doesn't have a single "Apply value proposition" - it has Apply to competitors, Apply to GEO queries, Apply as keywords. So for value proposition we could add a button "Save to company info" that PATCHes valueProposition. I'll add that to the research page when we have research result - a button that PATCHes project with the current valueProposition from the form state. For now I'll create the research page with the same structure as before (run research, form with all handlers, apply competitors/geo/keywords). I'll add a handler to persist value proposition to project when user clicks a "Save value proposition to project" button.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/research/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to fix the research page - API_RANK_TRACKING_KEYWORDS is in the constants but I imported it. Let me check - I have `import { apiProject, apiProjectResearch, pathProject } from '@/lib/constants';` and then `import { API_RANK_TRACKING_KEYWORDS } from '@/lib/constants';` - I should merge them into one import. Let me fix that.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/research/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Add a locale key for "Save Value Proposition" or use a generic "Save to project" - I used "Save Value Proposition" in English in the button. Let me use a translation key. I'll add projects.saveValueProposition to locales and use it.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/research/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Fix the geo-summary API - the history API might return runs in a different shape. Let me check the geo-eeat history route.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "runs|data",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/geo-eeat/history",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "runs|data",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/geo-eeat/history",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 15,
+  "topFiles": [
+    {
+      "uri": "app/api/scan/geo-eeat/history/route.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/api/scan/geo-eeat/history/route.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/api/scan/geo-eeat/history/route.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/api/scan/geo-eeat/history/route.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/api/scan/geo-eeat/history/route.ts",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/geo-eeat/history/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The history returns runs as full GeoEeatRunRow objects - so they have createdAt as Date. The geo page maps them and uses g.createdAt - when we get from API it's JSON so it's a string. Good. The dashboard fetches apiProjectGeoSummary which returns runs with createdAt as ISO string. Good.
+
+Let me run the build to see if everything compiles. But first fix the listGeoEeatRuns - it's called with (user.id, limit, { projectId }). Let me check the signature.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/geo-eeat-runs.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/research/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/research/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+No linter errors. Let me run the build to ensure everything compiles. We need to run from CHECKION-1 and use build:local per the cursor rule.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build:local 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build:local 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build:local
+&gt; sh scripts/ensure-design-system-and-build.sh
+
+[CHECKION] Design system link exists: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/msqdx-design-system
+[CHECKION] Running: npm run build
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 7.9s
+  Running TypeScript ...
+Failed to compile.
+
+./app/projects/[id]/geo/page.tsx:220:66
+Type error: Type 'ForwardRefExoticComponent&lt;Omit&lt;AnchorHTMLAttributes&lt;HTMLAnchorElement&gt;, keyof LinkProps&lt;any&gt;&gt; &amp; LinkProps&lt;any&gt; &amp; { children?: ReactNode; } &amp; RefAttributes&lt;...&gt;&gt;' is not assignable to type 'ElementType&lt;any, keyof IntrinsicElements&gt; | undefined'.
+  Type 'ForwardRefExoticComponent&lt;Omit&lt;AnchorHTMLAttributes&lt;HTMLAnchorElement&gt;, keyof LinkProps&lt;any&gt;&gt; &amp; LinkProps&lt;any&gt; &amp; { children?: ReactNode; } &amp; RefAttributes&lt;...&gt;&gt;' is not assignable to type 'FunctionComponent&lt;any&gt;'.
+    Type 'React.ReactNode' is not assignable to type 'import("/Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS/msqdx-design-system/node_modules/@types/react/index").ReactNode'.
+      Type 'bigint' is not assignable to type 'ReactNode'.
+
+[0m [90m 218 |[39m             [33m&lt;[39m[33mStack[39m sx[33m=[39m{{ gap[33m:[39m [35m2[39m }}[33m&gt;[39m
+ [90m 219 |[39m                 [33m&lt;[39m[33mBox[39m sx[33m=[39m{{ display[33m:[39m [32m'flex'[39m[33m,[39m alignItems[33m:[39m [32m'center'[39m[33m,[39m gap[33m:[39m [35m1[39m[33m,[39m flexWrap[33m:[39m [32m'wrap'[39m }}[33m&gt;[39m
+[31m[1m&gt;[22m[39m[90m 220 |[39m                     [33m&lt;[39m[33mMsqdxButton[39m variant[33m=[39m[32m"outlined"[39m size[33m=[39m[32m"small"[39m component[33m=[39m{[33mLink[39m} href[33m=[39m{pathProject(id)}[33m&gt;[39m
+ [90m     |[39m                                                                  [31m[1m^[22m[39m
+ [90m 221 |[39m                         ← {project[33m.[39mname}
+ [90m 222 |[39m                     [33m&lt;[39m[33m/[39m[33mMsqdxButton[39m[33m&gt;[39m
+ [90m 223 |[39m                 [33m&lt;[39m[33m/[39m[33mBox[39m[33m&gt;[39m[0m
+Next.js build worker exited with code: 1 and signal: null
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The error is that MsqdxButton with component={Link} has a type conflict between Next.js Link and the design system's expected component type. The fix is to use a regular anchor or use router.push instead of Link for the back button, or wrap in Link without using component prop. Let me use a simple Link wrapper around the button content, or use MsqdxButton as a child of Link.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/research/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The dashboard page also uses component={Link} for the "View all rankings", "View GEO", and "Research starten" buttons. Let me check if the same error occurs there - the build failed on geo page first. Let me fix the dashboard page too to use Link wrapping the button instead of component={Link}.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Running the build again.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 6.1s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+  Generating static pages using 9 workers (0/46) ...
+  Generating static pages using 9 workers (11/46) 
+  Generating static pages using 9 workers (22/46) 
+  Generating static pages using 9 workers (34/46) 
+✓ Generating static pages using 9 workers (46/46) in 316.7ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/register
+├ ƒ /api/auth/tokens
+├ ƒ /api/auth/tokens/[id]
+├ ƒ /api/checks/contrast
+├ ƒ /api/checks/pagespeed
+├ ƒ /api/checks/readability
+├ ƒ /api/checks/ssl
+├ ƒ /api/checks/wayback
+├ ƒ /api/health
+├ ƒ /api/journeys
+├ ƒ /api/journeys/[id]
+├ ƒ /api/projects
+├ ƒ /api/projects/[id]
+├ ƒ /api/projects/[id]/geo-summary
+├ ƒ /api/projects/[id]/ranking-summary
+├ ƒ /api/projects/[id]/research
+├ ƒ /api/projects/[id]/suggest-competitors
+├ ƒ /api/projects/[id]/suggest-keywords
+├ ƒ /api/rank-tracking/keywords
+├ ƒ /api/rank-tracking/keywords/[id]
+├ ƒ /api/rank-tracking/keywords/[id]/positions
+├ ƒ /api/rank-tracking/refresh
+├ ƒ /api/saliency/generate
+├ ƒ /api/saliency/result
+├ ƒ /api/scan
+├ ƒ /api/scan/[id]
+├ ƒ /api/scan/[id]/project
+├ ƒ /api/scan/[id]/screenshot
+├ ƒ /api/scan/[id]/summarize
+├ ƒ /api/scan/domain
+├ ƒ /api/scan/domain/[id]/journey
+├ ƒ /api/scan/domain/[id]/status
+├ ƒ /api/scan/domain/[id]/summarize
+├ ƒ /api/scan/domain/[id]/summary
+├ ƒ /api/scan/geo-eeat
+├ ƒ /api/scan/geo-eeat/[jobId]
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history/[runId]
+├ ƒ /api/scan/geo-eeat/[jobId]/project
+├ ƒ /api/scan/geo-eeat/[jobId]/rerun-competitive
+├ ƒ /api/scan/geo-eeat/[jobId]/status
+├ ƒ /api/scan/geo-eeat/history
+├ ƒ /api/scan/geo-eeat/suggest-competitors-queries
+├ ƒ /api/scan/journey-agent
+├ ƒ /api/scan/journey-agent/[jobId]
+├ ƒ /api/scan/journey-agent/[jobId]/live
+├ ƒ /api/scan/journey-agent/[jobId]/live/stream
+├ ƒ /api/scan/journey-agent/[jobId]/project
+├ ƒ /api/scan/journey-agent/[jobId]/video
+├ ƒ /api/scan/journey-agent/history
+├ ƒ /api/scans
+├ ƒ /api/scans/[id]
+├ ƒ /api/scans/domain
+├ ƒ /api/scans/domain/[id]
+├ ƒ /api/scans/domain/[id]/project
+├ ƒ /api/search
+├ ƒ /api/share
+├ ƒ /api/share/[token]
+├ ƒ /api/share/[token]/access
+├ ƒ /api/share/[token]/pages/[pageId]
+├ ƒ /api/share/[token]/pages/[pageId]/screenshot
+├ ƒ /api/share/[token]/video
+├ ƒ /api/share/by-resource
+├ ƒ /api/tools/contrast
+├ ƒ /api/tools/extract
+├ ƒ /api/tools/pagespeed
+├ ƒ /api/tools/readability
+├ ƒ /api/tools/ssl-labs
+├ ƒ /api/tools/wayback
+├ ƒ /developers
+├ ƒ /domain/[id]
+├ ƒ /geo-eeat/[jobId]
+├ ƒ /history
+├ ƒ /journey-agent/[jobId]
+├ ƒ /login
+├ ƒ /projects
+├ ƒ /projects/[id]
+├ ƒ /projects/[id]/geo
+├ ƒ /projects/[id]/rankings
+├ ƒ /projects/[id]/research
+├ ƒ /register
+├ ƒ /results/[id]
+├ ƒ /scan
+├ ƒ /scan/domain
+├ ƒ /settings
+└ ƒ /share/[token]
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build succeeded. Now mark todo 4 as completed and todo 5 (Activity on dashboard + i18n keys). Activity is already on the dashboard (we kept the Activity card). i18n keys are added. So I'll mark both complete and add a quick test for the new APIs if there are existing tests we can follow.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Schema + API for value proposition (migration, projects CRUD, PATCH)
+- [x] Ranking summary API and GEO summary API
+- [x] Dashboard layout: two-column, company/competitors/scores cards
+- [x] Subpages: rankings, geo, research + path helpers
+- [x] Activity on dashboard + i18n keys
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Adding tests for the new ranking-summary and geo-summary APIs would be good per user rules. Let me add minimal tests.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/__tests__/api/project-research.test.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add two small test files for ranking-summary and geo-summary GET endpoints.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/__tests__/api/project-ranking-summary.test.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/__tests__/api/project-geo-summary.test.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Run the tests to ensure they pass.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run test -- --run __tests__/api/project-ranking-summary.test.ts __tests__/api/project-geo-summary.test.ts 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run test -- --run __tests__/api/project-ranking-summary.test.ts __tests__/api/project-geo-summary.test.ts 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 test
+&gt; vitest run --run __tests__/api/project-ranking-summary.test.ts __tests__/api/project-geo-summary.test.ts
+
+
+ RUN  v4.0.18 /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1
+
+ ✓ __tests__/api/project-geo-summary.test.ts (3 tests) 5ms
+ ✓ __tests__/api/project-ranking-summary.test.ts (4 tests) 7ms
+
+ Test Files  2 passed (2)
+      Tests  7 passed (7)
+   Start at  16:00:17
+   Duration  214ms (transform 120ms, setup 0ms, import 227ms, tests 12ms, environment 0ms)
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+All tests pass. Let me provide a summary to the user.
+</details></think>
+
+---
+
+
+Summary of what was implemented:
+
+## 1. Value proposition (schema + API)
+
+- **Schema**: Added `valueProposition: text('value_proposition')` to `projects` in `lib/db/schema.ts`.
+- **Migration**: `lib/db/migrations/0009_project_value_proposition.sql`.
+- **DB**: `ProjectRow`, `insertProject`, `getProject`, `listProjects`, `updateProject` in `lib/db/projects.ts` support `valueProposition`.
+- **API**: `projectUpdateBodySchema` in `lib/api-schemas.ts` and PATCH in `app/api/projects/[id]/route.ts` accept and persist `valueProposition`.
+- **Tests**: `lib/db/projects.test.ts` updated for the new field.
+
+## 2. Ranking summary and GEO summary APIs
+
+- **GET `/api/projects/[id]/ranking-summary`**  
+  Auth + project check. Loads project keywords, last positions via `getLastPositionsByKeywordIds`, computes score (position 1→100, 2→90, …, 10→10, 11+→0), returns `{ score, keywordCount, lastUpdated }`.
+
+- **GET `/api/projects/[id]/geo-summary`**  
+  Auth + project check. Loads last 5 GEO runs for the project, derives GEO score from the latest completed run’s competitive data (project domain’s shareOfVoice/avgPosition), returns `{ score, runs }`.
+
+- **Tests**: `__tests__/api/project-ranking-summary.test.ts`, `__tests__/api/project-geo-summary.test.ts` (all passing).
+
+## 3. Dashboard layout (project detail page)
+
+- **Layout**: Two-column grid (CSS grid): left ~280–320px (company card), right flex (stack of cards).
+- **Left**: Company card (name, domain, value proposition, “Research starten” → research subpage).
+- **Right**:  
+  - Competitors (chips, add, “Mit KI vorschlagen”).  
+  - Ranking summary (score X/100 or “—”, keyword count, last updated, “Alle Rankings anzeigen” → rankings subpage).  
+  - GEO summary (score X/100 or “—”, last 5 runs with links, “GEO anzeigen” → geo subpage).  
+  - Activity (unchanged accordion: domain scans, journey runs, GEO runs, single scans).
+- Removed from dashboard: full research card, full keywords list, full GEO questions list, add-keyword dialog.
+- **Links**: Use `<Link href={…}><MsqdxButton>…</MsqdxButton></Link>` to avoid `component={Link}` type issues with MSQDX.
+
+## 4. Subpages and routes
+
+- **Paths** in `lib/constants.ts`: `pathProjectRankings(id)`, `pathProjectGeo(id)`, `pathProjectResearch(id)`.
+- **`/projects/[id]/rankings`**: Keywords list, add keyword (dialog), suggest keywords, refresh rankings, suggested keywords selector, per-keyword chart (RankTrackingChart) and delete. Back link to project.
+- **`/projects/[id]/geo`**: GEO questions (chips, add, suggest), “Start GEO” / “Neue GEO-Analyse”, history of GEO runs with links to run. Back link to project.
+- **`/projects/[id]/research`**: “Research starten”, error/empty state, `ProjectResearchResultForm` (target groups, value proposition, SEO keywords, GEO queries, competitors), apply to project, “Value Proposition speichern” (PATCH project). Back link to project.
+
+## 5. i18n
+
+- **DE/EN**: `rankingScore`, `geoScore`, `viewAllRankings`, `viewGeo`, `keywordCount` (with `{count}`), `saveValueProposition`.
+
+## 6. Build and tests
+
+- **Build**: `npm run build` succeeds.
+- **Tests**: New API tests for ranking-summary and geo-summary pass; existing project DB test updated.
+
+**Apply DB migration** (e.g. on Coolify/Postgres):
+
+```sql
+ALTER TABLE "projects" ADD COLUMN IF NOT EXISTS "value_proposition" text;
+```
+
+---
+
+_**User**_
+
+/api/projects:1  Failed to load resource: the server responded with a status of 401 ()
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is seeing a 401 (Unauthorized) error when loading `/api/projects`. This suggests that the API route for listing or accessing projects requires authentication, and the request is either not sending credentials or the user is not authenticated.
+
+Let me look at how the projects API works and how it's being called from the frontend.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+Cancelled
+
+---
+
+_**User**_
+
+DOM Path: div.MuiBox-root c.-azg.63 > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-anclqx > div.MuiBox-root c.-1jv0dmq > div.MuiStack-root c.-yd8.a2
+Position: top=88px, left=218px, width=868px, height=1304px
+React Component: ForwardRef
+HTML Element: <div class="MuiStack-root css-yd8sa2" data-cursor-element-id="cursor-el-113">← testprojekt Rankings Keyword hinzufügen Keywords mit KI vorschlagen Rankings aktualisieren https://ksb.com — pumpen de/de · Position: — · · Letzte Aktualisierung: 13.3.2026 Diagramm anzeigen Entfe</div> können wir hier nicht die volle breite unser app nutzen und direkt die diagramme anzeigen? ganz oben würde ich halt eine card anzeigen die den score anzeigt und auch den score der competitors.
 
 ---
 

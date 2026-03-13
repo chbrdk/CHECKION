@@ -14,6 +14,7 @@ import { useI18n } from '@/components/i18n/I18nProvider';
 import Link from 'next/link';
 import {
     apiProject,
+    apiProjectRankingSummary,
     apiRankTrackingKeywords,
     apiRankTrackingKeyword,
     apiRankTrackingRefresh,
@@ -35,6 +36,13 @@ interface RankKeywordItem {
     lastCompetitorPositions?: Record<string, number | null>;
 }
 
+interface RankingSummaryData {
+    score: number | null;
+    keywordCount: number;
+    lastUpdated: string | null;
+    competitorScores?: Record<string, number>;
+}
+
 export default function ProjectRankingsPage() {
     const params = useParams();
     const { t } = useI18n();
@@ -54,7 +62,7 @@ export default function ProjectRankingsPage() {
     const [suggestKeywordsError, setSuggestKeywordsError] = useState<string | null>(null);
     const [suggestedKeywords, setSuggestedKeywords] = useState<string[]>([]);
     const [selectedSuggestedKeywords, setSelectedSuggestedKeywords] = useState<Set<string>>(new Set());
-    const [chartExpandedKeywordId, setChartExpandedKeywordId] = useState<string | null>(null);
+    const [rankingSummary, setRankingSummary] = useState<RankingSummaryData | null>(null);
 
     const loadProject = useCallback(async () => {
         if (!id) return;
@@ -78,6 +86,14 @@ export default function ProjectRankingsPage() {
         setRankKeywords(Array.isArray(listData?.data) ? listData.data : []);
     }, [id]);
 
+    const loadRankingSummary = useCallback(async () => {
+        if (!id) return;
+        const res = await fetch(apiProjectRankingSummary(id), { credentials: 'same-origin' });
+        const data = await res.json();
+        if (data?.success && data?.data) setRankingSummary(data.data as RankingSummaryData);
+        else setRankingSummary(null);
+    }, [id]);
+
     useEffect(() => {
         loadProject();
     }, [loadProject]);
@@ -86,6 +102,10 @@ export default function ProjectRankingsPage() {
         if (!id) return;
         loadKeywords();
     }, [id, loadKeywords]);
+
+    useEffect(() => {
+        loadRankingSummary();
+    }, [loadRankingSummary]);
 
     const competitors = Array.isArray(project?.competitors) ? project.competitors : [];
 
@@ -116,11 +136,12 @@ export default function ProjectRankingsPage() {
                 setAddKeywordDevice('');
                 loadProject();
                 loadKeywords();
+                loadRankingSummary();
             }
         } finally {
             setAddKeywordSubmitting(false);
         }
-    }, [id, addKeywordDomain, addKeywordKeyword, addKeywordMarket, addKeywordDevice, loadProject, loadKeywords]);
+    }, [id, addKeywordDomain, addKeywordKeyword, addKeywordMarket, addKeywordDevice, loadProject, loadKeywords, loadRankingSummary]);
 
     const handleSuggestKeywords = useCallback(async () => {
         if (!id) return;
@@ -186,7 +207,8 @@ export default function ProjectRankingsPage() {
         setSelectedSuggestedKeywords(new Set());
         loadProject();
         loadKeywords();
-    }, [id, project?.domain, selectedSuggestedKeywords, loadProject, loadKeywords]);
+        loadRankingSummary();
+    }, [id, project?.domain, selectedSuggestedKeywords, loadProject, loadKeywords, loadRankingSummary]);
 
     const handleRefreshRankings = useCallback(async () => {
         if (!id) return;
@@ -203,6 +225,7 @@ export default function ProjectRankingsPage() {
             if (res.ok && data?.success) {
                 loadProject();
                 loadKeywords();
+                loadRankingSummary();
             } else if (!res.ok && typeof data?.error === 'string') {
                 setRefreshError(data.error);
             } else if (!res.ok) {
@@ -213,7 +236,7 @@ export default function ProjectRankingsPage() {
         } finally {
             setRefreshLoading(false);
         }
-    }, [id, loadProject, loadKeywords, t]);
+    }, [id, loadProject, loadKeywords, loadRankingSummary, t]);
 
     const handleDeleteKeyword = useCallback(async (keywordId: string) => {
         if (!id) return;
@@ -254,7 +277,7 @@ export default function ProjectRankingsPage() {
     }
 
     return (
-        <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 900, mx: 'auto' }}>
+        <Box sx={{ p: 'var(--msqdx-spacing-md)', width: '100%', maxWidth: '100%' }}>
             <Stack sx={{ gap: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                     <Link href={pathProject(id)} style={{ textDecoration: 'none' }}>
@@ -263,6 +286,40 @@ export default function ProjectRankingsPage() {
                         </MsqdxButton>
                     </Link>
                 </Box>
+
+                {/* Score card: our score + competitor scores */}
+                <MsqdxMoleculeCard
+                    title={t('projects.rankingScore')}
+                    variant="flat"
+                    borderRadius="lg"
+                    footerDivider={false}
+                    sx={{ bgcolor: 'var(--color-card-bg)' }}
+                >
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'baseline' }}>
+                        <Box>
+                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                                {t('projects.ourScore')}
+                            </MsqdxTypography>
+                            <MsqdxTypography variant="h4" weight="bold">
+                                {rankingSummary?.score != null ? `${rankingSummary.score}/100` : '—'}
+                            </MsqdxTypography>
+                        </Box>
+                        {rankingSummary?.competitorScores && Object.keys(rankingSummary.competitorScores).length > 0 && (
+                            <>
+                                {Object.entries(rankingSummary.competitorScores).map(([domain, score]) => (
+                                    <Box key={domain}>
+                                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                                            {domain}
+                                        </MsqdxTypography>
+                                        <MsqdxTypography variant="h4" weight="bold" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                            {score}/100
+                                        </MsqdxTypography>
+                                    </Box>
+                                ))}
+                            </>
+                        )}
+                    </Box>
+                </MsqdxMoleculeCard>
 
                 <MsqdxMoleculeCard
                     title={t('projects.rankings')}
@@ -340,7 +397,7 @@ export default function ProjectRankingsPage() {
                                 <Box
                                     key={k.id}
                                     component="li"
-                                    sx={{ borderBottom: '1px solid var(--color-border-subtle, #eee)' }}
+                                    sx={{ borderBottom: '1px solid var(--color-border-subtle, #eee)', pb: 2 }}
                                 >
                                     <Box sx={{ ...listItemSx, flexWrap: 'wrap', gap: 1, borderBottom: 'none' }}>
                                         <Box sx={{ minWidth: 0, flex: '1 1 200px' }}>
@@ -361,29 +418,20 @@ export default function ProjectRankingsPage() {
                                             </MsqdxTypography>
                                         </Box>
                                         <Box sx={{ display: 'flex', gap: 0.5 }}>
-                                            <MsqdxButton
-                                                variant="outlined"
-                                                size="small"
-                                                onClick={() => setChartExpandedKeywordId((cur) => (cur === k.id ? null : k.id))}
-                                            >
-                                                {chartExpandedKeywordId === k.id ? t('projects.rankChartHide') : t('projects.rankChartShow')}
-                                            </MsqdxButton>
                                             <MsqdxButton variant="outlined" size="small" color="error" onClick={() => handleDeleteKeyword(k.id)}>
                                                 {t('projects.deleteKeyword')}
                                             </MsqdxButton>
                                         </Box>
                                     </Box>
-                                    {chartExpandedKeywordId === k.id && (
-                                        <Box sx={{ px: 1.5, pb: 2, pt: 0 }}>
-                                            <RankTrackingChart
-                                                keywordId={k.id}
-                                                keywordLabel={`${k.domain} — ${k.keyword}`}
-                                                ourDomain={k.domain}
-                                                competitorDomains={competitors}
-                                                t={t}
-                                            />
-                                        </Box>
-                                    )}
+                                    <Box sx={{ px: 0, pt: 1, width: '100%', minHeight: 200 }}>
+                                        <RankTrackingChart
+                                            keywordId={k.id}
+                                            keywordLabel={`${k.domain} — ${k.keyword}`}
+                                            ourDomain={k.domain}
+                                            competitorDomains={competitors}
+                                            t={t}
+                                        />
+                                    </Box>
                                 </Box>
                             ))}
                         </Box>

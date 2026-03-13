@@ -35,7 +35,7 @@ export async function GET(
     if (keywordIds.length === 0) {
         return NextResponse.json({
             success: true,
-            data: { score: null, keywordCount: 0, lastUpdated: null },
+            data: { score: null, keywordCount: 0, lastUpdated: null, competitorScores: {} },
         });
     }
 
@@ -43,6 +43,8 @@ export async function GET(
     let sumPoints = 0;
     let countWithPosition = 0;
     let lastUpdated: string | null = null;
+    /** Per-domain: { sumPoints, count } for competitor score (same 0–100 scale). */
+    const competitorSums: Record<string, { sum: number; count: number }> = {};
 
     for (const [, data] of lastPositions) {
         const points = positionToPoints(data.position);
@@ -54,9 +56,24 @@ export async function GET(
             const iso = data.recordedAt.toISOString();
             if (!lastUpdated || iso > lastUpdated) lastUpdated = iso;
         }
+        const comp = data.competitorPositions;
+        if (comp && typeof comp === 'object' && !Array.isArray(comp)) {
+            for (const [domain, pos] of Object.entries(comp)) {
+                if (domain && pos != null && pos >= 1) {
+                    const p = positionToPoints(pos);
+                    if (!competitorSums[domain]) competitorSums[domain] = { sum: 0, count: 0 };
+                    competitorSums[domain].sum += p;
+                    competitorSums[domain].count += 1;
+                }
+            }
+        }
     }
 
     const score = countWithPosition > 0 ? Math.round(sumPoints / countWithPosition) : null;
+    const competitorScores: Record<string, number> = {};
+    for (const [domain, { sum, count }] of Object.entries(competitorSums)) {
+        if (count > 0) competitorScores[domain] = Math.round(sum / count);
+    }
 
     return NextResponse.json({
         success: true,
@@ -64,6 +81,7 @@ export async function GET(
             score,
             keywordCount: keywords.length,
             lastUpdated,
+            competitorScores,
         },
     });
 }
