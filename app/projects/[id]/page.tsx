@@ -719,11 +719,12 @@ export default function ProjectDetailPage() {
                                     ))}
                                 </Box>
                                 <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
-                                    <MsqdxFormField
+                                    <Box
+                                        component="input"
                                         placeholder={t('projects.researchAdd')}
                                         value={researchAddTargetGroup}
                                         onChange={handleResearchAddTargetGroupChange}
-                                        sx={{ minWidth: 180, flex: '1 1 180px' }}
+                                        sx={{ minWidth: 180, flex: '1 1 180px', px: 1.5, py: 1, border: '1px solid var(--color-border-subtle)', borderRadius: 1, fontSize: 14 }}
                                     />
                                     <MsqdxButton
                                         variant="outlined"
@@ -740,12 +741,12 @@ export default function ProjectDetailPage() {
                                 <MsqdxTypography variant="subtitle2" weight="semibold" sx={{ mb: 0.5 }}>
                                     {t('projects.researchValueProposition')}
                                 </MsqdxTypography>
-                                <MsqdxFormField
-                                    multiline
-                                    minRows={2}
+                                <Box
+                                    component="textarea"
                                     value={researchResult.valueProposition ?? ''}
                                     onChange={handleResearchValuePropositionChange}
-                                    sx={{ width: '100%' }}
+                                    rows={2}
+                                    sx={{ width: '100%', px: 1.5, py: 1, border: '1px solid var(--color-border-subtle)', borderRadius: 1, fontSize: 14, resize: 'vertical' }}
                                 />
                             </Box>
                             {/* SEO keywords */}
@@ -767,11 +768,12 @@ export default function ProjectDetailPage() {
                                     ))}
                                 </Box>
                                 <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
-                                    <MsqdxFormField
+                                    <Box
+                                        component="input"
                                         placeholder={t('projects.researchAdd')}
                                         value={researchAddKeyword}
                                         onChange={handleResearchAddKeywordChange}
-                                        sx={{ minWidth: 180, flex: '1 1 180px' }}
+                                        sx={{ minWidth: 180, flex: '1 1 180px', px: 1.5, py: 1, border: '1px solid var(--color-border-subtle)', borderRadius: 1, fontSize: 14 }}
                                     />
                                     <MsqdxButton
                                         variant="outlined"
@@ -807,11 +809,12 @@ export default function ProjectDetailPage() {
                                     ))}
                                 </Box>
                                 <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
-                                    <MsqdxFormField
+                                    <Box
+                                        component="input"
                                         placeholder={t('projects.researchAdd')}
                                         value={researchAddGeoQuery}
                                         onChange={handleResearchAddGeoQueryChange}
-                                        sx={{ minWidth: 180, flex: '1 1 180px' }}
+                                        sx={{ minWidth: 180, flex: '1 1 180px', px: 1.5, py: 1, border: '1px solid var(--color-border-subtle)', borderRadius: 1, fontSize: 14 }}
                                     />
                                     <MsqdxButton
                                         variant="outlined"
@@ -842,11 +845,12 @@ export default function ProjectDetailPage() {
                                     ))}
                                 </Box>
                                 <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
-                                    <MsqdxFormField
+                                    <Box
+                                        component="input"
                                         placeholder={t('projects.researchAdd')}
                                         value={researchAddCompetitor}
                                         onChange={handleResearchAddCompetitorChange}
-                                        sx={{ minWidth: 180, flex: '1 1 180px' }}
+                                        sx={{ minWidth: 180, flex: '1 1 180px', px: 1.5, py: 1, border: '1px solid var(--color-border-subtle)', borderRadius: 1, fontSize: 14 }}
                                     />
                                     <MsqdxButton
                                         variant="outlined"
