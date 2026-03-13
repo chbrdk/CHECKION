@@ -24251,11 +24251,181 @@ I'll create a useMemo or a variable that holds the props object and then spread 
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
 
-Status: **loading**
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
 
 </details>
 
 </tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now the JSX is just {projectResearchResultFormProps && <ProjectResearchResultForm {...projectResearchResultFormProps} />} - a single line. The props are built in a variable above. This should avoid whatever multi-line or prop parsing issue the Docker build had.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. The props object is only created when researchResult is truthy, and we render the form only when projectResearchResultFormProps is non-null. So we're good.
+</details></think>
+
+---
+
+
+Änderung ist umgesetzt:
+
+1. **Props gebündelt**  
+   Die vielen Einzel-Props werden in eine Variable `projectResearchResultFormProps` gepackt (nur gesetzt, wenn `researchResult` existiert).
+
+2. **Einzeiliges JSX**  
+   Statt vieler Zeilen mit einzelnen Props steht nur noch:
+   `{projectResearchResultFormProps && <ProjectResearchResultForm {...projectResearchResultFormProps} />}`
+
+Damit entfällt die lange, mehrzeilige Prop-Liste im JSX, die im Docker-Build vermutlich den Fehler ausgelöst hat.
+
+Bitte den **Docker-Build erneut ausführen**.
+
+---
+
+_**User**_
+
+2026-Mar-13 12:17:25.927963
+> [builder 6/6] RUN npm run build:
+2026-Mar-13 12:17:25.927963
+42.15       |                                                         ^
+2026-Mar-13 12:17:25.927963
+42.15   734 |                 </MsqdxMoleculeCard>
+2026-Mar-13 12:17:25.927963
+42.15   735 |
+2026-Mar-13 12:17:25.927963
+42.15   736 |                 {/* Card 2: Competitors */}
+2026-Mar-13 12:17:25.927963
+42.27 Next.js build worker exited with code: 1 and signal: null
+2026-Mar-13 12:17:25.927963
+42.49 npm notice
+2026-Mar-13 12:17:25.927963
+42.49 npm notice New major version of npm available! 10.9.4 -> 11.11.1
+2026-Mar-13 12:17:25.927963
+42.49 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.11.1
+2026-Mar-13 12:17:25.927963
+42.49 npm notice To update run:<REDACTED>@11.11.1
+2026-Mar-13 12:17:25.927963
+42.49 npm notice
+2026-Mar-13 12:17:25.927963
+------
+2026-Mar-13 12:17:25.927963
+2026-Mar-13 12:17:25.927963
+36 warnings found (use docker --debug to expand):
+2026-Mar-13 12:17:25.927963
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "ANTHROPIC_API_KEY") (line 19)
+2026-Mar-13 12:17:25.927963
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_AUTH_URL") (line 23)
+2026-Mar-13 12:17:25.927963
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "GEMINI_API_KEY") (line 128)
+2026-Mar-13 12:17:25.927963
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "CHECKION_ADMIN_API_KEY") (line 130)
+2026-Mar-13 12:17:25.927963
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "OPENAI_API_KEY") (line 12)
+2026-Mar-13 12:17:25.927963
+- SecretsUsedInArgOrEnv: Do
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The build is now failing at a different place - lines 734-736, which is the closing of MsqdxMoleculeCard and the comment {/* Card 2: Competitors */}. The caret "^" points to around that area. So the error might be right before that - perhaps the closing of the Research card or something in the conditional. Let me look at the structure. The issue could be:
+
+1. Something wrong with the JSX structure - maybe an unclosed tag or the way we have the conditional
+2. The `projectResearchResultFormProps &&` - maybe the build doesn't like that pattern
+3. Something about the MsqdxMoleculeCard closing
+
+Let me read the file around that area to see the exact structure.
+</details></think>
+
+---
+
+
+Struktur um die fehlerhafte Stelle prüfen:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The error points to line 734 (</MsqdxMoleculeCard>) or 736 (the comment). So the parser might be getting confused by something inside the Research card. One possibility: when we have `{projectResearchResultFormProps && <ProjectResearchResultForm {...projectResearchResultFormProps} />}`, the spread might be causing an issue in the Docker build's parser - e.g. `...` could be interpreted oddly. Let me try wrapping the component in a Fragment or Box so the expression is simpler: {projectResearchResultFormProps ? <ProjectResearchResultForm {...projectResearchResultFormProps} /> : null}. Or maybe the issue is that we have multiple conditional children and the build gets confused - let me try rendering the Research card content in a single conditional block. Actually, re-reading the error - it says the caret is at 734/735/736. So the error might be that something is wrong with the closing tag or the next opening tag. Could it be that MsqdxMoleculeCard has a problem with the way we're nesting? Or maybe the issue is in ProjectResearchResultForm - when the build compiles it might be inlining or something and then the error position maps to this line. Let me try wrapping the entire Research card content (everything inside MsqdxMoleculeCard) in a single Box or Fragment so there's only one explicit child structure. Right now we have:
+- MsqdxTypography (description)
+- MsqdxButton
+- {researchError && ...}
+- {!researchResult && !researchLoading && ...}
+- {projectResearchResultFormProps && <ProjectResearchResultForm ... />}
+
+Maybe the build doesn't like the mix of conditional renders. Let me try making the Research card body a single variable: researchCardContent = ... and then {researchCardContent} so we have one expression.
+</details></think>
+
+---
+
+
+Research-Card-Inhalt in eine Variable auslagern und nur diese rendern:
+
 
 ---
 
@@ -24268,6 +24438,10 @@ Status: **loading**
 </details>
 
 </tool-use>
+
+---
+
+
 
 ---
 

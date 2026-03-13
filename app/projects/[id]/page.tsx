@@ -708,29 +708,33 @@ export default function ProjectDetailPage() {
                     footerDivider={false}
                     sx={{ bgcolor: 'var(--color-card-bg)' }}
                 >
-                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1.5 }}>
-                        {t('projects.researchDescription')}
-                    </MsqdxTypography>
-                    <MsqdxButton
-                        variant="contained"
-                        brandColor="green"
-                        size="small"
-                        onClick={handleRunResearch}
-                        disabled={researchLoading || !project.domain}
-                    >
-                        {researchLoading ? t('common.loading') : t('projects.researchStart')}
-                    </MsqdxButton>
-                    {researchError && (
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-status-error)', display: 'block', mt: 1 }}>
-                            {researchError}
+                    <Box component="span" sx={{ display: 'block' }}>
+                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1.5 }}>
+                            {t('projects.researchDescription')}
                         </MsqdxTypography>
-                    )}
-                    {!researchResult && !researchLoading && (
-                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mt: 2 }}>
-                            {t('projects.researchEmpty')}
-                        </MsqdxTypography>
-                    )}
-                    {projectResearchResultFormProps && <ProjectResearchResultForm {...projectResearchResultFormProps} />}
+                        <MsqdxButton
+                            variant="contained"
+                            brandColor="green"
+                            size="small"
+                            onClick={handleRunResearch}
+                            disabled={researchLoading || !project.domain}
+                        >
+                            {researchLoading ? t('common.loading') : t('projects.researchStart')}
+                        </MsqdxButton>
+                        {researchError ? (
+                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-status-error)', display: 'block', mt: 1 }}>
+                                {researchError}
+                            </MsqdxTypography>
+                        ) : null}
+                        {!researchResult && !researchLoading ? (
+                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mt: 2 }}>
+                                {t('projects.researchEmpty')}
+                            </MsqdxTypography>
+                        ) : null}
+                        {projectResearchResultFormProps ? (
+                            <ProjectResearchResultForm {...projectResearchResultFormProps} />
+                        ) : null}
+                    </Box>
                 </MsqdxMoleculeCard>
 
                 {/* Card 2: Competitors */}
