@@ -24031,3 +24031,243 @@ I'll create a new component file that contains the research result form. It will
 
 ---
 
+<think><details><summary>Thought Process</summary>
+
+I'll create components/ProjectResearchResultForm.tsx that takes researchResult and all the handlers/state as props. It will render the same UI. Then in the page we just render <ProjectResearchResultForm ... /> when researchResult is set. This way the textarea and the rest of the problematic JSX are in a different file.
+</details></think>
+
+---
+
+
+Erstelle die Komponente `ProjectResearchResultForm.tsx` und ersetze den Inhalt auf der Seite.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ProjectResearchResultForm.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to update the project page to:
+1. Import ProjectResearchResultForm
+2. Remove the researchTextareaStyle constant (no longer needed)
+3. Replace the entire {researchResult && ( <Box>... </Box> )} block with <ProjectResearchResultForm ... /> and pass all the props.
+</details></think>
+
+---
+
+
+Seite anpassen: Research-Block durch die neue Komponente ersetzen und `researchTextareaStyle` entfernen.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+handleResearchValuePropositionChange is typed for React.ChangeEvent<HTMLInputElement> but we're now passing it as onValuePropositionChange which expects React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>. So the handler type should be compatible (HTMLInputElement is a subset). Let me check - the handler does setResearchResult((prev) => (prev ? { ...prev, valueProposition: e.target.value } : prev)) - so it only uses e.target.value which exists on both. The type in the form component is (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void so we need to make sure the page's handleResearchValuePropositionChange is compatible. It's (e: React.ChangeEvent<HTMLInputElement>) => void which is assignable to the broader type. Good.
+
+Let me verify there are no lint errors.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ProjectResearchResultForm.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ProjectResearchResultForm.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+If the build still fails, it might now fail in ProjectResearchResultForm.tsx at the textarea. In that case we could try removing the value proposition section from the form component or use a different approach. Let me leave as is - the separate file might compile fine in Docker (different chunk/bundle).
+</details></think>
+
+---
+
+
+Hier die Änderungen:
+
+1. **Neue Komponente**  
+   `components/ProjectResearchResultForm.tsx`  
+   Enthält die komplette Research-Ergebnis-UI (Zielgruppen, Value Proposition, SEO-Keywords, GEO-Queries, Competitors) inkl. `<textarea>`, `Box component="input"` und allen Handlern. Styling über die ausgelagerten Konstanten `researchTextareaStyle` und `researchInputSx`.
+
+2. **Projektseite**  
+   Der bisherige Research-Block wurde durch einen Aufruf von  
+   `<ProjectResearchResultForm ... />`  
+   ersetzt, mit allen nötigen Props (Result, Add-Werte, Handler, `t`). Die Konstante `researchTextareaStyle` wurde auf der Seite entfernt.
+
+Damit liegt die bisher problematische JSX-Struktur (textarea, viele Inputs, Chips) in einer eigenen Datei und wird getrennt kompiliert – das kann den Docker-Build entlasten.
+
+Bitte den **Docker-Build erneut ausführen**. Wenn der Fehler dann in `ProjectResearchResultForm.tsx` auftritt, können wir in dieser Datei gezielt weiter anpassen (z. B. Value Proposition weglassen oder anders darstellen).
+
+---
+
+_**User**_
+
+2026-Mar-13 12:14:08.865853
+------
+2026-Mar-13 12:14:08.865853
+> [builder 6/6] RUN npm run build:
+2026-Mar-13 12:14:08.865853
+42.83       |                             ^
+2026-Mar-13 12:14:08.865853
+42.83   715 |                             onAddKeywordChange={handleResearchAddKeywordChange}
+2026-Mar-13 12:14:08.865853
+42.83   716 |                             onAddGeoQueryChange={handleResearchAddGeoQueryChange}
+2026-Mar-13 12:14:08.865853
+42.83   717 |                             onAddCompetitorChange={handleResearchAddCompetitorChange}
+2026-Mar-13 12:14:08.865853
+43.11 Next.js build worker exited with code: 1 and signal: null
+2026-Mar-13 12:14:08.865853
+43.21 npm notice
+2026-Mar-13 12:14:08.865853
+43.21 npm notice New major version of npm available! 10.9.4 -> 11.11.1
+2026-Mar-13 12:14:08.865853
+43.21 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.11.1
+2026-Mar-13 12:14:08.865853
+43.21 npm notice To update run:<REDACTED>@11.11.1
+2026-Mar-13 12:14:08.865853
+43.21 npm notice
+2026-Mar-13 12:14:08.865853
+------
+2026-Mar-13 12:14:08.865853
+2026-Mar-13 12:14:08.865853
+36 warnings found (use docker --debug to expand):
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The build is now failing at a different location - lines 715-717 in the project page, which are the props being passed to ProjectResearchResultForm: onAddKeywordChange, onAddGeoQueryChange, onAddCompetitorChange. The caret "^" points to around line 714-715. So the issue might be the multi-line JSX with many props - the build might be choking on the way we're passing these handler props. Let me try consolidating the props into a single object so we don't have so many lines of props in the JSX. Or we could spread an object: researchFormProps={{ ... }} and then <ProjectResearchResultForm {...researchFormProps} />. That would reduce the JSX to one spread and might avoid whatever parsing issue the Docker build has.
+</details></think>
+
+---
+
+
+Props in ein Objekt bündeln und per Spread übergeben, um die lange Prop-Liste zu vermeiden:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll create a useMemo or a variable that holds the props object and then spread it: const researchFormProps = { ... }; and <ProjectResearchResultForm {...researchFormProps} />. That way the JSX is just one line with a spread.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+

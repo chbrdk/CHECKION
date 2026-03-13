@@ -650,6 +650,34 @@ export default function ProjectDetailPage() {
         borderBottom: '1px solid var(--color-border-subtle, #eee)',
     };
 
+    const projectResearchResultFormProps = researchResult
+        ? {
+              researchResult,
+              addTargetGroup: researchAddTargetGroup,
+              addKeyword: researchAddKeyword,
+              addGeoQuery: researchAddGeoQuery,
+              addCompetitor: researchAddCompetitor,
+              selectedKeywords: selectedResearchKeywords,
+              onAddTargetGroupChange: handleResearchAddTargetGroupChange,
+              onValuePropositionChange: handleResearchValuePropositionChange,
+              onAddKeywordChange: handleResearchAddKeywordChange,
+              onAddGeoQueryChange: handleResearchAddGeoQueryChange,
+              onAddCompetitorChange: handleResearchAddCompetitorChange,
+              onAddTargetGroupClick: handleResearchAddTargetGroupClick,
+              onAddKeywordClick: handleResearchAddKeywordClick,
+              onAddGeoQueryClick: handleResearchAddGeoQueryClick,
+              onAddCompetitorClick: handleResearchAddCompetitorClick,
+              onRemoveTargetGroup: handleResearchRemoveTargetGroup,
+              onRemoveGeoQuery: handleResearchRemoveGeoQuery,
+              onRemoveCompetitor: handleResearchRemoveCompetitor,
+              onToggleKeyword: handleToggleResearchKeyword,
+              onApplyKeywords: handleApplyResearchKeywords,
+              onApplyGeoQueries: handleApplyResearchGeoQueries,
+              onApplyCompetitors: handleApplyResearchCompetitors,
+              t,
+          }
+        : null;
+
     return (
         <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1200, mx: 'auto' }}>
             <Stack sx={{ gap: 'var(--msqdx-spacing-lg)' }}>
@@ -702,33 +730,7 @@ export default function ProjectDetailPage() {
                             {t('projects.researchEmpty')}
                         </MsqdxTypography>
                     )}
-                    {researchResult && (
-                        <ProjectResearchResultForm
-                            researchResult={researchResult}
-                            addTargetGroup={researchAddTargetGroup}
-                            addKeyword={researchAddKeyword}
-                            addGeoQuery={researchAddGeoQuery}
-                            addCompetitor={researchAddCompetitor}
-                            selectedKeywords={selectedResearchKeywords}
-                            onAddTargetGroupChange={handleResearchAddTargetGroupChange}
-                            onValuePropositionChange={handleResearchValuePropositionChange}
-                            onAddKeywordChange={handleResearchAddKeywordChange}
-                            onAddGeoQueryChange={handleResearchAddGeoQueryChange}
-                            onAddCompetitorChange={handleResearchAddCompetitorChange}
-                            onAddTargetGroupClick={handleResearchAddTargetGroupClick}
-                            onAddKeywordClick={handleResearchAddKeywordClick}
-                            onAddGeoQueryClick={handleResearchAddGeoQueryClick}
-                            onAddCompetitorClick={handleResearchAddCompetitorClick}
-                            onRemoveTargetGroup={handleResearchRemoveTargetGroup}
-                            onRemoveGeoQuery={handleResearchRemoveGeoQuery}
-                            onRemoveCompetitor={handleResearchRemoveCompetitor}
-                            onToggleKeyword={handleToggleResearchKeyword}
-                            onApplyKeywords={handleApplyResearchKeywords}
-                            onApplyGeoQueries={handleApplyResearchGeoQueries}
-                            onApplyCompetitors={handleApplyResearchCompetitors}
-                            t={t}
-                        />
-                    )}
+                    {projectResearchResultFormProps && <ProjectResearchResultForm {...projectResearchResultFormProps} />}
                 </MsqdxMoleculeCard>
 
                 {/* Card 2: Competitors */}
