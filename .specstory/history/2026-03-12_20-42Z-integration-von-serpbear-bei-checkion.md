@@ -23856,10 +23856,177 @@ I'll add a constant for the textarea style near the top of the return (or before
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
 
-Status: **loading**
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
 
 </details>
 
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+If the build still fails, it might be the value={researchResult.valueProposition ?? ''} or the onChange handler. Let me check lints.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. The fix was to move the style object out of the JSX into a variable `researchTextareaStyle` so the JSX no longer contains the multiline `style={{ ... }}` which the Docker/Next build parser might have been choking on.
+</details></think>
+
+---
+
+
+Erledigt. Das mehrzeilige `style={{ ... }}` am `<textarea>` ist entfernt. Die Styles liegen jetzt in einer Variable `researchTextareaStyle` (neben `listItemSx`), und das Textarea nutzt nur noch `style={researchTextareaStyle}`. So vermeidest du das doppelte `{{` im JSX, das im Build zu Parsing-Problemen führen kann.
+
+Bitte den **Docker-Build erneut ausführen**.
+
+---
+
+_**User**_
+
+2026-Mar-13 12:04:33.253157
+#17 [builder 6/6] RUN npm run build
+2026-Mar-13 12:04:33.253157
+#17 0.382
+2026-Mar-13 12:04:33.253157
+#17 0.382 > checkion@0.1.0 build
+2026-Mar-13 12:04:33.253157
+#17 0.382 > next build --webpack
+2026-Mar-13 12:04:33.253157
+#17 0.382
+2026-Mar-13 12:04:33.253157
+#17 1.004 ▲ Next.js 16.1.6 (webpack)
+2026-Mar-13 12:04:33.253157
+#17 1.004 - Experiments (use with caution):<REDACTED>@11.11.1
+2026-Mar-13 12:04:33.253157
+#17 42.46 npm notice
+2026-Mar-13 12:04:33.253157
+#17 ERROR: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+2026-Mar-13 12:04:33.253157
+------
+2026-Mar-13 12:04:33.253157
+> [builder 6/6] RUN npm run build:
+2026-Mar-13 12:04:33.253157
+42.14       |                                     ^
+2026-Mar-13 12:04:33.253157
+42.14   756 |                                     rows={2}
+2026-Mar-13 12:04:33.253157
+42.14   757 |                                     style={researchTextareaStyle}
+2026-Mar-13 12:04:33.253157
+42.14   758 |                                 />
+2026-Mar-13 12:04:33.253157
+42.27 Next.js build worker exited with code: 1 and signal: null
+2026-Mar-13 12:04:33.253157
+42.46 npm notice
+2026-Mar-13 12:04:33.253157
+42.46 npm notice New major version of npm available! 10.9.4 -> 11.11.1
+2026-Mar-13 12:04:33.253157
+42.46 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.11.1
+2026-Mar-13 12:04:33.253157
+42.46 npm notice To update run:<REDACTED>@11.11.1
+2026-Mar-13 12:04:33.253157
+42.46 npm notice
+2026-Mar-13 12:04:33.253157
+------
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The build is still failing at the same textarea - lines 756-758. So it's not the style object - it's the textarea element itself or one of its props (value, onChange, rows). The Docker build might be using an older or stricter parser that doesn't like something about the textarea. Let me try:
+
+1. Removing the Value Proposition section entirely from the Research card - then the build might pass and we confirm the issue is this block.
+2. Or replacing the textarea with a simple single-line input for value proposition to see if it's the textarea specifically.
+3. Or moving the entire Research result content (the part that shows when researchResult is set) into a separate component file - that way the problematic JSX is in another file and might compile differently.
+
+I'll try option 3: extract the "Research result form" (the content when researchResult exists) into a separate client component. That way the main page doesn't have this block at all and we can see if the build passes. The new component will receive researchResult, handlers, state values as props.
+</details></think>
+
+---
+
+
+Den gesamten Research-Ergebnis-Block in eine eigene Client-Komponente auslagern, damit der Build in der Hauptseite nicht mehr an diesem Abschnitt scheitert.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll create a new component file that contains the research result form. It will receive all the necessary props. This way the problematic JSX (textarea, Box component="input", etc.) lives in a separate file that might compile without issues in the Docker build.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
 </tool-use>
 
 ---

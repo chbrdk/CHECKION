@@ -36,6 +36,7 @@ import {
 } from '@/lib/constants';
 import { SERP_MAIN_MARKETS } from '@/lib/serp-markets';
 import { RankTrackingChart } from '@/components/RankTrackingChart';
+import { ProjectResearchResultForm } from '@/components/ProjectResearchResultForm';
 import type { ProjectResearchResult } from '@/lib/research/schema';
 
 interface RankKeywordItem {
@@ -649,15 +650,6 @@ export default function ProjectDetailPage() {
         borderBottom: '1px solid var(--color-border-subtle, #eee)',
     };
 
-    const researchTextareaStyle = {
-        width: '100%' as const,
-        padding: '8px 12px',
-        border: '1px solid var(--color-border-subtle)',
-        borderRadius: 4,
-        fontSize: 14,
-        resize: 'vertical' as const,
-    };
-
     return (
         <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1200, mx: 'auto' }}>
             <Stack sx={{ gap: 'var(--msqdx-spacing-lg)' }}>
@@ -711,169 +703,31 @@ export default function ProjectDetailPage() {
                         </MsqdxTypography>
                     )}
                     {researchResult && (
-                        <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                            {/* Target groups */}
-                            <Box>
-                                <MsqdxTypography variant="subtitle2" weight="semibold" sx={{ mb: 0.5 }}>
-                                    {t('projects.researchTargetGroups')}
-                                </MsqdxTypography>
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 0.5 }}>
-                                    {(researchResult.targetGroups ?? []).map((item) => (
-                                        <MsqdxChip
-                                            key={item}
-                                            label={item}
-                                            onDelete={() => handleResearchRemoveTargetGroup(item)}
-                                            size="small"
-                                        />
-                                    ))}
-                                </Box>
-                                <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
-                                    <Box
-                                        component="input"
-                                        placeholder={t('projects.researchAdd')}
-                                        value={researchAddTargetGroup}
-                                        onChange={handleResearchAddTargetGroupChange}
-                                        sx={{ minWidth: 180, flex: '1 1 180px', px: 1.5, py: 1, border: '1px solid var(--color-border-subtle)', borderRadius: 1, fontSize: 14 }}
-                                    />
-                                    <MsqdxButton
-                                        variant="outlined"
-                                        size="small"
-                                        onClick={handleResearchAddTargetGroupClick}
-                                        disabled={!researchAddTargetGroup.trim()}
-                                    >
-                                        {t('projects.researchAdd')}
-                                    </MsqdxButton>
-                                </Box>
-                            </Box>
-                            {/* Value proposition */}
-                            <Box>
-                                <MsqdxTypography variant="subtitle2" weight="semibold" sx={{ mb: 0.5 }}>
-                                    {t('projects.researchValueProposition')}
-                                </MsqdxTypography>
-                                <textarea
-                                    value={researchResult.valueProposition ?? ''}
-                                    onChange={handleResearchValuePropositionChange}
-                                    rows={2}
-                                    style={researchTextareaStyle}
-                                />
-                            </Box>
-                            {/* SEO keywords */}
-                            <Box>
-                                <MsqdxTypography variant="subtitle2" weight="semibold" sx={{ mb: 0.5 }}>
-                                    {t('projects.researchSeoKeywords')}
-                                </MsqdxTypography>
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 0.5 }}>
-                                    {(researchResult.seoKeywords ?? []).map((kw) => (
-                                        <MsqdxChip
-                                            key={kw}
-                                            label={kw}
-                                            onClick={() => handleToggleResearchKeyword(kw)}
-                                            color={selectedResearchKeywords.has(kw) ? 'primary' : 'default'}
-                                            variant={selectedResearchKeywords.has(kw) ? 'filled' : 'outlined'}
-                                            size="small"
-                                            sx={{ cursor: 'pointer' }}
-                                        />
-                                    ))}
-                                </Box>
-                                <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
-                                    <Box
-                                        component="input"
-                                        placeholder={t('projects.researchAdd')}
-                                        value={researchAddKeyword}
-                                        onChange={handleResearchAddKeywordChange}
-                                        sx={{ minWidth: 180, flex: '1 1 180px', px: 1.5, py: 1, border: '1px solid var(--color-border-subtle)', borderRadius: 1, fontSize: 14 }}
-                                    />
-                                    <MsqdxButton
-                                        variant="outlined"
-                                        size="small"
-                                        onClick={handleResearchAddKeywordClick}
-                                        disabled={!researchAddKeyword.trim()}
-                                    >
-                                        {t('projects.researchAdd')}
-                                    </MsqdxButton>
-                                    <MsqdxButton
-                                        variant="contained"
-                                        size="small"
-                                        onClick={handleApplyResearchKeywords}
-                                        disabled={selectedResearchKeywords.size === 0}
-                                    >
-                                        {t('projects.researchApplyKeywords')} ({selectedResearchKeywords.size})
-                                    </MsqdxButton>
-                                </Box>
-                            </Box>
-                            {/* GEO queries */}
-                            <Box>
-                                <MsqdxTypography variant="subtitle2" weight="semibold" sx={{ mb: 0.5 }}>
-                                    {t('projects.researchGeoQueries')}
-                                </MsqdxTypography>
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 0.5 }}>
-                                    {(researchResult.geoQueries ?? []).map((q) => (
-                                        <MsqdxChip
-                                            key={q}
-                                            label={q}
-                                            onDelete={() => handleResearchRemoveGeoQuery(q)}
-                                            size="small"
-                                        />
-                                    ))}
-                                </Box>
-                                <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
-                                    <Box
-                                        component="input"
-                                        placeholder={t('projects.researchAdd')}
-                                        value={researchAddGeoQuery}
-                                        onChange={handleResearchAddGeoQueryChange}
-                                        sx={{ minWidth: 180, flex: '1 1 180px', px: 1.5, py: 1, border: '1px solid var(--color-border-subtle)', borderRadius: 1, fontSize: 14 }}
-                                    />
-                                    <MsqdxButton
-                                        variant="outlined"
-                                        size="small"
-                                        onClick={handleResearchAddGeoQueryClick}
-                                        disabled={!researchAddGeoQuery.trim()}
-                                    >
-                                        {t('projects.researchAdd')}
-                                    </MsqdxButton>
-                                    <MsqdxButton variant="contained" size="small" onClick={handleApplyResearchGeoQueries}>
-                                        {t('projects.researchApplyGeoQueries')}
-                                    </MsqdxButton>
-                                </Box>
-                            </Box>
-                            {/* Competitors */}
-                            <Box>
-                                <MsqdxTypography variant="subtitle2" weight="semibold" sx={{ mb: 0.5 }}>
-                                    {t('projects.researchCompetitors')}
-                                </MsqdxTypography>
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 0.5 }}>
-                                    {(researchResult.competitors ?? []).map((c) => (
-                                        <MsqdxChip
-                                            key={c}
-                                            label={c}
-                                            onDelete={() => handleResearchRemoveCompetitor(c)}
-                                            size="small"
-                                        />
-                                    ))}
-                                </Box>
-                                <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
-                                    <Box
-                                        component="input"
-                                        placeholder={t('projects.researchAdd')}
-                                        value={researchAddCompetitor}
-                                        onChange={handleResearchAddCompetitorChange}
-                                        sx={{ minWidth: 180, flex: '1 1 180px', px: 1.5, py: 1, border: '1px solid var(--color-border-subtle)', borderRadius: 1, fontSize: 14 }}
-                                    />
-                                    <MsqdxButton
-                                        variant="outlined"
-                                        size="small"
-                                        onClick={handleResearchAddCompetitorClick}
-                                        disabled={!researchAddCompetitor.trim()}
-                                    >
-                                        {t('projects.researchAdd')}
-                                    </MsqdxButton>
-                                    <MsqdxButton variant="contained" size="small" onClick={handleApplyResearchCompetitors}>
-                                        {t('projects.researchApplyCompetitors')}
-                                    </MsqdxButton>
-                                </Box>
-                            </Box>
-                        </Box>
+                        <ProjectResearchResultForm
+                            researchResult={researchResult}
+                            addTargetGroup={researchAddTargetGroup}
+                            addKeyword={researchAddKeyword}
+                            addGeoQuery={researchAddGeoQuery}
+                            addCompetitor={researchAddCompetitor}
+                            selectedKeywords={selectedResearchKeywords}
+                            onAddTargetGroupChange={handleResearchAddTargetGroupChange}
+                            onValuePropositionChange={handleResearchValuePropositionChange}
+                            onAddKeywordChange={handleResearchAddKeywordChange}
+                            onAddGeoQueryChange={handleResearchAddGeoQueryChange}
+                            onAddCompetitorChange={handleResearchAddCompetitorChange}
+                            onAddTargetGroupClick={handleResearchAddTargetGroupClick}
+                            onAddKeywordClick={handleResearchAddKeywordClick}
+                            onAddGeoQueryClick={handleResearchAddGeoQueryClick}
+                            onAddCompetitorClick={handleResearchAddCompetitorClick}
+                            onRemoveTargetGroup={handleResearchRemoveTargetGroup}
+                            onRemoveGeoQuery={handleResearchRemoveGeoQuery}
+                            onRemoveCompetitor={handleResearchRemoveCompetitor}
+                            onToggleKeyword={handleToggleResearchKeyword}
+                            onApplyKeywords={handleApplyResearchKeywords}
+                            onApplyGeoQueries={handleApplyResearchGeoQueries}
+                            onApplyCompetitors={handleApplyResearchCompetitors}
+                            t={t}
+                        />
                     )}
                 </MsqdxMoleculeCard>
 
