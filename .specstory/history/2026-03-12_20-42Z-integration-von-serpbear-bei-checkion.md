@@ -20863,3 +20863,489 @@ HTML Element: <div class="MuiStack-root css-yd8sa2" data-cursor-element-id="curs
 
 ---
 
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is on the project rankings page and wants:
+1. Use the full width of the app (instead of the current max-width constraint)
+2. Show the diagrams directly (not collapsed/hidden by default?)
+3. At the top, a card that shows the ranking score and also the score of competitors
+
+Let me look at the current rankings page layout and the RankTrackingChart to understand the structure, then:
+1. Remove or increase the max-width so the page uses full app width
+2. Consider showing charts by default or in a more prominent way
+3. Add a summary card at the top showing: overall ranking score + competitor scores (e.g. our domain vs each competitor's aggregate score)
+
+I'll need to:
+- Read the rankings page to see current layout (maxWidth: 900, etc.)
+- See how we can get "competitor scores" - likely an aggregate per competitor across keywords from the ranking data
+- Add a top card with our score and competitor scores, use full width, and possibly show charts inline/expanded by default or in a full-width grid
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/ranking-summary/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The user wants:
+1. Full width of the app (remove maxWidth: 900)
+2. Show diagrams directly (always visible, not behind "Diagramm anzeigen")
+3. Top card showing: our score + competitor scores
+
+To show competitor scores we need per-domain aggregate scores. The ranking-summary API currently only returns our score. We could:
+- Extend the ranking-summary API to also return competitor scores (average position → points per competitor), or
+- Compute competitor scores on the rankings page from rankKeywords (each has lastCompetitorPositions). We have lastPosition for our domain and lastCompetitorPositions for each competitor per keyword. We can average the points per domain across keywords and show in a card.
+
+I'll:
+1. Extend ranking-summary API to return `competitorScores: { [domain: string]: number }` (same 0-100 scale, average points across keywords where that competitor has a position). So the API needs to use getLastPositionsByKeywordIds which returns competitorPositions, then for each competitor domain aggregate points and average.
+2. On the rankings page: use full width (remove maxWidth or set to 100%), add a top card that fetches ranking-summary and displays our score + competitor scores.
+3. Show all charts directly (always expanded), perhaps in a grid so they use full width.
+
+Let me check getLastPositionsByKeywordIds - it returns competitorPositions in the map value.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/rank-tracking-positions.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to:
+1. Extend GET /api/projects/[id]/ranking-summary to return competitorScores: Record<string, number> (domain -> 0-100 score, same algorithm).
+2. Rankings page: 
+   - Use full width: change outer Box to use full width (remove maxWidth or set width: '100%').
+   - Fetch ranking summary (we may already have it from dashboard; on rankings page we need to fetch it for the score card). So add state for rankingSummary, fetch apiProjectRankingSummary(id) on load.
+   - Add a top card (MsqdxMoleculeCard or MsqdxCard) showing: "Unser Score: X/100" and for each competitor "Competitor: Y/100". Use the new competitorScores from the API.
+   - Show all charts directly: instead of one expanded at a time, show every keyword's chart always visible. So we can do a grid of cards: each keyword gets a card with the keyword label and the chart. That uses full width better. Or we could keep the list but have all charts expanded by default (chartExpandedKeywordId could be "all" or we just render all charts). Easiest: render chart for every keyword (remove the toggle, always show chart below each keyword row). That could get long. Better: two-column or grid layout - left column compact keyword list (no charts), right column or below: a section "Diagramme" with each chart in a full-width card or in a grid. User said "direkt die diagramme anzeigen" so they want charts visible without clicking. I'll show each keyword as a card with the chart always visible (so we have keyword + chart per item, all expanded). So remove the "Diagramm anzeigen" button and always render the chart for each keyword. And use full width so the chart has room.
+3. Add competitor scores to the API.
+
+Implementing.
+</details></think>
+
+---
+
+
+Erweiterung der Ranking-Summary-API um Competitor-Scores, Nutzung der vollen Breite, obere Score-Card (Unser Score + Competitor-Scores) und direkte Anzeige aller Diagramme.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/ranking-summary/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Empty keyword case: we should also return competitorScores: {} in that response.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/ranking-summary/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now update the rankings page:
+1. Add state for rankingSummary (score, competitorScores) and fetch it.
+2. Full width: remove maxWidth: 900 or use width: '100%', maxWidth: '100%'.
+3. Add top card with our score and competitor scores.
+4. Show all charts by default (remove toggle, always render chart for each keyword). Optionally we could show keyword rows in a compact list and then a grid of charts below - but "direkt die diagramme anzeigen" suggests show them right away. I'll do: each keyword row has the chart always visible below it (remove the "Diagramm anzeigen" button and the conditional).
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now: refresh rankingSummary after loadKeywords (when user adds/refreshes), and update the layout: full width, top score card, charts always visible.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now update the JSX: 1) Full width container, 2) Add top score card (our score + competitor scores), 3) Remove "Diagramm anzeigen" and show all charts always.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I added a reference to ourDomain but didn't use it - that's fine, we can remove it. Let me add the i18n key for "ourScore" and fix the test for ranking-summary (it might expect data without competitorScores).
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/__tests__/api/project-ranking-summary.test.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The test doesn't check for competitorScores, so the API now returns competitorScores: {} in the computed case (no competitor positions in the mock). So the test should still pass. Let me run the test to confirm.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run test -- --run __tests__/api/project-ranking-summary.test.ts 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run test -- --run __tests__/api/project-ranking-summary.test.ts 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 test
+&gt; vitest run --run __tests__/api/project-ranking-summary.test.ts
+
+
+ RUN  v4.0.18 /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1
+
+ ✓ __tests__/api/project-ranking-summary.test.ts (4 tests) 7ms
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  16:20:02
+   Duration  221ms (transform 59ms, setup 0ms, import 116ms, tests 7ms, environment 0ms)
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Tests pass. Summary for the user.
+</details></think>
+
+---
+
+
+Hier die Änderungen im Überblick:
+
+## 1. **Volle Breite**
+- Container der Rankings-Seite nutzt jetzt die volle Breite: `maxWidth: 900` entfernt, stattdessen `width: '100%', maxWidth: '100%'`.
+
+## 2. **Score-Card oben (Unser Score + Competitor-Scores)**
+- **API** `GET /api/projects/[id]/ranking-summary`: Antwort um **`competitorScores`** ergänzt. Für jede Competitor-Domain wird derselbe Punktesatz (Position 1→100, 2→90, …, 10→10, 11+→0) über alle Keywords gemittelt.
+- **Neue Card** ganz oben auf der Rankings-Seite:
+  - **Unser Score:** X/100 (wie bisher).
+  - **Pro Competitor:** Domain + Score Y/100 in derselben Skala.
+- Neue i18n-Keys: `projects.ourScore` (DE: „Unser Score“, EN: „Our score“).
+
+## 3. **Diagramme direkt sichtbar**
+- Button „Diagramm anzeigen“ / „Diagramm ausblenden“ entfernt.
+- Pro Keyword wird das **RankTrackingChart** immer unter der Keyword-Zeile gerendert (kein Auf-/Zuklappen).
+- Pro Keyword nur noch der Button „Entfernen“; die Kurve ist direkt darunter in voller Breite sichtbar.
+
+**Geänderte/ange passte Dateien:**
+- `app/api/projects/[id]/ranking-summary/route.ts` – Berechnung und Rückgabe von `competitorScores`.
+- `app/projects/[id]/rankings/page.tsx` – Full-Width-Layout, Score-Card mit unserem und Competitor-Scores, Abruf von `ranking-summary`, alle Charts dauerhaft eingeblendet.
+- `locales/de.json`, `locales/en.json` – `ourScore`.
+
+---
+
+_**User**_
+
+okay wir können ein grid etablieren und das in 4 oder 3spaltigkeit anzeigen, mach daraus doch jeweils eine card DOM Path: div.MuiBox-root c.-azg.63 > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-anclqx > div.MuiBox-root c.-15j60lk > div.MuiStack-root c.-yd8.a2 > div.MuiBox-root c.-17b4aqi[1] > div.MuiBox-root c.-1.g4afn > div.MuiBox-root c.-1hdbc19 > div.MuiBox-root c.-a1igic > ul.MuiBox-root c.-no.8u6 > li.MuiBox-root c.-151p99d[1] > div.MuiBox-root c.-15cnexn
+Position: top=302px, left=97px, width=1109px, height=352px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-15cnexn" data-cursor-element-id="cursor-el-1">ksb.com — pumps and valves 7d 30d 90d 1J flowserve.comgrundfos.comksb.comsulzer.comtheweirgroup.comwilo.comxylem.comxyleminc.com 13.03.26 13.03.26 13.03.26 7 4 1 Position</div> 
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+
+
+---
+

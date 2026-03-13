@@ -7,6 +7,7 @@ import {
     MsqdxTypography,
     MsqdxButton,
     MsqdxMoleculeCard,
+    MsqdxCard,
     MsqdxFormField,
     MsqdxChip,
 } from '@msqdx/react';
@@ -251,15 +252,6 @@ export default function ProjectRankingsPage() {
         }
     }, [id, loadProject]);
 
-    const listItemSx = {
-        display: 'flex' as const,
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        py: 1,
-        px: 1.5,
-        borderBottom: '1px solid var(--color-border-subtle, #eee)',
-    };
-
     if (!id) {
         return (
             <Box sx={{ p: 'var(--msqdx-spacing-md)' }}>
@@ -392,38 +384,49 @@ export default function ProjectRankingsPage() {
                             </MsqdxButton>
                         </Box>
                     ) : (
-                        <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
+                        <Box
+                            sx={{
+                                display: 'grid',
+                                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' },
+                                gap: 2,
+                            }}
+                        >
                             {rankKeywords.map((k) => (
-                                <Box
+                                <MsqdxCard
                                     key={k.id}
-                                    component="li"
-                                    sx={{ borderBottom: '1px solid var(--color-border-subtle, #eee)', pb: 2 }}
+                                    variant="flat"
+                                    borderRadius="button"
+                                    sx={{
+                                        p: 'var(--msqdx-spacing-md)',
+                                        border: '1px solid var(--color-border-subtle, #eee)',
+                                        bgcolor: 'var(--color-card-bg)',
+                                        color: 'var(--color-text-on-light)',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        minHeight: 320,
+                                    }}
                                 >
-                                    <Box sx={{ ...listItemSx, flexWrap: 'wrap', gap: 1, borderBottom: 'none' }}>
-                                        <Box sx={{ minWidth: 0, flex: '1 1 200px' }}>
-                                            <MsqdxTypography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                {k.domain} — {k.keyword}
-                                            </MsqdxTypography>
-                                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                                {k.country && k.language ? `${k.country}/${k.language} · ` : ''}
-                                                {t('projects.lastPosition')}: {k.lastPosition != null ? k.lastPosition : '—'}
-                                                {k.lastCompetitorPositions && Object.keys(k.lastCompetitorPositions).length > 0 && (
-                                                    <> · {Object.entries(k.lastCompetitorPositions)
-                                                        .filter(([, pos]) => pos != null)
-                                                        .map(([dom, pos]) => `${dom}: ${pos}`)
-                                                        .join(' · ')}
-                                                    </>
-                                                )}
-                                                {' · '}{t('projects.lastUpdate')}: {k.lastRecordedAt ? new Date(k.lastRecordedAt).toLocaleDateString() : '—'}
-                                            </MsqdxTypography>
-                                        </Box>
-                                        <Box sx={{ display: 'flex', gap: 0.5 }}>
-                                            <MsqdxButton variant="outlined" size="small" color="error" onClick={() => handleDeleteKeyword(k.id)}>
-                                                {t('projects.deleteKeyword')}
-                                            </MsqdxButton>
-                                        </Box>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1, mb: 1 }}>
+                                        <MsqdxTypography variant="subtitle2" weight="semibold" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
+                                            {k.domain} — {k.keyword}
+                                        </MsqdxTypography>
+                                        <MsqdxButton variant="outlined" size="small" color="error" onClick={() => handleDeleteKeyword(k.id)} sx={{ flexShrink: 0 }}>
+                                            {t('projects.deleteKeyword')}
+                                        </MsqdxButton>
                                     </Box>
-                                    <Box sx={{ px: 0, pt: 1, width: '100%', minHeight: 200 }}>
+                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1.5 }}>
+                                        {k.country && k.language ? `${k.country}/${k.language} · ` : ''}
+                                        {t('projects.lastPosition')}: {k.lastPosition != null ? k.lastPosition : '—'}
+                                        {k.lastCompetitorPositions && Object.keys(k.lastCompetitorPositions).length > 0 && (
+                                            <> · {Object.entries(k.lastCompetitorPositions)
+                                                .filter(([, pos]) => pos != null)
+                                                .map(([dom, pos]) => `${dom}: ${pos}`)
+                                                .join(' · ')}
+                                            </>
+                                        )}
+                                        {' · '}{t('projects.lastUpdate')}: {k.lastRecordedAt ? new Date(k.lastRecordedAt).toLocaleDateString() : '—'}
+                                    </MsqdxTypography>
+                                    <Box sx={{ flex: 1, minHeight: 200, width: '100%' }}>
                                         <RankTrackingChart
                                             keywordId={k.id}
                                             keywordLabel={`${k.domain} — ${k.keyword}`}
@@ -432,7 +435,7 @@ export default function ProjectRankingsPage() {
                                             t={t}
                                         />
                                     </Box>
-                                </Box>
+                                </MsqdxCard>
                             ))}
                         </Box>
                     )}
