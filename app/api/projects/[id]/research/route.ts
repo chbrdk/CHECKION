@@ -16,15 +16,15 @@ import { projectResearchResultSchema, type ProjectResearchResult } from '@/lib/r
 
 const RESEARCH_MODEL = process.env.OPENAI_SUGGEST_MODEL ?? 'gpt-4o-mini';
 
-const SYSTEM_PROMPT = `You are an expert in market research, SEO, and positioning. Given a company website URL or company name, you produce a structured research result to help define target groups, SEO keywords, GEO/E-E-A-T search queries, and competitors.
+const SYSTEM_PROMPT = `Du bist ein Experte für Marktforschung, SEO und Positionierung. Zu einer Unternehmens-URL oder einem Firmennamen erstellst du ein strukturiertes Research-Ergebnis für Zielgruppen, SEO-Keywords, GEO/E-E-A-T-Suchanfragen und Wettbewerber.
 
-Output only the requested JSON structure. Use the same language as the domain if obvious (e.g. .de = German), otherwise use English.
+Antworte ausschließlich mit der geforderten JSON-Struktur. Alle Texte (Zielgruppen, Value Proposition, Keywords, GEO-Queries) müssen auf Deutsch sein.
 
-- targetGroups: 5–10 clear, distinct target audience descriptions (e.g. "B2B decision-makers in manufacturing", "SMBs looking for cloud solutions").
-- valueProposition: 1–2 sentences summarizing the main value proposition or USPs of this company (optional).
-- seoKeywords: 10–15 SEO keywords suitable for rank tracking (mix of head, mid-tail, long-tail).
-- geoQueries: 8–12 typical search queries users might ask in ChatGPT/Perplexity when looking for this type of company or service.
-- competitors: 5–8 direct competitor domains (e.g. competitor.com).`;
+- targetGroups: 5–10 klare, abgegrenzte Zielgruppen-Beschreibungen (z. B. "B2B-Entscheider in der Fertigung", "KMU auf der Suche nach Cloud-Lösungen").
+- valueProposition: 1–2 Sätze zur zentralen Value Proposition bzw. USPs des Unternehmens (kann null sein).
+- seoKeywords: 10–15 SEO-Keywords für Rank-Tracking (Mix aus Head-, Mid- und Long-Tail).
+- geoQueries: 8–12 typische Suchanfragen, die Nutzer in ChatGPT/Perplexity stellen könnten, um solche Unternehmen oder Leistungen zu finden.
+- competitors: 5–8 direkte Wettbewerber-Domains (z. B. wettbewerber.de).`;
 
 export async function POST(
     request: NextRequest,
@@ -78,11 +78,11 @@ export async function POST(
                 { role: 'system', content: SYSTEM_PROMPT },
                 {
                     role: 'user',
-                    content: `Website URL: ${url}\nDomain: ${domain}\nProject name: ${project.name}\n${
-                        existingCompetitors.length > 0 ? `Existing competitors (can overlap): ${existingCompetitors.join(', ')}.\n` : ''
+                    content: `Website-URL: ${url}\nDomain: ${domain}\nProjektname: ${project.name}\n${
+                        existingCompetitors.length > 0 ? `Bereits vorhandene Wettbewerber (dürfen überlappen): ${existingCompetitors.join(', ')}.\n` : ''
                     }${
-                        existingGeoQueries.length > 0 ? `Existing GEO queries (can overlap): ${existingGeoQueries.slice(0, 5).join('; ')}.\n` : ''
-                    }Produce the structured research result (target groups, value proposition, SEO keywords, GEO queries, competitors) in the required JSON format.`,
+                        existingGeoQueries.length > 0 ? `Bereits vorhandene GEO-Queries (dürfen überlappen): ${existingGeoQueries.slice(0, 5).join('; ')}.\n` : ''
+                    }Erstelle das strukturierte Research-Ergebnis (Zielgruppen, Value Proposition, SEO-Keywords, GEO-Queries, Wettbewerber) auf Deutsch im geforderten JSON-Format.`,
                 },
             ],
             response_format: zodResponseFormat(projectResearchResultSchema, 'project_research'),

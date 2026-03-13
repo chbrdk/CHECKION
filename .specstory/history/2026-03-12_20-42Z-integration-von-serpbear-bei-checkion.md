@@ -26298,7 +26298,296 @@ The user is getting an error about the Zod schema used for OpenAI structured out
 2. Use something like z.union([z.string(), z.null()]) and then transform - but that might not be "required"
 3. Use z.string().default("") to make it required with a default
 
-Actually re-reading the error: "uses `.optional()` without `.nullable()` which is not su</details></think>
+Actually re-reading the error: "uses `.optional()` without `.nullable()` which is not supported". So the API might support nullable but not optional? Let me check - "all fields must be required" suggests we need the key to always be present. So the value can be null (nullable) but the field must exist. So we need to change from .optional() to something that makes the field required. So either:
+- required string: z.string()
+- required but can be null: z.string().nullable() 
+- required with default: z.string().default("")
+
+I'll look at the schema and change valueProposition to be required. The easiest is z.string().optional() -> z.string().nullable() so the field is always present but can be null. Or we could use z.union([z.string(), z.literal("")]).default("") to keep it as a string. Let me read the schema file.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/research/schema.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The OpenAI structured outputs API requires all fields to be required - so we can't use `.optional()`. We have two options:
+1. Make it required and allow empty string: `z.string().trim().max(500)` and in the system prompt ask the model to use "" when not applicable.
+2. Make it required but nullable: `z.string().trim().max(500).nullable()` - then the field is always present but can be null.
+
+The error says ".optional() without .nullable() which is not supported" - so they might want .nullable() for optional-like behavior. So the fix is to use .nullable() so the field is required (always present in the JSON) but its value can be null. So:
+
+valueProposition: z.string().trim().max(500).nullable()
+
+Then in our TypeScript type we'll get `string | null`. The rest of the code that uses valueProposition might need to handle null (e.g. display empty string when null). Let me check if there are usages that need updating.
+</details></think>
+
+---
+
+
+Schema anpassen: OpenAI Structured Outputs verlangen, dass alle Felder vorhanden sind. `.optional()` entfernen und stattdessen `.nullable()` verwenden:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/research/schema.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now the type will be `string | null` instead of `string | undefined`. I need to check usages of valueProposition in the codebase - they might be doing optional chaining or treating it as optional. Let me grep for valueProposition.
+</details></think>
+
+---
+
+
+Prüfen, ob `valueProposition` (jetzt `string | null`) überall korrekt verwendet wird:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "valueProposition",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.{ts,tsx}",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "valueProposition",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 25,
+  "totalMatches": 25,
+  "topFiles": [
+    {
+      "uri": "./lib/research/schema.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/projects/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/ProjectResearchResultForm.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./__tests__/api/project-research.test.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/api/projects/[id]/research/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/research/schema.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/ProjectResearchResultForm.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/__tests__/api/project-research.test.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/research/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/research/schema.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/ProjectResearchResultForm.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/__tests__/api/project-research.test.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/research/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/research/schema.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/ProjectResearchResultForm.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/__tests__/api/project-research.test.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/research/route.ts",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+- `ProjectResearchResultForm.tsx` already uses `researchResult.valueProposition ?? ''` – works for both `undefined` and `null`.
+- `page.tsx` sets `valueProposition: e.target.value` – fine, string is valid.
+- Test uses `valueProposition: 'We help companies scale.'` – fine.
+- API route has a comment "(optional)" – we could update to say it can be null.
+
+No code changes needed; the type is now `string | null` and `?? ''` handles null. I'll double-check the API route doesn't need to coerce or validate null - the parsed result from OpenAI will now have valueProposition as string | null, and we validate with the schema which allows null. Good.
+</details></think>
+
+---
+
+
+Die Verwendung `valueProposition ?? ''` in `ProjectResearchResultForm.tsx` behandelt `null` bereits. Lints prüfen:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/research/schema.ts"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/research/schema.ts"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+All good. I'll give a short summary.
+</details></think>
+
+---
+
+
+Änderung ist umgesetzt.
+
+**Anpassung:** In `lib/research/schema.ts` wurde  
+`valueProposition: z.string().trim().max(500).optional()`  
+durch  
+`valueProposition: z.string().trim().max(500).nullable()`  
+ersetzt.
+
+- **OpenAI Structured Outputs:** Alle Felder müssen im JSON vorkommen. Mit `.nullable()` ist das Feld immer vorhanden, der Wert kann `null` sein.
+- **Typ:** `ProjectResearchResult.valueProposition` ist jetzt `string | null` (statt `string | undefined`).
+- **UI:** In `ProjectResearchResultForm.tsx` wird weiterhin `valueProposition ?? ''` genutzt, also bleibt die Anzeige unverändert.
+
+Optional kannst du im System-Prompt unter `app/api/projects/[id]/research/route.ts` das Wort „(optional)“ bei valueProposition durch „(kann null sein)“ ersetzen, damit es zur Schema-Definition passt.
+
+---
+
+_**User**_
+
+kannst du die prompts alle auf deutsch umstellen und das wir deutsche ergebnisse erwarten
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants me to change all prompts to German and expect German results. I need to find the prompts in the CHECKION project - likely in the research API, suggest-competitors, suggest-keywords, and any other places where we send system/user prompts to OpenAI or other LLMs.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
 
 ---
 

@@ -13,15 +13,15 @@ import { reportUsage } from '@/lib/usage-report';
 const SUGGEST_MODEL = process.env.OPENAI_SUGGEST_MODEL ?? 'gpt-5-nano';
 import { extractHostname, parseSuggestResponse } from '@/lib/geo-eeat/suggest-parse';
 
-const SYSTEM_PROMPT = `You are an expert in market research and SEO. Given a company website URL, you suggest:
-1. Exactly 5 direct competitors (companies in the same industry/market). Return as domain names (e.g. competitor.com) or company names, one per item.
-2. Exactly 10 typical search queries that users might ask in ChatGPT, Perplexity, or other LLMs when looking for this type of company, product, or service. Queries should be in the same language as the URL if obvious (e.g. .de = German), otherwise use English. Mix of: "best [product] in [region]", "top [industry] companies", "[service] provider recommendation", etc.
+const SYSTEM_PROMPT = `Du bist ein Experte für Marktforschung und SEO. Zu einer Unternehmens-URL schlägst du vor:
+1. Genau 5 direkte Wettbewerber (Unternehmen derselben Branche). Als Domains (z. B. wettbewerber.de) oder Firmennamen, je ein Eintrag.
+2. Genau 10 typische Suchanfragen, die Nutzer in ChatGPT, Perplexity oder anderen LLMs stellen könnten, um solche Unternehmen, Produkte oder Leistungen zu finden. Alle Suchanfragen auf Deutsch. Mix aus: "beste [Produkt] in [Region]", "top [Branche] Unternehmen", "[Leistung] Anbieter Empfehlung" usw.
 
-Reply ONLY with a single JSON object. No markdown, no text outside JSON.
-Required structure:
+Antworte ausschließlich mit einem einzigen JSON-Objekt. Kein Markdown, kein Text außerhalb des JSON.
+Erforderliche Struktur:
 {
-  "competitors": ["domain1.com", "domain2.com", ...],
-  "queries": ["query 1", "query 2", ...]
+  "competitors": ["domain1.de", "domain2.de", ...],
+  "queries": ["Anfrage 1", "Anfrage 2", ...]
 }`;
 
 export async function POST(request: NextRequest) {
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
             model: SUGGEST_MODEL,
             messages: [
                 { role: 'system', content: SYSTEM_PROMPT },
-                { role: 'user', content: `Website URL: ${url}\nDomain: ${domain}\nSuggest 5 competitors and 10 typical LLM search queries for this company. Reply with JSON only.` },
+                { role: 'user', content: `Website-URL: ${url}\nDomain: ${domain}\nSchlage 5 Wettbewerber und 10 typische LLM-Suchanfragen für dieses Unternehmen vor. Antworte nur mit JSON. Alle Texte auf Deutsch.` },
             ],
         });
 

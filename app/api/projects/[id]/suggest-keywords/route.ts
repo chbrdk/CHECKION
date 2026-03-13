@@ -14,10 +14,11 @@ import { extractHostname, parseKeywordsResponse } from '@/lib/geo-eeat/suggest-p
 
 const SUGGEST_MODEL = process.env.OPENAI_SUGGEST_MODEL ?? 'gpt-4o-mini';
 
-const SYSTEM_PROMPT = `You are an expert in SEO and keyword research. Given a company website URL or company name, suggest 10–15 SEO keywords suitable for rank tracking. Include a mix of head terms, mid-tail, and long-tail keywords. Use the same language as the domain if obvious (e.g. .de = German), otherwise use English. Return ONLY a single JSON object. No markdown, no text outside JSON.
-Required structure:
+const SYSTEM_PROMPT = `Du bist ein Experte für SEO und Keyword-Recherche. Zu einer Unternehmens-URL oder einem Firmennamen schlägst du 10–15 SEO-Keywords für Rank-Tracking vor. Mix aus Head-, Mid- und Long-Tail-Keywords. Alle Keywords auf Deutsch.
+Antworte ausschließlich mit einem einzigen JSON-Objekt. Kein Markdown, kein Text außerhalb des JSON.
+Erforderliche Struktur:
 {
-  "keywords": ["keyword 1", "keyword 2", ...]
+  "keywords": ["Keyword 1", "Keyword 2", ...]
 }`;
 
 export async function POST(
@@ -69,7 +70,7 @@ export async function POST(
             model: SUGGEST_MODEL,
             messages: [
                 { role: 'system', content: SYSTEM_PROMPT },
-                { role: 'user', content: `Website URL: ${url}\nDomain: ${domain}\nProject name: ${project.name}\nSuggest 10–15 SEO keywords for rank tracking. Reply with JSON only.` },
+                { role: 'user', content: `Website-URL: ${url}\nDomain: ${domain}\nProjektname: ${project.name}\nSchlage 10–15 SEO-Keywords für Rank-Tracking vor. Antworte nur mit JSON. Alle Keywords auf Deutsch.` },
             ],
         });
 
