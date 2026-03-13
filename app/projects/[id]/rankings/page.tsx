@@ -400,7 +400,7 @@ export default function ProjectRankingsPage() {
                                     borderRadius="button"
                                     sx={{
                                         p: 'var(--msqdx-spacing-md)',
-                                        border: '1px solid var(--color-border-subtle, #eee)',
+                                        border: '1px solid var(--color-secondary-dx-green)',
                                         bgcolor: 'var(--color-card-bg)',
                                         color: 'var(--color-text-on-light)',
                                         display: 'flex',
@@ -410,7 +410,7 @@ export default function ProjectRankingsPage() {
                                 >
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1, mb: 1 }}>
                                         <MsqdxTypography variant="subtitle2" weight="semibold" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
-                                            {k.domain} — {k.keyword}
+                                            {k.keyword}
                                         </MsqdxTypography>
                                         <MsqdxIconButton
                                             size="small"
@@ -447,7 +447,7 @@ export default function ProjectRankingsPage() {
                                     <Box sx={{ flex: 1, minHeight: 200, width: '100%' }}>
                                         <RankTrackingChart
                                             keywordId={k.id}
-                                            keywordLabel={`${k.domain} — ${k.keyword}`}
+                                            keywordLabel={k.keyword}
                                             ourDomain={k.domain}
                                             competitorDomains={competitors}
                                             t={t}

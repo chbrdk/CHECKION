@@ -51,6 +51,8 @@
   --color-card-bg: var(--color-primary-white);
   --color-text-on-light: #0f172a;
   --color-text-muted-on-light: #475569;
+  /* Dunklere Umrandung/Grid auf hellem Grund (z. B. Diagramme) */
+  --color-border-on-light: #94a3b8;
 }
 
 [data-theme="light"] {

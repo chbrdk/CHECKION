@@ -124,6 +124,7 @@ export function RankTrackingChart({
     const allDomains = useMemo(() => [ourDomain, ...competitorDomains], [ourDomain, competitorDomains]);
     const textMuted = 'var(--color-text-muted-on-light)';
     const borderColor = 'var(--color-border-subtle, #eee)';
+    const gridStroke = 'var(--color-border-on-light)';
     const tooltipContentStyle = {
         backgroundColor: 'var(--color-card-bg, #fff)',
         border: `1px solid ${borderColor}`,
@@ -193,18 +194,18 @@ export function RankTrackingChart({
                         data={chartData}
                         margin={{ top: 8, right: 8, left: 0, bottom: 8 }}
                     >
-                        <CartesianGrid strokeDasharray="3 3" stroke={borderColor} />
+                        <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} strokeWidth={1} />
                         <XAxis
                             dataKey="date"
                             tick={{ fill: textMuted, fontSize: 11 }}
-                            stroke={borderColor}
+                            stroke={gridStroke}
                         />
                         <YAxis
                             domain={[maxPos, 1]}
                             reversed
                             allowDataOverflow
                             tick={{ fill: textMuted, fontSize: 11 }}
-                            stroke={borderColor}
+                            stroke={gridStroke}
                             width={28}
                         />
                         <Tooltip
@@ -221,8 +222,8 @@ export function RankTrackingChart({
                             dataKey={ourDomain}
                             name={ourDomain}
                             stroke={CHART_COLORS[0]}
-                            strokeWidth={2}
-                            dot={{ r: 2 }}
+                            strokeWidth={2.5}
+                            dot={{ r: 3 }}
                             connectNulls
                         />
                         {competitorDomains.map((dom, idx) => (
@@ -232,8 +233,8 @@ export function RankTrackingChart({
                                 dataKey={dom}
                                 name={dom}
                                 stroke={CHART_COLORS[(idx + 1) % CHART_COLORS.length]}
-                                strokeWidth={1.5}
-                                dot={{ r: 2 }}
+                                strokeWidth={2}
+                                dot={{ r: 2.5 }}
                                 connectNulls
                             />
                         ))}

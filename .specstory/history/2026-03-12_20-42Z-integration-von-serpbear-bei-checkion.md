@@ -23805,3 +23805,539 @@ Status: **completed**
 
 ---
 
+<think><details><summary>Thought Process</summary>
+
+Found it. The grid currently has:
+- xs: 1fr (1 column)
+- sm: repeat(2, 1fr) (2 columns)
+- md: repeat(3, 1fr) (3 columns)
+- lg: repeat(4, 1fr) (4 columns)
+
+The user wants "maximal 3 spaltig" - so at most 3 columns. I need to change lg from 4 columns to 3 columns. So the grid should be:
+- xs: 1fr
+- sm: repeat(2, 1fr)
+- md: repeat(3, 1fr)
+- lg: repeat(3, 1fr)  (cap at 3, no 4 columns)
+</details></think>
+
+---
+
+
+Grid auf maximal 3 Spalten begrenzen (lg bisher 4).
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Done. Now the grid is at most 3 columns: 1 on xs, 2 on sm, 3 on md and lg. No 4-column layout anymore.
+</details></think>
+
+---
+
+
+Erledigt. Das Keyword-Karten-Grid ist jetzt auf **maximal 3 Spalten** begrenzt:
+
+- **xs:** 1 Spalte  
+- **sm:** 2 Spalten  
+- **md / lg:** 3 Spalten (keine 4. Spalte mehr)
+
+Die Karten bleiben also auch auf großen Viewports bei 3 Spalten und wirken nicht zu schmal.
+
+---
+
+_**User**_
+
+DOM Path: div.MuiBox-root c.-azg.63 > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-anclqx > div.MuiBox-root c.-1whhp80 > div.MuiStack-root c.-yd8.a2 > div.MuiBox-root c.-17b4aqi[1] > div.MuiBox-root c.-1.g4afn > div.MuiBox-root c.-1hdbc19 > div.MuiBox-root c.-a1igic > div.MuiBox-root c.-1ncjp16 > div.MuiBox-root c.-1f1nat5[0] > div.MuiBox-root c.-1.g4afn > div.MuiBox-root c.-1twd594 > h6.MuiTypography-root MuiTypography-.ubtitle2 c.-joprbf
+Position: top=253px, left=126px, width=296px, height=21px
+React Component: ForwardRef
+HTML Element: <h6 class="MuiTypography-root MuiTypography-subtitle2 css-joprbf" data-cursor-element-id="cursor-el-1">ksb.com — pumping systems manufacturer</h6> wir müssen nicht den company namen vorne anführen
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is referring to the keyword card title that shows "ksb.com — pumping systems manufacturer". They say we don't need to lead with the company name ("wir müssen nicht den company namen vorne anführen") - so they want to remove or change the display so it doesn't start with the domain/company name. Probably they want to show just the keyword, e.g. "pumping systems manufacturer" instead of "ksb.com — pumping systems manufacturer".
+
+Let me find where this is rendered - it's the card header that shows `{k.domain} — {k.keyword}`. I need to change it to just show the keyword, or perhaps "keyword" only (e.g. `{k.keyword}`).
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "domain.*keyword|k\\.domain.*k\\.keyword",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "domain.*keyword|k\\.domain.*k\\.keyword",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 10,
+  "topFiles": [
+    {
+      "uri": "app/projects/[id]/rankings/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll change both places to show only the keyword. The card title becomes just `{k.keyword}`. For the chart's keywordLabel we could keep it as is for the chart context (axis/tooltip) or also use just the keyword - I'll use just the keyword for consistency so the chart label doesn't repeat the domain either.
+</details></think>
+
+---
+
+
+Anzeige auf nur das Keyword umstellen (ohne Domain vorne).
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Done. Card title and chart label now show only the keyword (e.g. "pumping systems manufacturer") without "ksb.com — " in front.
+</details></think>
+
+---
+
+
+Änderung ist umgesetzt:
+
+- **Karten-Titel:** Zeigt nur noch das Keyword (z. B. „pumping systems manufacturer“), die Domain (ksb.com) steht nicht mehr davor.
+- **Chart-Label:** Verwendet ebenfalls nur noch das Keyword.
+
+Die Domain bleibt in der Card weiterhin über die Projekt-/Keyword-Daten und die Chart-Legende (ourDomain) erkennbar, steht aber nicht mehr im Titel.
+
+---
+
+_**User**_
+
+DOM Path: div.MuiBox-root c.-azg.63 > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-anclqx > div.MuiBox-root c.-1whhp80 > div.MuiStack-root c.-yd8.a2 > div.MuiBox-root c.-17b4aqi[1] > div.MuiBox-root c.-1.g4afn > div.MuiBox-root c.-1hdbc19 > div.MuiBox-root c.-a1igic > div.MuiBox-root c.-1ncjp16 > div.MuiBox-root c.-1f1nat5[0]
+Position: top=220px, left=93px, width=561px, height=480px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-1f1nat5" data-cursor-element-id="cursor-el-96">ksb.com — pumping systems manufacturer de/de · Position: — · sulzer.com: 1 · Letzte Aktualisierung: 13.3.2026 ksb.com — pumping systems manufacturer 7d 30d 90d 1J flowserve.comgrundfos.comksb.comsulze</div> kann die card nicht auch die volle brandcolor variable bekommen als border
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants the ranking keyword card to have a border using the full brand color variable. So instead of the current border (e.g. `border: '1px solid var(--color-border-subtle, #eee)'`), they want to use the brand color for the border.
+
+I need to find where the MsqdxCard for the keyword is styled and add a brand color border. Let me check the rankings page for the card styling and what brand color variable is used in the project.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "border|brand|--color|--msqdx",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx",
+  "contextBefore": 0,
+  "contextAfter": 0,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "border|brand|--color|--msqdx",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 145,
+  "topFiles": [
+    {
+      "uri": "app/projects/[id]/rankings/page.tsx",
+      "matchCount": 29
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 29
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 29
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 29
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 29
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "brand|--msqdx|primary|green",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.css",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "brand|--msqdx|primary|green",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 175,
+  "topFiles": [
+    {
+      "uri": "./styles/globals.css",
+      "matchCount": 35
+    },
+    {
+      "uri": "../CHECKION-1/styles/globals.css",
+      "matchCount": 35
+    },
+    {
+      "uri": "../CHECKION-1/styles/globals.css",
+      "matchCount": 35
+    },
+    {
+      "uri": "../CHECKION-1/styles/globals.css",
+      "matchCount": 35
+    },
+    {
+      "uri": "../CHECKION-1/styles/globals.css",
+      "matchCount": 35
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see the project uses `--color-secondary-dx-green` for the green brand. The user asked for "die volle brandcolor variable" - so use the brand color variable for the card border. I'll use the existing green variable `--color-secondary-dx-green` for the keyword card border. If there's a more generic "brand" variable I should check globals.css.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/styles/globals.css</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see the project has `--color-secondary-dx-green` for the green brand. There's no single "brand" variable; the green is the primary brand color used in the app (e.g. brandColor="green" on buttons). I'll use `var(--color-secondary-dx-green)` for the card border so it uses the full brand color variable. If they want a generic "brand" variable we could add one, but "volle brandcolor variable" likely means the main green brand color they already use.
+</details></think>
+
+---
+
+
+Keyword-Card mit grüner Brandfarbe als Rahmen versehen:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Done. The keyword card now uses the brand color variable `--color-secondary-dx-green` for its border instead of the subtle gray. This matches the "volle brandcolor variable" request.
+</details></think>
+
+---
+
+
+Die Keyword-Card hat jetzt einen Rahmen in der Brandfarbe:
+
+- **Rahmen:** `border: 1px solid var(--color-secondary-dx-green)` – nutzt die zentrale grüne Brand-Variable aus `globals.css` (`#00ca55`) statt des bisherigen dezenten Graus.
+
+Damit ist die Card klar als Marken-Element erkennbar.
+
+---
+
+_**User**_
+
+können wir die linien im diagramm DOM Path: div.MuiBox-root c.-azg.63 > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-anclqx > div.MuiBox-root c.-1whhp80 > div.MuiStack-root c.-yd8.a2 > div.MuiBox-root c.-17b4aqi[1] > div.MuiBox-root c.-1.g4afn > div.MuiBox-root c.-1hdbc19 > div.MuiBox-root c.-a1igic > div.MuiBox-root c.-1ncjp16 > div.MuiBox-root c.-1f1nat5[0] > div.MuiBox-root c.-1.g4afn > div.MuiBox-root c.-me3dl2 > div.MuiBox-root c.-12hkkyy > div.MuiBox-root c.-yo1co2 > div.rechart.-re.pon.ive-container > div > div.rechart.-wrapper > svg > g[0] > g > g[0] > line[0]
+Position: top=441px, left=154px, width=459px, height=0px
+HTML Element: <line stroke-dasharray="3 3" stroke="var(--color-border-subtle, #eee)" fill="none" x="28" y="8" width="459" height="184.5" x1="28" y1="69.5" x2="487" y2="69.5" data-cursor-element-id="cursor-el-184"></line> besser sichtbar machen?
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants to make the lines in the chart diagram more visible. The DOM path points to a line element with `stroke-dasharray="3 3"` and `stroke="var(--color-border-subtle, #eee)"` - this is the CartesianGrid in the Recharts LineChart. So they want the grid lines (and possibly the data lines) to be more visible.
+
+Let me look at the RankTrackingChart component where the grid and lines are defined.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The user wants the grid lines (and possibly the axes/data lines) to be more visible. Currently:
+- CartesianGrid uses `stroke={borderColor}` which is `var(--color-border-subtle, #eee)` - a very light gray
+- On a light card background (#eee or similar) this can be hard to see
+
+I'll:
+1. Use a darker/more visible color for the grid - e.g. a medium gray that works on light background, or use a CSS variable that's more visible. In globals.css we have `--color-text-muted-on-light: #475569` - using something like that for grid could work, or a dedicated slightly darker border. Let me use something like `rgba(0,0,0,0.12)` or a token. Checking - the card has light bg, so we need a darker stroke. I'll use a more visible gray e.g. `#ccc` or `var(--color-text-muted-on-light)` with lower opacity, or just a solid #d1d5db / #e5e7eb (tailwind gray-300/200). Actually the user said "besser sichtbar" so just make the grid lines more visible. I'll use a darker stroke color like #d1d5db or rgba(0,0,0,0.15).
+2. Optionally make the data lines (Line components) slightly thicker so they stand out more - they're already 2 and 1.5.
+
+Let me update the CartesianGrid stroke to a more visible color. I could also reduce or remove the dash array so the lines are solid and more visible. I'll use a more visible grid color and maybe make the stroke a bit thicker (strokeWidth on CartesianGrid if supported - need to check Recharts). Actually CartesianGrid doesn't have strokeWidth in the same way - it's the stroke attribute. So I'll just change the stroke to a more visible color. Something like #d4d4d4 or #a3a3a3 (neutral-300/400) so the grid is clearly visible but not overwhelming.
+</details></think>
+
+---
+
+
+Grid-Linien und Achsen sichtbarer machen: dunkleren Strich und optional etwas kräftigere Datenlinien.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+</details></think>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Recharts CartesianGrid - I added strokeWidth={1}. Let me check if CartesianGrid supports strokeWidth. In SVG, the line elements get stroke from CartesianGrid - in Recharts the API might not expose strokeWidth. If it doesn't, the default is 1 anyway. The main improvement is the darker stroke color (gridStroke). Done.
+</details></think>
+
+---
+
+
+Hier die Anpassungen:
+
+**1. Grid- und Achsenlinien**
+- **Neue Farbe:** `gridStroke = 'rgba(0,0,0,0.14)'` statt `var(--color-border-subtle, #eee)` – auf hellem Kartenhintergrund besser erkennbar.
+- **CartesianGrid:** `stroke={gridStroke}` und explizit `strokeWidth={1}`.
+- **XAxis & YAxis:** `stroke={gridStroke}`, damit die Achsenstriche zur Grid-Optik passen.
+
+**2. Datenlinien (Kurven)**
+- **Eigene Domain:** `strokeWidth` 2 → 2.5, `dot r` 2 → 3.
+- **Competitors:** `strokeWidth` 1.5 → 2, `dot r` 2 → 2.5.
+
+Grid und Kurven sind damit klarer sichtbar, die Kurven wirken etwas kräftiger.
+
+---
+
+_**User**_
+
+nein nutze lieber eine var color aber halt eine dunkelere
+
+---
+
