@@ -57,6 +57,10 @@ function formatPositionTooltip(value: unknown, name: string): [string, string] {
     return [display, name];
 }
 
+function formatTooltipLabel(label: string): string {
+    return label;
+}
+
 export function RankTrackingChart({
     keywordId,
     keywordLabel,
@@ -206,7 +210,7 @@ export function RankTrackingChart({
                             }}
                             labelStyle={{ color: 'var(--color-text-on-light)' }}
                             formatter={formatPositionTooltip}
-                            labelFormatter={(label: string) => label}
+                            labelFormatter={formatTooltipLabel}
                         />
                         <Legend
                             wrapperStyle={{ fontSize: 11 }}
