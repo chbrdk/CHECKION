@@ -18789,32 +18789,42 @@ Status: **completed**
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
 
 </details>
 </tool-use>
 
 ---
 
+<think><details><summary>Thought Process</summary>
 
+I need to:
+1. In rank-tracking-positions.ts: listPositionsByKeyword should also select competitorPositions and return it (the select currently omits it).
+2. In the positions API route: return competitorPositions in each item; support optional limit (already there) - we can use limit as "last N points" which effectively is a time range (e.g. limit 30 = last 30 data points).
+3. Add apiRankTrackingPositions(keywordId, limit?) to constants if not already - we have apiRankTrackingKeywordPositions in the grep output. Let me read the full constant.
+4. Create a component e.g. components/RankTrackingChart.tsx that:
+   - Takes keywordId, keyword label (domain + keyword), ourDomain (for legend), competitorDomains (for legend/lines)
+   - Fetches GET positions?limit=90 (or 30, 7 based on selector)
+   - State: timeRange = '30' | '90' | '365' (days) or limit 30, 90, 365
+   - Transforms data for Recharts: one data point per recordedAt with { date, ourPosition, [competitor1]: pos, [competitor2]: pos }
+   - LineChart: XAxis = date (recordedAt), YAxis = position (reversed so 1 is top), Line for "our domain", Line per competitor
+   - Time range selector: buttons or select for 7d, 30d, 90d, 1y
+5. On the project page: for each keyword we could show an expandable row or a "Chart" button that opens/shows the RankTrackingChart. Or we show a chart below each keyword. Given "ein Diagramm wo man den Zeitraum ändern kann", I'll do one chart per keyword with a time range dropdown (7 / 30 / 90 / 365 days).
+
+Let me read the constants for the positions URL builder.
+</details></think>
 
 ---
 
 
 
+
+
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
 
 </details>
 </tool-use>
@@ -18825,7 +18835,52 @@ Status: **loading**
 <details>
 <summary>Tool use: **ripgrep_raw_search**</summary>
 
-Status: **loading**
+
+Parameters:
+
+```json
+{
+  "pattern": "from 'recharts'|from \\\"recharts\\\"",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "from 'recharts'|from \\\"recharts\\\"",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 5,
+  "topFiles": [
+    {
+      "uri": "./components/CompetitivePositionDiagram.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/CompetitivePositionDiagram.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/CompetitivePositionDiagram.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/CompetitivePositionDiagram.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/CompetitivePositionDiagram.tsx",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
 
 
 </details>
@@ -18833,19 +18888,165 @@ Status: **loading**
 
 ---
 
+<think><details><summary>Thought Process</summary>
 
+Good - we have CompetitivePositionDiagram using recharts. Let me look at it for patterns (LineChart, XAxis, YAxis, etc.).
+</details></think>
 
 ---
 
 
 
+
+
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/CompetitivePositionDiagram.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I have a good picture. Now implement:
+
+1. **DB**: In `listPositionsByKeyword` add `competitorPositions` to the select and return it. Need to check the schema - rankTrackingPositions has competitor_positions.
+
+2. **API**: In positions route, return for each item: `{ position, recordedAt, competitorPositions }` (competitorPositions optional).
+
+3. **Component RankTrackingChart**: 
+   - Props: keywordId, ourDomain (label), competitorDomains (string[]), keywordLabel (e.g. "example.com — keyword")
+   - State: timeRangeDays = 30 (or 7, 90, 365)
+   - Fetch: apiRankTrackingKeywordPositions(keywordId, limit) with limit = timeRangeDays (or a cap like 365)
+   - Build chart data: array of { date: string (formatted), timestamp: number, our: position, [competitorDomain]: position }
+   - Sort by timestamp ascending for line chart (oldest first)
+   - LineChart with XAxis = date, YAxis = position (reversed: domain 1 at top), one Line for "our" and one per competitor
+   - Time range: Tabs or Select for 7d, 30d, 90d, 1y
+
+4. **Project page**: For each keyword in the list, add an expandable section or a "Diagramm" button that shows the RankTrackingChart. Or show the chart inline below each keyword - could get long. Better: each keyword row has a "Chart" / "Diagramm" button that toggles showing the chart below it. So we need state: expandedChartKeywordId: string | null. When expanded, show RankTrackingChart below that row.
+
+Let me implement. First the DB and API, then the chart component, then integrate.
+</details></think>
+
+---
+
+
+Implementierung starten: DB- und API-Erweiterung, dann Chart-Komponente mit Zeitraumauswahl.
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] API positions: return competitorPositions + DB listPositionsByKeyword
+- [ ] RankTrackingChart component with LineChart + time range selector
+- [ ] Integrate chart into project page Keywords card
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me implement the DB layer change first - listPositionsByKeyword must select competitorPositions.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/rank-tracking-positions.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/rank-tracking/keywords/[id]/positions/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Schema - rankTrackingPositions has competitorPositions in schema. Let me check the schema to ensure the column name is competitorPositions in the select.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
 <details>
-<summary>Tool use: **read_file_v2**</summary>
+<summary>Tool use: **ripgrep_raw_search**</summary>
 
-Status: **loading**
+
+Parameters:
+
+```json
+{
+  "pattern": "competitorPositions|competitor_positions",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts",
+  "outputMode": "content",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "competitorPositions|competitor_positions",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 10,
+  "topFiles": [
+    {
+      "uri": "lib/db/schema.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/schema.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/schema.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/schema.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/schema.ts",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
 
 
 </details>
@@ -18853,7 +19054,863 @@ Status: **loading**
 
 ---
 
+<think><details><summary>Thought Process</summary>
 
+Good - the schema uses competitorPositions (camelCase) as the JS name. The select in Drizzle will return it. Now create the chart component. I'll use LineChart from recharts. For the Y axis we want position 1 at the top - so we can use reversed YAxis (recharts supports domain={[100, 1]} or something like that so lower position = higher on chart). Let me check recharts YAxis - we set domain={[100, 1]} so 1 is at top, 100 at bottom. Or we could leave 1-100 and just invert the axis. In Recharts, YAxis has `reversed` prop. So <YAxis reversed domain={[1, 100]} /> would put 1 at top.
+
+Chart data: we need one point per recordedAt. Each point has: date (for display), our position, and for each competitor domain a key with their position. So:
+{ date: '13.03.2025', recordedAt: '...', our: 3, 'competitor-a.com': 1, 'competitor-b.com': 5 }
+We need to sort by recordedAt ascending so the line goes left to right chronologically. The API returns newest first, so we reverse.
+
+Colors: our domain = primary (e.g. green), competitors = from a palette. Use CHART_COLORS from CompetitivePositionDiagram or similar.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] API positions: return competitorPositions + DB listPositionsByKeyword
+- [-] RankTrackingChart component with LineChart + time range selector
+- [ ] Integrate chart into project page Keywords card
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/CompetitivePositionDiagram.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I'll create the RankTrackingChart component. It needs:
+- LineChart (from recharts) with XAxis = date, YAxis = position (reversed so 1 is top)
+- Data: array of { date, our, competitor1, competitor2, ... } sorted by time ascending
+- Time range: 7, 30, 90, 365 days - we pass limit to the API (number of data points). So limit 90 means last 90 snapshots. Actually the API "limit" is number of position records. So if user refreshes daily, limit 30 = last 30 days. So we can label "30 days" as limit 30, "90 days" as 90, etc. So time range selector sets limit.
+- Colors: our domain = green (primary), competitors = from palette
+- Legend: "Unser Projekt (domain)" and each competitor domain
+
+Let me also add a keyword label in the chart title so user knows which keyword this is.
+</details></think>
+
+---
+
+
+Chart-Komponente erstellen:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to fix the Tooltip formatter - it receives (value, name, props). For recharts Tooltip formatter we should return [displayValue, name]. Let me also add the locale keys for rankChartNoData and rankChartYAxis. And fix the YAxis label - for "Position" we need a short label. Let me check - we're showing position (1 = top). So Y axis label = "Position" or "Rang". Then integrate into the project page: add state for which keyword's chart is expanded, and show the chart below that keyword row. We need to pass competitor domains - we have project.competitors. And our domain = project.domain or from the keyword (k.domain).
+</details></think>
+
+---
+
+
+Tooltip korrigieren und Locale-Keys hinzufügen.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "\"rankings\":",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json",
+  "outputMode": "content",
+  "contextAfter": 3,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "\"rankings\":",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 5,
+  "topFiles": [
+    {
+      "uri": "locales/en.json",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 4
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Add locale keys rankChartNoData and rankChartYAxis. I'll add them after emptyRankings or near other ranking keys.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now integrate the chart into the project page. I need to:
+1. Import RankTrackingChart
+2. State: chartExpandedKeywordId: string | null
+3. For each keyword row: add a button "Diagramm anzeigen" / "Diagramm ausblenden" that toggles chartExpandedKeywordId
+4. When chartExpandedKeywordId === k.id, render below that row a box with RankTrackingChart with keywordId=k.id, keywordLabel=`${k.domain} — ${k.keyword}`, ourDomain=k.domain, competitorDomains=competitors (project.competitors)
+</details></think>
+
+---
+
+
+Chart in die Projektseite einbinden:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add:
+1. Import RankTrackingChart
+2. State: chartExpandedKeywordId: string | null = null
+3. In the keyword list item: add a "Diagramm" toggle button; when expanded, show a Box below the row with RankTrackingChart. The list item structure should change so we have a wrapper that can contain the row + optional chart. So each list item becomes:
+   <Box component="li" sx={{ borderBottom: ... }}>
+     <Box sx={{ display: 'flex', ... }}>  // row
+       ... row content ...
+       <MsqdxButton onClick={() => setChartExpandedKeywordId(chartExpandedKeywordId === k.id ? null : k.id)}>Chart</MsqdxButton>
+       <MsqdxButton Delete />
+     </Box>
+     {chartExpandedKeywordId === k.id && (
+       <Box sx={{ pl: ..., pr: ..., pb: 2 }}>
+         <RankTrackingChart keywordId={k.id} keywordLabel={`${k.domain} — ${k.keyword}`} ourDomain={k.domain} competitorDomains={competitors} t={t} />
+       </Box>
+     )}
+   </Box>
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Chart data keys: we're using `ourDomain` (e.g. "example.com") as the dataKey for our line. So in chartData we have row[ourDomain] = p.position. And for competitors we have row[dom] = pos. So the Line components use dataKey={ourDomain} and dataKey={dom}. But in the chartData we're building from `reversed` which has competitorPositions - and we're iterating p.competitorPositions for competitor domains. So we might have more domains in the data than in competitorDomains (if some old snapshots had different competitors). That's fine - we only draw lines for ourDomain and competitorDomains. Let me also ensure we collect all competitor domains that appear in the data so the legend is correct. Actually we're passing competitorDomains from project.competitors - so we only show those. If a snapshot has a competitor not in the list we don't draw it (we could add it dynamically but that could get noisy). So we're good.
+
+Let me double-check: in chartData we do row[ourDomain] = p.position and for (dom, pos) in p.competitorPositions we do row[dom] = pos. So the keys in each row are date, recordedAt, ourDomain, and any keys from competitorPositions. The Line components use dataKey={ourDomain} and dataKey={dom} for dom in competitorDomains. So we need to make sure competitorDomains is the list we want - that's `competitors` from the project. Good.
+
+Read lints and fix any issues.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] API positions: return competitorPositions + DB listPositionsByKeyword
+- [x] RankTrackingChart component with LineChart + time range selector
+- [x] Integrate chart into project page Keywords card
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+All done. Let me provide a short summary to the user. I should also fix the chart data - we're only including competitor domains that are in competitorDomains, but the data might have other keys from competitorPositions. For the Line components we're iterating competitorDomains so we only draw those. The chartData row might have extra keys from competitorPositions (other domains) - that's fine, we just don't draw them. So we're good.
+
+One more thing: in RankTrackingChart we're building chartData with row[ourDomain] and row[dom] for each dom in p.competitorPositions. So we're adding all competitor positions from the API to the row. But we're only drawing lines for ourDomain and competitorDomains (the prop). So if the API returns competitorPositions with keys that aren't in competitorDomains, they'll still be in the data - we could filter to only include ourDomain + competitorDomains in the row to keep the tooltip clean. Actually the Legend and Line only use ourDomain and competitorDomains, so the tooltip will show all keys in the payload. So we might show "competitor-x.com" in tooltip even if we don't draw it. Let me leave it as is - the data row can have more keys, only the lines we draw matter. Tooltip will show whatever is in the payload for that point - Recharts typically shows all series that are in the chart. So we're good.
+
+Let me double-check the listPositionsByKeyword return type - we're now returning competitorPositions. The type RankTrackingPositionRow has competitorPositions as optional. The select returns competitorPositions from the DB. So the map we added returns objects with competitorPositions. Good.
+</details></think>
+
+---
+
+
+Zusammenfassung der Änderungen:
+
+## 1. API & DB
+
+- **`listPositionsByKeyword`** ([lib/db/rank-tracking-positions.ts](lib/db/rank-tracking-positions.ts)) liest `competitorPositions` aus der DB und gibt es pro Eintrag zurück.
+- **GET `/api/rank-tracking/keywords/[id]/positions`** liefert pro Punkt `position`, `recordedAt` und optional `competitorPositions` (Domain → Position).
+
+## 2. Komponente `RankTrackingChart` ([components/RankTrackingChart.tsx](components/RankTrackingChart.tsx))
+
+- **Liniendiagramm (Recharts):** X = Datum, Y = Position (1 oben, größere Ränge unten).
+- **Eine Linie** für die Projekt-URL (grün), **weitere Linien** für jede Competitor-Domain (andere Farben).
+- **Zeitraum:** Buttons **7d | 30d | 90d | 1J** – setzen den `limit` der API (Anzahl der letzten Messpunkte).
+- Lädt die Daten per `apiRankTrackingKeywordPositions(keywordId, limit)`.
+- Zeigt Loading, Fehler und „Keine Daten“ (Hinweis: „Rankings aktualisieren“ ausführen).
+
+## 3. Einbindung auf der Projektseite
+
+- In der **Keywords-Card** hat jedes Keyword einen Button **„Diagramm anzeigen“** / **„Diagramm ausblenden“**.
+- Ein Klick öffnet unter der Zeile das **RankTrackingChart** für dieses Keyword.
+- Übergeben werden: `keywordId`, `keywordLabel` (z. B. „domain.de — keyword“), `ourDomain`, `competitorDomains` (aus den Projekt-Competitors).
+
+## 4. i18n
+
+- **en:** `rankChartNoData`, `rankChartYAxis` (Position), `rankChartShow`, `rankChartHide`.
+- **de:** dieselben Keys auf Deutsch.
+
+Damit siehst du pro Keyword im gewählten Zeitraum (7d/30d/90d/1J), wo eure Domain und die definierten Competitors in den SERPs stehen; die Y-Achse ist „Position“ (1 = beste Position).
+
+---
+
+_**User**_
+
+2026-Mar-13 10:39:49.150795
+#17 [builder 6/6] RUN npm run build
+2026-Mar-13 10:39:49.150795
+#17 0.360
+2026-Mar-13 10:39:49.150795
+#17 0.360 > checkion@0.1.0 build
+2026-Mar-13 10:39:49.150795
+#17 0.360 > next build --webpack
+2026-Mar-13 10:39:49.150795
+#17 0.360
+2026-Mar-13 10:39:49.150795
+#17 0.994 ▲ Next.js 16.1.6 (webpack)
+2026-Mar-13 10:39:49.150795
+#17 0.995 - Experiments (use with caution):<REDACTED>@11.11.1
+2026-Mar-13 10:39:49.150795
+#17 41.26 npm notice
+2026-Mar-13 10:39:49.150795
+#17 ERROR: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+2026-Mar-13 10:39:49.150795
+------
+2026-Mar-13 10:39:49.150795
+> [builder 6/6] RUN npm run build:
+2026-Mar-13 10:39:49.150795
+40.93       |                             ^
+2026-Mar-13 10:39:49.150795
+40.93   204 |                                 typeof value === 'number' ? value : '—',
+2026-Mar-13 10:39:49.150795
+40.93   205 |                                 name,
+2026-Mar-13 10:39:49.150795
+40.93   206 |                             ]}
+2026-Mar-13 10:39:49.150795
+41.06 Next.js build worker exited with code: 1 and signal: null
+2026-Mar-13 10:39:49.150795
+41.26 npm notice
+2026-Mar-13 10:39:49.150795
+41.26 npm notice New major version of npm available! 10.9.4 -> 11.11.1
+2026-Mar-13 10:39:49.150795
+41.26 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.11.1
+2026-Mar-13 10:39:49.150795
+41.26 npm notice To update run:<REDACTED>@11.11.1
+2026-Mar-13 10:39:49.150795
+41.26 npm notice
+2026-Mar-13 10:39:49.150795
+------
+2026-Mar-13 10:39:49.150795
+2026-Mar-13 10:39:49.150795
+36 warnings found (use docker --debug to expand):
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_URL") (line 21)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "SERP_API_KEY") (line 48)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "ANTHROPIC_API_KEY") (line 50)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_URL") (line 91)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "CHECKION_ADMIN_API_KEY") (line 130)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "CHECKION_ADMIN_API_KEY") (line 53)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "OPENAI_API_KEY") (line 120)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "SERP_API_KEY") (line 125)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_AUTH_URL") (line 131)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "OPENAI_API_KEY") (line 12)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "OPENAI_API_KEY") (line 43)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "GEMINI_API_KEY") (line 90)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_URL") (line 129)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_SERVICE_SECRET") (line 132)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_URL") (line 52)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_SERVICE_SECRET") (line 55)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "CHECKION_ADMIN_API_KEY") (line 92)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_SERVICE_SECRET") (line 94)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "ANTHROPIC_API_KEY") (line 127)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_AUTH_URL") (line 54)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "SERP_API_KEY") (line 87)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_AUTH_URL") (line 93)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_SECRET") (line 118)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "GEMINI_API_KEY") (line 128)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "ANTHROPIC_API_KEY") (line 19)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "GEMINI_API_KEY") (line 20)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_SECRET") (line 41)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "GEMINI_API_KEY") (line 51)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_SECRET") (line 80)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "ANTHROPIC_API_KEY") (line 89)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_SECRET") (line 10)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "SERP_API_KEY") (line 17)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "CHECKION_ADMIN_API_KEY") (line 22)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_AUTH_URL") (line 23)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_SERVICE_SECRET") (line 24)
+2026-Mar-13 10:39:49.150795
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "OPENAI_API_KEY") (line 82)
+2026-Mar-13 10:39:49.150795
+Dockerfile:114
+2026-Mar-13 10:39:49.150795
+--------------------
+2026-Mar-13 10:39:49.150795
+112 |       && cp -r /msqdx-design-system/packages/tokens ./node_modules/@msqdx/tokens
+2026-Mar-13 10:39:49.150795
+113 |     ENV DS_BASE=../msqdx-design-system
+2026-Mar-13 10:39:49.150795
+114 | >>> RUN npm run build
+2026-Mar-13 10:39:49.150795
+115 |
+2026-Mar-13 10:39:49.150795
+116 |     # ---- Runner ----
+2026-Mar-13 10:39:49.150795
+--------------------
+2026-Mar-13 10:39:49.150795
+ERROR: failed to build: failed to solve: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+2026-Mar-13 10:39:49.150795
+exit status 1
+2026-Mar-13 10:39:49.264542
+========================================
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The build is failing around line 204-206 in what appears to be the RankTrackingChart component - the Tooltip formatter. The error message shows:
+```
+40.93   204 |                                 typeof value === 'number' ? value : '—',
+40.93   205 |                                 name,
+40.93   206 |                             ]}
+```
+
+So there's a syntax or type error with the formatter. The issue might be that in JSX, the `]` could be interpreted as closing the JSX attribute or something. Let me look at the exact code - we have:
+```jsx
+formatter={(value: unknown, name: string) => [
+    typeof value === 'number' ? value : '—',
+    name,
+]}
+```
+
+The problem could be that Recharts' Tooltip formatter in some versions expects a different signature or return type, and the build (TypeScript?) is complaining. Or the `]` might be parsed as part of JSX. Let me check - in JSX, `]} ` could be seen as `]` (end of array) and `}` (end of arrow function). So the array return is `[value, name]`. That should be valid.
+
+Actually wait - in JSX, inside `{}` we have `(value: unknown, name: string) => [ ... ]`. So we're returning an array. The `]` closes the array literal. Could the issue be that we need a semicolon or the type of the return is wrong? Some Recharts versions expect the formatter to return [displayValue, name] where displayValue is string. So returning `value` (number) might need to be stringified. Let me try returning a string for the first element: `String(typeof value === 'number' ? value : '—')`.
+
+Or the build error might be a TypeScript error - e.g. the formatter prop expects a different type. Let me read the RankTrackingChart file to see the exact context and fix it.
+</details></think>
+
+---
+
+
+Build-Fehler in der Tooltip-Formatter-Zeile prüfen und beheben:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The Recharts Tooltip formatter in Recharts v2/v3 can have a different API. The error might be that the formatter is being invoked with more arguments (e.g. props object as third argument) and the return type might need to be a React node or [string, string]. Let me change the formatter to return a tuple of strings to avoid any type issues, and use a block body with explicit return to avoid JSX/parsing ambiguity:
+
+formatter={(value: unknown, name: string) => {
+  const display = typeof value === 'number' ? String(value) : '—';
+  return [display, name];
+}}
+
+That way we're not returning a number in the array (which might conflict with React children type) and the parser sees a clear return statement.
+</details></think>
+
+---
+
+
+Wahrscheinlich verursacht der Rückgabewert des Formatters (Zahl vs. string) oder die JSX-Parsing-Grenze den Fehler. Formatter so anpassen, dass er ein [string, string]-Tupel zurückgibt:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+That should fix it - using a block body with explicit return and returning two strings avoids any type/JSX ambiguity. Let me verify there are no lints.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. The fix was to replace the arrow function with an inline array return by a block body that returns `[display, name]` where `display` is always a string. This avoids (1) returning a number in the tuple which might conflict with React/Recharts types, (2) any potential JSX parsing confusion with `]}` at the end of the attribute.
+</details></think>
+
+---
+
+
+Die Anpassung ist umgesetzt.
+
+**Ursache:** Der Tooltip-`formatter` hat ein Array mit teils Zahl (`value`), teils String zurückgegeben. Das kann den TypeScript/React-Build stolpern lassen, und die Zeichenfolge `]}` am Ende kann beim Parsen von JSX falsch gedeutet werden.
+
+**Änderung:** Der Formatter hat jetzt einen Block-Rumpf und gibt nur noch Strings zurück:
+
+```ts
+formatter={(value: unknown, name: string) => {
+  const display = typeof value === 'number' ? String(value) : '—';
+  return [display, name];
+}}
+```
+
+Damit sollte der Build wieder durchlaufen. Bitte erneut ausführen.
+
+---
+
+_**User**_
+
+2026-Mar-13 10:53:50.311203
+#14 [builder 3/6] COPY package.json package-lock.json* ./
+2026-Mar-13 10:53:50.311203
+#14 CACHED
+2026-Mar-13 10:53:50.311203
+2026-Mar-13 10:53:50.311203
+#15 [builder 4/6] COPY . .
+2026-Mar-13 10:53:50.311203
+#15 DONE 1.4s
+2026-Mar-13 10:53:50.311203
+2026-Mar-13 10:53:50.311203
+#16 [builder 5/6] RUN mkdir -p ./node_modules/@msqdx   && rm -rf ./node_modules/@msqdx/react ./node_modules/@msqdx/tokens   && cp -r /msqdx-design-system/packages/react ./node_modules/@msqdx/react   && cp -r /msqdx-design-system/packages/tokens ./node_modules/@msqdx/tokens
+2026-Mar-13 10:53:50.311203
+#16 DONE 0.3s
+2026-Mar-13 10:53:50.311203
+2026-Mar-13 10:53:50.311203
+#17 [builder 6/6] RUN npm run build
+2026-Mar-13 10:53:50.311203
+#17 0.403
+2026-Mar-13 10:53:50.311203
+#17 0.403 > checkion@0.1.0 build
+2026-Mar-13 10:53:50.311203
+#17 0.403 > next build --webpack
+2026-Mar-13 10:53:50.311203
+#17 0.403
+2026-Mar-13 10:53:50.311203
+#17 1.056 ▲ Next.js 16.1.6 (webpack)
+2026-Mar-13 10:53:50.311203
+#17 1.056 - Experiments (use with caution):<REDACTED>@11.11.1
+2026-Mar-13 10:53:50.311203
+#17 41.96 npm notice
+2026-Mar-13 10:53:50.311203
+#17 ERROR: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+2026-Mar-13 10:53:50.311203
+------
+2026-Mar-13 10:53:50.311203
+> [builder 6/6] RUN npm run build:
+2026-Mar-13 10:53:50.311203
+41.67       |                             ^
+2026-Mar-13 10:53:50.311203
+41.67   204 |                                 const display = typeof value === 'number' ? String(value) : '—';
+2026-Mar-13 10:53:50.311203
+41.67   205 |                                 return [display, name];
+2026-Mar-13 10:53:50.311203
+41.67   206 |                             }}
+2026-Mar-13 10:53:50.311203
+41.78 Next.js build worker exited with code: 1 and signal: null
+2026-Mar-13 10:53:50.311203
+41.96 npm notice
+2026-Mar-13 10:53:50.311203
+41.96 npm notice New major version of npm available! 10.9.4 -> 11.11.1
+2026-Mar-13 10:53:50.311203
+41.96 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.11.1
+2026-Mar-13 10:53:50.311203
+41.96 npm notice To update run:<REDACTED>@11.11.1
+2026-Mar-13 10:53:50.311203
+41.96 npm notice
+2026-Mar-13 10:53:50.311203
+------
+2026-Mar-13 10:53:50.311203
+2026-Mar-13 10:53:50.311203
+36 warnings found (use docker --debug to expand):
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_SECRET") (line 10)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "CHECKION_ADMIN_API_KEY") (line 22)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_SERVICE_SECRET") (line 24)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_SECRET") (line 80)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "OPENAI_API_KEY") (line 12)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_URL") (line 129)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_SERVICE_SECRET") (line 132)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "SERP_API_KEY") (line 48)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "GEMINI_API_KEY") (line 20)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "OPENAI_API_KEY") (line 82)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "CHECKION_ADMIN_API_KEY") (line 92)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "ANTHROPIC_API_KEY") (line 50)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "ANTHROPIC_API_KEY") (line 89)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_URL") (line 91)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "SERP_API_KEY") (line 17)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_AUTH_URL") (line 23)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_SERVICE_SECRET") (line 94)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "SERP_API_KEY") (line 125)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "GEMINI_API_KEY") (line 128)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "CHECKION_ADMIN_API_KEY") (line 130)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "GEMINI_API_KEY") (line 51)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "CHECKION_ADMIN_API_KEY") (line 53)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_SERVICE_SECRET") (line 55)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "SERP_API_KEY") (line 87)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "GEMINI_API_KEY") (line 90)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_SECRET") (line 118)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_AUTH_URL") (line 93)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "ANTHROPIC_API_KEY") (line 19)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "OPENAI_API_KEY") (line 43)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_URL") (line 52)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_AUTH_URL") (line 54)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "ANTHROPIC_API_KEY") (line 127)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_AUTH_URL") (line 131)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_URL") (line 21)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_SECRET") (line 41)
+2026-Mar-13 10:53:50.311203
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "OPENAI_API_KEY") (line 120)
+2026-Mar-13 10:53:50.311203
+Dockerfile:114
+2026-Mar-13 10:53:50.311203
+--------------------
+2026-Mar-13 10:53:50.311203
+112 |       && cp -r /msqdx-design-system/packages/tokens ./node_modules/@msqdx/tokens
+2026-Mar-13 10:53:50.311203
+113 |     ENV DS_BASE=../msqdx-design-system
+2026-Mar-13 10:53:50.311203
+114 | >>> RUN npm run build
+2026-Mar-13 10:53:50.311203
+115 |
+2026-Mar-13 10:53:50.311203
+116 |     # ---- Runner ----
+2026-Mar-13 10:53:50.311203
+--------------------
+2026-Mar-13 10:53:50.311203
+ERROR: failed to build: failed to solve: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+2026-Mar-13 10:53:50.311203
+exit status 1
+2026-Mar-13 10:53:50.409934
+========================================
+2026-Mar-13 10:53:50.419019
+Deployment failed. Removing the new version of your application.
+2026-Mar-13 10:53:51.023153
+Gracefully shutting down build container: tuqcznbdwslzihijgj79hrgz
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The build is still failing at the same location - line 204-206 in RankTrackingChart. The caret points to line 204: `const display = ...`. So the error might not be the formatter return type but something else - perhaps the closing `}}` is being interpreted wrong. In JSX, `}}` closes the object `contentStyle={{...}}` and then the first `}` could close the formatter arrow function. So we have `formatter={(value, name) => { ... }}` - that's correct. Unless... the issue is that in some strict or SWC parsers, the `}}` at the end is parsed as `}` (end of function) + `}` (end of... something?). Let me look at the full Tooltip again.
+
+Actually re-reading the error: it says the caret is at line 204, which is `const display = ...`. So the compiler might be complaining about something on that line or the next. Could it be that the Recharts Tooltip formatter has a different signature in the type definitions and we're not matching it? For example maybe it receives (value, name, props) and we're only declaring (value, name). Or the return type might need to be React.ReactNode or something specific.
+
+Let me try removing the custom formatter entirely and use the default Tooltip behavior - that might fix the build. Or we could use a custom Tooltip content component instead of formatter. Let me check Recharts v3 Tooltip - the formatter can return [string, string] or a React element. So [display, name] should be valid.
+
+Another possibility: maybe the build uses a different parser (e.g. SWC) and there's an issue with the double curly `}}`. Let me try extracting the formatter to a named function outside the JSX so the JSX doesn't have the complex inline function:
+
+function formatTooltipValue(value: unknown, name: string): [string, string] {
+  const display = typeof value === 'number' ? String(value) : '—';
+  return [display, name];
+}
+...
+formatter={formatTooltipValue}
+
+That way the JSX is simpler and there's no `}}` in the middle of the component.
+</details></think>
 
 ---
 

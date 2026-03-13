@@ -52,6 +52,11 @@ function formatDate(iso: string): string {
     return d.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: '2-digit' });
 }
 
+function formatPositionTooltip(value: unknown, name: string): [string, string] {
+    const display = typeof value === 'number' ? String(value) : '—';
+    return [display, name];
+}
+
 export function RankTrackingChart({
     keywordId,
     keywordLabel,
@@ -200,11 +205,8 @@ export function RankTrackingChart({
                                 fontSize: 12,
                             }}
                             labelStyle={{ color: 'var(--color-text-on-light)' }}
-                            formatter={(value: unknown, name: string) => {
-                                const display = typeof value === 'number' ? String(value) : '—';
-                                return [display, name];
-                            }}
-                            labelFormatter={(label) => label}
+                            formatter={formatPositionTooltip}
+                            labelFormatter={(label: string) => label}
                         />
                         <Legend
                             wrapperStyle={{ fontSize: 11 }}
