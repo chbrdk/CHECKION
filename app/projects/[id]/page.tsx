@@ -34,6 +34,7 @@ import {
     PATH_SCAN_DOMAIN,
 } from '@/lib/constants';
 import { SERP_MAIN_MARKETS } from '@/lib/serp-markets';
+import { RankTrackingChart } from '@/components/RankTrackingChart';
 
 interface RankKeywordItem {
     id: string;
@@ -87,6 +88,7 @@ export default function ProjectDetailPage() {
     const [suggestKeywordsError, setSuggestKeywordsError] = useState<string | null>(null);
     const [suggestedKeywords, setSuggestedKeywords] = useState<string[]>([]);
     const [selectedSuggestedKeywords, setSelectedSuggestedKeywords] = useState<Set<string>>(new Set());
+    const [chartExpandedKeywordId, setChartExpandedKeywordId] = useState<string | null>(null);
 
     const loadProject = useCallback(async () => {
         if (!id) return;
@@ -627,27 +629,55 @@ export default function ProjectDetailPage() {
                             ) : (
                                 <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
                                     {rankKeywords.map((k) => (
-                                        <Box key={k.id} component="li" sx={{ ...listItemSx, flexWrap: 'wrap', gap: 1 }}>
-                                            <Box sx={{ minWidth: 0, flex: '1 1 200px' }}>
-                                                <MsqdxTypography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                    {k.domain} — {k.keyword}
-                                                </MsqdxTypography>
-                                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                                    {k.country && k.language ? `${k.country}/${k.language} · ` : ''}
-                                                    {t('projects.lastPosition')}: {k.lastPosition != null ? k.lastPosition : '—'}
-                                                    {k.lastCompetitorPositions && Object.keys(k.lastCompetitorPositions).length > 0 && (
-                                                        <> · {Object.entries(k.lastCompetitorPositions)
-                                                            .filter(([, pos]) => pos != null)
-                                                            .map(([dom, pos]) => `${dom}: ${pos}`)
-                                                            .join(' · ')}
-                                                        </>
-                                                    )}
-                                                    {' · '}{t('projects.lastUpdate')}: {k.lastRecordedAt ? new Date(k.lastRecordedAt).toLocaleDateString() : '—'}
-                                                </MsqdxTypography>
+                                        <Box
+                                            key={k.id}
+                                            component="li"
+                                            sx={{
+                                                borderBottom: '1px solid var(--color-border-subtle, #eee)',
+                                            }}
+                                        >
+                                            <Box sx={{ ...listItemSx, flexWrap: 'wrap', gap: 1, borderBottom: 'none' }}>
+                                                <Box sx={{ minWidth: 0, flex: '1 1 200px' }}>
+                                                    <MsqdxTypography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                        {k.domain} — {k.keyword}
+                                                    </MsqdxTypography>
+                                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                                        {k.country && k.language ? `${k.country}/${k.language} · ` : ''}
+                                                        {t('projects.lastPosition')}: {k.lastPosition != null ? k.lastPosition : '—'}
+                                                        {k.lastCompetitorPositions && Object.keys(k.lastCompetitorPositions).length > 0 && (
+                                                            <> · {Object.entries(k.lastCompetitorPositions)
+                                                                .filter(([, pos]) => pos != null)
+                                                                .map(([dom, pos]) => `${dom}: ${pos}`)
+                                                                .join(' · ')}
+                                                            </>
+                                                        )}
+                                                        {' · '}{t('projects.lastUpdate')}: {k.lastRecordedAt ? new Date(k.lastRecordedAt).toLocaleDateString() : '—'}
+                                                    </MsqdxTypography>
+                                                </Box>
+                                                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                                    <MsqdxButton
+                                                        variant="outlined"
+                                                        size="small"
+                                                        onClick={() => setChartExpandedKeywordId((id) => (id === k.id ? null : k.id))}
+                                                    >
+                                                        {chartExpandedKeywordId === k.id ? t('projects.rankChartHide') : t('projects.rankChartShow')}
+                                                    </MsqdxButton>
+                                                    <MsqdxButton variant="outlined" size="small" color="error" onClick={() => handleDeleteKeyword(k.id)}>
+                                                        {t('projects.deleteKeyword')}
+                                                    </MsqdxButton>
+                                                </Box>
                                             </Box>
-                                            <MsqdxButton variant="outlined" size="small" color="error" onClick={() => handleDeleteKeyword(k.id)}>
-                                                {t('projects.deleteKeyword')}
-                                            </MsqdxButton>
+                                            {chartExpandedKeywordId === k.id && (
+                                                <Box sx={{ px: 1.5, pb: 2, pt: 0 }}>
+                                                    <RankTrackingChart
+                                                        keywordId={k.id}
+                                                        keywordLabel={`${k.domain} — ${k.keyword}`}
+                                                        ourDomain={k.domain}
+                                                        competitorDomains={competitors}
+                                                        t={t}
+                                                    />
+                                                </Box>
+                                            )}
                                         </Box>
                                     ))}
                                 </Box>

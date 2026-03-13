@@ -26,6 +26,7 @@ export async function GET(
     const data = positions.map((p) => ({
         position: p.position,
         recordedAt: p.recordedAt.toISOString(),
+        competitorPositions: p.competitorPositions ?? undefined,
     }));
     return NextResponse.json({ success: true, data });
 }

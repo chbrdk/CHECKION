@@ -41,6 +41,7 @@ export async function listPositionsByKeyword(
             id: rankTrackingPositions.id,
             keywordId: rankTrackingPositions.keywordId,
             position: rankTrackingPositions.position,
+            competitorPositions: rankTrackingPositions.competitorPositions,
             recordedAt: rankTrackingPositions.recordedAt,
         })
         .from(rankTrackingPositions)
@@ -48,7 +49,10 @@ export async function listPositionsByKeyword(
         .where(and(eq(rankTrackingPositions.keywordId, keywordId), eq(rankTrackingKeywords.userId, userId)))
         .orderBy(desc(rankTrackingPositions.recordedAt))
         .limit(limit);
-    return rows as RankTrackingPositionRow[];
+    return rows.map((r) => ({
+        ...r,
+        competitorPositions: (r.competitorPositions as Record<string, number | null> | null) ?? undefined,
+    })) as RankTrackingPositionRow[];
 }
 
 export async function getLastPosition(keywordId: string): Promise<{ position: number | null; recordedAt: Date } | null> {
