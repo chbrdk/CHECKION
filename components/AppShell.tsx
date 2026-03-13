@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Box, IconButton, useMediaQuery, useTheme } from '@mui/material';
@@ -31,36 +31,37 @@ export function AppShell({ children }: { children: ReactNode }) {
 
     const showSidebar = !isSharePage;
 
+    const layoutProps = {
+        appName: 'CHECKION',
+        logo: true as const,
+        borderWidth: 'thin' as const,
+        borderRadius: '2xl' as const,
+        innerBackground: 'grid' as const,
+        sidebar: showSidebar ? <Sidebar open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} /> : null,
+        ...(isProjectRoute(pathname ?? null) ? { headerEnd: <ProjectHeaderNav /> } : {}),
+        sx: {
+            '& > div:last-of-type': {
+                backgroundColor: `${THEME_ACCENT_WITH_FALLBACK.backgroundColor} !important`,
+            },
+            '& > div:last-of-type > div': {
+                borderColor: `${THEME_ACCENT_WITH_FALLBACK.borderColor} !important`,
+            },
+            '& > div:last-of-type > div > div:first-of-type': {
+                backgroundColor: 'transparent !important',
+                color: 'var(--color-theme-accent-contrast, #ffffff) !important',
+            },
+            '& > div:last-of-type > div > div:first-of-type *': {
+                color: 'inherit !important',
+            },
+            '& > div:last-of-type > div > div:first-of-type > div': {
+                backgroundColor: `${THEME_ACCENT_WITH_FALLBACK.backgroundColor} !important`,
+            },
+        },
+    };
     return (
         <>
             <BrandColorInitializer />
-            <MsqdxAppLayout
-                appName="CHECKION"
-                logo={true}
-                borderWidth="thin"
-                borderRadius="2xl"
-                innerBackground="grid"
-                sidebar={showSidebar ? <Sidebar open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} /> : null}
-                headerEnd={isProjectRoute(pathname ?? null) ? <ProjectHeaderNav /> : undefined}
-                sx={{
-                    '& > div:last-of-type': {
-                        backgroundColor: `${THEME_ACCENT_WITH_FALLBACK.backgroundColor} !important`,
-                    },
-                    '& > div:last-of-type > div': {
-                        borderColor: `${THEME_ACCENT_WITH_FALLBACK.borderColor} !important`,
-                    },
-                    '& > div:last-of-type > div > div:first-of-type': {
-                        backgroundColor: 'transparent !important',
-                        color: 'var(--color-theme-accent-contrast, #ffffff) !important',
-                    },
-                    '& > div:last-of-type > div > div:first-of-type *': {
-                        color: 'inherit !important',
-                    },
-                    '& > div:last-of-type > div > div:first-of-type > div': {
-                        backgroundColor: `${THEME_ACCENT_WITH_FALLBACK.backgroundColor} !important`,
-                    },
-                }}
-            >
+            <MsqdxAppLayout {...(layoutProps as unknown as ComponentProps<typeof MsqdxAppLayout>)}>
                 <Box data-checkion-content sx={{ flex: 1, minHeight: 0, color: 'var(--color-text-on-light)' }}>
                     {children as any}
                 </Box>
