@@ -13,6 +13,7 @@ import {
 import { useI18n } from '@/components/i18n/I18nProvider';
 import {
     apiProject,
+    apiProjectSuggestCompetitors,
     apiScansDomainList,
     apiScanJourneyAgentHistory,
     apiScanGeoEeatHistory,
@@ -28,21 +29,25 @@ import {
     PATH_SCAN,
     PATH_SCAN_DOMAIN,
 } from '@/lib/constants';
+import { SERP_MAIN_MARKETS } from '@/lib/serp-markets';
 
 interface RankKeywordItem {
     id: string;
     domain: string;
     keyword: string;
     country?: string;
+    language?: string;
     device?: string;
     lastPosition?: number;
     lastRecordedAt?: string;
+    lastCompetitorPositions?: Record<string, number | null>;
 }
 
 interface ProjectData {
     id: string;
     name: string;
     domain: string | null;
+    competitors?: string[];
     counts: { domainScans: number; journeyRuns: number; geoEeatRuns: number; singleScans: number; rankTrackingKeywords: number };
 }
 
@@ -63,11 +68,14 @@ export default function ProjectDetailPage() {
     const [addKeywordOpen, setAddKeywordOpen] = useState(false);
     const [addKeywordDomain, setAddKeywordDomain] = useState('');
     const [addKeywordKeyword, setAddKeywordKeyword] = useState('');
-    const [addKeywordCountry, setAddKeywordCountry] = useState('');
+    const [addKeywordMarket, setAddKeywordMarket] = useState<string>(''); // value: "country-language" e.g. "de-de"
     const [addKeywordDevice, setAddKeywordDevice] = useState('');
     const [addKeywordSubmitting, setAddKeywordSubmitting] = useState(false);
     const [refreshLoading, setRefreshLoading] = useState(false);
     const [refreshError, setRefreshError] = useState<string | null>(null);
+    const [addCompetitorValue, setAddCompetitorValue] = useState('');
+    const [suggestCompetitorsLoading, setSuggestCompetitorsLoading] = useState(false);
+    const [suggestCompetitorsError, setSuggestCompetitorsError] = useState<string | null>(null);
 
     const loadProject = useCallback(async () => {
         if (!id) return;
@@ -83,6 +91,92 @@ export default function ProjectDetailPage() {
             setLoading(false);
         }
     }, [id]);
+
+    const competitors = Array.isArray(project?.competitors) ? project.competitors : [];
+
+    const normalizeDomainInput = useCallback((value: string) => {
+        let v = value.trim().toLowerCase();
+        v = v.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '').split('/')[0] ?? '';
+        return v;
+    }, []);
+
+    const handleAddCompetitor = useCallback(async () => {
+        const domain = normalizeDomainInput(addCompetitorValue);
+        if (!id || !domain) return;
+        const next = [...competitors];
+        if (next.includes(domain)) return;
+        next.push(domain);
+        setAddCompetitorValue('');
+        try {
+            const res = await fetch(apiProject(id), {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ competitors: next }),
+            });
+            if (res.ok) loadProject();
+        } catch {
+            // ignore
+        }
+    }, [id, addCompetitorValue, competitors, normalizeDomainInput, loadProject]);
+
+    const handleRemoveCompetitor = useCallback(
+        async (domain: string) => {
+            if (!id) return;
+            const next = competitors.filter((c) => c !== domain);
+            try {
+                const res = await fetch(apiProject(id), {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ competitors: next }),
+                });
+                if (res.ok) loadProject();
+            } catch {
+                // ignore
+            }
+        },
+        [id, competitors, loadProject]
+    );
+
+    const handleSuggestCompetitors = useCallback(async () => {
+        if (!id) return;
+        setSuggestCompetitorsError(null);
+        setSuggestCompetitorsLoading(true);
+        try {
+            const res = await fetch(apiProjectSuggestCompetitors(id), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({}),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && Array.isArray(data.competitors)) {
+                const existing = new Set(competitors.map((c) => c.toLowerCase()));
+                const toAdd = data.competitors
+                    .map((c: string) => normalizeDomainInput(c))
+                    .filter((c: string) => c && !existing.has(c));
+                if (toAdd.length > 0) {
+                    const next = [...competitors, ...toAdd];
+                    const patchRes = await fetch(apiProject(id), {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({ competitors: next }),
+                    });
+                    if (patchRes.ok) loadProject();
+                }
+            } else if (!res.ok && typeof data?.error === 'string') {
+                setSuggestCompetitorsError(data.error);
+            } else if (!res.ok) {
+                setSuggestCompetitorsError(t('common.error'));
+            }
+        } catch {
+            setSuggestCompetitorsError(t('common.error'));
+        } finally {
+            setSuggestCompetitorsLoading(false);
+        }
+    }, [id, competitors, normalizeDomainInput, loadProject, t]);
 
     useEffect(() => {
         loadProject();
@@ -116,7 +210,8 @@ export default function ProjectDetailPage() {
     }, [id]);
 
     const handleAddKeyword = useCallback(async () => {
-        if (!id || !addKeywordDomain.trim() || !addKeywordKeyword.trim()) return;
+        const [country, language] = addKeywordMarket ? addKeywordMarket.split('-') : ['', ''];
+        if (!id || !addKeywordDomain.trim() || !addKeywordKeyword.trim() || !country || !language) return;
         setAddKeywordSubmitting(true);
         try {
             const res = await fetch(API_RANK_TRACKING_KEYWORDS, {
@@ -127,7 +222,8 @@ export default function ProjectDetailPage() {
                     projectId: id,
                     domain: addKeywordDomain.trim(),
                     keyword: addKeywordKeyword.trim(),
-                    country: addKeywordCountry.trim() || undefined,
+                    country,
+                    language,
                     device: addKeywordDevice.trim() || undefined,
                 }),
             });
@@ -136,7 +232,7 @@ export default function ProjectDetailPage() {
                 setAddKeywordOpen(false);
                 setAddKeywordDomain('');
                 setAddKeywordKeyword('');
-                setAddKeywordCountry('');
+                setAddKeywordMarket('');
                 setAddKeywordDevice('');
                 loadProject();
                 const listRes = await fetch(apiRankTrackingKeywords(id), { credentials: 'same-origin' });
@@ -146,7 +242,7 @@ export default function ProjectDetailPage() {
         } finally {
             setAddKeywordSubmitting(false);
         }
-    }, [id, addKeywordDomain, addKeywordKeyword, addKeywordCountry, addKeywordDevice, loadProject]);
+    }, [id, addKeywordDomain, addKeywordKeyword, addKeywordMarket, addKeywordDevice, loadProject]);
 
     const handleRefreshRankings = useCallback(async () => {
         if (!id) return;
@@ -225,6 +321,69 @@ export default function ProjectDetailPage() {
                     <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
                         {project.domain}
                     </MsqdxTypography>
+                )}
+            </Box>
+
+            <Box sx={{ mb: 2 }}>
+                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                    {t('projects.competitors')}
+                </MsqdxTypography>
+                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1 }}>
+                    {t('projects.competitorsDescription')}
+                </MsqdxTypography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center', mb: 1 }}>
+                    <MsqdxFormField
+                        placeholder={t('projects.addCompetitorPlaceholder')}
+                        value={addCompetitorValue}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddCompetitorValue(e.target.value)}
+                        onKeyDown={(e: React.KeyboardEvent) => e.key === 'Enter' && handleAddCompetitor()}
+                        sx={{ minWidth: 200, flex: '1 1 200px' }}
+                    />
+                    <MsqdxButton variant="outlined" size="small" onClick={handleAddCompetitor} disabled={!normalizeDomainInput(addCompetitorValue)}>
+                        {t('projects.addCompetitor')}
+                    </MsqdxButton>
+                    <MsqdxButton
+                        variant="outlined"
+                        size="small"
+                        onClick={handleSuggestCompetitors}
+                        disabled={suggestCompetitorsLoading || !project.domain}
+                        sx={{ ml: 1 }}
+                    >
+                        {suggestCompetitorsLoading ? t('common.loading') : t('projects.suggestCompetitorsWithAi')}
+                    </MsqdxButton>
+                </Box>
+                {suggestCompetitorsError && (
+                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-status-error)', display: 'block', mb: 1 }}>
+                        {suggestCompetitorsError}
+                    </MsqdxTypography>
+                )}
+                {competitors.length === 0 ? (
+                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                        {t('projects.noCompetitors')}
+                    </MsqdxTypography>
+                ) : (
+                    <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {competitors.map((domain) => (
+                            <Box
+                                key={domain}
+                                component="li"
+                                sx={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 0.5,
+                                    px: 1,
+                                    py: 0.5,
+                                    borderRadius: 'var(--msqdx-radius-sm)',
+                                    bgcolor: 'var(--color-bg-subtle, #f5f5f5)',
+                                }}
+                            >
+                                <MsqdxTypography variant="body2">{domain}</MsqdxTypography>
+                                <MsqdxButton variant="text" size="small" color="error" onClick={() => handleRemoveCompetitor(domain)} sx={{ minWidth: 0, p: 0.25 }}>
+                                    {t('projects.removeCompetitor')}
+                                </MsqdxButton>
+                            </Box>
+                        ))}
+                    </Box>
                 )}
             </Box>
 
@@ -423,7 +582,16 @@ export default function ProjectDetailPage() {
                                                 {k.domain} — {k.keyword}
                                             </MsqdxTypography>
                                             <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                                {t('projects.lastPosition')}: {k.lastPosition != null ? k.lastPosition : '—'} · {t('projects.lastUpdate')}: {k.lastRecordedAt ? new Date(k.lastRecordedAt).toLocaleDateString() : '—'}
+                                                {k.country && k.language ? `${k.country}/${k.language} · ` : ''}
+                                                {t('projects.lastPosition')}: {k.lastPosition != null ? k.lastPosition : '—'}
+                                                {k.lastCompetitorPositions && Object.keys(k.lastCompetitorPositions).length > 0 && (
+                                                    <> · {Object.entries(k.lastCompetitorPositions)
+                                                        .filter(([, pos]) => pos != null)
+                                                        .map(([dom, pos]) => `${dom}: ${pos}`)
+                                                        .join(' · ')}
+                                                    </>
+                                                )}
+                                                {' · '}{t('projects.lastUpdate')}: {k.lastRecordedAt ? new Date(k.lastRecordedAt).toLocaleDateString() : '—'}
                                             </MsqdxTypography>
                                         </Box>
                                         <Box sx={{ display: 'flex', gap: 0.5 }}>
@@ -457,13 +625,33 @@ export default function ProjectDetailPage() {
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddKeywordKeyword(e.target.value)}
                             fullWidth
                         />
-                        <MsqdxFormField
-                            label={t('projects.country')}
-                            placeholder={t('projects.countryPlaceholder')}
-                            value={addKeywordCountry}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddKeywordCountry(e.target.value)}
-                            fullWidth
-                        />
+                        <Box>
+                            <MsqdxTypography component="label" variant="body2" sx={{ display: 'block', mb: 0.5, fontWeight: 500 }}>
+                                {t('projects.market')}
+                            </MsqdxTypography>
+                            <Box
+                                component="select"
+                                value={addKeywordMarket}
+                                onChange={(e) => setAddKeywordMarket(e.target.value)}
+                                required
+                                sx={{
+                                    width: '100%',
+                                    py: 1,
+                                    px: 1.5,
+                                    borderRadius: 'var(--msqdx-radius-sm, 4px)',
+                                    border: '1px solid var(--color-border-subtle, #ccc)',
+                                    fontSize: 'inherit',
+                                    fontFamily: 'inherit',
+                                }}
+                            >
+                                <option value="">{t('projects.marketPlaceholder')}</option>
+                                {SERP_MAIN_MARKETS.map((m) => (
+                                    <option key={`${m.country}-${m.language}`} value={`${m.country}-${m.language}`}>
+                                        {m.label} ({m.country}/{m.language})
+                                    </option>
+                                ))}
+                            </Box>
+                        </Box>
                         <MsqdxFormField
                             label={t('projects.device')}
                             placeholder={t('projects.devicePlaceholder')}
@@ -481,7 +669,7 @@ export default function ProjectDetailPage() {
                         variant="contained"
                         brandColor="green"
                         onClick={handleAddKeyword}
-                        disabled={!addKeywordDomain.trim() || !addKeywordKeyword.trim() || addKeywordSubmitting}
+                        disabled={!addKeywordDomain.trim() || !addKeywordKeyword.trim() || !addKeywordMarket || addKeywordSubmitting}
                     >
                         {addKeywordSubmitting ? t('projects.creating') : t('projects.save')}
                     </MsqdxButton>

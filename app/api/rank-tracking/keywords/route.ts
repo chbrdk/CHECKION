@@ -33,9 +33,11 @@ export async function GET(request: NextRequest) {
             domain: k.domain,
             keyword: k.keyword,
             country: k.country,
+            language: k.language,
             device: k.device,
             lastPosition: last?.position ?? undefined,
             lastRecordedAt: last?.recordedAt?.toISOString() ?? undefined,
+            lastCompetitorPositions: last?.competitorPositions ?? undefined,
         };
     });
     return NextResponse.json({ success: true, data });
@@ -54,7 +56,8 @@ export async function POST(request: NextRequest) {
     await insertKeyword(id, user.id, parsed.projectId, {
         domain: parsed.domain,
         keyword: parsed.keyword,
-        country: parsed.country ?? undefined,
+        country: parsed.country,
+        language: parsed.language,
         device: parsed.device ?? undefined,
     });
     return NextResponse.json({ success: true, id });

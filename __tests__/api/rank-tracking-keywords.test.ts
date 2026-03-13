@@ -85,6 +85,7 @@ describe('GET /api/rank-tracking/keywords', () => {
                 domain: 'example.com',
                 keyword: 'test',
                 country: 'de',
+                language: 'de',
                 device: null,
                 createdAt: new Date(),
                 updatedAt: new Date(),

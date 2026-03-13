@@ -9251,3 +9251,2443 @@ Now I need to show refreshError in the UI (near the Refresh button) and add the 
 
 ---
 
+<think><details><summary>Thought Process</summary>
+
+I'll add the error message below the buttons (after the Box with display flex) and add the locale key.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/rank-tracking/refresh/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Done. Let me give a short summary to the user explaining the 502 and what we changed.
+</details></think>
+
+---
+
+
+Kurz, was die **502** bedeutet und was geändert wurde:
+
+---
+
+## Was bedeutet die 502?
+
+**502 Bad Gateway** kommt von der Route `/api/rank-tracking/refresh` in genau diesen Fällen:
+
+1. **`SERP_API_KEY` fehlt**  
+   → Antwort: *"SERP rank tracking is not configured (SERP_API_KEY missing)"*
+
+2. **Externe SERP-API (Serper oder ScrapingRobot) schlägt fehl**, z. B.:
+   - ungültiger oder abgelaufener API-Key
+   - Timeout (z. B. 15–20 s)
+   - Rate-Limit (zu viele Requests)
+   - Netzwerkfehler oder 5xx der Anbieter
+
+Die API antwortet dann mit **502** und einem JSON-Body `{ "error": "..." }` mit der konkreten Meldung.
+
+---
+
+## Was wurde geändert?
+
+1. **Fehlermeldung in der UI**  
+   Wenn du „Rankings aktualisieren“ klickst und die API mit 502 antwortet, wird die **vom Server gelieferte Fehlermeldung** (z. B. „SERP_API_KEY is not configured“ oder „SERP API error: 401 …“) **unter den Buttons** in Rot angezeigt. So siehst du direkt, was schiefgelaufen ist.
+
+2. **Kommentar in der Refresh-Route**  
+   Im Code steht nun, wann 502 zurückgegeben wird (fehlender Key oder Fehler der externen SERP-API).
+
+3. **Neue Übersetzungen**  
+   `projects.rankingsRefresh502` (DE/EN) als Fallback-Text, wenn keine spezifische `error`-Meldung vom Server kommt.
+
+---
+
+## Was du prüfen solltest
+
+- **Lokal/Coolify:** In der `.env` (bzw. in den Umgebungsvariablen der App):
+  - `SERP_API_KEY` gesetzt (Serper-Key oder ScrapingRobot-Token)?
+  - Optional: `SERP_API_PROVIDER=scrapingrobot` oder weglassen für Serper?
+- **ScrapingRobot:** Token im ScrapingRobot-Dashboard prüfen (gültig, Kontingent nicht aufgebraucht).
+- **Serper:** Key unter [serper.dev](https://serper.dev) prüfen.
+
+Beim nächsten Klick auf „Rankings aktualisieren“ solltest du bei einem Fehler die genaue Meldung unter den Buttons sehen.
+
+---
+
+_**User**_
+
+da wir serper nutzen würde ich das ganze gerne etwas erweitern zumindest mal 10 pages und language und country sollten auch immer gesetzt sein, lass uns da auf die hauptmärkte fokussieren. prüfen wir dann immernoch an welcher stelle die domain auftaucht?
+
+schau mal so sieht das aus im playground von serper:
+const https = require('follow-redirects').https;
+const fs = require('fs');
+
+let options = {
+  'method': 'POST',
+  'hostname': 'google.serper.dev',
+  'path': '/search',
+  'headers': {
+    'X-API-KEY': 'bb28ef1a806c67b84beac2e1c8fb5c6dfd7f8dae',
+    'Content-Type': 'application/json'
+  },
+  'maxRedirects': 20
+};
+
+const req = https.request(options, (res) => {
+  let chunks = [];
+
+  res.on("data", (chunk) => {
+    chunks.push(chunk);
+  });
+
+  res.on("end", (chunk) => {
+    let body = Buffer.concat(chunks);
+    console.log(body.toString());
+  });
+
+  res.on("error", (error) => {
+    console.error(error);
+  });
+});
+
+let postData = JSON.stringify({
+  "q": "pumpen",
+  "gl": "de",
+  "hl": "de",
+  "page": 10
+});
+
+req.write(postData);
+
+req.end();
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants to:
+1. Extend SERP tracking to fetch up to 10 pages (not just the first page)
+2. Always set language (hl) and country (gl) - focus on main markets
+3. Still check at which position the domain appears (across all those pages)
+
+They shared Serper's playground example: POST to google.serper.dev/search with body containing q, gl, hl, and page (e.g. page: 10 for page 10, or we need to make multiple requests for pages 1-10).
+
+Let me check Serper API docs - typically you request one page at a time (page: 1, page: 2, ... page: 10). So we'd need to either:
+- Make 10 requests per keyword (page=1, page=2, ... page=10) and concatenate organic results, then find position of domain (position would be 1-100 if we get 10 results per page)
+- Or see if Serper returns multiple pages in one request - usually they don't, you pass "page" for which page to get
+
+So the flow would be:
+1. For each keyword, loop page 1 to 10 (or 1 to numPages configurable)
+2. Each request: body { q: keyword, gl: country, hl: language, page: pageNum }
+3. Collect all organic results in order (page1 results, then page2, etc.)
+4. Find first index where domain matches → position = index + 1 (1-100 for 10 pages of 10 results)
+5. Store that position (or null if not in top 100)
+
+We also need:
+- In DB: ensure we have country and language (we have country already; add language/hl)
+- Default or required country/language - "main markets" could be a preset list: DE, US, UK, FR, etc.
+- In the UI: when adding a keyword, require or default country and language
+
+Let me check the current schema and serp-api to see what we have.
+</details></think>
+
+---
+
+
+Serper-Integration erweitern: bis zu 10 Seiten abfragen, `gl` und `hl` immer setzen und die Position der Domain in den kombinierten Ergebnissen ermitteln. Aktuellen Stand prüfen:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/serp-api.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="web_search">
+<details>
+            <summary>Tool use: **web_search** • Searched web `undefined` • **1** results</summary>
+        
+| Title | URL | Chunk |
+|-------|-----|-------|
+| Web search results for query: Serper API search page parameter multiple pages num results per page |  | Links:<br/>1. [SearchParams \| SerpExtractor](https://serpextractor.com/docs/api/schemas/searchparams)<br/>2. [Pagination \| SerpExtractor](https://serpextractor.com/docs/google/pagination/)<br/>3. [How does Google Pagination Work? - SerpApi](https://serpapi.com/pagination)<br/>4. [Documentation – SerpSolution API](https://serpsolution.com/documentation/)<br/>5. [Serper Client API](https://tkdkid1000.github.io/serper/)<br/><br/># Serper API: Page Parameter and Results Per Page<br/><br/>## Page Parameter<br/><br/>The `page` parameter controls which page of results to retrieve:[1][2]<br/><br/>- **Valid range**: 1-100[1]<br/>- **Default**: First page (when not specified)[2]<br/>- **Behavior**: Page numbers higher than available results return an empty `organic_results` array[2]<br/>- **Constraint**: Google doesn't serve more than 1000 results for any query[1]<br/><br/>## Results Per Page<br/><br/>For APIs that support controlling results per page:<br/><br/>**SerpSolution API** uses a `num` parameter to set quantity of results per page:[4]<br/>- Example: `page=3&num=7` returns page 3 with 7 results per page<br/><br/>**SerpExtractor** returns a default page size, with position numbers adjusted per page (e.g., page 2 starts at position 11)[2]<br/><br/>## Pagination Best Practices<br/><br/>- Always start from page 1 and increment sequentially[2]<br/>- Handle empty results gracefully when reaching the end[2]<br/>- Page requests > 100 or < 1 return a 400 status error[2]<br/>- Results may vary across paginated requests due to Google's frequent index changes[2]<br/><br/>## Serper Client Library<br/><br/>The JavaScript/TypeScript Serper client includes built-in pagination methods: `nextPage()`, `prevPage()`, and `toPage(pageNumber)`[5] |
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So for Serper:
+- We pass `page: 1`, `page: 2`, ... `page: 10` in the body (one request per page).
+- Each page typically returns ~10 organic results.
+- We need to make 10 requests, collect all URLs in order, then find the 1-based position of the domain.
+
+We also need:
+1. Add `language` (hl) to schema - we have country (gl), add language/hl. Or we could store it as one "locale" - but Serper uses gl + hl separately. So add `language` to rank_tracking_keywords.
+2. Main markets: define a list of gl/hl pairs (e.g. de/de, us/en, gb/en, fr/fr, etc.) and ensure when we add a keyword we set country + language (required or with sensible defaults).
+3. In fetchSerpPosition: for Serper, accept language (hl), and numPages (e.g. 10). Loop page 1..numPages, collect all organic URLs in order, then find position.
+
+Let me check Serper docs for the exact request body (q, gl, hl, page).
+</details></think>
+
+---
+
+
+Serper-Dokumentation prüfen und Schema sowie Keywords-Layer einsehen:
+
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="web_search">
+<details>
+            <summary>Tool use: **web_search** • Searched web `undefined` • **1** results</summary>
+        
+| Title | URL | Chunk |
+|-------|-----|-------|
+| Web search results for query: Serper API google.serper.dev search POST body gl hl page |  | Links:<br/>1. [Serper - The World's Fastest and Cheapest Google Search API](https://serper.dev/)<br/>2. [SERP API Google Query Parameters - Bright Data Docs](https://docs.brightdata.com/scraping-automation/serp-api/query-parameters/google)<br/>3. [Serper Client API](https://tkdkid1000.github.io/serper/)<br/>4. [TKDKid1000/serper](https://github.com/tkdkid1000/serper)<br/>5. [Serper](https://docs.sim.ai/tools/serper)<br/><br/># Serper API POST Body Parameters<br/><br/>The Serper API (serper.dev) uses standard Google search parameters. Key parameters for POST requests include:<br/><br/>## Localization Parameters<br/><br/>- **`gl`**: Two-letter country code that defines the country for search results (e.g., "us", "uk")[2]<br/>- **`hl`**: Two-letter language code that defines the page language (e.g., "en", "es", "de")[2]<br/><br/>## Pagination<br/><br/>- **`page`**: Used to paginate through results. The `start` parameter defines the result offset (e.g., `start=0` for first page, `start=10` for second page, `start=20` for third page)[2]<br/><br/>## Other Common Parameters<br/><br/>- **`q`**: The search query (required)[2]<br/>- **`tbm`**: Defines search type (e.g., `tbm=isch` for images, `tbm=nws` for news, `tbm=vid` for videos)[2]<br/>- **`num`**: Number of results to return (deprecated as of September 11, 2025)[2]<br/><br/>## Implementation Note<br/><br/>When using these parameters in requests, ensure the `q` parameter comes before other arguments like `gl` in the URL structure, as placing arguments before `q` may result in delays and lower success rates.[2]<br/><br/>The Serper API supports various search types including search, news, images, videos, places, shopping, scholar, patents, and autocomplete.[1] |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/rank-tracking-keywords.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/api-schemas.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to:
+1. Add `language` to schema (hl) - and ensure country/language are required or have defaults for "main markets"
+2. In serp-api: for Serper, add `numPages` (default 10), and `language` (hl). Loop pages 1..numPages, collect all organic URLs, find position (1-100).
+3. API schemas: add language to keyword create, and ensure country/language are validated (e.g. 2-letter codes).
+4. Define main markets: e.g. DE/de, US/en, GB/en, FR/fr, etc. I'll add a constant and use it as default options.
+
+Let me read the rest of api-schemas for rank tracking and the refresh route to see how options are passed.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "rankTracking|rank-tracking",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "rankTracking|rank-tracking",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 55,
+  "totalMatches": 400,
+  "topFiles": [
+    {
+      "uri": "./app/api/rank-tracking/refresh/route.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "./__tests__/api/rank-tracking-keywords.test.ts",
+      "matchCount": 12
+    },
+    {
+      "uri": "./app/api/projects/[id]/route.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "./lib/constants.ts",
+      "matchCount": 6
+    },
+    {
+      "uri": "./app/api/rank-tracking/keywords/[id]/positions/route.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/api/rank-tracking/keywords/[id]/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/api/rank-tracking/keywords/route.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "./lib/api-schemas.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "./lib/db/rank-tracking-positions.ts",
+      "matchCount": 20
+    },
+    {
+      "uri": "./lib/db/rank-tracking-keywords.ts",
+      "matchCount": 17
+    },
+    {
+      "uri": "./lib/db/schema.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/api/rank-tracking/refresh/route.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/__tests__/api/rank-tracking-keywords.test.ts",
+      "matchCount": 12
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/route.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/app/api/rank-tracking/keywords/[id]/positions/route.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/api/rank-tracking/keywords/[id]/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/api/rank-tracking/keywords/route.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/lib/api-schemas.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/rank-tracking-positions.ts",
+      "matchCount": 20
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/rank-tracking/refresh/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/api-schemas.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I have a clear picture. I need to:
+
+1. **Schema**: Add `language` (text, for `hl`) to `rank_tracking_keywords`. Migration 0006.
+
+2. **Constants**: Add a list of "main markets" (gl/hl pairs) and default numPages (10). Put in knowledge or lib (e.g. lib/serp-markets.ts or in constants).
+
+3. **serp-api.ts**:
+   - Extend `FetchSerpPositionOptions` with `language?: string` and `numPages?: number` (default 10 for Serper).
+   - For Serper: always send `gl` and `hl` (require them or use defaults from main markets).
+   - For Serper: loop page 1 to numPages (10), collect all organic URLs in order, then find position (1-based in combined list). Position can be 1–100 for 10 pages.
+   - ScrapingRobot: we can leave as-is (single page) or add a note that multi-page is Serper-only for now.
+
+4. **DB layer**: rank-tracking-keywords: add `language` to insert and to the row type; when creating keyword require country + language (or default from main market).
+
+5. **API schema**: rankTrackingKeywordCreateBodySchema: add `language` (z.string().length(2) or .max(10)), and require country + language (or provide defaults). User said "language and country should always be set" and "focus on main markets" – so I'll make them required with a list of allowed values (main markets: de, us, gb, fr, etc.) as optional validation.
+
+6. **Refresh route**: Pass `language: kw.language` and numPages (from env or constant, e.g. 10) to fetchSerpPosition.
+
+7. **Frontend**: Add language field to the Add Keyword dialog, and ensure country + language are both required with a dropdown or predefined list (main markets).
+
+Let me implement. First: main markets constant. Typical main markets: DE (de), US (en), GB (en), FR (fr), ES (es), IT (it), NL (nl), etc. I'll add a list of { country: string, language: string } and use it for validation/defaults.
+</details></think>
+
+---
+
+
+Projektseite prüfen, wie Keywords angelegt werden:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/migrations/0005_rank_tracking.sql</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to see the rest of the project page (Rankings tab and Add Keyword dialog) and the locales for the new keys. Then I'll implement:
+
+1. Add `language` to schema + migration
+2. Main markets constant (gl/hl pairs)
+3. serp-api: numPages (10), language (hl), loop pages 1..10, collect URLs, find position
+4. DB layer: add language to insert/row
+5. API schema: require country + language (from main markets or 2-letter codes)
+6. Refresh route: pass language, numPages
+7. Frontend: language field, country/language required, dropdown for main markets
+8. Tests update
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "rankings|rankTracking|addKeyword|country|keyword",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "rankings|rankTracking|addKeyword|country|keyword",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 105,
+  "topFiles": [
+    {
+      "uri": "locales/de.json",
+      "matchCount": 9
+    },
+    {
+      "uri": "locales/en.json",
+      "matchCount": 12
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 12
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 12
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 12
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 12
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/rank-tracking/keywords/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I have a clear picture. Implementing:
+
+1. **knowledge** or **lib/serp-markets.ts**: Main markets as list of { country: string, language: string, label?: string } for dropdown. Use 2-letter codes: DE/de, US/en, GB/en, FR/fr, ES/es, IT/it, NL/nl, AT/de, CH/de (or ch for country?), etc.
+
+2. **Schema**: Add `language` column to rank_tracking_keywords. New migration 0006.
+
+3. **serp-api.ts**:
+   - Add `language?: string` and `numPages?: number` to FetchSerpPositionOptions.
+   - For Serper: default numPages = 10. Always send gl and hl (require: if not provided use defaults e.g. de/de).
+   - Serper: loop page 1 to numPages, for each page POST with { q, gl, hl, page }. Collect organic links in order. Then find first index where domain matches → position = index + 1 (1-100). If not found, position null.
+   - Comment: We still check at which position the domain appears (first occurrence in the combined list of up to 10 pages).
+
+4. **rank-tracking-keywords.ts**: Add language to insert and to RankTrackingKeywordRow interface.
+
+5. **api-schemas**: rankTrackingKeywordCreateBodySchema: add language (string, 2 chars or optional). Make country and language required (min 1) for rank tracking - user said "language and country should always be set". So: country: z.string().length(2), language: z.string().length(2) or we use a union of main market codes.
+
+   Actually "always be set" could mean: we always send them to Serper (so we need defaults if not provided). So either:
+   - Required in API: country and language required when creating a keyword.
+   - Or optional in API but when calling Serper we use a default (e.g. de/de) if missing.
+   I'll make them required and add a list of allowed main markets so we validate 2-letter codes.
+
+   Allowed: country 2 letters, language 2 letters. So country: z.string().length(2).toLowerCase(), language: z.string().length(2).toLowerCase().
+
+6. **Refresh route**: Pass country, language from kw, and numPages (constant 10 or from env). fetchSerpPosition(kw.keyword, kw.domain, { country: kw.country ?? 'de', language: kw.language ?? 'de', device: kw.device ?? undefined, numPages: 10 }).
+
+7. **Frontend**: Add language state and field. Require country and language (disable submit if either empty, or use dropdown with main markets). I'll add a dropdown for "Market" that sets both country and language from SERP_MAIN_MARKETS, or two dropdowns (country, language). Simplest: two required text fields with placeholders "de", "de" and validation 2 letters. Or one dropdown "Market" with options like "Deutschland (de/de)", "United States (us/en)", etc. from a constant. I'll add a constant in the frontend for main markets and a single dropdown that sets both country and language. And add language to the keyword payload.
+
+8. **Keywords route**: Return language in list. POST accept language.
+
+9. **Locales**: Add language label, "Language", "Market", and make "Country" required in labels.
+
+Let me implement. I'll use a shared constant for main markets - could be in lib/serp-markets.ts and export for API validation and frontend. So the frontend can import from a path that works in client - we need a place that's available both in API and client. lib/ is usually server-only in Next.js - so for frontend we need either to put markets in a client-safe file or pass from API. Easiest: define in lib/serp-markets.ts and export; if Next.js bundles it for client when used in a client component, we're good. Otherwise we duplicate or use an API. I'll put it in lib/serp-markets.ts and import in the page (client component) - Next will bundle it. If it has server-only deps we'd need to avoid - serp-markets will only export a constant array, so it's fine.
+
+Implementing step by step.
+</details></think>
+
+---
+
+
+Erweiterung umsetzen: 10 Serper-Seiten, `gl`/`hl` immer setzen, Position der Domain in den kombinierten Ergebnissen ermitteln.
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] Add lib/serp-markets.ts with main markets (gl/hl) for Serper
+- [ ] Add language column to rank_tracking_keywords + migration
+- [ ] Serper: 10 pages, gl/hl always set, find domain position in combined results
+- [ ] DB layer + API schema: language required with country; keywords route
+- [ ] Refresh route: pass language + numPages to fetchSerpPosition
+- [ ] Project page: language field, country+language required, main markets dropdown
+- [ ] Update serp-api tests for multi-page and language/country
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **6** results in **1** directory</summary>
+
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/migrations** (6 files)
+
+| File |
+|------|
+| `0005_rank_tracking.sql` |
+| `0004_drop_user_id_fk_for_plexon.sql` |
+| `0003_api_tokens.sql` |
+| `0002_projects.sql` |
+| `0001_geo_eeat_runs.sql` |
+| `0000_add_llm_summary.sql` |
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Creating serp-markets.ts, then schema + migration, then serp-api, db layer, api schemas, refresh route, frontend, tests.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/serp-markets.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now add language to schema and create migration 0006. Then update serp-api, db layer, api schemas, refresh route, frontend, tests.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add lib/serp-markets.ts with main markets (gl/hl) for Serper
+- [-] Add language column to rank_tracking_keywords + migration
+- [ ] Serper: 10 pages, gl/hl always set, find domain position in combined results
+- [ ] DB layer + API schema: language required with country; keywords route
+- [ ] Refresh route: pass language + numPages to fetchSerpPosition
+- [ ] Project page: language field, country+language required, main markets dropdown
+- [ ] Update serp-api tests for multi-page and language/country
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/migrations/0006_rank_tracking_language.sql</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+PostgreSQL: you can't ALTER COLUMN SET NOT NULL if there are nulls. The UPDATE handles existing rows. But if the table is empty or we're adding a new column, we need to set a default for the ADD COLUMN. Let me fix the migration: first add column with default, then alter to set not null; for country we're altering existing column to NOT NULL after updating nulls. Actually the table might have existing rows with country null - we set them to 'de'. So the migration is:
+1. Add language column (with default 'de' for existing rows)
+2. Update language where null to country or 'de'
+3. Update country where null to 'de'
+4. Alter country to NOT NULL
+5. Alter language to NOT NULL
+
+In PostgreSQL, ADD COLUMN "language" text - then UPDATE set language = COALESCE(country, 'de') where language is null. Then ALTER COLUMN language SET NOT NULL. For country: UPDATE set country = 'de' where country is null; ALTER COLUMN country SET NOT NULL. Let me rewrite the migration to be safe.
+</details></think>
+
+---
+
+
+Migration anpassen: Zuerst Spalte hinzufügen, dann bestehende Zeilen setzen, dann NOT NULL.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/migrations/0006_rank_tracking_language.sql</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Drizzle might expect a specific migration format. Let me check how other migrations look - they use --> statement-breakpoint. The issue is that in PostgreSQL you cannot SET NOT NULL on a column that has NULLs. So the order must be: 1) add column with default 'de', 2) update existing rows so country is not null, 3) alter country set not null, 4) alter language set not null. Actually for "language" we add the column - so it will be NULL for all existing rows. So we need UPDATE rank_tracking_keywords SET language = COALESCE(country, 'de') WHERE language IS NULL; then ALTER COLUMN language SET NOT NULL. Good. I'll leave the migration as is but fix the first UPDATE: for new column language, all rows have NULL, so UPDATE ... SET language = COALESCE(country, 'de'). No need for COALESCE(language, ...). Simplified: UPDATE rank_tracking_keywords SET language = COALESCE(country, 'de') WHERE language IS NULL;
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/migrations/0006_rank_tracking_language.sql</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/__tests__/lib/serp-api.test.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now implement serp-api with:
+1. Options: language, numPages (default 10)
+2. For Serper: always set gl and hl (default de/de if not provided)
+3. Loop pages 1..numPages, collect all organic URLs in order, find position
+
+Then update db layer (insertKeyword with language, country required), api-schemas (country + language required, validated against main markets or 2-letter), refresh route, frontend, tests.
+</details></think>
+
+---
+
+
+Serper-Client erweitern: 10 Seiten, `gl`/`hl` setzen, Position in den kombinierten Ergebnissen ermitteln.
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add lib/serp-markets.ts with main markets (gl/hl) for Serper
+- [x] Add language column to rank_tracking_keywords + migration
+- [-] Serper: 10 pages, gl/hl always set, find domain position in combined results
+- [ ] DB layer + API schema: language required with country; keywords route
+- [ ] Refresh route: pass language + numPages to fetchSerpPosition
+- [ ] Project page: language field, country+language required, main markets dropdown
+- [ ] Update serp-api tests for multi-page and language/country
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/serp-api.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now replace the Serper block to: 1) use gl/hl from options with defaults, 2) loop pages 1..numPages, 3) collect all organic links, 4) find position in combined list.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/serp-api.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now update DB layer: add language to RankTrackingKeywordRow and insertKeyword (country and language required). Then api-schemas: country and language required, validated (e.g. 2-letter or from main markets). Then refresh route passes language and numPages. Then frontend.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add lib/serp-markets.ts with main markets (gl/hl) for Serper
+- [x] Add language column to rank_tracking_keywords + migration
+- [x] Serper: 10 pages, gl/hl always set, find domain position in combined results
+- [-] DB layer + API schema: language required with country; keywords route
+- [ ] Refresh route: pass language + numPages to fetchSerpPosition
+- [ ] Project page: language field, country+language required, main markets dropdown
+- [ ] Update serp-api tests for multi-page and language/country
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/rank-tracking-keywords.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/rank-tracking-keywords.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/api-schemas.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Keywords route: POST must pass country and language to insertKeyword. GET already returns country; add language to the response. Refresh route: pass country, language, numPages to fetchSerpPosition.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/rank-tracking/keywords/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/rank-tracking/keywords/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/rank-tracking/refresh/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Import SERP_NUM_PAGES in refresh route for consistency (optional). I used 10 hardcoded - we have SERP_NUM_PAGES in serp-markets. Let me use the constant in refresh route.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/rank-tracking/refresh/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/rank-tracking/refresh/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Frontend: add language state, add language to RankKeywordItem, require country and language in the form. Use main markets dropdown: either one dropdown "Market" that sets both country and language, or keep country + language as two fields but required. User said "language and country should always be set" and "focus on main markets" - so a single dropdown with main markets is best. I'll add a "Market" dropdown using SERP_MAIN_MARKETS and when selected set both country and language. And add language to the payload and to the list display.
+</details></think>
+
+---
+
+
+Frontend anpassen: Sprachfeld hinzufügen, Land und Sprache erforderlich, Dropdown für Hauptmärkte.
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add lib/serp-markets.ts with main markets (gl/hl) for Serper
+- [x] Add language column to rank_tracking_keywords + migration
+- [x] Serper: 10 pages, gl/hl always set, find domain position in combined results
+- [x] DB layer + API schema: language required with country; keywords route
+- [x] Refresh route: pass language + numPages to fetchSerpPosition
+- [-] Project page: language field, country+language required, main markets dropdown
+- [ ] Update serp-api tests for multi-page and language/country
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add locale keys for market/language. I'll add "market" and "marketPlaceholder" and change country/language to required in the UI. Use a single dropdown "Market" that shows SERP_MAIN_MARKETS and on select sets both country and language. So we need:
+- projects.market = "Market" / "Markt"
+- projects.marketPlaceholder = "Select market" / "Markt wählen"
+- Keep country and language as optional display or remove them and use one "market" select that sends country + language.
+
+Actually the API expects country and language as two fields. So in the form we can have one dropdown "Market" with options like "Deutschland (de/de)", and when user selects it we set addKeywordCountry = "de", addKeywordLanguage = "de". So we need state for "selected market" or just derive from one dropdown: options are SERP_MAIN_MARKETS, value could be index or "de-de". When we submit we send country: markets[selected].country, language: markets[selected].language. So add state addKeywordMarket: string (e.g. "de-de" or index). Easier: store the selected market as `${m.country}-${m.language}` and parse on submit. Or store object. Simplest: two dropdowns - Country and Language - but both required, and we can populate with main market values. So Country dropdown: de, at, ch, us, gb, fr, es, it, nl. Language dropdown: de, en, fr, es, it, nl. When user picks a market from one dropdown we could auto-set the other (e.g. when country is "de" set language to "de"). For simplicity I'll use one dropdown "Market" with SERP_MAIN_MARKETS and send country + language from the selected item.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now update handleAddKeyword to use addKeywordMarket (parse "de-de" into country + language) and send both. And reset addKeywordMarket on success. Add the Market dropdown to the dialog and require it (disable submit if no market selected).
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Add caption in rankings list to show country/language (e.g. "de / de") and add locale keys for market and marketPlaceholder.
+</details></think>
+
+---
+
+
+Locales ergänzen und Anzeige von Land/Sprache in der Keyword-Liste hinzufügen:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+API returns country and language now, so k.country and k.language will be there. The interface has them as optional for backward compatibility with existing list response. Good.
+
+Now run migration: Drizzle might need to be run. Let me check - we added a new migration file. In many setups you run migrations manually (e.g. npm run db:migrate). I'll add a note in knowledge or leave as is.
+
+Tests: Update serp-api tests - fetchSerpPosition is now called with multiple pages for Serper. So the mock must be called multiple times (10 times) and return organic results. And we need to test that when domain appears on "page 2" (e.g. position 15), we get 15. So mock: first 9 calls return 10 results each without domain, 10th call could have domain at position 5 - then combined position is 90+5 = 95? No - we're iterating page 1, 2, ... and concatenating. So page 1: 10 results (no domain), page 2: 10 results, if domain is at index 3 of page 2 then position = 10 + 3 + 1 = 14. So we need to mock fetch to be called multiple times and return different results. In vitest, vi.fn().mockResolvedValueOnce(...).mockResolvedValueOnce(...) or mockImplementation((url, opts) => { ... }). Let me add one test: multiple pages, domain on second page. And keep existing tests - but they will now call fetch 10 times (numPages default 10) and the mock will return the same response 10 times. So the first test "position 1 when domain in first result" - the mock returns same for every call, so we get 10 * 10 = 100 results, first one matching - position 1. Good. But wait - we're using mockResolvedValue which returns the same for every call. So for "position 1" we get 10 calls, each returning organic: [{ link: 'https://example.com/page' }], so allUrls = [example.com, example.com, ...] (10 times). First match at index 0, position 1. OK.
+ 
+Actually the default numPages is 10, so every test will trigger 10 fetch calls. So we need the mock to return 10 times. vi.fn().mockResolvedValue({...}) will return the same for every call. So the test "returns position 2 when domain appears in second organic result" - we'll get 10 fetches, each returning 2 results with domain at second. So allUrls will have 20 items per page... no, each fetch returns one page. So 10 pages * 2 results = 20 results total, and domain at index 1 in each page. So the first match is at index 1, position 2. Good.
+
+For "domain does not appear" we get 10 fetches returning other domains - we never find, position null. Good.
+
+For "empty organic array" - we get first fetch returning organic: [], then we break (if (pageUrls.length === 0) break). So we only call fetch once. allUrls = [], position null. Good.
+
+So the existing tests might still pass if the mock is invoked 10 times and returns the same each time. Let me run the tests. One more thing: we now have SERP_DEFAULT_COUNTRY and SERP_DEFAULT_LANGUAGE in serp-api, so when options are not passed we use 'de'/'de'. So the request body will have gl: 'de', hl: 'de', page: 1, 2, ... 10. No change to the mock needed for that.
+
+Let me add a test for "multi-page: domain on page 2" - mock: first call return 10 results without domain, second call return 10 results with domain at position 3. So position = 10 + 3 + 1 = 14. mockResolvedValueOnce for page 1, mockResolvedValueOnce for page 2, then mockResolvedValue for remaining 8 calls (empty to stop early). Actually if we mock 2nd call with domain at index 3, we get allUrls = [10 from page1] + [url, url, url, domainUrl, ...]. So position 14. We need mockImplementation that checks the body and returns accordingly. body: JSON.parse(opts.body), page: body.page. So mockImplementation((url, opts) => { const body = JSON.parse(opts.body); if (body.page === 1) return Promise.resolve({ ok: true, json: () => Promise.resolve({ organic: [...10 fake without domain] }) }); if (body.page === 2) return Promise.resolve({ ok: true, json: () => Promise.resolve({ organic: [..., ..., ..., { link: 'https://example.com/p' }] }) }); return Promise.resolve({ ok: true, json: () => Promise.resolve({ organic: [] }) }); }); Let me add that test and run tests.
+</details></think>
+
+---
+
+
+Tests anpassen: Serper ruft jetzt mehrfach `fetch` auf (bis zu 10 Seiten).
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add lib/serp-markets.ts with main markets (gl/hl) for Serper
+- [x] Add language column to rank_tracking_keywords + migration
+- [x] Serper: 10 pages, gl/hl always set, find domain position in combined results
+- [x] DB layer + API schema: language required with country; keywords route
+- [x] Refresh route: pass language + numPages to fetchSerpPosition
+- [x] Project page: language field, country+language required, main markets dropdown
+- [-] Update serp-api tests for multi-page and language/country
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/__tests__/lib/serp-api.test.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/__tests__/lib/serp-api.test.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/__tests__/lib/serp-api.test.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/__tests__/lib/serp-api.test.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/__tests__/lib/serp-api.test.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/__tests__/lib/serp-api.test.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Fix the multi-page test: mockImplementation receives (url, opts). In Node/fetch the second argument is RequestInit with body as string. So we need to read opts.body. Good. Let me run the tests. Also the rank-tracking-keywords API tests might need updating - POST now requires country and language. Let me check the keywords test file for any POST that doesn't send country/language.
+</details></think>
+
+---
+
+
+API-Tests für Keywords prüfen (POST erfordert jetzt `country` und `language`):
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/__tests__/api/rank-tracking-keywords.test.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The GET tests use listKeywordsByProject which returns rows with country (and now language). The mock has country: 'de' but no language. The API response maps k.language - so the mock row should include language. Let me add language to the mock in the test that returns keywords. And the GET route returns language in the data - so the test expect json.data[0] should include language if we want to assert it. I'll add language: 'de' to the mock row so that the type is correct (RankTrackingKeywordRow now has language). The test doesn't assert on language, so just adding it to the mock is enough.
+</details></think>
+
+---
+
+
+Keyword-Mock um `language` ergänzen.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/__tests__/api/rank-tracking-keywords.test.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Run tests. Also need to fix the serp-api test - the mockImplementation signature for fetch: fetch(url, init?). So the second argument is RequestInit and body is string. Let me run tests and see.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run test -- --run __tests__/lib/serp-api.test.ts __tests__/api/rank-tracking-keywords.test.ts 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run test -- --run __tests__/lib/serp-api.test.ts __tests__/api/rank-tracking-keywords.test.ts 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 test
+&gt; vitest run --run __tests__/lib/serp-api.test.ts __tests__/api/rank-tracking-keywords.test.ts
+
+
+ RUN  v4.0.18 /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1
+
+ ✓ __tests__/lib/serp-api.test.ts (7 tests) 4ms
+ ✓ __tests__/api/rank-tracking-keywords.test.ts (5 tests) 17ms
+
+ Test Files  2 passed (2)
+      Tests  12 passed (12)
+   Start at  08:23:23
+   Duration  383ms (transform 137ms, setup 0ms, import 319ms, tests 20ms, environment 0ms)
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+All tests pass. Let me double-check: the schema has country and language as notNull() - so the migration must run. I'll add a short note in knowledge about the SERP extension. And run linter on the changed files.
+</details></think>
+
+---
+
+
+Tests laufen. Linter prüfen und Änderungen in der Wissensdatenbank dokumentieren:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/serp-api.ts",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/serp-markets.ts",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/api-schemas.ts"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/serp-api.ts"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/serp-markets.ts"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/api-schemas.ts"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **42** results in **1** directory</summary>
+
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge** (42 files)
+
+| File |
+|------|
+| `checkion-deployment.md` |
+| `checkion-mcp-server.md` |
+| `checkion-preventive-fixes.md` |
+| `checkion-api-mcp-audit.md` |
+| `checkion-path-constants.md` |
+| `checkion-usage-tracking-coverage.md` |
+| `coolify-vollstaendige-anleitung.md` |
+| `checkion-auth-and-database.md` |
+| `figma-mcp-design-creation.md` |
+| `checkion-settings-brand-color.md` |
+| `checkion-projects-feature.md` |
+| `checkion-llm-structured-outputs.md` |
+| `checkion-geo-eeat-intensive-scan.md` |
+| `checkion-feature-ideas-geo-llm-domain.md` |
+| `checkion-improvement-opportunities.md` |
+| `checkion-remediation-feature.md` |
+| `checkion-password-policy.md` |
+| `checkion-aria-audit.md` |
+| `checkion-api-schemas.md` |
+| `checkion-api-error-handler.md` |
+| `checkion-api-tests.md` |
+| `checkion-geo-eeat-ui-improvements.md` |
+| `checkion-eeat-analysis.md` |
+| `checkion-saliency-fusion.md` |
+| `checkion-saliency-ai.md` |
+| `checkion-saliency-sum-build.md` |
+| `checkion-screenshot-storage.md` |
+| `checkion-share-links.md` |
+| `ux-journey-agent.md` |
+| `i18n-setup.md` |
+| `cookie-banner-dismiss.md` |
+| `checkion-visual-map-concept.md` |
+| `checkion-seo-keyword-analysis.md` |
+| `checkion-page-index.md` |
+| `checkion-msqdx-accordion.md` |
+| `checkion-journey-history.md` |
+| `checkion-domain-scan-storage.md` |
+| `checkion-design-background.md` |
+| `checkion-dependencies-state-of-the-art.md` |
+| `checkion-deep-scan-sitemap.md` |
+| `checkion-dashboard-pagination.md` |
+| `checkion-caching.md` |
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+No linter errors. I'll add or update a knowledge file for rank tracking / Serper so the 10 pages and main markets are documented.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add lib/serp-markets.ts with main markets (gl/hl) for Serper
+- [x] Add language column to rank_tracking_keywords + migration
+- [x] Serper: 10 pages, gl/hl always set, find domain position in combined results
+- [x] DB layer + API schema: language required with country; keywords route
+- [x] Refresh route: pass language + numPages to fetchSerpPosition
+- [x] Project page: language field, country+language required, main markets dropdown
+- [x] Update serp-api tests for multi-page and language/country
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "rank|serp|Serper",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge",
+  "outputMode": "files_with_matches",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "rank|serp|Serper",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge",
+  "outputMode": "files_with_matches",
+  "totalFiles": 0,
+  "totalMatches": 0,
+  "topFiles": []
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+No existing knowledge file for rank tracking. I'll create a short one so the SERP/Serper extension (10 pages, gl/hl, main markets) is documented.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-rank-tracking-serper.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Migration: We need to make sure existing DBs can run it. The migration 0006 adds column "language", updates it from country or 'de', then sets NOT NULL. For "country" we update NULL to 'de' then set NOT NULL. Good. Let me remove the ALTER COLUMN language SET DEFAULT 'de' if it causes issues - actually in PostgreSQL after SET NOT NULL we don't need the default for existing rows. I'll leave the migration as is. Let me give the user a summary.
+</details></think>
+
+---
+
+
+Hier die Änderungen im Überblick:
+
+## 1. **10 Seiten & Position**
+
+- **`lib/serp-api.ts`**: Serper ruft jetzt **bis zu 10 Seiten** pro Keyword ab (konfigurierbar über `SERP_NUM_PAGES` in `lib/serp-markets.ts`).
+- Pro Seite ein POST wie im Playground: `{ q, gl, hl, page }` (Seite 1, 2, … 10).
+- Alle organischen Links werden **in Reihenfolge** gesammelt; die **Position** ist der 1-basierte Index des **ersten** Treffers, der zur Domain gehört (weiterhin 1–100 oder `null`).
+
+## 2. **Immer Land & Sprache (Hauptmärkte)**
+
+- **`gl`** (country) und **hl** (language) werden bei Serper **immer** mitgesendet, Standard `de`/`de`.
+- **`lib/serp-markets.ts`**: Neue Datei mit Hauptmärkten (DE, AT, CH, US, GB, FR, ES, IT, NL) inkl. `country`/`language` und Anzeige-Label.
+- **Schema**: In `rank_tracking_keywords` sind `country` und `language` **Pflichtfelder** (NOT NULL).
+- **Migration** `0006_rank_tracking_language.sql`: Spalte `language` angelegt, bestehende Zeilen mit `country` bzw. `'de'` gefüllt, danach NOT NULL gesetzt.
+
+## 3. **API & DB**
+
+- **`lib/api-schemas.ts`**: Beim Anlegen eines Keywords sind `country` und `language` **erforderlich** (2 Zeichen, z. B. `de`, `en`).
+- **`lib/db/rank-tracking-keywords.ts`**: `insertKeyword` verlangt `country` und `language`; Row-Interface um `language` ergänzt.
+- **Refresh-Route**: Übergibt `country`, `language` und `numPages: SERP_NUM_PAGES` (10) an `fetchSerpPosition`.
+
+## 4. **Frontend**
+
+- Beim **Keyword anlegen** gibt es ein **Pflichtfeld „Markt“**: Dropdown aus `SERP_MAIN_MARKETS` (z. B. „Deutschland (de/de)“, „United States (us/en)“). Es setzt automatisch `country` und `language`.
+- In der **Rankings-Liste** werden pro Keyword `country`/`language` (z. B. `de/de`) mit angezeigt.
+
+## 5. **Tests**
+
+- **serp-api.test.ts**: Aufrufe mit `country`/`language`; neuer Test „finds domain position across multiple pages“ (Domain auf Seite 2 an Position 13).
+- **rank-tracking-keywords.test.ts**: Mock um `language: 'de'` ergänzt.
+
+**Wichtig:** Migration ausführen, damit die neue Spalte und NOT NULL-Constraints greifen:
+
+```bash
+# Beispiel, wenn ihr Drizzle/Migrate nutzt:
+npm run db:migrate
+# oder die SQL-Datei manuell auf eurer DB ausführen:
+# lib/db/migrations/0006_rank_tracking_language.sql
+```
+
+Kurzfassung: Es werden **10 Serper-Seiten** pro Keyword mit **festem gl/hl** (Hauptmärkte) geholt, und wir ermitteln weiterhin die **Position** der Domain in der zusammengeführten organischen Liste (1–100 oder nicht gefunden).
+
+---
+
+_**User**_
+
+So I was wondering if it would make sense to have On the project page, some input fields to say, okay, These are your competitors. And we... analyze them as well on every step like when we do the seo analysis with SERP we can then track okay competitor one or competitor two is already on rank or on place. and we are on place three, so we have a direct comparison. and the single source of truth of competitors is on the main project page. And I mean we can add AI as well. So that we instantly say... This is your company. This is your company. And then we... automatically recommend other competitors which the AI might Find out.
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is asking about extending the project page with:
+1. **Competitor input fields** on the project page – a single source of truth for "these are your competitors"
+2. **Using competitors in rank tracking** – when doing SERP/SEO analysis, not only track "our domain" position but also track competitor positions (e.g. "competitor 1 is rank 1, competitor 2 is rank 2, we are rank 3") for direct comparison
+3. **AI-powered competitor suggestions** – e.g. "This is your company [domain], this is your company [name?]" and AI recommends competitors automatically
+
+They're asking if this would "make sense" – so they want my opinion/analysis and possibly how it could fit into the existing architecture. I'm in Ask mode, so I should explain the idea, how it could fit into Checkion's current structure, and what would be involved – without making edits.
+
+Let me quickly check:
+- Where competitors are currently used in Checkion (e.g. GEO/E-E-A-T runs already have competitors)
+- Project schema and project detail page
+- Rank tracking current structure
+
+So I can give a grounded answer about where competitors would live, how SERP tracking would use them, and how AI suggestions could plug in.
+</details></think>
+
+---
+
+
+Checking how competitors and project data are used in the codebase so we can give a precise answer.
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "competitor",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.{ts,tsx,json}",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "competitor",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 105,
+  "totalMatches": 480,
+  "topFiles": [
+    {
+      "uri": "./__tests__/lib/serp-api.test.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./locales/en.json",
+      "matchCount": 5
+    },
+    {
+      "uri": "./locales/de.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "./lib/api-schemas.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "./lib/db/schema.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./lib/constants.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./mcp-server/src/tools.ts",
+      "matchCount": 6
+    },
+    {
+      "uri": "./app/api/scan/geo-eeat/[jobId]/rerun-competitive/route.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "./app/api/scan/geo-eeat/suggest-competitors-queries/route.ts",
+      "matchCount": 13
+    },
+    {
+      "uri": "./app/api/scan/geo-eeat/route.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/api/scan/geo-eeat/[jobId]/competitive-history/[runId]/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/api/scan/geo-eeat/[jobId]/competitive-history/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/scan/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "./app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./lib/geo-eeat/competitive-benchmark.ts",
+      "matchCount": 13
+    },
+    {
+      "uri": "./components/CompetitivePositionDiagram.test.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./lib/db/geo-eeat-competitive-runs.test.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./lib/db/geo-eeat-competitive-runs.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "./lib/types.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./lib/geo-eeat/suggest-parse.test.ts",
+      "matchCount": 13
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So currently:
+- **Projects** have: id, userId, name, domain, createdAt, updatedAt — no `competitors` field.
+- **Competitors** are only used in GEO/E-E-A-T: per run you can pass `competitors` (and queries); they're stored in `geo_eeat_competitive_runs.competitors` (jsonb) for that specific run. So competitors are **per GEO run**, not per project.
+- There's already **AI suggest**: `POST /api/scan/geo-eeat/suggest-competitors-queries` that takes a `url` and returns suggested competitors + queries.
+
+The user's idea:
+1. **Single source of truth**: Store competitors on the **project** (project page has input fields). So we'd add something like `competitors: jsonb` or a `project_competitors` table linked to project.
+2. **Use in SERP/rank tracking**: When we do rank tracking refresh, for each keyword we already get the full SERP (up to 10 pages). We could:
+   - Keep storing "our" domain position as now.
+   - Additionally, for each competitor domain from the project, find their position in the same SERP and store or return it. So the UI could show: "Keyword X: we're #3, Competitor A #1, Competitor B #2" (direct comparison).
+3. **AI on project page**: "This is your company [domain/name], suggest competitors" — similar to the existing suggest endpoint but scoped to the project (project domain or URL) and writing the result into the project's competitor list.
+
+So yes, it makes sense. I'll summarize:
+- **Where**: Add competitors to project (schema + project API + project page UI).
+- **SERP**: When we fetch SERP for a keyword we already have the full list of URLs. We can compute position for our domain AND for each project competitor in one go (no extra API calls). Store or return competitor positions per keyword/date (new table or extend rank_tracking_positions to store a jsonb like `{ "our": 3, "competitor1.com": 1, "competitor2.com": 2 }` or a separate `rank_tracking_competitor_positions`).
+- **AI**: Reuse or mirror `suggest-competitors-queries` with project context (project domain/name) and optionally write suggested competitors into the project's list.
+
+I'll give a clear, structured answer.
+</details></think>
+
+---
+
+
+Checking how the GEO suggest endpoint and project API work:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/geo-eeat/suggest-competitors-queries/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/serp-api.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I have a good picture. Let me summarize for the user:
+
+1. **Single source of truth on project** – Right now competitors only exist per GEO/E-E-A-T run (in `geo_eeat_competitive_runs.competitors`). Projects only have `name` and `domain`. Adding a `competitors` field (or table) on the project would give one place to maintain the list and reuse it everywhere (GEO runs, rank tracking, future features).
+
+2. **SERP / rank tracking** – We already fetch the full SERP (up to 10 pages) for each keyword. The same response contains all organic URLs. So in one pass we can:
+   - Find position of **our** domain (already done).
+   - For each **project competitor** domain, find their position in that same URL list.
+   No extra Serper calls; just one more loop over the same `allUrls` array. We’d need to store competitor positions (e.g. new table `rank_tracking_competitor_positions` with keywordId, competitorDomain, position, recordedAt, or a jsonb column on the main positions table). The UI could then show "Keyword X: You #3, Competitor A #1, Competitor B #2".
+
+3. **AI suggestions on project page** – There’s already `POST /api/scan/geo-eeat/suggest-competitors-queries` that takes a URL and returns competitors + queries. You could:
+   - Add a project-level endpoint like `POST /api/projects/[id]/suggest-competitors` that uses the project’s `domain` (or a URL the user passes) and calls the same LLM logic (or a slim variant that only returns competitors), then optionally **writes** the suggested competitors into the project’s competitor list.
+   - On the project page: "This is your company [domain/name]" could be the project’s domain + name, and a button "Suggest competitors with AI" that calls this and fills the competitor list (or offers to add them).
+
+So yes, it makes sense. I'll write a clear answer.
+</details></think>
+
+---
+
+
+Yes, it makes sense. Here’s how it fits your codebase and what would need to change.
+
+---
+
+## 1. Single source of truth: competitors on the project
+
+**Current state:**  
+Competitors only exist **per GEO/E-E-A-T run**. They’re stored in `geo_eeat_competitive_runs.competitors` (and passed in the scan payload). Projects only have `name` and `domain` – no competitor list.
+
+**Idea:**  
+Store competitors on the **project** (e.g. `projects.competitors` jsonb or a small `project_competitors` table). The project page would have input fields (or a list) to manage that list. Then:
+
+- **Rank tracking** uses “our” domain (from keyword or project) + project competitors.
+- **GEO/E-E-A-T** can optionally default “competitors” from the project instead of asking every time.
+- One place to add/remove competitors; every feature that needs them reads from the project.
+
+So yes: having competitors on the project page as the single source of truth is a good design.
+
+---
+
+## 2. SERP: track us + competitors in one go (direct comparison)
+
+**Current state:**  
+For each keyword you already fetch up to 10 pages of Serper results and compute **one** position: the first URL that matches “our” domain. That’s in `lib/serp-api.ts` (e.g. `fetchSerpPosition` returning `{ position: number | null }`).
+
+**Idea:**  
+Use the **same** SERP response (the same `allUrls` list) and:
+
+- Keep computing “our” position as now.
+- For each **project competitor** domain, run the same “first index where URL matches this domain” logic over the same list.
+
+No extra Serper calls; one SERP fetch per keyword gives you:
+
+- Our position  
+- Position of competitor 1  
+- Position of competitor 2  
+- …
+
+So you get a direct comparison: “Keyword X: we’re #3, Competitor A #1, Competitor B #2.”
+
+**Storage:**  
+You’d need to persist competitor positions as well, e.g.:
+
+- A separate table like `rank_tracking_competitor_positions(keywordId, competitorDomain, position, recordedAt)`, or  
+- Extending what you store per “snapshot” (e.g. one row per keyword+date with a jsonb like `{ "our": 3, "competitor1.com": 1, "competitor2.com": 2 }`).
+
+Then the Rankings tab can show a small table or list per keyword: our rank vs each competitor’s rank.
+
+---
+
+## 3. AI: “This is your company” → suggest competitors on the project
+
+**Current state:**  
+You already have AI-backed competitor (and query) suggestion for **GEO/E-E-A-T**:
+
+- `POST /api/scan/geo-eeat/suggest-competitors-queries`  
+- Body: `{ url }`  
+- It uses the URL (and derived domain) and asks the LLM for ~5 competitors and ~10 queries (see `app/api/scan/geo-eeat/suggest-competitors-queries/route.ts` and the system prompt).
+
+**Idea:**  
+On the **project** page you could add:
+
+- A section “This is your company” (e.g. project name + project domain).
+- A button like “Suggest competitors with AI” that:
+  - Calls an endpoint that uses **project context** (e.g. project `domain` or project `name` + domain), e.g. `POST /api/projects/[id]/suggest-competitors`.
+  - That endpoint can reuse the same LLM pattern as the GEO suggest (or a variant that only returns competitors).
+  - The UI then shows the suggested list and lets the user **add** them to the project’s competitor list (the single source of truth).
+
+So: “This is your company [domain/name], here are suggested competitors” and one-click (or two-click) “add to project competitors” fits well and reuses the existing suggest logic.
+
+---
+
+## Summary
+
+| Piece | Makes sense? | Note |
+|-------|--------------|------|
+| Competitors on project page (single source of truth) | Yes | Add `competitors` to project (schema + API + UI). GEO and rank tracking can both read from it. |
+| SERP: track our + competitor positions per keyword | Yes | Same SERP response; no extra API calls; extend storage and UI to show “us vs competitors” per keyword. |
+| AI suggest competitors on project (“this is your company”) | Yes | Reuse or mirror `suggest-competitors-queries` with project domain/name and optionally write results into the project’s competitor list. |
+
+If you want this implemented in the repo (schema, SERP logic, project API, and UI), switch to Agent mode and we can do it step by step; in Ask mode I can only outline and explain as above.
+
+---
+
+_**User**_
+
+plan the whole implementation
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants a full implementation plan for:
+1. Competitors as single source of truth on the project (project page input fields, store on project)
+2. SERP/rank tracking: when we do rank refresh, also compute and store competitor positions for the same keyword (direct comparison: "we're #3, competitor A #1, competitor B #2")
+3. AI: "This is your company" on project page → suggest competitors with AI and optionally add them to the project
+
+I need to gather enough context to write a concrete plan:
+- Project schema and API (GET/PATCH project)
+- Rank tracking: refresh flow, serp-api, positions storage
+- GEO suggest-competitors-queries (to reuse for project suggest)
+- Project page structure (tabs, rankings tab, where to add competitors section)
+
+Let me read the relevant files to make the plan specific.
+</details></think>
+
+---
+
+
+Gathering project structure, rank-tracking flow, and GEO suggest implementation to draft the implementation plan.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/rank-tracking/refresh/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need:
+1. Projects DB layer - getProject, updateProject - to see if they already support any extra fields
+2. Rank tracking positions schema and how we store - to design competitor positions storage
+3. serp-api fetchSerpPosition - does it return only one position or could we extend to return positions for multiple domains
+4. GEO suggest-competitors full route to see how to reuse for project suggest
+5. Project page structure - where competitors UI would go
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/projects.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/rank-tracking-positions.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/serp-api.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I have a clear picture. For competitor positions we have two options:
+A) New table rank_tracking_competitor_positions(positionId, competitorDomain, position) - links to the same "snapshot" (one rank_tracking_positions row per keyword per refresh). So we'd have one row in rank_tracking_positions (our position) and N rows in rank_tracking_competitor_positions for that "recording".
+B) Add a jsonb column competitor_positions to rank_tracking_positions: { "competitor1.com": 1, "competitor2.com": 2 }. Simpler, one row per keyword per refresh.
+
+Option B is simpler and avoids another table and join. We already have one row per keyword per refresh; we can add competitor_positions jsonb to that row. So rank_tracking_positions gets an optional column competitor_positions: jsonb (Record<string, number | null> or array of { domain, position }).
+
+Actually storing as Record<string, number> where key is normalized domain and value is position is clean. So when we refresh we:
+1. Call a new function fetchSerpPositions(keyword, [ourDomain, ...competitorDomains], options) that returns { positions: { "ourdomain.com": 3, "competitor1.com": 1, ... } } or we keep fetchSerpPosition and add fetchSerpPositionsForDomains that returns Map<domain, position>.
+2. insertPosition(keywordId, ourPosition, id, competitorPositions?)
+3. GET keywords list and GET positions need to return competitor positions for the last snapshot.
+
+Let me check the keywords list API - it returns lastPosition, lastRecordedAt. We'd add lastCompetitorPositions: { "competitor.com": 1 } or similar.
+
+I'll need:
+- rank_tracking_positions: add competitor_positions jsonb (optional). Type: Record<string, number> (domain -> position).
+- serp-api: new function or extend fetchSerpPosition to accept optional competitorDomains: string[] and return { position, competitorPositions: Record<string, number | null> }. So we still have one SERP fetch, then we iterate allUrls once for our domain and once for each competitor. Same loop can build a map domain -> first position found.
+- refresh route: get project's competitors, call fetchSerpPosition (extended) with competitor list, insert our position + competitor_positions.
+- keywords list API: when we get last position, also return last competitor positions (from same row).
+- Frontend: show competitor columns or a small table.
+
+For the project:
+- projects table: add competitors jsonb (string[]). Migration.
+- getProject returns it, updateProject accepts it.
+- Project page: section "Competitors" with list + add + remove, and "Suggest with AI" button.
+- API PATCH project: allow competitors in body (and schema).
+- New endpoint POST /api/projects/[id]/suggest-competitors: uses project domain/name, calls LLM (reuse logic from suggest-competitors-queries), returns { competitors: string[] }; frontend can then add them to project.
+
+GEO flow: when starting a GEO run with runCompetitive, we could optionally pre-fill competitors from project if not provided in the request. That's a nice-to-have; the plan can say "optionally pre-fill GEO run competitors from project".
+
+Let me also check how the keywords route returns data and how the project page displays it, so the plan can say where competitor positions appear.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/rank-tracking/keywords/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/geo-eeat/suggest-competitors-queries/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "projectUpdateBodySchema|project.*schema",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/api-schemas.ts",
+  "contextBefore": 0,
+  "contextAfter": 8,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "projectUpdateBodySchema|project.*schema",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/api-schemas.ts",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 5,
+  "topFiles": [
+    {
+      "uri": "lib/api-schemas.ts",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/lib/api-schemas.ts",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/lib/api-schemas.ts",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/lib/api-schemas.ts",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/lib/api-schemas.ts",
+      "matchCount": 9
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+getLastPositionsByKeywordIds returns only position and recordedAt - it doesn't return the full row. So we need to either:
+1. Add a new function getLastPositionRowsByKeywordIds that returns the full row including competitor_positions, or
+2. Change getLastPositionsByKeywordIds to return competitor_positions as well (so the return type becomes { position, recordedAt, competitorPositions? }).
+
+I'll go with extending the return type and the query to include competitor_positions. So we need to add the column, then in the SELECT include it, and in the Map value type include competitorPositions.
+
+Checking suggest-parse for the JSON structure.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat/suggest-parse.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I have enough. Let me check the project page structure - is there a dedicated "project settings" area or do we add competitors above the tabs / in a new tab? The user said "on the project page, some input fields" and "single source of truth of competitors is on the main project page". So the competitors section could be:
+- Above the tabs (next to project name/domain) as an editable list
+- Or a new tab "Settings" / "Competitors"
+- Or a collapsible section on the same page
+
+I'll plan for a **Competitors section on the project page** (same page, visible when viewing the project) - e.g. below the title/domain and above or beside the tabs. That way it's always visible and editable. Alternatively a "Project settings" or "Competitors" tab. I'll say "section on the project detail page (e.g. below header, or in a dedicated tab)" and recommend below header so it's one place.
+
+Actually re-reading the user message: "on the project page, some input fields to say, okay, These are your competitors" - so input fields on the project page. I'll plan for a **Competitors block** on the project detail page (below the project name/domain, above the tabs). List of competitor domains with add/remove, plus "Suggest with AI" button.
+
+Now write the full plan.
+</details></think>
+
+---
+
+
+Checking the migrations folder pattern and whether the positions table is referenced elsewhere:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "rank_tracking_positions|getLastPositionsByKeywordIds",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "rank_tracking_positions|getLastPositionsByKeywordIds",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 20,
+  "totalMatches": 45,
+  "topFiles": [
+    {
+      "uri": "./__tests__/api/rank-tracking-keywords.test.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "./app/api/rank-tracking/keywords/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./lib/db/schema.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./lib/db/rank-tracking-positions.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/__tests__/api/rank-tracking-keywords.test.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/app/api/rank-tracking/keywords/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/schema.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/rank-tracking-positions.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/__tests__/api/rank-tracking-keywords.test.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/app/api/rank-tracking/keywords/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/schema.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/rank-tracking-positions.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/__tests__/api/rank-tracking-keywords.test.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/app/api/rank-tracking/keywords/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/schema.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/rank-tracking-positions.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/__tests__/api/rank-tracking-keywords.test.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/app/api/rank-tracking/keywords/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/schema.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/rank-tracking-positions.ts",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I have everything. Creating the plan.
+</details></think>
+
+---
+
+
+Creating the implementation plan.
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="create_plan">
+<details>
+<summary>Tool use: **create_plan**</summary>
+
+
+Parameters:
+
+```json
+{
+  "plan": "# Project competitors + SERP competitor tracking + AI suggest\n\n## Current state\n\n- **Projects** ([lib/db/schema.ts](lib/db/schema.ts)): &#96;id&#96;, &#96;userId&#96;, &#96;name&#96;, &#96;domain&#96; — no competitors.\n- **Project API** ([app/api/projects/[id]/route.ts](app/api/projects/[id]/route.ts)): GET returns project + counts; PATCH accepts &#96;name&#96; and &#96;domain&#96; via [projectUpdateBodySchema](lib/api-schemas.ts).\n- **Rank tracking**: One SERP fetch per keyword returns a single **our** position; stored in [rank_tracking_positions](lib/db/schema.ts) (id, keywordId, position, recordedAt). Keywords list API uses [getLastPositionsByKeywordIds](lib/db/rank-tracking-positions.ts) and returns &#96;lastPosition&#96;, &#96;lastRecordedAt&#96;.\n- **GEO/E-E-A-T**: Competitors are **per run** (body + [geo_eeat_competitive_runs.competitors](lib/db/schema.ts)). [POST /api/scan/geo-eeat/suggest-competitors-queries](app/api/scan/geo-eeat/suggest-competitors-queries/route.ts) takes a URL and returns &#96;{ competitors, queries }&#96; via LLM ([lib/geo-eeat/suggest-parse.ts](lib/geo-eeat/suggest-parse.ts)).\n\n---\n\n## 1. Project competitors (single source of truth)\n\n**Schema and migration**\n\n- Add &#96;competitors&#96; to &#96;projects&#96;: &#96;jsonb('competitors')&#96; storing &#96;string[]&#96; (domain strings). Default &#96;[]&#96;. New migration e.g. &#96;0007_project_competitors.sql&#96;: &#96;ALTER TABLE projects ADD COLUMN competitors jsonb DEFAULT '[]'::jsonb NOT NULL;&#96; (or appropriate for existing rows).\n\n**DB layer**\n\n- [lib/db/projects.ts](lib/db/projects.ts): Extend &#96;ProjectRow&#96; with &#96;competitors: string[]&#96;. In &#96;insertProject&#96; write &#96;competitors: data.competitors ?? []&#96;. In &#96;getProject&#96; return the column (ensure JSON is parsed as array). In &#96;updateProject&#96; allow &#96;data.competitors?: string[]&#96; and set it when provided.\n\n**API**\n\n- [lib/api-schemas.ts](lib/api-schemas.ts): Extend &#96;projectUpdateBodySchema&#96; with &#96;competitors: z.array(z.string()).optional()&#96; (and optionally normalize: trim, lowercase, filter empty).\n- [app/api/projects/[id]/route.ts](app/api/projects/[id]/route.ts): GET already returns &#96;...project&#96;, so &#96;competitors&#96; will appear once the DB returns it. PATCH: pass &#96;parsed.competitors&#96; into &#96;updateProject&#96; when present.\n\n**Constants**\n\n- [lib/constants.ts](lib/constants.ts): No new URL needed for PATCH project; optional: add a helper for &#96;POST /api/projects/[id]/suggest-competitors&#96; (see below).\n\n---\n\n## 2. Project page: competitors UI and AI suggest\n\n**Project page layout**\n\n- [app/projects/[id]/page.tsx](app/projects/[id]/page.tsx): Add a **Competitors** section on the project detail page (below the project name/domain, above the tabs). This keeps competitors visible and editable in one place.\n\n**Competitors block**\n\n- State: &#96;competitors: string[]&#96; (from &#96;project.competitors&#96; after load), &#96;addCompetitorValue: string&#96;, &#96;suggestCompetitorsLoading: boolean&#96;, &#96;suggestCompetitorsError: string | null&#96;.\n- Display: List of competitor domains with a remove button each; an input + “Add” to append a domain; normalize input (trim, optional strip protocol/www) before add.\n- Persistence: On add/remove, call &#96;PATCH /api/projects/[id]&#96; with &#96;{ competitors: newList }&#96; and refresh project (or optimistic update then refetch). Ensure only the updated list is sent (array of strings).\n\n**AI suggest**\n\n- New endpoint: &#96;POST /api/projects/[id]/suggest-competitors&#96;. Auth, load project by id and userId. Use &#96;project.domain&#96; or &#96;project.name&#96; (and optional body override URL) to build a context string (e.g. “Domain: project.domain, Name: project.name”). Reuse the same LLM prompt and parsing as [app/api/scan/geo-eeat/suggest-competitors-queries/route.ts](app/api/scan/geo-eeat/suggest-competitors-queries/route.ts) but request only competitors (or call existing logic and ignore &#96;queries&#96;). Return &#96;{ competitors: string[] }&#96;.\n- Project page: Button “Suggest competitors with AI”. On click set loading, call &#96;POST /api/projects/[id]/suggest-competitors&#96;, merge or replace suggested competitors into local state and show them (e.g. “Add all” or show list with checkboxes to add selected). Optionally auto-PATCH to save to project so the list is persisted.\n- If project has no domain, either disable the button with a tooltip or allow passing a URL in a small form; document in UI.\n\n**Locales**\n\n- Add keys e.g. &#96;projects.competitors&#96;, &#96;projects.competitorsDescription&#96;, &#96;projects.addCompetitor&#96;, &#96;projects.suggestCompetitorsWithAi&#96;, &#96;projects.noCompetitors&#96;, &#96;projects.removeCompetitor&#96;. Use in the new section.\n\n---\n\n## 3. SERP: track competitor positions (same SERP, no extra calls)\n\n**SERP API**\n\n- [lib/serp-api.ts](lib/serp-api.ts): Extend the existing fetch so we can get positions for multiple domains from one SERP response.\n  - Option A (recommended): Add an optional parameter &#96;competitorDomains?: string[]&#96; to &#96;fetchSerpPosition&#96;. After building &#96;allUrls&#96; (Serper loop or ScrapingRobot single response), compute: (1) our domain’s first position (current behaviour); (2) for each competitor domain, first position in &#96;allUrls&#96; (same &#96;urlMatchesDomain&#96; logic). Return e.g. &#96;{ position: number | null, competitorPositions: Record&lt;string, number | null&gt; }&#96; (key = normalized domain).\n  - Keep backward compatibility: if &#96;competitorDomains&#96; is missing or empty, &#96;competitorPositions&#96; is &#96;{}&#96;. Existing callers still get &#96;position&#96; only.\n\n**DB: store competitor positions**\n\n- [lib/db/schema.ts](lib/db/schema.ts): Add to &#96;rank_tracking_positions&#96; a nullable column &#96;competitor_positions jsonb&#96; — type &#96;Record&lt;string, number | null&gt;&#96; (domain -&gt; position). Migration: &#96;ALTER TABLE rank_tracking_positions ADD COLUMN competitor_positions jsonb;&#96;.\n- [lib/db/rank-tracking-positions.ts](lib/db/rank-tracking-positions.ts): &#96;insertPosition(keywordId, position, id, competitorPositions?: Record&lt;string, number | null&gt;)&#96; — write the new column when provided. &#96;getLastPositionsByKeywordIds&#96;: in the SELECT include &#96;competitor_positions&#96;; return type becomes &#96;Map&lt;string, { position, recordedAt, competitorPositions? }&gt;&#96;.\n\n**Refresh route**\n\n- [app/api/rank-tracking/refresh/route.ts](app/api/rank-tracking/refresh/route.ts): For each keyword, resolve the project (keyword has &#96;projectId&#96;). Load project competitors (from [getProject](lib/db/projects.ts) or a lightweight getter that returns only &#96;competitors&#96;). Call &#96;fetchSerpPosition(keyword, ourDomain, { ..., competitorDomains: project.competitors })&#96;. Pass &#96;competitorPositions&#96; into &#96;insertPosition&#96;. Response can include &#96;competitorPositions&#96; per keyword in &#96;results&#96; for clarity.\n\n**Keywords list API**\n\n- [app/api/rank-tracking/keywords/route.ts](app/api/rank-tracking/keywords/route.ts): When building the list, use the extended &#96;getLastPositionsByKeywordIds&#96; and expose &#96;lastCompetitorPositions: Record&lt;string, number | null&gt;&#96; (or &#96;lastCompetitorPositions&#96;) on each keyword item so the frontend can show “Us vs Competitor A, B” per keyword.\n\n---\n\n## 4. Rankings tab: show competitor comparison\n\n- [app/projects/[id]/page.tsx](app/projects/[id]/page.tsx) (Rankings tab): Extend the keyword rows to show not only “our” last position and last update, but also the last recorded competitor positions (from &#96;lastCompetitorPositions&#96;). Example: a small table or chip list “You: 3 | Competitor A: 1 | Competitor B: 2” so the direct comparison is visible. If no competitor data yet, show only our position (current behaviour). Use project’s competitor list for labels if needed (same order or match by domain).\n\n---\n\n## 5. Optional: GEO run pre-fill from project\n\n- When starting a GEO/E-E-A-T run with “competitive” enabled, if the request does not send &#96;competitors&#96; (or sends empty), the backend can load the project’s &#96;competitors&#96; and pre-fill the competitive run. This is a small change in the GEO scan start route (e.g. [app/api/scan/geo-eeat/route.ts](app/api/scan/geo-eeat/route.ts) or wherever the run is created). Low priority; can be a follow-up.\n\n---\n\n## 6. Tests and docs\n\n- **Unit**: Extend [__tests__/lib/serp-api.test.ts](__tests__/lib/serp-api.test.ts) with a case where &#96;competitorDomains&#96; is passed and the response includes &#96;competitorPositions&#96; with correct positions from the same SERP.\n- **API**: Adjust [__tests__/api/rank-tracking-keywords.test.ts](__tests__/api/rank-tracking-keywords.test.ts) if the keywords GET response shape changes (mock &#96;getLastPositionsByKeywordIds&#96; to return &#96;competitorPositions&#96;). Add or extend a test for PATCH project with &#96;competitors&#96;.\n- **Knowledge**: Update or add [knowledge/checkion-rank-tracking-serper.md](knowledge/checkion-rank-tracking-serper.md) to mention project competitors and that each rank snapshot can include competitor positions; document [knowledge/checkion-projects-feature.md](knowledge/checkion-projects-feature.md) (or equivalent) with competitors and AI suggest.\n\n---\n\n## Data flow (high level)\n\n&#96;&#96;&#96;mermaid\nflowchart LR\n  subgraph project [Project]\n    P[projects table]\n    P --&gt; competitors[competitors jsonb]\n  end\n  subgraph ui [Project page]\n    UI_Edit[Edit competitors list]\n    UI_Suggest[Suggest with AI]\n    UI_Rankings[Rankings tab]\n  end\n  subgraph serp [SERP refresh]\n    Refresh[POST refresh]\n    Refresh --&gt; Fetch[fetchSerpPosition]\n    Fetch --&gt; Store[insertPosition with competitor_positions]\n  end\n  UI_Edit --&gt; PATCH[PATCH project]\n  PATCH --&gt; P\n  UI_Suggest --&gt; SuggestAPI[POST suggest-competitors]\n  SuggestAPI --&gt; LLM[LLM]\n  LLM --&gt; UI_Edit\n  competitors --&gt; Refresh\n  Fetch --&gt; competitors\n  Store --&gt; UI_Rankings\n  getLastPositionsByKeywordIds --&gt; UI_Rankings\n&#96;&#96;&#96;\n\n---\n\n## File change summary\n\n| Area | Files to add/change |\n|------|---------------------|\n| Schema + migration | [lib/db/schema.ts](lib/db/schema.ts) (projects.competitors, rank_tracking_positions.competitor_positions), new migration SQL |\n| Projects DB | [lib/db/projects.ts](lib/db/projects.ts) |\n| Projects API | [app/api/projects/[id]/route.ts](app/api/projects/[id]/route.ts), [lib/api-schemas.ts](lib/api-schemas.ts) |\n| Suggest API | New [app/api/projects/[id]/suggest-competitors/route.ts](app/api/projects/[id]/suggest-competitors/route.ts) |\n| SERP | [lib/serp-api.ts](lib/serp-api.ts) |\n| Positions DB | [lib/db/rank-tracking-positions.ts](lib/db/rank-tracking-positions.ts) |\n| Refresh route | [app/api/rank-tracking/refresh/route.ts](app/api/rank-tracking/refresh/route.ts) |\n| Keywords list API | [app/api/rank-tracking/keywords/route.ts](app/api/rank-tracking/keywords/route.ts) |\n| Project page | [app/projects/[id]/page.tsx](app/projects/[id]/page.tsx), [locales/en.json](locales/en.json), [locales/de.json](locales/de.json) |\n| Constants | [lib/constants.ts](lib/constants.ts) (optional suggest-competitors URL) |\n| Tests | [__tests__/lib/serp-api.test.ts](__tests__/lib/serp-api.test.ts), [__tests__/api/rank-tracking-keywords.test.ts](__tests__/api/rank-tracking-keywords.test.ts), optional project PATCH test |\n| Knowledge | [knowledge/checkion-rank-tracking-serper.md](knowledge/checkion-rank-tracking-serper.md), project feature doc |\n\n---\n\n## Order of implementation\n\n1. Schema + migrations (projects.competitors, rank_tracking_positions.competitor_positions).\n2. DB layer: projects (CRUD with competitors), rank-tracking-positions (insert and get last with competitor_positions).\n3. SERP API: extend fetchSerpPosition with competitorDomains and competitorPositions return value.\n4. API: PATCH project (competitors), GET project already returns competitors; new suggest-competitors route.\n5. Refresh route: load project competitors, call extended fetchSerpPosition, insertPosition with competitor_positions.\n6. Keywords GET: return lastCompetitorPositions per keyword.\n7. Project page: competitors section (list, add, remove, PATCH), “Suggest with AI” button and integration.\n8. Rankings tab: show competitor positions next to “our” position.\n9. Locales, constants, tests, knowledge.\n",
+  "name": "Project competitors and SERP comparison",
+  "overview": "Add project-level competitors as single source of truth (DB + project page UI), extend SERP rank tracking to store and display competitor positions per keyword for direct comparison, and add an AI \"suggest competitors\" flow on the project page reusing the existing GEO suggest logic."
+}
+```
+Additional data:
+
+```json
+{
+  "reviewData": {
+    "status": "Requested",
+    "selectedOption": "none",
+    "isShowingInput": false
+  },
+  "planUri": "file:///Users/christoph.bordeck/.cursor/plans/project_competitors_and_serp_comparison_4f6fbbb4.plan.md",
+  "hasOpenedEditor": true
+}
+```
+Result:
+
+```json
+{
+  "rejected": {}
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+_**User**_
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants me to implement the full plan for "Project competitors + SERP competitor tracking + AI suggest". The plan is attached. I should not edit the plan file. I need to mark todos as in_progress and completed as I work through them.
+
+Let me first check what todos exist - the plan said "To-do's from the plan have already been created" but the attached plan shows `todos: []`. I'll proceed with the implementation order from the plan:
+
+1. Schema + migrations (projects.competitors, rank_tracking_positions.competitor_positions).
+2. DB layer: projects (CRUD with competitors), rank-tracking-positions (insert and get last with competitor_positions).
+3. SERP API: extend fetchSerpPosition with competitorDomains and competitorPositions return value.
+4. API: PATCH project (competitors), GET project already returns competitors; new suggest-competitors route.
+5. Refresh route: load project competitors, call extended fetchSerpPosition, insertPosition with competitor_positions.
+6. Keywords GET: return lastCompetitorPositions per keyword.
+7. Project page: competitors section (list, add, remove, PATCH), "Suggest with AI" button and integration.
+8. Rankings tab: show competitor positions next to "our" position.
+9. Locales, constants, tests, knowledge.
+
+I'll start implementing. First I need to see if there are existing todos in the worksp</details></think>
+
+---
+

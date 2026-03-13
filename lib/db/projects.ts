@@ -11,6 +11,7 @@ export interface ProjectRow {
     userId: string;
     name: string;
     domain: string | null;
+    competitors: string[];
     createdAt: Date;
     updatedAt: Date;
 }
@@ -18,15 +19,17 @@ export interface ProjectRow {
 export async function insertProject(
     id: string,
     userId: string,
-    data: { name: string; domain?: string | null }
+    data: { name: string; domain?: string | null; competitors?: string[] }
 ): Promise<void> {
     const db = getDb();
     const now = new Date();
+    const competitors = Array.isArray(data.competitors) ? data.competitors : [];
     await db.insert(projects).values({
         id,
         userId,
         name: data.name,
         domain: data.domain ?? null,
+        competitors,
         createdAt: now,
         updatedAt: now,
     });
@@ -39,7 +42,12 @@ export async function getProject(id: string, userId: string): Promise<ProjectRow
         .from(projects)
         .where(and(eq(projects.id, id), eq(projects.userId, userId)))
         .limit(1);
-    return rows.length > 0 ? (rows[0] as ProjectRow) : null;
+    if (rows.length === 0) return null;
+    const row = rows[0] as ProjectRow & { competitors?: unknown };
+    return {
+        ...row,
+        competitors: Array.isArray(row.competitors) ? row.competitors : [],
+    } as ProjectRow;
 }
 
 export async function listProjects(userId: string): Promise<ProjectRow[]> {
@@ -49,13 +57,16 @@ export async function listProjects(userId: string): Promise<ProjectRow[]> {
         .from(projects)
         .where(eq(projects.userId, userId))
         .orderBy(desc(projects.updatedAt));
-    return rows as ProjectRow[];
+    return rows.map((row) => {
+        const r = row as ProjectRow & { competitors?: unknown };
+        return { ...r, competitors: Array.isArray(r.competitors) ? r.competitors : [] } as ProjectRow;
+    });
 }
 
 export async function updateProject(
     id: string,
     userId: string,
-    data: { name?: string; domain?: string | null }
+    data: { name?: string; domain?: string | null; competitors?: string[] }
 ): Promise<boolean> {
     const db = getDb();
     const updated = await db
@@ -63,6 +74,7 @@ export async function updateProject(
         .set({
             ...(data.name !== undefined && { name: data.name }),
             ...(data.domain !== undefined && { domain: data.domain }),
+            ...(data.competitors !== undefined && { competitors: data.competitors }),
             updatedAt: new Date(),
         })
         .where(and(eq(projects.id, id), eq(projects.userId, userId)));

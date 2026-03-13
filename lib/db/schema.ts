@@ -24,12 +24,13 @@ export const apiTokens = pgTable('api_tokens', {
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-/** User projects: group domain/scans/journeys/geo-runs for a customer or domain. */
+/** User projects: group domain/scans/journeys/geo-runs for a customer or domain. Competitors = single source of truth for rank tracking and GEO. */
 export const projects = pgTable('projects', {
     id: text('id').primaryKey(),
     userId: text('user_id').notNull(), // PLEXON user id when using central auth
     name: text('name').notNull(),
     domain: text('domain'),
+    competitors: jsonb('competitors').notNull().default([]), // string[] – competitor domains
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -120,23 +121,25 @@ export const geoEeatCompetitiveRuns = pgTable('geo_eeat_competitive_runs', {
     error: text('error'),
 });
 
-/** Rank tracking: keywords per project for SERP position monitoring. */
+/** Rank tracking: keywords per project for SERP position monitoring. Country + language (gl/hl) always set for main markets. */
 export const rankTrackingKeywords = pgTable('rank_tracking_keywords', {
     id: text('id').primaryKey(),
     userId: text('user_id').notNull(),
     projectId: text('project_id').references(() => projects.id, { onDelete: 'set null' }),
     domain: text('domain').notNull(),
     keyword: text('keyword').notNull(),
-    country: text('country'),
+    country: text('country').notNull(), // gl, e.g. de, us
+    language: text('language').notNull(), // hl, e.g. de, en
     device: text('device'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-/** Rank tracking: position history per keyword (1–100 or null if not in top 100). */
+/** Rank tracking: position history per keyword (1–100 or null if not in top 100). competitor_positions = domain -> position for project competitors (same SERP). */
 export const rankTrackingPositions = pgTable('rank_tracking_positions', {
     id: text('id').primaryKey(),
     keywordId: text('keyword_id').notNull().references(() => rankTrackingKeywords.id, { onDelete: 'cascade' }),
     position: integer('position'), // 1–100 or null
+    competitorPositions: jsonb('competitor_positions'), // Record<string, number | null> – domain -> position
     recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull().defaultNow(),
 });

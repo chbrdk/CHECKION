@@ -12,7 +12,8 @@ export interface RankTrackingKeywordRow {
     projectId: string | null;
     domain: string;
     keyword: string;
-    country: string | null;
+    country: string;
+    language: string;
     device: string | null;
     createdAt: Date;
     updatedAt: Date;
@@ -22,7 +23,7 @@ export async function insertKeyword(
     id: string,
     userId: string,
     projectId: string | null,
-    data: { domain: string; keyword: string; country?: string | null; device?: string | null }
+    data: { domain: string; keyword: string; country: string; language: string; device?: string | null }
 ): Promise<void> {
     const db = getDb();
     const now = new Date();
@@ -32,7 +33,8 @@ export async function insertKeyword(
         projectId,
         domain: data.domain,
         keyword: data.keyword,
-        country: data.country ?? null,
+        country: data.country,
+        language: data.language,
         device: data.device ?? null,
         createdAt: now,
         updatedAt: now,

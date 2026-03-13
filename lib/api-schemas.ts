@@ -161,6 +161,7 @@ export const projectCreateBodySchema = z.object({
 export const projectUpdateBodySchema = z.object({
   name: z.string().min(1).optional(),
   domain: z.string().optional().nullable(),
+  competitors: z.array(z.string().trim().min(1)).optional(),
 });
 
 /** PATCH .../project (assign resource to project) */
@@ -168,12 +169,16 @@ export const projectAssignmentBodySchema = z.object({
   projectId: z.string().uuid().nullable(),
 });
 
-/** POST /api/rank-tracking/keywords */
+/** 2-letter locale code (gl or hl) for SERP main markets */
+const twoLetterLocale = z.string().length(2, 'Use 2-letter code (e.g. de, en)').transform((s) => s.toLowerCase().trim());
+
+/** POST /api/rank-tracking/keywords – country and language required (main markets) */
 export const rankTrackingKeywordCreateBodySchema = z.object({
   projectId: z.string().uuid().min(1, 'projectId is required'),
   domain: z.string().min(1, 'domain is required'),
   keyword: z.string().min(1, 'keyword is required'),
-  country: z.string().max(10).optional().nullable(),
+  country: twoLetterLocale,
+  language: twoLetterLocale,
   device: z.string().max(20).optional().nullable(),
 });
 

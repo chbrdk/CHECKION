@@ -72,6 +72,7 @@ export async function PATCH(
     const updated = await updateProject(id, user.id, {
         ...(parsed.name !== undefined && { name: parsed.name }),
         ...(parsed.domain !== undefined && { domain: parsed.domain }),
+        ...(parsed.competitors !== undefined && { competitors: parsed.competitors }),
     });
     return NextResponse.json({ success: updated });
 }

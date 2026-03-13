@@ -14,7 +14,9 @@ import {
     touchKeywordUpdatedAt,
 } from '@/lib/db/rank-tracking-keywords';
 import { insertPosition } from '@/lib/db/rank-tracking-positions';
+import { getProject } from '@/lib/db/projects';
 import { fetchSerpPosition } from '@/lib/serp-api';
+import { SERP_NUM_PAGES } from '@/lib/serp-markets';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: NextRequest) {
@@ -36,18 +38,24 @@ export async function POST(request: NextRequest) {
         keywordIds.push(...(await listKeywordIdsByProject(parsed.projectId)));
     }
 
-    const results: Array<{ keywordId: string; position: number | null }> = [];
+    const results: Array<{ keywordId: string; position: number | null; competitorPositions?: Record<string, number | null> }> = [];
     for (const kid of keywordIds) {
         const kw = await getKeyword(kid, user.id);
         if (!kw) continue;
+        const competitorDomains = kw.projectId
+            ? (await getProject(kw.projectId, user.id))?.competitors ?? []
+            : [];
         try {
-            const { position } = await fetchSerpPosition(kw.keyword, kw.domain, {
-                country: kw.country ?? undefined,
+            const { position, competitorPositions } = await fetchSerpPosition(kw.keyword, kw.domain, {
+                country: kw.country,
+                language: kw.language,
                 device: kw.device ?? undefined,
+                numPages: SERP_NUM_PAGES,
+                competitorDomains,
             });
-            await insertPosition(kid, position, uuidv4());
+            await insertPosition(kid, position, uuidv4(), competitorPositions);
             await touchKeywordUpdatedAt(kid, user.id);
-            results.push({ keywordId: kid, position });
+            results.push({ keywordId: kid, position, competitorPositions });
         } catch (err) {
             const msg = err instanceof Error ? err.message : 'SERP request failed';
             return apiError(`Rank refresh failed: ${msg}`, API_STATUS.BAD_GATEWAY);
