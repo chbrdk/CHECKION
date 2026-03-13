@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Box, Stack } from '@mui/material';
+import Link from 'next/link';
+import { Box, Stack, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
 import {
     MsqdxTypography,
     MsqdxButton,
@@ -13,10 +14,13 @@ import {
 import { useI18n } from '@/components/i18n/I18nProvider';
 import {
     apiProject,
+    apiScanGeoEeat,
     apiScanGeoEeatCreate,
     apiScanGeoEeatHistory,
     pathGeoEeat,
 } from '@/lib/constants';
+import { CompetitivePositionDiagram } from '@/components/CompetitivePositionDiagram';
+import type { GeoEeatIntensiveResult } from '@/lib/types';
 
 export default function ProjectGeoPage() {
     const params = useParams();
@@ -32,6 +36,9 @@ export default function ProjectGeoPage() {
     } | null>(null);
     const [loading, setLoading] = useState(true);
     const [geoRuns, setGeoRuns] = useState<Array<{ id: string; url: string; status: string; createdAt: string }>>([]);
+    const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+    const [runPayload, setRunPayload] = useState<GeoEeatIntensiveResult | null>(null);
+    const [runPayloadLoading, setRunPayloadLoading] = useState(false);
     const [addGeoQueryValue, setAddGeoQueryValue] = useState('');
     const [suggestGeoQueriesLoading, setSuggestGeoQueriesLoading] = useState(false);
     const [suggestGeoQueriesError, setSuggestGeoQueriesError] = useState<string | null>(null);
@@ -62,12 +69,49 @@ export default function ProjectGeoPage() {
         fetch(apiScanGeoEeatHistory({ limit: 100, projectId: id }), { credentials: 'same-origin' })
             .then((r) => r.json())
             .then((data) => {
-                setGeoRuns(Array.isArray(data?.runs) ? data.runs : Array.isArray(data?.data) ? data.data : []);
+                const runs = Array.isArray(data?.runs) ? data.runs : Array.isArray(data?.data) ? data.data : [];
+                setGeoRuns(runs);
+                if (runs.length > 0) {
+                    setSelectedRunId((prev) => {
+                        const stillInList = prev && runs.some((r: { id: string }) => r.id === prev);
+                        if (stillInList) return prev;
+                        const completed = runs.find((r: { status: string }) => r.status === 'complete');
+                        return completed?.id ?? runs[0]?.id ?? null;
+                    });
+                } else {
+                    setSelectedRunId(null);
+                }
             })
             .catch(() => setGeoRuns([]));
     }, [id]);
 
+    useEffect(() => {
+        if (!selectedRunId) {
+            setRunPayload(null);
+            return;
+        }
+        let cancelled = false;
+        setRunPayloadLoading(true);
+        setRunPayload(null);
+        fetch(apiScanGeoEeat(selectedRunId), { credentials: 'same-origin' })
+            .then((r) => r.json())
+            .then((data: { payload?: GeoEeatIntensiveResult }) => {
+                if (!cancelled && data?.payload) setRunPayload(data.payload);
+            })
+            .catch(() => {
+                if (!cancelled) setRunPayload(null);
+            })
+            .finally(() => {
+                if (!cancelled) setRunPayloadLoading(false);
+            });
+        return () => { cancelled = true; };
+    }, [selectedRunId]);
+
     const geoQueries = Array.isArray(project?.geoQueries) ? project.geoQueries : [];
+    const competitiveByModel = runPayload?.competitiveByModel && Object.keys(runPayload.competitiveByModel).length > 0
+        ? runPayload.competitiveByModel
+        : null;
+    const targetUrl = project?.domain ? (project.domain.includes('://') ? project.domain : `https://${project.domain}`) : '';
 
     const handleAddGeoQuery = useCallback(async () => {
         const q = addGeoQueryValue.trim();
@@ -212,8 +256,80 @@ export default function ProjectGeoPage() {
     }
 
     return (
-        <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 900, mx: 'auto' }}>
+        <Box sx={{ py: 'var(--msqdx-spacing-md)', px: 1.5, width: '100%', maxWidth: '100%' }}>
             <Stack sx={{ gap: 2 }}>
+                {/* Diagramm: Platzierung pro Frage (wie SEO-Seite mit Charts) */}
+                <MsqdxMoleculeCard
+                    title={t('geoEeat.positionDiagramTitle')}
+                    variant="flat"
+                    borderRadius="lg"
+                    footerDivider={false}
+                    sx={{ bgcolor: 'var(--color-card-bg)' }}
+                >
+                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
+                        {t('geoEeat.positionDiagramDescription')}
+                    </MsqdxTypography>
+                    {geoRuns.length > 0 && (
+                        <FormControl size="small" sx={{ minWidth: 260, mb: 2 }}>
+                            <InputLabel id="geo-run-select-label">{t('projects.geoEeatRuns')}</InputLabel>
+                            <Select
+                                labelId="geo-run-select-label"
+                                value={selectedRunId ?? ''}
+                                label={t('projects.geoEeatRuns')}
+                                onChange={(e) => setSelectedRunId((e.target.value as string) || null)}
+                            >
+                                {geoRuns.map((g) => (
+                                    <MenuItem key={g.id} value={g.id}>
+                                        {new Date(g.createdAt).toLocaleString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} · {g.status}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    )}
+                    {runPayloadLoading && (
+                        <Box sx={{ py: 4, textAlign: 'center' }}>
+                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                {t('common.loading')}
+                            </MsqdxTypography>
+                        </Box>
+                    )}
+                    {!runPayloadLoading && competitiveByModel && targetUrl && (
+                        <CompetitivePositionDiagram
+                            competitiveByModel={competitiveByModel}
+                            targetUrl={targetUrl}
+                            t={t}
+                        />
+                    )}
+                    {!runPayloadLoading && !competitiveByModel && geoRuns.length > 0 && selectedRunId && (
+                        <Box sx={{ py: 3, textAlign: 'center' }}>
+                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
+                                {t('geoEeat.noResultsDisplay')}
+                            </MsqdxTypography>
+                            <Link href={pathGeoEeat(selectedRunId)} style={{ textDecoration: 'none' }}>
+                                <MsqdxButton variant="outlined" size="small">
+                                    {t('projects.open')}
+                                </MsqdxButton>
+                            </Link>
+                        </Box>
+                    )}
+                    {!runPayloadLoading && geoRuns.length === 0 && project?.domain && (
+                        <Box sx={{ py: 3, textAlign: 'center' }}>
+                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
+                                {t('projects.emptyGeoEeatRuns')}
+                            </MsqdxTypography>
+                            <MsqdxButton
+                                variant="contained"
+                                brandColor="green"
+                                size="small"
+                                onClick={handleStartGeoEeat}
+                                disabled={!project.domain || geoStartLoading}
+                            >
+                                {geoStartLoading ? t('common.loading') : t('projects.startGeoEeat')}
+                            </MsqdxButton>
+                        </Box>
+                    )}
+                </MsqdxMoleculeCard>
+
                 <MsqdxMoleculeCard
                     title={t('projects.geoQueries')}
                     variant="flat"

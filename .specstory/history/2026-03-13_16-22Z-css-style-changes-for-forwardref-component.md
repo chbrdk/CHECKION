@@ -13623,3 +13623,650 @@ Layout auf ein 3-Spalten-Grid umstellen, damit Company-, Ranking- und GEO-Karte 
 
 ---
 
+<think><details><summary>Thought Process</summary>
+
+I need to:
+1. Change the layout to a single grid so that the first row has 3 columns (company, ranking, geo) - they will stretch to equal height. Then the second row has the competitors card in the first column.
+2. Company card: use MsqdxMoleculeCard with actions for "Research starten" so the button is at the bottom, and it will stretch with the grid.
+3. Competitors card: use actions for the two buttons (Hinzufügen, Mit KI vorschlagen), put the form field in the body. So the structure is: title, children (chips + form field), actions (Hinzufügen + Mit KI vorschlagen). Wait - the form field and the two buttons are in one row. If we put the buttons in actions they go to the bottom. So the layout would be: chips at top, then form field (full width?), then at the bottom the two buttons. That might look odd - the input and "Hinzufügen" are usually next to each other. Let me re-read the user message. "stell die card ... auch um" - update the competitors card as well. So use the same pattern - so the card fills height and the buttons are at the bottom. So we put the two buttons in actions. The form field could stay in the body above. So the order would be: chips, form field (taking space), then at the bottom the divider and the two buttons. That way the competitors card has the same structure as the others - content that can grow, actions at bottom. The input might be alone in the middle which is fine.
+
+Let me implement:
+1. Grid: 
+   - md: gridTemplateColumns: 'minmax(280px, 320px) 1fr 1fr', gridTemplateRows: 'auto auto'
+   - xs: 1fr
+   - gap: 2
+   - alignItems: stretch (for row 1)
+
+   Placements:
+   - Company card: row 1, col 1 (on md), on xs it's just order
+   - Ranking card: row 1, col 2 (on md)
+   - GEO card: row 1, col 3 (on md)
+   - Competitors card: row 2, col 1 (on md)
+
+   On mobile (xs) we need a single column order: Company, Ranking, GEO, Competitors. So we can use the same grid and on xs gridTemplateColumns: 1fr, so everything stacks. Order: 1 company, 2 ranking, 3 geo, 4 competitors. So we need gridRow and gridColumn. On md: company (1,1), ranking (1,2), geo (1,3), competitors (2,1). On xs: company (1,1), ranking (2,1), geo (3,1), competitors (4,1). So we need 4 rows on xs. So the grid could be:
+   - xs: 1 col, 4 rows - so each card is in row 1, 2, 3, 4
+   - md: 3 cols, 2 rows. Row 1: company(1,1), ranking(1,2), geo(1,3). Row 2: competitors(2,1) - could span 1 or 3. I'll do (2,1) so competitors under company.
+
+   For grid to work with different number of rows we need:
+   - md: gridTemplateColumns: 'minmax(280px,320px) 1fr 1fr', gridTemplateRows: '1fr auto' so row 1 stretches and row 2 is auto. So the three cards in row 1 get equal height (1fr). Then row 2 is the competitors card.
+   - xs: gridTemplateColumns: 1fr, so 4 rows auto. So we need 4 grid rows on xs. So we need a wrapper or use a different approach. Actually on xs we have 4 items stacked. So the grid could be:
+     gridTemplateColumns: { xs: '1fr', md: 'minmax(280px,320px) 1fr 1fr' }
+     gridTemplateRows: not set (implicit)
+     gridAutoRows: auto
+   For md we want row 1 to have equal height. So we need to set gridTemplateRows: { md: '1fr auto' }. So on md we have 2 rows, first row 1fr (takes remaining space or equal to content - actually 1fr means share space. So the row height will be the max of the three cards' content. So we need the row to be as tall as the tallest card. That's default behavior - the row is as tall as the tallest item. So we don't need 1fr - we need alignItems: stretch so all three have the same height (the max of the three). So gridTemplateRows: auto for row 1 - the row height is determined by the tallest cell. So we just need alignItems: stretch on the grid, and the three cards in row 1 will stretch to match. So the grid is:
+   display: grid
+   gridTemplateColumns: { xs: '1fr', md: 'minmax(280px,320px) 1fr 1fr' }
+   gridTemplateRows: { xs: 'auto auto auto auto', md: 'auto auto' }
+   gap: 2
+   alignItems: stretch
+
+   Items:
+   - Company: gridColumn: { xs: 1, md: 1 }, gridRow: { xs: 1, md: 1 }
+   - Ranking: gridColumn: { xs: 1, md: 2 }, gridRow: { xs: 2, md: 1 }
+   - GEO: gridColumn: { xs: 1, md: 3 }, gridRow: { xs: 3, md: 1 }
+   - Competitors: gridColumn: { xs: 1, md: 1 }, gridRow: { xs: 4, md: 2 }
+
+   So on md, row 1 has 3 items that stretch (alignItems: stretch). So they'll all be the same height. Good.
+
+2. Company card: We need it to be a card that has the button at the bottom. The company card is currently MsqdxCard (atom). It doesn't have actions. We need to use MsqdxMoleculeCard for company info with title (or no title, just content) and actions = "Research starten" link. So convert company to MsqdxMoleculeCard with title={project.name} or no title and children = the rest, actions = the Link+Button. Actually the company card has project name as h1, then "Unternehmensinformationen", domain, value prop, then the button. So we could use MsqdxMoleculeCard with title={project.name}, no headerActions, children = Unternehmensinformationen text, domain, value prop. actions = Research starten button. But then the title would be the project name - and we had it as h1. Let me check - MsqdxMoleculeCard renders title in the header. So we'd have title (project name), then children (body), then actions (button at bottom). The body would have "Unternehmensinformationen", domain, value proposition. That works. And the card will have flex layout so the body grows and actions stay at bottom.
+
+3. Competitors card: Use footerDivider and actions = the two buttons (Hinzufügen, Mit KI vorschlagen). Children = chips (or "Keine Wettbewerber") + error + form field. So the form field is in the body, and the two action buttons at the bottom. That way the card can stretch and the buttons stay at bottom.
+</details></think>
+
+---
+
+
+Layout auf ein 3-Spalten-Grid umstellen (erste Zeile: Company, Ranking, GEO mit gleicher Höhe) und beide Karten auf die DS-`actions`-Variante umstellen.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to add gridColumn and gridRow to the Ranking and GEO cards, and add the Competitors card back with actions at the bottom and the correct grid placement.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I duplicated the opening of the Ranking card - now there are two "sx" props. Let me read the file and fix - the Ranking card should have only one sx that includes both grid placement and bgcolor.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see - there's a closing </Box> that was for the right column grid. Now we don't have that wrapper, so we have an extra </Box>. Let me read from the Ranking card to see the full structure.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see - there's an extra `</Box>` at line 343 that was closing the right column grid. Now we have only one grid, so the structure should be: Box (grid) > 4 cards. So we need to remove the extra </Box> and add grid placement to the GEO card, then add the Competitors card with actions. Let me fix the GEO card sx to include grid placement and remove the extra </Box>, then add the Competitors card.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to fix the Ranking card - it has wrong indentation and the closing tag might be wrong. Let me also fix the indentation of the Ranking and GEO cards (they have extra spaces). And ensure MsqdxCard is not still imported if we're not using it - we're now using MsqdxMoleculeCard for company. Let me check - we might have removed MsqdxCard (atom) usage, so we could remove it from imports if it's unused. Let me check the imports.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "MsqdxCard[^A-Za-z]",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "MsqdxCard[^A-Za-z]",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 5,
+  "topFiles": [
+    {
+      "uri": "app/projects/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+MsqdxCard is still imported but we're no longer using it (we replaced the company card with MsqdxMoleculeCard). I'll remove the unused import.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me also remove the Stack import if it's no longer used.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "Stack",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "Stack",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 5,
+  "topFiles": [
+    {
+      "uri": "app/projects/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Stack is only in the import, not used in the file anymore. I'll remove it.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me verify the molecule card accepts titleVariant - I used titleVariant="h4" for the company card. Let me check the DS - we have CardTitleVariant = "h4" | "h5" | "h6". Good. All set.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+All good. Let me provide a summary to the user.
+</details></think>
+
+---
+
+
+Hier die Änderungen:
+
+**1. Ein gemeinsames Grid für alle Cards**
+- **Desktop (md):** 3 Spalten, 2 Zeilen  
+  - Zeile 1: **Unternehmensinformationen** (col 1) | **Ranking-Score** (col 2) | **GEO** (col 3)  
+  - Zeile 2: **Wettbewerber** (col 1)
+- **Mobile (xs):** 1 Spalte, 4 Zeilen (Company → Ranking → GEO → Wettbewerber)
+- `alignItems: 'stretch'` sorgt dafür, dass die drei Cards in Zeile 1 **gleich hoch** sind; die Buttons liegen damit auf einer Linie.
+
+**2. Company-Card auf MoleculeCard mit `actions`**
+- Jetzt **MsqdxMoleculeCard** mit `title={project.name}`, `titleVariant="h4"`, `footerDivider` und **`actions`** = Link + Button „Research starten“.
+- Inhalt (Unternehmensinformationen, Domain, Value Proposition) bleibt im Body, der Button ist unten.
+
+**3. Wettbewerber-Card auf `actions` umgestellt**
+- **`actions`:** die beiden Buttons „Hinzufügen“ und „Mit KI vorschlagen“ (in einem kleinen Flex-Container mit Abstand).
+- **Body:** Chips (oder „Keine Wettbewerber“), ggf. Fehlermeldung, darunter das Domain-Eingabefeld.
+- `footerDivider: true`, damit die Aktionszeile wie bei den anderen Cards abgetrennt ist.
+
+**4. Aufräumen**
+- Ungenutzte Imports entfernt: `MsqdxCard`, `Stack`.
+
+Ergebnis: Die drei oberen Cards (Company, Ranking, GEO) haben dieselbe Höhe und die Buttons sitzen unten auf einer Linie; die Wettbewerber-Card nutzt dieselbe `actions`-Variante mit Buttons unten.
+
+---
+
+_**User**_
+
+ ich würde gerne die geo page im projekt dashboard anpassen und mehr in die richtung der seo seite bringen. lass uns dafür am besten die geo/eeat scans davon explizit nur die fragen in diagrammen abbilden, genau so wie der seo page. das reicht eigentlich :DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-1cfcp92 > div.MuiBox-root c.-18aj2y2 > div.MuiBox-root c.-1.g4afn > div.MuiBox-root c.-1hdbc19 > div.MuiBox-root c.-a1igic > div.MuiBox-root c.-1fbu.j9 > div.MuiBox-root c.-105k5zf
+Position: top=606px, left=121px, width=1075px, height=812px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-105k5zf" role="region" aria-label="Accordion" data-cursor-element-id="cursor-el-1">Frage 1 best industrial pumps in Europe 10 Nennungen expand_more Frage 2 top pump manufacturers for water treatment plants 10 Nennungen expand_more Frage 3 KSB competitors comparison 10 Nennunge</div>  um in diagrammen dargestellt zu werden.
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
