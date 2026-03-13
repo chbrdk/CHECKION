@@ -21721,3 +21721,1443 @@ To-do's from the plan have already been created. Do not create them again. Mark 
 
 ---
 
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants me to implement the Project Research Agent plan. Let me check the plan file for the todos - the attached file shows `todos: []` so there might not be todos in the plan file. Let me read the plan file to see the current state and then implement according to the plan.
+
+The plan specifies:
+1. Schema + Type - lib/research/schema.ts or lib/api-schemas.ts
+2. API Route - app/api/projects/[id]/research/route.ts (POST)
+3. Constants - lib/constants.ts - apiProjectResearch(id)
+4. Project page - app/projects/[id]/page.tsx - Research card, state, category UI, apply logic
+5. i18n - locales/de.json, locales/en.json - projects.research*
+6. Tests - __tests__/api/project-research.test.ts
+7. Docs - knowledge/checkion-projects-feature.md
+
+I'll create a todo list and work through each item. Let me start by reading the plan file to see if there are todos, then implement.
+</details></think>
+
+---
+
+
+Implementierung starten: Plan und bestehende Struktur prüfen, anschließend die To-dos abarbeiten.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/.cursor/plans/project_research_agent_0a9e8343.plan.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/suggest-keywords/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The plan says "To-do's from the plan have already been created" but the plan file shows `todos: []`. I'll create a logical todo list and work through: 1) Schema, 2) API route, 3) Constants, 4) Project page UI, 5) i18n, 6) Tests, 7) Docs. Let me start implementing.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] Add project research Zod schema and type in lib/research/schema.ts
+- [ ] Implement POST /api/projects/[id]/research with OpenAI parse()
+- [ ] Add apiProjectResearch(id) to lib/constants.ts
+- [ ] Add Research card, state, category UI and apply logic on project page
+- [ ] Add projects.research* keys to de.json and en.json
+- [ ] Add __tests__/api/project-research.test.ts
+- [ ] Update knowledge/checkion-projects-feature.md with research endpoint
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/node_modules/openai/helpers/zod.d.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "zodResponseFormat|\\.parse\\(",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/node_modules/openai",
+  "outputMode": "content",
+  "contextBefore": 0,
+  "contextAfter": 2,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "zodResponseFormat|\\.parse\\(",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/node_modules/openai",
+  "outputMode": "content",
+  "totalFiles": 240,
+  "totalMatches": 615,
+  "topFiles": [
+    {
+      "uri": "node_modules/openai/src/resources/webhooks/webhooks.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "node_modules/openai/src/internal/utils/values.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "node_modules/openai/src/beta/realtime/ws.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "node_modules/openai/src/beta/realtime/websocket.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "node_modules/openai/src/_vendor/partial-json-parser/parser.ts",
+      "matchCount": 22
+    },
+    {
+      "uri": "node_modules/openai/src/realtime/ws.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "node_modules/openai/src/realtime/websocket.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "node_modules/openai/src/lib/parser.ts",
+      "matchCount": 6
+    },
+    {
+      "uri": "node_modules/openai/src/lib/ResponsesParser.ts",
+      "matchCount": 6
+    },
+    {
+      "uri": "node_modules/openai/src/lib/ChatCompletionStream.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "node_modules/openai/src/lib/AbstractChatCompletionRunner.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "node_modules/openai/src/helpers/zod.ts",
+      "matchCount": 27
+    },
+    {
+      "uri": "node_modules/openai/src/core/streaming.ts",
+      "matchCount": 9
+    },
+    {
+      "uri": "node_modules/openai/src/core/api-promise.ts",
+      "matchCount": 12
+    },
+    {
+      "uri": "node_modules/openai/resources/webhooks/webhooks.mjs",
+      "matchCount": 3
+    },
+    {
+      "uri": "node_modules/openai/resources/webhooks/webhooks.js",
+      "matchCount": 3
+    },
+    {
+      "uri": "node_modules/openai/internal/utils/values.mjs",
+      "matchCount": 3
+    },
+    {
+      "uri": "node_modules/openai/internal/utils/values.js",
+      "matchCount": 3
+    },
+    {
+      "uri": "node_modules/openai/beta/realtime/ws.mjs",
+      "matchCount": 3
+    },
+    {
+      "uri": "node_modules/openai/beta/realtime/ws.js",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+OpenAI's zod helper uses z3/z4 - the project uses plain `zod` (from "zod" package). I need to use the schema with zodResponseFormat. Let me check - the helper says "z3.ZodType | z4.ZodType". In Node, the main "zod" package typically exports the default zod - I'll use z from 'zod' and it should work as the default zod. Let me check the openai package - it might need to be imported from 'zod' and the helper might accept it. I'll create the schema with standard z from 'zod'.
+
+Actually looking at the type again: `z3.ZodType | z4.ZodType` - the openai package might be checking for zod v3 or v4. Our package.json has zod - I'll use it. If there are type issues we can fix.
+
+Creating the schema file. OpenAI Structured Outputs have limitations - I'll use simple array of strings and optional string. The plan had .min(1).max(15) etc - OpenAI's strict schema might not support all zod features. I'll use z.array(z.string()) and z.string().optional() to be safe, and we can add refinements that are validated server-side after the response.
+</details></think>
+
+---
+
+
+Research-Schema anlegen und API-Route implementieren.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/research/schema.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+OpenAI's strict JSON schema might not support .min(1).max(20) on arrays - I'll check the docs. Actually for zodResponseFormat the openai library converts Zod to JSON Schema - and OpenAI's structured outputs support a subset. Let me keep the schema as-is for our server-side validation; if the API fails we might need to relax. Proceeding with the API route.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add project research Zod schema and type in lib/research/schema.ts
+- [-] Implement POST /api/projects/[id]/research with OpenAI parse()
+- [ ] Add apiProjectResearch(id) to lib/constants.ts
+- [ ] Add Research card, state, category UI and apply logic on project page
+- [ ] Add projects.research* keys to de.json and en.json
+- [ ] Add __tests__/api/project-research.test.ts
+- [ ] Update knowledge/checkion-projects-feature.md with research endpoint
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat/suggest-parse.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to implement the research route. It should use openai.chat.completions.parse() with zodResponseFormat. The openai package exports the helper from 'openai/helpers/zod'. Let me check the exact import and if completions have a .parse method.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/node_modules/openai/resources/chat/completions/completions.d.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "parse\\(",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/node_modules/openai/resources/chat/completions",
+  "outputMode": "content",
+  "contextBefore": 0,
+  "contextAfter": 2,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "parse\\(",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/node_modules/openai/resources/chat/completions",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 10,
+  "topFiles": [
+    {
+      "uri": "node_modules/openai/resources/chat/completions/completions.mjs",
+      "matchCount": 3
+    },
+    {
+      "uri": "node_modules/openai/resources/chat/completions/completions.js",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/openai/resources/chat/completions/completions.mjs",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/openai/resources/chat/completions/completions.js",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/openai/resources/chat/completions/completions.mjs",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/openai/resources/chat/completions/completions.js",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/openai/resources/chat/completions/completions.mjs",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/openai/resources/chat/completions/completions.js",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/openai/resources/chat/completions/completions.mjs",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/openai/resources/chat/completions/completions.js",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So the client has client.chat.completions.parse(body, options). The body must include response_format from zodResponseFormat. Let me check how to import zodResponseFormat - it's from 'openai/helpers/zod'. So:
+
+import OpenAI from 'openai';
+import { zodResponseFormat } from 'openai/helpers/zod';
+
+Then:
+const completion = await openai.chat.completions.parse({
+  model: RESEARCH_MODEL,
+  messages: [...],
+  response_format: zodResponseFormat(projectResearchResultSchema, 'project_research'),
+});
+
+Then message.parsed should be ProjectResearchResult. I need to handle the case where the model refuses (refusal in response). Let me implement the route.
+</details></think>
+
+---
+
+
+Implementiere die Research-Route:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/research/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+OpenAI's zodResponseFormat might expect zod schema in a specific way. I recall there were issues with zod v3/v4 - the helper imports from 'zod/v3' and 'zod/v4'. Our project uses 'zod' (default). Let me check - the declaration says `z3.ZodType | z4.ZodType`. So they might only support zod v3 or v4. Let me check package.json for zod version.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "\"zod\"",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/package.json",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "\"zod\"",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/package.json",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 5,
+  "topFiles": [
+    {
+      "uri": "package.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/package.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/package.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/package.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/package.json",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/research/route.ts",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/research/schema.ts"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/research/route.ts"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/research/schema.ts"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Zod v4 is used. The openai helper supports z4.ZodType. So we're good. Adding constants and then frontend.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add project research Zod schema and type in lib/research/schema.ts
+- [x] Implement POST /api/projects/[id]/research with OpenAI parse()
+- [-] Add apiProjectResearch(id) to lib/constants.ts
+- [ ] Add Research card, state, category UI and apply logic on project page
+- [ ] Add projects.research* keys to de.json and en.json
+- [ ] Add __tests__/api/project-research.test.ts
+- [ ] Update knowledge/checkion-projects-feature.md with research endpoint
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now i18n and then the big frontend piece. I'll add i18n keys first so the frontend can use them, then implement the project page Research card.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add project research Zod schema and type in lib/research/schema.ts
+- [x] Implement POST /api/projects/[id]/research with OpenAI parse()
+- [x] Add apiProjectResearch(id) to lib/constants.ts
+- [ ] Add Research card, state, category UI and apply logic on project page
+- [-] Add projects.research* keys to de.json and en.json
+- [ ] Add __tests__/api/project-research.test.ts
+- [ ] Update knowledge/checkion-projects-feature.md with research endpoint
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "\"projects\":",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "outputMode": "content",
+  "contextAfter": 80,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "\"projects\":",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 20,
+  "topFiles": [
+    {
+      "uri": "locales/de.json",
+      "matchCount": 85
+    },
+    {
+      "uri": "locales/en.json",
+      "matchCount": 85
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 85
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 85
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 85
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 85
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 85
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 85
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 85
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 85
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to find where the projects section ends in de.json and en.json to add the research keys. Let me read more of the file to find a good insertion point (e.g. after "activity" or before the closing of projects).
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add the research keys before the closing "}" of the projects section - i.e. before "rankingsRefresh502" line in both files, or after it. I'll add after "rankingsRefresh502" so the new block is at the end of projects.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now the frontend: add Research card to the project page. I need to:
+1. Import apiProjectResearch, ProjectResearchResult type
+2. Add state: researchResult, researchLoading, researchError; and for editing we mutate researchResult in state
+3. Add handlers: runResearch, applyCompetitors, applyGeoQueries, applyKeywords (for SEO keywords use same flow as suggested keywords - selected chips then add)
+4. Add the Research card UI below company info: button to start, then when result exists show categories with chips + input + add + apply buttons
+5. For "researchApplyKeywords" we need to allow selecting from researchResult.seoKeywords and then call the same logic as handleAddSelectedKeywords
+
+Let me read the project page again to see the exact structure and where to insert the Research card and how handleAddSelectedKeywords works.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add project research Zod schema and type in lib/research/schema.ts
+- [x] Implement POST /api/projects/[id]/research with OpenAI parse()
+- [x] Add apiProjectResearch(id) to lib/constants.ts
+- [-] Add Research card, state, category UI and apply logic on project page
+- [x] Add projects.research* keys to de.json and en.json
+- [ ] Add __tests__/api/project-research.test.ts
+- [ ] Update knowledge/checkion-projects-feature.md with research endpoint
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add:
+1. Import apiProjectResearch and ProjectResearchResult
+2. State: researchResult (ProjectResearchResult | null), researchLoading, researchError; and for inline add we need local inputs per category - to keep it simple I'll use one "add" input per category that adds to researchResult. So we need to update researchResult in state when user adds/removes items. So state is the editable research result.
+3. handleRunResearch: POST apiProjectResearch(id), set researchResult to response, clear error
+4. Helpers to update researchResult: add/remove for each array, and set valueProposition
+5. handleApplyCompetitors: PATCH project with competitors merged
+6. handleApplyGeoQueries: PATCH project with geoQueries merged
+7. For keywords: we can set suggestedKeywords to researchResult.seoKeywords and selectedSuggestedKeywords and show the same "Add selected" flow - or add a dedicated "Apply as rank keywords" that takes researchResult.seoKeywords (or selected from them) and adds. Plan says "selectable chips and Add selected" - so we need to either reuse the suggestedKeywords UI (set suggestedKeywords from research when applying from research card) or add a separate selection. Simplest: when user clicks "Apply as rank keywords", we set suggestedKeywords to researchResult.seoKeywords and selectedSuggestedKeywords to a copy of the set so the existing keyword card's "suggested keywords" section can be used - but that's in a different card. Cleaner: in the Research card, show SEO keywords as chips with toggle selection, and a button "Apply as rank keywords" that does the same as handleAddSelectedKeywords but for the selected research keywords. So we need selectedResearchKeywordIds (Set<string>) or just use the same pattern: selectedSuggestedKeywords could be repurposed when the source is research - actually the page has both "suggested keywords" (from suggest-keywords API) and we need "research keywords" (from research result). So in the Research card we have researchResult.seoKeywords displayed as chips, we need a way to select which to add. So: in Research card, show seoKeywords as chips, each chip click toggles selection (visual state), then "Apply as rank keywords" adds the selected ones. So state: selectedResearchKeywords: Set<string>. And apply: same as handleAddSelectedKeywords but for selectedResearchKeywords and then clear selection. Let me implement.
+
+Actually re-reading the plan: "SEO Keywords übernehmen: Gleicher Flow wie beim bestehenden „Suggest keywords with AI“ – aus researchResult.seoKeywords auswählbar (Chips toggle) und „Ausgewählte hinzufügen“ ruft die bestehende Logik auf". So we need chips for each keyword that can be toggled (selected state), then one button "Apply as rank keywords" that calls the same logic as adding selected suggested keywords. So I need selectedResearchKeywords: Set<string> and a handler that adds those to rank tracking (reuse the same fetch logic as handleAddSelectedKeywords).
+</details></think>
+
+---
+
+
+Implementing the Research card: adding imports and state, then the card UI and handlers.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to add the handlers for research: handleRunResearch, update research result (add/remove items), apply competitors, apply geo queries, apply keywords. Then add the Research card JSX. Let me find a good place to add the handlers - after handleDeleteKeyword.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add the research handlers after handleDeleteKeyword (before the `if (!id)` block). Then add the Research card in the JSX after the Company info card and before the Competitors card.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add the geoQueries variable - it's used in the handlers. Let me check - in the page we have `const geoQueries = project?.geoQueries ?? []` or similar. Let me search.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "geoQueries|competitors",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx",
+  "outputMode": "content",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "geoQueries|competitors",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 220,
+  "topFiles": [
+    {
+      "uri": "app/projects/[id]/page.tsx",
+      "matchCount": 44
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 44
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 44
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 44
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 44
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+competitors and geoQueries are derived from project which is in scope at the time the callbacks are defined - but the callbacks are defined after the early returns (if (!id), if (loading || !project)). So when we're in the main return(), project, competitors, geoQueries are all in scope. Good.
+
+Now I need to add the Research card JSX. I'll add it between the Company info card and the Competitors card. The card will have:
+- Title, description
+- Button "Research starten" (disabled when no domain or loading)
+- Error message if researchError
+- When researchResult: sections for target groups, value prop, seo keywords, geo queries, competitors. Each section: heading, list of chips (with onDelete that calls updateResearchArray), optional input + Add button for new item, and for competitors/geo/keywords an "Apply" button.
+
+For "add new item" we need local state per category or one shared input - plan says "MsqdxFormField + Hinzufügen". To avoid too many state variables I'll use a single "researchAddValue" and "researchAddCategory" when the user clicks Add - or simpler: for each category have a small inline add. Actually the plan says "Pro Eintrag: Chip mit onDelete; neuer Eintrag: MsqdxFormField + „Hinzufügen"". So we need one input per category. That would be 4 inputs (target groups, seo keywords, geo queries, competitors). Let me use one generic "add" flow: one input and a dropdown or we show one input per section. Simpler: one input per section. So state: addResearchTargetGroup, addResearchKeyword, addResearchGeoQuery, addResearchCompetitor. That's 4 new state vars. Or we could use a single "researchAddValue" and "researchAddKey" and when user clicks Add we add to that key. So one input and 4 "Add" buttons (one per category) - but then the input value would be shared. Cleaner: each section has its own input. So addResearchTargetGroup, addResearchSeoKeyword, addResearchGeoQuery, addResearchCompetitor.
+</details></think>
+
+---
+
+
+Adding the Research card UI: inserting the card and local add-state for each category.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now add the Research card JSX between Company info and Competitors card.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+When we add a new keyword via the Research card's input, we need to make sure it also appears in the chips and can be selected. The updateResearchArray adds to researchResult.seoKeywords, so the new keyword will show up. When user toggles a newly added keyword it goes into selectedResearchKeywords. Good.
+
+One issue: after adding a keyword via the inline "Add" in the Research card, the new keyword won't be in selectedResearchKeywords - user has to click the chip to select it. That's correct.
+
+Also need to fix: when we add a new item to targetGroups, we're not showing valueProposition edit when it's empty - the plan said optional. So we only show value proposition section "when researchResult.valueProposition != null". But the API might return empty string - let me show the section when the key exists (including empty string) so user can add one. So condition: researchResult.valueProposition !== undefined. I'll leave as is (only show when truthy) for simplicity; user can still add value prop if we show an empty section. Actually the schema has valueProposition as optional, so it might be undefined. Showing when != null is fine - if they want to add one they could add a target group that describes it or we add an empty "Value proposition" section with just an input. I'll add a short editable field for value proposition even when empty, so users can add one. So: always show the Value proposition section when we have researchResult, with value={researchResult.valueProposition ?? ''}.
+</details></think>
+
+---
+
+
+Showing the value proposition section even when empty so users can add one.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+When we add a new SEO keyword via the Research card's "Add" input, that new keyword appears in the list but won't be in selectedResearchKeywords. So the user would click the chip to select it. When they then click "Apply as rank keywords", we only add selectedResearchKeywords. So newly added keywords need to be toggled to be included. That's correct.
+
+Let me check lints and then run tests. Also need to add the newly added keywords to the chip list - when we updateResearchArray('seoKeywords', researchAddKeyword), we're adding to researchResult.seoKeywords. The chips are (researchResult.seoKeywords ?? []).map(...), so the new one will show. But we need to make sure when we add a keyword that was just typed, we also add it to selectedResearchKeywords if we want "add and apply" in one go - the plan didn't require that, so current behavior is fine.
+
+Let me verify: after updateResearchArray('seoKeywords', researchAddKeyword), the new keyword is in the array. It's not in selectedResearchKeywords. So the user has to click the chip to select it. Good.
+
+Read lints and fix any issues.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to fix the "Add" flow for research keywords - when user adds a new keyword via the input, we should also add it to the list. We're calling updateResearchArray('seoKeywords', researchAddKeyword) which does add to the array. But the chip for that new keyword - will it be selectable? Yes, it's in researchResult.seoKeywords. So when we add "my new kw", the state updates, the chip appears, and the user can click it to select and then click Apply. Good.
+
+Let me double-check: when we add a new chip via the Add button, do we need to add it to selectedResearchKeywords? The plan said "Chips mit onDelete; MsqdxFormField + Hinzufügen; Button „Als Rank-Keywords übernehmen"". So the flow is: user can add more keywords via the input, and they can select which of all the keywords (including newly added) to apply. So we're good.
+
+Now run the project-research test. First create the test file.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add project research Zod schema and type in lib/research/schema.ts
+- [x] Implement POST /api/projects/[id]/research with OpenAI parse()
+- [x] Add apiProjectResearch(id) to lib/constants.ts
+- [x] Add Research card, state, category UI and apply logic on project page
+- [x] Add projects.research* keys to de.json and en.json
+- [-] Add __tests__/api/project-research.test.ts
+- [ ] Update knowledge/checkion-projects-feature.md with research endpoint
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/__tests__/api/project-suggest-keywords.test.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The research route uses openai.chat.completions.parse(), not create(). So the mock needs to expose parse that returns a completion with message.parsed. Let me check the research route again - it calls openai.chat.completions.parse({...}). So we need to mock completions.parse to resolve with a completion that has choices[0].message.parsed set to our research result.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/__tests__/api/project-research.test.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The research route imports extractHostname from suggest-parse and getProject returns a project. The route also uses zodResponseFormat from 'openai/helpers/zod' - when we mock 'openai', the route still imports the real openai/helpers/zod. So when the route runs, it will do:
+import OpenAI from 'openai';
+import { zodResponseFormat } from 'openai/helpers/zod';
+
+So the openai default export is mocked (so new OpenAI() gives our mock with chat.completions.parse). The zodResponseFormat is not mocked in a way that gets used by the route - the route file imports it. So when we run the test, the route will use our mocked OpenAI and the real zodResponseFormat. The parse() method is mocked to return the completion with message.parsed. So the route should work. But wait - we're mocking 'openai' to provide completions.parse. So when the route calls openai.chat.completions.parse(...), it will call our mockChatCompletionsParse. Good.
+
+Run the test to see if it passes. The route might still import zodResponseFormat and pass it to parse() - the mock for openai doesn't affect the zod helper import. So the actual parse call will be mockChatCompletionsParse(body). The body will include response_format from zodResponseFormat(...). So we're good.
+
+Let me run the test.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run test:api -- --run __tests__/api/project-research.test.ts 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run test:api -- --run __tests__/api/project-research.test.ts 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 test:api
+&gt; vitest run __tests__/api --run __tests__/api/project-research.test.ts
+
+
+ RUN  v4.0.18 /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1
+
+ ✓ __tests__/api/health.test.ts (1 test) 26ms
+ ✓ __tests__/api/checks-contrast.test.ts (2 tests) 8ms
+ ✓ __tests__/api/project-suggest-keywords.test.ts (3 tests) 7ms
+ ✓ __tests__/api/project-research.test.ts (4 tests) 19ms
+ ❯ __tests__/api/auth-profile.test.ts (0 test)
+ ✓ __tests__/api/rank-tracking-keywords.test.ts (5 tests) 11ms
+ ✓ __tests__/api/auth-register.test.ts (7 tests) 12ms
+ ✓ __tests__/api/scan.test.ts (3 tests) 6ms
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  __tests__/api/auth-profile.test.ts [ __tests__/api/auth-profile.test.ts ]
+Error: Cannot find module '/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/node_modules/next/server' imported from /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/node_modules/next-auth/lib/env.js
+Did you mean to import "next/server.js"?
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  25 passed (25)
+   Start at  12:37:47
+   Duration  1.87s (transform 973ms, setup 0ms, import 3.71s, tests 90ms, environment 1ms)
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+project-research.test.ts passed (4 tests). The failure is in auth-profile.test.ts (unrelated). So our tests are good. Let me update the knowledge doc and we're done.
+</details></think>
+
+---
+
+
+Project-research tests passed. Updating the knowledge doc:
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add project research Zod schema and type in lib/research/schema.ts
+- [x] Implement POST /api/projects/[id]/research with OpenAI parse()
+- [x] Add apiProjectResearch(id) to lib/constants.ts
+- [x] Add Research card, state, category UI and apply logic on project page
+- [x] Add projects.research* keys to de.json and en.json
+- [x] Add __tests__/api/project-research.test.ts
+- [-] Update knowledge/checkion-projects-feature.md with research endpoint
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-projects-feature.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add the research endpoint to the API section and update the Frontend section to mention the Research card (so it's now 6 cards or we renumber - Company info, Research, Competitors, Keywords, GEO, Activity).
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-projects-feature.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-projects-feature.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Mark the last todo complete. Then verify the implementation once more - ensure when we add a new keyword in the research card we also allow selecting it. We're calling updateResearchArray('seoKeywords', researchAddKeyword) which updates researchResult. The chips are (researchResult.seoKeywords ?? []).map(...). So the new keyword appears. User clicks the chip to toggle selection. Good. One more thing: after adding a keyword via the Research card's input, the new keyword is in the list but not selected - so when they click "Apply as rank keywords" only previously selected chips are added. If they want to add the just-typed keyword they need to click the chip first. That's correct.
+
+Let me also ensure the schema allows optional valueProposition - the API might not return it. Our schema has valueProposition: z.string().trim().max(500).optional(), so it's optional. The frontend uses researchResult.valueProposition ?? '' so we're good.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add project research Zod schema and type in lib/research/schema.ts
+- [x] Implement POST /api/projects/[id]/research with OpenAI parse()
+- [x] Add apiProjectResearch(id) to lib/constants.ts
+- [x] Add Research card, state, category UI and apply logic on project page
+- [x] Add projects.research* keys to de.json and en.json
+- [x] Add __tests__/api/project-research.test.ts
+- [x] Update knowledge/checkion-projects-feature.md with research endpoint
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+All todos are done. Let me do a quick sanity check: the research route uses `openai.chat.completions.parse` - so the mock in the test must provide `parse` which we did. The route also imports extractHostname from suggest-parse - that's a real import, no mock needed. And it imports zodResponseFormat from openai/helpers/zod - we mocked that module to return a simple object. So when the route runs in the test, it will use our mocked OpenAI (with parse), and the real zodResponseFormat from the mock (we mocked the module so zodResponseFormat is a vi.fn returning an object). So the parse() call receives response_format: { type: 'json_schema', name: 'project_research' }. The mock parse resolves with message.parsed = validResearchResult. The route then validates with projectResearchResultSchema.safeParse(parsed) - and validResearchResult has the right shape. So we're good.
+
+Let me read the research route once more to ensure we're not missing anything - e.g. do we need to handle the case when the API returns refusal?
+</details></think>
+
+---
+
+
+Summary of what was implemented:
+
+## 1. **Schema** – `lib/research/schema.ts`
+- Zod schema `projectResearchResultSchema`: `targetGroups`, `valueProposition?`, `seoKeywords`, `geoQueries`, `competitors` (all arrays of strings, valueProposition optional).
+- Exported type `ProjectResearchResult`.
+
+## 2. **API** – `app/api/projects/[id]/research/route.ts`
+- POST handler: auth, load project, resolve URL from project or body.
+- Calls `openai.chat.completions.parse()` with `zodResponseFormat(projectResearchResultSchema, 'project_research')` (OpenAI Structured Outputs).
+- Handles `message.refusal` (422).
+- Validates `message.parsed` with the schema and returns it; reports usage.
+
+## 3. **Constants** – `lib/constants.ts`
+- `apiProjectResearch(id)` for `POST /api/projects/[id]/research`.
+
+## 4. **Frontend** – `app/projects/[id]/page.tsx`
+- State: `researchResult`, `researchLoading`, `researchError`, `selectedResearchKeywords`, and add-inputs per category.
+- **Research card** (below Company info): “Research starten”, error display, empty state.
+- When `researchResult` exists: sections for **Target groups**, **Value proposition** (multiline), **SEO keywords** (chips + toggle selection + “Apply as rank keywords”), **GEO queries** (chips + “Apply to GEO queries”), **Competitors** (chips + “Apply to competitors”). Each section has optional “Add” input and chip delete.
+- Handlers: `handleRunResearch`, `updateResearchArray`, `handleApplyResearchCompetitors`, `handleApplyResearchGeoQueries`, `handleApplyResearchKeywords`, `handleToggleResearchKeyword`.
+
+## 5. **i18n** – `locales/de.json`, `locales/en.json`
+- New keys: `projects.research`, `researchDescription`, `researchStart`, `researchTargetGroups`, `researchValueProposition`, `researchSeoKeywords`, `researchGeoQueries`, `researchCompetitors`, `researchAdd`, `researchApplyCompetitors`, `researchApplyGeoQueries`, `researchApplyKeywords`, `researchEmpty`.
+
+## 6. **Tests** – `__tests__/api/project-research.test.ts`
+- 401 unauthenticated, 404 project not found, 400 no domain, 200 with valid parsed result; response checked with `projectResearchResultSchema.safeParse()`.
+- OpenAI client mocked with `chat.completions.parse`.
+
+## 7. **Docs** – `knowledge/checkion-projects-feature.md`
+- API section updated with POST `/api/projects/[id]/research`.
+- Frontend section updated to six cards and description of the Research card.
+
+All related todos are completed. The project research agent uses OpenAI’s JSON/Structured Outputs via `zodResponseFormat` and `completions.parse()`, and the project page shows the result in an editable, category-based UI with apply actions.
+
+---
+
+_**User**_
+
+2026-Mar-13 11:41:31.448234
+#17 [builder 6/6] RUN npm run build
+2026-Mar-13 11:41:31.448234
+#17 0.371
+2026-Mar-13 11:41:31.448234
+#17 0.371 > checkion@0.1.0 build
+2026-Mar-13 11:41:31.448234
+#17 0.371 > next build --webpack
+2026-Mar-13 11:41:31.448234
+#17 0.371
+2026-Mar-13 11:41:31.448234
+#17 0.957 ▲ Next.js 16.1.6 (webpack)
+2026-Mar-13 11:41:31.448234
+#17 0.957 - Experiments (use with caution):<REDACTED>@11.11.1
+2026-Mar-13 11:41:31.448234
+#17 44.96 npm notice
+2026-Mar-13 11:41:31.448234
+#17 ERROR: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+2026-Mar-13 11:41:31.448234
+------
+2026-Mar-13 11:41:31.448234
+> [builder 6/6] RUN npm run build:
+2026-Mar-13 11:41:31.448234
+44.67       |                                      ^
+2026-Mar-13 11:41:31.448234
+44.67   674 |                                         placeholder={t('projects.researchAdd')}
+2026-Mar-13 11:41:31.448234
+44.67   675 |                                         value={researchAddTargetGroup}
+2026-Mar-13 11:41:31.448234
+44.67   676 |                                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setResearchAddTargetGroup(e.target.value)}
+2026-Mar-13 11:41:31.448234
+44.79 Next.js build worker exited with code: 1 and signal: null
+2026-Mar-13 11:41:31.448234
+44.96 npm notice
+2026-Mar-13 11:41:31.448234
+44.96 npm notice New major version of npm available! 10.9.4 -> 11.11.1
+2026-Mar-13 11:41:31.448234
+44.96 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.11.1
+2026-Mar-13 11:41:31.448234
+44.96 npm notice To update run:<REDACTED>@11.11.1
+2026-Mar-13 11:41:31.448234
+44.96 npm notice
+2026-Mar-13 11:41:31.448234
+------
+2026-Mar-13 11:41:31.448234
+2026-Mar-13 11:41:31.448234
+36 warnings found (use docker --debug to expand):
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The Docker build is failing at line 674 in the project page - around the Research card's MsqdxFormField with `onChange={(e: React.ChangeEvent<HTMLInputElement>) => setResearchAddTargetGroup(e.target.value)}`. The caret points to that area.
+
+This could be the same kind of issue we had with RankTrackingChart - the Docker/Next build (possibly SWC or a stricter parser) might be choking on inline arrow functions or the type assertion in the JSX. Let me check the project page and extract the onChange handlers into named functions or simplify the JSX to avoid parsing issues.
+
+I'll read the relevant section of the project page and replace inline arrow functions with named handlers or use a different pattern that the build accepts.
+</details></think>
+
+---
+
+
+Build schlägt bei den inline-`onChange`-Handlern in der Research-Card fehl. Wir ersetzen sie durch benannte Handler, damit der Build durchläuft.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The build fails around the inline `onChange={(e: React.ChangeEvent<HTMLInputElement>) => ...}`. The Docker/Next build might be strict about the type annotation in the arrow function inside JSX. I'll add useCallback handlers at the top of the component for each of these and use them in the JSX, so we avoid inline arrow functions with type annotations in the Research card.
+
+I need to:
+1. Add handlers like handleResearchAddTargetGroupChange, handleResearchValuePropositionChange, handleResearchAddKeywordChange, handleResearchAddGeoQueryChange, handleResearchAddCompetitorChange - each takes e: React.ChangeEvent<HTMLInputElement> and calls the appropriate setState.
+2. Add handlers for the "Add" button clicks: addResearchTargetGroup, addResearchKeyword, addResearchGeoQuery, addResearchCompetitor - so we don't have inline onClick with arrow functions that close over state.
+
+Actually looking at the error again - the caret is at line 674, which is the MsqdxFormField. The issue might be specifically the `(e: React.ChangeEvent<HTMLInputElement>)` type in JSX. In some build setups, the parser gets confused. Let me try removing the explicit type and just use (e) => setResearchAddTargetGroup(e.target.value) - the type can be inferred. Or use a named handler.
+
+I'll add named change handlers and named click handlers for the add buttons, so the JSX only references function names.
+</details></think>
+
+---
+

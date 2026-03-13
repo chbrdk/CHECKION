@@ -575,6 +575,55 @@ export default function ProjectDetailPage() {
         });
     }, []);
 
+    const handleResearchAddTargetGroupChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setResearchAddTargetGroup(e.target.value);
+    }, []);
+    const handleResearchValuePropositionChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            setResearchResult((prev) => (prev ? { ...prev, valueProposition: e.target.value } : prev));
+        },
+        []
+    );
+    const handleResearchAddKeywordChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setResearchAddKeyword(e.target.value);
+    }, []);
+    const handleResearchAddGeoQueryChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setResearchAddGeoQuery(e.target.value);
+    }, []);
+    const handleResearchAddCompetitorChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setResearchAddCompetitor(e.target.value);
+    }, []);
+
+    const handleResearchAddTargetGroupClick = useCallback(() => {
+        updateResearchArray('targetGroups', researchAddTargetGroup);
+        setResearchAddTargetGroup('');
+    }, [researchAddTargetGroup, updateResearchArray]);
+    const handleResearchAddKeywordClick = useCallback(() => {
+        updateResearchArray('seoKeywords', researchAddKeyword);
+        setResearchAddKeyword('');
+    }, [researchAddKeyword, updateResearchArray]);
+    const handleResearchAddGeoQueryClick = useCallback(() => {
+        updateResearchArray('geoQueries', researchAddGeoQuery);
+        setResearchAddGeoQuery('');
+    }, [researchAddGeoQuery, updateResearchArray]);
+    const handleResearchAddCompetitorClick = useCallback(() => {
+        updateResearchArray('competitors', researchAddCompetitor);
+        setResearchAddCompetitor('');
+    }, [researchAddCompetitor, updateResearchArray]);
+
+    const handleResearchRemoveTargetGroup = useCallback(
+        (item: string) => updateResearchArray('targetGroups', null, item),
+        [updateResearchArray]
+    );
+    const handleResearchRemoveGeoQuery = useCallback(
+        (q: string) => updateResearchArray('geoQueries', null, q),
+        [updateResearchArray]
+    );
+    const handleResearchRemoveCompetitor = useCallback(
+        (c: string) => updateResearchArray('competitors', null, c),
+        [updateResearchArray]
+    );
+
     if (!id) {
         return (
             <Box sx={{ p: 'var(--msqdx-spacing-md)' }}>
@@ -664,7 +713,7 @@ export default function ProjectDetailPage() {
                                         <MsqdxChip
                                             key={item}
                                             label={item}
-                                            onDelete={() => updateResearchArray('targetGroups', null, item)}
+                                            onDelete={() => handleResearchRemoveTargetGroup(item)}
                                             size="small"
                                         />
                                     ))}
@@ -673,16 +722,13 @@ export default function ProjectDetailPage() {
                                     <MsqdxFormField
                                         placeholder={t('projects.researchAdd')}
                                         value={researchAddTargetGroup}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setResearchAddTargetGroup(e.target.value)}
+                                        onChange={handleResearchAddTargetGroupChange}
                                         sx={{ minWidth: 180, flex: '1 1 180px' }}
                                     />
                                     <MsqdxButton
                                         variant="outlined"
                                         size="small"
-                                        onClick={() => {
-                                            updateResearchArray('targetGroups', researchAddTargetGroup);
-                                            setResearchAddTargetGroup('');
-                                        }}
+                                        onClick={handleResearchAddTargetGroupClick}
                                         disabled={!researchAddTargetGroup.trim()}
                                     >
                                         {t('projects.researchAdd')}
@@ -698,9 +744,7 @@ export default function ProjectDetailPage() {
                                     multiline
                                     minRows={2}
                                     value={researchResult.valueProposition ?? ''}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                        setResearchResult((prev) => (prev ? { ...prev, valueProposition: e.target.value } : prev))
-                                    }
+                                    onChange={handleResearchValuePropositionChange}
                                     sx={{ width: '100%' }}
                                 />
                             </Box>
@@ -726,16 +770,13 @@ export default function ProjectDetailPage() {
                                     <MsqdxFormField
                                         placeholder={t('projects.researchAdd')}
                                         value={researchAddKeyword}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setResearchAddKeyword(e.target.value)}
+                                        onChange={handleResearchAddKeywordChange}
                                         sx={{ minWidth: 180, flex: '1 1 180px' }}
                                     />
                                     <MsqdxButton
                                         variant="outlined"
                                         size="small"
-                                        onClick={() => {
-                                            updateResearchArray('seoKeywords', researchAddKeyword);
-                                            setResearchAddKeyword('');
-                                        }}
+                                        onClick={handleResearchAddKeywordClick}
                                         disabled={!researchAddKeyword.trim()}
                                     >
                                         {t('projects.researchAdd')}
@@ -760,7 +801,7 @@ export default function ProjectDetailPage() {
                                         <MsqdxChip
                                             key={q}
                                             label={q}
-                                            onDelete={() => updateResearchArray('geoQueries', null, q)}
+                                            onDelete={() => handleResearchRemoveGeoQuery(q)}
                                             size="small"
                                         />
                                     ))}
@@ -769,16 +810,13 @@ export default function ProjectDetailPage() {
                                     <MsqdxFormField
                                         placeholder={t('projects.researchAdd')}
                                         value={researchAddGeoQuery}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setResearchAddGeoQuery(e.target.value)}
+                                        onChange={handleResearchAddGeoQueryChange}
                                         sx={{ minWidth: 180, flex: '1 1 180px' }}
                                     />
                                     <MsqdxButton
                                         variant="outlined"
                                         size="small"
-                                        onClick={() => {
-                                            updateResearchArray('geoQueries', researchAddGeoQuery);
-                                            setResearchAddGeoQuery('');
-                                        }}
+                                        onClick={handleResearchAddGeoQueryClick}
                                         disabled={!researchAddGeoQuery.trim()}
                                     >
                                         {t('projects.researchAdd')}
@@ -798,7 +836,7 @@ export default function ProjectDetailPage() {
                                         <MsqdxChip
                                             key={c}
                                             label={c}
-                                            onDelete={() => updateResearchArray('competitors', null, c)}
+                                            onDelete={() => handleResearchRemoveCompetitor(c)}
                                             size="small"
                                         />
                                     ))}
@@ -807,16 +845,13 @@ export default function ProjectDetailPage() {
                                     <MsqdxFormField
                                         placeholder={t('projects.researchAdd')}
                                         value={researchAddCompetitor}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setResearchAddCompetitor(e.target.value)}
+                                        onChange={handleResearchAddCompetitorChange}
                                         sx={{ minWidth: 180, flex: '1 1 180px' }}
                                     />
                                     <MsqdxButton
                                         variant="outlined"
                                         size="small"
-                                        onClick={() => {
-                                            updateResearchArray('competitors', researchAddCompetitor);
-                                            setResearchAddCompetitor('');
-                                        }}
+                                        onClick={handleResearchAddCompetitorClick}
                                         disabled={!researchAddCompetitor.trim()}
                                     >
                                         {t('projects.researchAdd')}
