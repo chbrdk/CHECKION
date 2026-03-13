@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Box, IconButton, useMediaQuery, useTheme } from '@mui/material';
 import { MsqdxAppLayout, MsqdxIcon } from '@msqdx/react';
 import { Sidebar } from './Sidebar';
+import { ProjectHeaderNav } from './ProjectHeaderNav';
 import { BrandColorInitializer } from './settings/BrandColorInitializer';
 import { THEME_ACCENT_WITH_FALLBACK } from '@/lib/theme-accent';
 import { PATH_LOGIN, PATH_REGISTER, PATH_SHARE } from '@/lib/constants';
@@ -13,6 +14,13 @@ import { PATH_LOGIN, PATH_REGISTER, PATH_SHARE } from '@/lib/constants';
 const AUTH_PATHS = [PATH_LOGIN, PATH_REGISTER];
 /** Share landing pages: use app layout + logo but hide navigation. */
 const SHARE_PATHS = [PATH_SHARE];
+/** Project sub-routes: show project subnav in header. */
+const isProjectRoute = (path: string | null) =>
+    path != null && path.startsWith('/projects/') && /^\/projects\/[^/]+/.test(path);
+
+/** Header height (matches Audion): xs 56px, md 64px. */
+const HEADER_HEIGHT_XS = 56;
+const HEADER_HEIGHT_MD = 64;
 
 export function AppShell({ children }: { children: ReactNode }) {
     const pathname = usePathname();
@@ -54,12 +62,67 @@ export function AppShell({ children }: { children: ReactNode }) {
             },
         },
     };
+
     return (
         <>
             <BrandColorInitializer />
             <MsqdxAppLayout {...layoutProps}>
-                <Box data-checkion-content sx={{ flex: 1, minHeight: 0, color: 'var(--color-text-on-light)' }}>
-                    {children as any}
+                {/* Wrapper: relative + flex column so header and main can be absolutely positioned (Audion-style). */}
+                <Box
+                    sx={{
+                        position: 'relative',
+                        flex: 1,
+                        minHeight: 0,
+                        display: 'flex',
+                        flexDirection: 'column',
+                    }}
+                >
+                    {/* Header bar – project subnav when on project route; same positioning as Audion. */}
+                    <Box
+                        component="header"
+                        sx={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            zIndex: 1100,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'flex-end',
+                            padding: { xs: '0.75rem 1rem', md: '1rem 1.5rem' },
+                            minHeight: { xs: HEADER_HEIGHT_XS, md: HEADER_HEIGHT_MD },
+                            backgroundColor: 'transparent',
+                            overflow: 'visible',
+                        }}
+                    >
+                        {isProjectRoute(pathname ?? null) ? <ProjectHeaderNav /> : null}
+                    </Box>
+                    {/* Main content – full area with paddingTop to clear header (Audion-style). */}
+                    <Box
+                        component="main"
+                        data-checkion-content
+                        sx={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            zIndex: 0,
+                            overflowX: 'hidden',
+                            overflowY: 'auto',
+                            padding: { xs: '1rem', md: '1.5rem' },
+                            paddingTop: {
+                                xs: `calc(${HEADER_HEIGHT_XS}px + 1rem)`,
+                                md: `calc(${HEADER_HEIGHT_MD}px + 1.5rem)`,
+                            },
+                            minWidth: 0,
+                            maxWidth: '100%',
+                            width: '100%',
+                            color: 'var(--color-text-on-light)',
+                        }}
+                    >
+                        {children}
+                    </Box>
                 </Box>
             </MsqdxAppLayout>
             {/* Mobile: floating menu button when sidebar is closed (only when sidebar is shown) */}

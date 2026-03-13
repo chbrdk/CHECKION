@@ -9759,7 +9759,419 @@ Actually re-reading the layout:
 
 That's the bug! The wrapper Box around MsqdxCornerBox has:
 sx={{ flexShrink: 0, display: "flex", justifyContent: "flex-start", alignItems: "flex-start" }}
-So it doesn't set alignSelf: "stretch" or width: "100%". So the Box only wraps the CornerBox tightly. The CornerBox in turn has a header row - but the CornerBox's width is determined by its content (the header row content). So the header row might b</details></think>
+So it doesn't set alignSelf: "stretch" or width: "100%". So the Box only wraps the CornerBox tightly. The CornerBox in turn has a header row - but the CornerBox's width is determined by its content (the header row content). So the header row might be only as wide as logo+appName if the parent doesn't stretch. So headerEnd would be after that, but the Box might not be taking full width so the layout is wrong.
+
+Let me check MsqdxCornerBox - the header row has alignSelf: "stretch" - so within the CornerBox the header row stretches. But the CornerBox itself - does it have a width? The CornerBox is a Box with position: relative, no explicit width. So its width is the size of its content. The content is the header row (which has flex children) + possibly children. The header row has two parts: left (logo+appName) and right (headerEnd). So the intrinsic width of the header would be left width + right width. So the CornerBox would grow to fit. So actually the CornerBox should be as wide as needed. Unless the parent of CornerBox constrains it - the parent is a Box with flexShrink: 0, display: flex, justifyContent: flex-start. So the flex container's main size - the inner box has flexDirection: column, so the main axis is vertical. So the cross axis is horizontal. So the Box (flex item) has default alignSelf: auto, so it stretches in the cross axis (horizontal). So the Box should stretch to full width! So the CornerBox's parent Box does get full width. Then the CornerBox - as a child of that Box (display: flex), the CornerBox doesn't have flex: 1, so it's just a flex item. Default is flex: 0 1 auto. So the CornerBox would shrink if needed but its base size is content. And align-items: flex-start so the CornerBox (the single child) would be at the start. So the Box has full width (stretch), and the CornerBox is one child with align-items: flex-start. So the CornerBox would not stretch - it would be only as wide as its content! So the parent Box stretches to full width, but the CornerBox inside stays content-sized. So the header row inside CornerBox is only as wide as logo + appName + headerEnd. So actually that could be wide. So the subnav should show.
+
+Unless - the user runs in Docker/Coolify. There, the design system is copied from /msqdx-design-system in the image. So the **Docker image** might have an older version of the design system without headerEnd in the **built dist**. So at runtime in production they don't see the subnav because the copied package doesn't have the headerEnd code. We fixed the TypeScript error with a cast, but the runtime code in the container still doesn't pass/render headerEnd if the copied DS is old.
+
+So two scenarios:
+1. User runs locally (npm run dev): They should see the subnav if the symlink points to MSQDX-DS and dist has headerEnd. Unless there's a caching issue or they're not on a project route.
+2. User runs in Coolify/Docker: The image might use an old design system copy, so headerEnd is not in the component - the prop is passed but the old code doesn't use it, so no subnav.
+
+I'll suggest:
+1. Remove the type assertion and use headerEnd properly so TypeScript uses the real type when available (so we don't hide the prop from the type system when DS is up to date). Actually we need the assertion for Docker build where the type doesn't exist. So we keep the assertion.
+2. Make the subnav visible even when the layout doesn't have headerEnd: render the project subnav inside the main content area (e.g. in the project layout) as a fallback. So we always show the back button + tabs when on a project route - either in the header (if headerEnd is supported) or above the content. That way the user always sees the subnav.
+
+Implementing the fallback: we could render ProjectHeaderNav in the project layout (app/projects/[id]/layout.tsx) as a bar above {children}. So when you're on /projects/123/rankings, the layout would show the subnav bar and then the page content. That would work regardless of whether the DS has headerEnd. And when the DS does have headerEnd, we'd show it in both places unless we hide one. Better: show it only in one place. So either we always show it in the project layout (and don't pass headerEnd to AppShell), or we pass headerEnd and the DS shows it in the header. The user said they don't see the subnav "anymore" - so they saw it before. That might mean we had it in the project layout before (the bar we removed) and now we only have it in headerEnd, but in their environment (e.g. Docker) headerEnd isn't rendered. So the fix is to add the subnav back in the project layout so it's always visible. We can keep passing headerEnd for when the DS supports it (so in the future or in dev we don't duplicate). But for now, to guarantee visibility, render ProjectHeaderNav in the project layout as well. That could mean we see it twice when headerEnd works - so we need to either:
+A) Only render in layout (reliable, but not in header), or
+B) Render in both but hide the one in layout when we're sure headerEnd is shown (we can't know), or
+C) Render only via headerEnd and ensure Docker uses DS with headerEnd.
+
+The user wants to see the subnav. The quickest fix is to put it back in the project layout so it always shows, and we can still pass headerEnd so when the DS in the environment supports it, we could show it in the header - but then we'd have it twice. So the clean approach: show the subnav in the project layout (the bar we had before). Then we can remove headerEnd from AppShell to avoid duplication, or we keep headerEnd and accept that in environments with new DS we might show it in the header - but then we'd want to NOT show it in the layout to avoid two. So the logic would be: we don't have a way to know if the DS renders headerEnd. So the only robust approach is to always render the subnav in the project layout. Then remove headerEnd from AppShell (or leave it for when DS is new, and in project layout we'd need to hide the bar when... we can't). So simpler: always render subnav in project layout. Remove the headerEnd from AppShell so we don't rely on DS version. The subnav will be in the content area (below the main header), which is acceptable.
+
+Let me re-read the user message. "jetzt sehe ich aber die neue subnavigation nicht mehr" - they don't see the new subnavigation anymore. So they want to see it. The "new" one was the one in the header (headerEnd). So they're saying that one is not visible. So the fix could be:
+1. Ensure headerEnd is visible (fix layout/CSS so the DS actually shows it) - we checked, the DS code looks correct.
+2. Or add fallback: show subnav in project layout so it's always visible.
+
+I'll add the subnav to the project layout so it's always visible regardless of DS version. Then we can keep headerEnd for when the header integration works (e.g. local with new DS). So we'll have:
+- AppShell: keep passing headerEnd when on project route (so in dev/local it shows in header if DS has it).
+- Project layout: render a bar with ProjectHeaderNav above children. So the subnav always appears. If headerEnd also renders it (same DS), we'd see it twice - once in header, once in content. To avoid that we could not pass headerEnd and only use the layout bar. Then we have one place and it's always visible. Let me do that: remove headerEnd from AppShell, add ProjectHeaderNav to project layout. That way the subnav is always there and we don't depend on DS version.
+</details></think>
+
+---
+
+
+Vermutlich nutzt die laufende Umgebung (z. B. Docker/Coolify) eine ältere Design-System-Kopie ohne `headerEnd` — die TypeScript-Assertion lässt den Build durchlaufen, die Laufzeit rendert die Prop aber nicht. Wir bringen die Subnavigation als Fallback in die Projekt-Layout-Ebene zurück, damit sie immer sichtbar ist:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/layout.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add the React import and the ProjectHeaderNav. The layout is a server component by default - ProjectHeaderNav is a client component (useState, useEffect, usePathname). So we can just import and render it in the layout; the client component will render on the client.
+</details></think>
+
+---
+
+
+Subnav im Projekt-Layout einbauen, damit sie unabhängig vom Design-System immer sichtbar ist.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/layout.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+ProjectHeaderNav uses white/contrast styling when in the header (inherit). Now it's in the content area with background.paper, so the default text/button colors should be fine. Let me check - ProjectHeaderNav has color: 'inherit' on the button and tabs. So it will inherit from the new container (background.paper = usually white/light), so the text will be dark. That's correct for a bar below the header. Good.
+
+Let me also add React import if the file doesn't have it - we're using React.ReactNode. Let me check - in Next/React 19, React is in scope often. Let me check lints.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/layout.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/layout.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+ProjectHeaderNav is a client component. In the layout we're in a server component. Importing a client component and rendering it in a server component is fine - it will render on the client. But we need to make sure the styling of ProjectHeaderNav works when it's in a light bar (background.paper) - it currently uses color: 'inherit' and borderColor: 'currentColor', so it will adapt. Good.
+
+Let me also update ProjectHeaderNav so that when it's used in the content area (this layout), it uses normal text/button colors; when in the header it uses inherit. Actually we're not passing any prop to distinguish. So we keep it as is - inherit will take the color from the parent. The new parent has backgroundColor: 'background.paper' and no explicit color, so the theme's text color for that background will apply. Good.
+
+I'll leave the headerEnd in AppShell as is - so in environments where the DS has headerEnd, the subnav could appear in both places. To avoid duplicate subnav when headerEnd works, we could either:
+1. Remove headerEnd from AppShell so the subnav only shows in the layout bar. Then we have one consistent place (below the main app header). 
+2. Keep both and accept that when DS is new, we might show it in header AND in layout (duplicate).
+
+Option 1 is cleaner - one place for the subnav. So I'll remove the headerEnd from AppShell so we don't risk showing it twice when the DS supports it. The subnav will always be in the project layout bar.
+</details></think>
+
+---
+
+
+`headerEnd` in AppShell entfernen, damit die Subnav nur noch in der Projekt-Layout-Leiste erscheint und nicht doppelt (Header + Leiste), wenn das Design-System `headerEnd` unterstützt.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/AppShell.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/AppShell.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I removed the usePathname usage for isProjectRoute - but we might still have usePathname in the file for isAuthPage and isSharePage. Let me check - yes, pathname is still used for isAuthPage and isSharePage. So we're good. And we no longer need the type assertion for layoutProps since we're not passing headerEnd. So we can simplify to just spread layoutProps. Let me check - the layoutProps type now doesn't have headerEnd, so it should match MsqdxAppLayoutProps. We can remove the "as unknown as ComponentProps<typeof MsqdxAppLayout>" if the types match. Let me leave the cast in place for safety (in case other optional props get added), or remove it for cleaner code. I'll remove the cast and just use {...layoutProps} so TypeScript validates normally.
+</details></think>
+
+---
+
+
+Type-Assertion entfernen, da wir `headerEnd` nicht mehr übergeben.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/AppShell.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/AppShell.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+usePathname - we still use pathname for isAuthPage and isSharePage, so we need usePathname. Good. Let me verify the file and run the build.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/AppShell.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/AppShell.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 7.9s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+  Generating static pages using 9 workers (0/46) ...
+  Generating static pages using 9 workers (11/46) 
+  Generating static pages using 9 workers (22/46) 
+  Generating static pages using 9 workers (34/46) 
+✓ Generating static pages using 9 workers (46/46) in 231.6ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/register
+├ ƒ /api/auth/tokens
+├ ƒ /api/auth/tokens/[id]
+├ ƒ /api/checks/contrast
+├ ƒ /api/checks/pagespeed
+├ ƒ /api/checks/readability
+├ ƒ /api/checks/ssl
+├ ƒ /api/checks/wayback
+├ ƒ /api/health
+├ ƒ /api/journeys
+├ ƒ /api/journeys/[id]
+├ ƒ /api/projects
+├ ƒ /api/projects/[id]
+├ ƒ /api/projects/[id]/geo-summary
+├ ƒ /api/projects/[id]/ranking-summary
+├ ƒ /api/projects/[id]/research
+├ ƒ /api/projects/[id]/suggest-competitors
+├ ƒ /api/projects/[id]/suggest-keywords
+├ ƒ /api/rank-tracking/keywords
+├ ƒ /api/rank-tracking/keywords/[id]
+├ ƒ /api/rank-tracking/keywords/[id]/positions
+├ ƒ /api/rank-tracking/refresh
+├ ƒ /api/saliency/generate
+├ ƒ /api/saliency/result
+├ ƒ /api/scan
+├ ƒ /api/scan/[id]
+├ ƒ /api/scan/[id]/project
+├ ƒ /api/scan/[id]/screenshot
+├ ƒ /api/scan/[id]/summarize
+├ ƒ /api/scan/domain
+├ ƒ /api/scan/domain/[id]/journey
+├ ƒ /api/scan/domain/[id]/status
+├ ƒ /api/scan/domain/[id]/summarize
+├ ƒ /api/scan/domain/[id]/summary
+├ ƒ /api/scan/geo-eeat
+├ ƒ /api/scan/geo-eeat/[jobId]
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history/[runId]
+├ ƒ /api/scan/geo-eeat/[jobId]/project
+├ ƒ /api/scan/geo-eeat/[jobId]/rerun-competitive
+├ ƒ /api/scan/geo-eeat/[jobId]/status
+├ ƒ /api/scan/geo-eeat/history
+├ ƒ /api/scan/geo-eeat/suggest-competitors-queries
+├ ƒ /api/scan/journey-agent
+├ ƒ /api/scan/journey-agent/[jobId]
+├ ƒ /api/scan/journey-agent/[jobId]/live
+├ ƒ /api/scan/journey-agent/[jobId]/live/stream
+├ ƒ /api/scan/journey-agent/[jobId]/project
+├ ƒ /api/scan/journey-agent/[jobId]/video
+├ ƒ /api/scan/journey-agent/history
+├ ƒ /api/scans
+├ ƒ /api/scans/[id]
+├ ƒ /api/scans/domain
+├ ƒ /api/scans/domain/[id]
+├ ƒ /api/scans/domain/[id]/project
+├ ƒ /api/search
+├ ƒ /api/share
+├ ƒ /api/share/[token]
+├ ƒ /api/share/[token]/access
+├ ƒ /api/share/[token]/pages/[pageId]
+├ ƒ /api/share/[token]/pages/[pageId]/screenshot
+├ ƒ /api/share/[token]/video
+├ ƒ /api/share/by-resource
+├ ƒ /api/tools/contrast
+├ ƒ /api/tools/extract
+├ ƒ /api/tools/pagespeed
+├ ƒ /api/tools/readability
+├ ƒ /api/tools/ssl-labs
+├ ƒ /api/tools/wayback
+├ ƒ /developers
+├ ƒ /domain/[id]
+├ ƒ /geo-eeat/[jobId]
+├ ƒ /history
+├ ƒ /journey-agent/[jobId]
+├ ƒ /login
+├ ƒ /projects
+├ ƒ /projects/[id]
+├ ƒ /projects/[id]/geo
+├ ƒ /projects/[id]/rankings
+├ ƒ /projects/[id]/research
+├ ƒ /register
+├ ƒ /results/[id]
+├ ƒ /scan
+├ ƒ /scan/domain
+├ ƒ /settings
+└ ƒ /share/[token]
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build succeeded. The subnav is now in the project layout, so it will always show when you're under /projects/[id]/*, regardless of whether the design system in the environment supports headerEnd. I removed the headerEnd from AppShell so we don't depend on the DS version and so the subnav appears in one place only (the bar below the main header).
+</details></think>
+
+---
+
+
+Hier die Änderungen:
+
+**Ursache:** Die Subnav wurde nur über `headerEnd` im App-Header angezeigt. In manchen Umgebungen (z. B. Docker/Coolify) nutzt die App eine ältere Design-System-Version, die `headerEnd` nicht rendert – die Prop wird ignoriert, die Subnav fehlt.
+
+**Lösung:**
+
+1. **Subnav im Projekt-Layout** (`app/projects/[id]/layout.tsx`):  
+   Die Projekt-Subnavigation (Zurück-Button + Tabs: Übersicht, Rankings, GEO, Research) sitzt jetzt in einer festen Leiste **unter** dem Haupt-Header. Sie wird für alle Projektseiten gerendert und hängt nicht mehr vom Design-System ab.
+
+2. **`headerEnd` aus dem AppShell entfernt:**  
+   Die Subnav kommt nur noch aus dem Projekt-Layout. So gibt es keine doppelte Anzeige und der Build funktioniert auch mit einer DS-Version ohne `headerEnd`.
+
+**Ergebnis:**  
+- Subnav erscheint immer auf allen Projektseiten (`/projects/[id]`, `/projects/[id]/rankings`, etc.).  
+- Gilt lokal und in Docker/Coolify.  
+- Build läuft durch (kein `headerEnd`-Typ mehr nötig).
+
+Die Leiste hat einen dezenten unteren Rand und nutzt `background.paper`; Buttons und Tabs übernehmen die normale Theme-Farbe (nicht mehr „inherit“ wie im farbigen Header). Wenn du die Subnav später wieder in den App-Header (mit `headerEnd`) legen willst, muss das Docker-Image eine Design-System-Version mit `headerEnd` verwenden.
+
+---
+
+_**User**_
+
+schau dir mal bei audion das applayout mit dem header und main containern an und übernimm es hier. @app 
 
 ---
 
