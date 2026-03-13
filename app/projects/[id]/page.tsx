@@ -223,7 +223,13 @@ export default function ProjectDetailPage() {
                     <MsqdxCard
                         variant="flat"
                         borderRadius="button"
-                        sx={{ p: 'var(--msqdx-spacing-md)', border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}
+                        sx={{
+                            p: 'var(--msqdx-spacing-md)',
+                            border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                            bgcolor: 'var(--color-card-bg)',
+                            color: 'var(--color-text-on-light)',
+                            minHeight: 254,
+                        }}
                     >
                         <MsqdxTypography component="h1" variant="h4" weight="bold" sx={{ mb: 0.5 }}>
                             {project.name}
@@ -287,8 +293,10 @@ export default function ProjectDetailPage() {
                                 sx={{
                                     minWidth: 200,
                                     flex: '1 1 200px',
-                                    '& .MuiInputBase-root': { minHeight: 40 },
-                                    '& .MuiInputBase-input': { py: 0.75 },
+                                    margin: 0,
+                                    '& .MuiFormControl-root': { margin: 0, minHeight: 0 },
+                                    '& .MuiInputBase-root': { minHeight: 40, maxHeight: 40, height: 40 },
+                                    '& .MuiInputBase-input': { py: 0.5, height: 40, boxSizing: 'border-box' },
                                 }}
                             />
                             <MsqdxButton variant="outlined" size="small" onClick={handleAddCompetitor} disabled={!normalizeDomainInput(addCompetitorValue)}>
