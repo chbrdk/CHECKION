@@ -46,6 +46,8 @@ export interface GeoQuestionCardProps {
     points: GeoQuestionHistoryPoint[];
     targetDomain: string;
     competitorDomains: string[];
+    /** When set, model is controlled from parent (central selector); card does not show model chips. */
+    selectedModelId?: string | null;
     t: (key: string, params?: Record<string, string | number>) => string;
 }
 
@@ -55,7 +57,7 @@ function formatDate(iso: string): string {
 }
 
 /** Single question card: line chart over time (our domain + competitors per model), like RankTrackingChart. */
-export function GeoQuestionCard({ queryText, queryIndex, points, targetDomain, competitorDomains, t }: GeoQuestionCardProps) {
+export function GeoQuestionCard({ queryText, queryIndex, points, targetDomain, competitorDomains, selectedModelId: controlledModelId, t }: GeoQuestionCardProps) {
     const [timeRangeIndex, setTimeRangeIndex] = useState(1);
     const limit = TIME_RANGES[timeRangeIndex]?.limit ?? 30;
 
@@ -69,8 +71,11 @@ export function GeoQuestionCard({ queryText, queryIndex, points, targetDomain, c
         return Array.from(set);
     }, [points]);
 
-    const [selectedModelIndex, setSelectedModelIndex] = useState(0);
-    const selectedModel = modelIds[Math.min(selectedModelIndex, modelIds.length - 1)] ?? null;
+    const [localModelIndex, setLocalModelIndex] = useState(0);
+    const isModelControlled = controlledModelId !== undefined && controlledModelId !== null;
+    const selectedModel = isModelControlled
+        ? (modelIds.includes(controlledModelId!) ? controlledModelId! : modelIds[0] ?? null)
+        : (modelIds[Math.min(localModelIndex, modelIds.length - 1)] ?? null);
 
     const allDomains = useMemo(
         () => [targetDomain, ...competitorDomains],
@@ -201,15 +206,15 @@ export function GeoQuestionCard({ queryText, queryIndex, points, targetDomain, c
                             />
                         ))}
                     </Box>
-                    {hasCompetitors && modelIds.length > 0 && (
+                    {hasCompetitors && modelIds.length > 0 && !isModelControlled && (
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                             {modelIds.map((modelId, idx) => (
                                 <MsqdxChip
                                     key={modelId}
                                     label={modelId}
-                                    variant={selectedModelIndex === idx ? 'filled' : 'outlined'}
+                                    variant={localModelIndex === idx ? 'filled' : 'outlined'}
                                     size="small"
-                                    onClick={() => setSelectedModelIndex(idx)}
+                                    onClick={() => setLocalModelIndex(idx)}
                                     sx={{ cursor: 'pointer', fontSize: 10 }}
                                 />
                             ))}

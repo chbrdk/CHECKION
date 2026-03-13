@@ -18030,19 +18030,424 @@ los
 
 _**Agent (model default, mode Agent)**_
 
+<think><details><summary>Thought Process</summary>
 
+The user said "los" which means "go" in German - they want me to implement the competitor display in the GEO question diagram. I'll:
+
+1. Extend the API `geo-question-history` to include competitor positions per model (so each point has not just our position per model but also competitor domain -> position per model).
+2. Use project.competitors (or extract from runs) to know which domains to include.
+3. Update GeoQuestionCard to show multiple lines: our domain + each competitor, similar to RankTrackingChart. We need to decide: one chart per model (tabs) or aggregate? I'll do per-model with a model selector so the chart shows: our domain + competitors for that model. Or we could show one chart with our domain + competitors where the value is "average position across models" - that would be simpler. Let me check RankTrackingChart again - it shows our domain + competitorDomains, and each point has position for our domain and competitorPositions for each. So one line per domain. The data is per-keyword per date - not per model. So for GEO we have per-model. Simplest: add a model selector (tabs) to each card, and for the selected model show lines: our domain + competitors. So we need competitor positions in the API.
+
+Let me implement:
+
+1. **API** (`app/api/projects/[id]/geo-question-history/route.ts`):
+   - When building points from each sample, for each row (question) we have competitiveByModel. For each model we have runs[i] with citations. So we can get position for our domain AND for each competitor domain. Competitors: from project.competitors (list of domains). For each point we need: recordedAt, positionsByModel (our position per model), and competitorPositionsByModel: { [modelId]: { [competitorDomain]: position } }. So the type becomes something like:
+   - GeoQuestionHistoryPoint: { recordedAt, positionsByModel: Record<string, number | null>, competitorPositionsByModel?: Record<string, Record<string, number | null>> }  // modelId -> domain -> position
+   - We need to extract competitor positions from citations - same way we get our position, but for each project.competitors domain.
+
+2. **position-matrix lib**: We need a function that given competitiveByModel, targetDomain, and competitorDomains (string[]), returns for each row not just our position per model but also competitor position per model. So we could have buildPositionMatrix return rows that include competitor columns, or we have a separate helper that for one sample returns { ourPositionByModel, competitorPositionByModel: { modelId: { domain: position } } } per query. Actually the current buildPositionMatrix returns rows with queryText and [modelId]: ourPosition. We need to also return competitor positions. So extend the return to include per row: for each modelId, not just our position but a record of domain -> position for our domain + each competitor. So row could be: queryIndex, queryText, [modelId]: ourPosition (for backward compat), and we add competitorPositions?: { [modelId]: { [domain]: number } }. Or we add to the point in the API: when we build the time series, for each (sample, row) we already have the runs. We can get our position from buildPositionMatrix. For competitors we need to get from the same runs - getPositionForDomain(run, competitorDomain) for each competitor. So in the API we can do: for each sample, buildPositionMatrix(competitiveByModel, targetDomain) gives rows. For each row we have row[modelId] = our position. We also need to call getPositionForDomain for each competitor - but getPositionForDomain is in the position-matrix lib and takes one target domain. So we could export a function that gets all positions (our + competitors) from a run, or we call getPositionForDomain in a loop. Actually the position-matrix lib has getPositionForDomain as internal. We need to either export it or add a new function that returns positions for multiple domains. Let me add in position-matrix.ts a function that given competitiveByModel and a list of domains (first is "our", rest are competitors), returns for each row the position per model per domain. So: getPositionMatrixForDomains(competitiveByModel, domains: string[]) -> { rows: { queryIndex, queryText, [modelId]: { [domain]: number } }[], modelIds }. Then in the API we'd build domains = [targetDomain, ...project.competitors] and get the full matrix, then when building the time series we'd map each row to points: our position = row[modelId][targetDomain], competitor positions = row[modelId][competitor] for each competitor.
+
+Actually simpler: keep buildPositionMatrix as is. In the API, for each sample we have competitiveByModel. We need to extract competitor positions. The competitive benchmark result has runs[queryIndex].citations = [{ domain, position }]. So for each (model, queryIndex) we have a list of citations. Our position we get via buildPositionMatrix. For competitors we need to find in citations the position of each competitor domain. So we can add a helper in position-matrix that takes one run (model's runs[i]) and returns { ourPosition, competitorPositions: { domain: position } } given targetDomain and competitorDomains. Or we add getPositionForDomain as exported and in the API we loop: for each model, for each run (query), for each competitor get getPositionForDomain(run, competitor). But getPositionForDomain is not exported. Let me export it from position-matrix and then in the API we can use buildPositionMatrix for our positions and for each sample we iterate the competitive run and build competitor positions. Actually the cleanest: extend buildPositionMatrix to accept an optional competitorDomains: string[], and return rows that have not just row[modelId] = our position but also row[`${modelId}_${domain}`] or we add a separate structure. Simpler: return rows as now, and add a new field to the return: competitorRows?: for each row index, for each modelId, for each competitor domain, the position. So return type becomes { rows, modelIds, competitorPositions?: Map<rowIndex, Map<modelId, Map<domain, number>>> } or just a parallel structure. Actually the simplest for the API response: each point in the time series is { recordedAt, positionsByModel: { [modelId]: number }, competitorPositionsByModel: { [modelId]: { [domain]: number } } }. So when we process each sample we need to compute not only our position per model (via buildPositionMatrix) but also competitor position per model. So we need a function that from competitiveByModel and a list of competitor domains returns competitor positions per model per query. I'll add to position-matrix.ts a function buildCompetitorPositionMatrix(competitiveByModel, competitorDomains: string[]) that returns for each row index, for each modelId, for each competitor domain, the position. So it returns { rows: Array<{ queryIndex, queryText, positions: { [modelId]: { [domain]: number } } }>, modelIds }. Then in the API we call buildPositionMatrix(competitiveByModel, targetDomain) for our positions and buildCompetitorPositionMatrix(competitiveByModel, competitorDomains) for competitor positions. We need to align by query index. So we have rows from buildPositionMatrix (our) and rows from buildCompetitorPositionMatrix (competitors). The competitor matrix rows have the same queryIndex/queryText, so we can merge: for each row index i, our row has row[modelId], competitor row has row[modelId][domain]. So the API builds points as: for each sample, get our rows and competitor rows. For each row index, point = { recordedAt, positionsByModel: from our row, competitorPositionsByModel: from competitor row }. Let me implement buildCompetitorPositionMatrix - it's similar to buildPositionMatrix but instead of one target domain we have a list, and we return for each (row, modelId) a record domain -> position.
+</details></think>
+
+---
+
+
+Competitor-Positionen in die GEO-Fragen-Historie und ins Diagramm einbauen.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat/position-matrix.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/geo-question-history/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/GeoQuestionCard.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to:
+1. Add a function in position-matrix.ts that returns competitor positions per model per query - or extend the API to compute competitor positions using getPositionForDomain. Easiest: export getPositionForDomain and in the API loop over competitors and call it. So I'll export getPositionForDomain from position-matrix (or add buildCompetitorPositionsForRow that takes one run and returns positions for multiple domains). Actually the cleanest is to add in position-matrix a function that for a given competitiveByModel and list of domains (our + competitors) returns rows where each row has for each modelId a Record<domain, position>. So we'd have rows: { queryIndex, queryText, positionsByModelByDomain: { [modelId]: { [domain]: number } } }[]. Then the API can use that to build points with our position and competitor positions. Let me add buildPositionMatrixWithCompetitors(competitiveByModel, domains: string[]) that returns rows with for each modelId an object domain -> position. So row[modelId] would be an object. Then in the API we'd have our domain = domains[0], competitors = domains.slice(1). So we build domains = [targetDomain, ...(project.competitors || [])]. And the return would be rows with row[modelId][domain] for each domain. Then when building the time series we'd have for each point: positionsByModel (our) = row[modelId][targetDomain], competitorPositionsByModel = { [modelId]: { [domain]: row[modelId][domain] } for domain in competitors }. So we need the full matrix with all domains. Let me add buildPositionMatrixMultiDomain(competitiveByModel, domains: string[]) -> { rows: { queryIndex, queryText, [modelId]: Record<string, number> }[], modelIds }. So row[modelId] is Record<domain, position>. Then API uses targetDomain and competitorDomains = project.competitors (normalized), and domains = [targetDomain, ...competitorDomains]. Then for each point we set positionsByModel[modelId] = row[modelId][targetDomain], competitorPositionsByModel[modelId][domain] = row[modelId][domain] for domain in competitorDomains.
+</details></think>
 
 ---
 
 
 
+
+
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] Add buildPositionMatrixMultiDomain in position-matrix.ts
+- [ ] API: return competitorPositionsByModel per point
+- [ ] GeoQuestionCard: model selector + lines our + competitors
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Adding buildPositionMatrixMultiDomain that takes competitiveByModel and an array of domains (target + competitors), returns rows where each row has per modelId a Record<domain, number> (position for that domain). So we need to normalize competitor domains to hostname form when passing from project. In the API project.competitors are likely already domain strings. We'll pass [targetDomain, ...competitorDomains] and get back positions for all.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat/position-matrix.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now update the API to use buildPositionMatrixMultiDomain with domains = [targetDomain, ...competitorDomains], and return for each point competitorPositionsByModel. Competitor domains: project.competitors - we need to normalize to hostname. So competitorDomains = (project.competitors || []).map(d => extractHostname(d.startsWith('http') ? d : `https://${d}`)). Filter out targetDomain from competitor list to avoid duplicate. Then domains = [targetDomain, ...competitorDomains].
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add buildPositionMatrixMultiDomain in position-matrix.ts
+- [-] API: return competitorPositionsByModel per point
+- [ ] GeoQuestionCard: model selector + lines our + competitors
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/geo-question-history/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I added a duplicate export interface - the response type. Let me fix the API body: we need to build competitorDomains from project.competitors (normalized), then use buildPositionMatrixMultiDomain(competitiveByModel, [targetDomain, ...competitorDomains]). Then for each point we set positionsByModel from row.positionsByModelByDomain[modelId][targetDomain] and competitorPositionsByModel[modelId][domain] = row.positionsByModelByDomain[modelId][domain] for domain in competitorDomains.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/geo-question-history/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Need to fix the GeoQuestionHistoryItem - it's already defined in the file. I added GeoQuestionHistoryResponse but the interface GeoQuestionHistoryItem was already there. Let me check - we have export interface GeoQuestionHistoryPoint and export interface GeoQuestionHistoryItem. I added GeoQuestionHistoryResponse - that's redundant for the return type, we can leave it as documentation or remove. The response is just the json. Leave as is.
+
+Now update the GEO page to pass competitorDomains to the card (from API response), and update GeoQuestionCard to accept competitorDomains and competitorPositionsByModel in each point, and show one chart per model (model selector) with lines: our domain + each competitor.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So in RankTrackingChart the chart data has one key per domain (our + competitors), and we draw one Line per domain. For GeoQuestionCard we have per-model data. So we have two options:
+A) One chart per model (tabs): when model "gpt-4" is selected, chart shows our position for gpt-4 and each competitor's position for gpt-4 over time. So chartData = points mapped to { date, [ourDomain]: pos, [competitor1]: pos, ... } using positionsByModel[selectedModel] and competitorPositionsByModel[selectedModel].
+B) One chart with all models + all domains - too many lines.
+
+I'll do A: model selector (tabs or dropdown), then chart shows our domain + competitors for that model. So we need targetDomain and competitorDomains passed to the card. And each point has positionsByModel and competitorPositionsByModel. So for the selected model we build chartData with columns: date, targetDomain (our), ...competitorDomains. And we draw one Line per domain.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add buildPositionMatrixMultiDomain in position-matrix.ts
+- [x] API: return competitorPositionsByModel per point
+- [-] GeoQuestionCard: model selector + lines our + competitors
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/GeoQuestionCard.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to update GeoQuestionCard to:
+1. Accept targetDomain and competitorDomains as props (from API response).
+2. Extend GeoQuestionHistoryPoint type to include competitorPositionsByModel (optional).
+3. Add a model selector (tabs): when user selects a model, the chart shows for that model: our domain + competitor domains (one line each), like RankTrackingChart.
+4. Chart data for selected model: each point = { date, [targetDomain]: our position, [competitor1]: pos, [competitor2]: pos, ... }.
+5. allDomains = [targetDomain, ...competitorDomains]. One Line per domain. Colors: first = green (us), rest = other colors.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/GeoQuestionCard.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now update the component body: add model selector state, build chartData for selected model with columns date + targetDomain + competitorDomains, draw one Line per domain. If no competitor data, keep current behavior (one line per model) for backward compat - actually we always have targetDomain and competitorDomains from parent; if competitorDomains is empty we just show our line per model. So we have two modes:
+1. With competitors: model selector, then chart = our + competitors for that model (one line per domain).
+2. Without competitors: keep current - one line per model (our position per model).
+
+Let me implement: when competitorDomains.length > 0 we show model tabs and chart with domains (our + competitors) for selected model. When competitorDomains.length === 0 we show current chart (one line per model, our position). So the card needs to support both. Actually re-reading the API - we always return competitorPositionsByModel when competitorDomains.length > 0. So when we have competitor data, we show model selector and for selected model the chart has one line per domain (our + competitors). When we don't have competitors, chart has one line per model (our position per model). So we need two chart modes. Let me implement the "with competitors" mode: model selector (tabs), chart data for selected model = points -> { date, [targetDomain]: positionsByModel[model][targetDomain] i.e. our position, [comp1]: competitorPositionsByModel[model][comp1], ... }. allDomains = [targetDomain, ...competitorDomains]. One Line per domain.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/GeoQuestionCard.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to add the model selector UI (tabs/chips) when hasCompetitors, and change the chart to either show one line per domain (when hasCompetitors) or one line per model (when no competitors). And fix the Line rendering - when hasCompetitors we render Line for each domain in allDomains, otherwise Line for each modelId.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/GeoQuestionCard.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now update the GEO page to pass targetDomain, competitorDomains from the API response, and store them in state when we fetch the history.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Remove the duplicate GeoQuestionHistoryResponse interface from the API if it's there and fix the API file - we have both GeoQuestionHistoryItem and the response. Let me check the API file for the duplicate interface and fix the getProject type for competitors.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/geo-question-history/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
 <details>
-<summary>Tool use: **read_file_v2**</summary>
+<summary>Tool use: **ripgrep_raw_search**</summary>
 
-Status: **loading**
+
+Parameters:
+
+```json
+{
+  "pattern": "competitors",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/projects.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "competitors",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/projects.ts",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 50,
+  "topFiles": [
+    {
+      "uri": "lib/db/projects.ts",
+      "matchCount": 10
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/projects.ts",
+      "matchCount": 10
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/projects.ts",
+      "matchCount": 10
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/projects.ts",
+      "matchCount": 10
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/projects.ts",
+      "matchCount": 10
+    }
+  ]
+}
+```
+Status: **completed**
 
 
 </details>
@@ -18050,31 +18455,694 @@ Status: **loading**
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
+<think><details><summary>Thought Process</summary>
 
-Status: **loading**
+getProject returns an object that has competitors as string[]. So project.competitors is correct. Let me check - in the API we're using project from getProject(projectId, user.id). So we need to see what getProject returns. It returns something with competitors. So we're good. Let me run the build and fix any issues. Also need to fix the GEO page - when questionHistory is empty we might still have targetDomain from a previous fetch; we're now setting targetDomain and competitorDomains from the history API response. When the API returns success with no questions (e.g. no runs), we still get targetDomain and competitorDomains. So we're good. Let me also reset targetDomain and competitorDomains when we start the fetch (setQuestionHistory([]) and set them in the then). We already set them in the then. When cancelled we don't set - that's fine. Let me run build.
+</details></think>
 
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 7.0s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+  Generating static pages using 9 workers (0/46) ...
+  Generating static pages using 9 workers (11/46) 
+  Generating static pages using 9 workers (22/46) 
+  Generating static pages using 9 workers (34/46) 
+✓ Generating static pages using 9 workers (46/46) in 194.4ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/register
+├ ƒ /api/auth/tokens
+├ ƒ /api/auth/tokens/[id]
+├ ƒ /api/checks/contrast
+├ ƒ /api/checks/pagespeed
+├ ƒ /api/checks/readability
+├ ƒ /api/checks/ssl
+├ ƒ /api/checks/wayback
+├ ƒ /api/health
+├ ƒ /api/journeys
+├ ƒ /api/journeys/[id]
+├ ƒ /api/projects
+├ ƒ /api/projects/[id]
+├ ƒ /api/projects/[id]/geo-question-history
+├ ƒ /api/projects/[id]/geo-summary
+├ ƒ /api/projects/[id]/ranking-summary
+├ ƒ /api/projects/[id]/research
+├ ƒ /api/projects/[id]/suggest-competitors
+├ ƒ /api/projects/[id]/suggest-keywords
+├ ƒ /api/rank-tracking/keywords
+├ ƒ /api/rank-tracking/keywords/[id]
+├ ƒ /api/rank-tracking/keywords/[id]/positions
+├ ƒ /api/rank-tracking/refresh
+├ ƒ /api/saliency/generate
+├ ƒ /api/saliency/result
+├ ƒ /api/scan
+├ ƒ /api/scan/[id]
+├ ƒ /api/scan/[id]/project
+├ ƒ /api/scan/[id]/screenshot
+├ ƒ /api/scan/[id]/summarize
+├ ƒ /api/scan/domain
+├ ƒ /api/scan/domain/[id]/journey
+├ ƒ /api/scan/domain/[id]/status
+├ ƒ /api/scan/domain/[id]/summarize
+├ ƒ /api/scan/domain/[id]/summary
+├ ƒ /api/scan/geo-eeat
+├ ƒ /api/scan/geo-eeat/[jobId]
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history/[runId]
+├ ƒ /api/scan/geo-eeat/[jobId]/project
+├ ƒ /api/scan/geo-eeat/[jobId]/rerun-competitive
+├ ƒ /api/scan/geo-eeat/[jobId]/status
+├ ƒ /api/scan/geo-eeat/history
+├ ƒ /api/scan/geo-eeat/suggest-competitors-queries
+├ ƒ /api/scan/journey-agent
+├ ƒ /api/scan/journey-agent/[jobId]
+├ ƒ /api/scan/journey-agent/[jobId]/live
+├ ƒ /api/scan/journey-agent/[jobId]/live/stream
+├ ƒ /api/scan/journey-agent/[jobId]/project
+├ ƒ /api/scan/journey-agent/[jobId]/video
+├ ƒ /api/scan/journey-agent/history
+├ ƒ /api/scans
+├ ƒ /api/scans/[id]
+├ ƒ /api/scans/domain
+├ ƒ /api/scans/domain/[id]
+├ ƒ /api/scans/domain/[id]/project
+├ ƒ /api/search
+├ ƒ /api/share
+├ ƒ /api/share/[token]
+├ ƒ /api/share/[token]/access
+├ ƒ /api/share/[token]/pages/[pageId]
+├ ƒ /api/share/[token]/pages/[pageId]/screenshot
+├ ƒ /api/share/[token]/video
+├ ƒ /api/share/by-resource
+├ ƒ /api/tools/contrast
+├ ƒ /api/tools/extract
+├ ƒ /api/tools/pagespeed
+├ ƒ /api/tools/readability
+├ ƒ /api/tools/ssl-labs
+├ ƒ /api/tools/wayback
+├ ƒ /developers
+├ ƒ /domain/[id]
+├ ƒ /geo-eeat/[jobId]
+├ ƒ /history
+├ ƒ /journey-agent/[jobId]
+├ ƒ /login
+├ ƒ /projects
+├ ƒ /projects/[id]
+├ ƒ /projects/[id]/geo
+├ ƒ /projects/[id]/rankings
+├ ƒ /projects/[id]/research
+├ ƒ /register
+├ ƒ /results/[id]
+├ ƒ /scan
+├ ƒ /scan/domain
+├ ƒ /settings
+└ ƒ /share/[token]
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build passed. Let me also clear targetDomain and competitorDomains when we reset questionHistory at the start of the fetch, so that when there's an error or empty response we don't show stale domain names. Actually we're already setting them in the then - and if success we set from data. If empty questions we still get targetDomain and competitorDomains from API. So when API returns success with questions: [] we'd set targetDomain and competitorDomains from response (could be empty string and []). Good. Mark todo complete.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add buildPositionMatrixMultiDomain in position-matrix.ts
+- [x] API: return competitorPositionsByModel per point
+- [x] GeoQuestionCard: model selector + lines our + competitors
 
 </details>
 </tool-use>
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
+<think><details><summary>Thought Process</summary>
 
-Status: **loading**
+Done. Summarize for the user.
+</details></think>
 
+---
+
+
+Die Competitors sind jetzt im GEO-Diagramm berücksichtigt. Überblick über die Änderungen:
+
+## 1. **API `geo-question-history`**
+
+- **Competitor-Domains:** Aus `project.competitors` (normalisiert per Hostname), ohne Doppel mit der eigenen Domain.
+- **Neue Struktur:** Pro Punkt gibt es zusätzlich `competitorPositionsByModel`: `{ [modelId]: { [competitorDomain]: position } }`.
+- **Neue Hilfsfunktion:** `buildPositionMatrixMultiDomain(competitiveByModel, domains)` in `lib/geo-eeat/position-matrix.ts` liefert pro Frage und Modell die Position für alle angegebenen Domains (eure + Competitors).
+- **Response:** Enthält `targetDomain`, `competitorDomains` und pro Frage `points` inkl. `competitorPositionsByModel` (falls Competitors vorhanden).
+
+## 2. **GeoQuestionCard**
+
+- **Neue Props:** `targetDomain`, `competitorDomains` (kommen von der GEO-Seite aus der API-Response).
+- **Mit Competitors:**  
+  - **Modell-Auswahl:** Chips (z. B. „gpt-4“, „claude“) – pro Modell ein Chart.  
+  - **Chart:** Eine Linie pro Domain: eure Domain (z. B. grün, etwas dicker) + eine Linie pro Competitor, alle für das gewählte Modell über die Zeit.  
+  - Verhalten wie beim SEO-Keyword-Chart: X = Zeit, Y = Platz (1 oben), mehrere Linien = eure Domain + Competitors.
+- **Ohne Competitors:** Unverändert eine Linie pro Modell (nur eure Position pro LLM).
+
+## 3. **GEO-Seite**
+
+- Lädt `targetDomain` und `competitorDomains` aus der History-API und übergibt sie an jede `GeoQuestionCard`.
+
+**Ergebnis:** Pro Frage siehst du bei gesetzten Projekt-Competitors einen Modell-Filter; pro Modell zeigt das Chart eure Domain und alle Competitors als Linien über die Zeit (Platz 1–n), analog zur SEO-Rankings-Seite. Build ist durchgelaufen.
+
+---
+
+_**User**_
+
+DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-1whhp80 > div.MuiBox-root c.-1ncjp16 > div.MuiBox-root c.-1oa8fd3[1] > div.MuiBox-root c.-1.g4afn > div.MuiBox-root c.-bw0hlw > div.MuiBox-root c.-r348.g > div.MuiBox-root c.-yi3mkw[1]
+Position: top=278px, left=507px, width=304px, height=156px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-yi3mkw" data-cursor-element-id="cursor-el-1">gpt-5 gpt-5-mini gpt-5-nano gemini-2.5-pro claude-opus-4-6 gemini-2.5-flash claude-sonnet-4-6 gemini-2.5-flash-lite gemini-3-flash-preview gemini-3.1-pro-preview claude-haiku-4-5-20251001</div> lass uns die modelauswahl zentral obendrüber anzeigen und für alle cards umschalten
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants to move the model selection (gpt-5, gpt-5-mini, gpt-5-nano, etc.) from inside each card to a central place above all cards, so that one model selector applies to all question cards at once.
+
+So I need to:
+1. Lift the "selected model" state up to the GEO page (project geo page).
+2. Add a model selector UI (chips or dropdown) in the header area of the GEO page - above the grid of cards.
+3. Pass the selected model down to each GeoQuestionCard as a prop, and GeoQuestionCard becomes a controlled component for the model (or we pass selectedModel and onModelChange and let the parent own the state - actually simpler: parent holds selectedModelIndex or selectedModelId, passes it to each card, each card receives selectedModel and uses it instead of internal state).
+4. When we have competitors, the list of model IDs comes from the data - we need to get the model list from the first question's points (or from the API). Actually the API doesn't return a global "modelIds" list - each question has points with positionsByModel keys. So the set of model IDs is the union across all questions. We can compute that on the page from questionHistory: collect all model IDs from all points. Then the page shows one row of model chips, and passes selectedModelId (or selectedModelIndex) to each card. Each card then uses that to show the chart for that model (our + competitors when hasCompetitors).
+
+Let me implement:
+1. GEO page: state selectedModelId: string | null. Compute modelIds from questionHistory (union of all positionsByModel keys). Render model chips in the header (only when modelIds.length > 0 and we have competitor data - or always show when we have multiple models?). Actually the user said "model selection central above" - so whenever we have multiple models, show the selector above. So: modelIds = union of all model ids from all questions' points. If modelIds.length > 1 (or > 0), show the model selector. selectedModelId state, default to modelIds[0]. Pass selectedModelId to each GeoQuestionCard.
+2. GeoQuestionCard: remove internal selectedModelIndex state. Accept optional selectedModelId?: string | null and onModelChange?: (modelId: string) => void - or just selectedModelId from parent. When selectedModelId is provided (from parent), use it; when not provided (e.g. single card used elsewhere), use internal state. Actually simpler: always receive selectedModelId and onModelChange from parent when we're on the GEO page. So the card receives: selectedModelId (from parent), onModelChange (from parent). Parent (GEO page) holds the state. So we need to change the card to optional selectedModelId and onModelChange - when provided, card is controlled; when not provided, card uses its own state (for backward compat or when used in isolation). So: GeoQuestionCard props: add optional selectedModelId?: string | null, onModelChange?: (modelId: string) => void. When both provided, use them (controlled). Otherwise use internal state. And when controlled, don't render the model chips inside the card - the parent renders them. So we need to not render the model chips inside the card when selectedModelId is passed - we use the prop and don't show the selector in the card. So the card just uses selectedModelId prop when provided, and doesn't render the model chips when selectedModelId is provided (parent renders them above). Let me implement.
+</details></think>
+
+---
+
+
+Modellauswahl in den Header der GEO-Seite ziehen und für alle Karten gemeinsam steuern.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
 
 </details>
 </tool-use>
 
 ---
 
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/GeoQuestionCard.tsx</summary>
 
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to:
+1. On the GEO page: compute modelIds from questionHistory (union of all positionsByModel keys from all points in all questions). Add state selectedModelId, default to modelIds[0]. Render model chips in the header (between the action buttons and the grid), only when we have questions and modelIds.length > 0. Pass selectedModelId to each GeoQuestionCard.
+2. GeoQuestionCard: add optional props selectedModelId?: string | null and onModelChange?: (modelId: string) => void. When selectedModelId is provided, use it instead of internal state and do NOT render the model chips inside the card. When not provided, keep current behavior (internal state + chips in card). So we need to not render the model chips when selectedModelId is passed - the card just uses the prop.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/GeoQuestionCard.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/GeoQuestionCard.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to:
+1. When controlled, use selectedModel (derived from controlledModelId). When not controlled, we need to update local state when user clicks - but we're not showing the chips when controlled, so we only show chips when !isModelControlled. And when not controlled, we use localModelIndex and setLocalModelIndex. So the chip click handler should be setLocalModelIndex(idx). Let me update the chip section to only render when !isModelControlled.
+2. Fix the local state: when not controlled, selectedModelIndex was used - I renamed to localModelIndex. So the chips onClick should setLocalModelIndex(idx). Good.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/GeoQuestionCard.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now on the GEO page: compute modelIds from all questions, add state selectedModelId, render model chips in header, pass selectedModelId to each card.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add useMemo to compute modelIds from questionHistory, add state selectedModelId, and when we set questionHistory we could set selectedModelId to the first model (or leave it and derive: if selectedModelId is not in the new modelIds, reset to modelIds[0]). Add the model chips row between the header and the grid. Pass selectedModelId to each card.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now add the model chips bar between the header and the grid, and pass effectiveModelId to each card. Also set selectedModelId when we first get data so it defaults to first model - we can do that in the fetch then callback or with a useEffect that sets selectedModelId to allModelIds[0] when allModelIds changes and selectedModelId is null or not in the list. Actually we're already deriving effectiveModelId so the cards will get the first model when selectedModelId is null. So we don't need to set selectedModelId on load. We just need to add the UI and pass the prop.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The competitiveModelLabel in locales is "Modell: {model}" - so when we do replace(': ', '') we get "Modell" which is good for the label "Modell:". So we're showing "Modell:" followed by the chips. Let me check - we want to show the model selector even when there are no competitors (we have multiple LLM models). So the condition should be questionHistory.length > 0 && allModelIds.length > 0 - we already have that. So we show the central model bar whenever we have questions and at least one model. When there's only one model it might still be useful to show it (one chip), or we could hide when allModelIds.length === 1. The user said "model selection central above" and "for all cards switch" - so they want it when there are multiple models. I'll leave it as is (show whenever allModelIds.length > 0); if there's only one model, one chip is still clear. Run build.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 5.7s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+  Generating static pages using 9 workers (0/46) ...
+  Generating static pages using 9 workers (11/46) 
+  Generating static pages using 9 workers (22/46) 
+  Generating static pages using 9 workers (34/46) 
+✓ Generating static pages using 9 workers (46/46) in 220.5ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/register
+├ ƒ /api/auth/tokens
+├ ƒ /api/auth/tokens/[id]
+├ ƒ /api/checks/contrast
+├ ƒ /api/checks/pagespeed
+├ ƒ /api/checks/readability
+├ ƒ /api/checks/ssl
+├ ƒ /api/checks/wayback
+├ ƒ /api/health
+├ ƒ /api/journeys
+├ ƒ /api/journeys/[id]
+├ ƒ /api/projects
+├ ƒ /api/projects/[id]
+├ ƒ /api/projects/[id]/geo-question-history
+├ ƒ /api/projects/[id]/geo-summary
+├ ƒ /api/projects/[id]/ranking-summary
+├ ƒ /api/projects/[id]/research
+├ ƒ /api/projects/[id]/suggest-competitors
+├ ƒ /api/projects/[id]/suggest-keywords
+├ ƒ /api/rank-tracking/keywords
+├ ƒ /api/rank-tracking/keywords/[id]
+├ ƒ /api/rank-tracking/keywords/[id]/positions
+├ ƒ /api/rank-tracking/refresh
+├ ƒ /api/saliency/generate
+├ ƒ /api/saliency/result
+├ ƒ /api/scan
+├ ƒ /api/scan/[id]
+├ ƒ /api/scan/[id]/project
+├ ƒ /api/scan/[id]/screenshot
+├ ƒ /api/scan/[id]/summarize
+├ ƒ /api/scan/domain
+├ ƒ /api/scan/domain/[id]/journey
+├ ƒ /api/scan/domain/[id]/status
+├ ƒ /api/scan/domain/[id]/summarize
+├ ƒ /api/scan/domain/[id]/summary
+├ ƒ /api/scan/geo-eeat
+├ ƒ /api/scan/geo-eeat/[jobId]
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history/[runId]
+├ ƒ /api/scan/geo-eeat/[jobId]/project
+├ ƒ /api/scan/geo-eeat/[jobId]/rerun-competitive
+├ ƒ /api/scan/geo-eeat/[jobId]/status
+├ ƒ /api/scan/geo-eeat/history
+├ ƒ /api/scan/geo-eeat/suggest-competitors-queries
+├ ƒ /api/scan/journey-agent
+├ ƒ /api/scan/journey-agent/[jobId]
+├ ƒ /api/scan/journey-agent/[jobId]/live
+├ ƒ /api/scan/journey-agent/[jobId]/live/stream
+├ ƒ /api/scan/journey-agent/[jobId]/project
+├ ƒ /api/scan/journey-agent/[jobId]/video
+├ ƒ /api/scan/journey-agent/history
+├ ƒ /api/scans
+├ ƒ /api/scans/[id]
+├ ƒ /api/scans/domain
+├ ƒ /api/scans/domain/[id]
+├ ƒ /api/scans/domain/[id]/project
+├ ƒ /api/search
+├ ƒ /api/share
+├ ƒ /api/share/[token]
+├ ƒ /api/share/[token]/access
+├ ƒ /api/share/[token]/pages/[pageId]
+├ ƒ /api/share/[token]/pages/[pageId]/screenshot
+├ ƒ /api/share/[token]/video
+├ ƒ /api/share/by-resource
+├ ƒ /api/tools/contrast
+├ ƒ /api/tools/extract
+├ ƒ /api/tools/pagespeed
+├ ƒ /api/tools/readability
+├ ƒ /api/tools/ssl-labs
+├ ƒ /api/tools/wayback
+├ ƒ /developers
+├ ƒ /domain/[id]
+├ ƒ /geo-eeat/[jobId]
+├ ƒ /history
+├ ƒ /journey-agent/[jobId]
+├ ƒ /login
+├ ƒ /projects
+├ ƒ /projects/[id]
+├ ƒ /projects/[id]/geo
+├ ƒ /projects/[id]/rankings
+├ ƒ /projects/[id]/research
+├ ƒ /register
+├ ƒ /results/[id]
+├ ƒ /scan
+├ ƒ /scan/domain
+├ ƒ /settings
+└ ƒ /share/[token]
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build passed. The label "Modell:" - we're using t('geoEeat.competitiveModelLabel', { model: '' }) which gives "Modell: " and then we replace ': ' with '' to get "Modell". So the display is "Modell: [chip] [chip] ...". Actually that leaves "Modell" as the label. So we show "Modell:" then the chips. Good. Done.
+</details></think>
+
+---
+
+
+Die Modellauswahl ist jetzt zentral umgesetzt. Kurz die Änderungen:
+
+## 1. **GEO-Seite (zentrale Modell-Auswahl)**
+
+- **State:** `selectedModelId` (string | null); `effectiveModelId` = gewählte ID, falls in der Modell-Liste, sonst erstes Modell.
+- **Modell-Liste:** `allModelIds` wird aus allen Fragen gebildet (Vereinigung aller `positionsByModel`-Keys).
+- **UI:** Eine Zeile unter den Buttons („GEO/EEAT starten“, „GEO-Fragen“), nur wenn es Fragen und mindestens ein Modell gibt:
+  - Label „Modell:“
+  - Pro Modell ein Chip (z. B. gpt-5, gpt-5-mini, …); der aktive Modell-Chip ist „filled“.
+- **Weitergabe:** Jede `GeoQuestionCard` bekommt `selectedModelId={effectiveModelId}`.
+
+## 2. **GeoQuestionCard (gesteuert von außen)**
+
+- **Neue optionale Prop:** `selectedModelId?: string | null`. Wenn gesetzt, nutzt die Karte dieses Modell und zeigt **keine** Modell-Chips mehr in der Karte.
+- **Ohne Prop:** Wie bisher eigener State und Modell-Chips in der Karte (z. B. für Einzelnutzung).
+- **Logik:** `isModelControlled` = `selectedModelId !== undefined && selectedModelId !== null`. Die Modell-Chips in der Karte werden nur gerendert, wenn `hasCompetitors && modelIds.length > 0 && !isModelControlled`.
+
+Damit gibt es eine gemeinsame Modellzeile über allen Karten; ein Wechsel des Modells (z. B. auf „gpt-5-mini“) aktualisiert alle Frage-Charts auf dieses Modell. Build ist durchgelaufen.
+
+---
+
+_**User**_
+
+bei der seo seite zeigen wir oben noch den score und den score der competitors an, können wir das hier auch
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants to show a score and competitor scores at the top of the GEO page, similar to what's shown on the SEO/rankings page. Let me look at how the rankings page displays the score and competitor scores, and then implement something similar for the GEO page.
+
+I need to:
+1. Check how the rankings page shows score + competitor scores
+2. Check if we have a GEO score API (apiProjectGeoSummary) that returns score and possibly competitor data
+3. Add a score card at the top of the GEO page similar to the rankings page
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/geo-summary/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The geo-summary API currently only returns our score (from the latest run with competitive data), not competitor scores. I need to:
+
+1. Extend the geo-summary API to also return competitor scores (same logic: for each competitor domain, get score from metrics; return competitorScores: Record<string, number>).
+2. On the GEO page: fetch geo-summary (or we might already have it - let me check), and add a score card at the top like the rankings page showing "Unser Score" / "Our Score" and then each competitor's score.
+
+Let me check the geo-summary API again - it uses getScoreFromCompetitive which gets our domain's score from payload.competitiveByModel. The metrics array in CompetitiveBenchmarkResult has per-domain metrics (domain, shareOfVoice, avgPosition, etc.). So for each competitor we can get their metrics and compute score the same way. I need to extend getScoreFromCompetitive to also return competitor scores, or add a similar function that returns { score, competitorScores }.
+
+Actually the API iterates over runs and gets score for project domain. To get competitor scores we need to, for the same run (the one we used for our score), extract scores for each project.competitors domain from the same payload. So in the geo-summary route we already have the run and payload. We can compute our score and then for each project.competitors (normalized), get the score from the same payload using the same getScoreFromCompetitive logic but for each competitor domain. So I need a helper that given payload and a list of domains returns { [domain]: score }. Then we return score (our) and competitorScores (for project.competitors).
+
+Let me read the geo-summary again to see the exact structure. getScoreFromCompetitive takes payload and projectDomain and returns one number. So we need getScoresFromCompetitive(payload, domains: string[]) that returns Record<string, number | null> - score per domain. Then in the API we call it with [projectDomain, ...competitorDomains] and we get back our score and competitor scores.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/geo-summary/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+</tool-use>
 
 ---
 

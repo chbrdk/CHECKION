@@ -31,6 +31,7 @@ function scoreFromMetrics(metrics: CompetitiveMetrics | undefined): number | nul
     return null;
 }
 
+/** Get score (0–100) for one domain from competitive payload (average across models). */
 function getScoreFromCompetitive(
     payload: GeoEeatIntensiveResult | null,
     projectDomain: string
@@ -55,6 +56,33 @@ function getScoreFromCompetitive(
     return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
 }
 
+/** Get scores for multiple domains from the same payload. Returns domain -> score (0–100). */
+function getScoresFromCompetitive(
+    payload: GeoEeatIntensiveResult | null,
+    domains: string[]
+): Record<string, number> {
+    const out: Record<string, number> = {};
+    if (!payload || domains.length === 0) return out;
+    const byModel = payload.competitiveByModel ?? (payload.competitive ? { default: payload.competitive } : null);
+    if (!byModel || typeof byModel !== 'object') return out;
+
+    for (const domain of domains) {
+        const normalized = normalizeDomain(domain);
+        if (!normalized) continue;
+        const scores: number[] = [];
+        for (const result of Object.values(byModel) as CompetitiveBenchmarkResult[]) {
+            if (!result?.metrics || !Array.isArray(result.metrics)) continue;
+            const forDomain = result.metrics.find((m) => normalizeDomain(m.domain) === normalized);
+            const s = scoreFromMetrics(forDomain);
+            if (s != null) scores.push(s);
+        }
+        if (scores.length > 0) {
+            out[normalized] = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+        }
+    }
+    return out;
+}
+
 export async function GET(
     request: NextRequest,
     context: { params: Promise<{ id: string }> }
@@ -70,13 +98,20 @@ export async function GET(
 
     const runs = await listGeoEeatRuns(user.id, RUNS_LIMIT, { projectId });
 
-    let score: number | null = null;
     const projectDomain = project.domain ?? '';
+    const competitorDomains = (project.competitors ?? [])
+        .filter((c): c is string => typeof c === 'string' && c.trim() !== '')
+        .map((c) => normalizeDomain(c.trim().startsWith('http') ? c.trim() : `https://${c.trim()}`))
+        .filter((d) => d !== normalizeDomain(projectDomain));
+
+    let score: number | null = null;
+    let competitorScores: Record<string, number> = {};
     for (const run of runs) {
         if (run.status !== 'complete' || !run.payload) continue;
         const s = getScoreFromCompetitive(run.payload, projectDomain);
         if (s != null) {
             score = s;
+            competitorScores = getScoresFromCompetitive(run.payload, competitorDomains);
             break;
         }
     }
@@ -85,6 +120,7 @@ export async function GET(
         success: true,
         data: {
             score,
+            competitorScores,
             runs: runs.map((r) => ({
                 id: r.id,
                 url: r.url,

@@ -1,18 +1,20 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Box, Dialog, DialogTitle, DialogContent } from '@mui/material';
+import { Box, Dialog, DialogTitle, DialogContent, Stack } from '@mui/material';
 import {
     MsqdxTypography,
     MsqdxButton,
     MsqdxFormField,
     MsqdxChip,
+    MsqdxMoleculeCard,
 } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import {
     apiProject,
+    apiProjectGeoSummary,
     apiScanGeoEeatCreate,
     apiScanGeoEeatHistory,
     apiProjectGeoQuestionHistory,
@@ -44,7 +46,9 @@ export default function ProjectGeoPage() {
     const [questionHistory, setQuestionHistory] = useState<GeoQuestionHistoryItem[]>([]);
     const [targetDomain, setTargetDomain] = useState('');
     const [competitorDomains, setCompetitorDomains] = useState<string[]>([]);
+    const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
     const [historyLoading, setHistoryLoading] = useState(false);
+    const [geoSummary, setGeoSummary] = useState<{ score: number | null; competitorScores: Record<string, number> }>({ score: null, competitorScores: {} });
     const [addGeoQueryValue, setAddGeoQueryValue] = useState('');
     const [suggestGeoQueriesLoading, setSuggestGeoQueriesLoading] = useState(false);
     const [suggestGeoQueriesError, setSuggestGeoQueriesError] = useState<string | null>(null);
@@ -84,6 +88,21 @@ export default function ProjectGeoPage() {
 
     useEffect(() => {
         if (!id) return;
+        fetch(apiProjectGeoSummary(id), { credentials: 'same-origin' })
+            .then((r) => r.json())
+            .then((data: { success?: boolean; data?: { score?: number | null; competitorScores?: Record<string, number> } }) => {
+                if (data?.success && data?.data) {
+                    setGeoSummary({
+                        score: data.data.score ?? null,
+                        competitorScores: data.data.competitorScores ?? {},
+                    });
+                }
+            })
+            .catch(() => setGeoSummary({ score: null, competitorScores: {} }));
+    }, [id]);
+
+    useEffect(() => {
+        if (!id) return;
         let cancelled = false;
         setHistoryLoading(true);
         setQuestionHistory([]);
@@ -106,6 +125,20 @@ export default function ProjectGeoPage() {
     }, [id]);
 
     const geoQueries = Array.isArray(project?.geoQueries) ? project.geoQueries : [];
+
+    const allModelIds = useMemo(() => {
+        const set = new Set<string>();
+        for (const q of questionHistory) {
+            for (const p of q.points) {
+                for (const k of Object.keys(p.positionsByModel)) set.add(k);
+            }
+        }
+        return Array.from(set);
+    }, [questionHistory]);
+
+    const effectiveModelId = selectedModelId && allModelIds.includes(selectedModelId)
+        ? selectedModelId
+        : (allModelIds[0] ?? null);
 
     const handleAddGeoQuery = useCallback(async () => {
         const q = addGeoQueryValue.trim();
@@ -242,8 +275,53 @@ export default function ProjectGeoPage() {
 
     return (
         <Box sx={{ py: 'var(--msqdx-spacing-md)', px: 1.5, width: '100%', maxWidth: '100%' }}>
-            {/* Header: Aktionen (wie SEO-Seite) */}
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1.5, mb: 2 }}>
+            <Stack sx={{ gap: 2 }}>
+                {/* Score-Karte: Unser GEO-Score + Competitor-Scores (wie SEO-Seite) */}
+                <MsqdxMoleculeCard
+                    title={t('projects.geoScore')}
+                    variant="flat"
+                    borderRadius="lg"
+                    footerDivider={false}
+                    sx={{ bgcolor: 'var(--color-card-bg)' }}
+                >
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 5, alignItems: 'baseline' }}>
+                        <Box>
+                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                                {t('projects.ourScore')}
+                            </MsqdxTypography>
+                            <MsqdxTypography
+                                variant="h4"
+                                weight="bold"
+                                sx={{
+                                    color:
+                                        geoSummary.score != null
+                                            ? geoSummary.score >= 70
+                                                ? 'var(--color-status-success)'
+                                                : geoSummary.score >= 40
+                                                  ? 'var(--color-status-warning)'
+                                                  : 'var(--color-status-error)'
+                                            : undefined,
+                                }}
+                            >
+                                {geoSummary.score != null ? `${geoSummary.score}/100` : '—'}
+                            </MsqdxTypography>
+                        </Box>
+                        {geoSummary.competitorScores && Object.keys(geoSummary.competitorScores).length > 0 &&
+                            Object.entries(geoSummary.competitorScores).map(([domain, score]) => (
+                                <Box key={domain}>
+                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                                        {domain}
+                                    </MsqdxTypography>
+                                    <MsqdxTypography variant="h4" weight="bold" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                        {score}/100
+                                    </MsqdxTypography>
+                                </Box>
+                            ))}
+                    </Box>
+                </MsqdxMoleculeCard>
+
+                {/* Header: Aktionen (wie SEO-Seite) */}
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1.5 }}>
                 <MsqdxButton
                     variant="contained"
                     brandColor="green"
@@ -262,6 +340,25 @@ export default function ProjectGeoPage() {
                     </MsqdxTypography>
                 )}
             </Box>
+
+            {/* Zentrale Modell-Auswahl (gilt für alle Karten) */}
+            {!historyLoading && questionHistory.length > 0 && allModelIds.length > 0 && (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.5, mb: 2 }}>
+                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', mr: 1 }}>
+                        {t('geoEeat.competitiveModelLabel', { model: '' }).replace(': ', '')}:
+                    </MsqdxTypography>
+                    {allModelIds.map((modelId) => (
+                        <MsqdxChip
+                            key={modelId}
+                            label={modelId}
+                            variant={effectiveModelId === modelId ? 'filled' : 'outlined'}
+                            size="small"
+                            onClick={() => setSelectedModelId(modelId)}
+                            sx={{ cursor: 'pointer', fontSize: 11 }}
+                        />
+                    ))}
+                </Box>
+            )}
 
             {/* Inhalt: Frage-Cards mit Verlauf über alle Analysen (wie SEO Keywords mit Chart) */}
             {historyLoading && (
@@ -288,6 +385,7 @@ export default function ProjectGeoPage() {
                             points={q.points}
                             targetDomain={targetDomain}
                             competitorDomains={competitorDomains}
+                            selectedModelId={effectiveModelId}
                             t={t}
                         />
                     ))}
@@ -376,6 +474,7 @@ export default function ProjectGeoPage() {
                     )}
                 </DialogContent>
             </Dialog>
+            </Stack>
         </Box>
     );
 }
