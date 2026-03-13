@@ -724,7 +724,7 @@ export default function ProjectDetailPage() {
                         <MsqdxTypography variant="body2" sx={{ py: 2 }}>{t('common.loading')}</MsqdxTypography>
                     ) : (
                         <MsqdxAccordion>
-                            <MsqdxAccordionItem title={`${t('projects.domainScans')} (${domainScans.length})`} defaultExpanded>
+                            <MsqdxAccordionItem id="activity-domain-scans" summary={`${t('projects.domainScans')} (${domainScans.length})`}>
                                 {domainScans.length === 0 ? (
                                     <Box sx={{ py: 3, textAlign: 'center' }}>
                                         <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
@@ -747,7 +747,7 @@ export default function ProjectDetailPage() {
                                     </Box>
                                 )}
                             </MsqdxAccordionItem>
-                            <MsqdxAccordionItem title={`${t('projects.journeyRuns')} (${journeyRuns.length})`}>
+                            <MsqdxAccordionItem id="activity-journey-runs" summary={`${t('projects.journeyRuns')} (${journeyRuns.length})`}>
                                 {journeyRuns.length === 0 ? (
                                     <Box sx={{ py: 3, textAlign: 'center' }}>
                                         <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
@@ -772,7 +772,7 @@ export default function ProjectDetailPage() {
                                     </Box>
                                 )}
                             </MsqdxAccordionItem>
-                            <MsqdxAccordionItem title={`${t('projects.geoEeatRuns')} (${geoRuns.length})`}>
+                            <MsqdxAccordionItem id="activity-geo-runs" summary={`${t('projects.geoEeatRuns')} (${geoRuns.length})`}>
                                 {geoRuns.length === 0 ? (
                                     <Box sx={{ py: 3, textAlign: 'center' }}>
                                         <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
@@ -797,7 +797,7 @@ export default function ProjectDetailPage() {
                                     </Box>
                                 )}
                             </MsqdxAccordionItem>
-                            <MsqdxAccordionItem title={`${t('projects.singleScans')} (${singleScans.length})`}>
+                            <MsqdxAccordionItem id="activity-single-scans" summary={`${t('projects.singleScans')} (${singleScans.length})`}>
                                 {singleScans.length === 0 ? (
                                     <Box sx={{ py: 3, textAlign: 'center' }}>
                                         <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
