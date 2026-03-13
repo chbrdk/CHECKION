@@ -271,7 +271,7 @@ export default function ProjectRankingsPage() {
     }
 
     return (
-        <Box sx={{ p: 'var(--msqdx-spacing-md)', width: '100%', maxWidth: '100%' }}>
+        <Box sx={{ py: 'var(--msqdx-spacing-md)', px: 1.5, width: '100%', maxWidth: '100%' }}>
             <Stack sx={{ gap: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                     <Link href={pathProject(id)} style={{ textDecoration: 'none' }}>
@@ -389,7 +389,7 @@ export default function ProjectRankingsPage() {
                         <Box
                             sx={{
                                 display: 'grid',
-                                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' },
+                                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(3, 1fr)' },
                                 gap: 2,
                             }}
                         >
@@ -413,13 +413,23 @@ export default function ProjectRankingsPage() {
                                             {k.domain} — {k.keyword}
                                         </MsqdxTypography>
                                         <MsqdxIconButton
-                                            size="xs"
+                                            size="small"
                                             color="error"
                                             onClick={() => handleDeleteKeyword(k.id)}
                                             aria-label={t('projects.deleteKeyword')}
-                                            sx={{ flexShrink: 0 }}
+                                            sx={{
+                                                flexShrink: 0,
+                                                color: 'var(--color-status-error)',
+                                                borderColor: 'var(--color-status-error)',
+                                                '&:hover': {
+                                                    backgroundColor: 'var(--color-status-error)',
+                                                    color: '#fff',
+                                                    borderColor: 'var(--color-status-error)',
+                                                },
+                                                '& svg': { color: 'inherit' },
+                                            }}
                                         >
-                                            <Trash2 size={14} />
+                                            <Trash2 size={16} strokeWidth={2} />
                                         </MsqdxIconButton>
                                     </Box>
                                     <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1.5 }}>

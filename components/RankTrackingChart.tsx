@@ -12,7 +12,7 @@ import {
     ResponsiveContainer,
 } from 'recharts';
 import { Box } from '@mui/material';
-import { MsqdxTypography, MsqdxButton } from '@msqdx/react';
+import { MsqdxTypography, MsqdxChip } from '@msqdx/react';
 import { apiRankTrackingKeywordPositions } from '@/lib/constants';
 
 const CHART_COLORS = [
@@ -173,17 +173,17 @@ export function RankTrackingChart({
                 <MsqdxTypography variant="caption" sx={{ color: textMuted }}>
                     {keywordLabel}
                 </MsqdxTypography>
-                <Box sx={{ display: 'flex', gap: 0.25 }}>
+                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                     {TIME_RANGES.map((tr, idx) => (
-                        <MsqdxButton
+                        <MsqdxChip
                             key={tr.label}
-                            variant={timeRangeIndex === idx ? 'contained' : 'outlined'}
+                            label={tr.label}
+                            variant={timeRangeIndex === idx ? 'filled' : 'outlined'}
+                            brandColor={timeRangeIndex === idx ? 'green' : undefined}
                             size="small"
                             onClick={() => setTimeRangeIndex(idx)}
-                            sx={{ minWidth: 32, px: 0.75, py: 0.25, fontSize: 11, lineHeight: 1.2 }}
-                        >
-                            {tr.label}
-                        </MsqdxButton>
+                            sx={{ cursor: 'pointer' }}
+                        />
                     ))}
                 </Box>
             </Box>
