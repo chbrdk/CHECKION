@@ -741,12 +741,18 @@ export default function ProjectDetailPage() {
                                 <MsqdxTypography variant="subtitle2" weight="semibold" sx={{ mb: 0.5 }}>
                                     {t('projects.researchValueProposition')}
                                 </MsqdxTypography>
-                                <Box
-                                    component="textarea"
+                                <textarea
                                     value={researchResult.valueProposition ?? ''}
                                     onChange={handleResearchValuePropositionChange}
                                     rows={2}
-                                    sx={{ width: '100%', px: 1.5, py: 1, border: '1px solid var(--color-border-subtle)', borderRadius: 1, fontSize: 14, resize: 'vertical' }}
+                                    style={{
+                                        width: '100%',
+                                        padding: '8px 12px',
+                                        border: '1px solid var(--color-border-subtle)',
+                                        borderRadius: 4,
+                                        fontSize: 14,
+                                        resize: 'vertical',
+                                    }}
                                 />
                             </Box>
                             {/* SEO keywords */}
