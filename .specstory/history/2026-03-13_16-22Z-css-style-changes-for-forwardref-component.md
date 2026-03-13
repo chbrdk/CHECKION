@@ -11232,3 +11232,348 @@ Erledigt. Ich habe zwei Anpassungen gemacht:
 
 ---
 
+_**User**_
+
+DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > header.MuiBox-root c.-16czz9o > div.MuiBox-root c.-1woy44q
+Position: top=19px, left=88px, width=864px, height=44px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-1woy44q" data-cursor-element-id="cursor-el-53">← testprojekt Übersicht Rankings GEO Research Performance (Demnächst) WCAG (Demnächst)</div> braucht immer links abstand damit es nicht vom logo verdeckt wird.
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants the project header nav div to always have left spacing/margin so it's not covered by the logo (CHECKION). The logo/corner is positioned absolute on the left, so the header content needs a left margin or padding that's at least as wide as the logo area. I should add marginLeft or paddingLeft to the ProjectHeaderNav container so it doesn't sit under the logo. Looking at Audion they had marginLeft: { md: "230px" } for some header content to clear the sidebar. For CHECKION the corner box (logo + CHECKION text) has a certain width - we need to add enough left spacing so the "← testprojekt" and tabs start to the right of the logo. A safe value would be something like 200px or 240px to clear the corner. I'll add marginLeft to the ProjectHeaderNav root Box - e.g. marginLeft: 220 or 240 (px) so there's always space for the logo.
+</details></think>
+
+---
+
+
+Linksabstand hinzufügen, damit die Projekt-Subnav nicht vom Logo überlagert wird:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ProjectHeaderNav.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Actually the user said "links abstand damit es nicht vom logo verdeckt wird" - so they need enough space on the left so the logo doesn't cover the content. The logo/corner box is in the top-left. So we need a substantial left margin - not just 10-16px padding. We need something like 200px or 220px so the entire ProjectHeaderNav block starts to the right of the CHECKION logo. Let me check - in the AppShell the corner has position absolute with left: 0. The corner box contains the logo and "CHECKION" text - that's probably around 200-250px wide. So I should add marginLeft: 220 or 240 (in px) to the ProjectHeaderNav so the nav block always starts after the logo. Let me update to use a proper value like 220px or use a theme spacing that's large. Actually re-reading - "immer links abstand" = always left spacing. So a fixed left margin that clears the logo. I'll use something like 220px or 240px. In MUI we could use theme spacing - but 220px is 220/8 = 27.5 so not a round number. Let me use 224px (28*8) or 240px. I'll add marginLeft: 240 to be safe, or we could use a CSS variable if the project has one for the logo width. For now I'll use 240 (px).
+</details></think>
+
+---
+
+
+Größeren Abstand hinzufügen, damit die Subnav nicht vom Logo überlagert wird:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ProjectHeaderNav.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Wait - if we set marginLeft: 240 and marginLeft: 'auto', the marginLeft: 240 might get overridden by marginLeft: 'auto' since they're in the same object. In CSS, the last one wins if both are applied... Actually in the sx object we have marginLeft: 'auto' and now marginLeft: 240. So marginLeft: 240 will override 'auto'. So we'd lose the "push to the right" behavior. We need BOTH: enough left margin so we're not under the logo, AND the block to be on the right. So we need paddingLeft or marginLeft on the left to clear the logo, but the container itself should still be pushed right. So the parent (header) has the flex. The child (this Box) has marginLeft: 'auto' which pushes it to the right. If we also add marginLeft: 240, we're replacing 'auto' and the block would only have 240px from the left - so it would sit next to the logo but not at the right edge. What we need is: the block should stay on the right (marginLeft: auto), but the block should have internal left padding so that its content doesn't extend under the logo. So when the block is pushed right, its left edge might be under the logo. So we need the header to have paddingLeft that clears the logo, so that the content area (where our nav sits) starts after the logo. So the fix should be on the header in AppShell: add paddingLeft to the header so the whole header content area starts after the logo. That way the ProjectHeaderNav (with marginLeft: auto) will sit in the area that's already to the right of the logo. So I'll revert the marginLeft: 240 on ProjectHeaderNav and instead add paddingLeft to the header in AppShell. Let me check the header in AppShell - we have padding: { xs: '0.75rem 1rem', md: '1rem 1.5rem' }. So we have 1rem left padding. The logo/corner is about 200-250px wide. So we need the header to have paddingLeft that's at least that - e.g. 240px or 220px. So I'll add to the header in AppShell: paddingLeft: { xs: 240, md: 260 } or similar, and remove the marginLeft: 240 from ProjectHeaderNav (and keep marginLeft: 'auto'). Let me do that.
+</details></think>
+
+---
+
+
+Korrigieren: `marginLeft: 240` würde `marginLeft: 'auto'` überschreiben. Stattdessen am Header `paddingLeft` setzen, damit der Bereich rechts vom Logo beginnt:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ProjectHeaderNav.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/AppShell.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add paddingLeft to the header so the header's content area starts after the logo. The logo/corner is absolutely positioned and is roughly 200-250px wide. I'll add paddingLeft to the header - e.g. 220px or 240px so that the header's flex content (the ProjectHeaderNav) starts to the right of the logo.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/AppShell.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now padding will add to the existing padding from the shorthand. So we have padding: { xs: '0.75rem 1rem', md: '1rem 1.5rem' } which sets all four sides, and then paddingLeft overrides just the left. So the left padding will be 240px (xs) and 260px (md), which clears the logo. Good.
+</details></think>
+
+---
+
+
+Erledigt. Zwei Anpassungen:
+
+1. **AppShell – Header:** `paddingLeft: { xs: 240, md: 260 }` (in px) – der Header-Inhalt beginnt damit immer rechts neben dem Logo und wird nicht mehr von ihm überdeckt.
+
+2. **ProjectHeaderNav:** `marginLeft: 'auto'` bleibt erhalten, damit die Subnav rechtsbündig bleibt; der zusätzliche `marginLeft: 240` wurde wieder entfernt.
+
+Die Projekt-Subnav hat jetzt konstant Abstand nach links und bleibt rechtsbündig.
+
+---
+
+_**User**_
+
+2026-Mar-13 20:04:04.029070
+#11 [deps 2/4] RUN ln -snf /msqdx-design-system /app/msqdx-design-system
+2026-Mar-13 20:04:04.029070
+#11 CACHED
+2026-Mar-13 20:04:04.029070
+2026-Mar-13 20:04:04.029070
+#12 [base 2/3] WORKDIR /app
+2026-Mar-13 20:04:04.029070
+#12 CACHED
+2026-Mar-13 20:04:04.029070
+2026-Mar-13 20:04:04.029070
+#13 [base 3/3] RUN apt-get update && apt-get install -y --no-install-recommends     git     ca-certificates     && rm -rf /var/lib/apt/lists/*
+2026-Mar-13 20:04:04.029070
+#13 CACHED
+2026-Mar-13 20:04:04.029070
+2026-Mar-13 20:04:04.029070
+#14 [builder 3/6] COPY package.json package-lock.json* ./
+2026-Mar-13 20:04:04.029070
+#14 CACHED
+2026-Mar-13 20:04:04.029070
+2026-Mar-13 20:04:04.029070
+#15 [builder 4/6] COPY . .
+2026-Mar-13 20:04:04.029070
+#15 DONE 1.5s
+2026-Mar-13 20:04:04.029070
+2026-Mar-13 20:04:04.029070
+#16 [builder 5/6] RUN mkdir -p ./node_modules/@msqdx   && rm -rf ./node_modules/@msqdx/react ./node_modules/@msqdx/tokens   && cp -r /msqdx-design-system/packages/react ./node_modules/@msqdx/react   && cp -r /msqdx-design-system/packages/tokens ./node_modules/@msqdx/tokens
+2026-Mar-13 20:04:04.029070
+#16 DONE 0.3s
+2026-Mar-13 20:04:04.029070
+2026-Mar-13 20:04:04.029070
+#17 [builder 6/6] RUN npm run build
+2026-Mar-13 20:04:04.029070
+#17 0.436
+2026-Mar-13 20:04:04.029070
+#17 0.436 > checkion@0.1.0 build
+2026-Mar-13 20:04:04.029070
+#17 0.436 > next build --webpack
+2026-Mar-13 20:04:04.029070
+#17 0.436
+2026-Mar-13 20:04:04.029070
+#17 1.194 ▲ Next.js 16.1.6 (webpack)
+2026-Mar-13 20:04:04.029070
+#17 1.194 - Experiments (use with caution):<REDACTED>@11.11.1
+2026-Mar-13 20:04:04.029070
+#17 47.91 npm notice
+2026-Mar-13 20:04:04.029070
+#17 ERROR: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+2026-Mar-13 20:04:04.029070
+------
+2026-Mar-13 20:04:04.029070
+> [builder 6/6] RUN npm run build:
+2026-Mar-13 20:04:04.029070
+47.53      |                 ^
+2026-Mar-13 20:04:04.029070
+47.53   55 |                 minWidth: 0,
+2026-Mar-13 20:04:04.029070
+47.53   56 |             }}
+2026-Mar-13 20:04:04.029070
+47.53   57 |         >
+2026-Mar-13 20:04:04.029070
+47.69 Next.js build worker exited with code: 1 and signal: null
+2026-Mar-13 20:04:04.029070
+47.91 npm notice
+2026-Mar-13 20:04:04.029070
+47.91 npm notice New major version of npm available! 10.9.4 -> 11.11.1
+2026-Mar-13 20:04:04.029070
+47.91 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.11.1
+2026-Mar-13 20:04:04.029070
+47.91 npm notice To update run:<REDACTED>@11.11.1
+2026-Mar-13 20:04:04.029070
+47.91 npm notice
+2026-Mar-13 20:04:04.029070
+------
+2026-Mar-13 20:04:04.029070
+2026-Mar-13 20:04:04.029070
+36 warnings found (use docker --debug to expand):
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "OPENAI_API_KEY") (line 43)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "CHECKION_ADMIN_API_KEY") (line 53)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "OPENAI_API_KEY") (line 120)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "CHECKION_ADMIN_API_KEY") (line 130)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "ANTHROPIC_API_KEY") (line 50)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "GEMINI_API_KEY") (line 90)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "CHECKION_ADMIN_API_KEY") (line 92)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_SERVICE_SECRET") (line 132)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "GEMINI_API_KEY") (line 20)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_SERVICE_SECRET") (line 24)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "GEMINI_API_KEY") (line 51)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_AUTH_URL") (line 93)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "ANTHROPIC_API_KEY") (line 127)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_AUTH_URL") (line 131)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_SECRET") (line 10)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_SECRET") (line 41)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_SERVICE_SECRET") (line 55)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "SERP_API_KEY") (line 125)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_URL") (line 129)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_URL") (line 21)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_URL") (line 52)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_SECRET") (line 80)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "SERP_API_KEY") (line 87)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_URL") (line 91)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_SERVICE_SECRET") (line 94)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "SERP_API_KEY") (line 17)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "ANTHROPIC_API_KEY") (line 19)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_AUTH_URL") (line 23)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "OPENAI_API_KEY") (line 82)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_AUTH_URL") (line 54)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "GEMINI_API_KEY") (line 128)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "CHECKION_ADMIN_API_KEY") (line 22)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "SERP_API_KEY") (line 48)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "ANTHROPIC_API_KEY") (line 89)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_SECRET") (line 118)
+2026-Mar-13 20:04:04.029070
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "OPENAI_API_KEY") (line 12)
+2026-Mar-13 20:04:04.029070
+Dockerfile:114
+2026-Mar-13 20:04:04.029070
+--------------------
+2026-Mar-13 20:04:04.029070
+112 |       && cp -r /msqdx-design-system/packages/tokens ./node_modules/@msqdx/tokens
+2026-Mar-13 20:04:04.029070
+113 |     ENV DS_BASE=../msqdx-design-system
+2026-Mar-13 20:04:04.029070
+114 | >>> RUN npm run build
+2026-Mar-13 20:04:04.029070
+115 |
+2026-Mar-13 20:04:04.029070
+116 |     # ---- Runner ----
+2026-Mar-13 20:04:04.029070
+--------------------
+2026-Mar-13 20:04:04.029070
+ERROR: failed to build: failed to solve: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+2026-Mar-13 20:04:04.029070
+exit status 1
+2026-Mar-13 20:04:04.134944
+========================================
+2026-Mar-13 20:04:04.145027
+Deployment failed. Removing the new version of your application.
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+

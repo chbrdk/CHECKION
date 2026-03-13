@@ -51,7 +51,6 @@ export function ProjectHeaderNav() {
                 gap: 2,
                 flexWrap: 'nowrap',
                 marginLeft: 'auto',
-                marginLeft: 'auto',
                 minWidth: 0,
             }}
         >
