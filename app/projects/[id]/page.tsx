@@ -291,9 +291,9 @@ export default function ProjectDetailPage() {
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddCompetitorValue(e.target.value)}
                                 onKeyDown={(e: React.KeyboardEvent) => e.key === 'Enter' && handleAddCompetitor()}
                                 sx={{
-                                    minWidth: 200,
-                                    flex: '1 1 200px',
                                     margin: 0,
+                                    flex: 1,
+                                    minWidth: 0,
                                     '& .MuiFormControl-root': { margin: 0, minHeight: 0 },
                                     '& .MuiInputBase-root': { minHeight: 40, maxHeight: 40, height: 40 },
                                     '& .MuiInputBase-input': { py: 0.5, height: 40, boxSizing: 'border-box' },
@@ -316,12 +316,21 @@ export default function ProjectDetailPage() {
 
                 {/* Right column: 2-column grid (Ranking-Score | GEO) */}
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, alignItems: 'stretch' }}>
-                        {/* Ranking summary card */}
+                        {/* Ranking summary card – actions = button unten (DS-Variante) */}
                         <MsqdxMoleculeCard
                             title={t('projects.rankingScore')}
                             variant="flat"
                             borderRadius="lg"
-                            footerDivider={false}
+                            footerDivider
+                            actions={
+                                id ? (
+                                    <Link href={pathProjectRankings(id)} style={{ textDecoration: 'none' }}>
+                                        <MsqdxButton variant="outlined" size="small">
+                                            {t('projects.viewAllRankings')}
+                                        </MsqdxButton>
+                                    </Link>
+                                ) : null
+                            }
                             sx={{ bgcolor: 'var(--color-card-bg)' }}
                         >
                             {listsLoading ? (
@@ -331,25 +340,29 @@ export default function ProjectDetailPage() {
                                     <MsqdxTypography variant="h4" weight="bold" sx={{ mb: 0.5 }}>
                                         {rankingSummary?.score != null ? `${rankingSummary.score}/100` : '—'}
                                     </MsqdxTypography>
-                                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 1 }}>
+                                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
                                         {rankingSummary ? t('projects.keywordCount', { count: rankingSummary.keywordCount }) : ''}
                                         {rankingSummary?.lastUpdated ? ` · ${t('projects.lastUpdate')}: ${new Date(rankingSummary.lastUpdated).toLocaleDateString()}` : ''}
                                     </MsqdxTypography>
-                                    <Link href={id ? pathProjectRankings(id) : '#'} style={{ textDecoration: 'none' }}>
-                                        <MsqdxButton variant="outlined" size="small">
-                                            {t('projects.viewAllRankings')}
-                                        </MsqdxButton>
-                                    </Link>
                                 </>
                             )}
                         </MsqdxMoleculeCard>
 
-                        {/* GEO summary card */}
+                        {/* GEO summary card – actions = button unten (DS-Variante) */}
                         <MsqdxMoleculeCard
                             title={t('projects.geoScore')}
                             variant="flat"
                             borderRadius="lg"
-                            footerDivider={false}
+                            footerDivider
+                            actions={
+                                id ? (
+                                    <Link href={pathProjectGeo(id)} style={{ textDecoration: 'none' }}>
+                                        <MsqdxButton variant="outlined" size="small">
+                                            {t('projects.viewGeo')}
+                                        </MsqdxButton>
+                                    </Link>
+                                ) : null
+                            }
                             sx={{ bgcolor: 'var(--color-card-bg)' }}
                         >
                             {listsLoading ? (
@@ -362,7 +375,7 @@ export default function ProjectDetailPage() {
                                         </MsqdxTypography>
                                     </Box>
                                     {geoSummary?.runs && geoSummary.runs.length > 0 && (
-                                        <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0, mb: 1 }}>
+                                        <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
                                             {geoSummary.runs.slice(0, 5).map((g) => (
                                                 <Box key={g.id} component="li" sx={listItemSx}>
                                                     <MsqdxTypography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 300 }}>
@@ -375,11 +388,6 @@ export default function ProjectDetailPage() {
                                             ))}
                                         </Box>
                                     )}
-                                    <Link href={id ? pathProjectGeo(id) : '#'} style={{ textDecoration: 'none' }}>
-                                        <MsqdxButton variant="outlined" size="small">
-                                            {t('projects.viewGeo')}
-                                        </MsqdxButton>
-                                    </Link>
                                 </>
                             )}
                         </MsqdxMoleculeCard>
