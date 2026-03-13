@@ -2,12 +2,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Box, Stack } from '@mui/material';
+import { Box } from '@mui/material';
 import {
     MsqdxTypography,
     MsqdxButton,
     MsqdxMoleculeCard,
-    MsqdxCard,
     MsqdxFormField,
     MsqdxChip,
 } from '@msqdx/react';
@@ -217,111 +216,61 @@ export default function ProjectDetailPage() {
 
     return (
         <Box sx={{ p: 'var(--msqdx-spacing-md)', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'minmax(280px, 320px) 1fr' }, gap: 2, alignItems: 'start' }}>
-                {/* Left column: Company info + Competitors */}
-                <Stack sx={{ gap: 2 }}>
-                    <MsqdxCard
-                        variant="flat"
-                        borderRadius="button"
-                        sx={{
-                            p: 'var(--msqdx-spacing-md)',
-                            border: '1px solid var(--color-secondary-dx-grey-light-tint)',
-                            bgcolor: 'var(--color-card-bg)',
-                            color: 'var(--color-text-on-light)',
-                            minHeight: 254,
-                        }}
-                    >
-                        <MsqdxTypography component="h1" variant="h4" weight="bold" sx={{ mb: 0.5 }}>
-                            {project.name}
-                        </MsqdxTypography>
+            <Box
+                sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: 'minmax(280px, 320px) 1fr 1fr' },
+                    gridTemplateRows: { xs: 'auto auto auto auto', md: 'auto auto' },
+                    gap: 2,
+                    alignItems: 'stretch',
+                }}
+            >
+                {/* Row 1 col 1: Company info – actions = Button unten (gleiche Höhe wie Ranking/GEO) */}
+                <MsqdxMoleculeCard
+                    title={project.name}
+                    titleVariant="h4"
+                    variant="flat"
+                    borderRadius="button"
+                    footerDivider
+                    actions={
+                        id ? (
+                            <Link href={pathProjectResearch(id)} style={{ textDecoration: 'none' }}>
+                                <MsqdxButton variant="outlined" size="small">
+                                    {t('projects.researchStart')}
+                                </MsqdxButton>
+                            </Link>
+                        ) : null
+                    }
+                    sx={{
+                        gridColumn: { xs: 1, md: 1 },
+                        gridRow: { xs: 1, md: 1 },
+                        border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                        bgcolor: 'var(--color-card-bg)',
+                        color: 'var(--color-text-on-light)',
+                    }}
+                >
+                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 0.5 }}>
+                        {t('projects.companyInfo')}
+                    </MsqdxTypography>
+                    {project.domain && (
                         <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 1 }}>
-                            {t('projects.companyInfo')}
+                            {project.domain}
                         </MsqdxTypography>
-                        {project.domain && (
-                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 1 }}>
-                                {project.domain}
-                            </MsqdxTypography>
-                        )}
-                        {project.valueProposition && (
-                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 1.5 }}>
-                                {project.valueProposition}
-                            </MsqdxTypography>
-                        )}
-                        <Link href={id ? pathProjectResearch(id) : '#'} style={{ textDecoration: 'none' }}>
-                            <MsqdxButton variant="outlined" size="small">
-                                {t('projects.researchStart')}
-                            </MsqdxButton>
-                        </Link>
-                    </MsqdxCard>
+                    )}
+                    {project.valueProposition && (
+                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                            {project.valueProposition}
+                        </MsqdxTypography>
+                    )}
+                </MsqdxMoleculeCard>
 
-                    <MsqdxMoleculeCard
-                        title={t('projects.competitors')}
-                        variant="flat"
-                        borderRadius="lg"
-                        footerDivider={false}
-                        sx={{ bgcolor: 'var(--color-card-bg)' }}
-                    >
-                        {competitors.length === 0 ? (
-                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 1.5 }}>
-                                {t('projects.noCompetitors')}
-                            </MsqdxTypography>
-                        ) : (
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1.5 }}>
-                                {competitors.map((domain) => (
-                                    <MsqdxChip
-                                        key={domain}
-                                        label={domain}
-                                        onDelete={() => handleRemoveCompetitor(domain)}
-                                        size="small"
-                                        sx={{ mr: 0.5, mb: 0.5 }}
-                                    />
-                                ))}
-                            </Box>
-                        )}
-                        {suggestCompetitorsError && (
-                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-status-error)', display: 'block', mb: 1 }}>
-                                {suggestCompetitorsError}
-                            </MsqdxTypography>
-                        )}
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
-                            <MsqdxFormField
-                                label={t('projects.competitorDomain')}
-                                placeholder={t('projects.addCompetitorPlaceholder')}
-                                value={addCompetitorValue}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddCompetitorValue(e.target.value)}
-                                onKeyDown={(e: React.KeyboardEvent) => e.key === 'Enter' && handleAddCompetitor()}
-                                sx={{
-                                    margin: 0,
-                                    flex: 1,
-                                    minWidth: 0,
-                                    '& .MuiFormControl-root': { margin: 0, minHeight: 0 },
-                                    '& .MuiInputBase-root': { minHeight: 40, maxHeight: 40, height: 40 },
-                                    '& .MuiInputBase-input': { py: 0.5, height: 40, boxSizing: 'border-box' },
-                                }}
-                            />
-                            <MsqdxButton variant="outlined" size="small" onClick={handleAddCompetitor} disabled={!normalizeDomainInput(addCompetitorValue)}>
-                                {t('projects.addCompetitor')}
-                            </MsqdxButton>
-                            <MsqdxButton
-                                variant="outlined"
-                                size="small"
-                                onClick={handleSuggestCompetitors}
-                                disabled={suggestCompetitorsLoading || !project.domain}
-                            >
-                                {suggestCompetitorsLoading ? t('common.loading') : t('projects.suggestCompetitorsWithAi')}
-                            </MsqdxButton>
-                        </Box>
-                    </MsqdxMoleculeCard>
-                </Stack>
-
-                {/* Right column: 2-column grid (Ranking-Score | GEO) */}
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, alignItems: 'stretch' }}>
-                        {/* Ranking summary card – actions = button unten (DS-Variante) */}
-                        <MsqdxMoleculeCard
+                {/* Row 1 col 2: Ranking-Score */}
+                <MsqdxMoleculeCard
                             title={t('projects.rankingScore')}
                             variant="flat"
                             borderRadius="lg"
                             footerDivider
+                            sx={{ gridColumn: { xs: 1, md: 2 }, gridRow: { xs: 2, md: 1 }, bgcolor: 'var(--color-card-bg)' }}
                             actions={
                                 id ? (
                                     <Link href={pathProjectRankings(id)} style={{ textDecoration: 'none' }}>
@@ -331,7 +280,6 @@ export default function ProjectDetailPage() {
                                     </Link>
                                 ) : null
                             }
-                            sx={{ bgcolor: 'var(--color-card-bg)' }}
                         >
                             {listsLoading ? (
                                 <MsqdxTypography variant="body2" sx={{ py: 1 }}>{t('common.loading')}</MsqdxTypography>
@@ -348,8 +296,8 @@ export default function ProjectDetailPage() {
                             )}
                         </MsqdxMoleculeCard>
 
-                        {/* GEO summary card – actions = button unten (DS-Variante) */}
-                        <MsqdxMoleculeCard
+                {/* Row 1 col 3: GEO */}
+                <MsqdxMoleculeCard
                             title={t('projects.geoScore')}
                             variant="flat"
                             borderRadius="lg"
@@ -363,7 +311,7 @@ export default function ProjectDetailPage() {
                                     </Link>
                                 ) : null
                             }
-                            sx={{ bgcolor: 'var(--color-card-bg)' }}
+                            sx={{ gridColumn: { xs: 1, md: 3 }, gridRow: { xs: 3, md: 1 }, bgcolor: 'var(--color-card-bg)' }}
                         >
                             {listsLoading ? (
                                 <MsqdxTypography variant="body2" sx={{ py: 1 }}>{t('common.loading')}</MsqdxTypography>
@@ -391,7 +339,72 @@ export default function ProjectDetailPage() {
                                 </>
                             )}
                         </MsqdxMoleculeCard>
-                </Box>
+
+                {/* Row 2 col 1: Wettbewerber – actions = Buttons unten (wie andere Cards) */}
+                <MsqdxMoleculeCard
+                    title={t('projects.competitors')}
+                    variant="flat"
+                    borderRadius="lg"
+                    footerDivider
+                    actions={
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                            <MsqdxButton
+                                variant="outlined"
+                                size="small"
+                                onClick={handleAddCompetitor}
+                                disabled={!normalizeDomainInput(addCompetitorValue)}
+                            >
+                                {t('projects.addCompetitor')}
+                            </MsqdxButton>
+                            <MsqdxButton
+                                variant="outlined"
+                                size="small"
+                                onClick={handleSuggestCompetitors}
+                                disabled={suggestCompetitorsLoading || !project.domain}
+                            >
+                                {suggestCompetitorsLoading ? t('common.loading') : t('projects.suggestCompetitorsWithAi')}
+                            </MsqdxButton>
+                        </Box>
+                    }
+                    sx={{ gridColumn: { xs: 1, md: 1 }, gridRow: { xs: 4, md: 2 }, bgcolor: 'var(--color-card-bg)' }}
+                >
+                    {competitors.length === 0 ? (
+                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 1.5 }}>
+                            {t('projects.noCompetitors')}
+                        </MsqdxTypography>
+                    ) : (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1.5 }}>
+                            {competitors.map((domain) => (
+                                <MsqdxChip
+                                    key={domain}
+                                    label={domain}
+                                    onDelete={() => handleRemoveCompetitor(domain)}
+                                    size="small"
+                                    sx={{ mr: 0.5, mb: 0.5 }}
+                                />
+                            ))}
+                        </Box>
+                    )}
+                    {suggestCompetitorsError && (
+                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-status-error)', display: 'block', mb: 1 }}>
+                            {suggestCompetitorsError}
+                        </MsqdxTypography>
+                    )}
+                    <MsqdxFormField
+                        label={t('projects.competitorDomain')}
+                        placeholder={t('projects.addCompetitorPlaceholder')}
+                        value={addCompetitorValue}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddCompetitorValue(e.target.value)}
+                        onKeyDown={(e: React.KeyboardEvent) => e.key === 'Enter' && handleAddCompetitor()}
+                        sx={{
+                            margin: 0,
+                            width: '100%',
+                            '& .MuiFormControl-root': { margin: 0, minHeight: 0 },
+                            '& .MuiInputBase-root': { minHeight: 40, maxHeight: 40, height: 40 },
+                            '& .MuiInputBase-input': { py: 0.5, height: 40, boxSizing: 'border-box' },
+                        }}
+                    />
+                </MsqdxMoleculeCard>
             </Box>
         </Box>
     );
