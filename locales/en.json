@@ -103,6 +103,8 @@
     "startDeepScan": "Start deep scan",
     "startJourney": "Start journey",
     "startGeoEeat": "Start GEO/E-E-A-T",
+    "startNewGeoEeat": "Start new GEO analysis",
+    "domainRequiredForGeo": "Please set the project URL (domain) in company info first.",
     "open": "Open",
     "save": "Save",
     "cancel": "Cancel",

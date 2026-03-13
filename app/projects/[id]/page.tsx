@@ -22,6 +22,7 @@ import {
     apiScansDomainList,
     apiScanJourneyAgentHistory,
     apiScanGeoEeatHistory,
+    apiScanGeoEeatCreate,
     apiScanList,
     API_RANK_TRACKING_KEYWORDS,
     apiRankTrackingKeywords,
@@ -100,6 +101,8 @@ export default function ProjectDetailPage() {
     const [researchAddKeyword, setResearchAddKeyword] = useState('');
     const [researchAddGeoQuery, setResearchAddGeoQuery] = useState('');
     const [researchAddCompetitor, setResearchAddCompetitor] = useState('');
+    const [geoStartLoading, setGeoStartLoading] = useState(false);
+    const [geoStartError, setGeoStartError] = useState<string | null>(null);
 
     const loadProject = useCallback(async () => {
         if (!id) return;
@@ -625,6 +628,44 @@ export default function ProjectDetailPage() {
         [updateResearchArray]
     );
 
+    const handleStartGeoEeat = useCallback(async () => {
+        if (!project?.id || !project.domain) return;
+        setGeoStartError(null);
+        setGeoStartLoading(true);
+        try {
+            const url = project.domain.includes('://') ? project.domain : `https://${project.domain}`;
+            const comps = Array.isArray(project.competitors) ? project.competitors : [];
+            const queries = Array.isArray(project.geoQueries) ? project.geoQueries : [];
+            const runCompetitive = comps.length > 0 || queries.length > 0;
+            const body: { url: string; projectId: string; runCompetitive?: boolean; competitors?: string[]; queries?: string[] } = {
+                url,
+                projectId: project.id,
+            };
+            if (runCompetitive) {
+                body.runCompetitive = true;
+                if (comps.length > 0) body.competitors = comps;
+                if (queries.length > 0) body.queries = queries;
+            }
+            const res = await fetch(apiScanGeoEeatCreate, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+                credentials: 'same-origin',
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                setGeoStartError(data.error ?? t('common.error'));
+                return;
+            }
+            const jobId = data.jobId as string;
+            if (jobId) router.push(pathGeoEeat(jobId));
+        } catch (e) {
+            setGeoStartError(e instanceof Error ? e.message : t('common.error'));
+        } finally {
+            setGeoStartLoading(false);
+        }
+    }, [project?.id, project?.domain, project?.competitors, project?.geoQueries, router, t]);
+
     if (!id) {
         return (
             <Box sx={{ p: 'var(--msqdx-spacing-md)' }}>
@@ -1053,23 +1094,57 @@ export default function ProjectDetailPage() {
                                         <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
                                             {t('projects.emptyGeoEeatRuns')}
                                         </MsqdxTypography>
-                                        <MsqdxButton variant="contained" brandColor="green" size="small" onClick={() => router.push(PATH_SCAN)}>
-                                            {t('projects.startGeoEeat')}
+                                        {!project.domain ? (
+                                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1 }}>
+                                                {t('projects.domainRequiredForGeo')}
+                                            </MsqdxTypography>
+                                        ) : null}
+                                        <MsqdxButton
+                                            variant="contained"
+                                            brandColor="green"
+                                            size="small"
+                                            onClick={handleStartGeoEeat}
+                                            disabled={!project.domain || geoStartLoading}
+                                        >
+                                            {geoStartLoading ? t('common.loading') : t('projects.startGeoEeat')}
                                         </MsqdxButton>
+                                        {geoStartError ? (
+                                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-status-error)', display: 'block', mt: 1 }}>
+                                                {geoStartError}
+                                            </MsqdxTypography>
+                                        ) : null}
                                     </Box>
                                 ) : (
-                                    <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
-                                        {geoRuns.map((g) => (
-                                            <Box key={g.id} component="li" sx={listItemSx}>
-                                                <MsqdxTypography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 400 }}>
-                                                    {g.url}
+                                    <>
+                                        <Box sx={{ mb: 1.5 }}>
+                                            <MsqdxButton
+                                                variant="contained"
+                                                brandColor="green"
+                                                size="small"
+                                                onClick={handleStartGeoEeat}
+                                                disabled={!project.domain || geoStartLoading}
+                                            >
+                                                {geoStartLoading ? t('common.loading') : t('projects.startNewGeoEeat')}
+                                            </MsqdxButton>
+                                            {geoStartError ? (
+                                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-status-error)', display: 'block', mt: 0.5 }}>
+                                                    {geoStartError}
                                                 </MsqdxTypography>
-                                                <MsqdxButton variant="outlined" size="small" onClick={() => router.push(pathGeoEeat(g.id))}>
-                                                    {t('projects.open')}
-                                                </MsqdxButton>
-                                            </Box>
-                                        ))}
-                                    </Box>
+                                            ) : null}
+                                        </Box>
+                                        <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
+                                            {geoRuns.map((g) => (
+                                                <Box key={g.id} component="li" sx={listItemSx}>
+                                                    <MsqdxTypography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 400 }}>
+                                                        {g.url}
+                                                    </MsqdxTypography>
+                                                    <MsqdxButton variant="outlined" size="small" onClick={() => router.push(pathGeoEeat(g.id))}>
+                                                        {t('projects.open')}
+                                                    </MsqdxButton>
+                                                </Box>
+                                            ))}
+                                        </Box>
+                                    </>
                                 )}
                             </MsqdxAccordionItem>
                             <MsqdxAccordionItem id="activity-single-scans" summary={`${t('projects.singleScans')} (${singleScans.length})`}>
