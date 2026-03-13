@@ -81,20 +81,19 @@ export function AppShell({ children }: { children: ReactNode }) {
                         flexDirection: 'column',
                     }}
                 >
-                    {/* Header bar – project subnav when on project route; same positioning as Audion. */}
+                    {/* Header bar – starts right of logo so nav is never covered; above corner in stacking order. */}
                     <Box
                         component="header"
                         sx={{
                             position: 'absolute',
                             top: 0,
-                            left: 0,
+                            left: { xs: 240, md: 260 },
                             right: 0,
-                            zIndex: 1100,
+                            zIndex: 100001,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'flex-end',
                             padding: { xs: '0.75rem 1rem', md: '1rem 1.5rem' },
-                            paddingLeft: { xs: 240, md: 260 },
                             minHeight: { xs: HEADER_HEIGHT_XS, md: HEADER_HEIGHT_MD },
                             backgroundColor: 'transparent',
                             overflow: 'visible',
