@@ -8625,7 +8625,1141 @@ I'll add a type declaration file that augments the @msqdx/react module to includ
 
 <think><details><summary>Thought Process</summary>
 
-I'll create a new file types/msqdx-react.d.ts (or global.d.ts) that augme</details></think>
+I'll create a new file types/msqdx-react.d.ts (or global.d.ts) that augments the module. TypeScript will pick it up if it's in include. The include has "**/*.ts" and "**/*.tsx" - .d.ts files are typically included when they're in the project. Let me create types/msqdx-react.d.ts with module augmentation.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/types/msqdx-react.d.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Module augmentation in TypeScript for an existing interface doesn't work by re-declaring the whole interface - we need to use declaration merging. In TypeScript, when you augment a module, you can add to an existing interface by declaring the same interface again in the augmented module - the declarations merge. So:
+
+declare module '@msqdx/react' {
+  interface MsqdxAppLayoutProps {
+    headerEnd?: ReactNode;
+  }
+}
+
+But wait - MsqdxAppLayoutProps might be exported. So we need to check - if the original has `export interface MsqdxAppLayoutProps`, then in augmentation we use `export interface MsqdxAppLayoutProps` and only add the new property. Let me try without the import and with just the interface merge - ReactNode might need to be from 'react'. Actually in .d.ts we can use import type for ReactNode and then use it. Let me simplify - use React.ReactNode or just any for the prop type to avoid import. Actually in declaration files, adding `headerEnd?: ReactNode` requires ReactNode. So we need to either import from 'react' (in a .d.ts we can use "import type { ReactNode } from 'react'" at the top) or use global React namespace. Let me use React.ReactNode - that's available if React types are loaded.
+</details></think>
+
+---
+
+
+Prüfen, ob die Modul-Augmentation korrekt ist — bei exportierten Interfaces nur die neue Property hinzufügen:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/types/msqdx-react.d.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+TypeScript might not merge the interface if the original is in a different module - we're augmenting the module and adding to the interface. The merged interface will have both the original props and headerEnd. Let me run the build to see if it works. Actually the issue could be that we're re-declaring MsqdxAppLayoutProps - in declaration merging, the second declaration just adds properties. So the final MsqdxAppLayoutProps = original + { headerEnd?: React.ReactNode }. That should work. Let me run the CHECKION build.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 4.9s
+  Running TypeScript ...
+Failed to compile.
+
+./app/developers/page.tsx:5:10
+Type error: Module '"@msqdx/react"' has no exported member 'MsqdxCard'.
+
+[0m [90m 3 |[39m [36mimport[39m [33mReact[39m [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { [33mBox[39m } [36mfrom[39m [32m'@mui/material'[39m[33m;[39m
+[31m[1m&gt;[22m[39m[90m 5 |[39m [36mimport[39m { [33mMsqdxCard[39m[33m,[39m [33mMsqdxChip[39m[33m,[39m [33mMsqdxTypography[39m } [36mfrom[39m [32m'@msqdx/react'[39m[33m;[39m
+ [90m   |[39m          [31m[1m^[22m[39m
+ [90m 6 |[39m [36mimport[39m { [33mCode[39m[33m,[39m [33mTerminal[39m[33m,[39m [33mDatabase[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 7 |[39m [36mimport[39m { useI18n } [36mfrom[39m [32m'@/components/i18n/I18nProvider'[39m[33m;[39m
+ [90m 8 |[39m [36mimport[39m { [33mInfoTooltip[39m } [36mfrom[39m [32m'@/components/InfoTooltip'[39m[33m;[39m[0m
+Next.js build worker exited with code: 1 and signal: null
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The module augmentation replaced the entire module declaration - so now TypeScript thinks @msqdx/react only exports MsqdxAppLayoutProps. We need to augment without replacing the module. In TypeScript, when you do `declare module '@msqdx/react' { ... }`, you're supposed to only add to the module, not replace it. But if we only add `export interface MsqdxAppLayoutProps { headerEnd?: ... }`, we're not re-exporting everything else. The issue is that in an ambient module declaration, what we put inside is the entire module - so we're effectively saying the module only has that one export. We need to use a different approach: **module augmentation** that only merges the interface. For that we must not re-export the interface in a way that shadows other exports. The correct way is to use interface merging - we declare the same interface name and add the new property. TypeScript will merge it with the existing interface from the original module. So we should have:
+
+declare module '@msqdx/react' {
+  interface MsqdxAppLayoutProps {
+    headerEnd?: React.ReactNode;
+  }
+}
+
+Without "export" - so we're just augmenting the existing interface. Let me try without export. Actually in the original module the interface is exported. When we augment, we need to extend the exported interface. So we use:
+
+declare module '@msqdx/react' {
+  export interface MsqdxAppLayoutProps {
+    headerEnd?: React.ReactNode;
+  }
+}
+
+The problem might be that when TypeScript sees our declare module block, it might be treating it as the only declaration for that module in some cases. Let me check - typically multiple declare module '@msqdx/react' blocks get merged. So the first one is from node_modules (the package's index.d.ts) and the second is our file. They should merge. So the exports from the package should still be there, and our block just adds to MsqdxAppLayoutProps. Unless... our types/msqdx-react.d.ts is being loaded instead of the package's types? Like if we're not including the package in the compilation? Let me remove the "export" from the interface - in augmentation we often don't re-export, we just declare the interface to merge:
+
+declare module '@msqdx/react' {
+  interface MsqdxAppLayoutProps {
+    headerEnd?: React.ReactNode;
+  }
+}
+
+That way we're only adding to the interface. Let me try that.
+</details></think>
+
+---
+
+
+Modul-Augmentation überschreibt die Modul-Deklaration. Nur die bestehende Interface erweitern (ohne erneutes Exportieren):
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/types/msqdx-react.d.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+If the package exports MsqdxAppLayoutProps as a type (export type { MsqdxAppLayoutProps } or export interface MsqdxAppLayoutProps), then the interface we're augmenting might need to be the one that's used by MsqdxAppLayout. In the DS, the component's props are MsqdxAppLayoutProps. When we do interface merging in a declare module block without export, we're adding to the existing MsqdxAppLayoutProps that the package exports. So the merged result should still be the same interface with one more property. Let me run the build again.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 5.5s
+  Running TypeScript ...
+Failed to compile.
+
+./app/developers/page.tsx:5:10
+Type error: Module '"@msqdx/react"' has no exported member 'MsqdxCard'.
+
+[0m [90m 3 |[39m [36mimport[39m [33mReact[39m [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { [33mBox[39m } [36mfrom[39m [32m'@mui/material'[39m[33m;[39m
+[31m[1m&gt;[22m[39m[90m 5 |[39m [36mimport[39m { [33mMsqdxCard[39m[33m,[39m [33mMsqdxChip[39m[33m,[39m [33mMsqdxTypography[39m } [36mfrom[39m [32m'@msqdx/react'[39m[33m;[39m
+ [90m   |[39m          [31m[1m^[22m[39m
+ [90m 6 |[39m [36mimport[39m { [33mCode[39m[33m,[39m [33mTerminal[39m[33m,[39m [33mDatabase[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 7 |[39m [36mimport[39m { useI18n } [36mfrom[39m [32m'@/components/i18n/I18nProvider'[39m[33m;[39m
+ [90m 8 |[39m [36mimport[39m { [33mInfoTooltip[39m } [36mfrom[39m [32m'@/components/InfoTooltip'[39m[33m;[39m[0m
+Next.js build worker exited with code: 1 and signal: null
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Still the same error - "Module '"@msqdx/react"' has no exported member 'MsqdxCard'". So our declare module is still somehow replacing or being used instead of the package's types. Maybe the order of loading: our types/msqdx-react.d.ts is loaded and when TypeScript resolves @msqdx/react it finds our declaration first? Let me try excluding our augmentation from the main compilation and only applying it in a way that doesn't replace the module. The standard approach for module augmentation is to have the augmentation in a separate file that only adds to the module. The key is that TypeScript should merge our declare module with the one from node_modules. Perhaps the issue is that our file is being processed and the node_modules @msqdx/react isn't being resolved - e.g. in Docker they copy the package to node_modules/@msqdx/react but that package's dist might not be there (they copy the source folder). So when TypeScript runs, it might not find any types for @msqdx/react from the package (if the copied package has no dist or the types field points to a missing file), and then our declaration is the only one, so the module only has MsqdxAppLayoutProps. So the real fix in Docker might be to ensure the copied design system has been built (has dist/ with types). But the user asked to fix the build - so we need a solution that works when the Docker copy doesn't have the new types. Alternative: don't use module augmentation. Instead, in AppShell, use a type assertion to pass headerEnd. We cast the props to include headerEnd so TypeScript accepts it. That way we don't touch the module declaration at all.
+
+So: remove the types/msqdx-react.d.ts file, and in AppShell do:
+  headerEnd={...} as any
+or
+  {...(isProjectRoute(pathname ?? null) ? { headerEnd: <ProjectHeaderNav /> } : {})}
+and cast the whole MsqdxAppLayout props. Actually the simplest is to cast the component so it accepts our props:
+  <MsqdxAppLayout ... headerEnd={...} /> 
+we need to cast. So we do: 
+  <MsqdxAppLayout ... {...(isProjectRoute(pathname ?? null) ? { headerEnd: <ProjectHeaderNav /> } : {})} />
+and the type error is that headerEnd doesn't exist. So we cast the spread object: 
+  {...(isProjectRoute(pathname ?? null) ? { headerEnd: <ProjectHeaderNav /> } as Record<string, unknown> : {})}
+No, that won't help the type error on headerEnd. We need to cast the entire props or the component. The cleanest is to cast the component to accept additional props:
+  const Layout = MsqdxAppLayout as React.ComponentType<React.ComponentProps<typeof MsqdxAppLayout> & { headerEnd?: React.ReactNode }>;
+  <Layout ... headerEnd={...} />
+That way we're not augmenting the module, we're just casting at the call site. Let me do that and remove the types file.
+</details></think>
+
+---
+
+
+Die Augmentation wird offenbar als einzige Modul-Definition geladen (im Docker-Kontext fehlen die Paket-Typen). Stattdessen am Verwendungsort typisieren (Type-Assertion):
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="delete_file">
+<details><summary>Tool use: **delete_file**</summary>
+
+Explanation: undefined
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/AppShell.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll spread the layout props and add headerEnd via a spread with a type assertion so TypeScript accepts it. That way we don't need to augment the module and the Docker build will pass. At runtime the component will receive headerEnd if the design system supports it.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/AppShell.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/AppShell.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add React import for React.ComponentProps. Let me check - we have "import type { ReactNode } from 'react'" - we need ComponentProps from react. So I'll use React.ComponentProps - that requires React to be in scope. Let me check - we don't have import React from 'react'. So we need to either import React or use ComponentProps from 'react'. Let me use: import type { ComponentProps } from 'react' and then ComponentProps<typeof MsqdxAppLayout>.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/AppShell.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/AppShell.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now layoutProps has `sx` as a property but the original had more - we need to make sure the object structure is correct. Let me read the file to see the current state.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/AppShell.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+MsqdxAppLayout expects children as prop - we're spreading layoutProps which doesn't include children, and then we're passing <Box> as children. So the spread has appName, logo, etc. and the children are the Box. Good. Let me fix the indentation of the sx object and run the build.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/AppShell.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+ComponentProps<typeof MsqdxAppLayout> might not include children - let me check. Actually ComponentProps extracts the props of a component, which usually includes children for React components. So we're spreading layoutProps and the second argument to MsqdxAppLayout is the children (the Box). So we have <MsqdxAppLayout {...layoutProps}>{children content}</MsqdxAppLayout>. Good. Let me run the build.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 5.0s
+  Running TypeScript ...
+Failed to compile.
+
+./components/AppShell.tsx:64:34
+Type error: Conversion of type '{ sx: { '&amp; &gt; div:last-of-type': { backgroundColor: string; }; '&amp; &gt; div:last-of-type &gt; div': { borderColor: string; }; '&amp; &gt; div:last-of-type &gt; div &gt; div:first-of-type': { backgroundColor: string; color: string; }; '&amp; &gt; div:last-of-type &gt; div &gt; div:first-of-type *': { ...; }; '&amp; &gt; div:last-of-type &gt; div &gt; div:first-of...' to type 'MsqdxAppLayoutProps' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'children' is missing in type '{ sx: { '&amp; &gt; div:last-of-type': { backgroundColor: string; }; '&amp; &gt; div:last-of-type &gt; div': { borderColor: string; }; '&amp; &gt; div:last-of-type &gt; div &gt; div:first-of-type': { backgroundColor: string; color: string; }; '&amp; &gt; div:last-of-type &gt; div &gt; div:first-of-type *': { ...; }; '&amp; &gt; div:last-of-type &gt; div &gt; div:first-of...' but required in type 'MsqdxAppLayoutProps'.
+
+[0m [90m 62 |[39m         [33m&lt;[39m[33m&gt;[39m
+ [90m 63 |[39m             [33m&lt;[39m[33mBrandColorInitializer[39m [33m/[39m[33m&gt;[39m
+[31m[1m&gt;[22m[39m[90m 64 |[39m             [33m&lt;[39m[33mMsqdxAppLayout[39m {[33m...[39m(layoutProps [36mas[39m [33mComponentProps[39m[33m&lt;[39m[36mtypeof[39m [33mMsqdxAppLayout[39m[33m&gt;[39m)}[33m&gt;[39m
+ [90m    |[39m                                  [31m[1m^[22m[39m
+ [90m 65 |[39m                 [33m&lt;[39m[33mBox[39m data[33m-[39mcheckion[33m-[39mcontent sx[33m=[39m{{ flex[33m:[39m [35m1[39m[33m,[39m minHeight[33m:[39m [35m0[39m[33m,[39m color[33m:[39m [32m'var(--color-text-on-light)'[39m }}[33m&gt;[39m
+ [90m 66 |[39m                     {children [36mas[39m any}
+ [90m 67 |[39m                 [33m&lt;[39m[33m/[39m[33mBox[39m[33m&gt;[39m[0m
+Next.js build worker exited with code: 1 and signal: null
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The cast fails because layoutProps doesn't have children. So we need to cast via unknown: layoutProps as unknown as ComponentProps<typeof MsqdxAppLayout>. That way we're not claiming the types overlap.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/AppShell.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now run the build again.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 6.1s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+  Generating static pages using 9 workers (0/46) ...
+  Generating static pages using 9 workers (11/46) 
+  Generating static pages using 9 workers (22/46) 
+  Generating static pages using 9 workers (34/46) 
+✓ Generating static pages using 9 workers (46/46) in 498.3ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/register
+├ ƒ /api/auth/tokens
+├ ƒ /api/auth/tokens/[id]
+├ ƒ /api/checks/contrast
+├ ƒ /api/checks/pagespeed
+├ ƒ /api/checks/readability
+├ ƒ /api/checks/ssl
+├ ƒ /api/checks/wayback
+├ ƒ /api/health
+├ ƒ /api/journeys
+├ ƒ /api/journeys/[id]
+├ ƒ /api/projects
+├ ƒ /api/projects/[id]
+├ ƒ /api/projects/[id]/geo-summary
+├ ƒ /api/projects/[id]/ranking-summary
+├ ƒ /api/projects/[id]/research
+├ ƒ /api/projects/[id]/suggest-competitors
+├ ƒ /api/projects/[id]/suggest-keywords
+├ ƒ /api/rank-tracking/keywords
+├ ƒ /api/rank-tracking/keywords/[id]
+├ ƒ /api/rank-tracking/keywords/[id]/positions
+├ ƒ /api/rank-tracking/refresh
+├ ƒ /api/saliency/generate
+├ ƒ /api/saliency/result
+├ ƒ /api/scan
+├ ƒ /api/scan/[id]
+├ ƒ /api/scan/[id]/project
+├ ƒ /api/scan/[id]/screenshot
+├ ƒ /api/scan/[id]/summarize
+├ ƒ /api/scan/domain
+├ ƒ /api/scan/domain/[id]/journey
+├ ƒ /api/scan/domain/[id]/status
+├ ƒ /api/scan/domain/[id]/summarize
+├ ƒ /api/scan/domain/[id]/summary
+├ ƒ /api/scan/geo-eeat
+├ ƒ /api/scan/geo-eeat/[jobId]
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history/[runId]
+├ ƒ /api/scan/geo-eeat/[jobId]/project
+├ ƒ /api/scan/geo-eeat/[jobId]/rerun-competitive
+├ ƒ /api/scan/geo-eeat/[jobId]/status
+├ ƒ /api/scan/geo-eeat/history
+├ ƒ /api/scan/geo-eeat/suggest-competitors-queries
+├ ƒ /api/scan/journey-agent
+├ ƒ /api/scan/journey-agent/[jobId]
+├ ƒ /api/scan/journey-agent/[jobId]/live
+├ ƒ /api/scan/journey-agent/[jobId]/live/stream
+├ ƒ /api/scan/journey-agent/[jobId]/project
+├ ƒ /api/scan/journey-agent/[jobId]/video
+├ ƒ /api/scan/journey-agent/history
+├ ƒ /api/scans
+├ ƒ /api/scans/[id]
+├ ƒ /api/scans/domain
+├ ƒ /api/scans/domain/[id]
+├ ƒ /api/scans/domain/[id]/project
+├ ƒ /api/search
+├ ƒ /api/share
+├ ƒ /api/share/[token]
+├ ƒ /api/share/[token]/access
+├ ƒ /api/share/[token]/pages/[pageId]
+├ ƒ /api/share/[token]/pages/[pageId]/screenshot
+├ ƒ /api/share/[token]/video
+├ ƒ /api/share/by-resource
+├ ƒ /api/tools/contrast
+├ ƒ /api/tools/extract
+├ ƒ /api/tools/pagespeed
+├ ƒ /api/tools/readability
+├ ƒ /api/tools/ssl-labs
+├ ƒ /api/tools/wayback
+├ ƒ /developers
+├ ƒ /domain/[id]
+├ ƒ /geo-eeat/[jobId]
+├ ƒ /history
+├ ƒ /journey-agent/[jobId]
+├ ƒ /login
+├ ƒ /projects
+├ ƒ /projects/[id]
+├ ƒ /projects/[id]/geo
+├ ƒ /projects/[id]/rankings
+├ ƒ /projects/[id]/research
+├ ƒ /register
+├ ƒ /results/[id]
+├ ƒ /scan
+├ ƒ /scan/domain
+├ ƒ /settings
+└ ƒ /share/[token]
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
+
+```
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The build succeeded locally. The fix was to cast the layout props through `unknown` to `ComponentProps<typeof MsqdxAppLayout>` so TypeScript accepts the spread even when the installed `@msqdx/react` types don't declare `headerEnd`.
+
+I should give the user a short summary: the Docker build failure was due to `headerEnd` not existing on the design system types in the image. We fixed it by building the props in an object and spreading with a type assertion. Local build passes. They can re-run the Coolify/Docker deploy; if the image's design system includes the `headerEnd` implementation, the subnav will show; otherwise it will be ignored until the image is updated.
+</details></think>
+
+---
+
+
+Summary:
+
+**Cause:** The Docker image uses a copy of the design system that doesn’t declare the `headerEnd` prop on `MsqdxAppLayout`, so TypeScript failed with “Property 'headerEnd' does not exist”.
+
+**Fix:** In `AppShell.tsx` the layout props (including optional `headerEnd`) are built in a `layoutProps` object and passed with a double assertion so the spread is accepted by TypeScript even when the installed `@msqdx/react` types don’t include `headerEnd`:
+
+```ts
+{...(layoutProps as unknown as ComponentProps<typeof MsqdxAppLayout>)}
+```
+
+**Result:** `npm run build` completes successfully locally.
+
+**Next steps for you:**
+1. **Re-run the Coolify/Docker deploy.** The build should pass with this change.
+2. **Runtime behavior:** If the design system **in the image** was built from MSQDX-DS with the `headerEnd` changes (CornerBox + AppLayout), the project subnav will show in the header. If that image uses an older build without `headerEnd`, the prop will be ignored and the subnav won’t appear until the image is built from an updated design system that includes and builds `headerEnd`.
+
+If you want, we can add a short note in a `knowledge` (or README) file that Coolify/Docker must use an msqdx-design-system build that includes `headerEnd` for the project header nav to appear in production.
+
+---
+
+_**User**_
+
+jetzt sehe ich aber die neue subnavigation nicht mehr
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user says they no longer see the new subnavigation. This could mean:
+1. The subnav (project header with back button + tabs) was working before and now it's gone
+2. Or it was never visible in their environment and they're saying they still don't see it
+
+Given the conversation summary, we moved the project subnav into the app header via `headerEnd` on MsqdxAppLayout. The design system (MSQDX-DS) was updated with `headerEnd` on CornerBox and AppLayout. CHECKION uses AppShell and passes `<ProjectHeaderNav />` as `headerEnd` when on a project route.
+
+Possible reasons they don't see it:
+1. **Runtime:** The design system in their running app (local or Docker) might not have the `headerEnd` implementation - e.g. they're running from node_modules that don't include the updated CornerBox/AppLayout that actually render `headerEnd`.
+2. **Conditional:** Maybe `isProjectRoute(pathname)` is false so we never pass `headerEnd`.
+3. **Styling:** ProjectHeaderNav might be there but hidden (e.g. color, overflow, or layout).
+4. **Build:** They might be running the Docker image which copies an old design system that doesn't render `headerEnd`.
+
+Let me check:
+1. How `isProjectRoute` is defined and what pathname is used
+2. How AppShell passes headerEnd
+3. How MsqdxAppLayout/MsqdxCornerBox use headerEnd in the design system
+
+I'll look at CHECKION's AppShell and the design system's AppLayout/CornerBox to see why the subnav might not show.
+</details></think>
+
+---
+
+
+Wir prüfen, wo die Subnavigation eingebunden ist und warum sie nicht angezeigt wird.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/AppShell.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ProjectHeaderNav.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "isProjectRoute",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "isProjectRoute",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 30,
+  "topFiles": [
+    {
+      "uri": "./components/AppShell.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./.specstory/history/2026-03-13_16-22Z-css-style-changes-for-forwardref-component.md",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/components/AppShell.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-03-13_16-22Z-css-style-changes-for-forwardref-component.md",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/components/AppShell.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-03-13_16-22Z-css-style-changes-for-forwardref-component.md",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/components/AppShell.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-03-13_16-22Z-css-style-changes-for-forwardref-component.md",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/components/AppShell.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-03-13_16-22Z-css-style-changes-for-forwardref-component.md",
+      "matchCount": 4
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The logic looks correct. The issue is likely that the design system's MsqdxAppLayout doesn't actually use/forward the `headerEnd` prop to the header. So when we pass it, the component might not accept it (we cast it) but the DS component might not be forwarding it to MsqdxCornerBox or rendering it.
+
+Let me check the design system: MsqdxAppLayout and MsqdxCornerBox - do they have and use headerEnd?
+</details></think>
+
+---
+
+
+Design-System prüfen: Ob MsqdxAppLayout und MsqdxCornerBox `headerEnd` durchreichen und rendern.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS/msqdx-design-system/packages/react/src/components/layout/AppLayout/MsqdxAppLayout.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS/msqdx-design-system/packages/react/src/components/atoms/CornerDecoration/MsqdxCornerBox.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "headerEnd",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "headerEnd",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 40,
+  "topFiles": [
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/layout/AppLayout/MsqdxAppLayout.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/atoms/CornerDecoration/MsqdxCornerBox.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/layout/AppLayout/MsqdxAppLayout.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/atoms/CornerDecoration/MsqdxCornerBox.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/layout/AppLayout/MsqdxAppLayout.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/atoms/CornerDecoration/MsqdxCornerBox.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/layout/AppLayout/MsqdxAppLayout.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/atoms/CornerDecoration/MsqdxCornerBox.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "./msqdx-design-system/packages/react/src/components/layout/AppLayout/MsqdxAppLayout.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./msqdx-design-system/packages/react/src/components/atoms/CornerDecoration/MsqdxCornerBox.tsx",
+      "matchCount": 5
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The design system source has headerEnd and passes it through. So locally CHECKION might be using:
+1. A symlink to the design system source (so it gets the source with headerEnd)
+2. Or node_modules/@msqdx/react from a built package
+
+If the user runs locally with `npm run dev` or similar, the question is: where does CHECKION get @msqdx/react from? Let me check package.json and whether there's a symlink or file: reference.
+</details></think>
+
+---
+
+
+Design-System-Quellcode enthält `headerEnd`. Prüfen, woher CHECKION das Paket bezieht und ob die gebauten Typen/Dateien aktuell sind:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/package.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+CHECKION uses `file:../msqdx-design-system/packages/react` - so the path is relative. That could resolve to different places:
+- From CHECKION-1: `../msqdx-design-system` would be one level up from CHECKION-1, so it could be a folder named "msqdx-design-system" in ANTIGRAVITY. Let me check - the workspace has MSQDX-DS. So the path might be `../MSQDX-DS/msqdx-design-system` if there's a symlink, or maybe there's literally a `msqdx-design-system` folder.
+
+Actually package.json says `file:../msqdx-design-system/packages/react` - so from CHECKION-1's perspective, the parent directory could have a folder `msqdx-design-system`. In the workspace we have MSQDX-DS which contains `msqdx-design-system`. So the path `../msqdx-design-system` from CHECKION-1 would be `/Users/christoph.bordeck/Desktop/ANTIGRAVITY/msqdx-design-system` - not MSQDX-DS. So there might be a separate clone or a symlink. I'll check.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **1** result in **1** directory</summary>
+
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY** (1 file)
+
+| File |
+|------|
+| `MSQDX-DS/msqdx-design-system/package.json` |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/scripts/ensure-design-system-and-build.sh</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So locally, when you run the script it creates a symlink `../msqdx-design-system` -> `../MSQDX-DS/msqdx-design-system`. So when CHECKION has `file:../msqdx-design-system/packages/react`, npm will install from that path. So the **source** of the design system is used (the packages/react folder). Next.js/TypeScript will use the source files from that path.
+
+So when the user runs `npm run dev` or normal `npm run build` (without ensure script), does the symlink exist? If they ran `build:local` once, the symlink was created. Then `npm install` would have installed from the linked folder. So node_modules/@msqdx/react would point to or copy from ../msqdx-design-system/packages/react. With `file:` protocol, npm typically creates a symlink in node_modules to that folder. So the actual code used is the source in MSQDX-DS.
+
+So the source has headerEnd. Why wouldn't the user see the subnav?
+
+Possibilities:
+1. **pathname** – Maybe on the client the pathname is different (e.g. trailing slash, or not yet updated when they're on a project page). So `isProjectRoute(pathname)` returns false.
+2. **hasCornerBox** – In MsqdxAppLayout, `hasCornerBox = logo != null || appName != null`. We pass both logo: true and appName: 'CHECKION'. So hasCornerBox is true. And we pass headerEnd. So the CornerBox is rendered with headerEnd.
+3. **headerEnd only renders when hasHeader** – In CornerBox, hasHeader = showLogo || appName != null. We have both. So the header row is rendered. And headerEnd != null && (...). So it should show.
+
+Unless - maybe the design system that's actually being used at runtime is not the source but a pre-built dist? Let me check - with file:../msqdx-design-system/packages/react, npm install usually symlinks the package. The package's main/module might point to dist or to src. If it points to dist and dist wasn't rebuilt after adding headerEnd, then the running code wouldn't have headerEnd.
+
+Let me check the react package's package.json for main/exports.
+</details></think>
+
+---
+
+
+Prüfen, ob das Design-System-Paket aus dem Quellcode oder aus `dist` geladen wird:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS/msqdx-design-system/packages/react/package.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: ls -la /Users/christoph.bordeck/Desktop/ANTIGRAVITY/msqdx-design-system 2>/dev/null || echo "No msqdx-design-system in parent"; ls -la /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/node_modules/@msqdx/react 2>/dev/null | head -5</summary>
+
+```bash
+ls -la /Users/christoph.bordeck/Desktop/ANTIGRAVITY/msqdx-design-system 2>/dev/null || echo "No msqdx-design-system in parent"; ls -la /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/node_modules/@msqdx/react 2>/dev/null | head -5
+```
+
+```
+lrwxr-xr-x@ 1 christoph.bordeck  staff  73 Mar 13 13:37 /Users/christoph.bordeck/Desktop/ANTIGRAVITY/msqdx-design-system -&gt; /Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS/msqdx-design-system
+lrwxr-xr-x@ 1 christoph.bordeck  staff  43 Mar 12 22:14 /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/node_modules/@msqdx/react -&gt; ../../../msqdx-design-system/packages/react
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So CHECKION uses the design system via symlink to the source folder. The package.json of @msqdx/react says main is "dist/index.js" and types "dist/index.d.ts". So when Next/Node resolves the package, it uses the **built** dist/ - not the TypeScript source. So if the user hasn't run `npm run build` in the design system after adding headerEnd, the dist/ might be old and not include the headerEnd in the compiled output. Let me check - does the dist in the design system have headerEnd?
+</details></think>
+
+---
+
+
+Das React-Paket liefert `dist/` (nicht den Quellcode). Prüfen, ob `dist` nach dem Hinzufügen von `headerEnd` neu gebaut wurde:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "headerEnd",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS/msqdx-design-system/packages/react/dist",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "headerEnd",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS/msqdx-design-system/packages/react/dist",
+  "outputMode": "content",
+  "totalFiles": 20,
+  "totalMatches": 45,
+  "topFiles": [
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/dist/components/layout/AppLayout/MsqdxAppLayout.d.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/dist/components/layout/AppLayout/MsqdxAppLayout.js",
+      "matchCount": 2
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/dist/components/atoms/CornerDecoration/MsqdxCornerBox.d.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/dist/components/atoms/CornerDecoration/MsqdxCornerBox.js",
+      "matchCount": 3
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/dist/components/layout/AppLayout/MsqdxAppLayout.d.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/dist/components/layout/AppLayout/MsqdxAppLayout.js",
+      "matchCount": 2
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/dist/components/atoms/CornerDecoration/MsqdxCornerBox.d.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/dist/components/atoms/CornerDecoration/MsqdxCornerBox.js",
+      "matchCount": 3
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/dist/components/layout/AppLayout/MsqdxAppLayout.d.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/dist/components/layout/AppLayout/MsqdxAppLayout.js",
+      "matchCount": 2
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/dist/components/atoms/CornerDecoration/MsqdxCornerBox.d.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/dist/components/atoms/CornerDecoration/MsqdxCornerBox.js",
+      "matchCount": 3
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/dist/components/layout/AppLayout/MsqdxAppLayout.d.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/dist/components/layout/AppLayout/MsqdxAppLayout.js",
+      "matchCount": 2
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/dist/components/atoms/CornerDecoration/MsqdxCornerBox.d.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/dist/components/atoms/CornerDecoration/MsqdxCornerBox.js",
+      "matchCount": 3
+    },
+    {
+      "uri": "msqdx-design-system/packages/react/dist/components/layout/AppLayout/MsqdxAppLayout.d.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "msqdx-design-system/packages/react/dist/components/layout/AppLayout/MsqdxAppLayout.js",
+      "matchCount": 2
+    },
+    {
+      "uri": "msqdx-design-system/packages/react/dist/components/atoms/CornerDecoration/MsqdxCornerBox.d.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "msqdx-design-system/packages/react/dist/components/atoms/CornerDecoration/MsqdxCornerBox.js",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS/msqdx-design-system/packages/react/dist/index.d.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The dist has headerEnd. So locally the code and types are there. The user said they don't see the subnav anymore. Possible causes:
+
+1. **Next.js / webpack** might be resolving a different entry - e.g. the package's "exports" point to dist, but Next could be bundling from source in some cases. Unlikely to drop a prop.
+
+2. **Layout structure**: The MsqdxAppLayout wraps the CornerBox in a Box with `flexShrink: 0`. The header (CornerBox) is inside that. So the header row has: logo + appName on the left, and headerEnd on the right (marginLeft: auto). So the subnav should appear. Unless...
+
+3. **Overflow / width**: Maybe the parent Box that wraps the CornerBox has a constrained width and the header content is overflowing and hidden? Let me look at the layout again. In MsqdxAppLayout:
+   - There's a Box with `flexShrink: 0, display: "flex", justifyContent: "flex-start", alignItems: "flex-start"` that wraps the CornerBox.
+   - So that Box doesn't have flex: 1 or minWidth: 0 - it's flexShrink: 0. So it only takes the space it needs. The CornerBox inside will size to its content. So the header row has display: flex, justifyContent: space-between when headerEnd is set. So the left part (logo + appName) and the right part (headerEnd) should both be visible. Unless the parent is cutting off the Box - e.g. the inner layout Box has overflow: auto and the header Box has flexShrink: 0 but the first row might be in a flex container that doesn't give it enough space? Let me look at the structure again.
+
+Actually re-reading the layout:
+- The inner box (with border, background) has display: flex, flexDirection: column.
+- First child: Box (flexShrink: 0) containing MsqdxCornerBox. So the CornerBox is the first row. The CornerBox has a header row with logo, appName, and headerEnd. So the full width of the inner container is available to this Box (flexShrink: 0, display: flex). So the Box takes the full width of the column. So the CornerBox inside - does it have width? The parent Box has display: flex, justifyContent: flex-start, alignItems: flex-start. So the CornerBox as a flex child would size to its content by default (flex: 0 1 auto or similar). So the CornerBox might only be as wide as its content - i.e. logo + appName! So headerEnd would be inside the CornerBox but the CornerBox might not stretch to full width, so the header row's "space-between" would only apply within the narrow CornerBox width, pushing headerEnd to the right edge of that narrow box - possibly off-screen or the CornerBox might have overflow hidden.
+
+That's the bug! The wrapper Box around MsqdxCornerBox has:
+sx={{ flexShrink: 0, display: "flex", justifyContent: "flex-start", alignItems: "flex-start" }}
+So it doesn't set alignSelf: "stretch" or width: "100%". So the Box only wraps the CornerBox tightly. The CornerBox in turn has a header row - but the CornerBox's width is determined by its content (the header row content). So the header row might b</details></think>
 
 ---
 
