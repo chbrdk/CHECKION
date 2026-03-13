@@ -9,12 +9,23 @@ import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getProject } from '@/lib/db/projects';
 import { listGeoEeatRuns } from '@/lib/db/geo-eeat-runs';
 import { listCompetitiveRunsByGeoEeatJob } from '@/lib/db/geo-eeat-competitive-runs';
-import { extractHostname, buildPositionMatrix } from '@/lib/geo-eeat/position-matrix';
+import { extractHostname, buildPositionMatrixMultiDomain } from '@/lib/geo-eeat/position-matrix';
 import type { CompetitiveBenchmarkResult } from '@/lib/types';
 
 export interface GeoQuestionHistoryPoint {
     recordedAt: string;
+    /** Our domain position per model */
     positionsByModel: Record<string, number | null>;
+    /** Competitor domain position per model (for chart: one line per domain) */
+    competitorPositionsByModel?: Record<string, Record<string, number | null>>;
+}
+
+/** List of competitor domains (normalized hostnames) for the project; included in response for chart legend. */
+export interface GeoQuestionHistoryResponse {
+    success: boolean;
+    targetDomain: string;
+    competitorDomains: string[];
+    questions: GeoQuestionHistoryItem[];
 }
 
 export interface GeoQuestionHistoryItem {
@@ -40,8 +51,14 @@ export async function GET(
         ? extractHostname(project.domain.includes('://') ? project.domain : `https://${project.domain}`)
         : '';
     if (!targetDomain) {
-        return NextResponse.json({ success: true, targetDomain: '', questions: [] });
+        return NextResponse.json({ success: true, targetDomain: '', competitorDomains: [], questions: [] });
     }
+
+    const competitorDomains = (project.competitors ?? [])
+        .filter((c): c is string => typeof c === 'string' && c.trim() !== '')
+        .map((c) => extractHostname(c.trim().startsWith('http') ? c.trim() : `https://${c.trim()}`))
+        .filter((d) => d !== targetDomain);
+    const domains = [targetDomain, ...competitorDomains];
 
     const limitParam = request.nextUrl.searchParams.get('limit');
     const limit = limitParam ? Math.min(Math.max(1, parseInt(limitParam, 10)), 100) : 50;
@@ -75,16 +92,23 @@ export async function GET(
     const byQueryText = new Map<string, GeoQuestionHistoryItem>();
 
     for (const { recordedAt, competitiveByModel } of samples) {
-        const { rows, modelIds } = buildPositionMatrix(competitiveByModel, targetDomain);
+        const { rows, modelIds } = buildPositionMatrixMultiDomain(competitiveByModel, domains);
         const recordedAtIso = recordedAt.toISOString();
 
         for (const row of rows) {
             const text = (row.queryText || `Q${row.queryIndex}`).trim();
             const key = text || `index-${row.queryIndex}`;
             const positionsByModel: Record<string, number | null> = {};
+            const competitorPositionsByModel: Record<string, Record<string, number | null>> = {};
             for (const modelId of modelIds) {
-                const v = row[modelId];
-                positionsByModel[modelId] = typeof v === 'number' && v > 0 ? v : null;
+                const byDomain = row.positionsByModelByDomain[modelId] ?? {};
+                const ourPos = byDomain[targetDomain];
+                positionsByModel[modelId] = typeof ourPos === 'number' && ourPos > 0 ? ourPos : null;
+                competitorPositionsByModel[modelId] = {};
+                for (const dom of competitorDomains) {
+                    const pos = byDomain[dom];
+                    competitorPositionsByModel[modelId][dom] = typeof pos === 'number' && pos > 0 ? pos : null;
+                }
             }
 
             let item = byQueryText.get(key);
@@ -92,7 +116,11 @@ export async function GET(
                 item = { queryText: text || row.queryLabel, queryIndex: row.queryIndex, points: [] };
                 byQueryText.set(key, item);
             }
-            item.points.push({ recordedAt: recordedAtIso, positionsByModel });
+            item.points.push({
+                recordedAt: recordedAtIso,
+                positionsByModel,
+                competitorPositionsByModel: competitorDomains.length > 0 ? competitorPositionsByModel : undefined,
+            });
         }
     }
 
@@ -107,6 +135,7 @@ export async function GET(
     return NextResponse.json({
         success: true,
         targetDomain,
+        competitorDomains,
         questions,
     });
 }

@@ -36,12 +36,16 @@ const TIME_RANGES = [
 export interface GeoQuestionHistoryPoint {
     recordedAt: string;
     positionsByModel: Record<string, number | null>;
+    /** modelId -> competitorDomain -> position (only when API returns competitors) */
+    competitorPositionsByModel?: Record<string, Record<string, number | null>>;
 }
 
 export interface GeoQuestionCardProps {
     queryText: string;
     queryIndex: number;
     points: GeoQuestionHistoryPoint[];
+    targetDomain: string;
+    competitorDomains: string[];
     t: (key: string, params?: Record<string, string | number>) => string;
 }
 
@@ -50,41 +54,78 @@ function formatDate(iso: string): string {
     return d.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: '2-digit' });
 }
 
-/** Single question card with line chart over time (position per LLM per analysis), like RankTrackingChart. */
-export function GeoQuestionCard({ queryText, queryIndex, points, t }: GeoQuestionCardProps) {
+/** Single question card: line chart over time (our domain + competitors per model), like RankTrackingChart. */
+export function GeoQuestionCard({ queryText, queryIndex, points, targetDomain, competitorDomains, t }: GeoQuestionCardProps) {
     const [timeRangeIndex, setTimeRangeIndex] = useState(1);
     const limit = TIME_RANGES[timeRangeIndex]?.limit ?? 30;
 
-    const { modelIds, chartData, maxPos } = useMemo(() => {
-        if (points.length === 0) return { modelIds: [] as string[], chartData: [], maxPos: 10 };
-        const modelSet = new Set<string>();
+    const hasCompetitors = competitorDomains.length > 0 && points.some((p) => p.competitorPositionsByModel);
+
+    const modelIds = useMemo(() => {
+        const set = new Set<string>();
         for (const p of points) {
-            for (const k of Object.keys(p.positionsByModel)) modelSet.add(k);
+            for (const k of Object.keys(p.positionsByModel)) set.add(k);
         }
-        const ids = Array.from(modelSet);
+        return Array.from(set);
+    }, [points]);
+
+    const [selectedModelIndex, setSelectedModelIndex] = useState(0);
+    const selectedModel = modelIds[Math.min(selectedModelIndex, modelIds.length - 1)] ?? null;
+
+    const allDomains = useMemo(
+        () => [targetDomain, ...competitorDomains],
+        [targetDomain, competitorDomains]
+    );
+
+    const { chartData, maxPos } = useMemo(() => {
+        if (points.length === 0) return { chartData: [], maxPos: 10 };
         const sorted = [...points].sort(
             (a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime()
         );
         const sliced = limit < 365 ? sorted.slice(-limit) : sorted;
+
+        if (hasCompetitors && selectedModel) {
+            const data = sliced.map((p) => {
+                const row: Record<string, string | number | null> = {
+                    date: formatDate(p.recordedAt),
+                    recordedAt: p.recordedAt,
+                };
+                row[targetDomain] = p.positionsByModel[selectedModel] ?? null;
+                const compByModel = p.competitorPositionsByModel?.[selectedModel];
+                for (const dom of competitorDomains) {
+                    row[dom] = compByModel?.[dom] ?? null;
+                }
+                return row;
+            });
+            let max = 6;
+            for (const row of data) {
+                for (const dom of allDomains) {
+                    const v = row[dom];
+                    if (typeof v === 'number' && v > 0 && v > max) max = v;
+                }
+            }
+            return { chartData: data, maxPos: Math.max(max, 6) };
+        }
+
         const data = sliced.map((p) => {
             const row: Record<string, string | number | null> = {
                 date: formatDate(p.recordedAt),
                 recordedAt: p.recordedAt,
             };
-            for (const m of ids) {
+            for (const m of modelIds) {
                 row[m] = p.positionsByModel[m] ?? null;
             }
             return row;
         });
         let max = 6;
         for (const row of data) {
-            for (const m of ids) {
+            for (const m of modelIds) {
                 const v = row[m];
                 if (typeof v === 'number' && v > 0 && v > max) max = v;
             }
         }
-        return { modelIds: ids, chartData: data, maxPos: Math.max(max, 6) };
-    }, [points, limit]);
+        return { chartData: data, maxPos: Math.max(max, 6) };
+    }, [points, limit, hasCompetitors, selectedModel, targetDomain, competitorDomains, allDomains, modelIds]);
 
     const textMuted = 'var(--color-text-muted-on-light)';
     const gridStroke = 'var(--color-border-subtle, #eee)';
@@ -146,18 +187,34 @@ export function GeoQuestionCard({ queryText, queryIndex, points, t }: GeoQuestio
                 >
                     {queryText || `${t('geoEeat.queryN', { n: queryIndex })}`}
                 </MsqdxTypography>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 0.5, mt: 1, mb: 0.5 }}>
-                    {TIME_RANGES.map((tr, idx) => (
-                        <MsqdxChip
-                            key={tr.label}
-                            label={tr.label}
-                            variant={timeRangeIndex === idx ? 'filled' : 'outlined'}
-                            brandColor={timeRangeIndex === idx ? 'green' : undefined}
-                            size="small"
-                            onClick={() => setTimeRangeIndex(idx)}
-                            sx={{ cursor: 'pointer' }}
-                        />
-                    ))}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 0.5, mt: 1, mb: 0.5 }}>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {TIME_RANGES.map((tr, idx) => (
+                            <MsqdxChip
+                                key={tr.label}
+                                label={tr.label}
+                                variant={timeRangeIndex === idx ? 'filled' : 'outlined'}
+                                brandColor={timeRangeIndex === idx ? 'green' : undefined}
+                                size="small"
+                                onClick={() => setTimeRangeIndex(idx)}
+                                sx={{ cursor: 'pointer' }}
+                            />
+                        ))}
+                    </Box>
+                    {hasCompetitors && modelIds.length > 0 && (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                            {modelIds.map((modelId, idx) => (
+                                <MsqdxChip
+                                    key={modelId}
+                                    label={modelId}
+                                    variant={selectedModelIndex === idx ? 'filled' : 'outlined'}
+                                    size="small"
+                                    onClick={() => setSelectedModelIndex(idx)}
+                                    sx={{ cursor: 'pointer', fontSize: 10 }}
+                                />
+                            ))}
+                        </Box>
+                    )}
                 </Box>
             </Box>
             <Box sx={{ flex: 1, minHeight: 220, width: '100%', px: 'var(--msqdx-spacing-sm)', py: 0 }}>
@@ -175,25 +232,38 @@ export function GeoQuestionCard({ queryText, queryIndex, points, t }: GeoQuestio
                             allowDataOverflow
                             tick={{ fill: textMuted, fontSize: 10 }}
                             stroke={gridStroke}
-                            width={24}
+                            width={28}
                         />
                         <Tooltip
                             contentStyle={tooltipContentStyle}
                             formatter={(value: unknown) => (typeof value === 'number' && value > 0 ? `${t('geoEeat.positionShort')} ${value}` : t('geoEeat.positionNotCited'))}
                         />
                         <Legend wrapperStyle={{ fontSize: 10 }} iconType="line" />
-                        {modelIds.map((modelId, idx) => (
-                            <Line
-                                key={modelId}
-                                type="monotone"
-                                dataKey={modelId}
-                                name={modelId}
-                                stroke={CHART_COLORS[idx % CHART_COLORS.length]}
-                                strokeWidth={2}
-                                dot={{ r: 2.5 }}
-                                connectNulls
-                            />
-                        ))}
+                        {hasCompetitors && selectedModel
+                            ? allDomains.map((dom, idx) => (
+                                  <Line
+                                      key={dom}
+                                      type="monotone"
+                                      dataKey={dom}
+                                      name={dom}
+                                      stroke={CHART_COLORS[idx % CHART_COLORS.length]}
+                                      strokeWidth={dom === targetDomain ? 2.5 : 2}
+                                      dot={{ r: dom === targetDomain ? 3 : 2.5 }}
+                                      connectNulls
+                                  />
+                              ))
+                            : modelIds.map((modelId, idx) => (
+                                  <Line
+                                      key={modelId}
+                                      type="monotone"
+                                      dataKey={modelId}
+                                      name={modelId}
+                                      stroke={CHART_COLORS[idx % CHART_COLORS.length]}
+                                      strokeWidth={2}
+                                      dot={{ r: 2.5 }}
+                                      connectNulls
+                                  />
+                              ))}
                     </LineChart>
                 </ResponsiveContainer>
             </Box>

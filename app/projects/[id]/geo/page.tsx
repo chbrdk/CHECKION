@@ -42,6 +42,8 @@ export default function ProjectGeoPage() {
     const [loading, setLoading] = useState(true);
     const [geoRuns, setGeoRuns] = useState<Array<{ id: string; url: string; status: string; createdAt: string }>>([]);
     const [questionHistory, setQuestionHistory] = useState<GeoQuestionHistoryItem[]>([]);
+    const [targetDomain, setTargetDomain] = useState('');
+    const [competitorDomains, setCompetitorDomains] = useState<string[]>([]);
     const [historyLoading, setHistoryLoading] = useState(false);
     const [addGeoQueryValue, setAddGeoQueryValue] = useState('');
     const [suggestGeoQueriesLoading, setSuggestGeoQueriesLoading] = useState(false);
@@ -87,9 +89,11 @@ export default function ProjectGeoPage() {
         setQuestionHistory([]);
         fetch(apiProjectGeoQuestionHistory(id, 90), { credentials: 'same-origin' })
             .then((r) => r.json())
-            .then((data: { success?: boolean; questions?: GeoQuestionHistoryItem[] }) => {
-                if (!cancelled && data?.success && Array.isArray(data.questions)) {
-                    setQuestionHistory(data.questions);
+            .then((data: { success?: boolean; questions?: GeoQuestionHistoryItem[]; targetDomain?: string; competitorDomains?: string[] }) => {
+                if (!cancelled && data?.success) {
+                    if (Array.isArray(data.questions)) setQuestionHistory(data.questions);
+                    setTargetDomain(typeof data.targetDomain === 'string' ? data.targetDomain : '');
+                    setCompetitorDomains(Array.isArray(data.competitorDomains) ? data.competitorDomains : []);
                 }
             })
             .catch(() => {
@@ -282,6 +286,8 @@ export default function ProjectGeoPage() {
                             queryText={q.queryText}
                             queryIndex={q.queryIndex}
                             points={q.points}
+                            targetDomain={targetDomain}
+                            competitorDomains={competitorDomains}
                             t={t}
                         />
                     ))}

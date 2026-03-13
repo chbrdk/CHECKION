@@ -75,3 +75,46 @@ export function buildPositionMatrix(
     }
     return { rows, modelIds };
 }
+
+/** Per-model, per-domain position matrix for our domain + competitors (for time-series charts). */
+export interface PositionMatrixRowMultiDomain {
+    queryIndex: number;
+    queryLabel: string;
+    queryText: string;
+    /** modelId -> domain -> position (1-based, 0 = not cited) */
+    positionsByModelByDomain: Record<string, Record<string, number>>;
+}
+
+export function buildPositionMatrixMultiDomain(
+    competitiveByModel: Record<string, CompetitiveBenchmarkResult>,
+    domains: string[]
+): { rows: PositionMatrixRowMultiDomain[]; modelIds: string[] } {
+    const modelIds = Object.keys(competitiveByModel);
+    if (modelIds.length === 0 || domains.length === 0) return { rows: [], modelIds: [] };
+
+    const first = competitiveByModel[modelIds[0]!];
+    const runsCount = first?.runs?.length ?? 0;
+    if (runsCount === 0) return { rows: [], modelIds: [] };
+
+    const rows: PositionMatrixRowMultiDomain[] = [];
+    for (let i = 0; i < runsCount; i++) {
+        const positionsByModelByDomain: Record<string, Record<string, number>> = {};
+        for (const modelId of modelIds) {
+            const result = competitiveByModel[modelId];
+            const run = result?.runs?.[i];
+            const byDomain: Record<string, number> = {};
+            for (const domain of domains) {
+                const pos = run ? getPositionForDomain(run, domain) : null;
+                byDomain[domain] = pos ?? 0;
+            }
+            positionsByModelByDomain[modelId] = byDomain;
+        }
+        rows.push({
+            queryIndex: i + 1,
+            queryLabel: `Q${i + 1}`,
+            queryText: first!.runs![i]?.query ?? '',
+            positionsByModelByDomain,
+        });
+    }
+    return { rows, modelIds };
+}

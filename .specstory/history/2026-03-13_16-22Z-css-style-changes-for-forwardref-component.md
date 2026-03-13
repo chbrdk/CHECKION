@@ -17094,3 +17094,987 @@ Let me implement. First the shared lib so the API can use it without importing f
 
 ---
 
+<think><details><summary>Thought Process</summary>
+
+Now update CompetitivePositionDiagram to import from this lib instead of defining locally. Then create the API.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/CompetitivePositionDiagram.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now the GEO page imports from CompetitivePositionDiagram - we need to update it to import from the lib or keep importing from the component (component re-exports from lib). So the page can keep importing buildPositionMatrix, extractHostname from CompetitivePositionDiagram (re-exported) or from lib. I'll leave the page importing from the component for now (component re-exports). GeoQuestionCard imports PositionMatrixRow from CompetitivePositionDiagram - we need to update GeoQuestionCard to import from the lib. Let me add the API route for geo-question-history.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/geo-question-history/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Fix the import - we're not using GeoEeatIntensiveResult in the file. Remove unused import. And fix the type for competitiveByModel - we're already importing from types in the buildPositionMatrix via the lib. Let me remove the inline import and use the type from the lib's dependency.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/geo-question-history/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/geo-question-history/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now add the API URL to constants, then create GeoQuestionChart component that takes projectId, queryText, points (or fetches by projectId and gets all, then we pass points to each card). Actually the page currently has one card per question from the selected run - so we have a list of questions from the run. For "history" we need to show all questions that appear in any run, and for each question show the time series. So the flow is: 1. Page fetches GET /api/projects/[id]/geo-question-history → { questions: [{ queryText, queryIndex, points }] }. 2. Page renders one card per question; each card gets points and shows LineChart. 3. We need to get modelIds from the points - the first point's positionsByModel keys. So the page will: - Fetch geo-question-history once - For each question render GeoQuestionCard (or a new name) with queryText, points. The card will show a LineChart with date on X, position on Y, one line per model (from positionsByModel keys). So we need to update GeoQuestionCard to accept points instead of row, and render a line chart. Or we create GeoQuestionChart that only does the chart and the card wraps it. Let me add the constant for the API and then update GeoQuestionCard to accept points and show LineChart when points.length > 0, and optionally keep the single-run bar chart when we only have one point? Or always use line chart - if one point it's just a dot. Let me add apiProjectGeoQuestionHistory to constants, then rewrite GeoQuestionCard to take points (and queryText, queryIndex) and render LineChart like RankTrackingChart.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "apiProject|apiProjectRankingSummary",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts",
+  "contextBefore": 0,
+  "contextAfter": 1,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "apiProject|apiProjectRankingSummary",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 40,
+  "topFiles": [
+    {
+      "uri": "lib/constants.ts",
+      "matchCount": 16
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 16
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 16
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 16
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 16
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Add apiProjectGeoQuestionHistory after apiProjectGeoSummary.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now update GeoQuestionCard to support time series: accept either (row + modelIds) for single-run view or (queryText, points) for history view. Actually the user said they want "jede analyse der frage angezeigt" and "alle platzierungen über die dauer" - so we should replace the single-run bar chart with the time series line chart. So GeoQuestionCard should take queryText, queryIndex, points (array of { recordedAt, positionsByModel }), and render a LineChart. If points is empty we show "Keine Daten". ModelIds we get from the first point's positionsByModel keys. Let me rewrite GeoQuestionCard to take points and queryText and render the line chart like RankTrackingChart.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] API GET /api/projects/[id]/geo-question-history
+- [-] GeoQuestionChart component (LineChart over time like RankTrackingChart)
+- [ ] GEO page: use question list + GeoQuestionChart per question
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/GeoQuestionCard.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll rewrite GeoQuestionCard to accept points (time series) and render a LineChart like RankTrackingChart. Props: queryText, queryIndex, points: { recordedAt, positionsByModel }[], t. We derive modelIds from the first point's positionsByModel keys. Chart: X = date, Y = position (reversed so 1 is top), one Line per model.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/GeoQuestionCard.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Check if rankChartNoData exists in locales. And update the GEO page to fetch geo-question-history and render one card per question with points.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "rankChartNoData",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "rankChartNoData",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 10,
+  "topFiles": [
+    {
+      "uri": "locales/en.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "locales/de.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The GEO page currently:
+1. Loads project and geo runs
+2. When a run is selected, loads run payload and builds positionRows/modelIds from competitiveByModel
+3. Renders header (run selector, start, manage queries) and a grid of GeoQuestionCard(row, modelIds, t)
+
+I need to change it to:
+1. Keep project and geo runs loading
+2. Add fetch for geo-question-history (apiProjectGeoQuestionHistory(id, 90)) - returns { questions: [{ queryText, queryIndex, points }] }
+3. Remove the selectedRunId/runPayload logic (or keep run selector for something else - actually we can remove the run selector since we're now showing all analyses over time; we could keep "Start" and "Fragen verwalten")
+4. Render grid of GeoQuestionCard(queryText, queryIndex, points, t) for each question from the history API
+
+So the page will:
+- Fetch project, geo runs (for "Start" button and run list if we want), and geo-question-history
+- Display one card per question from history (questions array). If no questions (no data), show empty state.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to replace the rest of the page - remove the run selector from the header, and replace the grid that used positionRows/modelIds with the grid that uses questionHistory. Also fix the empty states.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+GeoQuestionHistoryPoint is exported from GeoQuestionCard - the page imports it for the type of points. The API returns questions with points that match that shape. Good.
+
+Now we need to fix the GEO page - it still has the Dialog and the rest. Let me also fix the CompetitivePositionDiagram - we're now importing from lib/geo-eeat/position-matrix but we're re-exporting - so the GEO page was importing buildPositionMatrix and extractHostname from CompetitivePositionDiagram; we removed that usage from the page. So we're good. Let me check that we don't have any remaining references to buildPositionMatrix or extractHostname in the GEO page - we removed them. Good.
+
+Let me fix the GeoQuestionCard - the t() for rankChartNoData might be under projects. Let me check - the grep showed "rankChartNoData" in locales - need to see the full key. It was in en.json at line 117 - likely under "projects". So t('projects.rankChartNoData'). Let me update the card.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/GeoQuestionCard.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I accidentally duplicated the closing part. Let me read the file and fix it.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/GeoQuestionCard.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+There's duplicate code from line 205 to the end. I need to remove lines 205-276 (the duplicate closing part).
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/GeoQuestionCard.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now the GEO page imports GeoQuestionHistoryPoint from GeoQuestionCard - but the API returns the same shape. The type GeoQuestionHistoryItem we defined in the page has points: GeoQuestionHistoryPoint[]. So we're good. Let me verify the GEO page doesn't reference pathGeoEeat when geoRuns is empty - we have geoRuns[0]!.id in the link when questionHistory.length === 0 && geoRuns.length > 0. So we need geoRuns[0] to exist. Good.
+
+Let me also update the GEO page to use the type from the API response - we could import GeoQuestionHistoryItem from the API route, but that might be odd. So we keep the local interface. Let me run the build and fix any issues. First, update CompetitivePositionDiagram - it still imports from position-matrix; we need to make sure the diagram file doesn't reference PositionMatrixRow in a way that breaks (we're now exporting the type from the lib). Let me check - the diagram uses PositionMatrixRow in the component. We're exporting it from the lib and re-exporting from the diagram. So any file that imported PositionMatrixRow from the diagram will get it - but GeoQuestionCard no longer uses it. So we're good.
+
+Let me double-check: the GEO page imports type { GeoQuestionHistoryPoint } from '@/components/GeoQuestionCard' - that's correct. Build.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 6.7s
+  Running TypeScript ...
+Failed to compile.
+
+./components/GeoQuestionCard.tsx:182:29
+Type error: Type '(value: number | null) =&gt; string' is not assignable to type 'Formatter&lt;ValueType, NameType&gt; &amp; ((value: ValueType, name: NameType, item: Payload&lt;ValueType, NameType&gt;, index: number, payload: Payload&lt;...&gt;[]) =&gt; ReactNode | [...])'.
+  Type '(value: number | null) =&gt; string' is not assignable to type 'Formatter&lt;ValueType, NameType&gt;'.
+    Types of parameters 'value' and 'value' are incompatible.
+      Type 'ValueType | undefined' is not assignable to type 'number | null'.
+        Type 'undefined' is not assignable to type 'number | null'.
+
+[0m [90m 180 |[39m                         [33m&lt;[39m[33mTooltip[39m
+ [90m 181 |[39m                             contentStyle[33m=[39m{tooltipContentStyle}
+[31m[1m&gt;[22m[39m[90m 182 |[39m                             formatter[33m=[39m{(value[33m:[39m number [33m|[39m [36mnull[39m) [33m=&gt;[39m (value [33m!=[39m [36mnull[39m [33m&amp;&amp;[39m value [33m&gt;[39m [35m0[39m [33m?[39m [32m&#96;${t('geoEeat.positionShort')} ${value}&#96;[39m [33m:[39m t([32m'geoEeat.positionNotCited'[39m))}
+ [90m     |[39m                             [31m[1m^[22m[39m
+ [90m 183 |[39m                         [33m/[39m[33m&gt;[39m
+ [90m 184 |[39m                         [33m&lt;[39m[33mLegend[39m wrapperStyle[33m=[39m{{ fontSize[33m:[39m [35m10[39m }} iconType[33m=[39m[32m"line"[39m [33m/[39m[33m&gt;[39m
+ [90m 185 |[39m                         {modelIds[33m.[39mmap((modelId[33m,[39m idx) [33m=&gt;[39m ([0m
+Next.js build worker exited with code: 1 and signal: null
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Same Tooltip formatter type issue - value can be undefined. Fix it.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/GeoQuestionCard.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Run build again.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 6.5s
+  Running TypeScript ...
+Failed to compile.
+
+./components/GeoQuestionCard.tsx:182:29
+Type error: Type '(value: number | null | undefined) =&gt; string' is not assignable to type 'Formatter&lt;ValueType, NameType&gt; &amp; ((value: ValueType, name: NameType, item: Payload&lt;ValueType, NameType&gt;, index: number, payload: Payload&lt;...&gt;[]) =&gt; ReactNode | [...])'.
+  Type '(value: number | null | undefined) =&gt; string' is not assignable to type 'Formatter&lt;ValueType, NameType&gt;'.
+    Types of parameters 'value' and 'value' are incompatible.
+      Type 'ValueType | undefined' is not assignable to type 'number | null | undefined'.
+        Type 'string' is not assignable to type 'number'.
+
+[0m [90m 180 |[39m                         [33m&lt;[39m[33mTooltip[39m
+ [90m 181 |[39m                             contentStyle[33m=[39m{tooltipContentStyle}
+[31m[1m&gt;[22m[39m[90m 182 |[39m                             formatter[33m=[39m{(value[33m:[39m number [33m|[39m [36mnull[39m [33m|[39m undefined) [33m=&gt;[39m (value [33m!=[39m [36mnull[39m [33m&amp;&amp;[39m value [33m&gt;[39m [35m0[39m [33m?[39m [32m&#96;${t('geoEeat.positionShort')} ${value}&#96;[39m [33m:[39m t([32m'geoEeat.positionNotCited'[39m))}
+ [90m     |[39m                             [31m[1m^[22m[39m
+ [90m 183 |[39m                         [33m/[39m[33m&gt;[39m
+ [90m 184 |[39m                         [33m&lt;[39m[33mLegend[39m wrapperStyle[33m=[39m{{ fontSize[33m:[39m [35m10[39m }} iconType[33m=[39m[32m"line"[39m [33m/[39m[33m&gt;[39m
+ [90m 185 |[39m                         {modelIds[33m.[39mmap((modelId[33m,[39m idx) [33m=&gt;[39m ([0m
+Next.js build worker exited with code: 1 and signal: null
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The formatter receives ValueType which can be string. So we need to accept unknown and handle it.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/GeoQuestionCard.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Run build again.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 6.0s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+  Generating static pages using 9 workers (0/46) ...
+  Generating static pages using 9 workers (11/46) 
+  Generating static pages using 9 workers (22/46) 
+  Generating static pages using 9 workers (34/46) 
+✓ Generating static pages using 9 workers (46/46) in 210.9ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/register
+├ ƒ /api/auth/tokens
+├ ƒ /api/auth/tokens/[id]
+├ ƒ /api/checks/contrast
+├ ƒ /api/checks/pagespeed
+├ ƒ /api/checks/readability
+├ ƒ /api/checks/ssl
+├ ƒ /api/checks/wayback
+├ ƒ /api/health
+├ ƒ /api/journeys
+├ ƒ /api/journeys/[id]
+├ ƒ /api/projects
+├ ƒ /api/projects/[id]
+├ ƒ /api/projects/[id]/geo-question-history
+├ ƒ /api/projects/[id]/geo-summary
+├ ƒ /api/projects/[id]/ranking-summary
+├ ƒ /api/projects/[id]/research
+├ ƒ /api/projects/[id]/suggest-competitors
+├ ƒ /api/projects/[id]/suggest-keywords
+├ ƒ /api/rank-tracking/keywords
+├ ƒ /api/rank-tracking/keywords/[id]
+├ ƒ /api/rank-tracking/keywords/[id]/positions
+├ ƒ /api/rank-tracking/refresh
+├ ƒ /api/saliency/generate
+├ ƒ /api/saliency/result
+├ ƒ /api/scan
+├ ƒ /api/scan/[id]
+├ ƒ /api/scan/[id]/project
+├ ƒ /api/scan/[id]/screenshot
+├ ƒ /api/scan/[id]/summarize
+├ ƒ /api/scan/domain
+├ ƒ /api/scan/domain/[id]/journey
+├ ƒ /api/scan/domain/[id]/status
+├ ƒ /api/scan/domain/[id]/summarize
+├ ƒ /api/scan/domain/[id]/summary
+├ ƒ /api/scan/geo-eeat
+├ ƒ /api/scan/geo-eeat/[jobId]
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history/[runId]
+├ ƒ /api/scan/geo-eeat/[jobId]/project
+├ ƒ /api/scan/geo-eeat/[jobId]/rerun-competitive
+├ ƒ /api/scan/geo-eeat/[jobId]/status
+├ ƒ /api/scan/geo-eeat/history
+├ ƒ /api/scan/geo-eeat/suggest-competitors-queries
+├ ƒ /api/scan/journey-agent
+├ ƒ /api/scan/journey-agent/[jobId]
+├ ƒ /api/scan/journey-agent/[jobId]/live
+├ ƒ /api/scan/journey-agent/[jobId]/live/stream
+├ ƒ /api/scan/journey-agent/[jobId]/project
+├ ƒ /api/scan/journey-agent/[jobId]/video
+├ ƒ /api/scan/journey-agent/history
+├ ƒ /api/scans
+├ ƒ /api/scans/[id]
+├ ƒ /api/scans/domain
+├ ƒ /api/scans/domain/[id]
+├ ƒ /api/scans/domain/[id]/project
+├ ƒ /api/search
+├ ƒ /api/share
+├ ƒ /api/share/[token]
+├ ƒ /api/share/[token]/access
+├ ƒ /api/share/[token]/pages/[pageId]
+├ ƒ /api/share/[token]/pages/[pageId]/screenshot
+├ ƒ /api/share/[token]/video
+├ ƒ /api/share/by-resource
+├ ƒ /api/tools/contrast
+├ ƒ /api/tools/extract
+├ ƒ /api/tools/pagespeed
+├ ƒ /api/tools/readability
+├ ƒ /api/tools/ssl-labs
+├ ƒ /api/tools/wayback
+├ ƒ /developers
+├ ƒ /domain/[id]
+├ ƒ /geo-eeat/[jobId]
+├ ƒ /history
+├ ƒ /journey-agent/[jobId]
+├ ƒ /login
+├ ƒ /projects
+├ ƒ /projects/[id]
+├ ƒ /projects/[id]/geo
+├ ƒ /projects/[id]/rankings
+├ ƒ /projects/[id]/research
+├ ƒ /register
+├ ƒ /results/[id]
+├ ƒ /scan
+├ ƒ /scan/domain
+├ ƒ /settings
+└ ƒ /share/[token]
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build succeeded. Let me mark todos complete and give a short summary to the user.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] API GET /api/projects/[id]/geo-question-history
+- [x] GeoQuestionChart component (LineChart over time like RankTrackingChart)
+- [x] GEO page: use question list + GeoQuestionChart per question
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Done. Summarize for the user.
+</details></think>
+
+---
+
+
+Die GEO-Seite zeigt jetzt pro Frage den **Verlauf über alle Analysen** – analog zur SEO-Seite mit Keyword-Charts. Überblick:
+
+## 1. **Neue API: `GET /api/projects/[id]/geo-question-history`**
+
+- Lädt alle GEO-/EEAT-Läufe des Projekts (inkl. Competitive-Reruns).
+- Baut pro **Frage** (anhand des Query-Texts) eine **Zeitreihe**:
+  - Jeder Punkt = ein Analysezeitpunkt (`recordedAt`) mit **Platz pro Modell** (`positionsByModel`).
+- Datenquellen: `payload.competitiveByModel` der Haupt-Läufe und `competitiveByModel` der abgeschlossenen Einträge in `geo_eeat_competitive_runs`.
+- Antwort: `{ success, targetDomain, questions: [{ queryText, queryIndex, points: [{ recordedAt, positionsByModel }] }] }`.
+
+## 2. **Gemeinsame Logik: `lib/geo-eeat/position-matrix.ts`**
+
+- `extractHostname`, `buildPositionMatrix`, `PositionMatrixRow` aus dem Diagramm hierher ausgelagert.
+- Wird von der neuen API und von `CompetitivePositionDiagram` genutzt (Diagramm importiert aus dieser Lib).
+
+## 3. **GeoQuestionCard = Liniendiagramm über die Zeit**
+
+- Statt nur einer Analyse: **Liniendiagramm** wie beim Ranking-Keyword-Chart.
+- **X-Achse:** Zeit (Datum).
+- **Y-Achse:** Platz (1 = oben, „beste“ Position).
+- **Eine Linie pro LLM** (z. B. gpt-4, claude); mehrere Analysen = mehrere Punkte pro Linie.
+- **Zeitfilter:** 7d / 30d / 90d / 1J (Chips wie bei der SEO-Seite).
+- Props: `queryText`, `queryIndex`, `points` (Zeitreihe von der API), `t`.
+
+## 4. **Anpassung der GEO-Seite**
+
+- **Lauf-Dropdown entfernt** – es gibt keine Auswahl „eines“ Laufs mehr.
+- Beim Laden wird **`apiProjectGeoQuestionHistory(id, 90)`** aufgerufen (90 Analysen).
+- Pro Eintrag in `questions` wird eine **GeoQuestionCard** mit der zugehörigen Zeitreihe gerendert.
+- Leerzustände: keine Daten → Hinweis + „Öffnen“ (zum ersten Lauf) bzw. „GEO/EEAT starten“, wenn noch keine Läufe existieren.
+
+**Ergebnis:** Jede Karte = eine Frage, das Diagramm zeigt den **Platz-Verlauf pro LLM über alle GEO-Analysen** (Hauptläufe + Competitive-Reruns), vergleichbar mit den Keyword-Positions-Charts auf der SEO-Seite. Build ist durchgelaufen.
+
+---
+
+_**User**_
+
+okay das diagramm macht noch keinen sinn, wollenw ir vielleicht direkt auch die competitors mit anzeigen? hast du eine idee
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is asking about the GEO question diagram - they say it doesn't make sense yet and are wondering if we should also show competitors directly. They're asking for my ideas.
+
+I'm in Ask mode, so I can only provide ideas and explanations, not make edits.
+
+Let me think about what would make the diagram more meaningful:
+
+1. **Current state**: The diagram shows "position over time" per LLM (e.g. gpt-4, claude) for the project's domain. So we have one line per model, and the value is "on which position was our domain mentioned for this question at this point in time".
+
+2. **Why it might not "make sense"**: 
+   - Maybe the user expects to see "how we perform vs competitors" - i.e. not just "our position" but also competitor positions, so you can compare.
+   - On the SEO/Rankings page, the RankTrackingChart shows our domain + competitor domains (each with their own line) - so you see multiple lines: our domain's position over time, competitor A's position, competitor B's, etc.
+   - So the natural idea: for GEO, show the same - for each question, show **position over time for our domain AND for each competitor**. Then you get a chart where you can see "we're position 2, competitor X is position 1, competitor Y is position 4" at each date.
+
+3. **Data**: The competitive benchmark already has `citations` per run - each citation has `domain` and `position`. So for each (run, question index, model) we have a list of domains and their positions. Currently we only extract "our" domain's position. We could extract positions for all domains (our + competitors) and return in the API something like:
+   - `points: [{ recordedAt, positionsByModel: { modelId: ourPosition }, competitorPositionsByModel: { modelId: { domain: position } } }]`
+   - Or simpler: same structure as rank tracking - each point has `position` (ours) and `competitorPositions: Record<string, number | null>` (competitor domain -> position). So we'd have one line per "entity" (our domain + each competitor), exactly like the ranking chart.
+
+4. **Implementation idea**: 
+   - In the API, when building the time series, for each sample we already have the full citations per model per query. So we could compute not just "position of target domain" but "position of target domain + position of each competitor domain" (competitors could come from project.competitors or from the run's competitor list).
+   - Return format per point: `{ recordedAt, positionsByModel: { [modelId]: ourPosition }, competitorPositionsByModel?: { [modelId]: { [domain]: position } } }` or flatten to one series per (model, domain) or aggregate: e.g. one line "our domain", one line "competitor 1" (avg over models?), one line "competitor 2". The cleanest for the chart would be: like rank tracking, have each point be `{ date, [domainKey]: position }` where domainKey is our domain and each competitor. So we need one position per domain per point. But we have per-model positions - so we could either show (a) one chart per model, or (b) aggregate to "per domain" - e.g. average position across models, or "best" position. Or (c) show all: our domain + each competitor, and each line is (model, domain) e.g. "gpt-4 · our", "gpt-4 · competitor1", "claude · our", ... That could get busy. The ranking chart does: one line per domain (our + competitors), and the value is position in SERP. So it's not per-model, it's one position per domain. For GEO we have per-model positions. So options:
+   - **Option A**: One chart per model (tabs or selector). Each chart shows: our domain + competitors, one line each, position over time. So we need to extend the API to return competitor positions per model per point.
+   - **Option B**: One chart with our domain + competitors, but position = average (or min/best) across models. Then we need to aggregate in the API.
+   - **Option C**: Many lines: our domain for model 1, our domain for model 2, competitor 1 for model 1, ... (messy).
+
+   I'll suggest Option A (per-model view, each chart shows us + competitors) as the clearest and most similar to the ranking chart concept.
+</details></think>
+
+---
+
+
+Das Diagramm zeigt aktuell nur **eure Domain** – pro LLM eine Linie (Platz über die Zeit). Das ist wenig vergleichbar und wirkt isoliert.
+
+**Idee: Competitors wie beim SEO-Chart einzeichnen**
+
+Auf der **Rankings-Seite** zeigt `RankTrackingChart` pro Keyword:
+- eine Linie für **eure Domain**,
+- eine Linie pro **Competitor-Domain**,
+- alle mit **Position über die Zeit**.
+
+Dasselbe Konzept für GEO würde heißen:
+
+- Pro **Frage** ein Chart.
+- Pro **Modell** (z. B. GPT-4, Claude) entweder:
+  - **ein Chart** mit mehreren Linien: eure Domain + alle Competitors (eine Linie pro Domain), **oder**
+  - ein **Modell-Selector** (Tabs/Dropdown), und im gewählten Modell wieder: eure Domain + Competitors.
+
+Dann siehst du z. B.: „Bei Frage X war wir am 1.3. auf Platz 2, Competitor A auf 1, Competitor B auf 4“ und wie sich das über die Analysen verändert.
+
+**Datenlage**
+
+- Pro Lauf/Competitive-Run gibt es pro Modell und Frage **Citations** mit `domain` und `position`.
+- Bisher wird nur die Position **eurer** Domain pro Modell ausgelesen.
+- Die gleichen Daten liefern auch die Position **jeder Competitor-Domain** pro Modell und Frage.
+
+**Konkrete Erweiterung**
+
+1. **API** `geo-question-history`:  
+   Pro Punkt nicht nur `positionsByModel` (nur eure Domain), sondern z. B.  
+   `competitorPositionsByModel: { [modelId]: { [domain]: number | null } }`  
+   (oder ein flaches Format wie beim Ranking: ein Wert pro Domain, ggf. pro Modell getrennt).
+
+2. **Competitors definieren**:  
+   Entweder die **Projekt-Competitors** (`project.competitors`) nutzen oder die in den Runs vorkommenden Domains (z. B. aus den Citations) – je nachdem, ob ihr feste Competitors pro Projekt habt.
+
+3. **Chart**:  
+   Wie im `RankTrackingChart`:  
+   - X = Zeit, Y = Platz (1 = oben),  
+   - eine Linie für eure Domain, eine pro Competitor,  
+   - optional erst pro Modell (Tabs), damit es lesbar bleibt.
+
+Wenn du willst, kann ich im **Agent-Modus** die API um Competitor-Positionen erweitern und das GEO-Diagramm so umbauen, dass pro Frage (und ggf. pro Modell) eure Domain + Competitors als Linien angezeigt werden.
+
+---
+
+_**User**_
+
+los
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
