@@ -14,12 +14,12 @@ async function runDebug() {
 
     // Inject CLS Observer
     await page.evaluateOnNewDocument(() => {
-        (window as Window & { __cls_score: number }).__cls_score = 0;
+        (window as unknown as Window & { __cls_score: number }).__cls_score = 0;
         new PerformanceObserver((entryList) => {
             for (const entry of entryList.getEntries() as Array<{ hadRecentInput?: boolean; value?: number }>) {
                 if (!entry.hadRecentInput) {
-                    (window as Window & { __cls_score: number }).__cls_score += entry.value ?? 0;
-                    console.log('CLS Entry:', entry.value, (window as Window & { __cls_score: number }).__cls_score);
+                    (window as unknown as Window & { __cls_score: number }).__cls_score += entry.value ?? 0;
+                    console.log('CLS Entry:', entry.value, (window as unknown as Window & { __cls_score: number }).__cls_score);
                 }
             }
         }).observe({ type: 'layout-shift', buffered: true });

@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --webpack --port 3333",
     "build": "next build --webpack",
+    "build:local": "sh scripts/ensure-design-system-and-build.sh",
     "analyze": "cross-env ANALYZE=true next build --webpack",
     "start": "next start --port 3333",
     "lint": "eslint",

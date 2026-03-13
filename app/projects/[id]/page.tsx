@@ -580,7 +580,7 @@ export default function ProjectDetailPage() {
         setResearchAddTargetGroup(e.target.value);
     }, []);
     const handleResearchValuePropositionChange = useCallback(
-        (e: React.ChangeEvent<HTMLInputElement>) => {
+        (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
             setResearchResult((prev) => (prev ? { ...prev, valueProposition: e.target.value } : prev));
         },
         []

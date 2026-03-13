@@ -24684,11 +24684,402 @@ Rendern der Form in einer Variable außerhalb des JSX, damit der Build-Parser di
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
 
-Status: **loading**
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to replace the ternary in the JSX with just {researchFormNode}.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
 
 </details>
 
 </tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Now the JSX no longer contains the ternary with the spread – we only have `{researchFormNode}`. The spread and ProjectResearchResultForm are in a plain JavaScript assignment above the return. Let me verify there are no linter errors.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+No linter errors. The fix: move the conditional rendering of ProjectResearchResultForm into a variable `researchFormNode` in the component body (plain JS), then in JSX only render `{researchFormNode}`. That way the problematic pattern (ternary + spread in JSX) is no longer in the JSX tree that the Next.js build parses.
+</details></think>
+
+---
+
+
+Änderung ist umgesetzt.
+
+**Ursache:** Der Build-Parser hatte offenbar Probleme mit dem Ternary inkl. Spread direkt im JSX (`{projectResearchResultFormProps ? <ProjectResearchResultForm {...projectResearchResultFormProps} /> : null}`).
+
+**Lösung:** Die Form wird jetzt **außerhalb des JSX** in einer Variable gerendert:
+
+```ts
+const researchFormNode =
+    projectResearchResultFormProps != null ? (
+        <ProjectResearchResultForm {...projectResearchResultFormProps} />
+    ) : null;
+```
+
+Im JSX steht nur noch `{researchFormNode}`. Spread und Ternary liegen damit in normalem JavaScript, nicht im JSX-Baum.
+
+Bitte den Docker-Build erneut ausführen.
+
+---
+
+_**User**_
+
+können wir das ganze auch lokal mal testen/ builden oder dafür eine lösung finden? 
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is asking if they can test/build the project locally, or find a solution for that. They want to be able to run the build locally instead of only discovering build failures in Docker. I'm in Ask mode, so I can only provide information and guidance - no edits or running commands.
+
+Let me check how the project is set up for building - package.json scripts, Docker setup, and any docs about local development.
+</details></think>
+
+---
+
+
+Projekt-Setup prüfen, ob ein lokaler Build möglich ist:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/package.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **7** results in **1** directory</summary>
+
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1** (7 files)
+
+| File |
+|------|
+| `Dockerfile` |
+| `Dockerfile.mcp-server` |
+| `mcp-server/Dockerfile` |
+| `saliency-service/Dockerfile.msinet` |
+| `saliency-service/Dockerfile` |
+| `saliency-service/Dockerfile.sum` |
+| `ux-journey-agent/Dockerfile` |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **104** results in **1** directory</summary>
+
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1** (104 files)
+
+| File |
+|------|
+| `mcp-server/README.md` |
+| `README.md` |
+| `mcp-server/node_modules/@modelcontextprotocol/sdk/README.md` |
+| `mcp-server/node_modules/hono/README.md` |
+| `mcp-server/node_modules/ajv/README.md` |
+| `mcp-server/node_modules/typescript/README.md` |
+| `mcp-server/node_modules/zod/README.md` |
+| `mcp-server/node_modules/@esbuild/darwin-arm64/README.md` |
+| `mcp-server/node_modules/zod-to-json-schema/README.md` |
+| `mcp-server/node_modules/jose/README.md` |
+| `mcp-server/node_modules/ip-address/README.md` |
+| `mcp-server/node_modules/iconv-lite/README.md` |
+| `mcp-server/node_modules/tsx/README.md` |
+| `mcp-server/node_modules/object-inspect/readme.markdown` |
+| `mcp-server/node_modules/fast-uri/README.md` |
+| `mcp-server/node_modules/qs/README.md` |
+| `mcp-server/node_modules/@hono/node-server/README.md` |
+| `mcp-server/node_modules/eventsource-parser/README.md` |
+| `mcp-server/node_modules/express/Readme.md` |
+| `mcp-server/node_modules/body-parser/README.md` |
+| `mcp-server/node_modules/math-intrinsics/README.md` |
+| `mcp-server/node_modules/eventsource/README.md` |
+| `mcp-server/node_modules/has-symbols/README.md` |
+| `mcp-server/node_modules/cross-spawn/README.md` |
+| `mcp-server/node_modules/ajv-formats/README.md` |
+| `mcp-server/node_modules/mime-db/README.md` |
+| `mcp-server/node_modules/negotiator/README.md` |
+| `mcp-server/node_modules/esbuild/README.md` |
+| `mcp-server/node_modules/pkce-challenge/README.md` |
+| `mcp-server/node_modules/function-bind/README.md` |
+| `mcp-server/node_modules/es-errors/README.md` |
+| `mcp-server/node_modules/call-bind-apply-helpers/README.md` |
+| `mcp-server/node_modules/dunder-proto/README.md` |
+| `mcp-server/node_modules/debug/README.md` |
+| `mcp-server/node_modules/get-intrinsic/README.md` |
+| `mcp-server/node_modules/router/README.md` |
+| `mcp-server/node_modules/get-tsconfig/README.md` |
+| `mcp-server/node_modules/express-rate-limit/readme.md` |
+| `mcp-server/node_modules/get-proto/README.md` |
+| `mcp-server/node_modules/side-channel/README.md` |
+| `mcp-server/node_modules/side-channel-map/README.md` |
+| `mcp-server/node_modules/json-schema-traverse/README.md` |
+| `mcp-server/node_modules/es-object-atoms/README.md` |
+| `mcp-server/node_modules/json-schema-typed/README.md` |
+| `mcp-server/node_modules/fast-deep-equal/README.md` |
+| `mcp-server/node_modules/side-channel-list/README.md` |
+| `mcp-server/node_modules/path-to-regexp/Readme.md` |
+| `mcp-server/node_modules/es-define-property/README.md` |
+| `mcp-server/node_modules/side-channel-weakmap/README.md` |
+| `mcp-server/node_modules/gopd/README.md` |
+| `mcp-server/node_modules/call-bound/README.md` |
+| `mcp-server/node_modules/mime-types/README.md` |
+| `mcp-server/node_modules/hasown/README.md` |
+| `mcp-server/node_modules/resolve-pkg-maps/README.md` |
+| `mcp-server/node_modules/content-disposition/README.md` |
+| `mcp-server/node_modules/finalhandler/README.md` |
+| `mcp-server/node_modules/safer-buffer/Readme.md` |
+| `mcp-server/node_modules/which/README.md` |
+| `mcp-server/node_modules/depd/Readme.md` |
+| `mcp-server/node_modules/statuses/README.md` |
+| `mcp-server/node_modules/send/README.md` |
+| `mcp-server/node_modules/type-is/README.md` |
+| `mcp-server/node_modules/cors/README.md` |
+| `mcp-server/node_modules/on-finished/README.md` |
+| `mcp-server/node_modules/proxy-addr/README.md` |
+| `mcp-server/node_modules/@types/node/README.md` |
+| `mcp-server/node_modules/content-type/README.md` |
+| `mcp-server/node_modules/cookie/README.md` |
+| `mcp-server/node_modules/raw-body/README.md` |
+| `mcp-server/node_modules/cookie-signature/Readme.md` |
+| `mcp-server/node_modules/accepts/README.md` |
+| `mcp-server/node_modules/http-errors/README.md` |
+| `mcp-server/node_modules/serve-static/README.md` |
+| `mcp-server/node_modules/parseurl/README.md` |
+| `mcp-server/node_modules/fresh/README.md` |
+| `mcp-server/node_modules/range-parser/README.md` |
+| `mcp-server/node_modules/bytes/Readme.md` |
+| `mcp-server/node_modules/setprototypeof/README.md` |
+| `mcp-server/node_modules/toidentifier/README.md` |
+| `mcp-server/node_modules/inherits/README.md` |
+| `mcp-server/node_modules/forwarded/README.md` |
+| `mcp-server/node_modules/ipaddr.js/README.md` |
+| `mcp-server/node_modules/shebang-regex/readme.md` |
+| `mcp-server/node_modules/media-typer/README.md` |
+| `mcp-server/node_modules/shebang-command/readme.md` |
+| `mcp-server/node_modules/path-key/readme.md` |
+| `mcp-server/node_modules/object-assign/readme.md` |
+| `mcp-server/node_modules/require-from-string/readme.md` |
+| `mcp-server/node_modules/encodeurl/README.md` |
+| `mcp-server/node_modules/escape-html/Readme.md` |
+| `mcp-server/node_modules/merge-descriptors/readme.md` |
+| `mcp-server/node_modules/ms/readme.md` |
+| `mcp-server/node_modules/is-promise/readme.md` |
+| `mcp-server/node_modules/undici-types/README.md` |
+| `mcp-server/node_modules/isexe/README.md` |
+| `mcp-server/node_modules/vary/README.md` |
+| `mcp-server/node_modules/once/README.md` |
+| `mcp-server/node_modules/etag/README.md` |
+| `mcp-server/node_modules/unpipe/README.md` |
+| `mcp-server/node_modules/ee-first/README.md` |
+| `mcp-server/node_modules/wrappy/README.md` |
+| `saliency-service/.pytest_cache/README.md` |
+| `saliency-service/README.md` |
+| `ux-journey-agent/README.md` |
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The package.json shows:
+- `"build": "next build --webpack"` - so locally you can run `npm run build`
+- `@msqdx/react` and `@msqdx/tokens` are `file:../msqdx-design-system/packages/react` and `file:../msqdx-design-system/packages/tokens`
+
+So locally, the build would need the msqdx-design-system at `../msqdx-design-system` relative to CHECKION-1. In Docker, the Dockerfile likely copies or mounts that. Let me check the Dockerfile to see how it differs from local.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/Dockerfile</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/README.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So the situation is:
+
+1. **Lokal**: `npm run build` nutzt dieselbe Next.js-Build-Pipeline. Die Dependencies sind `file:../msqdx-design-system/...` – also muss das MSQDX Design System **neben** dem CHECKION-1-Ordner liegen (z.B. `ANTIGRAVITY/msqdx-design-system`), und man muss dort ggf. `npm install` und `npm run build` ausgeführt haben. Wenn das Repo bereits so ausgecheckt ist, sollte `npm run build` im CHECKION-1-Verzeichnis lokal laufen.
+
+2. **Docker**: Der Dockerfile klont das Design-System-Repo, baut es, und kopiert die gebauten Pakete in node_modules. Der eigentliche Build-Befehl ist derselbe: `npm run build`.
+
+Der Nutzer fragt, ob man das Ganze auch lokal testen/builden kann. Die Antwort ist: **Ja.** Lokal kann man:
+- `npm install` (vorausgesetzt msqdx-design-system liegt unter ../msqdx-design-system)
+- `npm run build`
+
+Das sollte denselben Next-Build ausführen wie in Docker. Wenn der lokale Build durchgeht, sollte auch der Docker-Build durchgehen (gleicher Befehl). Der Unterschied ist nur die Umgebung (Node-Version, fehlende Symlinks im Docker weil dort das Design-System geklont und dann per cp eingebunden wird).
+
+Ich fasse das für den Nutzer zusammen und gebe konkrete Schritte.
+</details></think>
+
+---
+
+
+Ja, ihr könnt den Build lokal testen – der gleiche Befehl läuft auch im Docker.
+
+## Lokaler Build
+
+Im Projektverzeichnis:
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1
+npm install
+npm run build
+```
+
+Das ist derselbe Befehl wie in Docker (`next build --webpack`). Wenn der lokale Build grün ist, sollte auch der Docker-Build durchlaufen (gleiche Next.js-Pipeline).
+
+## Voraussetzung: MSQDX Design System
+
+In der `package.json` sind `@msqdx/react` und `@msqdx/tokens` als lokale Pfade eingetragen:
+
+```json
+"@msqdx/react": "file:../msqdx-design-system/packages/react",
+"@msqdx/tokens": "file:../msqdx-design-system/packages/tokens",
+```
+
+Damit `npm install` und `npm run build` lokal funktionieren, muss das Design-System **neben** CHECKION-1 liegen, z.B.:
+
+- `.../ANTIGRAVITY/CHECKION-1/`  (dieses Projekt)
+- `.../ANTIGRAVITY/msqdx-design-system/`  (mit `packages/react` und `packages/tokens`)
+
+Falls ihr das Repo so ausgecheckt habt:
+
+1. In `msqdx-design-system`: `npm install` und ggf. `npm run build` ausführen.
+2. In `CHECKION-1`: `npm install` und `npm run build` ausführen.
+
+Wenn `msqdx-design-system` woanders liegt oder fehlt, könnt ihr die Pfade in der `package.json` anpassen oder das Repo an den erwarteten Ort klonen.
+
+## Warum das hilft
+
+- Build-Fehler (z.B. Parser/JSX wie bei der Research-Card) treten lokal genauso auf wie im Container.
+- Ihr spart die Docker-Build-Zeit beim Ausprobieren von Fixes.
+- Erst wenn `npm run build` lokal erfolgreich ist, lohnt sich ein erneuter Docker-Build.
+
+Kurz: Lokal `npm run build` im CHECKION-1-Ordner ausführen (mit vorhandenem `../msqdx-design-system`) – das ist eure Lösung zum lokalen Testen/Builden.
+
+---
+
+_**User**_
+
+ja wir haben ja das system auch lokal, wir müssen nur gucken das wir die jsons auch wieder für remote / coolify bereinigen oder gibt es einen weg beides gleichzeitig zu haben sodass du automatisch die lösung erstmal lokal builden und testen kannst und erst wenn du fertig bist, sync ich zu github und coolify @msqdx-design-system 
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants to:
+1. Have a way to build and test locally (they have msqdx-design-system locally)
+2. Either clean the package.json for remote/Coolify deployment, OR find a way to have both local and remote work
+3. So that I (the agent) can build and test locally first, and only when done they sync to GitHub and Coolify
+
+Let me check:
+1. Current package.json - uses `file:../msqdx-design-system/packages/react` etc.
+2. The Dockerfile clones msqdx-design-system from GitHub and copies it in - so in Docker the `file:` deps are replaced by the COPY step that puts the built packages into node_modules
+
+So actually:
+- **Locally**: If the repo is checked out with msqdx-design-system as a sibling (../msqdx-design-system), `npm install` will use the local path. Build works.
+- **In Docker**: The Dockerfile doesn't use the file: path at install time - it uses npm ci/install (which would try to resolve file:../msqdx-design-system - but in the Docker context, the deps stage creates /msqdx-design-system and links it so from /app the path ../msqdx-design-system goes to /app/msqdx-design-system which is a symlink to /msqdx-design-system). So in deps stage they have WORKDIR /app, and they do `RUN ln -snf /msqdx-design-system /app/msqdx-design-system` - so from /app, ../msqdx-design-system would go to parent of /app which doesn't have msqdx-design-system. Wait, the symlink is /app/msqdx-design-system -> /msqdx-design-system. So from /app, ".." is parent of /app, not the symlink. So file:../msqdx-design-system from /app would look for /msqdx-design-system (one level up from /app). So they need the design system at /msqdx-design-system when building. In the deps stage they clone to /msqdx-design-system and create a symlink at /app/msqdx-design-system. So from /app, ../msqdx-design-system = /msqdx-design-system (parent of app + msqdx-design-system). So that's wrong - parent of /app is something else. So actually in Docker, when WORKDIR is /app, the path ../msqdx-design-system means go to parent directory of /app and then msqdx-design-system. The parent of /app is probably the filesystem root or whatever. So they need the design system to be at /app/../msqdx-design-system = /msqdx-design-system. So in the deps stage they put it at /msqdx-design-system. So when npm install runs in /app, it looks for ../msqdx-design-system = /msqdx-design-system (since /app's parent + "msqdx-design-system" could be a path under root). Actually on Linux, /app's parent is /. So ../msqdx-design-system from /app = /msqdx-design-system. So the clone to /msqdx-design-system is correct! So in deps they have /msqdx-design-system and /app with node_modules. When npm install runs in /app, package.json has file:../msqdx-design-system - from /app that's /msqdx-design-system. So it should resolve. Good.
+
+So the same package.json with file:../msqdx-design-system works:
+- Locally: when CHECKION-1 is at .../CHECKION-1 and msqdx-design-system is at .../msqdx-design-system (sibling), ../msqdx-design-system from CHECKION-1 is correct.
+- Docker: they create /msqdx-design-system and /app, so from /app ../msqdx-d</details></think>
 
 ---
 
