@@ -200,10 +200,10 @@ export function RankTrackingChart({
                                 fontSize: 12,
                             }}
                             labelStyle={{ color: 'var(--color-text-on-light)' }}
-                            formatter={(value: unknown, name: string) => [
-                                typeof value === 'number' ? value : '—',
-                                name,
-                            ]}
+                            formatter={(value: unknown, name: string) => {
+                                const display = typeof value === 'number' ? String(value) : '—';
+                                return [display, name];
+                            }}
                             labelFormatter={(label) => label}
                         />
                         <Legend
