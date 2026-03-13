@@ -170,10 +170,7 @@ export function RankTrackingChart({
 
     return (
         <Box sx={{ mt: 1.5, mb: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1, mb: 1 }}>
-                <MsqdxTypography variant="caption" sx={{ color: textMuted }}>
-                    {keywordLabel}
-                </MsqdxTypography>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
                 <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                     {TIME_RANGES.map((tr, idx) => (
                         <MsqdxChip

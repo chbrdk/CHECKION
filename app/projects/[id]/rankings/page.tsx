@@ -320,24 +320,26 @@ export default function ProjectRankingsPage() {
                     variant="flat"
                     borderRadius="lg"
                     footerDivider={false}
+                    headerActions={
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                            <MsqdxButton variant="contained" brandColor="green" size="small" onClick={() => setAddKeywordOpen(true)}>
+                                {t('projects.addKeyword')}
+                            </MsqdxButton>
+                            <MsqdxButton
+                                variant="outlined"
+                                size="small"
+                                onClick={handleSuggestKeywords}
+                                disabled={suggestKeywordsLoading || !project.domain}
+                            >
+                                {suggestKeywordsLoading ? t('common.loading') : t('projects.suggestKeywordsWithAi')}
+                            </MsqdxButton>
+                            <MsqdxButton variant="outlined" size="small" onClick={handleRefreshRankings} disabled={refreshLoading}>
+                                {refreshLoading ? t('common.loading') : t('projects.refreshRankings')}
+                            </MsqdxButton>
+                        </Box>
+                    }
                     sx={{ bgcolor: 'var(--color-card-bg)' }}
                 >
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                        <MsqdxButton variant="contained" brandColor="green" size="small" onClick={() => setAddKeywordOpen(true)}>
-                            {t('projects.addKeyword')}
-                        </MsqdxButton>
-                        <MsqdxButton
-                            variant="outlined"
-                            size="small"
-                            onClick={handleSuggestKeywords}
-                            disabled={suggestKeywordsLoading || !project.domain}
-                        >
-                            {suggestKeywordsLoading ? t('common.loading') : t('projects.suggestKeywordsWithAi')}
-                        </MsqdxButton>
-                        <MsqdxButton variant="outlined" size="small" onClick={handleRefreshRankings} disabled={refreshLoading}>
-                            {refreshLoading ? t('common.loading') : t('projects.refreshRankings')}
-                        </MsqdxButton>
-                    </Box>
                     {suggestKeywordsError && (
                         <MsqdxTypography variant="caption" sx={{ color: 'var(--color-status-error)', display: 'block', mb: 1 }}>
                             {suggestKeywordsError}
@@ -399,7 +401,7 @@ export default function ProjectRankingsPage() {
                                     variant="flat"
                                     borderRadius="button"
                                     sx={{
-                                        p: 'var(--msqdx-spacing-md)',
+                                        p: 0,
                                         border: '1px solid var(--color-secondary-dx-green)',
                                         bgcolor: 'var(--color-card-bg)',
                                         color: 'var(--color-text-on-light)',
