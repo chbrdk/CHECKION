@@ -127,6 +127,7 @@
     "devicePlaceholder": "z. B. desktop",
     "deleteKeyword": "Entfernen",
     "competitors": "Wettbewerber",
+    "competitorDomain": "Wettbewerber-Domain",
     "competitorsDescription": "Wettbewerber-Domains für Rank-Vergleich und GEO/E-E-A-T. Werden beim Aktualisieren der Rankings genutzt.",
     "addCompetitor": "Hinzufügen",
     "addCompetitorPlaceholder": "z. B. wettbewerber.de",

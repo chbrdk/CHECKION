@@ -333,6 +333,7 @@ export default function ProjectDetailPage() {
                 </MsqdxTypography>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center', mb: 1 }}>
                     <MsqdxFormField
+                        label={t('projects.competitorDomain')}
                         placeholder={t('projects.addCompetitorPlaceholder')}
                         value={addCompetitorValue}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddCompetitorValue(e.target.value)}
