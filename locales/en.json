@@ -173,7 +173,15 @@
     "viewAllRankings": "View all rankings",
     "viewGeo": "View GEO",
     "keywordCount": "{count} keywords",
-    "saveValueProposition": "Save value proposition"
+    "saveValueProposition": "Save value proposition",
+    "navOverview": "Overview",
+    "navSeo": "SEO",
+    "navRankings": "Rankings",
+    "navGeo": "GEO",
+    "navResearch": "Research",
+    "navPerformance": "Performance",
+    "navWcag": "WCAG",
+    "navComingSoon": "Coming soon"
   },
   "auth": {
     "login": {

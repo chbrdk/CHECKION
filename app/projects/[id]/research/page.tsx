@@ -5,8 +5,7 @@ import { useParams } from 'next/navigation';
 import { Box, Stack } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
-import Link from 'next/link';
-import { apiProject, apiProjectResearch, pathProject, API_RANK_TRACKING_KEYWORDS } from '@/lib/constants';
+import { apiProject, apiProjectResearch, API_RANK_TRACKING_KEYWORDS } from '@/lib/constants';
 import { SERP_MAIN_MARKETS } from '@/lib/serp-markets';
 import { ProjectResearchResultForm } from '@/components/ProjectResearchResultForm';
 import type { ProjectResearchResult } from '@/lib/research/schema';
@@ -251,14 +250,6 @@ export default function ProjectResearchPage() {
     return (
         <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 900, mx: 'auto' }}>
             <Stack sx={{ gap: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                    <Link href={pathProject(id)} style={{ textDecoration: 'none' }}>
-                        <MsqdxButton variant="outlined" size="small">
-                            ← {project.name}
-                        </MsqdxButton>
-                    </Link>
-                </Box>
-
                 <MsqdxMoleculeCard
                     title={t('projects.research')}
                     variant="flat"

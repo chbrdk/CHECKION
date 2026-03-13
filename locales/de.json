@@ -173,7 +173,15 @@
     "viewAllRankings": "Alle Rankings anzeigen",
     "viewGeo": "GEO anzeigen",
     "keywordCount": "{count} Keywords",
-    "saveValueProposition": "Value Proposition speichern"
+    "saveValueProposition": "Value Proposition speichern",
+    "navOverview": "Übersicht",
+    "navSeo": "SEO",
+    "navRankings": "Rankings",
+    "navGeo": "GEO",
+    "navResearch": "Research",
+    "navPerformance": "Performance",
+    "navWcag": "WCAG",
+    "navComingSoon": "Demnächst"
   },
   "auth": {
     "login": {

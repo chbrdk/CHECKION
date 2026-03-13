@@ -14,7 +14,6 @@ import {
 } from '@msqdx/react';
 import { Trash2 } from 'lucide-react';
 import { useI18n } from '@/components/i18n/I18nProvider';
-import Link from 'next/link';
 import {
     apiProject,
     apiProjectRankingSummary,
@@ -22,7 +21,6 @@ import {
     apiRankTrackingKeyword,
     apiRankTrackingRefresh,
     API_RANK_TRACKING_KEYWORDS,
-    pathProject,
 } from '@/lib/constants';
 import { SERP_MAIN_MARKETS } from '@/lib/serp-markets';
 import { RankTrackingChart } from '@/components/RankTrackingChart';
@@ -273,14 +271,6 @@ export default function ProjectRankingsPage() {
     return (
         <Box sx={{ py: 'var(--msqdx-spacing-md)', px: 1.5, width: '100%', maxWidth: '100%' }}>
             <Stack sx={{ gap: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                    <Link href={pathProject(id)} style={{ textDecoration: 'none' }}>
-                        <MsqdxButton variant="outlined" size="small">
-                            ← {project.name}
-                        </MsqdxButton>
-                    </Link>
-                </Box>
-
                 {/* Score card: our score + competitor scores */}
                 <MsqdxMoleculeCard
                     title={t('projects.rankingScore')}
@@ -289,12 +279,25 @@ export default function ProjectRankingsPage() {
                     footerDivider={false}
                     sx={{ bgcolor: 'var(--color-card-bg)' }}
                 >
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'baseline' }}>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 5, alignItems: 'baseline' }}>
                         <Box>
                             <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
                                 {t('projects.ourScore')}
                             </MsqdxTypography>
-                            <MsqdxTypography variant="h4" weight="bold">
+                            <MsqdxTypography
+                                variant="h4"
+                                weight="bold"
+                                sx={{
+                                    color:
+                                        rankingSummary?.score != null
+                                            ? rankingSummary.score >= 70
+                                                ? 'var(--color-status-success)'
+                                                : rankingSummary.score >= 40
+                                                  ? 'var(--color-status-warning)'
+                                                  : 'var(--color-status-error)'
+                                            : undefined,
+                                }}
+                            >
                                 {rankingSummary?.score != null ? `${rankingSummary.score}/100` : '—'}
                             </MsqdxTypography>
                         </Box>

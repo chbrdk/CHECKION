@@ -3869,7 +3869,1511 @@ MsqdxMoleculeCard is from @msqdx/react so I don't have its source in this repo. 
 I'll go with option 2: remove the title prop from MsqdxMoleculeCard (or pass empty) and add a custom first row with the headline left and buttons right. Let me check if we can pass nothing for title - might need to pass title="" or use a different approach. Looking at the component name "MoleculeCard" - it might require title. I'll add a header row as the first child that has the title (h5) on the left and the buttons on the right. So the structure will be:
 
 <MsqdxMoleculeCard title={t('projects.rankings')} ...>
+  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+    <MsqdxTypography component="h5" variant="h5">...</MsqdxTypography>
+    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+      ...buttons...
+    </Box>
+  </Box>
+  ...
+</MsqdxMoleculeCard>
+
+But wait - if the card already renders the title from the title prop, we'd have the title twice. So I need to either:
+A) Not use the card's title and add our own row with title + buttons
+B) Use the card's title but see if we can pass a React node that includes both title and buttons
+
+Let me try A: remove the title from the card (if the component allows no title) and add a header row. I need to check - does MsqdxMoleculeCard require title? Looking at other usages they all have title. So maybe the card has an optional title. I'll try passing title={null} or we might need to pass a fragment - but then the card would render "Rankings" from our Typography and we need to add the buttons in the same row. So the clean approach: use a custom header as first child.
+
+Actually re-read the DOM path. The user said the buttons are in div (1ppihqm) and the headline is h5 (1deqlk7). So the card renders: (1) some wrapper (2) h5 "Rankings" (3) content area with the buttons. So the card puts title in an h5 and then the children in a content box. To get "headline left, buttons right" we need the card to have a single row with both. So we should not use the card's title prop, and instead as the first child render a Box that is display flex, justifyContent space-between, with the h5 on the left and the button group on the right. So:
+
+<MsqdxMoleculeCard variant="flat" borderRadius="lg" footerDivider={false} sx={{ bgcolor: 'var(--color-card-bg)' }}>
+  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+    <MsqdxTypography component="h5" variant="h5">{t('projects.rankings')}</MsqdxTypography>
+    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+      ... three buttons ...
+    </Box>
+  </Box>
+  ... rest (suggestKeywordsError, suggestedKeywords, grid) ...
+</MsqdxMoleculeCard>
+
+We need to remove the title prop so the card doesn't render its own title. Let me check - if we remove title, does the card still render correctly? I'll remove title and add the custom header row.
 </details></think>
+
+---
+
+
+Placing the "Rankings" headline on the left and the action buttons on the right in one row. Checking whether MsqdxMoleculeCard accepts an optional title:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "MsqdxMoleculeCard|title=",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS",
+  "glob": "*.{tsx,jsx,ts,js}",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "MsqdxMoleculeCard|title=",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS",
+  "outputMode": "content",
+  "totalFiles": 85,
+  "totalMatches": 290,
+  "topFiles": [
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/PrismionToolbar/MsqdxPrismionToolbar.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/ConnectorEdge/MsqdxConnectorEdge.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/PrismionCard/MsqdxPrismionCard.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/PrismionPorts/MsqdxPrismionPorts.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/BoardToolbar/MsqdxBoardToolbar.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/ConnectorMenu/MsqdxConnectorMenu.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/molecules/Tooltip/MsqdxTooltip.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/atoms/UserBadge/MsqdxUserBadge.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/BoardHeader/MsqdxBoardHeader.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/UserToolbar/MsqdxUserToolbar.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/PresenceList/MsqdxPresenceList.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/index.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/molecules/AdminNav/MsqdxAdminNav.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/molecules/Tooltip/MsqdxTooltip.stories.tsx",
+      "matchCount": 19
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/molecules/Dialog/MsqdxDialog.stories.tsx",
+      "matchCount": 11
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/molecules/Card/MsqdxCard.stories.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/audion/DashboardCard/MsqdxDashboardCard.stories.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/PrismionToolbar/MsqdxPrismionToolbar.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/ConnectorEdge/MsqdxConnectorEdge.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/PrismionCard/MsqdxPrismionCard.tsx",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So MsqdxMoleculeCard is actually MsqdxCard (from the index). Let me check MsqdxCard for title and how it renders:
+</details></think>
+
+---
+
+
+Checking how MsqdxCard (MoleculeCard) renders the title:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "title|children",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS/msqdx-design-system/packages/react/src/components",
+  "glob": "**/Card*",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "title|children",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS/msqdx-design-system/packages/react/src/components",
+  "outputMode": "content",
+  "totalFiles": 0,
+  "totalMatches": 0,
+  "topFiles": []
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **3** results in **1** directory</summary>
+
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS** (3 files)
+
+| File |
+|------|
+| `msqdx-design-system/packages/react/src/components/atoms/Card/MsqdxCard.tsx` |
+| `msqdx-design-system/packages/react/src/components/molecules/Card/MsqdxCard.tsx` |
+| `msqdx-design-system/packages/react/src/components/molecules/Card/MsqdxCard.stories.tsx` |
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+There are two Card components - atoms and molecules. The index says "MsqdxCard as MsqdxMoleculeCard" - need to check which one is exported as MsqdxMoleculeCard. The index said: MsqdxCard as MsqdxMoleculeCard - so the molecules Card is the one. Let me read the molecules Card to see how title works.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS/msqdx-design-system/packages/react/src/components/molecules/Card/MsqdxCard.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The molecule Card has `headerActions?: ReactNode` - "Actions in header (right of title)". So we can pass the three buttons as `headerActions` and keep `title={t('projects.rankings')}`. That should render the title on the left and the header actions on the right. Let me read a bit more to see how the header is laid out.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS/msqdx-design-system/packages/react/src/components/molecules/Card/MsqdxCard.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The MsqdxCard (MoleculeCard) already has `headerActions` which is rendered in a flex row with `justifyContent: "space-between"` - title on the left, headerActions on the right. So I just need to:
+
+1. Keep `title={t('projects.rankings')}` 
+2. Pass the three buttons as `headerActions` instead of as the first child Box
+3. Remove the first child Box that currently contains only the buttons
+
+So the change in rankings page:
+- Add headerActions={<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>...three buttons...</Box>}
+- Remove the <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}> that wraps the three buttons (and the mb: 2 will be handled by the card's internal gap)
+
+Let me do that.
+</details></think>
+
+---
+
+
+Using MsqdxCard's `headerActions` to place the title left and actions right. Moving the three buttons into `headerActions` and removing the redundant wrapper Box.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Now I need to add a bit of bottom margin so the content below the header (suggestKeywordsError, suggested keywords, grid) isn't flush. The card uses gap in its internal Box - the first child after the header is the main content. So the children (suggestKeywordsError, suggestedKeywords block, grid) will get the card's internal gap. Let me check - the original had mb: 2 on the button box, so there was space between buttons and the rest. Now the header (title + headerActions) will have the card's default gap to the next sibling (children). So we might need a small top margin on the first content or the card's gap might be enough. Looking at the Card code, the structure is: header Box, then chips, then children in a Box with flex. So the gap between header and children is MSQDX_SPACING.gap.sm. That should be fine. Let me verify there are no linter errors.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+All good. The change uses the existing MsqdxCard/MsqdxMoleculeCard `headerActions` prop so the headline "Rankings" stays on the left and the three buttons (Keyword hinzufügen, Keywords mit KI vorschlagen, Rankings aktualisieren) are on the right in the same row.
+</details></think>
+
+---
+
+
+Summary of changes:
+
+**Goal:** One row with the “Rankings” headline on the left and the three actions (“Keyword hinzufügen”, “Keywords mit KI vorschlagen”, “Rankings aktualisieren”) on the right.
+
+**Approach:** `MsqdxMoleculeCard` is the design system’s molecule Card, which supports a `headerActions` prop for content on the right of the title. The card already lays out title and `headerActions` in a flex row with `justifyContent: 'space-between'`.
+
+**Updates in `app/projects/[id]/rankings/page.tsx`:**
+- Pass the three buttons as **`headerActions`** on `MsqdxMoleculeCard`.
+- Remove the extra `Box` that previously wrapped only those buttons below the title.
+
+Result in the UI: the “Rankings” title stays on the left and the three buttons are aligned on the right in the same header row, with spacing and wrapping handled by the card’s existing layout.
+
+---
+
+_**User**_
+
+DOM Path: div.MuiBox-root c.-azg.63 > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-anclqx > div.MuiBox-root c.-1whhp80 > div.MuiStack-root c.-yd8.a2 > div.MuiBox-root c.-17b4aqi[0] > div.MuiBox-root c.-1.g4afn > div.MuiBox-root c.-1hdbc19 > div.MuiBox-root c.-a1igic > div.MuiBox-root c.-y74.gi
+Position: top=212px, left=93px, width=1716px, height=69px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-y74sgi" data-cursor-element-id="cursor-el-1">Unser Score 54/100 sulzer.com 33/100 grundfos.com 29/100 wilo.com 45/100 xylem.com 10/100</div> können wir hier mehr abstand zwischen den scores einbauen und unseren score je nach wert, rot, gelb oder grün färben
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants two things for the "ranking score" card on the rankings page:
+1. More spacing between the scores (Unser Score 54/100, sulzer.com 33/100, etc.)
+2. Color our score (Unser Score) based on value: red, yellow, or green
+
+I need to find the rankings page where this score card is rendered and:
+1. Increase gap/spacing between the score items
+2. Add conditional coloring for "Unser Score" - typically green for good, yellow for medium, red for low. I'll need to define thresholds (e.g. green >= 70, yellow 40-69, red < 40, or similar).
+
+Let me find the exact code for this card.
+</details></think>
+
+---
+
+
+Adding spacing between scores and coloring "Unser Score" by value (red / yellow / green). Locating the score card in the rankings page.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see the score card. Currently:
+- gap: 3 (MUI spacing = 24px). I'll increase it, e.g. gap: 4 or 5 for more space.
+- "Unser Score" value has no color; I need to add a color based on score value.
+
+For score coloring (0-100 scale), a common scheme:
+- Green: good (e.g. >= 60 or >= 70)
+- Yellow: medium (e.g. 40-59 or 40-69)
+- Red: poor (e.g. < 40)
+
+I'll use CSS variables if they exist in the project for success/warning/error, e.g. --color-status-success, --color-status-warning, --color-status-error. From earlier context I saw var(--color-status-error). Let me use:
+- green: score >= 60
+- yellow: 40 <= score < 60
+- red: score < 40
+
+Or more strict: >= 70 green, 40-69 yellow, < 40 red.
+
+I'll add a helper to get the color and apply it to the our-score MsqdxTypography. I need to pass the score to determine color.
+</details></think>
+
+---
+
+
+Checking which color variables the project uses for status/success/warning/error:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "color-status-success|color-status-warning|color-status-error",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.{tsx,css,scss}",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "color-status-success|color-status-warning|color-status-error",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 25,
+  "totalMatches": 65,
+  "topFiles": [
+    {
+      "uri": "./app/projects/[id]/rankings/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "./components/RankTrackingChart.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/projects/[id]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/projects/[id]/research/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/projects/[id]/geo/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/components/RankTrackingChart.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/research/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/geo/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/components/RankTrackingChart.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/research/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/geo/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/components/RankTrackingChart.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/research/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/geo/page.tsx",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll assume success and warning exist as --color-status-success and --color-status-warning (common naming). Applying the changes:
+
+1. Increase gap: 3 → 5 (or use gap in px like 32px) for more space between scores. MUI spacing(5) = 40px. Let me use gap: 4 (32px) or 5 (40px) - I'll use 4 or 5. Actually the user said "mehr Abstand" so I'll go with gap: 5 (40px in default theme) or even add marginRight to each score box. Simpler: just increase gap to 5.
+
+2. For our score color: if score >= 70 green, 40 <= score < 70 yellow, < 40 red. I'll add a small helper or inline logic to get the color variable.
+</details></think>
+
+---
+
+
+Applying both changes: increasing spacing and adding score-based color for "Unser Score".
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Checking if the design system defines --color-status-success and --color-status-warning. If not, we might need to use fallbacks or different variable names.
+</details></think>
+
+---
+
+
+Checking for status color variables in the app:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "color-status-success|color-status-warning|--color-status",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "color-status-success|color-status-warning|--color-status",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 30,
+  "totalMatches": 100,
+  "topFiles": [
+    {
+      "uri": "./app/projects/[id]/rankings/page.tsx",
+      "matchCount": 9
+    },
+    {
+      "uri": "./components/RankTrackingChart.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./.specstory/history/2026-03-12_20-42Z-integration-von-serpbear-bei-checkion.md",
+      "matchCount": 4
+    },
+    {
+      "uri": "./app/projects/[id]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/projects/[id]/research/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/projects/[id]/geo/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/components/RankTrackingChart.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-03-12_20-42Z-integration-von-serpbear-bei-checkion.md",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/research/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/geo/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/components/RankTrackingChart.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-03-12_20-42Z-integration-von-serpbear-bei-checkion.md",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/research/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/geo/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/components/RankTrackingChart.tsx",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+No linter errors. The theme or design system likely provides these CSS variables when the app is themed. If success/warning aren't defined, the browser would show the variable name or nothing - we could add fallbacks like var(--color-status-success, #16a34a) but that might not be necessary if the design system sets them. I'll leave as is; the user can ask for fallbacks if needed.
+
+Done. Summary for the user.
+</details></think>
+
+---
+
+
+Summary of changes:
+
+**1. More space between scores**  
+- Container `gap` increased from `3` (24px) to `5` (40px in the default MUI theme), so there’s more space between “Unser Score”, “sulzer.com”, “grundfos.com”, etc.
+
+**2. Color for “Unser Score” by value**  
+- **Grün** (gut): Score ≥ 70 → `var(--color-status-success)`  
+- **Gelb** (mittel): 40 ≤ Score &lt; 70 → `var(--color-status-warning)`  
+- **Rot** (schlecht): Score &lt; 40 → `var(--color-status-error)`  
+
+Wenn `rankingSummary?.score` `null` ist, wird keine Statusfarbe gesetzt (z. B. bei „—“).
+
+Die Statusfarben nutzen die gleichen CSS-Variablen wie im Rest der App (`--color-status-error` ist bereits verwendet). Wenn euer Theme `--color-status-success` oder `--color-status-warning` nicht setzt, können wir Fallback-Farben (z. B. Hex) ergänzen.
+
+---
+
+_**User**_
+
+DOM Path: div.MuiBox-root c.-azg.63 > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-1yrdb6
+Position: top=3px, left=64px, width=1789px, height=68px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-1yrdb6" data-cursor-element-id="cursor-el-27">CHECKION</div> hier würde ich gern den button platzieren DOM Path: div.MuiBox-root c.-azg.63 > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-anclqx > div.MuiBox-root c.-1whhp80 > div.MuiStack-root c.-yd8.a2 > div.MuiBox-root c.-1qocved > a > button.MuiButtonBa.e-root MuiButton-root MuiButton-outlined MuiButton-outlinedPrimary MuiButton-.izeSmall MuiButton-outlinedSizeSmall MuiButton-colorPrimary MuiButton-root MuiButton-outlined MuiButton-outlinedPrimary MuiButton-.izeSmall MuiButton-outlinedSizeSmall MuiButton-colorPrimary c.-c6dw3b
+Position: top=87px, left=76px, width=124px, height=44px
+React Component: ForwardRef
+HTML Element: <button class="MuiButtonBase-root MuiButton-root MuiButton-outlined MuiButton-outlinedPrimary MuiButton-sizeSmall MuiButton-outlinedSizeSmall MuiButton-colorPrimary MuiButton-root MuiButton-outlined MuiButton-outlin…" tabindex="0" type="button" data-cursor-element-id="cursor-el-57">← testprojekt</button>  und generell vielleicht ein kleines menü für die einzelnen seiten eines projektes, SEO, GEO, Performance, WCAG?
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants to:
+1. Place a button in the header area where "CHECKION" is displayed (the top bar, position top=3px, left=64px) - likely they want the "← testprojekt" back button (or project navigation) moved up into that header
+2. Add a small menu for the different project sub-pages: SEO, GEO, Performance, WCAG (and presumably Rankings which we've been working on)
+
+So I need to:
+1. Find the layout/header that renders "CHECKION" (the app bar or main layout)
+2. Find where the "← project name" link/button is (in the project pages)
+3. Move or add the back-to-project button into the header area
+4. Add a project sub-navigation menu (tabs or links) for: SEO (or Overview?), Rankings, GEO, Performance, WCAG - need to check what routes exist
+
+Let me search for the CHECKION header and the project back button, and the project routes.
+</details></think>
+
+---
+
+
+Adding the project back button to the header and a project sub-navigation (SEO, GEO, Performance, WCAG). Locating the layout and project routes.
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "CHECKION|css-1yrdb6",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.{tsx,jsx}",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "CHECKION|css-1yrdb6",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 25,
+  "totalMatches": 30,
+  "topFiles": [
+    {
+      "uri": "./app/register/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/settings/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/login/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/AppShell.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/layout.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/register/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/settings/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/login/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/AppShell.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/layout.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/register/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/settings/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/login/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/AppShell.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/layout.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/register/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/settings/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/login/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/AppShell.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/layout.tsx",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "pathProject|←.*project|testprojekt",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "pathProject|←.*project|testprojekt",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 30,
+  "totalMatches": 100,
+  "topFiles": [
+    {
+      "uri": "./app/projects/[id]/rankings/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/projects/[id]/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "./app/projects/[id]/research/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/projects/[id]/geo/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./components/AddToProject.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/projects/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/research/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/geo/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/components/AddToProject.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/research/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/geo/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/components/AddToProject.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 6
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **4** results in **1** directory</summary>
+
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]** (4 files)
+
+| File |
+|------|
+| `rankings/page.tsx` |
+| `page.tsx` |
+| `research/page.tsx` |
+| `geo/page.tsx` |
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So we have:
+- AppShell.tsx has appName="CHECKION" - that's the header
+- Project sub-pages: page.tsx (main/overview), rankings, research, geo. User asked for SEO, GEO, Performance, WCAG - I'll map: SEO could be the main project page or research; Rankings is SEO-related; GEO exists; Performance and WCAG might be future or different names. Let me check constants for all project paths and what the main project page shows.
+- The back button "← project name" is on each of rankings, research, geo and likely the main [id]/page - need to see layout
+
+I need to:
+1. Read AppShell to see how the header is built and where to inject project-specific content (back button + nav)
+2. Check if there's a project layout (app/projects/[id]/layout.tsx) that wraps all project sub-pages
+3. Define path constants for Performance, WCAG if they exist or use placeholders
+
+Let me read AppShell, project layout, and constants.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/AppShell.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **0** result in **1** directory</summary>
+
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects** (0 file)
+
+</details>
+</tool-use>
+
+---
+
+Path does not exist: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants*
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+No project layout. AppShell uses MsqdxAppLayout with appName="CHECKION" - the header is inside the design system component. I need to check if MsqdxAppLayout accepts a slot for header actions or custom header content. If not, we have two options:
+A) Add a project layout (app/projects/[id]/layout.tsx) that renders a shared bar under the main header with back button + project nav, and remove the back button from each page's content.
+B) Modify AppShell to detect project routes and render project-specific header content (back + nav) - but AppShell doesn't have access to project id/name without fetching.
+
+The cleanest approach: create app/projects/[id]/layout.tsx that:
+1. Wraps children with a shared "project chrome": top bar with back button (← project name) and tabs/links for SEO (Overview?), Rankings, Research?, GEO, and placeholders for Performance, WCAG if routes exist.
+2. Fetches project name (or we pass it down via context) for the back button.
+
+Then remove the per-page back button from rankings, research, geo, and main project page.
+
+First, check what paths exist and what the main project page is called (SEO or Overview).
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "pathProject|path.*Project",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "pathProject|path.*Project",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 20,
+  "topFiles": [
+    {
+      "uri": "lib/constants.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 4
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+We have pathProject, pathProjectRankings, pathProjectGeo, pathProjectResearch. No Performance or WCAG routes yet - I'll add nav items that link to existing routes and use placeholder # or future paths for Performance/WCAG (or we could add pathProjectPerformance, pathProjectWcag as constants that point to # for now). Let me check the MSQDX AppLayout to see if it supports header actions.
+</details></think>
+
+---
+
+
+Checking whether MsqdxAppLayout supports header/content slots and inspecting the project page structure:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "MsqdxAppLayout|headerActions|header",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS/msqdx-design-system/packages/react/src",
+  "glob": "*.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "MsqdxAppLayout|headerActions|header",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS/msqdx-design-system/packages/react/src",
+  "outputMode": "content",
+  "totalFiles": 40,
+  "totalMatches": 170,
+  "topFiles": [
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/layout/AppLayout/MsqdxAppLayout.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/BoardHeader/MsqdxBoardHeader.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/molecules/AdminNav/MsqdxAdminNav.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/audion/DashboardCard/MsqdxDashboardCard.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/atoms/CornerDecoration/MsqdxCornerBox.tsx",
+      "matchCount": 11
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/molecules/Card/MsqdxCard.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/layout/AppLayout/MsqdxAppLayout.stories.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/atoms/CornerDecoration/MsqdxCornerBox.stories.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/layout/AppLayout/MsqdxAppLayout.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/BoardHeader/MsqdxBoardHeader.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/molecules/AdminNav/MsqdxAdminNav.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/audion/DashboardCard/MsqdxDashboardCard.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/atoms/CornerDecoration/MsqdxCornerBox.tsx",
+      "matchCount": 11
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/molecules/Card/MsqdxCard.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/layout/AppLayout/MsqdxAppLayout.stories.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/atoms/CornerDecoration/MsqdxCornerBox.stories.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/layout/AppLayout/MsqdxAppLayout.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/BoardHeader/MsqdxBoardHeader.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/molecules/AdminNav/MsqdxAdminNav.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/audion/DashboardCard/MsqdxDashboardCard.tsx",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+MsqdxAppLayout uses MsqdxCornerBox which has headerJustify, headerAlign. I need to read the AppLayout to see if it accepts custom header content (e.g. right side). If not, the best approach is:
+
+1. Create a project layout that shows a bar below the main app header (inside the content area) with: [← Project name] and [SEO | Rankings | GEO | Research] (and optionally Performance, WCAG as disabled or links to #). So the "CHECKION" header stays as is; we add a project-specific row at the top of the content when we're in /projects/[id]/...
+
+2. To put the back button in the actual header (next to CHECKION), we'd need to change AppShell to pass something to MsqdxAppLayout - but the design system layout might not support custom header content. So I'll go with: project layout that renders a sticky or static bar at the top of the content with back button + nav tabs.
+
+Reading MsqdxAppLayout to see the structure.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS/msqdx-design-system/packages/react/src/components/layout/AppLayout/MsqdxAppLayout.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS/msqdx-design-system/packages/react/src/components/layout/AppLayout/MsqdxAppLayout.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The layout passes `children` directly - and in AppShell the children are the page content. The header is inside MsqdxCornerBox (logo + appName "CHECKION"). So we can't inject into the header without changing the design system.
+
+Best approach: create a project layout at app/projects/[id]/layout.tsx that:
+1. Fetches project name (or we use a client component that reads id from params and fetches)
+2. Renders a bar at the top: left = back button "← {projectName}", right or next row = tab nav (SEO/Übersicht, Rankings, GEO, Research, and placeholders Performance, WCAG)
+3. Then {children}
+
+So the structure will be:
+- AppShell > MsqdxAppLayout > [content area]
+  - When route is /projects/[id]/... the content is: ProjectLayout > [project bar with back + tabs] + [page children]
+
+I'll need i18n keys for the nav labels. Let me check if there are existing keys for "SEO", "GEO", "Rankings", "Performance", "WCAG".
+</details></think>
+
+---
+
+
+Checking i18n keys for project/nav and how the main project page is labeled:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "projects\\.(rankings|geo|research|seo|overview|performance|wcag)",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "projects\\.(rankings|geo|research|seo|overview|performance|wcag)",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 40,
+  "totalMatches": 265,
+  "topFiles": [
+    {
+      "uri": "./.specstory/history/2026-03-13_16-22Z-css-style-changes-for-forwardref-component.md",
+      "matchCount": 6
+    },
+    {
+      "uri": "./app/projects/[id]/rankings/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./.specstory/history/2026-03-12_20-42Z-integration-von-serpbear-bei-checkion.md",
+      "matchCount": 17
+    },
+    {
+      "uri": "./app/projects/[id]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/projects/[id]/research/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "./app/projects/[id]/geo/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "./components/ProjectResearchResultForm.tsx",
+      "matchCount": 16
+    },
+    {
+      "uri": "./.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-03-13_16-22Z-css-style-changes-for-forwardref-component.md",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-03-12_20-42Z-integration-von-serpbear-bei-checkion.md",
+      "matchCount": 17
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/research/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/geo/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/components/ProjectResearchResultForm.tsx",
+      "matchCount": 16
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-03-13_16-22Z-css-style-changes-for-forwardref-component.md",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-03-12_20-42Z-integration-von-serpbear-bei-checkion.md",
+      "matchCount": 17
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
 
 ---
 

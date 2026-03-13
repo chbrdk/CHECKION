@@ -11,12 +11,10 @@ import {
     MsqdxChip,
 } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
-import Link from 'next/link';
 import {
     apiProject,
     apiScanGeoEeatCreate,
     apiScanGeoEeatHistory,
-    pathProject,
     pathGeoEeat,
 } from '@/lib/constants';
 
@@ -216,14 +214,6 @@ export default function ProjectGeoPage() {
     return (
         <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 900, mx: 'auto' }}>
             <Stack sx={{ gap: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                    <Link href={pathProject(id)} style={{ textDecoration: 'none' }}>
-                        <MsqdxButton variant="outlined" size="small">
-                            ← {project.name}
-                        </MsqdxButton>
-                    </Link>
-                </Box>
-
                 <MsqdxMoleculeCard
                     title={t('projects.geoQueries')}
                     variant="flat"
