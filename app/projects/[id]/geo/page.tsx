@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Box, MenuItem, Select, FormControl, InputLabel, Dialog, DialogTitle, DialogContent } from '@mui/material';
+import { Box, Dialog, DialogTitle, DialogContent } from '@mui/material';
 import {
     MsqdxTypography,
     MsqdxButton,
@@ -13,14 +13,19 @@ import {
 import { useI18n } from '@/components/i18n/I18nProvider';
 import {
     apiProject,
-    apiScanGeoEeat,
     apiScanGeoEeatCreate,
     apiScanGeoEeatHistory,
+    apiProjectGeoQuestionHistory,
     pathGeoEeat,
 } from '@/lib/constants';
-import { buildPositionMatrix, extractHostname } from '@/components/CompetitivePositionDiagram';
 import { GeoQuestionCard } from '@/components/GeoQuestionCard';
-import type { GeoEeatIntensiveResult } from '@/lib/types';
+import type { GeoQuestionHistoryPoint } from '@/components/GeoQuestionCard';
+
+interface GeoQuestionHistoryItem {
+    queryText: string;
+    queryIndex: number;
+    points: GeoQuestionHistoryPoint[];
+}
 
 export default function ProjectGeoPage() {
     const params = useParams();
@@ -36,9 +41,8 @@ export default function ProjectGeoPage() {
     } | null>(null);
     const [loading, setLoading] = useState(true);
     const [geoRuns, setGeoRuns] = useState<Array<{ id: string; url: string; status: string; createdAt: string }>>([]);
-    const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
-    const [runPayload, setRunPayload] = useState<GeoEeatIntensiveResult | null>(null);
-    const [runPayloadLoading, setRunPayloadLoading] = useState(false);
+    const [questionHistory, setQuestionHistory] = useState<GeoQuestionHistoryItem[]>([]);
+    const [historyLoading, setHistoryLoading] = useState(false);
     const [addGeoQueryValue, setAddGeoQueryValue] = useState('');
     const [suggestGeoQueriesLoading, setSuggestGeoQueriesLoading] = useState(false);
     const [suggestGeoQueriesError, setSuggestGeoQueriesError] = useState<string | null>(null);
@@ -72,52 +76,32 @@ export default function ProjectGeoPage() {
             .then((data) => {
                 const runs = Array.isArray(data?.runs) ? data.runs : Array.isArray(data?.data) ? data.data : [];
                 setGeoRuns(runs);
-                if (runs.length > 0) {
-                    setSelectedRunId((prev) => {
-                        const stillInList = prev && runs.some((r: { id: string }) => r.id === prev);
-                        if (stillInList) return prev;
-                        const completed = runs.find((r: { status: string }) => r.status === 'complete');
-                        return completed?.id ?? runs[0]?.id ?? null;
-                    });
-                } else {
-                    setSelectedRunId(null);
-                }
             })
             .catch(() => setGeoRuns([]));
     }, [id]);
 
     useEffect(() => {
-        if (!selectedRunId) {
-            setRunPayload(null);
-            return;
-        }
+        if (!id) return;
         let cancelled = false;
-        setRunPayloadLoading(true);
-        setRunPayload(null);
-        fetch(apiScanGeoEeat(selectedRunId), { credentials: 'same-origin' })
+        setHistoryLoading(true);
+        setQuestionHistory([]);
+        fetch(apiProjectGeoQuestionHistory(id, 90), { credentials: 'same-origin' })
             .then((r) => r.json())
-            .then((data: { payload?: GeoEeatIntensiveResult }) => {
-                if (!cancelled && data?.payload) setRunPayload(data.payload);
+            .then((data: { success?: boolean; questions?: GeoQuestionHistoryItem[] }) => {
+                if (!cancelled && data?.success && Array.isArray(data.questions)) {
+                    setQuestionHistory(data.questions);
+                }
             })
             .catch(() => {
-                if (!cancelled) setRunPayload(null);
+                if (!cancelled) setQuestionHistory([]);
             })
             .finally(() => {
-                if (!cancelled) setRunPayloadLoading(false);
+                if (!cancelled) setHistoryLoading(false);
             });
         return () => { cancelled = true; };
-    }, [selectedRunId]);
+    }, [id]);
 
     const geoQueries = Array.isArray(project?.geoQueries) ? project.geoQueries : [];
-    const competitiveByModel = runPayload?.competitiveByModel && Object.keys(runPayload.competitiveByModel).length > 0
-        ? runPayload.competitiveByModel
-        : null;
-    const targetUrl = project?.domain ? (project.domain.includes('://') ? project.domain : `https://${project.domain}`) : '';
-    const targetDomain = useMemo(() => (targetUrl ? extractHostname(targetUrl) : ''), [targetUrl]);
-    const { rows: positionRows, modelIds } = useMemo(() => {
-        if (!competitiveByModel || !targetDomain) return { rows: [], modelIds: [] as string[] };
-        return buildPositionMatrix(competitiveByModel, targetDomain);
-    }, [competitiveByModel, targetDomain]);
 
     const handleAddGeoQuery = useCallback(async () => {
         const q = addGeoQueryValue.trim();
@@ -254,25 +238,8 @@ export default function ProjectGeoPage() {
 
     return (
         <Box sx={{ py: 'var(--msqdx-spacing-md)', px: 1.5, width: '100%', maxWidth: '100%' }}>
-            {/* Header: Lauf-Auswahl + Aktionen (wie SEO-Seite) */}
+            {/* Header: Aktionen (wie SEO-Seite) */}
             <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                {geoRuns.length > 0 && (
-                    <FormControl size="small" sx={{ minWidth: 260 }}>
-                        <InputLabel id="geo-run-select-label">{t('projects.geoEeatRuns')}</InputLabel>
-                        <Select
-                            labelId="geo-run-select-label"
-                            value={selectedRunId ?? ''}
-                            label={t('projects.geoEeatRuns')}
-                            onChange={(e) => setSelectedRunId((e.target.value as string) || null)}
-                        >
-                            {geoRuns.map((g) => (
-                                <MenuItem key={g.id} value={g.id}>
-                                    {new Date(g.createdAt).toLocaleString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} · {g.status}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                )}
                 <MsqdxButton
                     variant="contained"
                     brandColor="green"
@@ -292,8 +259,8 @@ export default function ProjectGeoPage() {
                 )}
             </Box>
 
-            {/* Inhalt: nur Frage-Cards (wie Keywords auf SEO-Seite) */}
-            {runPayloadLoading && (
+            {/* Inhalt: Frage-Cards mit Verlauf über alle Analysen (wie SEO Keywords mit Chart) */}
+            {historyLoading && (
                 <Box sx={{ py: 6, textAlign: 'center' }}>
                     <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
                         {t('common.loading')}
@@ -301,7 +268,7 @@ export default function ProjectGeoPage() {
                 </Box>
             )}
 
-            {!runPayloadLoading && positionRows.length > 0 && modelIds.length > 0 && (
+            {!historyLoading && questionHistory.length > 0 && (
                 <Box
                     sx={{
                         display: 'grid',
@@ -309,18 +276,24 @@ export default function ProjectGeoPage() {
                         gap: 2,
                     }}
                 >
-                    {positionRows.map((row) => (
-                        <GeoQuestionCard key={row.queryIndex} row={row} modelIds={modelIds} t={t} />
+                    {questionHistory.map((q, idx) => (
+                        <GeoQuestionCard
+                            key={q.queryText || `q-${q.queryIndex}-${idx}`}
+                            queryText={q.queryText}
+                            queryIndex={q.queryIndex}
+                            points={q.points}
+                            t={t}
+                        />
                     ))}
                 </Box>
             )}
 
-            {!runPayloadLoading && positionRows.length === 0 && geoRuns.length > 0 && selectedRunId && (
+            {!historyLoading && questionHistory.length === 0 && geoRuns.length > 0 && project?.domain && (
                 <Box sx={{ py: 6, textAlign: 'center' }}>
                     <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
                         {t('geoEeat.noResultsDisplay')}
                     </MsqdxTypography>
-                    <Link href={pathGeoEeat(selectedRunId)} style={{ textDecoration: 'none' }}>
+                    <Link href={pathGeoEeat(geoRuns[0]!.id)} style={{ textDecoration: 'none' }}>
                         <MsqdxButton variant="outlined" size="small">
                             {t('projects.open')}
                         </MsqdxButton>
@@ -328,7 +301,7 @@ export default function ProjectGeoPage() {
                 </Box>
             )}
 
-            {!runPayloadLoading && geoRuns.length === 0 && project?.domain && (
+            {!historyLoading && questionHistory.length === 0 && geoRuns.length === 0 && project?.domain && (
                 <Box sx={{ py: 6, textAlign: 'center' }}>
                     <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
                         {t('projects.emptyGeoEeatRuns')}

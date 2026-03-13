@@ -1,11 +1,19 @@
 'use client';
 
-import { useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Box, alpha } from '@mui/material';
-import { MsqdxTypography, MsqdxCard } from '@msqdx/react';
-import { MSQDX_BRAND_PRIMARY, MSQDX_NEUTRAL } from '@msqdx/tokens';
-import type { PositionMatrixRow } from '@/components/CompetitivePositionDiagram';
+import { useMemo, useState } from 'react';
+import {
+    LineChart,
+    Line,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    Legend,
+    ResponsiveContainer,
+} from 'recharts';
+import { Box } from '@mui/material';
+import { MsqdxTypography, MsqdxCard, MsqdxChip } from '@msqdx/react';
+import { MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
 
 const CHART_COLORS = [
     MSQDX_BRAND_PRIMARY?.green ?? '#22c55e',
@@ -18,25 +26,96 @@ const CHART_COLORS = [
     '#6366f1',
 ];
 
+const TIME_RANGES = [
+    { label: '7d', limit: 7 },
+    { label: '30d', limit: 30 },
+    { label: '90d', limit: 90 },
+    { label: '1J', limit: 365 },
+] as const;
+
+export interface GeoQuestionHistoryPoint {
+    recordedAt: string;
+    positionsByModel: Record<string, number | null>;
+}
+
 export interface GeoQuestionCardProps {
-    row: PositionMatrixRow;
-    modelIds: string[];
+    queryText: string;
+    queryIndex: number;
+    points: GeoQuestionHistoryPoint[];
     t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-/** Single question card with mini bar chart (position per LLM), like one keyword card on rankings page. */
-export function GeoQuestionCard({ row, modelIds, t }: GeoQuestionCardProps) {
-    const chartData = useMemo(
-        () =>
-            modelIds.map((modelId, idx) => {
-                const pos = row[modelId];
-                const num = typeof pos === 'number' && pos > 0 ? pos : 0;
-                return { modelId, position: num, fill: CHART_COLORS[idx % CHART_COLORS.length] };
-            }),
-        [modelIds, row]
-    );
+function formatDate(iso: string): string {
+    const d = new Date(iso);
+    return d.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: '2-digit' });
+}
 
-    const maxPos = Math.max(1, ...chartData.map((d) => d.position));
+/** Single question card with line chart over time (position per LLM per analysis), like RankTrackingChart. */
+export function GeoQuestionCard({ queryText, queryIndex, points, t }: GeoQuestionCardProps) {
+    const [timeRangeIndex, setTimeRangeIndex] = useState(1);
+    const limit = TIME_RANGES[timeRangeIndex]?.limit ?? 30;
+
+    const { modelIds, chartData, maxPos } = useMemo(() => {
+        if (points.length === 0) return { modelIds: [] as string[], chartData: [], maxPos: 10 };
+        const modelSet = new Set<string>();
+        for (const p of points) {
+            for (const k of Object.keys(p.positionsByModel)) modelSet.add(k);
+        }
+        const ids = Array.from(modelSet);
+        const sorted = [...points].sort(
+            (a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime()
+        );
+        const sliced = limit < 365 ? sorted.slice(-limit) : sorted;
+        const data = sliced.map((p) => {
+            const row: Record<string, string | number | null> = {
+                date: formatDate(p.recordedAt),
+                recordedAt: p.recordedAt,
+            };
+            for (const m of ids) {
+                row[m] = p.positionsByModel[m] ?? null;
+            }
+            return row;
+        });
+        let max = 6;
+        for (const row of data) {
+            for (const m of ids) {
+                const v = row[m];
+                if (typeof v === 'number' && v > 0 && v > max) max = v;
+            }
+        }
+        return { modelIds: ids, chartData: data, maxPos: Math.max(max, 6) };
+    }, [points, limit]);
+
+    const textMuted = 'var(--color-text-muted-on-light)';
+    const gridStroke = 'var(--color-border-subtle, #eee)';
+    const tooltipContentStyle = {
+        backgroundColor: 'var(--color-card-bg, #fff)',
+        border: `1px solid ${gridStroke}`,
+        borderRadius: 8,
+        fontSize: 11,
+    };
+
+    if (points.length === 0) {
+        return (
+            <MsqdxCard
+                variant="flat"
+                borderRadius="button"
+                sx={{
+                    p: 2,
+                    border: '1px solid var(--color-border-subtle, #eee)',
+                    bgcolor: 'var(--color-card-bg)',
+                    minHeight: 280,
+                }}
+            >
+                <MsqdxTypography variant="subtitle2" weight="semibold" sx={{ mb: 1 }}>
+                    {queryText || `${t('geoEeat.queryN', { n: queryIndex })}`}
+                </MsqdxTypography>
+                <MsqdxTypography variant="body2" sx={{ color: textMuted }}>
+                    {t('projects.rankChartNoData')}
+                </MsqdxTypography>
+            </MsqdxCard>
+        );
+    }
 
     return (
         <MsqdxCard
@@ -49,7 +128,7 @@ export function GeoQuestionCard({ row, modelIds, t }: GeoQuestionCardProps) {
                 color: 'var(--color-text-on-light)',
                 display: 'flex',
                 flexDirection: 'column',
-                minHeight: 280,
+                minHeight: 320,
             }}
         >
             <Box sx={{ px: 'var(--msqdx-spacing-sm)', pt: 'var(--msqdx-spacing-sm)', pb: 0 }}>
@@ -65,80 +144,58 @@ export function GeoQuestionCard({ row, modelIds, t }: GeoQuestionCardProps) {
                         minHeight: 0,
                     }}
                 >
-                    {row.queryText || `${t('geoEeat.queryN', { n: row.queryIndex })}`}
+                    {queryText || `${t('geoEeat.queryN', { n: queryIndex })}`}
                 </MsqdxTypography>
-                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mt: 0.5 }}>
-                    {t('geoEeat.positionDiagramYLabel')}
-                </MsqdxTypography>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 0.5, mt: 1, mb: 0.5 }}>
+                    {TIME_RANGES.map((tr, idx) => (
+                        <MsqdxChip
+                            key={tr.label}
+                            label={tr.label}
+                            variant={timeRangeIndex === idx ? 'filled' : 'outlined'}
+                            brandColor={timeRangeIndex === idx ? 'green' : undefined}
+                            size="small"
+                            onClick={() => setTimeRangeIndex(idx)}
+                            sx={{ cursor: 'pointer' }}
+                        />
+                    ))}
+                </Box>
             </Box>
-            <Box sx={{ flex: 1, minHeight: 180, width: '100%', px: 'var(--msqdx-spacing-sm)', py: 1 }}>
+            <Box sx={{ flex: 1, minHeight: 220, width: '100%', px: 'var(--msqdx-spacing-sm)', py: 0 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                        data={chartData}
-                        layout="vertical"
-                        margin={{ top: 4, right: 8, left: 8, bottom: 4 }}
-                    >
-                        <XAxis type="number" domain={[0, Math.max(maxPos, 5)]} hide />
+                    <LineChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 4 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} strokeWidth={1} />
+                        <XAxis
+                            dataKey="date"
+                            tick={{ fill: textMuted, fontSize: 10 }}
+                            stroke={gridStroke}
+                        />
                         <YAxis
-                            type="category"
-                            dataKey="modelId"
-                            width={80}
-                            tick={{ fontSize: 11, fill: 'var(--color-text-muted-on-light)' }}
-                            axisLine={false}
-                            tickLine={false}
+                            domain={[maxPos, 1]}
+                            reversed
+                            allowDataOverflow
+                            tick={{ fill: textMuted, fontSize: 10 }}
+                            stroke={gridStroke}
+                            width={24}
                         />
                         <Tooltip
-                            formatter={(value: number | undefined) => (value != null && value > 0 ? `${t('geoEeat.positionShort')} ${value}` : t('geoEeat.positionNotCited'))}
-                            labelFormatter={(label) => String(label)}
+                            contentStyle={tooltipContentStyle}
+                            formatter={(value: unknown) => (typeof value === 'number' && value > 0 ? `${t('geoEeat.positionShort')} ${value}` : t('geoEeat.positionNotCited'))}
                         />
-                        <Bar dataKey="position" radius={[0, 4, 4, 0]} maxBarSize={24} isAnimationActive>
-                            {chartData.map((entry, idx) => (
-                                <Cell
-                                    key={entry.modelId}
-                                    fill={entry.position > 0 ? entry.fill : alpha(MSQDX_NEUTRAL[200] ?? '#e5e7eb', 0.5)}
-                                />
-                            ))}
-                        </Bar>
-                    </BarChart>
+                        <Legend wrapperStyle={{ fontSize: 10 }} iconType="line" />
+                        {modelIds.map((modelId, idx) => (
+                            <Line
+                                key={modelId}
+                                type="monotone"
+                                dataKey={modelId}
+                                name={modelId}
+                                stroke={CHART_COLORS[idx % CHART_COLORS.length]}
+                                strokeWidth={2}
+                                dot={{ r: 2.5 }}
+                                connectNulls
+                            />
+                        ))}
+                    </LineChart>
                 </ResponsiveContainer>
-            </Box>
-            <Box
-                component="table"
-                sx={{
-                    width: '100%',
-                    borderCollapse: 'collapse',
-                    fontSize: 11,
-                    '& td': {
-                        borderTop: '1px solid var(--color-border-subtle, #eee)',
-                        px: 'var(--msqdx-spacing-sm)',
-                        py: 'var(--msqdx-spacing-xs)',
-                        color: 'var(--color-text-on-light)',
-                    },
-                    '& td:first-of-type': { color: 'var(--color-text-muted-on-light)' },
-                }}
-            >
-                <tbody>
-                    {chartData.map(({ modelId, position }) => {
-                        const pos = position > 0 ? position : null;
-                        const green = MSQDX_BRAND_PRIMARY?.green ?? '#22c55e';
-                        const bg =
-                            pos === 1
-                                ? alpha(green, 0.15)
-                                : pos === 2
-                                  ? alpha(green, 0.08)
-                                  : pos != null && pos <= 3
-                                    ? alpha(MSQDX_BRAND_PRIMARY?.yellow ?? '#f59e0b', 0.08)
-                                    : undefined;
-                        return (
-                            <tr key={modelId}>
-                                <td>{modelId}</td>
-                                <td style={{ backgroundColor: bg, fontWeight: 600 }}>
-                                    {pos != null && pos > 0 ? pos : '–'}
-                                </td>
-                            </tr>
-                        );
-                    })}
-                </tbody>
             </Box>
         </MsqdxCard>
     );

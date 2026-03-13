@@ -15554,3 +15554,1543 @@ HTML Element: <div class="MuiBox-root css-1sg4afn" data-cursor-element-id="curso
 
 ---
 
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants to change the GEO page layout:
+
+1. **Don't show** the two current cards as separate big cards:
+   - The "GEO-Fragen" card (with the form to add questions, "Frage hinzufügen", "Mit KI vorschlagen", and the list of queries like "best industrial pumps in Europe", etc.)
+   - The "Platzierung pro Frage und LLM" card (with the run selector and the diagram)
+
+2. **Instead**: Map the questions and their results directly into **individual cards** like on the SEO page. So similar to how the rankings page has one card per keyword with a chart inside, the GEO page should have **one card per question** (Frage) with that question's results/diagram inside.
+
+So the structure should be:
+- Remove the big "Platzierung pro Frage und LLM" card (with run selector + single diagram showing all questions)
+- Remove the big "GEO-Fragen" card (with add question form and chip list)
+- Show **one card per question** (like one card per keyword on SEO page), and inside each card show that question's results - presumably the position/mention data for that question across LLMs, similar to one "row" of the CompetitivePositionDiagram or a small chart.
+
+Let me look at the rankings page again - each keyword has a card with RankTrackingChart inside. So for GEO we need:
+- One card per "Frage" (query)
+- Each card shows: the question text (title) and the results for that question (e.g. position per LLM, or a small bar chart, or the same data we have in CompetitivePositionDiagram but for just that one question)
+
+The data we have: `competitiveByModel` is Record<string, CompetitiveBenchmarkResult>, and each CompetitiveBenchmarkResult has `runs: CompetitiveCitationRun[]` - each run corresponds to a query. So for each query index i we have one "question" and we can get the position of the target domain per model for that question.
+
+So the new layout:
+1. Run selector somewhere (maybe a small header bar or first line) - to choose which GEO run to show
+2. Then a grid of cards: **one card per question** (from the selected run's competitive data). Each card shows:
+   - Title: the question text (e.g. "best industrial pumps in Europe")
+   - Content: the results for that question - e.g. position per LLM (could be a small bar chart, or just a list of model -> position, or reuse part of CompetitivePositionDiagram for one row)
+
+I need to:
+1. Read the current geo page structure
+2. Read how CompetitivePositionDiagram works - can we show one row (one question) per card? Or do we need a new component that shows one question's data?
+3. Change the GEO page to: run selector at top, then grid of cards where each card = one question with its diagram/results
+
+Let me check CompetitivePositionDiagram - it takes competitiveByModel and targetUrl and builds a matrix of all questions. So we could either:
+- Split the diagram so we render one "row" per card (one question per card with a small chart for that question)
+- Or create a new component "QuestionResultCard" that takes one question's data (query text + position per model) and displays it in a card
+
+I'll look at the structure and implement.
+</details></think>
+
+---
+
+
+GEO-Seite umbauen: keine großen Karten mehr; stattdessen eine Karte pro Frage (wie bei den Keywords auf der SEO-Seite). Dafür die aktuelle Struktur und das Diagramm prüfen.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/CompetitivePositionDiagram.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to:
+
+1. Remove the two big cards (Platzierung pro Frage card and GEO-Fragen card).
+2. Remove the third card (GEO/EEAT Läufe) as a big card - or keep only a minimal header with run selector + "Neue Analyse starten" + list of runs as secondary.
+3. Build a list of "questions" - from either:
+   - The selected run's competitive data (competitiveByModel → first model's runs → one row per query), so we have one card per question with results from the run
+   - OR the project's geoQueries - but then we might not have results for each. So it's better to use the run's data: the questions come from the run (first model's runs[].query), and we have position per model for each.
+
+4. So the data source for "questions" is: when we have competitiveByModel and a selected run, we get rows from buildPositionMatrix (one row per question). Each row has queryText, queryIndex, and position per modelId.
+
+5. Layout: Like rankings page - a header line with run selector + "Neue Analyse starten" + maybe "Frage hinzufügen" / "Mit KI vorschlagen" that affect project.geoQueries (for future runs). Then a grid of cards: one card per question (from the selected run's competitive data). Each card shows:
+   - Title: question text
+   - Content: For that single question, show the position per LLM (small bar chart or a compact table row, or a single row of the diagram). So we need a component that shows one question's data - e.g. a small bar chart with one bar per model, or just the table row for that question.
+
+I'll create a component that displays one question's result (one row of the position matrix) - either a small horizontal bar chart or a compact list. Then the GEO page will have:
+- Top: Run selector dropdown + "Neue Analyse starten" button + "Frage hinzufügen" and "Mit KI vorschlagen" (so we still allow managing queries for the project, but in a compact way in the header)
+- Grid: one MsqdxCard per question (from the selected run's competitive data). Each card title = question text, content = that question's position per model (mini chart or table).
+
+If there are no runs or no competitive data, we show empty state with "GEO/EEAT starten" and maybe still show the list of project geoQueries as chips so they can add/remove, or we could have a single small "Fragen verwalten" area.
+
+Let me check the rankings page structure again for the header and grid.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So on rankings we have:
+1. Score card
+2. One big "Rankings" card with headerActions (Add keyword, Suggest, Refresh) and inside a **grid of keyword cards** - each keyword is a MsqdxCard with the keyword title and a RankTrackingChart inside.
+
+For GEO I need:
+1. No big "Platzierung" or "GEO-Fragen" cards.
+2. A header bar with: Run selector, "Neue Analyse starten", "Frage hinzufügen", "Mit KI vorschlagen" (like headerActions).
+3. A **grid of question cards** - one MsqdxCard per question. Each card shows the question text as title and the position-per-LLM as content (mini bar chart or table row).
+
+I need to export or reuse buildPositionMatrix from CompetitivePositionDiagram to get the rows. Or I can duplicate the logic in the page. Better: export buildPositionMatrix and the types from CompetitivePositionDiagram, then on the GEO page we build rows and render one card per row; each card content is a small chart (one bar per model for that row) or a compact table. Let me check - CompetitivePositionDiagram uses buildPositionMatrix internally. I could export PositionMatrixRow and a helper to build rows, then create a small "GeoQuestionCard" component that takes one row + modelIds + t and renders a card with a mini bar chart (one bar per model).
+
+Actually the simplest is: in the GEO page, we need the same rows/modelIds that CompetitivePositionDiagram uses. So we need to either:
+- Export buildPositionMatrix and the domain extraction from CompetitivePositionDiagram and use them in the page to get rows, then for each row render a card with a mini diagram (we need a component that takes one row and modelIds and renders the bar chart for just that row - i.e. one data point with one bar per model).
+- Or add a prop to CompetitivePositionDiagram like singleQuestionIndex and when set it only shows that one question - then we'd have one CompetitivePositionDiagram per card. That would be heavy (many charts). Better to have one small chart per card.
+
+So plan:
+1. Export from CompetitivePositionDiagram: buildPositionMatrix, extractHostname (or get targetDomain in page), PositionMatrixRow, and CHART_COLORS. Or we could put the "single row chart" in the diagram file as GeoQuestionCard that takes competitiveByModel, targetUrl, queryIndex, t.
+2. Create GeoQuestionCard component that takes one row (queryText, queryIndex, and modelId -> position) and renders a MsqdxCard with title=queryText and a small horizontal bar chart (one bar per model, value = position, or "–" if 0).
+3. GEO page: header with run selector + start + add question + suggest. Then if we have competitiveByModel and targetUrl, compute rows with buildPositionMatrix. Then grid of GeoQuestionCard for each row. If no run or no data, show empty state.
+
+Let me implement. I'll add a new component GeoQuestionCard that takes a row and modelIds and t, and renders a card with a mini chart. I need to get the rows in the page - so I need to either export buildPositionMatrix from CompetitivePositionDiagram or duplicate the logic. I'll export buildPositionMatrix and the helper getPositionForDomain/citationMatchesDomain and extractHostname from the diagram file, or I could just compute the rows in the page by calling a function that we export from CompetitivePositionDiagram. Let me export buildPositionMatrix and the type PositionMatrixRow from CompetitivePositionDiagram. The diagram already has buildPositionMatrix which takes competitiveByModel and targetDomain - so we need targetDomain in the page (we have targetUrl). So in the page: targetDomain = extractHostname(targetUrl). We need to export extractHostname and buildPositionMatrix from CompetitivePositionDiagram.
+
+Actually re-reading the CompetitivePositionDiagram code - buildPositionMatrix is not exported. I'll export it and PositionMatrixRow (already exported). I'll also need extractHostname - it's used inside the component. So export: buildPositionMatrix, extractHostname (or just use a simple extract in the page), PositionMatrixRow. Let me export buildPositionMatrix and the type. For extractHostname we can duplicate a one-liner in the page or export it. I'll export from CompetitivePositionDiagram: buildPositionMatrix, extractHostname, PositionMatrixRow.
+</details></think>
+
+---
+
+
+GEO-Seite umbauen: keine Sammelkarten; eine Karte pro Frage mit Ergebnis (wie bei den Keywords auf der SEO-Seite). Dafür die Matrix-Logik aus dem Diagramm nutzen und eine Komponente für eine einzelne Fragen-Karte erstellen.
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] Export buildPositionMatrix + extractHostname from CompetitivePositionDiagram
+- [ ] Add GeoQuestionCard component (one card per question with mini chart)
+- [ ] GEO page: header bar + grid of question cards only
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll export buildPositionMatrix and a helper to get target domain. Actually looking at the CompetitivePositionDiagram again - buildPositionMatrix takes (competitiveByModel, targetDomain). So in the GEO page we have competitiveByModel and targetUrl - we need to get targetDomain. I can copy the extractHostname logic into the page (it's small) or export it. I'll export extractHostname and buildPositionMatrix from the diagram component.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/CompetitivePositionDiagram.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/CompetitivePositionDiagram.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+buildPositionMatrix uses getPositionForDomain and citationMatchesDomain - they are not exported but that's fine, they're only used inside the same file. Now create GeoQuestionCard - a component that takes one PositionMatrixRow, modelIds, t, and renders a card with the question as title and a small bar chart (or compact list) of position per model.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Export buildPositionMatrix + extractHostname from CompetitivePositionDiagram
+- [-] Add GeoQuestionCard component (one card per question with mini chart)
+- [ ] GEO page: header bar + grid of question cards only
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/CompetitivePositionDiagram.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll create a new file GeoQuestionCard.tsx that takes a single row (PositionMatrixRow), modelIds, and t. It renders an MsqdxCard (like the keyword cards on rankings) with:
+- Title: row.queryText (or row.queryLabel as subtitle)
+- Content: A small horizontal bar chart - one bar per model, value = position (or show "–" for 0). So we need a BarChart with data = [{ modelId1: pos1, modelId2: pos2, ... }] for that one row. So data is just one object: { ...row } but we only want the model keys. So we can do a simple horizontal bar chart with data = modelIds.map(m => ({ name: m, position: row[m] })) and one Bar with dataKey="position". Or we could do a compact table: Model | Position. Let me use a small recharts BarChart (horizontal) - one bar per model, value is position, color by position (green for 1, etc.). I'll use the same CHART_COLORS. I need to export CHART_COLORS from the diagram or define in the card. I'll define a minimal set in the card and use BarChart.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/GeoQuestionCard.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Fix the caption - "Platz · X Fragen" doesn't make sense. It should be something like "X Modelle" or just the position label. Let me change to "modelIds.length Modelle" or use an existing key. Actually the second line could be "Position pro Modell" or just remove it. I'll use a simpler caption. And fix the table - in MUI Box component="table", the tbody contains tr/td. For the table we need proper table structure. Let me check - we have Box component="table" and then tbody - but Box with component="table" might not render tbody correctly. Let me use a normal table element or Box with display: table. Actually in the CompetitivePositionDiagram they use <Box component="table"> and then <thead><tr>...</tr></thead><tbody>...</tbody>. So the structure is Box as table, and thead/tbody are direct children. So we need thead? No, we only have body rows. So <Box component="table"><tbody><tr>...</tr></tbody></Box>. But Box component="table" might not accept tbody as child in React - actually it should, it just passes through. Let me keep it. The "queriesLabel" is "Fragen" - so "X Fragen" would mean X questions. We have modelIds.length models. So caption: "Platz · {modelIds.length} Modelle" or we could add a locale key. For now I'll use a simpler text: just "Position pro LLM" or similar. Let me check locales for something like "models" or "LLMs". I'll simplify to just not show that subtitle or use "modelIds.length Modelle".
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "Modelle|model|LLM",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "Modelle|model|LLM",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 20,
+  "topFiles": [
+    {
+      "uri": "locales/de.json",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 4
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/GeoQuestionCard.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/GeoQuestionCard.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The caption "Platz · X Fragen" - I used t('geoEeat.queriesLabel') which is "Fragen". So it says "Platz · 3 Fragen" for 3 models which is wrong. Let me change to "Position pro Modell" or remove the subtitle. I'll change to a simple "Platz pro LLM" style - we can use positionDiagramYLabel for "Platz" and then just not add "X Fragen". So: `{t('geoEeat.positionDiagramYLabel')}` only. And fix the table - in HTML, table > tbody > tr > td. So we need a proper table. Let me use <table> and <tbody> and <tr><td> - but we're in a Box. So <Box component="table"> ... - in React, when you use Box component="table", the children should be tbody. So <Box component="table" sx={{...}}><tbody>{...}</tbody></Box>. But then tr and td - in React, tbody must contain tr elements. So we're good. But wait - we have Box component="table" and then tbody - is tbody a valid child of a table? Yes. So the structure is correct. Let me just fix the subtitle to not say "X Fragen".
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/GeoQuestionCard.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+That's hacky. competitiveModelLabel is "Modell: {model}" so with model: '' we get "Modell: " and replace ': ' gives "Modell". So we'd get "Platz · 3 Modell" which is wrong (should be "Modelle"). Let me just use a simple string "Platz pro Modell" or leave it as "Platz" only.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/GeoQuestionCard.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now rewrite the GEO page: remove the two big cards (Platzierung + GEO-Fragen) and the third card (GEO/EEAT Läufe). Replace with:
+1. A header bar: run selector (dropdown) + "Neue Analyse starten" + "Frage hinzufügen" + "Mit KI vorschlagen" - so we need a way to add questions. The user said "direkt nur die fragen und ihre ergebnisse ... in einzelne cards". So the "Fragen verwalten" (add/remove/suggest) could be in the header as actions, and the list of questions comes from the selected run's data (not from project.geoQueries for display - we display run results). So when there's no run or no competitive data, we show empty state. When there is a run with data, we show one card per question from that run. The "Frage hinzufügen" and "Mit KI vorschlagen" are for configuring project.geoQueries for the next run - we could put them in a small dropdown or dialog, or in the header. Let me put in the header: Run selector | Start GEO/EEAT | Add question (opens dialog?) | Suggest with AI. And if no runs, show a single empty state card with "GEO/EEAT starten" and maybe a link to add questions (project settings). Actually re-reading the user message again: they don't want to show the big "GEO-Fragen" card and the big "Platzierung" card. They want "nur die fragen und ihre ergebnisse ... in einzelne cards". So the questions shown are from the run's results (the competitive data). So we don't show a separate "GEO-Fragen" management card - we only show question cards with results. Where do we put "Frage hinzufügen" and "Mit KI vorschlagen"? We could put them in the header so the user can still manage project queries for the next run. And "GEO/EEAT Läufe" - the list of runs and "Neue Analyse starten" - could also be in the header (run selector + start button). So the page becomes: Header: [Run selector] [Neue Analyse starten] [Frage hinzufügen] [Mit KI vorschlagen] Then grid of GeoQuestionCard for each question from the selected run. If no run or no data: empty state with "GEO/EEat starten" and optionally the run list somewhere (e.g. in a small "Läufe" dropdown or below the empty state). I'll implement: - Header with run select, Start button, Add question, Suggest. For "Frage hinzufügen" we need an inline form or a dialog - on the rankings page they have a dialog for add keyword. So we need a dialog for "Frage hinzufügen" (input + add) and the chips could be shown somewhere minimal or only in the dialog. Actually the user said they don't want to show the GEO-Fragen card at all - so we don't show the list of project geoQueries on the page. We only show the question cards (from run data). So the header can have: Run selector, Start, and maybe a small "Fragen verwalten" dropdown that opens a popover with add/suggest and list of project queries. Or we keep it minimal: Run selector, Start. And "Frage hinzufügen" / "Mit KI vorschlagen" could be in a menu or we remove them from this page and they're only on project settings. For simplicity I'll put in the header: Run selector, Start new run, and a "Fragen verwalten" button that toggles a small section below the header with add/suggest and chips - so we don't lose the functionality but it's collapsed. Or even simpler: just Run selector and Start. The "add question" and "suggest" are used to configure what questions to use for the *next* run - so we need them somewhere. I'll put them in the header as two buttons; when "Frage hinzufügen" is clicked we could show an inline input + Add, or a dialog. Let me do: Header row: Run selector (if runs) | Start GEO/EEAT | Add question (opens dialog with input + existing chips + Add) | Suggest with AI. So we need a dialog state for adding a question. Actually re-read again: "gar nicht anzeigen sondern direkt nur die fragen und ihre ergebnisse genau so in einzelne cards wie bei seo page". So they want to NOT show (1) the big diagram card and (2) the big GEO-Fragen card. And instead show only the questions and their results in individual cards. So the third card (GEO/EEAT Läufe with run list and start button) - do we show that? The user didn't say to remove it. They said don't show the first two and map to individual cards. So I'll keep a minimal header with run selector and start button (and optionally add/suggest). The "Läufe" list could be in a dropdown when you click the run selector - we already have the run selector. So the run selector dropdown shows the list of runs. So we don't need a separate "GEO/EEAT Läufe" card - the run selector is the way to pick a run, and we have a "Neue Analyse starten" button. So final layout: 1. Header: [Lauf: dropdown] [Neue Analyse starten] [Frage hinzufügen] [Mit KI vorschlagen] - and if no runs, no dropdown, just Start + add/suggest. 2. Grid of GeoQuestionCard - one per question from the selected run's competitive data. 3. If no run or no competitive data: show one empty state (no cards or one card saying "Keine Ergebnisse" with Start button). For "Frage hinzufügen" we need a dialog or inline form. I'll add a simple dialog: when you click "Frage hinzufügen", a dialog opens with the form (input + Add) and the list of current project geoQueries as chips (with delete). And "Mit KI vorschlagen" can be in that dialog too or next to it. So the header has: Run select, Start, and a button "Fragen verwalten" that opens a dialog with the current GEO-Fragen management UI (description, input, Add, Suggest, chips). That way we don't lose functionality but the main view is only the question cards.
+</details></think>
+
+---
+
+
+GEO-Seite umbauen: nur noch Header (Lauf-Auswahl, Aktionen) und Grid mit je einer Karte pro Frage.
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Export buildPositionMatrix + extractHostname from CompetitivePositionDiagram
+- [x] Add GeoQuestionCard component (one card per question with mini chart)
+- [-] GEO page: header bar + grid of question cards only
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Implement the GEO page. I need to:
+1. Import buildPositionMatrix, extractHostname from CompetitivePositionDiagram and GeoQuestionCard.
+2. Remove the three MsqdxMoleculeCards (Platzierung, GEO-Fragen, GEO/EEAT Läufe).
+3. Add a header Box with: run selector, Start button, and a "Fragen verwalten" button that opens a dialog (with add question form, suggest, chips).
+4. When we have competitiveByModel and targetUrl, compute rows and modelIds with buildPositionMatrix(competitiveByModel, extractHostname(targetUrl)). Then render a grid of GeoQuestionCard for each row.
+5. Empty state when no run or no data: show message + Start button (+ link to open run if a run is selected but no data).
+
+I'll need to add a dialog for "Fragen verwalten" that contains the current form (description, input, Add, Suggest, chips). Let me add state for dialog open and put the form content in a Dialog.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now add state for the "Fragen verwalten" dialog and replace the whole return body with header + grid + dialog.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now add the useMemo for rows and modelIds from competitiveByModel and targetUrl, and replace the entire return section with the new layout.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now replace the whole return block - remove the three big cards and use header + grid of GeoQuestionCard + dialog for manage queries.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Remove the unused listItemSx since we're not rendering the run list in a card anymore.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+GeoQuestionCard uses a table with tbody and tr - but the Box component="table" with tbody - in the card we have <Box component="table"> and then <tbody> - but Box with component="table" might not render tbody as child in React (it might strip it). Let me check - in React, when you do <Box component="table"><tbody>...</tbody></Box>, the Box will render as <table> and the tbody will be a child. So we get <table><tbody>...</tbody></table>. But wait - Box from MUI renders as a div by default, and with component="table" it renders as <table>. So the children (tbody) are passed through. So we get <table><tbody><tr>...</tr></tbody></table>. That's valid. But the sx on Box has '& td' - that targets td inside the table. So we're good. However I used '& td:first-of-type' - that might not work for table cells in the same way. Let me leave it.
+
+Also in GeoQuestionCard the table has two columns - modelId and position. So each row is one model. Good.
+
+Let me double-check the GeoQuestionCard - we're rendering a horizontal bar chart with layout="vertical", so YAxis is the modelId and XAxis is the position. The data is chartData = modelIds.map(...) so we have one bar per model. Good.
+
+Run the linter and build.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/GeoQuestionCard.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/GeoQuestionCard.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Remove unused Stack import from geo page if it's no longer used.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "Stack",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "Stack",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 5,
+  "topFiles": [
+    {
+      "uri": "app/projects/[id]/geo/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/geo/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/geo/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/geo/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/geo/page.tsx",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Stack is imported but not used. Remove it.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 6.8s
+  Running TypeScript ...
+Failed to compile.
+
+./components/GeoQuestionCard.tsx:91:29
+Type error: Type '(value: number) =&gt; string' is not assignable to type 'Formatter&lt;number, NameType&gt; &amp; ((value: number, name: NameType, item: Payload&lt;number, NameType&gt;, index: number, payload: Payload&lt;number, NameType&gt;[]) =&gt; ReactNode | [...])'.
+  Type '(value: number) =&gt; string' is not assignable to type 'Formatter&lt;number, NameType&gt;'.
+    Types of parameters 'value' and 'value' are incompatible.
+      Type 'number | undefined' is not assignable to type 'number'.
+        Type 'undefined' is not assignable to type 'number'.
+
+[0m [90m 89 |[39m                         [33m/[39m[33m&gt;[39m
+ [90m 90 |[39m                         [33m&lt;[39m[33mTooltip[39m
+[31m[1m&gt;[22m[39m[90m 91 |[39m                             formatter[33m=[39m{(value[33m:[39m number) [33m=&gt;[39m (value [33m&gt;[39m [35m0[39m [33m?[39m [32m&#96;${t('geoEeat.positionShort')} ${value}&#96;[39m [33m:[39m t([32m'geoEeat.positionNotCited'[39m))}
+ [90m    |[39m                             [31m[1m^[22m[39m
+ [90m 92 |[39m                             labelFormatter[33m=[39m{(label) [33m=&gt;[39m [33mString[39m(label)}
+ [90m 93 |[39m                         [33m/[39m[33m&gt;[39m
+ [90m 94 |[39m                         [33m&lt;[39m[33mBar[39m dataKey[33m=[39m[32m"position"[39m radius[33m=[39m{[[35m0[39m[33m,[39m [35m4[39m[33m,[39m [35m4[39m[33m,[39m [35m0[39m]} maxBarSize[33m=[39m{[35m24[39m} isAnimationActive[33m&gt;[39m[0m
+Next.js build worker exited with code: 1 and signal: null
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The Tooltip formatter in recharts expects (value, name, item, index, payload) and value can be number | undefined. Let me fix the type.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/GeoQuestionCard.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Recharts Tooltip formatter might expect a different signature. Let me check - the error said Formatter<number, NameType> which might have multiple parameters. So the formatter might need to return [string, string] for [value, name] or accept (value, name, ...). Let me try running the build again - if it still fails we might need to use a different signature.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 5.6s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+  Generating static pages using 9 workers (0/46) ...
+  Generating static pages using 9 workers (11/46) 
+  Generating static pages using 9 workers (22/46) 
+  Generating static pages using 9 workers (34/46) 
+✓ Generating static pages using 9 workers (46/46) in 267.2ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/register
+├ ƒ /api/auth/tokens
+├ ƒ /api/auth/tokens/[id]
+├ ƒ /api/checks/contrast
+├ ƒ /api/checks/pagespeed
+├ ƒ /api/checks/readability
+├ ƒ /api/checks/ssl
+├ ƒ /api/checks/wayback
+├ ƒ /api/health
+├ ƒ /api/journeys
+├ ƒ /api/journeys/[id]
+├ ƒ /api/projects
+├ ƒ /api/projects/[id]
+├ ƒ /api/projects/[id]/geo-summary
+├ ƒ /api/projects/[id]/ranking-summary
+├ ƒ /api/projects/[id]/research
+├ ƒ /api/projects/[id]/suggest-competitors
+├ ƒ /api/projects/[id]/suggest-keywords
+├ ƒ /api/rank-tracking/keywords
+├ ƒ /api/rank-tracking/keywords/[id]
+├ ƒ /api/rank-tracking/keywords/[id]/positions
+├ ƒ /api/rank-tracking/refresh
+├ ƒ /api/saliency/generate
+├ ƒ /api/saliency/result
+├ ƒ /api/scan
+├ ƒ /api/scan/[id]
+├ ƒ /api/scan/[id]/project
+├ ƒ /api/scan/[id]/screenshot
+├ ƒ /api/scan/[id]/summarize
+├ ƒ /api/scan/domain
+├ ƒ /api/scan/domain/[id]/journey
+├ ƒ /api/scan/domain/[id]/status
+├ ƒ /api/scan/domain/[id]/summarize
+├ ƒ /api/scan/domain/[id]/summary
+├ ƒ /api/scan/geo-eeat
+├ ƒ /api/scan/geo-eeat/[jobId]
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history/[runId]
+├ ƒ /api/scan/geo-eeat/[jobId]/project
+├ ƒ /api/scan/geo-eeat/[jobId]/rerun-competitive
+├ ƒ /api/scan/geo-eeat/[jobId]/status
+├ ƒ /api/scan/geo-eeat/history
+├ ƒ /api/scan/geo-eeat/suggest-competitors-queries
+├ ƒ /api/scan/journey-agent
+├ ƒ /api/scan/journey-agent/[jobId]
+├ ƒ /api/scan/journey-agent/[jobId]/live
+├ ƒ /api/scan/journey-agent/[jobId]/live/stream
+├ ƒ /api/scan/journey-agent/[jobId]/project
+├ ƒ /api/scan/journey-agent/[jobId]/video
+├ ƒ /api/scan/journey-agent/history
+├ ƒ /api/scans
+├ ƒ /api/scans/[id]
+├ ƒ /api/scans/domain
+├ ƒ /api/scans/domain/[id]
+├ ƒ /api/scans/domain/[id]/project
+├ ƒ /api/search
+├ ƒ /api/share
+├ ƒ /api/share/[token]
+├ ƒ /api/share/[token]/access
+├ ƒ /api/share/[token]/pages/[pageId]
+├ ƒ /api/share/[token]/pages/[pageId]/screenshot
+├ ƒ /api/share/[token]/video
+├ ƒ /api/share/by-resource
+├ ƒ /api/tools/contrast
+├ ƒ /api/tools/extract
+├ ƒ /api/tools/pagespeed
+├ ƒ /api/tools/readability
+├ ƒ /api/tools/ssl-labs
+├ ƒ /api/tools/wayback
+├ ƒ /developers
+├ ƒ /domain/[id]
+├ ƒ /geo-eeat/[jobId]
+├ ƒ /history
+├ ƒ /journey-agent/[jobId]
+├ ƒ /login
+├ ƒ /projects
+├ ƒ /projects/[id]
+├ ƒ /projects/[id]/geo
+├ ƒ /projects/[id]/rankings
+├ ƒ /projects/[id]/research
+├ ƒ /register
+├ ƒ /results/[id]
+├ ƒ /scan
+├ ƒ /scan/domain
+├ ƒ /settings
+└ ƒ /share/[token]
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build passed. Let me mark the todo complete.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Export buildPositionMatrix + extractHostname from CompetitivePositionDiagram
+- [x] Add GeoQuestionCard component (one card per question with mini chart)
+- [x] GEO page: header bar + grid of question cards only
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Done. Summarize for the user.
+</details></think>
+
+---
+
+
+Die GEO-Seite ist umgebaut. Zusammenfassung:
+
+## 1. Keine großen Sammelkarten mehr
+
+- Die Karte **„Platzierung pro Frage und LLM“** (mit einem großen Diagramm) gibt es nicht mehr.
+- Die Karte **„GEO-Fragen“** (Frage hinzufügen, Mit KI vorschlagen, Chips) gibt es nicht mehr im Hauptbereich.
+- Die Karte **„GEO/EEAT-Läufe“** (Start + Run-Liste) gibt es nicht mehr.
+
+## 2. Neuer Aufbau wie die SEO-Seite
+
+- **Header-Zeile** mit:
+  - **Lauf-Auswahl** (Dropdown, wenn Läufe vorhanden)
+  - **„GEO/EEAT starten“** bzw. **„Neue GEO/EEAT-Analyse“**
+  - **„GEO-Fragen“**-Button → öffnet einen Dialog zum Verwalten der Fragen (Frage hinzufügen, Mit KI vorschlagen, Chips wie bisher)
+- **Darunter nur ein Grid aus Frage-Cards** (analog zu den Keyword-Cards auf der Rankings-Seite):
+  - **Eine Karte pro Frage** aus dem gewählten Lauf
+  - Jede Karte: Fragetext als Titel, darunter **Mini-Balkendiagramm** (Platz pro LLM) und **kleine Tabelle** (Modell → Platz)
+
+## 3. Technik
+
+- **`CompetitivePositionDiagram`**: `buildPositionMatrix` und `extractHostname` werden exportiert.
+- **Neue Komponente `GeoQuestionCard`**: Eine Karte pro Frage mit horizontalem Balkendiagramm (ein Balken pro Modell) und Tabellenzeile (Modell | Platz), Optik angelehnt an die Keyword-Cards.
+- **Projekt-GEO-Seite**: Nutzt die Matrix aus dem gewählten Lauf, rendert nur das Header-Bar + Grid von `GeoQuestionCard` (+ leere Zustände, wenn kein Lauf oder keine Competitive-Daten). Fragen verwalten nur noch im Dialog über den Button „GEO-Fragen“.
+
+Build ist durchgelaufen. Wenn du willst, können wir noch z. B. das Styling der Frage-Cards oder die Dialog-Texte anpassen.
+
+---
+
+_**User**_
+
+gibt es keine andere diagrammform? momentan zeigen wir ja nur die einzelne analyse an, ich würde es aber gern eher so machen wie bei seo sodass jede analyse der frage angezeigt wird. heißt wenn wir mehrere geo analysen zu der frage gefahren haben, sollten alle platzierungen über die dauer angezeigt werden im diagramm
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants the GEO question cards to work more like the SEO/rankings page: instead of showing only a single analysis (one run), they want to show **all analyses over time** for each question. So if they've run multiple GEO analyses, the diagram should show the **position over time** (like the RankTrackingChart does for keywords - multiple data points over time, one line/bar per model or similar).
+
+So the requirement is:
+1. For each **question** (Frage), we need to show **historical data** - not just the latest run's position per LLM, but **positions over time** across all GEO runs that included that question.
+2. Similar to how on the rankings page each keyword has a chart showing position over time (RankTrackingChart with time series data).
+
+To implement this I need to:
+1. Understand how GEO/EEAT runs store data - we have competitive runs per job, and each run has queries and positions. So we have multiple "runs" (either the main job runs or the competitive re-runs). Let me check the data model.
+2. We need an API or data structure that gives us, for a given **project** and **query text** (or query index): a time series of (date/runId, positions per model). So for each question we need to aggregate across all project GEO runs that have that question and return the position per model per run date.
+3. Then each GeoQuestionCard would show a **line chart over time** (like RankTrackingChart) instead of a single bar chart.
+
+Let me look at:
+1. How ranking keyword positions are fetched (apiRankTrackingKeywordPositions) - it returns time series data.
+2. Whether we have or can create an API that returns "for this project, for this question (by text or by order), all runs with (runId/date, position per model)".
+3. The schema for geo_eeat runs and competitive runs.
+
+If we don't have such an API, we'd need to:
+- Either: fetch all project GEO runs and their payloads and on the client aggregate by question (matching by query text or index) and build time series. That could be heavy (many runs = many fetches).
+- Or: create a new API e.g. GET /api/projects/[id]/geo-question-history?query=... or by question index that returns time series for that question across all runs.
+
+Let me search for how rank tracking positions work and what the GEO competitive data structure looks like.
+</details></think>
+
+---
+
+
+Wir prüfen, wie die Rankings-Seite die Zeitverläufe lädt und wie wir dasselbe für GEO-Fragen abbilden können.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "apiRankTrackingKeywordPositions|positions",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.ts*",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "apiRankTrackingKeywordPositions|positions",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 90,
+  "totalMatches": 195,
+  "topFiles": [
+    {
+      "uri": "./components/RankTrackingChart.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/api/projects/[id]/ranking-summary/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./__tests__/api/project-ranking-summary.test.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "./lib/constants.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "./lib/db/schema.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/api/rank-tracking/keywords/[id]/positions/route.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "./app/api/rank-tracking/keywords/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/api/rank-tracking/refresh/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./lib/serp-api.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./__tests__/api/rank-tracking-keywords.test.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./mcp-server/node_modules/zod/src/v3/locales/en.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./mcp-server/node_modules/typescript/lib/lib.es2015.core.d.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./mcp-server/node_modules/typescript/lib/lib.dom.d.ts",
+      "matchCount": 6
+    },
+    {
+      "uri": "./mcp-server/node_modules/@types/node/inspector.generated.d.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "./mcp-server/node_modules/@types/node/child_process.d.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./mcp-server/node_modules/json-schema-typed/draft_2020_12.d.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./mcp-server/node_modules/json-schema-typed/draft_2019_09.d.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./tsconfig.tsbuildinfo",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/RankTrackingChart.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/ranking-summary/route.ts",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/geo-eeat-competitive-runs.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So for rankings we have:
+- rank_tracking_positions table: stores (keywordId, recordedAt, position, competitorPositions) - so time series per keyword
+- API: GET /api/rank-tracking/keywords/[id]/positions?limit= returns list of positions over time
+
+For GEO we have:
+- geo_eeat_runs (main job runs per project)
+- geo_eeat_competitive_runs: per geoEeatRunId, we have competitive runs with startedAt, completedAt, competitiveByModel (which has runs[].query and runs[].citations per model). So each "competitive run" is one point in time - we have multiple competitive runs per job (reruns) and multiple jobs (geo_eeat_runs) per project.
+
+So the "time series" for a given question would be: across all project GEO runs (geo_eeat_runs where projectId = X), and for each run we might have one or more competitive runs (geo_eeat_competitive_runs). For each competitive run we have competitiveByModel -> for each model -> runs[] array where runs[i] corresponds to query i. So we need to match "question" across runs - by query text (same question text) or by index (if the project always has the same ordered list of queries). Matching by query text is more robust.
+
+So the data we need: For project P, for question Q (query text):
+- Get all geo_eeat_runs for project P
+- For each run, get the latest competitive run (or all?) with completedAt, competitiveByModel
+- From competitiveByModel, find the run index where runs[i].query === Q (or normalize query for matching)
+- For that index, get position of target domain per model
+- So we get points: (completedAt or startedAt, { modelId: position }[])
+
+We don't currently have a table that stores "geo question position history" like rank_tracking_positions. The history is implicit: each geo_eeat_run has payload with competitiveByModel, and each competitive run has competitiveByModel. So we need to either:
+1. Create a new API that: fetches all project GEO runs, for each fetches the run's competitive data (from main payload or from competitive_runs table), aggregates by query text, and returns time series per question. This could be heavy.
+2. Create a new DB table that stores "geo_question_positions" - (project_id, query_text, run_id, completed_at, model_id, position) - and we'd need to populate it when competitive runs complete. Then an API could read from that. This is the "proper" way like rank_tracking_positions.
+
+Option 2 is cleaner long-term but requires a migration and populating the table (when do we insert? when a competitive run completes for a job that belongs to a project). Option 1 is quicker: an API that fetches all project runs (we already have apiScanGeoEeatHistory(projectId)), then for each run fetch the run details (apiScanGeoEeat(jobId)) to get payload.competitiveByModel, and on the client we could aggregate. But that's N+1 requests. Better: one API that returns "for project X, for each question (query text), the time series of (date, positions per model)". The backend would need to get all runs for the project, then for each run get the payload (from geo_eeat_runs.payload or from latest competitive run), extract for each query the position per model, and return. So we need a new API e.g. GET /api/projects/[id]/geo-question-positions?limit= that returns something like:
+{
+  questions: [
+    { queryText: "...", points: [{ recordedAt: "...", positionsByModel: { "gpt-4": 1, "claude": 2 } }, ...] },
+    ...
+  ]
+}
+
+That way we need to load all project runs and their payloads on the server - might be heavy if many runs. Alternatively we could return by question: GET /api/projects/[id]/geo-questions (list of unique query texts) and GET /api/projects/[id]/geo-questions/[queryId]/positions - but we don't have query IDs, we have query text. So the simpler approach is one endpoint that returns the full structure for the project.
+
+Let me check how geo_eeat_runs store the payload and whether we have competitive run history per job.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/rank-tracking/keywords/[id]/positions/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/geo-eeat-runs.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So we have:
+- geo_eeat_runs: id, projectId, payload (GeoEeatIntensiveResult with competitiveByModel), createdAt
+- geo_eeat_competitive_runs: id, geoEeatRunId, startedAt, completedAt, competitiveByModel, queries[]
+
+So for a project we have multiple geo_eeat_runs (each run has one payload with competitiveByModel when complete). We might also have multiple competitive_runs per geo_eeat_run (reruns). So the "time series" for a question could be:
+1. From geo_eeat_runs: each run has payload.competitiveByModel and run.createdAt (or updatedAt). So we get one point per run (when it completed).
+2. From geo_eeat_competitive_runs: for a given geo_eeat_run we might have multiple competitive runs (reruns), each with completedAt and competitiveByModel. So we get multiple points per job.
+
+So the full time series would be: all geo_eeat_runs for the project (ordered by date) + for each run, we could take either the main payload.competitiveByModel (if it's the initial run with competitive) or the latest competitive_run's competitiveByModel. Actually looking at the flow: when you run a GEO job, the main run has payload which may include competitiveByModel. When you "rerun competitive" you get a new row in geo_eeat_competitive_runs. So we have:
+- Points from geo_eeat_runs: run.createdAt (or updatedAt), payload.competitiveByModel (if present)
+- Points from geo_eeat_competitive_runs: completedAt, competitiveByModel
+
+We need to merge these: for each "point in time" we have (date, competitiveByModel). The question is how to match "the same question" across runs - by query text. So we need to build a list of unique query texts from all runs, then for each query text, build the time series of (date, position per model).
+
+Let me create:
+1. An API GET /api/projects/[id]/geo-question-history that:
+   - Gets all geo_eeat_runs for the project (listGeoEeatRunsByProject or we have history API)
+   - For each run, get competitive data: either from run.payload.competitiveByModel (if run is complete and has it) or from the latest geo_eeat_competitive_run for that job
+   - Build a map: queryText -> points[] where each point is { recordedAt, positionsByModel: { [modelId]: position } }
+   - Return { questions: { queryText, points }[] }
+
+2. On the client, GeoQuestionCard (or a new GeoQuestionChart) fetches this time series for its question and displays a LineChart like RankTrackingChart.
+
+Actually the API could return per-question time series. So we need to aggregate on the server. Let me check if we have listGeoEeatRunsByProject.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/geo-eeat-runs.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/geo-eeat/history/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to:
+1. Create a DB helper or API that for a project returns "question history": for each distinct query text, a list of points (recordedAt, positionsByModel). The data comes from: (a) geo_eeat_runs for project with payload.competitiveByModel, (b) geo_eeat_competitive_runs for each of those runs. So we need to get all runs for the project, then for each run get the competitive data (from payload or from latest competitive run), then extract per-query positions and aggregate by query text.
+2. Create GeoQuestionChart component (like RankTrackingChart): takes projectId, queryText, targetDomain (or we get from project), fetches the time series and displays a LineChart (date on X, position on Y, one line per model).
+3. On the GEO page we need to get the list of "questions" - unique query texts from all runs for the project. Then for each question we show a card with GeoQuestionChart (time series). So the flow is: we need either one API that returns everything (questions + their time series) or we need one API that returns time series per question (and we need to know the list of questions). The list of questions could come from the current project.geoQueries merged with query texts found in the history. Or we could have one endpoint that returns { questions: [{ queryText, points: [{ recordedAt, positionsByModel }] }] } so the client gets everything in one call. That way we can show a card per question with the chart. Let me implement the API first. We need a new route: GET /api/projects/[id]/geo-question-history?limit=90 that:
+- Gets user, project (check access)
+- listGeoEeatRuns(userId, limit, { projectId: id })
+- For each run (we have run.payload and run.id). We also need to check geo_eeat_competitive_runs for that run - listCompetitiveRunsByGeoEeatJob(run.id, userId). So for each run we have: - Main run: run.payload?.competitiveByModel, run.updatedAt (or createdAt?) - Competitive runs: listCompetitiveRunsByGeoEeatJob, take completed ones with competitiveByModel, use completedAt So we build a list of "samples": (date, competitiveByModel) from main run payload and from each completed competitive run. Then we need to extract by query: competitiveByModel has structure { [modelId]: { runs: [{ query, citations: [{ domain, position }] }] } }. So for each sample we have runs (array per model). The runs are aligned by index - runs[i] is the i-th query. So we need to get query text from the first model's runs[i].query, then for each model get position for target domain in runs[i].citations. So we need target domain - we get it from the project (project.domain). So the API needs project id, and we load project to get domain for position extraction. Steps: 1. Load project, get domain 2. List geo runs for project 3. For each run: get competitive data (payload.competitiveByModel or latest competitive run's competitiveByModel). Get date (run.updatedAt for payload, or competitive run's completedAt). 4. For each (date, competitiveByModel), extract target domain position per model per query index (using same buildPositionMatrix logic - we need to get rows). So we get for each sample a list of { queryIndex, queryText, positions: { modelId: position } }. 5. Aggregate by queryText (normalize?): map queryText -> points: [{ recordedAt, positionsByModel }]. 6. Return { success: true, targetDomain, questions: [{ queryText, points }] }.
+
+Let me implement this. First I need a helper that given competitiveByModel and targetDomain returns the list of (queryText, positionsByModel) for that sample. We have buildPositionMatrix which returns rows - each row has queryText and [modelId]: position. So for one sample we get rows. We then convert to points per question: for each row we have row.queryText and row has modelIds as keys with position values. So one sample gives us rows.length points (one per question), each with queryText and positionsByModel = { [modelId]: row[modelId] }. We aggregate: by queryText, collect { recordedAt, positionsByModel }.
+</details></think>
+
+---
+
+
+Implementierung: API für GEO-Fragen-Verlauf (Zeitreihe pro Frage) und ein Liniendiagramm wie bei der SEO-Seite.
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] API GET /api/projects/[id]/geo-question-history
+- [ ] GeoQuestionChart component (LineChart over time like RankTrackingChart)
+- [ ] GEO page: use question list + GeoQuestionChart per question
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/CompetitivePositionDiagram.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add a server-side helper that extracts "samples" (date + competitiveByModel) for a project, then builds question history. The buildPositionMatrix and getPositionForDomain use targetDomain - I can use the same logic on the server. I'll need to import or duplicate the extraction logic. Actually the extraction (getPositionForDomain, citationMatchesDomain) is in the component - I could put it in a shared lib or duplicate in the API. Let me create a small lib that both can use: lib/geo-eeat/position-matrix.ts with buildPositionMatrix and extractHostname (or we use the one from the component). Actually the API can import from the component file - but that might pull in React/recharts. Better: add a server-side only helper in lib/geo-eeat/ that takes competitiveByModel and targetDomain and returns rows. So I'll create lib/geo-eeat/position-from-competitive.ts with the same logic (citationMatchesDomain, getPositionForDomain, buildPositionMatrix) without React.
+</details></think>
+
+---
+
+
+Hilfsfunktionen für die Positions-Extraktion in eine gemeinsame Lib auslagern, dann die API und die Chart-Komponente implementieren.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/CompetitivePositionDiagram.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add a lib that can be used from the API (server) to build position matrix - we can import CompetitiveBenchmarkResult and the logic. Actually the API can import from CompetitivePositionDiagram - but that file imports recharts and MUI. So when Next runs the API route it would load that component. Let me check - API routes run on server and typically don't import client components. CompetitivePositionDiagram is a client component ('use client'). If the API imports buildPositionMatrix from it, the server might still execute the function (it's just a pure function). So it could work. Let me try having the API import buildPositionMatrix and extractHostname from the component file - if the API route only needs those two exports, the bundler might tree-shake the rest. Actually in Next.js, API routes are server-side and when they import from a file that has 'use client', the client boundary might pull in React. Safer to put the pure logic in a shared lib. I'll create lib/geo-eeat/position-matrix.ts with buildPositionMatrix and extractHostname (and the internal helpers). Then CompetitivePositionDiagram can re-export from there or import from there. So: 1. Create lib/geo-eeat/position-matrix.ts with extractHostname, buildPositionMatrix, PositionMatrixRow (and citationMatchesDomain, getPositionForDomain as internal). 2. Update CompetitivePositionDiagram to import from that lib. 3. Create API that uses that lib. 4. Create GeoQuestionChart and update GEO page.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat/competitive-benchmark.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "getProject|projectId",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects",
+  "outputMode": "files_with_matches",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "getProject|projectId",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects",
+  "outputMode": "files_with_matches",
+  "totalFiles": 30,
+  "totalMatches": 30,
+  "topFiles": [
+    {
+      "uri": "app/api/projects/[id]/ranking-summary/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/projects/[id]/geo-summary/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/projects/[id]/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/projects/[id]/suggest-keywords/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/projects/[id]/suggest-competitors/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/projects/[id]/research/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/ranking-summary/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/geo-summary/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/suggest-keywords/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/suggest-competitors/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/research/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/ranking-summary/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/geo-summary/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/suggest-keywords/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/suggest-competitors/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/research/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/ranking-summary/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/geo-summary/route.ts",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me check how project is loaded in one of those routes.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/geo-summary/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/rank-tracking-positions.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll create:
+1. lib/geo-eeat/position-matrix.ts - pure functions extractHostname, buildPositionMatrix (and helpers). Uses CompetitiveBenchmarkResult from types.
+2. API GET /api/projects/[id]/geo-question-history - gets project, listGeoEeatRuns(limit), for each run get competitive data (payload.competitiveByModel or listCompetitiveRunsByGeoEeatJob and take latest completed), build (recordedAt, competitiveByModel) list, then for each sample use buildPositionMatrix to get rows, aggregate by queryText into questions with points.
+3. GeoQuestionChart - fetches from that API (we need to pass projectId and get all questions - or we could have the chart fetch per question: GET .../geo-question-history?query=... but then we need to know the query. Easier: API returns all questions with their points. So the page fetches once and passes to each card the points for that question. So the page will need to fetch the full history and then render one card per question with the time series for that question.
+4. GeoQuestionCard becomes a card that shows the question and a LineChart (time on X, position on Y, one line per model). So we need to change GeoQuestionCard to accept points: { recordedAt, positionsByModel }[] and modelIds, and render LineChart.
+
+Let me implement. First the shared lib so the API can use it without importing from a client component.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat/position-matrix.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+

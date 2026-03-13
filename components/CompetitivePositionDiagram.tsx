@@ -16,6 +16,10 @@ import { Box, alpha } from '@mui/material';
 import { MsqdxTypography } from '@msqdx/react';
 import { MSQDX_BRAND_PRIMARY, MSQDX_SPACING, MSQDX_NEUTRAL, MSQDX_THEME } from '@msqdx/tokens';
 import type { CompetitiveBenchmarkResult } from '@/lib/types';
+import { extractHostname, buildPositionMatrix, type PositionMatrixRow } from '@/lib/geo-eeat/position-matrix';
+
+export { extractHostname, buildPositionMatrix };
+export type { PositionMatrixRow } from '@/lib/geo-eeat/position-matrix';
 
 const TABLE_BORDER = `1px solid ${MSQDX_NEUTRAL[200]}`;
 const br = MSQDX_SPACING.borderRadius as Record<string, unknown> | undefined;
@@ -24,80 +28,6 @@ const TABLE_RADIUS = typeof br?.sm === 'number' ? br.sm : 4;
 const BAR_RADIUS = typeof br?.xs === 'number' ? br.xs : 2;
 const scale = MSQDX_SPACING.scale as Record<string, unknown> | undefined;
 const spacingSm = typeof scale?.sm === 'number' ? scale.sm : 12;
-
-export function extractHostname(input: string): string {
-    const s = input.trim().toLowerCase();
-    try {
-        const u = new URL(s.startsWith('http') ? s : `https://${s}`);
-        return u.hostname.replace(/^www\./, '');
-    } catch {
-        return s.replace(/^www\./, '').split(/[/?#]/)[0] ?? s;
-    }
-}
-
-function citationMatchesDomain(citationDomain: string, ourDomain: string): boolean {
-    const c = citationDomain.toLowerCase().trim();
-    const d = ourDomain.toLowerCase().trim();
-    if (c === d) return true;
-    if (d.endsWith('.' + c)) return true;
-    if (c.endsWith('.' + d)) return true;
-    const dBase = d.split('.')[0];
-    if (dBase && c === dBase) return true;
-    if (dBase && c.startsWith(dBase + '.')) return true;
-    return false;
-}
-
-/** Get position of target domain in this run's citations (1-based), or null if not cited. */
-function getPositionForDomain(
-    run: { citations?: Array<{ domain?: string; position?: number }> },
-    targetDomain: string
-): number | null {
-    if (!run.citations?.length) return null;
-    const match = run.citations.find((c) =>
-        citationMatchesDomain((c.domain ?? '').trim(), targetDomain)
-    );
-    return match != null && typeof match.position === 'number' && match.position >= 1
-        ? match.position
-        : null;
-}
-
-export interface PositionMatrixRow {
-    queryIndex: number;
-    queryLabel: string;
-    queryText: string;
-    /** Position 1-based, or 0 if not cited (for chart/table). */
-    [modelId: string]: number | string;
-}
-
-/** For chart: use 0 for "not cited". For table: show "–" when value is 0 or null. */
-export function buildPositionMatrix(
-    competitiveByModel: Record<string, CompetitiveBenchmarkResult>,
-    targetDomain: string
-): { rows: PositionMatrixRow[]; modelIds: string[] } {
-    const modelIds = Object.keys(competitiveByModel);
-    if (modelIds.length === 0) return { rows: [], modelIds: [] };
-
-    const first = competitiveByModel[modelIds[0]!];
-    const runsCount = first?.runs?.length ?? 0;
-    if (runsCount === 0) return { rows: [], modelIds: [] };
-
-    const rows: PositionMatrixRow[] = [];
-    for (let i = 0; i < runsCount; i++) {
-        const row: PositionMatrixRow = {
-            queryIndex: i + 1,
-            queryLabel: `Q${i + 1}`,
-            queryText: first!.runs![i]?.query ?? '',
-        };
-        for (const modelId of modelIds) {
-            const result = competitiveByModel[modelId];
-            const run = result?.runs?.[i];
-            const pos = run ? getPositionForDomain(run, targetDomain) : null;
-            row[modelId] = pos ?? 0;
-        }
-        rows.push(row);
-    }
-    return { rows, modelIds };
-}
 
 const CHART_COLORS = [
     MSQDX_BRAND_PRIMARY?.green ?? '#22c55e',

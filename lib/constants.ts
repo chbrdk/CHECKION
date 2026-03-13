@@ -254,6 +254,11 @@ export const apiProjectResearch = (id: string) => `${API_PROJECTS}/${encodeURICo
 export const apiProjectRankingSummary = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/ranking-summary`;
 /** Build: GET /api/projects/[id]/geo-summary */
 export const apiProjectGeoSummary = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/geo-summary`;
+/** Build: GET /api/projects/[id]/geo-question-history?limit= */
+export const apiProjectGeoQuestionHistory = (id: string, limit?: number) => {
+    const base = `${API_PROJECTS}/${encodeURIComponent(id)}/geo-question-history`;
+    return limit != null ? `${base}?limit=${limit}` : base;
+};
 
 // ─── Other Paths ───────────────────────────────────────────────────────────
 /** Public path for the black MSQDX logo (PDF reports, print). Resolve with origin in browser: `${window.location.origin}${PDF_LOGO_PATH}` */
