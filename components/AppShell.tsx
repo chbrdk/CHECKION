@@ -51,6 +51,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                 borderColor: `${THEME_ACCENT_WITH_FALLBACK.borderColor} !important`,
             },
             '& > div:last-of-type > div > div:first-of-type': {
+                position: 'absolute !important',
+                top: 0,
+                left: 0,
+                zIndex: 100000,
                 backgroundColor: 'transparent !important',
                 color: 'var(--color-theme-accent-contrast, #ffffff) !important',
             },
@@ -93,6 +97,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                             minHeight: { xs: HEADER_HEIGHT_XS, md: HEADER_HEIGHT_MD },
                             backgroundColor: 'transparent',
                             overflow: 'visible',
+                            color: '#000',
                         }}
                     >
                         {isProjectRoute(pathname ?? null) ? <ProjectHeaderNav /> : null}

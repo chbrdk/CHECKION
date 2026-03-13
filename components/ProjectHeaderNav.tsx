@@ -43,15 +43,15 @@ export function ProjectHeaderNav() {
         : 'overview';
 
     return (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap', marginLeft: 'auto' }}>
             <Link href={id ? pathProject(id) : '/projects'} style={{ textDecoration: 'none' }}>
                 <MsqdxButton
                     variant="outlined"
                     size="small"
                     sx={{
-                        color: 'inherit',
+                        color: '#000',
                         borderColor: 'currentColor',
-                        '&:hover': { borderColor: 'currentColor', backgroundColor: 'rgba(255,255,255,0.1)' },
+                        '&:hover': { borderColor: 'currentColor', backgroundColor: 'rgba(0,0,0,0.06)' },
                     }}
                 >
                     ← {projectName ?? (id ? t('common.loading') : '…')}
@@ -64,11 +64,11 @@ export function ProjectHeaderNav() {
                 allowScrollButtonsMobile
                 sx={{
                     minHeight: 40,
-                    color: 'inherit',
+                    color: '#000',
                     '& .MuiTabs-flexContainer': { gap: 0 },
-                    '& .MuiTab-root': { minHeight: 40, py: 0, color: 'inherit', opacity: 0.85, textTransform: 'none' },
+                    '& .MuiTab-root': { minHeight: 40, py: 0, color: '#000', opacity: 0.85, textTransform: 'none' },
                     '& .Mui-selected': { opacity: 1, fontWeight: 600 },
-                    '& .MuiTabs-indicator': { backgroundColor: 'currentColor' },
+                    '& .MuiTabs-indicator': { backgroundColor: '#000' },
                 }}
             >
                 <Tab label={t('projects.navOverview')} value="overview" href={id ? pathProject(id) : '#'} component={Link} />
