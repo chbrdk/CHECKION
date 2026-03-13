@@ -649,6 +649,15 @@ export default function ProjectDetailPage() {
         borderBottom: '1px solid var(--color-border-subtle, #eee)',
     };
 
+    const researchTextareaStyle = {
+        width: '100%' as const,
+        padding: '8px 12px',
+        border: '1px solid var(--color-border-subtle)',
+        borderRadius: 4,
+        fontSize: 14,
+        resize: 'vertical' as const,
+    };
+
     return (
         <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1200, mx: 'auto' }}>
             <Stack sx={{ gap: 'var(--msqdx-spacing-lg)' }}>
@@ -745,14 +754,7 @@ export default function ProjectDetailPage() {
                                     value={researchResult.valueProposition ?? ''}
                                     onChange={handleResearchValuePropositionChange}
                                     rows={2}
-                                    style={{
-                                        width: '100%',
-                                        padding: '8px 12px',
-                                        border: '1px solid var(--color-border-subtle)',
-                                        borderRadius: 4,
-                                        fontSize: 14,
-                                        resize: 'vertical',
-                                    }}
+                                    style={researchTextareaStyle}
                                 />
                             </Box>
                             {/* SEO keywords */}

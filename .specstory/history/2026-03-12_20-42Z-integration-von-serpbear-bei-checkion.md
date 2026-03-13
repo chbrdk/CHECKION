@@ -23426,3 +23426,441 @@ Let me try extracting the entire Research result content into a separate compone
 
 ---
 
+
+Fehler besteht weiterhin bei derselben Stelle. Wir extrahieren den Research-Card-Inhalt in eine eigene Komponente, um das Problem zu isolieren.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The build fails at the MsqdxFormField. Maybe the issue is that in the Docker build, the MSQDX package has a different API - e.g. the FormField might not accept `onChange` with that signature, or there's a conflict. Let me try using a regular MUI/HTML input for the research card add fields instead of MsqdxFormField, to see if that's the culprit. We already use Box from @mui/material - so we have Input or TextField from MUI. Let me check what the page imports from MUI.
+
+Actually re-reading the error - "42.67   723 |                                         placeholder={t('projects.researchAdd')}" and the caret "^" - sometimes the caret points to the line above. So the error might be on line 722 which could be the closing of the previous element or the opening of MsqdxFormField. Let me try replacing MsqdxFormField in the Research card with a native <input> or MUI Input. That way we avoid any MSQDX FormField type/parse issue in the build.
+
+Let me check - does the project use MUI TextField or Input somewhere?
+</details></think>
+
+---
+
+
+Prüfen, ob wir in der Research-Card stattdessen ein natives `input` oder MUI-`Input` verwenden können, um den Build-Fehler zu umgehen:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "MsqdxFormField|Input|TextField",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app",
+  "outputMode": "content",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "MsqdxFormField|Input|TextField",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 450,
+  "topFiles": [
+    {
+      "uri": "app/projects/[id]/page.tsx",
+      "matchCount": 27
+    },
+    {
+      "uri": "app/register/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 27
+    },
+    {
+      "uri": "../CHECKION-1/app/register/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 27
+    },
+    {
+      "uri": "../CHECKION-1/app/register/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 27
+    },
+    {
+      "uri": "../CHECKION-1/app/register/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 27
+    },
+    {
+      "uri": "../CHECKION-1/app/register/page.tsx",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So the build fails at line 722 - the first MsqdxFormField inside the Research card. Other MsqdxFormField usages exist later in the file (880, 1071, etc.) with inline onChange. So the build might be failing at the first "complex" usage - the one inside `{researchResult && ( <Box>... )}`. Perhaps the issue is that when the build compiles, something about the conditional block or the way props are spread causes an error. Let me try replacing only the Research card's MsqdxFormField components with native <input> elements wrapped in Box for styling. That way we don't depend on MsqdxFormField in that block at all.
+</details></think>
+
+---
+
+
+Ersetze die MsqdxFormField-Komponenten in der Research-Card durch native `<input>`-Elemente, damit der Build nicht an der MSQDX-Komponente scheitert.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+handleResearchValuePropositionChange is typed for React.ChangeEvent<HTMLInputElement> but textarea also uses ChangeEvent<HTMLInputElement> in React (actually for textarea it's HTMLTextAreaElement). Let me check - in React, both input and textarea use the same event type for onChange in practice (React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>). So the handler that does e.target.value will work for both. We might need to fix the type of the handler to accept HTMLTextAreaElement too - but TypeScript might be fine since we're just reading e.target.value. Let me check lints.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. The value proposition handler takes React.ChangeEvent<HTMLInputElement> - for a textarea, the event is actually React.ChangeEvent<HTMLTextAreaElement>. So we might get a type error when we pass it to the textarea. Let me check - Box component="textarea" will pass through the onChange. The handler expects HTMLInputElement but we're passing from textarea. In practice both have .target.value. TypeScript might still allow it because the handler is (e: React.ChangeEvent<HTMLInputElement>) => void and we're passing an event that could be from textarea - actually React.ChangeEvent<HTMLTextAreaElement> is not assignable to React.ChangeEvent<HTMLInputElement> in strict mode. Let me check - no linter errors were found, so we're good. If there were type errors they'd show. So we're fine.
+</details></think>
+
+---
+
+
+In der Research-Card sind die **MsqdxFormField**-Komponenten durch **native Eingaben** ersetzt:
+
+1. **Zielgruppen, SEO-Keyword, GEO-Query, Competitor:**  
+   `Box component="input"` mit `placeholder`, `value`, `onChange` und angepassten Styles (Rahmen, Padding, Schriftgröße).
+
+2. **Value Proposition:**  
+   `Box component="textarea"` mit `value`, `onChange`, `rows={2}` und ähnlichen Styles.
+
+Damit wird in diesem Abschnitt keine MSQDX-FormField-Komponente mehr verwendet, die im Docker-Build Probleme machen könnte. Optik bleibt über die gleichen CSS-Variablen (z. B. `--color-border-subtle`) nah am Rest der App.
+
+Bitte den **Docker-Build erneut ausführen**. Wenn er durchläuft, war die Ursache sehr wahrscheinlich die Kombination aus MsqdxFormField und dem Build-Setup.
+
+---
+
+_**User**_
+
+2026-Mar-13 11:55:37.890298
+#17 [builder 6/6] RUN npm run build
+2026-Mar-13 11:55:37.890298
+#17 0.471
+2026-Mar-13 11:55:37.890298
+#17 0.471 > checkion@0.1.0 build
+2026-Mar-13 11:55:37.890298
+#17 0.471 > next build --webpack
+2026-Mar-13 11:55:37.890298
+#17 0.471
+2026-Mar-13 11:55:37.890298
+#17 1.094 ▲ Next.js 16.1.6 (webpack)
+2026-Mar-13 11:55:37.890298
+#17 1.094 - Experiments (use with caution):<REDACTED>@11.11.1
+2026-Mar-13 11:55:37.890298
+#17 43.69 npm notice
+2026-Mar-13 11:55:37.890298
+#17 ERROR: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+2026-Mar-13 11:55:37.890298
+------
+2026-Mar-13 11:55:37.890298
+> [builder 6/6] RUN npm run build:
+2026-Mar-13 11:55:37.890298
+43.33       |                                  ^
+2026-Mar-13 11:55:37.890298
+43.33   745 |                                     component="textarea"
+2026-Mar-13 11:55:37.890298
+43.33   746 |                                     value={researchResult.valueProposition ?? ''}
+2026-Mar-13 11:55:37.890298
+43.33   747 |                                     onChange={handleResearchValuePropositionChange}
+2026-Mar-13 11:55:37.890298
+43.49 Next.js build worker exited with code: 1 and signal: null
+2026-Mar-13 11:55:37.890298
+43.69 npm notice
+2026-Mar-13 11:55:37.890298
+43.69 npm notice New major version of npm available! 10.9.4 -> 11.11.1
+2026-Mar-13 11:55:37.890298
+43.69 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.11.1
+2026-Mar-13 11:55:37.890298
+43.69 npm notice To update run:<REDACTED>@11.11.1
+2026-Mar-13 11:55:37.890298
+43.69 npm notice
+2026-Mar-13 11:55:37.890298
+------
+2026-Mar-13 11:55:37.890298
+2026-Mar-13 11:55:37.890298
+36 warnings found (use docker --debug to expand):
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The build is now failing at the textarea - line 745-747. So the issue isn't specifically MsqdxFormField - it's something about this block of JSX. The caret points to line 745. Maybe the build chokes on `component="textarea"` with Box, or on the `??` operator in value, or on the handler reference. Let me try replacing the textarea with a simple div contentEditable or just a plain HTML textarea element (not Box component="textarea"). Using <textarea> directly might avoid whatever parsing/compilation issue the Docker build has.
+</details></think>
+
+---
+
+
+Build schlägt beim `Box component="textarea"` fehl. Ersetze das durch ein natives `<textarea>`.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+If the build still fails at the same area, the problem might be handleResearchValuePropositionChange - e.g. its type or the way it's referenced. Or it could be the `??` in value. Let me also try changing the value to a variable to avoid any ?? in JSX: value={researchResult.valueProposition || ''}. Actually let me leave it as is first and see if native textarea fixes it. If not, we could try moving the entire research result UI into a separate client component file.
+</details></think>
+
+---
+
+
+Die Value Proposition wird jetzt mit einem nativen `<textarea>` und inline-`style` umgesetzt statt mit `Box component="textarea"`. So entfällt die MUI-Box-`component`-Prop, die im Build Probleme machen kann.
+
+Bitte den **Docker-Build erneut ausführen**. Wenn der Fehler weiterhin bei dieser Stelle auftritt, können wir den gesamten Research-Ergebnis-Block in eine eigene Client-Komponente (z. B. `ProjectResearchCard.tsx`) auslagern.
+
+---
+
+_**User**_
+
+2026-Mar-13 11:58:00.704402
+#16 DONE 0.3s
+2026-Mar-13 11:58:00.704402
+2026-Mar-13 11:58:00.704402
+#17 [builder 6/6] RUN npm run build
+2026-Mar-13 11:58:00.704402
+#17 0.504
+2026-Mar-13 11:58:00.704402
+#17 0.504 > checkion@0.1.0 build
+2026-Mar-13 11:58:00.704402
+#17 0.504 > next build --webpack
+2026-Mar-13 11:58:00.704402
+#17 0.504
+2026-Mar-13 11:58:00.704402
+#17 1.368 ▲ Next.js 16.1.6 (webpack)
+2026-Mar-13 11:58:00.704402
+#17 1.368 - Experiments (use with caution):<REDACTED>@11.11.1
+2026-Mar-13 11:58:00.704402
+#17 46.19 npm notice
+2026-Mar-13 11:58:00.704402
+#17 ERROR: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+2026-Mar-13 11:58:00.704402
+------
+2026-Mar-13 11:58:00.704402
+> [builder 6/6] RUN npm run build:
+2026-Mar-13 11:58:00.704402
+45.89       |                                     ^
+2026-Mar-13 11:58:00.704402
+45.89   747 |                                     rows={2}
+2026-Mar-13 11:58:00.704402
+45.89   748 |                                     style={{
+2026-Mar-13 11:58:00.704402
+45.89   749 |                                         width: '100%',
+2026-Mar-13 11:58:00.704402
+45.99 Next.js build worker exited with code: 1 and signal: null
+2026-Mar-13 11:58:00.704402
+46.19 npm notice
+2026-Mar-13 11:58:00.704402
+46.19 npm notice New major version of npm available! 10.9.4 -> 11.11.1
+2026-Mar-13 11:58:00.704402
+46.19 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.11.1
+2026-Mar-13 11:58:00.704402
+46.19 npm notice To update run:<REDACTED>@11.11.1
+2026-Mar-13 11:58:00.704402
+46.19 npm notice
+2026-Mar-13 11:58:00.704402
+------
+2026-Mar-13 11:58:00.704402
+2026-Mar-13 11:58:00.704402
+36 warnings found (use docker --debug to expand):
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The build is still failing at the textarea - now at line 747 (rows={2}) or the style={{. The caret "^" often points to the beginning of the problematic construct. So it could be that the parser is choking on the multiline `style={{` object. In some minifiers or transpilers, a double curly brace right after a prop can be misinterpreted. Let me try:
+1. Moving the style to a variable outside JSX (e.g. const researchTextareaStyle = { ... }; then style={researchTextareaStyle})
+2. Or removing the value proposition field from the Research card temporarily to see if the rest builds - no, we need a fix.
+3. Or putting the textarea in a separate component.
+
+Let me try extracting the style object to a constant in the component, so the JSX doesn't have style={{ ... }}.
+</details></think>
+
+---
+
+
+Vermutlich verursacht das mehrzeilige `style={{ ... }}` den Fehler. Style in eine Variable auslagern:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add a constant for the textarea style near the top of the return (or before the research card section) and use it. Actually constants need to be inside the component but before the return. I'll add researchTextareaStyle next to listItemSx.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
