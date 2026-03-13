@@ -24433,8 +24433,6 @@ Research-Card-Inhalt in eine Variable auslagern und nur diese rendern:
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
 
-Status: **loading**
-
 </details>
 
 </tool-use>
@@ -24442,6 +24440,255 @@ Status: **loading**
 ---
 
 
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Actually, using an IIFE with JSX inside might cause the same kind of parsing issues in the build. Let me try a simpler approach: extract the Research card body into a separate component. That way the parent JSX is minimal and we avoid any parser quirks with conditionals and spread in the same block.
+</details></think>
+
+---
+
+
+IIFE mit JSX kann den Build weiter stören. Stattdessen den Research-Card-Inhalt in eine eigene Komponente auslagern:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ProjectResearchResultForm.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me revert the IIFE approach and instead create a small wrapper component that receives the research card props and renders the whole card content. That way the page only has one child inside MsqdxMoleculeCard. I'll create a component like ProjectResearchCardContent that takes all the needed props and returns the fragment with description, button, error, empty state, and form. Actually, the simpler fix might be to just use a single Box as wrapper with children - so we have one expression that evaluates to the content. Let me try reverting the IIFE and using a simple Box wrapper:
+
+<MsqdxMoleculeCard ...>
+  <Box>
+    <MsqdxTypography ... />
+    <MsqdxButton ... />
+    {researchError && <MsqdxTypography ... />}
+    ...
+  </Box>
+</MsqdxMoleculeCard>
+
+That way we don't have multiple conditional siblings - we have one Box and inside it the conditionals. Let me try that first since it's less invasive. Actually re-reading the error again - the caret is at line 734. So the parser might be complaining about something that ends at 734. Could it be that the spread operator in {...projectResearchResultFormProps} is misparsed? Let me try the Box wrapper approach - wrap all content in <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}> so there's a single child.
+</details></think>
+
+---
+
+
+IIFE rückgängig machen und stattdessen den Card-Inhalt in ein einzelnes umschließendes Element packen, damit der Parser nicht an mehreren Geschwister-Knoten scheitert:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Actually - the build error said the caret was at line 734, which was the closing </MsqdxMoleculeCard>. So the issue might not be the conditionals but something about the ProjectResearchResultForm or the way the closing tag is parsed. Let me check if there's a known issue with MsqdxMoleculeCard requiring a single child. Wrapping in Box might help. I changed conditionals from && to ternary with : null to avoid any potential "false" being rendered. Let me run the build to see if it passes. But first let me read the exact error again - "42.15       |                                                         ^" and "42.15   734 |                 </MsqdxMoleculeCard>" - so the ^ is somewhere around column 57 (many spaces then ^). So the parser might be pointing to the closing tag. Perhaps the issue is that one of the children is invalid - e.g. when projectResearchResultFormProps is an object with many properties, the spread might create a parsing issue in the build. Let me also try moving the ProjectResearchResultForm to a variable so the line is simpler:
+
+const researchForm = projectResearchResultFormProps ? <ProjectResearchResultForm {...projectResearchResultFormProps} /> : null;
+
+Then in JSX just {researchForm}. That way the spread is not in the same "block" as the closing tag. I already have the Box wrapper and ternary. Let me run linter and then suggest the user run the build.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+No linter errors. The change I made:
+1. Wrapped the entire Research card body in a single `<Box component="span" sx={{ display: 'block' }}>` so there's only one direct child of MsqdxMoleculeCard.
+2. Replaced `{condition && <X />}` with `{condition ? <X /> : null}` for researchError, empty state, and the form - to avoid any potential issues with rendering boolean false.
+
+If the build still fails, the next step would be to extract the Research card content into a separate component (e.g. ProjectResearchCardContent) so the page file has minimal JSX in that section.
+</details></think>
+
+---
+
+
+Zwei Anpassungen sind drin:
+
+1. **Ein Wrapper für den Card-Inhalt**  
+   Der komplette Inhalt der Research-Card liegt jetzt in einem `<Box component="span" sx={{ display: 'block' }}>`. So hat `MsqdxMoleculeCard` nur noch ein einziges Kind, was Parser-Probleme mit mehreren Geschwister-Knoten vermeiden soll.
+
+2. **Conditionals als Ternäre**  
+   Statt `{researchError && <...>}` und `{projectResearchResultFormProps && <...>}` wird überall `{condition ? <...> : null}` verwendet. So wird nie ein boolean (`false`) gerendert und die JSX-Struktur bleibt eindeutig.
+
+Bitte den Docker-Build erneut ausführen. Wenn der Fehler wieder bei derselben Stelle auftritt, können wir den Research-Card-Inhalt in eine eigene Client-Komponente (z. B. `ProjectResearchCardContent`) auslagern und in der Page nur diese Komponente rendern.
+
+---
+
+_**User**_
+
+2026-Mar-13 12:25:22.719551
+#17 ERROR: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+2026-Mar-13 12:25:22.719551
+------
+2026-Mar-13 12:25:22.719551
+> [builder 6/6] RUN npm run build:
+2026-Mar-13 12:25:22.719551
+42.42       |                              ^
+2026-Mar-13 12:25:22.719551
+42.42   736 |                         ) : null}
+2026-Mar-13 12:25:22.719551
+42.42   737 |                     </Box>
+2026-Mar-13 12:25:22.719551
+42.42   738 |                 </MsqdxMoleculeCard>
+2026-Mar-13 12:25:22.719551
+42.53 Next.js build worker exited with code: 1 and signal: null
+2026-Mar-13 12:25:22.719551
+42.73 npm notice
+2026-Mar-13 12:25:22.719551
+42.73 npm notice New major version of npm available! 10.9.4 -> 11.11.1
+2026-Mar-13 12:25:22.719551
+42.73 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.11.1
+2026-Mar-13 12:25:22.719551
+42.73 npm notice To update run:<REDACTED>@11.11.1
+2026-Mar-13 12:25:22.719551
+42.73 npm notice
+2026-Mar-13 12:25:22.719551
+------
+2026-Mar-13 12:25:22.719551
+
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The build is still failing at lines 736-738, around the ternary `) : null}` and the closing `</Box>` and `</MsqdxMoleculeCard>`. The caret points to around column 30. So the issue seems to be with the JSX that contains `<ProjectResearchResultForm {...projectResearchResultFormProps} />` - the spread or the component call might be confusing the parser in the Docker/Next build.
+
+Let me try extracting the Research card content into a separate client component. That way the project page will only have something like `<ProjectResearchCard ... />` with simple props (no spread of a big object in the same file). The new component will receive the props and render the MsqdxMoleculeCard with the form inside.
+</details></think>
+
+---
+
+
+Fehler weiterhin bei der Research-Card (Zeile 736). Wir lagern den gesamten Research-Card-Inhalt in eine eigene Client-Komponente aus, damit in der Page kein JSX mit Spread mehr vorkommt.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ProjectResearchResultForm.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The error is at line 736 `) : null}` - so the parser is choking on the ternary that renders ProjectResearchResultForm. I'll create a wrapper component `ProjectResearchCard` that takes all the needed props and renders the whole MsqdxMoleculeCard including the form. Then on the page we only render `<ProjectResearchCard ... />` with explicit props (no spread of a large object in the same JSX). The key is to avoid having the spread `{...projectResearchResultFormProps}` in the page's JSX at all.
+
+So:
+1. Create a new component `ProjectResearchCard` in e.g. `components/ProjectResearchCard.tsx`.
+2. It receives: the t function, researchLoading, researchError, researchResult, project.domain, handleRunResearch, and either projectResearchResultFormProps or all the individual props needed for the form.
+3. Inside ProjectResearchCard we can use the spread for ProjectResearchResultForm since that's in a different file - the build failure might be specific to this file.
+
+Actually, the issue might be that in this file we have something that the Next.js/SWC compiler doesn't like. Let me try the simplest fix first: render the form in a variable outside the JSX, then use the variable in JSX.
+
+So in the page, before the return:
+```
+const researchFormNode = projectResearchResultFormProps != null ? <ProjectResearchResultForm {...projectResearchResultFormProps} /> : null;
+```
+
+Then in JSX:
+```
+{researchFormNode}
+```
+
+That way the ternary and the spread are not in the same JSX tree - they're in a JavaScript statement. Let me try that.
+</details></think>
+
+---
+
+
+Rendern der Form in einer Variable außerhalb des JSX, damit der Build-Parser die Zeile mit Spread und Ternary nicht mehr im JSX-Baum parst.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
 
 ---
 

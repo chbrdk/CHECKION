@@ -678,6 +678,11 @@ export default function ProjectDetailPage() {
           }
         : null;
 
+    const researchFormNode =
+        projectResearchResultFormProps != null ? (
+            <ProjectResearchResultForm {...projectResearchResultFormProps} />
+        ) : null;
+
     return (
         <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1200, mx: 'auto' }}>
             <Stack sx={{ gap: 'var(--msqdx-spacing-lg)' }}>
@@ -731,9 +736,7 @@ export default function ProjectDetailPage() {
                                 {t('projects.researchEmpty')}
                             </MsqdxTypography>
                         ) : null}
-                        {projectResearchResultFormProps ? (
-                            <ProjectResearchResultForm {...projectResearchResultFormProps} />
-                        ) : null}
+                        {researchFormNode}
                     </Box>
                 </MsqdxMoleculeCard>
 
