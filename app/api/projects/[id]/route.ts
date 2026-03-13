@@ -72,6 +72,7 @@ export async function PATCH(
     const updated = await updateProject(id, user.id, {
         ...(parsed.name !== undefined && { name: parsed.name }),
         ...(parsed.domain !== undefined && { domain: parsed.domain }),
+        ...(parsed.valueProposition !== undefined && { valueProposition: parsed.valueProposition }),
         ...(parsed.competitors !== undefined && { competitors: parsed.competitors }),
         ...(parsed.geoQueries !== undefined && { geoQueries: parsed.geoQueries }),
     });

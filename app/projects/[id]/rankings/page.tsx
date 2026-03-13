@@ -1,0 +1,464 @@
+'use client';
+
+import { useCallback, useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import { Box, Dialog, DialogTitle, DialogContent, DialogActions, Stack } from '@mui/material';
+import {
+    MsqdxTypography,
+    MsqdxButton,
+    MsqdxMoleculeCard,
+    MsqdxFormField,
+    MsqdxChip,
+} from '@msqdx/react';
+import { useI18n } from '@/components/i18n/I18nProvider';
+import Link from 'next/link';
+import {
+    apiProject,
+    apiRankTrackingKeywords,
+    apiRankTrackingKeyword,
+    apiRankTrackingRefresh,
+    API_RANK_TRACKING_KEYWORDS,
+    pathProject,
+} from '@/lib/constants';
+import { SERP_MAIN_MARKETS } from '@/lib/serp-markets';
+import { RankTrackingChart } from '@/components/RankTrackingChart';
+
+interface RankKeywordItem {
+    id: string;
+    domain: string;
+    keyword: string;
+    country?: string;
+    language?: string;
+    device?: string;
+    lastPosition?: number;
+    lastRecordedAt?: string;
+    lastCompetitorPositions?: Record<string, number | null>;
+}
+
+export default function ProjectRankingsPage() {
+    const params = useParams();
+    const { t } = useI18n();
+    const id = typeof params.id === 'string' ? params.id : params.id?.[0] ?? null;
+    const [project, setProject] = useState<{ id: string; name: string; domain: string | null; competitors?: string[] } | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [rankKeywords, setRankKeywords] = useState<RankKeywordItem[]>([]);
+    const [addKeywordOpen, setAddKeywordOpen] = useState(false);
+    const [addKeywordDomain, setAddKeywordDomain] = useState('');
+    const [addKeywordKeyword, setAddKeywordKeyword] = useState('');
+    const [addKeywordMarket, setAddKeywordMarket] = useState('');
+    const [addKeywordDevice, setAddKeywordDevice] = useState('');
+    const [addKeywordSubmitting, setAddKeywordSubmitting] = useState(false);
+    const [refreshLoading, setRefreshLoading] = useState(false);
+    const [refreshError, setRefreshError] = useState<string | null>(null);
+    const [suggestKeywordsLoading, setSuggestKeywordsLoading] = useState(false);
+    const [suggestKeywordsError, setSuggestKeywordsError] = useState<string | null>(null);
+    const [suggestedKeywords, setSuggestedKeywords] = useState<string[]>([]);
+    const [selectedSuggestedKeywords, setSelectedSuggestedKeywords] = useState<Set<string>>(new Set());
+    const [chartExpandedKeywordId, setChartExpandedKeywordId] = useState<string | null>(null);
+
+    const loadProject = useCallback(async () => {
+        if (!id) return;
+        setLoading(true);
+        try {
+            const res = await fetch(apiProject(id), { credentials: 'same-origin' });
+            const data = await res.json();
+            if (data?.data) setProject(data.data);
+            else setProject(null);
+        } catch {
+            setProject(null);
+        } finally {
+            setLoading(false);
+        }
+    }, [id]);
+
+    const loadKeywords = useCallback(async () => {
+        if (!id) return;
+        const listRes = await fetch(apiRankTrackingKeywords(id), { credentials: 'same-origin' });
+        const listData = await listRes.json();
+        setRankKeywords(Array.isArray(listData?.data) ? listData.data : []);
+    }, [id]);
+
+    useEffect(() => {
+        loadProject();
+    }, [loadProject]);
+
+    useEffect(() => {
+        if (!id) return;
+        loadKeywords();
+    }, [id, loadKeywords]);
+
+    const competitors = Array.isArray(project?.competitors) ? project.competitors : [];
+
+    const handleAddKeyword = useCallback(async () => {
+        const [country, language] = addKeywordMarket ? addKeywordMarket.split('-') : ['', ''];
+        if (!id || !addKeywordDomain.trim() || !addKeywordKeyword.trim() || !country || !language) return;
+        setAddKeywordSubmitting(true);
+        try {
+            const res = await fetch(API_RANK_TRACKING_KEYWORDS, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    projectId: id,
+                    domain: addKeywordDomain.trim(),
+                    keyword: addKeywordKeyword.trim(),
+                    country,
+                    language,
+                    device: addKeywordDevice.trim() || undefined,
+                }),
+            });
+            const data = await res.json();
+            if (data?.success) {
+                setAddKeywordOpen(false);
+                setAddKeywordDomain('');
+                setAddKeywordKeyword('');
+                setAddKeywordMarket('');
+                setAddKeywordDevice('');
+                loadProject();
+                loadKeywords();
+            }
+        } finally {
+            setAddKeywordSubmitting(false);
+        }
+    }, [id, addKeywordDomain, addKeywordKeyword, addKeywordMarket, addKeywordDevice, loadProject, loadKeywords]);
+
+    const handleSuggestKeywords = useCallback(async () => {
+        if (!id) return;
+        setSuggestKeywordsError(null);
+        setSuggestedKeywords([]);
+        setSelectedSuggestedKeywords(new Set());
+        setSuggestKeywordsLoading(true);
+        try {
+            const res = await fetch(`/api/projects/${id}/suggest-keywords`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({}),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && Array.isArray(data.keywords)) {
+                setSuggestedKeywords(data.keywords);
+            } else if (!res.ok && typeof data?.error === 'string') {
+                setSuggestKeywordsError(data.error);
+            } else if (!res.ok) {
+                setSuggestKeywordsError(t('common.error'));
+            }
+        } catch {
+            setSuggestKeywordsError(t('common.error'));
+        } finally {
+            setSuggestKeywordsLoading(false);
+        }
+    }, [id, t]);
+
+    const handleToggleSuggestedKeyword = useCallback((kw: string) => {
+        setSelectedSuggestedKeywords((prev) => {
+            const next = new Set(prev);
+            if (next.has(kw)) next.delete(kw);
+            else next.add(kw);
+            return next;
+        });
+    }, []);
+
+    const handleAddSelectedKeywords = useCallback(async () => {
+        if (!id || !project?.domain || selectedSuggestedKeywords.size === 0) return;
+        const market = SERP_MAIN_MARKETS[0];
+        const [country, language] = market ? [market.country, market.language] : ['de', 'de'];
+        const domain = project.domain.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0] ?? project.domain;
+        for (const keyword of selectedSuggestedKeywords) {
+            try {
+                await fetch(API_RANK_TRACKING_KEYWORDS, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        projectId: id,
+                        domain,
+                        keyword: keyword.trim(),
+                        country,
+                        language,
+                    }),
+                });
+            } catch {
+                // continue
+            }
+        }
+        setSuggestedKeywords([]);
+        setSelectedSuggestedKeywords(new Set());
+        loadProject();
+        loadKeywords();
+    }, [id, project?.domain, selectedSuggestedKeywords, loadProject, loadKeywords]);
+
+    const handleRefreshRankings = useCallback(async () => {
+        if (!id) return;
+        setRefreshError(null);
+        setRefreshLoading(true);
+        try {
+            const res = await fetch(apiRankTrackingRefresh(), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ projectId: id }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data?.success) {
+                loadProject();
+                loadKeywords();
+            } else if (!res.ok && typeof data?.error === 'string') {
+                setRefreshError(data.error);
+            } else if (!res.ok) {
+                setRefreshError(res.status === 502 ? t('projects.rankingsRefresh502') : t('common.error'));
+            }
+        } catch {
+            setRefreshError(t('common.error'));
+        } finally {
+            setRefreshLoading(false);
+        }
+    }, [id, loadProject, loadKeywords, t]);
+
+    const handleDeleteKeyword = useCallback(async (keywordId: string) => {
+        if (!id) return;
+        try {
+            const res = await fetch(apiRankTrackingKeyword(keywordId), { method: 'DELETE', credentials: 'same-origin' });
+            if (res.ok) {
+                loadProject();
+                setRankKeywords((prev) => prev.filter((k) => k.id !== keywordId));
+            }
+        } catch {
+            // ignore
+        }
+    }, [id, loadProject]);
+
+    const listItemSx = {
+        display: 'flex' as const,
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        py: 1,
+        px: 1.5,
+        borderBottom: '1px solid var(--color-border-subtle, #eee)',
+    };
+
+    if (!id) {
+        return (
+            <Box sx={{ p: 'var(--msqdx-spacing-md)' }}>
+                <MsqdxTypography variant="body2">{t('common.error')}</MsqdxTypography>
+            </Box>
+        );
+    }
+
+    if (loading || !project) {
+        return (
+            <Box sx={{ p: 'var(--msqdx-spacing-md)' }}>
+                <MsqdxTypography variant="body2">{loading ? t('common.loading') : t('common.error')}</MsqdxTypography>
+            </Box>
+        );
+    }
+
+    return (
+        <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 900, mx: 'auto' }}>
+            <Stack sx={{ gap: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                    <Link href={pathProject(id)} style={{ textDecoration: 'none' }}>
+                        <MsqdxButton variant="outlined" size="small">
+                            ← {project.name}
+                        </MsqdxButton>
+                    </Link>
+                </Box>
+
+                <MsqdxMoleculeCard
+                    title={t('projects.rankings')}
+                    variant="flat"
+                    borderRadius="lg"
+                    footerDivider={false}
+                    sx={{ bgcolor: 'var(--color-card-bg)' }}
+                >
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                        <MsqdxButton variant="contained" brandColor="green" size="small" onClick={() => setAddKeywordOpen(true)}>
+                            {t('projects.addKeyword')}
+                        </MsqdxButton>
+                        <MsqdxButton
+                            variant="outlined"
+                            size="small"
+                            onClick={handleSuggestKeywords}
+                            disabled={suggestKeywordsLoading || !project.domain}
+                        >
+                            {suggestKeywordsLoading ? t('common.loading') : t('projects.suggestKeywordsWithAi')}
+                        </MsqdxButton>
+                        <MsqdxButton variant="outlined" size="small" onClick={handleRefreshRankings} disabled={refreshLoading}>
+                            {refreshLoading ? t('common.loading') : t('projects.refreshRankings')}
+                        </MsqdxButton>
+                    </Box>
+                    {suggestKeywordsError && (
+                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-status-error)', display: 'block', mb: 1 }}>
+                            {suggestKeywordsError}
+                        </MsqdxTypography>
+                    )}
+                    {suggestedKeywords.length > 0 && (
+                        <Box sx={{ mb: 2 }}>
+                            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                                {t('projects.suggestedKeywords')}
+                            </MsqdxTypography>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
+                                {suggestedKeywords.map((kw) => (
+                                    <MsqdxChip
+                                        key={kw}
+                                        label={kw}
+                                        onClick={() => handleToggleSuggestedKeyword(kw)}
+                                        color={selectedSuggestedKeywords.has(kw) ? 'primary' : 'default'}
+                                        variant={selectedSuggestedKeywords.has(kw) ? 'filled' : 'outlined'}
+                                        size="small"
+                                        sx={{ cursor: 'pointer', mb: 0.5 }}
+                                    />
+                                ))}
+                            </Box>
+                            <MsqdxButton
+                                variant="contained"
+                                size="small"
+                                onClick={handleAddSelectedKeywords}
+                                disabled={selectedSuggestedKeywords.size === 0}
+                            >
+                                {t('projects.addSelectedKeywords')} ({selectedSuggestedKeywords.size})
+                            </MsqdxButton>
+                        </Box>
+                    )}
+                    {refreshError && (
+                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-status-error)', mb: 1 }}>
+                            {refreshError}
+                        </MsqdxTypography>
+                    )}
+                    {rankKeywords.length === 0 && suggestedKeywords.length === 0 ? (
+                        <Box sx={{ py: 4, textAlign: 'center' }}>
+                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
+                                {t('projects.emptyRankings')}
+                            </MsqdxTypography>
+                            <MsqdxButton variant="contained" brandColor="green" onClick={() => setAddKeywordOpen(true)}>
+                                {t('projects.addKeyword')}
+                            </MsqdxButton>
+                        </Box>
+                    ) : (
+                        <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
+                            {rankKeywords.map((k) => (
+                                <Box
+                                    key={k.id}
+                                    component="li"
+                                    sx={{ borderBottom: '1px solid var(--color-border-subtle, #eee)' }}
+                                >
+                                    <Box sx={{ ...listItemSx, flexWrap: 'wrap', gap: 1, borderBottom: 'none' }}>
+                                        <Box sx={{ minWidth: 0, flex: '1 1 200px' }}>
+                                            <MsqdxTypography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {k.domain} — {k.keyword}
+                                            </MsqdxTypography>
+                                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                                {k.country && k.language ? `${k.country}/${k.language} · ` : ''}
+                                                {t('projects.lastPosition')}: {k.lastPosition != null ? k.lastPosition : '—'}
+                                                {k.lastCompetitorPositions && Object.keys(k.lastCompetitorPositions).length > 0 && (
+                                                    <> · {Object.entries(k.lastCompetitorPositions)
+                                                        .filter(([, pos]) => pos != null)
+                                                        .map(([dom, pos]) => `${dom}: ${pos}`)
+                                                        .join(' · ')}
+                                                    </>
+                                                )}
+                                                {' · '}{t('projects.lastUpdate')}: {k.lastRecordedAt ? new Date(k.lastRecordedAt).toLocaleDateString() : '—'}
+                                            </MsqdxTypography>
+                                        </Box>
+                                        <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                            <MsqdxButton
+                                                variant="outlined"
+                                                size="small"
+                                                onClick={() => setChartExpandedKeywordId((cur) => (cur === k.id ? null : k.id))}
+                                            >
+                                                {chartExpandedKeywordId === k.id ? t('projects.rankChartHide') : t('projects.rankChartShow')}
+                                            </MsqdxButton>
+                                            <MsqdxButton variant="outlined" size="small" color="error" onClick={() => handleDeleteKeyword(k.id)}>
+                                                {t('projects.deleteKeyword')}
+                                            </MsqdxButton>
+                                        </Box>
+                                    </Box>
+                                    {chartExpandedKeywordId === k.id && (
+                                        <Box sx={{ px: 1.5, pb: 2, pt: 0 }}>
+                                            <RankTrackingChart
+                                                keywordId={k.id}
+                                                keywordLabel={`${k.domain} — ${k.keyword}`}
+                                                ourDomain={k.domain}
+                                                competitorDomains={competitors}
+                                                t={t}
+                                            />
+                                        </Box>
+                                    )}
+                                </Box>
+                            ))}
+                        </Box>
+                    )}
+                </MsqdxMoleculeCard>
+            </Stack>
+
+            <Dialog open={addKeywordOpen} onClose={() => setAddKeywordOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 'var(--msqdx-spacing-md, 8px)' } }}>
+                <DialogTitle sx={{ fontWeight: 600 }}>{t('projects.addKeyword')}</DialogTitle>
+                <DialogContent>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 320, pt: 0.5 }}>
+                        <MsqdxFormField
+                            label={t('projects.domain')}
+                            placeholder={t('projects.domainPlaceholder')}
+                            value={addKeywordDomain}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddKeywordDomain(e.target.value)}
+                            fullWidth
+                        />
+                        <MsqdxFormField
+                            label={t('projects.keyword')}
+                            placeholder={t('projects.keywordPlaceholder')}
+                            value={addKeywordKeyword}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddKeywordKeyword(e.target.value)}
+                            fullWidth
+                        />
+                        <Box>
+                            <MsqdxTypography component="label" variant="body2" sx={{ display: 'block', mb: 0.5, fontWeight: 500 }}>
+                                {t('projects.market')}
+                            </MsqdxTypography>
+                            <Box
+                                component="select"
+                                value={addKeywordMarket}
+                                onChange={(e) => setAddKeywordMarket(e.target.value)}
+                                required
+                                sx={{
+                                    width: '100%',
+                                    py: 1,
+                                    px: 1.5,
+                                    borderRadius: 'var(--msqdx-radius-sm, 4px)',
+                                    border: '1px solid var(--color-border-subtle, #ccc)',
+                                    fontSize: 'inherit',
+                                    fontFamily: 'inherit',
+                                }}
+                            >
+                                <option value="">{t('projects.marketPlaceholder')}</option>
+                                {SERP_MAIN_MARKETS.map((m) => (
+                                    <option key={`${m.country}-${m.language}`} value={`${m.country}-${m.language}`}>
+                                        {m.label} ({m.country}/{m.language})
+                                    </option>
+                                ))}
+                            </Box>
+                        </Box>
+                        <MsqdxFormField
+                            label={t('projects.device')}
+                            placeholder={t('projects.devicePlaceholder')}
+                            value={addKeywordDevice}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddKeywordDevice(e.target.value)}
+                            fullWidth
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ px: 2, pb: 2 }}>
+                    <MsqdxButton variant="outlined" onClick={() => setAddKeywordOpen(false)}>
+                        {t('projects.cancel')}
+                    </MsqdxButton>
+                    <MsqdxButton
+                        variant="contained"
+                        brandColor="green"
+                        onClick={handleAddKeyword}
+                        disabled={!addKeywordDomain.trim() || !addKeywordKeyword.trim() || !addKeywordMarket || addKeywordSubmitting}
+                    >
+                        {addKeywordSubmitting ? t('projects.creating') : t('projects.save')}
+                    </MsqdxButton>
+                </DialogActions>
+            </Dialog>
+        </Box>
+    );
+}

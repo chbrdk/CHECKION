@@ -166,7 +166,13 @@
     "researchApplyCompetitors": "Apply to competitors",
     "researchApplyGeoQueries": "Apply to GEO queries",
     "researchApplyKeywords": "Apply as rank keywords",
-    "researchEmpty": "No research yet. Click \"Start research\"."
+    "researchEmpty": "No research yet. Click \"Start research\".",
+    "rankingScore": "Ranking score",
+    "geoScore": "GEO score",
+    "viewAllRankings": "View all rankings",
+    "viewGeo": "View GEO",
+    "keywordCount": "{count} keywords",
+    "saveValueProposition": "Save value proposition"
   },
   "auth": {
     "login": {

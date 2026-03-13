@@ -39,6 +39,12 @@ export const pathJourneyAgent = (jobId: string) => `${PATH_JOURNEY_AGENT}/${enco
 export const pathGeoEeat = (jobId: string) => `${PATH_GEO_EEAT}/${encodeURIComponent(jobId)}`;
 /** Build app route: /projects/[id] */
 export const pathProject = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}`;
+/** Build app route: /projects/[id]/rankings */
+export const pathProjectRankings = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}/rankings`;
+/** Build app route: /projects/[id]/geo */
+export const pathProjectGeo = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}/geo`;
+/** Build app route: /projects/[id]/research */
+export const pathProjectResearch = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}/research`;
 /** Build app route: /share/[token] */
 export const pathShare = (token: string) => `${PATH_SHARE}/${encodeURIComponent(token)}`;
 /** Build app route: /scan/domain?url=...&maxPages=... */
@@ -244,6 +250,10 @@ export const apiProjectSuggestCompetitors = (id: string) => `${API_PROJECTS}/${e
 export const apiProjectSuggestKeywords = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/suggest-keywords`;
 /** Build: POST /api/projects/[id]/research */
 export const apiProjectResearch = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/research`;
+/** Build: GET /api/projects/[id]/ranking-summary */
+export const apiProjectRankingSummary = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/ranking-summary`;
+/** Build: GET /api/projects/[id]/geo-summary */
+export const apiProjectGeoSummary = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/geo-summary`;
 
 // ─── Other Paths ───────────────────────────────────────────────────────────
 /** Public path for the black MSQDX logo (PDF reports, print). Resolve with origin in browser: `${window.location.origin}${PDF_LOGO_PATH}` */

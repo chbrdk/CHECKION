@@ -30,6 +30,7 @@ export const projects = pgTable('projects', {
     userId: text('user_id').notNull(), // PLEXON user id when using central auth
     name: text('name').notNull(),
     domain: text('domain'),
+    valueProposition: text('value_proposition'),
     competitors: jsonb('competitors').notNull().default([]), // string[] – competitor domains
     geoQueries: jsonb('geo_queries').notNull().default([]), // string[] – GEO/E-E-A-T queries for this project
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

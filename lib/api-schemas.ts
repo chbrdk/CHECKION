@@ -161,6 +161,7 @@ export const projectCreateBodySchema = z.object({
 export const projectUpdateBodySchema = z.object({
   name: z.string().min(1).optional(),
   domain: z.string().optional().nullable(),
+  valueProposition: z.string().max(2000).optional().nullable(),
   competitors: z.array(z.string().trim().min(1)).optional(),
   geoQueries: z.array(z.string().trim().min(1)).optional(),
 });

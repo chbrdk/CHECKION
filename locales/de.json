@@ -166,7 +166,13 @@
     "researchApplyCompetitors": "Zu Wettbewerbern übernehmen",
     "researchApplyGeoQueries": "Zu GEO-Fragen übernehmen",
     "researchApplyKeywords": "Als Rank-Keywords übernehmen",
-    "researchEmpty": "Noch kein Research. Klicke auf \"Research starten\"."
+    "researchEmpty": "Noch kein Research. Klicke auf \"Research starten\".",
+    "rankingScore": "Ranking-Score",
+    "geoScore": "GEO-Score",
+    "viewAllRankings": "Alle Rankings anzeigen",
+    "viewGeo": "GEO anzeigen",
+    "keywordCount": "{count} Keywords",
+    "saveValueProposition": "Value Proposition speichern"
   },
   "auth": {
     "login": {

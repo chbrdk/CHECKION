@@ -18,6 +18,7 @@ function run(): void {
         userId: 'user-1',
         name: 'Test Project',
         domain: 'https://example.com',
+        valueProposition: null,
         competitors: [],
         geoQueries: [],
         createdAt: new Date(),
