@@ -240,6 +240,8 @@ export const apiProjectsCreate = API_PROJECTS;
 export const apiProject = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}`;
 /** Build: POST /api/projects/[id]/suggest-competitors */
 export const apiProjectSuggestCompetitors = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/suggest-competitors`;
+/** Build: POST /api/projects/[id]/suggest-keywords */
+export const apiProjectSuggestKeywords = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/suggest-keywords`;
 
 // ─── Other Paths ───────────────────────────────────────────────────────────
 /** Public path for the black MSQDX logo (PDF reports, print). Resolve with origin in browser: `${window.location.origin}${PDF_LOGO_PATH}` */

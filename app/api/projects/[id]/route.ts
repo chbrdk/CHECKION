@@ -73,6 +73,7 @@ export async function PATCH(
         ...(parsed.name !== undefined && { name: parsed.name }),
         ...(parsed.domain !== undefined && { domain: parsed.domain }),
         ...(parsed.competitors !== undefined && { competitors: parsed.competitors }),
+        ...(parsed.geoQueries !== undefined && { geoQueries: parsed.geoQueries }),
     });
     return NextResponse.json({ success: updated });
 }

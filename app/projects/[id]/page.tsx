@@ -2,18 +2,22 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Box, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Box, Dialog, DialogTitle, DialogContent, DialogActions, Stack } from '@mui/material';
 import {
     MsqdxTypography,
     MsqdxButton,
     MsqdxMoleculeCard,
-    MsqdxTabs,
+    MsqdxCard,
     MsqdxFormField,
+    MsqdxChip,
+    MsqdxAccordion,
+    MsqdxAccordionItem,
 } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import {
     apiProject,
     apiProjectSuggestCompetitors,
+    apiProjectSuggestKeywords,
     apiScansDomainList,
     apiScanJourneyAgentHistory,
     apiScanGeoEeatHistory,
@@ -48,6 +52,7 @@ interface ProjectData {
     name: string;
     domain: string | null;
     competitors?: string[];
+    geoQueries?: string[];
     counts: { domainScans: number; journeyRuns: number; geoEeatRuns: number; singleScans: number; rankTrackingKeywords: number };
 }
 
@@ -58,7 +63,6 @@ export default function ProjectDetailPage() {
     const id = typeof params.id === 'string' ? params.id : params.id?.[0] ?? null;
     const [project, setProject] = useState<ProjectData | null>(null);
     const [loading, setLoading] = useState(true);
-    const [tab, setTab] = useState(0);
     const [domainScans, setDomainScans] = useState<Array<{ id: string; domain: string; timestamp: string; status: string }>>([]);
     const [journeyRuns, setJourneyRuns] = useState<Array<{ id: string; url: string; task: string; status: string; createdAt: string }>>([]);
     const [geoRuns, setGeoRuns] = useState<Array<{ id: string; url: string; status: string; createdAt: string }>>([]);
@@ -76,6 +80,13 @@ export default function ProjectDetailPage() {
     const [addCompetitorValue, setAddCompetitorValue] = useState('');
     const [suggestCompetitorsLoading, setSuggestCompetitorsLoading] = useState(false);
     const [suggestCompetitorsError, setSuggestCompetitorsError] = useState<string | null>(null);
+    const [addGeoQueryValue, setAddGeoQueryValue] = useState('');
+    const [suggestGeoQueriesLoading, setSuggestGeoQueriesLoading] = useState(false);
+    const [suggestGeoQueriesError, setSuggestGeoQueriesError] = useState<string | null>(null);
+    const [suggestKeywordsLoading, setSuggestKeywordsLoading] = useState(false);
+    const [suggestKeywordsError, setSuggestKeywordsError] = useState<string | null>(null);
+    const [suggestedKeywords, setSuggestedKeywords] = useState<string[]>([]);
+    const [selectedSuggestedKeywords, setSelectedSuggestedKeywords] = useState<Set<string>>(new Set());
 
     const loadProject = useCallback(async () => {
         if (!id) return;
@@ -177,6 +188,155 @@ export default function ProjectDetailPage() {
             setSuggestCompetitorsLoading(false);
         }
     }, [id, competitors, normalizeDomainInput, loadProject, t]);
+
+    const geoQueries = Array.isArray(project?.geoQueries) ? project.geoQueries : [];
+
+    const handleAddGeoQuery = useCallback(async () => {
+        const q = addGeoQueryValue.trim();
+        if (!id || !q) return;
+        const next = [...geoQueries];
+        if (next.includes(q)) return;
+        next.push(q);
+        setAddGeoQueryValue('');
+        try {
+            const res = await fetch(apiProject(id), {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ geoQueries: next }),
+            });
+            if (res.ok) loadProject();
+        } catch {
+            // ignore
+        }
+    }, [id, addGeoQueryValue, geoQueries, loadProject]);
+
+    const handleRemoveGeoQuery = useCallback(
+        async (query: string) => {
+            if (!id) return;
+            const next = geoQueries.filter((x) => x !== query);
+            try {
+                const res = await fetch(apiProject(id), {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ geoQueries: next }),
+                });
+                if (res.ok) loadProject();
+            } catch {
+                // ignore
+            }
+        },
+        [id, geoQueries, loadProject]
+    );
+
+    const handleSuggestGeoQueries = useCallback(async () => {
+        if (!id) return;
+        setSuggestGeoQueriesError(null);
+        setSuggestGeoQueriesLoading(true);
+        try {
+            const res = await fetch(apiProjectSuggestCompetitors(id), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({}),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && Array.isArray(data.queries)) {
+                const existing = new Set(geoQueries.map((q) => q.toLowerCase()));
+                const toAdd = data.queries
+                    .filter((q: string) => typeof q === 'string' && q.trim() && !existing.has(q.trim().toLowerCase()))
+                    .map((q: string) => q.trim())
+                    .slice(0, 15);
+                if (toAdd.length > 0) {
+                    const next = [...geoQueries, ...toAdd];
+                    const patchRes = await fetch(apiProject(id), {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({ geoQueries: next }),
+                    });
+                    if (patchRes.ok) loadProject();
+                }
+            } else if (!res.ok && typeof data?.error === 'string') {
+                setSuggestGeoQueriesError(data.error);
+            } else if (!res.ok) {
+                setSuggestGeoQueriesError(t('common.error'));
+            }
+        } catch {
+            setSuggestGeoQueriesError(t('common.error'));
+        } finally {
+            setSuggestGeoQueriesLoading(false);
+        }
+    }, [id, geoQueries, loadProject, t]);
+
+    const handleSuggestKeywords = useCallback(async () => {
+        if (!id) return;
+        setSuggestKeywordsError(null);
+        setSuggestedKeywords([]);
+        setSelectedSuggestedKeywords(new Set());
+        setSuggestKeywordsLoading(true);
+        try {
+            const res = await fetch(apiProjectSuggestKeywords(id), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({}),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && Array.isArray(data.keywords)) {
+                setSuggestedKeywords(data.keywords);
+            } else if (!res.ok && typeof data?.error === 'string') {
+                setSuggestKeywordsError(data.error);
+            } else if (!res.ok) {
+                setSuggestKeywordsError(t('common.error'));
+            }
+        } catch {
+            setSuggestKeywordsError(t('common.error'));
+        } finally {
+            setSuggestKeywordsLoading(false);
+        }
+    }, [id, t]);
+
+    const handleToggleSuggestedKeyword = useCallback((kw: string) => {
+        setSelectedSuggestedKeywords((prev) => {
+            const next = new Set(prev);
+            if (next.has(kw)) next.delete(kw);
+            else next.add(kw);
+            return next;
+        });
+    }, []);
+
+    const handleAddSelectedKeywords = useCallback(async () => {
+        if (!id || !project?.domain || selectedSuggestedKeywords.size === 0) return;
+        const market = SERP_MAIN_MARKETS[0];
+        const [country, language] = market ? [market.country, market.language] : ['de', 'de'];
+        const domain = project.domain.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0] ?? project.domain;
+        for (const keyword of selectedSuggestedKeywords) {
+            try {
+                await fetch(API_RANK_TRACKING_KEYWORDS, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        projectId: id,
+                        domain,
+                        keyword: keyword.trim(),
+                        country,
+                        language,
+                    }),
+                });
+            } catch {
+                // continue
+            }
+        }
+        setSuggestedKeywords([]);
+        setSelectedSuggestedKeywords(new Set());
+        loadProject();
+        const listRes = await fetch(apiRankTrackingKeywords(id), { credentials: 'same-origin' });
+        const listData = await listRes.json();
+        setRankKeywords(Array.isArray(listData?.data) ? listData.data : []);
+    }, [id, project?.domain, selectedSuggestedKeywords, loadProject]);
 
     useEffect(() => {
         loadProject();
@@ -302,311 +462,370 @@ export default function ProjectDetailPage() {
         );
     }
 
-    const rankCount = 'rankTrackingKeywords' in project.counts ? project.counts.rankTrackingKeywords : 0;
-    const tabs = [
-        { label: `${t('projects.domainScans')} (${project.counts.domainScans})`, value: 0 },
-        { label: `${t('projects.journeyRuns')} (${project.counts.journeyRuns})`, value: 1 },
-        { label: `${t('projects.geoEeatRuns')} (${project.counts.geoEeatRuns})`, value: 2 },
-        { label: `${t('projects.singleScans')} (${project.counts.singleScans})`, value: 3 },
-        { label: `${t('projects.rankings')} (${rankCount})`, value: 4 },
-    ];
+    const listItemSx = {
+        display: 'flex' as const,
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        py: 1,
+        px: 1.5,
+        borderBottom: '1px solid var(--color-border-subtle, #eee)',
+    };
 
     return (
         <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1200, mx: 'auto' }}>
-            <Box sx={{ mb: 'var(--msqdx-spacing-md)' }}>
-                <MsqdxTypography variant="h4" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
-                    {project.name}
-                </MsqdxTypography>
-                {project.domain && (
-                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                        {project.domain}
+            <Stack sx={{ gap: 'var(--msqdx-spacing-lg)' }}>
+                {/* Card 1: Company info */}
+                <MsqdxCard
+                    variant="flat"
+                    borderRadius="button"
+                    sx={{ p: 'var(--msqdx-spacing-md)', border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}
+                >
+                    <MsqdxTypography variant="h6" weight="semibold" sx={{ mb: 0.5 }}>
+                        {t('projects.companyInfo')}
                     </MsqdxTypography>
-                )}
-            </Box>
+                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 1 }}>
+                        {project.name}
+                    </MsqdxTypography>
+                    {project.domain && (
+                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                            {project.domain}
+                        </MsqdxTypography>
+                    )}
+                </MsqdxCard>
 
-            <Box sx={{ mb: 2 }}>
-                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                    {t('projects.competitors')}
-                </MsqdxTypography>
-                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1 }}>
-                    {t('projects.competitorsDescription')}
-                </MsqdxTypography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center', mb: 1 }}>
-                    <MsqdxFormField
-                        label={t('projects.competitorDomain')}
-                        placeholder={t('projects.addCompetitorPlaceholder')}
-                        value={addCompetitorValue}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddCompetitorValue(e.target.value)}
-                        onKeyDown={(e: React.KeyboardEvent) => e.key === 'Enter' && handleAddCompetitor()}
-                        sx={{ minWidth: 200, flex: '1 1 200px' }}
-                    />
-                    <MsqdxButton variant="outlined" size="small" onClick={handleAddCompetitor} disabled={!normalizeDomainInput(addCompetitorValue)}>
-                        {t('projects.addCompetitor')}
-                    </MsqdxButton>
-                    <MsqdxButton
-                        variant="outlined"
-                        size="small"
-                        onClick={handleSuggestCompetitors}
-                        disabled={suggestCompetitorsLoading || !project.domain}
-                        sx={{ ml: 1 }}
-                    >
-                        {suggestCompetitorsLoading ? t('common.loading') : t('projects.suggestCompetitorsWithAi')}
-                    </MsqdxButton>
-                </Box>
-                {suggestCompetitorsError && (
-                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-status-error)', display: 'block', mb: 1 }}>
-                        {suggestCompetitorsError}
+                {/* Card 2: Competitors */}
+                <MsqdxMoleculeCard
+                    title={t('projects.competitors')}
+                    variant="flat"
+                    borderRadius="lg"
+                    footerDivider={false}
+                    sx={{ bgcolor: 'var(--color-card-bg)' }}
+                >
+                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1.5 }}>
+                        {t('projects.competitorsDescription')}
                     </MsqdxTypography>
-                )}
-                {competitors.length === 0 ? (
-                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                        {t('projects.noCompetitors')}
-                    </MsqdxTypography>
-                ) : (
-                    <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {competitors.map((domain) => (
-                            <Box
-                                key={domain}
-                                component="li"
-                                sx={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: 0.5,
-                                    px: 1,
-                                    py: 0.5,
-                                    borderRadius: 'var(--msqdx-radius-sm)',
-                                    bgcolor: 'var(--color-bg-subtle, #f5f5f5)',
-                                }}
-                            >
-                                <MsqdxTypography variant="body2">{domain}</MsqdxTypography>
-                                <MsqdxButton variant="text" size="small" color="error" onClick={() => handleRemoveCompetitor(domain)} sx={{ minWidth: 0, p: 0.25 }}>
-                                    {t('projects.removeCompetitor')}
-                                </MsqdxButton>
-                            </Box>
-                        ))}
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center', mb: 1.5 }}>
+                        <MsqdxFormField
+                            label={t('projects.competitorDomain')}
+                            placeholder={t('projects.addCompetitorPlaceholder')}
+                            value={addCompetitorValue}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddCompetitorValue(e.target.value)}
+                            onKeyDown={(e: React.KeyboardEvent) => e.key === 'Enter' && handleAddCompetitor()}
+                            sx={{ minWidth: 200, flex: '1 1 200px' }}
+                        />
+                        <MsqdxButton variant="outlined" size="small" onClick={handleAddCompetitor} disabled={!normalizeDomainInput(addCompetitorValue)}>
+                            {t('projects.addCompetitor')}
+                        </MsqdxButton>
+                        <MsqdxButton
+                            variant="outlined"
+                            size="small"
+                            onClick={handleSuggestCompetitors}
+                            disabled={suggestCompetitorsLoading || !project.domain}
+                        >
+                            {suggestCompetitorsLoading ? t('common.loading') : t('projects.suggestCompetitorsWithAi')}
+                        </MsqdxButton>
                     </Box>
-                )}
-            </Box>
+                    {suggestCompetitorsError && (
+                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-status-error)', display: 'block', mb: 1 }}>
+                            {suggestCompetitorsError}
+                        </MsqdxTypography>
+                    )}
+                    {competitors.length === 0 ? (
+                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                            {t('projects.noCompetitors')}
+                        </MsqdxTypography>
+                    ) : (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                            {competitors.map((domain) => (
+                                <MsqdxChip
+                                    key={domain}
+                                    label={domain}
+                                    onDelete={() => handleRemoveCompetitor(domain)}
+                                    size="small"
+                                    sx={{ mr: 0.5, mb: 0.5 }}
+                                />
+                            ))}
+                        </Box>
+                    )}
+                </MsqdxMoleculeCard>
 
-            <Box sx={{ mb: 2 }}>
-                <MsqdxTabs
-                    value={tab}
-                    onChange={(v) => setTab(typeof v === 'number' ? v : 0)}
-                    tabs={tabs}
-                />
-            </Box>
-
-            <MsqdxMoleculeCard variant="flat" borderRadius="lg" footerDivider={false} sx={{ bgcolor: 'var(--color-card-bg)' }}>
-                {listsLoading ? (
-                    <MsqdxTypography variant="body2" sx={{ py: 2 }}>{t('common.loading')}</MsqdxTypography>
-                ) : tab === 0 ? (
-                    domainScans.length === 0 ? (
-                        <Box sx={{ py: 4, textAlign: 'center' }}>
-                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
-                                {t('projects.emptyDomainScans')}
-                            </MsqdxTypography>
-                            <MsqdxButton variant="contained" brandColor="green" onClick={() => router.push(PATH_SCAN_DOMAIN)}>
-                                {t('projects.startDeepScan')}
-                            </MsqdxButton>
-                        </Box>
+                {/* Card 3: Keywords (Rank-Tracking) */}
+                <MsqdxMoleculeCard
+                    title={t('projects.rankings')}
+                    variant="flat"
+                    borderRadius="lg"
+                    footerDivider={false}
+                    sx={{ bgcolor: 'var(--color-card-bg)' }}
+                >
+                    {listsLoading ? (
+                        <MsqdxTypography variant="body2" sx={{ py: 2 }}>{t('common.loading')}</MsqdxTypography>
                     ) : (
-                        <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
-                            {domainScans.map((ds) => (
-                                <Box
-                                    key={ds.id}
-                                    component="li"
-                                    sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        py: 1,
-                                        px: 1.5,
-                                        borderBottom: '1px solid var(--color-border-subtle, #eee)',
-                                    }}
-                                >
-                                    <MsqdxTypography variant="body2">{ds.domain}</MsqdxTypography>
-                                    <MsqdxButton variant="outlined" size="small" onClick={() => router.push(pathDomain(ds.id))}>
-                                        {t('projects.open')}
-                                    </MsqdxButton>
-                                </Box>
-                            ))}
-                        </Box>
-                    )
-                ) : tab === 1 ? (
-                    journeyRuns.length === 0 ? (
-                        <Box sx={{ py: 4, textAlign: 'center' }}>
-                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
-                                {t('projects.emptyJourneyRuns')}
-                            </MsqdxTypography>
-                            <MsqdxButton variant="contained" brandColor="green" onClick={() => router.push(PATH_SCAN)}>
-                                {t('projects.startJourney')}
-                            </MsqdxButton>
-                        </Box>
-                    ) : (
-                        <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
-                            {journeyRuns.map((j) => (
-                                <Box
-                                    key={j.id}
-                                    component="li"
-                                    sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        py: 1,
-                                        px: 1.5,
-                                        borderBottom: '1px solid var(--color-border-subtle, #eee)',
-                                    }}
-                                >
-                                    <MsqdxTypography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 400 }}>
-                                        {j.task || j.url}
-                                    </MsqdxTypography>
-                                    <MsqdxButton variant="outlined" size="small" onClick={() => router.push(pathJourneyAgent(j.id))}>
-                                        {t('projects.open')}
-                                    </MsqdxButton>
-                                </Box>
-                            ))}
-                        </Box>
-                    )
-                ) : tab === 2 ? (
-                    geoRuns.length === 0 ? (
-                        <Box sx={{ py: 4, textAlign: 'center' }}>
-                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
-                                {t('projects.emptyGeoEeatRuns')}
-                            </MsqdxTypography>
-                            <MsqdxButton variant="contained" brandColor="green" onClick={() => router.push(PATH_SCAN)}>
-                                {t('projects.startGeoEeat')}
-                            </MsqdxButton>
-                        </Box>
-                    ) : (
-                        <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
-                            {geoRuns.map((g) => (
-                                <Box
-                                    key={g.id}
-                                    component="li"
-                                    sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        py: 1,
-                                        px: 1.5,
-                                        borderBottom: '1px solid var(--color-border-subtle, #eee)',
-                                    }}
-                                >
-                                    <MsqdxTypography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 400 }}>
-                                        {g.url}
-                                    </MsqdxTypography>
-                                    <MsqdxButton variant="outlined" size="small" onClick={() => router.push(pathGeoEeat(g.id))}>
-                                        {t('projects.open')}
-                                    </MsqdxButton>
-                                </Box>
-                            ))}
-                        </Box>
-                    )
-                ) : tab === 3 ? (
-                    singleScans.length === 0 ? (
-                        <Box sx={{ py: 4, textAlign: 'center' }}>
-                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
-                                {t('projects.emptySingleScans')}
-                            </MsqdxTypography>
-                            <MsqdxButton variant="contained" brandColor="green" onClick={() => router.push(PATH_SCAN)}>
-                                {t('projects.startScan')}
-                            </MsqdxButton>
-                        </Box>
-                    ) : (
-                        <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
-                            {singleScans.map((s) => (
-                                <Box
-                                    key={s.id}
-                                    component="li"
-                                    sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        py: 1,
-                                        px: 1.5,
-                                        borderBottom: '1px solid var(--color-border-subtle, #eee)',
-                                    }}
-                                >
-                                    <MsqdxTypography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 400 }}>
-                                        {s.url}
-                                    </MsqdxTypography>
-                                    <MsqdxButton variant="outlined" size="small" onClick={() => router.push(pathResults(s.id))}>
-                                        {t('projects.open')}
-                                    </MsqdxButton>
-                                </Box>
-                            ))}
-                        </Box>
-                    )
-                ) : (
-                    rankKeywords.length === 0 ? (
-                        <Box sx={{ py: 4, textAlign: 'center' }}>
-                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
-                                {t('projects.emptyRankings')}
-                            </MsqdxTypography>
-                            <MsqdxButton variant="contained" brandColor="green" onClick={() => setAddKeywordOpen(true)}>
-                                {t('projects.addKeyword')}
-                            </MsqdxButton>
-                        </Box>
-                    ) : (
-                        <Box sx={{ p: 1.5 }}>
-                            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                        <>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
                                 <MsqdxButton variant="contained" brandColor="green" size="small" onClick={() => setAddKeywordOpen(true)}>
                                     {t('projects.addKeyword')}
+                                </MsqdxButton>
+                                <MsqdxButton
+                                    variant="outlined"
+                                    size="small"
+                                    onClick={handleSuggestKeywords}
+                                    disabled={suggestKeywordsLoading || !project.domain}
+                                >
+                                    {suggestKeywordsLoading ? t('common.loading') : t('projects.suggestKeywordsWithAi')}
                                 </MsqdxButton>
                                 <MsqdxButton variant="outlined" size="small" onClick={handleRefreshRankings} disabled={refreshLoading}>
                                     {refreshLoading ? t('common.loading') : t('projects.refreshRankings')}
                                 </MsqdxButton>
                             </Box>
+                            {suggestKeywordsError && (
+                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-status-error)', display: 'block', mb: 1 }}>
+                                    {suggestKeywordsError}
+                                </MsqdxTypography>
+                            )}
+                            {suggestedKeywords.length > 0 && (
+                                <Box sx={{ mb: 2 }}>
+                                    <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                                        {t('projects.suggestedKeywords')}
+                                    </MsqdxTypography>
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
+                                        {suggestedKeywords.map((kw) => (
+                                            <MsqdxChip
+                                                key={kw}
+                                                label={kw}
+                                                onClick={() => handleToggleSuggestedKeyword(kw)}
+                                                color={selectedSuggestedKeywords.has(kw) ? 'primary' : 'default'}
+                                                variant={selectedSuggestedKeywords.has(kw) ? 'filled' : 'outlined'}
+                                                size="small"
+                                                sx={{ cursor: 'pointer', mb: 0.5 }}
+                                            />
+                                        ))}
+                                    </Box>
+                                    <MsqdxButton
+                                        variant="contained"
+                                        size="small"
+                                        onClick={handleAddSelectedKeywords}
+                                        disabled={selectedSuggestedKeywords.size === 0}
+                                    >
+                                        {t('projects.addSelectedKeywords')} ({selectedSuggestedKeywords.size})
+                                    </MsqdxButton>
+                                </Box>
+                            )}
                             {refreshError && (
-                                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-status-error, #b71c1c)', mb: 2 }}>
+                                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-status-error)', mb: 1 }}>
                                     {refreshError}
                                 </MsqdxTypography>
                             )}
-                            <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
-                                {rankKeywords.map((k) => (
-                                    <Box
-                                        key={k.id}
-                                        component="li"
-                                        sx={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            flexWrap: 'wrap',
-                                            gap: 1,
-                                            py: 1,
-                                            px: 1.5,
-                                            borderBottom: '1px solid var(--color-border-subtle, #eee)',
-                                        }}
-                                    >
-                                        <Box sx={{ minWidth: 0, flex: '1 1 200px' }}>
-                                            <MsqdxTypography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                {k.domain} — {k.keyword}
-                                            </MsqdxTypography>
-                                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                                {k.country && k.language ? `${k.country}/${k.language} · ` : ''}
-                                                {t('projects.lastPosition')}: {k.lastPosition != null ? k.lastPosition : '—'}
-                                                {k.lastCompetitorPositions && Object.keys(k.lastCompetitorPositions).length > 0 && (
-                                                    <> · {Object.entries(k.lastCompetitorPositions)
-                                                        .filter(([, pos]) => pos != null)
-                                                        .map(([dom, pos]) => `${dom}: ${pos}`)
-                                                        .join(' · ')}
-                                                    </>
-                                                )}
-                                                {' · '}{t('projects.lastUpdate')}: {k.lastRecordedAt ? new Date(k.lastRecordedAt).toLocaleDateString() : '—'}
-                                            </MsqdxTypography>
-                                        </Box>
-                                        <Box sx={{ display: 'flex', gap: 0.5 }}>
+                            {rankKeywords.length === 0 && suggestedKeywords.length === 0 ? (
+                                <Box sx={{ py: 4, textAlign: 'center' }}>
+                                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
+                                        {t('projects.emptyRankings')}
+                                    </MsqdxTypography>
+                                    <MsqdxButton variant="contained" brandColor="green" onClick={() => setAddKeywordOpen(true)}>
+                                        {t('projects.addKeyword')}
+                                    </MsqdxButton>
+                                </Box>
+                            ) : (
+                                <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
+                                    {rankKeywords.map((k) => (
+                                        <Box key={k.id} component="li" sx={{ ...listItemSx, flexWrap: 'wrap', gap: 1 }}>
+                                            <Box sx={{ minWidth: 0, flex: '1 1 200px' }}>
+                                                <MsqdxTypography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {k.domain} — {k.keyword}
+                                                </MsqdxTypography>
+                                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                                    {k.country && k.language ? `${k.country}/${k.language} · ` : ''}
+                                                    {t('projects.lastPosition')}: {k.lastPosition != null ? k.lastPosition : '—'}
+                                                    {k.lastCompetitorPositions && Object.keys(k.lastCompetitorPositions).length > 0 && (
+                                                        <> · {Object.entries(k.lastCompetitorPositions)
+                                                            .filter(([, pos]) => pos != null)
+                                                            .map(([dom, pos]) => `${dom}: ${pos}`)
+                                                            .join(' · ')}
+                                                        </>
+                                                    )}
+                                                    {' · '}{t('projects.lastUpdate')}: {k.lastRecordedAt ? new Date(k.lastRecordedAt).toLocaleDateString() : '—'}
+                                                </MsqdxTypography>
+                                            </Box>
                                             <MsqdxButton variant="outlined" size="small" color="error" onClick={() => handleDeleteKeyword(k.id)}>
                                                 {t('projects.deleteKeyword')}
                                             </MsqdxButton>
                                         </Box>
-                                    </Box>
-                                ))}
-                            </Box>
+                                    ))}
+                                </Box>
+                            )}
+                        </>
+                    )}
+                </MsqdxMoleculeCard>
+
+                {/* Card 4: GEO-Fragen */}
+                <MsqdxMoleculeCard
+                    title={t('projects.geoQueries')}
+                    variant="flat"
+                    borderRadius="lg"
+                    footerDivider={false}
+                    sx={{ bgcolor: 'var(--color-card-bg)' }}
+                >
+                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1.5 }}>
+                        {t('projects.geoQueriesDescription')}
+                    </MsqdxTypography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center', mb: 1.5 }}>
+                        <MsqdxFormField
+                            label={t('projects.geoQuery')}
+                            placeholder={t('projects.addGeoQueryPlaceholder')}
+                            value={addGeoQueryValue}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddGeoQueryValue(e.target.value)}
+                            onKeyDown={(e: React.KeyboardEvent) => e.key === 'Enter' && handleAddGeoQuery()}
+                            sx={{ minWidth: 240, flex: '1 1 240px' }}
+                        />
+                        <MsqdxButton variant="outlined" size="small" onClick={handleAddGeoQuery} disabled={!addGeoQueryValue.trim()}>
+                            {t('projects.addGeoQuery')}
+                        </MsqdxButton>
+                        <MsqdxButton
+                            variant="outlined"
+                            size="small"
+                            onClick={handleSuggestGeoQueries}
+                            disabled={suggestGeoQueriesLoading || !project.domain}
+                        >
+                            {suggestGeoQueriesLoading ? t('common.loading') : t('projects.suggestGeoQueriesWithAi')}
+                        </MsqdxButton>
+                    </Box>
+                    {suggestGeoQueriesError && (
+                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-status-error)', display: 'block', mb: 1 }}>
+                            {suggestGeoQueriesError}
+                        </MsqdxTypography>
+                    )}
+                    {geoQueries.length === 0 ? (
+                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                            {t('projects.emptyGeoQueries')}
+                        </MsqdxTypography>
+                    ) : (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                            {geoQueries.map((query) => (
+                                <MsqdxChip
+                                    key={query}
+                                    label={query}
+                                    onDelete={() => handleRemoveGeoQuery(query)}
+                                    size="small"
+                                    sx={{ mr: 0.5, mb: 0.5 }}
+                                />
+                            ))}
                         </Box>
-                    )
-                )}
-            </MsqdxMoleculeCard>
+                    )}
+                </MsqdxMoleculeCard>
+
+                {/* Card 5: Aktivität */}
+                <MsqdxMoleculeCard
+                    title={t('projects.activity')}
+                    variant="flat"
+                    borderRadius="lg"
+                    footerDivider={false}
+                    sx={{ bgcolor: 'var(--color-card-bg)' }}
+                >
+                    {listsLoading ? (
+                        <MsqdxTypography variant="body2" sx={{ py: 2 }}>{t('common.loading')}</MsqdxTypography>
+                    ) : (
+                        <MsqdxAccordion>
+                            <MsqdxAccordionItem title={`${t('projects.domainScans')} (${domainScans.length})`} defaultExpanded>
+                                {domainScans.length === 0 ? (
+                                    <Box sx={{ py: 3, textAlign: 'center' }}>
+                                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
+                                            {t('projects.emptyDomainScans')}
+                                        </MsqdxTypography>
+                                        <MsqdxButton variant="contained" brandColor="green" size="small" onClick={() => router.push(PATH_SCAN_DOMAIN)}>
+                                            {t('projects.startDeepScan')}
+                                        </MsqdxButton>
+                                    </Box>
+                                ) : (
+                                    <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
+                                        {domainScans.map((ds) => (
+                                            <Box key={ds.id} component="li" sx={listItemSx}>
+                                                <MsqdxTypography variant="body2">{ds.domain}</MsqdxTypography>
+                                                <MsqdxButton variant="outlined" size="small" onClick={() => router.push(pathDomain(ds.id))}>
+                                                    {t('projects.open')}
+                                                </MsqdxButton>
+                                            </Box>
+                                        ))}
+                                    </Box>
+                                )}
+                            </MsqdxAccordionItem>
+                            <MsqdxAccordionItem title={`${t('projects.journeyRuns')} (${journeyRuns.length})`}>
+                                {journeyRuns.length === 0 ? (
+                                    <Box sx={{ py: 3, textAlign: 'center' }}>
+                                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
+                                            {t('projects.emptyJourneyRuns')}
+                                        </MsqdxTypography>
+                                        <MsqdxButton variant="contained" brandColor="green" size="small" onClick={() => router.push(PATH_SCAN)}>
+                                            {t('projects.startJourney')}
+                                        </MsqdxButton>
+                                    </Box>
+                                ) : (
+                                    <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
+                                        {journeyRuns.map((j) => (
+                                            <Box key={j.id} component="li" sx={listItemSx}>
+                                                <MsqdxTypography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 400 }}>
+                                                    {j.task || j.url}
+                                                </MsqdxTypography>
+                                                <MsqdxButton variant="outlined" size="small" onClick={() => router.push(pathJourneyAgent(j.id))}>
+                                                    {t('projects.open')}
+                                                </MsqdxButton>
+                                            </Box>
+                                        ))}
+                                    </Box>
+                                )}
+                            </MsqdxAccordionItem>
+                            <MsqdxAccordionItem title={`${t('projects.geoEeatRuns')} (${geoRuns.length})`}>
+                                {geoRuns.length === 0 ? (
+                                    <Box sx={{ py: 3, textAlign: 'center' }}>
+                                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
+                                            {t('projects.emptyGeoEeatRuns')}
+                                        </MsqdxTypography>
+                                        <MsqdxButton variant="contained" brandColor="green" size="small" onClick={() => router.push(PATH_SCAN)}>
+                                            {t('projects.startGeoEeat')}
+                                        </MsqdxButton>
+                                    </Box>
+                                ) : (
+                                    <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
+                                        {geoRuns.map((g) => (
+                                            <Box key={g.id} component="li" sx={listItemSx}>
+                                                <MsqdxTypography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 400 }}>
+                                                    {g.url}
+                                                </MsqdxTypography>
+                                                <MsqdxButton variant="outlined" size="small" onClick={() => router.push(pathGeoEeat(g.id))}>
+                                                    {t('projects.open')}
+                                                </MsqdxButton>
+                                            </Box>
+                                        ))}
+                                    </Box>
+                                )}
+                            </MsqdxAccordionItem>
+                            <MsqdxAccordionItem title={`${t('projects.singleScans')} (${singleScans.length})`}>
+                                {singleScans.length === 0 ? (
+                                    <Box sx={{ py: 3, textAlign: 'center' }}>
+                                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
+                                            {t('projects.emptySingleScans')}
+                                        </MsqdxTypography>
+                                        <MsqdxButton variant="contained" brandColor="green" size="small" onClick={() => router.push(PATH_SCAN)}>
+                                            {t('projects.startScan')}
+                                        </MsqdxButton>
+                                    </Box>
+                                ) : (
+                                    <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
+                                        {singleScans.map((s) => (
+                                            <Box key={s.id} component="li" sx={listItemSx}>
+                                                <MsqdxTypography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 400 }}>
+                                                    {s.url}
+                                                </MsqdxTypography>
+                                                <MsqdxButton variant="outlined" size="small" onClick={() => router.push(pathResults(s.id))}>
+                                                    {t('projects.open')}
+                                                </MsqdxButton>
+                                            </Box>
+                                        ))}
+                                    </Box>
+                                )}
+                            </MsqdxAccordionItem>
+                        </MsqdxAccordion>
+                    )}
+                </MsqdxMoleculeCard>
+            </Stack>
 
             <Dialog open={addKeywordOpen} onClose={() => setAddKeywordOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 'var(--msqdx-spacing-md, 8px)' } }}>
                 <DialogTitle sx={{ fontWeight: 600 }}>{t('projects.addKeyword')}</DialogTitle>

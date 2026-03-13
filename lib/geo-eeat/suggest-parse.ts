@@ -43,3 +43,24 @@ export function parseSuggestResponse(raw: string): SuggestResult {
 
     return { competitors, queries };
 }
+
+/**
+ * Parse LLM raw text into keywords array (for suggest-keywords).
+ * Expects JSON object with "keywords" array; extracts first JSON object if wrapped in markdown.
+ * Returns empty array if input is empty or JSON is invalid/truncated.
+ */
+export function parseKeywordsResponse(raw: string): string[] {
+    const trimmed = raw.trim();
+    if (!trimmed) return [];
+    const jsonMatch = trimmed.match(/\{[\s\S]*\}/);
+    const jsonStr = jsonMatch ? jsonMatch[0] : trimmed;
+    let parsed: { keywords?: unknown };
+    try {
+        parsed = JSON.parse(jsonStr) as { keywords?: unknown };
+    } catch {
+        return [];
+    }
+    return Array.isArray(parsed.keywords)
+        ? parsed.keywords.slice(0, 20).filter((k): k is string => typeof k === 'string').map((k) => k.trim()).filter(Boolean)
+        : [];
+}

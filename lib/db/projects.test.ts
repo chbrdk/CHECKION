@@ -19,6 +19,7 @@ function run(): void {
         name: 'Test Project',
         domain: 'https://example.com',
         competitors: [],
+        geoQueries: [],
         createdAt: new Date(),
         updatedAt: new Date(),
     };

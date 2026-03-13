@@ -13664,19 +13664,553 @@ Deployment failed. Removing the new version of your application.
 
 _**Agent (model default, mode Agent)**_
 
+<think><details><summary>Thought Process</summary>
 
+The user is getting a TypeScript build error in the Docker build. The error is:
+
+```
+./app/projects/[id]/page.tsx:335:22
+Type error: Property 'label' is missing in type '{ placeholder: string; value: string; onChange: ...; onKeyDown: ...; sx: { ... }; }' but required in type 'MsqdxFormFieldProps'.
+```
+
+So `MsqdxFormField` requires a `label` prop. I need to add the `label` prop to the MsqdxFormField in the competitors section. Let me fix that.
+</details></think>
+
+---
+
+
+Adding the required `label` prop to `MsqdxFormField` in the competitors section.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add the `label` prop to MsqdxFormField. I can use something like the addCompetitor label - we have t('projects.addCompetitor') for the button. For the input field a label could be the same placeholder text or a dedicated label like "Domain" or we use a generic "Competitor domain". Looking at the locale we have "addCompetitorPlaceholder": "e.g. competitor.com". A good label would be something like "Competitor domain" or we could use an empty string if the component allows it - but the error says label is required. So I'll add label={t('projects.competitors')} or a new key. Actually "competitors" is the section title. For the input a label like "Domain" or "Add competitor domain" - we have "addCompetitor" for the button. Let me add label with an existing or sensible key. I'll use a label that makes sense - e.g. we could add "competitorDomain" or use "projects.addCompetitor" as the label (Add). Better: use a descriptive label. Checking locales we have "addCompetitorPlaceholder". So the label could be "Competitor domain" - I'll add a new key or use something existing. Actually the simplest fix is label="" if the type allows empty string, or label=" " to satisfy the type. Let me check - typically required means non-optional, so we need to pass a string. I'll use label={t('projects.competitors')} which is "Competitors" - a bit redundant since the section title is already Competitors. Or label={t('projects.addCompetitorPlaceholder')} to use the placeholder as label. Cleaner: add a locale key "competitorDomain": "Competitor domain" and use that, or just use t('projects.addCompetitorPlaceholder') as label. Simplest: use label="" - but that might not be valid if it's required. I'll use label={t('projects.competitors')} or a short descriptive string. Looking at the form, the flow is "add a competitor domain", so label could be "Domain" (we have projects.country, etc). We don't have "domain" in projects for this context. I'll use label="" with a space or a proper key. Actually in the dialog we have label={t('projects.domain')} for the domain field. So for competitor we could use a new key "competitorDomain" or reuse. The minimal fix is to add label and the design system requires it - so I'll add label={t('projects.competitors')} which might be too long, or add a short label. Let me just add label={t('projects.addCompetitorPlaceholder')} so the label shows "e.g. competitor.com" - that's a bit odd as a label. Better: label="Domain" or use an i18n key. I'll add label={t('projects.competitors')} - "Competitors" as label is acceptable for the single input in that section.
+</details></think>
 
 ---
 
 
 
+
+
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add the locale key "competitorDomain" to en.json and de.json.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Done. The build should pass now. Let me verify there are no other MsqdxFormField usages in that file that might be missing label - the error was only for that one at line 335. Good.
+</details></think>
+
+---
+
+
+Summary of changes:
+
+1. **`app/projects/[id]/page.tsx`**  
+   The competitors input uses `MsqdxFormField`, which requires a `label`. The `label` prop is now set to `label={t('projects.competitorDomain')}`.
+
+2. **Locales**  
+   - **`locales/en.json`**: `"competitorDomain": "Competitor domain"`  
+   - **`locales/de.json`**: `"competitorDomain": "Wettbewerber-Domain"`
+
+The TypeScript error came from `MsqdxFormFieldProps` requiring `label`. With `label` set and the new locale keys, the Next.js/TypeScript build should succeed. Re-run the Docker build to confirm.
+
+---
+
+_**User**_
+
+page-b00cd69103021382.js:1  GET https://checkion.projects-a.plygrnd.tech/api/projects 500 (Internal Server Error)
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is getting a 500 Internal Server Error when calling GET https://checkion.projects-a.plygrnd.tech/api/projects. This is the projects list endpoint. The 500 suggests a server-side error - likely in the API route that handles GET /api/projects.
+
+Possible causes after our recent changes:
+1. We added `competitors` to the projects table and to ProjectRow. When listing projects, we might be reading from the DB and the column might not exist yet (migration not run), or there's an issue with how we're returning the data.
+2. In listProjects we map rows and normalize competitors to array - if the DB returns something unexpected (e.g. null for old rows that didn't have the column before migration) we could have an issue.
+3. Maybe the migration wasn't run on the deployment, so `competitors` column doesn't exist and the query fails.
+
+Let me check the GET /api/projects route and the listProjects function to see what could throw a 500.
+</details></think>
+
+---
+
+
+Checking the projects API route and DB layer for the 500 error:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/projects.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The 500 is likely because:
+1. The database doesn't have the `competitors` column yet - the migration 0007 wasn't run on the deployed environment. So when Drizzle/Node runs `select()` from projects, it tries to read `competitors` and the column might not exist → DB error → 500.
+2. Or the opposite: the schema expects `competitors` and the query selects all columns - if the column is missing in the DB, the driver could throw.
+
+The fix that works both when the column exists and when it doesn't</details></think>
+
+---
+
+_**User**_
+
+⨯ Error: Failed query: select "id", "user_id", "name", "domain", "competitors", "created_at", "updated_at" from "projects" where "projects"."user_id" = $1 order by "projects"."updated_at" desc
+params: e066b6a0-27ac-4c52-be5e-91f08af2c908
+at p.queryWithCache (.next/server/chunks/2372.js:1:1364)
+at async (.next/server/chunks/2372.js:8:24697)
+at async l (.next/server/app/api/projects/[id]/suggest-competitors/route.js:13:2999)
+at async l (.next/server/app/api/projects/route.js:1:14113)
+at async k (.next/server/app/api/projects/route.js:1:11290)
+at async j (.next/server/app/api/projects/route.js:1:12302) {
+query: 'select "id", "user_id", "name", "domain", "competitors", "created_at", "updated_at" from "projects" where "projects"."user_id" = $1 order by "projects"."updated_at" desc',
+params: [Array],
+[cause]: error: column "competitors" does not exist
+at async (.next/server/chunks/2372.js:8:24907)
+at async p.queryWithCache (.next/server/chunks/2372.js:1:1339)
+at async (.next/server/chunks/2372.js:8:24697)
+at async l (.next/server/app/api/projects/[id]/suggest-competitors/route.js:13:2999)
+at async l (.next/server/app/api/projects/route.js:1:14113)
+at async k (.next/server/app/api/projects/route.js:1:11290) {
+length: 111,
+severity: 'ERROR',
+code: '42703',
+detail: undefined,
+hint: undefined,
+position: '43',
+internalPosition: undefined,
+internalQuery: undefined,
+where: undefined,
+schema: undefined,
+table: undefined,
+column: undefined,
+dataType: undefined,
+constraint: undefined,
+file: 'parse_relation.c',
+line: '3716',
+routine: 'errorMissingColumn'
+}
+}
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The error is clear: `column "competitors" does not exist` in the `projects` table. The migration that adds the `competitors` column (0007) hasn't been run on the deployed database. So when the app queries with the Drizzle schema that includes `competitors`, PostgreSQL throws because the column doesn't exist.
+
+The user has two options:
+1. Run the migration on the deployed database so the `competitors` column exists.
+2. Or we could make the code work when the column is missing (e.g. select only known columns, or use raw SQL that doesn't include competitors if we detect an error) - that's fragile and not ideal.
+
+The proper fix is to run the migration. I should tell the user to run the migration. I can also show them the migration file and how to run it.
+
+Alternatively, if they can't run migrations easily, we could temporarily make the schema not require the column - but that would mean changing the schema back and having optional handling everywhere. The right solution is to run the migration.
+
+Let me provide the migration SQL and instructions. I'll also double-check the migration file exists and is correct.
+</details></think>
+
+---
+
+
+PostgreSQL is failing because the `competitors` column doesn’t exist on `projects`. The app expects it (migration 0007), but that migration hasn’t been applied on the deployed DB.
+
+**Fix: run the migration on the deployed database.**
+
+Migration file:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/migrations/0007_project_competitors_and_position_competitors.sql</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The migration uses `--> statement-breakpoint` which is Drizzle's delimiter - when run manually in psql or another client, those lines need to be removed or treated as comments. I'll give the user a clean SQL script they can run directly.
+</details></think>
+
+---
+
+
+Run this SQL against your **deployed** PostgreSQL (e.g. via `psql`, Coolify DB console, or your migration runner):
+
+```sql
+-- Project competitors
+ALTER TABLE "projects" ADD COLUMN IF NOT EXISTS "competitors" jsonb;
+UPDATE "projects" SET "competitors" = '[]'::jsonb WHERE "competitors" IS NULL;
+ALTER TABLE "projects" ALTER COLUMN "competitors" SET DEFAULT '[]'::jsonb;
+ALTER TABLE "projects" ALTER COLUMN "competitors" SET NOT NULL;
+
+-- Rank tracking: competitor positions per snapshot
+ALTER TABLE "rank_tracking_positions" ADD COLUMN IF NOT EXISTS "competitor_positions" jsonb;
+```
+
+Notes:
+
+- Remove the `--> statement-breakpoint` lines if you copy from the migration file; the snippet above is already clean.
+- If you use `drizzle-kit push` or `drizzle-kit migrate`, run that against the **deployed** DB URL (the one used by checkion.projects-a.plygrnd.tech), not only locally.
+
+After this migration is applied, the `column "competitors" does not exist` error should go away and GET `/api/projects` (and the rest of the app that uses `competitors`) will work.
+
+---
+
+_**User**_
+
+kannst du mir den terminal befehl geben für den postgres container in coolify
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is asking for the terminal command to access the PostgreSQL container in Coolify. They want to run the migration SQL, so they need to either:
+1. Get a shell inside the Postgres container
+2. Or run psql against the Postgres container
+
+In Coolify, the PostgreSQL database is typically run as a service. The user would need to use Docker to exec into the container. The exact command depends on how Coolify names the container - it's often something like `coolify-*` or the project name.
+
+Common patterns:
+- `docker exec -it <container_name> psql -U <user> -d <database>`
+- Or `docker exec -it <container_name> bash` then run psql inside
+
+I don't have access to their Coolify setup, so I'll give them the generic Docker commands they need. Coolify often names containers with a hash or project identifier. They can find the container with `docker ps` and look for postgres.
+</details></think>
+
+---
+
+
+So kommst du in die Postgres-Umgebung von Coolify und führst die Migration aus:
+
+**1. Postgres-Container finden**
+```bash
+docker ps | grep -i postgres
+```
+Merke dir den **CONTAINER NAME** oder die **CONTAINER ID**.
+
+**2. In die `psql`-Shell im Container**
+```bash
+docker exec -it <CONTAINER_NAME_ODER_ID> psql -U postgres -d postgres
+```
+Falls Coolify einen anderen User/Datenbanknamen nutzt (z.B. aus der App-Env `DATABASE_URL`), z.B.:
+```bash
+docker exec -it <CONTAINER_NAME> psql -U coolify -d checkion
+```
+
+**3. SQL ausführen (entweder interaktiv oder in einem Schritt)**
+
+- **Interaktiv:** Nach `psql` einsteigen (Schritt 2), dann die SQL-Zeilen einfügen und mit Enter ausführen, am Ende `\q` zum Beenden.
+
+- **Direkt in einem Befehl (ohne interaktive Shell):**
+```bash
+docker exec -i <CONTAINER_NAME> psql -U postgres -d postgres << 'SQL'
+ALTER TABLE "projects" ADD COLUMN IF NOT EXISTS "competitors" jsonb;
+UPDATE "projects" SET "competitors" = '[]'::jsonb WHERE "competitors" IS NULL;
+ALTER TABLE "projects" ALTER COLUMN "competitors" SET DEFAULT '[]'::jsonb;
+ALTER TABLE "projects" ALTER COLUMN "competitors" SET NOT NULL;
+ALTER TABLE "rank_tracking_positions" ADD COLUMN IF NOT EXISTS "competitor_positions" jsonb;
+SQL
+```
+
+**Wenn du die DB nur über Coolify-UI siehst:** In Coolify die Checkion-App öffnen → Datenbank-Service (Postgres) → dort gibt es oft „Terminal“ / „Console“; darin dann:
+```bash
+psql -U postgres -d postgres
+```
+(oder den User/DB-Namen aus der `DATABASE_URL` der Checkion-App verwenden). Danach die gleichen SQL-Befehle wie oben ausführen.
+
+---
+
+_**User**_
+
+/ # psql -U postgres -d postgres
+psql (17.8)
+Type "help" for help.
+
+postgres=# 
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is now inside the psql shell (postgres=# prompt). They need the SQL commands to run to add the competitors column and the competitor_positions column. I'll give them the exact SQL to paste and run.
+</details></think>
+
+---
+
+
+Du bist in `psql`. Nacheinander ausführen:
+
+```sql
+ALTER TABLE "projects" ADD COLUMN IF NOT EXISTS "competitors" jsonb;
+UPDATE "projects" SET "competitors" = '[]'::jsonb WHERE "competitors" IS NULL;
+ALTER TABLE "projects" ALTER COLUMN "competitors" SET DEFAULT '[]'::jsonb;
+ALTER TABLE "projects" ALTER COLUMN "competitors" SET NOT NULL;
+ALTER TABLE "rank_tracking_positions" ADD COLUMN IF NOT EXISTS "competitor_positions" jsonb;
+```
+
+Jede Zeile mit Enter bestätigen. Am Ende sollte jeweils `ALTER TABLE` bzw. `UPDATE 0` (oder eine Zahl) erscheinen.
+
+Zum Beenden:
+
+```sql
+\q
+```
+
+---
+
+_**User**_
+
+können wir die keywords ebenfalls mit ai vorschlagen lassen? ich glaube ich würde gerne auf der projektseite es genau so wie bei den audion projektseiten machen und mehrere cards anzeigen. eine card kann dann keywords sein, eine card für die GEO Fragen, eine für die Competitors, ganz oben eine card für unternehmensinformationen usw. @projects 
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is asking about two things:
+
+1. **AI-suggested keywords** – They want to be able to suggest rank-tracking keywords with AI (similar to how we have "Suggest competitors with AI").
+
+2. **Project page layout** – They want to restructure the project page to be more like the Audion project pages: multiple cards instead of tabs. For example:
+   - A card for company/project info at the top
+   - A card for Keywords (rank tracking)
+   - A card for GEO questions (queries)
+   - A card for Competitors
+   - etc.
+
+They've referenced @projects - so they want me to look at the Checkion projects page and possibly the Audion project pages for reference.
+
+I'm in Ask mode, so I should:
+- Explain how AI keyword suggestion could work (reuse suggest-competitors pattern or GEO suggest endpoint that already returns queries)
+- Look at the current Checkion project page structure and the Audion project pages to describe the difference and what "multiple cards" would look like
+- Give a clear plan/suggestions without implementing
+
+Let me look at the Audion project pages to see the card layout, and the current Checkion projects page.
+</details></think>
+
+---
+
+
+Audion-Projektseiten und die aktuelle Checkion-Projektseite ansehen, um die gewünschte Card-Struktur zu verstehen:
+
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
 <details>
-<summary>Tool use: **read_file_v2**</summary>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **10** results in **1** directory</summary>
 
-Status: **loading**
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/AUDION-v2** (10 files)
+
+| File |
+|------|
+| `apps/api/app/routers/projects.py` |
+| `knowledge/project-company-context.md` |
+| `apps/api/app/schemas/projects.py` |
+| `apps/web/components/projects/project-provider.tsx` |
+| `knowledge/projects-routing.md` |
+| `knowledge/projects-page-missing-projects.md` |
+| `apps/web/lib/project-cookies.ts` |
+| `apps/web/storybook-static/project.json` |
+| `knowledge/project-optimization-report-2025-12-05.md` |
+| `PROJECT_DOCUMENTATION.md` |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "project|card|Card",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/AUDION-v2",
+  "glob": "**/page.tsx",
+  "outputMode": "files_with_matches",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "project|card|Card",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/AUDION-v2",
+  "outputMode": "files_with_matches",
+  "totalFiles": 100,
+  "totalMatches": 100,
+  "topFiles": [
+    {
+      "uri": "../AUDION-v2/apps/web/app/admin/journeys/[journeyId]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/app/admin/profile/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/app/admin/settings/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/app/admin/chat/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/app/chat/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/app/login/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/app/register/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/app/admin/target-groups/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/app/admin/settings/prompts/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/app/admin/queue/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/app/admin/projects/[projectId]/prompts/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/app/admin/personas/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/app/admin/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/app/admin/journeys/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/app/admin/settings/projects/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/app/admin/projects/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/app/admin/projects/[projectId]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/app/admin/journeys/new/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/app/upload/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/app/admin/settings/providers/page.tsx",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
 
 
 </details>
@@ -13684,7 +14218,805 @@ Status: **loading**
 
 ---
 
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
 
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me read the Audion project detail page to see the card layout.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/AUDION-v2/apps/web/app/admin/projects/[projectId]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So the actual layout is in MsqdxGlassProjectAdminPanel. Let me find that component.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/AUDION-v2/apps/web/components/msqdx-glass-project-admin-panel.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "Card|card|MoleculeCard",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/AUDION-v2/apps/web/components",
+  "outputMode": "content",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "Card|card|MoleculeCard",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/AUDION-v2/apps/web/components",
+  "outputMode": "content",
+  "totalFiles": 165,
+  "totalMatches": 1680,
+  "topFiles": [
+    {
+      "uri": "../AUDION-v2/apps/web/components/msqdx-glass-project-admin-panel.tsx",
+      "matchCount": 47
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/components/dashboard-cards/msqdx-glass-personality-card.tsx",
+      "matchCount": 10
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/components/msqdx-glass-persona-admin-panel.tsx",
+      "matchCount": 34
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/components/target-groups/msqdx-glass-target-groups-overview.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/components/admin/msqdx-glass-admin-dashboard.tsx",
+      "matchCount": 11
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/components/personas/msqdx-glass-personas-overview.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/components/journeys/msqdx-glass-phase-card.tsx",
+      "matchCount": 19
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/components/journeys/msqdx-glass-journeys-overview.tsx",
+      "matchCount": 7
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/components/projects/msqdx-glass-projects-overview.tsx",
+      "matchCount": 7
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/components/tavus-video-panel.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/components/msqdx-glass-target-group-admin-panel.tsx",
+      "matchCount": 18
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/components/msqdx-glass-persona-list.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/components/generic/msqdx-glass-chip-editor.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/components/dashboard-cards/msqdx-glass-persona-basics-card.tsx",
+      "matchCount": 14
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/components/dashboard-cards/msqdx-glass-pain-points-goals-card.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/components/dashboard-cards/msqdx-glass-knowledge-sources-card.tsx",
+      "matchCount": 18
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/components/dashboard-cards/msqdx-glass-communication-card.tsx",
+      "matchCount": 11
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/components/dashboard-cards/msqdx-glass-bio-card.tsx",
+      "matchCount": 11
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/components/dashboard-cards/msqdx-glass-bio-card-edit.tsx",
+      "matchCount": 15
+    },
+    {
+      "uri": "../AUDION-v2/apps/web/components/dashboard-cards/msqdx-glass-advanced-card.tsx",
+      "matchCount": 11
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me read more of the Audion panel to see the structure - the "Project Header Card", then "Overview + Team Members" with MsqdxDashboardCard, then "Three action cards", etc. So the pattern is: one card for header/meta, then several MsqdxDashboardCard / MsqdxCard sections for different areas (company context, suggest target groups, suggest personas, members, prompt templates).
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/AUDION-v2/apps/web/components/msqdx-glass-project-admin-panel.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/geo-eeat/suggest-competitors-queries/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I have a good picture:
+
+1. **Audion project page**: Uses a grid layout (`msqdx-glass-dashboard-grid`). At the top a full-width "Project Header Card" (MsqdxCard) with name, id, created/updated. Then a 50/50 row with **MsqdxDashboardCard** components – each has `id`, `title`, `icon`, `expanded`, `onToggle` for collapsible sections. So the pattern is: **one card per topic** (Overview, Members, Company context, Suggest target groups, Suggest personas, etc.), each card has a title and can be expanded/collapsed.
+
+2. **Checkion project page**: Currently has a single header (name + domain), then a **Competitors** block (no card), then **tabs** (Domain Scans, Journey Runs, GEO/E-E-A-T Runs, Single Scans, Rankings). All tab content is in one big MsqdxMoleculeCard.
+
+3. **AI Keywords**: The GEO suggest endpoint already returns **queries** (typical LLM search queries). Those could double as "keywords" for rank tracking, or we could add a dedicated "suggest keywords" that returns SEO/search keywords (e.g. for Google). So we have two options: (a) New endpoint `POST /api/projects/[id]/suggest-keywords` that uses project domain/name and returns suggested **SEO keywords** (for rank tracking). (b) Or reuse the GEO suggest and use the **queries** as a starting point for keywords (they're similar: "best pumpen in germany" etc.). So either extend suggest-competitors to also return "keywords" or create a dedicated suggest-keywords that returns e.g. 10–15 SEO keywords. I'll describe both in the answer.
+
+4. **GEO Fragen**: That would be the "queries" from the GEO suggest – typical LLM-style queries. We could store them on the project (e.g. `project.geo_queries` or a separate table) and show them in a card "GEO Fragen" with "Suggest with AI" and list + add/remove. So we'd need a place to store suggested GEO queries per project (or we keep them only in the GEO run flow and just have a card that suggests and lets you copy/add to a list).
+
+Let me summarize for the user in a clear way without implementing (Ask mode).
+</details></think>
+
+---
+
+
+Kurz zusammengefasst:
+
+---
+
+## 1. Keywords per AI vorschlagen
+
+**Möglichkeiten:**
+
+- **A) Eigenes Endpoint**  
+  `POST /api/projects/[id]/suggest-keywords` (analog zu suggest-competitors).  
+  Input: Projekt-Context (Domain, Name).  
+  Output: z.B. 10–15 **SEO-Keywords** für Rank-Tracking (Suchbegriffe, die zur Domain/ Branche passen).  
+  Technik: wie bei suggest-competitors (LLM + strukturiertes JSON, z.B. `{ "keywords": ["keyword1", "keyword2", ...] }`).
+
+- **B) GEO-Suggest erweitern**  
+  Der bestehende GEO-Endpoint liefert schon **queries** (LLM-typische Suchanfragen).  
+  Du könntest:
+  - dieselben Queries im UI als „Keyword-Vorschläge“ anzeigen und „Übernehmen“ → in Rank-Tracking-Keywords übernehmen, oder  
+  - das GEO-Suggest-Prompt/Response um ein Feld **keywords** (klassische SEO-Keywords) erweitern und beides (queries + keywords) zurückgeben.
+
+Empfehlung: **A)** separates suggest-keywords für klare Trennung (Rank-Tracking vs. GEO) und einfache Erweiterung (z.B. nur DE, nur bestimmte Intents).
+
+---
+
+## 2. Projektseite wie Audion: mehrere Cards
+
+**Audion** ([`msqdx-glass-project-admin-panel.tsx`](apps/web/components/msqdx-glass-project-admin-panel.tsx)) macht grob:
+
+- **Oben:** eine **Header-Card** (Projektname, Meta-Infos, ggf. Created/Updated).
+- **Darunter:** ein Grid mit mehreren **MsqdxDashboardCard**-Bereichen, jeweils ein Thema pro Card:
+  - Overview (Kennzahlen)
+  - Company context
+  - Members
+  - Suggest target groups / Suggest personas
+  - Prompt templates
+  - etc.
+
+Jede Card hat Titel, optional Icon, und oft **expand/collapse** (`expanded`, `onToggle`).
+
+**Übertrag auf Checkion** (nur Konzept, kein Code):
+
+- **Card 1 – Unternehmensinformationen (oben)**  
+  Name, Domain, ggf. Beschreibung, erstellt/aktualisiert. Alles, was du als „Projekt-Stammdaten“ willst.
+
+- **Card 2 – Competitors**  
+  Bisheriger Competitors-Block (Liste, Hinzufügen, Entfernen, „Suggest with AI“) in eine eigene Card.
+
+- **Card 3 – Keywords (Rank-Tracking)**  
+  Liste der Rank-Tracking-Keywords, „Keyword hinzufügen“, **„Suggest with AI“** (ruft suggest-keywords auf und übernimmt Vorschläge), Refresh Rankings. Der bisherige „Rankings“-Tab-Inhalt wird hier zur Card.
+
+- **Card 4 – GEO-Fragen (Queries)**  
+  Liste der GEO/LLM-Queries für dieses Projekt. Optional „Suggest with AI“ (z.B. bestehender GEO suggest oder eigener Endpoint), Hinzufügen/Entfernen. Speicherort: entweder am Projekt (z.B. `project.geo_queries` oder eigene Tabelle) oder nur UI + Copy-into-GEO-Run.
+
+- **Weitere Cards** (optional)  
+  Z.B. Domain Scans, Journey Runs, GEO-Runs, Single Scans – entweder als weitere Cards unterhalb oder als eine Card „Aktivität“ mit Unterbereichen/Links.
+
+**Technik Checkion:**
+
+- Statt **einer** großen Fläche mit Tabs: Layout wie Audion (z.B. `Box` mit `display: 'grid'`, `gridTemplateColumns: ...`).
+- Pro Bereich eine **MsqdxMoleculeCard** oder **MsqdxCard** (je nachdem, was in Checkion/MSQDX vorhanden ist) mit Titel und Inhalt.
+- Wenn ihr **MsqdxDashboardCard** mit expand/collapse habt, könnt ihr das gleiche Muster wie in Audion nutzen; sonst reichen normale Cards ohne Toggle.
+
+---
+
+## 3. Daten / Backend für GEO-Fragen
+
+- Wenn „GEO-Fragen“ pro Projekt gespeichert werden sollen:  
+  - Entweder neues Feld am Projekt, z.B. `project.geo_queries` (jsonb, Array von Strings), oder  
+  - eigene Tabelle `project_geo_queries` (projectId, query, sort).  
+- PATCH Projekt (oder CRUD für Queries) + GET Projekt erweitern, damit die Liste in der „GEO-Fragen“-Card geladen und gespeichert werden kann.
+
+---
+
+Wenn du willst, kann ich als Nächstes einen konkreten **Implementierungsplan** (Reihenfolge: API suggest-keywords, dann Projektseite Cards, dann GEO-Queries) inkl. Dateien/Änderungspunkten formulieren – weiterhin nur Planung, keine Code-Änderungen (Ask-Mode). Oder du wechselst in den Agent-Mode und ich setze Schritt für Schritt um.
+
+---
+
+_**User**_
+
+ja definitiv bedenke unbedingt die ux und interaktivität dabei und nutze native msqdx componenten
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants me to create a plan for:
+1. AI-suggested keywords for rank tracking
+2. Project page restructure: multiple cards like Audion (company info, keywords, GEO queries, competitors, etc.)
+3. UX and interactivity focus, using native MSQDX components
+
+I need to research:
+- What MSQDX components are available in Checkion (MsqdxCard, MsqdxMoleculeCard, MsqdxDashboardCard?)
+- Current project page structure in detail
+- How suggest-competitors and GEO suggest work (to mirror for keywords)
+- Audion card layout pattern once more for the grid/card structure
+
+Let me search for MSQDX components used in Checkion and the project page structure.
+</details></think>
+
+---
+
+
+Recherchieren, welche MSQDX-Komponenten in Checkion verfügbar sind und wie die Projektseite aufgebaut ist:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "Msqdx|@msqdx",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.tsx",
+  "outputMode": "content",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "Msqdx|@msqdx",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 9155,
+  "topFiles": [
+    {
+      "uri": "./app/projects/[id]/page.tsx",
+      "matchCount": 80
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 80
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 80
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 80
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 80
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/package.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Checkion uses @msqdx/react (local file from msqdx-design-system). I see MsqdxTypography, MsqdxButton, MsqdxMoleculeCard, MsqdxTabs, MsqdxFormField. I need to check if MsqdxCard or MsqdxDashboardCard exist in the design system used by Checkion. Let me check the MSQDX react package exports.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+Path does not exist: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS/packages/react
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/suggest-competitors/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat/suggest-parse.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+MSQDX-DS path might be different. Checkion has @msqdx/react from file:../msqdx-design-system - so the folder might be named differently. Let me search for what's exported from @msqdx in the codebase or node_modules.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **0** result in **1** directory</summary>
+
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1** (0 file)
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "MoleculeCard|Card",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.tsx",
+  "outputMode": "content",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "MoleculeCard|Card",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 25,
+  "totalMatches": 1610,
+  "topFiles": [
+    {
+      "uri": "./app/projects/[id]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/register/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/settings/page.tsx",
+      "matchCount": 16
+    },
+    {
+      "uri": "./app/scan/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "./app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/register/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/settings/page.tsx",
+      "matchCount": 16
+    },
+    {
+      "uri": "../CHECKION-1/app/scan/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/register/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/settings/page.tsx",
+      "matchCount": 16
+    },
+    {
+      "uri": "../CHECKION-1/app/scan/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/register/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/settings/page.tsx",
+      "matchCount": 16
+    },
+    {
+      "uri": "../CHECKION-1/app/scan/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 4
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I have a good picture:
+
+**Checkion MSQDX components in use:**
+- MsqdxTypography, MsqdxButton, MsqdxFormField
+- MsqdxMoleculeCard (with title, headerActions, variant, borderRadius, footerDivider) – used in settings, scan, geo-eeat, projects
+- MsqdxCard – used in settings
+- MsqdxTabs
+- MsqdxChip, MsqdxAccordion, MsqdxAccordionItem, MsqdxTooltip – used in geo-eeat
+
+So Checkion has: MsqdxCard, MsqdxMoleculeCard, MsqdxAccordion/MsqdxAccordionItem. No MsqdxDashboardCard in Checkion (that's in Audion). So we use MsqdxCard for simple cards and MsqdxMoleculeCard for section cards with optional title/header. We can use MsqdxAccordion for collapsible sections if we want.
+
+**Plan structure:**
+
+1. **Backend: Suggest Keywords**
+   - New endpoint POST /api/projects/[id]/suggest-keywords (like suggest-competitors). Uses project domain/name, LLM returns SEO keywords (e.g. 10–15). Response { keywords: string[] }. Parser similar to suggest-parse (new type or extend).
+
+2. **Backend: GEO Queries (optional storage)**
+   - If we want "GEO Fragen" as a card with persistence: add project.geo_queries jsonb (string[]) or keep only in-memory/suggest and use for GEO run. Plan: add geo_queries to project (migration), PATCH support, GET return. Suggest can be existing (GEO suggest returns queries) or new project suggest-queries that returns only queries.
+
+3. **Project page: Card-based layout**
+   - Remove single header + competitors block + tabs + one big MoleculeCard.
+   - New layout: Box with display grid (e.g. 1 col mobile, 2 cols desktop for some rows).
+   - **Card 1 – Unternehmensinformationen:** MsqdxCard or MsqdxMoleculeCard. Content: project name, domain, createdAt/updatedAt. Optional: edit name/domain inline or link to settings. Use MsqdxTypography, consistent spacing.
+   - **Card 2 – Competitors:** MsqdxMoleculeCard with title "Competitors". Move current competitors UI (list, add input, Add button, Suggest with AI, remove per item). Use MsqdxChip for competitor tags if available for better UX.
+   - **Card 3 – Keywords (Rank-Tracking):** MsqdxMoleculeCard "Keywords". List keywords (domain, keyword, market, last position, competitor positions), Add keyword (button opens Dialog as now), "Suggest with AI" (calls suggest-keywords, then user can add selected to rank tracking), Refresh rankings. Use MsqdxChip for keyword tags, list with remove. Dialog for add keyword stays.
+   - **Card 4 – GEO-Fragen:** MsqdxMoleculeCard "GEO-Fragen". List of queries (from project.geo_queries if we add it). "Suggest with AI" (reuse GEO suggest or project suggest that returns queries), add/remove. When starting GEO run, pre-fill these. Store in project.
+   - **Card 5 (or more) – Aktivität:** One or more cards for Domain Scans, Journey Runs, GEO Runs, Single Scans – either one card with subsections (e.g. MsqdxAccordion) or separate cards per type. Each: list + link to start scan/journey/geo. Use MsqdxButton outlined for "Open", empty state with CTA.
+
+4. **UX/Interactivity**
+   - Suggest with AI: loading state on button, error message below, success: merge into list and show (e.g. chips). For keywords: show suggested list with checkboxes or "Add all" so user can select which to add (with default market).
+   - Cards: consistent padding, spacing (e.g. gap: 2). Optional: collapsible cards via MsqdxAccordion if we want to save space.
+   - Use MsqdxChip for tags (competitors, keywords) with remove icon for quick delete.
+   - Add keyword dialog: keep current flow (domain, keyword, market dropdown, device), add optional "Suggest keywords" that pre-fills keyword field from AI.
+
+5. **Data**
+   - projects: add geo_queries jsonb (string[]) – migration. getProject/updateProject/listProjects handle it. projectUpdateBodySchema: geoQueries optional.
+   - suggest-keywords: new route, new parser or extend suggest-parse for keywords only.
+
+Let me also check if we need to store GEO queries on project or just suggest and use in run - the user said "eine card für die GEO Fragen" so they want a place to see/edit them. So store on project makes sense.
+
+Creating the plan.
+</details></think>
+
+---
+
+
+Settings-Seite prüfen, um die Verwendung von MsqdxCard und MsqdxMoleculeCard zu klären:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/settings/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/geo-eeat/[jobId]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see the pattern: MsqdxCard for flat content blocks (profile, appearance), MsqdxMoleculeCard for sections with optional title/header. Stack with gap for layout. I'll also check Audion project page for card layout reference.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="semantic_search_full">
+<details>
+<summary>Tool use: **semantic_search_full**</summary>
+
+
+Parameters:
+
+```json
+{
+  "query": "Where is the project detail page with cards or dashboard layout?",
+  "includePattern": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/AUDION-v2",
+  "topK": 10,
+  "explanation": ""
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I have enough context. Let me also quickly check the API for rank-tracking keywords (POST body) and the suggest-competitors full flow to design suggest-keywords.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/rank-tracking/keywords/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I have a clear picture. Now I'll create the plan with:
+1. UX/Interactivity focus (loading states, chips, selection for suggested keywords, empty states)
+2. Native MSQDX: MsqdxCard, MsqdxMoleculeCard, MsqdxChip, MsqdxFormField, MsqdxButton, MsqdxTypography, MsqdxAccordion where useful
+3. Card layout: Company info, Competitors, Keywords, GEO-Fragen, Activity (Domain Scans, Journeys, GEO Runs, Single Scans)
+4. Backend: suggest-keywords endpoint, geo_queries on project
+5. Tests and locales
+</details></think>
+
+---
+
+
+Plan erstellen:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="create_plan">
+<details>
+<summary>Tool use: **create_plan**</summary>
+
+
+Parameters:
+
+```json
+{
+  "plan": "# Projektseite: Card-Layout, AI-Keywords, GEO-Queries\n\n## Ziele\n\n- **Card-Layout**: Tabs durch eigenständige Cards ersetzen (Unternehmensinformationen, Competitors, Keywords, GEO-Fragen, Aktivität).\n- **AI-Keyword-Vorschläge**: Neuer Endpoint und UI zum Vorschlagen von SEO-Keywords; Nutzer wählt aus und fügt mit einem Klick hinzu.\n- **GEO-Queries am Projekt**: Queries speichern, anzeigen, bearbeiten und beim Start eines GEO-Runs vorbelegen.\n- **UX/Interaktivität**: Loading-States, Chips für Tags, klare leere Zustände, konsistente Abstände, nur **native MSQDX-Komponenten** (MsqdxCard, MsqdxMoleculeCard, MsqdxChip, MsqdxFormField, MsqdxButton, MsqdxTypography, ggf. MsqdxAccordion).\n\n---\n\n## 1. Backend: AI-Keyword-Vorschläge\n\n- **Neuer Endpoint**  \n  &#96;POST /api/projects/[id]/suggest-keywords&#96;  \n  - Auth wie bei &#96;suggest-competitors&#96;.  \n  - Projekt laden (domain/name), optional Body &#96;{ url?: string }&#96; für Kontext-URL.  \n  - LLM-Prompt: „Based on this company/domain, suggest 10–15 SEO keywords for rank tracking (mix of head/mid/long-tail, same language as domain). Return only a JSON object: &#96;{ \"keywords\": [\"keyword1\", ...] }&#96;.“  \n  - Antwort: &#96;{ keywords: string[] }&#96;.  \n  - Optional: &#96;parseSuggestResponse&#96; in [lib/geo-eeat/suggest-parse.ts](lib/geo-eeat/suggest-parse.ts) um Keywords-only-Parsing erweitern oder kleines Helper nur für Keywords (kein Breaking Change für Competitors/Queries).\n\n- **Konstanten**  \n  In [lib/constants.ts](lib/constants.ts): &#96;apiProjectSuggestKeywords(id)&#96; für die neue Route.\n\n- **Tests**  \n  - Unauthenticated → 401.  \n  - Projekt nicht gefunden → 404.  \n  - Erfolg: Response enthält &#96;keywords&#96;-Array (Mock LLM/Fetch).\n\n---\n\n## 2. Backend: GEO-Queries am Projekt\n\n- **Schema**  \n  In [lib/db/schema.ts](lib/db/schema.ts): &#96;projects&#96; um &#96;geoQueries: jsonb('geo_queries').notNull().default([])&#96; ergänzen (Typ: &#96;string[]&#96;).\n\n- **Migration**  \n  Neue Datei unter &#96;lib/db/migrations/&#96;:  \n  - Spalte &#96;geo_queries&#96; hinzufügen, Default &#96;'[]'::jsonb&#96;, NOT NULL.\n\n- **DB-Layer**  \n  In [lib/db/projects.ts](lib/db/projects.ts):  \n  - &#96;ProjectRow&#96; um &#96;geoQueries: string[]&#96; erweitern.  \n  - &#96;getProject&#96;, &#96;listProjects&#96;, &#96;updateProject&#96;, &#96;insertProject&#96; lesen/schreiben &#96;geoQueries&#96; (Array normalisieren wie bei &#96;competitors&#96;).\n\n- **API**  \n  - [lib/api-schemas.ts](lib/api-schemas.ts): &#96;projectUpdateBodySchema&#96; um &#96;geoQueries: z.array(z.string().trim().min(1)).optional()&#96;.  \n  - [app/api/projects/[id]/route.ts](app/api/projects/[id]/route.ts): PATCH nimmt &#96;geoQueries&#96; entgegen und übergibt an &#96;updateProject&#96;. GET liefert &#96;geoQueries&#96; bereits mit (über bestehende Projekt-Antwort).\n\n---\n\n## 3. Projektseite: Card-Layout und MSQDX\n\n**Referenz:**  \n- Layout wie [app/settings/page.tsx](app/settings/page.tsx): &#96;Stack&#96; mit &#96;gap: 'var(--msqdx-spacing-lg)'&#96; und einzelne Cards.  \n- Inhalts-Cards: [MsqdxCard](app/settings/page.tsx) (variant=\"flat\", borderRadius=\"button\", einheitliches Padding/Border) für kompakte Blöcke; [MsqdxMoleculeCard](app/settings/page.tsx) mit &#96;title&#96;/&#96;headerActions&#96; für Sektionen mit Überschrift und Aktionen.  \n- Chips/Tags: [MsqdxChip](app/geo-eeat/[jobId]/page.tsx) aus &#96;@msqdx/react&#96; für Competitors, Keywords und GEO-Queries (mit onDelete wo sinnvoll).\n\n**Struktur der Seite** (von oben nach unten):\n\n&#96;&#96;&#96;mermaid\nflowchart TB\n    subgraph page [Projektseite]\n        A[Card: Unternehmensinformationen]\n        B[Card: Competitors]\n        C[Card: Keywords Rank-Tracking]\n        D[Card: GEO-Fragen]\n        E[Card: Aktivität]\n    end\n    A --&gt; B --&gt; C --&gt; D --&gt; E\n&#96;&#96;&#96;\n\n- **Card 1 – Unternehmensinformationen**  \n  - **MsqdxCard** (wie Settings).  \n  - Inhalt: Projektname, Domain, ggf. Erstellungs-/Änderungsdatum.  \n  - Optional: Kurzbeschreibung oder Link „Projekt bearbeiten“ (bleibt optional, Name/Domain können später editierbar gemacht werden).\n\n- **Card 2 – Competitors**  \n  - **MsqdxMoleculeCard** mit Titel „Competitors“ und ggf. Tooltip/Info.  \n  - Bestehende Logik beibehalten: Input + „Add“, „Suggest with AI“, Liste.  \n  - **UX:** Competitors als **MsqdxChip** mit &#96;onDelete&#96; (statt nur Text + Button), einheitliches Spacing.\n\n- **Card 3 – Keywords (Rank-Tracking)**  \n  - **MsqdxMoleculeCard** „Keywords“.  \n  - Liste: pro Keyword **MsqdxChip** oder Zeile mit Keyword, Market (country/language), letzte Position (+ Competitor-Positionen), „Refresh“-Button, Delete.  \n  - Aktionen: „Keyword hinzufügen“ (öffnet bestehenden Dialog), **„Mit AI vorschlagen“** (ruft &#96;suggest-keywords&#96; auf).  \n  - **UX nach Vorschlag:**  \n    - API liefert &#96;keywords: string[]&#96;.  \n    - Anzeige: Liste/Grid der vorgeschlagenen Keywords mit **Checkboxen** oder „Alle übernehmen“ + Einzelauswahl.  \n    - Beim Übernehmen: für jedes gewählte Keyword POST an &#96;/api/rank-tracking/keywords&#96; (projectId, domain vom Projekt, keyword, country/language z.B. aus Hauptmarkt-Dropdown).  \n  - Loading-State für „Mit AI vorschlagen“ (Button disabled, Spinner/Label „Laden…“).  \n  - Leerer Zustand: kurzer Text + „Keyword hinzufügen“ + „Mit AI vorschlagen“.\n\n- **Card 4 – GEO-Fragen**  \n  - **MsqdxMoleculeCard** „GEO-Fragen“.  \n  - Anzeige: gespeicherte Queries aus &#96;project.geoQueries&#96; als **MsqdxChip** mit onDelete.  \n  - Aktionen: Input + „Hinzufügen“, **„Mit AI vorschlagen“** (bestehenden Suggest nutzen: &#96;suggest-competitors&#96; liefert bereits &#96;queries&#96;; oder dedizierter Aufruf, der nur Queries zurückgibt – siehe unten).  \n  - Beim Hinzufügen/Entfernen: PATCH Projekt mit &#96;geoQueries&#96;.  \n  - **UX:** Beim Start eines GEO-Runs (z.B. von Scan-Seite oder Link) können diese Queries als Vorauswahl genutzt werden (Backend/Verknüpfung in diesem Plan nur andeuten: GET project liefert &#96;geoQueries&#96;, Frontend kann sie beim Start übergeben).\n\n- **Card 5 – Aktivität**  \n  - **MsqdxMoleculeCard** mit optionalem **MsqdxAccordion** (wie in [app/geo-eeat/[jobId]/page.tsx](app/geo-eeat/[jobId]/page.tsx): MsqdxAccordion + MsqdxAccordionItem).  \n  - Sektionen: Domain Scans, Journey Runs, GEO Runs, Single Scans.  \n  - Pro Sektion: Überschrift, Liste (wie bisher), Link „Öffnen“, leerer Zustand mit CTA (z.B. „Deep Scan starten“, „GEO/E-E-A-T starten“).  \n  - So bleibt alles auf einer Seite, ohne Tabs, mit klarer visueller Hierarchie.\n\n**GEO „Mit AI vorschlagen“:**  \n- Option A: Bestehenden &#96;POST /api/projects/[id]/suggest-competitors&#96; aufrufen; Response enthält bereits &#96;queries&#96;. Frontend zeigt nur den Queries-Teil und fügt sie zu &#96;geoQueries&#96; hinzu (Merge oder Ersetzen nach UX-Entscheidung).  \n- Option B: Eigenen Endpoint &#96;suggest-geo-queries&#96; nur für Queries (weniger Duplikation im Prompt, klare Trennung).  \n- **Empfehlung:** Option A nutzen, um keine weitere API zu bauen; Button „Mit AI vorschlagen“ in Card GEO-Fragen ruft suggest-competitors auf und übernimmt nur &#96;data.queries&#96; in die Projekt-&#96;geoQueries&#96; (mit Bestätigung/Merge).\n\n---\n\n## 4. UX und Interaktivität (Details)\n\n- **Ladezustände:**  \n  - Alle „Suggest with AI“-Buttons: während Request &#96;disabled&#96; + Loading-Label.  \n  - Keywords laden, Rankings refresh: bestehende Loading-States beibehalten/vereinheitlichen.\n\n- **Fehler:**  \n  - Fehlermeldung unter dem jeweiligen Card-Bereich (z.B. unter Suggest-Button), nicht nur global.  \n  - Bekannte Meldungen (z. B. SERP 502) weiterhin nutzerfreundlich anzeigen.\n\n- **Leere Zustände:**  \n  - Pro Card ein kurzer Hinweis + primäre Aktion (z. B. „Noch keine Keywords“ + „Keyword hinzufügen“ / „Mit AI vorschlagen“).  \n  - Einheitliche Abstände (z. B. &#96;py: 4&#96;, &#96;textAlign: 'center'&#96; für leere Listen).\n\n- **Konsistenz:**  \n  - Nur Komponenten aus &#96;@msqdx/react&#96;: MsqdxCard, MsqdxMoleculeCard, MsqdxTypography, MsqdxButton, MsqdxFormField, MsqdxChip, MsqdxAccordion, MsqdxAccordionItem, ggf. MsqdxTooltip für Info-Icons.  \n  - Keine rohen MUI-Cards; Dialog für „Keyword hinzufügen“ kann weiterhin MUI &#96;Dialog&#96; bleiben (oder prüfen, ob MSQDX einen Modal/Dialog anbietet – falls ja, umstellen).\n\n- **Responsivität:**  \n  - Grid/Stack so, dass Cards auf kleinen Bildschirmen untereinander, auf großen evtl. 2-spaltig (z. B. Unternehmensinfo + Competitors in einer Zeile) – optional, mindestens eine Spalte ist ausreichend.\n\n---\n\n## 5. Implementierungsreihenfolge\n\n1. **Backend: suggest-keywords + geo_queries**  \n   - Migration, Schema, projects-DB-Layer, PATCH/GET project mit &#96;geoQueries&#96;.  \n   - POST suggest-keywords, constants, Tests.\n\n2. **Projektseite: Card-Layout**  \n   - Tabs und die eine große MoleculeCard entfernen.  \n   - Layout: Stack mit Abstand, Card 1 (Unternehmensinfo), Card 2 (Competitors mit Chips), Card 3 (Keywords mit Dialog + Suggest-Keyword-Flow), Card 4 (GEO-Fragen mit Chips + Suggest aus suggest-competitors), Card 5 (Aktivität mit Accordion oder Unterüberschriften).  \n   - Bestehende Daten-Fetches und Handler den neuen Cards zuordnen.\n\n3. **Keyword-Suggest-UI**  \n   - Nach Klick „Mit AI vorschlagen“: API-Call, Anzeige der vorgeschlagenen Keywords (z. B. als auswählbare Liste mit Checkboxen oder Chips), „Ausgewählte hinzufügen“ (mit Standard-Market), Loading/Error in der Card.\n\n4. **i18n und Tests**  \n   - Alle neuen Texte in [locales/de.json](locales/de.json) und [locales/en.json](locales/en.json) (z. B. &#96;projects.companyInfo&#96;, &#96;projects.suggestKeywords&#96;, &#96;projects.geoQueries&#96;, &#96;projects.addGeoQuery&#96;, empty states).  \n   - API-Test für suggest-keywords; optional E2E oder Komponententest für Projektseite.\n\n---\n\n## 6. Dateien-Überblick\n\n| Bereich | Dateien |\n|--------|---------|\n| Schema/DB | [lib/db/schema.ts](lib/db/schema.ts), neue Migration, [lib/db/projects.ts](lib/db/projects.ts) |\n| API | [lib/api-schemas.ts](lib/api-schemas.ts), [app/api/projects/[id]/route.ts](app/api/projects/[id]/route.ts), neue Route &#96;app/api/projects/[id]/suggest-keywords/route.ts&#96; |\n| Constants | [lib/constants.ts](lib/constants.ts) |\n| Frontend | [app/projects/[id]/page.tsx](app/projects/[id]/page.tsx) (komplette Umstellung auf Cards, Chips, Suggest-Keyword-UI, GEO-Queries-Card) |\n| i18n | [locales/de.json](locales/de.json), [locales/en.json](locales/en.json) |\n| Tests | &#96;__tests__/api/project-suggest-keywords.test.ts&#96;, ggf. Anpassung projects/rank-tracking Tests |\n| Wissen | [knowledge/checkion-projects-feature.md](knowledge/checkion-projects-feature.md) um Cards, suggest-keywords, geoQueries ergänzen |\n\n---\n\n## 7. Kurz: Was bleibt, was entfällt\n\n- **Entfällt:** Tab-Navigation (Domain Scans, Journeys, GEO Runs, Single Scans, Rankings) und die eine große MoleculeCard, die alle Tab-Inhalte bündelt.  \n- **Bleibt:** Alle bestehenden API-Calls und Logiken (loadProject, competitors add/remove/suggest, keywords add/delete/refresh, Listen für Scans/Journeys/GEO/Single).  \n- **Neu:** Card-basiertes Layout, AI-Keyword-Vorschläge (Endpoint + UI mit Auswahl), GEO-Queries am Projekt (Schema + PATCH + Card mit Chips und Suggest), durchgängig MSQDX und verbesserte UX (Chips, Loading, leere Zustände).\n",
+  "name": "Project Page Cards + AI Keywords",
+  "overview": "Projektseite von Tabs auf eine Card-basierte Layout-Struktur (wie Audion/Settings) umstellen, AI-Keyword-Vorschläge für Rank-Tracking ergänzen, GEO-Queries am Projekt speichern – mit Fokus auf UX, Interaktivität und ausschließlich nativen MSQDX-Komponenten."
+}
+```
+Additional data:
+
+```json
+{
+  "reviewData": {
+    "status": "Requested",
+    "selectedOption": "none",
+    "isShowingInput": false
+  },
+  "planUri": "file:///Users/christoph.bordeck/.cursor/plans/project_page_cards_%2B_ai_keywords_d529570b.plan.md",
+  "hasOpenedEditor": true
+}
+```
+Result:
+
+```json
+{
+  "rejected": {}
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+_**User**_
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants me to implement the plan for "Projektseite: Card-Layout, AI-Keywords, GEO-Queries". Let me first check what to-dos exist - the p</details></think>
 
 ---
 

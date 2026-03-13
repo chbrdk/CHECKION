@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------ */
-/*  CHECKION – POST /api/projects/[id]/suggest-competitors             */
-/*  AI suggests competitors for the project (uses project domain/name). */
+/*  CHECKION – POST /api/projects/[id]/suggest-keywords                */
+/*  AI suggests SEO keywords for rank tracking (uses project domain/name). */
 /* ------------------------------------------------------------------ */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -10,19 +10,14 @@ import { getProject } from '@/lib/db/projects';
 import OpenAI from 'openai';
 import { getOpenAIKey } from '@/lib/llm/config';
 import { reportUsage } from '@/lib/usage-report';
-import { extractHostname, parseSuggestResponse } from '@/lib/geo-eeat/suggest-parse';
+import { extractHostname, parseKeywordsResponse } from '@/lib/geo-eeat/suggest-parse';
 
-const SUGGEST_MODEL = process.env.OPENAI_SUGGEST_MODEL ?? 'gpt-5-nano';
+const SUGGEST_MODEL = process.env.OPENAI_SUGGEST_MODEL ?? 'gpt-4o-mini';
 
-const SYSTEM_PROMPT = `You are an expert in market research and SEO. Given a company website URL or company name, you suggest:
-1. Exactly 5 direct competitors (companies in the same industry/market). Return as domain names (e.g. competitor.com) or company names, one per item.
-2. Exactly 10 typical search queries that users might ask in ChatGPT, Perplexity, or other LLMs when looking for this type of company, product, or service. Queries should be in the same language as the URL if obvious (e.g. .de = German), otherwise use English. Mix of: "best [product] in [region]", "top [industry] companies", "[service] provider recommendation", etc.
-
-Reply ONLY with a single JSON object. No markdown, no text outside JSON.
+const SYSTEM_PROMPT = `You are an expert in SEO and keyword research. Given a company website URL or company name, suggest 10–15 SEO keywords suitable for rank tracking. Include a mix of head terms, mid-tail, and long-tail keywords. Use the same language as the domain if obvious (e.g. .de = German), otherwise use English. Return ONLY a single JSON object. No markdown, no text outside JSON.
 Required structure:
 {
-  "competitors": ["domain1.com", "domain2.com", ...],
-  "queries": ["query 1", "query 2", ...]
+  "keywords": ["keyword 1", "keyword 2", ...]
 }`;
 
 export async function POST(
@@ -64,7 +59,7 @@ export async function POST(
     try {
         openai = new OpenAI({ apiKey: getOpenAIKey() });
     } catch {
-        return apiError('OPENAI_API_KEY is not set. Cannot suggest competitors.', API_STATUS.UNAVAILABLE);
+        return apiError('OPENAI_API_KEY is not set. Cannot suggest keywords.', API_STATUS.UNAVAILABLE);
     }
 
     const domain = extractHostname(url);
@@ -74,13 +69,13 @@ export async function POST(
             model: SUGGEST_MODEL,
             messages: [
                 { role: 'system', content: SYSTEM_PROMPT },
-                { role: 'user', content: `Website URL: ${url}\nDomain: ${domain}\nProject name: ${project.name}\nSuggest 5 competitors and 10 typical LLM search queries for this company. Reply with JSON only.` },
+                { role: 'user', content: `Website URL: ${url}\nDomain: ${domain}\nProject name: ${project.name}\nSuggest 10–15 SEO keywords for rank tracking. Reply with JSON only.` },
             ],
         });
 
         const raw = completion.choices[0]?.message?.content ?? '';
         if (!raw?.trim()) {
-            console.warn('[CHECKION] suggest-competitors: LLM returned empty content');
+            console.warn('[CHECKION] suggest-keywords: LLM returned empty content');
         }
         try {
             const usage = completion.usage;
@@ -92,26 +87,16 @@ export async function POST(
                         input_tokens: usage.prompt_tokens,
                         output_tokens: usage.completion_tokens,
                     },
-                    idempotencyKey: `suggest-project:${projectId}:${Date.now()}`,
+                    idempotencyKey: `suggest-keywords:${projectId}:${Date.now()}`,
                 });
             }
         } catch { /* never affect response */ }
 
-        let competitors: string[];
-        let queries: string[];
-        try {
-            const result = parseSuggestResponse(raw);
-            competitors = result.competitors;
-            queries = result.queries;
-        } catch (e) {
-            console.warn('[CHECKION] suggest-competitors: parse failed', e);
-            competitors = [];
-            queries = [];
-        }
-        return NextResponse.json({ competitors, queries });
+        const keywords = parseKeywordsResponse(raw);
+        return NextResponse.json({ keywords });
     } catch (e) {
         const message = e instanceof Error ? e.message : 'Suggestion failed';
-        console.error('[CHECKION] suggest-competitors:', e);
+        console.error('[CHECKION] suggest-keywords:', e);
         return apiError(message, API_STATUS.INTERNAL_ERROR);
     }
 }

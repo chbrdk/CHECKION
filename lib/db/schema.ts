@@ -31,6 +31,7 @@ export const projects = pgTable('projects', {
     name: text('name').notNull(),
     domain: text('domain'),
     competitors: jsonb('competitors').notNull().default([]), // string[] – competitor domains
+    geoQueries: jsonb('geo_queries').notNull().default([]), // string[] – GEO/E-E-A-T queries for this project
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });

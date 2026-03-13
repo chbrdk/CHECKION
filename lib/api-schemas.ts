@@ -162,6 +162,7 @@ export const projectUpdateBodySchema = z.object({
   name: z.string().min(1).optional(),
   domain: z.string().optional().nullable(),
   competitors: z.array(z.string().trim().min(1)).optional(),
+  geoQueries: z.array(z.string().trim().min(1)).optional(),
 });
 
 /** PATCH .../project (assign resource to project) */
