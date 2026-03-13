@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Box, IconButton, useMediaQuery, useTheme } from '@mui/material';
 import { MsqdxAppLayout, MsqdxIcon } from '@msqdx/react';
 import { Sidebar } from './Sidebar';
+import { ProjectHeaderNav } from './ProjectHeaderNav';
 import { BrandColorInitializer } from './settings/BrandColorInitializer';
 import { THEME_ACCENT_WITH_FALLBACK } from '@/lib/theme-accent';
 import { PATH_LOGIN, PATH_REGISTER, PATH_SHARE } from '@/lib/constants';
@@ -13,6 +14,8 @@ import { PATH_LOGIN, PATH_REGISTER, PATH_SHARE } from '@/lib/constants';
 const AUTH_PATHS = [PATH_LOGIN, PATH_REGISTER];
 /** Share landing pages: use app layout + logo but hide navigation. */
 const SHARE_PATHS = [PATH_SHARE];
+/** Project sub-routes: show project back button + sub-nav in header. */
+const isProjectRoute = (path: string | null) => path != null && path.startsWith('/projects/') && /^\/projects\/[^/]+/.test(path);
 
 export function AppShell({ children }: { children: ReactNode }) {
     const pathname = usePathname();
@@ -38,6 +41,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 borderRadius="2xl"
                 innerBackground="grid"
                 sidebar={showSidebar ? <Sidebar open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} /> : null}
+                headerEnd={isProjectRoute(pathname ?? null) ? <ProjectHeaderNav /> : undefined}
                 sx={{
                     '& > div:last-of-type': {
                         backgroundColor: `${THEME_ACCENT_WITH_FALLBACK.backgroundColor} !important`,
