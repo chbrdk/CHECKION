@@ -1,0 +1,20 @@
+---
+description: Vor Abschluss von Frontend-/Next-Änderungen lokalen Build ausführen (CHECKION).
+globs: app/**/*.tsx,app/**/*.ts,components/**/*.tsx,components/**/*.ts
+alwaysApply: false
+---
+
+# CHECKION – Lokaler Build vor Abschluss
+
+Wenn du **Frontend-, React- oder Next.js-relevante** Änderungen an CHECKION vornimmst (z. B. `app/`, `components/`, neue API-Routen, Änderungen an der Projektseite), führe **vor dem Abschluss** den lokalen Build aus:
+
+```bash
+cd CHECKION-1
+npm run build:local
+```
+
+- **`build:local`** stellt bei Bedarf den Symlink zu `../msqdx-design-system` her (zeigt auf `../MSQDX-DS/msqdx-design-system`) und führt `npm run build` aus – dieselbe Pipeline wie in Coolify/Docker.
+- Wenn der Build **fehlschlägt**, die Fehler beheben und erneut bauen, bevor du die Aufgabe als erledigt markierst.
+- So treten Build-Fehler lokal statt erst beim Deploy auf.
+
+Details: `knowledge/checkion-local-build-and-deploy.md`.

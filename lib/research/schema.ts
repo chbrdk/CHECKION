@@ -8,7 +8,7 @@ const stringArray = z.array(z.string().trim()).min(1).max(20);
 
 export const projectResearchResultSchema = z.object({
   targetGroups: stringArray,
-  valueProposition: z.string().trim().max(500).optional(),
+  valueProposition: z.string().trim().max(500).nullable(),
   seoKeywords: stringArray,
   geoQueries: stringArray,
   competitors: stringArray,
