@@ -61,6 +61,10 @@ function formatTooltipLabel(label: string): string {
     return label;
 }
 
+function formatLegendValue(value: string): string {
+    return value;
+}
+
 export function RankTrackingChart({
     keywordId,
     keywordLabel,
@@ -120,6 +124,13 @@ export function RankTrackingChart({
     const allDomains = useMemo(() => [ourDomain, ...competitorDomains], [ourDomain, competitorDomains]);
     const textMuted = 'var(--color-text-muted-on-light)';
     const borderColor = 'var(--color-border-subtle, #eee)';
+    const tooltipContentStyle = {
+        backgroundColor: 'var(--color-card-bg, #fff)',
+        border: `1px solid ${borderColor}`,
+        borderRadius: 8,
+        fontSize: 12,
+    };
+    const tooltipLabelStyle = { color: 'var(--color-text-on-light)' };
 
     if (loading) {
         return (
@@ -202,19 +213,12 @@ export function RankTrackingChart({
                             }}
                         />
                         <Tooltip
-                            contentStyle={{
-                                backgroundColor: 'var(--color-card-bg, #fff)',
-                                border: `1px solid ${borderColor}`,
-                                borderRadius: 8,
-                                fontSize: 12,
-                            }}
-                            labelStyle={{ color: 'var(--color-text-on-light)' }}
-                            formatter={formatPositionTooltip}
-                            labelFormatter={formatTooltipLabel}
+                            contentStyle={tooltipContentStyle}
+                            labelStyle={tooltipLabelStyle}
                         />
                         <Legend
                             wrapperStyle={{ fontSize: 11 }}
-                            formatter={(value) => value}
+                            formatter={formatLegendValue}
                             iconType="line"
                         />
                         <Line

@@ -19914,3 +19914,489 @@ That way the JSX is simpler and there's no `}}` in the middle of the component.
 
 ---
 
+
+Formatter aus dem JSX auslagern, um Parsing-/Typfehler zu vermeiden:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add a helper function at the top level (after formatDate) that formats the tooltip value, and then in the JSX just pass formatter={formatPositionTooltip} or similar. That way there are no curly braces/arrow functions in the Tooltip props that could confuse the parser.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+If the build still fails, it might be a Recharts type issue - the formatter prop might expect a different signature. Let me check - in Recharts v3, Tooltip formatter can be (value, name, props) => ReactNode | [string, string]. So our return type [string, string] should be fine. If the error persists it might be that the type definition expects (value: any, name: any, props: any) => ReactNode. Let me add a type assertion to be safe: formatter={formatPositionTooltip as (value: unknown, name: string) => [string, string]} - no, that might not help. Let me leave it as is and see. If the user still gets an error we might need to remove the custom formatter entirely or use a different approach.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good, no linter errors. Let me run the build locally to confirm it passes.
+</details></think>
+
+---
+
+
+Build lokal ausführen, um zu prüfen, ob er durchläuft:
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1 | tail -50</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1 | tail -50
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+Failed to compile.
+
+./app/developers/page.tsx
+Module not found: Can't resolve '@msqdx/react'
+
+https://nextjs.org/docs/messages/module-not-found
+
+./app/domain/[id]/page.tsx
+Module not found: Can't resolve '@msqdx/react'
+
+https://nextjs.org/docs/messages/module-not-found
+
+./app/domain/[id]/page.tsx
+Module not found: Can't resolve '@msqdx/tokens'
+
+https://nextjs.org/docs/messages/module-not-found
+
+./app/geo-eeat/[jobId]/page.tsx
+Module not found: Can't resolve '@msqdx/react'
+
+https://nextjs.org/docs/messages/module-not-found
+
+./app/geo-eeat/[jobId]/page.tsx
+Module not found: Can't resolve '@msqdx/tokens'
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+&gt; Build failed because of webpack errors
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The local build fails because @msqdx/react and @msqdx/tokens are not present locally (they're copied in during Docker build). So we can't fully verify the build locally. The change I made should fix the Docker build: moving the formatter out of JSX into a named function avoids any potential parser confusion with the double braces `}}` or arrow function in that context.
+
+I'll summarize for the user.
+</details></think>
+
+---
+
+
+Lokal schlägt der Build wegen fehlender MSQDX-Pakete (werden erst im Docker-Build eingebunden) – das ist erwartbar.
+
+**Änderung:** Der Tooltip-Formatter steht nicht mehr inline im JSX, sondern als **eigene Funktion** `formatPositionTooltip` oben in der Datei. So entfallen:
+
+- die doppelten Klammern `}}` im JSX,
+- die Arrow-Function direkt im `formatter`-Prop,
+
+die den Next/Webpack-Parser im Docker-Build offenbar gestört haben.
+
+**Konkret:**
+
+1. **Neue Hilfsfunktion** (nach `formatDate`):
+   ```ts
+   function formatPositionTooltip(value: unknown, name: string): [string, string] {
+       const display = typeof value === 'number' ? String(value) : '—';
+       return [display, name];
+   }
+   ```
+
+2. **Tooltip** nutzt nur noch die Referenz:
+   ```ts
+   formatter={formatPositionTooltip}
+   labelFormatter={(label: string) => label}
+   ```
+
+Bitte den **Docker-Build erneut ausführen**. Wenn der Fehler weiterhin bei Zeile 204/206 auftaucht, könnte es an den Recharts-Typen liegen; dann können wir als nächsten Schritt den `formatter` weglassen oder mit einem Typ-Cast anpassen.
+
+---
+
+_**User**_
+
+2026-Mar-13 10:57:37.432469
+#17 [builder 6/6] RUN npm run build
+2026-Mar-13 10:57:37.432469
+#17 0.417
+2026-Mar-13 10:57:37.432469
+#17 0.417 > checkion@0.1.0 build
+2026-Mar-13 10:57:37.432469
+#17 0.417 > next build --webpack
+2026-Mar-13 10:57:37.432469
+#17 0.417
+2026-Mar-13 10:57:37.432469
+#17 1.046 ▲ Next.js 16.1.6 (webpack)
+2026-Mar-13 10:57:37.432469
+#17 1.046 - Experiments (use with caution):<REDACTED>@11.11.1
+2026-Mar-13 10:57:37.432469
+#17 42.89 npm notice
+2026-Mar-13 10:57:37.432469
+#17 ERROR: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+2026-Mar-13 10:57:37.432469
+------
+2026-Mar-13 10:57:37.432469
+> [builder 6/6] RUN npm run build:
+2026-Mar-13 10:57:37.432469
+42.55       |                             ^
+2026-Mar-13 10:57:37.432469
+42.55   209 |                             labelFormatter={(label: string) => label}
+2026-Mar-13 10:57:37.432469
+42.55   210 |                         />
+2026-Mar-13 10:57:37.432469
+42.55   211 |                         <Legend
+2026-Mar-13 10:57:37.432469
+42.68 Next.js build worker exited with code: 1 and signal: null
+2026-Mar-13 10:57:37.432469
+42.89 npm notice
+2026-Mar-13 10:57:37.432469
+42.89 npm notice New major version of npm available! 10.9.4 -> 11.11.1
+2026-Mar-13 10:57:37.432469
+42.89 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.11.1
+2026-Mar-13 10:57:37.432469
+42.89 npm notice To update run:<REDACTED>@11.11.1
+2026-Mar-13 10:57:37.432469
+42.89 npm notice
+2026-Mar-13 10:57:37.432469
+------
+2026-Mar-13 10:57:37.432469
+
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The build is still failing, but now the error has moved to line 209 - `labelFormatter={(label: string) => label}`. So it seems like the issue is with inline arrow functions in the Recharts Tooltip/component props in general - the parser or TypeScript in the Docker build doesn't like them.
+
+Let me extract the labelFormatter to a named function as well, so there are no inline arrow functions in the Tooltip at all.
+</details></think>
+
+---
+
+
+LabelFormatter ebenfalls in eine benannte Funktion auslagern:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add a formatTooltipLabel function and use it for labelFormatter, and remove the inline arrow function.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Done. If the error was about the arrow function in labelFormatter, this should fix it. If the caret was actually pointing at something else (e.g. the closing `/>` or the next line), the build might still fail. Let me also check if there are any other inline arrow functions in the Tooltip or nearby components that could cause issues - the error said line 209 labelFormatter and 210 /> and 211 Legend. So it might be that the parser is getting confused at the boundary. Using a named function should help.
+</details></think>
+
+---
+
+
+Ich habe den `labelFormatter` ebenfalls in eine benannte Funktion `formatTooltipLabel` ausgelagert. Im Tooltip stehen jetzt keine inline Arrow-Functions mehr.
+
+Bitte den **Docker-Build erneut ausführen**. Wenn der Fehler wieder an der gleichen Stelle (z. B. bei `/>` oder `<Legend`) auftritt, könnte es am Zusammenspiel von Recharts und dem Webpack-Build liegen – dann können wir als Nächstes die Recharts-Version oder die Tooltip-Props prüfen.
+
+---
+
+_**User**_
+
+2026-Mar-13 11:00:41.222090
+#16 [builder 5/6] RUN mkdir -p ./node_modules/@msqdx   && rm -rf ./node_modules/@msqdx/react ./node_modules/@msqdx/tokens   && cp -r /msqdx-design-system/packages/react ./node_modules/@msqdx/react   && cp -r /msqdx-design-system/packages/tokens ./node_modules/@msqdx/tokens
+2026-Mar-13 11:00:41.222090
+#16 DONE 0.3s
+2026-Mar-13 11:00:41.222090
+2026-Mar-13 11:00:41.222090
+#17 [builder 6/6] RUN npm run build
+2026-Mar-13 11:00:41.222090
+#17 0.407
+2026-Mar-13 11:00:41.222090
+#17 0.407 > checkion@0.1.0 build
+2026-Mar-13 11:00:41.222090
+#17 0.407 > next build --webpack
+2026-Mar-13 11:00:41.222090
+#17 0.407
+2026-Mar-13 11:00:41.222090
+#17 1.015 ▲ Next.js 16.1.6 (webpack)
+2026-Mar-13 11:00:41.222090
+#17 1.015 - Experiments (use with caution):<REDACTED>@11.11.1
+2026-Mar-13 11:00:41.222090
+#17 44.89 npm notice
+2026-Mar-13 11:00:41.222090
+#17 ERROR: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+2026-Mar-13 11:00:41.222090
+------
+2026-Mar-13 11:00:41.222090
+> [builder 6/6] RUN npm run build:
+2026-Mar-13 11:00:41.222090
+44.58       |                             ^
+2026-Mar-13 11:00:41.222090
+44.58   213 |                             labelFormatter={formatTooltipLabel}
+2026-Mar-13 11:00:41.222090
+44.58   214 |                         />
+2026-Mar-13 11:00:41.222090
+44.58   215 |                         <Legend
+2026-Mar-13 11:00:41.222090
+44.71 Next.js build worker exited with code: 1 and signal: null
+2026-Mar-13 11:00:41.222090
+44.89 npm notice
+2026-Mar-13 11:00:41.222090
+44.89 npm notice New major version of npm available! 10.9.4 -> 11.11.1
+2026-Mar-13 11:00:41.222090
+44.89 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.11.1
+2026-Mar-13 11:00:41.222090
+44.89 npm notice To update run:<REDACTED>@11.11.1
+2026-Mar-13 11:00:41.222090
+44.89 npm notice
+2026-Mar-13 11:00:41.222090
+------
+2026-Mar-13 11:00:41.222090
+2026-Mar-13 11:00:41.222090
+36 warnings found (use docker --debug to expand):
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "ANTHROPIC_API_KEY") (line 19)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "CHECKION_ADMIN_API_KEY") (line 53)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_SECRET") (line 80)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "CHECKION_ADMIN_API_KEY") (line 92)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "SERP_API_KEY") (line 125)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_URL") (line 129)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "CHECKION_ADMIN_API_KEY") (line 130)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_AUTH_URL") (line 131)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "SERP_API_KEY") (line 48)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "GEMINI_API_KEY") (line 20)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_URL") (line 21)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "CHECKION_ADMIN_API_KEY") (line 22)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "SERP_API_KEY") (line 87)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "ANTHROPIC_API_KEY") (line 89)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "ANTHROPIC_API_KEY") (line 127)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "GEMINI_API_KEY") (line 128)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_URL") (line 52)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "OPENAI_API_KEY") (line 82)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_AUTH_URL") (line 93)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_SERVICE_SECRET") (line 132)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_SECRET") (line 10)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "OPENAI_API_KEY") (line 12)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_SERVICE_SECRET") (line 24)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "GEMINI_API_KEY") (line 90)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_SERVICE_SECRET") (line 94)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_SECRET") (line 41)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "GEMINI_API_KEY") (line 51)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_AUTH_URL") (line 54)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "OPENAI_API_KEY") (line 43)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_AUTH_URL") (line 23)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "ANTHROPIC_API_KEY") (line 50)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "PLEXON_SERVICE_SECRET") (line 55)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_URL") (line 91)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "AUTH_SECRET") (line 118)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "SERP_API_KEY") (line 17)
+2026-Mar-13 11:00:41.222090
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "OPENAI_API_KEY") (line 120)
+2026-Mar-13 11:00:41.222090
+Dockerfile:114
+2026-Mar-13 11:00:41.222090
+--------------------
+2026-Mar-13 11:00:41.222090
+112 |       && cp -r /msqdx-design-system/packages/tokens ./node_modules/@msqdx/tokens
+2026-Mar-13 11:00:41.222090
+113 |     ENV DS_BASE=../msqdx-design-system
+2026-Mar-13 11:00:41.222090
+114 | >>> RUN npm run build
+2026-Mar-13 11:00:41.222090
+115 |
+2026-Mar-13 11:00:41.222090
+116 |     # ---- Runner ----
+2026-Mar-13 11:00:41.222090
+--------------------
+2026-Mar-13 11:00:41.222090
+ERROR: failed to build: failed to solve: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+2026-Mar-13 11:00:41.222090
+exit status 1
+2026-Mar-13 11:00:41.318626
+========================================
+2026-Mar-13 11:00:41.330000
+Deployment failed. Removing the new version of your application.
+2026-Mar-13 11:00:41.940037
+Gracefully shutting down build container: zos4qio0n7i77tgo9vpwqxd1
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+
+
+---
+
