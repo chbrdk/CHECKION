@@ -14106,152 +14106,50 @@ HTML Element: <div class="MuiBox-root css-105k5zf" role="region" aria-label="Acc
 
 _**Agent (model default, mode Agent)**_
 
+<think><details><summary>Thought Process</summary>
 
+The user wants to adapt the GEO page in the project dashboard to be more like the SEO (rankings) page. Specifically, they want to show GEO/EEAT scans - but only the "Fragen" (questions) in diagrams, just like on the SEO page. So they want to replace or simplify the current GEO page content (which seems to have an accordion with "Frage 1", "Frage 2", etc. and "Nennungen") and instead display these questions in diagrams similar to how the rankings/SEO page does it.
+
+Let me look at:
+1. The current GEO page structure (app/projects/[id]/geo/page.tsx or similar)
+2. The rankings/SEO page to see how it displays data in diagrams
+3. What data the GEO/EEAT scans provide (questions, mentions, etc.)
+
+Then I can propose changes to show the questions in diagram form like the SEO page.
+</details></think>
 
 ---
 
 
+GEO- und Rankings-Seite ansehen, um die Struktur und die Diagrammdarstellung zu verstehen.
+
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="glob_file_search">
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
 <details>
-<summary>Tool use: **glob_file_search**</summary>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **1** result in **1** directory</summary>
 
-Status: **loading**
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1** (1 file)
 
+| File |
+|------|
+| `app/projects/[id]/geo/page.tsx` |
 
 </details>
 </tool-use>
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="glob_file_search">
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
 <details>
-<summary>Tool use: **glob_file_search**</summary>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **1** result in **1** directory</summary>
 
-Status: **loading**
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1** (1 file)
 
-
-</details>
-</tool-use>
-
----
-
-<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
-<details>
-<summary>Tool use: **ripgrep_raw_search**</summary>
-
-Status: **loading**
-
-
-</details>
-</tool-use>
-
----
-
-
-
----
-
-
-
----
-
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
-
-</details>
-</tool-use>
-
----
-
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
-
-</details>
-</tool-use>
-
----
-
-
-
----
-
-
-
----
-
-<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
-<details>
-<summary>Tool use: **ripgrep_raw_search**</summary>
-
-Status: **loading**
-
-
-</details>
-</tool-use>
-
----
-
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
-
-</details>
-</tool-use>
-
----
-
-<tool-use data-tool-type="unknown" data-tool-name="glob_file_search">
-<details>
-<summary>Tool use: **glob_file_search**</summary>
-
-Status: **loading**
-
-
-</details>
-</tool-use>
-
----
-
-
-
----
-
-
-
----
-
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
-
-</details>
-</tool-use>
-
----
-
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
+| File |
+|------|
+| `app/projects/[id]/rankings/page.tsx` |
 
 </details>
 </tool-use>
@@ -14262,11 +14160,1397 @@ Status: **loading**
 <details>
 <summary>Tool use: **ripgrep_raw_search**</summary>
 
-Status: **loading**
+
+Parameters:
+
+```json
+{
+  "pattern": "Frage|Nennungen|accordion",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "Frage|Nennungen|accordion",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 0,
+  "totalMatches": 0,
+  "topFiles": []
+}
+```
+Status: **completed**
 
 
 </details>
 </tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me read the GEO page and the rankings page to understand the structure.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The GEO page in the project (app/projects/[id]/geo/page.tsx) currently shows:
+1. A card for GEO queries (add/suggest queries, list of chips)
+2. A card for GEO/EEAT runs (start run button, list of runs with "Open" links)
+
+The user mentioned a DOM path with "Frage 1", "Frage 2", "Nennungen", "Accordion" - that sounds like the geo-eeat job detail page (when you open a run), not the project geo page. So the content with "Frage 1 best industrial pumps in Europe 10 Nennungen" is likely on the geo-eeat job page (e.g. /geo-eeat/[jobId]). Let me search for that.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "Frage|Nennungen|accordion|Accordion",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "Frage|Nennungen|accordion|Accordion",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 140,
+  "totalMatches": 2105,
+  "topFiles": [
+    {
+      "uri": "./.specstory/history/2026-03-13_16-22Z-css-style-changes-for-forwardref-component.md",
+      "matchCount": 6
+    },
+    {
+      "uri": "./locales/de.json",
+      "matchCount": 19
+    },
+    {
+      "uri": "./.specstory/history/2026-03-12_20-42Z-integration-von-serpbear-bei-checkion.md",
+      "matchCount": 66
+    },
+    {
+      "uri": "./styles/globals.css",
+      "matchCount": 5
+    },
+    {
+      "uri": "./knowledge/checkion-projects-feature.md",
+      "matchCount": 2
+    },
+    {
+      "uri": "./.specstory/history/2026-03-12_16-12Z-css-style-changes-for-input-element.md",
+      "matchCount": 9
+    },
+    {
+      "uri": "./.specstory/history/2026-03-09_10-17Z-persona-creation-error-in-audion.md",
+      "matchCount": 64
+    },
+    {
+      "uri": "./knowledge/checkion-preventive-fixes.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./knowledge/checkion-api-mcp-audit.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./.specstory/history/2026-03-02_13-53Z-frontend-structure-for-plexon.md",
+      "matchCount": 2
+    },
+    {
+      "uri": "./.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 163
+    },
+    {
+      "uri": "./mcp-server/node_modules/typescript/lib/de/diagnosticMessages.generated.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "./app/results/[id]/page.tsx",
+      "matchCount": 7
+    },
+    {
+      "uri": "./app/share/[token]/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "./knowledge/checkion-llm-structured-outputs.md",
+      "matchCount": 2
+    },
+    {
+      "uri": "./knowledge/checkion-geo-eeat-intensive-scan.md",
+      "matchCount": 2
+    },
+    {
+      "uri": "./.specstory/history/2026-02-27_20-37Z-checkion-project-improvement-opportunities.md",
+      "matchCount": 7
+    },
+    {
+      "uri": "./knowledge/checkion-geo-eeat-ui-improvements.md",
+      "matchCount": 5
+    },
+    {
+      "uri": "./.specstory/history/2026-02-23_15-12Z-ergebnisse-teilen-für-normale-scans-und-ux-journeys.md",
+      "matchCount": 4
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **15** results in **1** directory</summary>
+
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1** (15 files)
+
+| File |
+|------|
+| `app/api/scan/geo-eeat/suggest-competitors-queries/route.ts` |
+| `lib/geo-eeat/suggest-parse.ts` |
+| `app/api/scan/geo-eeat/[jobId]/rerun-competitive/route.ts` |
+| `app/api/scan/geo-eeat/route.ts` |
+| `app/api/scan/geo-eeat/[jobId]/competitive-history/[runId]/route.ts` |
+| `app/api/scan/geo-eeat/[jobId]/competitive-history/route.ts` |
+| `app/api/scan/geo-eeat/[jobId]/status/route.ts` |
+| `app/api/scan/geo-eeat/[jobId]/project/route.ts` |
+| `app/api/scan/geo-eeat/[jobId]/route.ts` |
+| `app/api/scan/geo-eeat/history/route.ts` |
+| `app/geo-eeat/[jobId]/page.tsx` |
+| `lib/geo-eeat/competitive-benchmark.ts` |
+| `lib/geo-eeat/run-llm-stages.ts` |
+| `lib/geo-eeat/suggest-parse.test.ts` |
+| `lib/geo-eeat/stage1.ts` |
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The "Frage 1", "Frage 2", "Nennungen", Accordion content is on the geo-eeat job page: app/geo-eeat/[jobId]/page.tsx. The user wants the project GEO page (app/projects/[id]/geo/page.tsx) to show GEO/EEAT scan data - specifically the questions - in diagrams, like the SEO/rankings page. So I need to:
+
+1. Look at app/geo-eeat/[jobId]/page.tsx to see how questions/citations are structured and what API returns
+2. Look at how rankings page uses RankTrackingChart for diagrams
+3. On the project GEO page: either show the latest run's questions in diagrams, or aggregate data from runs. The user said "die geo/eeat scans davon explizit nur die fragen in diagrammen abbilden" - so from the GEO/EEAT scans, only the questions should be shown in diagrams. So we need to fetch competitive history or run data for the project's GEO runs and display question-level data (e.g. position per question per LLM) in a diagram like the rankings page.
+
+Let me read the geo-eeat job page and the competitive history API to understand the data shape, and RankTrackingChart to see the diagram pattern.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/geo-eeat/[jobId]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/RankTrackingChart.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "competitive-history|competitiveHistory|queries",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.ts*",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "competitive-history|competitiveHistory|queries",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 145,
+  "totalMatches": 685,
+  "topFiles": [
+    {
+      "uri": "./app/projects/[id]/geo/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "./lib/constants.ts",
+      "matchCount": 6
+    },
+    {
+      "uri": "./lib/api-schemas.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "./lib/db/schema.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/api/scan/geo-eeat/suggest-competitors-queries/route.ts",
+      "matchCount": 12
+    },
+    {
+      "uri": "./app/api/projects/[id]/suggest-competitors/route.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "./lib/geo-eeat/suggest-parse.ts",
+      "matchCount": 11
+    },
+    {
+      "uri": "./mcp-server/src/tools.ts",
+      "matchCount": 9
+    },
+    {
+      "uri": "./app/api/scan/geo-eeat/[jobId]/rerun-competitive/route.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "./app/api/scan/geo-eeat/route.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "./mcp-server/node_modules/hono/dist/types/request.d.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "./mcp-server/node_modules/typescript/lib/lib.dom.d.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./mcp-server/node_modules/@types/node/dns/promises.d.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./mcp-server/node_modules/@types/node/trace_events.d.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./mcp-server/node_modules/@types/node/os.d.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./mcp-server/node_modules/@types/node/dns.d.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "./app/api/scan/geo-eeat/[jobId]/competitive-history/[runId]/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/api/scan/geo-eeat/[jobId]/competitive-history/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/scan/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "./app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 9
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I found CompetitivePositionDiagram - that's used on the geo-eeat job page for the "Platzierung pro Frage und LLM" diagram. Let me read the geo-eeat page to see how the accordion (Frage 1, 2, 3 with Nennungen) and the diagram are used, and what data structure they need. Then I need to see if we have an API that returns project-level GEO data (latest run per project or list of runs with competitive data) so we can show diagrams on the project GEO page.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/geo-eeat/[jobId]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/CompetitivePositionDiagram.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to find CompetitiveBenchmarkResult and how the geo-eeat page fetches run data. The project GEO page currently only lists runs and has GEO queries management. To show "Fragen in Diagrammen" we need to either:
+1. On the project GEO page: fetch the latest completed run (or let user pick a run) for this project, then fetch that run's competitive data and show CompetitivePositionDiagram. So we need to load geo runs for the project, pick one (e.g. latest), get its jobId, then fetch that job's payload or competitive history and pass to CompetitivePositionDiagram.
+2. Or create an API that returns project-level competitive summary (e.g. latest run's competitive data by project id).
+
+The geo-eeat history API returns runs with projectId filter - let me check apiScanGeoEeatHistory. So we have geoRuns with id. Each id is a jobId. We can fetch the job's data (apiScanGeoEeat(jobId)) to get payload with competitiveByModel, then show the diagram. So the flow for the project GEO page:
+1. Keep loading project + geo runs (as now).
+2. Add state: selectedRunId (default: latest completed run?), runPayload (competitive data for that run).
+3. When we have geoRuns, optionally auto-select the latest completed one and fetch its full payload (or competitive-history latest).
+4. When we have competitive data, show CompetitivePositionDiagram (and maybe a run selector dropdown).
+5. Layout: similar to rankings page - header with "GEO/EEAT", then a card with the diagram (Fragen als Diagramm), and keep the GEO-Queries card and "Läufe" list but maybe more compact; or put diagram prominent like rankings has the charts.
+
+Let me check the API for getting a single run's data - apiScanGeoEeat(jobId) returns the run with payload. So we need to call that for the selected job and get payload.competitiveByModel. Then we need the target domain - from project.domain. So we have competitiveByModel and targetUrl (project.domain). That's exactly what CompetitivePositionDiagram needs.
+
+I'll implement:
+1. Project GEO page: add state for selectedRunId (from geoRuns), runPayload (GeoEeatIntensiveResult or null).
+2. When geoRuns load, set selectedRunId to the first/latest run that has status complete.
+3. When selectedRunId is set, fetch apiScanGeoEeat(selectedRunId), get payload.competitiveByModel; if present, show CompetitivePositionDiagram with project.domain as targetUrl.
+4. Add a run selector (dropdown or tabs) so user can switch which run's diagram to show.
+5. Layout: make it similar to rankings - one card for "Platzierung pro Frage" with the diagram, one card for GEO-Fragen (queries), one for "Neue Analyse starten" / run list. Remove or simplify the accordion-style content - the user said they only want the questions in diagrams, so we don't need to replicate the full geo-eeat job page accordion on the project GEO page.
+
+Let me also check - does the run payload from apiScanGeoEeat include competitiveByModel? I'll assume yes from the geo-eeat page code (payload?.competitiveByModel). So the flow is: fetch run by id -> get payload.competitiveByModel and payload.competitive (legacy). Then CompetitivePositionDiagram needs competitiveByModel: Record<string, CompetitiveBenchmarkResult>. So we need to fetch the job and extract that. Let me read the API response shape.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/geo-eeat/[jobId]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "CompetitiveBenchmarkResult|competitiveByModel",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "CompetitiveBenchmarkResult|competitiveByModel",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib",
+  "outputMode": "content",
+  "totalFiles": 25,
+  "totalMatches": 85,
+  "topFiles": [
+    {
+      "uri": "lib/db/schema.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/geo-eeat/competitive-benchmark.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "lib/db/geo-eeat-competitive-runs.test.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/db/geo-eeat-competitive-runs.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "lib/types.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/schema.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/geo-eeat/competitive-benchmark.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/geo-eeat-competitive-runs.test.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/geo-eeat-competitive-runs.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/schema.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/geo-eeat/competitive-benchmark.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/geo-eeat-competitive-runs.test.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/geo-eeat-competitive-runs.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/schema.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/geo-eeat/competitive-benchmark.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/geo-eeat-competitive-runs.test.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/geo-eeat-competitive-runs.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I understand. The rankings page has:
+1. A score card at top
+2. A big card "Rankings" with header actions (add keyword, suggest, refresh) and a grid of keyword cards - each keyword card contains a RankTrackingChart (line chart over time).
+
+For the project GEO page we need:
+1. A card "Platzierung pro Frage" (like the geo-eeat job page) that shows CompetitivePositionDiagram when we have competitive data from a run.
+2. We need to load a selected run's payload (apiScanGeoEeat(jobId)) to get competitiveByModel. The run list we already have (geoRuns). So: when user has runs, we can let them select one (or default to latest), fetch that run's full data, and if it has competitiveByModel, show the diagram.
+3. Keep GEO-Fragen card and the "Läufe" / start new run card, but make the diagram the main content like rankings has the charts.
+
+Let me check the API for fetching a single geo-eeat run - apiScanGeoEeat.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "apiScanGeoEeat",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts",
+  "contextAfter": 2,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "apiScanGeoEeat",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 40,
+  "topFiles": [
+    {
+      "uri": "lib/constants.ts",
+      "matchCount": 21
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 21
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 21
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 21
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 21
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I have everything. The project GEO page will:
+1. Load project + geo runs (as now).
+2. Add state: selectedRunId (string | null), runPayload (GeoEeatIntensiveResult | null). When geoRuns load, set selectedRunId to the first run that has status 'complete' (or first run). When selectedRunId changes, fetch apiScanGeoEeat(selectedRunId), get data.payload.competitiveByModel.
+3. Layout (like rankings): First card = "Platzierung pro Frage" with CompetitivePositionDiagram when we have competitiveByModel and project.domain (targetUrl). Add a run selector (dropdown or list) so user picks which run to show. If no run or no competitive data, show empty state + link to start run or open run.
+4. Second card = GEO-Fragen (queries) - keep as is.
+5. Third card = GEO/EEAT Läufe with "Neue Analyse starten" and list of runs (with "Öffnen" to go to job page). So we're not removing the runs list, we're adding the diagram as main content and keeping the rest.
+
+Let me implement the GEO page rewrite.
+</details></think>
+
+---
+
+
+GEO-Seite anpassen: Projekt-GEO-Seite um Diagramm „Platzierung pro Frage“ (wie auf der GEO-EEAT-Job-Seite) erweitern und Aufbau an die Rankings-Seite anlehnen.
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] Add run payload fetch + CompetitivePositionDiagram to project GEO page
+- [ ] Layout: diagram card first (like rankings), then queries + runs
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll rewrite the GEO page to:
+1. Add state for selectedRunId (from geoRuns), runPayload (from apiScanGeoEeat).
+2. When geoRuns load, set selectedRunId to first run with status 'complete', or first run.
+3. useEffect: when selectedRunId and id, fetch apiScanGeoEeat(selectedRunId), set runPayload from data.payload.
+4. Add a card "Platzierung pro Frage und LLM" (or use existing locale key positionDiagramTitle) with CompetitivePositionDiagram when runPayload?.competitiveByModel and project.domain. Add run selector (select or list of runs) to switch which run's diagram to show.
+5. Keep GEO-Fragen card and GEO-Läufe card below. Use full width like rankings (remove maxWidth 900).
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I'll add:
+1. Import apiScanGeoEeat, CompetitivePositionDiagram, type GeoEeatIntensiveResult
+2. State: selectedRunId (string | null), runPayload (GeoEeatIntensiveResult | null), runPayloadLoading (boolean)
+3. When geoRuns load: set selectedRunId to first run with status === 'complete', or first run
+4. useEffect: when selectedRunId, fetch apiScanGeoEeat(selectedRunId), set runPayload to data.payload (and runPayloadLoading false)
+5. First card: "Platzierung pro Frage und LLM" (t('geoEeat.positionDiagramTitle')) with:
+   - Run selector: dropdown or list of geoRuns, when selected fetch that run's payload
+   - When runPayload?.competitiveByModel && project.domain: render CompetitivePositionDiagram(competitiveByModel, project.domain, t)
+   - Else: empty state "Analyse auswählen oder starten" + link to start / list of runs to select
+6. Keep second card GEO-Fragen, third card GEO-Läufe with start button + list (with "Öffnen" and maybe "Diagramm anzeigen" to select that run for the diagram). Actually the run selector can be inside the diagram card: "Lauf: [dropdown of runs]" and when you change it we fetch that run and show its diagram. So selectedRunId is the run we're showing the diagram for. When user picks a run from the list we set selectedRunId and fetch. Default: first completed run.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now add the effect that sets selectedRunId when geoRuns load (first completed run, or first run), and the effect that fetches run payload when selectedRunId changes.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Fixing the initial selectedRunId: we shouldn't set selectedRunId from inside the first effect when runs load, because that would run every time and might conflict. Better: when geoRuns get set, in the same then() we set selectedRunId only if we don't have one yet. But actually we initialize selectedRunId as null, so the first time runs load we set it. When id changes we might reset geoRuns and then runs load again - we'd set selectedRunId again. That's fine. But we need to not set selectedRunId if the user has explicitly chosen another run. So only set default when selectedRunId is null. I did that. Good.
+
+One issue: when geoRuns is first empty then loads, we set selectedRunId. But the dependency array has only [id] - so we don't have selectedRunId in the dependency. So when the fetch returns we set runs and we set selectedRunId. That's correct. But then the second useEffect runs because selectedRunId changed, and it fetches the run payload. Good.
+
+Now add the diagram card to the JSX - first card "Platzierung pro Frage und LLM" with run selector and CompetitivePositionDiagram.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to fix the initial selectedRunId logic: when geoRuns load the first time, we're comparing selectedRunId === null - but we're inside the .then() of the fetch, so we're reading the state at the time the request completed. When the component first mounts, selectedRunId is null and geoRuns is []. Then the fetch completes and we set geoRuns to [...] and we want to set selectedRunId to the first completed run. So we should set it when we set geoRuns, and we should only set a "default" when we're initially loading - e.g. setSelectedRunId(completed?.id ?? runs[0]?.id ?? null) whenever we get new runs and we don't have a selected run that's in the list. Actually the simpler logic: when geoRuns is set from the API, if selectedRunId is null, set it to first completed or first run. If selectedRunId is already set but not in the new list, we could reset to first run - or leave it. For now just: if selectedRunId is null and runs.length > 0, set selectedRunId to first completed or runs[0]. That way the first time we load runs we get a default. Good.
+
+Let me also fix: when id changes, we might want to reset selectedRunId to null so that when new geoRuns load for the new project we set the default again. Actually when id changes, the effect runs again and fetches geoRuns. When the fetch completes we set geoRuns. At that moment selectedRunId might still be from the previous project. So we should reset selectedRunId when id changes, or when we set geoRuns we could set selectedRunId only when it's null OR when the current selectedRunId is not in the new runs. Let me add: when setting runs, if the current selectedRunId is not in the runs list, set selectedRunId to first completed or first. So: setGeoRuns(runs); const currentInList = runs.some((r: { id: string }) => r.id === selectedRunId); if (runs.length > 0 && (!selectedRunId || !currentInList)) { const completed = runs.find(...); setSelectedRunId(completed?.id ?? runs[0]?.id ?? null); }. That way when we switch project we get fresh runs and we'll set selectedRunId to the first run because selectedRunId might be from the old project and not in the new list. I'll leave the simpler logic for now (only set when selectedRunId === null) - when switching project the user might need to select a run again if the list changes. We could add a key or reset selectedRunId when id changes in a separate effect. Let me add: useEffect(() => { setSelectedRunId(null); setRunPayload(null); }, [id]); so when project id changes we clear selection. Then when geoRuns load they'll set selectedRunId to first run. Good.
+</details></think>
+
+---
+
+
+Resetting selection when the project (id) changes and fixing the default run selection when the run list updates.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+setSelectedRunId can take a function. Good. Now check if we have the locale keys - geoEeat.positionDiagramTitle and geoEeat.positionDiagramDescription. I saw them in the grep earlier in locales/de.json. Let me verify they exist and are under geoEeat.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "positionDiagramTitle|positionDiagramDescription|noResultsDisplay",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "positionDiagramTitle|positionDiagramDescription|noResultsDisplay",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 30,
+  "topFiles": [
+    {
+      "uri": "locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "locales/de.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The locale keys are under geoEeat in the JSON. Let me check - the i18n t() function - does it use 'geoEeat.positionDiagramTitle'? I need to see how the geo-eeat page uses t() for these - it might be that the namespace is set. Let me check how t is used in the codebase for geoEeat keys.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "t\\('geoEeat\\.",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.tsx",
+  "outputMode": "content",
+  "contextAfter": 0,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "t\\('geoEeat\\.",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 15,
+  "totalMatches": 435,
+  "topFiles": [
+    {
+      "uri": "./app/projects/[id]/geo/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/scan/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/geo/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/scan/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/geo/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/scan/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/geo/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/scan/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/geo/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/scan/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The locale structure - the keys are under "geoEeat" in the JSON. So the full key would be something like "geoEeat.positionDiagramTitle". Let me check how the I18n provider resolves keys - does it expect "geoEeat.positionDiagramTitle" or just the key under a namespace?
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "useI18n|t\\(",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/i18n",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "useI18n|t\\(",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/i18n",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 25,
+  "topFiles": [
+    {
+      "uri": "components/i18n/I18nProvider.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/components/i18n/I18nProvider.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/components/i18n/I18nProvider.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/components/i18n/I18nProvider.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/components/i18n/I18nProvider.tsx",
+      "matchCount": 5
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The geo-eeat job page uses t('geoEeat.positionDiagramTitle') so the key is the full path. The JSON has "geoEeat": { "positionDiagramTitle": "..." } so the t function likely looks up by path. So we're good.
+
+Let me double-check: CompetitivePositionDiagram expects t with (key, params?). The geo-eeat page passes t={t}. So we pass the same. Good.
+
+One more thing: the API response for apiScanGeoEeat - does it return { payload: GeoEeatIntensiveResult }? Let me check the route.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/geo-eeat/[jobId]/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So the API returns payload: run.payload. The run from DB has payload which is the GeoEeatIntensiveResult. So data.payload in our fetch is correct. Good.
+
+Let me add a small test or at least run the build to ensure nothing breaks. And update the todo.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add run payload fetch + CompetitivePositionDiagram to project GEO page
+- [x] Layout: diagram card first (like rankings), then queries + runs
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 6.0s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+  Generating static pages using 9 workers (0/46) ...
+  Generating static pages using 9 workers (11/46) 
+  Generating static pages using 9 workers (22/46) 
+  Generating static pages using 9 workers (34/46) 
+✓ Generating static pages using 9 workers (46/46) in 280.4ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/register
+├ ƒ /api/auth/tokens
+├ ƒ /api/auth/tokens/[id]
+├ ƒ /api/checks/contrast
+├ ƒ /api/checks/pagespeed
+├ ƒ /api/checks/readability
+├ ƒ /api/checks/ssl
+├ ƒ /api/checks/wayback
+├ ƒ /api/health
+├ ƒ /api/journeys
+├ ƒ /api/journeys/[id]
+├ ƒ /api/projects
+├ ƒ /api/projects/[id]
+├ ƒ /api/projects/[id]/geo-summary
+├ ƒ /api/projects/[id]/ranking-summary
+├ ƒ /api/projects/[id]/research
+├ ƒ /api/projects/[id]/suggest-competitors
+├ ƒ /api/projects/[id]/suggest-keywords
+├ ƒ /api/rank-tracking/keywords
+├ ƒ /api/rank-tracking/keywords/[id]
+├ ƒ /api/rank-tracking/keywords/[id]/positions
+├ ƒ /api/rank-tracking/refresh
+├ ƒ /api/saliency/generate
+├ ƒ /api/saliency/result
+├ ƒ /api/scan
+├ ƒ /api/scan/[id]
+├ ƒ /api/scan/[id]/project
+├ ƒ /api/scan/[id]/screenshot
+├ ƒ /api/scan/[id]/summarize
+├ ƒ /api/scan/domain
+├ ƒ /api/scan/domain/[id]/journey
+├ ƒ /api/scan/domain/[id]/status
+├ ƒ /api/scan/domain/[id]/summarize
+├ ƒ /api/scan/domain/[id]/summary
+├ ƒ /api/scan/geo-eeat
+├ ƒ /api/scan/geo-eeat/[jobId]
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history/[runId]
+├ ƒ /api/scan/geo-eeat/[jobId]/project
+├ ƒ /api/scan/geo-eeat/[jobId]/rerun-competitive
+├ ƒ /api/scan/geo-eeat/[jobId]/status
+├ ƒ /api/scan/geo-eeat/history
+├ ƒ /api/scan/geo-eeat/suggest-competitors-queries
+├ ƒ /api/scan/journey-agent
+├ ƒ /api/scan/journey-agent/[jobId]
+├ ƒ /api/scan/journey-agent/[jobId]/live
+├ ƒ /api/scan/journey-agent/[jobId]/live/stream
+├ ƒ /api/scan/journey-agent/[jobId]/project
+├ ƒ /api/scan/journey-agent/[jobId]/video
+├ ƒ /api/scan/journey-agent/history
+├ ƒ /api/scans
+├ ƒ /api/scans/[id]
+├ ƒ /api/scans/domain
+├ ƒ /api/scans/domain/[id]
+├ ƒ /api/scans/domain/[id]/project
+├ ƒ /api/search
+├ ƒ /api/share
+├ ƒ /api/share/[token]
+├ ƒ /api/share/[token]/access
+├ ƒ /api/share/[token]/pages/[pageId]
+├ ƒ /api/share/[token]/pages/[pageId]/screenshot
+├ ƒ /api/share/[token]/video
+├ ƒ /api/share/by-resource
+├ ƒ /api/tools/contrast
+├ ƒ /api/tools/extract
+├ ƒ /api/tools/pagespeed
+├ ƒ /api/tools/readability
+├ ƒ /api/tools/ssl-labs
+├ ƒ /api/tools/wayback
+├ ƒ /developers
+├ ƒ /domain/[id]
+├ ƒ /geo-eeat/[jobId]
+├ ƒ /history
+├ ƒ /journey-agent/[jobId]
+├ ƒ /login
+├ ƒ /projects
+├ ƒ /projects/[id]
+├ ƒ /projects/[id]/geo
+├ ƒ /projects/[id]/rankings
+├ ƒ /projects/[id]/research
+├ ƒ /register
+├ ƒ /results/[id]
+├ ƒ /scan
+├ ƒ /scan/domain
+├ ƒ /settings
+└ ƒ /share/[token]
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build succeeded. Let me provide a short summary to the user. I used MUI Select/FormControl/InputLabel - let me check if the project uses MUI or if we should use a different selector. The rankings page uses Msqdx components. Let me check if there's an Msqdx select - actually the geo-eeat job page uses MsqdxTabs for run selection. For a dropdown we could use MUI Select or a simple native select. The code I added uses MUI FormControl, InputLabel, Select, MenuItem - that's standard MUI. The project already uses @mui/material (Box, Stack, etc.) so it's fine. Done.
+</details></think>
+
+---
+
+
+Die GEO-Seite im Projekt-Dashboard ist angepasst. Zusammenfassung der Änderungen:
+
+## 1. **Diagramm „Platzierung pro Frage und LLM“ (wie SEO-Seite)**
+
+- **Neue oberste Karte** mit dem Titel „Platzierung pro Frage und LLM“ und der bestehenden Beschreibung aus der GEO/EEAT-Job-Seite.
+- **Lauf-Auswahl**: Dropdown („GEO/EEAT-Läufe“) listet alle GEO-Läufe des Projekts (Datum + Status). Beim Wechsel wird der gewählte Lauf geladen.
+- **`CompetitivePositionDiagram`**: Wenn der gewählte Lauf `competitiveByModel` hat und das Projekt eine Domain hat, wird dasselbe Diagramm wie auf der GEO-EEAT-Job-Seite gerendert (Balken pro Frage/LLM, Tabelle darunter).
+- **Leerzustände**:
+  - Keine Läufe: Hinweis + Button „GEO/EEAT starten“.
+  - Lauf gewählt, aber keine Competitive-Daten: Hinweis „Keine Ergebnisse zum Anzeigen“ + Link „Öffnen“ zur Job-Seite.
+
+## 2. **Datenfluss**
+
+- Beim Laden der GEO-Läufe wird automatisch der **erste abgeschlossene Lauf** (oder der erste Lauf) ausgewählt.
+- Beim Wechsel des Projekts bzw. der Lauf-Liste bleibt die Auswahl gültig, wenn der gewählte Lauf noch in der Liste ist; sonst wird wieder der erste (abgeschlossene) Lauf gewählt.
+- Für den gewählten Lauf wird `GET /api/scan/geo-eeat/[jobId]` aufgerufen und `payload.competitiveByModel` für das Diagramm verwendet; `targetUrl` ist die Projekt-Domain.
+
+## 3. **Layout (angeglichen an Rankings-Seite)**
+
+- Volle Breite (`width: '100%'`, `maxWidth: '100%'`) wie auf der Rankings-Seite.
+- Reihenfolge: **1) Diagramm-Karte** → **2) GEO-Fragen** (Fragen verwalten) → **3) GEO/EEAT-Läufe** (Neue Analyse starten, Liste mit „Öffnen“).
+
+Die frühere Accordion-Ansicht („Frage 1 … Nennungen“, „Frage 2 …“) wird auf der Projekt-GEO-Seite **nicht** mehr genutzt; die Fragen erscheinen nur noch im Diagramm (Balken + Tabelle) wie auf der SEO/Rankings-Seite. Die detaillierte Accordion-Ansicht bleibt nur auf der Einzel-Job-Seite unter `/geo-eeat/[jobId]`.
+
+Build ist durchgelaufen. Wenn du willst, können wir als Nächstes z. B. die Run-Auswahl (z. B. Tabs statt Dropdown) oder Texte anpassen.
+
+---
+
+_**User**_
+
+ich würde DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-1whhp80 > div.MuiStack-root c.-yd8.a2 > div.MuiBox-root c.-17b4aqi[1] > div.MuiBox-root c.-1.g4afn
+Position: top=237px, left=101px, width=1115px, height=675px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-1sg4afn" data-cursor-element-id="cursor-el-1">GEO-Fragen Typische Suchanfragen für GEO/E-E-A-T Analysen (z. B. für KI-Suchen). FRAGE ​ Frage hinzufügen Mit KI vorschlagen best industrial pumps in Europe top pump manufacturers for water treatment</div> und DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-1whhp80 > div.MuiStack-root c.-yd8.a2 > div.MuiBox-root c.-17b4aqi[0] > div.MuiBox-root c.-1.g4afn
+Position: top=108px, left=101px, width=1115px, height=1362px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-1sg4afn" data-cursor-element-id="cursor-el-81">Platzierung pro Frage und LLM Für jede Frage wird angezeigt, auf welchem Platz deine Domain bei welchem Modell genannt wurde (1 = beste Platzierung). GEO/E-E-A-T Analysen 13.03.2026, 15:08 · complet</div>  gar nicht anzeigen sondern direkt nur die fragen und ihre ergebnisse genau so in einzelne cards wie bei seo page mappen. 
 
 ---
 

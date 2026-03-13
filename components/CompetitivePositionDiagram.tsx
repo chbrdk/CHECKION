@@ -25,7 +25,7 @@ const BAR_RADIUS = typeof br?.xs === 'number' ? br.xs : 2;
 const scale = MSQDX_SPACING.scale as Record<string, unknown> | undefined;
 const spacingSm = typeof scale?.sm === 'number' ? scale.sm : 12;
 
-function extractHostname(input: string): string {
+export function extractHostname(input: string): string {
     const s = input.trim().toLowerCase();
     try {
         const u = new URL(s.startsWith('http') ? s : `https://${s}`);
@@ -70,7 +70,7 @@ export interface PositionMatrixRow {
 }
 
 /** For chart: use 0 for "not cited". For table: show "–" when value is 0 or null. */
-function buildPositionMatrix(
+export function buildPositionMatrix(
     competitiveByModel: Record<string, CompetitiveBenchmarkResult>,
     targetDomain: string
 ): { rows: PositionMatrixRow[]; modelIds: string[] } {
