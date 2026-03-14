@@ -26,6 +26,7 @@ import {
 } from '@/lib/constants';
 import type { DomainSummaryResponse } from '@/lib/domain-summary';
 import type { SlimPage } from '@/lib/types';
+import { computeWcagScore } from '@/lib/wcag-score';
 
 export default function ProjectWcagPage() {
     const params = useParams();
@@ -169,7 +170,15 @@ export default function ProjectWcagPage() {
                     </MsqdxMoleculeCard>
                 )}
 
-                {!loading && aggregated && (
+                {!loading && aggregated && (() => {
+                    const wcagScore = computeWcagScore({
+                        errors: aggregated.stats.errors,
+                        warnings: aggregated.stats.warnings,
+                        notices: aggregated.stats.notices,
+                        totalPageCount: totalPageCount,
+                    });
+                    const scoreLabelKey = `projects.wcag.scoreLabel_${wcagScore.label}`;
+                    return (
                     <>
                         {/* Stats card */}
                         <MsqdxMoleculeCard
@@ -178,7 +187,29 @@ export default function ProjectWcagPage() {
                             borderRadius="lg"
                             footerDivider={false}
                             sx={{ bgcolor: 'var(--color-card-bg)' }}
+                            headerActions={
+                                <InfoTooltip
+                                    title={t('projects.wcag.scoreTooltip')}
+                                    ariaLabel={t('common.info')}
+                                />
+                            }
                         >
+                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, flexWrap: 'wrap', mb: 1.5 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                                    <MsqdxTypography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                                        {wcagScore.score}
+                                    </MsqdxTypography>
+                                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', fontWeight: 500 }}>
+                                        {t('projects.wcag.score')}
+                                    </MsqdxTypography>
+                                </Box>
+                                <MsqdxChip
+                                    label={t(scoreLabelKey)}
+                                    size="small"
+                                    variant="outlined"
+                                    sx={{ alignSelf: 'center' }}
+                                />
+                            </Box>
                             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1 }}>
                                 <MsqdxChip
                                     label={`${t('share.errors')}: ${aggregated.stats.errors}`}
@@ -252,7 +283,8 @@ export default function ProjectWcagPage() {
                             </Box>
                         )}
                     </>
-                )}
+                    );
+                })()}
             </Stack>
         </Box>
     );

@@ -188,6 +188,13 @@
       "noScan": "Noch kein Deep Scan für dieses Projekt. Führe einen Domain-Scan aus, um die WCAG-Analyse zu sehen.",
       "startScan": "Deep Scan starten",
       "summary": "Übersicht",
+      "score": "WCAG-Score",
+      "scoreLabel_excellent": "Sehr gut",
+      "scoreLabel_good": "Gut",
+      "scoreLabel_fair": "Mäßig",
+      "scoreLabel_poor": "Schwach",
+      "scoreLabel_critical": "Kritisch",
+      "scoreTooltip": "Berechnung: 100 minus gewichtete Issues pro Seite (Errors×10, Warnings×3, Notices×1). Angelehnt an gängige Praxis (z. B. Lighthouse/BrowserStack); WCAG definiert keine offizielle Score-Formel.",
       "issuesTitle": "Gefundene Issues (Domain)",
       "aggregatedOver": "Aggregiert über {count} Seiten",
       "pagesWithMostErrors": "Seiten mit den meisten Fehlern"

@@ -188,6 +188,13 @@
       "noScan": "No deep scan for this project yet. Run a domain scan to see WCAG analysis.",
       "startScan": "Start deep scan",
       "summary": "Summary",
+      "score": "WCAG Score",
+      "scoreLabel_excellent": "Excellent",
+      "scoreLabel_good": "Good",
+      "scoreLabel_fair": "Fair",
+      "scoreLabel_poor": "Poor",
+      "scoreLabel_critical": "Critical",
+      "scoreTooltip": "Score = 100 minus weighted issues per page (errors×10, warnings×3, notices×1). Aligned with common tooling (e.g. Lighthouse/BrowserStack); WCAG does not define an official score formula.",
       "issuesTitle": "Found issues (domain)",
       "aggregatedOver": "Aggregated over {count} pages",
       "pagesWithMostErrors": "Pages with most issues"
