@@ -259,7 +259,15 @@
       "tableNo": "No",
       "tableEmpty": "No page data.",
       "tableAria": "SEO on-page table: all pages with meta, H1, structure and content.",
-      "tableTitle": "All pages: Meta, structure & content"
+      "tableTitle": "All pages: Meta, structure & content",
+      "tabPages": "Pages",
+      "tabKeywords": "Keywords",
+      "keywordsTableTitle": "Cross-page keywords",
+      "keywordsTableSubtitle": "Terms that appear on multiple pages; sorted by count.",
+      "keywordsColKeyword": "Keyword",
+      "keywordsColCount": "Count",
+      "keywordsColPages": "Pages",
+      "keywordsColAvgDensity": "Avg. density %"
     }
   },
   "auth": {

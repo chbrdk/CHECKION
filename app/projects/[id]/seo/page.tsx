@@ -10,6 +10,7 @@ import {
     MsqdxButton,
     MsqdxMoleculeCard,
     MsqdxChip,
+    MsqdxTabs,
 } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
@@ -21,7 +22,6 @@ import {
     pathResults,
     pathScanDomain,
     pathProject,
-    SEO_KEYWORDS_INITIAL_SHOWN,
     SEO_URL_LIST_INITIAL,
 } from '@/lib/constants';
 import type { DomainSummaryResponse } from '@/lib/domain-summary';
@@ -29,6 +29,7 @@ import type { SlimPage } from '@/lib/types';
 import type { AggregatedSeo, AggregatedStructure } from '@/lib/domain-aggregation';
 import { computeSeoOnPageScore } from '@/lib/seo-on-page-score';
 import { SeoOnPageTable, type SeoOnPageRow } from '@/components/SeoOnPageTable';
+import { SeoKeywordsTable } from '@/components/SeoKeywordsTable';
 
 /** Cache per project id so remount shows last data immediately. Max size to avoid unbounded memory growth. */
 const SEO_CACHE_MAX = 5;
@@ -151,7 +152,7 @@ export default function ProjectSeoPage() {
         },
         [pagesByUrl, router]
     );
-    const [keywordsExpanded, setKeywordsExpanded] = useState(false);
+    const [seoTabValue, setSeoTabValue] = useState(0);
     const [canonicalListExpanded, setCanonicalListExpanded] = useState(false);
     const [noindexListExpanded, setNoindexListExpanded] = useState(false);
     const loading = projectLoading || summaryLoading;
@@ -255,6 +256,19 @@ export default function ProjectSeoPage() {
 
                 {fullSummary && hasSeoData && (
                     <>
+                        <Box sx={{ borderBottom: '1px solid var(--color-secondary-dx-grey-light-tint)', mb: 2 }}>
+                            <MsqdxTabs
+                                value={seoTabValue}
+                                onChange={(v) => setSeoTabValue(Number(v))}
+                                tabs={[
+                                    { label: t('projects.seo.tabPages'), value: 0 },
+                                    { label: t('projects.seo.tabKeywords'), value: 1 },
+                                ]}
+                            />
+                        </Box>
+
+                        {seoTabValue === 0 && (
+                            <>
                         {/* Overview Meta & Basis */}
                         {aggregatedSeo && (
                             <MsqdxMoleculeCard
@@ -393,45 +407,28 @@ export default function ProjectSeoPage() {
                                 <SeoOnPageTable rows={seoTableRows} onRowClick={handleSeoRowClick} />
                             </MsqdxMoleculeCard>
                         )}
+                            </>
+                        )}
 
-                        {/* Cross-Page Keywords – initial slice to limit DOM (expand on demand) */}
-                        {aggregatedSeo && aggregatedSeo.crossPageKeywords.length > 0 && (() => {
-                            const keywords = aggregatedSeo.crossPageKeywords;
-                            const limit = keywordsExpanded ? keywords.length : Math.min(SEO_KEYWORDS_INITIAL_SHOWN, keywords.length);
-                            const shown = keywords.slice(0, limit);
-                            const hasMore = keywords.length > limit;
-                            return (
-                                <MsqdxMoleculeCard
-                                    title={t('projects.seo.crossPageKeywords')}
-                                    subtitle={t('projects.seo.crossPageKeywordsSubtitle')}
-                                    variant="flat"
-                                    borderRadius="lg"
-                                    sx={{ bgcolor: 'var(--color-card-bg)' }}
-                                >
-                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                        {shown.map((kw) => (
-                                            <MsqdxChip
-                                                key={kw.keyword}
-                                                label={`${kw.keyword} (${kw.totalCount}×, ${kw.pageCount} ${t('projects.seo.pagesShort')}, Ø ${kw.avgDensityPercent}%)`}
-                                                size="small"
-                                                sx={{ fontSize: '0.7rem', height: 22 }}
-                                            />
-                                        ))}
-                                    </Box>
-                                    {hasMore && (
-                                        <Box sx={{ mt: 0.5 }}>
-                                            <MsqdxButton
-                                                size="small"
-                                                variant="text"
-                                                onClick={() => setKeywordsExpanded(true)}
-                                            >
-                                                {t('common.loadMore')} ({keywords.length - limit} {t('projects.seo.more')})
-                                            </MsqdxButton>
-                                        </Box>
-                                    )}
-                                </MsqdxMoleculeCard>
-                            );
-                        })()}
+                        {seoTabValue === 1 && aggregatedSeo && aggregatedSeo.crossPageKeywords.length > 0 && (
+                            <MsqdxMoleculeCard
+                                title={t('projects.seo.keywordsTableTitle')}
+                                subtitle={t('projects.seo.keywordsTableSubtitle')}
+                                variant="flat"
+                                borderRadius="lg"
+                                sx={{ bgcolor: 'var(--color-card-bg)' }}
+                            >
+                                <SeoKeywordsTable keywords={aggregatedSeo.crossPageKeywords} />
+                            </MsqdxMoleculeCard>
+                        )}
+
+                        {seoTabValue === 1 && aggregatedSeo && aggregatedSeo.crossPageKeywords.length === 0 && (
+                            <MsqdxMoleculeCard variant="flat" borderRadius="lg" sx={{ bgcolor: 'var(--color-card-bg)' }}>
+                                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                    {t('projects.seo.tableEmpty')}
+                                </MsqdxTypography>
+                            </MsqdxMoleculeCard>
+                        )}
 
                     </>
                 )}

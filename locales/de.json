@@ -259,7 +259,15 @@
       "tableNo": "Nein",
       "tableEmpty": "Keine Seitendaten.",
       "tableAria": "SEO-On-Page-Tabelle: alle Seiten mit Meta, H1, Struktur und Inhalt.",
-      "tableTitle": "Alle Seiten: Meta, Struktur & Inhalt"
+      "tableTitle": "Alle Seiten: Meta, Struktur & Inhalt",
+      "tabPages": "Seiten",
+      "tabKeywords": "Keywords",
+      "keywordsTableTitle": "Keywords seitenübergreifend",
+      "keywordsTableSubtitle": "Begriffe, die auf mehreren Seiten vorkommen; sortiert nach Vorkommen.",
+      "keywordsColKeyword": "Keyword",
+      "keywordsColCount": "Vorkommen",
+      "keywordsColPages": "Seiten",
+      "keywordsColAvgDensity": "Ø Dichte %"
     }
   },
   "auth": {
