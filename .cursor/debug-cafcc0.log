@@ -102,3 +102,5 @@
 {"sessionId":"cafcc0","location":"seo/page.tsx:render","message":"SEO page render","data":{"renderCount":2,"hasFullSummary":true},"timestamp":1773517056598,"hypothesisId":"H1"}
 {"sessionId":"cafcc0","location":"SeoOnPageTable.tsx:viewport","message":"table in viewport","data":{"renderCount":1,"rowsLength":193},"timestamp":1773517056607,"hypothesisId":"H2"}
 {"sessionId":"cafcc0","location":"seo/page.tsx:render","message":"SEO page render","data":{"renderCount":3,"hasFullSummary":true},"timestamp":1773517058417,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"seo/page.tsx:render","message":"SEO page render","data":{"renderCount":1,"hasFullSummary":false},"timestamp":1773518783210,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"seo/page.tsx:render","message":"SEO page render","data":{"renderCount":2,"hasFullSummary":false},"timestamp":1773518785233,"hypothesisId":"H1"}

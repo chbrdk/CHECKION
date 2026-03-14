@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Box, Stack } from '@mui/material';
@@ -17,12 +17,19 @@ import { useFetchOnceForId } from '@/hooks/useFetchOnceForId';
 import {
   apiProject,
   apiProjectGeoSummary,
+  apiProjectDomainSummary,
+  apiScanDomainSummary,
   apiProjectGeoLatestResult,
   pathProjectGeo,
   pathGeoEeat,
+  pathDomain,
+  pathScanDomain,
 } from '@/lib/constants';
 import { GeoAnalysisPagesTable } from '@/components/GeoAnalysisPagesTable';
-import type { GeoEeatIntensiveResult, GeoEeatPageResult, GeoEeatRecommendation } from '@/lib/types';
+import type { GeoEeatPageResult, GeoEeatRecommendation } from '@/lib/types';
+import type { SlimPage } from '@/lib/types';
+import type { DomainSummaryResponse } from '@/lib/domain-summary';
+import type { AggregatedEeatOnPage } from '@/lib/domain-aggregation';
 
 type ScoreLabel = 'excellent' | 'good' | 'fair' | 'poor' | 'critical';
 
@@ -34,16 +41,21 @@ function scoreToLabel(score: number): ScoreLabel {
   return 'critical';
 }
 
+/** Map SlimPage from deep scan to shape compatible with GeoAnalysisPagesTable (GeoEeatPageResult). */
+function slimToGeoPage(s: SlimPage): GeoEeatPageResult {
+  return {
+    url: s.url,
+    technical: {
+      eeatSignals: s.eeatSignals,
+      hasImpressum: s.eeatSignals?.hasImpressum ?? false,
+      hasPrivacy: s.hasPrivacy ?? false,
+    },
+  };
+}
+
 interface GeoSummaryData {
   score: number | null;
   competitorScores: Record<string, number>;
-}
-
-interface GeoLatestResultData {
-  runId: string;
-  runUrl: string;
-  createdAt: string;
-  payload: GeoEeatIntensiveResult;
 }
 
 export default function ProjectGeoAnalysisPage() {
@@ -53,8 +65,10 @@ export default function ProjectGeoAnalysisPage() {
 
   const [project, setProject] = useState<{ id: string; domain: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState<GeoSummaryData | null>(null);
-  const [latestResult, setLatestResult] = useState<GeoLatestResultData | null>(null);
+  const [geoSummary, setGeoSummary] = useState<GeoSummaryData | null>(null);
+  const [scanId, setScanId] = useState<string | null>(null);
+  const [fullSummary, setFullSummary] = useState<DomainSummaryResponse | null>(null);
+  const [recommendations, setRecommendations] = useState<GeoEeatRecommendation[]>([]);
   const fetchedForIdRef = useFetchOnceForId();
 
   useEffect(() => {
@@ -66,36 +80,54 @@ export default function ProjectGeoAnalysisPage() {
 
     (async () => {
       setLoading(true);
-      setSummary(null);
-      setLatestResult(null);
+      setGeoSummary(null);
+      setScanId(null);
+      setFullSummary(null);
+      setRecommendations([]);
       try {
-        const [projectRes, summaryRes, latestRes] = await Promise.all([
+        const [projectRes, geoSummaryRes, domainSummaryRes] = await Promise.all([
           fetch(apiProject(id), { credentials: 'same-origin', signal }).then((r) =>
             r.json()
           ) as Promise<{ data?: { id: string; domain: string | null } }>,
           fetch(apiProjectGeoSummary(id), { credentials: 'same-origin', signal }).then((r) =>
             r.json()
           ) as Promise<{ success?: boolean; data?: { score?: number | null; competitorScores?: Record<string, number> } }>,
-          fetch(apiProjectGeoLatestResult(id), { credentials: 'same-origin', signal }).then((r) =>
+          fetch(apiProjectDomainSummary(id), { credentials: 'same-origin', signal }).then((r) =>
             r.json()
-          ) as Promise<{ success?: boolean; data?: GeoLatestResultData | null }>,
+          ) as Promise<{ success?: boolean; data?: { scanId?: string } | null }>,
         ]);
         if (signal.aborted) return;
         setProject(projectRes?.data ?? null);
-        if (summaryRes?.success && summaryRes?.data) {
-          setSummary({
-            score: summaryRes.data.score ?? null,
-            competitorScores: summaryRes.data.competitorScores ?? {},
+        if (geoSummaryRes?.success && geoSummaryRes?.data) {
+          setGeoSummary({
+            score: geoSummaryRes.data.score ?? null,
+            competitorScores: geoSummaryRes.data.competitorScores ?? {},
           });
         }
-        if (latestRes?.success && latestRes?.data) {
-          setLatestResult(latestRes.data);
+        const sid = domainSummaryRes?.success && domainSummaryRes?.data?.scanId ? domainSummaryRes.data.scanId : null;
+        if (sid) setScanId(sid);
+
+        if (sid) {
+          const scanSummaryRes = await fetch(apiScanDomainSummary(sid), { credentials: 'same-origin', signal });
+          if (!signal.aborted && scanSummaryRes.ok) {
+            const payload = (await scanSummaryRes.json()) as DomainSummaryResponse & { projectId?: string };
+            setFullSummary(payload);
+          }
+        }
+
+        const latestRes = (await fetch(apiProjectGeoLatestResult(id), { credentials: 'same-origin', signal }).then((r) =>
+          r.json()
+        )) as { success?: boolean; data?: { payload?: { recommendations?: GeoEeatRecommendation[] } } | null };
+        if (!signal.aborted && latestRes?.success && latestRes?.data?.payload?.recommendations) {
+          setRecommendations(latestRes.data.payload.recommendations);
         }
       } catch {
         if (!signal.aborted) {
           setProject(null);
-          setSummary(null);
-          setLatestResult(null);
+          setGeoSummary(null);
+          setScanId(null);
+          setFullSummary(null);
+          setRecommendations([]);
         }
       } finally {
         if (!signal.aborted) setLoading(false);
@@ -104,63 +136,70 @@ export default function ProjectGeoAnalysisPage() {
     return () => ac.abort();
   }, [id, fetchedForIdRef]);
 
-  const payload = latestResult?.payload;
-  const pages = payload?.pages ?? [];
-  const recommendations = payload?.recommendations ?? [];
+  const pages: GeoEeatPageResult[] = useMemo(() => {
+    const p = fullSummary?.pages;
+    if (!p || !Array.isArray(p)) return [];
+    return (p as SlimPage[]).map(slimToGeoPage);
+  }, [fullSummary?.pages]);
+
+  const eeatOnPage = fullSummary?.aggregated?.eeatOnPage as AggregatedEeatOnPage | undefined;
 
   const overviewStats = useMemo(() => {
+    if (eeatOnPage) {
+      return {
+        withImpressum: eeatOnPage.withImpressum,
+        totalPages: eeatOnPage.totalPages,
+        withPrivacy: eeatOnPage.withPrivacy,
+        withContact: eeatOnPage.withContact,
+        withAboutLink: eeatOnPage.withAboutLink,
+        withTeamLink: eeatOnPage.withTeamLink,
+        withCaseStudyMention: eeatOnPage.withCaseStudyMention,
+        recommendationCount: recommendations.length,
+      };
+    }
     if (pages.length === 0)
       return {
         withImpressum: 0,
         totalPages: 0,
         withPrivacy: 0,
-        avgEeat: 0,
-        avgGeoFitness: 0,
-        recommendationCount: 0,
+        withContact: 0,
+        withAboutLink: 0,
+        withTeamLink: 0,
+        withCaseStudyMention: 0,
+        recommendationCount: recommendations.length,
       };
-    let withImpressum = 0;
-    let withPrivacy = 0;
-    let eeatSum = 0;
-    let eeatCount = 0;
-    let geoSum = 0;
-    let geoCount = 0;
-    for (const p of pages as GeoEeatPageResult[]) {
+    let withImpressum = 0, withPrivacy = 0, withContact = 0, withAboutLink = 0, withTeamLink = 0, withCaseStudyMention = 0;
+    for (const p of pages) {
       if (p.technical?.hasImpressum === true || p.technical?.eeatSignals?.hasImpressum === true) withImpressum++;
       if (p.technical?.hasPrivacy === true) withPrivacy++;
-      const t = p.eeatScores?.trust?.score ?? 0;
-      const e = p.eeatScores?.experience?.score ?? 0;
-      const ex = p.eeatScores?.expertise?.score ?? 0;
-      const a = p.eeatScores?.authoritativeness?.score ?? 0;
-      if (t + e + ex + a > 0) {
-        eeatSum += (t + e + ex + a) / 4;
-        eeatCount++;
-      }
-      if (typeof p.geoFitnessScore === 'number') {
-        geoSum += p.geoFitnessScore;
-        geoCount++;
-      }
+      if (p.technical?.eeatSignals?.hasContact === true) withContact++;
+      if (p.technical?.eeatSignals?.hasAboutLink === true) withAboutLink++;
+      if (p.technical?.eeatSignals?.hasTeamLink === true) withTeamLink++;
+      if (p.technical?.eeatSignals?.hasCaseStudyMention === true) withCaseStudyMention++;
     }
     return {
       withImpressum,
       totalPages: pages.length,
       withPrivacy,
-      avgEeat: eeatCount > 0 ? Math.round((eeatSum / eeatCount) * 10) / 10 : 0,
-      avgGeoFitness: geoCount > 0 ? Math.round((geoSum / geoCount) * 10) / 10 : 0,
+      withContact,
+      withAboutLink,
+      withTeamLink,
+      withCaseStudyMention,
       recommendationCount: recommendations.length,
     };
-  }, [pages, recommendations.length]);
+  }, [eeatOnPage, pages, recommendations.length]);
 
-  const hasRun = latestResult != null && payload != null;
-  const score = summary?.score ?? null;
-  const competitorScores = summary?.competitorScores ?? {};
+  const hasDeepScan = fullSummary != null && (fullSummary.pages?.length ?? 0) > 0;
+  const score = geoSummary?.score ?? null;
+  const competitorScores = geoSummary?.competitorScores ?? {};
   const scoreLabel = score != null ? scoreToLabel(score) : 'critical';
+  const loadingState = loading && !fullSummary && !scanId;
 
-  const loadingState = loading && !summary && !latestResult;
+  const timestamp = fullSummary?.timestamp ? new Date(fullSummary.timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '';
 
   return (
     <Box sx={{ py: 'var(--msqdx-spacing-md)', px: 1.5, width: '100%', maxWidth: '100%' }}>
       <Stack sx={{ gap: 2 }}>
-        {/* Header card */}
         <MsqdxMoleculeCard
           title={t('projects.geoAnalysis.title')}
           titleVariant="h4"
@@ -169,10 +208,10 @@ export default function ProjectGeoAnalysisPage() {
           footerDivider
           sx={{ bgcolor: 'var(--color-card-bg)' }}
           actions={
-            hasRun ? (
-              <Link href={pathGeoEeat(latestResult!.runId)} style={{ textDecoration: 'none' }}>
+            hasDeepScan && scanId ? (
+              <Link href={pathDomain(scanId)} style={{ textDecoration: 'none' }}>
                 <MsqdxButton variant="outlined" size="small">
-                  {t('projects.geoAnalysis.openRun')}
+                  {t('projects.geoAnalysis.openDeepScan')}
                 </MsqdxButton>
               </Link>
             ) : null
@@ -182,14 +221,17 @@ export default function ProjectGeoAnalysisPage() {
             <MsqdxTypography variant="body2" sx={{ py: 1 }}>
               {t('common.loading')}
             </MsqdxTypography>
-          ) : !hasRun ? (
+          ) : !hasDeepScan ? (
             <>
               <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 1.5 }}>
-                {t('projects.geoAnalysis.noRun')}
+                {t('projects.geoAnalysis.noDeepScan')}
               </MsqdxTypography>
-              <Link href={id ? pathProjectGeo(id) : '#'} style={{ textDecoration: 'none' }}>
+              <Link
+                href={project?.domain ? pathScanDomain({ url: project.domain }) : (id ? pathProjectGeo(id) : '#')}
+                style={{ textDecoration: 'none' }}
+              >
                 <MsqdxButton variant="outlined" size="small">
-                  {t('projects.navGeo')}
+                  {project?.domain ? t('projects.wcag.startScan') : t('projects.navGeo')}
                 </MsqdxButton>
               </Link>
             </>
@@ -243,13 +285,12 @@ export default function ProjectGeoAnalysisPage() {
                 ))}
               </Box>
               <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                {t('projects.geoAnalysis.fromRun')}{' '}
-                {latestResult ? new Date(latestResult.createdAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : ''}
-                {hasRun && (
+                {t('projects.geoAnalysis.fromDeepScan')} {timestamp}
+                {scanId && (
                   <>
                     {' · '}
-                    <Link href={pathGeoEeat(latestResult!.runId)} style={{ color: 'inherit', textDecoration: 'underline' }}>
-                      {t('projects.geoAnalysis.openRun')}
+                    <Link href={pathDomain(scanId)} style={{ color: 'inherit', textDecoration: 'underline' }}>
+                      {t('projects.geoAnalysis.openDeepScan')}
                     </Link>
                   </>
                 )}
@@ -258,9 +299,8 @@ export default function ProjectGeoAnalysisPage() {
           )}
         </MsqdxMoleculeCard>
 
-        {hasRun && (
+        {hasDeepScan && (
           <>
-            {/* Overview – aggregated on-page signals */}
             <MsqdxMoleculeCard
               title={t('projects.geoAnalysis.overview')}
               titleVariant="h6"
@@ -297,22 +337,6 @@ export default function ProjectGeoAnalysisPage() {
                 </Box>
                 <Box sx={{ flex: '1 1 0', minWidth: 100 }}>
                   <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
-                    {t('projects.geoAnalysis.avgEeat')}
-                  </MsqdxTypography>
-                  <MsqdxTypography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
-                    {overviewStats.avgEeat}
-                  </MsqdxTypography>
-                </Box>
-                <Box sx={{ flex: '1 1 0', minWidth: 100 }}>
-                  <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
-                    {t('projects.geoAnalysis.avgGeoFitness')}
-                  </MsqdxTypography>
-                  <MsqdxTypography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
-                    {overviewStats.avgGeoFitness}
-                  </MsqdxTypography>
-                </Box>
-                <Box sx={{ flex: '1 1 0', minWidth: 100 }}>
-                  <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
                     {t('projects.geoAnalysis.recommendationCount')}
                   </MsqdxTypography>
                   <MsqdxTypography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
@@ -322,7 +346,6 @@ export default function ProjectGeoAnalysisPage() {
               </Box>
             </MsqdxMoleculeCard>
 
-            {/* Pages table */}
             <MsqdxMoleculeCard
               title={t('projects.geoAnalysis.pagesTableTitle')}
               titleVariant="h6"
@@ -330,10 +353,9 @@ export default function ProjectGeoAnalysisPage() {
               borderRadius="lg"
               sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-secondary-dx-green)' }}
             >
-              <GeoAnalysisPagesTable pages={pages as GeoEeatPageResult[]} />
+              <GeoAnalysisPagesTable pages={pages} />
             </MsqdxMoleculeCard>
 
-            {/* Recommendations */}
             <MsqdxMoleculeCard
               title={t('projects.geoAnalysis.recommendationsTitle')}
               titleVariant="h6"
@@ -347,7 +369,7 @@ export default function ProjectGeoAnalysisPage() {
                 </MsqdxTypography>
               ) : (
                 <MsqdxAccordion>
-                  {(recommendations as GeoEeatRecommendation[])
+                  {recommendations
                     .slice()
                     .sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0))
                     .map((rec, idx) => (

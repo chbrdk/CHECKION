@@ -529,6 +529,38 @@ export function aggregateInfra(pages: ScanResult[]): AggregatedInfra | null {
   };
 }
 
+/** E-E-A-T on-page signals aggregated from deep scan (for GEO analysis page). */
+export interface AggregatedEeatOnPage {
+  withImpressum: number;
+  withPrivacy: number;
+  withContact: number;
+  withAboutLink: number;
+  withTeamLink: number;
+  withCaseStudyMention: number;
+  totalPages: number;
+}
+
+export function aggregateEeatOnPage(pages: ScanResult[]): AggregatedEeatOnPage {
+  let withImpressum = 0, withPrivacy = 0, withContact = 0, withAboutLink = 0, withTeamLink = 0, withCaseStudyMention = 0;
+  for (const p of pages) {
+    if (p.eeatSignals?.hasImpressum) withImpressum++;
+    if (p.privacy?.hasPrivacyPolicy) withPrivacy++;
+    if (p.eeatSignals?.hasContact) withContact++;
+    if (p.eeatSignals?.hasAboutLink) withAboutLink++;
+    if (p.eeatSignals?.hasTeamLink) withTeamLink++;
+    if (p.eeatSignals?.hasCaseStudyMention) withCaseStudyMention++;
+  }
+  return {
+    withImpressum,
+    withPrivacy,
+    withContact,
+    withAboutLink,
+    withTeamLink,
+    withCaseStudyMention,
+    totalPages: pages.length,
+  };
+}
+
 /** Generative (GEO): average score + content summary + per-page. */
 export interface AggregatedGenerative {
   score: number;

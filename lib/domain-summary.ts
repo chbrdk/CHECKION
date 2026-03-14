@@ -8,6 +8,7 @@ import {
     aggregateSeo,
     aggregateLinks,
     aggregateInfra,
+    aggregateEeatOnPage,
     aggregateGenerative,
     aggregateStructure,
     aggregatePerformance,
@@ -26,6 +27,7 @@ export interface DomainSummaryResponse extends Omit<DomainScanResult, 'pages'> {
         seo: ReturnType<typeof aggregateSeo>;
         links: ReturnType<typeof aggregateLinks>;
         infra: ReturnType<typeof aggregateInfra>;
+        eeatOnPage?: ReturnType<typeof aggregateEeatOnPage>;
         generative: ReturnType<typeof aggregateGenerative>;
         structure: ReturnType<typeof aggregateStructure>;
         performance: ReturnType<typeof aggregatePerformance>;
@@ -52,6 +54,8 @@ function toSlimPage(p: ScanResult): SlimPage {
         score: p.score,
         stats: p.stats ?? { errors: 0, warnings: 0, notices: 0 },
         ux: p.ux != null ? { score: p.ux.score } : undefined,
+        eeatSignals: p.eeatSignals ?? undefined,
+        hasPrivacy: p.privacy?.hasPrivacyPolicy ?? false,
     };
 }
 
@@ -75,6 +79,7 @@ export function buildDomainSummary(scan: DomainScanResult): DomainSummaryRespons
         seo: aggregateSeo(pages),
         links: aggregateLinks(pages),
         infra: aggregateInfra(pages),
+        eeatOnPage: aggregateEeatOnPage(pages),
         generative: aggregateGenerative(pages),
         structure: aggregateStructure(pages),
         performance: aggregatePerformance(pages),
@@ -110,6 +115,7 @@ export function buildStoredDomainPayload(
         seo: aggregateSeo(fullPages),
         links: aggregateLinks(fullPages),
         infra: aggregateInfra(fullPages),
+        eeatOnPage: aggregateEeatOnPage(fullPages),
         generative: aggregateGenerative(fullPages),
         structure: aggregateStructure(fullPages),
         performance: aggregatePerformance(fullPages),

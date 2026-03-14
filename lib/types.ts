@@ -390,6 +390,10 @@ export interface SlimPage {
     score: number;
     stats: { errors: number; warnings: number; notices: number };
     ux?: { score: number };
+    /** E-E-A-T on-page signals from deep scan (optional; present when stored with extended payload). */
+    eeatSignals?: EeatPageSignals;
+    /** Has privacy policy (from deep scan). */
+    hasPrivacy?: boolean;
 }
 
 /** Precomputed during deep scan; stored in domain_scans.payload. */

@@ -274,8 +274,11 @@
     "geoAnalysis": {
       "title": "GEO / E-E-A-T Analysis",
       "fromRun": "Based on run from",
+      "fromDeepScan": "Based on deep scan from",
       "noRun": "No completed GEO run. Start a run on the GEO page.",
+      "noDeepScan": "No deep scan for this project. Run a domain scan to see E-E-A-T on-page analysis.",
       "openRun": "Open run",
+      "openDeepScan": "Open deep scan",
       "overview": "On-page signals overview",
       "withImpressum": "Pages with imprint",
       "withPrivacy": "Pages with privacy",
