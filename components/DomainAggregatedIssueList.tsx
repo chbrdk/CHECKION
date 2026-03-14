@@ -98,12 +98,13 @@ function DomainAggregatedIssueListInner({
         display: 'flex',
         alignItems: 'center',
         gap: 0.5,
-        px: 1.5,
-        py: 1,
+        px: 1,
+        py: 0.5,
         border: 'none',
         background: 'none',
         cursor: 'pointer',
         font: 'inherit',
+        fontSize: '0.7rem',
         color: MSQDX_THEME.light.text.tertiary,
         fontWeight: 600,
         textTransform: 'uppercase',
@@ -153,7 +154,7 @@ function DomainAggregatedIssueListInner({
               borderBottom: tableBorder,
               backgroundColor: MSQDX_NEUTRAL[100],
               alignItems: 'center',
-              minHeight: 44,
+              minHeight: 32,
               position: 'sticky',
               top: 0,
               zIndex: 1,
@@ -165,7 +166,7 @@ function DomainAggregatedIssueListInner({
             <SortHeader id="runner" label={t('domainResult.issuesTableRunner')} active={sortKey === 'runner'} />
             <SortHeader id="code" label={t('domainResult.issuesTableCode')} active={sortKey === 'code'} />
             <SortHeader id="pageCount" label={t('domainResult.issuesTablePages')} active={sortKey === 'pageCount'} />
-            <Box component="div" role="columnheader" sx={{ px: 1, py: 1 }} />
+            <Box component="div" role="columnheader" sx={{ px: 0.75, py: 0.5 }} />
           </Box>
           {paginatedRows.map((issue) => {
             const config = SEVERITY_CONFIG[issue.type] ?? SEVERITY_CONFIG.notice;
@@ -188,14 +189,14 @@ function DomainAggregatedIssueListInner({
                   '&:hover': { backgroundColor: alpha(config.color, 0.08) },
                 }}
               >
-                <Box sx={{ px: 1.5, py: 1, display: 'flex', alignItems: 'center', gap: 1, borderRight: tableBorder }}>
-                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: config.color, flexShrink: 0 }} />
-                  <MsqdxChip label={config.label} size="small" sx={{ backgroundColor: alpha(config.color, 0.12), color: config.color, fontWeight: 600, fontSize: '0.7rem', height: 22 }} />
+                <Box sx={{ px: 1, py: 0.5, display: 'flex', alignItems: 'center', gap: 0.5, borderRight: tableBorder }}>
+                  <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: config.color, flexShrink: 0 }} />
+                  <MsqdxChip label={config.label} size="small" sx={{ backgroundColor: alpha(config.color, 0.12), color: config.color, fontWeight: 600, fontSize: '0.65rem', height: 18, minHeight: 18 }} />
                 </Box>
-                <Box sx={{ px: 1.5, py: 1, minWidth: 0, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
-                  <MsqdxTypography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.4 }}>{issue.message}</MsqdxTypography>
+                <Box sx={{ px: 1, py: 0.5, minWidth: 0, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
+                  <MsqdxTypography variant="caption" sx={{ fontWeight: 500, lineHeight: 1.3, fontSize: '0.75rem' }}>{issue.message}</MsqdxTypography>
                 </Box>
-                <Box sx={{ px: 1.5, py: 1, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
+                <Box sx={{ px: 1, py: 0.5, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
                   {issue.wcagLevel !== 'Unknown' && (
                     <MsqdxChip
                       label={levelLabel}
@@ -203,41 +204,42 @@ function DomainAggregatedIssueListInner({
                       sx={{
                         backgroundColor: issue.wcagLevel === 'APCA' ? alpha(MSQDX_BRAND_PRIMARY.purple, 0.12) : alpha(MSQDX_STATUS.info.base, 0.12),
                         color: issue.wcagLevel === 'APCA' ? MSQDX_BRAND_PRIMARY.purple : MSQDX_STATUS.info.base,
-                        fontSize: '0.7rem',
-                        height: 22,
+                        fontSize: '0.65rem',
+                        height: 18,
+                        minHeight: 18,
                       }}
                     />
                   )}
-                  {issue.wcagLevel === 'Unknown' && <MsqdxTypography variant="caption" sx={{ color: MSQDX_THEME.light.text.tertiary }}>–</MsqdxTypography>}
+                  {issue.wcagLevel === 'Unknown' && <MsqdxTypography variant="caption" sx={{ color: MSQDX_THEME.light.text.tertiary, fontSize: '0.75rem' }}>–</MsqdxTypography>}
                 </Box>
-                <Box sx={{ px: 1.5, py: 1, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
-                  <MsqdxChip label={issue.runner} size="small" sx={{ fontSize: '0.7rem', height: 22 }} />
+                <Box sx={{ px: 1, py: 0.5, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
+                  <MsqdxChip label={issue.runner} size="small" sx={{ fontSize: '0.65rem', height: 18, minHeight: 18 }} />
                 </Box>
-                <Box sx={{ px: 1.5, py: 1, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
-                  <MsqdxTypography variant="caption" sx={{ fontFamily: 'monospace', fontSize: '0.7rem', wordBreak: 'break-all' }}>{codeShort}</MsqdxTypography>
+                <Box sx={{ px: 1, py: 0.5, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
+                  <MsqdxTypography variant="caption" sx={{ fontFamily: 'monospace', fontSize: '0.65rem', wordBreak: 'break-all' }}>{codeShort}</MsqdxTypography>
                 </Box>
-                <Box sx={{ px: 1.5, py: 1, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
-                  <MsqdxChip label={`${issue.pageCount} ${t('domainResult.issuesTablePages')}`} size="small" sx={{ fontSize: '0.7rem', height: 22 }} />
+                <Box sx={{ px: 1, py: 0.5, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
+                  <MsqdxChip label={`${issue.pageCount} ${t('domainResult.issuesTablePages')}`} size="small" sx={{ fontSize: '0.65rem', height: 18, minHeight: 18 }} />
                   {firstUrl && onPageClick && (
                     <MsqdxTypography
                       component="button"
                       variant="caption"
                       aria-label={t('domainResult.openPageAria', { url: firstUrl })}
-                      sx={{ ml: 0.5, cursor: 'pointer', color: MSQDX_BRAND_PRIMARY.green, textDecoration: 'underline', border: 'none', background: 'none' }}
+sx={{ ml: 0.5, cursor: 'pointer', color: MSQDX_BRAND_PRIMARY.green, textDecoration: 'underline', border: 'none', background: 'none', fontSize: '0.7rem' }}
                       onClick={() => onPageClick(firstUrl)}
                     >
                       {t('domainResult.openPage')}
                     </MsqdxTypography>
-                  )}
+              )}
                 </Box>
-                <Box sx={{ px: 1, py: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                <Box sx={{ px: 0.75, py: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
                   {issue.helpUrl && (
                     <a
                       href={issue.helpUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label={t('results.fixDocsAria')}
-                      style={{ fontSize: '0.7rem', color: MSQDX_BRAND_PRIMARY.green, textDecoration: 'underline' }}
+                      style={{ fontSize: '0.65rem', color: MSQDX_BRAND_PRIMARY.green, textDecoration: 'underline' }}
                     >
                       {t('results.fixDocs')} →
                     </a>
@@ -248,47 +250,50 @@ function DomainAggregatedIssueListInner({
           })}
         </Box>
       </Box>
-      {totalPages > 1 && (
+      {issues.length > 0 && (
         <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            gap: 1,
-            mt: 1.5,
+            gap: 0.5,
+            mt: 1,
             px: 0.5,
+            py: 0.25,
           }}
         >
-          <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+          <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', fontSize: '0.7rem' }}>
             {t('share.pageOfTotal', {
               current: String(safePage),
               total: String(totalPages),
               count: String(issues.length),
             })}
           </MsqdxTypography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <MsqdxButton
-              size="small"
-              variant="outlined"
-              disabled={safePage <= 1}
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              aria-label={t('domainResult.pagesTablePrev')}
-              sx={{ minWidth: 36, p: 0.75 }}
-            >
-              <ChevronLeft size={18} />
-            </MsqdxButton>
-            <MsqdxButton
-              size="small"
-              variant="outlined"
-              disabled={safePage >= totalPages}
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              aria-label={t('domainResult.pagesTableNext')}
-              sx={{ minWidth: 36, p: 0.75 }}
-            >
-              <ChevronRight size={18} />
-            </MsqdxButton>
-          </Box>
+          {totalPages > 1 && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+              <MsqdxButton
+                size="small"
+                variant="outlined"
+                disabled={safePage <= 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                aria-label={t('domainResult.pagesTablePrev')}
+                sx={{ minWidth: 28, p: 0.5, minHeight: 28 }}
+              >
+                <ChevronLeft size={14} />
+              </MsqdxButton>
+              <MsqdxButton
+                size="small"
+                variant="outlined"
+                disabled={safePage >= totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                aria-label={t('domainResult.pagesTableNext')}
+                sx={{ minWidth: 28, p: 0.5, minHeight: 28 }}
+              >
+                <ChevronRight size={14} />
+              </MsqdxButton>
+            </Box>
+          )}
         </Box>
       )}
     </Box>

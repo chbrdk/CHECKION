@@ -92,12 +92,13 @@ export function ScannedPagesTable({
         display: 'flex',
         alignItems: 'center',
         gap: 0.5,
-        px: 1.5,
-        py: 1,
+        px: 1,
+        py: 0.5,
         border: 'none',
         background: 'none',
         cursor: 'pointer',
         font: 'inherit',
+        fontSize: '0.7rem',
         color: MSQDX_THEME.light.text.tertiary,
         fontWeight: 600,
         textTransform: 'uppercase',
@@ -146,7 +147,7 @@ export function ScannedPagesTable({
               borderBottom: tableBorder,
               backgroundColor: MSQDX_NEUTRAL[100],
               alignItems: 'center',
-              minHeight: 44,
+              minHeight: 32,
               position: 'sticky',
               top: 0,
               zIndex: 1,
@@ -156,7 +157,7 @@ export function ScannedPagesTable({
             <SortHeader id="score" label={t('domainResult.pagesTableScore')} active={sortKey === 'score'} />
             <SortHeader id="uxScore" label={t('domainResult.pagesTableUxScore')} active={sortKey === 'uxScore'} />
             <SortHeader id="issues" label={t('domainResult.pagesTableIssues')} active={sortKey === 'issues'} />
-            <Box component="div" role="columnheader" sx={{ px: 1.5, py: 1 }} />
+            <Box component="div" role="columnheader" sx={{ px: 1, py: 0.5 }} />
           </Box>
           {paginatedRows.map((page) => {
             const issuesCount = getIssuesCount(page);
@@ -175,33 +176,33 @@ export function ScannedPagesTable({
                   '&:hover': { backgroundColor: 'var(--color-theme-accent-tint, rgba(0,0,0,0.04))' },
                 }}
               >
-                <Box sx={{ px: 1.5, py: 1, display: 'flex', alignItems: 'center', minWidth: 0, borderRight: tableBorder }}>
-                  <MsqdxTypography variant="body2" noWrap title={page.url} sx={{ fontWeight: 500 }}>
+                <Box sx={{ px: 1, py: 0.5, display: 'flex', alignItems: 'center', minWidth: 0, borderRight: tableBorder }}>
+                  <MsqdxTypography variant="caption" noWrap title={page.url} sx={{ fontWeight: 500, fontSize: '0.75rem' }}>
                     {page.url}
                   </MsqdxTypography>
                 </Box>
-                <Box sx={{ px: 1.5, py: 1, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
+                <Box sx={{ px: 1, py: 0.5, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
                   <MsqdxChip
                     label={String(page.score ?? 0)}
                     size="small"
                     brandColor={page.score > 80 ? 'green' : 'orange'}
-                    sx={{ fontSize: '0.75rem' }}
+                    sx={{ fontSize: '0.7rem', height: 20, minHeight: 20 }}
                   />
                 </Box>
-                <Box sx={{ px: 1.5, py: 1, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
-                  <MsqdxTypography variant="body2">{page.ux?.score ?? '–'}</MsqdxTypography>
+                <Box sx={{ px: 1, py: 0.5, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
+                  <MsqdxTypography variant="caption" sx={{ fontSize: '0.75rem' }}>{page.ux?.score ?? '–'}</MsqdxTypography>
                 </Box>
-                <Box sx={{ px: 1.5, py: 1, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
-                  <MsqdxTypography variant="body2">{issuesCount}</MsqdxTypography>
+                <Box sx={{ px: 1, py: 0.5, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
+                  <MsqdxTypography variant="caption" sx={{ fontSize: '0.75rem' }}>{issuesCount}</MsqdxTypography>
                 </Box>
-                <Box sx={{ px: 1.5, py: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Box sx={{ px: 1, py: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {onPageClick && (
                     <MsqdxButton
                       size="small"
                       variant="text"
                       onClick={() => onPageClick(page)}
                       aria-label={t('domainResult.openPageAria', { url: page.url })}
-                      sx={{ textTransform: 'none', fontSize: '0.75rem' }}
+                      sx={{ textTransform: 'none', fontSize: '0.7rem' }}
                     >
                       {t('domainResult.openPage')}
                     </MsqdxButton>
@@ -212,19 +213,20 @@ export function ScannedPagesTable({
           })}
         </Box>
       </Box>
-      {totalPages > 1 && (
+      {pages.length > 0 && (
         <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            gap: 1,
-            mt: 1.5,
+            gap: 0.5,
+            mt: 1,
             px: 0.5,
+            py: 0.25,
           }}
         >
-          <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+          <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', fontSize: '0.7rem' }}>
             {t('share.pageOfTotal', {
               current: String(safePage),
               total: String(totalPages),
@@ -232,16 +234,16 @@ export function ScannedPagesTable({
             })}
           </MsqdxTypography>
           {totalPages > 1 && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
               <MsqdxButton
                 size="small"
                 variant="outlined"
                 disabled={safePage <= 1}
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 aria-label={t('domainResult.pagesTablePrev')}
-                sx={{ minWidth: 36, p: 0.75 }}
+                sx={{ minWidth: 28, p: 0.5, minHeight: 28 }}
               >
-                <ChevronLeft size={18} />
+                <ChevronLeft size={14} />
               </MsqdxButton>
               <MsqdxButton
                 size="small"
@@ -249,9 +251,9 @@ export function ScannedPagesTable({
                 disabled={safePage >= totalPages}
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 aria-label={t('domainResult.pagesTableNext')}
-                sx={{ minWidth: 36, p: 0.75 }}
+                sx={{ minWidth: 28, p: 0.5, minHeight: 28 }}
               >
-                <ChevronRight size={18} />
+                <ChevronRight size={14} />
               </MsqdxButton>
             </Box>
           )}

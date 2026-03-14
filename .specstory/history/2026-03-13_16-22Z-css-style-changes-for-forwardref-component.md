@@ -27292,3 +27292,955 @@ Thank you. Can you please... check how we get those data because every time i ho
 
 ---
 
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is experiencing flickering/re-rendering on the page where the issues table (DomainAggregatedIssueList) is shown. They want to fetch the data once and keep it stable so that hovering or interacting doesn't cause the whole page to re-render.
+
+This could be caused by:
+1. **Parent re-renders** - The parent component (domain page or WCAG page) might be re-rendering frequently, causing the table to re-render. This could happen if state is updated on hover (e.g. tooltips, or some state that changes on interaction).
+2. **New object/array references** - If the parent passes `issues` or other props that are recreated on every render (e.g. `issues={aggregated.issues.issues}` where the parent re-fetches or re-creates the object), React will see new references and re-render the child.
+3. **Data fetching in a way that triggers re-renders** - Maybe the data is being re-fetched or the state is being set in a way that causes cascading re-renders.
+4. **Unstable callbacks** - If `onPageClick` or similar is recreated every render (e.g. inline arrow function), it could cause child re-renders. But that typically wouldn't cause "flickering" - more likely the parent is re-rendering and passing new props.
+5. **Context updates** - If something in a context (e.g. i18n, theme) updates on interaction, it could cause widespread re-renders.
+
+Let me look at:
+1. Where DomainAggregatedIssueList is used (domain page tab 2, project WCAG page)
+2. How the data flows - is the parent re-creating the issues array or re-fetching?
+3. Whether there's state in the parent that updates on hover/click (e.g. tab value, or something in the layout)
+4. Whether we can memoize the list or the parent's data so that references stay stable
+
+I'll search for usages of DomainAggregatedIssueList and trace the data source.
+</details></think>
+
+---
+
+
+Checking how issue data is loaded and what triggers re-renders on the domain and WCAG pages.
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "DomainAggregatedIssueList|aggregated\\.issues",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "DomainAggregatedIssueList|aggregated\\.issues",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 15,
+  "totalMatches": 65,
+  "topFiles": [
+    {
+      "uri": "./components/DomainAggregatedIssueList.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/domain/[id]/page.tsx",
+      "matchCount": 9
+    },
+    {
+      "uri": "./app/projects/[id]/wcag/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/components/DomainAggregatedIssueList.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/wcag/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/components/DomainAggregatedIssueList.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/wcag/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/components/DomainAggregatedIssueList.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/wcag/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/components/DomainAggregatedIssueList.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/wcag/page.tsx",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/wcag/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see a few potential causes:
+
+1. **Domain page**: `result` is from state; `aggregated = result?.aggregated ?? null` - so `aggregated` is a new reference only when `result` changes. But `aggregated.issues.issues` - every time the parent re-renders, we're passing the same array reference (from result state). So that should be stable unless `result` is being replaced.
+
+   However - **useSearchParams()** and **useI18n()** - if the i18n context or search params cause re-renders (e.g. on hover some parent in the tree re-renders and context updates), the whole page re-renders. When the page re-renders, we're still passing `aggregated.issues.issues` - the reference might be the same if `result` wasn't updated. So the issue might be:
+   - **Inline callbacks**: `onPageClick={(url) => { const page = pagesByUrl.get(url); if (page) router.push(pathResults(page.id)); }}` - this creates a new function every render. So DomainAggregatedIssueList receives a new onPageClick every time. That could cause DomainAggregatedIssueList to re-render. But re-rendering the list component shouldn't cause "flickering" unless the component is doing something expensive or losing internal state. Actually the list has internal state (sortKey, sortDir, currentPage). So when the parent re-renders and passes a new onPageClick, the list re-renders but keeps its state. So we wouldn't see flickering from that alone.
+
+   - **Dynamic import**: DomainAggregatedIssueList is loaded with dynamic() - could there be something that re-triggers the dynamic component to remount? Unlikely.
+
+   - **Tab value / MsqdxTabs**: When you hover over tabs, does the tabs component update state? If MsqdxTabs or something causes re-renders on hover, the whole content below would re-render. That could look like flickering.
+
+   - **The real culprit might be**: something in the layout or in a parent that re-renders on hover. For example, if there's a context that changes when you hover (e.g. a tooltip provider that sets state), every component under that context re-renders. So we should:
+     (1) Memoize the issues array reference so that we pass the same reference when the data hasn't changed.
+     (2) Memoize the onPageClick callback with useCallback so that DomainAggregatedIssueList doesn't get a new callback every time.
+     (3) Wrap DomainAggregatedIssueList in React.memo so it only re-renders when its props actually change (issues reference, onPageClick reference).
+
+2. **WCAG page**: Same idea - `aggregated` is derived from `fullSummary?.aggregated?.issues` - so `aggregated` is the issues result object, and we pass `aggregated.issues` to the list. Every time the WCAG page re-renders, `aggregated` might be a new object reference (because it's `fullSummary?.aggregated?.issues` - if fullSummary is the same, aggregated is the same reference). So when fullSummary is set once, fullSummary.aggregated.issues is the same reference. So issues prop might be stable. But onPageClick is likely inline again - we should use useCallback.
+
+Let me also check - in DomainAggregatedIssueList we have useState for sortKey, sortDir, currentPage. So when the parent re-renders and the list re-renders, we're doing useMemo for sortedIssues and paginatedRows - and we're mapping over paginatedRows. So we're not re-fetching. The flicker could be:
+- Visual: maybe the table is inside a container that re-mounts or loses key? Or the dynamic() component is re-mounting?
+- Or: the parent re-renders so often (e.g. from useSearchParams or useI18n or hover state somewhere) that the list re-renders constantly and the user perceives it as flickering.
+
+**Solution strategy:**
+1. **Memoize issues prop at parent**: For domain page, store `issues` in a ref or useMemo so that we only pass a new reference when result actually changes. Actually `aggregated.issues.issues` - the array reference comes from result. So when did we set result? Only in the fetch callback. So result is stable until we fetch again. So aggregated.issues.issues should be the same reference across re-renders. Unless... result is being set to a new object from somewhere else? Let me check - on AddToProject onAssigned they do fetch(apiScanDomainSummary(domainId!)).then(...).then((d) => setProjectId(d.projectId ?? null)) - they don't setResult. So result is only set in the initial fetch. So the reference should be stable. Unless the domain page has other state updates. Like tabValue - when you change tabs, setTabValue is called, so the page re-renders. When you're ON the issues tab and you hover over something, what could update? Maybe MsqdxTabs has internal hover state that triggers re-renders? That would re-render the whole page content.
+
+2. **React.memo on DomainAggregatedIssueList**: So the list only re-renders when issues or onPageClick actually change. We need to memoize onPageClick in the parent with useCallback(..., [pagesByUrl, router]) so that the callback reference is stable.
+
+3. **Memoize the list's props in the parent**: Pass issues via useMemo( () => aggregated?.issues?.issues ?? [], [aggregated?.issues?.issues] ) - but that might create a new array every time if aggregated?.issues?.issues is undefined and we use []. So better: const issuesList = aggregated?.issues?.issues ?? EMPTY_ISSUES; and we need to ensure we don't create [] every time. So useMemo(() => aggregated?.issues?.issues ?? [], [aggregated]) - when aggregated is the same reference, we return the same [] or the same issues array. Actually aggregated?.issues?.issues - if aggregated is stable, then aggregated.issues is stable and aggregated.issues.issues is stable. So we don't need useMemo for the array. The problem is more likely the callback.
+
+4. **DomainAggregatedIssueList: wrap in React.memo**: So when the parent re-renders, we do a shallow compare of props. If issues is the same reference and onPageClick is the same reference (and pageSize is the same), we skip re-rendering. So the fix is:
+   - In domain page and WCAG page: use useCallback for onPageClick.
+   - Wrap DomainAggregatedIssueList in React.memo.
+
+5. **Also**: Maybe the issue is that when we're on the Issues tab, the entire tab content is re-rendered because the parent has many state variables and something (e.g. a child or context) is updating. Let me check if there's a way to isolate the issues tab content. We could split the tab content into a separate component that only receives the data it needs and is memoized, so that when the parent re-renders, that component doesn't re-render unless its props change. So:
+   - Create a wrapper like `const MemoizedIssueList = React.memo(DomainAggregatedIssueList)` or just export DomainAggregatedIssueList as React.memo(...).
+   - In domain page: const handlePageClick = useCallback((url: string) => { const page = pagesByUrl.get(url); if (page) router.push(pathResults(page.id)); }, [pagesByUrl, router]); and pass handlePageClick to the list.
+   - In WCAG page: same useCallback for onPageClick.
+
+Let me also check - could the flickering be from the dynamic() import? When the parent re-renders, does the dynamic component get a new key or remount? Usually no - dynamic just loads the component once. So I'll go with:
+1. React.memo(DomainAggregatedIssueList) so it only re-renders when issues or onPageClick or pageSize change.
+2. In both domain page and WCAG page: useCallback for onPageClick.
+3. Optionally: in domain page, we could extract the "List & Details" tab content into a separate component that receives result (or aggregated, pagesByUrl) and is wrapped in React.memo, so that when the user is on a different tab and the parent re-renders, we don't even re-render the issues tab content. But that might be overkill - let's start with memoizing the list and the callback.
+
+Let me also consider - maybe the data is being re-fetched? Like there's a useEffect that runs on every render? Looking at the domain page again - the useEffect for fetch has [domainId] so it only runs when domainId changes. So we're not re-fetching. Good.
+
+Implementing:
+1. DomainAggregatedIssueList: wrap export in React.memo.
+2. Domain page: useCallback for the onPageClick passed to DomainAggregatedIssueList.
+3. WCAG page: useCallback for the onPageClick passed to DomainAggregatedIssueList.
+</details></think>
+
+---
+
+
+Checking the domain page for inline handlers and re-render triggers:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/wcag/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/DomainAggregatedIssueList.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see the issues:
+
+1. **Inline `onPageClick`** in both domain and WCAG page - new function reference every render → DomainAggregatedIssueList re-renders whenever the parent re-renders.
+
+2. **DomainAggregatedIssueList** uses **useI18n()** - so every time the i18n context updates (e.g. locale or any context state), the list re-renders. If the parent re-renders for any reason (hover on tabs, etc.), the list gets new onPageClick and re-renders.
+
+3. **No React.memo** on the list - so it always re-renders with the parent.
+
+Fix plan:
+1. **Memoize DomainAggregatedIssueList** with React.memo so it only re-renders when `issues`, `onPageClick`, or `pageSize` change (shallow compare).
+2. **Domain page**: Add `const handleIssuePageClick = useCallback((url: string) => { const page = pagesByUrl.get(url); if (page) router.push(pathResults(page.id)); }, [pagesByUrl, router]);` and pass `handleIssuePageClick` to the list. Note: pagesByUrl is from useMemo([pages]), so it's stable when pages don't change. router is from useRouter() - stable.
+3. **WCAG page**: Same - useCallback for onPageClick with [pagesByUrl, router].
+4. **Stable issues reference**: On domain page we pass `aggregated.issues.issues` - that's the same reference as long as result hasn't been replaced. On WCAG we pass `aggregated.issues` - same. So we're good. But to be extra safe we could memoize: `const issuesList = useMemo(() => aggregated?.issues?.issues ?? [], [aggregated?.issues?.issues])` - but that could create a new [] every time if aggregated is null. So when aggregated exists, we want to pass aggregated.issues.issues directly (same ref). When aggregated is null we're not rendering the list. So we're fine.
+5. **DomainAggregatedIssueList internal**: It uses useI18n() which might cause re-renders when locale changes. That's expected. The flickering the user sees is more likely from parent re-renders. So memoizing the list + stable callback should help a lot.
+
+6. **One more thing**: Maybe the issue is that the **entire tab content** is re-rendered because the domain page has a huge tree and something like MsqdxTabs re-renders on hover (internal state). So when you hover, the whole content under the tab re-renders, and even with React.memo, if the parent creates new inline elements (e.g. new Box, new MsqdxMoleculeCard), the list is still the same component but the DOM might be updating. Actually React.memo on the list will prevent the list from re-rendering when its props are the same. So we need to ensure the callback is stable. Let me implement.
+
+Also: In the list we have `const { t } = useI18n();` - when the parent re-renders and we have React.memo, we won't re-render the list so we won't call useI18n again for that render. So the list will only re-render when its props change. So the fix is React.memo + useCallback in parents.
+</details></think>
+
+---
+
+
+Stabilizing data flow and preventing unnecessary re-renders: memoizing the issues list, stabilizing the onPageClick callback in both parents, and wrapping the list in React.memo.
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] Memoize DomainAggregatedIssueList with React.memo
+- [ ] Stable onPageClick (useCallback) on domain page
+- [ ] Stable onPageClick and issues on WCAG page
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll wrap the component in React.memo. The props are issues (array), onPageClick (function), pageSize (number). So we need to do a custom comparison that does shallow compare for issues (reference equality) and pageSize, and reference equality for onPageClick. Default React.memo does shallow compare of all props, so if issues is the same reference and onPageClick is the same reference and pageSize is the same, we skip. Good.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/DomainAggregatedIssueList.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/DomainAggregatedIssueList.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add at the end of the file the memoized export. So after the closing `}` of the function, add:
+export const DomainAggregatedIssueList = React.memo(DomainAggregatedIssueListInner);
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/DomainAggregatedIssueList.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now add useCallback in the domain page for the onPageClick. I need to find the exact code and add a useCallback that depends on pagesByUrl and router. pathResults is from constants so it's stable.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Memoize DomainAggregatedIssueList with React.memo
+- [-] Stable onPageClick (useCallback) on domain page
+- [ ] Stable onPageClick and issues on WCAG page
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add useCallback. The domain page already has useMemo and useState. I need to add useCallback to the imports and then add the callback after the useMemo for pagesByNormUrl (or after the useEffect). So after line 99 (pagesByNormUrl) add:
+const handleIssuePageClick = useCallback((url: string) => {
+  const page = pagesByUrl.get(url);
+  if (page) router.push(pathResults(page.id));
+}, [pagesByUrl, router]);
+
+Then in the JSX replace the inline onPageClick with onPageClick={handleIssuePageClick}.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Add useCallback to the React import, then add the callback after pagesByNormUrl.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now WCAG page: add useCallback for onPageClick and optionally memoize the issues array so it's a stable reference. On the WCAG page, aggregated is `fullSummary?.aggregated?.issues ?? null` - so aggregated is the issues result object (has .issues, .stats, .pagesByIssueCount). We pass aggregated.issues to the list. So when fullSummary is set once, fullSummary.aggregated.issues is the object and fullSummary.aggregated.issues.issues is the array. So the reference to aggregated.issues (the array) is stable. So we just need useCallback for onPageClick. Let me add useCallback to the WCAG page - it already has useCallback in the imports (loadProject). So we need to add another useCallback for handleIssuePageClick. And we need to memoize the issues list reference: when aggregated is null we don't render the list. When aggregated is set, we pass aggregated.issues - that's the array. So the reference is stable as long as fullSummary doesn't change. Good. So just add useCallback for onPageClick on WCAG page.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Memoize DomainAggregatedIssueList with React.memo
+- [x] Stable onPageClick (useCallback) on domain page
+- [-] Stable onPageClick and issues on WCAG page
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/wcag/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/wcag/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+WCAG page already has useCallback in the import (for loadProject). So we're good. Let me also ensure the **issues** prop is a stable reference. On the WCAG page we have `aggregated.issues` - that's the array. When does fullSummary change? Only when the fetch completes. So fullSummary is set once (or when id changes and we re-fetch). So aggregated.issues is the same reference across re-renders until we fetch again. Good.
+
+One more potential cause of flickering: **data is re-fetched**. Let me check - on the WCAG page we have useEffect that fetches when id changes. We're not re-fetching on every render. On the domain page we fetch when domainId changes. So we're good.
+
+Let me also memoize the **issues array** when we pass it from the WCAG page - actually the issue might be that when `loading` or other state changes, we re-render and aggregated might be re-derived. But aggregated = fullSummary?.aggregated?.issues ?? null - so when fullSummary is the same object, fullSummary.aggregated is the same and fullSummary.aggregated.issues is the same. So aggregated.issues is the same reference. So we're good.
+
+Let me add a **stable empty array** for when there are no issues, so we never pass a new [] reference. Actually when aggregated is null we don't render the list (we're inside `!loading && aggregated &&`). When aggregated exists we pass aggregated.issues. So we're fine.
+
+Let me run the linter and build.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Memoize DomainAggregatedIssueList with React.memo
+- [x] Stable onPageClick (useCallback) on domain page
+- [x] Stable onPageClick and issues on WCAG page
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/DomainAggregatedIssueList.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/wcag/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/DomainAggregatedIssueList.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/wcag/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Checking - on the domain page, when we're on tab 2 we render the issues list. The `aggregated` comes from `result?.aggregated ?? null`. So when result is set from the fetch, result.aggregated is the same reference. So aggregated.issues.issues is the same reference. So when the parent re-renders (e.g. because of tab hover or something), we pass the same issues reference and now the same handleIssuePageClick reference, so React.memo will skip re-rendering the list. Good.
+
+Let me also consider: could the domain page be re-fetching? There's AddToProject with onAssigned that does fetch(apiScanDomainSummary(...)).then(d => setProjectId(d.projectId)). So they don't setResult - they only setProjectId. So result is not being replaced. Unless there's another place that sets result... Let me not change that. The fix we did should be enough.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 8.5s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+  Generating static pages using 9 workers (0/46) ...
+  Generating static pages using 9 workers (11/46) 
+  Generating static pages using 9 workers (22/46) 
+  Generating static pages using 9 workers (34/46) 
+✓ Generating static pages using 9 workers (46/46) in 313.6ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/register
+├ ƒ /api/auth/tokens
+├ ƒ /api/auth/tokens/[id]
+├ ƒ /api/checks/contrast
+├ ƒ /api/checks/pagespeed
+├ ƒ /api/checks/readability
+├ ƒ /api/checks/ssl
+├ ƒ /api/checks/wayback
+├ ƒ /api/health
+├ ƒ /api/journeys
+├ ƒ /api/journeys/[id]
+├ ƒ /api/projects
+├ ƒ /api/projects/[id]
+├ ƒ /api/projects/[id]/domain-summary
+├ ƒ /api/projects/[id]/geo-question-history
+├ ƒ /api/projects/[id]/geo-summary
+├ ƒ /api/projects/[id]/ranking-summary
+├ ƒ /api/projects/[id]/research
+├ ƒ /api/projects/[id]/suggest-competitors
+├ ƒ /api/projects/[id]/suggest-keywords
+├ ƒ /api/rank-tracking/keywords
+├ ƒ /api/rank-tracking/keywords/[id]
+├ ƒ /api/rank-tracking/keywords/[id]/positions
+├ ƒ /api/rank-tracking/refresh
+├ ƒ /api/saliency/generate
+├ ƒ /api/saliency/result
+├ ƒ /api/scan
+├ ƒ /api/scan/[id]
+├ ƒ /api/scan/[id]/project
+├ ƒ /api/scan/[id]/screenshot
+├ ƒ /api/scan/[id]/summarize
+├ ƒ /api/scan/domain
+├ ƒ /api/scan/domain/[id]/journey
+├ ƒ /api/scan/domain/[id]/status
+├ ƒ /api/scan/domain/[id]/summarize
+├ ƒ /api/scan/domain/[id]/summary
+├ ƒ /api/scan/geo-eeat
+├ ƒ /api/scan/geo-eeat/[jobId]
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history/[runId]
+├ ƒ /api/scan/geo-eeat/[jobId]/project
+├ ƒ /api/scan/geo-eeat/[jobId]/rerun-competitive
+├ ƒ /api/scan/geo-eeat/[jobId]/status
+├ ƒ /api/scan/geo-eeat/history
+├ ƒ /api/scan/geo-eeat/suggest-competitors-queries
+├ ƒ /api/scan/journey-agent
+├ ƒ /api/scan/journey-agent/[jobId]
+├ ƒ /api/scan/journey-agent/[jobId]/live
+├ ƒ /api/scan/journey-agent/[jobId]/live/stream
+├ ƒ /api/scan/journey-agent/[jobId]/project
+├ ƒ /api/scan/journey-agent/[jobId]/video
+├ ƒ /api/scan/journey-agent/history
+├ ƒ /api/scans
+├ ƒ /api/scans/[id]
+├ ƒ /api/scans/domain
+├ ƒ /api/scans/domain/[id]
+├ ƒ /api/scans/domain/[id]/project
+├ ƒ /api/search
+├ ƒ /api/share
+├ ƒ /api/share/[token]
+├ ƒ /api/share/[token]/access
+├ ƒ /api/share/[token]/pages/[pageId]
+├ ƒ /api/share/[token]/pages/[pageId]/screenshot
+├ ƒ /api/share/[token]/video
+├ ƒ /api/share/by-resource
+├ ƒ /api/tools/contrast
+├ ƒ /api/tools/extract
+├ ƒ /api/tools/pagespeed
+├ ƒ /api/tools/readability
+├ ƒ /api/tools/ssl-labs
+├ ƒ /api/tools/wayback
+├ ƒ /developers
+├ ƒ /domain/[id]
+├ ƒ /geo-eeat/[jobId]
+├ ƒ /history
+├ ƒ /journey-agent/[jobId]
+├ ƒ /login
+├ ƒ /projects
+├ ƒ /projects/[id]
+├ ƒ /projects/[id]/geo
+├ ƒ /projects/[id]/rankings
+├ ƒ /projects/[id]/research
+├ ƒ /projects/[id]/wcag
+├ ƒ /register
+├ ƒ /results/[id]
+├ ƒ /scan
+├ ƒ /scan/domain
+├ ƒ /settings
+└ ƒ /share/[token]
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build succeeded. Let me give a short summary to the user. I should also mention that the data is only fetched once (on mount / when id or domainId changes) - we didn't change that, it was already correct. The fix was purely about preventing the issues table from re-rendering when the parent re-renders due to hover or other unrelated state.
+</details></think>
+
+---
+
+
+Summary of what was found and changed:
+
+## Cause of the flickering
+
+1. **New callback every render**  
+   The domain and WCAG pages passed an inline `onPageClick` to `DomainAggregatedIssueList`. That created a new function on every parent render, so React always saw changed props.
+
+2. **No memoization on the list**  
+   The list re-rendered whenever the parent re-rendered (e.g. hover on tabs, tooltips, or other UI state), even when `issues` and the effective `onPageClick` behavior were unchanged.
+
+3. **Data loading**  
+   Data is already loaded once (domain: one fetch when `domainId` is set; WCAG: one fetch for domain summary, then one for full summary when `scanId` is set). No extra fetches were added; the problem was only re-renders.
+
+## Changes made
+
+### 1. **`DomainAggregatedIssueList`** (`components/DomainAggregatedIssueList.tsx`)
+
+- The main implementation is in `DomainAggregatedIssueListInner`.
+- The default export is now:  
+  `export const DomainAggregatedIssueList = React.memo(DomainAggregatedIssueListInner)`  
+- The list re-renders only when `issues`, `onPageClick`, or `pageSize` change (by reference). Parent re-renders from hover/tabs no longer re-render the list.
+
+### 2. **Domain page** (`app/domain/[id]/page.tsx`)
+
+- Added a stable callback:  
+  `handleIssuePageClick = useCallback((url) => { ... }, [pagesByUrl, router])`
+- The list is rendered with `onPageClick={handleIssuePageClick}` instead of an inline function.
+- `pagesByUrl` is already from `useMemo` and only changes when `pages` changes, so the callback reference stays stable across normal interaction.
+
+### 3. **WCAG page** (`app/projects/[id]/wcag/page.tsx`)
+
+- Same pattern: `handleIssuePageClick = useCallback((url) => { ... }, [pagesByUrl, router])` and `onPageClick={handleIssuePageClick}`.
+
+With this, the issues table only re-renders when its props actually change (e.g. after a new fetch). Hovering or other parent re-renders no longer cause the list to re-render, so the flickering from that should be gone. Data is still loaded once per page/scan and then kept in state.
+
+---
+
+_**User**_
+
+können wir die elemente und texte in der tabelle verkleinern? ausserdem fehlt die pagination
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants to:
+1. Make the elements and text in the table smaller
+2. Add pagination (they say it's missing - maybe they mean the issues table or the scanned pages table?)
+
+I'll check both tables - ScannedPagesTable and DomainAggregatedIssueList - to see which one might be missing pagination and to reduce font sizes / element sizes in both.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/DomainAggregatedIssueList.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ScannedPagesTable.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The user wants:
+1. Smaller elements and text in the table - I'll reduce padding (py, px), minHeight, font sizes (caption, body2 -> smaller), chip heights, etc. in both DomainAggregatedIssueList and ScannedPagesTable.
+2. Pagination is missing - DomainAggregatedIssueList has pagination (totalPages > 1 shows prev/next). ScannedPagesTable also has pagination. Maybe the pagination is only shown when totalPages > 1, so if there are 50 or fewer issues/pages they don't see it? Or the pagination bar is not visible enough? Let me re-read - "fehlt die pagination" = "pagination is missing". So they might be on a view where there are many rows but the pagination isn't showing. Let me check - in DomainAggregatedIssueList we show pagination only when totalPages > 1. So if they have e.g. 60 issues they should see it. Unless there's a bug. Let me also show the pagination info (Page X of Y) even when there's only 1 page, so the user knows the table is paginated? Or maybe they want the pagination controls to always be visible when there are items? I'll make the pagination always visible when there are more than 0 items (show "Page 1 of 1" when 1 page, and prev/next when totalPages > 1). That way it's clear. Let me check the current logic again... We have `{totalPages > 1 && (... pagination ...)}` so when totalPages === 1 we don't show anything. So when you have 50 issues and 1 page, you see no pagination. When you have 51 issues you see "Page 1 of 2 (51 issues)" and prev/next. So maybe the user has exactly 50 or fewer and expects to see "Page 1 of 1" for consistency? Or they have many and the pagination bar is not visible (e.g. styling or overflow). I'll:
+1. Make elements/text smaller in both tables.
+2. Show pagination bar whenever there are items (show "Page X of Y" always when items.length > 0, and prev/next when totalPages > 1). So we always show the footer with at least the page info when there are items.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/DomainAggregatedIssueList.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ScannedPagesTable.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/DomainAggregatedIssueList.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/DomainAggregatedIssueList.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/DomainAggregatedIssueList.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/DomainAggregatedIssueList.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/DomainAggregatedIssueList.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/DomainAggregatedIssueList.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/DomainAggregatedIssueList.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/DomainAggregatedIssueList.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ScannedPagesTable.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
