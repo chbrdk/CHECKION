@@ -44,11 +44,26 @@ export default function ProjectSeoPage() {
     const [fullSummary, setFullSummary] = useState<DomainSummaryResponse | null>(() => (id ? seoSummaryCache.get(id)?.fullSummary ?? null : null));
     const fetchedForIdRef = useFetchOnceForId();
 
+    // #region agent log
+    const _logPrev = useRef<{ fullSummaryNull: boolean; count: number }>({ fullSummaryNull: true, count: 0 });
+    _logPrev.current.count += 1;
+    const fullSummaryNull = fullSummary == null;
+    const changed = _logPrev.current.fullSummaryNull !== fullSummaryNull;
+    _logPrev.current.fullSummaryNull = fullSummaryNull;
+    if (typeof window !== 'undefined' && (changed || _logPrev.current.count <= 3)) {
+        const cacheHas = id ? seoSummaryCache.has(id) : false;
+        fetch('http://127.0.0.1:7902/ingest/bbc31d13-f45c-46d1-93ab-b989a1d926fc',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cafcc0'},body:JSON.stringify({sessionId:'cafcc0',location:'seo/page.tsx:render',message:'render',data:{renderCount:_logPrev.current.count,id:id??'null',fullSummaryNull,cacheHas,changed},timestamp:Date.now(),hypothesisId:'F1',runId:'seo-render'})}).catch(()=>{});
+    }
+    // #endregion
+
     useEffect(() => {
         if (!id) return;
         if (fetchedForIdRef.current === id) return;
         fetchedForIdRef.current = id;
         const cached = seoSummaryCache.get(id);
+        // #region agent log
+        if (typeof window !== 'undefined') fetch('http://127.0.0.1:7902/ingest/bbc31d13-f45c-46d1-93ab-b989a1d926fc',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cafcc0'},body:JSON.stringify({sessionId:'cafcc0',location:'seo/page.tsx:effect',message:'effect',data:{id,hasCached:!!cached},timestamp:Date.now(),hypothesisId:'F2',runId:'seo-effect'})}).catch(()=>{});
+        // #endregion
         if (cached) {
             setScanId(cached.scanId);
             setFullSummary(cached.fullSummary);
