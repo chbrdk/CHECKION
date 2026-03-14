@@ -44916,47 +44916,232 @@ Issue reproduced, please proceed.
 
 _**Agent (model default, mode Agent)**_
 
+<think><details><summary>Thought Process</summary>
 
+The user has reproduced the issue and wants me to proceed. I need to read the debug log file to analyze the logs and evaluate the hypotheses (H1, H2) with cited evidence, then fix with confidence or generate new hypotheses.
+</details></think>
 
 ---
 
 
 
+
+
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/.cursor/debug-cafcc0.log</summary>
 
 </details>
 </tool-use>
 
 ---
 
+<think><details><summary>Thought Process</summary>
 
+Let me analyze the logs:
+
+1. **SEO page render 1** (timestamp 1773504494060): renderCount 1, hasFullSummary false – initial load, no data yet.
+2. **SEO page render 2** (timestamp 1773504494529): renderCount 2, hasFullSummary true – after data loaded, one re-render. So SEO page only rendered **2 times** total.
+3. **Table render 1** (timestamp 1773504494543): renderCount 1, rowsLength 193 – table rendered once with 193 rows.
+4. **Table in viewport** (timestamp 1773504494755): H2, table entered viewport.
+
+So we only see:
+- SEO page: 2 renders (initial empty, then with data). No runaway re-renders.
+- Table: 1 render. No runaway re-renders.
+
+The logs don't show render counts of 3, 5, 10, 20, 50, 100, 200, 500 for either component. So **H1 (excessive re-renders)** is **REJECTED** – we're not seeing hundreds of re-renders in this run. The slowness/overlap the user saw might be:
+- From a different run (more navigation/interaction)?
+- From something other than React re-renders: e.g. **layout/paint cost** when the table (193 rows of data, but we only render 50 per page) is in view – so it could be **layout thrashing** or **too many DOM nodes** (50 rows × 7 cells × multiple components per cell = still a lot), or **MUI/Emotion** recalculating styles.
+- From **CSS/layout**: `contain: layout` might not be enough; or the sticky header + scroll container could cause repaints.
+- From **memory**: 193 rows in memory, useMemo for sortedRows copies the array and sorts – that's one full copy + sort on every sortKey/sortDir/rows change. Not necessarily the cause of "endlessly slow" but worth noting.
+
+Since H1 is rejected (no excessive re-renders in logs), I should:
+1. Not add more speculative "fix re-renders" code – the memoization we added is still good practice but the evidence says re-renders aren't the main cause in this capture.
+2. Consider that the issue might be **paint/layout** when the table is visible: many MUI Box + Emotion sx props = many style objects. Or the **IntersectionObserver** we added might be firing repeatedly? No – we only log when `entry.isIntersecting` and we're not setting state in the observer. So we're not causing re-renders from the observer.
+3. New hypotheses could be:
+   - **H3:** The table has too many styled components (MUI Box, MsqdxTypography, etc.) per row causing slow first paint or layout when the table scrolls into view.
+   - **H4:** Something in the parent layout (e.g. AppShell, MsqdxAppLayout) recalculates when the main content area changes (e.g. when the table is in view and has a certain height), causing repaints or reflows.
+   - **H5:** The sticky header inside the scrollable container causes composite layer or stacking context issues, leading to overlapping or disappearing elements.
+
+The user said "elements disappear or overlap" – that sounds like **z-index/stacking/position** or **paint order**, not just slowness. So H5 (sticky + scroll) is a good candidate. Let me check the table structure: we have a sticky header (position: sticky, top: 0, zIndex: 1) inside a Box with overflow: auto. When the user scrolls the table content, the sticky header should stay on top. If the parent or a sibling has a stacking context or overflow issue, elements could overlap or disappear.
+
+I'll:
+1. Document the log analysis: H1 REJECTED (low render counts), H2 INCONCLUSIVE (viewport event fired once; we don't know if viewport entry causes something else).
+2. Propose a fix for **overlapping/disappearing** that's safe: ensure the table scroll container has proper stacking (isolation, z-index) and that the sticky header doesn't break out. Also consider reducing paint cost: use `content-visibility: auto` on rows (with care) or ensure the scroll container doesn't trigger layout on parent. Let me re-read the table code for overlapping issues.
+
+Actually re-reading the user message again: "sobald die tabelle in den viewport kommt, wird die seite endlos langsam und elemente verschwinden wieder oder überlagern sich" – so when the table comes into view, the page becomes endlessly slow AND elements disappear or overlap. So two symptoms: (1) endless slowness, (2) elements disappearing/overlapping.
+
+Logs show only 2 page renders and 1 table render. So in this reproduction we didn't capture "endless" slowness – maybe the user didn't wait long enough for the runaway behavior, or it's intermittent. I'll state: from this log run, we don't have evidence of runaway re-renders. So the fix strategy could be:
+- Keep the memoization and stable header (they don't hurt).
+- Add a fix for overlapping: often caused by stacking context. Give the table wrapper a dedicated stacking context (e.g. `isolation: isolate` or `transform: translateZ(0)`) so the sticky header and rows don't interact badly with the rest of the page. And ensure the scroll container has `overflow: auto` and a defined height so layout is predictable.
+- Consider virtualizing the table rows so we only render visible rows (e.g. react-window or a simple "render only N rows" with a fixed row height). That would reduce DOM size and paint cost when the table is in view. But that's a larger change.
+
+Let me check if there's an existing virtualization or if we can add a minimal fix. The user said "please proceed" – so they want me to analyze and fix. I'll:
+1. Summarize: H1 REJECTED (low renders in log), H2 viewport event once (no evidence viewport causes re-renders).
+2. Since we don't have evidence of re-render storm, the slowness/overlap might be from (a) layout/paint cost of many components, (b) stacking/position issues. I'll add a defensive fix: ensure the table container has `isolation: isolate` and a clear stacking context so overlapping is less likely; and add `will-change: transform` on the sticky header (or contain: paint) to promote it to its own layer and avoid repaint of the whole table. Actually `will-change: transform` can cause more memory use; `contain: paint` on the scroll container might help. Let me try `isolation: isolate` on the table wrapper to fix overlapping, and keep the rest.
+3. For "endlessly slow" – if it's not re-renders, it could be main thread blocked by something else (e.g. many style recalc). Virtualization would be the next step but is a bigger change. I'll add the isolation fix first and suggest virtualization as a follow-up if needed.
+
+Implementing: add `isolation: 'isolate'` to the table scroll container Box so the table (and its sticky header) get their own stacking context and are less likely to overlap or be clipped by parent/sibling. Optionally add `contain: 'paint'` to the same Box to limit paint scope (but contain: paint can clip overflow, so we need to test – actually overflow: auto is on that Box, so the scrollable content is inside it; contain: paint would create a containing block for descendants and could affect sticky. So I'll only add isolation: isolate.).
+</details></think>
 
 ---
 
 
+Logs auswerten und gezielte Fixes anwenden.
+
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/.cursor/debug-cafcc0.log</summary>
 
 </details>
 </tool-use>
 
 ---
 
+<think><details><summary>Thought Process</summary>
 
+Analysis:
+- SEO page: render 1 (no data), render 2 (with data). Only 2 renders total.
+- Table: 1 render, 193 rows. Then "table in viewport" once.
+- No render counts 3, 5, 10, 20... so no runaway re-renders in this capture.
+
+**H1 (excessive re-renders): REJECTED** – Evidence: renderCount never exceeded 2 for SEO page and 1 for table (log lines 1–4). No evidence of "endless" re-renders.
+
+**H2 (viewport triggers something): INCONCLUSIVE** – Viewport event fired once; we don't log state updates from it, so we can't say if it causes issues. We didn't add any setState in the observer, so viewport entry shouldn't cause re-renders.
+
+So the slowness and overlapping the user sees are likely not from React re-render storms in this run. Possible causes:
+1. **Layout/paint cost** – 50 visible rows × many MUI/Emotion cells = heavy first paint when table enters view.
+2. **Stacking/overflow** – Sticky header or scroll container interacting badly with layout; elements overlapping or disappearing suggests z-index/stacking/overflow.
+
+I'll:
+1. Add a fix for overlapping: give the table wrapper its own stacking context (`isolation: isolate`) so the sticky header and content don't get clipped or overlap with app shell/sidebar.
+2. Consider reducing work: we're already paginating (50 rows). Could add `content-visibility: auto` to rows to let the browser skip off-screen row painting when the user scrolls inside the table – but that can cause scroll height issues. Safer is to add `contain: 'strict'` only on the inner table content box (not the scroll container) or leave containment as is.
+3. Remove the code changes that were for "rejected" hypothesis? H1 was about measuring re-renders – we didn't add a "fix" for H1, we added instrumentation. The fixes we added earlier (SortHeader outside, memoized TableRow, useCallback, contain: layout) are general best practices. We don't have evidence they were unnecessary; we only have evidence that re-renders weren't excessive in this run. So I'll keep those optimizations.
+
+I'll add `isolation: 'isolate'` to the table scroll container to create a stacking context and prevent overlapping with the rest of the page. I'll also ensure the sticky header has a background so it doesn't show content through it when scrolling (it already has backgroundColor: MSQDX_NEUTRAL[100]). Let me check the current table structure again for any overflow/position issues.
+</details></think>
+
+---
+
+
+Log-Auswertung:
+
+- H1 (exzessive Re-Renders): REJECTED — SEO-Seite nur 2 Renders (Zeilen 1–2), Tabelle 1 Render (Zeile 3). Kein Runaway.
+- H2 (Viewport löst Re-Renders aus): INCONCLUSIVE — Viewport-Event einmal (Zeile 4), kein setState im Observer.
+
+Schlussfolgerung: Slowness/Überlagerung kommen in diesem Log nicht von Re-Render-Stürmen. Wahrscheinlicher: Layout/Paint-Kosten beim Sichtbarwerden der Tabelle oder Stacking/Overflow (sticky Header, Scroll-Container).
+
+Wir fügen einen Stacking-Context-Fix hinzu und prüfen die Tabelle auf Overflow/Sticky.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoOnPageTable.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add:
+1. `isolation: 'isolate'` on the outer table wrapper (the flex column Box) so the whole table block gets its own stacking context – prevents the sticky header or table content from interacting badly with the app shell/sidebar and reduces overlapping.
+2. On the scroll container, add `transform: 'translateZ(0)'` or keep contain and add isolation there – actually isolation on the parent of the sticky element can help. Let me add isolation to the scroll container Box (the one with ref and overflow: auto). That way the scroll area and everything inside it (including sticky header) live in one stacking context.
+3. Ensure the sticky header has a solid background so content doesn't show through – it already has backgroundColor: MSQDX_NEUTRAL[100]. Maybe add a slight backdrop or ensure it's opaque.
+
+Also: the `contain: 'layout'` might in some browsers interact badly with sticky. Let me try changing to `contain: 'strict'` only if needed; actually `contain: layout` shouldn't break sticky. Sticky is typically the one that causes "disappearing" when the scroll container has a transform or filter. So let me avoid adding transform to the scroll container (transform on scroll container can break position: sticky in some cases). I'll only add `isolation: isolate` on the outer wrapper (the one with display: flex, flexDirection: column). That creates a stacking context for the whole table section without affecting sticky's containing block.
+</details></think>
+
+---
+
+
+Stacking-Context und Sticky-Header absichern, um Überlagerungen zu vermeiden:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoOnPageTable.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I added isolation to the outer wrapper and to the sticky header row, and bumped the sticky header zIndex to 2 so it stays above body rows. Now let me also reduce paint cost: we could add `content-visibility: auto` to the table rows so the browser can skip painting off-screen rows when scrolling inside the table. But that can change scroll height in some browsers. A safer option is to add a small `will-change: transform` only on the sticky header to promote it to its own layer and avoid repainting the whole table when scrolling – actually will-change can cause more memory. Let me leave that out.
+
+I'll also add a note in the knowledge file that we confirmed re-renders are not excessive and applied isolation for stacking. And I'll leave the instrumentation in place for the verification run as per debug mode rules.
+</details></think>
+
+---
+
+
+Log-Auswertung in die Knowledge-Datei eintragen und Verifikationsschritte bereitstellen.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-seo-table-performance.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Instrumentation stays in place for verification. I'll provide reproduction steps for the user to verify the fix.
+</details></think>
+
+---
+
+
+**Log-Auswertung**
+
+| Hypothese | Befund | Beleg |
+|-----------|--------|--------|
+| **H1** Exzessive Re-Renders | **Verworfen** | SEO-Seite nur 2 Renders (Zeile 1–2), Tabelle 1 Render (Zeile 3). Keine anhaltenden Re-Render-Wellen. |
+| **H2** Viewport löst Re-Renders aus | **Unklar** | Viewport-Event genau einmal (Zeile 4), im Observer wird kein State gesetzt. |
+
+**Fazit:** In diesem Lauf gibt es keine Hinweise auf Re-Render-Stürme. Slowness und „Elemente verschwinden/überlagern“ passen eher zu Layout/Stacking (z. B. Sticky-Header, Scroll-Container).
+
+**Umgesetzte Anpassung (mit Log-Befund)**
+
+- **Stacking Context:**  
+  - Äußerer Tabellen-Wrapper: `isolation: 'isolate'`, damit die ganze Tabelle einen eigenen Stacking Context hat.  
+  - Sticky-Header-Zeile: `isolation: 'isolate'` und `zIndex: 2`, damit der Header klar über dem Body liegt und nichts durch andere Ebenen (z. B. App Shell/Sidebar) verdeckt wird oder verschwindet.
+
+Die bisherigen Optimierungen (stabile SortHeader-Zelle, memoized TableRow, `useCallback`, `contain: 'layout'`) bleiben; die Logs zeigen keine Runaway-Renders, die Maßnahmen schaden aber nicht.
+
+Die Debug-Instrumentierung bleibt für einen Verifikationslauf aktiv.
+
+Bitte einmal prüfen:
+
+<reproduction_steps>
+1. Dev-Server laufen lassen und zu einem Projekt mit SEO-Daten wechseln (Tab „SEO“).
+2. Nach unten scrollen, bis die SEO-Tabelle vollständig in den Viewport kommt.
+3. Prüfen: Wird die Seite weiterhin „endlos langsam“, verschwinden oder überlagern sich Elemente (z. B. Header, Sidebar, Tabellenzeilen)?
+4. Optional: Tab wechseln (z. B. WCAG, Übersicht) und zurück zu SEO, erneut zur Tabelle scrollen.
+5. „Proceed“ / „Mark as fixed“ ausführen, wenn das Verhalten passt oder du das Ergebnis melden willst.
+</reproduction_steps>
+
+---
+
+_**User**_
+
+Issue reproduced, please proceed.
 
 ---
 
