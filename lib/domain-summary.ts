@@ -58,14 +58,17 @@ function toSlimPage(p: ScanResult): SlimPage {
 /** Build summary from stored payload (return as-is) or from legacy full pages. */
 export function buildDomainSummary(scan: DomainScanResult): DomainSummaryResponse {
     if (hasStoredAggregated(scan) && !isFullPages(scan.pages)) {
+        const pagesArr = (scan.pages as SlimPage[]) ?? [];
+        const pageCount = pagesArr.length > 0 ? pagesArr.length : (scan.totalPages ?? 0);
         return {
             ...scan,
-            pages: scan.pages as SlimPage[],
-            totalPageCount: (scan.pages as SlimPage[]).length,
+            pages: pagesArr,
+            totalPageCount: pageCount,
             aggregated: scan.aggregated as DomainSummaryResponse['aggregated'],
         };
     }
     const pages = (scan.pages ?? []) as ScanResult[];
+    const pageCount = pages.length > 0 ? pages.length : (scan.totalPages ?? 0);
     const aggregated = {
         issues: aggregateIssues(pages),
         ux: aggregateUx(pages),
@@ -91,7 +94,7 @@ export function buildDomainSummary(scan: DomainScanResult): DomainSummaryRespons
         error: scan.error,
         llmSummary: scan.llmSummary,
         pages: pages.map(toSlimPage),
-        totalPageCount: pages.length,
+        totalPageCount: pageCount,
         aggregated,
     };
 }

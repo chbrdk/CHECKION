@@ -45,7 +45,7 @@ export async function GET(
     const row = await getDomainScanWithProjectId(scanId, user.id);
     if (row) {
       const summary = buildDomainSummary(row.result);
-      const pageCount = summary.totalPageCount ?? (summary.pages?.length ?? 0);
+      const pageCount = summary.totalPageCount ?? summary.pages?.length ?? (summary as { totalPages?: number }).totalPages ?? 0;
       const issuesStats = (summary.aggregated as { issues?: { stats?: { errors?: number; warnings?: number; notices?: number } } })?.issues?.stats;
       const wcag = computeWcagScore({
         errors: issuesStats?.errors ?? 0,
@@ -80,7 +80,7 @@ export async function GET(
       continue;
     }
     const summary = buildDomainSummary(row.result);
-    const pageCount = summary.totalPageCount ?? (summary.pages?.length ?? 0);
+    const pageCount = summary.totalPageCount ?? summary.pages?.length ?? (summary as { totalPages?: number }).totalPages ?? 0;
     const issuesStats = (summary.aggregated as { issues?: { stats?: { errors?: number; warnings?: number; notices?: number } } })?.issues?.stats;
     const wcag = computeWcagScore({
       errors: issuesStats?.errors ?? 0,
