@@ -18289,20 +18289,24 @@ zeigen wir irgendwas im frontend an? ich überlege ob wir einzelne reiter machen
 
 _**Agent (model default, mode Agent)**_
 
+<think><details><summary>Thought Process</summary>
 
+The user is asking:
+1. Do we show anything in the frontend (for the SEO on-page page)? They're considering whether to use separate tabs to switch between "pages" (the table) and "keywords", and they want to display keywords in a table as well.
+
+Let me check the current SEO page structure to see what we display and how we could add tabs (pages vs keywords) and a keywords table.
+</details></think>
 
 ---
 
 
 
+
+
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
 
 </details>
 </tool-use>
@@ -18313,9 +18317,1897 @@ Status: **loading**
 <details>
 <summary>Tool use: **ripgrep_raw_search**</summary>
 
-Status: **loading**
+
+Parameters:
+
+```json
+{
+  "pattern": "MsqdxTabs|Tabs|tab",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "MsqdxTabs|Tabs|tab",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 125,
+  "totalMatches": 880,
+  "topFiles": [
+    {
+      "uri": "./app/projects/[id]/seo/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./components/SeoOnPageTable.tsx",
+      "matchCount": 34
+    },
+    {
+      "uri": "./components/ProjectHeaderNav.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "./app/projects/[id]/wcag/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/DomainAggregatedIssueList.tsx",
+      "matchCount": 11
+    },
+    {
+      "uri": "./app/domain/[id]/page.tsx",
+      "matchCount": 28
+    },
+    {
+      "uri": "./components/ScannedPagesTable.tsx",
+      "matchCount": 9
+    },
+    {
+      "uri": "./components/CompetitivePositionDiagram.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/scan/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 15
+    },
+    {
+      "uri": "./app/journey-agent/[jobId]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/results/[id]/page.tsx",
+      "matchCount": 19
+    },
+    {
+      "uri": "./app/share/[token]/page.tsx",
+      "matchCount": 9
+    },
+    {
+      "uri": "./components/DomainToolsCard.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "./app/developers/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./components/GenerativeOptimizerCard.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./components/ScanIssueRow.tsx",
+      "matchCount": 8
+    },
+    {
+      "uri": "./components/JourneyFlowchart.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/SearchResultsList.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/HistoryList.tsx",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
 
 
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The user is asking:
+1. "zeigen wir irgendwas im frontend an?" - Yes, we do show a lot: Overview card, missing canonical list, noindex list, the pages table (SeoOnPageTable), and the keywords as chips with load more.
+2. They're considering adding **tabs** to switch between "Seiten" (pages) and "Keywords", and they want to show **keywords in a table** instead of (or in addition to?) the chips.
+
+So the request is:
+- Add tabs: one tab for "Seiten" (current pages table + overview + canonical/noindex lists?), one tab for "Keywords"
+- In the Keywords tab: display keywords in a **table** (sortable, paginated like SeoOnPageTable) instead of chips
+
+I need to check if MSQDX has a Tabs component and what CrossPageKeyword looks like.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "MsqdxTabs|Tabs",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "MsqdxTabs|Tabs",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 30,
+  "totalMatches": 110,
+  "topFiles": [
+    {
+      "uri": "./components/ProjectHeaderNav.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "./app/domain/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/scan/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 8
+    },
+    {
+      "uri": "./app/results/[id]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/share/[token]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/components/ProjectHeaderNav.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/scan/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 8
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/share/[token]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/components/ProjectHeaderNav.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/scan/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 8
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/share/[token]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/components/ProjectHeaderNav.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me check how MsqdxTabs is used in domain page or results page to get the API.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to see how DOMAIN_TABS is defined - it's an array of tab labels. MsqdxTabs takes value, onChange, tabs (array of strings or objects). Let me check.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "DOMAIN_TABS|tabs=\\{",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "DOMAIN_TABS|tabs=\\{",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 10,
+  "topFiles": [
+    {
+      "uri": "app/domain/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/geo-eeat/[jobId]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So MsqdxTabs can take tabs as array of { label, value } or just strings. Domain page uses DOMAIN_TABS - let me see that.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So the pattern is: tabs = [{ label: string, value: number }, ...], value and onChange for controlled tab. I'll implement:
+
+1. Add MsqdxTabs with two tabs: "Seiten" (0) and "Keywords" (1). Need i18n keys: tabPages, tabKeywords.
+2. When tab 0: show Overview, canonical list, noindex list, and the pages table (current content except the keywords card).
+3. When tab 1: show only the keywords - but in a TABLE. So I need a new component SeoKeywordsTable that takes crossPageKeyword[] and displays keyword, totalCount, pageCount, avgDensityPercent in a sortable/paginated table (similar structure to SeoOnPageTable but simpler - 4 columns). Use same performance patterns: pagination (15 per page), optional virtualization if we want, or just pagination.
+
+Let me add:
+1. i18n: projects.seo.tabPages, projects.seo.tabKeywords (or similar)
+2. State: seoTabValue = 0 | 1
+3. MsqdxTabs below the header card, above the content
+4. Tab 0 content: Overview, missing canonical, noindex, pages table (all current except keywords)
+5. Tab 1 content: Keywords table (new component or inline table with columns: Keyword, Vorkommen (totalCount), Seiten (pageCount), Ø Dichte (avgDensityPercent))
+
+I'll create a simple SeoKeywordsTable component that takes keywords array and shows a table with pagination (SEO_TABLE_PAGE_SIZE or 15), sortable by keyword, totalCount, pageCount, avgDensityPercent. Same styling as SeoOnPageTable (Box with role=table, grid columns, etc.) but fewer columns.
+</details></think>
+
+---
+
+
+Umsetzen: Reiter „Seiten“ und „Keywords“ mit MsqdxTabs; Keywords in einer sortierbaren, paginierten Tabelle.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoOnPageTable.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll create a compact SeoKeywordsTable component (keyword, totalCount, pageCount, avgDensityPercent) with sort and pagination, then add tabs to the SEO page. Using SEO_TABLE_PAGE_SIZE (15) for keywords table too.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] Add i18n keys for SEO tabs (tabPages, tabKeywords)
+- [ ] Create SeoKeywordsTable component (sortable, paginated)
+- [ ] Add MsqdxTabs + tab content (Seiten / Keywords) on SEO page
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now create SeoKeywordsTable. It should take CrossPageKeyword[], have columns: keyword, totalCount, pageCount, avgDensityPercent. Sortable by each column, paginated with SEO_TABLE_PAGE_SIZE (15). Same visual style as SeoOnPageTable (border, sticky header, etc.) but simpler - no virtualization needed for 15-50 keywords.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add i18n keys for SEO tabs (tabPages, tabKeywords)
+- [-] Create SeoKeywordsTable component (sortable, paginated)
+- [ ] Add MsqdxTabs + tab content (Seiten / Keywords) on SEO page
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoKeywordsTable.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Fix handleSort - when clicking same key we should toggle; when clicking different key we set new key and default dir. Currently I'm calling setSortKey and setSortDir in one callback but sortKey in the dependency might be stale. Let me fix: when key === sortKey, toggle sortDir; else set sortKey and setSortDir to (key === 'keyword' ? 'asc' : 'desc').
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoKeywordsTable.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoKeywordsTable.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoKeywordsTable.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now add MsqdxTabs to the SEO page and split content: Tab 0 = Seiten (Overview, canonical, noindex, pages table), Tab 1 = Keywords (keywords table only). Remove the old keywords chip card and replace with tabbed content.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add i18n keys for SEO tabs (tabPages, tabKeywords)
+- [x] Create SeoKeywordsTable component (sortable, paginated)
+- [-] Add MsqdxTabs + tab content (Seiten / Keywords) on SEO page
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to:
+1. Add MsqdxTabs to imports
+2. Add SeoKeywordsTable to imports
+3. Remove SEO_KEYWORDS_INITIAL_SHOWN from imports (no longer used for chips - we use table)
+4. Add state: seoTabValue = 0 | 1
+5. After the header card and before the "fullSummary && hasSeoData" block, when hasSeoData, render the tabs (Seiten / Keywords)
+6. Wrap "Seiten" content (Overview, canonical, noindex, pages table) in tabValue === 0
+7. Replace the keywords chip card with tabValue === 1 content: one card with SeoKeywordsTable
+
+So the structure will be:
+- Header card (score, etc.) - always when fullSummary
+- When fullSummary && hasSeoData:
+  - MsqdxTabs (tabPages, tabKeywords)
+  - tabValue === 0: Overview, missing canonical, noindex, pages table
+  - tabValue === 1: MsqdxMoleculeCard with SeoKeywordsTable
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to:
+1. After the opening of fullSummary && hasSeoData, add the tabs and wrap the existing content in tab 0, then add tab 1 content with keywords table. Remove the old keywords chip card.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Check if share.pageOfTotal exists in locales - I used it in SeoKeywordsTable. Let me grep for it.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "pageOfTotal|pagesTablePrev|pagesTableNext",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "pageOfTotal|pagesTablePrev|pagesTableNext",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 30,
+  "topFiles": [
+    {
+      "uri": "locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "locales/de.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+pageOfTotal is under "share" - let me check the i18n key path. In SeoKeywordsTable I used t('share.pageOfTotal', ...). Let me verify the share namespace exists and the key format.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "\"share\":",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json",
+  "contextAfter": 3,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "\"share\":",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 15,
+  "topFiles": [
+    {
+      "uri": "locales/de.json",
+      "matchCount": 12
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 12
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 12
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 12
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 12
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+pageOfTotal was at line 49 in en.json - that might be under a different section. Let me check.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So pageOfTotal is under "common" (lines 44-49 are common keys). Let me check - the grep showed line 49 for de.json. So the path might be common.pageOfTotal. Let me check.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So pageOfTotal is under "share" (share starts at 12, and line 49 is pageOfTotal under share). So t('share.pageOfTotal', {...}) is correct. pagesTablePrev and pagesTableNext - let me check which namespace.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "pagesTablePrev",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "contextBefore": 5,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "pagesTablePrev",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 10,
+  "topFiles": [
+    {
+      "uri": "locales/en.json",
+      "matchCount": 6
+    },
+    {
+      "uri": "locales/de.json",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 6
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So pagesTablePrev is under domainResult (based on context - noPages, pagesTableUrl etc). So t('domainResult.pagesTablePrev') and t('domainResult.pagesTableNext'). Let me verify.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to see the parent key - domainResult. Let me check.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So pagesTablePrev is under domainResult. In SeoKeywordsTable I used t('domainResult.pagesTablePrev') - but I need to check - I wrote t('domainResult.pagesTablePrev'). So the key is domainResult.pagesTablePrev. Good. And share.pageOfTotal. All good. Run build to verify.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 7.8s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+  Generating static pages using 9 workers (0/47) ...
+  Generating static pages using 9 workers (11/47) 
+  Generating static pages using 9 workers (23/47) 
+  Generating static pages using 9 workers (35/47) 
+✓ Generating static pages using 9 workers (47/47) in 555.4ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/register
+├ ƒ /api/auth/tokens
+├ ƒ /api/auth/tokens/[id]
+├ ƒ /api/checks/contrast
+├ ƒ /api/checks/pagespeed
+├ ƒ /api/checks/readability
+├ ƒ /api/checks/ssl
+├ ƒ /api/checks/wayback
+├ ƒ /api/health
+├ ƒ /api/journeys
+├ ƒ /api/journeys/[id]
+├ ƒ /api/projects
+├ ƒ /api/projects/[id]
+├ ƒ /api/projects/[id]/domain-scan-all
+├ ƒ /api/projects/[id]/domain-summary
+├ ƒ /api/projects/[id]/domain-summary-all
+├ ƒ /api/projects/[id]/geo-question-history
+├ ƒ /api/projects/[id]/geo-summary
+├ ƒ /api/projects/[id]/ranking-summary
+├ ƒ /api/projects/[id]/research
+├ ƒ /api/projects/[id]/suggest-competitors
+├ ƒ /api/projects/[id]/suggest-keywords
+├ ƒ /api/rank-tracking/keywords
+├ ƒ /api/rank-tracking/keywords/[id]
+├ ƒ /api/rank-tracking/keywords/[id]/positions
+├ ƒ /api/rank-tracking/refresh
+├ ƒ /api/saliency/generate
+├ ƒ /api/saliency/result
+├ ƒ /api/scan
+├ ƒ /api/scan/[id]
+├ ƒ /api/scan/[id]/project
+├ ƒ /api/scan/[id]/screenshot
+├ ƒ /api/scan/[id]/summarize
+├ ƒ /api/scan/domain
+├ ƒ /api/scan/domain/[id]/journey
+├ ƒ /api/scan/domain/[id]/status
+├ ƒ /api/scan/domain/[id]/summarize
+├ ƒ /api/scan/domain/[id]/summary
+├ ƒ /api/scan/domain/by-domain
+├ ƒ /api/scan/geo-eeat
+├ ƒ /api/scan/geo-eeat/[jobId]
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history/[runId]
+├ ƒ /api/scan/geo-eeat/[jobId]/project
+├ ƒ /api/scan/geo-eeat/[jobId]/rerun-competitive
+├ ƒ /api/scan/geo-eeat/[jobId]/status
+├ ƒ /api/scan/geo-eeat/history
+├ ƒ /api/scan/geo-eeat/suggest-competitors-queries
+├ ƒ /api/scan/journey-agent
+├ ƒ /api/scan/journey-agent/[jobId]
+├ ƒ /api/scan/journey-agent/[jobId]/live
+├ ƒ /api/scan/journey-agent/[jobId]/live/stream
+├ ƒ /api/scan/journey-agent/[jobId]/project
+├ ƒ /api/scan/journey-agent/[jobId]/video
+├ ƒ /api/scan/journey-agent/history
+├ ƒ /api/scans
+├ ƒ /api/scans/[id]
+├ ƒ /api/scans/domain
+├ ƒ /api/scans/domain/[id]
+├ ƒ /api/scans/domain/[id]/project
+├ ƒ /api/search
+├ ƒ /api/share
+├ ƒ /api/share/[token]
+├ ƒ /api/share/[token]/access
+├ ƒ /api/share/[token]/pages/[pageId]
+├ ƒ /api/share/[token]/pages/[pageId]/screenshot
+├ ƒ /api/share/[token]/video
+├ ƒ /api/share/by-resource
+├ ƒ /api/tools/contrast
+├ ƒ /api/tools/extract
+├ ƒ /api/tools/pagespeed
+├ ƒ /api/tools/readability
+├ ƒ /api/tools/ssl-labs
+├ ƒ /api/tools/wayback
+├ ƒ /developers
+├ ƒ /domain/[id]
+├ ƒ /geo-eeat/[jobId]
+├ ƒ /history
+├ ƒ /journey-agent/[jobId]
+├ ƒ /login
+├ ƒ /projects
+├ ƒ /projects/[id]
+├ ƒ /projects/[id]/geo
+├ ƒ /projects/[id]/rankings
+├ ƒ /projects/[id]/research
+├ ƒ /projects/[id]/seo
+├ ƒ /projects/[id]/wcag
+├ ƒ /register
+├ ƒ /results/[id]
+├ ƒ /scan
+├ ƒ /scan/domain
+├ ƒ /settings
+└ ƒ /share/[token]
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build succeeded. Fix the handleSort in SeoKeywordsTable - when clicking the same key we should toggle sortDir; when clicking a different key we set the new key and default dir. But with setSortKey receiving a function that also calls setSortDir and setCurrentPage - the order might be wrong. When prev !== key we set sortDir and currentPage, then return key. When prev === key we only setSortDir. Good. But setSortKey is called with a function - so we're doing functional updates. So when user clicks same key: setSortKey(prev => { if (prev === key) { setSortDir(...); } return key; }) - we're always returning key, so sortKey becomes key. When user clicks different key: setSortKey(prev => { if (prev !== key) { setSortDir(...); setCurrentPage(1); } return key; }) - we're returning key. So we're always setting sortKey to key. The logic for sortDir: when prev === key, toggle; when prev !== key, set to (keyword ? 'asc' : 'desc'). Good. Done.
+
+Let me double-check: when we click the same column again we want to toggle asc/desc. So setSortDir(d => d === 'asc' ? 'desc' : 'asc'). When we click a different column we want sortKey to become that column and sortDir to be 'asc' for keyword, 'desc' for others. Good. Mark todo complete.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add i18n keys for SEO tabs (tabPages, tabKeywords)
+- [x] Create SeoKeywordsTable component (sortable, paginated)
+- [x] Add MsqdxTabs + tab content (Seiten / Keywords) on SEO page
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+All done. Summarize for the user.
+</details></think>
+
+---
+
+
+Kurz, was umgesetzt ist:
+
+**Ja, im Frontend wird angezeigt:**
+- **Header-Card** mit SEO-On-Page-Score, Scan-Infos und Link „Deep Scan öffnen“
+- **Reiter** „Seiten“ und „Keywords“ (MsqdxTabs)
+- **Tab „Seiten“:** Übersicht (Meta, OG, Canonical, Noindex), Listen „Seiten ohne Canonical“ / „Seiten mit noindex“ (mit „Mehr anzeigen“) und die **Seiten-Tabelle** (URL, Wörter, Keywords, Skinny, Meta, H1, Struktur) – sortierbar und paginiert
+- **Tab „Keywords“:** eine **Keywords-Tabelle** statt der bisherigen Chips
+
+**Änderungen im Detail:**
+
+1. **Reiter**
+   - Zwei Tabs: **Seiten** (0) und **Keywords** (1).
+   - Nur der aktive Tab rendert seinen Inhalt (weniger DOM, gleiche Performance-Idee wie bisher).
+
+2. **Keywords-Tabelle** (`SeoKeywordsTable`)
+   - Spalten: **Keyword**, **Vorkommen**, **Seiten**, **Ø Dichte %**
+   - Sortierung pro Spalte (Keyword alphabetisch, Rest numerisch)
+   - Paginierung mit 15 Einträgen pro Seite (wie bei der Seiten-Tabelle)
+   - Optik an die bestehende SEO-Tabelle angepasst (Border, Sticky-Header, Pagination-Buttons)
+
+3. **i18n**
+   - Neue Keys: `tabPages`, `tabKeywords`, `keywordsTableTitle`, `keywordsTableSubtitle`, `keywordsColKeyword`, `keywordsColCount`, `keywordsColPages`, `keywordsColAvgDensity` (DE/EN).
+
+Die Chips für Keywords sind entfernt; alle Keywords laufen nur noch über die Tabelle im Tab „Keywords“. Build ist durchgelaufen.
+
+---
+
+_**User**_
+
+können wir die cards DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-1whhp80 > div.MuiStack-root c.-yd8.a2 > div.MuiBox-root c.-17b4aqi[1] > div.MuiBox-root c.-1.g4afn
+Position: top=388px, left=101px, width=1015px, height=226px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-1sg4afn" data-cursor-element-id="cursor-el-1">Übersicht Meta & Struktur Title, Meta-Description, H1, Canonical und Wortanzahl Seiten mit Title: 193 / 193 Seiten mit Meta-Description: 9 / 193 Seiten mit H1: 193 / 193 Seiten mit Canonical: 9 /</div> , DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-1whhp80 > div.MuiStack-root c.-yd8.a2 > div.MuiBox-root c.-17b4aqi[2] > div.MuiBox-root c.-1.g4afn
+Position: top=632px, left=101px, width=1015px, height=626px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-1sg4afn" data-cursor-element-id="cursor-el-138">Alle Seiten: Meta, Struktur & Inhalt Sortiert nach Wortanzahl; unter 300 Wörter = Skinny Content. URL WÖRTER ↓ KEYWORDS SKINNY META H1 STRUKTUR https://www.ksb.com/en-global/company/history 1.598 15</div> , DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-1whhp80 > div.MuiStack-root c.-yd8.a2 > div.MuiBox-root c.-1qwn45 > div.MuiTab.-root c.-1.eqg.v > div.MuiTab.-.croller MuiTab.-hideScrollbar MuiTab.-.crollableX c.-jb8z7h > div.MuiTab.-li.t MuiTab.-flexContainer c.-162tvoi
+Position: top=313px, left=100px, width=1017px, height=40px
+React Component: ForwardRef
+HTML Element: <div role="tablist" class="MuiTabs-list MuiTabs-flexContainer css-162tvoi" data-cursor-element-id="cursor-el-120">Seiten Keywords</div>  mit border color brand farbe wie bei der rankings seite anpassen und in eine eigene card einpacken so wie bei rankings
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants to:
+1. Style the cards (Overview Meta & Structure, and the "All pages" table card) and the tabs with the brand border color like on the rankings page
+2. Wrap them in their own card similar to the rankings page
+
+Let me look at the rankings page to see how they style the cards and tabs there, then apply the same pattern to the SEO page.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "MsqdxMoleculeCard|border|brand|color",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings",
+  "glob": "*.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "MsqdxMoleculeCard|border|brand|color",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 190,
+  "topFiles": [
+    {
+      "uri": "app/projects/[id]/rankings/page.tsx",
+      "matchCount": 38
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 38
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 38
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 38
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 38
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see rankings uses `border: '1px solid var(--color-secondary-dx-green)'` for the card. Let me look at the full structure of the rankings page - how they wrap the content in a card with tabs or similar.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/rankings/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The user wants:
+1. Tabs and the content (Overview card, table card, etc.) to have border color in brand color (like rankings: `var(--color-secondary-dx-green)`)
+2. Wrap the tabs + content in one outer card (like rankings: the "Rankings" card that contains the tabs/content)
+
+On rankings they have:
+- One outer MsqdxMoleculeCard with title "Rankings", bgcolor, and inside it the content (keyword cards with green border)
+
+So for SEO I should:
+1. Wrap the tabs + tab content in one MsqdxMoleculeCard (e.g. title could be "SEO On-Page" or we use a generic title). That card should have:
+   - border: 1px solid var(--color-secondary-dx-green) 
+   - bgcolor: var(--color-card-bg)
+   - borderRadius: lg
+
+2. The tabs should use brand color for the indicator/active state - I need to check how MsqdxTabs gets the indicator color. Maybe we need to pass sx or a prop. Let me check how other pages style MsqdxTabs.
+
+3. Each inner card (Overview, Table card, etc.) could also get the green border like the ranking keyword cards: border: '1px solid var(--color-secondary-dx-green)'
+
+So the structure would be:
+- One wrapper MsqdxMoleculeCard with green border, containing:
+  - Tabs at the top (with brand color for active tab - need to check MUI/Msqdx)
+  - Tab content: either the "Seiten" content (Overview, canonical list, noindex list, pages table) or the "Keywords" content (keywords table)
+
+Let me check if MsqdxTabs accepts sx for the indicator.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "MsqdxTabs|Tabs.*indicator|sx.*indicator",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.tsx",
+  "contextBefore": 0,
+  "contextAfter": 2,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "MsqdxTabs|Tabs.*indicator|sx.*indicator",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 35,
+  "totalMatches": 70,
+  "topFiles": [
+    {
+      "uri": "./app/projects/[id]/seo/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "./components/ProjectHeaderNav.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/domain/[id]/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "./app/scan/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "./app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 9
+    },
+    {
+      "uri": "./app/results/[id]/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "./app/share/[token]/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/seo/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/components/ProjectHeaderNav.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/app/scan/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/app/share/[token]/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/seo/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/components/ProjectHeaderNav.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/app/scan/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 6
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ProjectHeaderNav.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So ProjectHeaderNav uses MUI Tabs with `'& .MuiTabs-indicator': { backgroundColor: '#000' }`. For brand color we'd use `var(--color-secondary-dx-green)`.
+
+MsqdxTabs might forward sx. I'll:
+1. Wrap the whole block (tabs + content) in one MsqdxMoleculeCard with border: 1px solid var(--color-secondary-dx-green), borderRadius lg, bgcolor card. Give it a title like the SEO page title or "Seiten & Keywords".
+2. Put the tabs inside that card with a border-bottom in brand color and style the indicator to brand green via sx if MsqdxTabs accepts it.
+3. Add the same border to the inner cards (Overview, Table card, Keywords card, etc.): border: '1px solid var(--color-secondary-dx-green)'
+
+Let me check if MsqdxTabs has an sx prop by looking at how it's used in domain page.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll wrap the SEO tabs + content in one outer MsqdxMoleculeCard (like rankings "Rankings" card), use green border for that card, use green for the tab bar border and tab indicator, and add green border to each inner MsqdxMoleculeCard (Overview, missing canonical, noindex, table, keywords). MsqdxTabs might accept sx - I'll add sx with the indicator color. If the component doesn't forward sx, it might still work if it's a MUI-based component.
+</details></think>
+
+---
+
+
+Änderungen umsetzen: Tabs und Inhalt in eine Card mit Brand-Border packen; Tab-Indikator und innere Cards in Brand-Farbe.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to:
+1. Add border to the other inner cards (missing canonical, noindex, table, keywords)
+2. Change the closing fragment and add the closing MsqdxMoleculeCard - and fix the Stack closing tag (I used Stack component="span" so the closing should be </Stack>)
+3. Check if MsqdxTabs accepts sx prop - if not we may need to wrap it in a Box with sx. Let me continue with the rest of the replacements and then check lints.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The outer card now has title={t('projects.seo.title')} - that's the same as the header card "SEO On-Page". So we'd have two cards with the same title. Let me check - the first card is the header with score and "Deep Scan öffnen". The second block is the new wrapper with tabs. So the wrapper card could have a different title like "Seiten & Keywords" or we leave it without a title (just the tabs). Looking at rankings again - they have "Rankings" as the title for the card that contains the keyword grid. So for SEO we could use a title that describes the content e.g. "Seiten & Keywords" or keep "SEO" - but we already have the main "SEO On-Page" card at the top. So the inner wrapper card could be titled something like "Daten" or "Seiten & Keywords". Let me add an i18n key for this card title so it's not the same as the page title. Or we could leave the wrapper card without a title (no title prop) so it's just a bordered box with tabs - like a panel. Let me check the user request again: "in eine eigene card einpacken so wie bei rankings" - so one card wrapping tabs and content. On rankings the card has title "Rankings". So our card could have title "Seiten & Keywords" or we use a generic "SEO-Daten". I'll use a new key seo.dataCardTitle or reuse something. Actually re-reading the user message - they want the cards (Overview, Table, etc.) and the tabs to have brand border and be in one card like rankings. So the outer card can have a title - maybe "Seiten & Keywords" to match the tabs. Let me add a translation key for that. Or we could use the same title as the tab area: we have tabs "Seiten" and "Keywords", so the card title could be something like "Seiten & Keywords" - I'll add that to i18n. Actually looking at my edit, I used title={t('projects.seo.title')} which is the main "SEO On-Page" title. So we'd have two "SEO On-Page" titles on the page. Better to use a different title for the wrapper card. Add projects.seo.dataCardTitle = "Seiten & Keywords" (de) and "Pages & Keywords" (en), and use that for the wrapper card.
+</details></think>
+
+---
+
+
+Doppelte Überschrift vermeiden: Eigene Titel-Übersetzung für die umschließende Card hinzufügen.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "\"tabPages\"|\"tabKeywords\"",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "\"tabPages\"|\"tabKeywords\"",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 20,
+  "topFiles": [
+    {
+      "uri": "locales/en.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "locales/de.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Add dataCardTitle to locales.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+MsqdxTabs might not support sx - it's from @msqdx/react. If it doesn't, the sx will be ignored and we might get a TypeScript error. Let me check - if MsqdxTabs doesn't accept sx, we could wrap the tabs in a Box and use a global selector, or use MUI's Tabs directly for this block. Let me read the lints.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+No lint errors - MsqdxTabs might accept sx. Let me fix the tab bar negative margin - we're using mt: -1, mx: -2, px: 2 to extend the border to the card edges. The MoleculeCard likely has padding, so the content is inset. To have the tab strip go edge to edge we need to counter that padding. Let me check - actually the user said "mit border color brand farbe" and "in eine eigene card einpacken so wie bei rankings". So the main thing is the outer card with green border and the inner cards with green border. The tabs with green indicator - if MsqdxTabs doesn't support sx the indicator might stay default. Let me run build to see if there are type errors for the sx on MsqdxTabs.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+
+```
 </details>
 </tool-use>
 

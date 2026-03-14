@@ -255,8 +255,27 @@ export default function ProjectSeoPage() {
                 )}
 
                 {fullSummary && hasSeoData && (
-                    <>
-                        <Box sx={{ borderBottom: '1px solid var(--color-secondary-dx-grey-light-tint)', mb: 2 }}>
+                    <MsqdxMoleculeCard
+                        title={t('projects.seo.dataCardTitle')}
+                        variant="flat"
+                        borderRadius="lg"
+                        footerDivider={false}
+                        sx={{
+                            bgcolor: 'var(--color-card-bg)',
+                            border: '1px solid var(--color-secondary-dx-green)',
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                borderBottom: '1px solid var(--color-secondary-dx-green)',
+                                mb: 0,
+                                mt: -1,
+                                mx: -2,
+                                px: 2,
+                                '& .MuiTabs-indicator': { backgroundColor: 'var(--color-secondary-dx-green)' },
+                                '& .Mui-selected': { color: 'var(--color-secondary-dx-green)' },
+                            }}
+                        >
                             <MsqdxTabs
                                 value={seoTabValue}
                                 onChange={(v) => setSeoTabValue(Number(v))}
@@ -268,7 +287,7 @@ export default function ProjectSeoPage() {
                         </Box>
 
                         {seoTabValue === 0 && (
-                            <>
+                            <Stack component="span" sx={{ gap: 2, pt: 2 }}>
                         {/* Overview Meta & Basis */}
                         {aggregatedSeo && (
                             <MsqdxMoleculeCard
@@ -276,7 +295,7 @@ export default function ProjectSeoPage() {
                                 subtitle={t('projects.seo.overviewSubtitle')}
                                 variant="flat"
                                 borderRadius="lg"
-                                sx={{ bgcolor: 'var(--color-card-bg)' }}
+                                sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-secondary-dx-green)' }}
                             >
                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                                     <MsqdxTypography variant="body2">
@@ -333,7 +352,7 @@ export default function ProjectSeoPage() {
                                     subtitle={`${urls.length} ${t('projects.seo.pagesShort')}`}
                                     variant="flat"
                                     borderRadius="lg"
-                                    sx={{ bgcolor: 'var(--color-card-bg)' }}
+                                    sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-secondary-dx-green)' }}
                                 >
                                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
                                         {shown.map((url) => {
@@ -370,7 +389,7 @@ export default function ProjectSeoPage() {
                                     subtitle={`${urls.length} ${t('projects.seo.pagesShort')}`}
                                     variant="flat"
                                     borderRadius="lg"
-                                    sx={{ bgcolor: 'var(--color-card-bg)' }}
+                                    sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-secondary-dx-green)' }}
                                 >
                                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
                                         {shown.map((url) => {
@@ -402,35 +421,39 @@ export default function ProjectSeoPage() {
                                 subtitle={t('projects.seo.pagesByContentSubtitle')}
                                 variant="flat"
                                 borderRadius="lg"
-                                sx={{ bgcolor: 'var(--color-card-bg)' }}
+                                sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-secondary-dx-green)' }}
                             >
                                 <SeoOnPageTable rows={seoTableRows} onRowClick={handleSeoRowClick} />
                             </MsqdxMoleculeCard>
                         )}
-                            </>
+                            </Stack>
                         )}
 
                         {seoTabValue === 1 && aggregatedSeo && aggregatedSeo.crossPageKeywords.length > 0 && (
-                            <MsqdxMoleculeCard
-                                title={t('projects.seo.keywordsTableTitle')}
-                                subtitle={t('projects.seo.keywordsTableSubtitle')}
-                                variant="flat"
-                                borderRadius="lg"
-                                sx={{ bgcolor: 'var(--color-card-bg)' }}
-                            >
-                                <SeoKeywordsTable keywords={aggregatedSeo.crossPageKeywords} />
-                            </MsqdxMoleculeCard>
+                            <Box sx={{ pt: 2 }}>
+                                <MsqdxMoleculeCard
+                                    title={t('projects.seo.keywordsTableTitle')}
+                                    subtitle={t('projects.seo.keywordsTableSubtitle')}
+                                    variant="flat"
+                                    borderRadius="lg"
+                                    sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-secondary-dx-green)' }}
+                                >
+                                    <SeoKeywordsTable keywords={aggregatedSeo.crossPageKeywords} />
+                                </MsqdxMoleculeCard>
+                            </Box>
                         )}
 
                         {seoTabValue === 1 && aggregatedSeo && aggregatedSeo.crossPageKeywords.length === 0 && (
-                            <MsqdxMoleculeCard variant="flat" borderRadius="lg" sx={{ bgcolor: 'var(--color-card-bg)' }}>
-                                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                    {t('projects.seo.tableEmpty')}
-                                </MsqdxTypography>
-                            </MsqdxMoleculeCard>
+                            <Box sx={{ pt: 2 }}>
+                                <MsqdxMoleculeCard variant="flat" borderRadius="lg" sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-secondary-dx-green)' }}>
+                                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                        {t('projects.seo.tableEmpty')}
+                                    </MsqdxTypography>
+                                </MsqdxMoleculeCard>
+                            </Box>
                         )}
 
-                    </>
+                    </MsqdxMoleculeCard>
                 )}
             </Stack>
         </Box>

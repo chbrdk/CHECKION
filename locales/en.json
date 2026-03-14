@@ -262,6 +262,7 @@
       "tableTitle": "All pages: Meta, structure & content",
       "tabPages": "Pages",
       "tabKeywords": "Keywords",
+      "dataCardTitle": "Pages & Keywords",
       "keywordsTableTitle": "Cross-page keywords",
       "keywordsTableSubtitle": "Terms that appear on multiple pages; sorted by count.",
       "keywordsColKeyword": "Keyword",
