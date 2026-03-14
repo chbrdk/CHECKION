@@ -25,6 +25,7 @@ import type { DomainSummaryResponse } from '@/lib/domain-summary';
 import type { SlimPage } from '@/lib/types';
 import type { AggregatedSeo, AggregatedStructure } from '@/lib/domain-aggregation';
 import { computeSeoOnPageScore } from '@/lib/seo-on-page-score';
+import { SeoOnPageTable, type SeoOnPageRow } from '@/components/SeoOnPageTable';
 
 export default function ProjectSeoPage() {
     const params = useParams();
@@ -95,6 +96,22 @@ export default function ProjectSeoPage() {
     const seoScore = useMemo(
         () => computeSeoOnPageScore({ seo: aggregatedSeo ?? null, structure: aggregatedStructure ?? null }),
         [aggregatedSeo, aggregatedStructure]
+    );
+    const seoTableRows = useMemo((): SeoOnPageRow[] => {
+        if (!aggregatedSeo?.pages?.length) return [];
+        const multiH1Set = new Set(aggregatedStructure?.pagesWithMultipleH1 ?? []);
+        const skippedSet = new Set(aggregatedStructure?.pagesWithSkippedLevels ?? []);
+        return aggregatedSeo.pages.map((p) => ({
+            ...p,
+            structure: multiH1Set.has(p.url) ? 'multipleH1' as const : skippedSet.has(p.url) ? 'skippedLevels' as const : 'good' as const,
+        }));
+    }, [aggregatedSeo?.pages, aggregatedStructure?.pagesWithMultipleH1, aggregatedStructure?.pagesWithSkippedLevels]);
+    const handleSeoRowClick = useCallback(
+        (url: string) => {
+            const page = pagesByUrl.get(url);
+            if (page) router.push(pathResults(page.id));
+        },
+        [pagesByUrl, router]
     );
     const loading = projectLoading || summaryLoading;
 
@@ -228,155 +245,16 @@ export default function ProjectSeoPage() {
                             </MsqdxMoleculeCard>
                         )}
 
-                        {/* Pages without Meta-Description */}
-                        {aggregatedSeo && aggregatedSeo.missingMetaDescriptionUrls.length > 0 && (
+                        {/* Unified table: all pages with Meta, H1, structure, content */}
+                        {aggregatedSeo && seoTableRows.length > 0 && (
                             <MsqdxMoleculeCard
-                                title={t('projects.seo.pagesWithoutMetaDescription')}
-                                subtitle={t('projects.seo.pagesCount', { count: aggregatedSeo.missingMetaDescriptionUrls.length })}
+                                title={t('projects.seo.tableTitle')}
+                                subtitle={t('projects.seo.pagesByContentSubtitle')}
                                 variant="flat"
                                 borderRadius="lg"
                                 sx={{ bgcolor: 'var(--color-card-bg)' }}
                             >
-                                <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0, maxHeight: 280, overflow: 'auto' }}>
-                                    {aggregatedSeo.missingMetaDescriptionUrls.map((url) => {
-                                        const page = pagesByUrl.get(url);
-                                        return (
-                                            <Box component="li" key={url} sx={{ py: 0.5, borderBottom: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
-                                                {page ? (
-                                                    <MsqdxButton
-                                                        size="small"
-                                                        variant="text"
-                                                        onClick={() => router.push(pathResults(page.id))}
-                                                        sx={{ textTransform: 'none', fontSize: '0.75rem', justifyContent: 'flex-start' }}
-                                                    >
-                                                        {url}
-                                                    </MsqdxButton>
-                                                ) : (
-                                                    <MsqdxTypography variant="caption" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
-                                                        {url}
-                                                    </MsqdxTypography>
-                                                )}
-                                            </Box>
-                                        );
-                                    })}
-                                </Box>
-                            </MsqdxMoleculeCard>
-                        )}
-
-                        {/* Pages without H1 */}
-                        {aggregatedSeo && aggregatedSeo.missingH1Urls.length > 0 && (
-                            <MsqdxMoleculeCard
-                                title={t('projects.seo.pagesWithoutH1')}
-                                subtitle={t('projects.seo.pagesCount', { count: aggregatedSeo.missingH1Urls.length })}
-                                variant="flat"
-                                borderRadius="lg"
-                                sx={{ bgcolor: 'var(--color-card-bg)' }}
-                            >
-                                <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0, maxHeight: 280, overflow: 'auto' }}>
-                                    {aggregatedSeo.missingH1Urls.map((url) => {
-                                        const page = pagesByUrl.get(url);
-                                        return (
-                                            <Box component="li" key={url} sx={{ py: 0.5, borderBottom: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
-                                                {page ? (
-                                                    <MsqdxButton
-                                                        size="small"
-                                                        variant="text"
-                                                        onClick={() => router.push(pathResults(page.id))}
-                                                        sx={{ textTransform: 'none', fontSize: '0.75rem', justifyContent: 'flex-start' }}
-                                                    >
-                                                        {url}
-                                                    </MsqdxButton>
-                                                ) : (
-                                                    <MsqdxTypography variant="caption" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
-                                                        {url}
-                                                    </MsqdxTypography>
-                                                )}
-                                            </Box>
-                                        );
-                                    })}
-                                </Box>
-                            </MsqdxMoleculeCard>
-                        )}
-
-                        {/* Structure */}
-                        {aggregatedStructure && (
-                            <MsqdxMoleculeCard
-                                title={t('projects.seo.structureTitle')}
-                                variant="flat"
-                                borderRadius="lg"
-                                sx={{ bgcolor: 'var(--color-card-bg)' }}
-                            >
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
-                                    <MsqdxChip
-                                        label={`${t('projects.seo.multipleH1')}: ${aggregatedStructure.pagesWithMultipleH1.length}`}
-                                        size="small"
-                                        brandColor="pink"
-                                    />
-                                    <MsqdxChip
-                                        label={`${t('projects.seo.skippedLevels')}: ${aggregatedStructure.pagesWithSkippedLevels.length}`}
-                                        size="small"
-                                        brandColor="yellow"
-                                    />
-                                    {aggregatedStructure.pagesWithGoodStructure.length > 0 && (
-                                        <MsqdxChip
-                                            label={`${t('projects.seo.goodStructure')}: ${aggregatedStructure.pagesWithGoodStructure.length}`}
-                                            size="small"
-                                            brandColor="green"
-                                        />
-                                    )}
-                                </Box>
-                                {aggregatedStructure.pagesWithMultipleH1.length > 0 && (
-                                    <Box sx={{ mb: 1 }}>
-                                        <MsqdxTypography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>{t('projects.seo.multipleH1')}</MsqdxTypography>
-                                        <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
-                                            {aggregatedStructure.pagesWithMultipleH1.slice(0, 10).map((url) => {
-                                                const page = pagesByUrl.get(url);
-                                                return (
-                                                    <Box component="li" key={url} sx={{ py: 0.25 }}>
-                                                        {page ? (
-                                                            <MsqdxButton size="small" variant="text" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>
-                                                                {url}
-                                                            </MsqdxButton>
-                                                        ) : (
-                                                            <MsqdxTypography variant="caption" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{url}</MsqdxTypography>
-                                                        )}
-                                                    </Box>
-                                                );
-                                            })}
-                                            {aggregatedStructure.pagesWithMultipleH1.length > 10 && (
-                                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                                    +{aggregatedStructure.pagesWithMultipleH1.length - 10} {t('projects.seo.more')}
-                                                </MsqdxTypography>
-                                            )}
-                                        </Box>
-                                    </Box>
-                                )}
-                                {aggregatedStructure.pagesWithSkippedLevels.length > 0 && (
-                                    <Box>
-                                        <MsqdxTypography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>{t('projects.seo.skippedLevels')}</MsqdxTypography>
-                                        <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
-                                            {aggregatedStructure.pagesWithSkippedLevels.slice(0, 10).map((url) => {
-                                                const page = pagesByUrl.get(url);
-                                                return (
-                                                    <Box component="li" key={url} sx={{ py: 0.25 }}>
-                                                        {page ? (
-                                                            <MsqdxButton size="small" variant="text" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>
-                                                                {url}
-                                                            </MsqdxButton>
-                                                        ) : (
-                                                            <MsqdxTypography variant="caption" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{url}</MsqdxTypography>
-                                                        )}
-                                                    </Box>
-                                                );
-                                            })}
-                                            {aggregatedStructure.pagesWithSkippedLevels.length > 10 && (
-                                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                                    +{aggregatedStructure.pagesWithSkippedLevels.length - 10} {t('projects.seo.more')}
-                                                </MsqdxTypography>
-                                            )}
-                                        </Box>
-                                    </Box>
-                                )}
+                                <SeoOnPageTable rows={seoTableRows} onRowClick={handleSeoRowClick} />
                             </MsqdxMoleculeCard>
                         )}
 
@@ -402,62 +280,6 @@ export default function ProjectSeoPage() {
                             </MsqdxMoleculeCard>
                         )}
 
-                        {/* Pages by content & density */}
-                        {aggregatedSeo && aggregatedSeo.pages.length > 0 && (
-                            <MsqdxMoleculeCard
-                                title={t('projects.seo.pagesByContent')}
-                                subtitle={t('projects.seo.pagesByContentSubtitle')}
-                                variant="flat"
-                                borderRadius="lg"
-                                sx={{ bgcolor: 'var(--color-card-bg)' }}
-                            >
-                                <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0, maxHeight: 360, overflow: 'auto' }}>
-                                    {aggregatedSeo.pages.map((row) => {
-                                        const page = pagesByUrl.get(row.url);
-                                        return (
-                                            <Box
-                                                component="li"
-                                                key={row.url}
-                                                sx={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: 1,
-                                                    py: 0.5,
-                                                    borderBottom: '1px solid var(--color-secondary-dx-grey-light-tint)',
-                                                    flexWrap: 'wrap',
-                                                }}
-                                            >
-                                                {page ? (
-                                                    <MsqdxButton
-                                                        size="small"
-                                                        variant="text"
-                                                        onClick={() => router.push(pathResults(page.id))}
-                                                        sx={{ textTransform: 'none', fontSize: '0.75rem', flex: '1 1 auto', minWidth: 0, justifyContent: 'flex-start' }}
-                                                    >
-                                                        {row.url}
-                                                    </MsqdxButton>
-                                                ) : (
-                                                    <MsqdxTypography variant="caption" sx={{ flex: '1 1 auto', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                        {row.url}
-                                                    </MsqdxTypography>
-                                                )}
-                                                <MsqdxTypography variant="caption" sx={{ whiteSpace: 'nowrap' }}>
-                                                    {row.wordCount.toLocaleString('de-DE')} {t('projects.seo.words')}
-                                                </MsqdxTypography>
-                                                {row.topKeywordCount > 0 && (
-                                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                                        {row.topKeywordCount} {t('projects.seo.topKeywords')}
-                                                    </MsqdxTypography>
-                                                )}
-                                                {row.isSkinny && (
-                                                    <MsqdxChip label={t('projects.seo.skinny')} size="small" sx={{ height: 18, fontSize: '0.65rem', bgcolor: 'var(--color-secondary-dx-orange-tint)', color: 'var(--color-secondary-dx-orange)' }} />
-                                                )}
-                                            </Box>
-                                        );
-                                    })}
-                                </Box>
-                            </MsqdxMoleculeCard>
-                        )}
                     </>
                 )}
             </Stack>

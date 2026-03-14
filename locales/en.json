@@ -237,7 +237,22 @@
       "scoreLabel_fair": "Fair",
       "scoreLabel_poor": "Poor",
       "scoreLabel_critical": "Critical",
-      "scoreTooltip": "Formula: 40% meta coverage (title, meta description, H1, canonical), 30% heading structure (single H1, no skipped levels), 30% content depth (share of non-skinny pages, ≥300 words). Not an official standard; derived from deep-scan data."
+      "scoreTooltip": "Formula: 40% meta coverage (title, meta description, H1, canonical), 30% heading structure (single H1, no skipped levels), 30% content depth (share of non-skinny pages, ≥300 words). Not an official standard; derived from deep-scan data.",
+      "tableUrl": "URL",
+      "tableWords": "Words",
+      "tableKeywords": "Keywords",
+      "tableSkinny": "Skinny",
+      "tableMeta": "Meta",
+      "tableH1": "H1",
+      "tableStructure": "Structure",
+      "structureGood": "OK",
+      "structureMultipleH1": "Multiple H1",
+      "structureSkippedLevels": "Skipped levels",
+      "tableYes": "Yes",
+      "tableNo": "No",
+      "tableEmpty": "No page data.",
+      "tableAria": "SEO on-page table: all pages with meta, H1, structure and content.",
+      "tableTitle": "All pages: Meta, structure & content"
     }
   },
   "auth": {

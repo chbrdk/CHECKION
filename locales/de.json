@@ -237,7 +237,22 @@
       "scoreLabel_fair": "Mäßig",
       "scoreLabel_poor": "Schwach",
       "scoreLabel_critical": "Kritisch",
-      "scoreTooltip": "Berechnung: 40 % Meta-Abdeckung (Title, Meta-Description, H1, Canonical), 30 % Überschriften-Struktur (einziger H1, keine übersprungenen Ebenen), 30 % Inhaltsstärke (Anteil nicht zu dünner Seiten, ≥ 300 Wörter). Kein offizieller Standard; nachvollziehbar aus den Deep-Scan-Daten."
+      "scoreTooltip": "Berechnung: 40 % Meta-Abdeckung (Title, Meta-Description, H1, Canonical), 30 % Überschriften-Struktur (einziger H1, keine übersprungenen Ebenen), 30 % Inhaltsstärke (Anteil nicht zu dünner Seiten, ≥ 300 Wörter). Kein offizieller Standard; nachvollziehbar aus den Deep-Scan-Daten.",
+      "tableUrl": "URL",
+      "tableWords": "Wörter",
+      "tableKeywords": "Keywords",
+      "tableSkinny": "Skinny",
+      "tableMeta": "Meta",
+      "tableH1": "H1",
+      "tableStructure": "Struktur",
+      "structureGood": "OK",
+      "structureMultipleH1": "Mehrere H1",
+      "structureSkippedLevels": "Ebenen überspr.",
+      "tableYes": "Ja",
+      "tableNo": "Nein",
+      "tableEmpty": "Keine Seitendaten.",
+      "tableAria": "SEO-On-Page-Tabelle: alle Seiten mit Meta, H1, Struktur und Inhalt.",
+      "tableTitle": "Alle Seiten: Meta, Struktur & Inhalt"
     }
   },
   "auth": {
