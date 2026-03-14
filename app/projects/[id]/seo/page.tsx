@@ -295,44 +295,141 @@ export default function ProjectSeoPage() {
                                 borderRadius="lg"
                                 sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-secondary-dx-green)' }}
                             >
-                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                                    <MsqdxTypography variant="body2">
-                                        {t('projects.seo.withTitle')}: {aggregatedSeo.withTitle} / {aggregatedSeo.totalPages}
-                                    </MsqdxTypography>
-                                    <MsqdxTypography variant="body2">
-                                        {t('projects.seo.withMetaDescription')}: {aggregatedSeo.withMetaDescription} / {aggregatedSeo.totalPages}
-                                    </MsqdxTypography>
-                                    <MsqdxTypography variant="body2">
-                                        {t('projects.seo.withH1')}: {aggregatedSeo.withH1} / {aggregatedSeo.totalPages}
-                                    </MsqdxTypography>
-                                    <MsqdxTypography variant="body2">
-                                        {t('projects.seo.withCanonical')}: {aggregatedSeo.withCanonical} / {aggregatedSeo.totalPages}
-                                    </MsqdxTypography>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'baseline' }}>
+                                    <Box>
+                                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                                            {t('projects.seo.withTitle')}
+                                        </MsqdxTypography>
+                                        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                                            <MsqdxTypography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                                                {aggregatedSeo.withTitle}
+                                            </MsqdxTypography>
+                                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', fontWeight: 500 }}>
+                                                / {aggregatedSeo.totalPages}
+                                            </MsqdxTypography>
+                                        </Box>
+                                    </Box>
+                                    <Box>
+                                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                                            {t('projects.seo.withMetaDescription')}
+                                        </MsqdxTypography>
+                                        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                                            <MsqdxTypography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                                                {aggregatedSeo.withMetaDescription}
+                                            </MsqdxTypography>
+                                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', fontWeight: 500 }}>
+                                                / {aggregatedSeo.totalPages}
+                                            </MsqdxTypography>
+                                        </Box>
+                                    </Box>
+                                    <Box>
+                                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                                            {t('projects.seo.withH1')}
+                                        </MsqdxTypography>
+                                        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                                            <MsqdxTypography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                                                {aggregatedSeo.withH1}
+                                            </MsqdxTypography>
+                                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', fontWeight: 500 }}>
+                                                / {aggregatedSeo.totalPages}
+                                            </MsqdxTypography>
+                                        </Box>
+                                    </Box>
+                                    <Box>
+                                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                                            {t('projects.seo.withCanonical')}
+                                        </MsqdxTypography>
+                                        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                                            <MsqdxTypography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                                                {aggregatedSeo.withCanonical}
+                                            </MsqdxTypography>
+                                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', fontWeight: 500 }}>
+                                                / {aggregatedSeo.totalPages}
+                                            </MsqdxTypography>
+                                        </Box>
+                                    </Box>
                                     {(aggregatedSeo.withOgTitle != null || aggregatedSeo.withOgImage != null) && (
                                         <>
-                                            <MsqdxTypography variant="body2">
-                                                {t('projects.seo.withOgTitle')}: {(aggregatedSeo.withOgTitle ?? 0)} / {aggregatedSeo.totalPages}
-                                            </MsqdxTypography>
-                                            <MsqdxTypography variant="body2">
-                                                {t('projects.seo.withOgImage')}: {(aggregatedSeo.withOgImage ?? 0)} / {aggregatedSeo.totalPages}
-                                            </MsqdxTypography>
-                                            <MsqdxTypography variant="body2">
-                                                {t('projects.seo.withOgDescription')}: {(aggregatedSeo.withOgDescription ?? 0)} / {aggregatedSeo.totalPages}
-                                            </MsqdxTypography>
-                                            <MsqdxTypography variant="body2">
-                                                {t('projects.seo.withTwitterCard')}: {(aggregatedSeo.withTwitterCard ?? 0)} / {aggregatedSeo.totalPages}
-                                            </MsqdxTypography>
+                                            <Box>
+                                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                                                    {t('projects.seo.withOgTitle')}
+                                                </MsqdxTypography>
+                                                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                                                    <MsqdxTypography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                                                        {aggregatedSeo.withOgTitle ?? 0}
+                                                    </MsqdxTypography>
+                                                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', fontWeight: 500 }}>
+                                                        / {aggregatedSeo.totalPages}
+                                                    </MsqdxTypography>
+                                                </Box>
+                                            </Box>
+                                            <Box>
+                                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                                                    {t('projects.seo.withOgImage')}
+                                                </MsqdxTypography>
+                                                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                                                    <MsqdxTypography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                                                        {aggregatedSeo.withOgImage ?? 0}
+                                                    </MsqdxTypography>
+                                                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', fontWeight: 500 }}>
+                                                        / {aggregatedSeo.totalPages}
+                                                    </MsqdxTypography>
+                                                </Box>
+                                            </Box>
+                                            <Box>
+                                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                                                    {t('projects.seo.withOgDescription')}
+                                                </MsqdxTypography>
+                                                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                                                    <MsqdxTypography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                                                        {aggregatedSeo.withOgDescription ?? 0}
+                                                    </MsqdxTypography>
+                                                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', fontWeight: 500 }}>
+                                                        / {aggregatedSeo.totalPages}
+                                                    </MsqdxTypography>
+                                                </Box>
+                                            </Box>
+                                            <Box>
+                                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                                                    {t('projects.seo.withTwitterCard')}
+                                                </MsqdxTypography>
+                                                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                                                    <MsqdxTypography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                                                        {aggregatedSeo.withTwitterCard ?? 0}
+                                                    </MsqdxTypography>
+                                                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', fontWeight: 500 }}>
+                                                        / {aggregatedSeo.totalPages}
+                                                    </MsqdxTypography>
+                                                </Box>
+                                            </Box>
                                         </>
                                     )}
                                     {aggregatedSeo.pagesWithNoindex != null && (
-                                        <MsqdxTypography variant="body2">
-                                            {t('projects.seo.indexable')}: {Math.max(0, aggregatedSeo.totalPages - aggregatedSeo.pagesWithNoindex.length)} / {aggregatedSeo.totalPages}
-                                        </MsqdxTypography>
+                                        <Box>
+                                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                                                {t('projects.seo.indexable')}
+                                            </MsqdxTypography>
+                                            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                                                <MsqdxTypography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                                                    {Math.max(0, aggregatedSeo.totalPages - aggregatedSeo.pagesWithNoindex.length)}
+                                                </MsqdxTypography>
+                                                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', fontWeight: 500 }}>
+                                                    / {aggregatedSeo.totalPages}
+                                                </MsqdxTypography>
+                                            </Box>
+                                        </Box>
                                     )}
                                     {aggregatedSeo.totalWordsAcrossPages > 0 && (
-                                        <MsqdxTypography variant="body2" sx={{ mt: 0.5 }}>
-                                            {t('projects.seo.totalWords')}: {aggregatedSeo.totalWordsAcrossPages.toLocaleString('de-DE')}
-                                        </MsqdxTypography>
+                                        <Box>
+                                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                                                {t('projects.seo.totalWords')}
+                                            </MsqdxTypography>
+                                            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                                                <MsqdxTypography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                                                    {aggregatedSeo.totalWordsAcrossPages.toLocaleString('de-DE')}
+                                                </MsqdxTypography>
+                                            </Box>
+                                        </Box>
                                     )}
                                 </Box>
                             </MsqdxMoleculeCard>
