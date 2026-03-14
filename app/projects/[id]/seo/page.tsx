@@ -230,10 +230,10 @@ export default function ProjectSeoPage() {
                                             {t('projects.seo.score')}
                                         </MsqdxTypography>
                                         <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
-                                            <MsqdxTypography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                                            <MsqdxTypography variant="h2" sx={{ fontWeight: 700, lineHeight: 1.2, fontSize: '2rem' }}>
                                                 {seoScore.score}
                                             </MsqdxTypography>
-                                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', fontWeight: 500 }}>
+                                            <MsqdxTypography variant="body1" sx={{ color: 'var(--color-text-muted-on-light)', fontWeight: 500, fontSize: '1.25rem' }}>
                                                 /100
                                             </MsqdxTypography>
                                         </Box>
@@ -246,33 +246,31 @@ export default function ProjectSeoPage() {
                                     </Box>
                                     {Object.keys(competitorSeoScores).length > 0 &&
                                         Object.entries(competitorSeoScores).map(([domain, c]) => (
-                                            <Box key={domain} sx={{ flexShrink: 0 }}>
+                                            <Box key={domain} sx={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 0.25, alignItems: 'flex-start' }}>
                                                 <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', fontSize: '0.7rem' }}>
                                                     {domain}
                                                 </MsqdxTypography>
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                    <MsqdxTypography variant="body1" sx={{ fontWeight: 600, lineHeight: 1.2, color: 'var(--color-text-muted-on-light)' }}>
-                                                        {c.status === 'complete' ? `${c.seoOnPageScore}/100` : c.status}
-                                                    </MsqdxTypography>
-                                                    {c.status === 'complete' && (
-                                                        <MsqdxChip
-                                                            label={t(`projects.seo.scoreLabel_${c.seoOnPageLabel}`)}
-                                                            size="small"
-                                                            variant="outlined"
-                                                            sx={{ fontSize: '0.65rem', height: 18 }}
-                                                        />
-                                                    )}
-                                                    {c.status === 'complete' && (
-                                                        <MsqdxButton
-                                                            variant="outlined"
-                                                            size="small"
-                                                            onClick={() => router.push(pathDomain(c.scanId))}
-                                                            sx={{ minWidth: 0, px: 0.75, py: 0.25, fontSize: '0.7rem' }}
-                                                        >
-                                                            {t('projects.open')}
-                                                        </MsqdxButton>
-                                                    )}
-                                                </Box>
+                                                <MsqdxTypography variant="body1" sx={{ fontWeight: 600, lineHeight: 1.2, color: 'var(--color-text-muted-on-light)' }}>
+                                                    {c.status === 'complete' ? `${c.seoOnPageScore}/100` : c.status}
+                                                </MsqdxTypography>
+                                                {c.status === 'complete' && (
+                                                    <MsqdxChip
+                                                        label={t(`projects.seo.scoreLabel_${c.seoOnPageLabel}`)}
+                                                        size="small"
+                                                        variant="outlined"
+                                                        sx={{ fontSize: '0.65rem', height: 18 }}
+                                                    />
+                                                )}
+                                                {c.status === 'complete' && (
+                                                    <MsqdxButton
+                                                        variant="outlined"
+                                                        size="small"
+                                                        onClick={() => router.push(pathDomain(c.scanId))}
+                                                        sx={{ minWidth: 0, px: 0.75, py: 0.25, fontSize: '0.7rem', mt: 0.25 }}
+                                                    >
+                                                        {t('projects.open')}
+                                                    </MsqdxButton>
+                                                )}
                                             </Box>
                                         ))}
                                 </Box>

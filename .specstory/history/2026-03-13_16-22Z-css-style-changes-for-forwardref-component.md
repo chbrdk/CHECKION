@@ -51834,20 +51834,28 @@ HTML Element: <div class="MuiBox-root css-qy76j9" data-cursor-element-id="cursor
 
 _**Agent (model default, mode Agent)**_
 
+<think><details><summary>Thought Process</summary>
 
+The user wants to show competitor SEO-on-page scores next to the main project's score on the SEO page - similar to how they do it on the rankings page or WCAG page. The competitors should be displayed "nebeneinander" (side by side) and "weniger groß" (smaller).
+
+I need to:
+1. Find where the SEO page gets its data - it likely fetches project + domain summary. I need to also get competitor domain summaries (or we need an API that returns SEO scores for the project + competitors).
+2. Check if we already have domain-summary-all or similar that returns summaries for own + competitors - and if those summaries have the aggregated SEO data needed to compute the SEO on-page score.
+3. Compute the SEO on-page score for each competitor from their summary and display them next to the main score, with competitors shown smaller.
+
+Let me check the SEO page data flow and the domain-summary-all API.
+</details></think>
 
 ---
 
 
 
+
+
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
 
 </details>
 </tool-use>
@@ -51858,7 +51866,111 @@ Status: **loading**
 <details>
 <summary>Tool use: **ripgrep_raw_search**</summary>
 
-Status: **loading**
+
+Parameters:
+
+```json
+{
+  "pattern": "domain-summary-all|domainSummaryAll",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "domain-summary-all|domainSummaryAll",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 25,
+  "totalMatches": 585,
+  "topFiles": [
+    {
+      "uri": "./.specstory/history/2026-03-13_16-22Z-css-style-changes-for-forwardref-component.md",
+      "matchCount": 106
+    },
+    {
+      "uri": "./lib/constants.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./knowledge/checkion-fetch-once-pattern.md",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/projects/[id]/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "./app/api/projects/[id]/domain-summary-all/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-03-13_16-22Z-css-style-changes-for-forwardref-component.md",
+      "matchCount": 106
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/knowledge/checkion-fetch-once-pattern.md",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/domain-summary-all/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-03-13_16-22Z-css-style-changes-for-forwardref-component.md",
+      "matchCount": 106
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/knowledge/checkion-fetch-once-pattern.md",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/domain-summary-all/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-03-13_16-22Z-css-style-changes-for-forwardref-component.md",
+      "matchCount": 106
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/knowledge/checkion-fetch-once-pattern.md",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/domain-summary-all/route.ts",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
 
 
 </details>
@@ -51866,19 +51978,151 @@ Status: **loading**
 
 ---
 
+<think><details><summary>Thought Process</summary>
 
+The SEO page currently fetches:
+1. apiProject(id) - project
+2. apiProjectDomainSummary(id) - gets scanId for project's domain
+3. apiScanDomainSummary(sid) - full summary for that scan
+
+To show competitor scores I need either:
+A) Use the existing domain-summary-all API which returns own + competitors with summaries. Then for each competitor we need the full summary (with aggregated.seo, etc.) to compute the SEO on-page score. Let me check what domain-summary-all returns.
+</details></think>
 
 ---
 
 
 
+
+
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/domain-summary-all/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/seo-on-page-score.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The domain-summary-all API currently returns for competitors: scanId, score (domain score), totalPageCount, wcagScore, status. It does NOT return the full aggregated.seo and aggregated.structure needed to compute the SEO on-page score. So I have two options:
+
+1. **Extend domain-summary-all** to include for each competitor the full summary (or at least aggregated.seo and aggregated.structure) so the client can compute the SEO on-page score. That would make the response much larger.
+
+2. **Compute SEO on-page score in the API** for both own and competitors, and return seoOnPageScore in the response. Then the SEO page can either:
+   - Keep using apiProjectDomainSummary + apiScanDomainSummary for the main content (own domain), and in addition call domain-summary-all to get own + competitor SEO scores for the header. So we'd need domain-summary-all to return seoOnPageScore for own and each competitor. That means we need to build the full summary for each (we already have row.result) and run computeSeoOnPageScore. So in the API we have access to row.result, we call buildDomainSummary(row.result) which gives us summary.aggregated.seo and summary.aggregated.structure. So we can compute the SEO on-page score in the API and add it to the response.
+
+I'll extend the domain-summary-all API to:
+- Add seoOnPageScore (number 0-100, and optionally label) to own when we have aggregated.seo and structure
+- Add seoOnPageScore to each competitor entry when we have the data
+
+We need to import computeSeoOnPageScore and the types for AggregatedSeo, AggregatedStructure. buildDomainSummary returns a summary that has aggregated with seo and structure. Let me check the return type of buildDomainSummary.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-summary.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/wcag/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So the WCAG page uses apiProjectDomainSummaryAll to get competitor WCAG scores. The domain-summary-all API already computes wcagScore for each competitor. I need to:
+
+1. Extend domain-summary-all to also compute and return seoOnPageScore for own and each competitor. We have buildDomainSummary(row.result) which returns summary with aggregated.seo and aggregated.structure, so we can call computeSeoOnPageScore({ seo: summary.aggregated?.seo ?? null, structure: summary.aggregated?.structure ?? null }) and add seoOnPageScore (and optionally label) to the response.
+
+2. On the SEO page:
+   - Fetch domain-summary-all in addition to (or as part of) the existing data loading, so we have competitor SEO scores.
+   - Or we could switch to fetching domain-summary-all and then for "own" we still need the full summary for the table/keywords - so we'd get own.scanId from summary-all and then fetch full summary by scanId. So the flow could be: fetch project + domain-summary-all. From domain-summary-all we get own.scanId, own.seoOnPageScore, competitors[domain].seoOnPageScore, etc. Then if we have own.scanId we fetch the full scan summary (apiScanDomainSummary(own.scanId)) for the table and keywords. That way we have one extra API (domain-summary-all) that gives us competitor SEO scores. Let me add seoOnPageScore to the API response for own and competitors.
+
+3. Constants: check if apiProjectDomainSummaryAll exists.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
 <details>
-<summary>Tool use: **read_file_v2**</summary>
+<summary>Tool use: **ripgrep_raw_search**</summary>
 
-Status: **loading**
+
+Parameters:
+
+```json
+{
+  "pattern": "apiProjectDomainSummaryAll|domain-summary-all",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "apiProjectDomainSummaryAll|domain-summary-all",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 10,
+  "topFiles": [
+    {
+      "uri": "lib/constants.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
 
 
 </details>
@@ -51886,15 +52130,905 @@ Status: **loading**
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/wcag/page.tsx</summary>
 
-Status: **loading**
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to see how WCAG displays the competitor scores - the layout "nebeneinander" with our score and competitors.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/wcag/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So on WCAG they have: our score (caption "Unser Score", h4 score, chip label), then for each competitor: caption = domain, h4 with muted color showing "X/100" or status, and a small "Öffnen" button. The user wants the same for SEO but "competitors gerne weniger groß" - so competitors should be displayed smaller. So I'll use a smaller typography for competitors (e.g. body1 or h6 instead of h4).
+
+Plan:
+1. API domain-summary-all: Add seoOnPageScore (and optionally label) to own and to each competitor. We have buildDomainSummary which returns aggregated.seo and structure, so we can compute the score.
+2. SEO page: 
+   - Add state for competitorSeoScores: Record<string, { scanId: string; seoOnPageScore: number; status: string }>
+   - In the same useEffect, also fetch apiProjectDomainSummaryAll when we have id, and parse seoOnPageScore for own (we might use it from there too) and competitors
+   - In the header card where we show the score, add a flex row: our score (unchanged), then competitors with smaller typography (e.g. variant="body1" or "h6", smaller gap)
+</details></think>
+
+---
+
+
+API um SEO-On-Page-Score erweitern und auf der SEO-Seite Competitor-Scores anzeigen.
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] Add seoOnPageScore to domain-summary-all API (own + competitors)
+- [ ] SEO page: fetch summary-all, show competitor scores next to own (smaller)
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/domain-summary-all/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to:
+1. Import computeSeoOnPageScore from '@/lib/seo-on-page-score'
+2. For own: after building summary, compute seoOnPageScore from summary.aggregated?.seo and summary.aggregated?.structure, add to own object
+3. For each competitor: same, add seoOnPageScore (and optionally label) to CompetitorSummary
+4. Add seoOnPageScore and seoOnPageLabel to types
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/domain-summary-all/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/domain-summary-all/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/domain-summary-all/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/domain-summary-all/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now update the SEO page: 1) add apiProjectDomainSummaryAll to imports, 2) add state for competitorSeoScores, 3) in useEffect also fetch domain-summary-all and populate competitor scores (we can do it in parallel with existing fetches - when we have cached we might skip; when we don't have cache we need to fetch project, domain summary, and we can also fetch domain-summary-all to get competitor SEO scores). 4) In the header card, show our score as now, then loop over competitorSeoScores and show each with smaller typography (body1 or subtitle2 for the number, caption for domain). I need to be careful: the SEO page currently only fetches project + project domain summary + scan domain summary. It doesn't fetch domain-summary-all. So we need to add that fetch. When we have cache we skip the main fetch but we might still want competitor scores - so we could always fetch domain-summary-all when we have id (it's a light endpoint that returns scores). Or we fetch it only when we don't have cache, and when we have cache we don't have competitor scores (they'd show after next full load). Simpler: always fetch domain-summary-all in parallel with the rest when id is set. So the flow: fetch project, domain-summary (for scanId), and domain-summary-all in parallel. From domain-summary-all we only need competitors' seoOnPageScore and scanId for the header. We don't need to change how we get fullSummary - we still get it via apiScanDomainSummary(scanId). So we add one more fetch: apiProjectDomainSummaryAll(id). When it returns we set competitorSeoScores from data.competitors. Let me also remove the debug agent log from the SEO page if it's still there.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add seoOnPageScore to domain-summary-all API (own + competitors)
+- [-] SEO page: fetch summary-all, show competitor scores next to own (smaller)
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see there's debug instrumentation (the fetch to 127.0.0.1). I'll leave it for now and focus on the feature. I need to:
+1. Add apiProjectDomainSummaryAll to imports
+2. Add state: competitorSeoScores: Record<string, { scanId: string; seoOnPageScore: number; seoOnPageLabel: string; status: string }>
+3. In useEffect we need to also fetch domain-summary-all. But we have a cache - when cached we return early and don't fetch. So we won't have competitor scores when we have cache. Option A: always fetch domain-summary-all (in parallel) when we have id, and only use cache for fullSummary/scanId. So we could fetch domain-summary-all on every load (when id is set), and only skip the project + domain summary + scan summary when we have cache. So the flow: if (cached) { set competitor scores from ... we don't have them in cache. So we'd need to either always fetch domain-summary-all, or add competitors to the cache. Simpler: always fetch domain-summary-all when id is set (separate from the cache logic). So we have two parallel paths: 1) if !cached, fetch project + domainSummary + scanSummary, set fullSummary, scanId, project. 2) always fetch domain-summary-all and set competitorSeoScores. So I'll add a second useEffect that only fetches domain-summary-all when id is set, and setCompetitorSeoScores. Or we do it in the same useEffect: when we have id, we always call fetch(apiProjectDomainSummaryAll(id)) in parallel with the other fetches (or after we have project). Actually the simplest is: in the same useEffect, add fetch(apiProjectDomainSummaryAll(id)) to the Promise.all when we're not using cache. When we're using cache we don't fetch anything - so we don't get competitor scores. So when user navigates back to the page and gets cache, competitor scores would be empty until they refresh. Alternatively we could always fetch domain-summary-all in the same useEffect but outside the "if (cached) return" - so we fetch domain-summary-all every time the effect runs (when id changes). So: 
+  if (!id) return;
+  fetchedForIdRef...
+  const cached = seoSummaryCache.get(id);
+  const ac = new AbortController();
+  // Always fetch domain-summary-all for competitor scores
+  fetch(apiProjectDomainSummaryAll(id), { signal }).then(r => r.json()).then(data => { if (data?.success && data?.data?.competitors) setCompetitorSeoScores(...); });
+  if (cached) return;  // skip the rest
+  ... rest of fetch logic
+That way we always load competitor scores when the effect runs. Let me do that - we need to run the domain-summary-all fetch and not return before it when cached. So structure:
+  if (!id) return;
+  if (fetchedForIdRef.current === id) return;
+  fetchedForIdRef.current = id;
+  const ac = new AbortController();
+  (async () => {
+    const summaryAllPromise = fetch(apiProjectDomainSummaryAll(id), { credentials: 'same-origin', signal }).then(r => r.json());
+    const cached = seoSummaryCache.get(id);
+    if (cached) {
+      setProjectLoading(false);
+      setSummaryLoading(false);
+      const data = await summaryAllPromise;
+      if (data?.success && data?.data?.competitors) { setCompetitorSeoScores(...); }
+      return;
+    }
+    setProjectLoading(true);
+    setSummaryLoading(true);
+    const [projectRes, domainSummaryRes, summaryAllRes] = await Promise.all([
+      fetch(apiProject(id), ...),
+      fetch(apiProjectDomainSummary(id), ...),
+      summaryAllPromise,
+    ]);
+    ...
+    if (summaryAllRes?.success && summaryAllRes?.data?.competitors) setCompetitorSeoScores(...);
+  })();
+  return () => ac.abort();
+So we need to create summaryAllPromise before the cached check so we can await it in both branches. And we need to add competitorSeoScores state and set it from summaryAllRes.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now update the useEffect to also fetch domain-summary-all and set competitor scores. When cached we still want to fetch summary-all for competitors. So:
+</details></think>
+
+---
+
+
+
+
+
+---
+
+The string to replace was not found in the file.
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The fuzzy match doesn't have "if (cached) return;" - the file might have been changed. Let me read the current useEffect again.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see - the order is: cached check then return, then ac, then setProjectLoading, then async. I need to move the ac and summaryAllPromise before the cached check so we can use them when cached. Let me do the replacement in smaller chunks.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+We need to add useRouter for the competitor "Open" link - let me check, we have router from useRouter. Now update the header card to show our score and competitor scores side by side, with competitors smaller. I need to find the exact JSX for the score block.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add the competitor scores inside the same Box that has "display: 'flex', flexWrap: 'wrap', gap: 2" - after the first Box (our score). For competitors use smaller typography: variant="body1" or "subtitle2" for the number, caption for the domain label. And optionally a small "Öffnen" button like on WCAG. I'll add the competitors after the closing </Box> of our score but inside the parent Box.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+We need pathDomain in scope - it's already imported. Let me check - we have pathDomain from constants. And router from useRouter. Good. Let me check if "projects.open" exists in locales.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "\"open\":",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "\"open\":",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 5,
+  "topFiles": [
+    {
+      "uri": "locales/de.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
 
 
 </details>
 </tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/domain-summary-all/route.ts"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/domain-summary-all/route.ts"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+projects.open exists. Let me verify the key - it might be under "projects" section. Let me check.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "\"projects\":",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json",
+  "contextAfter": 3,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "\"projects\":",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 10,
+  "topFiles": [
+    {
+      "uri": "locales/de.json",
+      "matchCount": 8
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 8
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 8
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 8
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 8
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So it's projects.open = "Öffnen". Good. Run build to verify.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 9.5s
+  Running TypeScript ...
+Failed to compile.
+
+./app/api/projects/[id]/domain-summary-all/route.ts:61:7
+Type error: Type '{ scanId: string; score: number; totalPageCount: number; wcagScore: number; aggregated: { performance: AggregatedPerformance; eco: AggregatedEco; }; }' is missing the following properties from type '{ scanId: string; score: number; totalPageCount: number; wcagScore: number; seoOnPageScore: number; seoOnPageLabel: string; aggregated: { performance: AggregatedPerformance | null; eco: AggregatedEco | null; }; }': seoOnPageScore, seoOnPageLabel
+
+[0m [90m 59 |[39m         totalPageCount[33m:[39m pageCount[33m,[39m
+ [90m 60 |[39m       })[33m;[39m
+[31m[1m&gt;[22m[39m[90m 61 |[39m       own [33m=[39m {
+ [90m    |[39m       [31m[1m^[22m[39m
+ [90m 62 |[39m         scanId[33m,[39m
+ [90m 63 |[39m         score[33m:[39m summary[33m.[39mscore [33m?[39m[33m?[39m [35m0[39m[33m,[39m
+ [90m 64 |[39m         totalPageCount[33m:[39m pageCount[33m,[39m[0m
+Next.js build worker exited with code: 1 and signal: null
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The API route - the "own" assignment is missing seoOnPageScore and seoOnPageLabel. I added them in the type and in the first block where we set own, but it seems there's another place where we set own. Let me check - the error says line 61 "own = {" - so the object we're assigning has aggregated but is missing seoOnPageScore and seoOnPageLabel. So I did add the seoOnPage computation and added it to the own object in my edit. Let me re-read the file - maybe the edit didn't apply correctly or there are two places.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/domain-summary-all/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see - my first replacement added seoOnPage and the fields to the type and to the competitor branch, but the "own" assignment block (lines 61-70) doesn't have seoOnPageScore and seoOnPageLabel. The replacement I did was for the block that ends with "}; } }" and "own = {" - I had included the seoOnPage computation and the new fields in own. Let me look at the file again - it seems the edit for the own block didn't include the seoOnPage part. I'll add it now.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/domain-summary-all/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Now run build again.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 8.9s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+  Generating static pages using 9 workers (0/47) ...
+  Generating static pages using 9 workers (11/47) 
+  Generating static pages using 9 workers (23/47) 
+  Generating static pages using 9 workers (35/47) 
+✓ Generating static pages using 9 workers (47/47) in 326.8ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/register
+├ ƒ /api/auth/tokens
+├ ƒ /api/auth/tokens/[id]
+├ ƒ /api/checks/contrast
+├ ƒ /api/checks/pagespeed
+├ ƒ /api/checks/readability
+├ ƒ /api/checks/ssl
+├ ƒ /api/checks/wayback
+├ ƒ /api/health
+├ ƒ /api/journeys
+├ ƒ /api/journeys/[id]
+├ ƒ /api/projects
+├ ƒ /api/projects/[id]
+├ ƒ /api/projects/[id]/domain-scan-all
+├ ƒ /api/projects/[id]/domain-summary
+├ ƒ /api/projects/[id]/domain-summary-all
+├ ƒ /api/projects/[id]/geo-question-history
+├ ƒ /api/projects/[id]/geo-summary
+├ ƒ /api/projects/[id]/ranking-summary
+├ ƒ /api/projects/[id]/research
+├ ƒ /api/projects/[id]/suggest-competitors
+├ ƒ /api/projects/[id]/suggest-keywords
+├ ƒ /api/rank-tracking/keywords
+├ ƒ /api/rank-tracking/keywords/[id]
+├ ƒ /api/rank-tracking/keywords/[id]/positions
+├ ƒ /api/rank-tracking/refresh
+├ ƒ /api/saliency/generate
+├ ƒ /api/saliency/result
+├ ƒ /api/scan
+├ ƒ /api/scan/[id]
+├ ƒ /api/scan/[id]/project
+├ ƒ /api/scan/[id]/screenshot
+├ ƒ /api/scan/[id]/summarize
+├ ƒ /api/scan/domain
+├ ƒ /api/scan/domain/[id]/journey
+├ ƒ /api/scan/domain/[id]/status
+├ ƒ /api/scan/domain/[id]/summarize
+├ ƒ /api/scan/domain/[id]/summary
+├ ƒ /api/scan/domain/by-domain
+├ ƒ /api/scan/geo-eeat
+├ ƒ /api/scan/geo-eeat/[jobId]
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history/[runId]
+├ ƒ /api/scan/geo-eeat/[jobId]/project
+├ ƒ /api/scan/geo-eeat/[jobId]/rerun-competitive
+├ ƒ /api/scan/geo-eeat/[jobId]/status
+├ ƒ /api/scan/geo-eeat/history
+├ ƒ /api/scan/geo-eeat/suggest-competitors-queries
+├ ƒ /api/scan/journey-agent
+├ ƒ /api/scan/journey-agent/[jobId]
+├ ƒ /api/scan/journey-agent/[jobId]/live
+├ ƒ /api/scan/journey-agent/[jobId]/live/stream
+├ ƒ /api/scan/journey-agent/[jobId]/project
+├ ƒ /api/scan/journey-agent/[jobId]/video
+├ ƒ /api/scan/journey-agent/history
+├ ƒ /api/scans
+├ ƒ /api/scans/[id]
+├ ƒ /api/scans/domain
+├ ƒ /api/scans/domain/[id]
+├ ƒ /api/scans/domain/[id]/project
+├ ƒ /api/search
+├ ƒ /api/share
+├ ƒ /api/share/[token]
+├ ƒ /api/share/[token]/access
+├ ƒ /api/share/[token]/pages/[pageId]
+├ ƒ /api/share/[token]/pages/[pageId]/screenshot
+├ ƒ /api/share/[token]/video
+├ ƒ /api/share/by-resource
+├ ƒ /api/tools/contrast
+├ ƒ /api/tools/extract
+├ ƒ /api/tools/pagespeed
+├ ƒ /api/tools/readability
+├ ƒ /api/tools/ssl-labs
+├ ƒ /api/tools/wayback
+├ ƒ /developers
+├ ƒ /domain/[id]
+├ ƒ /geo-eeat/[jobId]
+├ ƒ /history
+├ ƒ /journey-agent/[jobId]
+├ ƒ /login
+├ ƒ /projects
+├ ƒ /projects/[id]
+├ ƒ /projects/[id]/geo
+├ ƒ /projects/[id]/rankings
+├ ƒ /projects/[id]/research
+├ ƒ /projects/[id]/seo
+├ ƒ /projects/[id]/wcag
+├ ƒ /register
+├ ƒ /results/[id]
+├ ƒ /scan
+├ ƒ /scan/domain
+├ ƒ /settings
+└ ƒ /share/[token]
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build succeeded. Mark todo complete.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add seoOnPageScore to domain-summary-all API (own + competitors)
+- [x] SEO page: fetch summary-all, show competitor scores next to own (smaller)
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Done. Summarize for the user.
+</details></think>
+
+---
+
+
+Zusammenfassung der Änderungen:
+
+**1. API `domain-summary-all`**
+
+- **Own:** Antwort enthält jetzt `seoOnPageScore` (0–100) und `seoOnPageLabel` (z. B. excellent, good, fair, poor, critical), berechnet aus `aggregated.seo` und `aggregated.structure` mit `computeSeoOnPageScore`.
+- **Competitors:** Jeder Eintrag hat ebenfalls `seoOnPageScore` und `seoOnPageLabel`. Bei nicht abgeschlossenem Scan: Score 0, Label `'critical'`.
+
+**2. SEO-Seite: Daten & UI**
+
+- **Neuer State:** `competitorSeoScores`: `Record<domain, { scanId, seoOnPageScore, seoOnPageLabel, status }>`.
+- **Laden:** Es wird immer `apiProjectDomainSummaryAll(id)` aufgerufen (auch bei Cache), damit Competitor-Scores immer aktuell sind. Bei Cache wird nur noch dieser Request ausgeführt.
+- **Header-Card:** Neben dem eigenen SEO-on-Page-Score (52 /100, Mäßig) werden die Competitors **kleiner** angezeigt:
+  - **Domain** als kleines Caption (ca. 0.7rem),
+  - **Score** als `body1`, fett, z. B. „47/100“,
+  - **Label** als kleiner Chip (z. B. „Mäßig“),
+  - **„Öffnen“-Button** führt zum Deep Scan des Competitors (`pathDomain(c.scanId)`).
+
+Alle Scores stehen in einer Zeile (`flexWrap: wrap`, `gap: 2`); der eigene Score bleibt mit h4 und Chip wie bisher, die Competitors mit reduzierter Schriftgröße und kleinem Chip. Build ist durchgelaufen.
+
+---
+
+_**User**_
+
+DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-1whhp80 > div.MuiStack-root c.-yd8.a2 > div.MuiBox-root c.-17b4aqi[0] > div.MuiBox-root c.-1.g4afn > div.MuiBox-root c.-1hdbc19 > div.MuiBox-root c.-a1igic > div.MuiBox-root c.-0 > div.MuiBox-root c.-qy76j9 > div.MuiBox-root c.-0 > div.MuiBox-root c.-q85vku
+Position: top=198px, left=117px, width=109px, height=41px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-q85vku" data-cursor-element-id="cursor-el-1">52 /100</div> größer ,hier alles unterinander DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-1whhp80 > div.MuiStack-root c.-yd8.a2 > div.MuiBox-root c.-17b4aqi[0] > div.MuiBox-root c.-1.g4afn > div.MuiBox-root c.-1hdbc19 > div.MuiBox-root c.-a1igic > div.MuiBox-root c.-0 > div.MuiBox-root c.-qy76j9 > div.MuiBox-root c.-6.u6fj[0] > div.MuiBox-root c.-171onha
+Position: top=198px, left=242px, width=166px, height=44px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-171onha" data-cursor-element-id="cursor-el-102">0/100 Kritisch Öffnen</div> 
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants:
+1. The main score "52 /100" to be displayed **larger** (größer)
+2. The competitor block (e.g. "0/100 Kritisch Öffnen") to have everything **under each other** (untereinander) - so the layout for each competitor should be vertical: domain on top, then score, then label, then button stacked vertically instead of in a row.
+
+Let me find the SEO page header card and update the styling.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to:
+1. Make the main score "52 /100" larger - change from h4 to h3 or h2, or increase font size
+2. For each competitor: layout "untereinander" (stacked vertically): domain (caption) → score (body1) → chip (label) → button, each on its own line. So change the competitor Box from having a horizontal inner Box to flexDirection: 'column', gap: 0.25 or similar.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+
+
+---
+
+
 
 ---
 
