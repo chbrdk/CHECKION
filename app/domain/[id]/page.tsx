@@ -31,6 +31,11 @@ const DomainAggregatedIssueList = dynamic(
     { ssr: false, loading: () => <Box sx={{ py: 2 }}><CircularProgress size={24} /></Box> }
 );
 
+const PageIssuesCard = dynamic(
+    () => import('@/components/PageIssuesCard').then((m) => ({ default: m.PageIssuesCard })),
+    { ssr: false }
+);
+
 const JourneyFlowchart = dynamic(
     () => import('@/components/JourneyFlowchart').then((m) => ({ default: m.JourneyFlowchart })),
     { ssr: false, loading: () => <Box sx={{ py: 2 }}><CircularProgress size={24} /></Box> }
@@ -342,21 +347,19 @@ export default function DomainResultPage() {
                     />
                     {aggregated.issues.pagesByIssueCount.some((p) => p.errors > 0 || p.warnings > 0) && (
                         <Box sx={{ mt: 2 }}>
-                            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Seiten mit den meisten Fehlern (Priorisierung)</MsqdxTypography>
-                            <Box component="ul" sx={{ m: 0, pl: 2, maxHeight: 180, overflow: 'auto' }}>
+                            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>Seiten mit den meisten Fehlern (Priorisierung)</MsqdxTypography>
+                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 2 }}>
                                 {aggregated.issues.pagesByIssueCount.slice(0, 15).map((row) => {
                                     const page = pagesByUrl.get(row.url);
-                                    const label = `${row.errors} Errors, ${row.warnings} Warnings`;
+                                    const issuesForPage = aggregated.issues.issues.filter((i) => i.pageUrls?.includes(row.url));
                                     return (
-                                        <li key={row.url}>
-                                            {page ? (
-                                                <MsqdxButton size="small" variant="text" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>
-                                                    {row.url} — {label}
-                                                </MsqdxButton>
-                                            ) : (
-                                                <MsqdxTypography variant="caption">{row.url} — {label}</MsqdxTypography>
-                                            )}
-                                        </li>
+                                        <PageIssuesCard
+                                            key={row.url}
+                                            url={row.url}
+                                            issuesForPage={issuesForPage}
+                                            stats={{ errors: row.errors, warnings: row.warnings, notices: row.notices }}
+                                            onOpenPage={page ? () => router.push(pathResults(page.id)) : undefined}
+                                        />
                                     );
                                 })}
                             </Box>

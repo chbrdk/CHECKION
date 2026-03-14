@@ -14,6 +14,7 @@ import { MSQDX_STATUS } from '@msqdx/tokens';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { DomainAggregatedIssueList } from '@/components/DomainAggregatedIssueList';
+import { PageIssuesCard } from '@/components/PageIssuesCard';
 import {
     apiProject,
     apiProjectDomainSummary,
@@ -229,38 +230,26 @@ export default function ProjectWcagPage() {
 
                         {/* Pages with most issues */}
                         {aggregated.pagesByIssueCount?.some((p) => p.errors > 0 || p.warnings > 0) && (
-                            <MsqdxMoleculeCard
-                                title={t('projects.wcag.pagesWithMostErrors')}
-                                variant="flat"
-                                borderRadius="lg"
-                                footerDivider={false}
-                                sx={{ bgcolor: 'var(--color-card-bg)' }}
-                            >
-                                <Box component="ul" sx={{ m: 0, pl: 2, maxHeight: 180, overflow: 'auto' }}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                                    {t('projects.wcag.pagesWithMostErrors')}
+                                </MsqdxTypography>
+                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 2 }}>
                                     {aggregated.pagesByIssueCount.slice(0, 15).map((row) => {
                                         const page = pagesByUrl.get(row.url);
-                                        const label = `${row.errors} ${t('share.errors')}, ${row.warnings} ${t('share.warnings')}`;
+                                        const issuesForPage = aggregated.issues.filter((i) => i.pageUrls?.includes(row.url));
                                         return (
-                                            <li key={row.url}>
-                                                {page ? (
-                                                    <MsqdxButton
-                                                        size="small"
-                                                        variant="text"
-                                                        onClick={() => router.push(pathResults(page.id))}
-                                                        sx={{ textTransform: 'none', fontSize: '0.75rem' }}
-                                                    >
-                                                        {row.url} — {label}
-                                                    </MsqdxButton>
-                                                ) : (
-                                                    <MsqdxTypography variant="caption">
-                                                        {row.url} — {label}
-                                                    </MsqdxTypography>
-                                                )}
-                                            </li>
+                                            <PageIssuesCard
+                                                key={row.url}
+                                                url={row.url}
+                                                issuesForPage={issuesForPage}
+                                                stats={{ errors: row.errors, warnings: row.warnings, notices: row.notices }}
+                                                onOpenPage={page ? () => router.push(pathResults(page.id)) : undefined}
+                                            />
                                         );
                                     })}
                                 </Box>
-                            </MsqdxMoleculeCard>
+                            </Box>
                         )}
                     </>
                 )}

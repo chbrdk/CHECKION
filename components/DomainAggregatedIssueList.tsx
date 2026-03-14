@@ -17,7 +17,8 @@ const SEVERITY_CONFIG: Record<string, { label: string; color: string }> = {
 
 const tableBorder = `1px solid ${MSQDX_NEUTRAL[200]}`;
 
-const GRID_COLUMNS = 'minmax(0, 1fr) minmax(120px, 1.2fr) 80px 72px minmax(0, 1fr) 72px 90px';
+/** Severity narrow; Pages + Fix docs wider. */
+const GRID_COLUMNS = '70px minmax(120px, 1.2fr) 80px 72px minmax(0, 1fr) 92px 112px';
 
 type SortKey = 'severity' | 'message' | 'level' | 'runner' | 'code' | 'pageCount';
 type SortDir = 'asc' | 'desc';
