@@ -36,6 +36,7 @@
 
 ## Debug-Log-Auswertung (Session cafcc0)
 
-- **H1 (exzessive Re-Renders):** Verworfen. SEO-Seite nur 2 Renders (ohne/mit Daten), Tabelle 1 Render. Kein Runaway.
-- **H2 (Viewport löst Re-Renders aus):** Unklar; Viewport-Event einmal, kein setState im Observer.
-- **Folgerung:** Slowness/Überlagerung kommen in der erfassten Session nicht von Re-Render-Stürmen. Maßnahmen: eigener Stacking Context für die Tabelle (`isolation: isolate` am Wrapper + an der Sticky-Header-Zeile), `zIndex: 2` für den Sticky-Header, damit er sauber über dem Body bleibt und nichts überdeckt wird.
+- **H1 (exzessive Re-Renders):** Verworfen. SEO-Seite 2 Renders, Tabelle 3 Renders über ~15 s – kein Runaway, aber jeder Re-Render mit 50 Zeilen teuer.
+- **H2 (Viewport löst Re-Renders aus):** Unklar; Viewport-Event einmal.
+- **H6 (Resize-Loop):** Verworfen. Nur 1 Resize-Event, kein Loop.
+- **Folgerung:** Hohe Kosten pro Re-Render (viele Zeilen × MUI). Maßnahmen: (1) Stacking Context (`isolation`, `zIndex: 2`), (2) `content-visibility: auto` + `containIntrinsicSize` pro Zeile, (3) **SEO_TABLE_PAGE_SIZE = 25** (statt 50) – halbiert die pro Seite gerenderten Zeilen und reduziert Re-Render-Kosten. ResizeObserver-Instrumentierung entfernt (H6 verworfen).

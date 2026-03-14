@@ -295,6 +295,8 @@ export const DOMAIN_PAGES_INCREMENT = 50;
 export const DOMAIN_PAGES_TABLE_PAGE_SIZE = 50;
 /** Aggregated issues table: rows per page (pagination). */
 export const DOMAIN_ISSUES_TABLE_PAGE_SIZE = 50;
+/** SEO on-page table: fewer rows per page to keep re-renders cheap. */
+export const SEO_TABLE_PAGE_SIZE = 25;
 /** Share page (deep scan): scanned pages list page size (prev/next pagination). */
 export const SHARE_DOMAIN_PAGES_PAGE_SIZE = 10;
 

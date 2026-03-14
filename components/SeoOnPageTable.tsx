@@ -6,7 +6,7 @@ import { MsqdxTypography, MsqdxChip, MsqdxButton } from '@msqdx/react';
 import { MSQDX_NEUTRAL, MSQDX_STATUS, MSQDX_BRAND_PRIMARY, MSQDX_THEME } from '@msqdx/tokens';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useI18n } from '@/components/i18n/I18nProvider';
-import { DOMAIN_ISSUES_TABLE_PAGE_SIZE } from '@/lib/constants';
+import { SEO_TABLE_PAGE_SIZE } from '@/lib/constants';
 import type { PageSeoSummary } from '@/lib/domain-aggregation';
 
 const tableBorder = `1px solid ${MSQDX_NEUTRAL[200]}`;
@@ -168,7 +168,7 @@ const TableRow = React.memo(function TableRow({
 function SeoOnPageTableInner({
   rows,
   onRowClick,
-  pageSize = DOMAIN_ISSUES_TABLE_PAGE_SIZE,
+  pageSize = SEO_TABLE_PAGE_SIZE,
 }: {
   rows: SeoOnPageRow[];
   onRowClick?: (url: string) => void;
@@ -197,7 +197,6 @@ function SeoOnPageTableInner({
       }),
     }).catch(() => {});
   }
-  const resizeLogLastRef = useRef(0);
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -223,28 +222,7 @@ function SeoOnPageTableInner({
       { threshold: 0.1, rootMargin: '0px' }
     );
     io.observe(el);
-    const ro = new ResizeObserver(() => {
-      const now = Date.now();
-      if (now - resizeLogLastRef.current < 300) return;
-      resizeLogLastRef.current = now;
-      fetch('http://127.0.0.1:7902/ingest/bbc31d13-f45c-46d1-93ab-b989a1d926fc', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'cafcc0' },
-        body: JSON.stringify({
-          sessionId: 'cafcc0',
-          location: 'SeoOnPageTable.tsx:resize',
-          message: 'table container resized',
-          data: { width: el.offsetWidth, height: el.offsetHeight },
-          timestamp: now,
-          hypothesisId: 'H6',
-        }),
-      }).catch(() => {});
-    });
-    ro.observe(el);
-    return () => {
-      io.disconnect();
-      ro.disconnect();
-    };
+    return () => io.disconnect();
   }, [rows.length]);
   // #endregion
 
