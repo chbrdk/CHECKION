@@ -189,6 +189,15 @@ export interface AggregatedSeo {
   withCanonical: number;
   missingMetaDescriptionUrls: string[];
   missingH1Urls: string[];
+  /** Pages without canonical link (optional for backward compat with old payloads). */
+  missingCanonicalUrls?: string[];
+  /** Pages with meta robots noindex (optional for backward compat). */
+  pagesWithNoindex?: string[];
+  /** Counts for social/OG (optional for backward compat). */
+  withOgTitle?: number;
+  withOgImage?: number;
+  withOgDescription?: number;
+  withTwitterCard?: number;
   pages: PageSeoSummary[];
   /** Keywords that appear on multiple pages, sorted by totalCount desc. */
   crossPageKeywords: CrossPageKeyword[];
@@ -203,8 +212,11 @@ export function aggregateSeo(pages: ScanResult[]): AggregatedSeo | null {
   if (withSeo.length === 0) return null;
 
   let withTitle = 0, withMetaDescription = 0, withH1 = 0, withCanonical = 0;
+  let withOgTitle = 0, withOgImage = 0, withOgDescription = 0, withTwitterCard = 0;
   const missingMetaDescriptionUrls: string[] = [];
   const missingH1Urls: string[] = [];
+  const missingCanonicalUrls: string[] = [];
+  const pagesWithNoindex: string[] = [];
   const pagesList: PageSeoSummary[] = [];
   const keywordMap = new Map<string, { totalCount: number; pageUrls: Set<string>; densitySum: number; densityCount: number }>();
   let totalWordsAcrossPages = 0;
@@ -217,6 +229,12 @@ export function aggregateSeo(pages: ScanResult[]): AggregatedSeo | null {
     if (seo.h1?.trim()) withH1++;
     else missingH1Urls.push(p.url);
     if (seo.canonical?.trim()) withCanonical++;
+    else missingCanonicalUrls.push(p.url);
+    if (seo.ogTitle?.trim()) withOgTitle++;
+    if (seo.ogImage?.trim()) withOgImage++;
+    if (seo.ogDescription?.trim()) withOgDescription++;
+    if (seo.twitterCard?.trim()) withTwitterCard++;
+    if (p.generative?.technical?.metaRobotsIndexable === false) pagesWithNoindex.push(p.url);
 
     const wordCount = seo.bodyWordCount ?? seo.keywordAnalysis?.totalWords ?? 0;
     totalWordsAcrossPages += wordCount;
@@ -273,6 +291,12 @@ export function aggregateSeo(pages: ScanResult[]): AggregatedSeo | null {
     withCanonical,
     missingMetaDescriptionUrls,
     missingH1Urls,
+    missingCanonicalUrls,
+    pagesWithNoindex,
+    withOgTitle,
+    withOgImage,
+    withOgDescription,
+    withTwitterCard,
     pages: pagesList.sort((a, b) => b.wordCount - a.wordCount),
     crossPageKeywords,
     totalWordsAcrossPages,

@@ -8,13 +8,13 @@ The project SEO-on-page page shows a **0–100 SEO on-page score** derived from 
 
 There is **no single official "SEO score"** formula. CHECKION uses a transparent, weighted combination of the on-page signals we collect:
 
-- **Meta/tag coverage**: Share of pages with title, meta description, H1, and canonical.
+- **Meta/tag coverage**: Share of pages with title, meta description, H1, and canonical, scaled by **indexability** (share of pages without meta robots noindex).
 - **Heading structure**: Share of pages with a single H1 and no skipped heading levels.
 - **Content depth**: Share of pages that are not "skinny" (≥ 300 words).
 
 ## Formula (see `lib/seo-on-page-score.ts`)
 
-- **Coverage (40%)**: Average of (withTitle, withMetaDescription, withH1, withCanonical) / totalPages → 0–40 points.
+- **Coverage (40%)**: (Average of withTitle, withMetaDescription, withH1, withCanonical) / totalPages × (indexableCount / totalPages) → 0–40 points. Pages with noindex reduce the coverage factor.
 - **Structure (30%)**: pagesWithGoodStructure / structureTotalPages → 0–30 points. If no structure data, 30 points (no penalty).
 - **Content (30%)**: (1 − skinnyCount / totalPages) → 0–30 points. Skinny = word count &lt; 300.
 - **Score** = coverage + structure + content, clamped to 0–100.

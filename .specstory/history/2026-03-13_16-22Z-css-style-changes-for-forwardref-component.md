@@ -16105,9 +16105,139 @@ HTML Element: <div class="MuiBox-root css-1sg4afn" data-cursor-element-id="curso
 
 _**Agent (model default, mode Agent)**_
 
+<think><details><summary>Thought Process</summary>
+
+The user is pointing out that the "Keywords" section (Cross-Page Keywords card) also has a lot of DOM elements - "keywords sind auch jede menge elemente". So besides the table, the keywords list on the SEO page could be contributing to the slowness when it comes into view. They're giving me the DOM path to the keywords card.
+
+I should find where this keywords section is rendered on the SEO page and optimize it - e.g. limit the number of keywords shown initially, or virtualize the list, or render a simpler structure (fewer Box/wrapper elements per keyword).
+</details></think>
+
+---
+
+
+Keywords-Bereich auf der SEO-Seite prüfen und die DOM-Last reduzieren.
 
 
 ---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "crossPageKeywords|Keywords|keywords",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "crossPageKeywords|Keywords|keywords",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 25,
+  "topFiles": [
+    {
+      "uri": "app/projects/[id]/seo/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/seo/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/seo/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/seo/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/seo/page.tsx",
+      "matchCount": 5
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So we have up to 50 keywords, each rendered as an MsqdxChip inside a Box with flexWrap. That's 50 chips - each chip is likely multiple DOM elements. I can:
+
+1. **Reduce the initial count** - e.g. show only 20 keywords by default, with a "Show more" to expand. That way we render fewer chips initially.
+2. **Use a constant** for the limit and make it smaller (e.g. 20).
+3. **Simplify markup** - instead of MsqdxChip for each, we could use a simple span with a class for the pill style, but that might change the look. Or we keep chips but limit to 20 and add "X weitere" with a button to show more.
+
+Let me add a constant for the initial keyword display limit (e.g. 20) and a "Mehr anzeigen" / "Show more" that expands to show all (or next 30). So we'd have:
+- Initial: slice(0, 20)
+- State: expanded = false
+- If not expanded and there are more than 20: show "20 von X angezeigt" + button "Mehr anzeigen"
+- If expanded: show all (or slice(0, 50) as now)
+
+I'll add a constant SEO_KEYWORDS_INITIAL_SHOWN = 20 in constants, then in the page use useState for expanded and show slice(0, expanded ? 50 : SEO_KEYWORDS_INITIAL_SHOWN). And a button to expand.
+</details></think>
+
+---
+
+
+Keywords-Bereich ansehen und die Anzahl der initial gerenderten Chips begrenzen.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add SEO_KEYWORDS_INITIAL_SHOWN = 20 (or 24) in constants. Then in the SEO page I need to:
+1. Add state for keywords expanded: useState(false)
+2. Show only slice(0, expanded ? 50 : SEO_KEYWORDS_INITIAL_SHOWN)
+3. If keywords.length > SEO_KEYWORDS_INITIAL_SHOWN and !expanded, show a "Mehr anzeigen" button that sets expanded to true
+
+I need to check if there's an i18n key for "show more" or "more" - the user had "projects.seo.more" in the conversation summary. Let me add the constant and the expand logic. I'll use a small constant like 20 so we only render 20 chips initially.
+</details></think>
+
+---
+
+
 
 
 
@@ -16117,7 +16247,72 @@ _**Agent (model default, mode Agent)**_
 <details>
 <summary>Tool use: **ripgrep_raw_search**</summary>
 
-Status: **loading**
+
+Parameters:
+
+```json
+{
+  "pattern": "more|Mehr|showMore",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "glob": "*.json",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "more|Mehr|showMore",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 45,
+  "topFiles": [
+    {
+      "uri": "locales/en.json",
+      "matchCount": 5
+    },
+    {
+      "uri": "locales/de.json",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 4
+    }
+  ]
+}
+```
+Status: **completed**
 
 
 </details>
@@ -16125,14 +16320,1474 @@ Status: **loading**
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
+<think><details><summary>Thought Process</summary>
 
-Status: **loading**
+I'll use common.loadMore for "Mehr anzeigen". I need to add a constant for the initial keyword count and then add state + slice + button. Let me add SEO_KEYWORDS_INITIAL_SHOWN to constants, then update the SEO page.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I used t('projects.seo.more') - that exists in the locales (projects.seo.more). Let me verify the key exists in the seo section.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "\"more\"|\"seo\"",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json",
+  "contextBefore": 0,
+  "contextAfter": 0,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "\"more\"|\"seo\"",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 10,
+  "topFiles": [
+    {
+      "uri": "locales/de.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
 
 
 </details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+projects.seo.more exists. Good. The implementation is done. Let me add a short note to the knowledge file about the keywords card optimization.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-seo-table-performance.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Done. I've limited the keywords to 20 initially with a "Load more" button. No need for reproduction steps unless the user wants to verify - they just asked me to remember that keywords are also a lot of elements, and I've addressed that.
+</details></think>
+
+---
+
+
+Die Keywords-Karte ist angepasst, damit weniger DOM-Elemente gerendert werden:
+
+**Änderungen:**
+
+1. **Konstante**  
+   In `lib/constants.ts`: `SEO_KEYWORDS_INITIAL_SHOWN = 20`.
+
+2. **SEO-Seite**  
+   - State: `keywordsExpanded` (initial `false`).  
+   - Anzeige: Es werden nur die ersten 20 Einträge gerendert (`slice(0, limit)` mit `limit = keywordsExpanded ? keywords.length : Math.min(SEO_KEYWORDS_INITIAL_SHOWN, keywords.length)`).  
+   - Wenn mehr als 20 Keywords da sind: Button „Mehr anzeigen“ („X weitere“) setzt `keywordsExpanded` auf `true`, danach werden alle gerendert.
+
+Damit sind auf der Keywords-Karte beim ersten Laden nur 20 Chips im DOM statt bis zu 50; der Rest kommt erst nach Klick auf „Mehr anzeigen“.
+
+---
+
+_**User**_
+
+lass uns lediglich 15 keywords und 15 einträge in der tabelle anzeigen.
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants to show only 15 keywords (instead of 20) and 15 entries in the table (instead of 25). I need to:
+1. Change SEO_KEYWORDS_INITIAL_SHOWN from 20 to 15
+2. Change SEO_TABLE_PAGE_SIZE from 25 to 15
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Done. Both constants are now 15. No need for reproduction steps for such a simple config change - the user just asked for the change. But the system reminder says "Reproduction steps (MANDATORY): Unless the issue is fully confirmed fixed..." - that's in the context of debug mode. This is a simple parameter change, not a bug fix. I'll skip the reproduction steps block since the user didn't ask to verify a fix, they asked for a specific value change.
+</details></think>
+
+---
+
+
+Erledigt:
+
+- **Keywords:** Es werden initial **15** Chips angezeigt (`SEO_KEYWORDS_INITIAL_SHOWN = 15`).
+- **Tabelle:** Es werden **15** Zeilen pro Seite angezeigt (`SEO_TABLE_PAGE_SIZE = 15`).
+
+Beide Werte stehen in `lib/constants.ts`.
+
+---
+
+_**User**_
+
+gibt es noch irgendwas was sinnvoll wäre für die seo on page seite um angezeigt zu werden?
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is asking if there's anything else that would make sense to display on the SEO on-page page. I'm in Ask mode, so I should only read the codebase and provide suggestions - no edits.
+
+Let me look at what's currently on the SEO on-page page and what data is available from the domain summary/aggregation that might not yet be displayed.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "aggregated|AggregatedSeo|AggregatedStructure|domain-aggregation",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib",
+  "glob": "*.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "aggregated|AggregatedSeo|AggregatedStructure|domain-aggregation",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib",
+  "outputMode": "content",
+  "totalFiles": 25,
+  "totalMatches": 135,
+  "topFiles": [
+    {
+      "uri": "lib/seo-on-page-score.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "lib/domain-summary.ts",
+      "matchCount": 12
+    },
+    {
+      "uri": "lib/types.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "lib/domain-aggregation.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "lib/seo-stopwords.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/seo-on-page-score.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-summary.ts",
+      "matchCount": 12
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-aggregation.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/lib/seo-stopwords.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/seo-on-page-score.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-summary.ts",
+      "matchCount": 12
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-aggregation.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/lib/seo-stopwords.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/seo-on-page-score.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-summary.ts",
+      "matchCount": 12
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-aggregation.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/lib/seo-stopwords.ts",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me read the full AggregatedSeo and AggregatedStructure interfaces and what the SEO page currently displays, so I can suggest what else could be shown.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I have a clear picture:
+
+**Currently shown on SEO on-page page:**
+1. Header card: SEO score (0–100), label, "from scan · X pages scanned", link to deep scan
+2. Overview card: withTitle, withMetaDescription, withH1, withCanonical (counts), totalWordsAcrossPages
+3. Table: pages with URL, words, keywords, skinny, meta, H1, structure (unified table)
+4. Cross-Page Keywords: chips with keyword (count×, pages, Ø density%)
+
+**Available in AggregatedSeo but not prominently shown:**
+- `missingMetaDescriptionUrls` – only indirectly via table (pages without meta)
+- `missingH1Urls` – only indirectly via table
+- `pages` (PageSeoSummary[]) – used for the table
+
+**Available in AggregatedStructure:**
+- `pagesWithHeadingIssues` (count)
+- `pagesWithMultipleH1` (URLs)
+- `pagesWithSkippedLevels` (URLs)
+- `pagesWithGoodStructure` (URLs)
+- `totalPages`
+
+The overview already shows withTitle, withMetaDescription, withH1, withCanonical. The table shows per-page meta, H1, structure. So the main aggregates are there.
+
+**What could still be useful:**
+
+1. **Canonical-Übersicht**  
+   `withCanonical` ist schon in der Overview-Karte. Zusätzlich könnte man eine Liste „Seiten ohne Canonical“ anzeigen (falls das irgendwo aggregiert wird). In `AggregatedSeo` gibt es nur `withCanonical`, keine `missingCanonicalUrls`. Also nur die Zahl ist da – mehr nicht ohne Code-Änderung.
+
+2. **Struktur-Kennzahlen kompakt**  
+   Aus `AggregatedStructure`: z.B. eine kleine Karte „Struktur“ mit „Seiten mit mehreren H1: X“, „Seiten mit übersprungenen Ebenen: Y“, „Seiten mit guter Struktur: Z“. Die Tabelle zeigt das schon pro Seite, aber eine Domain-Kennzahl könnte helfen.
+
+3. **Robots/Meta Robots**  
+   Wenn im Scan erfasst, könnte man „Seiten mit noindex“ o.ä. zeigen – müsste in den Daten vorhanden sein (nicht in AggregatedSeo gesehen).
+
+4. **Open Graph / Twitter Cards**  
+   Wenn vorhanden, könnten OG/Twitter-Abdeckung und Fehlende angezeigt werden – wieder abhängig vom Scan.
+
+5. **Durchschnittliche Wortanzahl pro Seite**  
+   `totalWordsAcrossPages / totalPages` als einfacher Kennwert (z.B. in der Overview-Karte).
+
+6. **Skinny-Content-Quote**  
+   Anteil der Seiten mit <300 Wörtern (aus `pages`/Table bereits ableitbar, könnte als Kennzahl in der Overview stehen).
+
+7. **Vergleich mit Wettbewerbern**  
+   Wie auf der WCAG-Seite: SEO-Score der Competitors daneben – würde API/Loading erweitern.
+
+8. **Letzte Aktualisierung**  
+   Zeitstempel des Deep Scans, damit klar ist, wie aktuell die Daten sind.
+
+Ich schaue kurz, ob es noch weitere genutzte Felder in ScanResult/seo gibt (canonical, robots, og, etc.).
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "canonical|robots|og:|twitter|meta",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib",
+  "glob": "*.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "canonical|robots|og:|twitter|meta",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib",
+  "outputMode": "content",
+  "totalFiles": 55,
+  "totalMatches": 480,
+  "topFiles": [
+    {
+      "uri": "lib/seo-on-page-score.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "lib/domain-normalize.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/types.ts",
+      "matchCount": 15
+    },
+    {
+      "uri": "lib/scanner.ts",
+      "matchCount": 42
+    },
+    {
+      "uri": "lib/domain-aggregation.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "lib/ymyl-heuristic.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "lib/llm/geo-eeat-prompts.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/sitemap.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "lib/llm/journey-agent.ts",
+      "matchCount": 17
+    },
+    {
+      "uri": "lib/llm/build-summary-payload.ts",
+      "matchCount": 6
+    },
+    {
+      "uri": "lib/domain-graph-data.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/seo-on-page-score.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-normalize.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 15
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 42
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-aggregation.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/lib/ymyl-heuristic.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/llm/geo-eeat-prompts.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/sitemap.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/lib/llm/journey-agent.ts",
+      "matchCount": 17
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So the scanner collects og:title, og:description, og:image, twitter:card, canonical, meta robots etc. – but **AggregatedSeo** in domain-aggregation only aggregates: withTitle, withMetaDescription, withH1, withCanonical, missingMetaDescriptionUrls, missingH1Urls, pages, crossPageKeywords, totalWordsAcrossPages. So OG/Twitter and meta robots are not in the current aggregation. To show them on the SEO page you’d need to extend the aggregation (and possibly the payload) to include e.g. withOgTitle, withOgImage, pagesWithNoindex, etc.
+
+I'll summarize for the user what's already there, what could be added with current data, and what would need backend/aggregation changes.
+</details></think>
+
+---
+
+
+Hier eine kompakte Übersicht, was **bereits da ist** und was **sinnvoll ergänzt** werden könnte:
+
+---
+
+## Bereits auf der SEO-on-Page-Seite
+
+- **Score** (0–100) + Label + Tooltip  
+- **Übersicht:** Titel, Meta-Description, H1, Canonical (Anzahl/Seiten), Gesamtwortanzahl  
+- **Tabelle:** Seiten mit URL, Wörter, Keywords, Skinny, Meta, H1, Struktur (sortierbar, paginiert)  
+- **Keywords:** seitenübergreifende Begriffe mit Vorkommen und Ø-Dichte  
+
+---
+
+## Mit den **aktuell vorhandenen Daten** umsetzbar
+
+1. **Struktur-Kennzahlen**  
+   Aus `AggregatedStructure` (wird schon für die Tabelle genutzt):  
+   Eine kleine Karte „Struktur & Überschriften“ mit z. B.:  
+   - Seiten mit mehreren H1: **X**  
+   - Seiten mit übersprungenen Ebenen: **Y**  
+   - Seiten mit guter Struktur: **Z**  
+   So hat man die Struktur-Qualität auf einen Blick, ohne in die Tabelle zu müssen.
+
+2. **Durchschnittliche Wortanzahl pro Seite**  
+   `totalWordsAcrossPages / totalPages` in der bestehenden Overview-Karte (z. B. „Ø X Wörter/Seite“). Zeigt Content-Tiefe auf Domain-Ebene.
+
+3. **Anteil Skinny Content**  
+   Aus `aggregatedSeo.pages` den Anteil mit `isSkinny === true` (z. B. „X von Y Seiten unter 300 Wörter“). Passt gut in die Overview oder als eigene kleine Kennzahl.
+
+4. **Scan-Zeitstempel**  
+   Falls der Deep-Scan-Zeitpunkt irgendwo im Payload/Response liegt: „Stand: DD.MM.YYYY“ oder „Zuletzt aktualisiert …“ in der Header-Karte. Macht die Aussagekraft der Daten klarer.
+
+---
+
+## Nur mit **Erweiterung der Aggregation** möglich
+
+Im Scanner werden pro Seite u. a. erfasst: **og:title**, **og:description**, **og:image**, **twitter:card**, **canonical**, **meta robots** (z. B. noindex). In `AggregatedSeo` landen davon aber nur Titel, Meta-Description, H1 und Canonical (als Zähler).  
+
+Wenn du das auf der SEO-on-Page-Seite anzeigen willst, müsstest du:
+
+- in **`lib/domain-aggregation.ts`** die SEO-Aggregation erweitern (z. B. `withOgTitle`, `withOgImage`, `missingCanonicalUrls`, `pagesWithNoindex` o. Ä.),
+- diese neuen Felder im **Domain-Summary-Payload** speichern/auslesen,
+- dann auf der SEO-Seite neue Karten/Zeilen dafür bauen.
+
+**Mögliche Erweiterungen:**
+
+- **Open Graph / Social:** „Seiten mit og:title / og:image“ (Anzahl oder Liste ohne OG)  
+- **Canonical:** „Seiten ohne Canonical“ (Liste), wenn du `missingCanonicalUrls` aggregierst  
+- **Indexierung:** „Seiten mit noindex“ (Anzahl/Liste), wenn du `metaRobotsContent` / noindex in der Aggregation abbildest  
+
+---
+
+**Kurz:** Mit dem, was ihr jetzt habt, sind die sinnvollsten nächsten Schritte: **Struktur-Kennzahlen**, **Ø Wörter/Seite**, **Skinny-Anteil** und optional **Scan-Datum**. Alles rund um OG, Twitter und noindex braucht zuerst eine Erweiterung der Aggregation in `domain-aggregation.ts` und des Payloads.
+
+---
+
+_**User**_
+
+ja das sollten wir doch zwingend mit aggregieren auch um unseren score zu verbessern oder? 
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is asking whether we should definitely aggregate the additional SEO data (OG, Twitter, canonical missing URLs, noindex) - also to improve the score. They're in Ask mode, so I should only explain and recommend, not implement.
+
+Let me think about this:
+
+1. **Score improvement:** The current SEO on-page score (in `lib/seo-on-page-score.ts`) is based on: meta coverage (title, meta description, H1, canonical), heading structure, and content depth. If we add more criteria (e.g. OG tags, noindex), we could either:
+   - Extend the score formula to include these (then aggregation must provide the counts).
+   - Or just show them as separate metrics; the "score" itself might stay focused on core on-page SEO.
+
+2. **Aggregation:** Yes - if we want to show "Seiten mit og:title", "Seiten ohne Canonical", "Seiten mit noindex" on the SEO page (and optionally feed them into the score), we need to aggregate these in `domain-aggregation.ts`. The scanner already collects ogTitle, ogDescription, ogImage, twitterCard, canonical, metaRobotsContent, metaRobotsIndexable per page. So we'd add to AggregatedSeo (or a related type) things like:
+   - withOgTitle, withOgImage, withOgDescription
+   - withCanonical we have; we could add missingCanonicalUrls
+   - pagesWithNoindex or withMetaRobotsIndexable count
+
+3. **Score:** To "improve" the score we could either:
+   - Weigh in the new dimensions (e.g. OG coverage, no noindex on important pages) into the existing formula.
+   - Or keep the score as-is and use the new metrics as "additional signals" displayed on the page. The user said "um unseren score zu verbessern" - that could mean "to improve our [SEO] score [formula]" or "to improve the score [we show]". I'll assume they want both: aggregate the data AND optionally incorporate it into the score so the score reflects more factors.
+
+I'll give a clear "ja" answer and outline what to aggregate and how it could feed into the score, without making any code changes.
+</details></think>
+
+---
+
+
+Ja – das solltet ihr zwingend mit aggregieren, und es kann den Score sinnvoll verbessern.
+
+**Warum aggregieren:**
+
+- Der Scanner liefert pro Seite schon: **canonical**, **og:title**, **og:description**, **og:image**, **twitter:card**, **meta robots** (z. B. noindex). Das ist wertvolle SEO-Information.
+- Ohne Aggregation könnt ihr diese Werte auf der SEO-on-Page-Seite nicht sauber auswerten und nicht in einen Gesamt-Score einfließen lassen.
+- Mit Aggregation habt ihr:
+  - klare Kennzahlen (z. B. „X von Y Seiten mit og:title“),
+  - die Möglichkeit, den **Score** um diese Faktoren zu erweitern,
+  - und eine konsistente Datenbasis (einmal pro Scan aggregieren, dann überall nutzen).
+
+**Was ihr konkret aggregieren solltet:**
+
+| Daten (pro Seite schon da) | Aggregation (z. B. in `AggregatedSeo` oder ergänzend) | Nutzen für Score / UI |
+|---------------------------|--------------------------------------------------------|------------------------|
+| `canonical`               | `withCanonical` (habt ihr), zusätzlich `missingCanonicalUrls: string[]` | Score/Liste „Seiten ohne Canonical“ |
+| `og:title` / `og:image`   | `withOgTitle`, `withOgImage` (evtl. auch `withOgDescription`) | Social-/OG-Abdeckung, optional im Score |
+| `twitter:card`            | `withTwitterCard` (Anzahl)                            | Anzeige „Seiten mit Twitter Card“ |
+| `metaRobotsIndexable` / noindex | `pagesWithNoindex: string[]` oder `withNoindex: number` | Wichtig für Indexierung; sollte den Score negativ beeinflussen (noindex = schlecht für Indexierung) |
+
+**Einbindung in den Score:**
+
+- **Aktuell:** Der Score in `seo-on-page-score.ts` nutzt vor allem Meta/Tag-Abdeckung (Title, Meta-Description, H1, Canonical), Struktur und Content-Tiefe.
+- **Erweiterung:**  
+  - **Canonical:** `missingCanonicalUrls` oder Anteil „mit Canonical“ in die Abdeckungs-Logik einbauen (falls noch nicht voll drin).  
+  - **Noindex:** Seiten mit noindex sollten den Domain-Score eher verschlechtern (z. B. als negativer Faktor oder geringerer Gewichtung indexierbarer Seiten).  
+  - **OG/Social:** optional als weiterer leichter Gewichtungsfaktor („Abdeckung mit og:title/og:image“), damit der Score auch Social-Readiness abbildet.
+
+**Fazit:** Ja – diese Werte solltet ihr zwingend mit aggregieren; dann könnt ihr sie auf der SEO-on-Page-Seite anzeigen und den Score so erweitern, dass Canonical, Noindex und optional OG/Twitter mit einfließen. Wenn du willst, können wir im Agent-Modus den genauen Aggregations- und Score-Plan (neue Felder, Formel) Schritt für Schritt durchgehen.
+
+---
+
+_**User**_
+
+dann los erstelle einen plan für die implementierung. bedenke unsere performance issues. 
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants a plan for implementing the aggregation of the additional SEO data (OG, Twitter, canonical URLs, noindex) and integrating it into the score and SEO on-page page. They also want me to consider the performance issues we've been dealing with (table virtualization, keyword limit, etc.).
+
+I need to:
+1. Read the current aggregation code to see exactly what's aggregated and how
+2. Read the scanner/types to see what fields are available per page
+3. Read the SEO score computation to see how to extend it
+4. Read the domain-summary and how aggregated is stored/used
+5. Create a plan that includes: extending AggregatedSeo (or related), extending the score formula, updating the SEO page UI, and keeping performance in mind (no new heavy lists without pagination/virtualization, constants for limits, etc.)
+
+Let me gather the necessary info.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/seo-on-page-score.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see that SeoAudit in types.ts has ogTitle, ogDescription, ogImage, twitterCard. The metaRobotsIndexable is under GenerativeEngineAudit.technical - I need to check where the scanner puts the SEO meta robots. Let me check the ScanResult type and what seo actually contains.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "metaRobotsIndexable|metaRobotsContent|SeoAudit|seo:",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib",
+  "glob": "*.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "metaRobotsIndexable|metaRobotsContent|SeoAudit|seo:",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib",
+  "outputMode": "content",
+  "totalFiles": 25,
+  "totalMatches": 95,
+  "topFiles": [
+    {
+      "uri": "lib/seo-on-page-score.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/domain-summary.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "lib/types.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "lib/scanner.ts",
+      "matchCount": 10
+    },
+    {
+      "uri": "lib/domain-aggregation.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/seo-on-page-score.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-summary.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 10
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-aggregation.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/seo-on-page-score.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-summary.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 10
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-aggregation.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/seo-on-page-score.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-summary.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 10
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-aggregation.ts",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-summary.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So SeoAudit in types.ts has metaRobotsContent and metaRobotsIndexable under a nested structure - let me look at the full SeoAudit again. From the grep, types.ts line 249-251 shows they're inside something. Let me read types.ts around 211-260.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-seo-table-performance.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So SeoAudit does NOT have metaRobotsContent/metaRobotsIndexable directly - those are in GenerativeEngineAudit.technical. But the scanner (line 862-863) assigns them to the seo object. Let me check the scanner again - it seems the seo object in the scanner output might have these fields. Let me look at scanner 820-870.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So in the scanner, metaRobotsContent and metaRobotsIndexable are stored under `generative`, not under `seo`. So when we aggregate SEO from ScanResult, we have access to p.seo (ogTitle, ogDescription, ogImage, twitterCard, canonical, etc.) but NOT metaRobotsIndexable from p.seo - that's in p.generative?.technical. Let me check ScanResult - does it have generative?
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "generative\\?|\\.generative",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib",
+  "glob": "*.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "generative\\?|\\.generative",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib",
+  "outputMode": "content",
+  "totalFiles": 35,
+  "totalMatches": 110,
+  "topFiles": [
+    {
+      "uri": "lib/geo-eeat/run-llm-stages.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "lib/types.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "lib/scanner.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "lib/domain-aggregation.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "lib/geo-eeat/stage1.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/spider.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "lib/llm/build-summary-payload.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/lib/geo-eeat/run-llm-stages.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-aggregation.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/geo-eeat/stage1.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/spider.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/llm/build-summary-payload.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/lib/geo-eeat/run-llm-stages.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-aggregation.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/geo-eeat/stage1.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/spider.ts",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So for noindex we need to read from p.generative?.technical?.metaRobotsIndexable when aggregating SEO. The aggregation runs over ScanResult[] which has both p.seo and p.generative. So in aggregateSeo we can:
+- From p.seo: ogTitle, ogDescription, ogImage, twitterCard, canonical (already have canonical)
+- From p.generative?.technical: metaRobotsIndexable (and metaRobotsContent if needed)
+
+Now I have enough to write the plan. I need to:
+
+1. Extend AggregatedSeo interface with:
+   - withOgTitle, withOgImage, withOgDescription (counts)
+   - withTwitterCard (count)
+   - missingCanonicalUrls: string[]
+   - withNoindex: number or pagesWithNoindex: string[] (from generative.technical.metaRobotsIndexable - when false, page is noindex)
+
+2. In aggregateSeo(): one loop over withSeo, for each page read seo.ogTitle, seo.ogImage, seo.ogDescription, seo.twitterCard; if !seo.canonical?.trim() push to missingCanonicalUrls; and from p.generative?.technical?.metaRobotsIndexable === false push to pagesWithNoindex.
+
+3. Extend PageSeoSummary optionally: hasCanonical, hasOgTitle, hasOgImage, isNoindex - so the table could show these. But that might blow up the table. Plan could say: optional per-page flags for future table columns; for now only aggregate counts and URL lists.
+
+4. Score: extend computeSeoOnPageScore to include:
+   - Coverage: add OG (e.g. average of withOgTitle, withOgImage) as optional 5th/6th factor, or keep coverage as 4 factors and add a separate "social" slice. Or: keep formula but add noindex as negative - e.g. "indexability" = share of pages that are indexable (metaRobotsIndexable !== false). So we need withIndexable count. Then coverage could be (withTitle + withMeta + withH1 + withCanonical) / 4 * (withIndexable/totalPages) to penalize noindex. Or add a 4th pillar "indexability". User said "um unseren score zu verbessern" - so improve the score formula. I'll suggest: (a) add indexability (no noindex) as negative factor to coverage or as separate small weight; (b) optionally add social (OG) as small bonus or separate breakdown.
+
+5. UI: Overview card add lines for OG, Twitter, Canonical missing, Noindex. List of URLs for missing canonical and noindex: use same pattern as keywords - initial slice (e.g. 15), "Mehr anzeigen" to avoid DOM explosion. Same for any new URL list.
+
+6. Performance: - All new URL lists (missingCanonicalUrls, pagesWithNoindex) capped or shown with "first N" + expand. - No new large tables; only counts + expandable lists. - Constants for initial list size (e.g. reuse SEO_KEYWORDS_INITIAL_SHOWN or new constant).
+
+Let me also check: does toSlimPage strip seo? So when we store the payload we have aggregated.seo - the full AggregatedSeo. So we're not storing per-page OG in SlimPage. So the only place we have OG etc. is during aggregation from full ScanResult[]. When we build the stored payload we call aggregateSeo(fullPages) - fullPages are the full scan results before slimming. So we have access to p.seo.ogTitle etc. and p.generative.technical.metaRobotsIndexable there. Good.
+
+Create the plan.
+</details></think>
+
+---
+
+
+Alle nötigen Stellen sind erfasst. Plan erstellen.
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="create_plan">
+<details>
+<summary>Tool use: **create_plan**</summary>
+
+
+Parameters:
+
+```json
+{
+  "plan": "# Plan: SEO-Aggregation erweitern (OG, Canonical, Noindex) und Score anpassen\n\n## Ausgangslage\n\n- **Scanner** liefert pro Seite bereits: &#96;seo.ogTitle&#96;, &#96;ogDescription&#96;, &#96;ogImage&#96;, &#96;twitterCard&#96;, &#96;canonical&#96;; Noindex liegt unter &#96;generative.technical.metaRobotsIndexable&#96; (Scanner schreibt es in [lib/scanner.ts](lib/scanner.ts) Zeile 861–863 in &#96;generative&#96;).\n- **Aggregation** in [lib/domain-aggregation.ts](lib/domain-aggregation.ts): &#96;aggregateSeo()&#96; nutzt nur Title, MetaDescription, H1, Canonical (Zähler), fehlende Meta/H1-URLs, Pages, Keywords, totalWords.\n- **Score** in [lib/seo-on-page-score.ts](lib/seo-on-page-score.ts): Formel Coverage (40 %) + Struktur (30 %) + Content (30 %). Coverage = Durchschnitt der Anteile mit Title, Meta, H1, Canonical.\n\n## 1. AggregatedSeo und aggregateSeo() erweitern\n\n**Datei:** [lib/domain-aggregation.ts](lib/domain-aggregation.ts)\n\n- **Interface &#96;AggregatedSeo&#96;** um folgende Felder ergänzen:\n  - &#96;withOgTitle&#96;, &#96;withOgImage&#96;, &#96;withOgDescription&#96; (number)\n  - &#96;withTwitterCard&#96; (number)\n  - &#96;missingCanonicalUrls: string[]&#96;\n  - &#96;pagesWithNoindex: string[]&#96; (Seiten mit &#96;generative?.technical?.metaRobotsIndexable === false&#96;)\n\n- **In &#96;aggregateSeo(pages)&#96;** im bestehenden Loop über &#96;withSeo&#96;:\n  - Pro Seite aus &#96;p.seo&#96;: &#96;ogTitle&#96;, &#96;ogDescription&#96;, &#96;ogImage&#96;, &#96;twitterCard&#96; auswerten (trim/truthy) und Zähler erhöhen.\n  - Fehlende Canonical: wenn &#96;!seo.canonical?.trim()&#96;, URL in &#96;missingCanonicalUrls&#96; pushen.\n  - Noindex: wenn &#96;p.generative?.technical?.metaRobotsIndexable === false&#96;, URL in &#96;pagesWithNoindex&#96; pushen.\n\n- **Performance:** Keine neuen großen Objekte pro Seite; nur Zähler und Arrays von URLs. Die URL-Arrays sind ohnehin durch die Anzahl der Seiten begrenzt. Keine Änderung an &#96;pages&#96;/&#96;crossPageKeywords&#96;-Logik.\n\n## 2. SEO-On-Page-Score anpassen\n\n**Datei:** [lib/seo-on-page-score.ts](lib/seo-on-page-score.ts)\n\n- **Option A (empfohlen):** Coverage um Indexierbarkeit erweitern: Anteil indexierbarer Seiten (kein Noindex) als Faktor in die Coverage-Berechnung einbeziehen, z. B.  \n  &#96;coverageRatio = (withTitle/total + … + withCanonical/total) / 4 * (indexableCount / totalPages)&#96;  \n  mit &#96;indexableCount = totalPages - pagesWithNoindex.length&#96;. So wird Noindex domain-weit bestraft, ohne die Gewichte der vier bestehenden Faktoren zu verwässern.\n\n- **Option B:** Eigenes kleines Gewicht „Indexability“ (z. B. 10 %) und Gewichte anpassen (z. B. Coverage 35 %, Struktur 27 %, Content 28 %, Indexability 10 %). Dann &#96;breakdown&#96; um &#96;indexability&#96; ergänzen.\n\n- **OG/Social:** Zunächst nur für die Anzeige aggregieren; optional in einer späteren Iteration als leichter Bonus in die Formel (z. B. „Social Readiness“) aufnehmen, um den Score nicht zu überladen.\n\n- **Dokumentation:** Kommentar/JSDoc in &#96;seo-on-page-score.ts&#96; und ggf. [knowledge/checkion-seo-on-page-score.md](knowledge/checkion-seo-on-page-score.md) anpassen (neue Faktoren, Formel).\n\n## 3. SEO-Seite: neue Kennzahlen und Listen (performance-schonend)\n\n**Datei:** [app/projects/[id]/seo/page.tsx](app/projects/[id]/seo/page.tsx)\n\n- **Overview-Karte** (bestehende „Übersicht“):\n  - Zeilen ergänzen: mit og:title, mit og:image, mit Canonical (habt ihr schon), ggf. mit Twitter Card.\n  - Optional: „Indexierbar (ohne noindex): X / Y“.\n\n- **Neue Listen nur als „erste N + Mehr anzeigen“** (wie bei Keywords), um DOM und Re-Render zu begrenzen:\n  - **Seiten ohne Canonical:** Anzeige von &#96;missingCanonicalUrls&#96; mit initial z. B. 15 Einträgen, Button „Mehr anzeigen“ (State &#96;canonicalExpanded&#96;), Konstante z. B. in [lib/constants.ts](lib/constants.ts) (z. B. &#96;SEO_URL_LIST_INITIAL = 15&#96;) wiederverwenden oder neu anlegen.\n  - **Seiten mit noindex:** &#96;pagesWithNoindex&#96; genauso (initial 15, dann expandierbar).\n\n- **Keine neuen großen Tabellen:** Nur kompakte Listen (z. B. Links/Chips pro URL) oder Aufzählung; keine zusätzliche Tabelle mit vielen Spalten, um die bisherigen Performance-Maßnahmen (virtualisierte Tabelle, begrenzte Keywords) nicht zu konterkarieren.\n\n- **i18n:** Neue Keys in [locales/de.json](locales/de.json) / [locales/en.json](locales/en.json) für „mit og:title“, „mit og:image“, „Seiten ohne Canonical“, „Seiten mit noindex“, „Indexierbar“ usw.\n\n## 4. Ablage und Kompatibilität\n\n- **Payload:** &#96;buildStoredDomainPayload&#96; in [lib/domain-summary.ts](lib/domain-summary.ts) ruft weiterhin &#96;aggregateSeo(fullPages)&#96; auf; das erweiterte &#96;AggregatedSeo&#96; wird automatisch gespeichert. Keine Änderung an der Signatur nötig.\n- **Bestehende Payloads:** Alte gespeicherte Scans haben die neuen Felder nicht. Beim Lesen von &#96;fullSummary?.aggregated?.seo&#96; entweder optional chaining nutzen (&#96;aggregatedSeo?.withOgTitle ?? 0&#96;) oder Typ so erweitern, dass die neuen Felder optional sind, bis alle Scans neu laufen. Empfehlung: neue Felder im Interface als **optional** (&#96;withOgTitle?: number&#96; usw.), in der Aggregation immer setzen; UI prüft auf &#96;!= null&#96;/&#96;undefined&#96;.\n\n## 5. Reihenfolge und Abhängigkeiten\n\n&#96;&#96;&#96;mermaid\nflowchart LR\n  A[domain-aggregation: AggregatedSeo + aggregateSeo] --&gt; B[seo-on-page-score: Formel]\n  A --&gt; C[SEO-Seite: Overview + Listen]\n  B --&gt; C\n  D[constants + i18n] --&gt; C\n&#96;&#96;&#96;\n\n1. **Aggregation:** Interface + &#96;aggregateSeo()&#96; in &#96;domain-aggregation.ts&#96; (inkl. Lesen von &#96;p.generative?.technical?.metaRobotsIndexable&#96;).\n2. **Score:** &#96;computeSeoOnPageScore()&#96; und ggf. Breakdown in &#96;seo-on-page-score.ts&#96;.\n3. **Konstanten + i18n:** &#96;SEO_URL_LIST_INITIAL&#96; (oder Wiederverwendung einer bestehenden), neue Übersetzungskeys.\n4. **UI:** Overview-Karte erweitern, zwei kleine Listen (ohne Canonical, mit noindex) mit „Mehr anzeigen“-Pattern.\n\n## Performance-Checkliste\n\n- Keine neuen großen Tabellen; nur Zähler und kurze URL-Listen.\n- Listen mit „erste N“ (z. B. 15) + Expand; gleiches Muster wie bei Keywords.\n- Keine zusätzlichen Requests; alles aus bestehendem &#96;fullSummary.aggregated.seo&#96;.\n- Bestehende Optimierungen (virtualisierte Tabelle, SEO_TABLE_PAGE_SIZE, Keywords-Limit) unverändert lassen.\n",
+  "name": "SEO Aggregation und Score",
+  "overview": "Erweiterung der SEO-Aggregation um OG, Twitter, Canonical-URLs und Noindex; Anpassung des SEO-On-Page-Scores; Darstellung auf der SEO-Seite unter Beachtung der Performance (begrenzte Listen, kein zusätzlicher schwerer DOM)."
+}
+```
+Additional data:
+
+```json
+{
+  "reviewData": {
+    "status": "Requested",
+    "selectedOption": "none",
+    "isShowingInput": false
+  },
+  "planUri": "file:///Users/christoph.bordeck/.cursor/plans/seo_aggregation_und_score_99d38594.plan.md",
+  "hasOpenedEditor": true
+}
+```
+Result:
+
+```json
+{
+  "rejected": {}
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+_**User**_
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants me to implement the plan for SEO aggregation extension. Let me check the plan's todos - the user said "To-do's from the plan have already been created" but the plan file shows `todos: []`. I'll proceed with the plan steps in order:
+
+1. Aggregation: Interface + aggregateSeo() in domain-aggregation.ts
+2. Score: computeSeoOnPageScore() in seo-on-page-score.ts
+3. Constants + i18n: SEO_URL_LIST_INITIAL, new translation keys
+4. UI: Overview card extend, two small lists (missing canonical, noindex) with "load more"
+
+Let me start implementing. I'll mark todos as in progress as I go - but the plan says todos: [] so there might be no todos in the file. I'll create a mental checklist and implement step by step.
+</details></think>
+
+---
+
+
+Implementierung starten: Zuerst prüfen wir die Todo-Liste und erweitern die Aggregation.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/.cursor/plans/seo_aggregation_und_score_99d38594.plan.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The plan has empty todos. I'll implement in order. First: extend AggregatedSeo interface and aggregateSeo() in domain-aggregation.ts.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] Extend AggregatedSeo + aggregateSeo() in domain-aggregation.ts
+- [ ] Adjust SEO score formula (indexability) in seo-on-page-score.ts
+- [ ] Add SEO_URL_LIST_INITIAL constant + i18n keys
+- [ ] SEO page: Overview + URL lists (canonical, noindex) with load more
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to:
+1. Add to AggregatedSeo: withOgTitle?, withOgImage?, withOgDescription?, withTwitterCard?, missingCanonicalUrls?, pagesWithNoindex?
+2. In the loop: count ogTitle, ogDescription, ogImage, twitterCard; push to missingCanonicalUrls when !canonical?.trim(); push to pagesWithNoindex when p.generative?.technical?.metaRobotsIndexable === false
+3. Return these in the result
+
+GenerativeEngineAudit has technical.metaRobotsIndexable. So it's p.generative?.technical?.metaRobotsIndexable. Let me check the type - is it under technical?
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So metaRobotsIndexable is under p.generative?.technical. When it's false, the page is noindex. So we need p.generative?.technical?.metaRobotsIndexable === false to push to pagesWithNoindex.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+</details></think>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Extend AggregatedSeo + aggregateSeo() in domain-aggregation.ts
+- [-] Adjust SEO score formula (indexability) in seo-on-page-score.ts
+- [ ] Add SEO_URL_LIST_INITIAL constant + i18n keys
+- [ ] SEO page: Overview + URL lists (canonical, noindex) with load more
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/seo-on-page-score.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Plan Option A: coverageRatio = (withTitle/total + ... + withCanonical/total) / 4 * (indexableCount / totalPages)
+So: baseCoverage = (withTitle + withMeta + withH1 + withCanonical) / 4 / totalPages
+indexableCount = totalPages - (seo.pagesWithNoindex?.length ?? 0)
+coverageRatio = baseCoverage * (indexableCount / totalPages)
+That way noindex pages reduce the coverage score.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/seo-on-page-score.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/seo-on-page-score.ts</summary>
+
+Status: **loading**
+
+</details>
+
 </tool-use>
 
 ---

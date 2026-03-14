@@ -22,6 +22,7 @@ import {
     pathScanDomain,
     pathProject,
     SEO_KEYWORDS_INITIAL_SHOWN,
+    SEO_URL_LIST_INITIAL,
 } from '@/lib/constants';
 import type { DomainSummaryResponse } from '@/lib/domain-summary';
 import type { SlimPage } from '@/lib/types';
@@ -151,6 +152,8 @@ export default function ProjectSeoPage() {
         [pagesByUrl, router]
     );
     const [keywordsExpanded, setKeywordsExpanded] = useState(false);
+    const [canonicalListExpanded, setCanonicalListExpanded] = useState(false);
+    const [noindexListExpanded, setNoindexListExpanded] = useState(false);
     const loading = projectLoading || summaryLoading;
 
     if (!id) {
@@ -274,6 +277,27 @@ export default function ProjectSeoPage() {
                                     <MsqdxTypography variant="body2">
                                         {t('projects.seo.withCanonical')}: {aggregatedSeo.withCanonical} / {aggregatedSeo.totalPages}
                                     </MsqdxTypography>
+                                    {(aggregatedSeo.withOgTitle != null || aggregatedSeo.withOgImage != null) && (
+                                        <>
+                                            <MsqdxTypography variant="body2">
+                                                {t('projects.seo.withOgTitle')}: {(aggregatedSeo.withOgTitle ?? 0)} / {aggregatedSeo.totalPages}
+                                            </MsqdxTypography>
+                                            <MsqdxTypography variant="body2">
+                                                {t('projects.seo.withOgImage')}: {(aggregatedSeo.withOgImage ?? 0)} / {aggregatedSeo.totalPages}
+                                            </MsqdxTypography>
+                                            <MsqdxTypography variant="body2">
+                                                {t('projects.seo.withOgDescription')}: {(aggregatedSeo.withOgDescription ?? 0)} / {aggregatedSeo.totalPages}
+                                            </MsqdxTypography>
+                                            <MsqdxTypography variant="body2">
+                                                {t('projects.seo.withTwitterCard')}: {(aggregatedSeo.withTwitterCard ?? 0)} / {aggregatedSeo.totalPages}
+                                            </MsqdxTypography>
+                                        </>
+                                    )}
+                                    {aggregatedSeo.pagesWithNoindex != null && (
+                                        <MsqdxTypography variant="body2">
+                                            {t('projects.seo.indexable')}: {Math.max(0, aggregatedSeo.totalPages - aggregatedSeo.pagesWithNoindex.length)} / {aggregatedSeo.totalPages}
+                                        </MsqdxTypography>
+                                    )}
                                     {aggregatedSeo.totalWordsAcrossPages > 0 && (
                                         <MsqdxTypography variant="body2" sx={{ mt: 0.5 }}>
                                             {t('projects.seo.totalWords')}: {aggregatedSeo.totalWordsAcrossPages.toLocaleString('de-DE')}
@@ -282,6 +306,80 @@ export default function ProjectSeoPage() {
                                 </Box>
                             </MsqdxMoleculeCard>
                         )}
+
+                        {/* Seiten ohne Canonical – initial slice, load more */}
+                        {aggregatedSeo && (aggregatedSeo.missingCanonicalUrls?.length ?? 0) > 0 && (() => {
+                            const urls = aggregatedSeo.missingCanonicalUrls!;
+                            const limit = canonicalListExpanded ? urls.length : Math.min(SEO_URL_LIST_INITIAL, urls.length);
+                            const shown = urls.slice(0, limit);
+                            const hasMore = urls.length > limit;
+                            return (
+                                <MsqdxMoleculeCard
+                                    title={t('projects.seo.missingCanonical')}
+                                    subtitle={`${urls.length} ${t('projects.seo.pagesShort')}`}
+                                    variant="flat"
+                                    borderRadius="lg"
+                                    sx={{ bgcolor: 'var(--color-card-bg)' }}
+                                >
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+                                        {shown.map((url) => {
+                                            const page = pagesByUrl.get(url);
+                                            return page ? (
+                                                <Link key={url} href={pathResults(page.id)} style={{ fontSize: '0.8rem', color: 'var(--color-text-on-light)', textDecoration: 'none' }}>
+                                                    {url}
+                                                </Link>
+                                            ) : (
+                                                <MsqdxTypography key={url} variant="caption" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{url}</MsqdxTypography>
+                                            );
+                                        })}
+                                    </Box>
+                                    {hasMore && (
+                                        <Box sx={{ mt: 0.5 }}>
+                                            <MsqdxButton size="small" variant="text" onClick={() => setCanonicalListExpanded(true)}>
+                                                {t('common.loadMore')} ({urls.length - limit} {t('projects.seo.more')})
+                                            </MsqdxButton>
+                                        </Box>
+                                    )}
+                                </MsqdxMoleculeCard>
+                            );
+                        })()}
+
+                        {/* Seiten mit noindex – initial slice, load more */}
+                        {aggregatedSeo && (aggregatedSeo.pagesWithNoindex?.length ?? 0) > 0 && (() => {
+                            const urls = aggregatedSeo.pagesWithNoindex!;
+                            const limit = noindexListExpanded ? urls.length : Math.min(SEO_URL_LIST_INITIAL, urls.length);
+                            const shown = urls.slice(0, limit);
+                            const hasMore = urls.length > limit;
+                            return (
+                                <MsqdxMoleculeCard
+                                    title={t('projects.seo.pagesWithNoindex')}
+                                    subtitle={`${urls.length} ${t('projects.seo.pagesShort')}`}
+                                    variant="flat"
+                                    borderRadius="lg"
+                                    sx={{ bgcolor: 'var(--color-card-bg)' }}
+                                >
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+                                        {shown.map((url) => {
+                                            const page = pagesByUrl.get(url);
+                                            return page ? (
+                                                <Link key={url} href={pathResults(page.id)} style={{ fontSize: '0.8rem', color: 'var(--color-text-on-light)', textDecoration: 'none' }}>
+                                                    {url}
+                                                </Link>
+                                            ) : (
+                                                <MsqdxTypography key={url} variant="caption" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{url}</MsqdxTypography>
+                                            );
+                                        })}
+                                    </Box>
+                                    {hasMore && (
+                                        <Box sx={{ mt: 0.5 }}>
+                                            <MsqdxButton size="small" variant="text" onClick={() => setNoindexListExpanded(true)}>
+                                                {t('common.loadMore')} ({urls.length - limit} {t('projects.seo.more')})
+                                            </MsqdxButton>
+                                        </Box>
+                                    )}
+                                </MsqdxMoleculeCard>
+                            );
+                        })()}
 
                         {/* Unified table: all pages with Meta, H1, structure, content */}
                         {aggregatedSeo && seoTableRows.length > 0 && (

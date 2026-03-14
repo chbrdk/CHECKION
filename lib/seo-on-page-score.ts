@@ -1,13 +1,13 @@
 /**
  * SEO On-Page Score
  *
- * There is no single official "SEO score" formula. This module implements a
- * transparent, weighted score from the on-page data we collect in the deep scan:
- * - Meta/tag coverage (title, meta description, H1, canonical)
+ * Transparent, weighted score from the on-page data we collect:
+ * - Meta/tag coverage (title, meta description, H1, canonical), scaled by indexability (no noindex)
  * - Heading structure (single H1, no skipped levels)
  * - Content depth (share of pages that are not "skinny" &lt; 300 words)
  *
  * Formula: 0–100 = coverage (40%) + structure (30%) + content (30%).
+ * Coverage includes an indexability factor: (indexableCount/totalPages) so noindex pages reduce the score.
  * No pages → score 0.
  */
 
@@ -38,7 +38,7 @@ export interface SeoOnPageScoreResult {
 
 /**
  * Computes a 0–100 SEO on-page score from aggregated SEO and structure data.
- * - coverage: average share of pages with title, meta description, H1, canonical (40%).
+ * - coverage: average share of pages with title, meta description, H1, canonical (40%), scaled by indexability (no noindex).
  * - structure: share of pages with good heading structure, i.e. single H1 and no skipped levels (30%).
  * - content: share of pages that are not "skinny" (&lt; 300 words) (30%).
  * If totalPages is 0 or seo is null, returns score 0.
@@ -55,10 +55,14 @@ export function computeSeoOnPageScore(input: SeoOnPageScoreInput): SeoOnPageScor
   }
 
   const totalPages = seo.totalPages;
+  const noindexCount = seo.pagesWithNoindex?.length ?? 0;
+  const indexableCount = Math.max(0, totalPages - noindexCount);
+  const indexabilityRatio = totalPages > 0 ? indexableCount / totalPages : 1;
 
-  // Coverage: average of (withTitle, withMetaDescription, withH1, withCanonical) / totalPages
-  const coverageRatio =
+  // Coverage: average share of pages with title, meta, H1, canonical, scaled by indexability (noindex penalized)
+  const baseCoverageRatio =
     (seo.withTitle / totalPages + seo.withMetaDescription / totalPages + seo.withH1 / totalPages + seo.withCanonical / totalPages) / 4;
+  const coverageRatio = baseCoverageRatio * indexabilityRatio;
   const coverageScore = Math.round(coverageRatio * WEIGHT_COVERAGE);
 
   // Structure: pages with good structure / totalPages (use structure.totalPages if available for denominator)
