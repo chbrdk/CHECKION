@@ -254,6 +254,8 @@ export const apiProjectResearch = (id: string) => `${API_PROJECTS}/${encodeURICo
 export const apiProjectRankingSummary = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/ranking-summary`;
 /** Build: GET /api/projects/[id]/geo-summary */
 export const apiProjectGeoSummary = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/geo-summary`;
+/** GET /api/projects/[id]/domain-summary – latest deep scan summary (score, performance, eco). */
+export const apiProjectDomainSummary = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/domain-summary`;
 /** Build: GET /api/projects/[id]/geo-question-history?limit= */
 export const apiProjectGeoQuestionHistory = (id: string, limit?: number) => {
     const base = `${API_PROJECTS}/${encodeURIComponent(id)}/geo-question-history`;

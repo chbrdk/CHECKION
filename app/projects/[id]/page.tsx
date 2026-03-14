@@ -16,11 +16,14 @@ import {
     apiProjectSuggestCompetitors,
     apiProjectRankingSummary,
     apiProjectGeoSummary,
+    apiProjectDomainSummary,
+    pathDomain,
     pathGeoEeat,
     pathProjectRankings,
     pathProjectGeo,
     pathProjectResearch,
 } from '@/lib/constants';
+import { InfoTooltip } from '@/components/InfoTooltip';
 import Link from 'next/link';
 
 interface ProjectData {
@@ -44,6 +47,16 @@ interface GeoSummaryData {
     runs: Array<{ id: string; url: string; status: string; createdAt: string }>;
 }
 
+interface DomainSummaryData {
+    scanId: string;
+    score: number;
+    totalPageCount: number;
+    aggregated: {
+        performance?: { avgTtfb: number; avgFcp: number; avgLcp: number; avgDomLoad: number; pageCount: number } | null;
+        eco?: { avgCo2: number; totalPageWeight: number; gradeDistribution: Record<string, number>; pageCount: number } | null;
+    };
+}
+
 export default function ProjectDetailPage() {
     const params = useParams();
     const router = useRouter();
@@ -53,6 +66,7 @@ export default function ProjectDetailPage() {
     const [loading, setLoading] = useState(true);
     const [rankingSummary, setRankingSummary] = useState<RankingSummaryData | null>(null);
     const [geoSummary, setGeoSummary] = useState<GeoSummaryData | null>(null);
+    const [domainSummary, setDomainSummary] = useState<DomainSummaryData | null>(null);
     const [listsLoading, setListsLoading] = useState(false);
     const [addCompetitorValue, setAddCompetitorValue] = useState('');
     const [suggestCompetitorsLoading, setSuggestCompetitorsLoading] = useState(false);
@@ -169,8 +183,9 @@ export default function ProjectDetailPage() {
         Promise.all([
             fetch(apiProjectRankingSummary(id), { credentials: 'same-origin' }).then((r) => r.json()),
             fetch(apiProjectGeoSummary(id), { credentials: 'same-origin' }).then((r) => r.json()),
+            fetch(apiProjectDomainSummary(id), { credentials: 'same-origin' }).then((r) => r.json()),
         ])
-            .then(([rankSummaryRes, geoSummaryRes]) => {
+            .then(([rankSummaryRes, geoSummaryRes, domainSummaryRes]) => {
                 if (rankSummaryRes?.success && rankSummaryRes?.data) {
                     setRankingSummary(rankSummaryRes.data as RankingSummaryData);
                 } else {
@@ -181,10 +196,16 @@ export default function ProjectDetailPage() {
                 } else {
                     setGeoSummary(null);
                 }
+                if (domainSummaryRes?.success && domainSummaryRes?.data) {
+                    setDomainSummary(domainSummaryRes.data as DomainSummaryData);
+                } else {
+                    setDomainSummary(null);
+                }
             })
             .catch(() => {
                 setRankingSummary(null);
                 setGeoSummary(null);
+                setDomainSummary(null);
             })
             .finally(() => setListsLoading(false));
     }, [id]);
@@ -220,7 +241,7 @@ export default function ProjectDetailPage() {
                 sx={{
                     display: 'grid',
                     gridTemplateColumns: { xs: '1fr', md: 'minmax(280px, 320px) 1fr 1fr' },
-                    gridTemplateRows: { xs: 'auto auto auto auto', md: 'auto auto' },
+                    gridTemplateRows: { xs: 'auto auto auto auto auto auto', md: 'auto auto' },
                     gap: 2,
                     alignItems: 'stretch',
                 }}
@@ -340,7 +361,125 @@ export default function ProjectDetailPage() {
                             )}
                         </MsqdxMoleculeCard>
 
-                {/* Row 2 col 1: Wettbewerber – actions = Buttons unten (wie andere Cards) */}
+                {/* Row 2 col 2: Domain Score (Deep Scan) */}
+                <MsqdxMoleculeCard
+                    title={t('domainResult.domainScore')}
+                    variant="flat"
+                    borderRadius="lg"
+                    footerDivider
+                    sx={{ gridColumn: { xs: 1, md: 2 }, gridRow: { xs: 4, md: 2 }, bgcolor: 'var(--color-card-bg)' }}
+                    headerActions={<InfoTooltip title={t('info.domainScore')} ariaLabel={t('common.info')} />}
+                    actions={
+                        domainSummary?.scanId ? (
+                            <Link href={pathDomain(domainSummary.scanId)} style={{ textDecoration: 'none' }}>
+                                <MsqdxButton variant="outlined" size="small">
+                                    {t('projects.open')}
+                                </MsqdxButton>
+                            </Link>
+                        ) : null
+                    }
+                >
+                    {listsLoading ? (
+                        <MsqdxTypography variant="body2" sx={{ py: 1 }}>{t('common.loading')}</MsqdxTypography>
+                    ) : domainSummary ? (
+                        <>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 0.5 }}>
+                                <Box
+                                    sx={{
+                                        width: 80,
+                                        height: 80,
+                                        borderRadius: '50%',
+                                        border: `6px solid ${domainSummary.score > 80 ? 'var(--color-secondary-dx-green)' : 'var(--color-secondary-dx-orange)'}`,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                    }}
+                                >
+                                    <MsqdxTypography variant="h3" weight="bold">
+                                        {domainSummary.score}
+                                    </MsqdxTypography>
+                                </Box>
+                                <MsqdxTypography variant="body2" sx={{ mt: 1, color: 'var(--color-text-muted-on-light)' }}>
+                                    {domainSummary.totalPageCount} {t('domainResult.pagesScanned')}
+                                </MsqdxTypography>
+                            </Box>
+                        </>
+                    ) : (
+                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                            —
+                        </MsqdxTypography>
+                    )}
+                </MsqdxMoleculeCard>
+
+                {/* Row 2 col 3: Performance (avg) + Eco Score */}
+                <MsqdxMoleculeCard
+                    title={t('domainResult.performanceEco')}
+                    variant="flat"
+                    borderRadius="lg"
+                    footerDivider
+                    sx={{ gridColumn: { xs: 1, md: 3 }, gridRow: { xs: 5, md: 2 }, bgcolor: 'var(--color-card-bg)' }}
+                >
+                    {listsLoading ? (
+                        <MsqdxTypography variant="body2" sx={{ py: 1 }}>{t('common.loading')}</MsqdxTypography>
+                    ) : domainSummary?.aggregated ? (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                            {domainSummary.aggregated.performance && (
+                                <Box>
+                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}>
+                                        {t('domainResult.performanceAvg')}
+                                    </MsqdxTypography>
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                        <MsqdxChip size="small" label={`TTFB ${domainSummary.aggregated.performance.avgTtfb} ms`} />
+                                        <MsqdxChip size="small" label={`FCP ${domainSummary.aggregated.performance.avgFcp} ms`} />
+                                        <MsqdxChip size="small" label={`LCP ${domainSummary.aggregated.performance.avgLcp} ms`} />
+                                    </Box>
+                                </Box>
+                            )}
+                            {domainSummary.aggregated.eco && (
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <Box
+                                        sx={{
+                                            width: 48,
+                                            height: 48,
+                                            borderRadius: '50%',
+                                            border: '3px solid',
+                                            borderColor:
+                                                (domainSummary.aggregated.eco.gradeDistribution['A+'] ?? domainSummary.aggregated.eco.gradeDistribution['A'])
+                                                    ? 'var(--color-secondary-dx-green)'
+                                                    : 'var(--color-secondary-dx-orange)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                        }}
+                                    >
+                                        <MsqdxTypography variant="h4" sx={{ lineHeight: 1 }}>
+                                            {Object.entries(domainSummary.aggregated.eco.gradeDistribution).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '—'}
+                                        </MsqdxTypography>
+                                    </Box>
+                                    <Box>
+                                        <MsqdxTypography variant="body2" weight="bold">
+                                            {domainSummary.aggregated.eco.avgCo2}g CO₂
+                                        </MsqdxTypography>
+                                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                            {(domainSummary.aggregated.eco.totalPageWeight / 1024 / 1024 / Math.max(1, domainSummary.aggregated.eco.pageCount)).toFixed(2)} MB Ø
+                                        </MsqdxTypography>
+                                    </Box>
+                                </Box>
+                            )}
+                            {!domainSummary.aggregated.performance && !domainSummary.aggregated.eco && (
+                                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                    —
+                                </MsqdxTypography>
+                            )}
+                        </Box>
+                    ) : (
+                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                            —
+                        </MsqdxTypography>
+                    )}
+                </MsqdxMoleculeCard>
+
+                {/* Row 3 / col 1: Wettbewerber – actions = Buttons unten (wie andere Cards) */}
                 <MsqdxMoleculeCard
                     title={t('projects.competitors')}
                     variant="flat"
@@ -366,7 +505,7 @@ export default function ProjectDetailPage() {
                             </MsqdxButton>
                         </Box>
                     }
-                    sx={{ gridColumn: { xs: 1, md: 1 }, gridRow: { xs: 4, md: 2 }, bgcolor: 'var(--color-card-bg)' }}
+                    sx={{ gridColumn: { xs: 1, md: 1 }, gridRow: { xs: 6, md: 2 }, bgcolor: 'var(--color-card-bg)' }}
                 >
                     {competitors.length === 0 ? (
                         <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 1.5 }}>

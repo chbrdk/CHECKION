@@ -19146,3 +19146,2040 @@ Let me read the geo-summary again to see the exact structure. getScoreFromCompet
 
 ---
 
+<think><details><summary>Thought Process</summary>
+
+I need to:
+1. Extend geo-summary API to return competitorScores: Record<string, number> (competitor domain -> score), using the same run we use for our score. I'll add a helper that gets scores for multiple domains from a payload, then in the loop when we find a run with our score we also compute competitor scores from that same payload.
+2. On the GEO page: fetch apiProjectGeoSummary, store score and competitorScores in state, and add a score card at the top (like rankings) with MsqdxMoleculeCard "GEO-Score" or use the same title as project overview - maybe "GEO-Score" to match. Show our score (with color) and then each competitor score.
+</details></think>
+
+---
+
+
+GEO-Summary-API um Competitor-Scores erweitern und auf der GEO-Seite eine Score-Karte wie bei der SEO-Seite anzeigen.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/geo-summary/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/geo-summary/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now add the GEO page: fetch geo summary, state for geoSummary (score + competitorScores), and a score card at the top. I need to check if there's a locale key for "GEO Score" or we use the same "Unser Score" (our score) and then show competitor scores. Looking at the rankings page they use t('projects.rankingScore') for the card title and t('projects.ourScore') for our score label. For GEO we might have something like projects.geoScore - let me check.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "rankingScore|ourScore|geoScore",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "rankingScore|ourScore|geoScore",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 40,
+  "topFiles": [
+    {
+      "uri": "locales/en.json",
+      "matchCount": 4
+    },
+    {
+      "uri": "locales/de.json",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 4
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add:
+1. import apiProjectGeoSummary and MsqdxMoleculeCard and Stack
+2. State for geoSummary: { score: number | null, competitorScores: Record<string, number> }
+3. useEffect to fetch apiProjectGeoSummary when id is set
+4. A score card at the top (before the header buttons) with the same structure as rankings: MsqdxMoleculeCard title="GEO-Score", our score with color, then competitor scores
+</details></think>
+
+---
+
+
+
+
+
+---
+
+The string to replace was not found in the file.
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The first replace failed - the imports. Let me do the import changes.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+The string to replace was not found in the file.
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+There's useI18n between the two import blocks. Let me read the file again to get exact content.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The state and useEffect for geo summary were already added (from my earlier replace that succeeded). But the imports for Stack, MsqdxMoleculeCard, and apiProjectGeoSummary might be missing - the fetch(apiProjectGeoSummary(id)) is there so we must have added the constant. Let me check - we have apiProjectGeoSummary in the fetch but it's not in the imports. So the build would fail. Let me add the missing imports.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Now I need to check if the GEO page has the score card and the Stack wrapper. Let me read the current return section to see if the score card and Stack were added - the third replace added the score card and changed the layout to Stack. Let me verify the structure and fix the closing - we need to close the Stack and the header Box needs mb: 2. Let me read the file to see current state.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "apiProjectGeoSummary",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "apiProjectGeoSummary",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 5,
+  "topFiles": [
+    {
+      "uri": "lib/constants.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The GEO page already has the score card and Stack. I need to ensure the rest of the page is inside the Stack - the closing </Stack> and </Box>. Let me read more of the file to see the structure.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see the structure - the Dialog and all content are inside the outer Box but the Stack is not closed. Looking at the structure:
+- Box (outer)
+  - Stack
+    - MsqdxMoleculeCard (score)
+    - Box (header actions)
+    - ... model selector, loading, grid, empty states
+    - Dialog
+  - (Stack never closed!)
+- /Box
+
+So we need to close the Stack before the closing Box. Let me add </Stack> before </Box>.
+</details></think>
+
+---
+
+
+Stack schließen: `</Stack>` vor dem schließenden `</Box>` einfügen.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now let me run the linter and build to make sure everything works.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/geo-summary/route.ts"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/geo-summary/route.ts"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+No linter errors. Let me run the build to verify.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 5.4s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+  Generating static pages using 9 workers (0/46) ...
+  Generating static pages using 9 workers (11/46) 
+  Generating static pages using 9 workers (22/46) 
+  Generating static pages using 9 workers (34/46) 
+✓ Generating static pages using 9 workers (46/46) in 311.0ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/register
+├ ƒ /api/auth/tokens
+├ ƒ /api/auth/tokens/[id]
+├ ƒ /api/checks/contrast
+├ ƒ /api/checks/pagespeed
+├ ƒ /api/checks/readability
+├ ƒ /api/checks/ssl
+├ ƒ /api/checks/wayback
+├ ƒ /api/health
+├ ƒ /api/journeys
+├ ƒ /api/journeys/[id]
+├ ƒ /api/projects
+├ ƒ /api/projects/[id]
+├ ƒ /api/projects/[id]/geo-question-history
+├ ƒ /api/projects/[id]/geo-summary
+├ ƒ /api/projects/[id]/ranking-summary
+├ ƒ /api/projects/[id]/research
+├ ƒ /api/projects/[id]/suggest-competitors
+├ ƒ /api/projects/[id]/suggest-keywords
+├ ƒ /api/rank-tracking/keywords
+├ ƒ /api/rank-tracking/keywords/[id]
+├ ƒ /api/rank-tracking/keywords/[id]/positions
+├ ƒ /api/rank-tracking/refresh
+├ ƒ /api/saliency/generate
+├ ƒ /api/saliency/result
+├ ƒ /api/scan
+├ ƒ /api/scan/[id]
+├ ƒ /api/scan/[id]/project
+├ ƒ /api/scan/[id]/screenshot
+├ ƒ /api/scan/[id]/summarize
+├ ƒ /api/scan/domain
+├ ƒ /api/scan/domain/[id]/journey
+├ ƒ /api/scan/domain/[id]/status
+├ ƒ /api/scan/domain/[id]/summarize
+├ ƒ /api/scan/domain/[id]/summary
+├ ƒ /api/scan/geo-eeat
+├ ƒ /api/scan/geo-eeat/[jobId]
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history/[runId]
+├ ƒ /api/scan/geo-eeat/[jobId]/project
+├ ƒ /api/scan/geo-eeat/[jobId]/rerun-competitive
+├ ƒ /api/scan/geo-eeat/[jobId]/status
+├ ƒ /api/scan/geo-eeat/history
+├ ƒ /api/scan/geo-eeat/suggest-competitors-queries
+├ ƒ /api/scan/journey-agent
+├ ƒ /api/scan/journey-agent/[jobId]
+├ ƒ /api/scan/journey-agent/[jobId]/live
+├ ƒ /api/scan/journey-agent/[jobId]/live/stream
+├ ƒ /api/scan/journey-agent/[jobId]/project
+├ ƒ /api/scan/journey-agent/[jobId]/video
+├ ƒ /api/scan/journey-agent/history
+├ ƒ /api/scans
+├ ƒ /api/scans/[id]
+├ ƒ /api/scans/domain
+├ ƒ /api/scans/domain/[id]
+├ ƒ /api/scans/domain/[id]/project
+├ ƒ /api/search
+├ ƒ /api/share
+├ ƒ /api/share/[token]
+├ ƒ /api/share/[token]/access
+├ ƒ /api/share/[token]/pages/[pageId]
+├ ƒ /api/share/[token]/pages/[pageId]/screenshot
+├ ƒ /api/share/[token]/video
+├ ƒ /api/share/by-resource
+├ ƒ /api/tools/contrast
+├ ƒ /api/tools/extract
+├ ƒ /api/tools/pagespeed
+├ ƒ /api/tools/readability
+├ ƒ /api/tools/ssl-labs
+├ ƒ /api/tools/wayback
+├ ƒ /developers
+├ ƒ /domain/[id]
+├ ƒ /geo-eeat/[jobId]
+├ ƒ /history
+├ ƒ /journey-agent/[jobId]
+├ ƒ /login
+├ ƒ /projects
+├ ƒ /projects/[id]
+├ ƒ /projects/[id]/geo
+├ ƒ /projects/[id]/rankings
+├ ƒ /projects/[id]/research
+├ ƒ /register
+├ ƒ /results/[id]
+├ ƒ /scan
+├ ƒ /scan/domain
+├ ƒ /settings
+└ ƒ /share/[token]
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build succeeded. Summary for the user.
+</details></think>
+
+---
+
+
+Die GEO-Seite zeigt jetzt oben eine Score-Karte wie die SEO-Seite. Umgesetzt wurde:
+
+**1. API `/api/projects/[id]/geo-summary` erweitert**
+- Neue Hilfsfunktion `getScoresFromCompetitive(payload, domains)` berechnet für beliebige Domains (inkl. Competitors) den 0–100-Score aus dem letzten vollständigen GEO-Run.
+- Response enthält zusätzlich `competitorScores: Record<string, number>` (Domain → Score). Competitor-Domains kommen aus den Projekteinstellungen und werden wie auf der Projektseite normalisiert.
+
+**2. GEO-Seite (`app/projects/[id]/geo/page.tsx`)**
+- State `geoSummary` mit `score` und `competitorScores`.
+- Beim Laden der Seite wird `apiProjectGeoSummary(id)` aufgerufen und das Ergebnis in `geoSummary` gespeichert.
+- Oben eine **Score-Karte** (wie bei Rankings):
+  - Titel: „GEO-Score“ (`projects.geoScore`).
+  - **Unser Score** mit Farblogik: grün ≥70, gelb ≥40, rot &lt;40.
+  - Darauf folgen die **Competitor-Scores** (Domain als Label, Score/100), dezent dargestellt.
+- Layout: Alles in einem `Stack` mit `gap: 2`, die Score-Karte ist das erste Element, danach Aktionen, Modell-Auswahl und Frage-Cards.
+
+Die Darstellung entspricht der Rankings-Seite: eine Karte mit „Unser Score“ und den Competitor-Scores nebeneinander. Build ist durchgelaufen.
+
+---
+
+_**User**_
+
+lass uns für die projekte seite die anzeige der deep scan results anpassen und es auf verschiedene seiten aufteilen. auf unserer hauptprojektseite würde ich gerne den domainscore DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-1ahjq4v > span.MuiBox-root c.-13o7eu2 > div.MuiBox-root c.-jkqe58 > div.MuiBox-root c.-1ge0qjq > div.MuiBox-root c.-i5fkh1
+Position: top=260px, left=104px, width=595px, height=299px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-i5fkh1" data-cursor-element-id="cursor-el-3986">Domain Score info 68 1000 Seiten gescannt</div>  als card abbilden und auch eine kumulierte performance durchschnitt inkl. eco score, also das was wir auf den single scans auch haben.
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants to adjust the display of deep scan results on the project page and split things across different pages. Specifically on the main project page they want:
+
+1. **Domain Score** – Show it as a card (the element they referenced: "Domain Score info 68 1000 Seiten gescannt")
+2. **Kumulierte Performance-Durchschnitt inkl. Eco Score** – Similar to what they have on single scans
+
+So I need to:
+1. Find where the domain score is currently displayed on the project page
+2. Find what "single scans" show for performance average and eco score
+3. Understand the data structure for deep scan results
+
+Let me search the codebase for these components and data structures. I'm in Ask mode so I can only read and explain; I'll provide guidance and references.
+</details></think>
+
+---
+
+
+Relevante Stellen suchen: wo der Domain Score angezeigt wird und wie Performance/Eco auf den Single-Scans dargestellt sind.
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "Domain Score|domainScore|domain.?score",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": true
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "Domain Score|domainScore|domain.?score",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 45,
+  "totalMatches": 95,
+  "topFiles": [
+    {
+      "uri": "./locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "./locales/de.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "./.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/domain/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/share/[token]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./.specstory/history/2026-02-23_09-14Z-system-overview-and-implementation.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./lib/spider.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "./knowledge/i18n-setup.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./Trace-20260219T213538.json",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/share/[token]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-23_09-14Z-system-overview-and-implementation.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/spider.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/knowledge/i18n-setup.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/Trace-20260219T213538.json",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "eco.?score|ecoScore|performance.*durchschnitt",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": true
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "eco.?score|ecoScore|performance.*durchschnitt",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 15,
+  "totalMatches": 15,
+  "topFiles": [
+    {
+      "uri": "./.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./lib/scanner.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/EcoCard.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/EcoCard.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/EcoCard.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/EcoCard.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/EcoCard.tsx",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "1000 Seiten gescannt|Seiten gescannt",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "1000 Seiten gescannt|Seiten gescannt",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 15,
+  "topFiles": [
+    {
+      "uri": "./locales/de.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "./Trace-20260219T213538.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/Trace-20260219T213538.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/Trace-20260219T213538.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/Trace-20260219T213538.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/Trace-20260219T213538.json",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The user mentioned "Hauptprojektseite" (main project page) - that's likely `app/projects/[id]/page.tsx`, not `app/domain/[id]/page.tsx`. The DOM path they gave (css-i5fkh1, "Domain Score info 68 1000 Seiten gescannt") might be on the project overview. Let me search for where deep scan / domain scan results are shown on the project page.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "deepScan|domainScan|domain.?scan|research",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "deepScan|domainScan|domain.?scan|research",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 190,
+  "topFiles": [
+    {
+      "uri": "app/projects/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/projects/[id]/research/page.tsx",
+      "matchCount": 36
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/research/page.tsx",
+      "matchCount": 36
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/research/page.tsx",
+      "matchCount": 36
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/research/page.tsx",
+      "matchCount": 36
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/research/page.tsx",
+      "matchCount": 36
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The user's DOM path mentions "Domain Score info 68 1000 Seiten gescannt" - that sounds like it could be on the research page where deep scan results are shown. Let me search for where this exact text or structure appears - "info", "68", "1000", "Seiten gescannt". The project page I just read doesn't show domain score or "1000 Seiten gescannt". So it might be on the research page or a component that shows deep scan/domain scan summary.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "domainScore|domain.*score|pagesScanned|Seiten gescannt",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "domainScore|domain.*score|pagesScanned|Seiten gescannt",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app",
+  "outputMode": "content",
+  "totalFiles": 35,
+  "totalMatches": 45,
+  "topFiles": [
+    {
+      "uri": "app/projects/[id]/geo/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/projects/[id]/geo-summary/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/projects/[id]/rankings/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/projects/[id]/ranking-summary/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/scan/domain/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/domain/[id]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "app/share/[token]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/geo/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/geo-summary/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/ranking-summary/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/scan/domain/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/share/[token]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/geo/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/geo-summary/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/ranking-summary/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/api/scan/domain/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/research/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "css-i5fkh1|i5fkh1",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "css-i5fkh1|i5fkh1",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 5,
+  "topFiles": [
+    {
+      "uri": "./Trace-20260219T213538.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/Trace-20260219T213538.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/Trace-20260219T213538.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/Trace-20260219T213538.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/Trace-20260219T213538.json",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The DOM path says "main" so it's inside the main content. The project page doesn't have Domain Score or "1000 Seiten gescannt". So the element the user is referring to might be:
+1. On the research page - but research page shows research result form, not domain score
+2. On the domain result page (domain/[id]) - that one has Domain Score and totalPages "pages scanned"
+
+So "Hauptprojektseite" might mean the project overview (projects/[id]) and the user wants to ADD the domain score there (from deep scan) as a card. So they want to pull deep scan summary (domain score + pages scanned) onto the main project page and also show "kumulierte Performance-Durchschnitt inkl. Eco Score" like on single scans.
+
+Let me find:
+1. Where deep scan / domain scan results are stored and how we get "domain score" and "pages scanned" for a project
+2. What "single scans" show for performance and eco score (results page or domain page)
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "apiProject|research|domainScan|domain.*scan",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "apiProject|research|domainScan|domain.*scan",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 50,
+  "topFiles": [
+    {
+      "uri": "app/api/projects/[id]/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/api/projects/[id]/research/route.ts",
+      "matchCount": 8
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/research/route.ts",
+      "matchCount": 8
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/research/route.ts",
+      "matchCount": 8
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/research/route.ts",
+      "matchCount": 8
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/research/route.ts",
+      "matchCount": 8
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/EcoCard.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So:
+1. **Domain result page** (`app/domain/[id]/page.tsx`) shows: Domain Score (ring with number), "X Seiten gescannt", Systemic Issues, EEAT. Data comes from `apiScanDomainSummary(domainId)` which returns `DomainSummaryResponse` with `score`, `totalPages`, etc.
+2. **Single scan** (results page) - I need to find where performance and Eco are shown. EcoCard uses `ScanResult.eco` (grade, co2, pageWeight).
+3. **Project** has `counts.domainScans` - so we know how many domain scans exist. We need an API that returns the latest domain scan summary for a project (score, pages scanned) and optionally aggregated performance + eco.
+
+Let me find: (1) how project is linked to domain scans, (2) API for domain summary by project, (3) where performance/eco are on single scan results.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-summary.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "performance|eco|EcoCard|PageSpeed",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "performance|eco|EcoCard|PageSpeed",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app",
+  "outputMode": "content",
+  "totalFiles": 150,
+  "totalMatches": 1045,
+  "topFiles": [
+    {
+      "uri": "app/projects/[id]/geo/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "app/api/projects/[id]/geo-summary/route.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "app/api/projects/[id]/geo-question-history/route.ts",
+      "matchCount": 14
+    },
+    {
+      "uri": "app/projects/[id]/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "app/projects/[id]/rankings/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "app/api/projects/[id]/ranking-summary/route.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "app/api/rank-tracking/keywords/[id]/positions/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/rank-tracking/keywords/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/rank-tracking/refresh/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/scan/domain/[id]/summary/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/scan/geo-eeat/[jobId]/rerun-competitive/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/tools/pagespeed/route.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "app/api/auth/profile/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/register/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "app/api/admin/users/[id]/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/settings/page.tsx",
+      "matchCount": 13
+    },
+    {
+      "uri": "app/api/scan/journey-agent/[jobId]/video/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/api/scan/journey-agent/[jobId]/route.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "app/api/share/[token]/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "app/scan/page.tsx",
+      "matchCount": 7
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So the project has `counts.domainScans` but we don't have an API that returns the latest domain scan's summary (score, pages scanned, aggregated performance, aggregated eco) for a project. The domain summary is fetched by domain scan id: `apiScanDomainSummary(domainId)`.
+
+I need to find: how do we get from project to the latest domain scan? Likely domain_scans table has project_id. Let me check the scans DB and how domain summary is served.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/domain/[id]/summary/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "domain_scans|domainScans|getDomainScan",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "domain_scans|domainScans|getDomainScan",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db",
+  "outputMode": "content",
+  "totalFiles": 40,
+  "totalMatches": 245,
+  "topFiles": [
+    {
+      "uri": "lib/db/schema.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "lib/db/migrations/0004_drop_user_id_fk_for_plexon.sql",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/db/scans.ts",
+      "matchCount": 31
+    },
+    {
+      "uri": "lib/db/migrations/0002_projects.sql",
+      "matchCount": 3
+    },
+    {
+      "uri": "lib/db/migrations/0001_geo_eeat_runs.sql",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/db/migrations/meta/0000_snapshot.json",
+      "matchCount": 5
+    },
+    {
+      "uri": "lib/db/migrations/0000_add_llm_summary.sql",
+      "matchCount": 2
+    },
+    {
+      "uri": "lib/db/journeys.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/schema.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/migrations/0004_drop_user_id_fk_for_plexon.sql",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/scans.ts",
+      "matchCount": 31
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/migrations/0002_projects.sql",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/migrations/0001_geo_eeat_runs.sql",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/migrations/meta/0000_snapshot.json",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/migrations/0000_add_llm_summary.sql",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/journeys.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/schema.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/migrations/0004_drop_user_id_fk_for_plexon.sql",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/scans.ts",
+      "matchCount": 31
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/migrations/0002_projects.sql",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I have a good picture now. Let me look at aggregatePerformance and aggregateEco to see their return types, and whether there's already a way to get "latest domain scan for project".
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "aggregatePerformance|aggregateEco",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts",
+  "contextAfter": 15,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "aggregatePerformance|aggregateEco",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 10,
+  "topFiles": [
+    {
+      "uri": "lib/domain-aggregation.ts",
+      "matchCount": 32
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-aggregation.ts",
+      "matchCount": 32
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-aggregation.ts",
+      "matchCount": 32
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-aggregation.ts",
+      "matchCount": 32
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-aggregation.ts",
+      "matchCount": 32
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/scans.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I have a clear picture. Let me summarize for the user:
+
+**Current state:**
+1. **Hauptprojektseite** = `app/projects/[id]/page.tsx` – zeigt aktuell: Unternehmensinfo, Ranking-Score, GEO-Score, Wettbewerber. Es gibt **keine** Anzeige von Domain Score oder "1000 Seiten gescannt" dort. Der User bezieht sich vermutlich auf die **Domain-Ergebnisseite** (`app/domain/[id]/page.tsx`), wo Domain Score + "X Seiten gescannt" in einer MsqdxCard (kein MoleculeCard) angezeigt werden – oder er möchte genau dieses Element auf die Projektseite bringen.
+
+2. **Deep Scan Results** kommen von Domain Scans. Ein Projekt hat `counts.domainScans`. Die Daten kommen von:
+   - `listDomainScanSummaries(userId, { projectId })` → Liste mit id, domain, timestamp, status, score, totalPages
+   - Für Full Summary (inkl. aggregated.performance, aggregated.eco): `getDomainScanWithProjectId(scanId, userId)` + `buildDomainSummary(row.result)` → liefert `DomainSummaryResponse` mit `score`, `totalPageCount`, `aggregated.performance`, `aggregated.eco`
+
+3. **Single Scans** (results page) zeigen Performance und Eco z.B. über EcoCard (eco: grade, co2, pageWeight) und vermutlich eine Performance-Anzeige. Die Domain-Seite (Tab Overview) hat die Domain-Score-Card und Systemic Issues; Performance/Eco könnten in anderen Tabs sein.
+
+**Was der User will:**
+- Auf der **Hauptprojektseite** (projects/[id]):  
+  - **Domain Score als Card** abbilden (wie auf der Domain-Seite: Score + "X Seiten gescannt")  
+  - **Kumulierter Performance-Durchschnitt inkl. Eco Score** – also das, was bei Single Scans (bzw. auf der Domain-Ergebnisseite) angezeigt wird: aggregated performance (avgTtfb, avgFcp, avgLcp, …) und aggregated eco (avgCo2, grade, totalPageWeight)
+
+**Umsetzung (nur als Anleitung, da Ask-Mode):**
+1. **API für Projekt-Domain-Summary:** Neue Route z.B. `GET /api/projects/[id]/domain-summary` die:
+   - den **letzten** Domain-Scan des Projekts lädt (`listDomainScanSummaries` mit projectId, limit 1, oder direkt den neuesten Scan mit Payload),
+   - `buildDomainSummary` aufruft,
+   - zurückgibt: `{ success, data: { scanId, score, totalPageCount, aggregated: { performance, eco } } }` (oder den kompletten aggregated-Block falls nötig).
+
+2. **Projektseite anpassen:**  
+   - Domain-Summary per API laden.  
+   - Zwei Cards einbauen (z.B. mit MsqdxMoleculeCard wie Ranking/GEO):  
+     - **Card 1 – Domain Score:** Titel "Domain-Score" (oder vorhandener i18n-Key), Score (Ring oder große Zahl), "X Seiten gescannt", optional Link "Zum Deep Scan" → `/domain/[latestScanId]`.  
+     - **Card 2 – Performance & Eco:** Kumulierter Durchschnitt: Performance (z.B. avg TTFB, FCP, LCP) und Eco (Grade, CO2, ggf. MB Transfer) – Darstellung wie auf Single-Scan/domain page, z.B. Wiederverwendung von EcoCard-Logik und einer Performance-Anzeige.
+
+3. **Aufteilen auf verschiedene Seiten:** Der User sagte "auf verschiedene Seiten aufteilen" – das könnte bedeuten: Die detaillierten Deep-Scan-Ergebnisse (alle Tabs wie Visual Map, List Details, UX, etc.) bleiben auf `/domain/[id]`, und auf der Projektseite nur die **Zusammenfassung** (Domain Score + Performance/Eco) als Cards. Oder eine eigene Unterroute z.B. `projects/[id]/domain` für Domain-Scan-Übersicht.
+
+Ich fasse das für den User strukturiert zusammen.
+</details></think>
+
+---
+
+
+Wo die Domain-Score-Anzeige und die Performance-/Eco-Daten herkommen und wie du sie auf der Projektseite unterbringen kannst:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "EcoCard|performance|aggregated\\.(performance|eco)",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "EcoCard|performance|aggregated\\.(performance|eco)",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain",
+  "outputMode": "content",
+  "totalFiles": 0,
+  "totalMatches": 0,
+  "topFiles": []
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So on the domain page they don't use EcoCard or show aggregated.performance/eco in the overview - they're in the domain summary response. Let me check where EcoCard is used (single scan results page).
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "EcoCard|aggregated\\.(performance|eco)",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "EcoCard|aggregated\\.(performance|eco)",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 20,
+  "topFiles": [
+    {
+      "uri": "./app/results/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./components/EcoCard.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/components/EcoCard.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/components/EcoCard.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/components/EcoCard.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/components/EcoCard.tsx",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So:
+- **Single scan** (`app/results/[id]/page.tsx`) uses `EcoCard` with `result.eco` (single page: grade, co2, pageWeight).
+- **Domain page** has `result.aggregated` (performance, eco, etc.) but I didn't see Performance/Eco explicitly in the overview tab – they might be in another tab. The DomainSummaryResponse has `aggregated.performance` and `aggregated.eco` (AggregatedPerformance: avgTtfb, avgFcp, avgLcp, avgDomLoad, pageCount; AggregatedEco: avgCo2, totalPageWeight, gradeDistribution, pageCount). EcoCard expects a single `eco` with grade, co2, pageWeight – for aggregated we'd need a small adapter (e.g. dominant grade from gradeDistribution, avgCo2, totalPageWeight or avg).
+
+I now have enough to write a clear answer for the user.
+</details></think>
+
+---
+
+
+Hier die Kurzfassung und eine konkrete Umsetzungsanleitung:
+
+---
+
+## Wo die Anzeigen herkommen
+
+- **„Domain Score“ + „X Seiten gescannt“**  
+  Stehen aktuell nur auf der **Domain-Ergebnisseite** `app/domain/[id]/page.tsx` (Tab „Übersicht“), in einer `MsqdxCard` mit Score-Ring und `result.totalPages` + `t('domainResult.pagesScanned')`.  
+  Daten: `apiScanDomainSummary(domainId)` → `DomainSummaryResponse` mit `score`, `totalPageCount`, `aggregated`.
+
+- **Performance- und Eco-Anzeige wie bei Single Scans**  
+  - **Single Scan:** `app/results/[id]/page.tsx` nutzt `<EcoCard eco={result.eco} />` (einzelne Seite: `grade`, `co2`, `pageWeight`).  
+  - **Domain (Deep Scan):** Dieselben Werte gibt es **aggregiert** in `result.aggregated.performance` und `result.aggregated.eco` (siehe `lib/domain-summary.ts` und `lib/domain-aggregation.ts`).  
+  - `AggregatedPerformance`: `avgTtfb`, `avgFcp`, `avgLcp`, `avgDomLoad`, `pageCount`.  
+  - `AggregatedEco`: `avgCo2`, `totalPageWeight`, `gradeDistribution`, `pageCount`.  
+  Auf der Domain-Seite werden diese Aggregates aktuell nicht in der Übersicht gezeigt (nur z. B. Issues in anderen Tabs).
+
+---
+
+## Was du umsetzen musst
+
+### 1. Daten für die Projektseite
+
+- Es gibt **keine** API „letzter Domain-Scan eines Projekts inkl. aggregated“.  
+- `lib/db/scans.ts` bietet:
+  - `listDomainScanSummaries(userId, { projectId, limit: 1 })` → nur Metadaten (id, score, totalPages),
+  - `listDomainScans(userId, { projectId, limit: 1 })` → volle Payloads (für `buildDomainSummary`).
+- Du brauchst eine **neue Projekt-API**, z. B. **`GET /api/projects/[id]/domain-summary`**, die:
+  - den **neuesten** Domain-Scan des Projekts lädt (z. B. `listDomainScans(userId, { projectId, limit: 1 })`),
+  - `buildDomainSummary(scanPayload)` aus `lib/domain-summary` aufruft,
+  - zurückgibt: z. B.  
+    `{ success: true, data: { scanId, score, totalPageCount, aggregated: { performance, eco } } }`  
+    (und optional mehr von `aggregated`, falls du es später brauchst).
+
+### 2. Hauptprojektseite: zwei Cards
+
+Auf **`app/projects/[id]/page.tsx`**:
+
+- **Card 1 – Domain Score (wie auf der Domain-Seite)**  
+  - Mit `MsqdxMoleculeCard` (analog zu Ranking-Score/GEO), Titel z. B. „Domain-Score“ (z. B. `domainResult.domainScore` oder eigener Key).  
+  - Inhalt: großer Score (Zahl oder Ring wie in `app/domain/[id]/page.tsx` Zeilen 198–212), darunter „X Seiten gescannt“ (`pagesScanned` / `totalPageCount`).  
+  - Optional: Info-Tooltip wie auf der Domain-Seite (`info.domainScore`).  
+  - Wenn `scanId` vorhanden: Link „Zum Deep Scan“ → `pathDomain(scanId)` (oder wie eure Route heißt).
+
+- **Card 2 – Kumulierter Performance-Durchschnitt + Eco Score**  
+  - Daten aus `data.aggregated.performance` und `data.aggregated.eco`.  
+  - **Performance:** z. B. TTFB, FCP, LCP (und ggf. DOM Load) als Durchschnittswerte anzeigen, gleiche Metriken wie auf den Single-Scans.  
+  - **Eco:**  
+    - `EcoCard` erwartet ein einzelnes `eco`: `{ grade, co2, pageWeight }`.  
+    - Für Aggregat: entweder eine **kleine Adapter-Komponente** „AggregatedEcoCard“, die `aggregated.eco` nimmt (z. B. `avgCo2`, `totalPageWeight/pageCount`, dominanter `grade` aus `gradeDistribution`) und daraus ein `eco`-ähnliches Objekt für die Anzeige baut, **oder** du baust die Anzeige (Grade, CO2, MB Transfer) direkt in der Card ohne `EcoCard`, aber mit dem gleichen Look (wie in `components/EcoCard.tsx`).
+
+Konstanten/URLs für Domain-Link in `lib/constants.ts` halten (keine Hardcodings).
+
+### 3. „Auf verschiedene Seiten aufteilen“
+
+- **Projektseite** = nur Übersicht: Domain-Score-Card + Performance/Eco-Card (+ ggf. Link zum letzten Deep Scan).  
+- **Detail/Deep Scan** = weiterhin **`/domain/[id]`** mit allen Tabs (Visual Map, Issues, UX, etc.).  
+- Optional: eigene Subroute z. B. **`/projects/[id]/domain`** nur für „alle Domain-Scans dieses Projekts“ (Liste + Auswahl), wenn ihr die Liste nicht woanders zeigen wollt.
+
+---
+
+## Relevante Stellen im Code
+
+| Was | Wo |
+|-----|-----|
+| Domain-Score + Seiten gescannt (Referenz) | `app/domain/[id]/page.tsx` ca. 193–215 |
+| Domain-Summary bauen (inkl. performance/eco) | `lib/domain-summary.ts` (buildDomainSummary, DomainSummaryResponse) |
+| Aggregates Performance/Eco | `lib/domain-aggregation.ts` (AggregatedPerformance, AggregatedEco, aggregatePerformance, aggregateEco) |
+| Eco-Darstellung Single Scan | `components/EcoCard.tsx` (Props: grade, co2, pageWeight) |
+| Domain-Scans pro Projekt laden | `lib/db/scans.ts`: listDomainScanSummaries, listDomainScans mit `projectId` |
+| Domain-Summary pro Scan-ID | `app/api/scan/domain/[id]/summary/route.ts` (getDomainScanWithProjectId + buildDomainSummary) |
+
+Wenn du willst, kann ich im **Agent-Modus** die neue API `GET /api/projects/[id]/domain-summary` und die beiden Cards auf der Projektseite konkret ausformulieren (inkl. Typen und Pfade).
+
+---
+
+_**User**_
+
+lets go
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants me to implement the domain summary on the project page: API for project domain summary, Domain Score card, and Performance + Eco card. I'll do this in agent mode now.
+
+Plan:
+1. Add `GET /api/projects/[id]/domain-summary` that loads the latest domain scan for the project and returns score, totalPageCount, aggregated.performance, aggregated.eco, scanId.
+2. Add constant for the new API in lib/constants.ts.
+3. On app/projects/[id]/page.tsx: fetch domain summary, add Domain Score card (MsqdxMoleculeCard with score + pages scanned, link to domain scan), add Performance + Eco card (aggregated metrics; for eco either adapt EcoCard or build inline with same look).
+4. Check path for domain scan - need pathDomain or similar in constants.
+
+Let me start implementing.
+</details></think>
+
+---
+
