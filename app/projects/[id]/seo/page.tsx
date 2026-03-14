@@ -260,10 +260,7 @@ export default function ProjectSeoPage() {
                         variant="flat"
                         borderRadius="lg"
                         footerDivider={false}
-                        sx={{
-                            bgcolor: 'var(--color-card-bg)',
-                            border: '1px solid var(--color-secondary-dx-green)',
-                        }}
+                        sx={{ bgcolor: 'var(--color-card-bg)' }}
                     >
                         <Box
                             sx={{
@@ -293,6 +290,7 @@ export default function ProjectSeoPage() {
                             <MsqdxMoleculeCard
                                 title={t('projects.seo.overview')}
                                 subtitle={t('projects.seo.overviewSubtitle')}
+                                titleVariant="h6"
                                 variant="flat"
                                 borderRadius="lg"
                                 sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-secondary-dx-green)' }}
@@ -419,9 +417,14 @@ export default function ProjectSeoPage() {
                             <MsqdxMoleculeCard
                                 title={t('projects.seo.tableTitle')}
                                 subtitle={t('projects.seo.pagesByContentSubtitle')}
+                                titleVariant="h6"
                                 variant="flat"
                                 borderRadius="lg"
-                                sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-secondary-dx-green)' }}
+                                sx={{
+                                    bgcolor: 'var(--color-card-bg)',
+                                    border: '1px solid var(--color-secondary-dx-green)',
+                                    '& p.MuiTypography-body2': { color: '#000' },
+                                }}
                             >
                                 <SeoOnPageTable rows={seoTableRows} onRowClick={handleSeoRowClick} />
                             </MsqdxMoleculeCard>

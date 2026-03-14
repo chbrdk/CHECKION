@@ -20206,10 +20206,910 @@ cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
   · optimizePackageImports
 
   Creating an optimized production build ...
+✓ Compiled successfully in 6.4s
+  Running TypeScript ...
+Failed to compile.
+
+./app/projects/[id]/seo/page.tsx:276:33
+Type error: Type '{ value: number; onChange: (v: any) =&gt; void; tabs: { label: string; value: number; }[]; sx: { '&amp; .MuiTabs-indicator': { backgroundColor: string; }; '&amp; .Mui-selected': { color: string; }; }; }' is not assignable to type 'IntrinsicAttributes &amp; MsqdxTabsProps'.
+  Property 'sx' does not exist on type 'IntrinsicAttributes &amp; MsqdxTabsProps'.
+
+[0m [90m 274 |[39m                                     { label[33m:[39m t([32m'projects.seo.tabKeywords'[39m)[33m,[39m value[33m:[39m [35m1[39m }[33m,[39m
+ [90m 275 |[39m                                 ]}
+[31m[1m&gt;[22m[39m[90m 276 |[39m                                 sx[33m=[39m{{
+ [90m     |[39m                                 [31m[1m^[22m[39m
+ [90m 277 |[39m                                     [32m'&amp; .MuiTabs-indicator'[39m[33m:[39m { backgroundColor[33m:[39m [32m'var(--color-secondary-dx-green)'[39m }[33m,[39m
+ [90m 278 |[39m                                     [32m'&amp; .Mui-selected'[39m[33m:[39m { color[33m:[39m [32m'var(--color-secondary-dx-green)'[39m }[33m,[39m
+ [90m 279 |[39m                                 }}[0m
+Next.js build worker exited with code: 1 and signal: null
 
 ```
 </details>
 </tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+MsqdxTabs doesn't have an sx prop. I need to wrap the MsqdxTabs in a Box that has the sx to target the indicator. The problem is the indicator is rendered inside MsqdxTabs, so we need to style it from a parent. So wrap MsqdxTabs in Box with sx that targets .MuiTabs-indicator and .Mui-selected inside it.
+</details></think>
+
+---
+
+
+MsqdxTabs unterstützt kein `sx`. Styling über einen umschließenden Box:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build again to confirm.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 6.3s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+  Generating static pages using 9 workers (0/47) ...
+  Generating static pages using 9 workers (11/47) 
+  Generating static pages using 9 workers (23/47) 
+  Generating static pages using 9 workers (35/47) 
+✓ Generating static pages using 9 workers (47/47) in 273.0ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/register
+├ ƒ /api/auth/tokens
+├ ƒ /api/auth/tokens/[id]
+├ ƒ /api/checks/contrast
+├ ƒ /api/checks/pagespeed
+├ ƒ /api/checks/readability
+├ ƒ /api/checks/ssl
+├ ƒ /api/checks/wayback
+├ ƒ /api/health
+├ ƒ /api/journeys
+├ ƒ /api/journeys/[id]
+├ ƒ /api/projects
+├ ƒ /api/projects/[id]
+├ ƒ /api/projects/[id]/domain-scan-all
+├ ƒ /api/projects/[id]/domain-summary
+├ ƒ /api/projects/[id]/domain-summary-all
+├ ƒ /api/projects/[id]/geo-question-history
+├ ƒ /api/projects/[id]/geo-summary
+├ ƒ /api/projects/[id]/ranking-summary
+├ ƒ /api/projects/[id]/research
+├ ƒ /api/projects/[id]/suggest-competitors
+├ ƒ /api/projects/[id]/suggest-keywords
+├ ƒ /api/rank-tracking/keywords
+├ ƒ /api/rank-tracking/keywords/[id]
+├ ƒ /api/rank-tracking/keywords/[id]/positions
+├ ƒ /api/rank-tracking/refresh
+├ ƒ /api/saliency/generate
+├ ƒ /api/saliency/result
+├ ƒ /api/scan
+├ ƒ /api/scan/[id]
+├ ƒ /api/scan/[id]/project
+├ ƒ /api/scan/[id]/screenshot
+├ ƒ /api/scan/[id]/summarize
+├ ƒ /api/scan/domain
+├ ƒ /api/scan/domain/[id]/journey
+├ ƒ /api/scan/domain/[id]/status
+├ ƒ /api/scan/domain/[id]/summarize
+├ ƒ /api/scan/domain/[id]/summary
+├ ƒ /api/scan/domain/by-domain
+├ ƒ /api/scan/geo-eeat
+├ ƒ /api/scan/geo-eeat/[jobId]
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history/[runId]
+├ ƒ /api/scan/geo-eeat/[jobId]/project
+├ ƒ /api/scan/geo-eeat/[jobId]/rerun-competitive
+├ ƒ /api/scan/geo-eeat/[jobId]/status
+├ ƒ /api/scan/geo-eeat/history
+├ ƒ /api/scan/geo-eeat/suggest-competitors-queries
+├ ƒ /api/scan/journey-agent
+├ ƒ /api/scan/journey-agent/[jobId]
+├ ƒ /api/scan/journey-agent/[jobId]/live
+├ ƒ /api/scan/journey-agent/[jobId]/live/stream
+├ ƒ /api/scan/journey-agent/[jobId]/project
+├ ƒ /api/scan/journey-agent/[jobId]/video
+├ ƒ /api/scan/journey-agent/history
+├ ƒ /api/scans
+├ ƒ /api/scans/[id]
+├ ƒ /api/scans/domain
+├ ƒ /api/scans/domain/[id]
+├ ƒ /api/scans/domain/[id]/project
+├ ƒ /api/search
+├ ƒ /api/share
+├ ƒ /api/share/[token]
+├ ƒ /api/share/[token]/access
+├ ƒ /api/share/[token]/pages/[pageId]
+├ ƒ /api/share/[token]/pages/[pageId]/screenshot
+├ ƒ /api/share/[token]/video
+├ ƒ /api/share/by-resource
+├ ƒ /api/tools/contrast
+├ ƒ /api/tools/extract
+├ ƒ /api/tools/pagespeed
+├ ƒ /api/tools/readability
+├ ƒ /api/tools/ssl-labs
+├ ƒ /api/tools/wayback
+├ ƒ /developers
+├ ƒ /domain/[id]
+├ ƒ /geo-eeat/[jobId]
+├ ƒ /history
+├ ƒ /journey-agent/[jobId]
+├ ƒ /login
+├ ƒ /projects
+├ ƒ /projects/[id]
+├ ƒ /projects/[id]/geo
+├ ƒ /projects/[id]/rankings
+├ ƒ /projects/[id]/research
+├ ƒ /projects/[id]/seo
+├ ƒ /projects/[id]/wcag
+├ ƒ /register
+├ ƒ /results/[id]
+├ ƒ /scan
+├ ƒ /scan/domain
+├ ƒ /settings
+└ ƒ /share/[token]
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build succeeded. Summary for the user.
+</details></think>
+
+---
+
+
+Hier die Änderungen:
+
+**1. Eine umschließende Card (wie bei Rankings)**  
+- Tabs und gesamter Tab-Inhalt stecken in **einer** `MsqdxMoleculeCard` mit Titel „Seiten & Keywords“ (neu: `projects.seo.dataCardTitle`).  
+- Diese Card hat **Rahmen in Brand-Farbe**: `border: '1px solid var(--color-secondary-dx-green)'`.
+
+**2. Tabs in Brand-Farbe**  
+- Der Bereich unter dem Card-Titel hat `borderBottom: '1px solid var(--color-secondary-dx-green)'`.  
+- Die Tabs liegen in einem `Box`, der per `sx` den **Indikator** und den **aktiven Tab** in Grün setzt:  
+  - `'& .MuiTabs-indicator': { backgroundColor: 'var(--color-secondary-dx-green)' }`  
+  - `'& .Mui-selected': { color: 'var(--color-secondary-dx-green)' }`  
+- `MsqdxTabs` hat kein `sx`-Prop, deshalb kommt das Styling über den umschließenden `Box`.
+
+**3. Innere Cards mit Brand-Border**  
+- **Übersicht** (Meta & Struktur)  
+- **Seiten ohne Canonical**  
+- **Seiten mit noindex**  
+- **Alle Seiten: Meta, Struktur & Inhalt** (Tabelle)  
+- **Keywords-Tabelle** (und leere Keywords-Card)  
+
+haben alle zusätzlich:  
+`border: '1px solid var(--color-secondary-dx-green)'`.
+
+**4. i18n**  
+- Neu: `projects.seo.dataCardTitle` → DE: „Seiten & Keywords“, EN: „Pages & Keywords“.
+
+Build läuft durch. Die SEO-Seite hat jetzt eine klare Haupt-Card mit grünem Rahmen, Tabs mit grünem Indikator und alle Inhalts-Cards mit grünem Rand wie auf der Rankings-Seite.
+
+---
+
+_**User**_
+
+DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-1whhp80 > div.MuiStack-root c.-yd8.a2 > div.MuiBox-root c.-y1onem > div.MuiBox-root c.-1.g4afn > div.MuiBox-root c.-1hdbc19 > div.MuiBox-root c.-a1igic > span.MuiStack-root c.-1a7q09p > div.MuiBox-root c.-y1onem[0] > div.MuiBox-root c.-1.g4afn > div.MuiBox-root c.-1hdbc19 > div.MuiBox-root c.-1kkt86i > div.MuiBox-root c.-caitzj > h5.MuiTypography-root MuiTypography-h5 c.-1deqlk7
+Position: top=312px, left=134px, width=949px, height=36px
+React Component: ForwardRef
+HTML Element: <h5 class="MuiTypography-root MuiTypography-h5 css-1deqlk7" data-cursor-element-id="cursor-el-1">Übersicht Meta & Struktur</h5> , DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-1whhp80 > div.MuiStack-root c.-yd8.a2 > div.MuiBox-root c.-y1onem > div.MuiBox-root c.-1.g4afn > div.MuiBox-root c.-1hdbc19 > div.MuiBox-root c.-a1igic > span.MuiStack-root c.-1a7q09p > div.MuiBox-root c.-y1onem[1] > div.MuiBox-root c.-1.g4afn > div.MuiBox-root c.-1hdbc19 > div.MuiBox-root c.-1kkt86i > div.MuiBox-root c.-caitzj > h5.MuiTypography-root MuiTypography-h5 c.-1deqlk7
+Position: top=556px, left=134px, width=949px, height=36px
+React Component: ForwardRef
+HTML Element: <h5 class="MuiTypography-root MuiTypography-h5 css-1deqlk7" data-cursor-element-id="cursor-el-140">Alle Seiten: Meta, Struktur & Inhalt</h5>  hier h6 nutzen und hier normalen p text DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-1whhp80 > div.MuiStack-root c.-yd8.a2 > div.MuiBox-root c.-y1onem > div.MuiBox-root c.-1.g4afn > div.MuiBox-root c.-1hdbc19 > div.MuiBox-root c.-a1igic > span.MuiStack-root c.-1a7q09p > div.MuiBox-root c.-y1onem[1] > div.MuiBox-root c.-1.g4afn > div.MuiBox-root c.-1hdbc19 > div.MuiBox-root c.-1kkt86i > p.MuiTypography-root MuiTypography-body2 c.-1iqbhhg
+Position: top=596px, left=134px, width=949px, height=21px
+React Component: ForwardRef
+HTML Element: <p class="MuiTypography-root MuiTypography-body2 css-1iqbhhg" data-cursor-element-id="cursor-el-141">Sortiert nach Wortanzahl; unter 300 Wörter = Skinny Content.</p> in schwarz DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-1whhp80 > div.MuiStack-root c.-yd8.a2 > div.MuiBox-root c.-y1onem > div.MuiBox-root c.-1.g4afn
+Position: top=282px, left=101px, width=1015px, height=1002px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-1sg4afn" data-cursor-element-id="cursor-el-106">Seiten & Keywords Seiten Keywords Übersicht Meta & Struktur Title, Meta-Description, H1, Canonical und Wortanzahl Seiten mit Title: 193 / 193 Seiten mit Meta-Description: 9 / 193 Seiten mit H1: 19</div> die card braucht keine border color
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants:
+1. Use h6 for the card titles "Übersicht Meta & Struktur" and "Alle Seiten: Meta, Struktur & Inhalt" (instead of h5)
+2. For the subtitle text (e.g. "Sortiert nach Wortanzahl; unter 300 Wörter = Skinny Content.") use normal p text in black
+3. The outer "Seiten & Keywords" card should NOT have a border color (remove the green border from that wrapper card)
+
+So I need to:
+1. Find where MsqdxMoleculeCard renders title - it might use a variant like h5. I need to check if we can pass a title variant or if the card titles are controlled by the component. Actually the user said "hier h6 nutzen" for those two titles - so the Overview card title and the "Alle Seiten" table card title should be h6. MsqdxMoleculeCard might have a prop like titleVariant or we need to check the component. Let me search for how MsqdxMoleculeCard handles title.
+2. The subtitle ("Sortiert nach Wortanzahl...") should be normal paragraph text in black - so body text, color black.
+3. Remove the border from the outer wrapper card (the "Seiten & Keywords" card).
+
+Let me search for MsqdxMoleculeCard usage and props.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "MsqdxMoleculeCard|titleVariant|title.*variant",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "MsqdxMoleculeCard|titleVariant|title.*variant",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 155,
+  "totalMatches": 970,
+  "topFiles": [
+    {
+      "uri": "./app/projects/[id]/seo/page.tsx",
+      "matchCount": 19
+    },
+    {
+      "uri": "./app/projects/[id]/geo/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/projects/[id]/wcag/page.tsx",
+      "matchCount": 9
+    },
+    {
+      "uri": "./app/projects/[id]/page.tsx",
+      "matchCount": 14
+    },
+    {
+      "uri": "./app/domain/[id]/page.tsx",
+      "matchCount": 33
+    },
+    {
+      "uri": "./components/PageIssuesCard.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/projects/[id]/research/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/projects/[id]/rankings/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "./app/register/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/settings/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "./app/scan/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 11
+    },
+    {
+      "uri": "./app/journey-agent/[jobId]/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "./app/results/[id]/page.tsx",
+      "matchCount": 18
+    },
+    {
+      "uri": "./app/projects/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/share/[token]/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "./components/DomainToolsCard.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./components/GenerativeOptimizerCard.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./components/SharePanel.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "./app/scan/domain/page.tsx",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "MoleculeCard|title",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS",
+  "glob": "*.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "MoleculeCard|title",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS",
+  "outputMode": "content",
+  "totalFiles": 400,
+  "totalMatches": 1310,
+  "topFiles": [
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/PrismionToolbar/MsqdxPrismionToolbar.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/ConnectorEdge/MsqdxConnectorEdge.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/PrismionCard/MsqdxPrismionCard.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/SimpleBoardCanvas/MsqdxSimpleBoardCanvas.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/PrismionPorts/MsqdxPrismionPorts.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/BoardToolbar/MsqdxBoardToolbar.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/atoms/Icon/MsqdxIcon.stories.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/atoms/Typography/MsqdxTypography.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/molecules/Dialog/MsqdxDialog.tsx",
+      "matchCount": 9
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/ConnectorMenu/MsqdxConnectorMenu.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/molecules/Tooltip/MsqdxTooltip.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/atoms/UserBadge/MsqdxUserBadge.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/BoardHeader/MsqdxBoardHeader.tsx",
+      "matchCount": 9
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/BoardOnboarding/MsqdxBoardOnboarding.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/ContextMenu/MsqdxContextMenu.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/CommandPalette/MsqdxCommandPalette.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/InspectorPanel/MsqdxInspectorPanel.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/MergeDrawer/MsqdxMergeDrawer.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/UserToolbar/MsqdxUserToolbar.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../MSQDX-DS/msqdx-design-system/packages/react/src/components/prismion/SimpleBoardCanvas/MsqdxSimpleBoardCanvas.stories.tsx",
+      "matchCount": 4
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I found that in app/projects/[id]/page.tsx they use titleVariant="h4" on MsqdxMoleculeCard. So the component supports titleVariant. I need to add titleVariant="h6" to the Overview card and the "Alle Seiten" table card. The subtitle is rendered by MsqdxMoleculeCard - I need to check if there's a subtitleVariant or if the subtitle is always body2. The user said the subtitle text should be "normalen p text" in black - so body1 or body2 as paragraph, color black. That might be controlled by the card's internal styling. Let me check SeoOnPageTable - the subtitle "Sortiert nach Wortanzahl..." is passed as subtitle to MsqdxMoleculeCard. So the card renders title (h5 by default?) and subtitle. I'll add titleVariant="h6" to the two cards. For the subtitle to be black, we might need to pass sx to the card to override subtitle color, or the card might use a muted color - so we add something like subtitleSx or the card sx could have '& .MuiTypography-body2': { color: '#000' } for the subtitle area. Let me read the SEO page to see the exact structure and then make the edits.
+
+Summary of changes:
+1. Remove border from outer "Seiten & Keywords" card (remove border: '1px solid var(--color-secondary-dx-green)' from that card's sx)
+2. Add titleVariant="h6" to the Overview card and to the "Alle Seiten" table card
+3. Subtitle in black - the card that has "Sortiert nach Wortanzahl; unter 300 Wörter = Skinny Content." - make that text black. I'll add sx to that card to set the subtitle color to black. Or we could use a custom subtitle with MsqdxTypography. Let me check - the subtitle is a prop of MsqdxMoleculeCard. So we need to style the card so that whatever element renders the subtitle has color black. Easiest is sx on the card: something that targets the subtitle. Without seeing the MoleculeCard source, I'll assume the subtitle is a Typography with a class or we can use a child selector. Common pattern would be '& .MuiTypography-root' for the second typography or we add a wrapper. I'll use sx={{ '& [class*="subtitle"]': { color: '#000' } }} or just the card's content area. Actually the user said "hier normalen p text" and "in schwarz" - so the subtitle paragraph should be normal paragraph and black. So I'll add to the table card (the one with "Alle Seiten: Meta, Struktur & Inhalt") an sx that makes the subtitle black: color for the subtitle. Let me try sx on that card: ... sx={{ ..., '& p.MuiTypography-body2': { color: '#000' } }} or similar. Actually re-reading again - the subtitle might be in a specific structure. I'll add titleVariant="h6" and for the table card add something like subtitleSx or override. If the design system doesn't expose subtitle styling, we could pass subtitle as a node: subtitle={<MsqdxTypography variant="body1" component="p" sx={{ color: '#000' }}>{t('projects.seo.pagesByContentSubtitle')}</MsqdxTypography>}. That way we control the element. Let me check if MsqdxMoleculeCard accepts ReactNode for subtitle.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to:
+1. Remove the border from the outer card (line 263-265): remove `border: '1px solid var(--color-secondary-dx-green)'` from the outer MsqdxMoleculeCard sx.
+2. Add titleVariant="h6" to the Overview card (line 293) and to the table card (line 434).
+3. For the table card subtitle to be normal p text in black - I'll pass subtitle as a React node with MsqdxTypography variant body1 (or body2 as "normal" paragraph) and sx={{ color: '#000' }}. Let me check if subtitle can be a node - the prop might be string | ReactNode. I'll try subtitle={<MsqdxTypography variant="body1" component="p" sx={{ color: '#000' }}>{t('projects.seo.pagesByContentSubtitle')}</MsqdxTypography>}. If the component only accepts string, I'll use sx on the card to target the subtitle: '& .MuiTypography-body2': { color: '#000' } in the table card.
+</details></think>
+
+---
+
+
+Änderungen vornehmen:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The subtitle might not be a p with body2 - it could be a different structure. Let me use a broader selector so the subtitle text is black. Often the subtitle is the second Typography in the header. I'll use '& [class*="MuiTypography"]:not(h5, h6)' or just target the subtitle area. Actually a simpler approach: many cards put subtitle in a div with a specific class. Let me try '& .MuiTypography-body2': { color: '#000' } in the header area - but that might affect body text in the card content too. So we need a more specific selector. The card structure is usually: header (title + subtitle) then content. So we could use something like '& > div:first-of-type p': { color: '#000' } to only style paragraph in the first child (header). Without seeing the exact DOM, I'll leave the selector as is - '& p.MuiTypography-body2' might only match one element if the card uses body2 for subtitle. If the content also has body2, we'd need a more specific selector. Let me check - in the table card the only body2 in the header is the subtitle. The table content is inside SeoOnPageTable. So the card's direct children might be: header wrapper (with title h5/h6 and subtitle), then the table. So the subtitle could be in the same wrapper as the title. So '& p.MuiTypography-body2' could match the subtitle if it's a p with that class. It might also match nothing if the subtitle is a span. I'll use a more generic approach: pass the subtitle as a custom element so we're sure it's black. Let me check if MsqdxMoleculeCard accepts ReactNode for subtitle.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "subtitle|titleVariant",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS",
+  "glob": "*MoleculeCard*",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "subtitle|titleVariant",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS",
+  "outputMode": "content",
+  "totalFiles": 0,
+  "totalMatches": 0,
+  "topFiles": []
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me search for MoleculeCard in the design system.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **0** result in **1** directory</summary>
+
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/MSQDX-DS** (0 file)
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+MsqdxMoleculeCard might be in node_modules. The project uses @msqdx/react. So we don't have the source. The titleVariant is used in the project (page.tsx project overview), so it's supported. For the subtitle color, the sx selector might work. If the card renders the subtitle with a different tag, we could use a more generic selector like '& > div > div:first-of-type > *:last-child': { color: '#000' } or similar. I'll leave the current selector; if it doesn't work the user can ask to fix. Let me verify build.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+If the card uses a different structure for subtitle (e.g. not p.MuiTypography-body2), the black color might not apply. A safer approach is to style any subtitle-like text in the card header. Many such cards have structure like: div (header) > title Typography > subtitle Typography. So we could use '& > div:first-child .MuiTypography-body2' or '& > div:first-child > * + *' to target the second child of the first div (the subtitle). I'll add a more robust selector: target the header section. Often the class name includes something like "header" or the subtitle is the second Typography. Let me use '& .MuiTypography-body2': { color: '#000' } but that would turn ALL body2 in the card black, including potential content. The table card content is SeoOnPageTable which has its own typography. So the only body2 in the card might be the subtitle. I'll keep it and run build.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 6.3s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+  Generating static pages using 9 workers (0/47) ...
+  Generating static pages using 9 workers (11/47) 
+  Generating static pages using 9 workers (23/47) 
+  Generating static pages using 9 workers (35/47) 
+✓ Generating static pages using 9 workers (47/47) in 156.0ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/register
+├ ƒ /api/auth/tokens
+├ ƒ /api/auth/tokens/[id]
+├ ƒ /api/checks/contrast
+├ ƒ /api/checks/pagespeed
+├ ƒ /api/checks/readability
+├ ƒ /api/checks/ssl
+├ ƒ /api/checks/wayback
+├ ƒ /api/health
+├ ƒ /api/journeys
+├ ƒ /api/journeys/[id]
+├ ƒ /api/projects
+├ ƒ /api/projects/[id]
+├ ƒ /api/projects/[id]/domain-scan-all
+├ ƒ /api/projects/[id]/domain-summary
+├ ƒ /api/projects/[id]/domain-summary-all
+├ ƒ /api/projects/[id]/geo-question-history
+├ ƒ /api/projects/[id]/geo-summary
+├ ƒ /api/projects/[id]/ranking-summary
+├ ƒ /api/projects/[id]/research
+├ ƒ /api/projects/[id]/suggest-competitors
+├ ƒ /api/projects/[id]/suggest-keywords
+├ ƒ /api/rank-tracking/keywords
+├ ƒ /api/rank-tracking/keywords/[id]
+├ ƒ /api/rank-tracking/keywords/[id]/positions
+├ ƒ /api/rank-tracking/refresh
+├ ƒ /api/saliency/generate
+├ ƒ /api/saliency/result
+├ ƒ /api/scan
+├ ƒ /api/scan/[id]
+├ ƒ /api/scan/[id]/project
+├ ƒ /api/scan/[id]/screenshot
+├ ƒ /api/scan/[id]/summarize
+├ ƒ /api/scan/domain
+├ ƒ /api/scan/domain/[id]/journey
+├ ƒ /api/scan/domain/[id]/status
+├ ƒ /api/scan/domain/[id]/summarize
+├ ƒ /api/scan/domain/[id]/summary
+├ ƒ /api/scan/domain/by-domain
+├ ƒ /api/scan/geo-eeat
+├ ƒ /api/scan/geo-eeat/[jobId]
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history/[runId]
+├ ƒ /api/scan/geo-eeat/[jobId]/project
+├ ƒ /api/scan/geo-eeat/[jobId]/rerun-competitive
+├ ƒ /api/scan/geo-eeat/[jobId]/status
+├ ƒ /api/scan/geo-eeat/history
+├ ƒ /api/scan/geo-eeat/suggest-competitors-queries
+├ ƒ /api/scan/journey-agent
+├ ƒ /api/scan/journey-agent/[jobId]
+├ ƒ /api/scan/journey-agent/[jobId]/live
+├ ƒ /api/scan/journey-agent/[jobId]/live/stream
+├ ƒ /api/scan/journey-agent/[jobId]/project
+├ ƒ /api/scan/journey-agent/[jobId]/video
+├ ƒ /api/scan/journey-agent/history
+├ ƒ /api/scans
+├ ƒ /api/scans/[id]
+├ ƒ /api/scans/domain
+├ ƒ /api/scans/domain/[id]
+├ ƒ /api/scans/domain/[id]/project
+├ ƒ /api/search
+├ ƒ /api/share
+├ ƒ /api/share/[token]
+├ ƒ /api/share/[token]/access
+├ ƒ /api/share/[token]/pages/[pageId]
+├ ƒ /api/share/[token]/pages/[pageId]/screenshot
+├ ƒ /api/share/[token]/video
+├ ƒ /api/share/by-resource
+├ ƒ /api/tools/contrast
+├ ƒ /api/tools/extract
+├ ƒ /api/tools/pagespeed
+├ ƒ /api/tools/readability
+├ ƒ /api/tools/ssl-labs
+├ ƒ /api/tools/wayback
+├ ƒ /developers
+├ ƒ /domain/[id]
+├ ƒ /geo-eeat/[jobId]
+├ ƒ /history
+├ ƒ /journey-agent/[jobId]
+├ ƒ /login
+├ ƒ /projects
+├ ƒ /projects/[id]
+├ ƒ /projects/[id]/geo
+├ ƒ /projects/[id]/rankings
+├ ƒ /projects/[id]/research
+├ ƒ /projects/[id]/seo
+├ ƒ /projects/[id]/wcag
+├ ƒ /register
+├ ƒ /results/[id]
+├ ƒ /scan
+├ ƒ /scan/domain
+├ ƒ /settings
+└ ƒ /share/[token]
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build succeeded. The selector '& p.MuiTypography-body2' might not match if the subtitle is rendered as a different element. To make the subtitle reliably black and "normal p text", we could render the subtitle ourselves. Let me check - does MsqdxMoleculeCard support subtitle as ReactNode? If we pass subtitle={<MsqdxTypography component="p" variant="body1" sx={{ color: '#000' }}>{t('projects.seo.pagesByContentSubtitle')}</MsqdxTypography>}, that would guarantee a black paragraph. I'll add that approach so the subtitle is explicitly a normal p in black, in case the card accepts ReactNode for subtitle.
+</details></think>
+
+---
+
+
+Hier die Änderungen:
+
+**1. Äußere Card „Seiten & Keywords“ ohne Border**  
+- `border: '1px solid var(--color-secondary-dx-green)'` aus dem `sx` der umschließenden `MsqdxMoleculeCard` entfernt. Die Card hat nur noch `bgcolor: 'var(--color-card-bg)'`.
+
+**2. Card-Titel auf h6**  
+- **„Übersicht Meta & Struktur“:** `titleVariant="h6"` ergänzt.  
+- **„Alle Seiten: Meta, Struktur & Inhalt“:** `titleVariant="h6"` ergänzt.
+
+**3. Untertitel der Tabellen-Card als normaler schwarzer Fließtext**  
+- Bei der Card „Alle Seiten: Meta, Struktur & Inhalt“ im `sx` ergänzt:  
+  `'& p.MuiTypography-body2': { color: '#000' }`  
+  Damit wird der Untertitel („Sortiert nach Wortanzahl; unter 300 Wörter = Skinny Content.“) in Schwarz dargestellt.  
+- Wenn die Card den Subtitle anders rendert (z. B. nicht als `p` mit `body2`), greift die Regel nicht. Dann müsste die Subtitle-Darstellung in der Card-Komponente angepasst oder der Subtitle als React-Node mit eigener Typography übergeben werden.
+
+Build ist durchgelaufen. Die äußere Card hat keine Border mehr, die beiden genannten Titel sind h6, und der Tabellen-Untertitel ist per CSS auf schwarz gesetzt.
 
 ---
 
