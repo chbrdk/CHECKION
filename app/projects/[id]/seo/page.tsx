@@ -28,6 +28,9 @@ import type { AggregatedSeo, AggregatedStructure } from '@/lib/domain-aggregatio
 import { computeSeoOnPageScore } from '@/lib/seo-on-page-score';
 import { SeoOnPageTable, type SeoOnPageRow } from '@/components/SeoOnPageTable';
 
+/** Cache per project id so remount (e.g. tab switch) shows last data immediately and avoids flicker. */
+const seoSummaryCache = new Map<string, { scanId: string; fullSummary: DomainSummaryResponse }>();
+
 export default function ProjectSeoPage() {
     const params = useParams();
     const router = useRouter();
@@ -50,11 +53,16 @@ export default function ProjectSeoPage() {
         // #endregion
         if (skipped) return;
         fetchedForIdRef.current = id;
+        const cached = seoSummaryCache.get(id);
+        if (cached) {
+            setScanId(cached.scanId);
+            setFullSummary(cached.fullSummary);
+            setSummaryLoading(false);
+        }
         const ac = new AbortController();
         const { signal } = ac;
         setProjectLoading(true);
-        setSummaryLoading(true);
-        /* Do not clear fullSummary/scanId here: on remount (e.g. back from another tab) we keep previous data until new fetch completes to avoid flicker. */
+        if (!cached) setSummaryLoading(true);
         fetch(apiProject(id), { credentials: 'same-origin', signal })
             .then((r) => r.json())
             .then((projectData: { data?: { id: string; domain: string | null } }) => {
@@ -73,14 +81,18 @@ export default function ProjectSeoPage() {
             .then((domainSummaryRes: { success?: boolean; data?: { scanId?: string } }) => {
                 if (signal.aborted) return;
                 if (domainSummaryRes?.success && domainSummaryRes?.data?.scanId) {
-                    setScanId(domainSummaryRes.data.scanId);
-                    return fetch(apiScanDomainSummary(domainSummaryRes.data.scanId), { credentials: 'same-origin', signal })
+                    const sid = domainSummaryRes.data.scanId;
+                    setScanId(sid);
+                    return fetch(apiScanDomainSummary(sid), { credentials: 'same-origin', signal })
                         .then((r) => (r.ok ? r.json() : null))
                         .then((payload: DomainSummaryResponse | null) => {
                             // #region agent log
                             fetch('http://127.0.0.1:7902/ingest/bbc31d13-f45c-46d1-93ab-b989a1d926fc',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cafcc0'},body:JSON.stringify({sessionId:'cafcc0',location:'seo/page.tsx:setFullSummary',message:'before setFullSummary',data:{payloadPresent:!!payload,signalAborted:signal.aborted},timestamp:Date.now(),hypothesisId:'E',runId:'seo-summary'})}).catch(()=>{});
                             // #endregion
-                            if (!signal.aborted && payload) setFullSummary(payload);
+                            if (!signal.aborted && payload) {
+                                setFullSummary(payload);
+                                seoSummaryCache.set(id, { scanId: sid, fullSummary: payload });
+                            }
                         });
                 }
             })

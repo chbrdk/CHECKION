@@ -41598,23 +41598,299 @@ Issue reproduced, please proceed.
 
 _**Agent (model default, mode Agent)**_
 
+<think><details><summary>Thought Process</summary>
 
+The user has reproduced the issue. I need to read the debug log file to analyze the hypotheses and determine the root cause.
+</details></think>
 
 ---
 
 
 
+
+
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/.cursor/debug-cafcc0.log</summary>
 
-Status: **loading**
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me analyze the logs:
+
+1. **First load (timestamps ~1773499177):**
+   - Effect runs: id present, refCurrent=**null**, skipped=**false** → effect runs, starts fetches.
+   - seoTableRows: length 0, fullSummaryNull true (initial state).
+   - setFullSummary: payloadPresent **true**, signalAborted **false** → data arrived, we set state.
+   - Table: rowsLength **193**, paginatedLength 50, totalPages 4 → table receives correct data.
+   - seoTableRows: length 193, fullSummaryNull false → state updated.
+
+2. **Second load (~1773499202):**
+   - Effect runs **again**: id same, refCurrent=**null**, skipped=**false** → effect ran a second time and did NOT skip!
+   - seoTableRows: length 0, fullSummaryNull true → state was reset (we're in the effect body that set setFullSummary(null), setScanId(null) at the start).
+   - setFullSummary: payloadPresent true, signalAborted false → data arrived again.
+   - Table: rowsLength 193 again.
+   - seoTableRows: 193 again.
+
+So **Hypothesis A (Strict Mode)** is partially wrong: we're not skipping the second run because refCurrent is **null** on the second effect run. That means either:
+- The component **unmounted and remounted** (so we get a new ref that's null again), OR
+- The ref is being reset somewhere, OR
+- There are two different component instances (e.g. React Strict Mode double-mount: mount → unmount → mount again; on the second mount we have a fresh ref = null).
+
+So the actual issue is: **the effect runs twice** (about 25 seconds apart: 1773499177665 vs 1773499202938 - that's ~25s). So it's not Strict Mode's double-invoke in quick succession - it's either:
+1. User navigated away and back (unmount/remount) → ref is new → effect runs again, resets state (setFullSummary(null)) → flicker.
+2. Or something caused a full remount of the page (e.g. parent re-render with different key).
+
+When the effect runs the second time, we do setFullSummary(null), setScanId(null) at the start - so we **clear the data** and show loading/empty state. Then we fetch again and eventually set fullSummary again. That's the flicker: data → empty → data.
+
+So the fix could be:
+- **Don't reset state at the start of the effect** when we're refetching for the same id. Only reset when id actually changed. But we already have ref guarding - the problem is on remount ref is null so we don't skip. So when the component remounts (e.g. user switched to WCAG and back to SEO), we intentionally refetch. But then we shouldn't clear state immediately - we could leave the old data visible until the new data arrives (stale-while-revalidate). That would prevent the flicker: we'd keep showing the old table until the new data replaces it.
+- Alternatively: persist the "last fetched id" somewhere that survives unmount (e.g. in a module-level cache or in the router/layout). Then on remount we could show cached data and not clear it. That's a bigger change.
+
+Simplest fix: **Don't clear fullSummary/scanId at the start of the effect.** Only clear when we're actually starting a fetch for a *different* id (id changed). So: when refCurrent !== id we're either (a) first run (ref null) or (b) id changed. In (a) we're going to fetch - we could clear to show loading. In (b) we're switching project - we should clear. So we should only clear when id changed from a previous value. We don't have "previous id" in state - we have it in the ref after the first run (ref.current = id). So: if we're not skipping (we're about to run), and we had a previous id (ref.current was set to something else, but wait - we only set ref when we don't skip, so when we don't skip ref could be null or the previous id). Actually when we don't skip, we then set ref.current = id. So the only time we don't skip is when ref.current !== id, i.e. ref is null (first mount) or ref is the OLD id (navigated to different project). So when ref.current is null it could be first mount OR remount (same project). We can't distinguish. So we can't "only clear when id changed".
+
+The other approach: **never clear fullSummary at effect start.** Set loading true, but keep fullSummary as-is. When the fetch completes, setFullSummary(payload) will replace it. So we don't flash empty - we show old data (or nothing on first load) and then update. So:
+- Remove setFullSummary(null) and setScanId(null) from the effect start.
+- Keep setProjectLoading(true) and setSummaryLoading(true) so we can show a loading indicator if we want, but the table would still have the previous data (or empty on first load).
+
+That would fix the flicker on remount: when user comes back to SEO page, we start fetch but don't clear, so the table still shows the previous 193 rows until the new data arrives (and if the new data is the same project, it'll look the same).
+
+Let me implement: remove setFullSummary(null) and setScanId(null) from the beginning of the effect. We still set loading states so the UI can show a subtle loading state if desired, but we don't wipe the table.
+
+Actually re-reading the log again - the second effect run has refCurrent: null. So the component that ran the effect the second time had a fresh ref. That only happens on a new mount. So the SEO page component unmounted (e.g. user went to WCAG) and then remounted (user came back to SEO). When it remounted, the effect ran, ref was null, so we didn't skip, we set fullSummary(null), and started fetching. So the user saw: table with 193 rows → (navigate away?) → (navigate back) → table goes empty (because we set fullSummary(null)) → then data arrives and table shows 193 again. So the flicker is: we clear state on every mount, including when we're just re-entering the same project. The fix is to not clear fullSummary and scanId at the start when we're going to fetch - just start the fetch and when it completes replace the state. So remove the two setState(null) calls at the beginning of the effect.
+</details></think>
+
+---
+
+
+Logs auswerten:
+
+- H-A (Strict Mode): REJECTED — Kein Cleanup-Log zwischen den beiden Effect-Läufen; zweiter Lauf hat `refCurrent: null` (kein Skip).
+- H-B (setState-Wellen): INCONCLUSIVE — Daten kommen an; mehrere Renders möglich, aber nicht Ursache des Flackerns.
+- H-C (Ref in deps): REJECTED — Effect läuft zweimal; Ref ist beim zweiten Lauf null.
+- H-D (rows-Identität): REJECTED — Tabelle erhält 193 Zeilen; Daten sind vorhanden.
+- H-E (setState nach Abort): REJECTED — `signalAborted: false`, setState korrekt.
+
+Befund: Zweiter Effect-Lauf (~25 s später) mit `refCurrent: null` → Komponente wurde neu gemountet (z. B. Tab-Wechsel). Beim erneuten Mount setzen wir zu Beginn `setFullSummary(null)` und `setScanId(null)` → Tabelle wird geleert, dann kommt der Fetch und füllt sie wieder → Flackern.
+
+Fix: Beim Start des Effects nicht `fullSummary`/`scanId` leeren; nur Fetches starten und State erst bei Ankunft der Daten setzen (stale-while-revalidate).
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Instrumentation stays in place for verification. I need to clear the log file before the user runs again, then ask them to reproduce and then we read the logs to confirm the fix. Actually the instructions say: "Clear logs using the delete_file tool only" before each run. So I should delete the log file before asking the user to run again.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="delete_file">
+<details><summary>Tool use: **delete_file**</summary>
+
+Explanation: undefined
 
 
 </details>
 </tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now provide reproduction steps for the user to verify. After verification we keep logs until user confirms success, then remove them.
+</details></think>
+
+---
+
+
+**Änderung:** Beim erneuten Öffnen der SEO-Seite (z. B. nach Tab-Wechsel) werden `fullSummary` und `scanId` nicht mehr zu Beginn des Effects geleert. Die bisherigen Daten bleiben sichtbar, bis der neue Request fertig ist – dadurch verschwindet die Tabelle nicht mehr kurz.
+
+**Log-Auswertung (kurz):**
+- Zweiter Effect-Lauf mit `refCurrent: null` → Komponente war neu gemountet (z. B. zurück zu SEO).
+- Zu Beginn des Effects wurde `setFullSummary(null)` ausgeführt → Tabelle wurde geleert, dann wieder befüllt → sichtbares Flackern.
+- Fix: Kein Löschen von `fullSummary`/`scanId` beim Start des Effects; Daten werden nur noch durch die neuen API-Antworten ersetzt.
+
+Instrumentierung ist weiter aktiv. Bitte einmal prüfen, ob das Flackern und die leeren/falschen Darstellungen weg sind.
+
+<reproduction_steps>
+1. Dev-Server laufen lassen (ggf. `npm run dev`).
+2. Zu einem Projekt gehen, Tab „SEO“ öffnen und warten, bis die Tabelle geladen ist.
+3. Zu einem anderen Projekt-Tab wechseln (z. B. WCAG oder Übersicht), dann wieder zu „SEO“.
+4. Prüfen: Tabelle bleibt sichtbar ohne kurzes Leerwerden; keine falschen oder fehlenden Elemente.
+5. „Proceed / Mark as fixed“ ausführen, wenn das Verhalten passt (dann entferne ich die Debug-Logs).
+</reproduction_steps>
+
+---
+
+_**User**_
+
+Issue reproduced, please proceed.
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user said "Issue reproduced, please proceed." This could mean either:
+1. They reproduced the issue again (fix didn't work) - so I need to read logs and investigate further
+2. They reproduced the scenario and the fix worked - "proceed" as in "proceed to remove the instrumentation"
+
+Given the phrasing "Issue reproduced, please proceed" it's a bit ambiguous. In debug workflows, "issue reproduced" often means "I reproduced the bug again". So they might be saying the problem still occurs. Let me read the log file to see what happened - if there are new logs, I can tell whether the fix helped or not. If the log shows the same pattern (effect running twice, etc.) or new patterns, I can decide. If they meant "fix verified, proceed to remove logs" then the log file might be empty or show only one effect run without the clearing.
+
+I'll read the log file first to see the current state.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/.cursor/debug-cafcc0.log</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The logs show the same pattern again:
+
+1. First run: effect runs (refCurrent null), then setFullSummary with payload, seoTableRows goes to 193, table gets 193 rows.
+2. Second run (~13.6s later): effect runs AGAIN (refCurrent null), then seoTableRows changed to **0** (seoTableRowsLength:0, fullSummaryNull:true) at 1773499643526 - so we're STILL clearing the data somewhere!
+
+Wait - we removed setFullSummary(null) and setScanId(null) from the effect. So why is fullSummaryNull true on the second run? The only way seoTableRows could be 0 and fullSummaryNull true is if fullSummary was set to null or the component re-rendered with initial state. Oh! When the component **remounts**, the **useState(initialValue)** runs again - so fullSummary is initialized to **null** on the new mount. So we're not clearing it in the effect - the remount itself gives us a new state with fullSummary = null. So the fix of "don't clear in the effect" doesn't help when the component unmounts and remounts, because the new instance has fresh state (null).
+
+So we need a different approach: **persist the fetched data across remounts** so that when the user comes back to the SEO tab, we don't show empty state. Options:
+1. **Lift state up** to the layout or a parent that doesn't unmount when switching tabs - so project data and domain summary live in a parent and are passed down. When we switch to SEO tab, the child mounts but receives the same data from parent. That would require restructuring.
+2. **Cache in a module-level or ref/store** - e.g. when we get fullSummary we store it in a cache keyed by project id. When the SEO page mounts, we first check the cache and set state from cache (so we show stale data immediately), then run the fetch and replace with fresh data. So: on mount, if we have cached data for this id, setFullSummary(cached) so we're not showing empty. Then fetch and update. We need a module-level cache (e.g. a Map) or React context that survives unmount. Next.js app router - when we switch from /projects/[id]/seo to /projects/[id]/wcag, the layout stays mounted but the page content (seo/page.tsx) unmounts. So the page component's state is lost. A simple approach: create a small cache (e.g. in a module or in the layout) that stores the last fullSummary per project id. When the SEO page mounts, it reads from this cache and initializes state, then fetches and updates.
+
+Let me implement a client-side cache for the domain summary keyed by project id. We can put it in a module that the SEO page imports - e.g. a simple Map. When we setFullSummary(payload), we also write to the cache. When the effect runs, before starting the fetch, we read from the cache for this id and if we have data, set state so the UI shows it immediately (no empty flash). Then we fetch and update.
+
+Implementation:
+1. Create a cache: e.g. in the seo page file or in a small util, `const domainSummaryCache = new Map<string, DomainSummaryResponse>();`
+2. When we receive payload in the effect, do `domainSummaryCache.set(id, payload)` and setFullSummary(payload).
+3. When the effect runs (and we're not skipping), before starting the fetch, do `const cached = domainSummaryCache.get(id); if (cached) { setFullSummary(cached); setScanId(cached.scanId or derive); }` so we restore from cache immediately. We need to set scanId too - from the cached summary we might have scanId in the response or we need to get it from the domain summary API. Actually the cache would be the full scan summary (fullSummary), which might not include the project's scanId directly. Let me check - fullSummary is DomainSummaryResponse from apiScanDomainSummary(scanId). So we have the full summary. We need to also cache the scanId for the project. So we could cache { fullSummary, scanId } keyed by project id. When we mount, we set both from cache. Then we fetch. When fetch completes we update cache and state.
+
+Let me add a module-level cache and use it on mount and on fetch complete.
+</details></think>
+
+---
+
+
+Logs zeigen: Beim zweiten Effect-Lauf (Remount) ist `seoTableRowsLength: 0`, `fullSummaryNull: true` — die Komponente wurde neu gemountet, daher ist der State wieder der Initialwert (null). Das Weglassen des Clearings im Effect reicht nicht; wir müssen die Daten remount-sicher machen (z. B. Cache pro Projekt-ID).
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add a module-level cache that survives remount. When the effect runs and we're about to fetch, first restore state from cache for this id (so we show previous data immediately). When we get new payload, update cache and state.
+
+I need to check DomainSummaryResponse - does it have scanId? Probably the scan summary response doesn't include the scanId in the payload - we get scanId from apiProjectDomainSummary. So we need to cache both: the project's scanId and the fullSummary. So cache structure: Map<string, { scanId: string; fullSummary: DomainSummaryResponse }>.
+
+When effect runs (not skipped): get cached = cache.get(id). If cached, setScanId(cached.scanId), setFullSummary(cached.fullSummary) synchronously so the first paint has data. Then start fetch. When we get domainSummaryRes we have scanId; when we get payload we have fullSummary. We update cache when we set state: cache.set(id, { scanId: domainSummaryRes.data.scanId, fullSummary: payload }). But we get scanId in the first .then and fullSummary in the inner .then. So we could cache when we have both - in the innermost .then we have payload and we have scanId from the closure (domainSummaryRes.data.scanId). So cache.set(id, { scanId: domainSummaryRes.data.scanId, fullSummary: payload }).
+
+On mount (effect run, not skipped): cached = cache.get(id). If (cached) { setScanId(cached.scanId); setFullSummary(cached.fullSummary); }. Then proceed with fetch. So the component will render with cached data immediately, then when fetch completes we update. We might also want to set summaryLoading(false) when we restore from cache so we don't show a loading overlay - or we could leave loading true until fetch completes. Leaving loading true might show a spinner over the table - not ideal. So when we restore from cache, set summaryLoading(false) and projectLoading we could set from cache too if we cache project - for now just cache scanId and fullSummary, and set summaryLoading(false) when we restore so the table shows. We still set projectLoading(true) and summaryLoading(true) when we start the fetch - that might flash a loading state. So when we have cache, don't set loading to true? Or set loading true only when we don't have cache. So: if (cached) { setScanId(...); setFullSummary(...); setSummaryLoading(false); } else { setSummaryLoading(true); }. And we always set projectLoading(true) when we start - or we could also cache project. Let me keep it minimal: cache fullSummary and scanId. On effect run: if (cached) { setScanId(cached.scanId); setFullSummary(cached.fullSummary); setSummaryLoading(false); }. Then start fetches. When project fetch completes we set project. When summary chain completes we setFullSummary, setScanId, update cache, setSummaryLoading(false). So when we have cache we immediately show the table with old data and don't show summary loading. Project might still show loading until project fetch completes - we could cache project too. For minimal change, just cache fullSummary and scanId.
+</details></think>
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="delete_file">
+<details><summary>Tool use: **delete_file**</summary>
+
+Explanation: undefined
+
+
+</details>
+</tool-use>
+
+---
+
+
 
 ---
 
