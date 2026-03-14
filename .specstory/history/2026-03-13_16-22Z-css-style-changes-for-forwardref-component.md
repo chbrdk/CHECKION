@@ -41832,14 +41832,14 @@ On mount (effect run, not skipped): cached = cache.get(id). If (cached) { setSca
 ---
 
 
+Modul-Cache hinzufügen: Beim Remount zuerst gecachte Daten in den State übernehmen, dann im Hintergrund nachladen.
+
 
 ---
 
 <tool-use data-tool-type="write" data-tool-name="edit_file_v2">
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
-
-Status: **loading**
 
 </details>
 
@@ -41851,8 +41851,6 @@ Status: **loading**
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
 
-Status: **loading**
-
 </details>
 
 </tool-use>
@@ -41863,17 +41861,20 @@ Status: **loading**
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
 
-Status: **loading**
-
 </details>
 
 </tool-use>
 
 ---
 
+<think><details><summary>Thought Process</summary>
 
+Good. Now when the user remounts (e.g. comes back to SEO tab), we read from seoSummaryCache.get(id) and immediately set state, so the table shows the previous 193 rows. No flicker. Then we still run the fetch in the background and update when done. Let me delete the log file for the next run.
+</details></think>
 
 ---
+
+
 
 
 
@@ -41890,11 +41891,91 @@ Explanation: undefined
 
 ---
 
+<think><details><summary>Thought Process</summary>
 
+Done. Summarize for the user and give reproduction steps.
+</details></think>
 
 ---
 
 
+**Erweiterter Fix (mit Log-Befund):** Beim Remount hat die Komponente wieder `useState(null)` → `fullSummary` ist sofort `null`, bis der Fetch fertig ist. Dagegen hilft nur remount-fester State.
+
+**Umsetzung:** Ein modulweiter Cache `seoSummaryCache` (pro Projekt-`id`):
+- Beim **ersten** Lauf: wie bisher fetchen; wenn die Scan-Summary da ist, `setFullSummary(payload)` und **zusätzlich** `seoSummaryCache.set(id, { scanId, fullSummary })`.
+- Beim **Remount** (z. B. zurück zum SEO-Tab): zu Beginn des Effects `cached = seoSummaryCache.get(id)`; wenn `cached`, sofort `setScanId(cached.scanId)` und `setFullSummary(cached.fullSummary)` sowie `setSummaryLoading(false)` → Tabelle zeigt sofort die letzten Daten, danach läuft der Fetch im Hintergrund und aktualisiert.
+
+Instrumentierung bleibt aktiv. Bitte einmal mit Tab-Wechsel (SEO → anderes Tab → zurück zu SEO) prüfen; in den Logs sollte beim zweiten Effect-Lauf direkt `seoTableRowsLength: 193` stehen (weil State aus dem Cache gesetzt wird).
+
+<reproduction_steps>
+1. Dev-Server laufen lassen.
+2. Zu einem Projekt gehen, Tab „SEO“ öffnen, warten bis die Tabelle 193 Zeilen zeigt.
+3. Zu einem anderen Projekt-Tab wechseln (z. B. WCAG), dann wieder „SEO“ wählen.
+4. Prüfen: Tabelle zeigt sofort die Daten (kein kurzes Leerwerden), danach ggf. Aktualisierung im Hintergrund.
+5. „Proceed / Mark as fixed“ ausführen, wenn das Verhalten stimmt (dann entferne ich die Debug-Logs).
+</reproduction_steps>
+
+---
+
+_**User**_
+
+Issue reproduced, please proceed.
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user said "Issue reproduced, please proceed" again. I need to read the log file to see if the fix worked this time - i.e. on the second effect run we should now see seoTableRowsLength: 193 immediately (from cache) instead of 0. If the logs confirm success, I should remove the instrumentation and summarize. If not, I need to analyze and potentially add more fixes or new hypotheses.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/.cursor/debug-cafcc0.log</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Interesting. The logs show:
+
+1. **First run (1773500080971):** effect runs, refCurrent null, skipped false. seoTableRows 0 (initial). Then setFullSummary, table gets 193, seoTableRows 193. So first load works and we should have written to cache when setFullSummary was called.
+
+2. **Cleanup (1773500089894):** effect cleanup abort - so React Strict Mode! The first effect's cleanup ran (abort). So the first run's fetches were aborted. But we did get setFullSummary with payload before that (timestamp 1773500081273, cleanup 1773500089894 - so setFullSummary ran and we wrote to cache at 81273, then cleanup at 89894). So we did cache the data before abort. Good.
+
+3. **Second run (1773500091399):** effect runs again (Strict Mode re-run), refCurrent **null**, skipped false. Then seoTableRows 0 at 1773500091400 - so we're still showing 0 first! Then at 1773500091401 we have seoTableRows 193. So the transition 0 → 193 happened in 1ms. That means we did set state from cache (setScanId, setFullSummary) in the effect, but the useEffect that logs "seoTableRows changed" runs after the effect - and React may have batched the state updates. So the order is: effect runs, we call setScanId and setFullSummary (from cache), then React commits and re-renders. The first "seoTableRows changed" log might be from the render that was already scheduled (before our setState from cache was applied). So we have: render 1 (fullSummary still null from initial state) → effect runs, setState(cached) → render 2 (fullSummary from cache, seoTableRows 193). So we get two seoTableRows logs: one with 0 (render before the cache setState is applied) and one with 193. The time difference is 1ms (1773500091400 vs 1773500091401). So the cache IS working - we do get to 193 very quickly. But there's still one frame where we show 0. That could be because the effect runs after the first paint - so we mount with state null, React paints (empty table), then effect runs and we set from cache, then React paints again (full table). So the fix is working but we have one frame of empty. To fix that we need to set initial state from cache before the first paint - i.e. initialize state with a function that reads from cache: useState(() => seoSummaryCache.get(id)?.fullSummary ?? null). So when the component mounts, the initial state is already the cached value if we have it. Let me do that - initialize fullSummary and scanId from cache when the component mounts. But we don't have id at the top level for useState(initial). We have id from useParams(). So we need to do something like: const [fullSummary, setFullSummary] = useState<DomainSummaryResponse | null>(() => null) and then in the effect we restore from cache. The problem is the first render already has null. So we need to get the cached value synchronously during the first render. We could do: const [fullSummary, setFullSummary] = useState<DomainSummaryResponse | null>(() => { const c = typeof window !== 'undefined' ? seoSummaryCache.get(id ?? '') : null; return c?.fullSummary ?? null; }); but we don't have id yet at useState - we have it from params. So we do have id. So useState(() => id ? seoSummaryCache.get(id)?.fullSummary ?? null : null) and same for scanId. But that would run on every mount with the current id. So when we mount with id X, we read cache.get(X) and use that as initial state. Perfect. Let me add that - initialize state from cache so the very first render has the cached data and we don't get even one frame of empty.
+
+Actually wait - the user said "Issue reproduced, please proceed". So they're saying the issue is still happening (they reproduced it again). So the cache fix might be working but there's still a brief flash (one frame of 0). Or they might mean "I reproduced the test scenario, please proceed to remove the logs". I'll assume they want the fix to be complete - so eliminate even the one-frame flash by initializing state from cache. Then remove the instrumentation.
+
+Let me:
+1. Initialize fullSummary and scanId from cache so first paint has data when available.
+2. Remove all debug instrumentation.
+</details></think>
+
+---
+
+
+Logs zeigen: Beim zweiten Lauf wechselt `seoTableRowsLength` in 1 ms von 0 auf 193 — der Cache greift, aber ein Render mit 0 läuft vor dem Effect. Wir initialisieren den State beim Mount aus dem Cache, damit der erste Frame nicht leer ist; anschließend entfernen wir die Instrumentierung.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+</tool-use>
 
 ---
 

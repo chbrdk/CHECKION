@@ -39,19 +39,14 @@ export default function ProjectSeoPage() {
 
     const [project, setProject] = useState<{ id: string; domain: string | null } | null>(null);
     const [projectLoading, setProjectLoading] = useState(true);
-    const [scanId, setScanId] = useState<string | null>(null);
-    const [summaryLoading, setSummaryLoading] = useState(true);
-    const [fullSummary, setFullSummary] = useState<DomainSummaryResponse | null>(null);
+    const [scanId, setScanId] = useState<string | null>(() => (id ? seoSummaryCache.get(id)?.scanId ?? null : null));
+    const [summaryLoading, setSummaryLoading] = useState(() => !(id && seoSummaryCache.has(id)));
+    const [fullSummary, setFullSummary] = useState<DomainSummaryResponse | null>(() => (id ? seoSummaryCache.get(id)?.fullSummary ?? null : null));
     const fetchedForIdRef = useFetchOnceForId();
 
     useEffect(() => {
         if (!id) return;
-        // #region agent log
-        const refCurrent = fetchedForIdRef.current;
-        const skipped = refCurrent === id;
-        fetch('http://127.0.0.1:7902/ingest/bbc31d13-f45c-46d1-93ab-b989a1d926fc',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cafcc0'},body:JSON.stringify({sessionId:'cafcc0',location:'seo/page.tsx:effect',message:'effect run',data:{id,refCurrent,skipped},timestamp:Date.now(),hypothesisId:'A',runId:'seo-effect'})}).catch(()=>{});
-        // #endregion
-        if (skipped) return;
+        if (fetchedForIdRef.current === id) return;
         fetchedForIdRef.current = id;
         const cached = seoSummaryCache.get(id);
         if (cached) {
@@ -86,9 +81,6 @@ export default function ProjectSeoPage() {
                     return fetch(apiScanDomainSummary(sid), { credentials: 'same-origin', signal })
                         .then((r) => (r.ok ? r.json() : null))
                         .then((payload: DomainSummaryResponse | null) => {
-                            // #region agent log
-                            fetch('http://127.0.0.1:7902/ingest/bbc31d13-f45c-46d1-93ab-b989a1d926fc',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cafcc0'},body:JSON.stringify({sessionId:'cafcc0',location:'seo/page.tsx:setFullSummary',message:'before setFullSummary',data:{payloadPresent:!!payload,signalAborted:signal.aborted},timestamp:Date.now(),hypothesisId:'E',runId:'seo-summary'})}).catch(()=>{});
-                            // #endregion
                             if (!signal.aborted && payload) {
                                 setFullSummary(payload);
                                 seoSummaryCache.set(id, { scanId: sid, fullSummary: payload });
@@ -100,12 +92,7 @@ export default function ProjectSeoPage() {
             .finally(() => {
                 if (!signal.aborted) setSummaryLoading(false);
             });
-        return () => {
-            // #region agent log
-            fetch('http://127.0.0.1:7902/ingest/bbc31d13-f45c-46d1-93ab-b989a1d926fc',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cafcc0'},body:JSON.stringify({sessionId:'cafcc0',location:'seo/page.tsx:cleanup',message:'effect cleanup abort',data:{id},timestamp:Date.now(),hypothesisId:'A',runId:'seo-cleanup'})}).catch(()=>{});
-            // #endregion
-            ac.abort();
-        };
+        return () => ac.abort();
     }, [id, fetchedForIdRef]);
 
     const pagesByUrl = useMemo(() => {
@@ -135,11 +122,6 @@ export default function ProjectSeoPage() {
             structure: multiH1Set.has(p.url) ? 'multipleH1' as const : skippedSet.has(p.url) ? 'skippedLevels' as const : 'good' as const,
         }));
     }, [aggregatedSeo?.pages, aggregatedStructure?.pagesWithMultipleH1, aggregatedStructure?.pagesWithSkippedLevels]);
-    useEffect(() => {
-        // #region agent log
-        fetch('http://127.0.0.1:7902/ingest/bbc31d13-f45c-46d1-93ab-b989a1d926fc',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cafcc0'},body:JSON.stringify({sessionId:'cafcc0',location:'seo/page.tsx:seoTableRows',message:'seoTableRows changed',data:{seoTableRowsLength:seoTableRows.length,hasAggregatedSeo:!!aggregatedSeo,fullSummaryNull:fullSummary==null},timestamp:Date.now(),hypothesisId:'D',runId:'seo-rows'})}).catch(()=>{});
-        // #endregion
-    }, [seoTableRows.length, aggregatedSeo, fullSummary]);
     const handleSeoRowClick = useCallback(
         (url: string) => {
             const page = pagesByUrl.get(url);
