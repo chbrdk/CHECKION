@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useFetchOnceForId } from '@/hooks/useFetchOnceForId';
 import Link from 'next/link';
 import { Box, Stack, alpha } from '@mui/material';
 import {
@@ -41,37 +42,33 @@ export default function ProjectWcagPage() {
     const [summaryLoading, setSummaryLoading] = useState(true);
     const [fullSummary, setFullSummary] = useState<DomainSummaryResponse | null>(null);
     const [competitorWcagScores, setCompetitorWcagScores] = useState<Record<string, { scanId: string; wcagScore: number; status: string }>>({});
+    const fetchedForIdRef = useFetchOnceForId();
 
-    const loadProject = useCallback(async () => {
+    useEffect(() => {
         if (!id) return;
+        if (fetchedForIdRef.current === id) return;
+        fetchedForIdRef.current = id;
+        const ac = new AbortController();
+        const { signal } = ac;
         setProjectLoading(true);
-        try {
-            const res = await fetch(apiProject(id), { credentials: 'same-origin' });
-            const data = await res.json();
-            if (data?.data) setProject(data.data);
-            else setProject(null);
-        } catch {
-            setProject(null);
-        } finally {
-            setProjectLoading(false);
-        }
-    }, [id]);
-
-    useEffect(() => {
-        loadProject();
-    }, [loadProject]);
-
-    useEffect(() => {
-        if (!id) return;
         setSummaryLoading(true);
         setScanId(null);
         setFullSummary(null);
         setCompetitorWcagScores({});
+        fetch(apiProject(id), { credentials: 'same-origin', signal })
+            .then((r) => r.json())
+            .then((data: { data?: { id: string; domain: string | null } }) => {
+                if (!signal.aborted && data?.data) setProject(data.data);
+                else if (!signal.aborted) setProject(null);
+            })
+            .catch(() => { if (!signal.aborted) setProject(null); })
+            .finally(() => { if (!signal.aborted) setProjectLoading(false); });
         Promise.all([
-            fetch(apiProjectDomainSummary(id), { credentials: 'same-origin' }).then((r) => r.json()),
-            fetch(apiProjectDomainSummaryAll(id), { credentials: 'same-origin' }).then((r) => r.json()),
+            fetch(apiProjectDomainSummary(id), { credentials: 'same-origin', signal }).then((r) => r.json()),
+            fetch(apiProjectDomainSummaryAll(id), { credentials: 'same-origin', signal }).then((r) => r.json()),
         ])
             .then(([domainSummaryRes, summaryAllRes]) => {
+                if (signal.aborted) return;
                 if (summaryAllRes?.success && summaryAllRes?.data?.competitors) {
                     const comp: Record<string, { scanId: string; wcagScore: number; status: string }> = {};
                     for (const [domain, c] of Object.entries(summaryAllRes.data.competitors as Record<string, { scanId: string; wcagScore?: number; status: string } | null>)) {
@@ -81,16 +78,17 @@ export default function ProjectWcagPage() {
                 }
                 if (domainSummaryRes?.success && domainSummaryRes?.data?.scanId) {
                     setScanId(domainSummaryRes.data.scanId);
-                    return fetch(apiScanDomainSummary(domainSummaryRes.data.scanId), { credentials: 'same-origin' })
+                    return fetch(apiScanDomainSummary(domainSummaryRes.data.scanId), { credentials: 'same-origin', signal })
                         .then((r) => (r.ok ? r.json() : null))
                         .then((payload: DomainSummaryResponse | null) => {
-                            if (payload) setFullSummary(payload);
+                            if (!signal.aborted && payload) setFullSummary(payload);
                         });
                 }
             })
-            .catch(() => {})
-            .finally(() => setSummaryLoading(false));
-    }, [id]);
+            .catch((err) => { if (err?.name !== 'AbortError') setCompetitorWcagScores({}); })
+            .finally(() => { if (!signal.aborted) setSummaryLoading(false); });
+        return () => ac.abort();
+    }, [id, fetchedForIdRef]);
 
     const pagesByUrl = useMemo(() => {
         const pages = fullSummary?.pages;

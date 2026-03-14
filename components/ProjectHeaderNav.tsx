@@ -1,11 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Box, Tabs, Tab } from '@mui/material';
 import { MsqdxButton } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
+import { useFetchOnceForId } from '@/hooks/useFetchOnceForId';
 import { apiProject, pathProject, pathProjectRankings, pathProjectGeo, pathProjectResearch, pathProjectWcag, pathProjectSeo } from '@/lib/constants';
 
 /** Renders back button + project sub-nav for use in the app header (headerEnd) when on a project route. */
@@ -15,21 +16,22 @@ export function ProjectHeaderNav() {
     const { t } = useI18n();
     const id = typeof params.id === 'string' ? params.id : params.id?.[0] ?? null;
     const [projectName, setProjectName] = useState<string | null>(null);
-
-    const loadProject = useCallback(async () => {
-        if (!id) return;
-        try {
-            const res = await fetch(apiProject(id), { credentials: 'same-origin' });
-            const data = await res.json();
-            setProjectName(data?.data?.name ?? null);
-        } catch {
-            setProjectName(null);
-        }
-    }, [id]);
+    const fetchedForIdRef = useFetchOnceForId();
 
     useEffect(() => {
-        loadProject();
-    }, [loadProject]);
+        if (!id) return;
+        if (fetchedForIdRef.current === id) return;
+        fetchedForIdRef.current = id;
+        const ac = new AbortController();
+        const { signal } = ac;
+        fetch(apiProject(id), { credentials: 'same-origin', signal })
+            .then((r) => r.json())
+            .then((data: { data?: { name?: string } }) => {
+                if (!signal.aborted) setProjectName(data?.data?.name ?? null);
+            })
+            .catch(() => { if (!signal.aborted) setProjectName(null); });
+        return () => ac.abort();
+    }, [id, fetchedForIdRef]);
 
     const basePath = id ? `/projects/${encodeURIComponent(id)}` : '';
     const isOverview = pathname === basePath || pathname === basePath + '/';

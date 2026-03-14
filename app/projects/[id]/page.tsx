@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useFetchOnceForId } from '@/hooks/useFetchOnceForId';
 import { Box } from '@mui/material';
 import {
     MsqdxTypography,
@@ -76,10 +77,10 @@ export default function ProjectDetailPage() {
     const [addCompetitorValue, setAddCompetitorValue] = useState('');
     const [suggestCompetitorsLoading, setSuggestCompetitorsLoading] = useState(false);
     const [suggestCompetitorsError, setSuggestCompetitorsError] = useState<string | null>(null);
+    const fetchedForIdRef = useFetchOnceForId();
 
     const loadProject = useCallback(async () => {
         if (!id) return;
-        setLoading(true);
         try {
             const res = await fetch(apiProject(id), { credentials: 'same-origin' });
             const data = await res.json();
@@ -87,8 +88,6 @@ export default function ProjectDetailPage() {
             else setProject(null);
         } catch {
             setProject(null);
-        } finally {
-            setLoading(false);
         }
     }, [id]);
 
@@ -179,28 +178,29 @@ export default function ProjectDetailPage() {
     }, [id, competitors, normalizeDomainInput, loadProject, t]);
 
     useEffect(() => {
-        loadProject();
-    }, [loadProject]);
-
-    useEffect(() => {
         if (!id) return;
+        if (fetchedForIdRef.current === id) return;
+        fetchedForIdRef.current = id;
+        const ac = new AbortController();
+        const { signal } = ac;
+        setLoading(true);
         setListsLoading(true);
         Promise.all([
-            fetch(apiProjectRankingSummary(id), { credentials: 'same-origin' }).then((r) => r.json()),
-            fetch(apiProjectGeoSummary(id), { credentials: 'same-origin' }).then((r) => r.json()),
-            fetch(apiProjectDomainSummaryAll(id), { credentials: 'same-origin' }).then((r) => r.json()),
+            fetch(apiProject(id), { credentials: 'same-origin', signal }).then((r) => r.json()),
+            fetch(apiProjectRankingSummary(id), { credentials: 'same-origin', signal }).then((r) => r.json()),
+            fetch(apiProjectGeoSummary(id), { credentials: 'same-origin', signal }).then((r) => r.json()),
+            fetch(apiProjectDomainSummaryAll(id), { credentials: 'same-origin', signal }).then((r) => r.json()),
         ])
-            .then(([rankSummaryRes, geoSummaryRes, domainSummaryAllRes]) => {
+            .then(([projectRes, rankSummaryRes, geoSummaryRes, domainSummaryAllRes]) => {
+                if (signal.aborted) return;
+                if (projectRes?.data) setProject(projectRes.data as ProjectData);
+                else setProject(null);
                 if (rankSummaryRes?.success && rankSummaryRes?.data) {
                     setRankingSummary(rankSummaryRes.data as RankingSummaryData);
-                } else {
-                    setRankingSummary(null);
-                }
+                } else setRankingSummary(null);
                 if (geoSummaryRes?.success && geoSummaryRes?.data) {
                     setGeoSummary(geoSummaryRes.data as GeoSummaryData);
-                } else {
-                    setGeoSummary(null);
-                }
+                } else setGeoSummary(null);
                 if (domainSummaryAllRes?.success && domainSummaryAllRes?.data) {
                     const d = domainSummaryAllRes.data as { own: DomainSummaryData | null; competitors: Record<string, { scanId: string; score: number; totalPageCount: number; status: string } | null> };
                     setDomainSummary(d.own ?? null);
@@ -210,14 +210,21 @@ export default function ProjectDetailPage() {
                     setDomainSummaryAllCompetitors({});
                 }
             })
-            .catch(() => {
+            .catch((err) => {
+                if (err?.name === 'AbortError') return;
                 setRankingSummary(null);
                 setGeoSummary(null);
                 setDomainSummary(null);
                 setDomainSummaryAllCompetitors({});
             })
-            .finally(() => setListsLoading(false));
-    }, [id]);
+            .finally(() => {
+                if (!signal.aborted) {
+                    setLoading(false);
+                    setListsLoading(false);
+                }
+            });
+        return () => ac.abort();
+    }, [id, fetchedForIdRef]);
 
     const loadDomainSummaryAll = useCallback(async () => {
         if (!id) return;

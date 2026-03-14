@@ -39069,3 +39069,1122 @@ I'll add the table component and the merged row building logic, then replace the
 
 ---
 
+
+Komponente `SeoOnPageTable` erstellen und die drei Listen-Cards durch eine kombinierte Tabelle ersetzen.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "domainResult\\.(issuesTable|pagesTable|openPage)",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "domainResult\\.(issuesTable|pagesTable|openPage)",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "outputMode": "content",
+  "totalFiles": 0,
+  "totalMatches": 0,
+  "topFiles": []
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+PageSeoSummary already has hasMeta and hasH1. So we don't need to derive from missingMetaDescriptionUrls - the per-page data in aggregatedSeo.pages already has hasMeta, hasH1. For structure we need to merge: for each URL, check if it's in pagesWithMultipleH1, pagesWithSkippedLevels, or else good. So the row type is: PageSeoSummary & { structure: 'good' | 'multipleH1' | 'skippedLevels' }. We get structure from aggregatedStructure by URL sets.
+
+Build rows: aggregatedSeo.pages.map(p => ({ ...p, structure: getStructure(p.url) })). getStructure(url) = if in pagesWithMultipleH1 then 'multipleH1', else if in pagesWithSkippedLevels then 'skippedLevels', else 'good'. When structure is null, we can use 'good' for all.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "pageOfTotal|openPage|issuesTable",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "pageOfTotal|openPage|issuesTable",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 45,
+  "topFiles": [
+    {
+      "uri": "locales/de.json",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 9
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add domainResult.pagesTablePrev and pagesTableNext if not present, and add new keys for the SEO table: projects.seo.tableUrl, tableWords, tableKeywords, tableSkinny, tableMeta, tableH1, tableStructure, structureGood, structureMultipleH1, structureSkippedLevels. Let me check for pagesTablePrev/Next.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "pagesTablePrev|pagesTableNext",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "pagesTablePrev|pagesTableNext",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 20,
+  "topFiles": [
+    {
+      "uri": "locales/en.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "locales/de.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Now create the SeoOnPageTable component and add i18n for the column headers. I'll add under projects.seo: tableUrl, tableWords, tableKeywords, tableSkinny, tableMeta, tableH1, tableStructure, structureGood, structureMultipleH1, structureSkippedLevels, tableYes, tableNo.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoOnPageTable.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to:
+1. Add i18n keys for table headers and structure labels (tableUrl, tableWords, tableKeywords, tableSkinny, tableMeta, tableH1, tableStructure, structureGood, structureMultipleH1, structureSkippedLevels, tableYes, tableNo, tableEmpty, tableAria).
+2. On the SEO page: build merged rows (from aggregatedSeo.pages + structure from aggregatedStructure), render one card with SeoOnPageTable, and remove the separate cards for "Pages without Meta-Description", "Pages without H1", "Structure", and "Pages by content & density".
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+MSQDX_STATUS might not have "success" - let me check. I used MSQDX_STATUS.success?.base - might need to use a different token for green. Let me check the tokens.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "MSQDX_STATUS|success|green",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components",
+  "glob": "*.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "MSQDX_STATUS|success|green",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components",
+  "outputMode": "content",
+  "totalFiles": 155,
+  "totalMatches": 1060,
+  "topFiles": [
+    {
+      "uri": "components/SeoOnPageTable.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "components/DomainAggregatedIssueList.tsx",
+      "matchCount": 8
+    },
+    {
+      "uri": "components/PageIssuesCard.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "components/ScannedPagesTable.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "components/GeoQuestionCard.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "components/CompetitivePositionDiagram.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "components/RankTrackingChart.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "components/ThemeProvider.tsx",
+      "matchCount": 7
+    },
+    {
+      "uri": "components/AddToProject.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "components/DomainToolsCard.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "components/settings/BrandColorSelector.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "components/GenerativeOptimizerCard.tsx",
+      "matchCount": 26
+    },
+    {
+      "uri": "components/ScanIssueRow.tsx",
+      "matchCount": 7
+    },
+    {
+      "uri": "components/JourneyFlowchart.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "components/SearchResultsList.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "components/HistoryList.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "components/PageIndexCard.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "components/pdf/ScanReportDocument.tsx",
+      "matchCount": 15
+    },
+    {
+      "uri": "components/auth/AuthBrandColorSelector.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "components/UxIssueList.tsx",
+      "matchCount": 16
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll use MSQDX_BRAND_PRIMARY.green for the "good" structure chip to be consistent. Updating the component.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoOnPageTable.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now update the SEO page: build seoTableRows from aggregatedSeo.pages + structure from aggregatedStructure, then replace the four cards (pages without meta, pages without H1, structure, pages by content) with one card that contains SeoOnPageTable. I'll add a useMemo for the rows and the handler to open the single result page.
+</details></think>
+
+---
+
+
+SEO-Seite anpassen: Tabellenzeilen aus den Aggregaten erzeugen und die vier Listen-Cards durch eine Tabelle ersetzen.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to:
+1. Import SeoOnPageTable and SeoOnPageRow
+2. Add useMemo for seoTableRows: from aggregatedSeo.pages, add structure (from aggregatedStructure: multipleH1 set, skippedLevels set)
+3. Replace the blocks "Pages without Meta-Description", "Pages without H1", "Structure", and "Pages by content & density" with a single MsqdxMoleculeCard containing SeoOnPageTable with rows={seoTableRows} and onRowClick that navigates to pathResults(page.id) when page is in pagesByUrl
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to remove the four cards (Pages without Meta-Description, Pages without H1, Structure, Pages by content & density) and replace them with one card that contains SeoOnPageTable.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to remove the "Pages by content & density" card that was at the end (the list with word count, keywords, skinny per page) since that's now in the table.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Removed the duplicate "Pages by content" card. The Overview card (Meta & Basis counts) and Cross-Page Keywords card remain. Let me check if we still need the MsqdxChip import on the SEO page - we use it in the header for the score label. Yes we do. Let me run linter and build.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoOnPageTable.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoOnPageTable.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me run the build to make sure everything compiles.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 11.3s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+  Generating static pages using 9 workers (0/47) ...
+  Generating static pages using 9 workers (11/47) 
+  Generating static pages using 9 workers (23/47) 
+  Generating static pages using 9 workers (35/47) 
+✓ Generating static pages using 9 workers (47/47) in 236.9ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/register
+├ ƒ /api/auth/tokens
+├ ƒ /api/auth/tokens/[id]
+├ ƒ /api/checks/contrast
+├ ƒ /api/checks/pagespeed
+├ ƒ /api/checks/readability
+├ ƒ /api/checks/ssl
+├ ƒ /api/checks/wayback
+├ ƒ /api/health
+├ ƒ /api/journeys
+├ ƒ /api/journeys/[id]
+├ ƒ /api/projects
+├ ƒ /api/projects/[id]
+├ ƒ /api/projects/[id]/domain-scan-all
+├ ƒ /api/projects/[id]/domain-summary
+├ ƒ /api/projects/[id]/domain-summary-all
+├ ƒ /api/projects/[id]/geo-question-history
+├ ƒ /api/projects/[id]/geo-summary
+├ ƒ /api/projects/[id]/ranking-summary
+├ ƒ /api/projects/[id]/research
+├ ƒ /api/projects/[id]/suggest-competitors
+├ ƒ /api/projects/[id]/suggest-keywords
+├ ƒ /api/rank-tracking/keywords
+├ ƒ /api/rank-tracking/keywords/[id]
+├ ƒ /api/rank-tracking/keywords/[id]/positions
+├ ƒ /api/rank-tracking/refresh
+├ ƒ /api/saliency/generate
+├ ƒ /api/saliency/result
+├ ƒ /api/scan
+├ ƒ /api/scan/[id]
+├ ƒ /api/scan/[id]/project
+├ ƒ /api/scan/[id]/screenshot
+├ ƒ /api/scan/[id]/summarize
+├ ƒ /api/scan/domain
+├ ƒ /api/scan/domain/[id]/journey
+├ ƒ /api/scan/domain/[id]/status
+├ ƒ /api/scan/domain/[id]/summarize
+├ ƒ /api/scan/domain/[id]/summary
+├ ƒ /api/scan/domain/by-domain
+├ ƒ /api/scan/geo-eeat
+├ ƒ /api/scan/geo-eeat/[jobId]
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history/[runId]
+├ ƒ /api/scan/geo-eeat/[jobId]/project
+├ ƒ /api/scan/geo-eeat/[jobId]/rerun-competitive
+├ ƒ /api/scan/geo-eeat/[jobId]/status
+├ ƒ /api/scan/geo-eeat/history
+├ ƒ /api/scan/geo-eeat/suggest-competitors-queries
+├ ƒ /api/scan/journey-agent
+├ ƒ /api/scan/journey-agent/[jobId]
+├ ƒ /api/scan/journey-agent/[jobId]/live
+├ ƒ /api/scan/journey-agent/[jobId]/live/stream
+├ ƒ /api/scan/journey-agent/[jobId]/project
+├ ƒ /api/scan/journey-agent/[jobId]/video
+├ ƒ /api/scan/journey-agent/history
+├ ƒ /api/scans
+├ ƒ /api/scans/[id]
+├ ƒ /api/scans/domain
+├ ƒ /api/scans/domain/[id]
+├ ƒ /api/scans/domain/[id]/project
+├ ƒ /api/search
+├ ƒ /api/share
+├ ƒ /api/share/[token]
+├ ƒ /api/share/[token]/access
+├ ƒ /api/share/[token]/pages/[pageId]
+├ ƒ /api/share/[token]/pages/[pageId]/screenshot
+├ ƒ /api/share/[token]/video
+├ ƒ /api/share/by-resource
+├ ƒ /api/tools/contrast
+├ ƒ /api/tools/extract
+├ ƒ /api/tools/pagespeed
+├ ƒ /api/tools/readability
+├ ƒ /api/tools/ssl-labs
+├ ƒ /api/tools/wayback
+├ ƒ /developers
+├ ƒ /domain/[id]
+├ ƒ /geo-eeat/[jobId]
+├ ƒ /history
+├ ƒ /journey-agent/[jobId]
+├ ƒ /login
+├ ƒ /projects
+├ ƒ /projects/[id]
+├ ƒ /projects/[id]/geo
+├ ƒ /projects/[id]/rankings
+├ ƒ /projects/[id]/research
+├ ƒ /projects/[id]/seo
+├ ƒ /projects/[id]/wcag
+├ ƒ /register
+├ ƒ /results/[id]
+├ ƒ /scan
+├ ƒ /scan/domain
+├ ƒ /settings
+└ ƒ /share/[token]
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
+
+```
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build succeeded. Let me provide a short summary to the user.
+</details></think>
+
+---
+
+
+Die komplexe Tabelle ist eingebaut. Kurzüberblick:
+
+## Neue Komponente: `SeoOnPageTable`
+
+- **Eine Tabelle** fasst die bisherigen drei Bereiche zusammen:
+  - **Seiten nach Inhalt & Dichte** (URL, Wörter, Keywords, Skinny)
+  - **Seiten ohne Meta-Description** → Spalte **Meta** (Ja/Nein)
+  - **Struktur & Überschriften** → Spalte **Struktur** (OK / Mehrere H1 / Ebenen überspr.)
+
+**Spalten (alle sortierbar):**
+
+| Spalte   | Inhalt |
+|----------|--------|
+| URL      | Seiten-URL, klickbar → Einzelergebnis |
+| Wörter   | Wortanzahl |
+| Keywords | Anzahl Top-Keywords |
+| Skinny   | Chip „Skinny“, wenn &lt; 300 Wörter |
+| Meta     | Ja/Nein (Meta-Description) |
+| H1       | Ja/Nein (H1 vorhanden) |
+| Struktur | OK (grün) / Mehrere H1 (pink) / Ebenen überspr. (gelb) |
+
+- **Pagination:** 50 Zeilen pro Seite (wie bei der Issues-Tabelle), Vor/Zurück-Buttons.
+- **Sortierung:** Klick auf Spaltenheader, Standard: Wörter absteigend.
+- **MSQDX:** `MsqdxTypography`, `MsqdxChip`, `MsqdxButton`, Farben aus Tokens.
+
+## SEO-Seite angepasst
+
+- Die vier Listen-Cards („Seiten ohne Meta-Description“, „Seiten ohne H1“, „Struktur“, „Seiten nach Inhalt & Dichte“) wurden durch **eine** Card **„Alle Seiten: Meta, Struktur & Inhalt“** mit der neuen Tabelle ersetzt.
+- Die Cards **Übersicht (Meta & Basis)** und **Cross-Page Keywords** bleiben unverändert.
+
+**Neue i18n-Keys** (de/en): `tableUrl`, `tableWords`, `tableKeywords`, `tableSkinny`, `tableMeta`, `tableH1`, `tableStructure`, `structureGood`, `structureMultipleH1`, `structureSkippedLevels`, `tableYes`, `tableNo`, `tableEmpty`, `tableAria`, `tableTitle`.
+
+Build läuft durch. Wenn du willst, können wir noch Spaltenbreiten oder Standard-Sortierung anpassen.
+
+---
+
+_**User**_
+
+deployed failed, kannst du lokal mal builden
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user says the deployment failed and wants me to run a local build to see if there are any issues.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 8.5s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+  Generating static pages using 9 workers (0/47) ...
+  Generating static pages using 9 workers (11/47) 
+  Generating static pages using 9 workers (23/47) 
+  Generating static pages using 9 workers (35/47) 
+✓ Generating static pages using 9 workers (47/47) in 430.4ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/register
+├ ƒ /api/auth/tokens
+├ ƒ /api/auth/tokens/[id]
+├ ƒ /api/checks/contrast
+├ ƒ /api/checks/pagespeed
+├ ƒ /api/checks/readability
+├ ƒ /api/checks/ssl
+├ ƒ /api/checks/wayback
+├ ƒ /api/health
+├ ƒ /api/journeys
+├ ƒ /api/journeys/[id]
+├ ƒ /api/projects
+├ ƒ /api/projects/[id]
+├ ƒ /api/projects/[id]/domain-scan-all
+├ ƒ /api/projects/[id]/domain-summary
+├ ƒ /api/projects/[id]/domain-summary-all
+├ ƒ /api/projects/[id]/geo-question-history
+├ ƒ /api/projects/[id]/geo-summary
+├ ƒ /api/projects/[id]/ranking-summary
+├ ƒ /api/projects/[id]/research
+├ ƒ /api/projects/[id]/suggest-competitors
+├ ƒ /api/projects/[id]/suggest-keywords
+├ ƒ /api/rank-tracking/keywords
+├ ƒ /api/rank-tracking/keywords/[id]
+├ ƒ /api/rank-tracking/keywords/[id]/positions
+├ ƒ /api/rank-tracking/refresh
+├ ƒ /api/saliency/generate
+├ ƒ /api/saliency/result
+├ ƒ /api/scan
+├ ƒ /api/scan/[id]
+├ ƒ /api/scan/[id]/project
+├ ƒ /api/scan/[id]/screenshot
+├ ƒ /api/scan/[id]/summarize
+├ ƒ /api/scan/domain
+├ ƒ /api/scan/domain/[id]/journey
+├ ƒ /api/scan/domain/[id]/status
+├ ƒ /api/scan/domain/[id]/summarize
+├ ƒ /api/scan/domain/[id]/summary
+├ ƒ /api/scan/domain/by-domain
+├ ƒ /api/scan/geo-eeat
+├ ƒ /api/scan/geo-eeat/[jobId]
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history/[runId]
+├ ƒ /api/scan/geo-eeat/[jobId]/project
+├ ƒ /api/scan/geo-eeat/[jobId]/rerun-competitive
+├ ƒ /api/scan/geo-eeat/[jobId]/status
+├ ƒ /api/scan/geo-eeat/history
+├ ƒ /api/scan/geo-eeat/suggest-competitors-queries
+├ ƒ /api/scan/journey-agent
+├ ƒ /api/scan/journey-agent/[jobId]
+├ ƒ /api/scan/journey-agent/[jobId]/live
+├ ƒ /api/scan/journey-agent/[jobId]/live/stream
+├ ƒ /api/scan/journey-agent/[jobId]/project
+├ ƒ /api/scan/journey-agent/[jobId]/video
+├ ƒ /api/scan/journey-agent/history
+├ ƒ /api/scans
+├ ƒ /api/scans/[id]
+├ ƒ /api/scans/domain
+├ ƒ /api/scans/domain/[id]
+├ ƒ /api/scans/domain/[id]/project
+├ ƒ /api/search
+├ ƒ /api/share
+├ ƒ /api/share/[token]
+├ ƒ /api/share/[token]/access
+├ ƒ /api/share/[token]/pages/[pageId]
+├ ƒ /api/share/[token]/pages/[pageId]/screenshot
+├ ƒ /api/share/[token]/video
+├ ƒ /api/share/by-resource
+├ ƒ /api/tools/contrast
+├ ƒ /api/tools/extract
+├ ƒ /api/tools/pagespeed
+├ ƒ /api/tools/readability
+├ ƒ /api/tools/ssl-labs
+├ ƒ /api/tools/wayback
+├ ƒ /developers
+├ ƒ /domain/[id]
+├ ƒ /geo-eeat/[jobId]
+├ ƒ /history
+├ ƒ /journey-agent/[jobId]
+├ ƒ /login
+├ ƒ /projects
+├ ƒ /projects/[id]
+├ ƒ /projects/[id]/geo
+├ ƒ /projects/[id]/rankings
+├ ƒ /projects/[id]/research
+├ ƒ /projects/[id]/seo
+├ ƒ /projects/[id]/wcag
+├ ƒ /register
+├ ƒ /results/[id]
+├ ƒ /scan
+├ ƒ /scan/domain
+├ ƒ /settings
+└ ƒ /share/[token]
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The local build completed successfully (exit code 0). So the codebase builds fine locally. The deployment failure might be due to:
+1. Different Node/npm versions on the deployment server
+2. Missing or different env vars (e.g. AUTH_SECRET) during build
+3. Memory/resource limits on the build server
+4. Coolify/Docker-specific issues
+
+I'll report to the user that the local build succeeded and suggest they check the deployment logs for the actual error.
+</details></think>
+
+---
+
+
+Lokal ist der Build durchgelaufen:
+
+- **Compiled successfully**
+- **TypeScript** ohne Fehler
+- **Static pages** erzeugt (47/47)
+- **Exit code: 0**
+
+Wenn das Deployment trotzdem fehlschlägt, liegt es sehr wahrscheinlich an der Umgebung (nicht am Code). Typische Ursachen:
+
+1. **Node/npm-Version** – Auf dem Server eine andere Version als lokal (z. B. Node 18/20).
+2. **AUTH_SECRET** – Beim Build erscheint mehrfach: *"AUTH_SECRET is missing or too short"*. In der Build-Umgebung (Coolify/Docker) `AUTH_SECRET` setzen (min. 32 Zeichen).
+3. **Speicher** – Build auf dem Server bricht ab wegen zu wenig RAM.
+4. **Coolify/Docker** – Build-Command, Working Directory oder fehlende Env-Variablen in der App-Konfiguration.
+
+Nächster Schritt: **Deployment-Logs** der fehlgeschlagenen Build-Runde prüfen (z. B. in Coolify unter „Build Logs“ oder „Deploy Logs“). Die genaue Fehlermeldung dort sagt, ob es z. B. „Out of memory“, „Command not found“, „Module not found“ oder ein Env-Fehler ist.
+
+Wenn du die relevante Log-Zeile (oder den Abschnitt) hier postest, können wir gezielt drauf eingehen.
+
+---
+
+_**User**_
+
+wir haben performance probleme das alles wieder flackert und neu lädt, irgendein listener oder hook verursacht das. können wir lieber alles vorher einmal abfragen und keine rerequeries machen
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+

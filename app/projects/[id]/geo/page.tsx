@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useFetchOnceForId } from '@/hooks/useFetchOnceForId';
 import Link from 'next/link';
 import { Box, Dialog, DialogTitle, DialogContent, Stack } from '@mui/material';
 import {
@@ -55,10 +56,10 @@ export default function ProjectGeoPage() {
     const [geoStartLoading, setGeoStartLoading] = useState(false);
     const [geoStartError, setGeoStartError] = useState<string | null>(null);
     const [manageQueriesOpen, setManageQueriesOpen] = useState(false);
+    const fetchedForIdRef = useFetchOnceForId();
 
     const loadProject = useCallback(async () => {
         if (!id) return;
-        setLoading(true);
         try {
             const res = await fetch(apiProject(id), { credentials: 'same-origin' });
             const data = await res.json();
@@ -66,63 +67,54 @@ export default function ProjectGeoPage() {
             else setProject(null);
         } catch {
             setProject(null);
-        } finally {
-            setLoading(false);
         }
     }, [id]);
 
     useEffect(() => {
-        loadProject();
-    }, [loadProject]);
-
-    useEffect(() => {
         if (!id) return;
-        fetch(apiScanGeoEeatHistory({ limit: 100, projectId: id }), { credentials: 'same-origin' })
-            .then((r) => r.json())
-            .then((data) => {
-                const runs = Array.isArray(data?.runs) ? data.runs : Array.isArray(data?.data) ? data.data : [];
-                setGeoRuns(runs);
-            })
-            .catch(() => setGeoRuns([]));
-    }, [id]);
-
-    useEffect(() => {
-        if (!id) return;
-        fetch(apiProjectGeoSummary(id), { credentials: 'same-origin' })
-            .then((r) => r.json())
-            .then((data: { success?: boolean; data?: { score?: number | null; competitorScores?: Record<string, number> } }) => {
-                if (data?.success && data?.data) {
-                    setGeoSummary({
-                        score: data.data.score ?? null,
-                        competitorScores: data.data.competitorScores ?? {},
-                    });
-                }
-            })
-            .catch(() => setGeoSummary({ score: null, competitorScores: {} }));
-    }, [id]);
-
-    useEffect(() => {
-        if (!id) return;
-        let cancelled = false;
+        if (fetchedForIdRef.current === id) return;
+        fetchedForIdRef.current = id;
+        const ac = new AbortController();
+        const { signal } = ac;
+        setLoading(true);
         setHistoryLoading(true);
         setQuestionHistory([]);
-        fetch(apiProjectGeoQuestionHistory(id, 90), { credentials: 'same-origin' })
-            .then((r) => r.json())
-            .then((data: { success?: boolean; questions?: GeoQuestionHistoryItem[]; targetDomain?: string; competitorDomains?: string[] }) => {
-                if (!cancelled && data?.success) {
-                    if (Array.isArray(data.questions)) setQuestionHistory(data.questions);
-                    setTargetDomain(typeof data.targetDomain === 'string' ? data.targetDomain : '');
-                    setCompetitorDomains(Array.isArray(data.competitorDomains) ? data.competitorDomains : []);
+        Promise.all([
+            fetch(apiProject(id), { credentials: 'same-origin', signal }).then((r) => r.json()),
+            fetch(apiScanGeoEeatHistory({ limit: 100, projectId: id }), { credentials: 'same-origin', signal }).then((r) => r.json()),
+            fetch(apiProjectGeoSummary(id), { credentials: 'same-origin', signal }).then((r) => r.json()),
+            fetch(apiProjectGeoQuestionHistory(id, 90), { credentials: 'same-origin', signal }).then((r) => r.json()),
+        ])
+            .then(([projectRes, historyRes, summaryRes, questionRes]) => {
+                if (signal.aborted) return;
+                if (projectRes?.data) setProject(projectRes.data);
+                else setProject(null);
+                const runs = Array.isArray(historyRes?.runs) ? historyRes.runs : Array.isArray(historyRes?.data) ? historyRes.data : [];
+                setGeoRuns(runs);
+                if (summaryRes?.success && summaryRes?.data) {
+                    setGeoSummary({
+                        score: summaryRes.data.score ?? null,
+                        competitorScores: summaryRes.data.competitorScores ?? {},
+                    });
+                }
+                if (questionRes?.success) {
+                    if (Array.isArray(questionRes.questions)) setQuestionHistory(questionRes.questions);
+                    setTargetDomain(typeof questionRes.targetDomain === 'string' ? questionRes.targetDomain : '');
+                    setCompetitorDomains(Array.isArray(questionRes.competitorDomains) ? questionRes.competitorDomains : []);
                 }
             })
-            .catch(() => {
-                if (!cancelled) setQuestionHistory([]);
+            .catch((err) => {
+                if (err?.name === 'AbortError') return;
+                setQuestionHistory([]);
             })
             .finally(() => {
-                if (!cancelled) setHistoryLoading(false);
+                if (!signal.aborted) {
+                    setLoading(false);
+                    setHistoryLoading(false);
+                }
             });
-        return () => { cancelled = true; };
-    }, [id]);
+        return () => ac.abort();
+    }, [id, fetchedForIdRef]);
 
     const geoQueries = Array.isArray(project?.geoQueries) ? project.geoQueries : [];
 
