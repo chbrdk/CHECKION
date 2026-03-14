@@ -89,6 +89,11 @@ export default function ProjectWcagPage() {
         return map;
     }, [fullSummary?.pages]);
 
+    const handleIssuePageClick = useCallback((url: string) => {
+        const page = pagesByUrl.get(url);
+        if (page) router.push(pathResults(page.id));
+    }, [pagesByUrl, router]);
+
     const aggregated = fullSummary?.aggregated?.issues ?? null;
     const totalPageCount = fullSummary?.totalPageCount ?? 0;
     const loading = projectLoading || summaryLoading;
@@ -218,10 +223,7 @@ export default function ProjectWcagPage() {
                         >
                             <DomainAggregatedIssueList
                                 issues={aggregated.issues}
-                                onPageClick={(url) => {
-                                    const page = pagesByUrl.get(url);
-                                    if (page) router.push(pathResults(page.id));
-                                }}
+                                onPageClick={handleIssuePageClick}
                             />
                         </MsqdxMoleculeCard>
 

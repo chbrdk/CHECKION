@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Box, CircularProgress, alpha } from '@mui/material';
 import {
@@ -97,6 +97,11 @@ export default function DomainResultPage() {
     const pagesByUrl = useMemo(() => new Map(pages.map((p) => [p.url, p])), [pages]);
     const norm = (u: string) => { try { const x = new URL(u); return x.origin + (x.pathname.replace(/\/$/, '') || '/'); } catch { return u; } };
     const pagesByNormUrl = useMemo(() => { const m = new Map<string, SlimPage>(); for (const p of pages) m.set(norm(p.url), p); return m; }, [pages]);
+
+    const handleIssuePageClick = useCallback((url: string) => {
+        const page = pagesByUrl.get(url);
+        if (page) router.push(pathResults(page.id));
+    }, [pagesByUrl, router]);
 
     useEffect(() => {
         if (!domainId) return;
@@ -333,10 +338,7 @@ export default function DomainResultPage() {
                     </Box>
                     <DomainAggregatedIssueList
                         issues={aggregated.issues.issues}
-                        onPageClick={(url) => {
-                            const page = pagesByUrl.get(url);
-                            if (page) router.push(pathResults(page.id));
-                        }}
+                        onPageClick={handleIssuePageClick}
                     />
                     {aggregated.issues.pagesByIssueCount.some((p) => p.errors > 0 || p.warnings > 0) && (
                         <Box sx={{ mt: 2 }}>

@@ -27118,10 +27118,177 @@ cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
   · optimizePackageImports
 
   Creating an optimized production build ...
+✓ Compiled successfully in 10.9s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+  Generating static pages using 9 workers (0/46) ...
+  Generating static pages using 9 workers (11/46) 
+  Generating static pages using 9 workers (22/46) 
+  Generating static pages using 9 workers (34/46) 
+✓ Generating static pages using 9 workers (46/46) in 498.8ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/register
+├ ƒ /api/auth/tokens
+├ ƒ /api/auth/tokens/[id]
+├ ƒ /api/checks/contrast
+├ ƒ /api/checks/pagespeed
+├ ƒ /api/checks/readability
+├ ƒ /api/checks/ssl
+├ ƒ /api/checks/wayback
+├ ƒ /api/health
+├ ƒ /api/journeys
+├ ƒ /api/journeys/[id]
+├ ƒ /api/projects
+├ ƒ /api/projects/[id]
+├ ƒ /api/projects/[id]/domain-summary
+├ ƒ /api/projects/[id]/geo-question-history
+├ ƒ /api/projects/[id]/geo-summary
+├ ƒ /api/projects/[id]/ranking-summary
+├ ƒ /api/projects/[id]/research
+├ ƒ /api/projects/[id]/suggest-competitors
+├ ƒ /api/projects/[id]/suggest-keywords
+├ ƒ /api/rank-tracking/keywords
+├ ƒ /api/rank-tracking/keywords/[id]
+├ ƒ /api/rank-tracking/keywords/[id]/positions
+├ ƒ /api/rank-tracking/refresh
+├ ƒ /api/saliency/generate
+├ ƒ /api/saliency/result
+├ ƒ /api/scan
+├ ƒ /api/scan/[id]
+├ ƒ /api/scan/[id]/project
+├ ƒ /api/scan/[id]/screenshot
+├ ƒ /api/scan/[id]/summarize
+├ ƒ /api/scan/domain
+├ ƒ /api/scan/domain/[id]/journey
+├ ƒ /api/scan/domain/[id]/status
+├ ƒ /api/scan/domain/[id]/summarize
+├ ƒ /api/scan/domain/[id]/summary
+├ ƒ /api/scan/geo-eeat
+├ ƒ /api/scan/geo-eeat/[jobId]
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history/[runId]
+├ ƒ /api/scan/geo-eeat/[jobId]/project
+├ ƒ /api/scan/geo-eeat/[jobId]/rerun-competitive
+├ ƒ /api/scan/geo-eeat/[jobId]/status
+├ ƒ /api/scan/geo-eeat/history
+├ ƒ /api/scan/geo-eeat/suggest-competitors-queries
+├ ƒ /api/scan/journey-agent
+├ ƒ /api/scan/journey-agent/[jobId]
+├ ƒ /api/scan/journey-agent/[jobId]/live
+├ ƒ /api/scan/journey-agent/[jobId]/live/stream
+├ ƒ /api/scan/journey-agent/[jobId]/project
+├ ƒ /api/scan/journey-agent/[jobId]/video
+├ ƒ /api/scan/journey-agent/history
+├ ƒ /api/scans
+├ ƒ /api/scans/[id]
+├ ƒ /api/scans/domain
+├ ƒ /api/scans/domain/[id]
+├ ƒ /api/scans/domain/[id]/project
+├ ƒ /api/search
+├ ƒ /api/share
+├ ƒ /api/share/[token]
+├ ƒ /api/share/[token]/access
+├ ƒ /api/share/[token]/pages/[pageId]
+├ ƒ /api/share/[token]/pages/[pageId]/screenshot
+├ ƒ /api/share/[token]/video
+├ ƒ /api/share/by-resource
+├ ƒ /api/tools/contrast
+├ ƒ /api/tools/extract
+├ ƒ /api/tools/pagespeed
+├ ƒ /api/tools/readability
+├ ƒ /api/tools/ssl-labs
+├ ƒ /api/tools/wayback
+├ ƒ /developers
+├ ƒ /domain/[id]
+├ ƒ /geo-eeat/[jobId]
+├ ƒ /history
+├ ƒ /journey-agent/[jobId]
+├ ƒ /login
+├ ƒ /projects
+├ ƒ /projects/[id]
+├ ƒ /projects/[id]/geo
+├ ƒ /projects/[id]/rankings
+├ ƒ /projects/[id]/research
+├ ƒ /projects/[id]/wcag
+├ ƒ /register
+├ ƒ /results/[id]
+├ ƒ /scan
+├ ƒ /scan/domain
+├ ƒ /settings
+└ ƒ /share/[token]
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
 
 ```
 </details>
 </tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build succeeded. Let me fix the chip label - "42 Seiten" in the Pages column might look like "42 Pages" in EN. But actually the column header is "Pages" and the cell shows "42 Pages" + Open link. So the translation "issuesTablePages" = "Pages" (EN) / "Seiten" (DE) gives "42 Pages" and "42 Seiten". That's correct. Done.
+</details></think>
+
+---
+
+
+Die **DomainAggregatedIssueList** (Gefundene Issues) ist jetzt wie die Scanned-Pages-Tabelle umgesetzt:
+
+## Änderungen
+
+### 1. **DomainAggregatedIssueList** (`components/DomainAggregatedIssueList.tsx`)
+
+- **Pagination:** Es werden nur **50 Einträge pro Seite** gerendert (`DOMAIN_ISSUES_TABLE_PAGE_SIZE`). Unten: „Seite X von Y (N Issues)“ und Vor/Zurück-Buttons, wenn mehr als eine Seite.
+- **Sortierung:** Alle Spalten sind klickbar und sortierbar:
+  - **Schwere** (Severity): Error → Warning → Notice
+  - **Meldung** (Message): alphabetisch
+  - **Level:** A, AA, AAA, APCA, Unknown
+  - **Runner:** alphabetisch
+  - **Code:** alphabetisch
+  - **Seiten** (Pages): Anzahl betroffener Seiten (Standard: absteigend, „meiste zuerst“)
+- Beim Wechsel der Sortierung wird wieder auf Seite 1 gesprungen.
+- **Sticky Header** wie bei der Scanned-Pages-Tabelle.
+- **Leerzustand:** Nutzung von `t('domainResult.noIssues')`.
+- Optionaler Prop **`pageSize`** (Standard: 50) für andere Seitengrößen.
+
+### 2. **Konstanten & i18n**
+
+- **`lib/constants.ts`:** `DOMAIN_ISSUES_TABLE_PAGE_SIZE = 50`
+- **Locales (en/de)** unter `domainResult`:
+  - `noIssues`
+  - `issuesTableSeverity`, `issuesTableMessage`, `issuesTableLevel`, `issuesTableRunner`, `issuesTableCode`, `issuesTablePages`
+
+Die Komponente wird unverändert auf der Domain-Seite (Tab „List & Details“) und auf der Projekt-WCAG-Seite verwendet; dort greifen jetzt überall Pagination und Spaltensortierung.
+
+---
+
+_**User**_
+
+Thank you. Can you please... check how we get those data because every time i hover or do something in that Page. where we have that issues. or that found issues It always flickers and flickers and tries to re-render the whole page, I guess. So... I think we should fetch one time of the data and then just leave it there
 
 ---
 

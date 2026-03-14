@@ -24,7 +24,7 @@ type SortDir = 'asc' | 'desc';
 
 const severityOrder = { error: 0, warning: 1, notice: 2 };
 
-export function DomainAggregatedIssueList({
+function DomainAggregatedIssueListInner({
   issues,
   onPageClick,
   pageSize = DOMAIN_ISSUES_TABLE_PAGE_SIZE,
@@ -294,3 +294,6 @@ export function DomainAggregatedIssueList({
     </Box>
   );
 }
+
+/** Memoized so parent re-renders (e.g. hover) don’t re-render the list; only re-renders when issues, onPageClick, or pageSize change. */
+export const DomainAggregatedIssueList = React.memo(DomainAggregatedIssueListInner);
