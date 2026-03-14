@@ -37566,3 +37566,969 @@ Status: **completed**
 
 ---
 
+<think><details><summary>Thought Process</summary>
+
+I need to see the projects section in de.json for wcag keys to mirror the structure for seo, and check domainResult.pagesScanned.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "\"wcag\"|\"navWcag\"|\"navOverview\"|\"domainResult\"",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "contextAfter": 0,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "\"wcag\"|\"navWcag\"|\"navOverview\"|\"domainResult\"",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 50,
+  "topFiles": [
+    {
+      "uri": "locales/en.json",
+      "matchCount": 5
+    },
+    {
+      "uri": "locales/de.json",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 5
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see navSeo already exists in de.json ("SEO"). Now I need to add the full projects.seo block. Let me read the wcag block to get the exact structure and then add seo block after it.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "pagesScanned",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "pagesScanned",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 10,
+  "topFiles": [
+    {
+      "uri": "locales/en.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "locales/de.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I'll create the full SEO page. I need to:
+1. Create app/projects/[id]/seo/page.tsx with the same data loading as WCAG (but without domain-summary-all), and all the cards for overview, missing meta, missing H1, structure, cross-page keywords, pages by content.
+2. Add i18n keys - I'll add them after the page so the page can reference them. If navSeo already exists I don't need to add it again; I need to add the full "seo" subsection under projects.
+
+Let me write the SEO page first.
+</details></think>
+
+---
+
+
+Erstelle die SEO-Seite.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to add the i18n keys. I used: projects.seo.title, fromScan, noScan, openDeepScan, startScan, overview, overviewSubtitle, withTitle, withMetaDescription, withH1, withCanonical, totalWords, pagesWithoutMetaDescription, pagesWithoutH1, pagesCount, structureTitle, multipleH1, skippedLevels, goodStructure, more, crossPageKeywords, crossPageKeywordsSubtitle, pagesShort, pagesByContent, pagesByContentSubtitle, words, topKeywords, skinny. And info.seoOnPage. Let me add these to de.json and en.json. I also need to fix the pagesCount - I used t('projects.seo.pagesCount', { count: ... }) so the key should support {count}.
+</details></think>
+
+---
+
+
+i18n-Keys hinzufügen und prüfen, ob `info.seoOnPage` existiert:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "\"info\":",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json",
+  "contextAfter": 15,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "\"info\":",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 10,
+  "topFiles": [
+    {
+      "uri": "locales/de.json",
+      "matchCount": 32
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 32
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 32
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 32
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 32
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The SEO page has no linter errors. I need to add the projects.seo block and info.seoOnPage. Let me add the seo block after the wcag block in both locale files, and add info.seoOnPage in the info section. I'll need to find where to add info.seoOnPage - after one of the existing keys in the info object.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add info.seoOnPage before the closing of the info object. I'll add it after "eeat".
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "\"eeat\":",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json",
+  "contextAfter": 2,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "\"eeat\":",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 5,
+  "topFiles": [
+    {
+      "uri": "locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now add info.seoOnPage to en.json.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to check that the domain-aggregation exports AggregatedSeo and AggregatedStructure so the SEO page can import them. Let me verify.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "export.*AggregatedSeo|export.*AggregatedStructure",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "export.*AggregatedSeo|export.*AggregatedStructure",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 20,
+  "topFiles": [
+    {
+      "uri": "lib/domain-aggregation.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-aggregation.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-aggregation.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-aggregation.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-aggregation.ts",
+      "matchCount": 4
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add pathProjectSeo in lib/constants.ts
+- [x] Add SEO tab in ProjectHeaderNav
+- [x] Create app/projects/[id]/seo/page.tsx with all cards
+- [x] Add i18n keys for projects.seo in de.json and en.json
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 8.8s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+  Generating static pages using 9 workers (0/47) ...
+  Generating static pages using 9 workers (11/47) 
+  Generating static pages using 9 workers (23/47) 
+  Generating static pages using 9 workers (35/47) 
+✓ Generating static pages using 9 workers (47/47) in 225.3ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/register
+├ ƒ /api/auth/tokens
+├ ƒ /api/auth/tokens/[id]
+├ ƒ /api/checks/contrast
+├ ƒ /api/checks/pagespeed
+├ ƒ /api/checks/readability
+├ ƒ /api/checks/ssl
+├ ƒ /api/checks/wayback
+├ ƒ /api/health
+├ ƒ /api/journeys
+├ ƒ /api/journeys/[id]
+├ ƒ /api/projects
+├ ƒ /api/projects/[id]
+├ ƒ /api/projects/[id]/domain-scan-all
+├ ƒ /api/projects/[id]/domain-summary
+├ ƒ /api/projects/[id]/domain-summary-all
+├ ƒ /api/projects/[id]/geo-question-history
+├ ƒ /api/projects/[id]/geo-summary
+├ ƒ /api/projects/[id]/ranking-summary
+├ ƒ /api/projects/[id]/research
+├ ƒ /api/projects/[id]/suggest-competitors
+├ ƒ /api/projects/[id]/suggest-keywords
+├ ƒ /api/rank-tracking/keywords
+├ ƒ /api/rank-tracking/keywords/[id]
+├ ƒ /api/rank-tracking/keywords/[id]/positions
+├ ƒ /api/rank-tracking/refresh
+├ ƒ /api/saliency/generate
+├ ƒ /api/saliency/result
+├ ƒ /api/scan
+├ ƒ /api/scan/[id]
+├ ƒ /api/scan/[id]/project
+├ ƒ /api/scan/[id]/screenshot
+├ ƒ /api/scan/[id]/summarize
+├ ƒ /api/scan/domain
+├ ƒ /api/scan/domain/[id]/journey
+├ ƒ /api/scan/domain/[id]/status
+├ ƒ /api/scan/domain/[id]/summarize
+├ ƒ /api/scan/domain/[id]/summary
+├ ƒ /api/scan/domain/by-domain
+├ ƒ /api/scan/geo-eeat
+├ ƒ /api/scan/geo-eeat/[jobId]
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history/[runId]
+├ ƒ /api/scan/geo-eeat/[jobId]/project
+├ ƒ /api/scan/geo-eeat/[jobId]/rerun-competitive
+├ ƒ /api/scan/geo-eeat/[jobId]/status
+├ ƒ /api/scan/geo-eeat/history
+├ ƒ /api/scan/geo-eeat/suggest-competitors-queries
+├ ƒ /api/scan/journey-agent
+├ ƒ /api/scan/journey-agent/[jobId]
+├ ƒ /api/scan/journey-agent/[jobId]/live
+├ ƒ /api/scan/journey-agent/[jobId]/live/stream
+├ ƒ /api/scan/journey-agent/[jobId]/project
+├ ƒ /api/scan/journey-agent/[jobId]/video
+├ ƒ /api/scan/journey-agent/history
+├ ƒ /api/scans
+├ ƒ /api/scans/[id]
+├ ƒ /api/scans/domain
+├ ƒ /api/scans/domain/[id]
+├ ƒ /api/scans/domain/[id]/project
+├ ƒ /api/search
+├ ƒ /api/share
+├ ƒ /api/share/[token]
+├ ƒ /api/share/[token]/access
+├ ƒ /api/share/[token]/pages/[pageId]
+├ ƒ /api/share/[token]/pages/[pageId]/screenshot
+├ ƒ /api/share/[token]/video
+├ ƒ /api/share/by-resource
+├ ƒ /api/tools/contrast
+├ ƒ /api/tools/extract
+├ ƒ /api/tools/pagespeed
+├ ƒ /api/tools/readability
+├ ƒ /api/tools/ssl-labs
+├ ƒ /api/tools/wayback
+├ ƒ /developers
+├ ƒ /domain/[id]
+├ ƒ /geo-eeat/[jobId]
+├ ƒ /history
+├ ƒ /journey-agent/[jobId]
+├ ƒ /login
+├ ƒ /projects
+├ ƒ /projects/[id]
+├ ƒ /projects/[id]/geo
+├ ƒ /projects/[id]/rankings
+├ ƒ /projects/[id]/research
+├ ƒ /projects/[id]/seo
+├ ƒ /projects/[id]/wcag
+├ ƒ /register
+├ ƒ /results/[id]
+├ ƒ /scan
+├ ƒ /scan/domain
+├ ƒ /settings
+└ ƒ /share/[token]
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build succeeded. The route `/projects/[id]/seo` is listed. All todos are completed. Let me give a short summary to the user.
+</details></think>
+
+---
+
+
+Die SEO-on-Page-Projektseite ist umgesetzt. Kurzüberblick:
+
+**1. Route & Konstanten**  
+- In [lib/constants.ts](lib/constants.ts): `pathProjectSeo(id)` ergänzt → `/projects/[id]/seo`.
+
+**2. Navigation**  
+- In [components/ProjectHeaderNav.tsx](components/ProjectHeaderNav.tsx): Tab „SEO“ mit `pathProjectSeo(id)` eingebaut, `isSeo` und `activeTab` angepasst (Tab zwischen Research und Performance).
+
+**3. Neue Seite** [app/projects/[id]/seo/page.tsx](app/projects/[id]/seo/page.tsx)  
+- **Daten:** Wie WCAG: `apiProjectDomainSummary(id)` → `scanId` → `apiScanDomainSummary(scanId)` → `fullSummary`; `pagesByUrl` aus `fullSummary.pages` für Klicks auf Einzelseiten.
+- **Zustände:** Kein `id` → Fehlermeldung; kein Scan → Hinweis + Button „Deep Scan starten“ (Link zu `pathScanDomain(project.domain)` oder Projekt); Scan ohne SEO/Struktur → Hinweis „Kein Deep Scan“.
+- **Inhalt (nur MSQDX + Box/Stack):**
+  - **Header-Card:** Titel „SEO on page“, Subtitle mit Seitenanzahl, InfoTooltip, Aktion „Deep Scan öffnen“.
+  - **Übersicht:** Meta & Struktur (Title, Meta-Description, H1, Canonical X/Y, Gesamtwörter).
+  - **Seiten ohne Meta-Description:** Liste mit klickbaren URLs → Einzelergebnis.
+  - **Seiten ohne H1:** gleiche Darstellung.
+  - **Struktur:** Chips (mehrere H1, übersprungene Ebenen, gute Struktur), Listen mit je bis zu 10 URLs + „+X weitere“.
+  - **Cross-Page-Keywords:** Bis zu 50 Chips (Keyword, Count, Seiten, Ø-Dichte).
+  - **Seiten nach Inhalt & Dichte:** Liste mit URL, Wörter, Top-Keywords, „Skinny“-Chip.
+
+**4. i18n**  
+- **DE/EN:** Unter `projects` neuer Block `seo` mit allen genutzten Keys (title, fromScan, noScan, startScan, openDeepScan, overview, overviewSubtitle, withTitle, withMetaDescription, withH1, withCanonical, totalWords, pagesWithoutMetaDescription, pagesWithoutH1, pagesCount, structureTitle, multipleH1, skippedLevels, goodStructure, more, crossPageKeywords, crossPageKeywordsSubtitle, pagesShort, pagesByContent, pagesByContentSubtitle, words, topKeywords, skinny).  
+- **info.seoOnPage:** In DE und EN für den InfoTooltip ergänzt.
+
+Build war erfolgreich, Route `projects/[id]/seo` ist aktiv. Alle To-dos sind erledigt.
+
+---
+
+_**User**_
+
+können wir aus allen daten die uns seo on page liefert einen validen, nachvollziehbaren score ermitteln? 
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is asking whether we can derive a valid, traceable score from all the SEO on-page data that we have. So they want an SEO on-page score - similar to how we have a WCAG score - that aggregates the available metrics (meta, structure, keywords, missing meta/H1, etc.) into a single number.
+
+Let me look at what data we have from the SEO aggregation and think about how to compute a sensible score:
+
+From AggregatedSeo:
+- totalPages
+- withTitle, withMetaDescription, withH1, withCanonical (counts)
+- missingMetaDescriptionUrls, missingH1Urls (lists)
+- pages (PageSeoSummary[] - wordCount, hasMeta, hasH1, isSkinny, topKeywordCount)
+- crossPageKeywords
+- totalWordsAcrossPages
+
+From AggregatedStructure:
+- pagesWithHeadingIssues, pagesWithMultipleH1, pagesWithSkippedLevels, pagesWithGoodStructure
+- totalPages
+
+A reasonable approach could be:
+1. **Coverage metrics**: What % of pages have title, meta description, H1, canonical? (withTitle/totalPages etc.) - each could contribute to the score.
+2. **Structure**: Penalize pages with multiple H1 or skipped levels; reward good structure.
+3. **Content**: Penalize skinny content (word count < 300); maybe reward having keywords.
+4. **Missing elements**: Penalize missing meta description, missing H1.
+
+We could do something like:
+- Score 0-100
+- Weight different factors (e.g. meta description is important for SEO, so 25%; title 20%; H1 20%; structure 15%; content depth/skinny 20%?)
+- Or simpler: average of (withTitle/totalPages)*100, (withMetaDescription/totalPages)*100, (withH1/totalPages)*100, then subtract for structure issues and skinny content.
+
+Let me check the codebase for any existing SEO score or similar pattern (e.g. WCAG score) to align with.
+</details></think>
+
+---
+
+
+Prüfen, welche SEO-Daten wir haben und ob bereits ein Score-Muster (z. B. WCAG) existiert:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/wcag-score.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Error parsing todo list data</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/seo-on-page-score.ts</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Error parsing todo list data</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+

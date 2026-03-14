@@ -230,7 +230,14 @@
       "pagesByContentSubtitle": "Sorted by word count; under 300 words = skinny content.",
       "words": "words",
       "topKeywords": "top keywords",
-      "skinny": "Skinny"
+      "skinny": "Skinny",
+      "score": "SEO on-page score",
+      "scoreLabel_excellent": "Excellent",
+      "scoreLabel_good": "Good",
+      "scoreLabel_fair": "Fair",
+      "scoreLabel_poor": "Poor",
+      "scoreLabel_critical": "Critical",
+      "scoreTooltip": "Formula: 40% meta coverage (title, meta description, H1, canonical), 30% heading structure (single H1, no skipped levels), 30% content depth (share of non-skinny pages, ≥300 words). Not an official standard; derived from deep-scan data."
     }
   },
   "auth": {

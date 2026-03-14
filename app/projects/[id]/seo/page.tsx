@@ -24,6 +24,7 @@ import {
 import type { DomainSummaryResponse } from '@/lib/domain-summary';
 import type { SlimPage } from '@/lib/types';
 import type { AggregatedSeo, AggregatedStructure } from '@/lib/domain-aggregation';
+import { computeSeoOnPageScore } from '@/lib/seo-on-page-score';
 
 export default function ProjectSeoPage() {
     const params = useParams();
@@ -91,6 +92,10 @@ export default function ProjectSeoPage() {
     const aggregatedStructure = fullSummary?.aggregated?.structure as AggregatedStructure | null | undefined;
     const totalPageCount = fullSummary?.totalPageCount ?? fullSummary?.pages?.length ?? (fullSummary as { totalPages?: number } | undefined)?.totalPages ?? 0;
     const hasSeoData = aggregatedSeo != null || aggregatedStructure != null;
+    const seoScore = useMemo(
+        () => computeSeoOnPageScore({ seo: aggregatedSeo ?? null, structure: aggregatedStructure ?? null }),
+        [aggregatedSeo, aggregatedStructure]
+    );
     const loading = projectLoading || summaryLoading;
 
     if (!id) {
@@ -119,7 +124,7 @@ export default function ProjectSeoPage() {
                     borderRadius="lg"
                     footerDivider
                     sx={{ bgcolor: 'var(--color-card-bg)' }}
-                    headerActions={<InfoTooltip title={t('info.seoOnPage')} ariaLabel={t('common.info')} />}
+                    headerActions={<InfoTooltip title={t('projects.seo.scoreTooltip')} ariaLabel={t('common.info')} />}
                     actions={
                         scanId ? (
                             <Link href={pathDomain(scanId)} style={{ textDecoration: 'none' }}>
@@ -133,9 +138,34 @@ export default function ProjectSeoPage() {
                     {loading ? (
                         <MsqdxTypography variant="body2" sx={{ py: 1 }}>{t('common.loading')}</MsqdxTypography>
                     ) : fullSummary ? (
-                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                            {t('projects.seo.fromScan')} · {totalPageCount} {t('domainResult.pagesScanned')}
-                        </MsqdxTypography>
+                        <Box>
+                            {hasSeoData && (
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'baseline', mb: 1 }}>
+                                    <Box>
+                                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                                            {t('projects.seo.score')}
+                                        </MsqdxTypography>
+                                        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                                            <MsqdxTypography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                                                {seoScore.score}
+                                            </MsqdxTypography>
+                                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', fontWeight: 500 }}>
+                                                /100
+                                            </MsqdxTypography>
+                                        </Box>
+                                        <MsqdxChip
+                                            label={t(`projects.seo.scoreLabel_${seoScore.label}`)}
+                                            size="small"
+                                            variant="outlined"
+                                            sx={{ mt: 0.5 }}
+                                        />
+                                    </Box>
+                                </Box>
+                            )}
+                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                {t('projects.seo.fromScan')} · {totalPageCount} {t('domainResult.pagesScanned')}
+                            </MsqdxTypography>
+                        </Box>
                     ) : !scanId ? (
                         <>
                             <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 1.5 }}>
