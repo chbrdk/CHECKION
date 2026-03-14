@@ -181,7 +181,17 @@
     "navResearch": "Research",
     "navPerformance": "Performance",
     "navWcag": "WCAG",
-    "navComingSoon": "Demnächst"
+    "navComingSoon": "Demnächst",
+    "openDeepScan": "Deep Scan öffnen",
+    "wcag": {
+      "fromScan": "Aus letztem Deep Scan",
+      "noScan": "Noch kein Deep Scan für dieses Projekt. Führe einen Domain-Scan aus, um die WCAG-Analyse zu sehen.",
+      "startScan": "Deep Scan starten",
+      "summary": "Übersicht",
+      "issuesTitle": "Gefundene Issues (Domain)",
+      "aggregatedOver": "Aggregiert über {count} Seiten",
+      "pagesWithMostErrors": "Seiten mit den meisten Fehlern"
+    }
   },
   "auth": {
     "login": {

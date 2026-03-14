@@ -43,6 +43,8 @@ export const pathProject = (id: string) => `${PATH_PROJECTS}/${encodeURIComponen
 export const pathProjectRankings = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}/rankings`;
 /** Build app route: /projects/[id]/geo */
 export const pathProjectGeo = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}/geo`;
+/** Build app route: /projects/[id]/wcag */
+export const pathProjectWcag = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}/wcag`;
 /** Build app route: /projects/[id]/research */
 export const pathProjectResearch = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}/research`;
 /** Build app route: /share/[token] */

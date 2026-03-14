@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Box, Tabs, Tab } from '@mui/material';
 import { MsqdxButton } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
-import { apiProject, pathProject, pathProjectRankings, pathProjectGeo, pathProjectResearch } from '@/lib/constants';
+import { apiProject, pathProject, pathProjectRankings, pathProjectGeo, pathProjectResearch, pathProjectWcag } from '@/lib/constants';
 
 /** Renders back button + project sub-nav for use in the app header (headerEnd) when on a project route. */
 export function ProjectHeaderNav() {
@@ -36,10 +36,12 @@ export function ProjectHeaderNav() {
     const isRankings = pathname === basePath + '/rankings';
     const isGeo = pathname === basePath + '/geo';
     const isResearch = pathname === basePath + '/research';
+    const isWcag = pathname === basePath + '/wcag';
     const activeTab =
         isRankings ? 'rankings'
         : isGeo ? 'geo'
         : isResearch ? 'research'
+        : isWcag ? 'wcag'
         : 'overview';
 
     return (
@@ -86,7 +88,7 @@ export function ProjectHeaderNav() {
                 <Tab label={t('projects.navGeo')} value="geo" href={id ? pathProjectGeo(id) : '#'} component={Link} />
                 <Tab label={t('projects.navResearch')} value="research" href={id ? pathProjectResearch(id) : '#'} component={Link} />
                 <Tab label={`${t('projects.navPerformance')} (${t('projects.navComingSoon')})`} value="performance" disabled sx={{ opacity: 0.6 }} />
-                <Tab label={`${t('projects.navWcag')} (${t('projects.navComingSoon')})`} value="wcag" disabled sx={{ opacity: 0.6 }} />
+                <Tab label={t('projects.navWcag')} value="wcag" href={id ? pathProjectWcag(id) : '#'} component={Link} />
             </Tabs>
         </Box>
     );
