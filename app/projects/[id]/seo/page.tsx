@@ -52,6 +52,25 @@ export default function ProjectSeoPage() {
     const [summaryLoading, setSummaryLoading] = useState(() => !(id && seoSummaryCache.has(id)));
     const [fullSummary, setFullSummary] = useState<DomainSummaryResponse | null>(() => (id ? seoSummaryCache.get(id)?.fullSummary ?? null : null));
     const fetchedForIdRef = useFetchOnceForId();
+    // #region agent log
+    const seoPageRenderRef = useRef(0);
+    seoPageRenderRef.current += 1;
+    const pr = seoPageRenderRef.current;
+    if ([1, 2, 3, 5, 10, 20, 50, 100, 200, 500].includes(pr)) {
+      fetch('http://127.0.0.1:7902/ingest/bbc31d13-f45c-46d1-93ab-b989a1d926fc', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'cafcc0' },
+        body: JSON.stringify({
+          sessionId: 'cafcc0',
+          location: 'seo/page.tsx:render',
+          message: 'SEO page render',
+          data: { renderCount: pr, hasFullSummary: !!fullSummary },
+          timestamp: Date.now(),
+          hypothesisId: 'H1',
+        }),
+      }).catch(() => {});
+    }
+    // #endregion
 
     useEffect(() => {
         if (!id) return;

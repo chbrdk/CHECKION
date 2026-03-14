@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, alpha } from '@mui/material';
 import { MsqdxTypography, MsqdxChip, MsqdxButton } from '@msqdx/react';
 import { MSQDX_NEUTRAL, MSQDX_STATUS, MSQDX_BRAND_PRIMARY, MSQDX_THEME } from '@msqdx/tokens';
@@ -25,6 +25,143 @@ type SortDir = 'asc' | 'desc';
 
 const structureOrder: Record<StructureStatus, number> = { good: 0, skippedLevels: 1, multipleH1: 2 };
 
+/** Stable header cell to avoid remount on parent re-render */
+function SortHeaderCell({
+  id,
+  label,
+  active,
+  sortDir,
+  onSort,
+}: {
+  id: SortKey;
+  label: string;
+  active: boolean;
+  sortDir: SortDir;
+  onSort: (key: SortKey) => void;
+}) {
+  return (
+    <Box
+      component="button"
+      type="button"
+      role="columnheader"
+      onClick={() => onSort(id)}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 0.5,
+        px: 1,
+        py: 0.5,
+        border: 'none',
+        background: 'none',
+        cursor: 'pointer',
+        font: 'inherit',
+        fontSize: '0.7rem',
+        color: MSQDX_THEME.light.text.tertiary,
+        fontWeight: 600,
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em',
+        textAlign: 'left',
+        '&:hover': { color: MSQDX_THEME.light.text.secondary },
+      }}
+    >
+      {label}
+      {active && (
+        <MsqdxTypography variant="caption" sx={{ opacity: 0.8 }}>
+          {sortDir === 'asc' ? '↑' : '↓'}
+        </MsqdxTypography>
+      )}
+    </Box>
+  );
+}
+
+/** Memoized row to avoid re-rendering all rows when parent updates */
+const TableRow = React.memo(function TableRow({
+  row,
+  onRowClick,
+  structureLabel,
+  tableYes,
+  tableNo,
+  skinnyLabel,
+}: {
+  row: SeoOnPageRow;
+  onRowClick?: (url: string) => void;
+  structureLabel: (s: StructureStatus) => string;
+  tableYes: string;
+  tableNo: string;
+  skinnyLabel: string;
+}) {
+  return (
+    <Box
+      component="div"
+      role="row"
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: GRID_COLUMNS,
+        gap: 0,
+        borderBottom: tableBorder,
+        alignItems: 'stretch',
+        '&:last-of-type': { borderBottom: 'none' },
+        '&:hover': { backgroundColor: alpha(MSQDX_NEUTRAL[500], 0.06) },
+      }}
+    >
+      <Box sx={{ px: 1, py: 0.5, minWidth: 0, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
+        {onRowClick ? (
+          <MsqdxButton
+            size="small"
+            variant="text"
+            onClick={() => onRowClick(row.url)}
+            sx={{
+              textTransform: 'none',
+              fontSize: '0.75rem',
+              justifyContent: 'flex-start',
+              minWidth: 0,
+              textAlign: 'left',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {row.url}
+          </MsqdxButton>
+        ) : (
+          <MsqdxTypography variant="caption" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.75rem' }}>
+            {row.url}
+          </MsqdxTypography>
+        )}
+      </Box>
+      <Box sx={{ px: 1, py: 0.5, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
+        <MsqdxTypography variant="caption" sx={{ fontSize: '0.75rem' }}>
+          {row.wordCount.toLocaleString('de-DE')}
+        </MsqdxTypography>
+      </Box>
+      <Box sx={{ px: 1, py: 0.5, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
+        <MsqdxTypography variant="caption" sx={{ fontSize: '0.75rem' }}>{row.topKeywordCount}</MsqdxTypography>
+      </Box>
+      <Box sx={{ px: 0.5, py: 0.5, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
+        {row.isSkinny ? (
+          <MsqdxChip label={skinnyLabel} size="small" sx={{ height: 18, fontSize: '0.65rem', bgcolor: alpha(MSQDX_STATUS.warning.base, 0.15), color: MSQDX_STATUS.warning.base }} />
+        ) : (
+          <MsqdxTypography variant="caption" sx={{ color: MSQDX_THEME.light.text.tertiary, fontSize: '0.7rem' }}>–</MsqdxTypography>
+        )}
+      </Box>
+      <Box sx={{ px: 0.5, py: 0.5, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
+        <MsqdxTypography variant="caption" sx={{ fontSize: '0.7rem', fontWeight: 500 }}>{row.hasMeta ? tableYes : tableNo}</MsqdxTypography>
+      </Box>
+      <Box sx={{ px: 0.5, py: 0.5, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
+        <MsqdxTypography variant="caption" sx={{ fontSize: '0.7rem', fontWeight: 500 }}>{row.hasH1 ? tableYes : tableNo}</MsqdxTypography>
+      </Box>
+      <Box sx={{ px: 0.5, py: 0.5, display: 'flex', alignItems: 'center' }}>
+        {row.structure === 'good' ? (
+          <MsqdxChip label={structureLabel(row.structure)} size="small" sx={{ height: 18, fontSize: '0.65rem', bgcolor: alpha(MSQDX_BRAND_PRIMARY.green, 0.15), color: MSQDX_BRAND_PRIMARY.green }} />
+        ) : row.structure === 'multipleH1' ? (
+          <MsqdxChip label={structureLabel(row.structure)} size="small" brandColor="pink" sx={{ height: 18, fontSize: '0.65rem' }} />
+        ) : (
+          <MsqdxChip label={structureLabel(row.structure)} size="small" brandColor="yellow" sx={{ height: 18, fontSize: '0.65rem' }} />
+        )}
+      </Box>
+    </Box>
+  );
+});
+
 function SeoOnPageTableInner({
   rows,
   onRowClick,
@@ -38,6 +175,53 @@ function SeoOnPageTableInner({
   const [sortKey, setSortKey] = useState<SortKey>('wordCount');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [currentPage, setCurrentPage] = useState(1);
+  // #region agent log
+  const renderCountRef = useRef(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  renderCountRef.current += 1;
+  const r = renderCountRef.current;
+  if ([1, 2, 3, 5, 10, 20, 50, 100, 200, 500].includes(r)) {
+    fetch('http://127.0.0.1:7902/ingest/bbc31d13-f45c-46d1-93ab-b989a1d926fc', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'cafcc0' },
+      body: JSON.stringify({
+        sessionId: 'cafcc0',
+        location: 'SeoOnPageTable.tsx:render',
+        message: 'table render',
+        data: { renderCount: r, rowsLength: rows.length },
+        timestamp: Date.now(),
+        hypothesisId: 'H1',
+      }),
+    }).catch(() => {});
+  }
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            fetch('http://127.0.0.1:7902/ingest/bbc31d13-f45c-46d1-93ab-b989a1d926fc', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'cafcc0' },
+              body: JSON.stringify({
+                sessionId: 'cafcc0',
+                location: 'SeoOnPageTable.tsx:viewport',
+                message: 'table in viewport',
+                data: { renderCount: renderCountRef.current, rowsLength: rows.length },
+                timestamp: Date.now(),
+                hypothesisId: 'H2',
+              }),
+            }).catch(() => {});
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '0px' }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [rows.length]);
+  // #endregion
 
   const sortedRows = useMemo(() => {
     const arr = [...rows];
@@ -81,54 +265,24 @@ function SeoOnPageTableInner({
     [sortedRows, start, pageSize]
   );
 
-  const handleSort = (key: SortKey) => {
+  const handleSort = useCallback((key: SortKey) => {
     if (sortKey === key) {
       setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortKey(key);
       setSortDir(key === 'url' ? 'asc' : 'desc');
+      setCurrentPage(1);
     }
-    setCurrentPage(1);
-  };
+  }, [sortKey]);
 
-  const SortHeader = ({ id, label, active }: { id: SortKey; label: string; active: boolean }) => (
-    <Box
-      component="button"
-      role="columnheader"
-      onClick={() => handleSort(id)}
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 0.5,
-        px: 1,
-        py: 0.5,
-        border: 'none',
-        background: 'none',
-        cursor: 'pointer',
-        font: 'inherit',
-        fontSize: '0.7rem',
-        color: MSQDX_THEME.light.text.tertiary,
-        fontWeight: 600,
-        textTransform: 'uppercase',
-        letterSpacing: '0.05em',
-        textAlign: 'left',
-        '&:hover': { color: MSQDX_THEME.light.text.secondary },
-      }}
-    >
-      {label}
-      {active && (
-        <MsqdxTypography variant="caption" sx={{ opacity: 0.8 }}>
-          {sortDir === 'asc' ? '↑' : '↓'}
-        </MsqdxTypography>
-      )}
-    </Box>
-  );
-
-  const structureLabel = (s: StructureStatus) => {
+  const structureLabel = useCallback((s: StructureStatus) => {
     if (s === 'good') return t('projects.seo.structureGood');
     if (s === 'multipleH1') return t('projects.seo.structureMultipleH1');
     return t('projects.seo.structureSkippedLevels');
-  };
+  }, [t]);
+  const tableYes = t('projects.seo.tableYes');
+  const tableNo = t('projects.seo.tableNo');
+  const skinnyLabel = t('projects.seo.skinny');
 
   if (rows.length === 0) {
     return (
@@ -143,12 +297,14 @@ function SeoOnPageTableInner({
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
       <Box
+        ref={containerRef}
         sx={{
           border: tableBorder,
           borderRadius: 1,
           overflow: 'auto',
           maxHeight: '65vh',
           backgroundColor: MSQDX_THEME.light.surface.primary,
+          contain: 'layout',
         }}
       >
         <Box component="div" role="table" aria-label={t('projects.seo.tableAria')}>
@@ -168,84 +324,24 @@ function SeoOnPageTableInner({
               zIndex: 1,
             }}
           >
-            <SortHeader id="url" label={t('projects.seo.tableUrl')} active={sortKey === 'url'} />
-            <SortHeader id="wordCount" label={t('projects.seo.tableWords')} active={sortKey === 'wordCount'} />
-            <SortHeader id="topKeywordCount" label={t('projects.seo.tableKeywords')} active={sortKey === 'topKeywordCount'} />
-            <SortHeader id="isSkinny" label={t('projects.seo.tableSkinny')} active={sortKey === 'isSkinny'} />
-            <SortHeader id="hasMeta" label={t('projects.seo.tableMeta')} active={sortKey === 'hasMeta'} />
-            <SortHeader id="hasH1" label={t('projects.seo.tableH1')} active={sortKey === 'hasH1'} />
-            <SortHeader id="structure" label={t('projects.seo.tableStructure')} active={sortKey === 'structure'} />
+            <SortHeaderCell id="url" label={t('projects.seo.tableUrl')} active={sortKey === 'url'} sortDir={sortDir} onSort={handleSort} />
+            <SortHeaderCell id="wordCount" label={t('projects.seo.tableWords')} active={sortKey === 'wordCount'} sortDir={sortDir} onSort={handleSort} />
+            <SortHeaderCell id="topKeywordCount" label={t('projects.seo.tableKeywords')} active={sortKey === 'topKeywordCount'} sortDir={sortDir} onSort={handleSort} />
+            <SortHeaderCell id="isSkinny" label={t('projects.seo.tableSkinny')} active={sortKey === 'isSkinny'} sortDir={sortDir} onSort={handleSort} />
+            <SortHeaderCell id="hasMeta" label={t('projects.seo.tableMeta')} active={sortKey === 'hasMeta'} sortDir={sortDir} onSort={handleSort} />
+            <SortHeaderCell id="hasH1" label={t('projects.seo.tableH1')} active={sortKey === 'hasH1'} sortDir={sortDir} onSort={handleSort} />
+            <SortHeaderCell id="structure" label={t('projects.seo.tableStructure')} active={sortKey === 'structure'} sortDir={sortDir} onSort={handleSort} />
           </Box>
           {paginatedRows.map((row) => (
-            <Box
+            <TableRow
               key={row.url}
-              component="div"
-              role="row"
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: GRID_COLUMNS,
-                gap: 0,
-                borderBottom: tableBorder,
-                alignItems: 'stretch',
-                '&:last-of-type': { borderBottom: 'none' },
-                '&:hover': { backgroundColor: alpha(MSQDX_NEUTRAL[500], 0.06) },
-              }}
-            >
-              <Box sx={{ px: 1, py: 0.5, minWidth: 0, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
-                {onRowClick ? (
-                  <MsqdxButton
-                    size="small"
-                    variant="text"
-                    onClick={() => onRowClick(row.url)}
-                    sx={{
-                      textTransform: 'none',
-                      fontSize: '0.75rem',
-                      justifyContent: 'flex-start',
-                      minWidth: 0,
-                      textAlign: 'left',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    {row.url}
-                  </MsqdxButton>
-                ) : (
-                  <MsqdxTypography variant="caption" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.75rem' }}>
-                    {row.url}
-                  </MsqdxTypography>
-                )}
-              </Box>
-              <Box sx={{ px: 1, py: 0.5, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
-                <MsqdxTypography variant="caption" sx={{ fontSize: '0.75rem' }}>
-                  {row.wordCount.toLocaleString('de-DE')}
-                </MsqdxTypography>
-              </Box>
-              <Box sx={{ px: 1, py: 0.5, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
-                <MsqdxTypography variant="caption" sx={{ fontSize: '0.75rem' }}>{row.topKeywordCount}</MsqdxTypography>
-              </Box>
-              <Box sx={{ px: 0.5, py: 0.5, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
-                {row.isSkinny ? (
-                  <MsqdxChip label={t('projects.seo.skinny')} size="small" sx={{ height: 18, fontSize: '0.65rem', bgcolor: alpha(MSQDX_STATUS.warning.base, 0.15), color: MSQDX_STATUS.warning.base }} />
-                ) : (
-                  <MsqdxTypography variant="caption" sx={{ color: MSQDX_THEME.light.text.tertiary, fontSize: '0.7rem' }}>–</MsqdxTypography>
-                )}
-              </Box>
-              <Box sx={{ px: 0.5, py: 0.5, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
-                <MsqdxTypography variant="caption" sx={{ fontSize: '0.7rem', fontWeight: 500 }}>{row.hasMeta ? t('projects.seo.tableYes') : t('projects.seo.tableNo')}</MsqdxTypography>
-              </Box>
-              <Box sx={{ px: 0.5, py: 0.5, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
-                <MsqdxTypography variant="caption" sx={{ fontSize: '0.7rem', fontWeight: 500 }}>{row.hasH1 ? t('projects.seo.tableYes') : t('projects.seo.tableNo')}</MsqdxTypography>
-              </Box>
-              <Box sx={{ px: 0.5, py: 0.5, display: 'flex', alignItems: 'center' }}>
-                {row.structure === 'good' ? (
-                  <MsqdxChip label={structureLabel(row.structure)} size="small" sx={{ height: 18, fontSize: '0.65rem', bgcolor: alpha(MSQDX_BRAND_PRIMARY.green, 0.15), color: MSQDX_BRAND_PRIMARY.green }} />
-                ) : row.structure === 'multipleH1' ? (
-                  <MsqdxChip label={structureLabel(row.structure)} size="small" brandColor="pink" sx={{ height: 18, fontSize: '0.65rem' }} />
-                ) : (
-                  <MsqdxChip label={structureLabel(row.structure)} size="small" brandColor="yellow" sx={{ height: 18, fontSize: '0.65rem' }} />
-                )}
-              </Box>
-            </Box>
+              row={row}
+              onRowClick={onRowClick}
+              structureLabel={structureLabel}
+              tableYes={tableYes}
+              tableNo={tableNo}
+              skinnyLabel={skinnyLabel}
+            />
           ))}
         </Box>
       </Box>

@@ -43810,3 +43810,169 @@ Another possibility: **multiple setState calls from the effect when we have cach
 
 ---
 
+
+Bei Cache trotzdem einen Background-Fetch durchführen — das löst einen weiteren setState-Zyklus aus und kann Flackern verursachen. Wir stellen um: Bei Cache keinen erneuten Fetch; nur ohne Cache laden.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll change so that when we have cached data we do NOT run the async fetch at all. We just set state from cache and return. So no second wave of setState, no re-renders from fetch completion. That should eliminate the flicker when returning to the tab.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now when we have cache we return early and never start the async. So no second wave of setState. We also set setProjectLoading(false) when we have cache so that we don't show loading. We don't have project data when we have cache (we never fetched it) - but we're not showing a loading spinner for project when we have fullSummary (we changed the UI earlier to show content when fullSummary exists). So we're good.
+
+One more thing - maybe the träge (sluggish) behavior is from the table re-rendering with 193 rows on every parent render. Let me check if we can memo the content section so that when the SEO page re-renders (e.g. from router or context), the heavy table and keywords don't re-render unless their data changed. We already have React.memo on SeoOnPageTable. The rows are from useMemo. So the table should only re-render when rows reference changes. But the parent could be re-rendering frequently - e.g. from useParams() or useRouter() or useI18n(). If any of these return new references every time, we'd re-render. Let me add a memoized wrapper for the main content (the Stack with all the cards) so that we only re-render it when fullSummary, project, loading, etc. actually change. We could use React.memo with a custom comparison. Or we could split the page into a thin wrapper that does the data fetching and a memoized SeoPageContent that receives the data as props. So the wrapper would have all the state and effects, and pass fullSummary, project, etc. to SeoPageContent. SeoPageContent would be React.memo(SeoPageContentInner) and would only re-render when the props change. So any re-renders of the parent (from router, etc.) wouldn't cause the content to re-render unless the props changed. Let me try that - extract the main content into a memoized component that receives fullSummary, project, id, scanId, loading, etc. That way we isolate the heavy UI from the parent's re-renders.
+</details></think>
+
+---
+
+
+Schweren Inhalt in eine memo-Komponente auslagern, damit Router-/Layout-Updates die Tabelle nicht ständig neu rendern.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The component is already fairly large. Extracting the whole return into a memoized component would require passing many props (fullSummary, project, id, scanId, loading, hasSeoData, seoScore, totalPageCount, aggregatedSeo, seoTableRows, handleSeoRowClick, t). And we'd need to be careful that we're not creating new object/array references on every render when we pass props - e.g. seoTableRows is already useMemo'd. The handleSeoRowClick is useCallback'd. So the main issue might just be that we're now skipping the fetch when we have cache - that should reduce the second wave of setState.
+
+Let me also check - could the layout or a parent be causing re-mounts? The project layout is just {children}. So when we navigate from overview to SEO, the layout's children change from overview page to SEO page. So the SEO page mounts. So we get one mount. When we navigate from SEO to WCAG, the SEO page unmounts. When we navigate back to SEO, the SEO page mounts again. So we'd have a new instance. With our cache, we'd set state from cache in the initializer and in the effect we'd return early. So we'd have: mount -> initial state from cache (fullSummary set) -> effect runs, we have cache, we set state again (redundant setScanId, setFullSummary, setSummaryLoading(false), setProjectLoading(false)) -> we return without starting fetch. So we'd have one extra re-render from those 4 setState calls. We could avoid that by not calling setState when we have cache in the effect - we already set it in the initializer. So when we have cache, we don't need to call setScanId, setFullSummary, etc. in the effect because the initial state already has them. So we could just return without doing anything when we have cache. That would avoid 4 setState calls and one re-render. Let me do that - when we have cache, just return without setting state (the initial state from the useState initializer already has the cached data).
+</details></think>
+
+---
+
+
+Bei Cache keine setState-Aufrufe im Effect — die Initial-State-Werte kommen bereits aus dem Cache; so vermeiden wir vier überflüssige Updates und einen Re-Render.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Now when we have cache we do nothing in the effect - no setState at all. The initial state from the useState(() => cache.get(id)) already has the data. So we get one render with the cached data and no re-renders from the effect. That should eliminate flicker when returning to the tab.
+
+Let me also add a note in the knowledge doc about the SEO page flicker fixes.
+</details></think>
+
+---
+
+
+Zwei Änderungen sind drin:
+
+**1. Bei Cache: kein erneuter Fetch, kein setState im Effect**  
+- Wenn Daten aus dem Cache kommen, bricht der Effect sofort mit `return` ab.  
+- Es wird weder nachgeladen noch `setScanId` / `setFullSummary` / `setSummaryLoading` / `setProjectLoading` aufgerufen.  
+- Die Anzeige kommt nur aus dem Initial-State (`useState(() => cache.get(id)…)`), es gibt keine zweite Update-Welle und kein Flackern beim Zurückwechseln auf den SEO-Tab.
+
+**2. Weniger Re-Renders bei Cache**  
+- Vorher: Cache → 4× setState im Effect → ein zusätzlicher Re-Render.  
+- Jetzt: Cache → sofort `return` → kein weiterer Render durch den Effect.
+
+**Kurz:**  
+- **Erster Besuch (kein Cache):** Einmal laden, ein Batch setState, ein Update – kein doppelter Fetch.  
+- **Zurück zum Tab (mit Cache):** Nur Initial-State aus Cache, Effect macht nichts → keine Extra-Updates, kein Flackern.
+
+Bitte einmal prüfen: SEO-Tab öffnen, zu einem anderen Tab wechseln, wieder auf SEO – die Inhalte sollten stabil bleiben und die Seite spürbar flüssiger reagieren.
+
+---
+
+_**User**_
+
+sobald die tabelle in den viewport kommt, wird die seite endlos langsam und elemente verschwinden wieder oder überlagern sich. kannst du einmal auch den kompletten techstack überprüfen ob es da irgendwelche bugs gibt?
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
