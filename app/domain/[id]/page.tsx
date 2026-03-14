@@ -40,11 +40,15 @@ const DomainToolsCard = dynamic(
     () => import('@/components/DomainToolsCard').then((m) => ({ default: m.DomainToolsCard })),
     { ssr: false }
 );
+
+const ScannedPagesTable = dynamic(
+    () => import('@/components/ScannedPagesTable').then((m) => ({ default: m.ScannedPagesTable })),
+    { ssr: false, loading: () => <Box sx={{ py: 2 }}><CircularProgress size={24} /></Box> }
+);
+
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import {
-    DOMAIN_PAGES_INITIAL,
-    DOMAIN_PAGES_INCREMENT,
     apiScanDomainSummary,
     apiScanDomainSummarize,
     apiScanDomainJourney,
@@ -93,14 +97,10 @@ export default function DomainResultPage() {
     const pagesByUrl = useMemo(() => new Map(pages.map((p) => [p.url, p])), [pages]);
     const norm = (u: string) => { try { const x = new URL(u); return x.origin + (x.pathname.replace(/\/$/, '') || '/'); } catch { return u; } };
     const pagesByNormUrl = useMemo(() => { const m = new Map<string, SlimPage>(); for (const p of pages) m.set(norm(p.url), p); return m; }, [pages]);
-    const [visiblePageCount, setVisiblePageCount] = useState(DOMAIN_PAGES_INITIAL);
-    const visiblePages = useMemo(() => pages.slice(0, visiblePageCount), [pages, visiblePageCount]);
-    const hasMorePages = pages.length > visiblePageCount;
 
     useEffect(() => {
         if (!domainId) return;
         setLoadError(null);
-        setVisiblePageCount(DOMAIN_PAGES_INITIAL);
         fetch(apiScanDomainSummary(domainId))
             .then(res => {
                 if (!res.ok) {
@@ -117,8 +117,6 @@ export default function DomainResultPage() {
             })
             .catch(() => setLoadError('not_found'));
     }, [domainId]);
-
-    const loadMorePages = () => setVisiblePageCount((n) => Math.min(pages.length, n + DOMAIN_PAGES_INCREMENT));
 
     const restoreJourneyId = searchParams.get('restoreJourney');
     useEffect(() => {
@@ -301,44 +299,10 @@ export default function DomainResultPage() {
                                 <MsqdxTypography variant="h6">{t('domainResult.scannedPages')}</MsqdxTypography>
                                 <InfoTooltip title={t('info.scannedPages')} ariaLabel={t('common.info')} />
                             </Box>
-                            <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0, maxHeight: 420, overflow: 'auto' }}>
-                                {visiblePages.map((page) => (
-                                    <Box
-                                        component="li"
-                                        key={page.id}
-                                        sx={{
-                                            cursor: 'pointer',
-                                            '&:hover': { bgcolor: 'var(--color-theme-accent-tint)' },
-                                            border: '1px solid var(--color-secondary-dx-grey-light-tint)',
-                                            borderRadius: 'var(--msqdx-radius-sm)',
-                                            mb: 'var(--msqdx-spacing-xs)',
-                                            p: 'var(--msqdx-spacing-md)',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            gap: 'var(--msqdx-spacing-sm)'
-                                        }}
-                                        onClick={() => router.push(pathResults(page.id))}
-                                    >
-                                        <Box sx={{ flex: 1, minWidth: 0 }}>
-                                            <MsqdxTypography variant="body2" sx={{ fontWeight: 600 }} noWrap>{page.url}</MsqdxTypography>
-                                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                                {page.ux?.score ?? 0} UX Score • {page.stats.errors + page.stats.warnings + page.stats.notices} Issues
-                                            </MsqdxTypography>
-                                        </Box>
-                                        <MsqdxChip
-                                            label={page.score.toString()}
-                                            size="small"
-                                            brandColor={page.score > 80 ? 'green' : 'orange'}
-                                        />
-                                    </Box>
-                                ))}
-                            </Box>
-                            {hasMorePages && (
-                                <MsqdxButton size="small" variant="outlined" onClick={loadMorePages} sx={{ mt: 1 }}>
-                                    {t('domainResult.showMorePages', { count: Math.min(DOMAIN_PAGES_INCREMENT, totalPageCount - visiblePageCount) })}
-                                </MsqdxButton>
-                            )}
+                            <ScannedPagesTable
+                                pages={pages}
+                                onPageClick={(page) => router.push(pathResults(page.id))}
+                            />
                         </MsqdxCard>
                     </Box>
                 </Box>
@@ -534,19 +498,12 @@ export default function DomainResultPage() {
                             )}
                         </Box>
                     ) : null}
-                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mt: 2 }}>Alle Seiten öffnen:</MsqdxTypography>
-                    <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0, maxHeight: 200, overflow: 'auto' }}>
-                        {visiblePages.map((page) => (
-                            <Box key={page.id} component="li" sx={{ mb: 0.5 }}>
-                                <MsqdxButton size="small" variant="text" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>{page.url}</MsqdxButton>
-                            </Box>
-                        ))}
-                    </Box>
-                    {hasMorePages && (
-                        <MsqdxButton size="small" variant="text" onClick={loadMorePages} sx={{ mt: 0.5, fontSize: '0.75rem' }}>
-                            {t('domainResult.showMorePages', { count: Math.min(DOMAIN_PAGES_INCREMENT, totalPageCount - visiblePageCount) })}
-                        </MsqdxButton>
-                    )}
+                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mt: 2 }}>
+                        {t('domainResult.allPagesInOverview')}
+                    </MsqdxTypography>
+                    <MsqdxButton size="small" variant="text" onClick={() => setTabValue(0)} sx={{ mt: 0.5, fontSize: '0.75rem' }}>
+                        {t('domainResult.tabOverview')} → {t('domainResult.scannedPages')}
+                    </MsqdxButton>
                 </MsqdxMoleculeCard>
             )}
 
