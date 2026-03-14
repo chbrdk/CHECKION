@@ -201,6 +201,36 @@
       "issuesTitle": "Gefundene Issues (Domain)",
       "aggregatedOver": "Aggregiert über {count} Seiten",
       "pagesWithMostErrors": "Seiten mit den meisten Fehlern"
+    },
+    "seo": {
+      "title": "SEO on page",
+      "fromScan": "Aus letztem Deep Scan",
+      "noScan": "Noch kein Deep Scan für dieses Projekt. Führe einen Domain-Scan aus, um die On-Page-SEO-Analyse zu sehen.",
+      "startScan": "Deep Scan starten",
+      "openDeepScan": "Deep Scan öffnen",
+      "overview": "Übersicht Meta & Struktur",
+      "overviewSubtitle": "Title, Meta-Description, H1, Canonical und Wortanzahl",
+      "withTitle": "Seiten mit Title",
+      "withMetaDescription": "Seiten mit Meta-Description",
+      "withH1": "Seiten mit H1",
+      "withCanonical": "Seiten mit Canonical",
+      "totalWords": "Wörter gesamt (alle Seiten)",
+      "pagesWithoutMetaDescription": "Seiten ohne Meta-Description",
+      "pagesWithoutH1": "Seiten ohne H1",
+      "pagesCount": "{count} Seiten",
+      "structureTitle": "Struktur & Überschriften",
+      "multipleH1": "Seiten mit mehreren H1",
+      "skippedLevels": "Seiten mit übersprungenen Ebenen",
+      "goodStructure": "Seiten mit guter Struktur",
+      "more": "weitere",
+      "crossPageKeywords": "Keywords seitenübergreifend",
+      "crossPageKeywordsSubtitle": "Begriffe, die auf mehreren Seiten vorkommen; sortiert nach Gesamt-Vorkommen.",
+      "pagesShort": "Seite(n)",
+      "pagesByContent": "Seiten nach Inhalt & Dichte",
+      "pagesByContentSubtitle": "Sortiert nach Wortanzahl; unter 300 Wörter = Skinny Content.",
+      "words": "Wörter",
+      "topKeywords": "Top-Keywords",
+      "skinny": "Skinny"
     }
   },
   "auth": {
@@ -729,6 +759,7 @@
     "infraPrivacy": "Technische Infrastruktur und Privacy-relevante Hinweise.",
     "generativeGeo": "Bewertung für Generative Search / GEO (Google) – wie gut die Seite für AI Overviews geeignet ist.",
     "issuesList": "Liste der gefundenen Barrierefreiheits-Probleme mit Schweregrad und WCAG-Level. Filter nach Error, Warning, Notice oder bestanden.",
-    "eeat": "E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness): über den Deep Scan aggregierte Signale für Vertrauen, Experience und Expertise. Authoritativeness würde Backlink-Daten erfordern."
+    "eeat": "E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness): über den Deep Scan aggregierte Signale für Vertrauen, Experience und Expertise. Authoritativeness würde Backlink-Daten erfordern.",
+    "seoOnPage": "On-Page-SEO aus dem Deep Scan: Meta (Title, Description, H1, Canonical), Überschriften-Struktur, Seiten ohne Meta/Keywords und seitenübergreifende Keywords."
   }
 }

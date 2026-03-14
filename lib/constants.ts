@@ -45,6 +45,8 @@ export const pathProjectRankings = (id: string) => `${PATH_PROJECTS}/${encodeURI
 export const pathProjectGeo = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}/geo`;
 /** Build app route: /projects/[id]/wcag */
 export const pathProjectWcag = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}/wcag`;
+/** Build app route: /projects/[id]/seo */
+export const pathProjectSeo = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}/seo`;
 /** Build app route: /projects/[id]/research */
 export const pathProjectResearch = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}/research`;
 /** Build app route: /share/[token] */

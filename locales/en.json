@@ -201,6 +201,36 @@
       "issuesTitle": "Found issues (domain)",
       "aggregatedOver": "Aggregated over {count} pages",
       "pagesWithMostErrors": "Pages with most issues"
+    },
+    "seo": {
+      "title": "SEO on page",
+      "fromScan": "From latest deep scan",
+      "noScan": "No deep scan for this project yet. Run a domain scan to see on-page SEO analysis.",
+      "startScan": "Start deep scan",
+      "openDeepScan": "Open deep scan",
+      "overview": "Overview Meta & Structure",
+      "overviewSubtitle": "Title, meta description, H1, canonical and word count",
+      "withTitle": "Pages with title",
+      "withMetaDescription": "Pages with meta description",
+      "withH1": "Pages with H1",
+      "withCanonical": "Pages with canonical",
+      "totalWords": "Total words (all pages)",
+      "pagesWithoutMetaDescription": "Pages without meta description",
+      "pagesWithoutH1": "Pages without H1",
+      "pagesCount": "{count} pages",
+      "structureTitle": "Structure & Headings",
+      "multipleH1": "Pages with multiple H1",
+      "skippedLevels": "Pages with skipped heading levels",
+      "goodStructure": "Pages with good structure",
+      "more": "more",
+      "crossPageKeywords": "Cross-page keywords",
+      "crossPageKeywordsSubtitle": "Terms that appear on multiple pages; sorted by total count.",
+      "pagesShort": "page(s)",
+      "pagesByContent": "Pages by content & density",
+      "pagesByContentSubtitle": "Sorted by word count; under 300 words = skinny content.",
+      "words": "words",
+      "topKeywords": "top keywords",
+      "skinny": "Skinny"
     }
   },
   "auth": {
@@ -729,6 +759,7 @@
     "infraPrivacy": "Technical infrastructure and privacy-related notes.",
     "generativeGeo": "Rating for Generative Search / GEO (Google) – how well the page is suited for AI overviews.",
     "issuesList": "List of accessibility issues found, with severity and WCAG level. Filter by error, warning, notice or passed.",
-    "eeat": "E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness): signals aggregated from the deep scan for trust, experience and expertise. Authoritativeness would require backlink data."
+    "eeat": "E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness): signals aggregated from the deep scan for trust, experience and expertise. Authoritativeness would require backlink data.",
+    "seoOnPage": "On-page SEO from the deep scan: meta (title, description, H1, canonical), heading structure, pages without meta/keywords, and cross-page keywords."
   }
 }

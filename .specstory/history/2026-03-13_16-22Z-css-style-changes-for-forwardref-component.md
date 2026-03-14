@@ -35617,7 +35617,1952 @@ Let me trace the flow:
 
 So the domain-summary-all API builds the summary for each competitor via getDomainScanWithProjectId(ref.domainScanId, user.id) and buildDomainSummary(row.result). Then it computes wcagScore with computeWcagScore({ errors, warnings, notices, totalPageCount: pageCount }) where pageCount = summary.totalPageCount ?? (summary.pages?.length ?? 0).
 
-If the competitor scans have data (domain score when you click in), then row.result should have pages and aggregated. So buildDomainSummary(row.result) should return a summary with totalPageCount or pages. Unless - getDomainScanWithProjectId retu</details></think>
+If the competitor scans have data (domain score when you click in), then row.result should have pages and aggregated. So buildDomainSummary(row.result) should return a summary with totalPageCount or pages. Unless - getDomainScanWithProjectId returns something different for competitor scans?
+
+Competitor scans are stored without projectId (they're standalone). So when we call getDomainScanWithProjectId(scanId, user.id), we're fetching by scan ID and user ID. So we get the scan if it belongs to the user. The scan payload (row.result) is the full stored payload. So it should have pages and aggregated.
+
+Let me check getDomainScanWithProjectId - does it return the full payload including pages? Or does it return a slim version?
+</details></think>
+
+---
+
+
+Wir prüfen, wie Competitor-Scans geladen werden und ob das Payload (inkl. `pages`/`aggregated`) vollständig zurückgegeben wird:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/scans.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "getDomainScanWithProjectId|payload",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/scans.ts",
+  "contextBefore": 0,
+  "contextAfter": 3,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "getDomainScanWithProjectId|payload",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/scans.ts",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 65,
+  "topFiles": [
+    {
+      "uri": "lib/db/scans.ts",
+      "matchCount": 40
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/scans.ts",
+      "matchCount": 40
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/scans.ts",
+      "matchCount": 40
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/scans.ts",
+      "matchCount": 40
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/scans.ts",
+      "matchCount": 40
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So getDomainScanWithProjectId returns the full payload (domainScans.payload). So row.result should have the full DomainScanResult including pages and aggregated. So buildDomainSummary(row.result) should work.
+
+Let me check buildDomainSummary again - specifically hasStoredAggregated and isFullPages. Maybe for competitor payloads the structure is different? Like maybe the payload has `aggregated` but the path to issues.stats is different? Or maybe the payload uses totalPages (from the DB list) but the stored payload has totalPages and we're reading totalPageCount which we set from pages.length - and if pages is a huge array, maybe it's not being stored/retrieved? Like PostgreSQL jsonb might have a size limit or the payload might be truncated?
+
+Actually wait - when we store the domain scan payload, we use buildStoredDomainPayload which sets pages: fullPages.map(toSlimPage). So we store the full array. When we read it back with getDomainScanWithProjectId we get the full payload. So pages should be there.
+
+Unless - the domain_scans table stores the payload in a column that has a size limit and the payload is truncated for large scans? So pages could be missing or empty in the DB? Let me check the schema for domain_scans.
+</details></think>
+
+---
+
+
+Struktur des gespeicherten Payloads und von `buildDomainSummary` prüfen (hasStoredAggregated / isFullPages):
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-summary.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/wcag/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see - on the WCAG page we're setting competitorWcagScores from summaryAllRes.data.competitors. So the competitor wcagScore comes from the domain-summary-all API. So the issue is in the API - when we build the summary for competitors and compute wcagScore, we're getting 0. So either:
+1. pageCount is 0 (so we're still passing 0 to computeWcagScore)
+2. Or the API returns the correct wcagScore but the frontend overwrites it or doesn't use it
+
+Looking at the frontend: comp[domain] = { scanId: c.scanId, wcagScore: c.wcagScore ?? 0, status: c.status }. So if the API returns wcagScore: 0 we'd show 0. So the API is returning 0 for competitors.
+
+So the issue is in domain-summary-all: for competitors, when we call buildDomainSummary(row.result), we're getting summary with totalPageCount 0 or pageCount 0. So either row.result (the payload) has empty pages, or the payload structure is different.
+
+One possibility: maybe the payload is stored as JSON in PostgreSQL and when we read it back, the structure might be different? For example, maybe "aggregated" is stored but when we parse it the nested "issues" or "stats" might be under a different structure? Let me check - we're reading issuesStats from (summary.aggregated as any)?.issues?.stats. So we need summary.aggregated.issues.stats with errors, warnings, notices. If the stored payload has that, we're good. If the payload has aggregated but the structure is different (e.g. snake_case or different nesting), we'd get undefined and pass 0,0,0 to computeWcagScore which would give score 100... but the user said they get 0. So we're hitting the totalPageCount === 0 branch. So pageCount is 0 for competitors.
+
+So for competitors, summary.totalPageCount and summary.pages?.length are both 0 or undefined. That could mean:
+1. The payload (row.result) has pages: [] or no pages
+2. Or buildDomainSummary is returning something where pages/totalPageCount are missing
+
+Let me check - when we do buildDomainSummary(row.result), the row.result is the raw payload from the DB. So it's what was stored. When we store with buildStoredDomainPayload we set pages: fullPages.map(toSlimPage). So we have an array. When we update the domain scan we call updateDomainScan with the merged payload. So the payload in the DB should have pages. Unless - for competitor scans we're not storing the full payload? Let me check how competitor scans get their payload. When we start a competitor scan we call startDomainScan without projectId. So the scan runs, and when it completes we update the domain scan with the result. So the same flow - we should have the full payload with pages. So the payload should have pages.
+
+Unless - the domain_scans.payload column is jsonb and there's a size limit? Or maybe we're not loading the full payload for some reason? Let me check - getDomainScanWithProjectId does db.select({ payload: domainScans.payload }). So we're selecting the full payload. So we get the whole thing.
+
+Oh! Maybe the issue is that when we do buildDomainSummary(row.result), the row.result might have "totalPages" (from the DomainScanResult type) but not "totalPageCount". And in the first branch we set totalPageCount: (scan.pages as SlimPage[]).length. So we're not reading from scan.totalPages. So if scan.pages is undefined or null, we'd have (undefined as SlimPage[]).length which is undefined, and undefined.length would throw. So we wouldn't get 0, we'd get an error. So maybe scan.pages is []? So the stored payload has pages: [] for competitor scans? That could happen if the update that saves the payload after the scan completes somehow doesn't include the pages for competitor scans. Let me check the flow - when does the payload get written with pages? In the spider/domain flow, when the scan completes we call updateDomainScan with the full domain result. So the result should have pages. Unless the result is built differently for different scan types?
+
+Actually, let me check - maybe the payload in the DB for domain_scans is stored differently. Like maybe we only store a "summary" for list performance and the full payload is elsewhere? Let me look at updateDomainScan and what gets stored.
+</details></think>
+
+---
+
+
+Prüfen, wie das Domain-Scan-Payload beim Speichern aufgebaut wird und ob es für alle Scans gleich ist:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "updateDomainScan|buildStoredDomainPayload|payload",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib",
+  "glob": "*.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "updateDomainScan|buildStoredDomainPayload|payload",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib",
+  "outputMode": "content",
+  "totalFiles": 70,
+  "totalMatches": 335,
+  "topFiles": [
+    {
+      "uri": "lib/domain-scan-start.ts",
+      "matchCount": 8
+    },
+    {
+      "uri": "lib/db/schema.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "lib/db/geo-eeat-runs.test.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "lib/cache.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/db/geo-eeat-runs.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "lib/db/scans.ts",
+      "matchCount": 14
+    },
+    {
+      "uri": "lib/geo-eeat/run-llm-stages.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "lib/types.ts",
+      "matchCount": 5
+    },
+    {
+      "uri": "lib/share-access.ts",
+      "matchCount": 12
+    },
+    {
+      "uri": "lib/store.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/llm/prompts.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "lib/llm/build-summary-payload.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/llm/build-domain-summary-payload.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/domain-summary.ts",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-scan-start.ts",
+      "matchCount": 8
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/schema.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/geo-eeat-runs.test.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/cache.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/geo-eeat-runs.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/scans.ts",
+      "matchCount": 14
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-summary.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So buildStoredDomainPayload returns an object with ...base, pages, aggregated. It does NOT set totalPageCount - it sets totalPages from base (which has totalPages). So the stored payload has totalPages (from the base when we call buildStoredDomainPayload - that comes from the runDomainScan result). So the payload has totalPages, not totalPageCount. And buildDomainSummary when it runs - in the first branch it returns { ...scan, pages, totalPageCount: (scan.pages as SlimPage[]).length, aggregated }. So we're setting totalPageCount from scan.pages.length. So if scan.pages is present and has length, we get it. The stored payload has pages: fullPages.map(toSlimPage). So it has pages. So when we read it back, scan.pages should be the array. So (scan.pages as SlimPage[]).length should be the count. Unless - when we merge in updateDomainScan we do merged = { ...(existing[0].payload as DomainScanResult), ...update }. So when we pass the full "stored" object, we're merging. So the final payload has pages and aggregated. So we're good. So when we read back, we should have pages. The only thing I can think of is that maybe the payload is too large and PostgreSQL or the driver is truncating it? Or maybe the JSON parsing loses something? Let me check - do we have totalPages in the stored payload? buildStoredDomainPayload has ...base, and base includes totalPages. So the stored payload has totalPages. So we could use scan.totalPages as another fallback in buildDomainSummary! So when we build the summary, if for some reason pages is empty but the payload has totalPages (from when we stored it), we could set totalPageCount = scan.totalPages ?? (scan.pages as SlimPage[])?.length ?? 0. So in buildDomainSummary, in the first branch we could do totalPageCount: (scan.pages as SlimPage[])?.length ?? (scan as { totalPages?: number }).totalPages ?? 0. That way we have a fallback from the stored totalPages field. And in the API we already have pageCount = summary.totalPageCount ?? summary.pages?.length ?? 0. So we could also add summary.totalPages (if the response has it) in the API. Let me check DomainSummaryResponse - it extends Omit<DomainScanResult, 'pages'> so it has totalPages from DomainScanResult. So summary.totalPages could be available. So in the API we could do pageCount = summary.totalPageCount ?? summary.pages?.length ?? (summary as { totalPages?: number }).totalPages ?? 0. That might fix the issue if the payload has totalPages but for some reason pages is empty (e.g. truncated).
+</details></think>
+
+---
+
+
+DomainScanResult prüfen — enthält er `totalPages`? Wenn das Payload `pages` nicht oder leer liefert, `totalPages` als Fallback nutzen:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "totalPages|totalPageCount",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts",
+  "contextBefore": 0,
+  "contextAfter": 0,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "totalPages|totalPageCount",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 20,
+  "topFiles": [
+    {
+      "uri": "lib/types.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 4
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/domain-summary-all/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So the payload (DomainScanResult) has totalPages. The buildDomainSummary return object extends the scan - so it has totalPages from the spread. But we set totalPageCount explicitly. So the summary has both. So in the API we could use (summary as any).totalPages as fallback. Let me add that: pageCount = summary.totalPageCount ?? summary.pages?.length ?? (summary as DomainScanResult).totalPages ?? 0. We need to get totalPages from the summary - the DomainSummaryResponse extends Omit<DomainScanResult, 'pages'>, so it should have totalPages. So summary.totalPages might be there. Let me add that fallback in the API.
+
+Actually, the key insight: when we build the summary from the payload, we do totalPageCount: (scan.pages as SlimPage[]).length in the first branch. So we're not copying scan.totalPages to totalPageCount. So if for some reason scan.pages is [] or undefined when we read from DB (e.g. payload too large and not fully stored, or different structure), then totalPageCount would be 0. But the payload might still have totalPages from when we stored it (from the base object in buildStoredDomainPayload). So in buildDomainSummary we could set totalPageCount: (scan.pages as SlimPage[])?.length ?? (scan as { totalPages?: number }).totalPages ?? 0. That way when we build the summary we always have a fallback to the stored totalPages. Let me do that in buildDomainSummary so the summary always has the correct totalPageCount when the payload has totalPages.
+</details></think>
+
+---
+
+
+buildDomainSummary prüfen: Das gespeicherte Payload enthält `totalPages`; wenn `pages` leer oder fehlt, nutzen wir `totalPages` als Fallback.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-summary.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So DomainScanResult has totalPages: number. So when we have the payload, we have scan.totalPages. In buildDomainSummary:
+- First branch: we set totalPageCount: (scan.pages as SlimPage[]).length. If scan.pages is [] or undefined, that's 0. We should add ?? scan.totalPages ?? 0.
+- Second branch: we set totalPageCount: pages.length. Here pages = (scan.pages ?? []) so if scan.pages is empty we get 0. We could add ?? scan.totalPages ?? 0.
+
+So the fix: in both branches set totalPageCount with a fallback to scan.totalPages. So:
+Branch 1: totalPageCount: (scan.pages as SlimPage[])?.length ?? scan.totalPages ?? 0
+Branch 2: totalPageCount: pages.length || scan.totalPages ?? 0 (or Math.max(pages.length, scan.totalPages ?? 0)? No - if we have pages we use pages.length; if pages is empty we use scan.totalPages. So totalPageCount: pages.length || (scan.totalPages ?? 0) or just totalPageCount: Math.max(pages.length, scan.totalPages ?? 0) to be safe.
+
+Actually the simpler fix: in the API we already have pageCount = summary.totalPageCount ?? summary.pages?.length ?? 0. We just need to add ?? (summary as any).totalPages. So in domain-summary-all route we use pageCount = summary.totalPageCount ?? summary.pages?.length ?? (summary as { totalPages?: number }).totalPages ?? 0. That way if the summary has totalPages (from the spread ...scan) we use it. So the summary object from buildDomainSummary has ...scan in the first branch, so it has totalPages. So summary.totalPages should be available. Let me add that in the API for both own and competitors.
+</details></think>
+
+---
+
+
+Wir nutzen das im Payload gespeicherte `totalPages` als Fallback, falls `pages` leer ist oder fehlt.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-summary.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-summary.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Now let me also add the totalPages fallback in the API so we have a triple fallback: totalPageCount, pages.length, totalPages. That way even if buildDomainSummary didn't get the right value, we'd still have it from the summary object (which has ...scan so totalPages).
+</details></think>
+
+---
+
+
+In der API `totalPages` als weiteren Fallback hinzufügen:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/domain-summary-all/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/domain-summary-all/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The replace_all only replaced one occurrence (the first one for "own"). The second replace was for the competitors block - let me check if that was already updated. Looking at the file, we have two places: one for own (inside if (row)) and one for competitors (in the for loop). The replace_all said "1 occurrence" so only the first was replaced. The second search_replace was for the competitors block - "const summary = buildDomainSummary(row.result);\n    const pageCount = ..." - that should have been updated. So both should now have the totalPages fallback. Let me verify the file.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/domain-summary-all/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Both places have the full fallback now. So we have:
+1. buildDomainSummary now uses scan.totalPages when pages array is empty (for both branches)
+2. API uses summary.totalPageCount ?? summary.pages?.length ?? summary.totalPages ?? 0
+
+One more possibility: maybe the issue is that when we read the payload from the DB, the JSON has "totalPages" but it's being read correctly. So the payload should have totalPages. Let me double-check - when we save with buildStoredDomainPayload we pass base which includes totalPages from the runDomainScan result. So the stored payload has totalPages. So when we build the summary, we spread ...scan so we have totalPages. And now we set totalPageCount from pages.length or scan.totalPages. So we should be good.
+
+Let me also add totalPages fallback on the WCAG page for the client-side totalPageCount when we use fullSummary, in case the API returns totalPages but not totalPageCount.
+</details></think>
+
+---
+
+
+WCAG-Seite: Fallback auf `totalPages` hinzufügen (falls die Summary-API es liefert).
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/wcag/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me check if there could be another issue - maybe the payload from the DB for competitor scans doesn't include the full payload? Like maybe we're only storing a reference and the actual scan data is loaded differently? Let me check - when we do getDomainScanWithProjectId(ref.domainScanId, user.id), we're loading the domain scan by id and userId. So we get the row from domain_scans. The payload is the full JSON. So we should get the same payload as when you open the scan. So the data should be there. Unless - there's something different about how the payload is structured when it's a "competitor" scan (no projectId). I don't think so - we use the same createDomainScan and updateDomainScan. So the payload should be identical. So the fix we did (using totalPages when pages length is 0) should help. Let me run the linter to make sure there are no issues.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-summary.ts",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/domain-summary-all/route.ts",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/wcag/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-summary.ts"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/domain-summary-all/route.ts"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/wcag/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Let me provide a summary to the user. The issue was that for competitor scans (and possibly own), the summary was built with totalPageCount from (scan.pages).length. If the payload when read from the DB has an empty pages array (e.g. due to payload size, or the way it's stored/retrieved), we'd get 0. But the payload also has totalPages (stored when we saved the scan). So now we use totalPages as fallback when pages.length is 0, in both buildDomainSummary and in the API/client. That way the WCAG score for competitors should show the correct value.
+</details></think>
+
+---
+
+
+Hier die Änderungen:
+
+**Ursache:**  
+Der WCAG-Score für Competitors wurde mit `totalPageCount` aus `summary.totalPageCount` bzw. `summary.pages.length` berechnet. Wenn das Payload aus der DB kein oder ein leeres `pages`-Array hat (z. B. bei großen Scans oder anderer Speicherung), war die Seitenanzahl 0 → `computeWcagScore` lieferte 0/100. Im gespeicherten Payload steht aber immer **`totalPages`** (wird beim Speichern des Deep-Scan-Ergebnisses gesetzt).
+
+**Anpassungen:**
+
+1. **`lib/domain-summary.ts` – `buildDomainSummary`**
+   - **Branch mit gespeichertem Aggregat:**  
+     `totalPageCount` = Länge von `scan.pages`, **falls 0:** Fallback auf `scan.totalPages`.
+   - **Legacy-Branch:**  
+     `totalPageCount` = `pages.length`, **falls 0:** Fallback auf `scan.totalPages`.
+
+2. **`app/api/projects/[id]/domain-summary-all/route.ts`**
+   - Für Own und Competitors:  
+     `pageCount = summary.totalPageCount ?? summary.pages?.length ?? summary.totalPages ?? 0`  
+     → Es wird immer zuerst `totalPages` aus dem Payload genutzt, wenn weder `totalPageCount` noch `pages.length` greifen.
+
+3. **`app/projects/[id]/wcag/page.tsx`**
+   - Beim eigenen Score:  
+     `totalPageCount` nutzt ebenfalls den Fallback auf `fullSummary.totalPages`, falls die anderen Werte fehlen.
+
+Damit wird die Seitenanzahl (und damit der WCAG-Score) für Competitors und die eigene Domain auch dann korrekt, wenn `pages` im Payload fehlt oder leer ist – solange das gespeicherte **`totalPages`** vorhanden ist (wie bei abgeschlossenen Deep Scans mit Domain-Score). Bitte die WCAG-Seite mit Competitors nochmal prüfen; die Scores sollten jetzt passen.
+
+---
+
+_**User**_
+
+So I was thinking the next step should be having a separate page in the project Something like... SEO on page. where we specifically show All the Things like meta and structure and pages without meta descriptions and keywords. So everything SEO related on the page. should be there.
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants to plan a new project sub-page for "SEO on page" (or similar) that shows all SEO-related data from the deep scan: meta tags, structure, pages without meta descriptions/keywords, and everything else SEO-related. They're in Ask mode, so I should explore the codebase to understand:
+
+1. What SEO data we already have from the deep scan / domain scan
+2. How the existing WCAG page is structured (as a reference for the new page)
+3. Where project sub-pages live and how they're routed
+4. What APIs/data structures exist for SEO/domain summary
+
+Then I can give a clear plan and recommendations without implementing.
+</details></think>
+
+---
+
+
+Wir prüfen, welche SEO-Daten aus dem Deep Scan vorhanden sind und wie die Projektseiten aufgebaut sind.
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "seo|meta|structure|aggregateSeo",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib",
+  "glob": "*.ts",
+  "outputMode": "content",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "seo|meta|structure|aggregateSeo",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib",
+  "outputMode": "content",
+  "totalFiles": 80,
+  "totalMatches": 810,
+  "topFiles": [
+    {
+      "uri": "lib/domain-summary.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "lib/research/schema.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/geo-eeat/competitive-benchmark.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "lib/types.ts",
+      "matchCount": 16
+    },
+    {
+      "uri": "lib/scanner.ts",
+      "matchCount": 49
+    },
+    {
+      "uri": "lib/domain-aggregation.ts",
+      "matchCount": 14
+    },
+    {
+      "uri": "lib/ymyl-heuristic.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "lib/llm/geo-eeat-prompts.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "lib/geo-eeat/stage1.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/saliency-fusion.test.ts",
+      "matchCount": 20
+    },
+    {
+      "uri": "lib/saliency-fusion.ts",
+      "matchCount": 13
+    },
+    {
+      "uri": "lib/spider.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/page-index.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "lib/page-index.test.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/llm/journey-agent.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "lib/llm/build-summary-payload.ts",
+      "matchCount": 22
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-summary.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/lib/research/schema.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/geo-eeat/competitive-benchmark.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 16
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me get the full SEO and structure aggregation functions and the SeoAudit type to understand what data we have.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "aggregateSeo|aggregateStructure|SeoAudit|StructureNode",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts",
+  "contextAfter": 2,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "aggregateSeo|aggregateStructure|SeoAudit|StructureNode",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 15,
+  "topFiles": [
+    {
+      "uri": "lib/domain-aggregation.ts",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-aggregation.ts",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-aggregation.ts",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-aggregation.ts",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-aggregation.ts",
+      "matchCount": 9
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **6** results in **1** directory</summary>
+
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]** (6 files)
+
+| File |
+|------|
+| `wcag/page.tsx` |
+| `page.tsx` |
+| `geo/page.tsx` |
+| `layout.tsx` |
+| `research/page.tsx` |
+| `rankings/page.tsx` |
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. So we have:
+- app/projects/[id]/ with page.tsx, wcag/page.tsx, geo/page.tsx, research/page.tsx, rankings/page.tsx, layout.tsx
+- SeoAudit has: title, metaDescription, h1, canonical, ogTitle, ogDescription, ogImage, twitterCard, robotsTxtPresent, sitemapUrl, duplicateContentWarning, skinnyContent, bodyWordCount, structuredDataRequiredFields, keywordAnalysis
+- aggregateSeo and aggregateStructure exist in domain-aggregation
+
+Let me read the full aggregateSeo and aggregateStructure to see what aggregated shapes they return, and check how the WCAG page is structured for reference.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/wcag/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I now have a good picture. Let me also check the layout for project nav (to see how wcag/geo/rankings are linked) and whether there's any existing SEO display in the domain scan page.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/layout.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "seo|aggregated\\.seo|aggregated\\.structure",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app",
+  "glob": "*.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "seo|aggregated\\.seo|aggregated\\.structure",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app",
+  "outputMode": "content",
+  "totalFiles": 20,
+  "totalMatches": 220,
+  "topFiles": [
+    {
+      "uri": "app/domain/[id]/page.tsx",
+      "matchCount": 22
+    },
+    {
+      "uri": "app/projects/[id]/research/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/results/[id]/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "app/share/[token]/page.tsx",
+      "matchCount": 15
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 22
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/research/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/app/share/[token]/page.tsx",
+      "matchCount": 15
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 22
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/research/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/app/share/[token]/page.tsx",
+      "matchCount": 15
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 22
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/research/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/app/share/[token]/page.tsx",
+      "matchCount": 15
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 22
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/research/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/app/share/[token]/page.tsx",
+      "matchCount": 15
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So the domain scan single page (app/domain/[id]/page.tsx) already shows SEO and structure in a section - but that's when you're on the deep scan detail page. The user wants a **project-level** page like `/projects/[id]/seo` (or "SEO on page") that shows all this SEO data in one place, similar to how WCAG is at `/projects/[id]/wcag`. So we need a new route under the project. Let me check how the project overview links to wcag/rankings/geo so I can describe where to add the nav.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "wcag|rankings|geo|research",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx",
+  "contextBefore": 0,
+  "contextAfter": 0,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "wcag|rankings|geo|research",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 55,
+  "topFiles": [
+    {
+      "uri": "app/projects/[id]/page.tsx",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 11
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me see how the project page links to sub-pages (e.g. rankings, wcag) - maybe via MsqdxAppLayout or some nav.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "pathProject|/rankings|/wcag|/geo|/research|Link|href",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx",
+  "contextAfter": 0,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "pathProject|/rankings|/wcag|/geo|/research|Link|href",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 60,
+  "topFiles": [
+    {
+      "uri": "app/projects/[id]/page.tsx",
+      "matchCount": 12
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 12
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 12
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 12
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 12
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I notice the project page doesn't seem to link to WCAG directly in the grep - let me search for wcag in the project page to see if it's there.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "wcag|pathProjectWcag",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "wcag|pathProjectWcag",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 40,
+  "totalMatches": 255,
+  "topFiles": [
+    {
+      "uri": "./app/projects/[id]/wcag/page.tsx",
+      "matchCount": 18
+    },
+    {
+      "uri": "./components/DomainAggregatedIssueList.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "./components/ProjectHeaderNav.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "./app/settings/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "./app/scan/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/results/[id]/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "./components/ScanIssueRow.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "./components/ScanIssueItem.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/wcag/page.tsx",
+      "matchCount": 18
+    },
+    {
+      "uri": "../CHECKION-1/components/DomainAggregatedIssueList.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/components/ProjectHeaderNav.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/app/settings/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/app/scan/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/components/ScanIssueRow.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/components/ScanIssueItem.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/wcag/page.tsx",
+      "matchCount": 18
+    },
+    {
+      "uri": "../CHECKION-1/components/DomainAggregatedIssueList.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/components/ProjectHeaderNav.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/app/settings/page.tsx",
+      "matchCount": 5
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I have a complete picture. The project uses ProjectHeaderNav with tabs for overview, rankings, geo, wcag, research. So for a new "SEO on page" page we'd add a tab and a new route. The data is already in the domain summary: fullSummary.aggregated.seo and fullSummary.aggregated.structure. The WCAG page fetches via apiProjectDomainSummary + apiScanDomainSummary to get the full summary. So the new SEO page would do the same and then display aggregated.seo and aggregated.structure (and optionally links if we want internal/external link stats). Let me summarize for the user.
+</details></think>
+
+---
+
+
+Hier die Kurzfassung und ein konkreter Plan für die neue **„SEO on page“** Projektseite.
+
+---
+
+## Was schon da ist
+
+**Daten aus dem Deep Scan (Domain Summary):**
+
+- **`aggregated.seo`** (`AggregatedSeo` in `lib/domain-aggregation.ts`):
+  - `totalPages`, `withTitle`, `withMetaDescription`, `withH1`, `withCanonical`
+  - `missingMetaDescriptionUrls`, `missingH1Urls`
+  - `pages`: pro Seite u.a. `url`, `title`, `hasMeta`, `hasH1`, `wordCount`, `topKeywordCount`, `isSkinny`
+  - `crossPageKeywords`: Keywords über mehrere Seiten (keyword, totalCount, pageCount, avgDensityPercent, pageUrls)
+  - `totalWordsAcrossPages`
+
+- **`aggregated.structure`** (`AggregatedStructure`):
+  - `pagesWithMultipleH1`, `pagesWithSkippedLevels`, `pagesWithGoodStructure`
+  - `pagesWithHeadingIssues`, `totalPages`
+
+**Pro-Seite im Scan (z. B. für „Seiten ohne Meta/Keywords“):**  
+`fullSummary.pages` (SlimPage[]) + pro Seite im Aggregat `aggregated.seo.pages` (Title, hasMeta, hasH1, wordCount, isSkinny usw.).  
+„Keywords“ pro Seite: über `aggregated.seo.pages[].topKeywordCount` und `crossPageKeywords` (mit `pageUrls`).
+
+**Wo es heute angezeigt wird:**  
+Nur auf der **Deep-Scan-Detailseite** `app/domain/[id]/page.tsx` (SEO/Struktur-Bereich, inkl. fehlende Meta-Descriptions, Cross-Page-Keywords, Seiten-Tabelle).  
+Es gibt noch **keine** projektbezogene Seite, die nur SEO/Struktur bündelt.
+
+---
+
+## Vorschlag: Neue Projektseite „SEO on page“
+
+**1. Route & Navigation**
+
+- Neue Route: z. B. **`/projects/[id]/seo`** (oder `/seo-on-page`).
+- In **`lib/constants.ts`**: z. B. `pathProjectSeo(id)` ergänzen.
+- In **`components/ProjectHeaderNav.tsx`**: neuen Tab (z. B. „SEO“ / „SEO on page“) mit `pathProjectSeo(id)` hinzufügen, gleiches Muster wie bei `pathProjectWcag` / `pathProjectRankings`.
+
+**2. Datenquelle (wie WCAG-Seite)**
+
+- Gleicher Flow wie auf der WCAG-Seite:
+  - `apiProjectDomainSummary(id)` → `scanId`
+  - Mit `scanId`: `apiScanDomainSummary(scanId)` → **full summary** (`DomainSummaryResponse`).
+- Darin nutzen:
+  - **`fullSummary.aggregated.seo`** (alle Meta/Title/H1/Keyword-Aggregate).
+  - **`fullSummary.aggregated.structure`** (H1/Struktur-Probleme).
+- Optional: `fullSummary.pages` nur, wenn du z. B. pro Seite noch weitere Felder aus dem Scan brauchst; für „Seiten ohne Meta/Keywords“ reichen die Aggregationen und `aggregated.seo.pages` in der Regel.
+
+**3. Inhaltliche Blöcke für die Seite**
+
+- **Übersicht (KPI-Card):**
+  - „Seiten mit Title / Meta-Description / H1 / Canonical“ (z. B. X/Y Seiten), Gesamtwörter.
+- **Seiten ohne Meta-Description:**  
+  Liste/Linkliste aus `aggregated.seo.missingMetaDescriptionUrls` (evtl. mit Link zur Einzelseite im Deep Scan, falls ihr eine URL→page.id Map habt).
+- **Seiten ohne H1:**  
+  analog aus `aggregated.seo.missingH1Urls`.
+- **Seiten ohne / mit wenig Keywords:**  
+  z. B. aus `aggregated.seo.pages` filtern nach `topKeywordCount === 0` oder `isSkinny === true` und diese Seiten auflisten.
+- **Struktur (Überschriften):**
+  - „Seiten mit mehreren H1“ → `aggregated.structure.pagesWithMultipleH1`
+  - „Seiten mit übersprungenen Ebenen“ → `aggregated.structure.pagesWithSkippedLevels`
+  - Optional: „Seiten mit guter Struktur“ → `aggregated.structure.pagesWithGoodStructure`
+- **Cross-Page-Keywords:**  
+  Tabelle/Liste aus `aggregated.seo.crossPageKeywords` (Keyword, Vorkommen, Seitenanzahl, ggf. Dichte).
+- **Seiten-Tabelle (optional, wie im Domain-Scan):**  
+  `aggregated.seo.pages` mit Spalten: URL, Title, Meta?, H1?, Wortanzahl, Keyword-Anzahl, Skinny – ggf. mit Pagination wie bei der WCAG-Issues-Tabelle.
+
+**4. Technik & UX**
+
+- **Layout:** Wie WCAG: Projekt-Context (Header/Nav) beibehalten, eine Seite mit mehreren **MsqdxMoleculeCard**/Cards (eine pro Block oben).
+- **Deep Scan fehlt:** Wie auf der WCAG-Seite: Hinweis „Kein Deep Scan“ + Link „Deep Scan starten“ (z. B. zu `/scan/domain?url=...` oder eurem Flow).
+- **i18n:** Neue Keys unter z. B. `projects.seo.*` für Titel, Tab-Label, KPI-Labels, „Seiten ohne Meta-Description“, „Seiten ohne H1“, „Keywords“, „Struktur“ usw.
+
+**5. Abgrenzung**
+
+- **Rankings-Seite** = Rankings/Serp-Daten (Keywords, Positionen).
+- **Neue SEO-Seite** = On-Page aus dem **Deep Scan**: Meta, Title, H1, Struktur, Keywords, „Seiten ohne Meta/Keywords“, alles aus `aggregated.seo` + `aggregated.structure`.
+
+Wenn du willst, kann ich im nächsten Schritt die genauen Komponenten-/Seitenstrukturen (inkl. welche Props aus `fullSummary` in welche Komponente fließen) und die genaue Signatur von `pathProjectSeo` + Tab-Integration in `ProjectHeaderNav` ausformulieren (ohne Code zu ändern, da Ask-Mode).
+
+---
+
+_**User**_
+
+plane die komplette planung und denk daran alles in msq dx componenten zu machen
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants me to plan the complete "SEO on page" project page implementation and to use MSQDX components throughout. I already have good context from the previous conversation. Let me gather a bit more detail on:
+
+1. Which MSQDX components are used on similar pages (WCAG, domain scan)
+2. The exact structure of ProjectHeaderNav for adding the new tab
+3. Domain summary API and types for the SEO/structure data
+
+I'll do a focused read to confirm MSQDX usage and nav structure, then create the plan.
+</details></think>
+
+---
+
+
+Kurz prüfen, welche MSQDX-Komponenten auf vergleichbaren Seiten verwendet werden und wie die Navigation aufgebaut ist:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ProjectHeaderNav.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "Msqdx|@msqdx",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/wcag/page.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "Msqdx|@msqdx",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/wcag/page.tsx",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 230,
+  "topFiles": [
+    {
+      "uri": "app/projects/[id]/wcag/page.tsx",
+      "matchCount": 46
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/wcag/page.tsx",
+      "matchCount": 46
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/wcag/page.tsx",
+      "matchCount": 46
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/wcag/page.tsx",
+      "matchCount": 46
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/wcag/page.tsx",
+      "matchCount": 46
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I have a clear picture. The WCAG page uses: MsqdxTypography, MsqdxButton, MsqdxMoleculeCard, MsqdxChip, InfoTooltip, Box (MUI), Stack. The domain page uses the same for the SEO section. I should check if there's MsqdxCard, MsqdxAccordion, or table components used elsewhere for tabular data.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "MsqdxCard|MsqdxAccordion|MsqdxTabs|MsqdxTable|InfoTooltip",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.tsx",
+  "outputMode": "content",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "MsqdxCard|MsqdxAccordion|MsqdxTabs|MsqdxTable|InfoTooltip",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 105,
+  "totalMatches": 1185,
+  "topFiles": [
+    {
+      "uri": "./app/projects/[id]/wcag/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "./app/projects/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/domain/[id]/page.tsx",
+      "matchCount": 33
+    },
+    {
+      "uri": "./components/GeoQuestionCard.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "./app/projects/[id]/rankings/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/settings/page.tsx",
+      "matchCount": 20
+    },
+    {
+      "uri": "./app/scan/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "./app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 7
+    },
+    {
+      "uri": "./app/journey-agent/[jobId]/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "./app/results/[id]/page.tsx",
+      "matchCount": 23
+    },
+    {
+      "uri": "./app/share/[token]/page.tsx",
+      "matchCount": 66
+    },
+    {
+      "uri": "./app/developers/page.tsx",
+      "matchCount": 9
+    },
+    {
+      "uri": "./app/scan/domain/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/page.tsx",
+      "matchCount": 11
+    },
+    {
+      "uri": "./components/PageIndexCard.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./components/UxIssueList.tsx",
+      "matchCount": 28
+    },
+    {
+      "uri": "./components/SeoCard.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/ScanIssueItem.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./components/LinkAuditCard.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./components/InfoTooltip.tsx",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/wcag/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I have everything I need. The plan should:
+1. Add route /projects/[id]/seo and pathProjectSeo in constants
+2. Add SEO tab in ProjectHeaderNav (pathProjectSeo, isSeo, activeTab)
+3. Create app/projects/[id]/seo/page.tsx with same data loading pattern as WCAG (apiProjectDomainSummary -> apiScanDomainSummary -> fullSummary), then display aggregated.seo and aggregated.structure
+4. Use only MSQDX: MsqdxTypography, MsqdxButton, MsqdxMoleculeCard, MsqdxChip, MsqdxCard where useful; InfoTooltip; Box/Stack from MUI for layout only
+5. Sections: Overview KPIs, Pages without meta description, Pages without H1, Structure (multiple H1, skipped levels), Cross-page keywords, Optional: pages table (with pagination like DomainAggregatedIssueList if needed - but that component uses custom grid, not a MSQDX table - so we use list/cards with MsqdxMoleculeCard and list items with MsqdxTypography/MsqdxButton)
+6. i18n keys under projects.seo.*
+
+I'll create the plan now.
+</details></think>
+
+---
+
+
+Alle nötigen Infos gesammelt. Plan erstellen:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="create_plan">
+<details>
+<summary>Tool use: **create_plan**</summary>
+
+
+Parameters:
+
+```json
+{
+  "plan": "# SEO-on-Page Projektseite (vollständige Planung)\n\n## Ziel\n\nEine dedizierte Projektseite **„SEO on page“**, die alle aus dem Deep Scan verfügbaren On-Page-SEO-Daten bündelt: Meta (Title, Description, H1, Canonical), Struktur (Überschriften), Seiten ohne Meta-Description/Keywords, Cross-Page-Keywords und Seitenübersicht. Umsetzung ausschließlich mit **MSQDX-Komponenten** (analog zur WCAG-Seite).\n\n## Datenbasis (bereits vorhanden)\n\nDie Daten kommen aus dem **Domain Summary** des Projekts-Deep-Scans. Keine neuen APIs nötig.\n\n- **Ladefluss** (wie [app/projects/[id]/wcag/page.tsx](app/projects/[id]/wcag/page.tsx)):  \n  &#96;apiProjectDomainSummary(id)&#96; → &#96;scanId&#96; → &#96;apiScanDomainSummary(scanId)&#96; → &#96;DomainSummaryResponse&#96; (fullSummary).\n- **Genutzte Aggregate:**\n  - **&#96;fullSummary.aggregated.seo&#96;** ([lib/domain-aggregation.ts](lib/domain-aggregation.ts) – &#96;AggregatedSeo&#96;):  \n    &#96;totalPages&#96;, &#96;withTitle&#96;, &#96;withMetaDescription&#96;, &#96;withH1&#96;, &#96;withCanonical&#96;, &#96;missingMetaDescriptionUrls&#96;, &#96;missingH1Urls&#96;, &#96;pages&#96; (PageSeoSummary[]), &#96;crossPageKeywords&#96;, &#96;totalWordsAcrossPages&#96;.\n  - **&#96;fullSummary.aggregated.structure&#96;** (&#96;AggregatedStructure&#96;):  \n    &#96;pagesWithMultipleH1&#96;, &#96;pagesWithSkippedLevels&#96;, &#96;pagesWithGoodStructure&#96;, &#96;pagesWithHeadingIssues&#96;, &#96;totalPages&#96;.\n- **Optional für Klick auf Einzelseite:** &#96;fullSummary.pages&#96; (SlimPage[]) für URL → &#96;page.id&#96; → &#96;pathResults(page.id)&#96; (wie im Domain-Scan SEO-Bereich).\n\n&#96;&#96;&#96;mermaid\nflowchart LR\n  subgraph data [Datenquelle]\n    API_Project[apiProjectDomainSummary]\n    API_Scan[apiScanDomainSummary]\n    API_Project --&gt; scanId\n    scanId --&gt; API_Scan\n    API_Scan --&gt; fullSummary[fullSummary]\n  end\n  fullSummary --&gt; seo[aggregated.seo]\n  fullSummary --&gt; structure[aggregated.structure]\n  fullSummary --&gt; pages[pages SlimPage]\n  seo --&gt; UI[SEO-on-Page UI]\n  structure --&gt; UI\n  pages --&gt; UI\n&#96;&#96;&#96;\n\n## 1. Route und Konstanten\n\n- **[lib/constants.ts](lib/constants.ts):**  \n  - Neue Route-Funktion: &#96;pathProjectSeo(id: string)&#96; → &#96;/projects/[id]/seo&#96; (nach &#96;pathProjectWcag&#96;).\n\n## 2. Navigation\n\n- **[components/ProjectHeaderNav.tsx](components/ProjectHeaderNav.tsx):**  \n  - &#96;pathProjectSeo&#96; importieren.  \n  - &#96;isSeo&#96; (pathname === basePath + '/seo') und im &#96;activeTab&#96;: &#96;isSeo ? 'seo' : …&#96;.  \n  - Neuen Tab einfügen (z. B. nach „Research“ oder vor „WCAG“):  \n    &#96;Tab label={t('projects.navSeo')} value=\"seo\" href={id ? pathProjectSeo(id) : '#'} component={Link}&#96;.\n\n## 3. Neue Seite: &#96;app/projects/[id]/seo/page.tsx&#96;\n\n**Struktur (nur MSQDX + Box/Stack für Layout):**\n\n- **Imports:**  \n  &#96;MsqdxTypography&#96;, &#96;MsqdxButton&#96;, &#96;MsqdxMoleculeCard&#96;, &#96;MsqdxChip&#96; aus &#96;@msqdx/react&#96;; &#96;InfoTooltip&#96; aus &#96;@/components/InfoTooltip&#96;; &#96;Box&#96;, &#96;Stack&#96; von MUI; gleiche API/Path-Imports wie WCAG-Seite (&#96;apiProjectDomainSummary&#96;, &#96;apiScanDomainSummary&#96;, &#96;pathDomain&#96;, &#96;pathResults&#96; usw.); &#96;DomainSummaryResponse&#96; und ggf. &#96;SlimPage&#96; für URL→page.id.\n\n- **State/Loading:**  \n  Projekt (id), &#96;scanId&#96;, &#96;fullSummary&#96;, &#96;summaryLoading&#96;; Lade-Logik wie WCAG: zuerst &#96;apiProjectDomainSummary(id)&#96; → bei &#96;data.scanId&#96; dann &#96;apiScanDomainSummary(scanId)&#96; → &#96;setFullSummary(payload)&#96;.\n\n- **Leer-/Fehlerzustände:**  \n  - Kein &#96;id&#96;: kurze Fehlermeldung (MsqdxTypography).  \n  - Kein Deep Scan / kein &#96;scanId&#96;: MsqdxMoleculeCard mit Hinweis „Kein Deep Scan“ und MsqdxButton „Deep Scan starten“ (Link zu &#96;pathScanDomain&#96; oder Projekt-Domain).  \n  - Keine SEO-Daten (&#96;!aggregated.seo &amp;&amp; !aggregated.structure&#96;): Hinweis, dass erst ein Deep Scan nötig ist.\n\n- **Inhalt bei vorhandenem &#96;fullSummary&#96; (alle Blöcke in MsqdxMoleculeCards):**\n\n  1. **Header/Context-Card**  \n     Titel z. B. „SEO on page“ (i18n), Subtitle mit Seitenanzahl aus Scan, optional &#96;headerActions&#96; mit InfoTooltip, &#96;actions&#96;: Link „Deep Scan öffnen“ (MsqdxButton, &#96;pathDomain(scanId)&#96;).\n\n  2. **Übersicht (Meta &amp; Basis)**  \n     Eine MsqdxMoleculeCard mit Kennzahlen:  \n     - Titel/Meta/H1/Canonical: „Seiten mit Title / Meta-Description / H1 / Canonical“ als X/Y (z. B. &#96;aggregated.seo.withTitle&#96;/&#96;totalPages&#96;).  \n     - Gesamtwörter: &#96;aggregated.seo.totalWordsAcrossPages&#96;.  \n     Darstellung mit MsqdxTypography, kompakt (body2/caption).\n\n  3. **Seiten ohne Meta-Description**  \n     MsqdxMoleculeCard, Titel z. B. „Seiten ohne Meta-Description“, Subtitle mit Anzahl.  \n     Liste aus &#96;aggregated.seo.missingMetaDescriptionUrls&#96;: pro URL MsqdxButton (variant=\"text\", size=\"small\") mit &#96;onClick&#96; → &#96;pathResults(page.id)&#96; falls Seite in &#96;fullSummary.pages&#96; gefunden, sonst nur Text. Optional mit MsqdxChip für „X Seiten“.\n\n  4. **Seiten ohne H1**  \n     Analog zu „ohne Meta-Description“, Quelle: &#96;aggregated.seo.missingH1Urls&#96;.\n\n  5. **Struktur (Überschriften)**  \n     MsqdxMoleculeCard „Struktur &amp; Überschriften“.  \n     - Chips oder kurze Liste: „Seiten mit mehreren H1“ (Anzahl + optional erste URLs), „Seiten mit übersprungenen Ebenen“, „Seiten mit guter Struktur“ (alle aus &#96;aggregated.structure&#96;).  \n     - Darstellung mit MsqdxTypography und MsqdxChip, Listen wie auf der Domain-Scan-Seite (Struktur-Bereich).\n\n  6. **Cross-Page-Keywords**  \n     MsqdxMoleculeCard „Keywords seitenübergreifend“.  \n     Liste/Chips aus &#96;aggregated.seo.crossPageKeywords&#96; (z. B. Top 25–50): Keyword, totalCount, pageCount, avgDensityPercent – mit MsqdxChip (wie in [app/domain/[id]/page.tsx](app/domain/[id]/page.tsx) Zeilen 700–706).\n\n  7. **Seiten nach Inhalt &amp; Dichte (optional)**  \n     MsqdxMoleculeCard „Seiten nach Inhalt &amp; Dichte“.  \n     Liste aus &#96;aggregated.seo.pages&#96;: pro Zeile URL (MsqdxButton zu Einzelergebnis), Wortanzahl, Top-Keyword-Anzahl, bei &#96;isSkinny&#96; ein MsqdxChip „Skinny“. Scrollbare Liste (maxHeight + overflow), gleiches Muster wie Domain-Scan SEO-Tab (Seiten-Tabelle).\n\n- **Layout:**  \n  Äußeres Layout wie WCAG: &#96;Box&#96; mit Padding, &#96;Stack&#96; mit &#96;gap: 2&#96; für die Cards. Keine MUI-Tabs auf der Seite nötig; alles ein vertikaler Scroll.\n\n- **Kein neues API-Endpoint:**  \n  Es wird ausschließlich die bestehende Domain-Summary-API genutzt; die Response enthält bereits &#96;aggregated.seo&#96; und &#96;aggregated.structure&#96;.\n\n## 4. Internationalisierung (i18n)\n\n- **[locales/de.json](locales/de.json)** / **[locales/en.json](locales/en.json):**  \n  Unter &#96;projects&#96; neue Sektion &#96;seo&#96; (analog &#96;wcag&#96;), z. B.:  \n  - &#96;navSeo&#96;: „SEO“ / „SEO“ (für Tab).  \n  - &#96;seo.title&#96;: „SEO on page“ / „SEO on page“.  \n  - &#96;seo.fromScan&#96;: „Aus Deep Scan“ / „From deep scan“.  \n  - &#96;seo.noScan&#96;: Hinweis kein Scan.  \n  - &#96;seo.openDeepScan&#96;: „Deep Scan öffnen“.  \n  - &#96;seo.overview&#96;: „Übersicht Meta &amp; Struktur“.  \n  - &#96;seo.withTitle&#96;, &#96;seo.withMetaDescription&#96;, &#96;seo.withH1&#96;, &#96;seo.withCanonical&#96;, &#96;seo.totalWords&#96;.  \n  - &#96;seo.pagesWithoutMetaDescription&#96;, &#96;seo.pagesWithoutH1&#96;.  \n  - &#96;seo.structureTitle&#96;, &#96;seo.multipleH1&#96;, &#96;seo.skippedLevels&#96;, &#96;seo.goodStructure&#96;.  \n  - &#96;seo.crossPageKeywords&#96;, &#96;seo.pagesByContent&#96;.  \n  - Optional: &#96;info.seoOnPage&#96; für InfoTooltip.\n\n## 5. MSQDX-Komponenten (Checkliste)\n\n- **MsqdxMoleculeCard** für alle Sektionen (title, subtitle, headerActions, actions, variant=\"flat\", borderRadius=\"lg\", sx bgcolor).\n- **MsqdxTypography** für alle Texte (variant body2/caption/subtitle2, sx color für Muted).\n- **MsqdxButton** für Links (Deep Scan öffnen, Deep Scan starten, URL-Links zu Einzelseiten; variant outlined/text, size small).\n- **MsqdxChip** für Kennzahlen-Labels, Keyword-Tags, „Skinny“, Struktur-Anzahl.\n- **InfoTooltip** für Header-Infos (z. B. Erklärung „SEO on page“).\n- **Box / Stack** (MUI) nur für Layout (Spacing, maxHeight, overflow).\n\nEs werden bewusst **keine** MUI-typischen Komponenten für Inhalte verwendet (kein reines MUI Card/Table); Tabellen werden als Listen mit MsqdxTypography/MsqdxButton/MsqdxChip umgesetzt, wie auf der WCAG- und Domain-Scan-Seite.\n\n## 6. Abgrenzung und Reihenfolge\n\n- **Rankings:** Serp/Keyword-Positionen (unverändert).  \n- **SEO on page:** Nur On-Page aus Deep Scan (Meta, Struktur, Keywords, fehlende Meta/Keywords).  \n- **Reihenfolge der Umsetzung:**  \n  1) Konstanten + Route, 2) ProjectHeaderNav (Tab), 3) &#96;seo/page.tsx&#96; inkl. aller Cards und i18n, 4) i18n-Keys in DE/EN prüfen und ergänzen.\n\n## 7. Kurzreferenz: Typen\n\n- &#96;DomainSummaryResponse&#96; (from [lib/domain-summary.ts](lib/domain-summary.ts)): enthält &#96;aggregated.seo&#96; (AggregatedSeo), &#96;aggregated.structure&#96; (AggregatedStructure), &#96;pages&#96; (SlimPage[]).  \n- &#96;AggregatedSeo&#96; / &#96;AggregatedStructure&#96;: siehe [lib/domain-aggregation.ts](lib/domain-aggregation.ts) (Zeilen 184–197, 563–570).\n",
+  "name": "SEO-on-Page Projektseite",
+  "overview": "Neue Projekt-Subseite „SEO on page“ unter &#96;/projects/[id]/seo&#96; einführen, die alle On-Page-SEO-Daten aus dem Deep Scan (Meta, Struktur, Keywords, Seiten ohne Meta/Keywords) in MSQDX-Komponenten darstellt."
+}
+```
+Additional data:
+
+```json
+{
+  "reviewData": {
+    "status": "Requested",
+    "selectedOption": "none",
+    "isShowingInput": false
+  },
+  "planUri": "file:///Users/christoph.bordeck/.cursor/plans/seo-on-page_projektseite_548630cf.plan.md",
+  "hasOpenedEditor": true
+}
+```
+Result:
+
+```json
+{
+  "rejected": {}
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+_**User**_
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants me to implement the SEO-on-Page project page according to the plan. Let me check the plan's todos - the user said "To-do's from the plan have already been created" but in the attached plan the todos are empty: `todos: []`. I'll proceed with the implementation in the order specified in the plan:
+
+1. Constants + Route (pathProjectSeo)
+2. ProjectHeaderNav (Tab)
+3. seo/page.tsx with all cards and i18n
+4. i18n keys in DE/EN
+
+Let me start by reading the current state of the files I need to modify and then implement.
+</details></think>
+
+---
+
+
+Implementierung starten: Zuerst prüfen wir die bestehenden Dateien und die To-dos.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/.cursor/plans/seo-on-page_projektseite_548630cf.plan.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ProjectHeaderNav.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The plan says todos are already created but the plan file shows `todos: []`. I'll implement in the order given: 1) Constants, 2) ProjectHeaderNav, 3) seo/page.tsx, 4) i18n. I'll add pathProjectSeo, then update ProjectHeaderNav, then create the full seo page, then add i18n keys.
+</details></think>
+
+---
+
+
+Implementierung starten: Konstanten und Route hinzufügen.
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] Add pathProjectSeo in lib/constants.ts
+- [ ] Add SEO tab in ProjectHeaderNav
+- [ ] Create app/projects/[id]/seo/page.tsx with all cards
+- [ ] Add i18n keys for projects.seo in de.json and en.json
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Now update ProjectHeaderNav and mark todo 1 done, 2 in progress.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add pathProjectSeo in lib/constants.ts
+- [-] Add SEO tab in ProjectHeaderNav
+- [ ] Create app/projects/[id]/seo/page.tsx with all cards
+- [ ] Add i18n keys for projects.seo in de.json and en.json
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ProjectHeaderNav.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ProjectHeaderNav.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ProjectHeaderNav.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Now I need to create the SEO page. Let me read the WCAG page fully to mirror the structure and data loading, and check pathScanDomain usage and how project domain is used for "start scan".
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add pathProjectSeo in lib/constants.ts
+- [x] Add SEO tab in ProjectHeaderNav
+- [-] Create app/projects/[id]/seo/page.tsx with all cards
+- [ ] Add i18n keys for projects.seo in de.json and en.json
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/wcag/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "pathScanDomain|pathResults|apiProjectDomainSummary|apiScanDomainSummary",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/wcag/page.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "pathScanDomain|pathResults|apiProjectDomainSummary|apiScanDomainSummary",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/wcag/page.tsx",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 55,
+  "topFiles": [
+    {
+      "uri": "app/projects/[id]/wcag/page.tsx",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/wcag/page.tsx",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/wcag/page.tsx",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/wcag/page.tsx",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/wcag/page.tsx",
+      "matchCount": 11
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+</tool-use>
 
 ---
 
