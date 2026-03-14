@@ -58,17 +58,11 @@ export default function ProjectSeoPage() {
         if (fetchedForIdRef.current === id) return;
         fetchedForIdRef.current = id;
         const cached = seoSummaryCache.get(id);
-        if (cached) {
-            setScanId(cached.scanId);
-            setFullSummary(cached.fullSummary);
-            setSummaryLoading(false);
-        }
+        if (cached) return;
         const ac = new AbortController();
         const { signal } = ac;
-        if (!cached) {
-            setProjectLoading(true);
-            setSummaryLoading(true);
-        }
+        setProjectLoading(true);
+        setSummaryLoading(true);
 
         (async () => {
             try {

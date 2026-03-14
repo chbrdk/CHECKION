@@ -43375,3 +43375,438 @@ That way when we have fullSummary from cache, we never show the loading state in
 
 ---
 
+
+Wir prüfen die Bedingungen: Bei Cache setzen wir `fullSummary`, rufen aber weiterhin `setProjectLoading(true)` auf — dadurch bleibt `loading === true` und die UI zeigt "Loading" statt der gecachten Inhalte.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see the issue now. We have:
+1. `loading ? (Loading text) : fullSummary ? (content) : ...` - so when loading is true we show Loading even if we have fullSummary from cache.
+2. `!loading && fullSummary && hasSeoData` - for the table and keywords sections. So when we have cache we set fullSummary and setSummaryLoading(false), but we also set setProjectLoading(true). So loading = true. So we show "Loading" in the header AND we don't render the table/keywords blocks because !loading is false!
+
+So when user returns to the tab with cache: we have fullSummary from initial state (cache). But then the effect runs and sets setProjectLoading(true). So we re-render with loading=true, fullSummary set. We show "Loading" because loading is true! And we don't show the table because !loading && fullSummary is false (loading is true). So we flash "Loading" and hide the content. That's the flicker.
+
+Fix 1: When we have cached, don't set projectLoading to true. So: if (cached) { ... set state from cache; } else { setProjectLoading(true); setSummaryLoading(true); }. Then we only set loading states when we don't have cache. So when we have cache, we never set projectLoading true, so loading stays false (we set summaryLoading false from cache). So we show content immediately.
+
+Fix 2: Change the display logic: show main content (score, table, keywords) whenever fullSummary is set, regardless of loading. Only show the "Loading" message when !fullSummary && loading. So we use fullSummary as the gate for showing content, not loading. That way when we have fullSummary from cache, we show content. And we don't set projectLoading when we have cache (Fix 1), so we don't get a re-render that hides content.
+
+Let me do both: (1) When we have cache, don't call setProjectLoading(true) - so we need to set projectLoading based on whether we're fetching project. When cached we could leave projectLoading as-is (from initial state it's true). So we need initial state for projectLoading: when we have cache we might want projectLoading false so that loading is false. So when we have cache we set setSummaryLoading(false) but we don't set setProjectLoading. So projectLoading stays true (initial state). So loading = true. So we still have the problem. So we need to either set projectLoading(false) when we have cache (we don't have project data yet but we have fullSummary - we could show content and let project load in background), or we need to change the display logic to show content when fullSummary exists regardless of loading. So the simpler fix is: show content (score, table, keywords) when fullSummary is set. Show "Loading" only when !fullSummary && loading. So we don't hide content when loading is true but we have fullSummary. That way when we have cache, we have fullSummary so we show content. When the effect runs and sets projectLoading(true), we still have fullSummary so we still show content - no flicker. And when we don't have cache, we show Loading until fullSummary is set. Perfect.
+</details></think>
+
+---
+
+
+Zwei Ursachen:
+1. Bei Cache setzen wir trotzdem `setProjectLoading(true)` → `loading` wird true und versteckt den Inhalt.
+2. Die Anzeige hängt an `loading`: Mit `fullSummary` aus Cache wird trotzdem "Loading" angezeigt und die Tabelle/Keywords ausgeblendet.
+
+Wir beheben beides: Bei Cache kein setProjectLoading(true); Inhalt anzeigen, sobald `fullSummary` da ist (nicht an `loading`).
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+We need to fix the early return when projectLoading && !project - that might still cause a full-page loading state. When we have cache we have fullSummary but we might not have project yet. So we don't want to return the "Loading" page when we have fullSummary. So the condition for the early return should be: show the full-page loading only when we have no data at all (no project and no fullSummary) and we're loading. So: if (!id) return error. If (loading && !project && !fullSummary) return loading. So when we have fullSummary from cache we don't show the full-page loading.
+</details></think>
+
+---
+
+
+Frühe Rückgabe anpassen: Bei Cache haben wir `fullSummary`, aber möglicherweise noch kein `project` — keine Vollseiten-Loading-Anzeige.
+
+
+---
+
+The string to replace was not found in the file.
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The file might have different content. Let me read the exact lines for the early return.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The content is there - the difference might be in the Box - the original had `sx={{ py: 1 }}` in the loading typography. Let me try the replace again with exact string.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Now when we have fullSummary from cache we won't show the full-page loading, and we won't set projectLoading/summaryLoading when we have cache, so we won't flash "Loading" in the header. And we show content whenever fullSummary is set, so table and keywords show as soon as we have data (including from cache).
+</details></think>
+
+---
+
+
+Hier die Änderungen:
+
+**1. Bei Cache keine Loading-Flag setzen**  
+Wenn `cached` gesetzt ist, werden `setProjectLoading(true)` und `setSummaryLoading(true)` nicht mehr aufgerufen. Beim Zurückwechseln auf den SEO-Tab bleibt der Inhalt sichtbar, es gibt keinen Wechsel auf „Laden…“.
+
+**2. Anzeige an `fullSummary` statt an `loading`**  
+- **Header-Karte:** „Laden…“ nur noch, wenn **weder** `fullSummary` **noch** Daten da sind (`!fullSummary && loading`). Sobald `fullSummary` da ist (auch aus dem Cache), wird direkt Score + Text gerendert.  
+- **Tabelle & Keywords:** Sichtbar, sobald `fullSummary && hasSeoData` (ohne `!loading`). Damit erscheinen sie sofort, sobald die Daten da sind, auch wenn im Hintergrund noch etwas lädt.
+
+**3. Vollseiten-Loading nur ohne Daten**  
+Die große „Laden…“-Seite erscheint nur noch, wenn `projectLoading && !project && !fullSummary`. Mit `fullSummary` aus dem Cache wird sie nicht mehr gezeigt.
+
+Ergebnis: Beim ersten Besuch siehst du kurz „Laden…“, dann den Inhalt. Beim erneuten Öffnen des SEO-Tabs kommt der Inhalt aus dem Cache ohne Flackern; „Laden…“ wird in dem Fall nicht angezeigt.
+
+---
+
+_**User**_
+
+es flickert immernoch und nach kurzer zeit wird die seite unbedinbar, als ob irgendein arbeitsspeicher voll läuft oder das system voll läuft an aufgaben
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user reports two issues:
+1. It still flickers
+2. After a short time the page becomes unresponsive, as if memory is full or the system is overwhelmed with tasks
+
+The second point suggests a **memory leak or runaway effect/re-renders** - e.g. an effect that keeps re-running, or state updates that trigger more updates in a loop, or something that allocates memory repeatedly (e.g. the debug log creating new refs/counters every render, or the effect running repeatedly).
+
+Let me check for potential causes of runaway behavior:
+
+1. **Effect dependency array** - We have `[id, fetchedForIdRef]`. The ref is stable. But if something causes the component to remount repeatedly (e.g. a key that changes), we'd run the effect repeatedly. Or if there's a setState in the effect that triggers a re-render that somehow causes the effect to run again - we have the guard `fetchedForIdRef.current === id` so we return early. So we shouldn't run the fetch twice. Unless the ref gets reset? It's a ref, it shouldn't.
+
+2. **Debug logging** - We have `renderCount.current += 1` and `prevFullNull.current` being updated on every render. That's just mutation, shouldn't cause re-renders. But we're calling `isFlickerDebugEnabled()` on every render - that reads from localStorage. Could that be slow or cause issues? Unlikely to cause "page unresponsive".
+
+3. **Infinite loop** - Could there be a setState that triggers a re-render that triggers the effect again? The effect has deps [id, fetchedForIdRef]. When we set state (setProject, setFullSummary, etc.), we re-render. But the effect's deps haven't changed (id is same, ref is same). So the effect shouldn't run again. Unless - in React Strict Mode, the effect runs twice. First run: we set fetchedForIdRef.current = id, start async. Cleanup runs (abort). Second run: ref.current === id so we return early. So we don't start a second fetch. Good. But wait - when we abort, we don't reset the ref. So the second run skips. So we never get data in Strict Mode! Actually we do get data - the first run's async might complete before the cleanup runs (race). So in production we'd get one run. In dev Strict Mode we might get no data or data. So that might not be the issue.
+
+4. **Memory leak** - The async function in the effect captures `id`, `cached`, `signal`, etc. When we abort, the promise might still be pending. When it resolves, we check signal.aborted and don't setState. Good. So we shouldn't have setState after unmount. But could we have many pending fetches if the user navigates quickly? Each navigation would run the effect, set ref to new id, abort the previous. So we'd have one active fetch at a time. Unless the abort doesn't cancel the fetch and the promise still runs - we'd have many promise handlers in memory. That could accumulate if the user navigates very fast. But typically that wouldn't make the page "unresponsive" quickly.
+
+5. **Re-render loop** - Could something in the render path cause a state update? We have `renderCount.current += 1` - that's a ref mutation, doesn't trigger re-render. We have `prevFullNull.current = fullNull` - same. We call `isFlickerDebugEnabled()` which reads localStorage - shouldn't trigger state update. We call `debugLog` only when condition is true - that's just console.log. So we shouldn't have a render loop.
+
+6. **Cache growth** - We have `seoSummaryCache.set(id, ...)`. We only set one entry per project id. So the cache has at most N entries for N projects. We never clear. So if the user visits 100 projects, we'd have 100 entries. Each entry holds fullSummary which could be large (many pages, aggregated data). So memory could grow with each project visited. That could eventually cause high memory usage. We could add a cache limit (e.g. keep only last 5 or 10 projects) to prevent unbounded growth.
+
+7. **Table with many rows** - If we have 193 rows and we're re-rendering frequently, the table could be expensive. We already have React.memo on the table. But if the parent re-renders every second for some reason, we'd be doing a lot of work. What could cause frequent re-renders? Maybe a timer somewhere? Or the useParams() or useRouter() causing re-renders? Let me check - in Next.js, when you have a layout that re-renders (e.g. because of a context), the child pages re-render. So if there's a context provider that updates frequently (e.g. every second), we'd re-render. That could make the page feel "overwhelmed" and flickery.
+
+8. **Debug refs** - We're mutating refs on every render. If the component re-renders very frequently (e.g. from a parent or from a subscription), we'd be doing that every time. And we're calling isFlickerDebugEnabled() which does try/catch and localStorage.getItem. If there's something causing re-renders every frame or very frequently, that could add up. Let me remove the debug instrumentation entirely - it could be contributing to the problem (unlikely to be the main cause but let's simplify). And let's add a cache limit so the Map doesn't grow forever.
+
+Let me:
+1. Remove the debug logging (render count, prevFullNull, debugLog calls) to eliminate any overhead and rule out it contributing.
+2. Add a cache eviction policy: e.g. keep max 5 entries in seoSummaryCache, evict oldest when adding new. That prevents unbounded memory growth.
+3. Check if there's an effect or subscription that could run repeatedly - e.g. the effect cleanup: when we abort, we don't reset fetchedForIdRef. So when the user navigates away and back, we have a new component instance with ref = null, so we run the effect again. That's correct. But could the component be mounting and unmounting repeatedly? That could happen if the parent has a key that changes, or if there's a conditional render that toggles. I'll add a simple guard: don't run the effect if we're already loading and have fullSummary (avoid redundant fetches). Actually we already have the ref guard. So the only remaining fix is cache limit and remove debug code.
+
+Let me also check - could the issue be that we're creating new objects on every render that cause child re-renders? For example, we pass `onRowClick={handleSeoRowClick}` - that's useCallback so it's stable. We pass `rows={seoTableRows}` - that's useMemo so it's stable when deps don't change. So we're good there.
+
+I'll implement:
+1. Remove all flicker debug code (isFlickerDebugEnabled, debugLog, renderCount ref, prevFullNull ref, the render log condition, debugLog in effect and setFullSummary).
+2. Add cache eviction: when setting a new entry, if cache.size > 5, delete the first key (or use a simple FIFO: we could use a Map which preserves insertion order, so we can delete the first key when size > 5).
+</details></think>
+
+---
+
+
+Zwei Probleme: Flackern und zunehmende Unbedienbarkeit (möglicher Speicher-/Task-Anstieg). Wir entfernen die Debug-Logs (können bei vielen Renders lasten), begrenzen den SEO-Cache (verhindert unbegrenztes Wachstum) und prüfen auf Effekt-Loops.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll:
+1. Remove the debug code entirely (isFlickerDebugEnabled, debugLog, prevFullNull, renderCount, and all debugLog calls).
+2. Add cache eviction: MAX_SEO_CACHE_SIZE = 5, when setting cache if size > 5 remove oldest (first key in Map).
+3. Remove fetchedForIdRef from the effect dependency array - it's a ref and including it is redundant (refs don't need to be in deps). Some guides say including refs in deps can cause issues in some edge cases. So use [id] only.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+We need to fix the effect - we're using fetchedForIdRef inside the effect but we removed it from the dependency array. That's intentional - refs don't need to be in deps because they're stable and we're reading the current value inside the effect. So we're good. But ESLint might warn about missing dependency. Let me check lints.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Let me also update the .env.example to remove the NEXT_PUBLIC_DEBUG_SEO_FLICKER comment since we removed that feature. Actually we could leave the comment but change it to say "removed" or we could remove the comment. I'll remove the debug env comment from .env.example since we're no longer using it.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/.env.example</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Done. Let me provide a short summary to the user.
+</details></think>
+
+---
+
+
+Hier die Änderungen:
+
+**1. Debug-Logging entfernt**  
+- `isFlickerDebugEnabled`, `debugLog`, `prevFullNull`, `renderCount` und alle Log-Aufrufe sind raus.  
+- Keine Ref-Mutation und kein `localStorage`-Zugriff mehr bei jedem Render → weniger Arbeit pro Render und kein Risiko, dass Logging bei vielen Renders lastet.
+
+**2. Cache begrenzt (Speicher)**  
+- Neuer Helper `setSeoCache(id, entry)`: Es werden maximal **5** Projekte im Cache gehalten (ältester Eintrag wird entfernt).  
+- Vorher: Jedes besuchte Projekt blieb im Cache → bei vielen Projekten wuchs der Speicher unbegrenzt.  
+- Jetzt: Obergrenze 5 → begrenzter Speicherverbrauch und geringeres Risiko, dass die Seite mit der Zeit „voll läuft“.
+
+**3. Effect-Dependencies**  
+- Im Effect wird nur noch `[id]` als Dependency genutzt (kein `fetchedForIdRef`).  
+- Refs müssen nicht in der Dependency-Liste stehen; so wird vermieden, dass der Effect unnötig nochmal läuft.
+
+**Kurz:**  
+- Weniger Last pro Render (kein Debug-Code).  
+- Speicher durch Cache-Obergrenze begrenzt.  
+- Effect nur von `id` abhängig.
+
+Bitte die SEO-Seite wieder testen: mehrfach Tab wechseln und etwas länger auf der Seite bleiben. Wenn es weiter flackert oder die Seite träge wird, können wir als Nächstes z. B. Parent-Layout oder Kontext-Provider prüfen (häufige Re-Renders von außen).
+
+---
+
+_**User**_
+
+ja die seite ist träge und inhalte verschwinden flackern immernoch
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user says the page is still sluggish and content still disappears/flickers. We've tried:
+1. Cache for remount
+2. Batched setState
+3. Don't show loading when we have fullSummary
+4. Cache limit, removed debug code, effect deps
+
+The flicker and sluggishness might be caused by something outside the SEO page - e.g. the parent layout or the app layout re-rendering frequently, or the way Next.js mounts/unmounts the page when switching tabs. Or it could be that the SEO page component is being unmounted and remounted on every tab switch (so we lose state and re-fetch), and the cache helps but there's still a brief moment where the new mount has initial state before the effect runs and restores from cache.
+
+Let me think about a more radical approach: **lift the SEO data (fullSummary, etc.) to a level that doesn't unmount** when switching tabs. In Next.js App Router, when we have:
+- /projects/[id]/layout.tsx (renders for all /projects/123/*)
+- /projects/[id]/page.tsx (overview)
+- /projects/[id]/seo/page.tsx (SEO tab)
+
+When we navigate from /projects/123 to /projects/123/seo, the layout stays mounted but the page content switches - so the overview component unmounts and the SEO page component mounts. So the SEO page state is fresh (or from cache initializer). The layout doesn't hold the SEO data.
+
+If we **store the project's SEO summary in a context or in the layout state**, then when we switch to the SEO tab, the data would already be there - no need to restore from cache or show loading. So we'd need:
+1. A ProjectDataContext or similar that holds project, domain summary, seo summary, etc. for the current project id.
+2. The layout (or a provider inside the layout) fetches and stores this data once when we're under /projects/[id].
+3. The SEO page just reads from context. No local fetch, no cache, no loading state - just display what's in context. When we switch tabs, the context is still there so no flicker.
+
+That's a bigger refactor. Alternatively we could try:
+- **Use React's use() or a store that survives unmount** - e.g. put the data in a module-level store keyed by id, and the SEO page reads from it synchronously on first render. We already have the cache - the issue might be that the useState initializer runs with the cache but then something causes a re-render with empty state. Let me check - when we mount, we have useState(() => cache.get(id)?.fullSummary). So we get the cached value. So our first render should have fullSummary set. Unless - in Next.js, could the component be rendered on the server first with id from params, and the server doesn't have the cache (cache is empty on server), so we get fullSummary = null? Then we hydrate on the client - the initial state is already set (null from server). So we'd show empty on first paint, then the effect runs and... we don't set from cache in the effect when we're on the server. So on client hydration, we have fullSummary = null (from server render). Then the effect runs, we have cached, we set state from cache. So we'd get one re-render. So we'd see: empty (hydration) -> then full (after effect). So there could be a flash on first load when coming from server. To fix that we'd need to not render the SEO content on the server, or we'd need to pass the cached data from client only. So we could do: only run the cache initializer when typeof window !== 'undefined'. So on server we'd use null, on client we'd use cache. But useState initializer runs once - and it runs on both server and client. On the server, window is undefined, so we'd get null. On the client, when the component mounts (hydration), the initializer runs again... Actually no - in React, the initial state is used from the first run. So the server runs the component, initializer returns null (no window). That state is serialized and sent to the client. The client hydrates with that state. So we're stuck with null. So the only way to get cache on the client is to run an effect or to have the initializer check typeof window - but the initializer runs on the server too, and on the server window is undefined so we get null. So when we're doing client-side navigation (user clicks SEO tab), we're not doing a full server render - we're doing client-side navigation. So the SEO page component mounts only on the client. So the initializer runs on the client. So we have window, we have cache. So we should get the cached value. So the first render on client-side nav should have fullSummary from cache. Unless - does Next.js pre-render or do something that runs the component on the server even for client nav? I don't think so. So when we navigate client-side to /projects/123/seo, the SEO page mounts in the client, initializer runs with id from useParams(), we read cache.get(id), we have it. So we get fullSummary set. So we shouldn't see empty. So why would content disappear or flicker?
+
+One possibility: **the parent is re-rendering and remounting the child**. For example, if the layout has a key that changes, or if the route segment has a key, React might unmount and remount the page component. So we'd get: mount (with cache) -> show content -> parent re-renders with new key -> unmount -> remount -> mount (new instance, cache still there) -> initializer runs, we get cache. So we'd briefly unmount (content disappears) then remount (content appears). That could look like flicker. So we need to check - does the layout or the parent pass a key? Let me check the layout and how the project routes are set up.
+
+Another possibility: **multiple setState calls from the effect when we have cache**. When we have cache we do setScanId, setFullSummary, setSummaryLoading(false). That's 3 setState calls. React 18 batches setState in event handlers and in useEffect... but actually these are in the effect body synchronously, so they should be batched. So we'd get one re-render. Good. But then we also start the async function. When the async completes we do setProject, setProjectLoading(false), setScanId, setFullSummary, setSeoCache, setSummaryLoading(false). So we're updating state again when the fetch completes. So we'd have: render 1 (from cache, 3 setState) -> render 2. Then async completes -> 6 setState -> render 3. So we'd have 3 renders. And when we set fullSummary again (even to the same payload), we're replacing the state with a new object reference. So the table and keywords would re-render. So we'd get a visual update. If the new payload is referentially different from the cached one, React would re-render. So we could avoid that: when we have cache and the async completes, only update state if the data actually changed (e.g. compare or don't set fullSummary if we already have it and the payload is the same). Or we could not refetch when we have cache - so when we have cached data we could skip the fetch entirely and just leave the state as is. That would mean when user returns to the tab we show cache and we don't refresh. If we want to refresh in the background we could do the fetch but then only setState if the new data is different from cache. Let me try: when we have cache, don't run the fetch at all. So we show cache and we're done. When user navigates to the tab and we have cache, we just use it. No background refresh. That would eliminate the second batch of setState and we'd have no flicker from the refresh. So the flow would be: mount with cache -> effect runs, we have cached, we set state from cache (3 setState), we do NOT start the async. So we'd have one re-render. And we're done. So when we have cache we skip the fetch entirely. Let me implement that.
+</details></think>
+
+---
+
