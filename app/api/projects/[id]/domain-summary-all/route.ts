@@ -45,17 +45,18 @@ export async function GET(
     const row = await getDomainScanWithProjectId(scanId, user.id);
     if (row) {
       const summary = buildDomainSummary(row.result);
+      const pageCount = summary.totalPageCount ?? (summary.pages?.length ?? 0);
       const issuesStats = (summary.aggregated as { issues?: { stats?: { errors?: number; warnings?: number; notices?: number } } })?.issues?.stats;
       const wcag = computeWcagScore({
         errors: issuesStats?.errors ?? 0,
         warnings: issuesStats?.warnings ?? 0,
         notices: issuesStats?.notices ?? 0,
-        totalPageCount: summary.totalPageCount ?? 0,
+        totalPageCount: pageCount,
       });
       own = {
         scanId,
         score: summary.score ?? 0,
-        totalPageCount: summary.totalPageCount ?? 0,
+        totalPageCount: pageCount,
         wcagScore: wcag.score,
         aggregated: {
           performance: (summary.aggregated?.performance as AggregatedPerformance) ?? null,
@@ -79,17 +80,18 @@ export async function GET(
       continue;
     }
     const summary = buildDomainSummary(row.result);
+    const pageCount = summary.totalPageCount ?? (summary.pages?.length ?? 0);
     const issuesStats = (summary.aggregated as { issues?: { stats?: { errors?: number; warnings?: number; notices?: number } } })?.issues?.stats;
     const wcag = computeWcagScore({
       errors: issuesStats?.errors ?? 0,
       warnings: issuesStats?.warnings ?? 0,
       notices: issuesStats?.notices ?? 0,
-      totalPageCount: summary.totalPageCount ?? 0,
+      totalPageCount: pageCount,
     });
     competitors[ref.domain] = {
       scanId: ref.domainScanId,
       score: summary.score ?? 0,
-      totalPageCount: summary.totalPageCount ?? 0,
+      totalPageCount: pageCount,
       wcagScore: wcag.score,
       status: 'complete',
     };

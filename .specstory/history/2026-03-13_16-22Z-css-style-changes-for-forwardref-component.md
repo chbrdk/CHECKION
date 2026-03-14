@@ -35090,3 +35090,33 @@ Wenn weiterhin fast nur 0 oder 100 vorkommen, liegt es vermutlich an den **Daten
 
 ---
 
+_**User**_
+
+jetzt haben alle 0
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user says now everyone has 0 - meaning all WCAG scores show 0/100. So the fix we did (returning 0 when totalPageCount === 0) might be too aggressive, or the totalPageCount is being passed as 0 when it shouldn't be.
+
+Let me think:
+1. Maybe the domain-summary-all API is not getting totalPageCount correctly from the summary - e.g. the summary might have totalPageCount in a different place or the buildDomainSummary might return something where totalPageCount is undefined and we're passing 0.
+2. Or maybe the scans do have pages but the way we read totalPageCount in the API is wrong - we use summary.totalPageCount ?? 0. If buildDomainSummary returns an object that has totalPageCount from (scan.pages as SlimPage[]).length - when hasStoredAggregated is true, the return is { ...scan, totalPageCount: (scan.pages as SlimPage[]).length }. So it's explicitly set. So summary.totalPageCount should be the length of pages. Unless the payload doesn't have pages as an array or it's empty when it shouldn't be?
+3. Or maybe the issue is that we're now returning 0 for totalPageCount === 0, but actually the scans DO have pages - so the bug might be that we're reading totalPageCount wrong in the domain-summary-all. Let me check - we have summary.totalPageCount ?? 0. In buildDomainSummary, when we return from the hasStoredAggregated branch we set totalPageCount: (scan.pages as SlimPage[]).length. So if the stored payload has pages: [] (empty array) we get 0. So maybe the stored domain_scans payload has pages as empty array even after a successful scan? That would be a data bug. Or maybe the DomainSummaryResponse type has totalPageCount as optional and it's set from totalPageCount in the return - and when we spread ...scan we might be overwriting with scan.totalPageCount which could be 0 or undefined?
+
+Let me look at buildDomainSummary again. When hasStoredAggregated(scan) && !isFullPages(scan.pages), we return:
+{
+  ...scan,
+  pages: scan.pages as SlimPage[],
+  totalPageCount: (scan.pages as SlimPage[]).length,
+  aggregated: scan.aggregated as ...
+}
+So we explicitly set totalPageCount to the length of scan.pages. So if the stored scan has 100 pages, we get 100. The only way we get 0 is if scan.pages is [] or undefined. So either the payloads actually have empty pages, or we're not getting the right summary.
+
+Wait - maybe the issue is different. When we call buildDomainSummary(row.result), row.result is the payload from domain_scans - which is DomainScanResult. So</details></think>
+
+---
+

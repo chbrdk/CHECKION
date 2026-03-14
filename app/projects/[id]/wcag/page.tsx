@@ -108,7 +108,7 @@ export default function ProjectWcagPage() {
     }, [pagesByUrl, router]);
 
     const aggregated = fullSummary?.aggregated?.issues ?? null;
-    const totalPageCount = fullSummary?.totalPageCount ?? 0;
+    const totalPageCount = fullSummary?.totalPageCount ?? (fullSummary?.pages?.length ?? 0);
     const loading = projectLoading || summaryLoading;
 
     if (!id) {
