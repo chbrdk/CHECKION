@@ -42794,10 +42794,27 @@ können wir das auch ohne dev umsetzen?
 
 _**Agent (model default, mode Agent)**_
 
+<think><details><summary>Thought Process</summary>
 
+The user wants the debug logging to work not only in development (NODE_ENV === 'development') but also in production or "without dev" - meaning they want to be able to see the flicker debug logs even when running in production mode, or they want a way to enable it without relying on NODE_ENV.
+
+Options:
+1. Use an environment variable like NEXT_PUBLIC_DEBUG_SEO_FLICKER that they can set to "1" or "true" when they want to debug. In production build, this would be baked in at build time; they'd set it in their deployment env or .env.local when debugging.
+2. Or check for a query param or localStorage flag so they can enable it at runtime in the browser without rebuilding (e.g. ?debug=1 or localStorage.setItem('DEBUG_SEO', '1')).
+
+The cleanest approach: use NEXT_PUBLIC_DEBUG_SEO_FLICKER so it's configurable at build time, and also allow enabling via localStorage at runtime so they can turn it on in production without redeploying. So: enable logging when (typeof window !== 'undefined' && (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_DEBUG_SEO_FLICKER === '1' || window.localStorage?.getItem('DEBUG_SEO_FLICKER') === '1')).
+
+That way:
+- In dev: always on (or we could make it only when env is set, to reduce noise)
+- In production: on when NEXT_PUBLIC_DEBUG_SEO_FLICKER=1 at build, or when user sets localStorage DEBUG_SEO_FLICKER=1 in the browser
+
+Let me implement: enable when window exists and (NODE_ENV === 'development' OR NEXT_PUBLIC_DEBUG_SEO_FLICKER === '1' OR localStorage DEBUG_SEO_FLICKER === '1'). So "without dev" = they can run production build and set the env var or localStorage to see logs.
+</details></think>
 
 ---
 
+
+Logging unabhängig von NODE_ENV aktivierbar machen — per Umgebungsvariable oder per localStorage im Browser (auch in Production).
 
 
 ---
@@ -42805,8 +42822,6 @@ _**Agent (model default, mode Agent)**_
 <tool-use data-tool-type="write" data-tool-name="edit_file_v2">
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
-
-Status: **loading**
 
 </details>
 
@@ -42818,17 +42833,20 @@ Status: **loading**
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
 
-Status: **loading**
-
 </details>
 
 </tool-use>
 
 ---
 
+<think><details><summary>Thought Process</summary>
 
+Good. I should also add a short note to the knowledge or .env.example so they know how to enable it. Let me check if .env.example exists and add NEXT_PUBLIC_DEBUG_SEO_FLICKER as optional.
+</details></think>
 
 ---
+
+
 
 
 
@@ -42838,7 +42856,52 @@ Status: **loading**
 <details>
 <summary>Tool use: **ripgrep_raw_search**</summary>
 
-Status: **loading**
+
+Parameters:
+
+```json
+{
+  "pattern": "NEXT_PUBLIC",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/.env.example",
+  "contextAfter": 0,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "NEXT_PUBLIC",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/.env.example",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 5,
+  "topFiles": [
+    {
+      "uri": ".env.example",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.env.example",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.env.example",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.env.example",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.env.example",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
 
 
 </details>
@@ -42846,49 +42909,56 @@ Status: **loading**
 
 ---
 
+<think><details><summary>Thought Process</summary>
 
+I'll add a comment in .env.example for the debug flag. Let me read a bit of .env.example to add it in a sensible place.
+</details></think>
 
 ---
 
 
 
+
+
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/.env.example</summary>
 
 </details>
 </tool-use>
 
 ---
 
+<think><details><summary>Thought Process</summary>
 
+I'll add the debug flag near the end or in a "Debug / Development" section. Let me see the end of the file.
+</details></think>
 
 ---
 
 
 
+
+
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/.env.example</summary>
 
 </details>
 </tool-use>
 
 ---
 
+<think><details><summary>Thought Process</summary>
 
+I'll add the NEXT_PUBLIC_DEBUG_SEO_FLICKER in the Build/Dev section.
+</details></think>
 
 ---
+
+
 
 
 
@@ -42898,18 +42968,161 @@ Status: **loading**
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/.env.example</summary>
 
-Status: **loading**
-
 </details>
 
 </tool-use>
 
 ---
 
+<think><details><summary>Thought Process</summary>
+
+Done. Summarize for the user.
+</details></think>
+
+---
+
+
+Das Flicker-Logging ist jetzt auch **ohne Dev-Modus** nutzbar:
+
+**1. Im Build (z. B. Production / Staging)**  
+In `.env` oder in den Umgebungsvariablen setzen:
+```bash
+NEXT_PUBLIC_DEBUG_SEO_FLICKER=1
+```
+Dann neu bauen; die Logs erscheinen in der Browser-Konsole.
+
+**2. Nur im Browser, ohne Rebuild**  
+In der Konsole (F12) einmal ausführen:
+```js
+localStorage.setItem('DEBUG_SEO_FLICKER', '1')
+```
+Seite neu laden – die `[SEO flicker]`-Logs laufen, bis du den Wert entfernst:
+```js
+localStorage.removeItem('DEBUG_SEO_FLICKER')
+```
+
+**Aktivierung im Überblick**
+- **Development** (`npm run dev`): Logging immer an.
+- **Production mit Env:** `NEXT_PUBLIC_DEBUG_SEO_FLICKER=1` setzen und neu bauen.
+- **Production ohne Rebuild:** `localStorage.setItem('DEBUG_SEO_FLICKER', '1')` in der Browser-Konsole.
+
+In `.env.example` ist die Variable mit kurzer Erklärung ergänzt.
+
+---
+
+_**User**_
+
+[SEO flicker] render ObjectcacheHas: falsefullSummaryNull: trueid: "28dfbd33-2681-4231-a9c1-3186a2fdb6f9"render: 1[[Prototype]]: Object
+page-82aa8816455ff3ec.js:1 [SEO flicker] effect ObjecthasCached: falseid: "28dfbd33-2681-4231-a9c1-3186a2fdb6f9"[[Prototype]]: Object
+page-82aa8816455ff3ec.js:1 [SEO flicker] render ObjectcacheHas: falsefullSummaryNull: trueid: "28dfbd33-2681-4231-a9c1-3186a2fdb6f9"render: 2[[Prototype]]: Object
+page-82aa8816455ff3ec.js:1 [SEO flicker] render ObjectcacheHas: falsefullSummaryNull: trueid: "28dfbd33-2681-4231-a9c1-3186a2fdb6f9"render: 3[[Prototype]]: Object
+page-82aa8816455ff3ec.js:1 [SEO flicker] setFullSummary Objectaborted: falseid: "28dfbd33-2681-4231-a9c1-3186a2fdb6f9"[[Prototype]]: Object
+page-82aa8816455ff3ec.js:1 [SEO flicker] render ObjectcacheHas: truefullSummaryNull: falseid: "28dfbd33-2681-4231-a9c1-3186a2fdb6f9"render: 4[[Prototype]]: Object
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user shared the console output from the SEO flicker debug. Let me analyze:
+
+1. **render 1**: cacheHas: false, fullSummaryNull: true, id present → First paint: no cache, no data. Table/keywords empty.
+2. **effect**: hasCached: false → Effect runs, no cache hit, starts fetch.
+3. **render 2**: cacheHas: false, fullSummaryNull: true → Re-render (e.g. from setProjectLoading/setSummaryLoading). Still no data.
+4. **render 3**: cacheHas: false, fullSummaryNull: true → Another re-render (maybe project fetch completed, setProject). Still no data.
+5. **setFullSummary**: aborted: false → Fetch completed, we set fullSummary and write to cache.
+6. **render 4**: cacheHas: true, fullSummaryNull: false → Final render with data.
+
+So the sequence is: empty (1) → effect runs → empty (2, 3) → setFullSummary → full (4). That's 3 renders with empty state before we get data. The "flicker" the user sees could be:
+- The initial 3 renders where the table/keywords are empty or in loading state, then suddenly the 4th render shows everything. So they see: nothing/loading → nothing/loading → content. That could feel like a flash.
+
+To reduce flicker we could:
+1. **Don't show the table/keywords section until we have data** - so we show a single loading state instead of an empty table that then pops in. That way there's no "empty → full" transition, just "loading → content". But the user might still see a flash when content appears.
+2. **Reduce re-renders** - We're getting 3 renders before data. Render 2 might be from setProjectLoading(true) and setSummaryLoading(true). Render 3 might be from setProject() when project fetch completes. So we have two fetch chains (project + domain summary) each triggering setState. We could batch: only set state once when we have both project and fullSummary. But that would require restructuring the fetch to wait for both and then set all state in one go. That would give us: render 1 (empty) → effect → ... → setState once with all data → render 2 (full). So 2 renders instead of 4. The "empty" phase would still be there but shorter.
+3. **Show a skeleton/loading state that has the same layout as the table** - so the transition from loading to content doesn't change layout (no layout shift), just the content fades in. That might reduce the perceived flicker.
+
+The root cause from the logs: we have multiple setState calls (project loading, summary loading, project data, fullSummary) so we get multiple re-renders. The first 3 renders have fullSummaryNull: true so the table and keywords sections either don't render or show empty. Then the 4th render has data.
+
+Best fix for "no flicker": **Batch state updates** - fetch both project and domain summary (and scan summary) and then do a single setState (or multiple setState in one React 18 batching cycle). React 18 already batches setState from event handlers and from useEffect cleanup, but setState from async fetch .then() callbacks are not in the same tick - each .then() runs in a separate microtask and triggers a re-render. So we could:
+- Use a single Promise.all or a single async function that awaits all fetches, then set project, fullSummary, scanId, loadings in one synchronous block. React will batch those setState calls and we'll get one re-render.
+ 
+I'll verify the batching behavior to ensure a single, smooth update cycle. I'll double-check the React 18 documentation to confirm how state updates are processed in asynchronous scenarios.
+</details></think>
+
+---
+
+
+Logs zeigen die Ursache: Drei Renders mit `fullSummaryNull: true` (leere Tabelle/Keywords), dann erst der vierte mit Daten. Ursache: Mehrere getrennte setState-Aufrufe (project, loadings, fullSummary), die jeweils einen Re-Render auslösen. Wir batchen die State-Updates — erst alle Daten laden, dann einmal setState:
 
 
 ---
 
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to refactor so that we don't call setProject, setProjectLoading(false), setScanId, setFullSummary, setSummaryLoading(false) in separate .then() callbacks. Instead:
+1. Use async/await in the effect and collect all results.
+2. Then in one block do all setState calls (or use a single setState with a reducer/object if we had one state object).
+
+We have multiple state setters: setProject, setProjectLoading, setScanId, setFullSummary, setSummaryLoading. So we can't collapse to one setState. But we can do all setters in one synchronous block so React 18 batches them. So:
+
+async function run() {
+  const [projectRes, domainSummaryRes] = await Promise.all([
+    fetch(apiProject(id), { signal }).then(r => r.json()),
+    fetch(apiProjectDomainSummary(id), { signal }).then(r => r.json()),
+  ]);
+  if (signal.aborted) return;
+  setProject(projectRes?.data ?? null);
+  setProjectLoading(false);
+  if (domainSummaryRes?.success && domainSummaryRes?.data?.scanId) {
+    const sid = domainSummaryRes.data.scanId;
+    setScanId(sid);
+    const payload = await fetch(apiScanDomainSummary(sid), { signal }).then(r => r.ok ? r.json() : null);
+    if (!signal.aborted && payload) {
+      setFullSummary(payload);
+      seoSummaryCache.set(id, { scanId: sid, fullSummary: payload });
+    }
+    setSummaryLoading(false);
+  } else {
+    setSummaryLoading(false);
+  }
+}
+run();
+
+So we still have two "waves" - first wave when Promise.all resolves (project + domainSummary meta), second when scan summary resolves. So we'd have: render 1 (empty) → effect runs → ... → setProject + setProjectLoading + setScanId (and maybe setFullSummary + setSummaryLoading if the inner fetch is fast) → render 2. If the inner fetch is async we'd get: first batch of setState → render 2 (project set, fullSummary maybe not yet), then setFullSummary + setSummaryLoading → render 3. So we'd go from 4 renders to 3. To get to 2 renders we need to await the full chain and then set everything once:
+
+const projectRes = await fetch(apiProject(id)).then(r => r.json());
+if (signal.aborted) return;
+const domainSummaryRes = await fetch(apiProjectDomainSummary(id)).then(r => r.json());
+if (signal.aborted) return;
+let payload = null;
+if (domainSummaryRes?.success && domainSummaryRes?.data?.scanId) {
+  payload = await fetch(apiScanDomainSummary(...)).then(r => r.ok ? r.json() : null);
+}
+if (signal.aborted) return;
+// single batch
+setProject(projectRes?.data ?? null);
+setProjectLoading(false);
+setScanId(domainSummaryRes?.data?.scanId ?? null);
+setFullSummary(payload);
+setSummaryLoading(false);
+if (payload) seoSummaryCache.set(id, { scanId: ..., fullSummary: payload });
+
+Then we'd have: render 1 (empty) → ... → one batch of 5 setState → render 2 (full). So 2 renders total. That should remove the flicker (no intermediate empty renders).
+</details></think>
+
+---
+
+
+Effect auf eine einzige async-Funktion umstellen, alle Fetches mit await ausführen und alle setState-Aufrufe in einem Block ausführen, damit React sie batched:
 
 
 ---

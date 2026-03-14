@@ -82,41 +82,37 @@ export default function ProjectSeoPage() {
         const { signal } = ac;
         setProjectLoading(true);
         if (!cached) setSummaryLoading(true);
-        fetch(apiProject(id), { credentials: 'same-origin', signal })
-            .then((r) => r.json())
-            .then((projectData: { data?: { id: string; domain: string | null } }) => {
+
+        (async () => {
+            try {
+                const [projectRes, domainSummaryRes] = await Promise.all([
+                    fetch(apiProject(id), { credentials: 'same-origin', signal }).then((r) => r.json()) as Promise<{ data?: { id: string; domain: string | null } }>,
+                    fetch(apiProjectDomainSummary(id), { credentials: 'same-origin', signal }).then((r) => r.json()) as Promise<{ success?: boolean; data?: { scanId?: string } }>,
+                ]);
                 if (signal.aborted) return;
-                if (projectData?.data) setProject(projectData.data);
-                else setProject(null);
-            })
-            .catch(() => {
-                if (!ac.signal.aborted) setProject(null);
-            })
-            .finally(() => {
-                if (!signal.aborted) setProjectLoading(false);
-            });
-        fetch(apiProjectDomainSummary(id), { credentials: 'same-origin', signal })
-            .then((r) => r.json())
-            .then((domainSummaryRes: { success?: boolean; data?: { scanId?: string } }) => {
-                if (signal.aborted) return;
-                if (domainSummaryRes?.success && domainSummaryRes?.data?.scanId) {
-                    const sid = domainSummaryRes.data.scanId;
-                    setScanId(sid);
-                    return fetch(apiScanDomainSummary(sid), { credentials: 'same-origin', signal })
-                        .then((r) => (r.ok ? r.json() : null))
-                        .then((payload: DomainSummaryResponse | null) => {
-                            if (!signal.aborted && payload) {
-                                debugLog('setFullSummary', { id, aborted: signal.aborted });
-                                setFullSummary(payload);
-                                seoSummaryCache.set(id, { scanId: sid, fullSummary: payload });
-                            }
-                        });
+                let payload: DomainSummaryResponse | null = null;
+                const sid = domainSummaryRes?.success && domainSummaryRes?.data?.scanId ? domainSummaryRes.data.scanId : null;
+                if (sid) {
+                    const scanRes = await fetch(apiScanDomainSummary(sid), { credentials: 'same-origin', signal });
+                    if (!signal.aborted && scanRes.ok) payload = await scanRes.json();
                 }
-            })
-            .catch(() => {})
-            .finally(() => {
-                if (!signal.aborted) setSummaryLoading(false);
-            });
+                if (signal.aborted) return;
+                debugLog('setFullSummary', { id, aborted: signal.aborted });
+                setProject(projectRes?.data ?? null);
+                setProjectLoading(false);
+                if (sid) setScanId(sid);
+                if (payload) {
+                    setFullSummary(payload);
+                    seoSummaryCache.set(id, { scanId: sid!, fullSummary: payload });
+                }
+                setSummaryLoading(false);
+            } catch (err) {
+                if (err instanceof Error && err.name === 'AbortError') return;
+                setProject(null);
+                setProjectLoading(false);
+                setSummaryLoading(false);
+            }
+        })();
         return () => ac.abort();
     }, [id, fetchedForIdRef]);
 
