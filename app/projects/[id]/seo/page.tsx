@@ -21,6 +21,7 @@ import {
     pathResults,
     pathScanDomain,
     pathProject,
+    SEO_KEYWORDS_INITIAL_SHOWN,
 } from '@/lib/constants';
 import type { DomainSummaryResponse } from '@/lib/domain-summary';
 import type { SlimPage } from '@/lib/types';
@@ -149,6 +150,7 @@ export default function ProjectSeoPage() {
         },
         [pagesByUrl, router]
     );
+    const [keywordsExpanded, setKeywordsExpanded] = useState(false);
     const loading = projectLoading || summaryLoading;
 
     if (!id) {
@@ -294,27 +296,44 @@ export default function ProjectSeoPage() {
                             </MsqdxMoleculeCard>
                         )}
 
-                        {/* Cross-Page Keywords */}
-                        {aggregatedSeo && aggregatedSeo.crossPageKeywords.length > 0 && (
-                            <MsqdxMoleculeCard
-                                title={t('projects.seo.crossPageKeywords')}
-                                subtitle={t('projects.seo.crossPageKeywordsSubtitle')}
-                                variant="flat"
-                                borderRadius="lg"
-                                sx={{ bgcolor: 'var(--color-card-bg)' }}
-                            >
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                    {aggregatedSeo.crossPageKeywords.slice(0, 50).map((kw) => (
-                                        <MsqdxChip
-                                            key={kw.keyword}
-                                            label={`${kw.keyword} (${kw.totalCount}×, ${kw.pageCount} ${t('projects.seo.pagesShort')}, Ø ${kw.avgDensityPercent}%)`}
-                                            size="small"
-                                            sx={{ fontSize: '0.7rem', height: 22 }}
-                                        />
-                                    ))}
-                                </Box>
-                            </MsqdxMoleculeCard>
-                        )}
+                        {/* Cross-Page Keywords – initial slice to limit DOM (expand on demand) */}
+                        {aggregatedSeo && aggregatedSeo.crossPageKeywords.length > 0 && (() => {
+                            const keywords = aggregatedSeo.crossPageKeywords;
+                            const limit = keywordsExpanded ? keywords.length : Math.min(SEO_KEYWORDS_INITIAL_SHOWN, keywords.length);
+                            const shown = keywords.slice(0, limit);
+                            const hasMore = keywords.length > limit;
+                            return (
+                                <MsqdxMoleculeCard
+                                    title={t('projects.seo.crossPageKeywords')}
+                                    subtitle={t('projects.seo.crossPageKeywordsSubtitle')}
+                                    variant="flat"
+                                    borderRadius="lg"
+                                    sx={{ bgcolor: 'var(--color-card-bg)' }}
+                                >
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                        {shown.map((kw) => (
+                                            <MsqdxChip
+                                                key={kw.keyword}
+                                                label={`${kw.keyword} (${kw.totalCount}×, ${kw.pageCount} ${t('projects.seo.pagesShort')}, Ø ${kw.avgDensityPercent}%)`}
+                                                size="small"
+                                                sx={{ fontSize: '0.7rem', height: 22 }}
+                                            />
+                                        ))}
+                                    </Box>
+                                    {hasMore && (
+                                        <Box sx={{ mt: 0.5 }}>
+                                            <MsqdxButton
+                                                size="small"
+                                                variant="text"
+                                                onClick={() => setKeywordsExpanded(true)}
+                                            >
+                                                {t('common.loadMore')} ({keywords.length - limit} {t('projects.seo.more')})
+                                            </MsqdxButton>
+                                        </Box>
+                                    )}
+                                </MsqdxMoleculeCard>
+                            );
+                        })()}
 
                     </>
                 )}

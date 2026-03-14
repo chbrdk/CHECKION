@@ -11,6 +11,12 @@ import type { PageSeoSummary } from '@/lib/domain-aggregation';
 
 const tableBorder = `1px solid ${MSQDX_NEUTRAL[200]}`;
 
+const ROW_HEIGHT = 36;
+const TABLE_HEADER_HEIGHT = 32;
+const TABLE_BODY_MAX_HEIGHT = 480;
+const VIRTUAL_WINDOW_EXTRA = 4;
+const VISIBLE_ROWS_COUNT = Math.ceil(TABLE_BODY_MAX_HEIGHT / ROW_HEIGHT) + VIRTUAL_WINDOW_EXTRA;
+
 /** URL | Words | Keywords | Skinny | Meta | H1 | Structure */
 const GRID_COLUMNS = 'minmax(140px, 1.5fr) 72px 72px 56px 48px 48px 100px';
 
@@ -286,6 +292,29 @@ function SeoOnPageTableInner({
     [sortedRows, start, pageSize]
   );
 
+  const [scrollTop, setScrollTop] = useState(0);
+  const scrollRafRef = useRef<number | null>(null);
+  const startIndex = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT));
+  const endIndex = Math.min(paginatedRows.length, startIndex + VISIBLE_ROWS_COUNT);
+  const visibleRows = useMemo(
+    () => paginatedRows.slice(startIndex, endIndex),
+    [paginatedRows, startIndex, endIndex]
+  );
+  const handleScroll = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    if (scrollRafRef.current != null) cancelAnimationFrame(scrollRafRef.current);
+    scrollRafRef.current = requestAnimationFrame(() => {
+      setScrollTop(el.scrollTop);
+      scrollRafRef.current = null;
+    });
+  }, []);
+  useEffect(() => {
+    return () => {
+      if (scrollRafRef.current != null) cancelAnimationFrame(scrollRafRef.current);
+    };
+  }, []);
+
   const handleSort = useCallback((key: SortKey) => {
     if (sortKey === key) {
       setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -319,16 +348,22 @@ function SeoOnPageTableInner({
     <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, isolation: 'isolate' }}>
       <Box
         ref={containerRef}
+        onScroll={handleScroll}
         sx={{
           border: tableBorder,
           borderRadius: 1,
           overflow: 'auto',
-          maxHeight: 480,
+          maxHeight: TABLE_BODY_MAX_HEIGHT,
           backgroundColor: MSQDX_THEME.light.surface.primary,
           contain: 'layout',
         }}
       >
-        <Box component="div" role="table" aria-label={t('projects.seo.tableAria')}>
+        <Box
+          component="div"
+          role="table"
+          aria-label={t('projects.seo.tableAria')}
+          sx={{ minHeight: TABLE_HEADER_HEIGHT + paginatedRows.length * ROW_HEIGHT }}
+        >
           <Box
             component="div"
             role="row"
@@ -339,7 +374,7 @@ function SeoOnPageTableInner({
               borderBottom: tableBorder,
               backgroundColor: MSQDX_NEUTRAL[100],
               alignItems: 'center',
-              minHeight: 32,
+              minHeight: TABLE_HEADER_HEIGHT,
               position: 'sticky',
               top: 0,
               zIndex: 2,
@@ -354,7 +389,10 @@ function SeoOnPageTableInner({
             <SortHeaderCell id="hasH1" label={t('projects.seo.tableH1')} active={sortKey === 'hasH1'} sortDir={sortDir} onSort={handleSort} />
             <SortHeaderCell id="structure" label={t('projects.seo.tableStructure')} active={sortKey === 'structure'} sortDir={sortDir} onSort={handleSort} />
           </Box>
-          {paginatedRows.map((row) => (
+          {startIndex > 0 && (
+            <Box component="div" role="presentation" sx={{ height: startIndex * ROW_HEIGHT, flexShrink: 0 }} />
+          )}
+          {visibleRows.map((row) => (
             <TableRow
               key={row.url}
               row={row}
@@ -365,6 +403,9 @@ function SeoOnPageTableInner({
               skinnyLabel={skinnyLabel}
             />
           ))}
+          {endIndex < paginatedRows.length && (
+            <Box component="div" role="presentation" sx={{ height: (paginatedRows.length - endIndex) * ROW_HEIGHT, flexShrink: 0 }} />
+          )}
         </Box>
       </Box>
       {rows.length > 0 && (

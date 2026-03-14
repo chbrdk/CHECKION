@@ -15508,3 +15508,632 @@ Let me implement these.
 
 ---
 
+
+Neue Hypothesen prüfen: Auslöser der Re-Renders (H9), feste Tabellenhöhe statt `65vh` (H10), Entfernen von `content-visibility` (H14).
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoOnPageTable.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoOnPageTable.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "maxHeight|65vh",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoOnPageTable.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "maxHeight|65vh",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoOnPageTable.tsx",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 5,
+  "topFiles": [
+    {
+      "uri": "components/SeoOnPageTable.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/SeoOnPageTable.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/SeoOnPageTable.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/SeoOnPageTable.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/SeoOnPageTable.tsx",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll change maxHeight from '65vh' to a fixed value. 65vh on a 900px viewport is ~585px. I'll use 480px so the table has a fixed height and doesn't trigger viewport-relative layout on scroll/resize.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoOnPageTable.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Now I need to fix the "r > 1" check - on first render prevRowsRef.current is null, so rowsRefChanged will be true (null !== rows). So we'd log on first render too. Let me only log when r > 1 so we don't log the initial mount. Actually we're already doing "if (r > 1 && (rowsRefChanged || onRowClickRefChanged))" - so we only log when it's not the first render AND one of the refs changed. On first render, prevRowsRef.current is null, so rowsRefChanged is true. So we would log on first render... No wait, r > 1 means we only log from the 2nd render onward. On 2nd render, prevRowsRef.current was set to rows on 1st render. So we're good. Let me double-check: render 1: prevRowsRef.current is null, we set prevRowsRef.current = rows. We don't log because r is 1. render 2: prevRowsRef.current is rows from render 1. Now we compare: rowsRefChanged = (prevRowsRef.current !== rows). If the parent passed the same rows reference, it's false. If parent passed new rows reference, it's true. We log. Good.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoOnPageTable.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoOnPageTable.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="delete_file">
+<details><summary>Tool use: **delete_file**</summary>
+
+Explanation: undefined
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Let me provide a summary for the user.
+</details></think>
+
+---
+
+
+Hier die Änderungen und was die neuen Logs zeigen sollen:
+
+---
+
+**Neue Hypothesen**
+
+- **H9 (Re-Render-Auslöser):** Re-Renders der Tabelle kommen von neuen Prop-Referenzen vom Parent (`rows` oder `onRowClick`).  
+  **Instrumentierung:** Bei jedem Re-Render (ab dem 2.) wird geloggt, ob sich die Referenz von `rows` oder `onRowClick` geändert hat (Log „table re-render cause“, hypothesisId H9). So siehst du, ob instabile Referenzen die Re-Renders auslösen.
+
+- **H10 (Layout durch vh):** `maxHeight: 65vh` führt bei Scroll/Resize zu ständiger Neuberechnung.  
+  **Änderung:** `maxHeight` auf feste **480px** gestellt, damit die Tabellenhöhe nicht viewport-abhängig ist.
+
+- **H14 (content-visibility):** `content-visibility: auto` kann in manchen Browsern zu Sprüngen oder Mehrarbeit führen.  
+  **Änderung:** `content-visibility` und `containIntrinsicSize` an den Zeilen wieder entfernt; nur `minHeight: 36` bleibt.
+
+**Konkret umgesetzt**
+
+1. **H9-Log:** Beim 2. und jedem weiteren Render wird geprüft, ob `rows` oder `onRowClick` eine andere Referenz haben als beim letzten Render; wenn ja, wird ein Log mit `rowsRefChanged` / `onRowClickRefChanged` geschrieben.
+2. **H10:** Tabellen-Container nutzt `maxHeight: 480` statt `65vh`.
+3. **H14:** Zeilen-Styles ohne `contentVisibility` und `containIntrinsicSize`.
+
+**Auswertung nach deinem Lauf**
+
+- Treten Logs mit „table re-render cause“ und `rowsRefChanged: true` oder `onRowClickRefChanged: true` auf, bestätigt das H9 → dann Parent anpassen (z. B. `rows`/`onRowClick` stabil halten mit `useMemo`/`useCallback`).
+- Ob H10/H14 helfen, siehst du am subjektiven Verhalten (weniger Ruckeln, keine Sprünge).
+
+<reproduction_steps>
+1. Dev-Server laufen lassen, zu einem Projekt mit SEO-Daten wechseln, Tab „SEO“ öffnen.
+2. Nach unten scrollen, bis die SEO-Tabelle sichtbar ist; ggf. 10–15 Sekunden warten oder in der Tabelle blättern.
+3. Prüfen: Wird die Seite flüssiger? Verschwinden/überlagern sich Elemente noch?
+4. „Proceed“ / „Mark as fixed“ ausführen – dann können die Logs (inkl. H9 „table re-render cause“) ausgewertet werden.
+</reproduction_steps>
+
+---
+
+_**User**_
+
+Issue reproduced, please proceed.
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user has reproduced the issue again. I need to read the debug log file to see what the new instrumentation (H9 - re-render cause) shows, then analyze and either fix based on evidence or generate new hypotheses.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/.cursor/debug-cafcc0.log</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The log shows:
+- SEO page: 2 renders (lines 1-2)
+- Table: 1 render only (line 3)
+- Viewport: 1 event (line 4)
+
+There are NO "table re-render cause" (H9) logs. That means either:
+1. The table only rendered once in this run (no 2nd/3rd re-render), so we never hit the "r > 1 && (rowsRefChanged || onRowClickRefChanged)" condition.
+2. Or the table did re-render but with the same rows and onRowClick references (rowsRefChanged and onRowClickRefChanged both false).
+
+Since we only see table render count 1, the table didn't re-render again in this capture. So we didn't get evidence for H9 - we didn't see a re-render at all. So the slowness/overlap might not be from React re-renders in this run - maybe it's purely layout/paint (browser) or the user didn't stay long enough for the 2nd/3rd render.
+
+Given the issue keeps being "reproduced", the fixes we've tried (stacking, page size 25, fixed height 480px, remove content-visibility) haven't solved it. The logs keep showing low render counts. So the problem might be:
+
+1. **Browser layout/paint**: When the table (with 25 rows of complex MUI components) enters the viewport, the browser does a lot of layout and paint work. No amount of React optimization fixes that - we'd need to reduce DOM complexity (e.g. simpler markup, virtualization so we only mount ~15 rows).
+
+2. **Overlapping/disappearing**: Could be a CSS stacking/overflow issue. The main content area has position: absolute, overflowY: auto. The table has isolation: isolate. Maybe something in the app shell or the card is clipping or stacking wrong. We could try adding overflow: hidden to the table wrapper to create a containing block, or check if the card has overflow issues.
+
+3. **Virtualization**: The only way to drastically reduce work is to not render rows that are off-screen. So use a virtual list: only mount the rows that are visible in the table's scroll area (e.g. 15-20 rows). When the user scrolls inside the table, we unmount rows that scroll out and mount rows that scroll in. That way we never have more than ~20 row components mounted. Libraries: react-window, @tanstack/react-virtual, or a simple custom implementation with scroll position state and slice.
+
+Let me try **virtualization** for the table body. We have a scroll container with fixed height 480px. We know row height is roughly 36px (minHeight). So we have room for about 13-14 visible rows. We can render maybe 20 rows (visible + buffer) and use transform to offset the list so the right rows are visible. This is a more invasive change but could be the only way to fix "endlessly slow".
+
+Actually, let me re-read the problem. "sobald die tabelle in den viewport kommt, wird die seite endlos langsam und elemente verschwinden wieder oder überlagern sich". So: (1) page becomes endlessly slow, (2) elements disappear or overlap. We've been focusing on React and layout. Maybe "elements disappear or overlap" is the key - perhaps it's a specific CSS bug. For example, if the table or something has a transform or filter, it creates a new stacking context and can cause overlapping. Or if overflow is wrong, content gets clipped. Let me try adding a minimal **virtualization** that only renders visible rows - that should reduce the number of DOM nodes and see if slowness improves. For the overlap/disappear we could try ensuring the table wrapper has overflow: auto explicitly and no transform.
+
+I'll implement a simple windowed list for the table body:
+- The scroll container has ref and we listen to scroll (throttled).
+- We have row height = 36, container height = 480. Visible count ≈ 480/36 ≈ 13. We'll render 20 rows (visible + buffer).
+- We need the total number of rows (paginatedRows.length) and scrollTop. StartIndex = floor(scrollTop / 36), we render rows from startIndex to min(startIndex + 20, paginatedRows.length). We need to add a spacer div at the top with height startIndex * 36 and a spacer at the bottom so the total scroll height is correct. And we need to set the inner content height to paginatedRows.length * 36 so the scrollbar is correct.
+- This is a bit involved. Let me do it.
+
+Actually, a simpler approach: use CSS overflow and a fixed height on the table body wrapper, and only render the rows that are in view. We need:
+1. State: scrollTop (number), updated from scroll listener (throttled or passive).
+2. Row height constant = 36.
+3. Visible start index = Math.floor(scrollTop / 36), visible end index = startIndex + Math.ceil(containerHeight / 36) + 5 (buffer).
+4. Slice paginatedRows to [startIndex, endIndex].
+5. Render: a div with height startIndex * 36 (spacer), then the visible rows, then a div with height (totalRows - endIndex) * 36 (spacer). The container has total height totalRows * 36.
+
+Let me implement this. The table currently has a structure:
+- Box (scroll container, ref, maxHeight 480, overflow auto)
+  - Box (role=table)
+    - Box (sticky header row)
+    - {paginatedRows.map(row => <TableRow key={row.url} ... />)}
+
+So the scroll container is the one with overflow. The inner table has the header + rows. When we scroll, we're scrolling the inner content. So the inner content height must be header height + (paginatedRows.length * 36). And we only render rows from startIndex to endIndex. So we need to measure the scroll container's clientHeight and scrollTop. We can get clientHeight from the ref (480 or whatever). scrollTop we need from the scroll event. So we need state for scrollTop and a scroll listener on the container. When the user scrolls, we update scrollTop (throttled) and re-render with the new slice. That could cause a re-render on every scroll - but we throttle to e.g. 100ms, and we only re-render the table body with a new slice. Actually the issue is that we're inside the table and the scroll container is the one we have ref on. So when the user scrolls, we need to read scrollTop and setState. That will cause a re-render. So we'll have re-renders on scroll - but we'll only be rendering ~20 rows instead of 25, so each re-render is cheaper. And with throttling we limit how often we re-render. Let me implement.
+
+Row height: 36. Header height: 32. So the scrollable content is header (32) + rows (paginatedRows.length * 36). The scroll container's scrollTop goes from 0 to (paginatedRows.length * 36). So when we read scrollTop, the offset for rows is scrollTop (the header is sticky so it stays). Wait, the header is position sticky - so when we scroll the container, the header stays at top. So the scrollable content below the header is the rows. So the total scroll height is 32 + paginatedRows.length * 36. When scrollTop is 0, we see rows 0 to ~13. When scrollTop is 100, we see rows from about 2-3 to 15-16. So visible start index = max(0, floor((scrollTop) / 36)). So we need to account for the header in the scroll. Actually the header is inside the scroll container and has position sticky. So the first 32px are the header, then the rows. So when we scroll, scrollTop 0 shows header + rows 0-13. scrollTop 50 shows header (sticky) + rows starting from about row 1. So the "content" that scrolls is the rows. The total height of the inner table is 32 (header) + paginatedRows.length * 36. So scrollTop ranges from 0 to paginatedRows.length * 36. And visible row start index = floor(scrollTop / 36). So we need state scrollTop, and we need to set the inner height to 32 + paginatedRows.length * 36. We render header + spacer (scrollTop/36 * 36 = scrollTop... no, the spacer should be startIndex * 36 in height) + visible rows + bottom spacer. So the visible rows are at indices startIndex to endIndex. The top spacer height is startIndex * 36. The bottom spacer is (paginatedRows.length - endIndex) * 36. And we need the inner wrapper to have total height 32 + paginatedRows.length * 36 so the scrollbar is correct. So the structure is:
+- inner wrapper div with style={{ height: 32 + paginatedRows.length * 36 }}
+  - header row (height 32, sticky)
+  - rows container: top spacer (height: startIndex * 36), then visible rows (each 36px), then bottom spacer (height: (paginatedRows.length - endIndex) * 36)
+
+The visible rows are paginatedRows.slice(startIndex, endIndex). Each has key={row.url}. So we need scrollTop in state. We update it on scroll. We need to throttle. Let me use a ref for scrollTop and requestAnimationFrame or throttle 100ms. Actually we need to re-render when scrollTop changes to show the new rows. So we need scrollTop in state. And we need to throttle setState so we don't setState on every scroll event. So: onScroll, get scrollTop from e.target.scrollTop. Use a ref to store last update time, if now - last > 50ms then setState(scrollTop). Or use requestAnimationFrame: onScroll, requestAnimationFrame(() => setState(containerRef.current.scrollTop)). That way we update at most once per frame. Let me implement.
+</details></think>
+
+---
+
+
+Log zeigt nur 1 Tabellen-Render — kein H9 „re-render cause“. Problem scheint nicht an Re-Render-Stürmen zu liegen. Wir implementieren eine einfache Virtualisierung der Tabellenzeilen, um die DOM-Last zu reduzieren:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoOnPageTable.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to implement virtualization. Key constants:
+- ROW_HEIGHT = 36
+- HEADER_HEIGHT = 32
+- CONTAINER_MAX_HEIGHT = 480
+- Visible rows ≈ 480/36 ≈ 13, add buffer of 5, so render 18-20 rows max.
+
+I need:
+1. State: scrollTop (number), default 0
+2. Scroll listener on containerRef - when scroll, update scrollTop (throttled with requestAnimationFrame or 50ms)
+3. startIndex = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT))
+4. endIndex = Math.min(paginatedRows.length, startIndex + Math.ceil(480 / ROW_HEIGHT) + 5) = startIndex + 13 + 5 = startIndex + 18
+5. visibleRows = paginatedRows.slice(startIndex, endIndex)
+6. Inner wrapper height = HEADER_HEIGHT + paginatedRows.length * ROW_HEIGHT
+7. Render: header, then a spacer Box with height startIndex * ROW_HEIGHT, then visibleRows.map(TableRow), then spacer with height (paginatedRows.length - endIndex) * ROW_HEIGHT
+
+I need to be careful: the scroll container ref is on the Box that has overflow auto. So when we scroll, we need to read that Box's scrollTop. The inner content height must be HEADER_HEIGHT + paginatedRows.length * ROW_HEIGHT so the scrollbar is correct.
+
+Let me add the virtualization logic. I'll use useRef for the scroll container and useState for scrollTop. On scroll we do requestAnimationFrame to set scrollTop from containerRef.current.scrollTop. We need to add the scroll handler to the Box that has ref={containerRef}. So that Box needs onScroll. And we need the inner structure to have the correct height.
+
+Inner structure:
+- Box (role=table) with style={{ minHeight: HEADER_HEIGHT + paginatedRows.length * ROW_HEIGHT }} so the scroll area has the right height
+  - Header row (sticky)
+  - Box (spacer) height={startIndex * ROW_HEIGHT} - might be 0
+  - visibleRows.map(TableRow)
+  - Box (spacer) height={(paginatedRows.length - endIndex) * ROW_HEIGHT}
+
+So the total content height is 32 + startIndex*36 + visibleRows.length*36 + (paginatedRows.length - endIndex)*36 = 32 + (startIndex + visibleRows.length + paginatedRows.length - endIndex)*36. And startIndex + visibleRows.length + (paginatedRows.length - endIndex) = startIndex + (endIndex - startIndex) + paginatedRows.length - endIndex = paginatedRows.length. So total = 32 + paginatedRows.length * 36. Good.
+
+Let me implement. I'll define ROW_HEIGHT = 36 and HEADER_HEIGHT = 32 as constants. Then add state for scrollTop. Add useEffect to attach scroll listener (with passive: true and requestAnimationFrame throttle). Then compute startIndex, endIndex, visibleRows, and the two spacers. Render the spacers as Box with height. The TableRow components need to be in a fragment or wrapper - the spacers are just empty Boxes with height.
+</details></think>
+
+---
+
+
+Virtualisierung der Tabellenzeilen implementieren: Es werden nur sichtbare Zeilen (+ kleiner Puffer) gerendert.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoOnPageTable.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add ROW_HEIGHT and HEADER_HEIGHT constants, then add scroll state and listener, then the virtual slice and spacers. I need to be careful with the scroll listener - use useRef for the raf id and clean up. And the container ref - we need to read scrollTop from the scroll target. The Box with ref={containerRef} is the scroll container, so we need to add onScroll to it. When we add onScroll we need to get the scrollTop. So we need to pass the ref to the scroll handler - actually the event target is the scroll container, so e.currentTarget.scrollTop. Let me implement.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoOnPageTable.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to add the virtualization state and logic. I'll add:
+1. useState for scrollTop (0)
+2. useRef for rafId to throttle scroll updates
+3. useMemo for startIndex, endIndex, visibleRows
+4. Scroll handler that uses requestAnimationFrame to set scrollTop
+5. In the render: inner wrapper with minHeight TABLE_HEADER_HEIGHT + paginatedRows.length * ROW_HEIGHT, then header, then top spacer, then visible rows, then bottom spacer
+
+I need to attach onScroll to the Box that has ref={containerRef}. So that Box needs onScroll={(e) => { const target = e.currentTarget; rafRef.current && cancelAnimationFrame(rafRef.current); rafRef.current = requestAnimationFrame(() => { setScrollTop(target.scrollTop); rafRef.current = 0; }); }}
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoOnPageTable.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to:
+1. Add onScroll={handleScroll} to the scroll container Box
+2. Change the inner structure: add minHeight to the table wrapper so scroll height is correct, add top spacer, render only visibleRows, add bottom spacer
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoOnPageTable.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to fix the TableRow - it has minHeight: 36 in its sx. We're now using ROW_HEIGHT constant. The TableRow should have a fixed height of ROW_HEIGHT so the virtual window math is correct. Let me check - the TableRow has minHeight: 36. So rows are at least 36px. Good. The visibleCount of 12 + 4 = 16 is the number of rows we render. 480/36 ≈ 13.3 so we need about 13 visible plus a few for buffer. 12 + 4 = 16 is good.
+
+One issue: when we scroll, setScrollTop causes a re-render. So we'll re-render on every scroll (throttled by rAF). That could still be heavy if the user scrolls fast - we'd get many re-renders. But each re-render only has 16 TableRow components instead of 25. So it should be better. And we're using requestAnimationFrame so we only update once per frame max.
+
+Let me also fix the header - I used minHeight: 32 in one place and TABLE_HEADER_HEIGHT in the sticky row. I already changed the sticky row to TABLE_HEADER_HEIGHT. Good.
+
+Let me verify the TableRow has minHeight: 36 - we have ROW_HEIGHT = 36. I could use ROW_HEIGHT in TableRow for consistency but it's in a different component. For now leave TableRow with minHeight: 36.
+
+Let me check for lint errors.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoOnPageTable.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoOnPageTable.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The visibleCount is 12 + 4 = 16. But 480/36 = 13.33, so we need at least 14 visible rows to fill the container. So visibleCount should be something like Math.ceil(480/ROW_HEIGHT) + VIRTUAL_WINDOW_EXTRA = 14 + 4 = 18. Let me use a constant that's computed from the container height. Actually we have maxHeight: 480. So visible rows = ceil(480/36) + 4 = 14 + 4 = 18. Let me change visibleCount to 14 + VIRTUAL_WINDOW_EXTRA so we have 18 rows max. That way when the user scrolls we always have enough rows to fill the view.
+</details></think>
+
+---
+
+
+Sichtbare Zeilenanzahl an die Containerhöhe anpassen:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoOnPageTable.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoOnPageTable.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/SeoOnPageTable.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+TableRow has minHeight: 36 in its sx. So the row height is correct. Let me double-check - when we have visible rows, each has height 36px (minHeight). So the spacers are correct. Good.
+
+Let me update the knowledge file and provide reproduction steps.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-seo-table-performance.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Done. Let me provide a short summary and reproduction steps. I did not remove the debug instrumentation - the user said to keep it until verification. So the H1, H2, H9 logs are still there.
+</details></think>
+
+---
+
+
+**Log-Auswertung (dieser Lauf)**  
+Es gab nur **einen** Tabellen-Render, kein H9-„re-render cause“. Die Verlangsamung kommt in diesem Lauf also nicht von Re-Render-Wellen, sondern eher von der **Menge an DOM/Layout** (viele Zeilen gleichzeitig).
+
+**Änderung: Virtualisierung der Tabellenzeilen**
+
+- Es werden nur noch **sichtbare Zeilen + Puffer** (~18 statt 25) gerendert.
+- **Konstanten:** `ROW_HEIGHT = 36`, `TABLE_HEADER_HEIGHT = 32`, `TABLE_BODY_MAX_HEIGHT = 480`, `VISIBLE_ROWS_COUNT = ceil(480/36) + 4`.
+- **State:** `scrollTop` (per `requestAnimationFrame` im Scroll-Handler aktualisiert).
+- **Berechnung:** `startIndex = floor(scrollTop / 36)`, `endIndex = startIndex + VISIBLE_ROWS_COUNT`, `visibleRows = paginatedRows.slice(startIndex, endIndex)`.
+- **Rendering:** Oberer Spacer (Höhe `startIndex * 36`), dann nur `visibleRows` als `TableRow`, dann unterer Spacer. Die Tabelle hat `minHeight: HEADER + paginatedRows.length * 36`, damit die Scrollbar stimmt.
+
+Damit sind pro Seite nur noch ~18 Zeilen-Komponenten im DOM statt 25, und beim Scrollen in der Tabelle bleibt die Anzahl begrenzt.
+
+Die Debug-Logs (H1, H2, H9) sind unverändert drin.
+
+<reproduction_steps>
+1. Dev-Server starten, zu einem Projekt mit SEO-Daten wechseln, Tab „SEO“ öffnen.
+2. Nach unten scrollen, bis die SEO-Tabelle sichtbar ist.
+3. In der Tabelle scrollen (Mausrad oder Scrollbalken) – nur sichtbare Zeilen + Puffer werden gerendert.
+4. Prüfen: Wirkt die Seite flüssiger? Verschwinden oder überlagern sich noch Elemente?
+5. „Proceed“ / „Mark as fixed“ ausführen, wenn das Verhalten passt oder du etwas rückmelden willst.
+</reproduction_steps>
+
+---
+
+_**User**_
+
+denk dran keywords sind auch jede menge elemente DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-1whhp80 > div.MuiStack-root c.-yd8.a2 > div.MuiBox-root c.-17b4aqi[3] > div.MuiBox-root c.-1.g4afn
+Position: top=369px, left=101px, width=1015px, height=581px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-1sg4afn" data-cursor-element-id="cursor-el-1">Keywords seitenübergreifend Begriffe, die auf mehreren Seiten vorkommen; sortiert nach Gesamt-Vorkommen. ksb (436×, 193 Seite(n), Ø 6.65%) server (184×, 184 Seite(n), Ø 6.67%) reference (183×, 183 S</div> 
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+

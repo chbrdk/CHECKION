@@ -28,7 +28,13 @@
    `contain: 'layout'` am Scroll-Container, um Layout-Berechnungen zu begrenzen.
 
 5. **Pagination**  
-   Nur ~50 Zeilen pro Seite werden gerendert (DOM-Größe begrenzt).
+   Nur ~25 Zeilen pro Seite (SEO_TABLE_PAGE_SIZE).
+
+6. **Virtualisierung des Tabellen-Bodys**  
+   Pro Seite werden nur die sichtbaren Zeilen + Puffer (~18 statt 25) im DOM gerendert. Beim Scrollen im Container wird `scrollTop` per requestAnimationFrame ausgelesen und nur der sichtbare Ausschnitt (visibleRows) gerendert. Oberer/unterer Spacer halten die Scroll-Höhe stabil. Reduziert DOM-Knoten und Layout/Paint deutlich.
+
+7. **Keywords-Karte (Cross-Page Keywords)**  
+   Es werden initial nur `SEO_KEYWORDS_INITIAL_SHOWN` (20) Chips gerendert. Button „Mehr anzeigen“ blendet den Rest ein. Weniger DOM-Elemente beim ersten Paint.
 
 ## Zentrale Konstanten
 
