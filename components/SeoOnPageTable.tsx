@@ -101,8 +101,6 @@ const TableRow = React.memo(function TableRow({
         borderBottom: tableBorder,
         alignItems: 'stretch',
         minHeight: 36,
-        contentVisibility: 'auto',
-        containIntrinsicSize: '0 36px',
         '&:last-of-type': { borderBottom: 'none' },
         '&:hover': { backgroundColor: alpha(MSQDX_NEUTRAL[500], 0.06) },
       }}
@@ -181,8 +179,28 @@ function SeoOnPageTableInner({
   // #region agent log
   const renderCountRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const prevRowsRef = useRef<typeof rows | null>(null);
+  const prevOnRowClickRef = useRef<typeof onRowClick | null>(null);
   renderCountRef.current += 1;
   const r = renderCountRef.current;
+  const rowsRefChanged = prevRowsRef.current !== rows;
+  const onRowClickRefChanged = prevOnRowClickRef.current !== onRowClick;
+  prevRowsRef.current = rows;
+  prevOnRowClickRef.current = onRowClick;
+  if (r > 1 && (rowsRefChanged || onRowClickRefChanged)) {
+    fetch('http://127.0.0.1:7902/ingest/bbc31d13-f45c-46d1-93ab-b989a1d926fc', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'cafcc0' },
+      body: JSON.stringify({
+        sessionId: 'cafcc0',
+        location: 'SeoOnPageTable.tsx:renderCause',
+        message: 'table re-render cause',
+        data: { renderCount: r, rowsRefChanged, onRowClickRefChanged },
+        timestamp: Date.now(),
+        hypothesisId: 'H9',
+      }),
+    }).catch(() => {});
+  }
   if ([1, 2, 3, 5, 10, 20, 50, 100, 200, 500].includes(r)) {
     fetch('http://127.0.0.1:7902/ingest/bbc31d13-f45c-46d1-93ab-b989a1d926fc', {
       method: 'POST',
@@ -305,7 +323,7 @@ function SeoOnPageTableInner({
           border: tableBorder,
           borderRadius: 1,
           overflow: 'auto',
-          maxHeight: '65vh',
+          maxHeight: 480,
           backgroundColor: MSQDX_THEME.light.surface.primary,
           contain: 'layout',
         }}
