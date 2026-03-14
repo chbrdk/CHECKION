@@ -2,7 +2,7 @@
 /*  CHECKION – Database schema (Drizzle + PostgreSQL)                 */
 /* ------------------------------------------------------------------ */
 
-import { pgTable, text, timestamp, jsonb, integer } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, jsonb, integer, primaryKey } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
     id: text('id').primaryKey(),
@@ -58,6 +58,16 @@ export const domainScans = pgTable('domain_scans', {
     timestamp: text('timestamp').notNull(),
     payload: jsonb('payload').notNull(), // DomainScanResult
 });
+
+/** Project → domain_scan references for competitor deep scans (standalone scans, referenced by project). One row per (project_id, domain). */
+export const projectDomainScanReferences = pgTable('project_domain_scan_references', {
+    projectId: text('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+    domain: text('domain').notNull(),
+    domainScanId: text('domain_scan_id').notNull().references(() => domainScans.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+    pk: primaryKey({ columns: [t.projectId, t.domain] }),
+}));
 
 /** Share links: public landing page for a scan (single, domain, journey, or geo_eeat). Token in URL, optional password. */
 export const shareLinks = pgTable('share_links', {

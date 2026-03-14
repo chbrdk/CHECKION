@@ -31224,6 +31224,127 @@ cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
   Creating an optimized production build ...
 ✓ Compiled successfully in 5.7s
   Running TypeScript ...
+  Collecting page data using 9 workers ...
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+  Generating static pages using 9 workers (0/46) ...
+  Generating static pages using 9 workers (11/46) 
+  Generating static pages using 9 workers (22/46) 
+  Generating static pages using 9 workers (34/46) 
+✓ Generating static pages using 9 workers (46/46) in 399.5ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/register
+├ ƒ /api/auth/tokens
+├ ƒ /api/auth/tokens/[id]
+├ ƒ /api/checks/contrast
+├ ƒ /api/checks/pagespeed
+├ ƒ /api/checks/readability
+├ ƒ /api/checks/ssl
+├ ƒ /api/checks/wayback
+├ ƒ /api/health
+├ ƒ /api/journeys
+├ ƒ /api/journeys/[id]
+├ ƒ /api/projects
+├ ƒ /api/projects/[id]
+├ ƒ /api/projects/[id]/domain-summary
+├ ƒ /api/projects/[id]/geo-question-history
+├ ƒ /api/projects/[id]/geo-summary
+├ ƒ /api/projects/[id]/ranking-summary
+├ ƒ /api/projects/[id]/research
+├ ƒ /api/projects/[id]/suggest-competitors
+├ ƒ /api/projects/[id]/suggest-keywords
+├ ƒ /api/rank-tracking/keywords
+├ ƒ /api/rank-tracking/keywords/[id]
+├ ƒ /api/rank-tracking/keywords/[id]/positions
+├ ƒ /api/rank-tracking/refresh
+├ ƒ /api/saliency/generate
+├ ƒ /api/saliency/result
+├ ƒ /api/scan
+├ ƒ /api/scan/[id]
+├ ƒ /api/scan/[id]/project
+├ ƒ /api/scan/[id]/screenshot
+├ ƒ /api/scan/[id]/summarize
+├ ƒ /api/scan/domain
+├ ƒ /api/scan/domain/[id]/journey
+├ ƒ /api/scan/domain/[id]/status
+├ ƒ /api/scan/domain/[id]/summarize
+├ ƒ /api/scan/domain/[id]/summary
+├ ƒ /api/scan/geo-eeat
+├ ƒ /api/scan/geo-eeat/[jobId]
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history/[runId]
+├ ƒ /api/scan/geo-eeat/[jobId]/project
+├ ƒ /api/scan/geo-eeat/[jobId]/rerun-competitive
+├ ƒ /api/scan/geo-eeat/[jobId]/status
+├ ƒ /api/scan/geo-eeat/history
+├ ƒ /api/scan/geo-eeat/suggest-competitors-queries
+├ ƒ /api/scan/journey-agent
+├ ƒ /api/scan/journey-agent/[jobId]
+├ ƒ /api/scan/journey-agent/[jobId]/live
+├ ƒ /api/scan/journey-agent/[jobId]/live/stream
+├ ƒ /api/scan/journey-agent/[jobId]/project
+├ ƒ /api/scan/journey-agent/[jobId]/video
+├ ƒ /api/scan/journey-agent/history
+├ ƒ /api/scans
+├ ƒ /api/scans/[id]
+├ ƒ /api/scans/domain
+├ ƒ /api/scans/domain/[id]
+├ ƒ /api/scans/domain/[id]/project
+├ ƒ /api/search
+├ ƒ /api/share
+├ ƒ /api/share/[token]
+├ ƒ /api/share/[token]/access
+├ ƒ /api/share/[token]/pages/[pageId]
+├ ƒ /api/share/[token]/pages/[pageId]/screenshot
+├ ƒ /api/share/[token]/video
+├ ƒ /api/share/by-resource
+├ ƒ /api/tools/contrast
+├ ƒ /api/tools/extract
+├ ƒ /api/tools/pagespeed
+├ ƒ /api/tools/readability
+├ ƒ /api/tools/ssl-labs
+├ ƒ /api/tools/wayback
+├ ƒ /developers
+├ ƒ /domain/[id]
+├ ƒ /geo-eeat/[jobId]
+├ ƒ /history
+├ ƒ /journey-agent/[jobId]
+├ ƒ /login
+├ ƒ /projects
+├ ƒ /projects/[id]
+├ ƒ /projects/[id]/geo
+├ ƒ /projects/[id]/rankings
+├ ƒ /projects/[id]/research
+├ ƒ /projects/[id]/wcag
+├ ƒ /register
+├ ƒ /results/[id]
+├ ƒ /scan
+├ ƒ /scan/domain
+├ ƒ /settings
+└ ƒ /share/[token]
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
 
 ```
 </details>
@@ -31285,6 +31406,1566 @@ Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1** (44 files
 | `knowledge/checkion-caching.md` |
 
 </details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build passed. I'll add a short knowledge doc for the WCAG score and mark todos complete.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add lib/wcag-score.ts with severity-weighted score + docs
+- [x] Show WCAG score in project WCAG page summary card
+- [x] Add i18n keys and optional InfoTooltip for score
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-wcag-score.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+All done. Summarize for the user.
+</details></think>
+
+---
+
+
+Zusammenfassung der Änderungen:
+
+## WCAG-Score eingebaut
+
+**Hintergrund:** Es gibt **keinen offiziellen WCAG-Standard** für eine Score-Zahl. W3C definiert nur Konformitätsstufen (A, AA, AAA). Üblich sind daher **eigene, gewichtete Formeln** (z. B. Lighthouse, BrowserStack).
+
+**Umsetzung in CHECKION:**
+
+1. **`lib/wcag-score.ts`**
+   - **Formel:**  
+     `Score = 100 − min(100, gewichtete Issues pro Seite)`  
+     mit **Gewichten:** Errors = 10, Warnings = 3, Notices = 1 (angelehnt an axe/Lighthouse).
+   - **Seitennormalisierung:** Gewichtete Summe wird durch die **Seitenanzahl** geteilt, damit große Domains nicht pauschal schlechter dastehen.
+   - **Stufen:** 90–100 = Sehr gut, 70–89 = Gut, 50–69 = Mäßig, 25–49 = Schwach, 0–24 = Kritisch.
+
+2. **WCAG-Seite (Projekt)**  
+   In der **Übersichtskarte** werden jetzt angezeigt:
+   - **WCAG-Score** (große Zahl 0–100),
+   - **Label** (z. B. „Sehr gut“ / „Gut“),
+   - **Info-Icon** mit Tooltip zur Erklärung (Formel + Hinweis, dass WCAG keine offizielle Score-Formel hat),
+   - darunter unverändert: Errors / Warnings / Notices und Level (A, AA, …).
+
+3. **i18n**  
+   Neue Keys in `de`/`en`: `projects.wcag.score`, `scoreLabel_*`, `scoreTooltip`.
+
+4. **Doku**  
+   Kurzbeschreibung in `knowledge/checkion-wcag-score.md`.
+
+**Beispiel:** 2223 Errors, 0 Warnings, 0 Notices, 1000 Seiten → gewichtet 22 230, pro Seite 22,23 → **Score 78** („Gut“).
+
+---
+
+_**User**_
+
+können wir hier  DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-1whhp80 > div.MuiStack-root c.-yd8.a2 > div.MuiBox-root c.-17b4aqi[0] > div.MuiBox-root c.-1.g4afn > div.MuiBox-root c.-1hdbc19 > div.MuiBox-root c.-otl2t > div.MuiBox-root c.-17ye1bz > a
+Position: top=234px, left=1543px, width=145px, height=44px
+HTML Element: <a href="/domain/b4795c2b-bc1c-4f03-a460-3e8da01d370c" data-cursor-element-id="cursor-el-236" style="text-decoration: none;">Deep Scan öffnen</a>  einen button hinzufügen deep scan neu starten? und aus dem projekt heraus sollten wir nicht nur die seite des users deep scanen sondern auch die der competitors allesamt deep scannen um hier einen vergleich zu haben. weißt du wie ich meine? wie lösen wir das am besten um auch zukünftig wenn jemand vielleicht den gleichen competitor hat, wir nicht doppelt analysieren sondern auf vorhandene daten setzen können?
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is asking about two things:
+
+1. **UI change**: Add a "Deep Scan neu starten" (restart deep scan) button next to or near the existing "Deep Scan öffnen" link on what appears to be the project overview page (the first card in the stack).
+
+2. **Feature/concept**: From the project, they want to not only deep-scan the user's domain but also deep-scan all competitor domains, so they can compare. And they want to avoid re-scanning when the same competitor appears in multiple projects - i.e. reuse existing scan data (by domain/URL) so we don't duplicate work.
+
+They're asking "do you know what I mean?" and "how do we solve this best so that in the future when someone might have the same competitor we don't analyze twice but can rely on existing data?"
+
+I'm in **Ask mode** - I must NOT make edits or run non-readonly tools. I can only answer, explain, and suggest. I should:
+- Find where "Deep Scan öffnen" is rendered (project page)
+- Understand the current domain scan flow (single domain per scan?)
+- Explain how to add the button (conceptually)
+- Propose an architecture for "scan competitors too" and "deduplicate by domain" so they can implement it or switch to Agent mode
+
+Let me search the codebase for "Deep Scan öffnen" and the domain scan flow.
+</details></think>
+
+---
+
+
+Zwei Punkte: 1) Button „Deep Scan neu starten“ neben „Deep Scan öffnen“. 2) Competitor-Deep-Scans aus dem Projekt + Wiederverwendung vorhandener Scans pro Domain. Codebase prüfen, um die aktuelle Struktur zu klären.
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "Deep Scan öffnen|domain.*öffnen|pathDomain",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "Deep Scan öffnen|domain.*öffnen|pathDomain",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 20,
+  "totalMatches": 50,
+  "topFiles": [
+    {
+      "uri": "./app/projects/[id]/wcag/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/projects/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/scan/domain/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/wcag/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/scan/domain/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/wcag/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/scan/domain/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/wcag/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/scan/domain/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/wcag/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/scan/domain/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/page.tsx",
+      "matchCount": 4
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "scan/domain|domain.*scan|startScan",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "scan/domain|domain.*scan|startScan",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 35,
+  "totalMatches": 65,
+  "topFiles": [
+    {
+      "uri": "./app/projects/[id]/wcag/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/domain/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./components/ScannedPagesTable.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/projects/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/scan/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/developers/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/scan/domain/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/wcag/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/components/ScannedPagesTable.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/scan/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/developers/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/scan/domain/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/wcag/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/components/ScannedPagesTable.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/scan/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/developers/page.tsx",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Found it. The "Deep Scan öffnen" link is on the project overview page `app/projects/[id]/page.tsx` around line 373–374. Let me read that section and also check how domain scans are created and whether they're tied to a project. Then I need to understand the DB schema for domain scans and projects/competitors.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "apiScanDomainCreate|POST.*scan/domain|domain.*scan.*create",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "apiScanDomainCreate|POST.*scan/domain|domain.*scan.*create",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 115,
+  "totalMatches": 360,
+  "topFiles": [
+    {
+      "uri": "./lib/constants.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "./.specstory/history/2026-03-12_20-42Z-integration-von-serpbear-bei-checkion.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./lib/api-schemas.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./mcp-server/dist/tools.js",
+      "matchCount": 1
+    },
+    {
+      "uri": "./mcp-server/src/tools.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./knowledge/checkion-api-mcp-audit.md",
+      "matchCount": 6
+    },
+    {
+      "uri": "./knowledge/checkion-path-constants.md",
+      "matchCount": 3
+    },
+    {
+      "uri": "./knowledge/checkion-usage-tracking-coverage.md",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/api/scan/domain/[id]/journey/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/api/scan/domain/[id]/summarize/route.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 28
+    },
+    {
+      "uri": "./app/scan/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./knowledge/checkion-geo-eeat-intensive-scan.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./lib/types.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/developers/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/scan/domain/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./knowledge/checkion-api-schemas.md",
+      "matchCount": 2
+    },
+    {
+      "uri": "./.specstory/history/2026-02-27_20-37Z-checkion-project-improvement-opportunities.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./.specstory/history/2026-02-23_09-14Z-system-overview-and-implementation.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./knowledge/checkion-journey-history.md",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="semantic_search_full">
+<details>
+<summary>Tool use: **semantic_search_full**</summary>
+
+
+Parameters:
+
+```json
+{
+  "query": "Where are domain scans stored and linked to project? domain_scan project_id",
+  "includePattern": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "topK": 10,
+  "explanation": ""
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The API already has projectId in the scan domain create (from checkion-api-mcp-audit). Let me look at the domain_scan schema and how domain-summary gets the "latest" scan for a project.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "domain_scan|domainScan|project_id|projectId",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "domain_scan|domainScan|project_id|projectId",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db",
+  "outputMode": "content",
+  "totalFiles": 65,
+  "totalMatches": 705,
+  "topFiles": [
+    {
+      "uri": "lib/db/schema.ts",
+      "matchCount": 8
+    },
+    {
+      "uri": "lib/db/rank-tracking-keywords.ts",
+      "matchCount": 9
+    },
+    {
+      "uri": "lib/db/migrations/0005_rank_tracking.sql",
+      "matchCount": 2
+    },
+    {
+      "uri": "lib/db/migrations/0004_drop_user_id_fk_for_plexon.sql",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/db/geo-eeat-runs.test.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "lib/db/geo-eeat-runs.ts",
+      "matchCount": 12
+    },
+    {
+      "uri": "lib/db/journey-runs.ts",
+      "matchCount": 11
+    },
+    {
+      "uri": "lib/db/scans.ts",
+      "matchCount": 63
+    },
+    {
+      "uri": "lib/db/migrations/0002_projects.sql",
+      "matchCount": 9
+    },
+    {
+      "uri": "lib/db/migrations/0001_geo_eeat_runs.sql",
+      "matchCount": 2
+    },
+    {
+      "uri": "lib/db/migrations/meta/0000_snapshot.json",
+      "matchCount": 5
+    },
+    {
+      "uri": "lib/db/migrations/0000_add_llm_summary.sql",
+      "matchCount": 2
+    },
+    {
+      "uri": "lib/db/journeys.ts",
+      "matchCount": 15
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/schema.ts",
+      "matchCount": 8
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/rank-tracking-keywords.ts",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/migrations/0005_rank_tracking.sql",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/migrations/0004_drop_user_id_fk_for_plexon.sql",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/geo-eeat-runs.test.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/geo-eeat-runs.ts",
+      "matchCount": 12
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/journey-runs.ts",
+      "matchCount": 11
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/domain/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/domain-summary/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to see:
+1. domain_scans table - does it have a "url" or "domain" column so we could look up by domain?
+2. How project competitors are stored (project_competitors or similar)
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "competitor|competitors",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "competitor|competitors",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db",
+  "outputMode": "content",
+  "totalFiles": 35,
+  "totalMatches": 190,
+  "topFiles": [
+    {
+      "uri": "lib/db/projects.test.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/db/projects.ts",
+      "matchCount": 10
+    },
+    {
+      "uri": "lib/db/schema.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "lib/db/rank-tracking-positions.ts",
+      "matchCount": 11
+    },
+    {
+      "uri": "lib/db/migrations/0007_project_competitors_and_position_competitors.sql",
+      "matchCount": 7
+    },
+    {
+      "uri": "lib/db/geo-eeat-competitive-runs.test.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "lib/db/geo-eeat-competitive-runs.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/projects.test.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/projects.ts",
+      "matchCount": 10
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/schema.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/rank-tracking-positions.ts",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/migrations/0007_project_competitors_and_position_competitors.sql",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/geo-eeat-competitive-runs.test.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/geo-eeat-competitive-runs.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/projects.test.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/projects.ts",
+      "matchCount": 10
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/schema.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/rank-tracking-positions.ts",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/migrations/0007_project_competitors_and_position_competitors.sql",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/geo-eeat-competitive-runs.test.ts",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/api-schemas.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I have a clear picture:
+
+1. **"Deep Scan öffnen"** – Der Link steht in `app/projects/[id]/page.tsx` in der Domain-Score-Card (MsqdxMoleculeCard), in `actions`: ein Link zu `pathDomain(domainSummary.scanId)` mit Button-Text `t('projects.open')`. Der User will daneben einen zweiten Button **"Deep Scan neu starten"**.
+
+2. **Domain-Scans**: 
+   - `domain_scans` hat: id, userId, projectId, **domain** (URL), status, timestamp, payload.
+   - Ein neuer Scan wird via POST `/api/scan/domain` mit `url`, optional `projectId` erstellt.
+   - Es gibt also **keine** Abbildung "eine Domain = ein Scan" – jeder Aufruf erzeugt einen neuen Scan. Um "nicht doppelt analysieren" zu können, müsste man **vor** dem Start prüfen: Gibt es schon einen (z.B. neueren) Domain-Scan für diese Domain (evtl. global oder pro User)?
+
+3. **Competitors**: Projekte haben `projects.competitors` (JSONB string[] – Domain-URLs). Es gibt keine eigene Tabelle für Competitors.
+
+4. **Gewünschtes Verhalten**:
+   - Button "Deep Scan neu starten": Startet einen neuen Deep Scan für die **Projekt-Domain** (mit projectId), dann Redirect zu `/domain/[id]` oder Scan-Seite.
+   - Aus Projekt heraus: Nicht nur User-Domain scannen, sondern **alle Competitors** auch deep scannen.
+   - **Deduplizierung**: Wenn dieselbe Competitor-Domain schon mal (für irgendein Projekt/User?) gescannt wurde, nicht nochmal scannen, sondern vorhandene Daten nutzen.
+
+**Lösungsansatz für Deduplizierung:**
+
+- **Option A: Lookup nach Domain (und User?)**  
+  Beim Start eines Domain-Scans (z.B. für Competitor X): Zuerst prüfen, ob es einen **abgeschlossenen** Domain-Scan mit derselben normalisierten Domain (z.B. `new URL(url).hostname`) gibt. Wenn ja: diesen Scan per projectId verknüpfen (oder nur referenzieren) statt einen neuen zu starten.  
+  Problem: `domain_scans` ist pro User (userId). Sollen Scans global geteilt werden (jeder User sieht den gleichen Scan für competitor.com) oder pro User? Das ist eine Produktentscheidung.  
+  - **Global**: Ein Scan pro Domain in der DB (evtl. userId = System oder null), alle Projekte referenzieren ihn.  
+  - **Pro User**: "Letzter Scan für diese Domain von diesem User" – dann kann User A und User B jeweils einen Scan für competitor.com haben, aber jeder nur einen.
+
+- **Option B: Domain-Scan-Ergebnisse "by domain" abfragen**  
+  Neue API z.B. `GET /api/domain-scan-by-domain?domain=competitor.com` (oder nach userId gefiltert) die den **neuesten** abgeschlossenen Scan für diese Domain zurückgibt. Beim "Deep Scan für alle starten" (Projekt + Competitors): Für jede Domain erst diese API fragen; nur wenn kein (oder nur alter) Scan existiert, neuen starten.
+
+- **Option C: Projekt-Konzept "Domain-Scan-Referenzen"**  
+  Projekt speichert nicht nur einen "latest domain scan" für die eigene Domain, sondern eine Map domain → scanId (eigen + Competitors). Beim Anzeigen: Für jede Domain den zugehörigen Scan laden. Beim "Alle scannen": Für jede Domain entweder vorhandenen Scan (nach Domain lookup) verwenden oder neuen starten und dann die Referenz speichern.
+
+Pragmatisch:
+- **Button "Deep Scan neu starten"**: Frontend ruft POST `/api/scan/domain` mit `url: project.domain`, `projectId: project.id`, dann Redirect zu `pathDomain(newScanId)` oder zu `/scan/domain?url=...`. Das ist klar.
+- **Competitors auch scannen**: Entweder ein neuer API-Endpoint z.B. `POST /api/projects/[id]/domain-scan-all` der:
+  1. Projekt-Domain + project.competitors liest;
+  2. Für jede Domain prüft (neu): existiert bereits ein **abgeschlossener** Domain-Scan mit dieser Domain (normalisiert)? Optional: nicht älter als X Tage?
+  3. Für alle ohne (oder mit veraltetem) Scan: neuen Scan anstoßen (evtl. asynchron/job-queue);
+  4. Sofort zurückgeben: Liste domain → scanId (vorhanden oder neu gestartet).
+  Oder: Frontend startet n+1 Scans (eins für eigene Domain, n für Competitors) und zeigt Fortschritt. Ohne Backend-Logik für "by domain lookup" würde man immer neue Scans erzeugen.
+- **Nicht doppelt analysieren**: Dafür braucht ihr im Backend eine **Lookup-Funktion**: "Letzter Scan für Domain X" (und ggf. User/global). In `lib/db/scans` (oder neu) z.B. `getLatestDomainScanByDomain(userId, domain)` die den neuesten abgeschlossenen Scan mit `domain = normalizedDomain` zurückgibt. Beim Start eines Scans für eine Competitor-Domain: erst diesen Lookup; wenn Ergebnis vorhanden (und z.B. nicht älter als 30 Tage), diesen scanId dem Projekt "zuordnen" (z.B. Projekt hat eine Tabelle oder JSONB project_id → { domain → scan_id }) und keinen neuen Scan starten. Sonst neuen Scan starten.
+
+Ich fasse das für den User strukturiert zusammen.
+</details></think>
+
+---
+
+
+So passt das zusammen und so könnt ihr es lösen.
+
+---
+
+## 1. Button „Deep Scan neu starten“
+
+**Ort:** Die Karte ist in `app/projects/[id]/page.tsx` (Domain-Score-Card). Der Link „Deep Scan öffnen“ (bzw. `t('projects.open')`) steht in den `actions` der `MsqdxMoleculeCard` (ca. Zeilen 371–378).
+
+**Umsetzung:** Neben dem bestehenden Link einen zweiten **Button** „Deep Scan neu starten“:
+
+- **Aktion:** `POST /api/scan/domain` mit  
+  `{ url: project.domain, projectId: id }`  
+  (project.domain und id aus der Projektseite).
+- **Nach Erfolg:** Response enthält die neue Scan-`id` → z.B. `router.push(pathDomain(id))` oder zu `/scan/domain?url=...`.
+- Optional: Loading-State und Fehlerbehandlung (z.B. wenn keine Projekt-Domain gesetzt ist).
+
+Die API unterstützt `projectId` bereits (`scanDomainBodySchema` in `lib/api-schemas.ts`, `createDomainScan` in `app/api/scan/domain/route.ts`).
+
+---
+
+## 2. Auch Competitors deep scannen
+
+**Aktuell:**  
+Projekt hat `project.domain` (eure Seite) und `project.competitors` (Array von Domain-Strings). Es wird nur ein Domain-Scan pro Projekt genutzt (der „letzte“ für dieses Projekt über `listDomainScanSummaries(..., { projectId, limit: 1 })`).
+
+**Ziel:**  
+Aus dem Projekt heraus:
+
+- einen Deep Scan für die **eigene Domain**,
+- und für **jede Competitor-Domain**
+
+starten bzw. referenzieren, damit ihr vergleichen könnt (z.B. WCAG-Score, Performance).
+
+Dafür braucht ihr konzeptionell:
+
+- Eine Möglichkeit, **mehrere** Domain-Scans einem Projekt zuzuordnen (einer pro Domain: Eigen + Competitors).
+- Beim „Alle scannen“: für jede dieser Domains entweder einen **bereits vorhandenen** Scan verwenden oder einen **neuen** anstoßen.
+
+---
+
+## 3. Nicht doppelt analysieren – Scans pro Domain wiederverwenden
+
+**Aktuell:**  
+`domain_scans` hat u.a. `id`, `userId`, `projectId`, **`domain`**. Jeder POST erzeugt einen **neuen** Scan; es gibt keinen „Lookup nach Domain“.
+
+**Idee:**  
+Scans **nach Domain** denken:  
+„Für die Domain `competitor.com` gibt es schon einen (abgeschlossenen) Scan → diesen (oder seinen neuesten) wiederverwenden, statt einen zweiten zu starten.“
+
+Dafür sind zwei Dinge nötig:
+
+### a) Lookup: „Neuester Scan für diese Domain“
+
+- **Normierung:** Domain-String vereinheitlichen (z.B. Hostname: `new URL(url).hostname` oder immer mit `https://`), damit `competitor.com` und `https://competitor.com` denselben Scan treffen.
+- **DB:** In `lib/db/scans` (oder eigener Modul) eine Funktion, z.B.  
+  `getLatestCompletedDomainScanByDomain(userId: string, domain: string): Promise<{ id: string, ... } | null>`  
+  die den **neuesten** Eintrag in `domain_scans` mit dieser normalisierten Domain und Status „complete“ (o.ä.) zurückgibt.
+- **Optional:** Nur Scans berücksichtigen, die nicht älter als X Tage sind; sonst gilt „kein Wiederverwendung“ und es wird neu gescannt.
+
+### b) Beim Start: Wiederverwenden oder neu starten
+
+- **Projekt-Flow „Deep Scan für alle (eigen + Competitors)“:**  
+  Für jede Domain (eigen + `project.competitors`):
+  1. `getLatestCompletedDomainScanByDomain(userId, normalizedDomain)` aufrufen.
+  2. **Wenn ein passender Scan existiert (und evtl. „frisch genug“):**  
+     Diesen Scan dem Projekt „zuordnen“ (siehe unten), **keinen** neuen Scan starten.
+  3. **Sonst:**  
+     Wie heute `POST /api/scan/domain` (mit dieser Domain, optional `projectId`) aufrufen und den neuen Scan dem Projekt zuordnen.
+
+So wird dieselbe Competitor-Domain nur einmal (pro User, ggf. mit Ablaufdatum) analysiert; andere Projekte mit demselben Competitor nutzen denselben Scan.
+
+---
+
+## 4. Projekt-Zuordnung: mehrere Scans (eigen + Competitors)
+
+Aktuell wird nur **ein** Scan pro Projekt genutzt (`projectId` am Scan, „letzter“ Scan für dieses Projekt).
+
+Für Vergleich „eigene Domain vs. Competitors“ braucht ihr eine klare Zuordnung **Domain → Scan** pro Projekt, z.B.:
+
+**Option A – Domain-Scans nur über `projectId` (wie jetzt):**  
+- Jeder Scan gehört zu einem Projekt (`projectId`).  
+- Für „Competitor auch scannen“: Beim Wiederverwenden eines bestehenden Scans müsst ihr entscheiden, ob dieser Scan einem **anderen** Projekt gehört. Dann:
+  - entweder denselben Scan-Datensatz in der Anzeige für mehrere Projekte nutzen (z.B. nur lesend referenzieren),
+  - oder eine zusätzliche Tabelle/Konzept „Projekt ↔ Domain ↔ Scan“ (siehe Option B).
+
+**Option B – Explizite Zuordnung Projekt ↔ Domain ↔ Scan (empfohlen für Skalierung):**  
+- Neue Tabelle z.B. `project_domain_scans`:  
+  `(project_id, domain, domain_scan_id, role)`  
+  mit `role` z.B. `'own' | 'competitor'`.
+- Beim „Alle scannen“:
+  - Für jede Domain (eigen + Competitors) wie oben prüfen: vorhandener Scan ja/nein.
+  - Eigen: neuen Scan mit `projectId` anlegen (wie heute) oder vorhandenen eintragen.  
+  - Competitor: vorhandenen Scan eintragen oder neuen anlegen (mit oder ohne `projectId`, je nach Produktentscheidung).
+- Projekt-Dashboard / WCAG / Vergleich: Für dieses Projekt alle Zeilen aus `project_domain_scans` laden und die zugehörigen Scans anzeigen.
+
+So bleibt „ein Scan pro Domain“ (mit Wiederverwendung), aber jedes Projekt hat eine explizite Liste „diese Domains (eigen + Competitors) mit diesen Scan-IDs“.
+
+---
+
+## 5. Kurz: Empfohlene Schritte
+
+1. **UI:** In der Domain-Score-Card neben „Deep Scan öffnen“ einen Button „Deep Scan neu starten“, der für die Projekt-Domain einen neuen Scan startet und auf die Scan-Seite weiterleitet.
+2. **Backend – Lookup:**  
+   `getLatestCompletedDomainScanByDomain(userId, normalizedDomain)` implementieren (Domain normalisieren, neuesten abgeschlossenen Scan pro User zurückgeben).
+3. **Backend – „Alle scannen“:**  
+   Neuer Endpoint z.B. `POST /api/projects/[id]/domain-scan-all` (oder Erweiterung von „Deep Scan neu starten“ zu „Eigen + Competitors scannen“):  
+   - Projekt + Competitors laden,  
+   - für jede Domain Lookup; wo kein (oder veralteter) Scan: neuen Scan anstoßen,  
+   - Zuordnung Projekt ↔ Domain ↔ Scan speichern (Option B) oder nur Scans mit `projectId` anlegen und in der Response zurückgeben.
+4. **Frontend – „Alle scannen“:**  
+   Entweder einen weiteren Button „Deep Scan für alle (eigen + Competitors) starten“, der diesen neuen Endpoint aufruft und Fortschritt/Ergebnis anzeigt (z.B. Liste Domain → Scan-Link).
+5. **Anzeige / Vergleich:**  
+   Projektseite (oder eigene Unterseite) so erweitern, dass für eigen + alle Competitors der zugehörige Domain-Scan (Score, WCAG, etc.) angezeigt wird, basierend auf der gewählten Zuordnung (Option A oder B).
+
+Wenn du willst, können wir im nächsten Schritt einen davon konkret ausarbeiten (z.B. nur Button „Deep Scan neu starten“ oder das komplette Modell für „Competitors + Deduplizierung“ inkl. API-Skizze).  
+Ich bin im **Ask-Modus** und kann keine Änderungen im Repo vornehmen – für die konkrete Implementierung bitte in den **Agent-Modus** wechseln.
+
+---
+
+_**User**_
+
+wichtig ist das wir die deep scans der competitors eigentlich als eigenständige scans haben und darauf dann referenzieren. bitte plane die komplette implementierung
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants to plan the full implementation with the key requirement: competitor deep scans should be **standalone scans** that we then **reference** from the project (rather than creating project-owned scans for each competitor). This aligns with the deduplication goal—one scan per domain, referenced by any project that uses that competitor.
+
+I need to:
+1. Understand the current domain_scan and project structure
+2. Design how we store "project references to domain scans" (own + competitors)
+3. Design the "start/resolve" flow: when starting "scan all", we resolve each domain to an existing scan or create a new one, and store references
+4. Plan UI: button "Deep Scan neu starten", optional "Scan all (own + competitors)", and where we show competitor scan results
+
+Let me gather a bit more detail on the codebase so the plan is accurate—scans table structure, how domain is stored, and how project domain summary works.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/scans.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "listDomainScanSummaries|getDomainScan",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "listDomainScanSummaries|getDomainScan",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 75,
+  "totalMatches": 355,
+  "topFiles": [
+    {
+      "uri": "./.specstory/history/2026-03-13_16-22Z-css-style-changes-for-forwardref-component.md",
+      "matchCount": 18
+    },
+    {
+      "uri": "./app/api/projects/[id]/domain-summary/route.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/api/projects/[id]/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/api/scan/domain/[id]/summary/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/api/scan/domain/[id]/journey/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/api/scan/domain/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/api/scan/domain/[id]/summarize/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 25
+    },
+    {
+      "uri": "./app/api/scan/domain/[id]/status/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/api/share/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./lib/cache.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "./lib/db/scans.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "./app/api/share/[token]/pages/[pageId]/screenshot/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./.specstory/history/2026-02-27_20-37Z-checkion-project-improvement-opportunities.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./lib/store.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-03-13_16-22Z-css-style-changes-for-forwardref-component.md",
+      "matchCount": 18
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/domain-summary/route.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/api/scan/domain/[id]/summary/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/api/scan/domain/[id]/journey/route.ts",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to see the full listDomainScanSummaries and how it filters by projectId, and whether we can also query by domain. Then I'll design the project_domain_scan_references table and the flow.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/scans.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/domain/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I have a clear picture:
+
+1. **domain_scans**: id, userId, projectId, domain, status, timestamp, payload. Currently "own" project scan is stored with projectId set. Competitor scans would be standalone (projectId = null) and we reference them from the project via a new table.
+
+2. **Requirement**: Competitor deep scans are **standalone** (eigenständige Scans) — i.e. domain_scans rows with projectId = null (or optionally no projectId), and we **reference** them from the project. So we need a table that says "project P uses domain_scan D for domain X with role 'own'|'competitor'".
+
+3. **Deduplication**: When we need a scan for domain X (e.g. competitor.com), we first look up "latest completed domain_scan for this userId and normalized domain". If found (and maybe not too old), we don't create a new scan; we only create a **reference** from the project to that existing scan. If not found, we create a new domain_scan (standalone, no projectId) and then add the reference.
+
+4. **Own domain**: Currently the "own" scan is the one with projectId = project.id. We have two options:
+   - **Option A**: Keep current behavior for "own" — one domain_scan per project with projectId set; "latest" for project = that one. References table only stores competitor references (domain -> scanId).
+   - **Option B**: Move own to references too: project has references (domain -> scanId, role=own) and (domain -> scanId, role=competitor). Then domain_scans for "own" could also be standalone (projectId = null) and we just reference them. That would allow reusing own-domain scan across projects if same domain in two projects (unusual but consistent).
+
+   User said "competitors as standalone scans and then reference". So for **competitors** we definitely do standalone + reference. For **own** we can keep current (projectId on domain_scan) for simplicity, or unify. I'll go with: **own** stays as today (domain_scan with projectId, so "latest for project" = listDomainScanSummaries(projectId, limit 1)). **Competitors**: standalone domain_scans (projectId = null), referenced by a new table project_domain_scan_references(project_id, domain, domain_scan_id, role = 'competitor'). So we only store references for competitors; own is still the single "project scan" via projectId.
+
+   Actually re-reading the user message: "die deep scans der competitors eigentlich als eigenständige scans haben und darauf dann referenzieren". So competitors = standalone scans, reference from project. They didn't say "own" must be standalone too. So:
+   - Own: keep current (domain_scan with projectId = projectId when started from project; "restart" = new scan with same projectId).
+   - Competitors: create domain_scans **without** projectId (or with projectId null). Store in project_domain_scan_references(project_id, domain, domain_scan_id) so the project "points to" which scan to use for each competitor domain.
+
+5. **Lookup by domain**: We need getLatestCompletedDomainScanByDomain(userId, domain) that returns the latest domain_scan where domain matches (normalized) and status = 'complete'. For competitor scans we create them without projectId, so we need to query by userId + domain (+ status complete).
+
+6. **Flow "Scan all (own + competitors)"**:
+   - Own: POST /api/scan/domain with url=project.domain, projectId=project.id → new scan (or just "restart" button for own only).
+   - For each competitor domain: normalize domain; getLatestCompletedDomainScanByDomain(userId, domain). If exists (and maybe not older than 30 days?), add/update project_domain_scan_references(project_id, domain, that_scan_id). If not, POST /api/scan/domain with url=competitor_url, projectId=null → new scan; when created, add project_domain_scan_references(project_id, domain, new_scan_id). But the scan runs async, so we add the reference when the scan is **created** (so we have the id), and the UI can show "pending" until complete. So: add reference with new scan_id immediately; scan runs in background.
+
+7. **API for "project domain summary" (current)** returns latest **own** scan. We need to extend or add API to return:
+   - Own: as today (latest domain_scan with projectId = this project).
+   - Competitors: for each project.competitors, get project_domain_scan_references(project_id, domain) → domain_scan_id; load that scan's summary. So we need an API that returns { own: { scanId, score, ... }, competitors: { [domain]: { scanId, score, ... } } }.
+
+8. **UI**: 
+   - Button "Deep Scan neu starten" (own only): POST /api/scan/domain with project.domain, projectId; redirect to /domain/[id].
+   - Button "Deep Scan für alle starten" (own + competitors): call new endpoint POST /api/projects/[id]/domain-scan-all which: for own, starts scan with projectId; for each competitor, resolve or create scan and add reference; return { ownScanId, competitorScanIds: { domain: scanId } }. Frontend can redirect to own scan or show a list of links.
+   - Project overview (and maybe WCAG): show own score; show competitor scores (from referenced scans). So we need to load references and then load each referenced scan's summary.
+
+Let me also check: when we create a competitor scan, do we set projectId on domain_scan? User said "eigenständige scans" — so I'll set projectId = null for competitor scans. So they're truly standalone. The link to the project is only via project_domain_scan_references.
+
+Now write the plan.
+</details></think>
+
+---
+
+
+Struktur geklärt. Plan erstellen.
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="create_plan">
+<details>
+<summary>Tool use: **create_plan**</summary>
+
+
+Parameters:
+
+```json
+{
+  "plan": "# Competitor Deep Scans als eigenständige Scans mit Referenzen\n\n## Ziel\n\n- **Eigene Domain:** Unverändert ein Domain-Scan mit &#96;projectId&#96; („letzter Scan des Projekts“).\n- **Competitors:** Eigenständige Domain-Scans (ohne &#96;projectId&#96;), auf die das Projekt nur **referenziert**. Dieselbe Competitor-Domain wird pro User nur einmal gescannt und über Referenzen in mehreren Projekten genutzt.\n\n## Architektur (Datenmodell)\n\n&#96;&#96;&#96;mermaid\nflowchart LR\n  subgraph projects [Projekt]\n    P[projects]\n  end\n  subgraph scans [Domain-Scans]\n    D_own[domain_scans own]\n    D_c1[domain_scans competitor 1]\n    D_c2[domain_scans competitor 2]\n  end\n  subgraph refs [Referenzen]\n    R[project_domain_scan_references]\n  end\n  P --&gt;|projectId| D_own\n  P --&gt;|project_id + domain -&gt; scan_id| R\n  R --&gt;|domain_scan_id| D_c1\n  R --&gt;|domain_scan_id| D_c2\n&#96;&#96;&#96;\n\n- **domain_scans:** Eigen-Scan: &#96;projectId = Projekt&#96;. Competitor-Scans: &#96;projectId = null&#96;, &#96;domain = competitor.com&#96;.\n- **project_domain_scan_references (neu):** Verknüpft Projekt mit einem konkreten Domain-Scan pro Competitor-Domain; eigener Scan wird weiterhin nur über &#96;projectId&#96; gefunden.\n\n## 1. Datenbank: Referenztabelle + Lookup nach Domain\n\n**Neue Tabelle** &#96;project_domain_scan_references&#96; in [lib/db/schema.ts](lib/db/schema.ts):\n\n- &#96;project_id&#96; (FK → projects.id, onDelete cascade)\n- &#96;domain&#96; (text, normalisierter Hostname z. B. &#96;competitor.com&#96;)\n- &#96;domain_scan_id&#96; (FK → domain_scans.id, onDelete cascade)\n- Primary Key &#96;(project_id, domain)&#96; damit pro Projekt pro Domain genau eine Referenz\n- Optional: &#96;created_at&#96; für Anzeige\n\n**Migration:** Neue Datei unter &#96;lib/db/migrations/&#96; (z. B. &#96;0010_project_domain_scan_references.sql&#96;).\n\n**Domain-Normalisierung:** Zentrale Hilfsfunktion (z. B. in [lib/db/scans.ts](lib/db/scans.ts) oder neues &#96;lib/domain-normalize.ts&#96;): aus URL/String einen einheitlichen Hostname erzeugen (z. B. &#96;new URL(url).hostname&#96; mit Fallback für strings ohne Protokoll), damit gleiche Domain nicht doppelt vorkommt.\n\n**Neue DB-Funktionen** in [lib/db/scans.ts](lib/db/scans.ts) (oder eigenes Modul &#96;lib/db/project-domain-references.ts&#96;):\n\n- &#96;getLatestCompletedDomainScanByDomain(userId: string, normalizedDomain: string): Promise&lt;{ id: string; ... } | null&gt;&#96;  \n  - Query auf &#96;domain_scans&#96;: &#96;userId&#96;, &#96;domain&#96; = normalizedDomain, &#96;status = 'complete'&#96;, sortiert nach &#96;timestamp desc&#96;, limit 1.  \n  - Ggf. optionaler Parameter „maxAgeDays“: nur Scans neuer als X Tage berücksichtigen.\n\n- &#96;upsertProjectDomainScanReference(projectId: string, domain: string, domainScanId: string): Promise&lt;void&gt;&#96;  \n  - INSERT … ON CONFLICT (project_id, domain) DO UPDATE SET domain_scan_id = EXCLUDED.domain_scan_id (Drizzle: &#96;onConflictDoUpdate&#96;).\n\n- &#96;getProjectDomainScanReferences(projectId: string): Promise&lt;Array&lt;{ domain: string; domainScanId: string }&gt;&gt;&#96;  \n  - Alle Referenzen für ein Projekt lesen (für Anzeige Competitor-Scans).\n\n## 2. API: Domain-Scan nach Domain finden / anlegen (Deduplizierung)\n\n**Option A – Erweiterung POST &#96;/api/scan/domain&#96;:**  \nBody um optionales Flag erweitern, z. B. &#96;useExistingIfRecent?: boolean&#96; (und optional &#96;maxAgeDays&#96;).  \nWenn gesetzt: zuerst &#96;getLatestCompletedDomainScanByDomain(userId, normalizedDomain)&#96; aufrufen; wenn vorhanden (und frisch genug), **keinen** neuen Scan anlegen, sondern sofort &#96;{ id: existingId, reused: true }&#96; zurückgeben. Sonst wie bisher neuen Scan anlegen.\n\n**Option B – Neuer Endpoint GET &#96;/api/scan/domain/by-domain?domain=...&#96;:**  \nGibt für den aktuellen User den neuesten abgeschlossenen Scan für diese Domain zurück (scanId + Kurz-Summary).  \n„Scan alle“-Endpoint nutzt diesen Lookup und ruft nur bei fehlendem Ergebnis POST &#96;/api/scan/domain&#96; auf.\n\nEmpfehlung: **Option B** (klare Trennung Lookup vs. Anlegen); „Scan alle“ orchestriert beides.\n\n## 3. API: „Scan alle“ (eigen + Competitors)\n\n**Neuer Endpoint** &#96;POST /api/projects/[id]/domain-scan-all&#96; in z. B. [app/api/projects/[id]/domain-scan-all/route.ts](app/api/projects/[id]/domain-scan-all/route.ts):\n\n1. Projekt laden (inkl. &#96;domain&#96;, &#96;competitors&#96;); Auth + Projekt-Zugehörigkeit prüfen.\n2. **Eigene Domain (falls gesetzt):**  \n   Wie bisher einen neuen Domain-Scan mit &#96;projectId = project.id&#96; starten (POST-Logik inline oder Aufruf der bestehenden Scan-Erstellung aus [app/api/scan/domain/route.ts](app/api/scan/domain/route.ts)). Response-Teil: &#96;own: { scanId, status: 'started' }&#96;.\n3. **Pro Competitor-Domain (normalisiert):**  \n   - &#96;getLatestCompletedDomainScanByDomain(userId, normalizedDomain)&#96; aufrufen.  \n   - Wenn vorhanden (optional: und nicht älter als X Tage): nur Referenz setzen: &#96;upsertProjectDomainScanReference(projectId, domain, existingScanId)&#96;.  \n   - Wenn nicht vorhanden: neuen Domain-Scan anlegen (**ohne** &#96;projectId&#96;), danach &#96;upsertProjectDomainScanReference(projectId, domain, newScanId)&#96;. Scan läuft asynchron wie heute.\n4. Response: z. B. &#96;{ own: { scanId }, competitors: { [domain]: { scanId, reused?: boolean } } }&#96;.\n\nRate-Limiting und Nutzungs-Limits (z. B. max. N Competitors pro Aufruf) berücksichtigen.\n\n## 4. API: Projekt-Domain-Übersicht (eigen + Competitors) für UI\n\n**Erweiterung** von &#96;GET /api/projects/[id]/domain-summary&#96; **oder** neuer Endpoint &#96;GET /api/projects/[id]/domain-summary-all&#96;:\n\n- **Eigen:** Wie bisher: neuester Domain-Scan mit &#96;projectId = project.id&#96; (bestehende Logik aus [app/api/projects/[id]/domain-summary/route.ts](app/api/projects/[id]/domain-summary/route.ts)), liefert &#96;scanId&#96;, &#96;score&#96;, &#96;totalPageCount&#96;, &#96;aggregated&#96; (performance, eco, issues für WCAG).\n- **Competitors:** &#96;getProjectDomainScanReferences(projectId)&#96; → für jede Referenz &#96;domain_scan_id&#96; die Summary laden (z. B. &#96;getDomainScanWithProjectId&#96;-Ergebnis + &#96;buildDomainSummary&#96;), keyed by domain.  \n  Fehlende oder fehlgeschlagene Scans (status != complete) als &#96;null&#96; oder &#96;{ status: 'pending'|'error' }&#96; zurückgeben.\n\nAntwortstruktur z. B. &#96;{ own: { scanId, score, ... }, competitors: { [domain]: { scanId, score, ... } | null } }&#96;.  \nSo kann die Projektseite und ggf. die WCAG-Seite eigen vs. Competitors vergleichen (Scores, Links zu &#96;/domain/[id]&#96;).\n\n## 5. Frontend: Projektseite (Overview)\n\n**Ort:** [app/projects/[id]/page.tsx](app/projects/[id]/page.tsx), Domain-Score-Karte (MsqdxMoleculeCard mit „Deep Scan öffnen“).\n\n- **Button „Deep Scan öffnen“:** Bleibt Link zu &#96;pathDomain(domainSummary.scanId)&#96; (nur anzeigen wenn &#96;domainSummary?.scanId&#96;).\n- **Neuer Button „Deep Scan neu starten“:**  \n  Nur anzeigen wenn Projekt-Domain gesetzt. OnClick: POST &#96;/api/scan/domain&#96; mit &#96;{ url: project.domain, projectId: id }&#96;, Response &#96;data.id&#96; → &#96;router.push(pathDomain(data.id))&#96;. Loading-State und Fehlerbehandlung (z. B. „Keine Domain konfiguriert“).\n- **Optional (später oder in gleichem Schritt):** Button „Deep Scan für alle starten“ (eigen + Competitors): POST &#96;/api/projects/[id]/domain-scan-all&#96;, dann z. B. zu eigenem Scan weiterleiten oder kurze Bestätigung + Hinweis auf Background-Scans; Liste der Competitor-Scans kann über die erweiterte domain-summary-all angezeigt werden.\n\n**i18n:** Neue Keys z. B. &#96;projects.restartDeepScan&#96;, &#96;projects.scanAllDeepScan&#96; in [locales/de.json](locales/de.json) und [locales/en.json](locales/en.json).\n\n## 6. Frontend: Anzeige Competitor-Scans (Vergleich)\n\n- **Projekt-Overview:** Wenn API &#96;domain-summary-all&#96; (oder erweiterte domain-summary) Competitor-Summaries liefert: unter oder neben der eigenen Domain-Score-Karte eine kompakte Liste/Zeile „Competitors“ mit Domain + Score + Link „Deep Scan öffnen“ (&#96;pathDomain(scanId)&#96;) pro Eintrag. Nur anzeigen wenn mindestens ein Competitor-Scan vorhanden ist.\n- **WCAG-Seite:** Optional gleiche Logik: eigenes WCAG-Summary wie heute; Competitors als weitere Karten/Zeilen mit Score und Link zum jeweiligen &#96;/domain/[id]&#96; (nutzt bestehende Domain-Summary/WCAG-Daten pro scanId).\n\nKonkrete UI-Platzierung (eine Zeile unter der Score-Karte vs. eigene Sektion „Competitor-Vergleich“) kann im Implementierungsschritt festgelegt werden.\n\n## 7. Konstanten und Pfade\n\n- In [lib/constants.ts](lib/constants.ts): z. B. &#96;apiProjectDomainScanAll(id)&#96; (POST), &#96;apiProjectDomainSummaryAll(id)&#96; (GET), falls als separate Routen umgesetzt.\n- Domain-Normalisierung zentral (eine Funktion), von API und ggf. Frontend (vor dem Senden) genutzt, damit überall dieselbe Normalisierung gilt.\n\n## 8. Zusammenfassung der Änderungen\n\n| Bereich | Änderung |\n|--------|----------|\n| DB Schema | Neue Tabelle &#96;project_domain_scan_references(project_id, domain, domain_scan_id)&#96; + Migration |\n| DB / Scans | Domain-Normalisierung; &#96;getLatestCompletedDomainScanByDomain&#96;; &#96;upsertProjectDomainScanReference&#96;; &#96;getProjectDomainScanReferences&#96; |\n| API | GET &#96;/api/scan/domain/by-domain?domain=...&#96; (optional); POST &#96;/api/projects/[id]/domain-scan-all&#96;; erweiterte domain-summary (own + competitors) oder GET &#96;domain-summary-all&#96; |\n| Projektseite | Button „Deep Scan neu starten“ (eigen); optional „Deep Scan für alle starten“; Anzeige Competitor-Scans (Scores + Links) |\n| i18n | Keys für neue Buttons und ggf. „Competitor-Vergleich“ |\n\nEigenständige Competitor-Scans haben bewusst **kein** &#96;projectId&#96;; die Zuordnung zum Projekt erfolgt ausschließlich über &#96;project_domain_scan_references&#96;. So können mehrere Projekte denselben Scan für dieselbe Competitor-Domain referenzieren, ohne Duplikate.\n",
+  "name": "Competitor Deep Scans Referenzen",
+  "overview": "Competitor-Deep-Scans als eigenständige Domain-Scans (ohne projectId) persistieren und über eine Referenztabelle dem Projekt zuordnen; eigene Domain bleibt wie bisher (ein Scan pro Projekt mit projectId). Zusätzlich: Button „Deep Scan neu starten“ (eigen) und „Alle scannen“ (eigen + Competitors) mit Deduplizierung nach Domain."
+}
+```
+Additional data:
+
+```json
+{
+  "reviewData": {
+    "status": "Requested",
+    "selectedOption": "none",
+    "isShowingInput": false
+  },
+  "planUri": "file:///Users/christoph.bordeck/.cursor/plans/competitor_deep_scans_referenzen_fa7a91cb.plan.md",
+  "hasOpenedEditor": true
+}
+```
+Result:
+
+```json
+{
+  "rejected": {}
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+_**User**_
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants me to implement the plan for "Competitor Deep Scans als eigenständige Scans mit Referenzen". Let me first read the plan file to see the todos and then implement step by step.
+
+From the attached plan:
+1. DB Schema: New table project_domain_scan_references + migration
+2. DB / Scans: Domain normalization; getLatestCompletedDomainScanByDomain; upsertProjectDomainScanReference; getProjectDomainScanReferences
+3. API: GET /api/scan/domain/by-domain (optional); POST /api/projects/[id]/domain-scan-all; extended domain-summary (own + competitors) or GET domain-summary-all
+4. Project page: Button "Deep Scan neu starten"; optional "Deep Scan für alle starten"; Display competitor scans (scores + links)
+5. i18n: Keys for new buttons
+
+The plan says "To-do's from the plan have already been created" - I need to find them. Let me read the plan file to see the todos in the frontmatter - it said "todos: []" in the attached content. So maybe the user created todos elsewhere. I'll proceed with the implementation and mark progress as I go.
+
+I'll start with:
+1. Domain normalization utility
+2. DB schema + migration for project_domain_scan_references
+3. DB functions: getLatestCompletedDomainScanByDomain, upsertProjectDomainScanReference, getProjectDomainScanReferences
+4. API GET /api/scan/domain/by-domain (optional per plan - I'll implement it since it's used by scan-all)
+5. API POST /api/projects/[id]/domain-scan-all
+6. API GET /api/projects/[id]/domain-summary-all (or extend domain-summary)
+7. Frontend: buttons + competitor display
+8. i18n
+
+Let me start by checking if there are existing todos in the plan file and then implement.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/.cursor/plans/competitor_deep_scans_referenzen_fa7a91cb.plan.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **10** results in **1** directory</summary>
+
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1** (10 files)
+
+| File |
+|------|
+| `lib/db/migrations/0009_project_value_proposition.sql` |
+| `lib/db/migrations/0008_project_geo_queries.sql` |
+| `lib/db/migrations/0007_project_competitors_and_position_competitors.sql` |
+| `lib/db/migrations/0006_rank_tracking_language.sql` |
+| `lib/db/migrations/0005_rank_tracking.sql` |
+| `lib/db/migrations/0004_drop_user_id_fk_for_plexon.sql` |
+| `lib/db/migrations/0003_api_tokens.sql` |
+| `lib/db/migrations/0002_projects.sql` |
+| `lib/db/migrations/0001_geo_eeat_runs.sql` |
+| `lib/db/migrations/0000_add_llm_summary.sql` |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The plan says todos were already created but the frontmatter shows todos: []. I'll create a todo list for tracking and implement everything. Let me start:
+
+1. Domain normalization + DB schema + migration
+2. DB functions (getLatestCompletedDomainScanByDomain, upsertProjectDomainScanReference, getProjectDomainScanReferences)
+3. API by-domain, domain-scan-all, domain-summary-all
+4. Frontend buttons + competitor display + i18n
+
+I'll add the schema, migration, then the lib for domain normalize and project-domain-references (or add to scans.ts). Then APIs, then frontend.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] DB: schema + migration project_domain_scan_references
+- [ ] Domain normalize + DB functions (getLatestByDomain, upsertRef, getRefs)
+- [ ] API GET by-domain, POST domain-scan-all, GET domain-summary-all
+- [ ] Frontend: Deep Scan neu starten + Scan alle + Competitor-Anzeige
+- [ ] i18n keys + constants
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/migrations/0009_project_value_proposition.sql</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Adding the new table to schema and creating the migration. domain_scans has a reference from domain_scans.id - so when we delete a domain_scan, we want references to cascade or set null? Plan says "onDelete cascade" for domain_scan_id - so if the scan is deleted, the reference row is deleted. That's correct.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/migrations/0010_project_domain_scan_references.sql</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Error parsing todo list data</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-normalize.ts</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/project-domain-references.ts</summary>
+
+Status: **loading**
+
+</details>
+
 </tool-use>
 
 ---

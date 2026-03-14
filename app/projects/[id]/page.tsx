@@ -16,7 +16,9 @@ import {
     apiProjectSuggestCompetitors,
     apiProjectRankingSummary,
     apiProjectGeoSummary,
-    apiProjectDomainSummary,
+    apiProjectDomainSummaryAll,
+    apiProjectDomainScanAll,
+    apiScanDomainCreate,
     pathDomain,
     pathGeoEeat,
     pathProjectRankings,
@@ -67,6 +69,9 @@ export default function ProjectDetailPage() {
     const [rankingSummary, setRankingSummary] = useState<RankingSummaryData | null>(null);
     const [geoSummary, setGeoSummary] = useState<GeoSummaryData | null>(null);
     const [domainSummary, setDomainSummary] = useState<DomainSummaryData | null>(null);
+    const [domainSummaryAllCompetitors, setDomainSummaryAllCompetitors] = useState<Record<string, { scanId: string; score: number; totalPageCount: number; status: string } | null>>({});
+    const [restartDeepScanLoading, setRestartDeepScanLoading] = useState(false);
+    const [scanAllDeepScanLoading, setScanAllDeepScanLoading] = useState(false);
     const [listsLoading, setListsLoading] = useState(false);
     const [addCompetitorValue, setAddCompetitorValue] = useState('');
     const [suggestCompetitorsLoading, setSuggestCompetitorsLoading] = useState(false);
@@ -183,9 +188,9 @@ export default function ProjectDetailPage() {
         Promise.all([
             fetch(apiProjectRankingSummary(id), { credentials: 'same-origin' }).then((r) => r.json()),
             fetch(apiProjectGeoSummary(id), { credentials: 'same-origin' }).then((r) => r.json()),
-            fetch(apiProjectDomainSummary(id), { credentials: 'same-origin' }).then((r) => r.json()),
+            fetch(apiProjectDomainSummaryAll(id), { credentials: 'same-origin' }).then((r) => r.json()),
         ])
-            .then(([rankSummaryRes, geoSummaryRes, domainSummaryRes]) => {
+            .then(([rankSummaryRes, geoSummaryRes, domainSummaryAllRes]) => {
                 if (rankSummaryRes?.success && rankSummaryRes?.data) {
                     setRankingSummary(rankSummaryRes.data as RankingSummaryData);
                 } else {
@@ -196,19 +201,80 @@ export default function ProjectDetailPage() {
                 } else {
                     setGeoSummary(null);
                 }
-                if (domainSummaryRes?.success && domainSummaryRes?.data) {
-                    setDomainSummary(domainSummaryRes.data as DomainSummaryData);
+                if (domainSummaryAllRes?.success && domainSummaryAllRes?.data) {
+                    const d = domainSummaryAllRes.data as { own: DomainSummaryData | null; competitors: Record<string, { scanId: string; score: number; totalPageCount: number; status: string } | null> };
+                    setDomainSummary(d.own ?? null);
+                    setDomainSummaryAllCompetitors(d.competitors ?? {});
                 } else {
                     setDomainSummary(null);
+                    setDomainSummaryAllCompetitors({});
                 }
             })
             .catch(() => {
                 setRankingSummary(null);
                 setGeoSummary(null);
                 setDomainSummary(null);
+                setDomainSummaryAllCompetitors({});
             })
             .finally(() => setListsLoading(false));
     }, [id]);
+
+    const loadDomainSummaryAll = useCallback(async () => {
+        if (!id) return;
+        try {
+            const r = await fetch(apiProjectDomainSummaryAll(id), { credentials: 'same-origin' });
+            const res = await r.json();
+            if (res?.success && res?.data) {
+                const d = res.data as { own: DomainSummaryData | null; competitors: Record<string, { scanId: string; score: number; totalPageCount: number; status: string } | null> };
+                setDomainSummary(d.own ?? null);
+                setDomainSummaryAllCompetitors(d.competitors ?? {});
+            }
+        } catch {
+            // ignore
+        }
+    }, [id]);
+
+    const handleRestartDeepScan = useCallback(async () => {
+        if (!id || !project?.domain) return;
+        setRestartDeepScanLoading(true);
+        try {
+            const r = await fetch(apiScanDomainCreate, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ url: project.domain, projectId: id }),
+            });
+            const data = await r.json();
+            if (data?.success && data?.data?.id) {
+                router.push(pathDomain(data.data.id));
+                return;
+            }
+        } catch {
+            // ignore
+        } finally {
+            setRestartDeepScanLoading(false);
+        }
+    }, [id, project?.domain, router]);
+
+    const handleScanAllDeepScan = useCallback(async () => {
+        if (!id) return;
+        setScanAllDeepScanLoading(true);
+        try {
+            const r = await fetch(apiProjectDomainScanAll(id), {
+                method: 'POST',
+                credentials: 'same-origin',
+            });
+            const data = await r.json();
+            if (data?.success) {
+                await loadDomainSummaryAll();
+                if (data?.data?.own?.scanId) router.push(pathDomain(data.data.own.scanId));
+            }
+        } catch {
+            // ignore
+        } finally {
+            setScanAllDeepScanLoading(false);
+        }
+    }, [id, loadDomainSummaryAll, router]);
 
     if (!id) {
         return (
@@ -370,13 +436,35 @@ export default function ProjectDetailPage() {
                     sx={{ gridColumn: { xs: 1, md: 2 }, gridRow: { xs: 4, md: 2 }, bgcolor: 'var(--color-card-bg)' }}
                     headerActions={<InfoTooltip title={t('info.domainScore')} ariaLabel={t('common.info')} />}
                     actions={
-                        domainSummary?.scanId ? (
-                            <Link href={pathDomain(domainSummary.scanId)} style={{ textDecoration: 'none' }}>
-                                <MsqdxButton variant="outlined" size="small">
-                                    {t('projects.open')}
+                        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                            {domainSummary?.scanId && (
+                                <Link href={pathDomain(domainSummary.scanId)} style={{ textDecoration: 'none' }}>
+                                    <MsqdxButton variant="outlined" size="small">
+                                        {t('projects.open')}
+                                    </MsqdxButton>
+                                </Link>
+                            )}
+                            {project?.domain && (
+                                <MsqdxButton
+                                    variant="outlined"
+                                    size="small"
+                                    onClick={handleRestartDeepScan}
+                                    disabled={restartDeepScanLoading}
+                                >
+                                    {restartDeepScanLoading ? t('common.loading') : t('projects.restartDeepScan')}
                                 </MsqdxButton>
-                            </Link>
-                        ) : null
+                            )}
+                            {(project?.domain || (competitors.length > 0)) && (
+                                <MsqdxButton
+                                    variant="outlined"
+                                    size="small"
+                                    onClick={handleScanAllDeepScan}
+                                    disabled={scanAllDeepScanLoading}
+                                >
+                                    {scanAllDeepScanLoading ? t('common.loading') : t('projects.scanAllDeepScan')}
+                                </MsqdxButton>
+                            )}
+                        </Box>
                     }
                 >
                     {listsLoading ? (
@@ -403,6 +491,27 @@ export default function ProjectDetailPage() {
                                     {domainSummary.totalPageCount} {t('domainResult.pagesScanned')}
                                 </MsqdxTypography>
                             </Box>
+                            {Object.keys(domainSummaryAllCompetitors).length > 0 && (
+                                <Box sx={{ mt: 1.5, width: '100%' }}>
+                                    <MsqdxTypography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
+                                        {t('projects.competitorDeepScans')}
+                                    </MsqdxTypography>
+                                    <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
+                                        {Object.entries(domainSummaryAllCompetitors).map(([domain, comp]) => (
+                                            comp && (
+                                                <Box key={domain} component="li" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 0.25, gap: 0.5 }}>
+                                                    <MsqdxTypography variant="caption" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                        {domain} {comp.status === 'complete' ? `· ${comp.score}` : `· ${comp.status}`}
+                                                    </MsqdxTypography>
+                                                    <MsqdxButton variant="outlined" size="small" onClick={() => router.push(pathDomain(comp.scanId))} sx={{ flexShrink: 0 }}>
+                                                        {t('projects.open')}
+                                                    </MsqdxButton>
+                                                </Box>
+                                            )
+                                        ))}
+                                    </Box>
+                                </Box>
+                            )}
                         </>
                     ) : (
                         <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>

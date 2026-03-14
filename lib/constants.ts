@@ -258,6 +258,12 @@ export const apiProjectRankingSummary = (id: string) => `${API_PROJECTS}/${encod
 export const apiProjectGeoSummary = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/geo-summary`;
 /** GET /api/projects/[id]/domain-summary – latest deep scan summary (score, performance, eco). */
 export const apiProjectDomainSummary = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/domain-summary`;
+/** GET /api/projects/[id]/domain-summary-all – own + competitor domain summaries. */
+export const apiProjectDomainSummaryAll = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/domain-summary-all`;
+/** POST /api/projects/[id]/domain-scan-all – start deep scan for own + all competitors. */
+export const apiProjectDomainScanAll = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/domain-scan-all`;
+/** GET /api/scan/domain/by-domain?domain= – latest completed scan for domain (current user). */
+export const apiScanDomainByDomain = (domain: string) => `${API_SCAN_DOMAIN}/by-domain?domain=${encodeURIComponent(domain)}`;
 /** Build: GET /api/projects/[id]/geo-question-history?limit= */
 export const apiProjectGeoQuestionHistory = (id: string, limit?: number) => {
     const base = `${API_PROJECTS}/${encodeURIComponent(id)}/geo-question-history`;
