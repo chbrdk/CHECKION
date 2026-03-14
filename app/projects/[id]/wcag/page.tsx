@@ -234,7 +234,7 @@ export default function ProjectWcagPage() {
                                 <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600 }}>
                                     {t('projects.wcag.pagesWithMostErrors')}
                                 </MsqdxTypography>
-                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 2 }}>
+                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
                                     {aggregated.pagesByIssueCount.slice(0, 15).map((row) => {
                                         const page = pagesByUrl.get(row.url);
                                         const issuesForPage = aggregated.issues.filter((i) => i.pageUrls?.includes(row.url));

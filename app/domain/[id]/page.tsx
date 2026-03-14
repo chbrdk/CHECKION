@@ -348,7 +348,7 @@ export default function DomainResultPage() {
                     {aggregated.issues.pagesByIssueCount.some((p) => p.errors > 0 || p.warnings > 0) && (
                         <Box sx={{ mt: 2 }}>
                             <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>Seiten mit den meisten Fehlern (Priorisierung)</MsqdxTypography>
-                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 2 }}>
+                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
                                 {aggregated.issues.pagesByIssueCount.slice(0, 15).map((row) => {
                                     const page = pagesByUrl.get(row.url);
                                     const issuesForPage = aggregated.issues.issues.filter((i) => i.pageUrls?.includes(row.url));

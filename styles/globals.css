@@ -285,6 +285,30 @@ pre {
   padding: var(--msqdx-spacing-md) !important;
 }
 
+/* ========== Scrollbars: light theme globally (for cards, lists, overflow areas) ========== */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f0f0f0;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+*::-webkit-scrollbar-corner {
+  background: #f0f0f0;
+}
+
 /* Journey video: floating MSQDX logomark at intro */
 @keyframes journey-video-float {
   0%, 100% { transform: translateY(0); }

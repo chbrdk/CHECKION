@@ -4,7 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { Box, alpha } from '@mui/material';
 import { MsqdxTypography, MsqdxChip, MsqdxButton } from '@msqdx/react';
 import { MSQDX_NEUTRAL, MSQDX_STATUS, MSQDX_BRAND_PRIMARY, MSQDX_THEME } from '@msqdx/tokens';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import type { AggregatedIssue } from '@/lib/domain-aggregation';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { DOMAIN_ISSUES_TABLE_PAGE_SIZE } from '@/lib/constants';
@@ -17,8 +17,8 @@ const SEVERITY_CONFIG: Record<string, { label: string; color: string }> = {
 
 const tableBorder = `1px solid ${MSQDX_NEUTRAL[200]}`;
 
-/** Severity narrow; Pages + Fix docs wider. */
-const GRID_COLUMNS = '70px minmax(120px, 1.2fr) 80px 72px minmax(0, 1fr) 92px 112px';
+/** Severity narrow; Pages wider; Fix = icon only. */
+const GRID_COLUMNS = '70px minmax(120px, 1.2fr) 80px 72px minmax(0, 1fr) 92px 48px';
 
 type SortKey = 'severity' | 'message' | 'level' | 'runner' | 'code' | 'pageCount';
 type SortDir = 'asc' | 'desc';
@@ -233,16 +233,24 @@ sx={{ ml: 0.5, cursor: 'pointer', color: MSQDX_BRAND_PRIMARY.green, textDecorati
                     </MsqdxTypography>
               )}
                 </Box>
-                <Box sx={{ px: 0.75, py: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                <Box sx={{ px: 0.5, py: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {issue.helpUrl && (
                     <a
                       href={issue.helpUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label={t('results.fixDocsAria')}
-                      style={{ fontSize: '0.65rem', color: MSQDX_BRAND_PRIMARY.green, textDecoration: 'underline' }}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: MSQDX_BRAND_PRIMARY.green,
+                        padding: 4,
+                        borderRadius: 4,
+                      }}
+                      className="fix-docs-link"
                     >
-                      {t('results.fixDocs')} →
+                      <ExternalLink size={16} strokeWidth={2} />
                     </a>
                   )}
                 </Box>
