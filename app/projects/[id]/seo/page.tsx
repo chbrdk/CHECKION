@@ -31,6 +31,20 @@ import { SeoOnPageTable, type SeoOnPageRow } from '@/components/SeoOnPageTable';
 /** Cache per project id so remount (e.g. tab switch) shows last data immediately and avoids flicker. */
 const seoSummaryCache = new Map<string, { scanId: string; fullSummary: DomainSummaryResponse }>();
 
+function isFlickerDebugEnabled(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (process.env.NODE_ENV === 'development') return true;
+  if (process.env.NEXT_PUBLIC_DEBUG_SEO_FLICKER === '1') return true;
+  try {
+    return window.localStorage?.getItem('DEBUG_SEO_FLICKER') === '1';
+  } catch {
+    return false;
+  }
+}
+function debugLog(label: string, data: Record<string, unknown>) {
+  if (isFlickerDebugEnabled()) console.log(`[SEO flicker] ${label}`, data);
+}
+
 export default function ProjectSeoPage() {
     const params = useParams();
     const router = useRouter();
@@ -44,26 +58,21 @@ export default function ProjectSeoPage() {
     const [fullSummary, setFullSummary] = useState<DomainSummaryResponse | null>(() => (id ? seoSummaryCache.get(id)?.fullSummary ?? null : null));
     const fetchedForIdRef = useFetchOnceForId();
 
-    // #region agent log
-    const _logPrev = useRef<{ fullSummaryNull: boolean; count: number }>({ fullSummaryNull: true, count: 0 });
-    _logPrev.current.count += 1;
-    const fullSummaryNull = fullSummary == null;
-    const changed = _logPrev.current.fullSummaryNull !== fullSummaryNull;
-    _logPrev.current.fullSummaryNull = fullSummaryNull;
-    if (typeof window !== 'undefined' && (changed || _logPrev.current.count <= 3)) {
-        const cacheHas = id ? seoSummaryCache.has(id) : false;
-        fetch('http://127.0.0.1:7902/ingest/bbc31d13-f45c-46d1-93ab-b989a1d926fc',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cafcc0'},body:JSON.stringify({sessionId:'cafcc0',location:'seo/page.tsx:render',message:'render',data:{renderCount:_logPrev.current.count,id:id??'null',fullSummaryNull,cacheHas,changed},timestamp:Date.now(),hypothesisId:'F1',runId:'seo-render'})}).catch(()=>{});
+    const prevFullNull = useRef<boolean | null>(null);
+    const renderCount = useRef(0);
+    renderCount.current += 1;
+    const fullNull = fullSummary == null;
+    if (isFlickerDebugEnabled() && (prevFullNull.current !== fullNull || renderCount.current <= 4)) {
+        debugLog('render', { render: renderCount.current, id: id ?? 'null', fullSummaryNull: fullNull, cacheHas: id ? seoSummaryCache.has(id) : false });
+        prevFullNull.current = fullNull;
     }
-    // #endregion
 
     useEffect(() => {
         if (!id) return;
         if (fetchedForIdRef.current === id) return;
         fetchedForIdRef.current = id;
         const cached = seoSummaryCache.get(id);
-        // #region agent log
-        if (typeof window !== 'undefined') fetch('http://127.0.0.1:7902/ingest/bbc31d13-f45c-46d1-93ab-b989a1d926fc',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cafcc0'},body:JSON.stringify({sessionId:'cafcc0',location:'seo/page.tsx:effect',message:'effect',data:{id,hasCached:!!cached},timestamp:Date.now(),hypothesisId:'F2',runId:'seo-effect'})}).catch(()=>{});
-        // #endregion
+        debugLog('effect', { id, hasCached: !!cached });
         if (cached) {
             setScanId(cached.scanId);
             setFullSummary(cached.fullSummary);
@@ -97,6 +106,7 @@ export default function ProjectSeoPage() {
                         .then((r) => (r.ok ? r.json() : null))
                         .then((payload: DomainSummaryResponse | null) => {
                             if (!signal.aborted && payload) {
+                                debugLog('setFullSummary', { id, aborted: signal.aborted });
                                 setFullSummary(payload);
                                 seoSummaryCache.set(id, { scanId: sid, fullSummary: payload });
                             }
