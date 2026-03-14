@@ -295,7 +295,7 @@ function SeoOnPageTableInner({
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, isolation: 'isolate' }}>
       <Box
         ref={containerRef}
         sx={{
@@ -321,7 +321,8 @@ function SeoOnPageTableInner({
               minHeight: 32,
               position: 'sticky',
               top: 0,
-              zIndex: 1,
+              zIndex: 2,
+              isolation: 'isolate',
             }}
           >
             <SortHeaderCell id="url" label={t('projects.seo.tableUrl')} active={sortKey === 'url'} sortDir={sortDir} onSort={handleSort} />

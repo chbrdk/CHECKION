@@ -33,3 +33,9 @@
 ## Zentrale Konstanten
 
 - Seitengröße Tabelle: `DOMAIN_ISSUES_TABLE_PAGE_SIZE` (z. B. 50).
+
+## Debug-Log-Auswertung (Session cafcc0)
+
+- **H1 (exzessive Re-Renders):** Verworfen. SEO-Seite nur 2 Renders (ohne/mit Daten), Tabelle 1 Render. Kein Runaway.
+- **H2 (Viewport löst Re-Renders aus):** Unklar; Viewport-Event einmal, kein setState im Observer.
+- **Folgerung:** Slowness/Überlagerung kommen in der erfassten Session nicht von Re-Render-Stürmen. Maßnahmen: eigener Stacking Context für die Tabelle (`isolation: isolate` am Wrapper + an der Sticky-Header-Zeile), `zIndex: 2` für den Sticky-Header, damit er sauber über dem Body bleibt und nichts überdeckt wird.
