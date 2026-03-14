@@ -18,6 +18,7 @@ import { PageIssuesCard } from '@/components/PageIssuesCard';
 import {
     apiProject,
     apiProjectDomainSummary,
+    apiProjectDomainSummaryAll,
     apiScanDomainSummary,
     pathDomain,
     pathResults,
@@ -39,6 +40,7 @@ export default function ProjectWcagPage() {
     const [scanId, setScanId] = useState<string | null>(null);
     const [summaryLoading, setSummaryLoading] = useState(true);
     const [fullSummary, setFullSummary] = useState<DomainSummaryResponse | null>(null);
+    const [competitorWcagScores, setCompetitorWcagScores] = useState<Record<string, { scanId: string; wcagScore: number; status: string }>>({});
 
     const loadProject = useCallback(async () => {
         if (!id) return;
@@ -64,18 +66,27 @@ export default function ProjectWcagPage() {
         setSummaryLoading(true);
         setScanId(null);
         setFullSummary(null);
-        fetch(apiProjectDomainSummary(id), { credentials: 'same-origin' })
-            .then((r) => r.json())
-            .then((data: { success?: boolean; data?: { scanId?: string } | null }) => {
-                if (data?.success && data?.data?.scanId) {
-                    setScanId(data.data.scanId);
-                    return fetch(apiScanDomainSummary(data.data.scanId), { credentials: 'same-origin' });
+        setCompetitorWcagScores({});
+        Promise.all([
+            fetch(apiProjectDomainSummary(id), { credentials: 'same-origin' }).then((r) => r.json()),
+            fetch(apiProjectDomainSummaryAll(id), { credentials: 'same-origin' }).then((r) => r.json()),
+        ])
+            .then(([domainSummaryRes, summaryAllRes]) => {
+                if (summaryAllRes?.success && summaryAllRes?.data?.competitors) {
+                    const comp: Record<string, { scanId: string; wcagScore: number; status: string }> = {};
+                    for (const [domain, c] of Object.entries(summaryAllRes.data.competitors as Record<string, { scanId: string; wcagScore?: number; status: string } | null>)) {
+                        if (c) comp[domain] = { scanId: c.scanId, wcagScore: c.wcagScore ?? 0, status: c.status };
+                    }
+                    setCompetitorWcagScores(comp);
                 }
-                return null;
-            })
-            .then((r) => (r?.ok ? r.json() : null))
-            .then((payload: DomainSummaryResponse | null) => {
-                if (payload) setFullSummary(payload);
+                if (domainSummaryRes?.success && domainSummaryRes?.data?.scanId) {
+                    setScanId(domainSummaryRes.data.scanId);
+                    return fetch(apiScanDomainSummary(domainSummaryRes.data.scanId), { credentials: 'same-origin' })
+                        .then((r) => (r.ok ? r.json() : null))
+                        .then((payload: DomainSummaryResponse | null) => {
+                            if (payload) setFullSummary(payload);
+                        });
+                }
             })
             .catch(() => {})
             .finally(() => setSummaryLoading(false));
@@ -194,21 +205,47 @@ export default function ProjectWcagPage() {
                                 />
                             }
                         >
-                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, flexWrap: 'wrap', mb: 1.5 }}>
-                                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
-                                    <MsqdxTypography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
-                                        {wcagScore.score}
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'baseline', mb: 1.5 }}>
+                                <Box>
+                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                                        {t('projects.ourScore')}
                                     </MsqdxTypography>
-                                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', fontWeight: 500 }}>
-                                        {t('projects.wcag.score')}
-                                    </MsqdxTypography>
+                                    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                                        <MsqdxTypography variant="h4" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                                            {wcagScore.score}
+                                        </MsqdxTypography>
+                                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', fontWeight: 500 }}>
+                                            {t('projects.wcag.score')}
+                                        </MsqdxTypography>
+                                    </Box>
+                                    <MsqdxChip
+                                        label={t(scoreLabelKey)}
+                                        size="small"
+                                        variant="outlined"
+                                        sx={{ mt: 0.5 }}
+                                    />
                                 </Box>
-                                <MsqdxChip
-                                    label={t(scoreLabelKey)}
-                                    size="small"
-                                    variant="outlined"
-                                    sx={{ alignSelf: 'center' }}
-                                />
+                                {Object.keys(competitorWcagScores).length > 0 && (
+                                    <>
+                                        {Object.entries(competitorWcagScores).map(([domain, c]) => (
+                                            <Box key={domain}>
+                                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                                                    {domain}
+                                                </MsqdxTypography>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                    <MsqdxTypography variant="h4" weight="bold" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                                        {c.status === 'complete' ? `${c.wcagScore}/100` : c.status}
+                                                    </MsqdxTypography>
+                                                    {c.status === 'complete' && (
+                                                        <MsqdxButton variant="outlined" size="small" onClick={() => router.push(pathDomain(c.scanId))}>
+                                                            {t('projects.open')}
+                                                        </MsqdxButton>
+                                                    )}
+                                                </Box>
+                                            </Box>
+                                        ))}
+                                    </>
+                                )}
                             </Box>
                             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1 }}>
                                 <MsqdxChip

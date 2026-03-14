@@ -32838,9 +32838,24 @@ Adding the new table to schema and creating the migration. domain_scans has a re
 
 ---
 
+<think><details><summary>Thought Process</summary>
 
+Schema uses pgTable - I need to add primaryKey. In Drizzle for composite PK we use primaryKey({ columns: [projectId, domain] }). Let me check the schema - I didn't add primaryKey in the table definition. In Drizzle ORM we add it like:
+primaryKey({ columns: [projectDomainScanReferences.projectId, projectDomainScanReferences.domain] })
+or in pgTable we can do it in the table. Let me check drizzle docs - for composite primary key in pgTable we need to add it at the end. So I need to add to the schema:
+}, (table) => ({ pk: primaryKey({ columns: [table.projectId, table.domain] }) }));
+Actually in drizzle-orm/pg-core, pgTable second argument is for constraints. So:
+export const projectDomainScanReferences = pgTable('project_domain_scan_references', {
+  ...
+}, (t) => ({
+  pk: primaryKey({ columns: [t.projectId, t.domain] }),
+}));
+I need to import primaryKey from drizzle-orm/pg-core.
+</details></think>
 
 ---
+
+
 
 
 
@@ -32850,7 +32865,51 @@ Adding the new table to schema and creating the migration. domain_scans has a re
 <details>
 <summary>Tool use: **ripgrep_raw_search**</summary>
 
-Status: **loading**
+
+Parameters:
+
+```json
+{
+  "pattern": "primaryKey|pgTable",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "primaryKey|pgTable",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 130,
+  "topFiles": [
+    {
+      "uri": "lib/db/schema.ts",
+      "matchCount": 26
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/schema.ts",
+      "matchCount": 26
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/schema.ts",
+      "matchCount": 26
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/schema.ts",
+      "matchCount": 26
+    },
+    {
+      "uri": "../CHECKION-1/lib/db/schema.ts",
+      "matchCount": 26
+    }
+  ]
+}
+```
+Status: **completed**
 
 
 </details>
@@ -32858,9 +32917,14 @@ Status: **loading**
 
 ---
 
+<think><details><summary>Thought Process</summary>
 
+I need to add composite primary key to the table. In Drizzle, pgTable can take a third argument for constraints. Let me add primaryKey.
+</details></think>
 
 ---
+
+
 
 
 
@@ -32870,8 +32934,6 @@ Status: **loading**
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts</summary>
 
-Status: **loading**
-
 </details>
 
 </tool-use>
@@ -32882,24 +32944,33 @@ Status: **loading**
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/schema.ts</summary>
 
-Status: **loading**
-
 </details>
 
 </tool-use>
 
 ---
 
+<think><details><summary>Thought Process</summary>
 
+Todo 1 done. Now create domain normalization and DB functions. I'll put domain normalization in lib/domain-normalize.ts and the reference functions in lib/db/project-domain-references.ts (or in scans.ts). Plan said "lib/db/scans.ts or lib/db/project-domain-references.ts". I'll use a separate file for references to keep scans.ts from growing too much, and domain normalize in lib/domain-normalize.ts.
+</details></think>
 
 ---
+
+
 
 
 
 ---
 
 <tool-use data-tool-type="task" data-tool-name="todo_write">
-<details><summary>Tool use: **todo_write** • Error parsing todo list data</summary>
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] DB: schema + migration project_domain_scan_references
+- [-] Domain normalize + DB functions (getLatestByDomain, upsertRef, getRefs)
+- [ ] API GET by-domain, POST domain-scan-all, GET domain-summary-all
+- [ ] Frontend: Deep Scan neu starten + Scan alle + Competitor-Anzeige
+- [ ] i18n keys + constants
 
 </details>
 </tool-use>
@@ -32910,49 +32981,49 @@ Status: **loading**
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-normalize.ts</summary>
 
-Status: **loading**
-
 </details>
 
 </tool-use>
 
 ---
 
+<think><details><summary>Thought Process</summary>
 
+Now I need to add the DB functions. domain_scans stores domain as text - we need to ensure we query by normalized domain. The domain in domain_scans might be stored as full URL (e.g. https://competitor.com) - I need to check how domain is stored when creating a scan. In the scan route they use `url` from the body and store as `scan.domain`. So it could be "https://example.com" or "example.com". For getLatestCompletedDomainScanByDomain we should normalize the input and also compare - we might need to normalize both sides. So when we insert a competitor scan we should store normalized domain (hostname) so that lookup by normalized domain works. Let me check createDomainScan - it uses scan.domain from the initial object which comes from parsed.url. So the stored domain might be the full URL. For lookup we have two options: 1) normalize when storing (so we always store hostname), 2) when querying, get all scans for user and filter by normalized domain. Option 1 is cleaner - when creating a domain scan we could normalize the domain before storing. But that would change existing behavior - existing rows have URL. So for getLatestCompletedDomainScanByDomain we'll need to match by normalized domain: we can do a query that gets rows where userId = X and status = 'complete', then in JS filter by normalizeDomain(row.domain) === normalizedDomain. Or we can use SQL: WHERE user_id = ? AND status = 'complete' AND (domain = ? OR domain = ? OR ...) for common variants. Simpler: fetch recent completed scans for user and filter in code by normalized domain. That could be heavy. Better: use SQL with a LIKE or with normalized value. In PostgreSQL we don't have a built-in normalizer. So the safest is: store the domain as provided, and when querying we need to match. If we normalize on write for new competitor scans (in domain-scan-all we'll create with normalized domain), then for those we can match. For existing scans the domain might be full URL - so in getLatestCompletedDomainScanByDomain we'll normalize the input and then query where (domain = normalized OR domain = 'https://'+normalized OR domain = 'http://'+normalized). Or we could just query domain_scans where userId and status=complete, order by timestamp desc, and in Node filter the first where normalizeDomain(row.domain) === normalizedInput. That's simple and works. Let me implement that - get all completed scans for user (limit e.g. 500), filter by normalized domain, take first. Actually that's inefficient. Better: in the API we only call this for competitor domains, and we'll store normalized domain when we create the scan in domain-scan-all. So when we create a new domain scan for a competitor we'll set domain to normalizeDomain(url). So from now on new competitor scans will have hostname. And for getLatestCompletedDomainScanByDomain we'll query where userId = ? AND status = 'complete' AND (domain = ? OR domain LIKE ? OR domain LIKE ?) with normalized, 'https://'+normalized+'%', 'http://'+normalized+'%'. Or simpler: select * from domain_scans where user_id = ? and status = 'complete' order by timestamp desc, then in JS find first where normalizeDomain(domain) === normalized. With a limit of 1000 it's acceptable. Let me do that.
+</details></think>
 
 ---
 
 
 
+
+
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/scans.ts</summary>
 
 </details>
 </tool-use>
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/index.ts</summary>
 
 </details>
 </tool-use>
 
 ---
 
+<think><details><summary>Thought Process</summary>
 
+I need to add getLatestCompletedDomainScanByDomain to scans.ts - it needs to query domain_scans where userId, status = 'complete', then filter by normalized domain. I'll use eq(domainScans.status, 'complete') and get rows, then in JS find first where normalizeDomain(row.domain) === normalizedDomain. I need to add the import for normalizeDomain and the new table for references. Actually the references table is in schema - I'll create a new file project-domain-references.ts that uses getDb, domainScans, projectDomainScanReferences, and normalizeDomain. There it will have getLatestCompletedDomainScanByDomain (which queries domainScans), upsertProjectDomainScanReference, getProjectDomainScanReferences. getLatestCompletedDomainScanByDomain could live in scans.ts since it's about domain scans. Let me put all three in lib/db/project-domain-references.ts: getLatestCompletedDomainScanByDomain will need to query domainScans - so it depends on domainScans from schema. And we need to get payload or at least id. So in project-domain-references we need getDb, domainScans, and maybe we need to import from scans getDomainScan or we do a raw query. Actually getLatestCompletedDomainScanByDomain returns { id, ... } - so we only need id for the reference. We can select id, domain from domain_scans where userId and status = 'complete' order by timestamp desc limit 500, then in JS find first where normalizeDomain(domain) === normalized. Return { id } or null.
+</details></think>
 
 ---
+
+
 
 
 
@@ -32962,11 +33033,1126 @@ Status: **loading**
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/project-domain-references.ts</summary>
 
-Status: **loading**
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to remove the unused `sql` import from project-domain-references.ts. Let me check - I didn't use sql. Remove it.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/project-domain-references.ts</summary>
 
 </details>
 
 </tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/domain/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to add the APIs. First, GET /api/scan/domain/by-domain?domain=... - this will return the latest completed scan for that domain for the current user. Then POST /api/projects/[id]/domain-scan-all - this will start own scan + for each competitor resolve or create and upsert reference. For starting a domain scan programmatically we need to either call the same logic as POST /api/scan/domain (createDomainScan + runDomainScan in background) or make a shared function. The plan says "POST-Logic inline or Aufruf der bestehenden Scan-Erstellung". I'll extract a minimal "startDomainScan(userId, url, projectId?)" that creates the row and kicks off the async scan, then use it from both the existing route and the new domain-scan-all route. Actually re-reading the route - the scan runs in an async IIFE and returns 202 immediately. So from domain-scan-all we can: 1) for own: create domain scan with projectId, run the same async logic (we need to export or duplicate the runner). 2) for competitors: getLatestCompletedDomainScanByDomain - if found, upsert reference; else createDomainScan without projectId, upsert reference, and run the async scan. The runDomainScan and the loop that updates the DB are in the route. So we have two options: extract a function that takes (userId, url, scanId, projectId?) and runs the scan loop (updating the existing scan by id), and call it from both places. Or we could do a fetch to ourselves POST /api/scan/domain from the domain-scan-all route for each domain. That would be simpler and reuse rate limiting etc. So domain-scan-all will: 1) for own: POST to apiScanDomainCreate with { url: project.domain, projectId: project.id } - but that's a client URL. We need to call the scan creation internally. So we need a shared "startDomainScan" that creates the row and spawns the async work. Let me check - the route uses createDomainScan, then (async () => { ... runDomainScan ... })(). So we need a lib function like startDomainScanInBackground(userId, url, options: { projectId?, useSitemap?, maxPages? }) that creates the scan row and kicks off the loop. Then the POST route and the domain-scan-all route can both use it. I'll create lib/domain-scan-start.ts or add to lib/spider or scans. Actually the route does a lot: createDomainScan, invalidateDomainList, then async updateDomainScan, runDomainScan, addScan for each page, updateDomainScan with result, reportUsage. So the cleanest is to have a function in the codebase that performs "start domain scan" (create + enqueue background work). We could put it in app/api/scan/domain/route.ts as a named export and then import it in domain-scan-all. But API routes might not import from other API routes in Next.js. So put the logic in lib: e.g. lib/domain-scan-run.ts that has startDomainScan(userId, url, options). It would do: createDomainScan, then (async () => { ... })(); return { id }. The loop code would need to be in that lib (runDomainScan, updateDomainScan, addScan, buildStoredDomainPayload, etc.). So we need to extract the background loop from the route into a lib. Let me read the full route again to extract.
+</details></think>
+
+---
+
+
+Implementing APIs: adding the by-domain GET route, then implementing domain-scan-all. Checking how to start a scan programmatically:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/domain/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/projects.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll create a lib that starts a domain scan (creates row + runs background). Then domain-scan-all can call it. Let me create lib/domain-scan-start.ts that exports startDomainScan(userId, url, options) and runs the same async logic. So the route will call startDomainScan and return 202. And domain-scan-all will call startDomainScan for own and for each competitor (when no existing scan).
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-scan-start.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+createDomainScan is async - I called it with .then() but we need to await it before we start the background loop, otherwise the row might not exist when updateDomainScan runs. Let me fix: we need to await createDomainScan and invalidateDomainList before spawning the async loop. So startDomainScan should be async and we await createDomainScan, then spawn the loop, then return { id }.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-scan-start.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to refactor the POST /api/scan/domain route to use startDomainScan so we don't duplicate. Then add GET by-domain, POST domain-scan-all, GET domain-summary-all.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/domain/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now add GET /api/scan/domain/by-domain. In Next.js App Router, a route can have multiple HTTP methods in the same file (e.g. route.ts with GET and POST). So I need to add a GET handler to the same file or create a separate route. By-domain is a different path: /api/scan/domain/by-domain?domain=... So I need to create app/api/scan/domain/by-domain/route.ts with GET.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] DB: schema + migration project_domain_scan_references
+- [x] Domain normalize + DB functions (getLatestByDomain, upsertRef, getRefs)
+- [-] API GET by-domain, POST domain-scan-all, GET domain-summary-all
+- [ ] Frontend: Deep Scan neu starten + Scan alle + Competitor-Anzeige
+- [ ] i18n keys + constants
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/scan/domain/by-domain/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Next: POST /api/projects/[id]/domain-scan-all. It should:
+1. Get project (with domain, competitors)
+2. If project.domain: start own scan with projectId, add to response
+3. For each competitor (normalized): getLatestCompletedDomainScanByDomain; if found, upsert reference and add to response with reused: true; else start scan with projectId=null, domainOverride=normalized, upsert reference, add to response
+4. Return { own: { scanId }, competitors: { [domain]: { scanId, reused? } } }
+Limit competitors to e.g. 20 to avoid abuse.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to create app/api/projects/[id]/domain-scan-all/route.ts with POST. And we need checkRateLimit - use same key as scan or a project-specific one.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/domain-scan-all/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now GET /api/projects/[id]/domain-summary-all. Plan says: own as today (from domain-summary), competitors from getProjectDomainScanReferences then load summary for each. I'll create a new route domain-summary-all/route.ts that returns { own: { scanId, score, totalPageCount, ... }, competitors: { [domain]: { scanId, score, ... } | null } }. For competitors we need to load each scan and build summary; if scan missing or not complete, return null.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/domain-summary/route.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-summary.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+For domain-summary-all I need to return own (same as domain-summary) and competitors. For each competitor reference we load getDomainScanWithProjectId(scanId, userId) - but wait, competitor scans might be from the same user so getDomainScan(id, userId) should work. getDomainScanWithProjectId returns result + projectId. So we can use getDomainScan or getDomainScanWithProjectId for competitor scan IDs. Then buildDomainSummary(row.result). If status !== 'complete' we return null or { status: 'pending' }. Let me keep it simple: for each ref, get the scan; if not found or not complete, return null for that domain; else return { scanId, score, totalPageCount } (minimal for UI). We can add aggregated later if needed for WCAG. Let me check what the project page needs - it needs score and link (scanId). So minimal is enough.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/domain-summary-all/route.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Add constants for the new APIs. Then frontend: project page with buttons and competitor display. Then i18n.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "apiProjectDomainSummary|domain-summary",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts",
+  "contextBefore": 0,
+  "contextAfter": 1,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "apiProjectDomainSummary|domain-summary",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 10,
+  "topFiles": [
+    {
+      "uri": "lib/constants.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add apiProjectDomainSummaryAll and apiProjectDomainScanAll. Also apiScanDomainByDomain for the GET by-domain.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now frontend. I need to:
+1. Add "Deep Scan neu starten" button - POST apiScanDomainCreate with project.domain and projectId, then redirect to pathDomain(data.id)
+2. Add "Deep Scan für alle starten" button - POST apiProjectDomainScanAll(id), then e.g. show toast and refetch domain summary all
+3. Fetch domain-summary-all when we want to show competitors; show competitor list with score + link
+
+The project page currently fetches domainSummary from apiProjectDomainSummary. We have two options: either keep that and add a separate fetch for domain-summary-all for the competitor block, or switch to domain-summary-all and derive own from data.own and show competitors from data.competitors. Plan says "domain-summary-all (or extended domain-summary)" and "Anzeige Competitor-Scans (Scores + Links)". So I'll add a second fetch for domain-summary-all only when we want to show the competitor section (or we could always fetch domain-summary-all and use it for both own and competitors - then we need to adapt the existing card to use data.own instead of domainSummary). That way one request gives us both. So:
+- Change project page to optionally fetch domain-summary-all (or always fetch it instead of domain-summary for the overview). If we always fetch domain-summary-all, we get own + competitors in one go. Then the Domain-Score card uses data.own (same shape as before: scanId, score, totalPageCount). And we add a competitor section that uses data.competitors.
+- But the current domain-summary returns also aggregated.performance and aggregated.eco - the project page uses domainSummary for the score card and for the Performance & Eco card. So we need data.own to include aggregated. Let me check - domain-summary-all returns own with aggregated. So we're good.
+- So on the project page we can replace the domainSummary fetch with domain-summary-all fetch, then use data.own for the existing cards (and for "Deep Scan öffnen" use data.own?.scanId). And add the competitor list and the two buttons.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see the structure. The page fetches apiProject(id), apiProjectRankingSummary(id), apiProjectGeoSummary(id), apiProjectDomainSummary(id). I need to:
+1. Add fetch for apiProjectDomainSummaryAll(id) - we can use it instead of apiProjectDomainSummary and then domainSummary = data.own, and we have data.competitors for the competitor section.
+2. Or keep domainSummary fetch and add a separate fetch for domain-summary-all only for the competitor block. That would mean two requests when we want to show competitors. Simpler: switch to domain-summary-all, set domainSummary from data.own (same interface), and store competitors in state (domainSummaryAllCompetitors).
+3. Add "Deep Scan neu starten" button - only show when project.domain is set. On click: POST apiScanDomainCreate with { url: project.domain, projectId: id }, then router.push(pathDomain(data.id)). Need loading state.
+4. Add "Deep Scan für alle starten" - POST apiProjectDomainScanAll(id), then refetch domain-summary-all (and optionally show a toast). Need loading state.
+5. Add competitor section: list of domains with score + link to pathDomain(scanId). Only show when we have at least one competitor with a scan.
+
+Let me find where the domain summary is loaded.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "apiProjectDomainSummary|setDomainSummary",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx",
+  "contextBefore": 0,
+  "contextAfter": 5,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "apiProjectDomainSummary|setDomainSummary",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 30,
+  "topFiles": [
+    {
+      "uri": "app/projects/[id]/page.tsx",
+      "matchCount": 32
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 32
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 32
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 32
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 32
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see there's a typo in the grep output - "} else {" and "setDomainSummary(domainSummaryRes.data" - the logic is if domainSummaryRes?.success && domainSummaryRes?.data then set domain summary from data, else set null. Let me read the exact block to get the condition right.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll switch to apiProjectDomainSummaryAll and then set domainSummary from res.data.own and store competitors in domainSummaryAllCompetitors. Then in the Domain Score card I'll add the two buttons and the competitor list. Let me do the edits.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] DB: schema + migration project_domain_scan_references
+- [x] Domain normalize + DB functions (getLatestByDomain, upsertRef, getRefs)
+- [x] API GET by-domain, POST domain-scan-all, GET domain-summary-all
+- [-] Frontend: Deep Scan neu starten + Scan alle + Competitor-Anzeige
+- [ ] i18n keys + constants
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to:
+1. Add apiProjectDomainSummaryAll, apiProjectDomainScanAll, apiScanDomainCreate to imports
+2. Add state for domainSummaryAllCompetitors and restartDeepScanLoading, scanAllDeepScanLoading
+3. Change the fetch from apiProjectDomainSummary to apiProjectDomainSummaryAll; set domainSummary from data.own and domainSummaryAllCompetitors from data.competitors
+4. Add loadDomainSummaryAll callback (or reuse the same useEffect - we need to refetch after "scan all" so a named callback is useful)
+5. In the Domain Score card actions: add Box with two buttons - "Deep Scan öffnen" (Link as now) and "Deep Scan neu starten" (button that POSTs and redirects), and optionally "Deep Scan für alle starten"
+6. Below the Domain Score card or inside it, add competitor list when domainSummaryAllCompetitors has entries
+
+Let me also fix the domain-summary-all response: we're returning domainSummaryRes.data for the old API as a single object; for domain-summary-all the response is { data: { own, competitors } }. So we set setDomainSummary(domainSummaryRes.data.own) and setDomainSummaryAllCompetitors(domainSummaryRes.data.competitors || {}).
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now add the loadDomainSummaryAll callback for refetch after "scan all", and the buttons + competitor section. I need to add the handlers and update the Domain Score card actions to include both buttons and the competitor list.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+apiScanDomainCreate is a constant string (the URL). So the fetch URL should be apiScanDomainCreate (it's the full URL for POST). Good. Now update the Domain Score card to have both buttons and the competitor list.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to fix the domain-summary-all response handling: the old domain-summary returns data: { scanId, score, totalPageCount, aggregated }. The new domain-summary-all returns data: { own: { scanId, score, totalPageCount, aggregated }, competitors: { [domain]: { scanId, score, totalPageCount, status } } }. So the Performance & Eco card uses domainSummary?.aggregated - and we're setting domainSummary from data.own which has the same shape. Good. Now add i18n keys.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "\"projects\":",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json",
+  "contextAfter": 50,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "\"projects\":",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 10,
+  "topFiles": [
+    {
+      "uri": "locales/de.json",
+      "matchCount": 55
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 55
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 55
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 55
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 55
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add "restartDeepScan", "scanAllDeepScan", "competitorDeepScans" to projects in both de and en. I'll add after "open".
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "\"open\": \"Open\"",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json",
+  "contextBefore": 0,
+  "contextAfter": 2,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "\"open\": \"Open\"",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 5,
+  "topFiles": [
+    {
+      "uri": "locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Add the same keys to en.json.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Fix the fetch URL for restart deep scan - apiScanDomainCreate is the URL string. So we need to pass it correctly: fetch(apiScanDomainCreate, { ... }). That's correct. Let me verify the project page - we're using pathDomain which takes one argument. And the WCAG page still uses apiProjectDomainSummary - we need to keep that API working for the WCAG page which only needs the single project scan. So we have both apiProjectDomainSummary (for WCAG page to get scanId and then full summary) and apiProjectDomainSummaryAll (for project overview). The WCAG page fetches apiProjectDomainSummary(id) to get scanId, then apiScanDomainSummary(scanId) for full payload. So we must NOT remove the old domain-summary endpoint. I didn't remove it - we only added domain-summary-all. So we're good. Let me double-check: app/projects/[id]/wcag/page.tsx uses apiProjectDomainSummary and apiScanDomainSummary. So the old GET /api/projects/[id]/domain-summary is still there and used by WCAG. Good. Now fix the domain-summary-all response: we're returning `own` with aggregated; the DomainSummaryData type in the project page has aggregated with performance and eco. So the API domain-summary-all returns own: { scanId, score, totalPageCount, aggregated: { performance, eco } }. Good. Let me run the build and fix any issues. First fix the fetch for restart - it should be fetch(apiScanDomainCreate, ...) - apiScanDomainCreate is the full URL. Yes. Let me also fix the domain-summary-all API - we're not returning aggregated in the competitor entries, only in own. So the type for competitors is { scanId, score, totalPageCount, status }. Good. Let me check if there are any lint errors and run the build.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-scan-start.ts",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/project-domain-references.ts",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/domain-scan-all/route.ts"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-scan-start.ts"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/db/project-domain-references.ts"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects/[id]/domain-scan-all/route.ts"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Fix the domain-summary-all - when we have no own scan, we still need to return the structure. And the project page expects data.own to be DomainSummaryData | null - which has aggregated. So the API is correct. Let me run build. One more thing: in domain-scan-all we're passing apiScanDomainCreate to fetch - but that's the URL. So fetch(apiProjectDomainScanAll(id), ...) for scan all is correct. For handleRestartDeepScan we have fetch(apiScanDomainCreate, ...) - but apiScanDomainCreate is just the path constant, we need to use it as URL. In constants, apiScanDomainCreate = API_SCAN_DOMAIN which is getApiBase() + '/api/scan/domain'. So it's the full URL. Good.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 9.0s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+  Generating static pages using 9 workers (0/47) ...
+  Generating static pages using 9 workers (11/47) 
+  Generating static pages using 9 workers (23/47) 
+  Generating static pages using 9 workers (35/47) 
+✓ Generating static pages using 9 workers (47/47) in 263.1ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/register
+├ ƒ /api/auth/tokens
+├ ƒ /api/auth/tokens/[id]
+├ ƒ /api/checks/contrast
+├ ƒ /api/checks/pagespeed
+├ ƒ /api/checks/readability
+├ ƒ /api/checks/ssl
+├ ƒ /api/checks/wayback
+├ ƒ /api/health
+├ ƒ /api/journeys
+├ ƒ /api/journeys/[id]
+├ ƒ /api/projects
+├ ƒ /api/projects/[id]
+├ ƒ /api/projects/[id]/domain-scan-all
+├ ƒ /api/projects/[id]/domain-summary
+├ ƒ /api/projects/[id]/domain-summary-all
+├ ƒ /api/projects/[id]/geo-question-history
+├ ƒ /api/projects/[id]/geo-summary
+├ ƒ /api/projects/[id]/ranking-summary
+├ ƒ /api/projects/[id]/research
+├ ƒ /api/projects/[id]/suggest-competitors
+├ ƒ /api/projects/[id]/suggest-keywords
+├ ƒ /api/rank-tracking/keywords
+├ ƒ /api/rank-tracking/keywords/[id]
+├ ƒ /api/rank-tracking/keywords/[id]/positions
+├ ƒ /api/rank-tracking/refresh
+├ ƒ /api/saliency/generate
+├ ƒ /api/saliency/result
+├ ƒ /api/scan
+├ ƒ /api/scan/[id]
+├ ƒ /api/scan/[id]/project
+├ ƒ /api/scan/[id]/screenshot
+├ ƒ /api/scan/[id]/summarize
+├ ƒ /api/scan/domain
+├ ƒ /api/scan/domain/[id]/journey
+├ ƒ /api/scan/domain/[id]/status
+├ ƒ /api/scan/domain/[id]/summarize
+├ ƒ /api/scan/domain/[id]/summary
+├ ƒ /api/scan/domain/by-domain
+├ ƒ /api/scan/geo-eeat
+├ ƒ /api/scan/geo-eeat/[jobId]
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history/[runId]
+├ ƒ /api/scan/geo-eeat/[jobId]/project
+├ ƒ /api/scan/geo-eeat/[jobId]/rerun-competitive
+├ ƒ /api/scan/geo-eeat/[jobId]/status
+├ ƒ /api/scan/geo-eeat/history
+├ ƒ /api/scan/geo-eeat/suggest-competitors-queries
+├ ƒ /api/scan/journey-agent
+├ ƒ /api/scan/journey-agent/[jobId]
+├ ƒ /api/scan/journey-agent/[jobId]/live
+├ ƒ /api/scan/journey-agent/[jobId]/live/stream
+├ ƒ /api/scan/journey-agent/[jobId]/project
+├ ƒ /api/scan/journey-agent/[jobId]/video
+├ ƒ /api/scan/journey-agent/history
+├ ƒ /api/scans
+├ ƒ /api/scans/[id]
+├ ƒ /api/scans/domain
+├ ƒ /api/scans/domain/[id]
+├ ƒ /api/scans/domain/[id]/project
+├ ƒ /api/search
+├ ƒ /api/share
+├ ƒ /api/share/[token]
+├ ƒ /api/share/[token]/access
+├ ƒ /api/share/[token]/pages/[pageId]
+├ ƒ /api/share/[token]/pages/[pageId]/screenshot
+├ ƒ /api/share/[token]/video
+├ ƒ /api/share/by-resource
+├ ƒ /api/tools/contrast
+├ ƒ /api/tools/extract
+├ ƒ /api/tools/pagespeed
+├ ƒ /api/tools/readability
+├ ƒ /api/tools/ssl-labs
+├ ƒ /api/tools/wayback
+├ ƒ /developers
+├ ƒ /domain/[id]
+├ ƒ /geo-eeat/[jobId]
+├ ƒ /history
+├ ƒ /journey-agent/[jobId]
+├ ƒ /login
+├ ƒ /projects
+├ ƒ /projects/[id]
+├ ƒ /projects/[id]/geo
+├ ƒ /projects/[id]/rankings
+├ ƒ /projects/[id]/research
+├ ƒ /projects/[id]/wcag
+├ ƒ /register
+├ ƒ /results/[id]
+├ ƒ /scan
+├ ƒ /scan/domain
+├ ƒ /settings
+└ ƒ /share/[token]
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build passed. The WCAG page still uses apiProjectDomainSummary - let me check if that's still working. The WCAG page fetches apiProjectDomainSummary(id) to get { data: { scanId, ... } }. So it expects the old API. We didn't change the old domain-summary route, so it still returns data: { scanId, score, totalPageCount, aggregated }. Good. Mark todos complete and add a quick test for the new DB module if needed. The plan said to run migration - we added the migration file but didn't run it (user would run it in their environment). I'll mark the remaining todos complete.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] DB: schema + migration project_domain_scan_references
+- [x] Domain normalize + DB functions (getLatestByDomain, upsertRef, getRefs)
+- [x] API GET by-domain, POST domain-scan-all, GET domain-summary-all
+- [x] Frontend: Deep Scan neu starten + Scan alle + Competitor-Anzeige
+- [x] i18n keys + constants
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Fixing the domain-summary-all response: when there's no own scan, the project page still needs aggregated for the Performance card. So when we have no own scan, domainSummary is null and the Performance & Eco card shows loading or —. So we're good. Let me also fix the domain-summary-all API - we're building summary from row.result; for own we need to return the same shape as the old domain-summary which includes aggregated. We do return aggregated in own. So the project page's DomainSummaryData type expects aggregated: { performance?, eco? }. Our API returns that. Good. One more thing: in the project page we're filtering competitor list with "comp &&" - so we only show rows where comp is truthy. But the API can return competitors[domain] = null for missing/failed scans. So we're only showing entries that have a scan. Good. Implementation complete.
+</details></think>
+
+---
+
+
+Summary of what was implemented:
+
+## 1. Database
+
+- **Schema** ([lib/db/schema.ts](lib/db/schema.ts)): New table `project_domain_scan_references` with `projectId`, `domain`, `domainScanId`, `createdAt` and composite primary key `(project_id, domain)`.
+- **Migration** ([lib/db/migrations/0010_project_domain_scan_references.sql](lib/db/migrations/0010_project_domain_scan_references.sql)): Creates the table and FKs.
+
+## 2. Domain normalization and references
+
+- **[lib/domain-normalize.ts](lib/domain-normalize.ts)**: `normalizeDomain(input)` for a stable hostname (handles URLs and plain domains).
+- **[lib/db/project-domain-references.ts](lib/db/project-domain-references.ts)**:
+  - `getLatestCompletedDomainScanByDomain(userId, normalizedDomain, options?)` – latest completed scan for that domain (optional `maxAgeDays`).
+  - `upsertProjectDomainScanReference(projectId, domain, domainScanId)` – insert or update reference.
+  - `getProjectDomainScanReferences(projectId)` – all references for a project.
+
+## 3. Domain scan start helper
+
+- **[lib/domain-scan-start.ts](lib/domain-scan-start.ts)**: `startDomainScan(userId, url, options?)` creates the domain scan row and runs the scan in the background. Supports `projectId`, `useSitemap`, `maxPages`, `domainOverride` (for storing normalized hostname for competitors).
+- **POST /api/scan/domain** now uses `startDomainScan` instead of inlined logic.
+
+## 4. APIs
+
+- **GET /api/scan/domain/by-domain?domain=...** ([app/api/scan/domain/by-domain/route.ts](app/api/scan/domain/by-domain/route.ts)): Returns the latest completed scan for the given domain for the current user (`scanId`, `domain`, `timestamp` or `data: null`).
+- **POST /api/projects/[id]/domain-scan-all** ([app/api/projects/[id]/domain-scan-all/route.ts](app/api/projects/[id]/domain-scan-all/route.ts)): Starts a deep scan for the project domain (with `projectId`) and for each competitor: reuses existing scan by domain or creates a new one (no `projectId`) and upserts a reference. Response: `{ own: { scanId, status }, competitors: { [domain]: { scanId, reused? } } }`. Competitors limited to 20.
+- **GET /api/projects/[id]/domain-summary-all** ([app/api/projects/[id]/domain-summary-all/route.ts](app/api/projects/[id]/domain-summary-all/route.ts)): Returns `{ own, competitors }`: same shape as before for `own`; `competitors` is a map from domain to `{ scanId, score, totalPageCount, status }` or `null`.
+
+## 5. Frontend (project overview)
+
+- **Data**: Fetches `apiProjectDomainSummaryAll(id)` instead of `apiProjectDomainSummary(id)`. State: `domainSummary` from `data.own`, `domainSummaryAllCompetitors` from `data.competitors`.
+- **Buttons** in the Domain Score card:
+  - **Deep Scan öffnen**: unchanged, links to `pathDomain(domainSummary.scanId)`.
+  - **Deep Scan neu starten**: only if `project.domain` is set; POST to `apiScanDomainCreate` with `{ url: project.domain, projectId: id }`, then redirect to `pathDomain(data.data.id)`.
+  - **Deep Scan für alle starten**: if project has domain or competitors; POST to `apiProjectDomainScanAll(id)`, then `loadDomainSummaryAll()` and redirect to own scan if present.
+- **Competitor list**: Under the score, section „Competitor Deep Scans“ lists domains with score/status and an „Öffnen“ button linking to `pathDomain(comp.scanId)`.
+
+## 6. Constants and i18n
+
+- **[lib/constants.ts](lib/constants.ts)**: `apiProjectDomainSummaryAll(id)`, `apiProjectDomainScanAll(id)`, `apiScanDomainByDomain(domain)`.
+- **locales**: `projects.restartDeepScan`, `projects.scanAllDeepScan`, `projects.competitorDeepScans` in `de` and `en`.
+
+**Note:** Run the new migration (e.g. `0010_project_domain_scan_references.sql`) on your DB so the references table exists. Existing project and WCAG flows still use `GET /api/projects/[id]/domain-summary` where only the single “own” scan is needed.
+
+---
+
+_**User**_
+
+nun da wir alle deepscans unserer competitors ebenfalls haben, können wir doch auch dort das scoring für ecag ermitteln und es mit auf der wcag seite anzeigen neben unserem scoring? genau so wie wir es auch bei der seo seite machen 
 
 ---
 
