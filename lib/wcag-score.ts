@@ -24,6 +24,7 @@ const WEIGHT_NOTICE = 1;
 
 /**
  * Computes a 0–100 WCAG accessibility score from issue counts, normalized by page count.
+ * No pages scanned (totalPageCount === 0) → score 0 (no data).
  * @returns Score 0–100 and optional details for tooltips (weighted per page, formula hint).
  */
 export function computeWcagScore(input: WcagScoreInput): {
@@ -32,10 +33,14 @@ export function computeWcagScore(input: WcagScoreInput): {
   label: 'excellent' | 'good' | 'fair' | 'poor' | 'critical';
 } {
   const { errors, warnings, notices, totalPageCount } = input;
-  const pages = Math.max(1, totalPageCount);
+
+  if (totalPageCount === 0) {
+    return { score: 0, weightedPerPage: 0, label: 'critical' };
+  }
+
   const weighted =
     errors * WEIGHT_ERROR + warnings * WEIGHT_WARNING + notices * WEIGHT_NOTICE;
-  const weightedPerPage = weighted / pages;
+  const weightedPerPage = weighted / totalPageCount;
   const score = Math.round(
     Math.max(0, Math.min(100, 100 - Math.min(100, weightedPerPage)))
   );
