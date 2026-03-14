@@ -17,6 +17,7 @@ import { InfoTooltip } from '@/components/InfoTooltip';
 import {
     apiProject,
     apiProjectDomainSummary,
+    apiProjectDomainSummaryAll,
     apiScanDomainSummary,
     pathDomain,
     pathResults,
@@ -54,6 +55,7 @@ export default function ProjectSeoPage() {
     const [scanId, setScanId] = useState<string | null>(() => (id ? seoSummaryCache.get(id)?.scanId ?? null : null));
     const [summaryLoading, setSummaryLoading] = useState(() => !(id && seoSummaryCache.has(id)));
     const [fullSummary, setFullSummary] = useState<DomainSummaryResponse | null>(() => (id ? seoSummaryCache.get(id)?.fullSummary ?? null : null));
+    const [competitorSeoScores, setCompetitorSeoScores] = useState<Record<string, { scanId: string; seoOnPageScore: number; seoOnPageLabel: string; status: string }>>({});
     const fetchedForIdRef = useFetchOnceForId();
     // #region agent log
     const seoPageRenderRef = useRef(0);
@@ -79,20 +81,43 @@ export default function ProjectSeoPage() {
         if (!id) return;
         if (fetchedForIdRef.current === id) return;
         fetchedForIdRef.current = id;
-        const cached = seoSummaryCache.get(id);
-        if (cached) return;
         const ac = new AbortController();
         const { signal } = ac;
-        setProjectLoading(true);
-        setSummaryLoading(true);
+        const summaryAllPromise = fetch(apiProjectDomainSummaryAll(id), { credentials: 'same-origin', signal }).then((r) =>
+            r.json()
+        ) as Promise<{ success?: boolean; data?: { competitors?: Record<string, { scanId: string; seoOnPageScore?: number; seoOnPageLabel?: string; status: string } | null> } }>;
 
         (async () => {
+            const cached = seoSummaryCache.get(id);
             try {
-                const [projectRes, domainSummaryRes] = await Promise.all([
+                if (cached) {
+                    setProjectLoading(false);
+                    setSummaryLoading(false);
+                    const data = await summaryAllPromise;
+                    if (!signal.aborted && data?.success && data?.data?.competitors) {
+                        const comp: Record<string, { scanId: string; seoOnPageScore: number; seoOnPageLabel: string; status: string }> = {};
+                        for (const [domain, c] of Object.entries(data.data.competitors)) {
+                            if (c) comp[domain] = { scanId: c.scanId, seoOnPageScore: c.seoOnPageScore ?? 0, seoOnPageLabel: c.seoOnPageLabel ?? 'critical', status: c.status };
+                        }
+                        setCompetitorSeoScores(comp);
+                    }
+                    return;
+                }
+                setProjectLoading(true);
+                setSummaryLoading(true);
+                const [projectRes, domainSummaryRes, summaryAllRes] = await Promise.all([
                     fetch(apiProject(id), { credentials: 'same-origin', signal }).then((r) => r.json()) as Promise<{ data?: { id: string; domain: string | null } }>,
                     fetch(apiProjectDomainSummary(id), { credentials: 'same-origin', signal }).then((r) => r.json()) as Promise<{ success?: boolean; data?: { scanId?: string } }>,
+                    summaryAllPromise,
                 ]);
                 if (signal.aborted) return;
+                if (summaryAllRes?.success && summaryAllRes?.data?.competitors) {
+                    const comp: Record<string, { scanId: string; seoOnPageScore: number; seoOnPageLabel: string; status: string }> = {};
+                    for (const [domain, c] of Object.entries(summaryAllRes.data.competitors)) {
+                        if (c) comp[domain] = { scanId: c.scanId, seoOnPageScore: c.seoOnPageScore ?? 0, seoOnPageLabel: c.seoOnPageLabel ?? 'critical', status: c.status };
+                    }
+                    setCompetitorSeoScores(comp);
+                }
                 let payload: DomainSummaryResponse | null = null;
                 const sid = domainSummaryRes?.success && domainSummaryRes?.data?.scanId ? domainSummaryRes.data.scanId : null;
                 if (sid) {
@@ -219,6 +244,37 @@ export default function ProjectSeoPage() {
                                             sx={{ mt: 0.5 }}
                                         />
                                     </Box>
+                                    {Object.keys(competitorSeoScores).length > 0 &&
+                                        Object.entries(competitorSeoScores).map(([domain, c]) => (
+                                            <Box key={domain} sx={{ flexShrink: 0 }}>
+                                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', fontSize: '0.7rem' }}>
+                                                    {domain}
+                                                </MsqdxTypography>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                    <MsqdxTypography variant="body1" sx={{ fontWeight: 600, lineHeight: 1.2, color: 'var(--color-text-muted-on-light)' }}>
+                                                        {c.status === 'complete' ? `${c.seoOnPageScore}/100` : c.status}
+                                                    </MsqdxTypography>
+                                                    {c.status === 'complete' && (
+                                                        <MsqdxChip
+                                                            label={t(`projects.seo.scoreLabel_${c.seoOnPageLabel}`)}
+                                                            size="small"
+                                                            variant="outlined"
+                                                            sx={{ fontSize: '0.65rem', height: 18 }}
+                                                        />
+                                                    )}
+                                                    {c.status === 'complete' && (
+                                                        <MsqdxButton
+                                                            variant="outlined"
+                                                            size="small"
+                                                            onClick={() => router.push(pathDomain(c.scanId))}
+                                                            sx={{ minWidth: 0, px: 0.75, py: 0.25, fontSize: '0.7rem' }}
+                                                        >
+                                                            {t('projects.open')}
+                                                        </MsqdxButton>
+                                                    )}
+                                                </Box>
+                                            </Box>
+                                        ))}
                                 </Box>
                             )}
                             <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
@@ -295,7 +351,7 @@ export default function ProjectSeoPage() {
                                 borderRadius="lg"
                                 sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-secondary-dx-green)' }}
                             >
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'baseline' }}>
+                                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 2, width: '100%', alignItems: 'end' }}>
                                     <Box>
                                         <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
                                             {t('projects.seo.withTitle')}

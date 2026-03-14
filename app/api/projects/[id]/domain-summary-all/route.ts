@@ -8,6 +8,7 @@ import { getProjectDomainScanReferences } from '@/lib/db/project-domain-referenc
 import { buildDomainSummary } from '@/lib/domain-summary';
 import type { AggregatedPerformance, AggregatedEco } from '@/lib/domain-aggregation';
 import { computeWcagScore } from '@/lib/wcag-score';
+import { computeSeoOnPageScore } from '@/lib/seo-on-page-score';
 
 export async function GET(
   req: NextRequest,
@@ -27,6 +28,8 @@ export async function GET(
     score: number;
     totalPageCount: number;
     wcagScore: number;
+    seoOnPageScore: number;
+    seoOnPageLabel: string;
     aggregated: { performance: AggregatedPerformance | null; eco: AggregatedEco | null };
   } | null;
 
@@ -35,6 +38,8 @@ export async function GET(
     score: number;
     totalPageCount: number;
     wcagScore: number;
+    seoOnPageScore: number;
+    seoOnPageLabel: string;
     status: string;
   } | null;
 
@@ -53,11 +58,17 @@ export async function GET(
         notices: issuesStats?.notices ?? 0,
         totalPageCount: pageCount,
       });
+      const seoOnPage = computeSeoOnPageScore({
+        seo: summary.aggregated?.seo ?? null,
+        structure: summary.aggregated?.structure ?? null,
+      });
       own = {
         scanId,
         score: summary.score ?? 0,
         totalPageCount: pageCount,
         wcagScore: wcag.score,
+        seoOnPageScore: seoOnPage.score,
+        seoOnPageLabel: seoOnPage.label,
         aggregated: {
           performance: (summary.aggregated?.performance as AggregatedPerformance) ?? null,
           eco: (summary.aggregated?.eco as AggregatedEco) ?? null,
@@ -76,7 +87,15 @@ export async function GET(
     }
     const status = (row.result as { status?: string }).status ?? 'unknown';
     if (status !== 'complete') {
-      competitors[ref.domain] = { scanId: ref.domainScanId, score: 0, totalPageCount: 0, wcagScore: 0, status };
+      competitors[ref.domain] = {
+        scanId: ref.domainScanId,
+        score: 0,
+        totalPageCount: 0,
+        wcagScore: 0,
+        seoOnPageScore: 0,
+        seoOnPageLabel: 'critical',
+        status,
+      };
       continue;
     }
     const summary = buildDomainSummary(row.result);
@@ -88,11 +107,17 @@ export async function GET(
       notices: issuesStats?.notices ?? 0,
       totalPageCount: pageCount,
     });
+    const seoOnPage = computeSeoOnPageScore({
+      seo: summary.aggregated?.seo ?? null,
+      structure: summary.aggregated?.structure ?? null,
+    });
     competitors[ref.domain] = {
       scanId: ref.domainScanId,
       score: summary.score ?? 0,
       totalPageCount: pageCount,
       wcagScore: wcag.score,
+      seoOnPageScore: seoOnPage.score,
+      seoOnPageLabel: seoOnPage.label,
       status: 'complete',
     };
   }
