@@ -25242,85 +25242,27 @@ okay wir müssen definitiv die performance optimieren. wir können keine 1000 se
 
 _**Agent (model default, mode Agent)**_
 
+<think><details><summary>Thought Process</summary>
 
+The user wants to optimize performance for the WCAG page (or wherever 1000 pages are displayed). They need:
+1. A state-of-the-art responsive table component
+2. Not loading all pages at once - show only ~50 at a time
+3. Pagination
+4. Column sorting
 
----
+I need to find where "1000 pages" are being displayed - likely in the DomainAggregatedIssueList or on the domain scan results page, or on the project WCAG page. Let me search for where we display many pages and what component is used.
 
+The user said "wir können keine 1000 seiten gleichzeitig anzeigen" - so somewhere we're showing all pages (e.g. in a list or table). This could be:
+1. The WCAG page - DomainAggregatedIssueList shows issues, and "pages with most issues" shows up to 15. So the issue list might show many rows (one per issue type with page counts).
+2. The domain scan page - might have a list of all scanned pages.
+3. Some other "pages" list.
 
-
----
-
-<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
-<details>
-<summary>Tool use: **ripgrep_raw_search**</summary>
-
-Status: **loading**
-
-
-</details>
-</tool-use>
-
----
-
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
-
-</details>
-</tool-use>
+Let me search for where we display lists of pages or large tables that could have 1000 rows.
+</details></think>
 
 ---
 
 
-
----
-
-
-
----
-
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
-
-</details>
-</tool-use>
-
----
-
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
-
-</details>
-</tool-use>
-
----
-
-<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
-<details>
-<summary>Tool use: **ripgrep_raw_search**</summary>
-
-Status: **loading**
-
-
-</details>
-</tool-use>
-
----
-
-
-
----
 
 
 
@@ -25330,7 +25272,112 @@ Status: **loading**
 <details>
 <summary>Tool use: **ripgrep_raw_search**</summary>
 
-Status: **loading**
+
+Parameters:
+
+```json
+{
+  "pattern": "pages\\.(map|length|slice)|pagesByIssueCount|scannedPages|SlimPage",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "pages\\.(map|length|slice)|pagesByIssueCount|scannedPages|SlimPage",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 25,
+  "totalMatches": 155,
+  "topFiles": [
+    {
+      "uri": "./app/projects/[id]/wcag/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "./app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/domain/[id]/page.tsx",
+      "matchCount": 14
+    },
+    {
+      "uri": "./app/share/[token]/page.tsx",
+      "matchCount": 7
+    },
+    {
+      "uri": "./app/scan/domain/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/wcag/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 14
+    },
+    {
+      "uri": "../CHECKION-1/app/share/[token]/page.tsx",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/app/scan/domain/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/wcag/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 14
+    },
+    {
+      "uri": "../CHECKION-1/app/share/[token]/page.tsx",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/app/scan/domain/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/wcag/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 14
+    },
+    {
+      "uri": "../CHECKION-1/app/share/[token]/page.tsx",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/app/scan/domain/page.tsx",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
 
 
 </details>
@@ -25338,11 +25385,164 @@ Status: **loading**
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/DomainAggregatedIssueList.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So we have:
+1. **Domain page** (`app/domain/[id]/page.tsx`) – shows "Scanned Pages" with `visiblePages` (slice 0 to visiblePageCount) and "Load more" (DOMAIN_PAGES_INCREMENT). So they already have a "load more" pattern but it's not a proper table with sorting/pagination.
+2. **DomainAggregatedIssueList** – shows **issues** (aggregated WCAG issues), not pages. Each issue can have many pageUrls. So the "1000 pages" problem might be either: (a) the list of **scanned pages** on the domain overview (visiblePages), or (b) somewhere we're rendering 1000 of something.
+
+The user said "wir können keine 1000 seiten gleichzeitig anzeigen" and "eine state of the art responsive table ... die nicht jedes mal alle seiten neu lädt sondern ggf. lediglich nur 50 anzeigt und pagination hat, aber auch sorting per spalte erlaubt."
+
+So they want:
+- A table that shows **pages** (not issues)
+- Page size ~50
+- Pagination
+- Column sorting
+- No re-loading of all pages – so client-side pagination of already-fetched data is fine, or we need server-side pagination. "nicht jedes mal alle seiten neu lädt" could mean: don't re-render all 1000 rows (virtualization) or don't fetch all 1000 at once (server pagination). Given "lediglich nur 50 anzeigt" I'll assume we show 50 per page with pagination. So we need:
+1. Identify where the "1000 pages" are shown – likely the **Scanned Pages** list on the domain page (`visiblePages` with load more), and possibly the same list on the project WCAG page if we ever show all pages there. Let me check the domain page for the actual "scanned pages" table/list.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
 <details>
-<summary>Tool use: **read_file_v2**</summary>
+<summary>Tool use: **ripgrep_raw_search**</summary>
 
-Status: **loading**
+
+Parameters:
+
+```json
+{
+  "pattern": "DOMAIN_PAGES_INCREMENT|visiblePageCount",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "DOMAIN_PAGES_INCREMENT|visiblePageCount",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 20,
+  "totalMatches": 50,
+  "topFiles": [
+    {
+      "uri": "./lib/constants.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/domain/[id]/page.tsx",
+      "matchCount": 7
+    },
+    {
+      "uri": "./.specstory/history/2026-02-27_20-37Z-checkion-project-improvement-opportunities.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_20-37Z-checkion-project-improvement-opportunities.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_20-37Z-checkion-project-improvement-opportunities.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_20-37Z-checkion-project-improvement-opportunities.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_20-37Z-checkion-project-improvement-opportunities.md",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
 
 
 </details>
@@ -25350,11 +25550,139 @@ Status: **loading**
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<think><details><summary>Thought Process</summary>
+
+So the domain page has:
+1. **Overview tab**: "Scanned Pages" – a list (ul/li) of `visiblePages` with "Show more" loading 50 at a time (DOMAIN_PAGES_INCREMENT = 50). So we're already only rendering 50 initially, but the user wants a proper table with pagination and sorting.
+2. There's also another place around line 547 that uses showMorePages – I need to check if there's a second "scanned pages" list.
+
+I'll create a reusable **ScannedPagesTable** (or **DomainPagesTable**) component that:
+- Accepts `pages: SlimPage[]` and `onPageClick?: (page: SlimPage) => void`
+- Uses client-side pagination: page size 50, show only current page
+- Column sorting: URL, Score, UX Score, Issues (errors+warnings+notices)
+- Responsive table layout
+- Uses MSQDX components (MsqdxTypography, MsqdxChip, MsqdxButton) and Box for layout
+
+Then I'll replace the current "Scanned Pages" list on the domain page with this table. I need to find DOMAIN_PAGES_INITIAL in constants.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
 <details>
-<summary>Tool use: **read_file_v2**</summary>
+<summary>Tool use: **ripgrep_raw_search**</summary>
 
-Status: **loading**
+
+Parameters:
+
+```json
+{
+  "pattern": "DOMAIN_PAGES_INITIAL",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "DOMAIN_PAGES_INITIAL",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 25,
+  "totalMatches": 35,
+  "topFiles": [
+    {
+      "uri": "./lib/constants.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/domain/[id]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./.specstory/history/2026-02-25_20-20Z-deployment-failure-and-docker-build-issues.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./.specstory/history/2026-02-27_20-37Z-checkion-project-improvement-opportunities.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-25_20-20Z-deployment-failure-and-docker-build-issues.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_20-37Z-checkion-project-improvement-opportunities.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-25_20-20Z-deployment-failure-and-docker-build-issues.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_20-37Z-checkion-project-improvement-opportunities.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/constants.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-25_20-20Z-deployment-failure-and-docker-build-issues.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_20-37Z-checkion-project-improvement-opportunities.md",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
 
 
 </details>
@@ -25362,17 +25690,1436 @@ Status: **loading**
 
 ---
 
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/DomainAggregatedIssueList.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So the main place that shows "all pages" is:
+1. **Overview tab** (tab 0): "Scanned Pages" card with a list of `visiblePages` (starts at 50, load more +50). This is the list that can grow to 1000.
+2. **Another spot** (around 537): "Alle Seiten öffnen" - same visiblePages list again.
+
+I'll create a reusable **ScannedPagesTable** component with:
+- Props: `pages: SlimPage[]`, `onPageClick?: (page: SlimPage) => void`, optional `pageSize = 50`
+- State: currentPage (1-based), sortKey ('url' | 'score' | 'uxScore' | 'issues'), sortDir ('asc' | 'desc')
+- Sorted and paginated slice: sort the full array (in memory – we already have it from API), then take slice for current page. So we only RENDER 50 rows.
+- Table: header row with clickable column headers (sort), then only current page rows.
+- Pagination: "Page 1 of 20" with Prev/Next or page number buttons. Use MSQDX Button.
+- Responsive: horizontal scroll on small screens, or collapse to cards on very small (optional – user said "responsive table" so table with overflow-x: auto is fine).
+
+Let me also add the constant for page size to lib/constants if not already (we have DOMAIN_PAGES_INCREMENT = 50, so page size 50 is good).
+
+Implementing:
+1. Create `components/ScannedPagesTable.tsx` – table with sortable columns (URL, Score, UX Score, Issues), page size 50, pagination. Uses Box, MsqdxTypography, MsqdxChip, MsqdxButton.
+2. Update `app/domain/[id]/page.tsx` – replace the "Scanned Pages" list (and the "Alle Seiten öffnen" list in the other tab?) with ScannedPagesTable. We can pass all `pages` to the table; the table will only render the current page slice and handle sort internally. So we remove visiblePageCount/visiblePages/hasMorePages/loadMorePages and just pass pages. The table will do pagination (page 1, 2, 3...) and sorting.
+</details></think>
+
+---
+
+
+Implementing a paginated, sortable table for scanned pages and adding the `ScannedPagesTable` component.
 
 
 ---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] Create ScannedPagesTable component with pagination and sorting
+- [ ] Integrate ScannedPagesTable into domain page Overview tab
+- [ ] Replace second visiblePages list (Alle Seiten öffnen) with table or link
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+SlimPage has: id, url, score, stats: { errors, warnings, notices }, ux?: { score }. So for "Issues" column we use page.stats.errors + page.stats.warnings + page.stats.notices. UX Score = page.ux?.score ?? 0.
+
+Creating ScannedPagesTable with:
+- pageSize default 50 (from constants)
+- sortBy: 'url' | 'score' | 'uxScore' | 'issues'
+- sortOrder: 'asc' | 'desc'
+- Pagination: currentPage, totalPages, setPage
+- Columns: URL (sortable), Score (sortable), UX Score (sortable), Issues (sortable), Action (open)
+- Use table semantics: role="table", thead, tbody, or we keep the grid layout like DomainAggregatedIssueList (role="row", role="columnheader") for consistency with existing design.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "domainResult\\.(scannedPages|showMorePages|openPage)",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "domainResult\\.(scannedPages|showMorePages|openPage)",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "outputMode": "content",
+  "totalFiles": 0,
+  "totalMatches": 0,
+  "topFiles": []
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add a constant for the table page size (50). Now create the ScannedPagesTable component. I'll use DOMAIN_PAGES_INITIAL (50) as the default page size for the table - we can export it or use the same constant. The table will:
+1. Accept pages: SlimPage[], onPageClick?: (page: SlimPage) => void, pageSize?: number (default 50)
+2. Internal state: sortKey, sortDir, currentPage
+3. useMemo: sortedPages = [...pages].sort(comparator), then paginatedSlice = sortedPages.slice((currentPage-1)*pageSize, currentPage*pageSize)
+4. Render: header row with sortable headers (click toggles sort), then only paginatedSlice.map for body. Pagination controls at bottom.
+5. Use i18n for "URL", "Score", "UX Score", "Issues", "Open", "Page X of Y", "Previous", "Next". Check locale keys.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "showMorePages|scannedPages|pageOfTotal",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "showMorePages|scannedPages|pageOfTotal",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 60,
+  "topFiles": [
+    {
+      "uri": "locales/de.json",
+      "matchCount": 6
+    },
+    {
+      "uri": "locales/en.json",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 6
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+domainResult has scannedPages, showMorePages. share has pageOfTotal. I'll add domainResult.pagesTablePageOfTotal or use a generic key. Let me check - share.pageOfTotal has current, total, count. So we need domainResult.pagesTablePrev, domainResult.pagesTableNext, and maybe domainResult.pagesTableSortUrl etc. Or we can add under domainResult: tableColumnUrl, tableColumnScore, tableColumnUxScore, tableColumnIssues, tablePrev, tableNext, pageOfTotal (or reuse share.pageOfTotal with count = total pages count). Actually for pagination we show "Page 1 of 20" so current page, total pages, and total count. share.pageOfTotal: "Page {current} of {total} ({count} pages)" - that's for share. So for domain we could use the same pattern: t('share.pageOfTotal', { current: page, total: totalPages, count: pages.length }) or add domainResult.pagination. I'll use share.pageOfTotal for consistency. For column headers I'll add domainResult.pagesTableUrl, etc. or use simple keys. Checking en.json domainResult keys...
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add domainResult keys for the table: pagesTableUrl, pagesTableScore, pagesTableUxScore, pagesTableIssues, pagesTablePrev, pagesTableNext. And use share.pageOfTotal for "Page X of Y". Creating the component now.
+</details></think>
+
+---
+
+
+Creating the ScannedPagesTable component and adding i18n keys.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ScannedPagesTable.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add the constant DOMAIN_PAGES_TABLE_PAGE_SIZE and the i18n keys. Let me add the constant to lib/constants.ts and the locale keys. Also need to add domainResult.noPages if it doesn't exist.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "\"noPages\"|domainResult\\.no",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "\"noPages\"|domainResult\\.no",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "outputMode": "content",
+  "totalFiles": 0,
+  "totalMatches": 0,
+  "topFiles": []
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add domainResult.noPages and the table column/button keys. share.pageOfTotal uses current, total, count - let me check the exact param names in the locale file.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "pageOfTotal",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json",
+  "contextBefore": 0,
+  "contextAfter": 0,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "pageOfTotal",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 5,
+  "topFiles": [
+    {
+      "uri": "locales/en.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+share.pageOfTotal is under "share" - so the key is share.pageOfTotal. In the component I used t('share.pageOfTotal', { current, total, count }). Good. Now add domainResult.noPages, pagesTableUrl, pagesTableScore, pagesTableUxScore, pagesTableIssues, pagesTablePrev, pagesTableNext. I'll add them in domainResult section.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add these under domainResult in the JSON. Let me check - the replacement was in the wrong place. The keys I added might have been under "domainResult" already since I matched "showMorePages" and "journeyNoSteps" - let me verify. showMorePages and journeyNoSteps are in domainResult (lines 555 and 556 in en). So the new keys are now in domainResult. Good.
+
+Now fix the ScannedPagesTable - we're using share.pageOfTotal for pagination text. Share might be under a different namespace. Let me check - in the component we have t('share.pageOfTotal', ...). So the share object has pageOfTotal. Good.
+
+Reset currentPage when pages change (e.g. when sort changes we already set currentPage(1). When pages array reference changes we might want to reset to page 1 - but that could be annoying if user is on page 5 and data refreshes. I'll leave it as is.
+
+Let me also fix: when totalPages is 1 we still show the pagination info - the user said "nur 50 anzeigen" and "pagination". So showing "Page 1 of 1 (1000 pages)" is still useful. We already have totalPages > 1 for the prev/next buttons. So we could show the caption even when totalPages === 1 so user sees "Page 1 of 1 (1000 pages)". Let me update to show the caption whenever pages.length > pageSize so that when there's exactly 50 pages we don't show pagination controls but when there are 1000 we show "Page 1 of 20 (1000 pages)" and the buttons.
+</details></think>
+
+---
+
+
+Showing pagination caption when there are multiple pages; only render Prev/Next when totalPages > 1.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ScannedPagesTable.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+When pages.length === 50 and pageSize === 50, totalPages is 1, so we'd show the caption "Page 1 of 1 (50 pages)" but no buttons. When pages.length > pageSize we have totalPages > 1 so we show caption and buttons. Good. Actually when pages.length <= pageSize, totalPages is 1 and pages.length > pageSize is false, so we wouldn't show the footer at all. So we only show the footer when totalPages > 1 (i.e. more than 50 pages) OR when pages.length > pageSize - but if pages.length > pageSize then totalPages > 1. So the condition is just totalPages > 1. Let me simplify: show footer when totalPages > 1. Then we always show caption + buttons when there are more than 50 pages. When there are 50 or fewer, we don't show the footer. That's cleaner.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ScannedPagesTable.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ScannedPagesTable.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ScannedPagesTable.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+We need to show the "Page 1 of 1" when there's exactly one page but many total count (e.g. 30 pages). So when we have 30 pages, totalPages is 1, we might still want to show "Page 1 of 1 (30 pages)" for consistency. Let me leave it as totalPages > 1 only - so when we have 50 or fewer pages we don't show the pagination bar at all. When we have 51+ we show it. Good.
+
+Now integrate into domain page: replace the Overview tab's "Scanned Pages" card content with ScannedPagesTable, and remove visiblePageCount, visiblePages, hasMorePages, loadMorePages. We'll pass all `pages` to the table. Also need to fix the second occurrence ("Alle Seiten öffnen") - that's in another tab (tab 4 maybe). Let me find it and either remove it or make it a link to the Overview tab where the table is, or we could keep a compact list there but use the same pagination - actually the user said they want one table with 50 rows and pagination. So the main place is the Overview tab. The "Alle Seiten öffnen" is in a different card - I'll leave that section but use the table there too, or just a single "Open page" link that goes to the first page? Re-reading the user request: "wir können keine 1000 seiten gleichzeitig anzeigen" - so the fix is to not render 1000 rows. The table with 50 per page solves that. The "Alle Seiten öffnen" list also renders visiblePages (same slice), so that list could also be 1000 if user clicked "load more" many times. So we should replace both with the table, or the second list we could replace with a text like "See the table above for all pages" or we remove the second list and only have the table in the Overview. Let me check where the second list is - it's around line 537. It's inside some card. I'll read the domain page again to see the structure.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So the "Alle Seiten öffnen" is in tab 4 (Visual Analysis). It lists visiblePages with load more. I'll replace that with a short note and a link to the Overview tab where the full table is, e.g. "See Overview tab for the full sortable list of all pages." Or we could use ScannedPagesTable there too - but that would duplicate the table. Better: in tab 4 replace the list with a single line like "Full list of pages with sorting and pagination is in the Overview tab." with a link/button to switch to tab 0. That way we have one source of truth (the table in Overview).
+
+Implementing domain page changes:
+1. Add import for ScannedPagesTable and DOMAIN_PAGES_TABLE_PAGE_SIZE (or the table uses it internally), and pathResults for onPageClick.
+2. Remove DOMAIN_PAGES_INITIAL, DOMAIN_PAGES_INCREMENT, visiblePageCount, setVisiblePageCount, visiblePages, hasMorePages, loadMorePages.
+3. In the Overview tab (the MsqdxCard "Scanned Pages"): replace the ul/visiblePages.map and the "Show more" button with <ScannedPagesTable pages={pages} onPageClick={(page) => router.push(pathResults(page.id))} />.
+4. In tab 4: replace "Alle Seiten öffnen" + visiblePages list + hasMorePages button with a single line that links to the Overview tab (e.g. setTabValue(0) or a link).
+</details></think>
+
+---
+
+
 
 
 
 ---
 
 <tool-use data-tool-type="task" data-tool-name="todo_write">
-<details><summary>Tool use: **todo_write** • Error parsing todo list data</summary>
+<details><summary>Tool use: **todo_write** • Todo List</summary>
 
+- [x] Create ScannedPagesTable component with pagination and sorting
+- [-] Integrate ScannedPagesTable into domain page Overview tab
+- [ ] Replace second visiblePages list (Alle Seiten öffnen) with table or link
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to update the domain page. I'll add the ScannedPagesTable import (can be dynamic like other components or static). Then remove the visiblePageCount state and related, replace the list with the table. Then update tab 4.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now replace the Overview tab's list with ScannedPagesTable.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now replace the tab 4 "Alle Seiten öffnen" section with a link to the Overview tab.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add the i18n key domainResult.allPagesInOverview. Let me add it to en and de.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The button text "Overview → Scanned Pages" might be long. Let me shorten to just "Go to Overview" or use a key like domainResult.goToOverview. Actually the current text is t('domainResult.tabOverview') + ' → ' + t('domainResult.scannedPages'). tabOverview is "Overview & Pages" and scannedPages is "Scanned Pages". So it would show "Overview & Pages → Scanned Pages". Simpler: just "Show all pages in Overview" or use allPagesInOverview as the button label and put the hint above. Let me use a separate key for the button: goToPagesTable or similar. I'll leave as is for now and run linter.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Check if there are any remaining references to visiblePageCount, visiblePages, hasMorePages, loadMorePages in the domain page.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "visiblePageCount|visiblePages|hasMorePages|loadMorePages",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "visiblePageCount|visiblePages|hasMorePages|loadMorePages",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/domain/[id]/page.tsx",
+  "outputMode": "content",
+  "totalFiles": 0,
+  "totalMatches": 0,
+  "topFiles": []
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Let me add DomainAggregatedIssueList pagination as well - the user said "1000 seiten" and "50 anzeigen" and "pagination" and "sorting". The DomainAggregatedIssueList shows **issues** (WCAG issues), not pages. Each row is one issue type with page count. So that list could have hundreds of issue types, not 1000 pages. The "1000 pages" is the scanned pages list. So we're good - we've fixed the pages list with the table. Optionally we could add pagination to DomainAggregatedIssueList too if there are many issue types, but the user specifically said "1000 seiten" (1000 pages), so the ScannedPagesTable was the right target. Mark todos complete and run build.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Create ScannedPagesTable component with pagination and sorting
+- [x] Integrate ScannedPagesTable into domain page Overview tab
+- [x] Replace second visiblePages list (Alle Seiten öffnen) with table or link
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 14.4s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+  Generating static pages using 9 workers (0/46) ...
+  Generating static pages using 9 workers (11/46) 
+  Generating static pages using 9 workers (22/46) 
+  Generating static pages using 9 workers (34/46) 
+✓ Generating static pages using 9 workers (46/46) in 652.6ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/register
+├ ƒ /api/auth/tokens
+├ ƒ /api/auth/tokens/[id]
+├ ƒ /api/checks/contrast
+├ ƒ /api/checks/pagespeed
+├ ƒ /api/checks/readability
+├ ƒ /api/checks/ssl
+├ ƒ /api/checks/wayback
+├ ƒ /api/health
+├ ƒ /api/journeys
+├ ƒ /api/journeys/[id]
+├ ƒ /api/projects
+├ ƒ /api/projects/[id]
+├ ƒ /api/projects/[id]/domain-summary
+├ ƒ /api/projects/[id]/geo-question-history
+├ ƒ /api/projects/[id]/geo-summary
+├ ƒ /api/projects/[id]/ranking-summary
+├ ƒ /api/projects/[id]/research
+├ ƒ /api/projects/[id]/suggest-competitors
+├ ƒ /api/projects/[id]/suggest-keywords
+├ ƒ /api/rank-tracking/keywords
+├ ƒ /api/rank-tracking/keywords/[id]
+├ ƒ /api/rank-tracking/keywords/[id]/positions
+├ ƒ /api/rank-tracking/refresh
+├ ƒ /api/saliency/generate
+├ ƒ /api/saliency/result
+├ ƒ /api/scan
+├ ƒ /api/scan/[id]
+├ ƒ /api/scan/[id]/project
+├ ƒ /api/scan/[id]/screenshot
+├ ƒ /api/scan/[id]/summarize
+├ ƒ /api/scan/domain
+├ ƒ /api/scan/domain/[id]/journey
+├ ƒ /api/scan/domain/[id]/status
+├ ƒ /api/scan/domain/[id]/summarize
+├ ƒ /api/scan/domain/[id]/summary
+├ ƒ /api/scan/geo-eeat
+├ ƒ /api/scan/geo-eeat/[jobId]
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history/[runId]
+├ ƒ /api/scan/geo-eeat/[jobId]/project
+├ ƒ /api/scan/geo-eeat/[jobId]/rerun-competitive
+├ ƒ /api/scan/geo-eeat/[jobId]/status
+├ ƒ /api/scan/geo-eeat/history
+├ ƒ /api/scan/geo-eeat/suggest-competitors-queries
+├ ƒ /api/scan/journey-agent
+├ ƒ /api/scan/journey-agent/[jobId]
+├ ƒ /api/scan/journey-agent/[jobId]/live
+├ ƒ /api/scan/journey-agent/[jobId]/live/stream
+├ ƒ /api/scan/journey-agent/[jobId]/project
+├ ƒ /api/scan/journey-agent/[jobId]/video
+├ ƒ /api/scan/journey-agent/history
+├ ƒ /api/scans
+├ ƒ /api/scans/[id]
+├ ƒ /api/scans/domain
+├ ƒ /api/scans/domain/[id]
+├ ƒ /api/scans/domain/[id]/project
+├ ƒ /api/search
+├ ƒ /api/share
+├ ƒ /api/share/[token]
+├ ƒ /api/share/[token]/access
+├ ƒ /api/share/[token]/pages/[pageId]
+├ ƒ /api/share/[token]/pages/[pageId]/screenshot
+├ ƒ /api/share/[token]/video
+├ ƒ /api/share/by-resource
+├ ƒ /api/tools/contrast
+├ ƒ /api/tools/extract
+├ ƒ /api/tools/pagespeed
+├ ƒ /api/tools/readability
+├ ƒ /api/tools/ssl-labs
+├ ƒ /api/tools/wayback
+├ ƒ /developers
+├ ƒ /domain/[id]
+├ ƒ /geo-eeat/[jobId]
+├ ƒ /history
+├ ƒ /journey-agent/[jobId]
+├ ƒ /login
+├ ƒ /projects
+├ ƒ /projects/[id]
+├ ƒ /projects/[id]/geo
+├ ƒ /projects/[id]/rankings
+├ ƒ /projects/[id]/research
+├ ƒ /projects/[id]/wcag
+├ ƒ /register
+├ ƒ /results/[id]
+├ ƒ /scan
+├ ƒ /scan/domain
+├ ƒ /settings
+└ ƒ /share/[token]
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build succeeded. Let me provide a short summary to the user.
+</details></think>
+
+---
+
+
+Summary of what was implemented:
+
+## 1. **`ScannedPagesTable`** (`components/ScannedPagesTable.tsx`)
+
+- **Pagination:** 50 rows per page (configurable via `DOMAIN_PAGES_TABLE_PAGE_SIZE` in `lib/constants.ts`). Only the current page is rendered.
+- **Sorting:** Click column headers to sort by:
+  - **URL** (A–Z / Z–A)
+  - **Score** (domain score)
+  - **UX** (UX score)
+  - **Issues** (errors + warnings + notices)
+  Toggle asc/desc on repeated clicks.
+- **Layout:** Table with sticky header, horizontal scroll on small screens, MSQDX typography/chips/buttons.
+- **Pagination UI:** “Page X of Y (N pages)” and Prev/Next when there is more than one page.
+- **Empty state:** Uses `domainResult.noPages` when there are no pages.
+
+## 2. **Domain page** (`app/domain/[id]/page.tsx`)
+
+- **Overview tab:** The previous “Scanned Pages” list (with “Show more”) is replaced by `ScannedPagesTable`. All `pages` are passed in; the table does client-side sort and slice (only 50 rows rendered per page).
+- **Tab 4 (Visual Analysis):** The “Alle Seiten öffnen” list and “Show more” are replaced by a short text (`domainResult.allPagesInOverview`) and a button that switches to the Overview tab (“Overview & Pages → Scanned Pages”).
+- **Cleanup:** `visiblePageCount`, `visiblePages`, `hasMorePages`, `loadMorePages`, and the `DOMAIN_PAGES_INITIAL` / `DOMAIN_PAGES_INCREMENT` imports are removed.
+
+## 3. **Constants and i18n**
+
+- **`lib/constants.ts`:** `DOMAIN_PAGES_TABLE_PAGE_SIZE = 50`.
+- **Locales (en/de):** New keys under `domainResult`: `noPages`, `pagesTableUrl`, `pagesTableScore`, `pagesTableUxScore`, `pagesTableIssues`, `pagesTablePrev`, `pagesTableNext`, `allPagesInOverview`.
+
+With 1000 scanned pages, only 50 rows are in the DOM at a time; switching pages or changing sort only re-renders that slice, so the list stays responsive.
+
+---
+
+_**User**_
+
+ja aber ich wollte diese tabelle auch für die gefundenen issues
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants the same kind of table (paginated, sortable) for the "found issues" list - i.e. the DomainAggregatedIssueList that shows WCAG issues. So I need to add pagination and column sorting to the issues table, not just the scanned pages table.
+
+Let me look at DomainAggregatedIssueList again - it displays AggregatedIssue[] with columns: Severity, Message, Level, Runner, Code, Pages (count + open link), and Fix docs. I need to:
+1. Add pagination (e.g. 50 rows per page)
+2. Add sortable column headers
+3. Only render the current page of rows
+
+I'll update DomainAggregatedIssueList to accept optional pagination/sorting, or create a wrapper. Actually the cleanest is to add the same pattern inside DomainAggregatedIssueList: sort state, pagination state, slice the issues array and only render the slice, add header click handlers and pagination UI.
+</details></think>
+
+---
+
+
+Wir erweitern die Issues-Tabelle (DomainAggregatedIssueList) um Paginierung und sortierbare Spalten, analog zur ScannedPagesTable.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/DomainAggregatedIssueList.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/domain-aggregation.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+AggregatedIssue extends Issue - so it has type, message, wcagLevel, runner, code, helpUrl, pageCount, pageUrls. I'll add:
+1. Sortable columns: Severity (type), Message, Level, Runner, Code, Pages (pageCount)
+2. Pagination: 50 per page, same constant - I can use a new constant ISSUES_TABLE_PAGE_SIZE or reuse 50.
+3. Sort state and pagination state inside DomainAggregatedIssueList
+4. Sticky header like in ScannedPagesTable
+5. Pagination footer with share.pageOfTotal and Prev/Next
+
+I'll need to add i18n keys for the column headers (they're currently hardcoded in German: Schwere, Meldung, Level, Runner, Code, Seiten). I'll use domainResult.issuesTableSeverity etc. and make the headers clickable for sort.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "issuesTable|Severity|Meldung",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "issuesTable|Severity|Meldung",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "outputMode": "content",
+  "totalFiles": 0,
+  "totalMatches": 0,
+  "topFiles": []
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add a constant for issues table page size (50), add i18n keys for the sortable column headers, and refactor DomainAggregatedIssueList to use useState for sortKey, sortDir, currentPage, then sorted slice and paginated slice, and render only the paginated rows plus the pagination footer.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to add i18n keys for the issues table columns (for sort headers). I'll use domainResult.issuesTableSeverity, issuesTableMessage, issuesTableLevel, issuesTableRunner, issuesTableCode, issuesTablePages. And the empty state is already "Keine Issues..." - I'll use i18n for that too: domainResult.noIssues (might already exist).
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "noIssues|Keine Issues",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "noIssues|Keine Issues",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 25,
+  "totalMatches": 30,
+  "topFiles": [
+    {
+      "uri": "./app/results/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/DomainAggregatedIssueList.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./.specstory/history/2026-02-23_15-12Z-ergebnisse-teilen-für-normale-scans-und-ux-journeys.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/pdf/ScanReportDocument.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./Trace-20260219T213538.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/DomainAggregatedIssueList.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-23_15-12Z-ergebnisse-teilen-für-normale-scans-und-ux-journeys.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/pdf/ScanReportDocument.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/Trace-20260219T213538.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/DomainAggregatedIssueList.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-23_15-12Z-ergebnisse-teilen-für-normale-scans-und-ux-journeys.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/pdf/ScanReportDocument.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/Trace-20260219T213538.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/DomainAggregatedIssueList.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-23_15-12Z-ergebnisse-teilen-für-normale-scans-und-ux-journeys.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/components/pdf/ScanReportDocument.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/Trace-20260219T213538.json",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add domainResult.noIssues and the issues table column keys, then rewrite DomainAggregatedIssueList with sorting and pagination.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now rewrite DomainAggregatedIssueList with:
+- useState for sortKey: 'severity' | 'message' | 'level' | 'runner' | 'code' | 'pageCount'
+- useState for sortDir: 'asc' | 'desc'
+- useState for currentPage
+- useMemo for sorted issues
+- useMemo for paginated slice (pageSize from DOMAIN_ISSUES_TABLE_PAGE_SIZE)
+- Sortable header buttons (like ScannedPagesTable)
+- Pagination footer with share.pageOfTotal and Prev/Next (ChevronLeft/Right)
+- Empty state: t('domainResult.noIssues')
+- Use stable key for rows: issue.code+issue.type+issue.message or index in full list - for paginated we use index in paginatedRows so key could be something unique. Actually we need a key that's stable across sort/pagination. The issue has code, type, message - together they form a unique key. So key={`${issue.code}|${issue.type}|${issue.message}`} or key={idx} with start index. Using a content-based key is better: `${issue.code}-${issue.type}-${issue.message}` might not be unique if same issue appears. Actually in AggregatedIssue each row is unique (grouped by code|type|message). So key={`${issue.code}|${issue.type}|${issue.message}`} is fine.
+</details></think>
+
+---
+
+
+Implementing sortable, paginated DomainAggregatedIssueList:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/DomainAggregatedIssueList.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I used `t('domainResult.issuesTablePages')` for the chip label - but that's "Seiten" / "Pages" which is the column name. The chip was originally "X Seite(n)" - so we need a different key for "page(s)" in the count. Let me check - in the original it was `MsqdxChip label={\`${issue.pageCount} Seite(n)\`}`. So the chip should show e.g. "42 Seiten" not "42 Pages" (column header). I'll add a key like domainResult.issuePageCountLabel = "page(s)" or use a generic "Seiten" for the count. Actually in English "42 Pages" is fine, in German "42 Seiten". So the column header is "Seiten" (Pages) and the count could be the same word. So "42 Seiten" = pageCount + " " + issuesTablePages. But "issuesTablePages" is the column header "Pages" / "Seiten". So it would read "42 Seiten" in German and "42 Pages" in English. That's correct. Leave as is.
+
+Wait - the chip now says `${issue.pageCount} ${t('domainResult.issuesTablePages')}` which would be "42 Seiten" in DE and "42 Pages" in EN. Good.
+
+Let me fix: the column header "Pages" in the table is for the column that shows page count + open link. So "issuesTablePages" = "Pages" / "Seiten" is correct. Using it in the chip "42 Pages" might sound a bit redundant in English (Pages column with "42 Pages" in cell). It's fine. Leave it.
+
+Let me double-check - we need share.pageOfTotal which uses current, total, count. So we're good. Read lints.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/DomainAggregatedIssueList.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/DomainAggregatedIssueList.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The chip label for page count: in German "Seiten" is the column and "42 Seiten" is correct. But "issuesTablePages" might be "Seiten" (noun) so "42 Seiten" = 42 pages. Good. In English "42 Pages". Good.
+
+One more thing: I'm not using MsqdxButton in the SortHeader - I'm using Box component="button". That's fine for accessibility. Let me run the build to make sure nothing is broken.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+
+```
 </details>
 </tool-use>
 
