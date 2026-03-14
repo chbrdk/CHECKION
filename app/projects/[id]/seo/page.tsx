@@ -54,8 +54,7 @@ export default function ProjectSeoPage() {
         const { signal } = ac;
         setProjectLoading(true);
         setSummaryLoading(true);
-        setScanId(null);
-        setFullSummary(null);
+        /* Do not clear fullSummary/scanId here: on remount (e.g. back from another tab) we keep previous data until new fetch completes to avoid flicker. */
         fetch(apiProject(id), { credentials: 'same-origin', signal })
             .then((r) => r.json())
             .then((projectData: { data?: { id: string; domain: string | null } }) => {
