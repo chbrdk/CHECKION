@@ -204,6 +204,7 @@ export default function ProjectSeoPage() {
                 {/* Header / context card */}
                 <MsqdxMoleculeCard
                     title={t('projects.seo.title')}
+                    titleVariant="h4"
                     variant="flat"
                     borderRadius="lg"
                     footerDivider
@@ -224,8 +225,8 @@ export default function ProjectSeoPage() {
                     ) : fullSummary ? (
                         <Box>
                             {hasSeoData && (
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'baseline', mb: 1 }}>
-                                    <Box>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'flex-start', mb: 1, width: '100%' }}>
+                                    <Box sx={{ flex: '1 1 0', minWidth: 100 }}>
                                         <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
                                             {t('projects.seo.score')}
                                         </MsqdxTypography>
@@ -246,7 +247,7 @@ export default function ProjectSeoPage() {
                                     </Box>
                                     {Object.keys(competitorSeoScores).length > 0 &&
                                         Object.entries(competitorSeoScores).map(([domain, c]) => (
-                                            <Box key={domain} sx={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 0.25, alignItems: 'flex-start' }}>
+                                            <Box key={domain} sx={{ flex: '1 1 0', minWidth: 80, display: 'flex', flexDirection: 'column', gap: 0.25, alignItems: 'flex-start' }}>
                                                 <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', fontSize: '0.7rem' }}>
                                                     {domain}
                                                 </MsqdxTypography>
@@ -349,8 +350,8 @@ export default function ProjectSeoPage() {
                                 borderRadius="lg"
                                 sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-secondary-dx-green)' }}
                             >
-                                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 2, width: '100%', alignItems: 'end' }}>
-                                    <Box>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, width: '100%', alignItems: 'flex-end' }}>
+                                    <Box sx={{ flex: '1 1 0', minWidth: 100 }}>
                                         <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
                                             {t('projects.seo.withTitle')}
                                         </MsqdxTypography>
@@ -363,7 +364,7 @@ export default function ProjectSeoPage() {
                                             </MsqdxTypography>
                                         </Box>
                                     </Box>
-                                    <Box>
+                                    <Box sx={{ flex: '1 1 0', minWidth: 100 }}>
                                         <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
                                             {t('projects.seo.withMetaDescription')}
                                         </MsqdxTypography>
@@ -376,7 +377,7 @@ export default function ProjectSeoPage() {
                                             </MsqdxTypography>
                                         </Box>
                                     </Box>
-                                    <Box>
+                                    <Box sx={{ flex: '1 1 0', minWidth: 100 }}>
                                         <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
                                             {t('projects.seo.withH1')}
                                         </MsqdxTypography>
@@ -389,7 +390,7 @@ export default function ProjectSeoPage() {
                                             </MsqdxTypography>
                                         </Box>
                                     </Box>
-                                    <Box>
+                                    <Box sx={{ flex: '1 1 0', minWidth: 100 }}>
                                         <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
                                             {t('projects.seo.withCanonical')}
                                         </MsqdxTypography>
@@ -417,7 +418,7 @@ export default function ProjectSeoPage() {
                                                     </MsqdxTypography>
                                                 </Box>
                                             </Box>
-                                            <Box>
+                                            <Box sx={{ flex: '1 1 0', minWidth: 100 }}>
                                                 <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
                                                     {t('projects.seo.withOgImage')}
                                                 </MsqdxTypography>
@@ -443,7 +444,7 @@ export default function ProjectSeoPage() {
                                                     </MsqdxTypography>
                                                 </Box>
                                             </Box>
-                                            <Box>
+                                            <Box sx={{ flex: '1 1 0', minWidth: 100 }}>
                                                 <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
                                                     {t('projects.seo.withTwitterCard')}
                                                 </MsqdxTypography>
@@ -459,7 +460,7 @@ export default function ProjectSeoPage() {
                                         </>
                                     )}
                                     {aggregatedSeo.pagesWithNoindex != null && (
-                                        <Box>
+                                        <Box sx={{ flex: '1 1 0', minWidth: 100 }}>
                                             <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
                                                 {t('projects.seo.indexable')}
                                             </MsqdxTypography>
@@ -474,7 +475,7 @@ export default function ProjectSeoPage() {
                                         </Box>
                                     )}
                                     {aggregatedSeo.totalWordsAcrossPages > 0 && (
-                                        <Box>
+                                        <Box sx={{ flex: '1 1 0', minWidth: 100 }}>
                                             <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
                                                 {t('projects.seo.totalWords')}
                                             </MsqdxTypography>

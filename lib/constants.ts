@@ -43,6 +43,8 @@ export const pathProject = (id: string) => `${PATH_PROJECTS}/${encodeURIComponen
 export const pathProjectRankings = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}/rankings`;
 /** Build app route: /projects/[id]/geo */
 export const pathProjectGeo = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}/geo`;
+/** Build app route: /projects/[id]/geo/analysis */
+export const pathProjectGeoAnalysis = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}/geo/analysis`;
 /** Build app route: /projects/[id]/wcag */
 export const pathProjectWcag = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}/wcag`;
 /** Build app route: /projects/[id]/seo */
@@ -258,6 +260,8 @@ export const apiProjectResearch = (id: string) => `${API_PROJECTS}/${encodeURICo
 export const apiProjectRankingSummary = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/ranking-summary`;
 /** Build: GET /api/projects/[id]/geo-summary */
 export const apiProjectGeoSummary = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/geo-summary`;
+/** Build: GET /api/projects/[id]/geo-latest-result */
+export const apiProjectGeoLatestResult = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/geo-latest-result`;
 /** GET /api/projects/[id]/domain-summary – latest deep scan summary (score, performance, eco). */
 export const apiProjectDomainSummary = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/domain-summary`;
 /** GET /api/projects/[id]/domain-summary-all – own + competitor domain summaries. */
@@ -297,6 +301,8 @@ export const DOMAIN_PAGES_TABLE_PAGE_SIZE = 50;
 export const DOMAIN_ISSUES_TABLE_PAGE_SIZE = 50;
 /** SEO on-page table: rows per page (pagination). */
 export const SEO_TABLE_PAGE_SIZE = 15;
+/** GEO analysis pages table: rows per page (pagination). */
+export const GEO_TABLE_PAGE_SIZE = 15;
 /** SEO keywords card: show this many chips initially; "load more" shows rest. */
 export const SEO_KEYWORDS_INITIAL_SHOWN = 15;
 /** SEO page: URL lists (missing canonical, noindex) show this many initially; "load more" expands. */

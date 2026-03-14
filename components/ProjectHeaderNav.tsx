@@ -7,7 +7,7 @@ import { Box, Tabs, Tab } from '@mui/material';
 import { MsqdxButton } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { useFetchOnceForId } from '@/hooks/useFetchOnceForId';
-import { apiProject, pathProject, pathProjectRankings, pathProjectGeo, pathProjectResearch, pathProjectWcag, pathProjectSeo } from '@/lib/constants';
+import { apiProject, pathProject, pathProjectRankings, pathProjectGeo, pathProjectGeoAnalysis, pathProjectResearch, pathProjectWcag, pathProjectSeo } from '@/lib/constants';
 
 /** Renders back button + project sub-nav for use in the app header (headerEnd) when on a project route. */
 export function ProjectHeaderNav() {
@@ -90,6 +90,7 @@ export function ProjectHeaderNav() {
                 <Tab label={t('projects.navOverview')} value="overview" href={id ? pathProject(id) : '#'} component={Link} />
                 <Tab label={t('projects.navRankings')} value="rankings" href={id ? pathProjectRankings(id) : '#'} component={Link} />
                 <Tab label={t('projects.navGeo')} value="geo" href={id ? pathProjectGeo(id) : '#'} component={Link} />
+                <Tab label={t('projects.navGeoAnalysis')} value="geoAnalysis" href={id ? pathProjectGeoAnalysis(id) : '#'} component={Link} />
                 <Tab label={t('projects.navResearch')} value="research" href={id ? pathProjectResearch(id) : '#'} component={Link} />
                 <Tab label={t('projects.navSeo')} value="seo" href={id ? pathProjectSeo(id) : '#'} component={Link} />
                 <Tab label={`${t('projects.navPerformance')} (${t('projects.navComingSoon')})`} value="performance" disabled sx={{ opacity: 0.6 }} />
