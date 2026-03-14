@@ -28,21 +28,16 @@ import type { AggregatedSeo, AggregatedStructure } from '@/lib/domain-aggregatio
 import { computeSeoOnPageScore } from '@/lib/seo-on-page-score';
 import { SeoOnPageTable, type SeoOnPageRow } from '@/components/SeoOnPageTable';
 
-/** Cache per project id so remount (e.g. tab switch) shows last data immediately and avoids flicker. */
+/** Cache per project id so remount shows last data immediately. Max size to avoid unbounded memory growth. */
+const SEO_CACHE_MAX = 5;
 const seoSummaryCache = new Map<string, { scanId: string; fullSummary: DomainSummaryResponse }>();
 
-function isFlickerDebugEnabled(): boolean {
-  if (typeof window === 'undefined') return false;
-  if (process.env.NODE_ENV === 'development') return true;
-  if (process.env.NEXT_PUBLIC_DEBUG_SEO_FLICKER === '1') return true;
-  try {
-    return window.localStorage?.getItem('DEBUG_SEO_FLICKER') === '1';
-  } catch {
-    return false;
+function setSeoCache(id: string, entry: { scanId: string; fullSummary: DomainSummaryResponse }) {
+  if (seoSummaryCache.size >= SEO_CACHE_MAX) {
+    const firstKey = seoSummaryCache.keys().next().value;
+    if (firstKey != null) seoSummaryCache.delete(firstKey);
   }
-}
-function debugLog(label: string, data: Record<string, unknown>) {
-  if (isFlickerDebugEnabled()) console.log(`[SEO flicker] ${label}`, data);
+  seoSummaryCache.set(id, entry);
 }
 
 export default function ProjectSeoPage() {
@@ -58,21 +53,11 @@ export default function ProjectSeoPage() {
     const [fullSummary, setFullSummary] = useState<DomainSummaryResponse | null>(() => (id ? seoSummaryCache.get(id)?.fullSummary ?? null : null));
     const fetchedForIdRef = useFetchOnceForId();
 
-    const prevFullNull = useRef<boolean | null>(null);
-    const renderCount = useRef(0);
-    renderCount.current += 1;
-    const fullNull = fullSummary == null;
-    if (isFlickerDebugEnabled() && (prevFullNull.current !== fullNull || renderCount.current <= 4)) {
-        debugLog('render', { render: renderCount.current, id: id ?? 'null', fullSummaryNull: fullNull, cacheHas: id ? seoSummaryCache.has(id) : false });
-        prevFullNull.current = fullNull;
-    }
-
     useEffect(() => {
         if (!id) return;
         if (fetchedForIdRef.current === id) return;
         fetchedForIdRef.current = id;
         const cached = seoSummaryCache.get(id);
-        debugLog('effect', { id, hasCached: !!cached });
         if (cached) {
             setScanId(cached.scanId);
             setFullSummary(cached.fullSummary);
@@ -99,13 +84,12 @@ export default function ProjectSeoPage() {
                     if (!signal.aborted && scanRes.ok) payload = await scanRes.json();
                 }
                 if (signal.aborted) return;
-                debugLog('setFullSummary', { id, aborted: signal.aborted });
                 setProject(projectRes?.data ?? null);
                 setProjectLoading(false);
                 if (sid) setScanId(sid);
                 if (payload) {
                     setFullSummary(payload);
-                    seoSummaryCache.set(id, { scanId: sid!, fullSummary: payload });
+                    setSeoCache(id, { scanId: sid!, fullSummary: payload });
                 }
                 setSummaryLoading(false);
             } catch (err) {
@@ -116,7 +100,7 @@ export default function ProjectSeoPage() {
             }
         })();
         return () => ac.abort();
-    }, [id, fetchedForIdRef]);
+    }, [id]);
 
     const pagesByUrl = useMemo(() => {
         const pages = fullSummary?.pages;
