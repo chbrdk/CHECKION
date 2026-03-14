@@ -40068,9 +40068,794 @@ wir haben performance probleme das alles wieder flackert und neu lädt, irgendei
 
 _**Agent (model default, mode Agent)**_
 
+<think><details><summary>Thought Process</summary>
+
+The user is experiencing performance issues - flickering and reloading. They suspect a listener or hook is causing re-queries. They want to fetch everything once upfront and avoid re-requeries.
+
+I need to find where data is being fetched on the project pages (especially SEO, WCAG, project overview) and identify:
+1. useEffect/useCallback that trigger refetches
+2. Dependencies that change often and cause re-runs
+3. Multiple separate fetches that could be consolidated
+4. Any subscriptions or listeners that trigger updates
+
+Let me search for data fetching patterns in the project pages and related components.
+</details></think>
+
+---
+
+
+Suche nach Datenabfragen und Hooks, die unnötige Neuabfragen auslösen:
 
 
 ---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "useEffect|fetch\\(|\\.then\\(",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects",
+  "outputMode": "content",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "useEffect|fetch\\(|\\.then\\(",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects",
+  "outputMode": "content",
+  "totalFiles": 35,
+  "totalMatches": 405,
+  "topFiles": [
+    {
+      "uri": "app/projects/[id]/seo/page.tsx",
+      "matchCount": 10
+    },
+    {
+      "uri": "app/projects/[id]/wcag/page.tsx",
+      "matchCount": 10
+    },
+    {
+      "uri": "app/projects/[id]/page.tsx",
+      "matchCount": 15
+    },
+    {
+      "uri": "app/projects/[id]/geo/page.tsx",
+      "matchCount": 20
+    },
+    {
+      "uri": "app/projects/[id]/research/page.tsx",
+      "matchCount": 8
+    },
+    {
+      "uri": "app/projects/[id]/rankings/page.tsx",
+      "matchCount": 12
+    },
+    {
+      "uri": "app/projects/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/seo/page.tsx",
+      "matchCount": 10
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/wcag/page.tsx",
+      "matchCount": 10
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 15
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/geo/page.tsx",
+      "matchCount": 20
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/research/page.tsx",
+      "matchCount": 8
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 12
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/seo/page.tsx",
+      "matchCount": 10
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/wcag/page.tsx",
+      "matchCount": 10
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 15
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/geo/page.tsx",
+      "matchCount": 20
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/research/page.tsx",
+      "matchCount": 8
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/rankings/page.tsx",
+      "matchCount": 12
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/wcag/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see the pattern. Each page has:
+1. loadProject() in useCallback([id]) - so when id changes it runs
+2. useEffect(() => loadProject(), [loadProject]) - runs when loadProject reference changes. loadProject changes when id changes, so that's OK.
+3. A second useEffect for summary data with [id] dependency
+
+The issue might be:
+1. useI18n() or useParams() could be returning new references on each render in some setups, causing loadProject to be recreated
+2. If the parent layout or something re-renders and passes new object/array refs, useMemo dependencies like fullSummary?.pages could change (reference equality)
+3. Router or other context might trigger re-renders
+
+Let me check - useParams() in Next.js returns a new object every time? Actually in Next 13+ useParams returns a stable reference per route. useI18n() - might return new t function reference?
+
+The key fix the user wants: "fetch everything once and no re-queries". So:
+1. Use a ref to track if we've already loaded for this id, and skip re-fetching
+2. Or use a single effect that runs only when id changes, and don't have loadProject in a useCallback that could change
+3. Stabilize the effect dependencies so they only depend on id (primitive)
+
+Let me look at what could cause re-runs:
+- useEffect(..., [id]) - runs when id changes. Good.
+- useEffect(..., [loadProject]) - loadProject is useCallback(..., [id]). So loadProject only changes when id changes. But wait - if the component re-mounts (e.g. due to parent state), we'd run again. And if useCallback's dependencies aren't stable (e.g. id from params could be unstable in some edge cases?), we could get multiple runs.
+
+Actually the more likely culprit: React Strict Mode double-mounts effects in development. So we get double fetch. Or - when navigating between tabs (SEO, WCAG, etc.) the same project [id] page might remount and refetch.
+
+Another possibility: the useMemo dependencies. fullSummary?.pages - if fullSummary is set from a fetch, the setState(payload) sets a new object. So fullSummary?.pages is a new array reference every time we set state. So pagesByUrl gets recomputed every time. But that shouldn't trigger a refetch - the useEffect only depends on id.
+
+Unless - the parent layout or a provider is re-rendering and causing the whole tree to re-render, and something in the chain is causing the effect to re-run. For example if id is derived from params and params is an object that's recreated every render, then id might be the same string but... no, id is a string.
+
+Let me add a "fetched once" guard using a ref: we'll only run the data-loading effect when id changes, and we'll use a ref to ignore stale responses (so if id changes we don't set state from the old request). And we can use a ref to record that we've already started a fetch for this id, and not start another one. Actually the simpler approach: use a ref to store the last fetched id; in the effect, if we're already loading or already have data for this id, don't refetch. That way when the component re-renders (for any reason), we won't trigger a new fetch.
+
+Let me implement:
+1. useRef(hasFetchedForId: string | null) - after successful fetch set to id. In effect, if hasFetchedForId === id, skip fetch (we already have data).
+2. But then when user navigates to another project we need to fetch. So: only skip if we have fullSummary and the id matches. So actually: when id changes we clear and fetch. When id is same and we already have fullSummary, don't fetch. So the effect should be: if (!id) return; if (fullSummary && fullSummary.projectId === id?) - we don't have projectId in summary. We have scanId. So we need another way. Simpler: use a ref "lastFetchedId". When effect runs, if lastFetchedId === id, return early (no refetch). When we complete fetch, set lastFetchedId = id. When id changes, lastFetchedId !== id so we run. Then we set lastFetchedId = id at the end. So we only ever run one fetch per id. But we need to still run when id changes - so when id changes, lastFetchedId is stale (e.g. "abc"), new id is "xyz", so we run. Good. So the ref prevents re-running when the effect's dependencies might be re-triggering it (e.g. in Strict Mode or parent re-render). Actually in React, useEffect([id]) only re-runs when id changes. So the effect shouldn't re-run on parent re-render. Unless id is not stable. Let me check - params.id could be string | string[] in Next. We do params.id?.[0] - so we get a string. That should be stable.
+
+Oh! One more possibility: the dependency array might be wrong. In SEO page we have useEffect(..., [id]). So we have one effect that depends on id. So it should only run when id changes. So why would there be re-queries? Unless:
+1. The component unmounts and remounts (e.g. switching between project tabs SEO/WCAG/Overview). When you switch from Overview to SEO, the SEO page mounts and its effect runs - so it fetches. When you switch from SEO to WCAG, SEO unmounts and WCAG mounts - WCAG fetches. So each tab does its own fetch when you first land on it. That's expected. But if you're on SEO and the page keeps re-fetching, that would be the bug.
+2. Maybe the issue is that when you're on the project overview, there are multiple useEffects that run and they trigger state updates that cause re-renders, and something in the tree causes a remount? Or the project layout has a key that changes?
+3. Or - the useCallback(loadProject, [id]) - in theory id is stable. But what if the parent re-renders and passes a new params object, so useParams() returns a new object, and params.id is a new string reference? In JavaScript, primitive values are compared by value, so params.id === "xyz" is true even if we had another "xyz" from previous render. So id should be stable.
+4. Perhaps the issue is in a child component - e.g. a component that fetches on hover or on visibility? Let me search for more fetch or useEffect in the project pages and in components they use.
+
+I'll add a ref-based guard so we only fetch once per id and ignore duplicate effect runs (e.g. from Strict Mode). I'll also make the initial state not trigger a loading flash - we could use a ref "initialLoadDone" and only set loading true if we're actually starting a new fetch. Let me read the project page and domain page to see the full picture.
+</details></think>
+
+---
+
+
+Layout und übergeordnete Komponenten prüfen; wir stabilisieren die Datenabfrage mit Refs, damit nur einmal pro Route/ID geladen wird.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/layout.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "useEffect|useCallback|fetch",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components",
+  "glob": "*Project*",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "useEffect|useCallback|fetch",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 60,
+  "topFiles": [
+    {
+      "uri": "components/ProjectHeaderNav.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "components/AddToProject.tsx",
+      "matchCount": 8
+    },
+    {
+      "uri": "../CHECKION-1/components/ProjectHeaderNav.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/components/AddToProject.tsx",
+      "matchCount": 8
+    },
+    {
+      "uri": "../CHECKION-1/components/ProjectHeaderNav.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/components/AddToProject.tsx",
+      "matchCount": 8
+    },
+    {
+      "uri": "../CHECKION-1/components/ProjectHeaderNav.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/components/AddToProject.tsx",
+      "matchCount": 8
+    },
+    {
+      "uri": "../CHECKION-1/components/ProjectHeaderNav.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/components/AddToProject.tsx",
+      "matchCount": 8
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see - ProjectHeaderNav also has its own loadProject and useEffect. So when we're on a project page we have:
+1. Project detail page (or SEO or WCAG child) - fetches project + summary data
+2. ProjectHeaderNav - also fetches project (apiProject(id)) in its own useEffect
+
+So the header might be re-fetching project on every render if its effect re-runs. And if the header triggers a state update, the parent re-renders, and maybe something causes the child to re-run its effect too.
+
+Let me check ProjectHeaderNav - it has loadProject and useEffect(loadProject, [loadProject]). So it fetches project. That's duplicate with the page's project fetch. And if the layout re-renders (e.g. when any child sets state), the layout's children re-render. So SEO page re-renders. The SEO page's useEffect has [id] - id shouldn't change. So the effect shouldn't re-run. Unless the component unmounts and remounts. When would it remount? If the parent uses key={something} and something changes. Or if we're using a router that unmounts/remounts. Let me check - in Next.js App Router, when you navigate from /projects/123 to /projects/123/seo, the layout stays mounted and the page content switches. So the SEO page mounts once. Its effect runs once. So we get one fetch. Unless React Strict Mode double-invokes effects - then we'd get two fetches on mount. And the setState from both would cause two re-renders - could look like "flashing".
+
+I'll implement:
+1. Use a ref to prevent duplicate fetches: lastFetchedIdRef. In the effect, only run fetch if lastFetchedIdRef.current !== id. When we start fetch set lastFetchedIdRef.current = id (or a "loading" sentinel). When we finish, keep it as id. When id changes (user navigated to different project), lastFetchedIdRef.current is old id so we run. Reset lastFetchedIdRef when id changes (in effect start).
+2. Don't reset state (setFullSummary(null)) at the start of the effect when we're refetching for the same id - that causes a flash. Only reset when id actually changed. So: when id changes we clear and set loading. When we're just preventing duplicate run we don't touch state.
+3. Use an AbortController so if the effect cleans up (e.g. id changed or component unmount) we abort the fetch and don't call setState after unmount.
+
+Let me also check - on the project overview page, handleAddCompetitor and handleRemoveCompetitor call loadProject() after PATCH. So they intentionally refetch. That's correct. The issue is the initial load or unnecessary refetches when nothing changed.
+
+I'll add ref-based "fetch once per id" logic to:
+- app/projects/[id]/seo/page.tsx
+- app/projects/[id]/wcag/page.tsx  
+- app/projects/[id]/page.tsx (overview)
+- app/projects/[id]/geo/page.tsx (if it has similar pattern)
+- components/ProjectHeaderNav.tsx
+
+And use AbortController to avoid setState after unmount.
+
+Let me read the geo page and ProjectHeaderNav fully.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ProjectHeaderNav.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see the pattern now. Multiple useEffects with [id] - each runs when id changes. But the problem could be:
+
+1. **ProjectHeaderNav** - fetches project (name) with loadProject. So we have project fetched in both the page and the header. When the header's loadProject runs and setProjectName triggers a re-render, the parent (layout) re-renders, and the page (child) re-renders. The page's useEffect has [id] so it shouldn't re-run. So that's fine.
+
+2. **Strict Mode** - In React 18 Strict Mode, effects run twice on mount. So we get: effect runs -> fetch -> setState -> effect runs again (cleanup then run again) -> fetch again -> setState. So we get two fetches and two loading cycles. That could look like "flackering".
+
+3. **useCallback(loadProject, [id])** - If for any reason the component re-creates (e.g. key change), we get new loadProject. So the dependency [loadProject] in useEffect(..., [loadProject]) would trigger the effect again. So we have two effects on SEO page: one with [loadProject] and one with [id]. The first runs when loadProject changes (i.e. when id changes). The second runs when id changes. So we're good. But wait - on first mount, loadProject is created with id. So we have loadProject1. Effect 1 runs (loadProject). Effect 2 runs (id). So we run loadProject() and we run the summary fetch. So we have two separate effects that both run on mount. And loadProject is called from effect 1. So we fetch project. And we fetch summary. If Strict Mode doubles effect 1 and effect 2, we'd get: mount -> effect1 run, effect2 run -> (strict mode) cleanup effect1, cleanup effect2 -> effect1 run again, effect2 run again. So we'd run loadProject twice and the summary fetch twice. The summary fetch doesn't have abort - so both could complete and call setState. That could cause flickering (loading true -> data -> loading true again -> data again).
+
+Solution:
+1. Use a ref to track "have we already started/fulfilled fetch for this id". Only run the effect body once per id. When id changes, reset the ref so we run again.
+2. Use AbortController and pass it to fetch, so when the effect cleans up (e.g. Strict Mode cleanup or unmount) we abort and don't setState.
+3. Optionally: combine project + summary into a single fetch from the server (one API that returns both) so we have one request per page. But that would require API changes. For now let's do ref + abort.
+
+Implementation for "fetch once per id" with ref:
+- ref current = id we've completed loading for (or a symbol for "loading")
+- In effect: if (!id) return; if (ref.current === id && we have data) return; // already loaded for this id
+- When we start: ref.current = id (or a loading sentinel); setLoading(true); 
+- When we finish: ref.current = id; setData(...); setLoading(false);
+- When id changes: ref.current is old id, so we don't skip. We run. We set ref.current = id at start. We clear previous data. We fetch. We get new data, setState. So we need to reset ref when id changes - so when id changes, ref.current !== id, so we enter the effect. Good. But we need to set ref when we *start* the fetch so that a duplicate run (Strict Mode) sees ref.current === id and skips. So: at the very beginning of effect, if (ref.current === id) return; ref.current = id; ... fetch ... on success/finally ref stays id. When id changes to id2, ref.current is id, id2 !== id, so we run. Set ref.current = id2. Fetch for id2. Good. So the ref should be "last id we started loading for". So at start: if (ref.current === id) return; ref.current = id; ... rest of effect. When id changes, ref.current is old id so we don't return. We set ref.current = new id. So we need to set ref at the beginning. And when the request completes we shouldn't set ref again (we already set it). But what if the request fails? We still have ref.current = id. So a retry wouldn't happen. For "fetch once" that's correct. If we want to allow manual retry we could expose a refresh function that sets ref.current = null or something. For now "fetch once per id" is enough.
+
+Actually wait - in Strict Mode, the flow is: effect runs, ref.current !== id (ref.current is undefined), so we set ref.current = id and start fetch. Then Strict Mode runs cleanup. Then effect runs again. Now ref.current === id! So we return early and don't start a second fetch. Perfect. So we need to NOT reset ref in cleanup. So when component unmounts (navigate away), ref keeps the old id. When we mount again for same project (e.g. navigated away and back), ref.current is still the old id. So we'd skip the fetch. That's wrong. We need to reset ref when id changes. So in the effect, when id changes we run. We set ref.current = id (new id). So when we navigate from project A to project B, ref was A, now we set ref = B and fetch. Good. When we navigate from project A to project B back to A, we mount project A's page. ref.current is B. id is A. So we don't return (ref.current !== id). We set ref.current = A. We fetch. Good. So we only need to set ref.current = id at the start of the effect when we're actually going to fetch. And we should not return early when we have data - we should return early when we've already started a fetch for this id. So: if (ref.current === id) return; ref.current = id; setLoading(true); ... fetch ... setState ... setLoading(false). So if we already have data and ref.current === id, we return and don't refetch. So when we navigate away and come back, ref.current is still the previous id (e.g. B), and current id is A. So we don't return. We fetch. Good. When Strict Mode runs effect twice, second time ref.current === id so we return. Good.
+
+Let me also use AbortController so we don't setState after unmount. So: const ac = new AbortController(); ... fetch(url, { signal: ac.signal }) ... return () => ac.abort(); So we need to return a cleanup that aborts. And in the .then we check if the request was aborted and don't setState. Actually when we abort, the fetch throws or the promise rejects with AbortError. So we need to catch and not setState on abort. So: .catch(err => { if (err.name !== 'AbortError') setError(...); }) and in .then we could check signal.aborted. Let me implement.
+</details></think>
+
+---
+
+
+Wir führen eine zentrale „Fetch-once-per-id“-Logik mit Ref und AbortController ein, um doppelte Abfragen und Flackern zu vermeiden.
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] Add fetch-once ref + AbortController to project overview page
+- [ ] Add fetch-once ref + AbortController to SEO page
+- [ ] Add fetch-once ref + AbortController to WCAG page
+- [ ] Add fetch-once ref to GEO page (multiple effects)
+- [ ] Add fetch-once ref to ProjectHeaderNav
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Creating a small shared hook would be ideal so we don't duplicate the ref + abort logic everywhere. Let me create a hook `useFetchOnce` or we could name it `useProjectData` that takes id and a fetch function. Actually the pages have different fetch logic - overview fetches 3 things in parallel, SEO fetches domain summary then scan summary. So a generic "run once per id" ref in the effect is simpler: at the top of the effect body, if (lastFetchedIdRef.current === id) return; lastFetchedIdRef.current = id; and use AbortController in the cleanup. I'll add this to each page.
+</details></think>
+
+---
+
+
+Einen wiederverwendbaren Hook erstellen und alle Projektseiten darauf umstellen:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll create a hook that:
+1. Takes a stable key (e.g. id)
+2. Returns a ref that we set at the start of the effect - if ref.current === key we skip (already ran for this key)
+3. We can put the ref and the "run once" logic inside the hook and have the hook accept a callback that does the fetch. So: useFetchOnce(id, () => { ... fetch ... }, [id]). The hook would run the callback in a useEffect and use a ref to only run once per id. And return a cleanup with AbortController.
+
+Actually simpler: create a ref in each page, and at the start of the data-loading effect do:
+  if (!id) return;
+  if (dataLoadedForIdRef.current === id) return;
+  dataLoadedForIdRef.current = id;
+  const ac = new AbortController();
+  // ... fetch with ac.signal, in finally/catch check !ac.signal.aborted before setState
+  return () => ac.abort();
+
+The problem with "dataLoadedForIdRef.current === id" for "skip" is: when we first load we set it to id. So we have data. When Strict Mode runs the effect again, we skip. Good. When user navigates to another project (id changes), we don't skip because ref.current is old id. We set ref.current = new id and fetch. Good. When we navigate back to first project, ref.current is second project's id, so we don't skip - we fetch again. So we'd refetch when navigating back. That's actually desirable for fresh data. If we want to cache and not refetch when coming back, we'd need a cache. The user said "alles vorher einmal abfragen und keine rerequeries" - so they want one fetch, no re-queries. So the main issue is avoiding duplicate fetches when the effect re-runs (Strict Mode or unstable deps). So "skip if we already ran for this id" means: skip if we've already *started* a fetch for this id (ref.current === id). Once we've completed, ref.current is still id, so we skip. When we navigate away, we don't reset ref (we could reset in cleanup: when id changes, cleanup runs with old id - we could set ref to null in cleanup so that when we come back to the same project we'd refetch. Actually when we navigate from A to B: effect for B runs, ref.current might be A, so we don't skip. We set ref.current = B. We fetch B. Good. When we navigate from B back to A: effect for A runs, ref.current is B, so we don't skip. We set ref.current = A. We fetch A. So we always refetch when id changes. We only skip when the same effect runs again for the same id (Strict Mode). Perfect.
+
+Implementing.
+</details></think>
+
+---
+
+
+Implementierung: Zuerst den Hook anlegen, dann alle Seiten anpassen.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/hooks/useFetchOnceForId.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Actually we need a fresh AbortController per effect run, not a ref that persists. So the hook useAbortController isn't right for useEffect - we need to create the controller inside the effect and return () => ac.abort() in the cleanup. So I'll remove that second hook and just use the ref for fetch-once. AbortController we create inside each effect.
+</details></think>
+
+---
+
+
+AbortController pro Effect-Lauf erzeugen. Hook vereinfachen:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/hooks/useFetchOnceForId.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now update the project overview page: 
+1. Merge the two useEffects (loadProject and the Promise.all) so we only have one place that runs when id changes. Actually the user said "alles vorher einmal abfragen" - so they want one fetch. So we could merge project + lists into one flow. So: one effect that when id changes, if ref.current === id return; ref.current = id; setLoading(true); fetch project, then fetch the three in parallel (or we could do all 4 in parallel). Then setState for all. So one effect, one "loading" state for initial load. Let me keep the project fetch and the lists fetch in one effect so they run together once. And use the ref so we don't run twice.
+2. Don't use loadProject in a separate effect - call it inside the single effect or merge the data. So we have one effect that: checks ref, sets ref, fetches project + ranking + geo + domainSummaryAll in parallel, sets all state, sets loading false. Then we need loadProject for after PATCH (add/remove competitor) - so we keep loadProject as a function that only fetches project, and we call it after PATCH. The initial load we do in one effect with ref.
+</details></think>
+
+---
+
+
+Projekt-Übersichtsseite anpassen: einen einzigen Lade-Effect mit Ref und AbortController.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+We need to reset the ref when id changes so that when we navigate to a different project we do fetch. Currently when id changes, the effect runs, and fetchedForIdRef.current might be the previous id, so we don't return (ref.current !== id). We set ref.current = id (the new id). Good. So we're fine. But when we navigate from A to B, the component might unmount (if it's a different route) or the same component might get new id. In Next.js app router, when we go from /projects/A to /projects/B, the page component re-renders with new params, so id changes from A to B. So effect runs, ref.current is A, id is B, so we don't skip. We set ref.current = B. Good.
+
+One issue: we're including fetchedForIdRef in the dependency array. The ref object is stable (same reference every time), so it doesn't cause re-runs. Good.
+
+Let me also fix - when we call loadProject() after PATCH, we're only updating project. We're not resetting the ref. So after add competitor, we refetch project and that's correct. Good.
+
+Now SEO page.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add fetch-once ref + AbortController to project overview page
+- [-] Add fetch-once ref + AbortController to SEO page
+- [ ] Add fetch-once ref + AbortController to WCAG page
+- [ ] Add fetch-once ref to GEO page (multiple effects)
+- [ ] Add fetch-once ref to ProjectHeaderNav
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+SEO page: we're running two fetches in parallel (project and domain summary). The domain summary chain has a second fetch (apiScanDomainSummary). If the first project fetch fails we still set project null. But we need to set projectLoading false and summaryLoading false in both branches. Currently project fetch has its own catch and doesn't have finally. So we have:
+- Project fetch: then setProject, catch setProject(null). No finally.
+- Domain summary: then ... finally setProjectLoading(false); setSummaryLoading(false).
+
+So when project fetch finishes first we never set loading false from it. When domain summary finishes we set both loadings false. But if domain summary fails or doesn't have scanId, we still run finally and set both to false. However project fetch doesn't set projectLoading to false - we rely on domain summary's finally. So if domain summary never gets a scanId (no scan), we still run finally and set both loadings false. Good. But if we only had project fetch (e.g. domain summary returns no scanId), we'd set summaryLoading false in finally but projectLoading was set true at start and never set false by project fetch. So we need to set projectLoading false in the project fetch's finally too, or have a single finally that runs after both. The simplest is: in the domain summary's finally we set both to false. So we're good - that finally runs whether we had scanId or not. And the project fetch doesn't have finally - so when does projectLoading become false? Only when the domain summary promise chain hits finally. So if project fetch is slow and domain summary is fast (no scanId), we hit finally and set both false. If project fetch is fast and domain summary is slow, we don't set projectLoading false until domain summary finishes. So we need to set projectLoading false when project fetch completes. Let me add finally to the project fetch to set projectLoading false. And summaryLoading false only when the summary chain completes. So:
+  project fetch: then setProject, catch setProject(null), finally setProjectLoading(false)
+  domain summary: ... finally setSummaryLoading(false)
+That way both loadings get set correctly.
+</details></think>
+
+---
+
+
+projectLoading in der SEO-Seite nach dem Projekt-Fetch auf false setzen.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now WCAG page - same pattern: one effect, ref, AbortController, merge project + summary fetches.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/wcag/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+WCAG page has loadProject in one effect and then Promise.all(domainSummary, domainSummaryAll) then optionally fetch(scanSummary). I'll merge project fetch with the rest and add ref + abort.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/wcag/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/wcag/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now GEO page - it has 4 separate useEffects: loadProject, geo history, geo summary, question history. I'll add ref to each so they only run once per id, and use AbortController where we have a single fetch. For the question history effect they already have a "cancelled" flag - we can use AbortController there too.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Add fetch-once ref + AbortController to project overview page
+- [x] Add fetch-once ref + AbortController to SEO page
+- [x] Add fetch-once ref + AbortController to WCAG page
+- [-] Add fetch-once ref to GEO page (multiple effects)
+- [ ] Add fetch-once ref to ProjectHeaderNav
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+GEO page has 4 effects. I'll merge them into one effect that runs once per id (using ref), fetches project + geo history + geo summary + question history in parallel, and uses one AbortController. That way we have a single load and no re-queries.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+GEO page - the API responses might have different shapes. Let me check: apiProject returns { data: project }. apiScanGeoEeatHistory - returns { runs } or { data }? apiProjectGeoSummary returns { success, data: { score, competitorScores } }. apiProjectGeoQuestionHistory returns { success, questions, targetDomain, competitorDomains }. So in the Promise.all we have:
+- projectRes = { data: project }
+- historyRes = { runs } or { data: runs }
+- summaryRes = { success, data: { score, competitorScores } }
+- questionRes = { success, questions?, targetDomain?, competitorDomains? }
+
+I used questionRes.questions etc - that's the shape from the API. Let me check the API - it might return { success, data: { questions, targetDomain, competitorDomains } }. Let me check the geo page's original handling: data?.success, data?.questions, data?.targetDomain, data?.competitorDomains. So the response is { success, questions, targetDomain, competitorDomains } not nested in data. Good.
+</details></think>
+
+---
+
+
+ProjectHeaderNav anpassen: Ref hinzufügen, damit das Projekt nur einmal geladen wird.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/ProjectHeaderNav.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to fix the GEO page - loadProject is still used somewhere (e.g. after starting a geo run we might refetch project). Let me check - in GEO page we have loadProject in useCallback and it's used somewhere. Let me search.
+</details></think>
+
+---
+
+
 
 
 
@@ -40080,7 +40865,51 @@ _**Agent (model default, mode Agent)**_
 <details>
 <summary>Tool use: **ripgrep_raw_search**</summary>
 
-Status: **loading**
+
+Parameters:
+
+```json
+{
+  "pattern": "loadProject",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "loadProject",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/page.tsx",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 35,
+  "topFiles": [
+    {
+      "uri": "app/projects/[id]/geo/page.tsx",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/geo/page.tsx",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/geo/page.tsx",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/geo/page.tsx",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/geo/page.tsx",
+      "matchCount": 7
+    }
+  ]
+}
+```
+Status: **completed**
 
 
 </details>
@@ -40088,59 +40917,30 @@ Status: **loading**
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/page.tsx</summary>
 
 </details>
 </tool-use>
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
+<think><details><summary>Thought Process</summary>
 
-Status: **loading**
+GEO page keeps loadProject for manual refresh after PATCH - that's correct. The ref only prevents the *initial* effect from running twice; when user adds a query and we call loadProject(), we're explicitly refetching. Good.
 
+Let me verify the project overview page - we're not resetting fetchedForIdRef when we call loadProject() after PATCH. So after add competitor we call loadProject() which only fetches project, not the lists. So we're good. The ref is only for the initial combined fetch.
 
-</details>
-</tool-use>
+Let me double-check: in overview, when we load we set fetchedForIdRef.current = id. So we won't run the effect again for same id. When user adds competitor we call loadProject() - that's a separate function that only fetches apiProject(id). So we get fresh project with new competitors. We don't reset the ref. So if the user then navigates away and back to the same project, ref.current === id so we skip the effect - we wouldn't refetch the lists. That might be OK (we have project from loadProject() and the lists from initial load). Actually when we come back to the project page, the component might remount - so we get a fresh ref (null). So ref.current !== id, we run the effect. Good. So when we navigate from project A to SEO and back to overview, does the overview component unmount? In Next.js app router, when we go from /projects/123 to /projects/123/seo, the layout stays mounted but the page content switches - so the overview page component unmounts and SEO mounts. When we go back to /projects/123, overview mounts again. So we get a new ref (null). So we run the effect. Good.
 
----
-
-
+Let me run the build and fix any issues. I need to fix the GEO page API response shape - questionRes might have data.questions. Let me check the API.
+</details></think>
 
 ---
 
 
 
----
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
-
-</details>
-</tool-use>
-
----
-
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
-
-</details>
-</tool-use>
 
 ---
 
@@ -40148,7 +40948,91 @@ Status: **loading**
 <details>
 <summary>Tool use: **ripgrep_raw_search**</summary>
 
-Status: **loading**
+
+Parameters:
+
+```json
+{
+  "pattern": "questions|targetDomain|competitorDomains",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "questions|targetDomain|competitorDomains",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/api/projects",
+  "outputMode": "content",
+  "totalFiles": 15,
+  "totalMatches": 100,
+  "topFiles": [
+    {
+      "uri": "app/api/projects/[id]/domain-scan-all/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/api/projects/[id]/geo-summary/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "app/api/projects/[id]/geo-question-history/route.ts",
+      "matchCount": 16
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/domain-scan-all/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/geo-summary/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/geo-question-history/route.ts",
+      "matchCount": 16
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/domain-scan-all/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/geo-summary/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/geo-question-history/route.ts",
+      "matchCount": 16
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/domain-scan-all/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/geo-summary/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/geo-question-history/route.ts",
+      "matchCount": 16
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/domain-scan-all/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/geo-summary/route.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/api/projects/[id]/geo-question-history/route.ts",
+      "matchCount": 16
+    }
+  ]
+}
+```
+Status: **completed**
 
 
 </details>
@@ -40156,35 +41040,246 @@ Status: **loading**
 
 ---
 
+<think><details><summary>Thought Process</summary>
 
+The API returns { success: true, targetDomain, competitorDomains, questions }. So the response is at top level. So questionRes.questions, questionRes.targetDomain, questionRes.competitorDomains are correct. But we need to check - does the API return NextResponse.json({ success: true, ... }) so the body is { success, targetDomain, competitorDomains, questions }? Yes. So our GEO code is correct.
+
+Let me run build and fix lint. Also remove the duplicate todo item 4/5 - we have GEO and ProjectHeaderNav.
+</details></think>
 
 ---
 
 
 
+
+
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
 
-Status: **loading**
-
+- [x] Add fetch-once ref + AbortController to project overview page
+- [x] Add fetch-once ref + AbortController to SEO page
+- [x] Add fetch-once ref + AbortController to WCAG page
+- [x] Add fetch-once ref to GEO page (multiple effects)
+- [x] Add fetch-once ref to ProjectHeaderNav
 
 </details>
 </tool-use>
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
 
-Status: **loading**
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 7.0s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+  Generating static pages using 9 workers (0/47) ...
+  Generating static pages using 9 workers (11/47) 
+  Generating static pages using 9 workers (23/47) 
+  Generating static pages using 9 workers (35/47) 
+✓ Generating static pages using 9 workers (47/47) in 307.5ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/register
+├ ƒ /api/auth/tokens
+├ ƒ /api/auth/tokens/[id]
+├ ƒ /api/checks/contrast
+├ ƒ /api/checks/pagespeed
+├ ƒ /api/checks/readability
+├ ƒ /api/checks/ssl
+├ ƒ /api/checks/wayback
+├ ƒ /api/health
+├ ƒ /api/journeys
+├ ƒ /api/journeys/[id]
+├ ƒ /api/projects
+├ ƒ /api/projects/[id]
+├ ƒ /api/projects/[id]/domain-scan-all
+├ ƒ /api/projects/[id]/domain-summary
+├ ƒ /api/projects/[id]/domain-summary-all
+├ ƒ /api/projects/[id]/geo-question-history
+├ ƒ /api/projects/[id]/geo-summary
+├ ƒ /api/projects/[id]/ranking-summary
+├ ƒ /api/projects/[id]/research
+├ ƒ /api/projects/[id]/suggest-competitors
+├ ƒ /api/projects/[id]/suggest-keywords
+├ ƒ /api/rank-tracking/keywords
+├ ƒ /api/rank-tracking/keywords/[id]
+├ ƒ /api/rank-tracking/keywords/[id]/positions
+├ ƒ /api/rank-tracking/refresh
+├ ƒ /api/saliency/generate
+├ ƒ /api/saliency/result
+├ ƒ /api/scan
+├ ƒ /api/scan/[id]
+├ ƒ /api/scan/[id]/project
+├ ƒ /api/scan/[id]/screenshot
+├ ƒ /api/scan/[id]/summarize
+├ ƒ /api/scan/domain
+├ ƒ /api/scan/domain/[id]/journey
+├ ƒ /api/scan/domain/[id]/status
+├ ƒ /api/scan/domain/[id]/summarize
+├ ƒ /api/scan/domain/[id]/summary
+├ ƒ /api/scan/domain/by-domain
+├ ƒ /api/scan/geo-eeat
+├ ƒ /api/scan/geo-eeat/[jobId]
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history/[runId]
+├ ƒ /api/scan/geo-eeat/[jobId]/project
+├ ƒ /api/scan/geo-eeat/[jobId]/rerun-competitive
+├ ƒ /api/scan/geo-eeat/[jobId]/status
+├ ƒ /api/scan/geo-eeat/history
+├ ƒ /api/scan/geo-eeat/suggest-competitors-queries
+├ ƒ /api/scan/journey-agent
+├ ƒ /api/scan/journey-agent/[jobId]
+├ ƒ /api/scan/journey-agent/[jobId]/live
+├ ƒ /api/scan/journey-agent/[jobId]/live/stream
+├ ƒ /api/scan/journey-agent/[jobId]/project
+├ ƒ /api/scan/journey-agent/[jobId]/video
+├ ƒ /api/scan/journey-agent/history
+├ ƒ /api/scans
+├ ƒ /api/scans/[id]
+├ ƒ /api/scans/domain
+├ ƒ /api/scans/domain/[id]
+├ ƒ /api/scans/domain/[id]/project
+├ ƒ /api/search
+├ ƒ /api/share
+├ ƒ /api/share/[token]
+├ ƒ /api/share/[token]/access
+├ ƒ /api/share/[token]/pages/[pageId]
+├ ƒ /api/share/[token]/pages/[pageId]/screenshot
+├ ƒ /api/share/[token]/video
+├ ƒ /api/share/by-resource
+├ ƒ /api/tools/contrast
+├ ƒ /api/tools/extract
+├ ƒ /api/tools/pagespeed
+├ ƒ /api/tools/readability
+├ ƒ /api/tools/ssl-labs
+├ ƒ /api/tools/wayback
+├ ƒ /developers
+├ ƒ /domain/[id]
+├ ƒ /geo-eeat/[jobId]
+├ ƒ /history
+├ ƒ /journey-agent/[jobId]
+├ ƒ /login
+├ ƒ /projects
+├ ƒ /projects/[id]
+├ ƒ /projects/[id]/geo
+├ ƒ /projects/[id]/rankings
+├ ƒ /projects/[id]/research
+├ ƒ /projects/[id]/seo
+├ ƒ /projects/[id]/wcag
+├ ƒ /register
+├ ƒ /results/[id]
+├ ƒ /scan
+├ ƒ /scan/domain
+├ ƒ /settings
+└ ƒ /share/[token]
 
 
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
+
+```
 </details>
 </tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build succeeded. Let me add the hook to the knowledge folder as requested by the user's rules (document things for reuse).
+</details></think>
+
+---
+
+
+Build war erfolgreich. Kurz in der Knowledge-Base festhalten:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-fetch-once-pattern.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+All done. Let me give the user a short summary.
+</details></think>
+
+---
+
+
+Zusammenfassung der Änderungen:
+
+## 1. Hook `useFetchOnceForId`  
+**`hooks/useFetchOnceForId.ts`**
+- Liefert eine Ref, die speichert, für welche `id` zuletzt geladen wurde.
+- Im Effect: `if (ref.current === id) return; ref.current = id;` → der Lade-Logik-Block läuft pro Route/`id` nur **einmal**. Keine doppelten Fetches bei Re-Render oder React Strict Mode.
+
+## 2. Eine kombinierte Abfrage pro Seite, mit Abort
+- **Overview** (`app/projects/[id]/page.tsx`): Ein Effect lädt **parallel** Projekt, Ranking, Geo und Domain-Summary. AbortController im Cleanup, alle `setState` nur wenn `!signal.aborted`.
+- **SEO** (`app/projects/[id]/seo/page.tsx`): Ein Effect lädt Projekt + Domain-Summary (+ ggf. Scan-Summary). Ref + Abort, kein zweiter „loadProject“-Effect.
+- **WCAG** (`app/projects/[id]/wcag/page.tsx`): Ein Effect lädt Projekt + Domain-Summary + Domain-Summary-All (+ Scan-Summary). Ref + Abort.
+- **GEO** (`app/projects/[id]/geo/page.tsx`): Ein Effect lädt **parallel** Projekt, Geo-History, Geo-Summary und Question-History. Ref + Abort. `loadProject()` bleibt für manuelles Nachladen (z. B. nach PATCH) erhalten.
+
+## 3. ProjectHeaderNav  
+**`components/ProjectHeaderNav.tsx`**
+- Eigenes Laden des Projektnamens nur noch in einem Effect, mit derselben Ref-Logik und AbortController. Kein `useCallback(loadProject, [id])` mehr, das bei jedem Render neu laufen könnte.
+
+## Ergebnis
+- Pro Projekt-Route wird der initiale Datensatz **einmal** geladen, keine Re-Queries durch Listener/Hooks.
+- Bei Wechsel der Projekt-`id` läuft der Effect wieder (weil `ref.current !== id`).
+- Abort verhindert setState nach Unmount oder nach Wechsel der `id`; weniger Flackern und sauberes Cleanup.
+
+Build ist durchgelaufen. Das Verhalten ist in `knowledge/checkion-fetch-once-pattern.md` beschrieben.
+
+---
+
+_**User**_
+
+es flackert immernoch und viele elemente werden völlig falsch oder garnicht dargestellt. ich denke es ist ein react oder node problem
 
 ---
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Box, alpha } from '@mui/material';
 import { MsqdxTypography, MsqdxChip, MsqdxButton } from '@msqdx/react';
 import { MSQDX_NEUTRAL, MSQDX_STATUS, MSQDX_BRAND_PRIMARY, MSQDX_THEME } from '@msqdx/tokens';
@@ -80,6 +80,12 @@ function SeoOnPageTableInner({
     () => sortedRows.slice(start, start + pageSize),
     [sortedRows, start, pageSize]
   );
+
+  // #region agent log
+  useEffect(() => {
+    fetch('http://127.0.0.1:7902/ingest/bbc31d13-f45c-46d1-93ab-b989a1d926fc',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'cafcc0'},body:JSON.stringify({sessionId:'cafcc0',location:'SeoOnPageTable.tsx',message:'table rows',data:{rowsLength:rows.length,paginatedLength:paginatedRows.length,totalPages},timestamp:Date.now(),hypothesisId:'D',runId:'table-rows'})}).catch(()=>{});
+  }, [rows.length, paginatedRows.length, totalPages]);
+  // #endregion
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
