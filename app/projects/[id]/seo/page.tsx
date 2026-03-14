@@ -80,8 +80,10 @@ export default function ProjectSeoPage() {
         }
         const ac = new AbortController();
         const { signal } = ac;
-        setProjectLoading(true);
-        if (!cached) setSummaryLoading(true);
+        if (!cached) {
+            setProjectLoading(true);
+            setSummaryLoading(true);
+        }
 
         (async () => {
             try {
@@ -160,7 +162,7 @@ export default function ProjectSeoPage() {
         );
     }
 
-    if (projectLoading && !project) {
+    if (projectLoading && !project && !fullSummary) {
         return (
             <Box sx={{ p: 'var(--msqdx-spacing-md)' }}>
                 <MsqdxTypography variant="body2">{t('common.loading')}</MsqdxTypography>
@@ -189,7 +191,7 @@ export default function ProjectSeoPage() {
                         ) : null
                     }
                 >
-                    {loading ? (
+                    {!fullSummary && loading ? (
                         <MsqdxTypography variant="body2" sx={{ py: 1 }}>{t('common.loading')}</MsqdxTypography>
                     ) : fullSummary ? (
                         <Box>
@@ -241,7 +243,7 @@ export default function ProjectSeoPage() {
                     )}
                 </MsqdxMoleculeCard>
 
-                {!loading && fullSummary && !hasSeoData && (
+                {fullSummary && !hasSeoData && (
                     <MsqdxMoleculeCard variant="flat" borderRadius="lg" sx={{ bgcolor: 'var(--color-card-bg)' }}>
                         <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
                             {t('projects.seo.noScan')}
@@ -249,7 +251,7 @@ export default function ProjectSeoPage() {
                     </MsqdxMoleculeCard>
                 )}
 
-                {!loading && fullSummary && hasSeoData && (
+                {fullSummary && hasSeoData && (
                     <>
                         {/* Overview Meta & Basis */}
                         {aggregatedSeo && (

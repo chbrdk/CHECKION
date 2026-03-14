@@ -43127,3 +43127,251 @@ Effect auf eine einzige async-Funktion umstellen, alle Fetches mit await ausfüh
 
 ---
 
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to fix the sid! - when payload is set we know sid was truthy. Good. Let me check for linter errors.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. One more thing - when domainSummaryRes has no scanId, we never call setSummaryLoading(false). So we need to set it in that case too. Let me check the flow:
+- If sid is null (no scanId), we don't fetch scan summary, payload stays null. We still need to setSummaryLoading(false). Currently we only set it inside "if (payload)" - no, we have setSummaryLoading(false) after the if (payload) block, so we always call it. Good.
+- When we have an error (catch), we set setSummaryLoading(false). Good.
+</details></think>
+
+---
+
+
+Kurz prüfen, ob wir `setSummaryLoading(false)` in allen Pfaden aufrufen (z. B. wenn keine `scanId`):
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+When signal.aborted we return without calling setSummaryLoading(false) or setProjectLoading(false). That's intentional - we don't want to update state after unmount. Good.
+</details></think>
+
+---
+
+
+Die Anpassung ist umgesetzt.
+
+**Ursache (aus deinen Logs):** Drei Renders mit `fullSummaryNull: true`, weil nacheinander gesetzt wurde: Projekt-Loading → Projekt-Daten → Scan-Summary. Jeder `setState` hat einen eigenen Render ausgelöst.
+
+**Änderung:** Der Effect lädt jetzt alles in **einer** async-Funktion:
+1. `Promise.all` für Projekt + Domain-Summary-Metadaten
+2. Danach ggf. Fetch der Scan-Summary
+3. **Ein** Block mit allen `setState` (setProject, setProjectLoading, setScanId, setFullSummary, setSummaryLoading)
+
+React 18 batched diese Updates → es gibt nur **einen** zusätzlichen Render mit den vollen Daten statt mehrerer Zwischen-Renders mit leerem State. In der Konsole solltest du z. B. sehen: `render 1` (initial) → `effect` → `setFullSummary` → `render 2` (mit Daten).
+
+Zum Prüfen: SEO-Seite neu laden und in der Konsole die `[SEO flicker]`-Logs zählen; es sollten nur noch 2 Renders (initial + nach Daten) vorkommen.
+
+---
+
+_**User**_
+
+page-c6b85dc3e9e0a687.js:1 [SEO flicker] render {render: 1, id: '28dfbd33-2681-4231-a9c1-3186a2fdb6f9', fullSummaryNull: true, cacheHas: false}
+content.js:1 [MCP Proxy] Initializing MCP proxy...
+content.js:1 [MCP Proxy] Client connected to transport
+content.js:20 MSQDX Toolsuite: Content script active
+content.js:90 MSQDX Toolsuite: Content script fully initialized
+page-c6b85dc3e9e0a687.js:1 [SEO flicker] effect {id: '28dfbd33-2681-4231-a9c1-3186a2fdb6f9', hasCached: false}hasCached: falseid: "28dfbd33-2681-4231-a9c1-3186a2fdb6f9"[[Prototype]]: Object
+page-c6b85dc3e9e0a687.js:1 [SEO flicker] setFullSummary {id: '28dfbd33-2681-4231-a9c1-3186a2fdb6f9', aborted: false}aborted: falseid: "28dfbd33-2681-4231-a9c1-3186a2fdb6f9"[[Prototype]]: Object
+page-c6b85dc3e9e0a687.js:1 [SEO flicker] render {render: 2, id: '28dfbd33-2681-4231-a9c1-3186a2fdb6f9', fullSummaryNull: false, cacheHas: true}cacheHas: truefullSummaryNull: falseid: "28dfbd33-2681-4231-a9c1-3186a2fdb6f9"render: 2[[Prototype]]: Object
+
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is sharing the new console output after our fix. Now we have:
+- render 1: fullSummaryNull: true, cacheHas: false (initial empty state)
+- effect: hasCached: false (starts fetch)
+- setFullSummary: aborted: false (data arrived)
+- render 2: fullSummaryNull: false, cacheHas: true (single update with data)
+
+So we went from 4 renders (1 → 2 → 3 → 4 with data) to **2 renders** (1 empty, 2 with data). The batched setState worked - React applied all state updates in one go, so only one re-render after the async work. The flicker should be significantly reduced or gone now.
+
+I should confirm this with the user and suggest they can remove the debug logging if they're satisfied, or leave it in for future debugging (it's gated by dev/localStorage/env).
+</details></think>
+
+---
+
+
+Die Logs bestätigen den Fix.
+
+**Vorher:** render 1 → effect → render 2 → render 3 → setFullSummary → render 4 (4 Renders, 3x leer).  
+**Jetzt:** render 1 (leer) → effect → setFullSummary → **render 2** (mit Daten).  
+
+Es gibt nur noch **2 Renders**; alle setState-Aufrufe werden in einem Batch verarbeitet. Die Tabelle und die Keywords sollten ohne Zwischen-Flackern erscheinen.
+
+Die Debug-Logs (`[SEO flicker]`) bleiben nur aktiv in Development oder wenn `NEXT_PUBLIC_DEBUG_SEO_FLICKER=1` bzw. `localStorage DEBUG_SEO_FLICKER=1` gesetzt ist. Wenn du die Logs dauerhaft entfernen willst, kann ich die `debugLog`-Aufrufe und die zugehörigen Ref-Zähler aus der SEO-Page rausnehmen.
+
+---
+
+_**User**_
+
+aber es flickert noch alles
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user says it still flickers even though we reduced the renders from 4 to 2. So the flicker might not be (only) from multiple React re-renders with empty state - it could be:
+
+1. **CSS/layout** - Something causes a reflow or repaint (e.g. skeleton/loading state that has different height, then content loads and layout shifts). Or the table/keywords components have animations or transitions that trigger on mount/update.
+
+2. **Parent re-renders** - The layout or a parent (e.g. the project layout, or the header with ProjectHeaderNav) might be re-rendering and causing the whole page to re-render. So we'd get: our SEO page renders with data (render 2), then something in the parent triggers another render (e.g. project name loaded in header), and the SEO page re-renders again - maybe with the same data but the DOM updates and the browser repaints, causing a visible flicker.
+
+3. **Loading state UI** - We might be showing a loading spinner or "Loading..." text first, then when data arrives we replace it with the table. That transition (loading → content) could look like a flicker, especially if the loading state is brief.
+
+4. **Hydration** - If the page is server-rendered with one state (e.g. empty) and then the client hydrates and updates to full state, there could be a flash. Or React's concurrent features might cause a "flash of empty" before the update is committed.
+
+5. **Component remount** - Maybe the table or the keywords section is inside a component that gets a key that changes, or the parent structure causes a remount, so the content literally unmounts and remounts (visible as flicker).
+
+Let me add more targeted instrumentation to understand what's causing the visible flicker:
+- Log when the SEO page component actually commits to the DOM (we could use a ref and requestAnimationFrame or useEffect to see paint).
+- Or log how many times the *child* components (e.g. the section that contains the table, or the keywords) render. If they render many times, the parent might be re-rendering.
+- Or check: does the layout/parent re-render? We could add a simple log in the layout.
+
+Actually - the user said "es flickert noch alles" - everything still flickers. So maybe it's not just the SEO page but the whole app or the whole project view. That could mean:
+- The layout re-renders (e.g. when project name loads in the header, the layout re-renders and the whole children tree re-renders).
+- Or there's a global loading state or suspense boundary that shows a fallback then content.
+- Or the way Next.js switches between tabs (e.g. /projects/[id] vs /projects/[id]/seo) might remount the page component each time, and we're already handling cache - but maybe the first paint is still empty before the cache is read?
+
+Let me check: when we have cache and we initialize state from cache (useState(() => cache.get(id))), the first render should have fullSummary from cache. So when we navigate back to the SEO tab, we'd get render 1 with fullSummary already set (from cache). So no flicker. Unless - the first render when we open the SEO tab has id but the cache was populated in a different "session" (same page, we navigated away and back). So when we come back, we remount, useState initializer runs with id from useParams(). So we should get cache. Unless useParams() on the first client-side render when navigating returns the id - does it? So the flow when user clicks "SEO" tab: Next.js navigates to /projects/123/seo. The SEO page component mounts. useParams() returns { id: '123' }. So id = '123'. useState(() => cache.get(id)?.fullSummary) runs - we had cached earlier so we have fullSummary. So the first render should have fullSummary. So we shouldn't see empty. Unless - when we navigate, does Next.js do a full page load? Or does it do client-side navigation? In client-side navigation, the component mounts with the new route. So we get one mount. The initial state is from the initializer. So if cache has data, we're good. So maybe the flicker when switching tabs is something else - e.g. the tab switch itself causes a loading state or the URL change causes a brief "loading" from the router. Or the parent layout re-renders when the route changes and shows a loading indicator.
+
+Let me suggest adding instrumentation to see:
+1. How many times does the SEO page render in total when the user does "open SEO tab, wait for data, switch to WCAG, switch back to SEO"? We might see more than 2 renders when coming back (e.g. render with cache, then effect runs and setState from cache again? That would be redundant setState and cause an extra render).
+2. Is there a parent re-render? We could log in the project layout.
+
+Actually re-reading the user message - "es flickert noch alles" might mean "everything still flickers" (the whole page/content) or "everything [we did] still flickers" (the issue persists). I'll assume the visible flicker is still there.
+
+Possible fixes to try without more logs:
+1. **Stabilize parent** - If the project layout or header re-renders and causes the SEO page to re-render, we could wrap the SEO page content in React.memo so it only re-renders when its props change. But the SEO page is a page component - it doesn't receive props from the layout. So the layout re-rendering would still cause the SEO page to re-render (same component tree). So we need to either prevent the layout from re-rendering unnecessarily, or make the SEO page's content not show any loading/empty state that could "flash". For example: if we have a loading state that shows a spinner, and then we show the table - the transition might flicker. So we could try not showing a loading spinner at all when we have cached data (we already do that - we set summaryLoading false when we have cache). When we don't have cache, we show loading. So the first time we open the page we see loading then content. That's one transition. Maybe the user wants zero transition - e.g. show a skeleton that has the same layout as the final table so there's no layout shift. Or maybe the flicker is the table re-rendering its rows (e.g. the table component has internal state and when the parent re-renders, something in the table causes a visual flicker). Let me check if we can memo the table or the keywords section so they don't re-render unless their data actually changes.
+
+2. **useMemo for the table rows** - We already have useMemo for seoTableRows. So when the parent re-renders with the same fullSummary, seoTableRows should be the same reference. So the SeoOnPageTable receives the same rows prop. If SeoOnPageTable is wrapped in React.memo, it wouldn't re-render. So we could wrap the table in React.memo. But we already have `export const SeoOnPageTable = React.memo(SeoOnPageTableInner)`. So the table is already memoized. So when the SEO page re-renders, the table should only re-render if rows reference changed. So that's good.
+
+3. **Keywords section** - The keywords are rendered inline: `aggregatedSeo.crossPageKeywords.slice(0, 50).map(...)`. So every time the SEO page re-renders, we create new array from slice and new elements. That could cause the list to "flash" if React reconciles and updates the DOM. We could wrap the keywords section in a separate component that's memoized and only receives the keywords array. So we'd have <MemoizedKeywordsList keywords={aggregatedSeo?.crossPageKeywords ?? []} /> and the component would only re-render when the array reference changes. We could use useMemo for the sliced array: const keywordsToShow = useMemo(() => aggregatedSeo?.crossPageKeywords?.slice(0, 50) ?? [], [aggregatedSeo?.crossPageKeywords]). That way the reference is stable. But the parent still re-renders and the chips are still re-created. Actually the issue might be that we're not memoizing the keywords - so on every parent render we create new Chip components. Let me try wrapping the main content (the cards with table and keywords) in a memoized component that receives fullSummary (or the derived data) and only re-renders when that changes. That way any re-renders of the SEO page (e.g. from layout or from setProject) wouldn't cause the content to re-render.
+
+I'll try: create a memoized wrapper for the "SEO content" (the part that shows the table and keywords) so it only re-renders when fullSummary or the necessary derived data changes. That way if the SEO page re-renders for other reasons (e.g. project state, router, i18n), the heavy content doesn't re-render.
+
+Let me read the SEO page structure to see what we can memoize.
+</details></think>
+
+---
+
+
+Wir prüfen die Seite: Mögliche Ursachen sind Re-Renders des Parents (Layout/Header) oder fehlende Memoization der Inhalte. Wir stabilisieren die Darstellung.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/seo/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/layout.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see a potential cause: we have `{loading ? ( ... loading text ... ) : fullSummary ? ( ... content ... ) : ... }`. So when `loading` is true we show "Loading...". When loading becomes false and we have fullSummary, we switch to the full content. So there's a **visible transition** from "Loading" to "Score + table + keywords". That switch is a big DOM change - the entire content is replaced. That could look like a flicker.
+
+Also: when we have loading true initially (render 1), we show the loading state. Then in render 2 we have loading false and fullSummary set - we show the full content. So the transition is: show "Loading" → show full content. The problem might be that we're rendering the loading state in the header card, and below we might have more content that appears. So the layout might shift.
+
+Ideas to reduce flicker:
+1. **Don't show "Loading" text** when we're about to have data quickly - or show a skeleton with the same layout as the final content so there's no layout shift. So instead of "Loading..." we could render the same card structure but with placeholder/skeleton content. That way when the real data arrives, we just fill in the content - no big DOM swap.
+
+2. **Avoid the loading state entirely when we have cache** - We already set summaryLoading false when we have cache. But we also set projectLoading true at the start of the effect. So when we have cache, we still set projectLoading(true) - so loading = true (projectLoading || summaryLoading). So we'd show "Loading" in the header even when we have cached fullSummary! That's a bug. When we have cached, we set setSummaryLoading(false) but we still call setProjectLoading(true) after. So loading becomes true. So we flash "Loading" even when we have cache. Let me check - when cached, we do setScanId, setFullSummary, setSummaryLoading(false). We don't set setProjectLoading(false) until the project fetch completes. So we're still loading project. So loading = true (projectLoading is true). So we show "Loading" and hide the full content even though we have fullSummary! So the fix is: when we have cache, don't set projectLoading(true), or set it in a way that we don't show the loading overlay. Or when we have cached fullSummary, show the content and only show a subtle loading for the project (e.g. project name in header). So the rule could be: if we have fullSummary (from cache or state), show the main content (table, keywords) and don't show the big "Loading" in the card. Only show loading when we have no fullSummary and we're still fetching. So change the condition: show loading state only when summaryLoading && !fullSummary. So when we have fullSummary (from cache), we show content even if projectLoading is still true. That way when user comes back to the tab, we have cache, we set fullSummary from cache and setSummaryLoading(false), and we don't set projectLoading true... wait we do set it true at the start. So we need to either not set projectLoading true when we have cache, or change the UI so that "loading" doesn't hide the content when we have fullSummary. Let me change the UI: show the main content (score, table, keywords) whenever we have fullSummary, regardless of loading. Only show the "Loading" message when we don't have fullSummary and (projectLoading || summaryLoading). So the condition for showing "Loading" in the header card becomes: !fullSummary && loading. And the condition for showing the score/content in the header becomes: fullSummary (we don't need to check !loading). So we'd show the score and "from scan" text whenever fullSummary is set. And we'd show the table and keywords whenever we have the data (fullSummary and aggregatedSeo). So the only time we show "Loading" is when fullSummary is null and we're still loading. That way when we restore from cache, we have fullSummary immediately so we never show "Loading" - we show the content. And when we're doing the initial fetch (no cache), we show Loading until fullSummary is set. Good.
+
+Let me implement that: use `loading` only where we need to show the loading message when we have no data. Where we show the main content, only check fullSummary / hasSeoData. So in the header card: show loading text only when loading && !fullSummary. Show score/content when fullSummary. And for the sections below (table, keywords), they're already gated by fullSummary and aggregatedSeo. So the key fix is: in the header card, don't show "Loading" when we have fullSummary. So change from `loading ? ( loading text ) : fullSummary ? ( content )` to `!fullSummary && loading ? ( loading text ) : fullSummary ? ( content )` - which is equivalent to: if we have fullSummary, show content. If we don't have fullSummary and we're loading, show loading. If we don't have fullSummary and we're not loading (error or no scan), show the no-scan UI. So:
+  {!fullSummary && loading ? (
+    <MsqdxTypography>Loading</MsqdxTypography>
+  ) : fullSummary ? (
+    <Box>... score and content ...</Box>
+  ) : !scanId ? (
+    ... no scan ...
+  ) : (
+    ... loading ...
+  )}
+
+That way when we have fullSummary from cache, we never show the loading state in the card - we show the content right away.
+</details></think>
+
+---
+
