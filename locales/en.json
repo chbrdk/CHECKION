@@ -641,7 +641,8 @@
     "pageClassificationTier2": "Only marginally thematic",
     "pageClassificationTier3": "Multiple topics / mix",
     "pageClassificationTier4": "Clearly one topic",
-    "pageClassificationTier5": "Clearly dedicated to one core topic"
+    "pageClassificationTier5": "Clearly dedicated to one core topic",
+    "overviewHint": "Scan details, page topic, and Eco, Performance, and UX cards are shown above."
   },
   "domainResult": {
     "loading": "Loading…",

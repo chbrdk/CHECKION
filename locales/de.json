@@ -641,7 +641,8 @@
     "pageClassificationTier2": "Nur am Rande thematisch",
     "pageClassificationTier3": "Mehrere Themen / Mischung",
     "pageClassificationTier4": "Eindeutig ein Thema",
-    "pageClassificationTier5": "Klar einem Kernthema gewidmet"
+    "pageClassificationTier5": "Klar einem Kernthema gewidmet",
+    "overviewHint": "Scan-Infos, Seitenthema sowie Eco-, Performance- und UX-Karten befinden sich oben."
   },
   "domainResult": {
     "loading": "Laden…",
