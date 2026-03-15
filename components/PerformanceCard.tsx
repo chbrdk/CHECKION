@@ -48,12 +48,13 @@ export const PerformanceCard: React.FC<PerformanceCardProps> = ({ perf }) => {
                             borderRadius: '12px',
                             border: '1px solid var(--color-secondary-dx-grey-light-tint)',
                             backgroundColor: 'var(--color-card-bg)',
+                            containerType: 'inline-size',
                         }}>
                             <Icon size={20} color={MSQDX_NEUTRAL[600]} style={{ marginBottom: 8 }} />
                             <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', fontWeight: 500, mb: 0.5 }}>
                                 {config.label}
                             </MsqdxTypography>
-                            <MsqdxTypography variant="h4" sx={{ color: color, fontWeight: 700 }}>
+                            <MsqdxTypography variant="h4" sx={{ color: color, fontWeight: 700, fontSize: 'clamp(0.875rem, 12cqw, 1.75rem)', lineHeight: 1.2 }}>
                                 {value}ms
                             </MsqdxTypography>
                             <Box sx={{ width: '100%', height: 4, bgcolor: MSQDX_NEUTRAL[200], borderRadius: 2, mt: 1, overflow: 'hidden' }}>
@@ -67,10 +68,11 @@ export const PerformanceCard: React.FC<PerformanceCardProps> = ({ perf }) => {
                         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                         p: 'var(--msqdx-spacing-sm)', borderRadius: '12px', border: '1px solid var(--color-secondary-dx-grey-light-tint)',
                         backgroundColor: 'var(--color-card-bg)',
+                        containerType: 'inline-size',
                     }}>
                         <Zap size={20} color={MSQDX_NEUTRAL[600]} style={{ marginBottom: 8 }} />
                         <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', fontWeight: 500, mb: 0.5 }}>INP</MsqdxTypography>
-                        <MsqdxTypography variant="h4" sx={{ color: perf.inp <= 200 ? MSQDX_STATUS.success.base : perf.inp <= 500 ? MSQDX_STATUS.warning.base : MSQDX_STATUS.error.base, fontWeight: 700 }}>
+                        <MsqdxTypography variant="h4" sx={{ color: perf.inp <= 200 ? MSQDX_STATUS.success.base : perf.inp <= 500 ? MSQDX_STATUS.warning.base : MSQDX_STATUS.error.base, fontWeight: 700, fontSize: 'clamp(0.875rem, 12cqw, 1.75rem)', lineHeight: 1.2 }}>
                             {perf.inp}ms
                         </MsqdxTypography>
                     </Box>

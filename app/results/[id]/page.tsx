@@ -609,8 +609,8 @@ export default function ResultsPage() {
                 );
             })()}
 
-            {/* Eco & Performance Grid */}
-            {(result.eco || result.performance) && (
+            {/* Eco, Performance & UX: Eco + Performance share row; UX card full width on its own row */}
+            {(result.eco || result.performance || result.ux) && (
                 <Box sx={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
@@ -628,7 +628,7 @@ export default function ResultsPage() {
                         </Box>
                     )}
                     {result.ux && (
-                        <Box sx={{ minHeight: '100%' }}>
+                        <Box sx={{ minHeight: '100%', gridColumn: '1 / -1' }}>
                             <UxCard ux={result.ux} />
                         </Box>
                     )}

@@ -7,8 +7,10 @@ import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
 import { dismissCookieBanner } from './cookie-banner-dismiss';
+import { AXE_RULE_WCAG_LEVEL } from './axe-wcag-levels';
 import { getRemediationUrl } from './remediation-urls';
 import { buildPageIndex } from './page-index';
+import { deduplicateIssues } from './issue-dedupe';
 import { writeScreenshot } from './screenshot-storage';
 import type { Issue, Runner, ScanResult, ScanStats, WcagStandard, Device, ScanOptions, SeoAudit } from './types';
 
@@ -78,20 +80,20 @@ function isInternalLink(href: string, pageOrigin: string): boolean {
 }
 
 /**
- * Detect WCAG Level from the issue code.
- * HTMLCS codes usually look like "WCAG2AA.Principle1..."
- * Axe codes don't have level directly in the code, but we might infer or default to Unknown/A.
- * Ideally we'd map axe tags, but pa11y might not expose them fully in the standard output.
- * We'll do best-effort parsing for now.
+ * Detect WCAG Level from the issue code (and runner for axe).
+ * HTMLCS codes usually look like "WCAG2AA.Principle1..." → level from code.
+ * Axe codes are rule IDs (e.g. color-contrast) → level from AXE_RULE_WCAG_LEVEL map.
  */
-function detectWcagLevel(code: string): Issue['wcagLevel'] {
+function detectWcagLevel(code: string, runner: Runner): Issue['wcagLevel'] {
+    if (runner === 'axe') {
+        const level = AXE_RULE_WCAG_LEVEL[code];
+        if (level) return level;
+    }
     const upperCode = code.toUpperCase();
     if (upperCode.includes('WCAG2AAA')) return 'AAA';
     if (upperCode.includes('WCAG2AA')) return 'AA';
     if (upperCode.includes('WCAG2A')) return 'A';
-    // APCA / WCAG 3.0 Experimental
     if (upperCode.includes('APCA') || upperCode.includes('COLOR-CONTRAST-ENHANCED')) return 'APCA';
-    // Fallback/Heuristic for Axe or other codes if they contain level indicators
     return 'Unknown';
 }
 
@@ -355,15 +357,14 @@ export async function runScan(options: ScanOptions & { groupId?: string; targetR
                 context: raw.context || '',
                 selector: raw.selector || '',
                 runner,
-                wcagLevel: detectWcagLevel(code),
+                wcagLevel: detectWcagLevel(code, runner),
                 helpUrl: helpUrl ?? undefined,
                 boundingBox,
             };
         });
 
-        const issues: Issue[] = await Promise.all(issuePromises);
-
-
+        const rawIssues: Issue[] = await Promise.all(issuePromises);
+        const issues = deduplicateIssues(rawIssues);
 
         // 3. Capture Passed Audits using axe-core directly
         let passes: any[] = [];

@@ -67843,3 +67843,1891 @@ Außerdem wurde der Tippfehler „tierTiers“ in „tagTiers“ korrigiert. Die
 
 ---
 
+_**User**_
+
+DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-odfgbo > span.MuiBox-root c.-13o7eu2 > div.MuiBox-root c.-6.3lb > div.MuiBox-root c.-6gpkta[2]
+Position: top=273px, left=104px, width=491px, height=867px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-6gpkta" data-cursor-element-id="cursor-el-1">User Experience Scan Score: 80/100 Analysis of visual stability, interactivity, and content. monitor Visual Stability (CLS) ? 0 Content Readability Very Complex (Academic) Flesch-Kincaid: 14.4 M</div>  die card würde ich auf 100% width strecken sodass sie eine zeile für sich hat. dafür würde ich aber den ersten part von oben bis hier DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-odfgbo > span.MuiBox-root c.-13o7eu2 > div.MuiBox-root c.-6.3lb > div.MuiBox-root c.-6gpkta[2] > div.MuiBox-root c.-3a.i7l > div.MuiBox-root c.-1.g4afn > div.MuiBox-root c.-1hdbc19 > div.MuiBox-root c.-a1igic > div.MuiStack-root c.-pb4y8c > div.MuiStack-root c.-jj2ztu > div.MuiBox-root c.-6yx8ib[1]
+Position: top=485px, left=358px, width=221px, height=67px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-6yx8ib" data-cursor-element-id="cursor-el-339">Tap Targets 67 Small targets</div>  auf eine spalte setzen und die einzelnen DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-odfgbo > span.MuiBox-root c.-13o7eu2 > div.MuiBox-root c.-6.3lb > div.MuiBox-root c.-6gpkta[2] > div.MuiBox-root c.-3a.i7l > div.MuiBox-root c.-1.g4afn > div.MuiBox-root c.-1hdbc19 > div.MuiBox-root c.-a1igic > div.MuiStack-root c.-pb4y8c > div.MuiBox-root c.-zxn8gx[0]
+Position: top=616px, left=121px, width=457px, height=69px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-zxn8gx" data-cursor-element-id="cursor-el-349">Skip-Link Vorhanden (#content)</div> gleichmäßig auf zwei weitere spalten aufteilen
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is describing a layout change on what appears to be a results/scan page. They're referring to:
+
+1. A card that shows "User Experience Scan Score: 80/100 Analysis of visual stability, interactivity, and content. monitor Visual Stability (CLS) ? 0 Content Readability Very Complex (Academic) Flesch-Kincaid: 14.4 M" - they want this card to stretch to 100% width (full row).
+
+2. The "first part" from the top down to "Tap Targets 67 Small targets" should be in a single column.
+
+3. The items like "Skip-Link Vorhanden (#content)" (and presumably other similar items) should be split evenly across two more columns.
+
+So the layout should be:
+- One full-width card (the UX card)
+- Inside that card or below it: first section in one column (score, CLS, Readability, Tap Targets etc.)
+- Then the rest (Skip-Link, and other items) distributed in two columns.
+
+I need to find the component that renders this UX card and the layout. The DOM path mentions "User Experience Scan Score", "Visual Stability (CLS)", "Content Readability", "Tap Targets", "Skip-Link" - this sounds like the UxCard component or the results page section that displays UX data.
+
+Let me search for UxCard and the layout structure on the results page.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "User Experience Scan Score|UxCard|Tap Targets|Skip-Link",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "User Experience Scan Score|UxCard|Tap Targets|Skip-Link",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 30,
+  "topFiles": [
+    {
+      "uri": "./app/results/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./components/UxCard.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/components/UxCard.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/components/UxCard.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/components/UxCard.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/components/UxCard.tsx",
+      "matchCount": 4
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/UxCard.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to see the full UxCard and how it's placed in the results page. The user wants:
+1. The UxCard (the whole card) to be 100% width - one row for itself.
+2. The "first part" (from top down to "Tap Targets" inclusive) in one column.
+3. The rest (Skip-Link, Resource Hints, and any other similar items) split evenly across two columns.
+
+So the structure inside the card should be:
+- Row 1: One column containing: Visual Stability (CLS), Content Readability, and the Mobile & Touch row (Mobile Viewport + Tap Targets).
+- Row 2: Two columns - left column with half of the items (Skip-Link, maybe more), right column with the other half (Resource Hints, etc.).
+
+Let me read the rest of UxCard to see all the items that go after Tap Targets.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/UxCard.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So the results page has a grid:
+```
+gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))'
+```
+with EcoCard, PerformanceCard, UxCard in it. So they share the row and each takes ~1/3 when all three are present. The user wants:
+1. UxCard to have 100% width (its own row). So we need to either put UxCard in a separate full-width row, or change the grid so that UxCard spans full width. Easiest: wrap the grid so that Eco and Performance are in one row, and UxCard in a full-width row below. Or: one row with Eco + Performance, next row with UxCard at 100%. Let me check the structure again.
+
+Actually re-reading the user message: "die card würde ich auf 100% width strecken sodass sie eine zeile für sich hat" - they want the (UX) card to be 100% width and have its own row. So the layout change is:
+- In the results page: make the UX card take full width (e.g. put it in its own row or make it grid-column: 1 / -1).
+- Inside the UxCard: 
+  - First part (Score header, CLS, Readability, Tap Targets / Mobile row) → one column.
+  - Then the rest (Skip-Link, Resource Hints, Reduced Motion, Focus Visible, etc.) → distributed in two columns.
+
+So two changes:
+1. In results/[id]/page.tsx: ensure UxCard is in a full-width row. Currently it's in a grid with eco and performance. So we could do: first row = Eco + Performance (two columns), second row = UxCard (full width). Or we could do a grid where the first two items are in one row and the third (UxCard) spans full width. Let me see the exact grid structure.
+
+Looking at the code:
+```jsx
+<Box sx={{
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+    gap: 'var(--msqdx-spacing-md)',
+    mb: 'var(--msqdx-spacing-md)',
+}}>
+    {result.eco && <Box><EcoCard /></Box>}
+    {result.performance && <Box><PerformanceCard /></Box>}
+    {result.ux && <Box><UxCard /></Box>}
+</Box>
+```
+So all three are in the same grid. To make UxCard full width we can give it gridColumn: '1 / -1' so it spans all columns. That way on large screens we might have 3 columns and UxCard would span all 3; on smaller we have 1 column so it's already full. So just add to the Box wrapping UxCard: sx={{ gridColumn: '1 / -1' }}.
+
+2. Inside UxCard: restructure so that:
+   - One column section: everything from top until (and including) the Tap Targets row (Visual Stability, Readability, Mobile Viewport + Tap Targets).
+   - Two columns section: all the conditional items (Skip-Link, Resource Hints, Reduced Motion, Focus Visible, Media, Heading, Images, Meta Refresh, Fonts). Split these evenly into two columns.
+
+For the two-column split we need to collect the "rest" items into an array and then render them in two columns. So we have an array of JSX elements (or render functions), then we split into two arrays (left and right) and render left column and right column.
+
+Let me implement:
+
+1. results/page.tsx: add gridColumn: '1 / -1' to the Box that wraps UxCard so the UX card spans full width.
+
+2. UxCard.tsx: 
+   - Wrap content in a Box with width 100% if needed (the card might already be full width when grid gives it).
+   - First section: Stack in one column with CLS, Readability, and the Mobile/Tap Targets row.
+   - Second section: collect all the optional blocks (Skip-Link, Resource Hints, Reduced Motion, etc.) into an array, then split into two columns (e.g. first half in column 1, second half in column 2). Use a 2-column grid or two Stacks.
+
+I'll implement this.
+</details></think>
+
+---
+
+
+UxCard auf 100% Breite setzen und das Layout innen anpassen: erster Block einspaltig, restliche Blöcke auf zwei Spalten verteilen.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/UxCard.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The grid currently shows when (result.eco || result.performance) - so when there's no eco and no performance but there is ux, the grid might not show. Let me check - the condition is `(result.eco || result.performance)` so if only result.ux exists, the whole block is not rendered! So we need to also include result.ux in the condition. So the grid is (result.eco || result.performance || result.ux). When all three exist, we want Eco and Performance in one row (two columns) and UxCard full width (second row). So I'll change the layout to:
+- Option A: Two separate sections - one grid for Eco + Performance (2 columns), then a full-width row for UxCard.
+- Option B: One grid with 2 columns for the first row, and UxCard spanning 1/-1 so it gets its own row.
+
+I'll do Option B: keep one grid but ensure when ux is present we render the grid with three children and give the UxCard wrapper gridColumn: '1 / -1'. But the grid has minmax(400px, 1fr), so with 3 items we get 3 columns on wide screens. So the order is Eco, Performance, UxCard. To get Eco and Performance in one row and UxCard full width we need: grid with 2 columns (or auto-fit minmax(400px, 1fr)), and UxCard's wrapper has gridColumn: '1 / -1'. So the first two items take first row (two columns), UxCard takes second row spanning 2 columns. Good.
+
+Now for UxCard content:
+1. First column (single column): CLS, Readability, Mobile & Tap Targets (the Stack up to and including the "Mobile & Touch" row).
+2. Two columns: collect all the optional blocks (Skip-Link, Resource Hints, Reduced Motion, Focus Visible, Media, Heading, Images, Meta Refresh, Fonts) into an array and split - first half in column 1, second half in column 2.
+
+I'll build the optional blocks as an array of React nodes, then split with slice(0, mid) and slice(mid).
+</details></think>
+
+---
+
+
+Zwei Änderungen vornehmen: 1) UxCard auf der Results-Seite auf volle Breite setzen. 2) UxCard-Inhalt: erste Sektion einspaltig, restliche Blöcke auf zwei Spalten verteilen.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to refactor UxCard so that:
+1. First section (one column): Visual Stability (CLS), Content Readability, Mobile & Touch (Mobile Viewport + Tap Targets).
+2. Second section (two columns): all the optional items (Skip-Link, Resource Hints, Reduced Motion, Focus Visible, Video/Audio, Überschriften, Bilder, Meta Refresh, Schriftarten) - split evenly into two columns.
+
+I'll build an array of the optional block elements and then render them in a 2-column grid with the first half in column 1 and second half in column 2.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/UxCard.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add React to the imports if we're using React.ReactNode - actually React is already imported. Let me check lints. Also on small screens the 2-column grid might be too narrow - we could use responsive gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' } so on mobile it stacks to one column.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/UxCard.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+MUI sx prop typically uses breakpoints as keys - xs, sm, md, lg, xl. So gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' } means below md one column, from md up two columns. Good.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/UxCard.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/UxCard.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+All good. Let me provide a short summary to the user.
+</details></think>
+
+---
+
+
+Hier die Änderungen:
+
+**1. Results-Seite (`app/results/[id]/page.tsx`)**
+- Die UX-Card liegt jetzt in einer **eigenen, vollen Zeile**: Der Container der UxCard hat `gridColumn: '1 / -1'`, die Card spannt also die komplette Grid-Breite.
+- Die Bedingung für den Block lautet jetzt `(result.eco || result.performance || result.ux)` – die UX-Card wird auch angezeigt, wenn nur UX-Daten da sind.
+
+**2. UxCard (`components/UxCard.tsx`)**
+- **Erste Sektion (eine Spalte):** Alles von oben bis inkl. Tap Targets in einem vertikalen Stack:
+  - Visual Stability (CLS)
+  - Content Readability
+  - Mobile Viewport + Tap Targets (weiterhin nebeneinander)
+- **Zweite Sektion (zwei Spalten):** Alle weiteren Blöcke (Skip-Link, Resource Hints, Reduced Motion, Focus Visible, Video/Audio, Überschriften, Bilder, Meta Refresh, Schriftarten) werden in einer Liste gesammelt, **möglichst gleichmäßig auf zwei Spalten verteilt** (erste Hälfte links, zweite Hälfte rechts).
+- Das Zwei-Spalten-Layout ist responsiv: unter `md` eine Spalte (`xs: '1fr'`), ab `md` zwei Spalten (`md: '1fr 1fr'`).
+
+Damit hat die UX-Card die volle Breite, der obere Block (Score, CLS, Readability, Tap Targets) steht in einer Spalte, und die übrigen Punkte (Skip-Link, Resource Hints, etc.) erscheinen in zwei Spalten darunter.
+
+---
+
+_**User**_
+
+DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-odfgbo > span.MuiBox-root c.-13o7eu2 > div.MuiBox-root c.-6.3lb > div.MuiBox-root c.-6gpkta[1] > div.MuiBox-root c.-3a.i7l > div.MuiBox-root c.-1.g4afn > div.MuiBox-root c.-1hdbc19 > div.MuiBox-root c.-a1igic > div.MuiBox-root c.-7ea4 > div.MuiBox-root c.-h9nwym[0] > h4.MuiTypography-root MuiTypography-h4 c.-149.ouh
+Position: top=212px, left=636px, width=90px, height=51px
+React Component: ForwardRef
+HTML Element: <h4 class="MuiTypography-root MuiTypography-h4 css-149souh" data-cursor-element-id="cursor-el-270">78ms</h4> können wir die größe skalieren mit der breite der box?
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is pointing to an element that shows "78ms" - it's an h4 with MuiTypography. They want the size to scale with the width of the box (i.e. make the text/font size responsive to the container width). This is likely the duration or some timing value in a card on the results page.
+
+Let me search for where "78ms" or similar (duration in ms) is displayed, and where we have an h4 with such content - likely in the Eco/Performance/UX grid area or in a card that shows scan stats.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "durationMs|ms|Typography.*h4",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "durationMs|ms|Typography.*h4",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 215,
+  "topFiles": [
+    {
+      "uri": "app/results/[id]/page.tsx",
+      "matchCount": 43
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 43
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 43
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 43
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 43
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "MuiTypography-h4|variant=\\\"h4\\\"",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "MuiTypography-h4|variant=\\\"h4\\\"",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 80,
+  "totalMatches": 200,
+  "topFiles": [
+    {
+      "uri": "./app/results/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/projects/[id]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/projects/[id]/geo/analysis/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/projects/[id]/seo/page.tsx",
+      "matchCount": 10
+    },
+    {
+      "uri": "./app/projects/[id]/geo/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/projects/[id]/wcag/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/domain/[id]/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "./app/projects/[id]/rankings/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/register/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/settings/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/scan/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/projects/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/scan/domain/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/login/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/PerformanceCard.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/geo/analysis/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/seo/page.tsx",
+      "matchCount": 10
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The DOM path says the h4 is inside a chain that includes "c.-7ea4" and "c.-h9nwym[0]". The user said the content is "78ms" - so it's the duration. In the results page we have:
+- Line 429: MsqdxTypography variant="h4" with result.score (the big score number)
+- Line 472: a chip with label={`${result.durationMs}ms`}
+
+So "78ms" could be the duration chip - but the user said it's an h4. Let me look at the structure around line 359-430 and also check if there's a MiniStat or similar that shows duration as h4. The path says "div.MuiBox-root c.-h9nwym[0]" then "h4... 78ms". So there's a box and inside an h4 with 78ms. Let me search for MiniStat or where duration/ms is rendered as heading.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "MiniStat|durationMs|value.*stats",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx",
+  "contextBefore": 0,
+  "contextAfter": 2,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "MiniStat|durationMs|value.*stats",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 40,
+  "topFiles": [
+    {
+      "uri": "app/results/[id]/page.tsx",
+      "matchCount": 15
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 15
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 15
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 15
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 15
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So we have MiniStat which takes label, value, color - and the stats grid uses it for Errors, Warnings, Notices, Level A, etc. The "78ms" might be from MiniStat if value is 78 and it's displayed as "78ms" - but MiniStat gets a number and probably just displays the number. Let me read the MiniStat function - it might render an h4 for the value.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+MiniStat uses variant="h5" for the value, not h4. So the "78ms" h4 might be from somewhere else. The user's DOM path includes "c.-h9nwym" and "h4... 78ms". Perhaps MsqdxTypography with variant h4 maps to MUI Typography h4. So we have two candidates:
+1. The score in the circular gauge (line 429) - but that shows result.score (e.g. 80), not 78ms
+2. Maybe there's another component that shows duration as h4?
+
+Actually re-reading the user message: they're asking to scale "die Größe" (the size) with the width of the box. So they want the element (which displays "78ms" or similar - could be the score number or a stat value) to scale with the container width. So they want fluid typography - e.g. font-size in clamp() or using a unit that scales with container (e.g. cqw in CSS, or we use a wrapper with a specific width and set font-size based on that).
+
+The DOM path says "h4... 78ms". So it's definitely an h4 showing "78ms". The only place we show duration is in the chip label `${result.durationMs}ms`. Chips might render their label with a typography - could be h4 in the design system? Or there might be another place. Let me search for where we display duration or "ms" as a prominent value.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "durationMs|ms",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx",
+  "contextBefore": 2,
+  "contextAfter": 2,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "durationMs|ms",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 210,
+  "topFiles": [
+    {
+      "uri": "app/results/[id]/page.tsx",
+      "matchCount": 194
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 194
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 194
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 194
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 194
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The user said the h4 shows "78ms". So it's not the score (which would be e.g. 80). It could be:
+1. The MiniStat value - but MiniStat uses h5 and shows numbers like Errors: 5, not "78ms"
+2. Perhaps in the stats grid there's a cell that shows duration - but we have Errors, Warnings, Notices, Level A, AA, AAA. No duration there.
+3. Maybe the design system renders "78ms" somewhere with h4 - e.g. in the PerformanceCard or EcoCard?
+
+Let me check PerformanceCard and EcoCard for any h4 or duration/ms display.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "h4|variant=\\\"h4\\\"|duration|ms",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/PerformanceCard.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "h4|variant=\\\"h4\\\"|duration|ms",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/PerformanceCard.tsx",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 60,
+  "topFiles": [
+    {
+      "uri": "components/PerformanceCard.tsx",
+      "matchCount": 12
+    },
+    {
+      "uri": "../CHECKION-1/components/PerformanceCard.tsx",
+      "matchCount": 12
+    },
+    {
+      "uri": "../CHECKION-1/components/PerformanceCard.tsx",
+      "matchCount": 12
+    },
+    {
+      "uri": "../CHECKION-1/components/PerformanceCard.tsx",
+      "matchCount": 12
+    },
+    {
+      "uri": "../CHECKION-1/components/PerformanceCard.tsx",
+      "matchCount": 12
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "h4|variant=\\\"h4\\\"|duration|ms",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/EcoCard.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "h4|variant=\\\"h4\\\"|duration|ms",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/EcoCard.tsx",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 30,
+  "topFiles": [
+    {
+      "uri": "components/EcoCard.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/components/EcoCard.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/components/EcoCard.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/components/EcoCard.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/components/EcoCard.tsx",
+      "matchCount": 6
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Found it. In PerformanceCard.tsx there are MsqdxTypography variant="h4" that display values like `{value}ms` and `{perf.inp}ms`. The user wants the font size of these to scale with the width of the box. So we need to use fluid typography - e.g. font-size that depends on the container. CSS options:
+1. Use clamp() for font-size: clamp(min, preferred, max) where preferred can be something like 2vw or 3vw (viewport) - but user said "mit der Breite der Box", so container width. 
+2. Container query: font-size based on container width - we can use container-type: inline-size on the parent and then in the child use something like 5cqw (5% of container width) for font-size. 
+3. Or use a scale like fontSize: 'clamp(0.875rem, 4vw, 2rem)' - viewport based, not box based.
+
+For "mit der Breite der Box" (with the width of the box), the best approach is container queries. We need to:
+1. Add a wrapper with containerType: 'inline-size' (and optionally containerName)
+2. On the h4, use font-size with cqw unit, e.g. fontSize: '5cqw' or clamp with cqw.
+
+Actually in MUI/sx we can do:
+- Parent Box: sx={{ containerType: 'inline-size' }}
+- Child Typography: sx={{ fontSize: 'clamp(0.75rem, 8cqw, 2rem)' }} or similar
+
+Let me read the full PerformanceCard to apply this to all the h4 ms values.
+</details></think>
+
+---
+
+
+PerformanceCard enthält die "78ms"-Anzeige. Wir machen die H4-Größe abhängig von der Containerbreite (Container Queries).
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/PerformanceCard.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add container-type: inline-size to each stat box so the h4 inside scales with that box's width. Then for the MsqdxTypography variant="h4" I'll use fontSize with clamp and cqw (container query width). So:
+- Each Box that wraps a stat gets: containerType: 'inline-size' (and we need to add a container name or just use the default)
+- The Typography gets: fontSize: 'clamp(0.75rem, 12cqw, 2rem)' or similar - 12cqw means 12% of container width, so in a 100px box we get ~12px, in 200px we get ~24px. We might want min 0.875rem and max 1.5rem or so.
+
+Actually the grid has minmax(100px, 1fr) so each cell can grow. So the box is the grid cell. Adding containerType: 'inline-size' to the Box and then fontSize: 'clamp(0.875rem, 10cqw, 1.75rem)' on the h4 should work. I'll use a reasonable range.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/PerformanceCard.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/PerformanceCard.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Container queries (cqw) need good browser support - they're supported in modern browsers. Let me add the containerType with a fallback for older browsers - actually containerType is the key; the cqw unit might not work in very old browsers but we have clamp with rem as min/max so it will still show a reasonable size. Let me check if MUI/React need any polyfill - we don't. Done.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/PerformanceCard.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/PerformanceCard.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+All good. The user might also want the same for the results page score (the big number in the circle) or for MiniStat - but they specifically said "78ms" and the DOM path pointed to that. So PerformanceCard is the right target. If the results page also has a similar "box" with an h4 that should scale (e.g. the score in the gauge), we could do the same there - but the user only asked about the "78ms" element. Summary for the user.
+</details></think>
+
+---
+
+
+Die Anpassung ist in der **PerformanceCard** umgesetzt (die „78ms“-Anzeige und alle anderen ms-Werte wie TTFB, FCP, Load, LCP, INP).
+
+**Änderungen:**
+
+1. **Container Query**  
+   Jede Stat-Box (die Box um Wert + Label) hat jetzt `containerType: 'inline-size'`. Damit wird sie zum Bezug für die Breite.
+
+2. **Skalierende Schriftgröße**  
+   Die `MsqdxTypography` mit `variant="h4"` (z. B. „78ms“, „1200ms“) hat jetzt:
+   - `fontSize: 'clamp(0.875rem, 12cqw, 1.75rem)'`  
+     - **12cqw** = 12 % der **Breite der Box** (Container Query), die Schrift skaliert mit der Boxbreite.  
+     - **clamp**: mindestens 0.875rem, maximal 1.75rem.  
+   - `lineHeight: 1.2` für einheitliche Zeilenhöhe.
+
+Ergebnis: Schmale Box → kleinere Zahl, breitere Box (z. B. volle Breite der UX-Zeile) → größere Zahl, immer innerhalb der genannten Grenzen. Das gilt für alle Performance-Werte (TTFB, FCP, Load, LCP, INP) in der Card.
+
+---
+
+_**User**_
+
+DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-odfgbo > span.MuiBox-root c.-13o7eu2 > div.MuiBox-root c.-17b4aqi > div.MuiBox-root c.-1.g4afn > div.MuiBox-root c.-1hdbc19 > div.MuiBox-root c.-a1igic > div.MuiBox-root c.-1lqdhh3 > div#issue-0-wrapper > div.MuiBox-root c.-gd9iqe[0]
+Position: top=924px, left=661px, width=80px, height=75px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-gd9iqe" role="cell" data-cursor-element-id="cursor-el-443">–</div>  die axe wcag analyse gibt keine level A,AA,AAA zurück kann man das anpassen und ergänzen sich html code sniffer und axe eigentlich oder erkennen sie beide auch die gleichen fehler und sorgen für doppelten content?
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is asking two things:
+
+1. **WCAG Level (A, AA, AAA)**: The axe WCAG analysis doesn't return Level A, AA, AAA - can that be adapted/supplemented?
+
+2. **HTML CodeSniffer vs axe**: Do they complement each other or do they both detect the same errors and cause duplicate content?
+
+I'm in Ask mode, so I should only use readonly tools to explore the codebase and answer. I need to find:
+- Where axe and htmlcs (HTML CodeSniffer) are used in the scanner
+- How WCAG levels are assigned to issues (level A, AA, AAA)
+- Whether the level comes from the runner (axe vs htmlcs) or is derived elsewhere
+
+Let me search the codebase for how issues get their wcagLevel and how axe/htmlcs are integrated.
+</details></think>
+
+---
+
+
+Codebase prüfen, wie die WCAG-Level (A/AA/AAA) gesetzt werden und wie axe und HTML CodeSniffer zusammenspielen.
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "wcagLevel|wcag.*level|A\\s*\\|\\s*AA|axe|htmlcs|pa11y",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib",
+  "glob": "*.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "wcagLevel|wcag.*level|A\\s*\\|\\s*AA|axe|htmlcs|pa11y",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib",
+  "outputMode": "content",
+  "totalFiles": 55,
+  "totalMatches": 365,
+  "topFiles": [
+    {
+      "uri": "lib/types.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "lib/scanner.ts",
+      "matchCount": 40
+    },
+    {
+      "uri": "lib/domain-aggregation.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/wcag-score.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "lib/api-schemas.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/remediation-urls.test.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "lib/remediation-urls.ts",
+      "matchCount": 8
+    },
+    {
+      "uri": "lib/api-schemas.test.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/llm/prompts.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/llm/build-summary-payload.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/cookie-banner-dismiss.ts",
+      "matchCount": 9
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 40
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-aggregation.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/wcag-score.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/api-schemas.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/remediation-urls.test.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/lib/remediation-urls.ts",
+      "matchCount": 8
+    },
+    {
+      "uri": "../CHECKION-1/lib/api-schemas.test.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/llm/prompts.ts",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "issue.*level|mapSeverity|runner",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "issue.*level|mapSeverity|runner",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 55,
+  "topFiles": [
+    {
+      "uri": "lib/scanner.ts",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 11
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I found detectWcagLevel and that issues get wcagLevel from it. Let me read the full detectWcagLevel function and how pa11y merges results from both runners.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I understand:
+
+1. **WCAG Level**: `detectWcagLevel(code)` only looks at the **issue code string**:
+   - If the code contains "WCAG2AAA" → AAA
+   - If "WCAG2AA" → AA  
+   - If "WCAG2A" → A
+   - APCA/color-contrast-enhanced → APCA
+   - Otherwise → **Unknown**
+
+   HTML CodeSniffer (htmlcs) uses codes like `WCAG2AA.Principle1.Guideline1_1.1_1_1.H37`, so they get A/AA/AAA correctly. **Axe** uses rule IDs like `color-contrast`, `aria-required-attr`, etc. – they don’t contain "WCAG2A" etc., so **all axe issues currently get `Unknown`**. That’s why the user sees no Level A/AA/AAA for axe. To fix that you’d need a **mapping from axe rule IDs to WCAG 2 Level** (axe’s rule metadata includes `tags` like `wcag2a`, `wcag2aa`, `wcag21aa`). Pa11y’s combined result doesn’t expose those tags per issue, so you’d need either to use axe’s own API (e.g. run axe separately and use its violations with rule metadata) or maintain a static mapping ruleId → level.
+
+2. **axe vs HTML CodeSniffer**: 
+   - **Pa11y** runs both runners and **merges** their results into one list of issues. So you get issues from axe AND from htmlcs in the same run.
+   - The two tools **overlap**: many WCAG criteria are checked by both (e.g. alt text, labels, contrast). So the same underlying problem can be reported twice (once by axe, once by htmlcs) with different codes and messages → **duplicate content** in the list.
+   - They also **complement** each other: each has rules the other doesn’t, or different implementations (e.g. contrast). So you get both duplication and extra coverage.
+
+I'll summarize this for the user and mention how they could get real A/AA/AAA for axe (e.g. axe rule metadata or a mapping table).
+</details></think>
+
+---
+
+
+Hier der Stand im Code und was du tun kannst:
+
+---
+
+## 1. Warum bei axe kein Level A/AA/AAA ankommt
+
+Das WCAG-Level wird in `lib/scanner.ts` nur aus der **Issue-`code`-Zeichenkette** abgeleitet:
+
+```87:97:lib/scanner.ts
+function detectWcagLevel(code: string): Issue['wcagLevel'] {
+    const upperCode = code.toUpperCase();
+    if (upperCode.includes('WCAG2AAA')) return 'AAA';
+    if (upperCode.includes('WCAG2AA')) return 'AA';
+    if (upperCode.includes('WCAG2A')) return 'A';
+    // APCA / WCAG 3.0 Experimental
+    if (upperCode.includes('APCA') || upperCode.includes('COLOR-CONTRAST-ENHANCED')) return 'APCA';
+    // Fallback/Heuristic for Axe or other codes if they contain level indicators
+    return 'Unknown';
+}
+```
+
+- **HTML CodeSniffer** liefert Codes wie `WCAG2AA.Principle1.Guideline1_1...` → dort funktioniert die Abfrage, du bekommst A/AA/AAA.
+- **Axe** liefert Rule-IDs wie `color-contrast`, `aria-required-attr`, `image-alt` – **ohne** die Zeichenketten "WCAG2A"/"WCAG2AA"/"WCAG2AAA". Deshalb landen alle axe-Issues in dem Fall bei `Unknown`.
+
+**Anpassung/Ergänzung:**  
+Axe selbst kennt pro Rule WCAG-2-Tags (z. B. `wcag2a`, `wcag21aa`). Diese Infos kommen aber nicht in den pa11y-Ausgaben pro Issue durch. Um für axe echte Level A/AA/AAA zu haben, müsstest du entweder:
+
+- axe **direkt** aufrufen (nicht nur über pa11y), die `violations` mit `ruleId` und Rule-Metadaten (tags) auswerten und daraus das Level ableiten, oder  
+- eine **statische Tabelle** pflegen: axe-`ruleId` → Level (A/AA/AAA) und in `detectWcagLevel` bei erkennbaren axe-Codes (z. B. über `detectRunner(code) === 'axe'`) diese Tabelle verwenden.
+
+Ohne eine dieser beiden Quellen bleibt für axe-Issues nur „Unknown“ oder ein Pauschal-Level (z. B. AA).
+
+---
+
+## 2. Ergänzen sich axe und HTML CodeSniffer – oder doppelt?
+
+**Beides:**
+
+- **Ergänzung:** Jedes Tool hat eigene Rules und Schwerpunkte. Manche Prüfungen macht nur axe, manche nur HTML CodeSniffer; bei einigen (z. B. Kontrast) weichen die Algorithmen ab. Zwei Runner erhöhen die Abdeckung.
+- **Doppelte Meldungen:** Viele WCAG-Kriterien werden von **beiden** geprüft (z. B. fehlendes `alt`, Label-Zuordnung, Kontrast). Derselbe Fehler kann dann zweimal erscheinen – einmal mit axe-Code (z. B. `image-alt`), einmal mit HTML-CodeSniffer-Code (z. B. `WCAG2AA.…H37`). Das ist der „doppelte Content“, den du siehst.
+
+Aktuell nutzt ihr pa11y mit **beiden** Runnern; pa11y merged die Ergebnisse, ohne Duplikate zu entfernen. Wenn du weniger Duplikate willst, könntest du z. B. nur einen Runner nutzen oder nach dem Lauf Duplikate erkennen (gleicher Selector + ähnliche Regel) und zusammenfassen – das wäre eine inhaltliche/UX-Entscheidung.
+
+**Kurz:**  
+- Level A/AA/AAA für axe: ja, anpassbar/ergänzbar, aber nur mit axe-Metadaten oder Mapping (axe direkt oder Rule-ID → Level).  
+- axe und HTML CodeSniffer: sie ergänzen sich, erzeugen aber bei vielen gleichen Kriterien doppelte Meldungen; Duplikate könntest du durch einen Runner weniger oder eine Deduplizierungslogik reduzieren.
+
+---
+
+_**User**_
+
+ja lass uns unbedingt auf duplikate checken und aggregieren. und es wäre gut wenn wir axe ergänzen um die Level zu bekommen.
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants two things:
+1. Check for duplicates in the accessibility issues (from axe + HTML CodeSniffer) and aggregate/deduplicate them.
+2. Extend axe so that we get proper WCAG levels (A, AA, AAA) for axe issues instead of "Unknown".
+
+I'm in Plan mode, so I need to research the codebase, then create a plan with CreatePlan. I must NOT make any edits.
+
+Let me gather more detail on:
+1. Where issues are produced and merged (pa11y output structure, axe direct run if any).
+2. What data we have per issue (code, selector, message, runner) to deduplicate.
+3. How axe is run - via pa11y only or also directly; what axe API returns (e.g. violations with tags/ruleId).
+</details></think>
+
+---
+
+
+Codebase prüfen, um einen präzisen Plan für Deduplizierung und axe-WCAG-Level zu erstellen.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "issues\\.|raw\\.code|raw\\.selector|violations",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "issues\\.|raw\\.code|raw\\.selector|violations",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 50,
+  "topFiles": [
+    {
+      "uri": "lib/scanner.ts",
+      "matchCount": 10
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 10
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 10
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 10
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 10
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see that axe is run via pa11y (which returns combined issues from both runners), and then axe is run again directly only for "passes" (passed audits). The violations from axe come through pa11y's results.issues - so we don't have axe's native violation object with tags. So to get axe levels we have two options:
+A) Run axe.run() ourselves (in addition to pa11y) and use axe's violations (which have tags like wcag2aa) - then we'd need to merge pa11y issues with axe violations, and deduplicate. That's a bigger change.
+B) Add a static mapping: axe rule ID (code) -> WCAG level, and use it in detectWcagLevel when runner is axe. The axe rule IDs are well-known (e.g. color-contrast -> AA, image-alt -> A). We could maintain a map or load from axe-core's rule definitions.
+
+Let me check if there's an existing axe rules metadata we can use, and what the Issue type looks like (do we have runner on each issue - yes we do).
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="web_search">
+<details>
+            <summary>Tool use: **web_search** • Searched web `undefined` • **1** results</summary>
+        
+| Title | URL | Chunk |
+|-------|-----|-------|
+| Web search results for query: axe-core rules metadata wcag2a wcag2aa tags JSON |  | No results found |
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me check if axe-core package has a rules or locale file that maps rule id to tags.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **21** results in **1** directory</summary>
+
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/node_modules/axe-core** (21 files)
+
+| File |
+|------|
+| `locales/zh_TW.json` |
+| `locales/zh_CN.json` |
+| `sri-history.json` |
+| `locales/ru.json` |
+| `locales/pt_PT.json` |
+| `locales/pt_BR.json` |
+| `locales/pl.json` |
+| `package.json` |
+| `locales/no_NB.json` |
+| `locales/nl.json` |
+| `locales/ko.json` |
+| `locales/ja.json` |
+| `locales/it.json` |
+| `locales/he.json` |
+| `locales/fr.json` |
+| `locales/eu.json` |
+| `locales/es.json` |
+| `locales/el.json` |
+| `locales/de.json` |
+| `locales/da.json` |
+| `locales/_template.json` |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "computeStats|issues\\.length|stats\\.",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "computeStats|issues\\.length|stats\\.",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 35,
+  "topFiles": [
+    {
+      "uri": "lib/scanner.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 7
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me check axe-core - the rules are usually in lib folder or in the main bundle. I'll look for where rule metadata with tags is.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/node_modules/axe-core/package.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+axe-core 4.11.1. The rule definitions with tags are typically inside the JS (axe.js or axe.min.js) or in a separate lib. The axe.run() result for violations includes each violation with impact, id, tags etc. So when we get issues from pa11y, we don't have tags - pa11y merges axe and htmlcs output into a common format. So the options are:
+
+1. **Axe levels**: Build a static mapping ruleId -> level (A/AA/AAA) in our code. axe-core rule IDs are stable (e.g. "color-contrast", "image-alt"). We can maintain a JSON or TS map. Alternatively run axe separately and use its violations (which have .tags) - but then we'd have to merge pa11y htmlcs issues with axe violations and dedupe, which is more invasive.
+
+2. **Deduplication**: After building the issues array from pa11y results, run a dedupe step. Consider two issues "same" if they point to the same element (selector) and same/similar rule (e.g. same WCAG criterion). Strategy:
+   - Normalize selector (e.g. strip whitespace, take first 200 chars for comparison).
+   - Group by (selector, code_family) or (selector, wcagCriterion). "code_family" could be: for axe we use rule id, for htmlcs we could use the WCAG principle.guideline part.
+   - Within each group keep one issue (e.g. prefer the one with more specific level, or prefer htmlcs for level info, or axe for consistency).
+   - Or: same selector + same "semantic" rule (e.g. both image-alt and H37) -> merge into one, keep both codes in a list or keep the one with level.
+
+I'll outline a plan that:
+- Adds axe rule ID -> WCAG level mapping (static map from axe-core docs / common rules), and uses it in detectWcagLevel when runner is axe.
+- Adds a deduplication step: normalize selector, group by selector + "rule group" (map both axe and htmlcs codes to a canonical WCAG criterion or rule group), then keep one representative issue per group (e.g. keep the one with wcagLevel if available, or merge messages).
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "levelStats|Level A|Level AA",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "levelStats|Level A|Level AA",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 25,
+  "topFiles": [
+    {
+      "uri": "app/results/[id]/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 5
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to see where levelStats is computed from issues - it's probably in a useEffect that counts issues by wcagLevel.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "setLevelStats|levelStats\\.|wcagLevel",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx",
+  "contextBefore": 0,
+  "contextAfter": 2,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "setLevelStats|levelStats\\.|wcagLevel",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 55,
+  "topFiles": [
+    {
+      "uri": "app/results/[id]/page.tsx",
+      "matchCount": 23
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 23
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 23
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 23
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 23
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I have a good picture. Now I need to decide:
+
+1. **Axe WCAG levels**: The pa11y result only gives us issue codes. For axe, the code is the rule id (e.g. "color-contrast"). So we need a mapping from axe rule id to WCAG level. Options:
+   - (A) Static map in code: e.g. `AXE_RULE_LEVELS: Record<string, 'A'|'AA'|'AAA'|'APCA'>` with the most common rules. We can source from axe-core's docs or from running axe and reading tags.
+   - (B) Run axe.run() and use its violations (which include .tags) - then we'd have to merge pa11y issues with axe violations. That would mean: either replace pa11y's axe issues with axe's violations (and merge htmlcs from pa11y), or run axe, get violations with tags, and for each pa11y issue that is from axe, look up the level from the axe violations by matching rule id + selector. Option (B) is more accurate but requires running axe and matching. Actually pa11y already runs axe - so the issues we get from pa11y are a merged list. We don't have a separate axe run that gives us tags. So the only way without running axe again is (A) static map. If we run axe again we get violations with tags - we could then use that to enrich pa11y issues (match by code + selector) or replace axe issues from pa11y with axe violations (and keep htmlcs from pa11y). The "replace" approach would mean: run pa11y with only htmlcs, run axe separately, then combine and dedupe. That's a bigger refactor. Simplest is (A): static mapping for axe rule IDs.
+
+2. **Deduplication**: We have a list of issues with selector, code, message, runner. Two issues are duplicates if they refer to the same element (same or equivalent selector) and the same "rule" (same WCAG criterion). Strategy:
+   - Normalize selector (trim, maybe take a fingerprint).
+   - Define "rule group": for htmlcs the code already contains level; for axe we can use rule id. Map (axe rule id, htmlcs guideline) to a "canonical" rule group - e.g. "image-alt" (axe) and "WCAG2AA....H37" (htmlcs) both map to "1.1.1 Non-text Content".
+   - Group issues by (normalizedSelector, ruleGroup). Keep one issue per group. When merging: keep the issue that has wcagLevel !== Unknown (so we prefer htmlcs for level), or combine: keep one, add a "also reported by: axe" in message or keep the most severe type.
+
+Let me define the plan with these two parts.
+</details></think>
+
+---
+
+
+Plan erstellen.
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="create_plan">
+<details>
+<summary>Tool use: **create_plan**</summary>
+
+
+Parameters:
+
+```json
+{
+  "plan": "# WCAG-Level für axe + Deduplizierung der Issues\n\n## Ausgangslage\n\n- **Issues** kommen aus **pa11y**, das axe und HTML CodeSniffer parallel laufen lässt und deren Ergebnisse in einer gemeinsamen &#96;results.issues&#96;-Liste zusammenführt ([lib/scanner.ts](lib/scanner.ts) Zeilen 243–252, 323–362).\n- **WCAG-Level** wird in &#96;detectWcagLevel(code)&#96; nur aus dem Issue-&#96;code&#96; abgeleitet. HTML-CodeSniffer-Codes enthalten \"WCAG2A\"/\"WCAG2AA\"/\"WCAG2AAA\" → Level ist bekannt. **Axe** liefert Rule-IDs wie &#96;color-contrast&#96;, &#96;image-alt&#96; ohne Level-String → aktuell immer &#96;Unknown&#96; (Zeilen 87–97).\n- **Doppelte Meldungen**: Derselbe Fehler wird oft von beiden Engines gemeldet (z. B. fehlendes Alt = axe &#96;image-alt&#96; + htmlcs &#96;WCAG2AA....H37&#96;), was doppelte Einträge in der Liste und in den Level-Statistiken erzeugt.\n\n---\n\n## Teil 1: Axe Rule-IDs auf WCAG-Level mappen\n\n**Ziel:** Für Issues mit &#96;runner === 'axe'&#96; ein Level A/AA/AAA/APCA setzen statt &#96;Unknown&#96;.\n\n**Vorgehen:**\n\n1. **Statische Mapping-Datei** (z. B. &#96;lib/axe-wcag-levels.ts&#96;):\n   - Ein Objekt &#96;AXE_RULE_WCAG_LEVEL: Record&lt;string, 'A' | 'AA' | 'AAA' | 'APCA'&gt;&#96; mit den gängigen axe-core Rule-IDs.\n   - Quelle: [axe-core Rule Descriptions](https://github.com/dequelabs/axe-core/blob/develop/doc/rule-descriptions.md) bzw. die Tags in den Rule-Definitionen (wcag2a, wcag2aa, wcag21aa, cat.apca). Typische Einträge: &#96;image-alt&#96; → A, &#96;color-contrast&#96; → AA, &#96;color-contrast-enhanced&#96; → APCA, &#96;aria-required-attr&#96; → A, &#96;document-title&#96; → A, &#96;html-has-lang&#96; → A, &#96;label&#96; → A, &#96;button-name&#96; → A, &#96;link-name&#96; → A, &#96;heading-order&#96; → AA, etc.\n   - Nur Rules, die WCAG 2 betreffen; unbekannte IDs bleiben ohne Eintrag (später in &#96;detectWcagLevel&#96; → &#96;Unknown&#96;).\n\n2. **&#96;detectWcagLevel&#96; erweitern** in [lib/scanner.ts](lib/scanner.ts):\n   - Signatur um &#96;runner: Runner&#96; ergänzen (oder separat prüfen: wenn &#96;code&#96; wie eine axe-ID aussieht, z. B. über bestehende Heuristik/&#96;detectRunner&#96;).\n   - Wenn Runner axe ist: zuerst in &#96;AXE_RULE_WCAG_LEVEL[code]&#96; nachschlagen; wenn vorhanden, dieses Level zurückgeben.\n   - Bestehende Logik für HTML-CodeSniffer (WCAG2AAA/AA/A, APCA) unverändert lassen.\n\n3. **Aufruf anpassen:** Beim Bauen der Issues (Zeile 358) &#96;detectWcagLevel(code, runner)&#96; aufrufen (bzw. &#96;runner&#96; aus dem bereits ermittelten &#96;runner&#96; übergeben).\n\n**Hinweis:** Optional kann die Map später aus axe-core-Metadaten (falls als JSON/JS verfügbar) oder per Build-Script generiert werden; für den Einstieg reicht eine handgepflegte Map der wichtigsten ~50–80 Rules.\n\n---\n\n## Teil 2: Duplikate erkennen und zusammenführen\n\n**Ziel:** Zwei Meldungen, die denselben Fehler am selben Element beschreiben (axe + htmlcs), als ein Issue darstellen.\n\n**Strategie:**\n\n1. **„Regelgruppe“ pro Issue definieren** (gleiche Regel = potenzielles Duplikat):\n   - **HTML CodeSniffer:** Aus &#96;code&#96; die WCAG-Prinzip/Guideline-Kennung extrahieren (z. B. erste zwei Segmente wie &#96;WCAG2AA.Principle1.Guideline1_1&#96; oder eine feste Liste von HTMLCS-Code-Prefixen), oder vereinfacht: &#96;code&#96; normalisiert (trim, uppercase) als Gruppe.\n   - **Axe:** &#96;code&#96; (Rule-ID) direkt als Gruppe, z. B. &#96;image-alt&#96;, &#96;color-contrast&#96;.\n   - **Kanonische Zuordnung axe ↔ htmlcs:** Eine kleine Map (z. B. in derselben Datei wie Dedupe-Logik), die axe Rule-IDs auf dieselbe „logische Regel“ wie ein htmlcs-Code-Prefix mappt (z. B. &#96;image-alt&#96; ↔ &#96;WCAG2AA.Principle1.Guideline1_1.1_1_1&#96;). So können „gleicher Fehler, anderer Engine“ gruppiert werden.\n\n2. **Selektor normalisieren:**\n   - &#96;selector&#96; trimmen, ggf. auf sinnvolle Länge kappen (z. B. 500 Zeichen) für Gruppierung.\n   - Leere Selektoren (falls vorkommen) als eigene Gruppe oder mit Fallback (z. B. &#96;code&#96; nur) behandeln.\n\n3. **Gruppierung und Zusammenführung:**\n   - Issues gruppieren nach Schlüssel &#96;(normalizedSelector, ruleGroup)&#96;.\n   - Pro Gruppe **ein** Issue behalten. Strategie für die Auswahl:\n     - Bevorzugt ein Issue mit &#96;wcagLevel !== 'Unknown'&#96; (meist htmlcs), damit Level A/AA/AAA in der UI und in levelStats korrekt ankommen.\n     - Bei gleichem Level: z. B. das mit kürzerer/längerer &#96;message&#96; oder erstes Vorkommen nehmen.\n   - Optional: Im behaltenen Issue ein zusätzliches Feld &#96;sources?: ('axe'|'htmlcs')[]&#96; oder in &#96;message&#96;/&#96;context&#96; vermerken („Auch von axe gemeldet“), damit transparent bleibt, dass beide Engines den Fehler gefunden haben. Das würde ggf. das &#96;Issue&#96;-Typ in [lib/types.ts](lib/types.ts) erweitern (optional).\n\n4. **Einsortierung im Scanner:**\n   - Nach dem bestehenden &#96;issuePromises&#96;/&#96;Promise.all&#96; die &#96;issues&#96;-Liste durch eine neue Funktion &#96;deduplicateIssues(issues: Issue[]): Issue[]&#96; laufen lassen.\n   - Die zurückgegebene Liste für alles Weitere verwenden (Stats, Passes, Result). &#96;computeStats(issues)&#96; und alle Downstream-Consumer (z. B. [app/results/[id]/page.tsx](app/results/[id]/page.tsx) Level-Statistik) arbeiten dann automatisch auf der deduplizierten Liste.\n\n**Dateien:**\n\n- Neue Hilfsdatei z. B. &#96;lib/issue-dedupe.ts&#96;: &#96;normalizeSelector&#96;, &#96;getRuleGroup(issue, axeToWcagRuleMap)&#96;, &#96;deduplicateIssues(issues, options?)&#96;.\n- [lib/scanner.ts](lib/scanner.ts): Nach Zeile 363 &#96;issues = deduplicateIssues(issues)&#96; (oder gleich das Ergebnis von &#96;deduplicateIssues&#96; in eine Variable schreiben und diese für &#96;computeStats&#96; und das Result verwenden).\n\n**Tests:**\n\n- Unit-Tests für &#96;deduplicateIssues&#96;: z. B. zwei Issues gleicher Selektor + gleiche Regelgruppe → ein Issue; zwei Issues gleicher Selektor, verschiedene Regelgruppe → zwei Issues; Bevorzugung von Issue mit bekanntem &#96;wcagLevel&#96;.\n- Optional: Tests für &#96;detectWcagLevel&#96; mit axe-Codes und der neuen Map (Level A/AA/AAA/APCA/Unknown).\n\n---\n\n## Ablauf (kurz)\n\n&#96;&#96;&#96;mermaid\nflowchart LR\n  subgraph pa11y [pa11y]\n    A[axe]\n    B[htmlcs]\n  end\n  pa11y --&gt; Merge[results.issues]\n  Merge --&gt; Map[Issue-Mapping + detectWcagLevel mit axe-Map]\n  Map --&gt; Issues[issues mit Level]\n  Issues --&gt; Dedupe[deduplicateIssues]\n  Dedupe --&gt; Out[issues final]\n  Out --&gt; Stats[computeStats / Result]\n&#96;&#96;&#96;\n\n---\n\n## Reihenfolge der Umsetzung\n\n1. **Axe-Level:** Map anlegen, &#96;detectWcagLevel&#96; erweitern, Aufruf anpassen → axe-Issues haben A/AA/AAA/APCA wo bekannt.\n2. **Dedupe:** Regelgruppen- und Selektor-Normalisierung, &#96;deduplicateIssues&#96; implementieren, im Scanner einhängen; optional &#96;Issue.sources&#96; und UI-Hinweis.\n3. **Tests** für Dedupe und ggf. für Level-Mapping ergänzen.\n\nDamit werden Duplikate reduziert und die Level-Anzeige (inkl. Level A/AA/AAA in der Results-Page) wird auch für axe-Issues sinnvoll befüllt.\n",
+  "name": "WCAG Level + Dedupe",
+  "overview": "Zwei Änderungen im Scanner: (1) axe-Issues bekommen echte WCAG-Level (A/AA/AAA) über eine Rule-ID-zu-Level-Map. (2) Issues von axe und HTML CodeSniffer werden vor der Ausgabe nach Selektor + Regelgruppe dedupliziert, damit derselbe Fehler nicht doppelt erscheint."
+}
+```
+Additional data:
+
+```json
+{
+  "reviewData": {
+    "status": "Requested",
+    "selectedOption": "none",
+    "isShowingInput": false
+  },
+  "planUri": "file:///Users/christoph.bordeck/.cursor/plans/wcag_level_%2B_dedupe_000ef545.plan.md",
+  "hasOpenedEditor": true
+}
+```
+Result:
+
+```json
+{
+  "rejected": {}
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+_**User**_
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
