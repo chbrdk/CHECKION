@@ -69731,3 +69731,1386 @@ To-do's from the plan have already been created. Do not create them again. Mark 
 
 ---
 
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants me to implement the plan for WCAG Level for axe + Deduplication of Issues. The plan has these main parts:
+
+1. **Part 1: Axe Rule-IDs to WCAG Level mapping**
+   - Create `lib/axe-wcag-levels.ts` with `AXE_RULE_WCAG_LEVEL` map
+   - Extend `detectWcagLevel` in scanner.ts to accept runner and use the map for axe
+   - Update the call when building issues to pass runner
+
+2. **Part 2: Deduplication**
+   - Create `lib/issue-dedupe.ts` with normalizeSelector, getRuleGroup, deduplicateIssues
+   - Map axe rule IDs to same "logical rule" as htmlcs for grouping
+   - In scanner.ts, after building issues, call deduplicateIssues(issues)
+
+3. **Tests**
+   - Unit tests for deduplicateIssues
+   - Optional tests for detectWcagLevel with axe map
+
+The user said "To-do's from the plan have already been created" but the plan file shows `todos: []`. I'll proceed with the implementation and use todo_write to track progress. Let me start with Part 1.
+
+I need to:
+1. Create lib/axe-wcag-levels.ts with a comprehensive map of axe rule IDs to WCAG levels. I'll need to look up common axe rules - from my knowledge: image-alt (A), color-contrast (AA), aria-required-attr (A), document-title (A), html-has-lang (A), label (A), button-name (A), link-name (A), etc.
+2. Update lib/scanner.ts - detectWcagLevel(code, runner), use AXE_RULE_WCAG_LEVEL when runner is axe; update the issue mapping to pass runner.
+3. Create lib/issue-dedupe.ts with normalizeSelector, getRuleGroup (with axe-to-htmlcs mapping for same logical rule), deduplicateIssues.
+4. In scanner.ts import and call deduplicateIssues after issues are built.
+5. Add unit tests.
+
+Let me start implementing. First I'll look up axe-core rules to build a reasonable map - I'll use a web search or create a map from common rules I know. Actually the plan says "handgepflegte Map der wichtigsten ~50–80 Rules" - I'll create a substantial map from axe-core documentation. Let me check if there's an axe-core rule list in node_modules.
+</details></think>
+
+---
+
+
+Implementierung starten: Zuerst die axe-WCAG-Level-Map anlegen und den Scanner anpassen.
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] Axe WCAG map + detectWcagLevel + scanner call
+- [ ] issue-dedupe.ts + deduplicateIssues in scanner
+- [ ] Unit tests for dedupe and level mapping
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="web_fetch">
+<details>
+<summary>Tool use: **web_fetch**</summary>
+
+
+Parameters:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/dequelabs/axe-core/develop/doc/rule-descriptions.md"
+}
+```
+Result:
+
+```json
+{
+  "url": "https://raw.githubusercontent.com/dequelabs/axe-core/develop/doc/rule-descriptions.md",
+  "markdown": "\n\n# Rule Descriptions\n\n## Table of Contents\n\n- [WCAG 2.0 Level A &amp; AA Rules](#wcag-20-level-a--aa-rules)\n- [WCAG 2.1 Level A &amp; AA Rules](#wcag-21-level-a--aa-rules)\n- [WCAG 2.2 Level A &amp; AA Rules](#wcag-22-level-a--aa-rules)\n- [Best Practices Rules](#best-practices-rules)\n- [WCAG 2.x level AAA rules](#wcag-2x-level-aaa-rules)\n- [Experimental Rules](#experimental-rules)\n- [Deprecated Rules](#deprecated-rules)\n\n## WCAG 2.0 Level A &amp; AA Rules\n\n| Rule ID | Description | Impact | Tags | Issue Type | [ACT Rules](https://www.w3.org/WAI/standards-guidelines/act/rules/) |\n| :-------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------- | :------- | :----------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |\n| [area-alt](https://dequeuniversity.com/rules/axe/4.11/area-alt?application=RuleDescription) | Ensure &amp;lt;area&amp;gt; elements of image maps have alternative text | Critical | cat.text-alternatives, wcag2a, wcag244, wcag412, section508, section508.22.a, TTv5, TT6.a, EN-301-549, EN-9.2.4.4, EN-9.4.1.2, ACT, RGAAv4, RGAA-1.1.2 | failure, needs&amp;nbsp;review | [c487ae](https://act-rules.github.io/rules/c487ae) |\n| [aria-allowed-attr](https://dequeuniversity.com/rules/axe/4.11/aria-allowed-attr?application=RuleDescription) | Ensure an element&amp;apos;s role supports its ARIA attributes | Critical | cat.aria, wcag2a, wcag412, EN-301-549, EN-9.4.1.2, RGAAv4, RGAA-7.1.1 | failure, needs&amp;nbsp;review | [5c01ea](https://act-rules.github.io/rules/5c01ea) |\n| [aria-braille-equivalent](https://dequeuniversity.com/rules/axe/4.11/aria-braille-equivalent?application=RuleDescription) | Ensure aria-braillelabel and aria-brailleroledescription have a non-braille equivalent | Serious | cat.aria, wcag2a, wcag412, EN-301-549, EN-9.4.1.2 | needs&amp;nbsp;review | |\n| [aria-command-name](https://dequeuniversity.com/rules/axe/4.11/aria-command-name?application=RuleDescription) | Ensure every ARIA button, link and menuitem has an accessible name | Serious | cat.aria, wcag2a, wcag412, TTv5, TT6.a, EN-301-549, EN-9.4.1.2, ACT, RGAAv4, RGAA-11.9.1 | failure, needs&amp;nbsp;review | [97a4e1](https://act-rules.github.io/rules/97a4e1) |\n| [aria-conditional-attr](https://dequeuniversity.com/rules/axe/4.11/aria-conditional-attr?application=RuleDescription) | Ensure ARIA attributes are used as described in the specification of the element&amp;apos;s role | Serious | cat.aria, wcag2a, wcag412, EN-301-549, EN-9.4.1.2, RGAAv4, RGAA-7.1.1 | failure | [5c01ea](https://act-rules.github.io/rules/5c01ea) |\n| [aria-deprecated-role](https://dequeuniversity.com/rules/axe/4.11/aria-deprecated-role?application=RuleDescription) | Ensure elements do not use deprecated roles | Minor | cat.aria, wcag2a, wcag412, EN-301-549, EN-9.4.1.2, RGAAv4, RGAA-7.1.1 | failure | [674b10](https://act-rules.github.io/rules/674b10) |\n| [aria-hidden-body](https://dequeuniversity.com/rules/axe/4.11/aria-hidden-body?application=RuleDescription) | Ensure aria-hidden=&amp;quot;true&amp;quot; is not present on the document body. | Critical | cat.aria, wcag2a, wcag131, wcag412, EN-301-549, EN-9.1.3.1, EN-9.4.1.2, RGAAv4, RGAA-10.8.1 | failure | |\n| [aria-hidden-focus](https://dequeuniversity.com/rules/axe/4.11/aria-hidden-focus?application=RuleDescription) | Ensure aria-hidden elements are not focusable nor contain focusable elements | Serious | cat.name-role-value, wcag2a, wcag412, TTv5, TT6.a, EN-301-549, EN-9.4.1.2, RGAAv4, RGAA-10.8.1 | failure, needs&amp;nbsp;review | [6cfa84](https://act-rules.github.io/rules/6cfa84) |\n| [aria-input-field-name](https://dequeuniversity.com/rules/axe/4.11/aria-input-field-name?application=RuleDescription) | Ensure every ARIA input field has an accessible name | Serious | cat.aria, wcag2a, wcag412, TTv5, TT5.c, EN-301-549, EN-9.4.1.2, ACT, RGAAv4, RGAA-11.1.1 | failure, needs&amp;nbsp;review | [e086e5](https://act-rules.github.io/rules/e086e5) |\n| [aria-meter-name](https://dequeuniversity.com/rules/axe/4.11/aria-meter-name?application=RuleDescription) | Ensure every ARIA meter node has an accessible name | Serious | cat.aria, wcag2a, wcag111, EN-301-549, EN-9.1.1.1, RGAAv4, RGAA-11.1.1 | failure, needs&amp;nbsp;review | |\n| [aria-progressbar-name](https://dequeuniversity.com/rules/axe/4.11/aria-progressbar-name?application=RuleDescription) | Ensure every ARIA progressbar node has an accessible name | Serious | cat.aria, wcag2a, wcag111, EN-301-549, EN-9.1.1.1, RGAAv4, RGAA-11.1.1 | failure, needs&amp;nbsp;review | |\n| [aria-prohibited-attr](https://dequeuniversity.com/rules/axe/4.11/aria-prohibited-attr?application=RuleDescription) | Ensure ARIA attributes are not prohibited for an element&amp;apos;s role | Serious | cat.aria, wcag2a, wcag412, EN-301-549, EN-9.4.1.2, RGAAv4, RGAA-7.1.1 | failure, needs&amp;nbsp;review | [5c01ea](https://act-rules.github.io/rules/5c01ea) |\n| [aria-required-attr](https://dequeuniversity.com/rules/axe/4.11/aria-required-attr?application=RuleDescription) | Ensure elements with ARIA roles have all required ARIA attributes | Critical | cat.aria, wcag2a, wcag412, EN-301-549, EN-9.4.1.2, RGAAv4, RGAA-7.1.1 | failure | [4e8ab6](https://act-rules.github.io/rules/4e8ab6) |\n| [aria-required-children](https://dequeuniversity.com/rules/axe/4.11/aria-required-children?application=RuleDescription) | Ensure elements with an ARIA role that require child roles contain them | Critical | cat.aria, wcag2a, wcag131, EN-301-549, EN-9.1.3.1, RGAAv4, RGAA-9.3.1 | failure, needs&amp;nbsp;review | [bc4a75](https://act-rules.github.io/rules/bc4a75), [ff89c9](https://act-rules.github.io/rules/ff89c9) |\n| [aria-required-parent](https://dequeuniversity.com/rules/axe/4.11/aria-required-parent?application=RuleDescription) | Ensure elements with an ARIA role that require parent roles are contained by them | Critical | cat.aria, wcag2a, wcag131, EN-301-549, EN-9.1.3.1, RGAAv4, RGAA-9.3.1 | failure | [ff89c9](https://act-rules.github.io/rules/ff89c9) |\n| [aria-roles](https://dequeuniversity.com/rules/axe/4.11/aria-roles?application=RuleDescription) | Ensure all elements with a role attribute use a valid value | Critical | cat.aria, wcag2a, wcag412, EN-301-549, EN-9.4.1.2, RGAAv4, RGAA-7.1.1 | failure | [674b10](https://act-rules.github.io/rules/674b10) |\n| [aria-tab-name](https://dequeuniversity.com/rules/axe/4.11/aria-tab-name?application=RuleDescription) | Ensure every ARIA tab node has an accessible name | Serious | cat.aria, wcag2a, wcag412, TTv5, TT5.c, EN-301-549, EN-9.4.1.2, ACT, RGAAv4, RGAA-7.1.1 | failure, needs&amp;nbsp;review | |\n| [aria-toggle-field-name](https://dequeuniversity.com/rules/axe/4.11/aria-toggle-field-name?application=RuleDescription) | Ensure every ARIA toggle field has an accessible name | Serious | cat.aria, wcag2a, wcag412, TTv5, TT5.c, EN-301-549, EN-9.4.1.2, ACT, RGAAv4, RGAA-7.1.1 | failure, needs&amp;nbsp;review | [e086e5](https://act-rules.github.io/rules/e086e5) |\n| [aria-tooltip-name](https://dequeuniversity.com/rules/axe/4.11/aria-tooltip-name?application=RuleDescription) | Ensure every ARIA tooltip node has an accessible name | Serious | cat.aria, wcag2a, wcag412, EN-301-549, EN-9.4.1.2 | failure, needs&amp;nbsp;review | |\n| [aria-valid-attr-value](https://dequeuniversity.com/rules/axe/4.11/aria-valid-attr-value?application=RuleDescription) | Ensure all ARIA attributes have valid values | Critical | cat.aria, wcag2a, wcag412, EN-301-549, EN-9.4.1.2, RGAAv4, RGAA-7.1.1 | failure, needs&amp;nbsp;review | [6a7281](https://act-rules.github.io/rules/6a7281) |\n| [aria-valid-attr](https://dequeuniversity.com/rules/axe/4.11/aria-valid-attr?application=RuleDescription) | Ensure attributes that begin with aria- are valid ARIA attributes | Critical | cat.aria, wcag2a, wcag412, EN-301-549, EN-9.4.1.2, RGAAv4, RGAA-7.1.1 | failure | [5f99a7](https://act-rules.github.io/rules/5f99a7) |\n| [blink](https://dequeuniversity.com/rules/axe/4.11/blink?application=RuleDescription) | Ensure &amp;lt;blink&amp;gt; elements are not used | Serious | cat.time-and-media, wcag2a, wcag222, section508, section508.22.j, TTv5, TT2.b, EN-301-549, EN-9.2.2.2, RGAAv4, RGAA-13.8.1 | failure | |\n| [button-name](https://dequeuniversity.com/rules/axe/4.11/button-name?application=RuleDescription) | Ensure buttons have discernible text | Critical | cat.name-role-value, wcag2a, wcag412, section508, section508.22.a, TTv5, TT6.a, EN-301-549, EN-9.4.1.2, ACT, RGAAv4, RGAA-11.9.1 | failure, needs&amp;nbsp;review | [97a4e1](https://act-rules.github.io/rules/97a4e1), [m6b1q3](https://act-rules.github.io/rules/m6b1q3) |\n| [bypass](https://dequeuniversity.com/rules/axe/4.11/bypass?application=RuleDescription) | Ensure each page has at least one mechanism for a user to bypass navigation and jump straight to the content | Serious | cat.keyboard, wcag2a, wcag241, section508, section508.22.o, TTv5, TT9.a, EN-301-549, EN-9.2.4.1, RGAAv4, RGAA-12.7.1 | needs&amp;nbsp;review | [cf77f2](https://act-rules.github.io/rules/cf77f2), [047fe0](https://act-rules.github.io/rules/047fe0), [b40fd1](https://act-rules.github.io/rules/b40fd1), [3e12e1](https://act-rules.github.io/rules/3e12e1), [ye5d6e](https://act-rules.github.io/rules/ye5d6e) |\n| [color-contrast](https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=RuleDescription) | Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds | Serious | cat.color, wcag2aa, wcag143, TTv5, TT13.c, EN-301-549, EN-9.1.4.3, ACT, RGAAv4, RGAA-3.2.1 | failure, needs&amp;nbsp;review | [afw4f7](https://act-rules.github.io/rules/afw4f7), [09o5cg](https://act-rules.github.io/rules/09o5cg) |\n| [definition-list](https://dequeuniversity.com/rules/axe/4.11/definition-list?application=RuleDescription) | Ensure &amp;lt;dl&amp;gt; elements are structured correctly | Serious | cat.structure, wcag2a, wcag131, EN-301-549, EN-9.1.3.1, RGAAv4, RGAA-9.3.3 | failure | |\n| [dlitem](https://dequeuniversity.com/rules/axe/4.11/dlitem?application=RuleDescription) | Ensure &amp;lt;dt&amp;gt; and &amp;lt;dd&amp;gt; elements are contained by a &amp;lt;dl&amp;gt; | Serious | cat.structure, wcag2a, wcag131, EN-301-549, EN-9.1.3.1, RGAAv4, RGAA-9.3.3 | failure | |\n| [document-title](https://dequeuniversity.com/rules/axe/4.11/document-title?application=RuleDescription) | Ensure each HTML document contains a non-empty &amp;lt;title&amp;gt; element | Serious | cat.text-alternatives, wcag2a, wcag242, TTv5, TT12.a, EN-301-549, EN-9.2.4.2, ACT, RGAAv4, RGAA-8.5.1 | failure | [2779a5](https://act-rules.github.io/rules/2779a5) |\n| [duplicate-id-aria](https://dequeuniversity.com/rules/axe/4.11/duplicate-id-aria?application=RuleDescription) | Ensure every id attribute value used in ARIA and in labels is unique | Critical | cat.parsing, wcag2a, wcag412, EN-301-549, EN-9.4.1.2, RGAAv4, RGAA-8.2.1 | needs&amp;nbsp;review | [3ea0c8](https://act-rules.github.io/rules/3ea0c8) |\n| [form-field-multiple-labels](https://dequeuniversity.com/rules/axe/4.11/form-field-multiple-labels?application=RuleDescription) | Ensure form field does not have multiple label elements | Moderate | cat.forms, wcag2a, wcag332, TTv5, TT5.c, EN-301-549, EN-9.3.3.2, RGAAv4, RGAA-11.2.1 | needs&amp;nbsp;review | |\n| [frame-focusable-content](https://dequeuniversity.com/rules/axe/4.11/frame-focusable-content?application=RuleDescription) | Ensure &amp;lt;frame&amp;gt; and &amp;lt;iframe&amp;gt; elements with focusable content do not have tabindex=-1 | Serious | cat.keyboard, wcag2a, wcag211, TTv5, TT4.a, EN-301-549, EN-9.2.1.1, RGAAv4, RGAA-7.3.2 | failure, needs&amp;nbsp;review | [akn7bn](https://act-rules.github.io/rules/akn7bn) |\n| [frame-title-unique](https://dequeuniversity.com/rules/axe/4.11/frame-title-unique?application=RuleDescription) | Ensure &amp;lt;iframe&amp;gt; and &amp;lt;frame&amp;gt; elements contain a unique title attribute | Serious | cat.text-alternatives, wcag2a, wcag412, TTv5, TT12.d, EN-301-549, EN-9.4.1.2, RGAAv4, RGAA-2.2.1 | needs&amp;nbsp;review | [4b1c6c](https://act-rules.github.io/rules/4b1c6c) |\n| [frame-title](https://dequeuniversity.com/rules/axe/4.11/frame-title?application=RuleDescription) | Ensure &amp;lt;iframe&amp;gt; and &amp;lt;frame&amp;gt; elements have an accessible name | Serious | cat.text-alternatives, wcag2a, wcag412, section508, section508.22.i, TTv5, TT12.d, EN-301-549, EN-9.4.1.2, RGAAv4, RGAA-2.1.1 | failure, needs&amp;nbsp;review | [cae760](https://act-rules.github.io/rules/cae760) |\n| [html-has-lang](https://dequeuniversity.com/rules/axe/4.11/html-has-lang?application=RuleDescription) | Ensure every HTML document has a lang attribute | Serious | cat.language, wcag2a, wcag311, TTv5, TT11.a, EN-301-549, EN-9.3.1.1, ACT, RGAAv4, RGAA-8.3.1 | failure | [b5c3f8](https://act-rules.github.io/rules/b5c3f8) |\n| [html-lang-valid](https://dequeuniversity.com/rules/axe/4.11/html-lang-valid?application=RuleDescription) | Ensure the lang attribute of the &amp;lt;html&amp;gt; element has a valid value | Serious | cat.language, wcag2a, wcag311, TTv5, TT11.a, EN-301-549, EN-9.3.1.1, ACT, RGAAv4, RGAA-8.4.1 | failure | [bf051a](https://act-rules.github.io/rules/bf051a) |\n| [html-xml-lang-mismatch](https://dequeuniversity.com/rules/axe/4.11/html-xml-lang-mismatch?application=RuleDescription) | Ensure that HTML elements with both valid lang and xml:lang attributes agree on the base language of the page | Moderate | cat.language, wcag2a, wcag311, EN-301-549, EN-9.3.1.1, ACT, RGAAv4, RGAA-8.3.1 | failure | [5b7ae0](https://act-rules.github.io/rules/5b7ae0) |\n| [image-alt](https://dequeuniversity.com/rules/axe/4.11/image-alt?application=RuleDescription) | Ensure &amp;lt;img&amp;gt; elements have alternative text or a role of none or presentation | Critical | cat.text-alternatives, wcag2a, wcag111, section508, section508.22.a, TTv5, TT7.a, TT7.b, EN-301-549, EN-9.1.1.1, ACT, RGAAv4, RGAA-1.1.1 | failure, needs&amp;nbsp;review | [23a2a8](https://act-rules.github.io/rules/23a2a8) |\n| [input-button-name](https://dequeuniversity.com/rules/axe/4.11/input-button-name?application=RuleDescription) | Ensure input buttons have discernible text | Critical | cat.name-role-value, wcag2a, wcag412, section508, section508.22.a, TTv5, TT5.c, EN-301-549, EN-9.4.1.2, ACT, RGAAv4, RGAA-11.9.1 | failure, needs&amp;nbsp;review | [97a4e1](https://act-rules.github.io/rules/97a4e1) |\n| [input-image-alt](https://dequeuniversity.com/rules/axe/4.11/input-image-alt?application=RuleDescription) | Ensure &amp;lt;input type=&amp;quot;image&amp;quot;&amp;gt; elements have alternative text | Critical | cat.text-alternatives, wcag2a, wcag111, wcag412, section508, section508.22.a, TTv5, TT7.a, EN-301-549, EN-9.1.1.1, EN-9.4.1.2, ACT, RGAAv4, RGAA-1.1.3 | failure, needs&amp;nbsp;review | [59796f](https://act-rules.github.io/rules/59796f) |\n| [label](https://dequeuniversity.com/rules/axe/4.11/label?application=RuleDescription) | Ensure every form element has a label | Critical | cat.forms, wcag2a, wcag412, section508, section508.22.n, TTv5, TT5.c, EN-301-549, EN-9.4.1.2, ACT, RGAAv4, RGAA-11.1.1 | failure, needs&amp;nbsp;review | [e086e5](https://act-rules.github.io/rules/e086e5) |\n| [link-in-text-block](https://dequeuniversity.com/rules/axe/4.11/link-in-text-block?application=RuleDescription) | Ensure links are distinguished from surrounding text in a way that does not rely on color | Serious | cat.color, wcag2a, wcag141, TTv5, TT13.a, EN-301-549, EN-9.1.4.1, RGAAv4, RGAA-10.6.1 | failure, needs&amp;nbsp;review | |\n| [link-name](https://dequeuniversity.com/rules/axe/4.11/link-name?application=RuleDescription) | Ensure links have discernible text | Serious | cat.name-role-value, wcag2a, wcag244, wcag412, section508, section508.22.a, TTv5, TT6.a, EN-301-549, EN-9.2.4.4, EN-9.4.1.2, ACT, RGAAv4, RGAA-6.2.1 | failure, needs&amp;nbsp;review | [c487ae](https://act-rules.github.io/rules/c487ae) |\n| [list](https://dequeuniversity.com/rules/axe/4.11/list?application=RuleDescription) | Ensure that lists are structured correctly | Serious | cat.structure, wcag2a, wcag131, EN-301-549, EN-9.1.3.1, RGAAv4, RGAA-9.3.1 | failure | |\n| [listitem](https://dequeuniversity.com/rules/axe/4.11/listitem?application=RuleDescription) | Ensure &amp;lt;li&amp;gt; elements are used semantically | Serious | cat.structure, wcag2a, wcag131, EN-301-549, EN-9.1.3.1, RGAAv4, RGAA-9.3.1 | failure | |\n| [marquee](https://dequeuniversity.com/rules/axe/4.11/marquee?application=RuleDescription) | Ensure &amp;lt;marquee&amp;gt; elements are not used | Serious | cat.parsing, wcag2a, wcag222, TTv5, TT2.b, EN-301-549, EN-9.2.2.2, RGAAv4, RGAA-13.8.1 | failure | |\n| [meta-refresh](https://dequeuniversity.com/rules/axe/4.11/meta-refresh?application=RuleDescription) | Ensure &amp;lt;meta http-equiv=&amp;quot;refresh&amp;quot;&amp;gt; is not used for delayed refresh | Critical | cat.time-and-media, wcag2a, wcag221, TTv5, TT8.a, EN-301-549, EN-9.2.2.1, RGAAv4, RGAA-13.1.2 | failure | [bc659a](https://act-rules.github.io/rules/bc659a), [bisz58](https://act-rules.github.io/rules/bisz58) |\n| [meta-viewport](https://dequeuniversity.com/rules/axe/4.11/meta-viewport?application=RuleDescription) | Ensure &amp;lt;meta name=&amp;quot;viewport&amp;quot;&amp;gt; does not disable text scaling and zooming | Moderate | cat.sensory-and-visual-cues, wcag2aa, wcag144, EN-301-549, EN-9.1.4.4, ACT, RGAAv4, RGAA-10.4.2 | failure | [b4f0c3](https://act-rules.github.io/rules/b4f0c3) |\n| [nested-interactive](https://dequeuniversity.com/rules/axe/4.11/nested-interactive?application=RuleDescription) | Ensure interactive controls are not nested as they are not always announced by screen readers or can cause focus problems for assistive technologies | Serious | cat.keyboard, wcag2a, wcag412, TTv5, TT6.a, EN-301-549, EN-9.4.1.2, RGAAv4, RGAA-7.1.1 | failure, needs&amp;nbsp;review | [307n5z](https://act-rules.github.io/rules/307n5z) |\n| [no-autoplay-audio](https://dequeuniversity.com/rules/axe/4.11/no-autoplay-audio?application=RuleDescription) | Ensure &amp;lt;video&amp;gt; or &amp;lt;audio&amp;gt; elements do not autoplay audio for more than 3 seconds without a control mechanism to stop or mute the audio | Moderate | cat.time-and-media, wcag2a, wcag142, TTv5, TT2.a, EN-301-549, EN-9.1.4.2, ACT, RGAAv4, RGAA-4.10.1 | needs&amp;nbsp;review | [80f0bf](https://act-rules.github.io/rules/80f0bf) |\n| [object-alt](https://dequeuniversity.com/rules/axe/4.11/object-alt?application=RuleDescription) | Ensure &amp;lt;object&amp;gt; elements have alternative text | Serious | cat.text-alternatives, wcag2a, wcag111, section508, section508.22.a, EN-301-549, EN-9.1.1.1, RGAAv4, RGAA-1.1.6 | failure, needs&amp;nbsp;review | [8fc3b6](https://act-rules.github.io/rules/8fc3b6) |\n| [role-img-alt](https://dequeuniversity.com/rules/axe/4.11/role-img-alt?application=RuleDescription) | Ensure [role=&amp;quot;img&amp;quot;] elements have alternative text | Serious | cat.text-alternatives, wcag2a, wcag111, section508, section508.22.a, TTv5, TT7.a, EN-301-549, EN-9.1.1.1, ACT, RGAAv4, RGAA-1.1.1 | failure, needs&amp;nbsp;review | [23a2a8](https://act-rules.github.io/rules/23a2a8) |\n| [scrollable-region-focusable](https://dequeuniversity.com/rules/axe/4.11/scrollable-region-focusable?application=RuleDescription) | Ensure elements that have scrollable content are accessible by keyboard in Safari | Serious | cat.keyboard, wcag2a, wcag211, wcag213, TTv5, TT4.a, EN-301-549, EN-9.2.1.1, EN-9.2.1.3, RGAAv4, RGAA-7.3.2 | failure | [0ssw9k](https://act-rules.github.io/rules/0ssw9k) |\n| [select-name](https://dequeuniversity.com/rules/axe/4.11/select-name?application=RuleDescription) | Ensure select element has an accessible name | Critical | cat.forms, wcag2a, wcag412, section508, section508.22.n, TTv5, TT5.c, EN-301-549, EN-9.4.1.2, ACT, RGAAv4, RGAA-11.1.1 | failure, needs&amp;nbsp;review | [e086e5](https://act-rules.github.io/rules/e086e5) |\n| [server-side-image-map](https://dequeuniversity.com/rules/axe/4.11/server-side-image-map?application=RuleDescription) | Ensure that server-side image maps are not used | Minor | cat.text-alternatives, wcag2a, wcag211, section508, section508.22.f, TTv5, TT4.a, EN-301-549, EN-9.2.1.1, RGAAv4, RGAA-1.1.4 | needs&amp;nbsp;review | |\n| [summary-name](https://dequeuniversity.com/rules/axe/4.11/summary-name?application=RuleDescription) | Ensure summary elements have discernible text | Serious | cat.name-role-value, wcag2a, wcag412, section508, section508.22.a, TTv5, TT6.a, EN-301-549, EN-9.4.1.2 | failure, needs&amp;nbsp;review | |\n| [svg-img-alt](https://dequeuniversity.com/rules/axe/4.11/svg-img-alt?application=RuleDescription) | Ensure &amp;lt;svg&amp;gt; elements with an img, graphics-document or graphics-symbol role have accessible text | Serious | cat.text-alternatives, wcag2a, wcag111, section508, section508.22.a, TTv5, TT7.a, EN-301-549, EN-9.1.1.1, ACT, RGAAv4, RGAA-1.1.5 | failure, needs&amp;nbsp;review | [7d6734](https://act-rules.github.io/rules/7d6734) |\n| [td-headers-attr](https://dequeuniversity.com/rules/axe/4.11/td-headers-attr?application=RuleDescription) | Ensure that each cell in a table that uses the headers attribute refers only to other &amp;lt;th&amp;gt; elements in that table | Serious | cat.tables, wcag2a, wcag131, section508, section508.22.g, TTv5, TT14.b, EN-301-549, EN-9.1.3.1, RGAAv4, RGAA-5.7.4 | failure, needs&amp;nbsp;review | [a25f45](https://act-rules.github.io/rules/a25f45) |\n| [th-has-data-cells](https://dequeuniversity.com/rules/axe/4.11/th-has-data-cells?application=RuleDescription) | Ensure that &amp;lt;th&amp;gt; elements and elements with role=columnheader/rowheader have data cells they describe | Serious | cat.tables, wcag2a, wcag131, section508, section508.22.g, TTv5, TT14.b, EN-301-549, EN-9.1.3.1, RGAAv4, RGAA-5.7.1 | failure, needs&amp;nbsp;review | [d0f69e](https://act-rules.github.io/rules/d0f69e) |\n| [valid-lang](https://dequeuniversity.com/rules/axe/4.11/valid-lang?application=RuleDescription) | Ensure lang attributes have valid values | Serious | cat.language, wcag2aa, wcag312, TTv5, TT11.b, EN-301-549, EN-9.3.1.2, ACT, RGAAv4, RGAA-8.8.1 | failure | [de46e4](https://act-rules.github.io/rules/de46e4) |\n| [video-caption](https://dequeuniversity.com/rules/axe/4.11/video-caption?application=RuleDescription) | Ensure &amp;lt;video&amp;gt; elements have captions | Critical | cat.text-alternatives, wcag2a, wcag122, section508, section508.22.a, TTv5, TT17.a, EN-301-549, EN-9.1.2.2, RGAAv4, RGAA-4.3.1 | needs&amp;nbsp;review | [eac66b](https://act-rules.github.io/rules/eac66b) |\n\n## WCAG 2.1 Level A &amp; AA Rules\n\n| Rule ID | Description | Impact | Tags | Issue Type | [ACT Rules](https://www.w3.org/WAI/standards-guidelines/act/rules/) |\n| :------------------------------------------------------------------------------------------------------------------ | :-------------------------------------------------------------------------------------------- | :------ | :------------------------------------------------------------------------------ | :------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------- |\n| [autocomplete-valid](https://dequeuniversity.com/rules/axe/4.11/autocomplete-valid?application=RuleDescription) | Ensure the autocomplete attribute is correct and suitable for the form field | Serious | cat.forms, wcag21aa, wcag135, EN-301-549, EN-9.1.3.5, ACT, RGAAv4, RGAA-11.13.1 | failure, needs&amp;nbsp;review | [73f2c2](https://act-rules.github.io/rules/73f2c2) |\n| [avoid-inline-spacing](https://dequeuniversity.com/rules/axe/4.11/avoid-inline-spacing?application=RuleDescription) | Ensure that text spacing set through style attributes can be adjusted with custom stylesheets | Serious | cat.structure, wcag21aa, wcag1412, EN-301-549, EN-9.1.4.12, ACT | failure | [24afc2](https://act-rules.github.io/rules/24afc2), [9e45ec](https://act-rules.github.io/rules/9e45ec), [78fd32](https://act-rules.github.io/rules/78fd32) |\n\n## WCAG 2.2 Level A &amp; AA Rules\n\nThese rules are disabled by default, until WCAG 2.2 is more widely adopted and required.\n\n| Rule ID | Description | Impact | Tags | Issue Type | [ACT Rules](https://www.w3.org/WAI/standards-guidelines/act/rules/) |\n| :------------------------------------------------------------------------------------------------ | :-------------------------------------------------- | :------ | :--------------------------------------------- | :------------------------- | :------------------------------------------------------------------ |\n| [target-size](https://dequeuniversity.com/rules/axe/4.11/target-size?application=RuleDescription) | Ensure touch targets have sufficient size and space | Serious | cat.sensory-and-visual-cues, wcag22aa, wcag258 | failure, needs&amp;nbsp;review | |\n\n## Best Practices Rules\n\nRules that do not necessarily conform to WCAG success criterion but are industry accepted practices that improve the user experience.\n\n| Rule ID | Description | Impact | Tags | Issue Type | [ACT Rules](https://www.w3.org/WAI/standards-guidelines/act/rules/) |\n| :-------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------- | :------- | :----------------------------------------------- | :------------------------- | :------------------------------------------------------------------ |\n| [accesskeys](https://dequeuniversity.com/rules/axe/4.11/accesskeys?application=RuleDescription) | Ensure every accesskey attribute value is unique | Serious | cat.keyboard, best-practice | failure | |\n| [aria-allowed-role](https://dequeuniversity.com/rules/axe/4.11/aria-allowed-role?application=RuleDescription) | Ensure role attribute has an appropriate value for the element | Minor | cat.aria, best-practice | failure, needs&amp;nbsp;review | |\n| [aria-dialog-name](https://dequeuniversity.com/rules/axe/4.11/aria-dialog-name?application=RuleDescription) | Ensure every ARIA dialog and alertdialog node has an accessible name | Serious | cat.aria, best-practice | failure, needs&amp;nbsp;review | |\n| [aria-text](https://dequeuniversity.com/rules/axe/4.11/aria-text?application=RuleDescription) | Ensure role=&amp;quot;text&amp;quot; is used on elements with no focusable descendants | Serious | cat.aria, best-practice | failure, needs&amp;nbsp;review | |\n| [aria-treeitem-name](https://dequeuniversity.com/rules/axe/4.11/aria-treeitem-name?application=RuleDescription) | Ensure every ARIA treeitem node has an accessible name | Serious | cat.aria, best-practice | failure, needs&amp;nbsp;review | |\n| [empty-heading](https://dequeuniversity.com/rules/axe/4.11/empty-heading?application=RuleDescription) | Ensure headings have discernible text | Minor | cat.name-role-value, best-practice | failure, needs&amp;nbsp;review | [ffd0e9](https://act-rules.github.io/rules/ffd0e9) |\n| [empty-table-header](https://dequeuniversity.com/rules/axe/4.11/empty-table-header?application=RuleDescription) | Ensure table headers have discernible text | Minor | cat.name-role-value, best-practice | failure, needs&amp;nbsp;review | |\n| [frame-tested](https://dequeuniversity.com/rules/axe/4.11/frame-tested?application=RuleDescription) | Ensure &amp;lt;iframe&amp;gt; and &amp;lt;frame&amp;gt; elements contain the axe-core script | Critical | cat.structure, best-practice, review-item | failure, needs&amp;nbsp;review | |\n| [heading-order](https://dequeuniversity.com/rules/axe/4.11/heading-order?application=RuleDescription) | Ensure the order of headings is semantically correct | Moderate | cat.semantics, best-practice | failure, needs&amp;nbsp;review | |\n| [image-redundant-alt](https://dequeuniversity.com/rules/axe/4.11/image-redundant-alt?application=RuleDescription) | Ensure image alternative is not repeated as text | Minor | cat.text-alternatives, best-practice | failure | |\n| [label-title-only](https://dequeuniversity.com/rules/axe/4.11/label-title-only?application=RuleDescription) | Ensure that every form element has a visible label and is not solely labeled using hidden labels, or the title or aria-describedby attributes | Serious | cat.forms, best-practice | failure | |\n| [landmark-banner-is-top-level](https://dequeuniversity.com/rules/axe/4.11/landmark-banner-is-top-level?application=RuleDescription) | Ensure the banner landmark is at top level | Moderate | cat.semantics, best-practice | failure | |\n| [landmark-contentinfo-is-top-level](https://dequeuniversity.com/rules/axe/4.11/landmark-contentinfo-is-top-level?application=RuleDescription) | Ensure the contentinfo landmark is at top level | Moderate | cat.semantics, best-practice | failure | |\n| [landmark-main-is-top-level](https://dequeuniversity.com/rules/axe/4.11/landmark-main-is-top-level?application=RuleDescription) | Ensure the main landmark is at top level | Moderate | cat.semantics, best-practice | failure | |\n| [landmark-no-duplicate-banner](https://dequeuniversity.com/rules/axe/4.11/landmark-no-duplicate-banner?application=RuleDescription) | Ensure the document has at most one banner landmark | Moderate | cat.semantics, best-practice | failure | |\n| [landmark-no-duplicate-contentinfo](https://dequeuniversity.com/rules/axe/4.11/landmark-no-duplicate-contentinfo?application=RuleDescription) | Ensure the document has at most one contentinfo landmark | Moderate | cat.semantics, best-practice | failure | |\n| [landmark-no-duplicate-main](https://dequeuniversity.com/rules/axe/4.11/landmark-no-duplicate-main?application=RuleDescription) | Ensure the document has at most one main landmark | Moderate | cat.semantics, best-practice | failure | |\n| [landmark-one-main](https://dequeuniversity.com/rules/axe/4.11/landmark-one-main?application=RuleDescription) | Ensure the document has a main landmark | Moderate | cat.semantics, best-practice | failure | |\n| [landmark-unique](https://dequeuniversity.com/rules/axe/4.11/landmark-unique?application=RuleDescription) | Ensure landmarks are unique | Moderate | cat.semantics, best-practice | failure | |\n| [meta-viewport-large](https://dequeuniversity.com/rules/axe/4.11/meta-viewport-large?application=RuleDescription) | Ensure &amp;lt;meta name=&amp;quot;viewport&amp;quot;&amp;gt; can scale a significant amount | Minor | cat.sensory-and-visual-cues, best-practice | failure | |\n| [page-has-heading-one](https://dequeuniversity.com/rules/axe/4.11/page-has-heading-one?application=RuleDescription) | Ensure that the page, or at least one of its frames contains a level-one heading | Moderate | cat.semantics, best-practice | failure | |\n| [presentation-role-conflict](https://dequeuniversity.com/rules/axe/4.11/presentation-role-conflict?application=RuleDescription) | Ensure elements marked as presentational do not have global ARIA or tabindex so that all screen readers ignore them | Minor | cat.aria, best-practice, ACT | failure | [46ca7f](https://act-rules.github.io/rules/46ca7f) |\n| [region](https://dequeuniversity.com/rules/axe/4.11/region?application=RuleDescription) | Ensure all page content is contained by landmarks | Moderate | cat.keyboard, best-practice, RGAAv4, RGAA-9.2.1 | failure | |\n| [scope-attr-valid](https://dequeuniversity.com/rules/axe/4.11/scope-attr-valid?application=RuleDescription) | Ensure the scope attribute is used correctly on tables | Moderate | cat.tables, best-practice | failure | |\n| [skip-link](https://dequeuniversity.com/rules/axe/4.11/skip-link?application=RuleDescription) | Ensure all skip links have a focusable target | Moderate | cat.keyboard, best-practice, RGAAv4, RGAA-12.7.1 | failure, needs&amp;nbsp;review | |\n| [tabindex](https://dequeuniversity.com/rules/axe/4.11/tabindex?application=RuleDescription) | Ensure tabindex attribute values are not greater than 0 | Serious | cat.keyboard, best-practice | failure | |\n| [table-duplicate-name](https://dequeuniversity.com/rules/axe/4.11/table-duplicate-name?application=RuleDescription) | Ensure the &amp;lt;caption&amp;gt; element does not contain the same text as the summary attribute | Minor | cat.tables, best-practice, RGAAv4, RGAA-5.2.1 | failure, needs&amp;nbsp;review | |\n\n## WCAG 2.x level AAA rules\n\nRules that check for conformance to WCAG AAA success criteria that can be fully automated. These are disabled by default in axe-core.\n\n| Rule ID | Description | Impact | Tags | Issue Type | [ACT Rules](https://www.w3.org/WAI/standards-guidelines/act/rules/) |\n| :---------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------- | :------ | :--------------------------------------------- | :------------------------- | :------------------------------------------------------------------ |\n| [color-contrast-enhanced](https://dequeuniversity.com/rules/axe/4.11/color-contrast-enhanced?application=RuleDescription) | Ensure the contrast between foreground and background colors meets WCAG 2 AAA enhanced contrast ratio thresholds | Serious | cat.color, wcag2aaa, wcag146, ACT | failure, needs&amp;nbsp;review | [09o5cg](https://act-rules.github.io/rules/09o5cg) |\n| [identical-links-same-purpose](https://dequeuniversity.com/rules/axe/4.11/identical-links-same-purpose?application=RuleDescription) | Ensure that links with the same accessible name serve a similar purpose | Minor | cat.semantics, wcag2aaa, wcag249 | needs&amp;nbsp;review | [b20e66](https://act-rules.github.io/rules/b20e66) |\n| [meta-refresh-no-exceptions](https://dequeuniversity.com/rules/axe/4.11/meta-refresh-no-exceptions?application=RuleDescription) | Ensure &amp;lt;meta http-equiv=&amp;quot;refresh&amp;quot;&amp;gt; is not used for delayed refresh | Minor | cat.time-and-media, wcag2aaa, wcag224, wcag325 | failure | [bisz58](https://act-rules.github.io/rules/bisz58) |\n\n## Experimental Rules\n\nRules we are still testing and developing. They are disabled by default in axe-core, but are enabled for the axe browser extensions.\n\n| Rule ID | Description | Impact | Tags | Issue Type | [ACT Rules](https://www.w3.org/WAI/standards-guidelines/act/rules/) |\n| :-------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------ | :------- | :------------------------------------------------------------------------------------------------------------------------------- | :------------------------- | :------------------------------------------------------------------ |\n| [css-orientation-lock](https://dequeuniversity.com/rules/axe/4.11/css-orientation-lock?application=RuleDescription) | Ensure content is not locked to any specific display orientation, and the content is operable in all display orientations | Serious | cat.structure, wcag134, wcag21aa, EN-301-549, EN-9.1.3.4, RGAAv4, RGAA-13.9.1, experimental | failure, needs&amp;nbsp;review | [b33eff](https://act-rules.github.io/rules/b33eff) |\n| [focus-order-semantics](https://dequeuniversity.com/rules/axe/4.11/focus-order-semantics?application=RuleDescription) | Ensure elements in the focus order have a role appropriate for interactive content | Minor | cat.keyboard, best-practice, RGAAv4, RGAA-12.8.1, experimental | failure | |\n| [hidden-content](https://dequeuniversity.com/rules/axe/4.11/hidden-content?application=RuleDescription) | Inform users about hidden content. | Minor | cat.structure, best-practice, experimental, review-item | failure, needs&amp;nbsp;review | |\n| [label-content-name-mismatch](https://dequeuniversity.com/rules/axe/4.11/label-content-name-mismatch?application=RuleDescription) | Ensure that elements labelled through their content must have their visible text as part of their accessible name | Serious | cat.semantics, wcag21a, wcag253, EN-301-549, EN-9.2.5.3, RGAAv4, RGAA-6.1.5, experimental | failure | [2ee8b8](https://act-rules.github.io/rules/2ee8b8) |\n| [p-as-heading](https://dequeuniversity.com/rules/axe/4.11/p-as-heading?application=RuleDescription) | Ensure bold, italic text and font-size is not used to style &amp;lt;p&amp;gt; elements as a heading | Serious | cat.semantics, wcag2a, wcag131, EN-301-549, EN-9.1.3.1, RGAAv4, RGAA-9.1.3, experimental | failure, needs&amp;nbsp;review | |\n| [table-fake-caption](https://dequeuniversity.com/rules/axe/4.11/table-fake-caption?application=RuleDescription) | Ensure that tables with a caption use the &amp;lt;caption&amp;gt; element. | Serious | cat.tables, experimental, wcag2a, wcag131, section508, section508.22.g, EN-301-549, EN-9.1.3.1, RGAAv4, RGAA-5.4.1 | failure | |\n| [td-has-header](https://dequeuniversity.com/rules/axe/4.11/td-has-header?application=RuleDescription) | Ensure that each non-empty data cell in a &amp;lt;table&amp;gt; larger than 3 by 3 has one or more table headers | Critical | cat.tables, experimental, wcag2a, wcag131, section508, section508.22.g, TTv5, TT14.b, EN-301-549, EN-9.1.3.1, RGAAv4, RGAA-5.7.4 | failure | |\n\n## Deprecated Rules\n\nDeprecated rules are disabled by default and will be removed in the next major release.\n\n| Rule ID | Description | Impact | Tags | Issue Type | [ACT Rules](https://www.w3.org/WAI/standards-guidelines/act/rules/) |\n| :------------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------- | :------- | :--------------------------------------------------------------------------------------------------- | :------------------------- | :----------------------------------------------------------------------------------------------------- |\n| [aria-roledescription](https://dequeuniversity.com/rules/axe/4.11/aria-roledescription?application=RuleDescription) | Ensure aria-roledescription is only used on elements with an implicit or explicit role | Serious | cat.aria, wcag2a, wcag412, EN-301-549, EN-9.4.1.2, deprecated | failure, needs&amp;nbsp;review | |\n| [audio-caption](https://dequeuniversity.com/rules/axe/4.11/audio-caption?application=RuleDescription) | Ensure &amp;lt;audio&amp;gt; elements have captions | Critical | cat.time-and-media, wcag2a, wcag121, EN-301-549, EN-9.1.2.1, section508, section508.22.a, deprecated | needs&amp;nbsp;review | [2eb176](https://act-rules.github.io/rules/2eb176), [afb423](https://act-rules.github.io/rules/afb423) |\n| [duplicate-id-active](https://dequeuniversity.com/rules/axe/4.11/duplicate-id-active?application=RuleDescription) | Ensure every id attribute value of active elements is unique | Serious | cat.parsing, wcag2a-obsolete, wcag411, deprecated | failure | [3ea0c8](https://act-rules.github.io/rules/3ea0c8) |\n| [duplicate-id](https://dequeuniversity.com/rules/axe/4.11/duplicate-id?application=RuleDescription) | Ensure every id attribute value is unique | Minor | cat.parsing, wcag2a-obsolete, wcag411, deprecated | failure | [3ea0c8](https://act-rules.github.io/rules/3ea0c8) |\n| [landmark-complementary-is-top-level](https://dequeuniversity.com/rules/axe/4.11/landmark-complementary-is-top-level?application=RuleDescription) | Ensure the complementary landmark or aside is at top level | Moderate | cat.semantics, best-practice, deprecated | failure | |\n"
+}
+```
+User decision: **accepted**
+
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The rule-descriptions.md was fetched to a file. Let me read that file to extract rule IDs and their WCAG levels (tags). Actually the content might be in a different format. Let me read the fetched content and also check axe-core's lib for rule definitions.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/.cursor/projects/Users-christoph-bordeck-Desktop-ANTIGRAVITY-CHECKION-1/agent-tools/0dfdbc30-e9ec-41e1-a540-eb5a60a9cd6b.txt</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "wcag2a|wcag2aa|wcag21aa",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/node_modules/axe-core",
+  "outputMode": "files_with_matches",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "wcag2a|wcag2aa|wcag21aa",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/node_modules/axe-core",
+  "outputMode": "files_with_matches",
+  "totalFiles": 10,
+  "totalMatches": 10,
+  "topFiles": [
+    {
+      "uri": "node_modules/axe-core/axe.min.js",
+      "matchCount": 1
+    },
+    {
+      "uri": "node_modules/axe-core/axe.js",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/axe-core/axe.min.js",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/axe-core/axe.js",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/axe-core/axe.min.js",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/axe-core/axe.js",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/axe-core/axe.min.js",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/axe-core/axe.js",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/axe-core/axe.min.js",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/node_modules/axe-core/axe.js",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I have the rule descriptions. From the table I can extract:
+- Tags column contains wcag2a, wcag2aa, wcag21aa, wcag22aa, etc.
+- Rule ID is in the first column (e.g. area-alt, aria-allowed-attr, color-contrast, image-alt, ...)
+
+Logic for level:
+- If tags contain wcag2aaa or wcag21aaa → AAA
+- If tags contain wcag2aa or wcag21aa or wcag22aa → AA  
+- If tags contain wcag2a or wcag244 (2.1 level A) → A
+- cat.apca or color-contrast-enhanced → APCA
+
+I'll create the map from the table. From the content:
+- area-alt: wcag2a → A
+- color-contrast: wcag2aa → AA
+- document-title: wcag2a → A
+- html-has-lang: wcag2a → A
+- image-alt: wcag2a → A
+- meta-viewport: wcag2aa → AA
+- valid-lang: wcag2aa → AA
+etc.
+
+I'll read more of the file to get WCAG 2.1 and AAA and experimental (color-contrast-enhanced → APCA).
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/.cursor/projects/Users-christoph-bordeck-Desktop-ANTIGRAVITY-CHECKION-1/agent-tools/0dfdbc30-e9ec-41e1-a540-eb5a60a9cd6b.txt</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see color-contrast-enhanced has wcag2aaa in the doc but the plan said APCA - actually in our scanner we already return APCA for COLOR-CONTRAST-ENHANCED. The doc says "WCAG 2 AAA enhanced contrast" so it could be AAA. The plan said "color-contrast-enhanced → APCA" - I'll keep APCA for that one as it's often used for the APCA contrast method. I'll add it as APCA in the map.
+
+Now I'll build the full axe map. From the tables:
+- WCAG 2.0 A & AA: most are wcag2a (A) or wcag2aa (AA). I'll parse by "wcag2aaa" → AAA, "wcag2aa" → AA, "wcag2a" → A (but not wcag2aa/aaa), "wcag21aa" → AA, "wcag21a" → A, "wcag22aa" → AA.
+- color-contrast-enhanced: doc says wcag2aaa - I'll put APCA as plan says (or AAA - I'll use APCA since we already have that in detectWcagLevel).
+- Best-practice rules: no wcag tag → we can leave them out of the map (Unknown) or assign a default. I'll leave them out so they stay Unknown.
+
+I'll create the map with all rules from the doc that have wcag tags. For rules that have both wcag2a and wcag2aa I'll take the higher (AA). Order of precedence: AAA > APCA > AA > A.
+</details></think>
+
+---
+
+
+Erstelle die axe-WCAG-Level-Map und passe den Scanner an.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/axe-wcag-levels.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to:
+1. Update scanner.ts: extend detectWcagLevel(code, runner) and use AXE_RULE_WCAG_LEVEL when runner is axe; update the place where issues are built to pass runner.
+2. Find the exact line where detectWcagLevel is called and where runner is available.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "detectWcagLevel|runner",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "detectWcagLevel|runner",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 55,
+  "topFiles": [
+    {
+      "uri": "lib/scanner.ts",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 11
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to:
+1. Add import for AXE_RULE_WCAG_LEVEL in scanner.ts
+2. Change detectWcagLevel(code: string) to detectWcagLevel(code: string, runner: Runner) and when runner === 'axe' look up AXE_RULE_WCAG_LEVEL[code]
+3. At line 358 pass runner: detectWcagLevel(code, runner)
+
+Then add deduplicateIssues after issues are built. First let me read the Runner type - it's 'axe' | 'htmlcs'. I need to import the type in scanner - it's from types. Let me check scanner imports.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I'll:
+1. Add import for AXE_RULE_WCAG_LEVEL from './axe-wcag-levels'
+2. Update detectWcagLevel to accept runner and use the map for axe
+3. Update the call to detectWcagLevel(code, runner)
+4. After `const issues: Issue[] = await Promise.all(issuePromises);` add deduplicateIssues - but first I need to create issue-dedupe.ts
+
+Let me do scanner changes first (axe level), then create issue-dedupe and integrate it.
+</details></think>
+
+---
+
+
+Scanner anpassen: `detectWcagLevel` erweitern und Aufruf aktualisieren.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I added the import for deduplicateIssues but I haven't created issue-dedupe.ts yet. Let me create it now so the scanner doesn't break. I'll create a minimal deduplicateIssues that we can flesh out, then wire it in.
+</details></think>
+
+---
+
+
+Erstelle `lib/issue-dedupe.ts` (Deduplizierungslogik):
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add the deduplicateIssues call after `const issues: Issue[] = await Promise.all(issuePromises);` and use the result for computeStats and the result. Let me check where `issues` is used next - it's used for computeStats(issues) and in the result. I'll do:
+  const issues: Issue[] = await Promise.all(issuePromises);
+  const deduped = deduplicateIssues(issues);
+and then use deduped everywhere issues was used. Let me search for where issues is used after this point.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "computeStats\\(issues\\)|issues\\.|result\\.issues",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "computeStats\\(issues\\)|issues\\.|result\\.issues",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 30,
+  "topFiles": [
+    {
+      "uri": "lib/scanner.ts",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 6
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So the main usage is at line 1533: `computeStats(issues)`. I need to find where the result object is built with issues - likely `issues: ...` in the return.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So I need to:
+1. After `const issues: Issue[] = await Promise.all(issuePromises);` add `const issues = deduplicateIssues(await Promise.all(issuePromises));` or keep a variable and reassign: actually the plan says "the returned list for everything else" - so we can do `let issues = await Promise.all(issuePromises); issues = deduplicateIssues(issues);` or `const rawIssues = await Promise.all(issuePromises); const issues = deduplicateIssues(rawIssues);`. I'll use the latter for clarity.
+
+2. Create issue-dedupe.ts with:
+   - normalizeSelector(selector: string): string
+   - getRuleGroup(issue, axeToWcagRuleMap): string  -- actually the plan says "rule group" - for htmlcs we can use code normalized or extract WCAG principle/guideline; for axe use code. And a map that maps axe rule IDs to the same logical group as htmlcs codes so we can group "image-alt" with "WCAG2AA.Principle1.Guideline1_1.1_1_1" (or similar).
+   - deduplicateIssues(issues: Issue[]): Issue[]
+
+Let me re-read the plan for the exact dedupe strategy.
+
+"1. **„Regelgruppe“ pro Issue definieren** (gleiche Regel = potenzielles Duplikat):
+   - **HTML CodeSniffer:** Aus `code` die WCAG-Prinzip/Guideline-Kennung extrahieren (z. B. erste zwei Segmente wie `WCAG2AA.Principle1.Guideline1_1` oder eine feste Liste von HTMLCS-Code-Prefixen), oder vereinfacht: `code` normalisiert (trim, uppercase) als Gruppe.
+   - **Axe:** `code` (Rule-ID) direkt als Gruppe, z. B. `image-alt`, `color-contrast`.
+   - **Kanonische Zuordnung axe ↔ htmlcs:** Eine kleine Map (z. B. in derselben Datei wie Dedupe-Logik), die axe Rule-IDs auf dieselbe „logische Regel“ wie ein htmlcs-Code-Prefix mappt (z. B. `image-alt` ↔ `WCAG2AA.Principle1.Guideline1_1.1_1_1`). So können „gleicher Fehler, anderer Engine“ gruppiert werden.
+
+2. **Selektor normalisieren:** ...
+
+3. **Gruppierung und Zusammenführung:** ... Pro Gruppe **ein** Issue behalten. Bevorzugt ein Issue mit `wcagLevel !== 'Unknown'` (meist htmlcs) ...
+
+4. Optional: `sources?: ('axe'|'htmlcs')[]` ... Das würde ggf. das `Issue`-Typ in [lib/types.ts](lib/types.ts) erweitern (optional)."
+
+So the key is: we need a "rule group" that can be the same for both axe and htmlcs when they report the same kind of error. So we need a mapping from axe rule ID to a "canonical" rule group key, and for htmlcs we derive a canonical key from the code (e.g. first N segments). Then we group by (normalizedSelector, ruleGroup). When merging, prefer the issue with known wcagLevel.
+
+For htmlcs, the code looks like "WCAG2AA.Principle1.Guideline1_1.1_1_1.H37" - so we could take the part up to the last segment (guideline + criterion) e.g. "WCAG2AA.Principle1.Guideline1_1.1_1_1" or even "1_1_1" (criterion) as the group. Actually the plan says "code normalisiert (trim, uppercase) als Gruppe" as a simplification - but then axe's "image-alt" would never match htmlcs "WCAG2AA....H37". So we need the canonical map: axe rule ID → same logical key as we use for htmlcs. So e.g. we could define:
+- ruleGroup(issue): 
+  - if axe: use AXE_TO_RULE_GROUP[code] ?? code  (so image-alt → e.g. "image-alt" and we need htmlcs to map to same - so for htmlcs we could use a mapping from code prefix to the same key. So e.g. image-alt ↔ "alt-text" or "1.1.1" and htmlcs H37 maps to "alt-text" or "1.1.1".)
+  - Simpler: use a single "logical rule" string. For axe we have rule id. For htmlcs we have long code. We want same selector + same "logical rule" to merge. So we need: for each axe rule, a list of htmlcs code prefixes that mean the same thing; or for each (axe rule, htmlcs code pattern) a canonical key. Easiest: define canonical keys like "image-alt", "color-contrast", "document-title", etc. Axe: use rule id as canonical key (it's already short). Htmlcs: we need to map "WCAG2AA.Principle1.Guideline1_1.1_1_1" (H37 = img alt) to "image-alt". So we need HTMLCS_CODE_TO_CANONICAL or we derive from htmlcs: e.g. take the last part before the dot (H37) and map H37 → image-alt? So we'd have HTMLCS_SUFFIX_TO_AXE: { "H37": "image-alt", ... }. Then ruleGroup(issue) = issue.runner === 'axe' ? issue.code : (HTMLCS_TO_CANONICAL[issue.code] ?? issue.code). So we need a map from htmlcs code (or suffix) to axe rule id. Then we use axe rule id as the canonical group key (so both axe and htmlcs end up with the same key when they're the same rule).
+
+Looking at HTML CodeSniffer - the codes are like WCAG2AA.Principle1.Guideline1_1.1_1_1.H37. So the structure is Standard.Principle.Guideline.Criterion.SnifferCode. So H37 = missing alt on image. So we could map by Criterion (1_1_1) + SnifferCode (H37) or just use a map from the full code prefix to axe id. Let me define:
+- getRuleGroup(issue): 
+  - if runner === 'axe': return issue.code (rule id)
+  - if runner === 'htmlcs': return htmlcsCodeToCanonicalRuleGroup(issue.code) ?? issue.code
+
+And we need htmlcsCodeToCanonicalRuleGroup so that when htmlcs reports something that axe also reports, they get the same group. So e.g. WCAG2AA.Principle1.Guideline1_1.1_1_1.H37 → "image-alt". I'll create a map from htmlcs code pattern (e.g. ending in .H37 or Principle1.Guideline1_1.1_1_1) to the axe rule id. Actually the plan says "axe Rule-IDs auf dieselbe „logische Regel“ wie ein htmlcs-Code-Prefix mappt (z. B. image-alt ↔ WCAG2AA.Principle1.Guideline1_1.1_1_1)". So one option: we map axe rule id to a "logical" key (could be the axe id itself), and map htmlcs code to the same logical key. So we need HTMLCS_TO_AXE_RULE: Record<string, string> for common htmlcs codes so that when we see WCAG2AA....H37 we map to "image-alt". Then getRuleGroup(issue) = issue.runner === 'axe' ? issue.code : (HTMLCS_TO_AXE_RULE[issue.code] ?? issue.code). So we need to map full htmlcs codes (or prefixes) to axe rule ids. There are many htmlcs codes - so maybe we map by the sniffer code part (H37, etc.) or by guideline. I'll add a small map for the most common overlapping rules (image alt, color contrast, labels, etc.) and for the rest we use the code as-is, so they won't dedupe across runners (only same runner same selector same code would dedupe). So:
+- normalizeSelector: trim, cap at 500 chars
+- getRuleGroup: 
+  - axe: return code
+  - htmlcs: return HTMLCS_CODE_TO_AXE[code] ?? code (so we need a map from htmlcs code to axe rule id for overlapping rules)
+- Group by (normalizeSelector(selector), getRuleGroup(issue))
+- Keep one issue per group: prefer wcagLevel !== 'Unknown', then first
+
+Let me create the issue-dedupe module. I'll need to add a small HTMLCS to axe map for common cases. Looking at HTML CodeSniffer docs, H37 is "Img element has an empty alt attribute" → image-alt. I'll add a few key mappings so that the most common duplicates are merged.
+</details></think>
+
+---
+
+
+Implementierung von `issue-dedupe.ts` mit Regelgruppen-Map und Deduplizierung:
+
+
+---
+
+<tool-use data-tool-type="search" data-tool-name="web_search">
+<details>
+            <summary>Tool use: **web_search** • Searched web `undefined` • **1** results</summary>
+        
+| Title | URL | Chunk |
+|-------|-----|-------|
+| Web search results for query: HTML CodeSniffer WCAG rule codes H37 H36 G94 list |  | Links:<br/>1. [HTML_CodeSniffer](https://squizlabs.github.io/HTML_CodeSniffer/)<br/>2. [GitHub - squizlabs/HTML_CodeSniffer: HTML_CodeSniffer is a client-side JavaScript application that checks a HTML document or source code, and detects violations of a defined coding standard. Comes with standards that cover the three conformance levels of the W3C's Web Content Accessibility Guidelines (WCAG) 2.0 and the U.S. Section 508 legislation.](https://github.com/squizlabs/HTML_CodeSniffer)<br/>3. [WCAG 2.1 Standard: Summary - HTML_CodeSniffer](https://squizlabs.github.io/HTML_CodeSniffer/Standards/WCAG2/)<br/>4. [WCAG guideline index and validator reference ¶](https://wcag-zoo.readthedocs.io/en/latest/wcag.html)<br/>5. [U.S. "Section 508" Guidelines: Summary - HTML_CodeSniffer](https://squizlabs.github.io/HTML_CodeSniffer/Standards/Section508/)<br/><br/># HTML CodeSniffer WCAG Rule Codes Summary<br/><br/>HTML_CodeSniffer is a JavaScript tool that checks HTML code against accessibility standards including WCAG 2.1 and Section 508.[1][2] <br/><br/>## Specific Rule Codes<br/><br/>The search results reference several WCAG technique codes:<br/><br/>- **H37**: Using alt attributes on img elements[4]<br/>- **H36**: Make sure input tags with src have alt or text[4]<br/>- **G94**: Not explicitly detailed in results, but listed as a potential technique<br/>- **G90**: Providing keyboard-triggered event handlers[4]<br/><br/>These codes refer to specific techniques used to comply with WCAG Success Criteria. H codes typically denote HTML techniques, while G codes refer to general techniques.[4]<br/><br/>## Available Standards<br/><br/>HTML_CodeSniffer provides comprehensive coverage of:[1][3]<br/>- WCAG 2.1 Level A, AA, and AAA<br/>- Section 508 Guidelines<br/><br/>The tool can automatically detect errors, but many items require manual inspection (marked as warnings or notices).[3][5] You can access detailed information about all success criteria and their corresponding techniques through the [HTML_CodeSniffer Standards documentation](https://squizlabs.github.io/HTML_CodeSniffer/Standards/WCAG2/).[1] |
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll create the dedupe module with:
+1. normalizeSelector(selector): trim, cap 500
+2. For getRuleGroup we need: axe uses code; htmlcs we could extract the last segment (e.g. H37) and map that to axe rule id, or we could use a map from full code (or code prefix) to canonical key. I'll use a map from htmlcs "suffix" (like H37, G94) or from the full code pattern to axe rule id. Actually the plan said: "Kanonische Zuordnung axe ↔ htmlcs: Eine kleine Map ... die axe Rule-IDs auf dieselbe „logische Regel“ wie ein htmlcs-Code-Prefix mappt". So we want one key per "logical rule". So we could define CANONICAL_RULE_GROUP: for axe rule id → group key (could be the axe id itself), and for htmlcs we need code → same group key. So HTMLCS_CODE_TO_GROUP: map htmlcs code (or normalized) to group key. When both report same selector + same group key, we merge. So I'll do:
+- getRuleGroup(issue): 
+  - if axe: return issue.code
+  - if htmlcs: extract something from code - the code is like "WCAG2AA.Principle1.Guideline1_1.1_1_1.H37". We could map by the last segment: H37 → image-alt, or we could have a map of full code prefixes. Let me use a map from the sniffer code (last segment after last dot) to axe rule id: H37→image-alt, etc. So we need to parse "WCAG2AA.Principle1.Guideline1_1.1_1_1.H37" and get "H37", then HTMLCS_SNIFFER_TO_AXE["H37"] = "image-alt". So for htmlcs getRuleGroup = HTMLCS_SNIFFER_TO_AXE[lastSegment] ?? issue.code (fallback to full code so we still dedupe same htmlcs code on same selector).
+3. deduplicateIssues: group by (normalizeSelector(issue.selector), getRuleGroup(issue)), then pick one per group preferring wcagLevel !== 'Unknown'.
+
+I'll add a small map for the most common overlapping rules (H37=image-alt, color contrast, etc.). If I don't have a mapping, htmlcs issues will use issue.code as group so they'll only dedupe with same htmlcs code; axe will use issue.code; so when we have both axe image-alt and htmlcs WCAG2AA....H37, we need them to share a group - so we need the htmlcs → axe map. So for htmlcs getRuleGroup: take last segment of code (e.g. H37), if we have HTMLCS_TO_AXE[lastSegment] return it, else return full code. So we need to build HTMLCS_TO_AXE for common sniffer codes. From the web: H37 = img alt → image-alt. I'll add a few more and then implement.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/issue-dedupe.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I need to wire deduplicateIssues into the scanner: after `const issues: Issue[] = await Promise.all(issuePromises);` use the deduplicated list for stats and result.
+</details></think>
+
+---
+
+
+Deduplizierung im Scanner einhängen:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Remove unused Runner from issue-dedupe - we don't import Runner there, we use issue.runner. Good. Let me check lints and then add tests. Also update todos.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Axe WCAG map + detectWcagLevel + scanner call
+- [x] issue-dedupe.ts + deduplicateIssues in scanner
+- [-] Unit tests for dedupe and level mapping
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/issue-dedupe.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/issue-dedupe.ts",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/axe-wcag-levels.ts"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/issue-dedupe.ts"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/axe-wcag-levels.ts"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Now add unit tests: for deduplicateIssues (same selector + same rule group → one issue; same selector different rule → two; prefer known wcagLevel) and optionally for detectWcagLevel with axe codes. The plan says: "Unit-Tests für deduplicateIssues: z. B. zwei Issues gleicher Selektor + gleiche Regelgruppe → ein Issue; zwei Issues gleicher Selektor, verschiedene Regelgruppe → zwei Issues; Bevorzugung von Issue mit bekanntem wcagLevel. Optional: Tests für detectWcagLevel mit axe-Codes und der neuen Map."
+
+detectWcagLevel is a private function in scanner.ts so we can't test it directly unless we export it or test via runScan. So I'll add tests for deduplicateIssues and for the axe map (by testing that AXE_RULE_WCAG_LEVEL has expected entries). Let me check if there's an existing test file for scanner or issue-dedupe.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **168** results in **1** directory</summary>
+
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1** (168 files)
+
+| File |
+|------|
+| `__tests__/lib/page-classification.test.ts` |
+| `__tests__/api/project-geo-summary.test.ts` |
+| `__tests__/api/project-ranking-summary.test.ts` |
+| `lib/db/projects.test.ts` |
+| `__tests__/api/project-research.test.ts` |
+| `__tests__/api/project-suggest-keywords.test.ts` |
+| `__tests__/lib/serp-api.test.ts` |
+| `__tests__/api/rank-tracking-keywords.test.ts` |
+| `__tests__/api/auth-profile.test.ts` |
+| `__tests__/api/checks-contrast.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/void.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/void.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/validations.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/validations.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/unions.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/union.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/tuple.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/tuple.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/transformer.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/transform.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/core/tests/locales/tr.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/to-json-schema.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/template-literal.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/stringbool.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/mini/tests/string.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/string.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/string.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/string-formats.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/standard-schema.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/standard-schema.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/set.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/set.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/safeparse.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/core/tests/locales/ru.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/registries.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/refine.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/refine.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/recursive.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/mini/tests/recursive-types.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/recursive-types.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/record.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/record.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/readonly.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/readonly.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/mini/tests/prototypes.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/prototypes.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/promise.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/promise.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/primitive.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/primitive.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/preprocess.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/preprocess.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/prefault.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/pipeline.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/pipe.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/pickomit.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/pickomit.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/partials.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/partial.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/parseUtil.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/parser.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/optional.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/optional.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/mini/tests/object.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/object.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/object.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/object-in-es5-env.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/object-augmentation.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/mini/tests/number.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/number.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/number.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/nullable.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/nullable.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/nonoptional.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/nested-refine.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/nativeEnum.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/nan.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/nan.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/mocker.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/masking.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/map.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/map.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/literal.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/literal.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/lazy.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/language-server.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/json.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/intersection.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/intersection.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/instanceof.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/instanceof.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/mini/tests/index.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/core/tests/index.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/index.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/generics.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/generics.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/mini/tests/functions.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/function.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/function.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/firstpartyschematypes.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/firstparty.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/firstparty.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/file.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/mini/tests/error.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/error.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/error.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/error-utils.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/enum.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/enum.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/core/tests/locales/en.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/discriminated-unions.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/discriminated-unions.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/description.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/description.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/default.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/default.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/deepmasking.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/datetime.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/date.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/date.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/custom.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/custom.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/continuability.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/mini/tests/computed.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/complex.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/coerce.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/coerce.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/coalesce.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/mini/tests/checks.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/catch.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/catch.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/branded.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/mini/tests/brand.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/brand.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/bigint.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/bigint.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/core/tests/locales/be.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/base.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/base.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/async-refinements.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/async-refinements.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/async-parsing.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/async-parsing.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/mini/tests/assignability.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/assignability.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/array.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/array.test.ts` |
+| `mcp-server/node_modules/zod/src/v4/classic/tests/anyunknown.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/anyunknown.test.ts` |
+| `mcp-server/node_modules/zod/src/v3/tests/all-errors.test.ts` |
+| `lib/db/geo-eeat-runs.test.ts` |
+| `components/CompetitivePositionDiagram.test.ts` |
+| `lib/db/geo-eeat-competitive-runs.test.ts` |
+| `lib/ymyl-heuristic.test.ts` |
+| `lib/llms-txt-parse.test.ts` |
+| `lib/remediation-urls.test.ts` |
+| `lib/api-schemas.test.ts` |
+| `__tests__/api/auth-register.test.ts` |
+| `__tests__/lib/constants-paths.test.ts` |
+| `lib/api-error-handler.test.ts` |
+| `__tests__/api/scan.test.ts` |
+| `__tests__/api/health.test.ts` |
+| `lib/geo-eeat/suggest-parse.test.ts` |
+| `lib/db/shares.test.ts` |
+| `lib/saliency-fusion.test.ts` |
+| `lib/scanpath.test.ts` |
+| `lib/page-index.test.ts` |
+| `lib/domain-graph-data.test.ts` |
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **13** results in **1** directory</summary>
+
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1** (13 files)
+
+| File |
+|------|
+| `__tests__/lib/page-classification.test.ts` |
+| `__tests__/api/project-geo-summary.test.ts` |
+| `__tests__/api/project-ranking-summary.test.ts` |
+| `__tests__/api/project-research.test.ts` |
+| `__tests__/api/project-suggest-keywords.test.ts` |
+| `__tests__/lib/serp-api.test.ts` |
+| `__tests__/api/rank-tracking-keywords.test.ts` |
+| `__tests__/api/auth-profile.test.ts` |
+| `__tests__/api/checks-contrast.test.ts` |
+| `__tests__/api/auth-register.test.ts` |
+| `__tests__/lib/constants-paths.test.ts` |
+| `__tests__/api/scan.test.ts` |
+| `__tests__/api/health.test.ts` |
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add __tests__/lib/issue-dedupe.test.ts and __tests__/lib/axe-wcag-levels.test.ts (or combine into one file). The plan asked for: "Unit-Tests für deduplicateIssues: z. B. zwei Issues gleicher Selektor + gleiche Regelgruppe → ein Issue; zwei Issues gleicher Selektor, verschiedene Regelgruppe → zwei Issues; Bevorzugung von Issue mit bekanntem wcagLevel. Optional: Tests für detectWcagLevel mit axe-Codes."
+
+I'll create issue-dedupe.test.ts for deduplicateIssues, normalizeSelector, getRuleGroup; and a small test for axe-wcag-levels (AXE_RULE_WCAG_LEVEL has expected keys). detectWcagLevel is inside scanner and not exported - we could export it for testing or test via integration; I'll add a test file that tests the axe map and the dedupe module.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/__tests__/lib/page-classification.test.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to create a test file for issue-dedupe. The getRuleGroup for htmlcs uses the *last* segment - so for "WCAG2AA.Principle1.Guideline1_1.1_1_1.H37" the last segment is "H37", which maps to "image-alt". So when we have axe issue (code: "image-alt", selector: "#img1") and htmlcs issue (code: "WCAG2AA.Principle1.Guideline1_1.1_1_1.H37", selector: "#img1"), they should get the same rule group (image-alt) and same normalized selector, so they dedupe to one. And we prefer the one with wcagLevel !== 'Unknown' - typically htmlcs has AA/A in the code so it gets a known level, axe we now also set from the map. So when both have known level we keep the first (reduce keeps "best" and returns best when both have same level). Let me double-check the reduce: we want to prefer known wcagLevel. So if best has Unknown and cur has AA, we want cur. So we return cur when cur has known and best has unknown. If best has known and cur has unknown, return best. Otherwise return best (first). So the logic is correct.
+
+Now write the tests. I need to create mock Issue objects.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/__tests__/lib/issue-dedupe.test.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Tests use @/lib/... - need to check if the project uses @ path alias. Let me check vitest or tsconfig.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "\"@/lib\"|paths.*@",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.{ts,json}",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "\"@/lib\"|paths.*@",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 0,
+  "totalMatches": 0,
+  "topFiles": []
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me check how other tests import from lib.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/__tests__/lib/page-classification.test.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/tsconfig.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Paths "@/*": ["./*"] so @/lib is correct. Let me run the tests.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm test -- __tests__/lib/issue-dedupe.test.ts --run</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm test -- __tests__/lib/issue-dedupe.test.ts --run
+```
+
+```
+
+&gt; checkion@0.1.0 test
+&gt; vitest run __tests__/lib/issue-dedupe.test.ts --run
+
+
+ RUN  v4.0.18 /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1
+
+ ✓ __tests__/lib/issue-dedupe.test.ts (13 tests) 6ms
+
+ Test Files  1 passed (1)
+      Tests  13 passed (13)
+   Start at  10:39:48
+   Duration  201ms (transform 51ms, setup 0ms, import 61ms, tests 6ms, environment 0ms)
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+All tests passed. Let me fix the "prefers issue with known wcagLevel when merging" test - we're putting htmlcs second, and the reduce keeps "best" so when we compare unknown (first) with known (second), we return cur (known). So the kept issue is the second one (HTMLCS). Good. When we put known first and unknown second, we compare best (known) with cur (unknown), we return best. So we keep the first. So in both cases we keep the one with known level. Tests pass.
+
+Let me mark the todo complete and add a short note to the knowledge folder as per user rules.
+</details></think>
+
+---
+
+
+Alle Tests bestanden. Wissen dokumentieren und Todo abschließen:
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Axe WCAG map + detectWcagLevel + scanner call
+- [x] issue-dedupe.ts + deduplicateIssues in scanner
+- [x] Unit tests for dedupe and level mapping
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="generic" data-tool-name="glob_file_search">
+<details>
+<summary>Tool use: **glob_file_search** • Searched codebase "undefined" • **48** results in **1** directory</summary>
+
+Directory: **/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge** (48 files)
+
+| File |
+|------|
+| `checkion-domain-scan-storage.md` |
+| `checkion-seo-on-page-score.md` |
+| `checkion-seo-table-performance.md` |
+| `checkion-fetch-once-pattern.md` |
+| `checkion-wcag-score.md` |
+| `checkion-local-build-and-deploy.md` |
+| `checkion-projects-feature.md` |
+| `checkion-rank-tracking-serper.md` |
+| `checkion-deployment.md` |
+| `checkion-mcp-server.md` |
+| `checkion-preventive-fixes.md` |
+| `checkion-api-mcp-audit.md` |
+| `checkion-path-constants.md` |
+| `checkion-usage-tracking-coverage.md` |
+| `coolify-vollstaendige-anleitung.md` |
+| `checkion-auth-and-database.md` |
+| `figma-mcp-design-creation.md` |
+| `checkion-settings-brand-color.md` |
+| `checkion-llm-structured-outputs.md` |
+| `checkion-geo-eeat-intensive-scan.md` |
+| `checkion-feature-ideas-geo-llm-domain.md` |
+| `checkion-improvement-opportunities.md` |
+| `checkion-remediation-feature.md` |
+| `checkion-password-policy.md` |
+| `checkion-aria-audit.md` |
+| `checkion-api-schemas.md` |
+| `checkion-api-error-handler.md` |
+| `checkion-api-tests.md` |
+| `checkion-geo-eeat-ui-improvements.md` |
+| `checkion-eeat-analysis.md` |
+| `checkion-saliency-fusion.md` |
+| `checkion-saliency-ai.md` |
+| `checkion-saliency-sum-build.md` |
+| `checkion-screenshot-storage.md` |
+| `checkion-share-links.md` |
+| `ux-journey-agent.md` |
+| `i18n-setup.md` |
+| `cookie-banner-dismiss.md` |
+| `checkion-visual-map-concept.md` |
+| `checkion-seo-keyword-analysis.md` |
+| `checkion-page-index.md` |
+| `checkion-msqdx-accordion.md` |
+| `checkion-journey-history.md` |
+| `checkion-design-background.md` |
+| `checkion-dependencies-state-of-the-art.md` |
+| `checkion-deep-scan-sitemap.md` |
+| `checkion-dashboard-pagination.md` |
+| `checkion-caching.md` |
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add a short knowledge doc for WCAG axe levels and dedupe so it's documented for later reference.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-wcag-score.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add a new knowledge file for axe WCAG levels and issue deduplication.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-axe-wcag-dedupe.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Implementation is complete. Let me provide a short summary to the user.
+</details></think>
+
+---
+
+
+Die Umsetzung ist fertig. Kurzüberblick:
+
+## 1. Axe Rule-IDs → WCAG-Level
+
+- **`lib/axe-wcag-levels.ts`** (neu): Map `AXE_RULE_WCAG_LEVEL` von axe Rule-IDs auf A/AA/AAA/APCA (z. B. `image-alt` → A, `color-contrast` → AA, `color-contrast-enhanced` → APCA). Orientierung: [axe-core rule descriptions](https://github.com/dequelabs/axe-core/blob/develop/doc/rule-descriptions.md).
+- **`lib/scanner.ts`**:
+  - `detectWcagLevel(code, runner)` nutzt bei `runner === 'axe'` die Map; für htmlcs bleibt die bisherige Auswertung von WCAG2A/AA/AAA im Code.
+  - Beim Erzeugen der Issues wird `detectWcagLevel(code, runner)` aufgerufen.
+
+## 2. Deduplizierung
+
+- **`lib/issue-dedupe.ts`** (neu):
+  - **`normalizeSelector(selector)`**: trimmen, Begrenzung auf 500 Zeichen.
+  - **`getRuleGroup(issue)`**: Für axe = `code`; für htmlcs = Sniffer-Code (z. B. H37) → gleiche logische Regel wie bei axe über `HTMLCS_SNIFFER_TO_AXE` (z. B. H37 → `image-alt`), damit gleicher Fehler dieselbe Gruppe bekommt.
+  - **`deduplicateIssues(issues)`**: Gruppierung nach `(normalizedSelector, ruleGroup)`; pro Gruppe wird ein Issue behalten, mit Vorzug für `wcagLevel !== 'Unknown'`.
+- **`lib/scanner.ts`**: Nach `Promise.all(issuePromises)` wird `deduplicateIssues(rawIssues)` aufgerufen; die bereinigte Liste geht in `computeStats` und ins Scan-Result.
+
+## 3. Tests
+
+- **`__tests__/lib/issue-dedupe.test.ts`** (neu): 13 Tests für `normalizeSelector`, `getRuleGroup`, `deduplicateIssues` (Merge bei gleichem Selektor + Regel, zwei Issues bei unterschiedlicher Regel, Bevorzugung bekanntes WCAG-Level) und Plausibilität von `AXE_RULE_WCAG_LEVEL`.
+
+Alle Tests laufen durch. Kurzdokumentation steht in **`knowledge/checkion-axe-wcag-dedupe.md`**.
+
+---
+
+_**User**_
+
+können wir dreispaltig hier sein DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-odfgbo > span.MuiBox-root c.-13o7eu2 > div.MuiBox-root c.-55eufm[1] > div.MuiBox-root c.-1.g4afn
+Position: top=295px, left=105px, width=1438px, height=480px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-1sg4afn" data-cursor-element-id="cursor-el-1">Seitenthema info Inhaltliche Einordnung (Tags & Wichtigkeit) Tier 5: Klar einem Kernthema gewidmet MHP Digitalization IT transformations Automotive industry Value chain Tier 4: Eindeutig ein Thema P</div> , DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-odfgbo > span.MuiBox-root c.-13o7eu2 > div.MuiBox-root c.-6.3lb > div.MuiBox-root c.-6gpkta[0] > div.MuiBox-root c.-3a.i7l > div.MuiBox-root c.-1.g4afn
+Position: top=793px, left=105px, width=467px, height=224px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-1sg4afn" data-cursor-element-id="cursor-el-233">Eco Score Geschätzter CO2-Fußabdruck pro Seitenaufruf D 0.519g CO2 / View 1.98 MB Transfer Cleaner than ~20% of pages</div>  und DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-odfgbo > span.MuiBox-root c.-13o7eu2 > div.MuiBox-root c.-6.3lb > div.MuiBox-root c.-6gpkta[1] > div.MuiBox-root c.-3a.i7l > div.MuiBox-root c.-1.g4afn
+Position: top=793px, left=590px, width=467px, height=319px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-1sg4afn" data-cursor-element-id="cursor-el-255">Performance Ladezeiten & Core Web Vitals (Lab Data) TTFB 78ms FCP 416ms Load 358ms LCP 416ms</div> 
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+Status: **loading**
+
+</details>
+
+</tool-use>
+
+---
+

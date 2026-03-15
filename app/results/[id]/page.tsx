@@ -552,81 +552,85 @@ export default function ResultsPage() {
                 </Box>
             </MsqdxMoleculeCard>
 
-            {/* Page classification: tags grouped by tier (5 = highest relevance) */}
-            {result.pageClassification && (() => {
-                const pc = result.pageClassification as { tagTiers?: Array<{ tag: string; tier: 1 | 2 | 3 | 4 | 5 }>; tags?: string[]; tier?: 1 | 2 | 3 | 4 | 5; shortSummary?: string };
-                const tagTiers = pc.tagTiers?.length
-                    ? pc.tagTiers
-                    : (pc.tags ?? []).map((tag) => ({ tag, tier: (pc.tier ?? 3) as 1 | 2 | 3 | 4 | 5 }));
-                if (tagTiers.length === 0 && !pc.shortSummary) return null;
-                const byTier = [5, 4, 3, 2, 1].map((tier) => ({ tier, tags: tagTiers.filter((tt) => tt.tier === tier) })).filter((g) => g.tags.length > 0);
-                return (
-                    <MsqdxMoleculeCard
-                        variant="flat"
-                        borderRadius="lg"
-                        sx={{ bgcolor: 'var(--color-card-bg)', mb: 'var(--msqdx-spacing-md)' }}
-                        title={t('results.pageClassificationTitle')}
-                        subtitle={t('results.pageClassificationSubtitle')}
-                        headerActions={
-                            <InfoTooltip
-                                title={t('info.pageClassification')}
-                                ariaLabel={t('common.info')}
-                                placement="bottom"
-                            />
-                        }
-                    >
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-md)' }}>
-                            {byTier.map(({ tier, tags }) => (
-                                <Box key={tier}>
-                                    <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
-                                        {t('results.pageClassificationTier')} {tier}: {t(`results.pageClassificationTier${tier}` as 'results.pageClassificationTier1')}
-                                    </MsqdxTypography>
-                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                        {tags.map((tt, i) => (
-                                            <MsqdxChip
-                                                key={`${tier}-${i}`}
-                                                label={tt.tag}
-                                                size="small"
-                                                variant="outlined"
-                                                sx={{ fontSize: '0.75rem' }}
-                                            />
-                                        ))}
-                                    </Box>
-                                </Box>
-                            ))}
-                            {pc.shortSummary && (
-                                <Box>
-                                    <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
-                                        {t('results.pageClassificationSummary')}
-                                    </MsqdxTypography>
-                                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                        {pc.shortSummary}
-                                    </MsqdxTypography>
-                                </Box>
-                            )}
-                        </Box>
-                    </MsqdxMoleculeCard>
-                );
-            })()}
-
-            {/* Eco, Performance & UX: Eco + Performance share row; UX card full width on its own row */}
-            {(result.eco || result.performance || result.ux) && (
+            {/* Three-column row: Seitenthema | Eco | Performance; then UX full width */}
+            {(result.pageClassification || result.eco || result.performance || result.ux) && (
                 <Box sx={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
                     gap: 'var(--msqdx-spacing-md)',
                     mb: 'var(--msqdx-spacing-md)',
                 }}>
+                    {/* Column 1: Page classification (Seitenthema) */}
+                    {result.pageClassification && (() => {
+                        const pc = result.pageClassification as { tagTiers?: Array<{ tag: string; tier: 1 | 2 | 3 | 4 | 5 }>; tags?: string[]; tier?: 1 | 2 | 3 | 4 | 5; shortSummary?: string };
+                        const tagTiers = pc.tagTiers?.length
+                            ? pc.tagTiers
+                            : (pc.tags ?? []).map((tag) => ({ tag, tier: (pc.tier ?? 3) as 1 | 2 | 3 | 4 | 5 }));
+                        if (tagTiers.length === 0 && !pc.shortSummary) return null;
+                        const byTier = [5, 4, 3, 2, 1].map((tier) => ({ tier, tags: tagTiers.filter((tt) => tt.tier === tier) })).filter((g) => g.tags.length > 0);
+                        return (
+                            <Box key="classification" sx={{ minHeight: '100%' }}>
+                                <MsqdxMoleculeCard
+                                    variant="flat"
+                                    borderRadius="lg"
+                                    sx={{ bgcolor: 'var(--color-card-bg)', height: '100%' }}
+                                    title={t('results.pageClassificationTitle')}
+                                    subtitle={t('results.pageClassificationSubtitle')}
+                                    headerActions={
+                                        <InfoTooltip
+                                            title={t('info.pageClassification')}
+                                            ariaLabel={t('common.info')}
+                                            placement="bottom"
+                                        />
+                                    }
+                                >
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-md)' }}>
+                                        {byTier.map(({ tier, tags }) => (
+                                            <Box key={tier}>
+                                                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                                    {t('results.pageClassificationTier')} {tier}: {t(`results.pageClassificationTier${tier}` as 'results.pageClassificationTier1')}
+                                                </MsqdxTypography>
+                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                    {tags.map((tt, i) => (
+                                                        <MsqdxChip
+                                                            key={`${tier}-${i}`}
+                                                            label={tt.tag}
+                                                            size="small"
+                                                            variant="outlined"
+                                                            sx={{ fontSize: '0.75rem' }}
+                                                        />
+                                                    ))}
+                                                </Box>
+                                            </Box>
+                                        ))}
+                                        {pc.shortSummary && (
+                                            <Box>
+                                                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                                    {t('results.pageClassificationSummary')}
+                                                </MsqdxTypography>
+                                                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                                    {pc.shortSummary}
+                                                </MsqdxTypography>
+                                            </Box>
+                                        )}
+                                    </Box>
+                                </MsqdxMoleculeCard>
+                            </Box>
+                        );
+                    })()}
+                    {/* Column 2: Eco */}
                     {result.eco && (
                         <Box sx={{ minHeight: '100%' }}>
                             <EcoCard eco={result.eco} />
                         </Box>
                     )}
+                    {/* Column 3: Performance */}
                     {result.performance && (
                         <Box sx={{ minHeight: '100%' }}>
                             <PerformanceCard perf={result.performance} />
                         </Box>
                     )}
+                    {/* Full width: UX */}
                     {result.ux && (
                         <Box sx={{ minHeight: '100%', gridColumn: '1 / -1' }}>
                             <UxCard ux={result.ux} />
