@@ -19,12 +19,19 @@ Damit der Spider (Sitemap, Link-Crawl) korrekt arbeitet, muss die Start-URL imme
 
 Siehe `app/api/scan/domain/route.ts` und `app/api/projects/[id]/domain-scan-all/route.ts`.
 
+## Seitenthemen (Tags + Tier) – im Single Scan
+
+Die LLM-Klassifikation (Tags + Tier 1–5) läuft **direkt im Single Scan** (`lib/scanner.ts`). Nach dem Aufbau des `ScanResult` wird `classifyPageWithLlm(result)` aufgerufen; bei Erfolg wird `pageClassification` ins Result geschrieben. Dadurch hat jede Seite (Einzelscan und Deep Scan) automatisch Tags und Tier, sofern genug `bodyTextExcerpt` vorhanden ist und `OPENAI_API_KEY` gesetzt ist. Siehe `lib/llm/page-classification.ts` (`classifyPageWithLlm`).
+
+- Einzelscan: Result enthält `pageClassification` beim Speichern.
+- Deep Scan: Jede von der Spider gescannte Seite wird klassifiziert; `toSlimPage` übernimmt `pageClassification` ins Domain-Payload.
+
 ## Ablauf Deep Scan
 
 1. `POST /api/scan/domain` startet den Scan, erstellt einen leeren Domain-Eintrag.
-2. Spider liefert am Ende `domainResult.pages` (volle `ScanResult[]`).
+2. Spider liefert am Ende `domainResult.pages` (volle `ScanResult[]`; jede Seite hat ggf. bereits `pageClassification`).
 3. Pro Seite: `addScan(userId, { ...page, groupId: id })` – voller Scan in `scans`.
-4. `buildStoredDomainPayload(fullPages, base)` berechnet Aggregationen und baut `pages: SlimPage[]`.
+4. `buildStoredDomainPayload(fullPages, base)` berechnet Aggregationen und baut `pages: SlimPage[]` (inkl. `pageClassification`).
 5. `updateDomainScan(id, userId, stored)` speichert den einen schlanken Payload.
 
 ## Lesen

@@ -4,7 +4,9 @@
  */
 
 import { z } from 'zod';
+import OpenAI from 'openai';
 import type { ScanResult, PageClassification } from '@/lib/types';
+import { OPENAI_MODEL, getOpenAIKey } from '@/lib/llm/config';
 
 const BODY_EXCERPT_MAX = 2000;
 
@@ -56,6 +58,38 @@ export function extractJsonFromResponse(content: string): string {
 }
 
 const DEFAULT_FALLBACK: PageClassification = { tags: [], tier: 3 };
+
+const MIN_BODY_LENGTH = 50;
+
+/**
+ * Run LLM classification for a single scan result. Used by scanner (single scan / deep scan).
+ * Returns null if bodyTextExcerpt too short, OpenAI not configured, or on error (never throws).
+ */
+export async function classifyPageWithLlm(result: ScanResult): Promise<PageClassification | null> {
+    const excerpt = (result.bodyTextExcerpt ?? '').trim();
+    if (excerpt.length < MIN_BODY_LENGTH) return null;
+    let openai: OpenAI;
+    try {
+        openai = new OpenAI({ apiKey: getOpenAIKey() });
+    } catch {
+        return null;
+    }
+    try {
+        const payload = buildClassificationPayload(result);
+        const userPrompt = buildClassificationUserPrompt(payload);
+        const completion = await openai.chat.completions.create({
+            model: OPENAI_MODEL,
+            messages: [
+                { role: 'system', content: CLASSIFICATION_SYSTEM_PROMPT },
+                { role: 'user', content: userPrompt },
+            ],
+        });
+        const rawContent = completion.choices[0]?.message?.content ?? '';
+        return parseClassificationResponse(rawContent);
+    } catch {
+        return null;
+    }
+}
 
 /**
  * Parse LLM response into PageClassification. Returns fallback (tier 3, empty tags) on parse/validation error.

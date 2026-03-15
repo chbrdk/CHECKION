@@ -1544,7 +1544,7 @@ export async function runScan(options: ScanOptions & { groupId?: string; targetR
             seoAudit.metaDescription ?? ''
         );
 
-        return {
+        const result: ScanResult = {
             id: scanId,
             groupId,
             url,
@@ -1579,6 +1579,12 @@ export async function runScan(options: ScanOptions & { groupId?: string; targetR
             ...(bodyTextExcerpt != null && bodyTextExcerpt !== '' ? { bodyTextExcerpt } : {}),
             ymyl: ymylResult
         };
+
+        const { classifyPageWithLlm } = await import('./llm/page-classification');
+        const classification = await classifyPageWithLlm(result).catch(() => null);
+        if (classification) result.pageClassification = classification;
+
+        return result;
     } finally {
         await browser.close();
     }
