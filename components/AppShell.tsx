@@ -7,6 +7,7 @@ import { Box, IconButton, useMediaQuery, useTheme } from '@mui/material';
 import { MsqdxAppLayout, MsqdxIcon } from '@msqdx/react';
 import { Sidebar } from './Sidebar';
 import { ProjectHeaderNav } from './ProjectHeaderNav';
+import { ResultsHeaderNav } from './ResultsHeaderNav';
 import { BrandColorInitializer } from './settings/BrandColorInitializer';
 import { THEME_ACCENT_WITH_FALLBACK } from '@/lib/theme-accent';
 import { PATH_LOGIN, PATH_REGISTER, PATH_SHARE } from '@/lib/constants';
@@ -17,6 +18,9 @@ const SHARE_PATHS = [PATH_SHARE];
 /** Project sub-routes: show project subnav in header. */
 const isProjectRoute = (path: string | null) =>
     path != null && path.startsWith('/projects/') && /^\/projects\/[^/]+/.test(path);
+/** Results detail: show back + AddToProject + Share in header. */
+const isResultsRoute = (path: string | null) =>
+    path != null && /^\/results\/[^/]+(?:\/|$)/.test(path);
 
 /** Header height (matches Audion): xs 56px, md 64px. */
 const HEADER_HEIGHT_XS = 56;
@@ -100,7 +104,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                             color: '#000',
                         }}
                     >
-                        {isProjectRoute(pathname ?? null) ? <ProjectHeaderNav /> : null}
+                        {isProjectRoute(pathname ?? null) ? <ProjectHeaderNav /> : isResultsRoute(pathname ?? null) ? <ResultsHeaderNav /> : null}
                     </Box>
                     {/* Main content – full area with paddingTop to clear header (Audion-style). */}
                     <Box

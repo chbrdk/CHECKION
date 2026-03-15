@@ -106,8 +106,6 @@ import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { PaginationBar } from '@/components/PaginationBar';
 import { RESULTS_ISSUES_PAGE_SIZE } from '@/lib/constants';
-import { SharePanel } from '@/components/SharePanel';
-import { AddToProject } from '@/components/AddToProject';
 
 function UxCheckV2Content({ summary }: { summary: UxCheckV2Summary }) {
     const { structured, modelUsed, generatedAt } = summary;
@@ -270,7 +268,6 @@ export default function ResultsPage() {
     const router = useRouter();
     const { t } = useI18n();
     const [result, setResult] = useState<ScanResult | null>(null);
-    const [projectId, setProjectId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [tab, setTab] = useState<TabFilter>('all');
@@ -441,7 +438,6 @@ export default function ResultsPage() {
             })
             .then((data: ScanResult & { projectId?: string | null }) => {
                 setResult(data);
-                setProjectId(data.projectId ?? null);
 
                 // Fetch all scans to find siblings with same groupId
                 // (In a real app, we'd have an endpoint like /api/scan?groupId=...)
@@ -510,22 +506,6 @@ export default function ResultsPage() {
             {/* Header with Score */}
             <Box sx={{ mb: 'var(--msqdx-spacing-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: MSQDX_SPACING.scale.sm }}>
-                        <MsqdxButton
-                            variant="text"
-                            size="small"
-                            onClick={() => router.push(PATH_HOME)}
-                            sx={{ color: 'var(--color-text-muted-on-light)' }}
-                        >
-                            ← {t('results.dashboard')}
-                        </MsqdxButton>
-                        {result?.id && (
-                            <>
-                                <AddToProject resourceType="single" resourceId={result.id} currentProjectId={projectId} onAssigned={() => result?.id && fetch(apiScan(result.id)).then((r) => r.json()).then((d: ScanResult & { projectId?: string | null }) => setProjectId(d.projectId ?? null))} />
-                                <SharePanel resourceType="single" resourceId={result.id} labelNamespace="results" />
-                            </>
-                        )}
-                    </Box>
                     <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: MSQDX_SPACING.scale.xs }}>
                         <MsqdxTypography
                             variant="h4"
