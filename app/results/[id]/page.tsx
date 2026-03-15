@@ -549,44 +549,16 @@ export default function ResultsPage() {
                     </MsqdxTypography>
                 </Box>
 
-                {/* Score Gauge */}
-                <Box sx={{ position: 'relative', display: 'inline-flex', mr: 'var(--msqdx-spacing-sm)' }}>
-                    <CircularProgress
-                        variant="determinate"
-                        value={100}
-                        size={80}
-                        thickness={4}
-                        sx={{ color: MSQDX_NEUTRAL[800], position: 'absolute' }}
-                    />
-                    <CircularProgress
-                        variant="determinate"
-                        value={result.score}
-                        size={80}
-                        thickness={4}
-                        sx={{ color: scoreColor }}
-                    />
-                    <Box
-                        sx={{
-                            top: 0,
-                            left: 0,
-                            bottom: 0,
-                            right: 0,
-                            position: 'absolute',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexDirection: 'column',
-                        }}
-                    >
-                        <MsqdxTypography variant="h4" sx={{ fontWeight: 800, color: scoreColor, lineHeight: 1 }}>
-                            {result.score}
+                {/* Score (no ring, large number) */}
+                <Box sx={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', mr: 'var(--msqdx-spacing-sm)' }}>
+                    <MsqdxTypography sx={{ fontSize: '2.5rem', fontWeight: 800, color: scoreColor, lineHeight: 1, letterSpacing: '-0.02em' }}>
+                        {result.score}
+                    </MsqdxTypography>
+                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
+                        <MsqdxTypography variant="caption" sx={{ fontSize: '0.65rem', color: 'var(--color-text-muted-on-light)', textTransform: 'uppercase', fontWeight: 600 }}>
+                            {t('results.score')}
                         </MsqdxTypography>
-                        <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
-                            <MsqdxTypography variant="caption" sx={{ fontSize: '0.6rem', color: 'var(--color-text-muted-on-light)' }}>
-                                {t('results.score')}
-                            </MsqdxTypography>
-                            <InfoTooltip title={t('info.score')} ariaLabel={t('common.info')} placement="bottom" />
-                        </Box>
+                        <InfoTooltip title={t('info.score')} ariaLabel={t('common.info')} placement="bottom" />
                     </Box>
                 </Box>
             </Box>
@@ -625,7 +597,7 @@ export default function ResultsPage() {
                             <MsqdxMoleculeCard
                                 variant="flat"
                                 borderRadius="lg"
-                                sx={{ bgcolor: 'var(--color-card-bg)' }}
+                                sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-card-border)' }}
                                 chips={
                                     <>
                                         <MsqdxChip label={result.standard} size="small" sx={{ backgroundColor: alpha(MSQDX_BRAND_PRIMARY.purple, 0.12), color: MSQDX_BRAND_PRIMARY.purple, fontWeight: 600, fontSize: '0.7rem', mr: 1 }} />
@@ -687,7 +659,7 @@ export default function ResultsPage() {
                                         key="classification"
                                         variant="flat"
                                         borderRadius="lg"
-                                        sx={{ bgcolor: 'var(--color-card-bg)' }}
+                                        sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-card-border)' }}
                                         title={t('results.pageClassificationTitle')}
                                         subtitle={t('results.pageClassificationSubtitle')}
                                         headerActions={<InfoTooltip title={t('info.pageClassification')} ariaLabel={t('common.info')} placement="bottom" />}
@@ -747,7 +719,7 @@ export default function ResultsPage() {
                     <MsqdxMoleculeCard
                         variant="flat"
                         borderRadius="lg"
-                        sx={{ bgcolor: 'var(--color-card-bg)' }}
+                        sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-card-border)' }}
                         chips={
                             <>
                                 <MsqdxChip label={result.standard} size="small" sx={{ backgroundColor: alpha(MSQDX_BRAND_PRIMARY.purple, 0.12), color: MSQDX_BRAND_PRIMARY.purple, fontWeight: 600, fontSize: '0.7rem', mr: 1 }} />
@@ -808,7 +780,7 @@ export default function ResultsPage() {
                     headerActions={<InfoTooltip title={t('info.uxCxCheck')} ariaLabel={t('common.info')} />}
                     subtitle="Heuristische Evaluation gemäß DIN EN ISO 9241-110 (Dialogprinzipien)"
                     variant="flat"
-                    sx={{ bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}
+                    sx={{ bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)', border: '1px solid var(--color-card-border)' }}
                     borderRadius="lg"
                 >
                     {result.llmSummary && isUxCheckV2Summary(result.llmSummary) ? (
@@ -892,7 +864,7 @@ export default function ResultsPage() {
                 <MsqdxMoleculeCard
                     title="Gefundene Issues"
                     variant="flat"
-                    sx={{ bgcolor: 'var(--color-card-bg)' }}
+                    sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-card-border)' }}
                     borderRadius="lg"
                     headerActions={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: MSQDX_SPACING.scale.sm }}>
@@ -1115,7 +1087,7 @@ export default function ResultsPage() {
                 <MsqdxMoleculeCard
                     title="Visuelle Analyse"
                     variant="flat"
-                    sx={{ bgcolor: 'var(--color-card-bg)', mb: 'var(--msqdx-spacing-md)' }}
+                    sx={{ bgcolor: 'var(--color-card-bg)', mb: 'var(--msqdx-spacing-md)', border: '1px solid var(--color-card-border)' }}
                     borderRadius="xs"
                     headerActions={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -1359,7 +1331,7 @@ export default function ResultsPage() {
                     title="User Experience Issues"
                     headerActions={<InfoTooltip title={t('info.uxIssues')} ariaLabel={t('common.info')} />}
                     subtitle="User Experience Issues"
-                    sx={{ bgcolor: 'var(--color-card-bg)' }}
+                    sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-card-border)' }}
                 >
                     {result.ux ? (
                         <UxIssueList ux={result.ux} />
@@ -1393,7 +1365,7 @@ export default function ResultsPage() {
                         title="Struktur & Semantik"
                         headerActions={<InfoTooltip title={t('info.structureSemantics')} ariaLabel={t('common.info')} />}
                         subtitle="Visualisierung der Dokumentenstruktur (Headings, Landmarks)."
-                        sx={{ bgcolor: 'var(--color-card-bg)' }}
+                        sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-card-border)' }}
                     >
                         {!hasOutline && !hasStructure ? (
                             <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
@@ -1540,13 +1512,13 @@ export default function ResultsPage() {
                     {result.seo ? (
                         <SeoCard seo={result.seo} />
                     ) : (
-                        <MsqdxMoleculeCard title="SEO Audit" subtitle="No SEO data." sx={{ bgcolor: 'var(--color-card-bg)' }}><MsqdxTypography>Keine SEO Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
+                        <MsqdxMoleculeCard title="SEO Audit" subtitle="No SEO data." sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-card-border)' }}><MsqdxTypography>Keine SEO Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
                     )}
 
                     {result.links ? (
                         <LinkAuditCard links={result.links} />
                     ) : (
-                        <MsqdxMoleculeCard title="Link Audit" subtitle="No Link data." sx={{ bgcolor: 'var(--color-card-bg)' }}><MsqdxTypography>Keine Link Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
+                        <MsqdxMoleculeCard title="Link Audit" subtitle="No Link data." sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-card-border)' }}><MsqdxTypography>Keine Link Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
                     )}
                 </Box>
             )}
@@ -1560,13 +1532,13 @@ export default function ResultsPage() {
                     {result.geo ? (
                         <InfraCard geo={result.geo} />
                     ) : (
-                        <MsqdxMoleculeCard title="Infrastruktur" subtitle="No data." sx={{ bgcolor: 'var(--color-card-bg)' }}><MsqdxTypography>Keine Infrastruktur-Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
+                        <MsqdxMoleculeCard title="Infrastruktur" subtitle="No data." sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-card-border)' }}><MsqdxTypography>Keine Infrastruktur-Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
                     )}
 
                     {result.privacy ? (
                         <PrivacyCard privacy={result.privacy} />
                     ) : (
-                        <MsqdxMoleculeCard title="Privacy Audit" subtitle="No Privacy data." sx={{ bgcolor: 'var(--color-card-bg)' }}><MsqdxTypography>Keine Privacy-Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
+                        <MsqdxMoleculeCard title="Privacy Audit" subtitle="No Privacy data." sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-card-border)' }}><MsqdxTypography>Keine Privacy-Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
                     )}
 
                     {result.security ? (
@@ -1584,7 +1556,7 @@ export default function ResultsPage() {
                     {result.generative ? (
                         <GenerativeOptimizerCard data={result.generative} ymyl={result.ymyl} geo={result.geo} />
                     ) : (
-                        <MsqdxMoleculeCard title="GEO-Analyse" subtitle="Keine Daten." sx={{ bgcolor: 'var(--color-card-bg)' }}><MsqdxTypography>Keine GEO-Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
+                        <MsqdxMoleculeCard title="GEO-Analyse" subtitle="Keine Daten." sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-card-border)' }}><MsqdxTypography>Keine GEO-Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
                     )}
                 </>
             )}
