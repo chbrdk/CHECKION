@@ -120,9 +120,16 @@ export interface LlmSummary {
 }
 
 /** LLM-derived page topic and importance tier (content-based, not structure). */
-export interface PageClassification {
-    tags: string[];
+/** One theme/tag with its content importance tier (1–5). */
+export interface TagTier {
+    tag: string;
     tier: 1 | 2 | 3 | 4 | 5;
+}
+
+/** LLM-derived page classification: themes/tags weighted by tier (at least 5 per tier). */
+export interface PageClassification {
+    /** Themes/tags with tier; at least 5 per tier (1–5). */
+    tagTiers: TagTier[];
     shortSummary?: string;
 }
 

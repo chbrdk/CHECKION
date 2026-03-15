@@ -1,11 +1,11 @@
 /**
- * Page classification: LLM-based tags and content tier (1–5) from page content.
- * Tier is content-based only (not URL/structure).
+ * Page classification: LLM-based themes/tags weighted by tier (1–5) from page content.
+ * Each tag gets a tier; at least 5 tags per tier (25+ total).
  */
 
 import { z } from 'zod';
 import OpenAI from 'openai';
-import type { ScanResult, PageClassification } from '@/lib/types';
+import type { ScanResult, PageClassification, TagTier } from '@/lib/types';
 import { OPENAI_MODEL, getOpenAIKey } from '@/lib/llm/config';
 
 const BODY_EXCERPT_MAX = 2000;
@@ -23,28 +23,40 @@ export function buildClassificationPayload(result: ScanResult): Record<string, u
 
 export const CLASSIFICATION_SYSTEM_PROMPT = `Du bist ein Experte für die inhaltliche Einordnung von Webseiten.
 
-Deine Aufgabe: Beurteile ausschließlich anhand des **Seiteninhalts** (nicht anhand der URL oder der Struktur der Website), worum es auf der Seite geht, und wie zentral bzw. intensiv dieses Thema auf der Seite behandelt wird.
+Deine Aufgabe: Erfasse **alle Themen und Aspekte** der Seite anhand des **Seiteninhalts** (nicht URL oder Struktur) und ordne jedes Thema einem **Tier (1–5)** zu – wie zentral bzw. intensiv dieses Thema auf der Seite behandelt wird.
+
+**Tier-Bedeutung:**
+- 5: Kernthema der Seite, sehr zentral und intensiv behandelt.
+- 4: Wichtiges Thema, klar präsent.
+- 3: Thema kommt vor, mittlere Relevanz.
+- 2: Nur am Rande erwähnt oder angedeutet.
+- 1: Kaum Substanz (z. B. Navigation, Footer, Boilerplate).
 
 **Ausgabe (nur gültiges JSON, kein Text davor oder danach):**
-- tags: Array von deutschen Stichwörtern/Themen (z. B. ["Pumpen", "Technische Daten", "Produktübersicht"]). Maximal 8 Tags.
-- tier: Zahl 1 bis 5 – inhaltliche Zentralität/Intensität des Hauptthemas auf dieser Seite:
-  - 5: Seite ist klar und stark einem Kernthema gewidmet, Inhalt dicht und fokussiert.
-  - 4: Eindeutig ein Thema, etwas weniger dicht oder mit mehr Kontext.
-  - 3: Mehrere Themen oder Mischung, kein klares Hauptthema.
-  - 2: Nur am Rande thematisch, wenig inhaltliche Tiefe.
-  - 1: Kaum inhaltliche Substanz (z. B. Boilerplate, Navigation, Footer).
+- tagTiers: Array von Objekten { "tag": string, "tier": 1|2|3|4|5 }. Pro Tier (1, 2, 3, 4, 5) **mindestens 5 Einträge**. Also insgesamt mindestens 25 Themen/Tags. Jedes "tag" ist ein deutsches Stichwort/Thema (z. B. "Pumpen", "Technische Daten", "Kontakt", "Impressum").
 - shortSummary (optional): Ein Satz auf Deutsch: "Worum geht es auf dieser Seite am ehesten?"
 
-Wichtig: Das Tier leitest du nur aus dem Inhalt ab, nicht aus der URL oder der Position in der Site-Struktur.`;
+Wichtig: Jedes Thema nur einmal vergeben. Verschiedene Aspekte (Produktname, Kategorie, Nutzen, Zielgruppe, …) pro Tier nutzen, um auf mindestens 5 pro Tier zu kommen.`;
 
 export function buildClassificationUserPrompt(payload: Record<string, unknown>): string {
-    return `Klassifiziere diese Webseite anhand des Inhalts. Antworte nur mit einem JSON-Objekt: { "tags": string[], "tier": 1|2|3|4|5, "shortSummary"?: string }
+    return `Klassifiziere diese Webseite: Alle Themen/Tags in tierTiers einordnen, mindestens 5 pro Tier (1–5). Antworte nur mit JSON: { "tagTiers": [ { "tag": string, "tier": 1|2|3|4|5 }, ... ], "shortSummary"?: string }
 
 Seitendaten:
 ${JSON.stringify(payload, null, 0)}`;
 }
 
+const TagTierSchema = z.object({
+    tag: z.string(),
+    tier: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]),
+});
+
 const PageClassificationSchema = z.object({
+    tagTiers: z.array(TagTierSchema).default([]),
+    shortSummary: z.string().optional(),
+});
+
+/** Legacy format (single tier + flat tags) for backward compatibility when reading from DB. */
+const LegacyPageClassificationSchema = z.object({
     tags: z.array(z.string()).default([]),
     tier: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]).default(3),
     shortSummary: z.string().optional(),
@@ -57,7 +69,7 @@ export function extractJsonFromResponse(content: string): string {
     return trimmed;
 }
 
-const DEFAULT_FALLBACK: PageClassification = { tags: [], tier: 3 };
+const DEFAULT_FALLBACK: PageClassification = { tagTiers: [] };
 
 const MIN_BODY_LENGTH = 50;
 
@@ -92,24 +104,40 @@ export async function classifyPageWithLlm(result: ScanResult): Promise<PageClass
 }
 
 /**
- * Parse LLM response into PageClassification. Returns fallback (tier 3, empty tags) on parse/validation error.
+ * Parse LLM response into PageClassification. Supports new (tagTiers) and legacy (tags + tier) format.
  */
 export function parseClassificationResponse(rawContent: string): PageClassification {
     if (!rawContent?.trim()) return DEFAULT_FALLBACK;
     try {
         const jsonStr = extractJsonFromResponse(rawContent);
-        const parsed = JSON.parse(jsonStr) as unknown;
-        const result = PageClassificationSchema.safeParse(parsed);
-        if (result.success) {
-            const d = result.data;
-            const tier = (typeof d.tier === 'number' && d.tier >= 1 && d.tier <= 5)
-                ? (d.tier as 1 | 2 | 3 | 4 | 5)
-                : 3;
-            return {
-                tags: Array.isArray(d.tags) ? d.tags.filter((t): t is string => typeof t === 'string').slice(0, 8) : [],
-                tier,
-                shortSummary: typeof d.shortSummary === 'string' ? d.shortSummary : undefined,
-            };
+        const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
+
+        const hasLegacy = Array.isArray(parsed.tags) && typeof parsed.tier === 'number';
+        const hasNew = Array.isArray(parsed.tagTiers);
+
+        if (hasLegacy && !hasNew) {
+            const legacy = LegacyPageClassificationSchema.safeParse(parsed);
+            if (legacy.success) {
+                const L = legacy.data;
+                const tier = (typeof L.tier === 'number' && L.tier >= 1 && L.tier <= 5) ? (L.tier as 1 | 2 | 3 | 4 | 5) : 3;
+                const tagTiers: TagTier[] = (Array.isArray(L.tags) ? L.tags.filter((t): t is string => typeof t === 'string').slice(0, 20) : [])
+                    .map((tag) => ({ tag: tag.trim(), tier }));
+                return { tagTiers, shortSummary: typeof L.shortSummary === 'string' ? L.shortSummary : undefined };
+            }
+        }
+
+        if (hasNew) {
+            const result = PageClassificationSchema.safeParse(parsed);
+            if (result.success) {
+                const d = result.data;
+                const tagTiers: TagTier[] = (d.tagTiers ?? [])
+                    .map((x) => ({ tag: String(x.tag).trim(), tier: x.tier }))
+                    .filter((x) => x.tag.length > 0);
+                return {
+                    tagTiers,
+                    shortSummary: typeof d.shortSummary === 'string' ? d.shortSummary : undefined,
+                };
+            }
         }
     } catch {
         // ignore
