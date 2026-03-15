@@ -21,27 +21,27 @@ export function buildClassificationPayload(result: ScanResult): Record<string, u
     };
 }
 
-export const CLASSIFICATION_SYSTEM_PROMPT = `Du bist ein Experte für die inhaltliche Einordnung von Webseiten.
+export const CLASSIFICATION_SYSTEM_PROMPT = `You are an expert at classifying web page content.
 
-Deine Aufgabe: Erfasse **alle Themen und Aspekte** der Seite anhand des **Seiteninhalts** (nicht URL oder Struktur) und ordne jedes Thema einem **Tier (1–5)** zu – wie zentral bzw. intensiv dieses Thema auf der Seite behandelt wird.
+Your task: Identify **all topics and aspects** of the page from its **page content only** (not URL or site structure) and assign each topic a **tier (1–5)** indicating how central or intensively that topic is treated on the page.
 
-**Tier-Bedeutung:**
-- 5: Kernthema der Seite, sehr zentral und intensiv behandelt.
-- 4: Wichtiges Thema, klar präsent.
-- 3: Thema kommt vor, mittlere Relevanz.
-- 2: Nur am Rande erwähnt oder angedeutet.
-- 1: Kaum Substanz (z. B. Navigation, Footer, Boilerplate).
+**Tier meaning:**
+- 5: Core topic of the page, very central and intensively covered.
+- 4: Important topic, clearly present.
+- 3: Topic appears with medium relevance.
+- 2: Only mentioned in passing or hinted at.
+- 1: Little substance (e.g. navigation, footer, boilerplate).
 
-**Ausgabe (nur gültiges JSON, kein Text davor oder danach):**
-- tagTiers: Array von Objekten { "tag": string, "tier": 1|2|3|4|5 }. Pro Tier (1, 2, 3, 4, 5) **mindestens 5 Einträge**. Also insgesamt mindestens 25 Themen/Tags. Jedes "tag" ist ein deutsches Stichwort/Thema (z. B. "Pumpen", "Technische Daten", "Kontakt", "Impressum").
-- shortSummary (optional): Ein Satz auf Deutsch: "Worum geht es auf dieser Seite am ehesten?"
+**Output (valid JSON only, no text before or after):**
+- tagTiers: Array of objects { "tag": string, "tier": 1|2|3|4|5 }. **At least 5 entries per tier** (1, 2, 3, 4, 5), so at least 25 topics/tags in total. Each "tag" is an English keyword/topic (e.g. "Pumps", "Technical specs", "Contact", "Imprint").
+- shortSummary (optional): One sentence in English: "What is this page mainly about?"
 
-Wichtig: Jedes Thema nur einmal vergeben. Verschiedene Aspekte (Produktname, Kategorie, Nutzen, Zielgruppe, …) pro Tier nutzen, um auf mindestens 5 pro Tier zu kommen.`;
+Important: Assign each topic only once. Use different aspects (product name, category, benefits, audience, etc.) per tier to reach at least 5 per tier.`;
 
 export function buildClassificationUserPrompt(payload: Record<string, unknown>): string {
-    return `Klassifiziere diese Webseite: Alle Themen/Tags in tierTiers einordnen, mindestens 5 pro Tier (1–5). Antworte nur mit JSON: { "tagTiers": [ { "tag": string, "tier": 1|2|3|4|5 }, ... ], "shortSummary"?: string }
+    return `Classify this web page: put all topics/tags into tagTiers, at least 5 per tier (1–5). Reply with JSON only: { "tagTiers": [ { "tag": string, "tier": 1|2|3|4|5 }, ... ], "shortSummary"?: string }
 
-Seitendaten:
+Page data:
 ${JSON.stringify(payload, null, 0)}`;
 }
 
