@@ -3,6 +3,7 @@
 import React from 'react';
 import { Page, Text, View, Document, StyleSheet, Svg, Path } from '@react-pdf/renderer';
 import type { ScanResult } from '@/lib/types';
+import { isUxCheckV2Summary } from '@/lib/ux-check-types';
 
 /* DIN A4: 595.28 x 841.89 pt. Margins for print. */
 const MARGIN = 40;
@@ -493,27 +494,57 @@ export function ScanReportDocument({ scan }: ScanReportProps) {
     );
 
     if (scan.llmSummary) {
-        page2Sections.push(
-            <React.Fragment key="summary">
-                <SectionHeader title="UX/CX Check" chapter="summary" />
-                {scan.llmSummary.overallGrade && (
-                    <View style={styles.pillRow}>
-                        <View style={[styles.pill, { backgroundColor: chapterColors.summary.main }]}><Text style={{ fontSize: 8, color: colors.white }}>Note: {scan.llmSummary.overallGrade}</Text></View>
-                    </View>
-                )}
-                <Text style={[styles.bodyText, { marginBottom: 6 }]}>{scan.llmSummary.summary.slice(0, 280)}{scan.llmSummary.summary.length > 280 ? '…' : ''}</Text>
-                {scan.llmSummary.recommendations && scan.llmSummary.recommendations.length > 0 && (
-                    <>
-                        <Text style={styles.subsectionTitle}>Empfehlungen (Auszug)</Text>
-                        {scan.llmSummary.recommendations.slice(0, 4).map((r, i) => (
-                            <View key={i} style={[styles.recommendationRow, { marginBottom: 4, paddingVertical: 4, borderLeftColor: chapterColors.summary.main, backgroundColor: chapterColors.summary.bg }]}>
-                                <Text style={styles.recommendationTitle}>P{r.priority}: {r.title}</Text>
-                            </View>
-                        ))}
-                    </>
-                )}
-            </React.Fragment>
-        );
+        const llm = scan.llmSummary;
+        if (isUxCheckV2Summary(llm)) {
+            const s = llm.structured;
+            const summaryText = typeof llm.reportMarkdown === 'string' && llm.reportMarkdown
+                ? llm.reportMarkdown.slice(0, 280) + (llm.reportMarkdown.length > 280 ? '…' : '')
+                : (s.header?.seitenTitel ?? 'UX-Analyse') + (s.positiveAspects.length ? ` — ${s.positiveAspects.slice(0, 2).join('; ')}` : '');
+            page2Sections.push(
+                <React.Fragment key="summary">
+                    <SectionHeader title="UX/CX Check" chapter="summary" />
+                    {s.header?.url ? (
+                        <View style={styles.pillRow}>
+                            <View style={[styles.pill, { backgroundColor: chapterColors.summary.main }]}><Text style={{ fontSize: 8, color: colors.white }}>{String(s.header.url).slice(0, 30)}…</Text></View>
+                        </View>
+                    ) : null}
+                    <Text style={[styles.bodyText, { marginBottom: 6 }]}>{summaryText.slice(0, 280)}{summaryText.length > 280 ? '…' : ''}</Text>
+                    {s.recommendations && s.recommendations.length > 0 && (
+                        <>
+                            <Text style={styles.subsectionTitle}>Empfehlungen (Auszug)</Text>
+                            {s.recommendations.slice(0, 4).map((r, i) => (
+                                <View key={i} style={[styles.recommendationRow, { marginBottom: 4, paddingVertical: 4, borderLeftColor: chapterColors.summary.main, backgroundColor: chapterColors.summary.bg }]}>
+                                    <Text style={styles.recommendationTitle}>{i + 1}. {r}</Text>
+                                </View>
+                            ))}
+                        </>
+                    )}
+                </React.Fragment>
+            );
+        } else {
+            const legacy = llm as { overallGrade?: string; summary?: string; recommendations?: Array<{ priority: number; title: string }> };
+            page2Sections.push(
+                <React.Fragment key="summary">
+                    <SectionHeader title="UX/CX Check" chapter="summary" />
+                    {legacy.overallGrade && (
+                        <View style={styles.pillRow}>
+                            <View style={[styles.pill, { backgroundColor: chapterColors.summary.main }]}><Text style={{ fontSize: 8, color: colors.white }}>Note: {legacy.overallGrade}</Text></View>
+                        </View>
+                    )}
+                    <Text style={[styles.bodyText, { marginBottom: 6 }]}>{legacy.summary?.slice(0, 280) ?? ''}{(legacy.summary?.length ?? 0) > 280 ? '…' : ''}</Text>
+                    {legacy.recommendations && legacy.recommendations.length > 0 && (
+                        <>
+                            <Text style={styles.subsectionTitle}>Empfehlungen (Auszug)</Text>
+                            {legacy.recommendations.slice(0, 4).map((r, i) => (
+                                <View key={i} style={[styles.recommendationRow, { marginBottom: 4, paddingVertical: 4, borderLeftColor: chapterColors.summary.main, backgroundColor: chapterColors.summary.bg }]}>
+                                    <Text style={styles.recommendationTitle}>P{r.priority}: {r.title}</Text>
+                                </View>
+                            ))}
+                        </>
+                    )}
+                </React.Fragment>
+            );
+        }
     }
 
     if (scan.ux && (scan.ux.focusOrder?.length || scan.ux.tapTargets?.details?.length)) {

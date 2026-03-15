@@ -594,11 +594,7 @@ export default function ResultsPage() {
                             }
                             title={t('results.scanVerified')}
                             headerActions={<InfoTooltip title={t('info.scanVerified')} ariaLabel={t('common.info')} />}
-                            subtitle={
-                                <MsqdxTypography component="span" sx={{ fontSize: '0.75rem', color: MSQDX_NEUTRAL[800], fontWeight: 500 }}>
-                                    URL: {result.url}
-                                </MsqdxTypography>
-                            }
+                            subtitle=""
                             actions={
                                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
                                     <MsqdxButton variant="outlined" size="small" disabled={pdfExporting} onClick={handlePdfExport} startIcon={<MsqdxIcon name="Download" size="sm" />}>
@@ -627,6 +623,7 @@ export default function ResultsPage() {
                                 </Box>
                             }
                         >
+                            <MsqdxTypography component="div" sx={{ fontSize: '0.75rem', color: MSQDX_NEUTRAL[800], fontWeight: 500, mb: 1 }}>URL: {result.url}</MsqdxTypography>
                             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(72px, 1fr))', gap: 'var(--msqdx-spacing-xs)', rowGap: 'var(--msqdx-spacing-sm)' }}>
                                 <MiniStat label="Errors" value={result.stats.errors} color={MSQDX_STATUS.error.base} />
                                 <MiniStat label="Warnings" value={result.stats.warnings} color={MSQDX_STATUS.warning.base} />
@@ -722,11 +719,7 @@ export default function ResultsPage() {
                     }
                     title={t('results.scanVerified')}
                     headerActions={<InfoTooltip title={t('info.scanVerified')} ariaLabel={t('common.info')} />}
-                    subtitle={
-                        <MsqdxTypography component="span" sx={{ fontSize: '0.75rem', color: MSQDX_NEUTRAL[800], fontWeight: 500 }}>
-                            URL: {result.url}
-                        </MsqdxTypography>
-                    }
+                    subtitle=""
                     actions={
                         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
                             <MsqdxButton variant="outlined" size="small" disabled={pdfExporting} onClick={handlePdfExport} startIcon={<MsqdxIcon name="Download" size="sm" />}>
@@ -755,6 +748,7 @@ export default function ResultsPage() {
                         </Box>
                     }
                 >
+                    <MsqdxTypography component="div" sx={{ fontSize: '0.75rem', color: MSQDX_NEUTRAL[800], fontWeight: 500, mb: 1 }}>URL: {result.url}</MsqdxTypography>
                     <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(72px, 1fr))', gap: 'var(--msqdx-spacing-xs)', rowGap: 'var(--msqdx-spacing-sm)' }}>
                         <MiniStat label="Errors" value={result.stats.errors} color={MSQDX_STATUS.error.base} />
                         <MiniStat label="Warnings" value={result.stats.warnings} color={MSQDX_STATUS.warning.base} />
