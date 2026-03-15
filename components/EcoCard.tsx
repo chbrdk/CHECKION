@@ -7,6 +7,7 @@ import { MSQDX_SPACING, MSQDX_NEUTRAL } from '@msqdx/tokens';
 
 interface EcoCardProps {
     eco: NonNullable<ScanResult['eco']>;
+    sx?: React.ComponentProps<typeof MsqdxMoleculeCard>['sx'];
 }
 
 const GRADE_COLORS: Record<string, string> = {
@@ -19,14 +20,14 @@ const GRADE_COLORS: Record<string, string> = {
     'F': '#b91c1c',  // Red 700
 };
 
-export const EcoCard: React.FC<EcoCardProps> = ({ eco }) => {
+export const EcoCard: React.FC<EcoCardProps> = ({ eco, sx }) => {
     const gradeColor = GRADE_COLORS[eco.grade] || MSQDX_NEUTRAL[500];
 
     return (
         <MsqdxMoleculeCard
             title="Eco Score"
             subtitle="Geschätzter CO2-Fußabdruck pro Seitenaufruf"
-            sx={{ bgcolor: 'var(--color-card-bg)' }}
+            sx={{ bgcolor: 'var(--color-card-bg)', ...sx }}
         >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-md)', height: '100%' }}>
                 {/* Grade Circle */}

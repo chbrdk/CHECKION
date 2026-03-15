@@ -7,6 +7,7 @@ import { MSQDX_SPACING, MSQDX_STATUS, MSQDX_NEUTRAL } from '@msqdx/tokens';
 
 interface PerformanceCardProps {
     perf: NonNullable<ScanResult['performance']>;
+    sx?: React.ComponentProps<typeof MsqdxMoleculeCard>['sx'];
 }
 
 // Thresholds in ms
@@ -23,12 +24,12 @@ function getStatusColor(value: number, metric: keyof typeof METRICS_CONFIG) {
     return MSQDX_STATUS.error.base;
 }
 
-export const PerformanceCard: React.FC<PerformanceCardProps> = ({ perf }) => {
+export const PerformanceCard: React.FC<PerformanceCardProps> = ({ perf, sx }) => {
     return (
         <MsqdxMoleculeCard
             title="Performance"
             subtitle="Ladezeiten & Core Web Vitals (Lab Data)"
-            sx={{ bgcolor: 'var(--color-card-bg)' }}
+            sx={{ bgcolor: 'var(--color-card-bg)', ...sx }}
         >
             <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 'var(--msqdx-spacing-sm)', height: '100%', minWidth: 0 }}>
                 {Object.entries(METRICS_CONFIG).map(([key, config]) => {
