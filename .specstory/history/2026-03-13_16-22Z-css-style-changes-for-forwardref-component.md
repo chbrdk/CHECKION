@@ -76368,53 +76368,64 @@ plane alles genaustens ein
 
 _**Agent (model default, mode Agent)**_
 
+<think><details><summary>Thought Process</summary>
 
+The user wants me to plan everything in detail ("plane alles genaustens ein" = plan everything in detail). This refers to the previous conversation about improving the "Struktur & Semantik" section so it's not just huge lists. I need to create a comprehensive plan that covers:
+
+1. Summary bar at the top (aggregated stats)
+2. Document Outline as tree or collapsible
+3. StructureMap grouped and capped with "show more"
+4. PageIndex aggregated and optional expand
+5. Tabs or accordion for the three blocks
+
+I'm in Plan mode - I must NOT make any edits. I should gather the exact code locations, data structures, and then create a detailed plan with CreatePlan.
+
+Let me re-read the relevant files to make the plan precise: structure section in page.tsx, StructureMap, PageIndexCard, types for StructureNode, headingHierarchy, PageIndex.
+</details></think>
 
 ---
 
 
+Relevante Stellen und Datenstrukturen prüfen, um einen detaillierten Plan zu erstellen.
+
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
 
 </details>
 </tool-use>
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/StructureMap.tsx</summary>
 
 </details>
 </tool-use>
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/PageIndexCard.tsx</summary>
 
 </details>
 </tool-use>
 
 ---
 
+<think><details><summary>Thought Process</summary>
 
+I have the full picture. Let me also check:
+1. headingHierarchy type (outline, hasSingleH1, h1Count, skippedLevels)
+2. Whether there are existing accordion/tabs components in the project
+3. StructureNode level semantics (0 = landmark, 1-6 = headings, 7 = button, 8 = paragraph)
+</details></think>
 
 ---
+
+
 
 
 
@@ -76424,7 +76435,113 @@ Status: **loading**
 <details>
 <summary>Tool use: **ripgrep_raw_search**</summary>
 
-Status: **loading**
+
+Parameters:
+
+```json
+{
+  "pattern": "headingHierarchy|Accordion|Tabs|MuiAccordion",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.{tsx,ts}",
+  "outputMode": "content",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "headingHierarchy|Accordion|Tabs|MuiAccordion",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 90,
+  "totalMatches": 550,
+  "topFiles": [
+    {
+      "uri": "./components/pdf/ScanReportDocument.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/results/[id]/page.tsx",
+      "matchCount": 17
+    },
+    {
+      "uri": "./lib/types.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./lib/scanner.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./components/UxCard.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "./app/projects/[id]/geo/analysis/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "./lib/domain-aggregation.ts",
+      "matchCount": 7
+    },
+    {
+      "uri": "./app/projects/[id]/seo/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./components/ProjectHeaderNav.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "./app/domain/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./mcp-server/node_modules/typescript/lib/typescript.d.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/scan/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 12
+    },
+    {
+      "uri": "./app/share/[token]/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "./lib/llm/build-summary-payload.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/UxIssueList.tsx",
+      "matchCount": 33
+    },
+    {
+      "uri": "./components/ScanIssueItem.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./components/LinkAuditCard.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/components/pdf/ScanReportDocument.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 17
+    }
+  ]
+}
+```
+Status: **completed**
 
 
 </details>
@@ -76432,66 +76549,72 @@ Status: **loading**
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
 
 </details>
 </tool-use>
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
 
 </details>
 </tool-use>
 
 ---
 
+<think><details><summary>Thought Process</summary>
 
+I have everything. The project already uses MsqdxTabs, MsqdxAccordion, MsqdxAccordionItem from the design system. I'll create a detailed plan that includes:
+
+1. Structure summary bar (aggregate stats)
+2. Document Outline: tree or collapsible (H1/H2 visible, rest expandable)
+3. StructureMap: group by type (landmarks vs headings), cap + "show more"
+4. PageIndex: aggregate by semanticType and aboveFold, cap list + "show more"
+5. Wrap the three blocks in MsqdxAccordion so they're collapsible
+
+I need to check how MsqdxAccordion/MsqdxAccordionItem are used in the codebase for the API.
+</details></think>
 
 ---
 
 
 
+
+
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
 
 </details>
 </tool-use>
 
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/projects/[id]/geo/analysis/page.tsx</summary>
 
 </details>
 </tool-use>
 
 ---
 
+<think><details><summary>Thought Process</summary>
 
+I see: MsqdxAccordion wraps multiple MsqdxAccordionItem; each item has `id`, `summary` (ReactNode), and children (content). No `allowMultiple` in the geo example. Now I have enough to write the full plan. I'll also need to decide:
+- Constants: INITIAL_OUTLINE_SHOW = 15 or 20, INITIAL_STRUCTURE_MAP = 12, INITIAL_PAGE_INDEX = 10
+- Document Outline tree: build a simple tree from outline (level 1 = root, level 2 = child of previous level 1, etc.) and render with collapsible sections, or show first N levels (e.g. H1+H2) and "X weitere Headings anzeigen" that expands the rest.
+
+Creating the plan.
+</details></think>
 
 ---
 
+
+Plan erstellen.
 
 
 ---
@@ -76500,6 +76623,16 @@ Status: **loading**
 <details>
 <summary>Tool use: **create_plan**</summary>
 
+
+Parameters:
+
+```json
+{
+  "plan": "# Plan: Struktur &amp; Semantik – Aggregation und visuell wertvolle Darstellung\n\n## Ausgangslage\n\nAktuell rendert der Tab „Struktur &amp; Semantik“ ([app/results/[id]/page.tsx](app/results/[id]/page.tsx) Zeilen 1349–1408) drei Blöcke untereinander ohne Kappung oder Aggregation:\n\n1. **Document Outline** – flache Liste aller Einträge aus &#96;result.ux.headingHierarchy.outline&#96; (level, text) plus Hinweise zu mehreren H1 / übersprungenen Levels  \n2. **StructureMap** – [components/StructureMap.tsx](components/StructureMap.tsx): flache Liste aller &#96;result.ux.structureMap&#96;-Nodes (tag, text, level; level 0 = Landmark, 1–6 = Heading, 7 = button, 8 = paragraph)  \n3. **PageIndexCard** – [components/PageIndexCard.tsx](components/PageIndexCard.tsx): flache Liste aller &#96;result.pageIndex.regions&#96; (tag, headingText, aboveFold, findabilityScore, semanticType, optional saliencyProminence)\n\nDatenquellen (Types in [lib/types.ts](lib/types.ts)):\n\n- &#96;headingHierarchy&#96;: &#96;{ hasSingleH1, h1Count, skippedLevels: { from, to }[], outline: { level, text }[] }&#96;\n- &#96;structureMap&#96;: &#96;StructureNode[]&#96; mit &#96;tag&#96;, &#96;text&#96;, &#96;level&#96; (0 = Landmark, 1–6 = H1–H6, 7 = button, 8 = paragraph)\n- &#96;pageIndex.regions&#96;: &#96;PageIndexRegion[]&#96; mit &#96;tag&#96;, &#96;headingText&#96;, &#96;level&#96;, &#96;aboveFold&#96;, &#96;findabilityScore&#96;, &#96;semanticType?&#96;, &#96;saliencyProminence?&#96;\n\n---\n\n## Zielarchitektur\n\n&#96;&#96;&#96;mermaid\nflowchart TB\n    subgraph card [MsqdxMoleculeCard Struktur und Semantik]\n        summaryBar[Summary-Leiste]\n        accordion[MsqdxAccordion]\n        summaryBar --&gt; accordion\n        accordion --&gt; outlineItem[AccordionItem Document Outline]\n        accordion --&gt; structureItem[AccordionItem Struktur-Map]\n        accordion --&gt; pageIndexItem[AccordionItem Seiten-Index]\n    end\n    outlineItem --&gt; outlineContent[Outline: Baum oder H1/H2 + gekappte Liste mit Mehr anzeigen]\n    structureItem --&gt; structureContent[StructureMap: Landmarks + Headings gruppiert gekappt]\n    pageIndexItem --&gt; pageIndexContent[PageIndex: Aggregation + gekappte Liste]\n&#96;&#96;&#96;\n\n---\n\n## 1. Summary-Leiste (oben in der Karte)\n\n**Ort:** Direkt unter dem Card-Header, vor dem Akkordeon, in [app/results/[id]/page.tsx](app/results/[id]/page.tsx).\n\n**Inhalt (nur wenn jeweilige Daten vorhanden):**\n\n- **Outline:** Zählung pro Level aus &#96;headingHierarchy.outline&#96;: z. B. „1× H1, 5× H2, 18× H3, …“ (reduce über outline, group by level).\n- **Struktur:** „X Landmarks, Y Headings“ aus &#96;structureMap&#96;: Landmarks = &#96;nodes.filter(n =&gt; n.level === 0).length&#96;, Headings = Rest (level 1–6; optional level 7/8 als „Sonstige“ ausweisen).\n- **Qualität:** Ein bis zwei kurze Zeilen:\n  - H1: „Eine H1“ (grün) oder „Mehrere H1 (N)“ (Warnung), nutze &#96;hasSingleH1&#96; / &#96;h1Count&#96;.\n  - Übersprungen: nur wenn &#96;skippedLevels.length &gt; 0&#96;: „Übersprungene Level: H2→H4, …“ (bestehende Logik).\n\n**Darstellung:** Eine Zeile mit Chips/Badges (z. B. MsqdxChip) für die Zahlen; darunter oder in zweiter Zeile die Qualitäts-Hinweise (MsqdxTypography, kleine Schrift). Keine langen Listen hier.\n\n**Fallback:** Wenn weder outline noch structureMap vorhanden: kurzer Hinweis „Keine Strukturdaten“ und trotzdem Akkordeon anzeigen (leere Items oder nur PageIndex falls vorhanden).\n\n---\n\n## 2. Document Outline – Baum/Kollabierbar und Kappung\n\n**Ort:** Erster Akkordeon-Block (MsqdxAccordionItem) mit summary z. B. „Document Outline (N Einträge)“.\n\n**Logik:**\n\n- **Baum aus outline bauen:** &#96;outline&#96; ist flach mit &#96;level&#96; 1–6. Einfacher Baum: Wurzel-Kinder = alle mit level 1; für jede H1 die folgenden Einträge bis zur nächsten H1 als Kinder zuordnen (gleiches Prinzip für H2 unter H1, etc.). Rekursive Komponente oder flache Darstellung mit Einrückung – je nach Aufwand: entweder echte verschachtelte Liste (ul/li pro Level) oder beibehalten der aktuellen Einrückung (pl: (level-1)*16), aber mit Kappung.\n- **Kappung:** Z. B. initial 20 Einträge anzeigen (Konstante &#96;OUTLINE_INITIAL_SHOW = 20&#96;). Wenn &#96;outline.length &gt; OUTLINE_INITIAL_SHOW&#96;: Button „X weitere Headings anzeigen“ (oder „Alle anzeigen“); bei Klick State erweitern und restliche Einträge anzeigen.\n- **Qualitäts-Box** (mehrere H1 / übersprungene Level) wie bisher unter der Outline-Liste belassen (bereits vorhanden, nur innerhalb des Accordion-Items verschieben).\n\n**Implementierung:** Entweder kleine Hilfsfunktion &#96;buildOutlineTree(outline)&#96; die eine Baumstruktur &#96;{ level, text, children? }[]&#96; zurückgibt und eine rekursive Komponente &#96;OutlineTree({ items })&#96;, oder beibehalten der flachen Liste mit &#96;.slice(0, visibleCount)&#96; und &#96;visibleCount&#96; State. Empfehlung: zuerst flache Liste mit Kappung (weniger Aufwand), optional später Baum-UI.\n\n---\n\n## 3. StructureMap – Gruppierung und Kappung\n\n**Ort:** Zweiter Akkordeon-Block; Inhalt von [components/StructureMap.tsx](components/StructureMap.tsx) erweitern oder neue Props.\n\n**Änderungen in StructureMap:**\n\n- **Gruppierung:** Nodes aufteilen in:\n  - Landmarks: &#96;nodes.filter(n =&gt; n.level === 0)&#96;\n  - Headings: &#96;nodes.filter(n =&gt; n.level &gt;= 1 &amp;&amp; n.level &lt;= 6)&#96; (optional: „Sonstige“ für level 7, 8)\n- **Darstellung:** Zwei Sektionen mit Überschrift „Landmarks“ und „Headings“ (oder „Semantische Landmarks“ / „Überschriften“). Pro Sektion gleiche Zeilen-Darstellung wie bisher (tag, text, Einrückung bei Headings).\n- **Kappung pro Gruppe:** Z. B. Landmarks alle anzeigen (meist wenige), Headings initial 15 (Konstante &#96;STRUCTURE_MAP_HEADINGS_INITIAL = 15&#96;). Wenn mehr: „X weitere Headings anzeigen“; State im Component (useState) oder optional Props &#96;initialHeadingsCount&#96; / &#96;showMore&#96;.\n- **Styling:** Bestehende Inline-Styles beibehalten oder schrittweise auf MUI &#96;sx&#96; umstellen, damit Konsistenz mit dem Rest der App (z. B. &#96;var(--color-card-bg)&#96;) bleibt.\n\n**API StructureMap:** Props erweitern um optional &#96;maxHeadingsInitial?: number&#96; (default 15); intern State &#96;expandedHeadings: boolean&#96;. Wenn &#96;expandedHeadings === false&#96;, nur &#96;headings.slice(0, maxHeadingsInitial)&#96; rendern und Button „N weitere anzeigen“ setzen &#96;expandedHeadings&#96; auf true.\n\n---\n\n## 4. PageIndex – Aggregation und gekappte Liste\n\n**Ort:** Dritter Akkordeon-Block; Änderungen in [components/PageIndexCard.tsx](components/PageIndexCard.tsx) und/oder in der Results-Page.\n\n**Aggregation (oben in PageIndexCard oder als Summary im Accordion summary):**\n\n- **Nach semanticType:** &#96;regions.reduce&#96; → Zählung pro &#96;semanticType&#96; (nav, main, footer, hero, …); Anzeige als kleine Chips oder Zeile „Nav: 1, Main: 2, Footer: 1, …“ (Labels aus bestehendem &#96;SEMANTIC_TYPE_LABELS&#96;).\n- **Above-the-fold:** „Above fold: N“ / „Darunter: M“ aus &#96;regions.filter(r =&gt; r.aboveFold).length&#96;.\n\n**Kappung:**\n\n- Neue Props z. B. &#96;initialVisible?: number&#96; (default 10). Wenn &#96;regions.length &gt; initialVisible&#96;: nur &#96;regions.slice(0, initialVisible)&#96; rendern; Button „X weitere Regionen anzeigen“ setzt State und zeigt alle. State in PageIndexCard (useState).\n\n**Optional:** Top-N nach Findability (z. B. Top 5 mit findabilityScore) in der Summary-Zeile hervorheben; Rest in der Liste (gekappt).\n\n---\n\n## 5. Akkordeon-Umsetzung in der Results-Page\n\n**Ort:** [app/results/[id]/page.tsx](app/results/[id]/page.tsx), Block &#96;viewMode === 'structure'&#96; (Zeilen 1349–1408).\n\n**Struktur:**\n\n- Nach der neuen Summary-Leiste: **MsqdxAccordion** (bereits im Projekt verwendet, siehe Issues-Liste Zeile 947 und [app/projects/[id]/geo/analysis/page.tsx](app/projects/[id]/geo/analysis/page.tsx) Zeile 371). Kein &#96;allowMultiple&#96; nötig, damit ein Block offen ist; optional &#96;allowMultiple&#96; um mehrere gleichzeitig offen zu haben.\n- **Drei MsqdxAccordionItems:**\n  1. **Document Outline** – &#96;summary&#96;: „Document Outline (N Einträge)“ + ggf. kleines Qualitäts-Chip (z. B. „Eine H1“ oder Warnung); &#96;children&#96;: die bestehende Outline-Liste (mit neuer Kappung) + Qualitäts-Box.\n  2. **Struktur-Map** – &#96;summary&#96;: „Struktur-Map (X Landmarks, Y Headings)“; &#96;children&#96;: &#96;&lt;StructureMap nodes={...} /&gt;&#96; mit neuer Gruppierung/Kappung.\n  3. **Seiten-Index** – &#96;summary&#96;: „Seiten-Index (N Regionen)“ + optional aggregierte Typen/Above-fold; &#96;children&#96;: &#96;&lt;PageIndexCard pageIndex={...} initialVisible={10} /&gt;&#96; (oder gleiche Logik mit State in PageIndexCard).\n\n**Reihenfolge:** Wie bisher: Outline → StructureMap → PageIndex. Default: z. B. erstes Item (Document Outline) geöffnet, Rest zugeklappt – sofern das Design-System das unterstützt (defaultExpanded o. Ä.).\n\n---\n\n## 6. Konstanten und i18n\n\n- **Konstanten:** An einer zentralen Stelle (z. B. oben in der Datei oder in [lib/constants.ts](lib/constants.ts)): &#96;OUTLINE_INITIAL_VISIBLE = 20&#96;, &#96;STRUCTURE_MAP_HEADINGS_INITIAL = 15&#96;, &#96;PAGE_INDEX_INITIAL_VISIBLE = 10&#96;.\n- **Texte:** Alle neuen UI-Texte („Document Outline (N Einträge)“, „X weitere Headings anzeigen“, „Landmarks“, „Headings“, „Struktur-Map (X Landmarks, Y Headings)“, „Seiten-Index (N Regionen)“, „X weitere Regionen anzeigen“, „Above fold: N“, etc.) in die bestehenden Locale-Dateien (z. B. [locales/de.json](locales/de.json) / [locales/en.json](locales/en.json)) unter einen gemeinsamen Schlüssel (z. B. &#96;results.structureSummary.*&#96;, &#96;results.structureOutline.*&#96;, &#96;results.structureMap.*&#96;, &#96;results.pageIndex.*&#96;) legen und über &#96;t()&#96; einbinden.\n\n---\n\n## 7. Dateien und Änderungsumfang\n\n| Datei | Änderungen |\n|-------|------------|\n| [app/results/[id]/page.tsx](app/results/[id]/page.tsx) | Summary-Leiste berechnen und rendern; Document Outline in MsqdxAccordionItem mit Kappung (State &#96;outlineExpanded&#96;/&#96;outlineVisibleCount&#96;); StructureMap und PageIndexCard in je ein AccordionItem; Konstanten für Kappung. |\n| [components/StructureMap.tsx](components/StructureMap.tsx) | Nodes in Landmarks / Headings gruppieren; Headings mit &#96;maxHeadingsInitial&#96; (Prop) und „Mehr anzeigen“-State; zwei Sektionen mit Überschriften. |\n| [components/PageIndexCard.tsx](components/PageIndexCard.tsx) | Optionale Aggregationszeile (semanticType-Zählung, above-fold); Prop &#96;initialVisible&#96;; State für „alle anzeigen“; Liste kappen. |\n| [lib/constants.ts](lib/constants.ts) | Optional: Konstanten für &#96;OUTLINE_INITIAL_VISIBLE&#96;, &#96;STRUCTURE_MAP_HEADINGS_INITIAL&#96;, &#96;PAGE_INDEX_INITIAL_VISIBLE&#96; (oder direkt in den Komponenten). |\n| [locales/de.json](locales/de.json) / [locales/en.json](locales/en.json) | Neue Keys für Summary, Outline, StructureMap, PageIndex (Labels, Buttons, Aggregationstexte). |\n\n---\n\n## 8. Tests und Abwärtskompatibilität\n\n- **Keine neuen API- oder Scan-Daten:** Nur Darstellung und State; bestehende Datenstrukturen (&#96;headingHierarchy&#96;, &#96;structureMap&#96;, &#96;pageIndex&#96;) unverändert.\n- **Fallbacks:** Wenn &#96;headingHierarchy.outline&#96; leer oder fehlt, Accordion-Item „Document Outline“ mit „Keine Outline-Daten“. Wenn &#96;structureMap&#96; leer/fehlt, wie bisher „Keine Strukturdaten“. Wenn &#96;pageIndex.regions&#96; leer, bestehende PageIndexCard-Meldung.\n- **Optional:** Ein kurzer manueller Test oder Vitest-Snapshot für die neue Struktur-Sektion (z. B. dass Summary-Leiste und Accordion mit Mock-Daten rendern ohne Fehler).\n\n---\n\n## 9. Reihenfolge der Implementierung\n\n1. Konstanten und Locale-Keys anlegen.  \n2. Summary-Leiste in &#96;page.tsx&#96; implementieren (Aggregation aus outline + structureMap + Qualität).  \n3. Document Outline: Kappung + State in &#96;page.tsx&#96;, dann in erstes AccordionItem packen.  \n4. StructureMap: Gruppierung + Kappung in [components/StructureMap.tsx](components/StructureMap.tsx); zweites AccordionItem in &#96;page.tsx&#96;.  \n5. PageIndexCard: Aggregation + Kappung in [components/PageIndexCard.tsx](components/PageIndexCard.tsx); drittes AccordionItem in &#96;page.tsx&#96;.  \n6. Optional: Outline als Baum (buildOutlineTree + rekursive Komponente) für bessere Hierarchie-Darstellung.\n\nDamit wird die Sektion „Struktur &amp; Semantik“ auf einen Blick erfassbar (Summary), und die Details bleiben in kollabierbaren, gekappten Listen statt in mehreren riesigen Listen.\n",
+  "name": "Struktur-Semantik Aggregation UI",
+  "overview": "Die Sektion „Struktur &amp; Semantik“ wird von mehreren langen Listen in eine kompakte, aggregierte Darstellung überführt: Summary-Leiste oben, Document Outline als kollabierbarer Baum mit Kappung, StructureMap gruppiert und mit „Mehr anzeigen“, PageIndex aggregiert und gekappt, alles in Akkordeon-Blöcken."
+}
+```
 Additional data:
 
 ```json
@@ -76508,14 +76641,1278 @@ Additional data:
     "status": "Requested",
     "selectedOption": "none",
     "isShowingInput": false
-  }
+  },
+  "planUri": "file:///Users/christoph.bordeck/.cursor/plans/struktur-semantik_aggregation_ui_f268feaf.plan.md",
+  "hasOpenedEditor": true
 }
 ```
-Status: **loading**
+Result:
+
+```json
+{
+  "rejected": {}
+}
+```
+Status: **completed**
 
 
 </details>
 </tool-use>
+
+---
+
+_**User**_
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user wants me to implement the plan for "Struktur & Semantik – Aggregation und visuell wertvolle Darstellung". The plan is attached. I should not edit the plan file. I need to check if there are existing todos and mark them as in_progress as I work, then complete all of them.
+
+Let me first read the plan file to see the todos, then implement according to the plan's section 9 (Reihenfolge der Implementierung):
+
+1. Konstanten und Locale-Keys anlegen.
+2. Summary-Leiste in page.tsx implementieren (Aggregation aus outline + structureMap + Qualität).
+3. Document Outline: Kappung + State in page.tsx, dann in erstes AccordionItem packen.
+4. StructureMap: Gruppierung + Kappung in StructureMap.tsx; zweites AccordionItem in page.tsx.
+5. PageIndexCard: Aggregation + Kappung in PageIndexCard.tsx; drittes AccordionItem in page.tsx.
+6. Optional: Outline als Baum - the plan says "optional", so I'll do the flat list with cap first.
+
+Let me find the todos in the plan file - the user said "To-do's from the plan have already been created" so they might be in the plan frontmatter. The attached plan shows `todos: []` in the frontmatter. So I'll create a mental todo list and work through the plan steps.
+
+I'll start by:
+1. Adding constants (OUTLINE_INITIAL_VISIBLE, etc.) - either in constants.ts or in the component
+2. Adding locale keys in de.json and en.json
+3. Implementing the summary bar and accordion structure in page.tsx
+4. Implementing StructureMap changes
+5. Implementing PageIndexCard changes
+
+Let me start implementing.
+</details></think>
+
+---
+
+
+Implementierung starten: Zuerst die Todos prüfen, dann die Schritte des Plans abarbeiten.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/.cursor/plans/struktur-semantik_aggregation_ui_f268feaf.plan.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "structureSemantics|structure\\.|pageIndex",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "outputMode": "content",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "structureSemantics|structure\\.|pageIndex",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 105,
+  "topFiles": [
+    {
+      "uri": "locales/en.json",
+      "matchCount": 11
+    },
+    {
+      "uri": "locales/de.json",
+      "matchCount": 10
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 10
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 10
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 10
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 10
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The plan says todos were already created but the frontmatter shows todos: []. I'll proceed with implementation and track progress. Let me add the constants first, then locale keys, then implement each part.
+
+I need to find where in de.json to add the new keys - near the results section. Let me search for "results." in de.json to find the right place.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] Constants + locale keys for structure section
+- [ ] Summary bar + accordion in results page
+- [ ] Document Outline: cap + accordion item
+- [ ] StructureMap: group Landmarks/Headings + cap
+- [ ] PageIndexCard: aggregation + initialVisible cap
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "\"results\":",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json",
+  "contextAfter": 5,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "\"results\":",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 5,
+  "topFiles": [
+    {
+      "uri": "locales/de.json",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 6
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add structure-related constants in lib/constants.ts and then add the locale keys. Let me read more of de.json to find where pageIndexTitle is and add the new structure keys nearby.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add the new keys before the closing of the "results" object - so before "pageClassificationTier5" I can add the structureSummary, structureOutline, structureMap, and pageIndex expansion keys. Actually the plan says to add under results.structureSummary.* etc. So I'll add a block like:
+
+"structureSummaryOutlineCount": "1× H1, 5× H2, …" - we need interpolated, so rather keys like:
+structureOutlineEntries: "Document Outline ({{count}} Einträge)"
+structureOutlineShowMore: "{{count}} weitere Headings anzeigen"
+structureOutlineShowAll: "Alle anzeigen"
+structureOutlineNoData: "Keine Outline-Daten"
+structureMapTitle: "Struktur-Map ({{landmarks}} Landmarks, {{headings}} Headings)"
+structureMapLandmarks: "Landmarks"
+structureMapHeadings: "Headings"
+structureMapShowMore: "{{count}} weitere Headings anzeigen"
+structureMapNoData: "Keine Strukturdaten"
+structureQualitySingleH1: "Eine H1"
+structureQualityMultipleH1: "Mehrere H1 ({{count}})"
+structureQualitySkippedLevels: "Übersprungene Level: {{list}}"
+pageIndexRegionsCount: "Seiten-Index ({{count}} Regionen)"
+pageIndexAboveFoldCount: "Above fold: {{count}}"
+pageIndexBelowFoldCount: "Darunter: {{count}}"
+pageIndexShowMore: "{{count}} weitere Regionen anzeigen"
+structureSummaryNoData: "Keine Strukturdaten"
+
+Let me add these to both de.json and en.json. I'll add them after pageIndexTagParagraph in the results section.
+</details></think>
+
+---
+
+
+Konstanten und Locale-Keys hinzufügen.
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add the structure constants after the API section - maybe near the top with other UI constants, or in a dedicated "Structure / Semantics" section. Let me add them at the end of constants.ts or after the API scan section. Actually the plan says "lib/constants.ts" optional - so I could add in page.tsx at the top. I'll add in constants.ts for central place.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add the structure constants at the end of the file. Then add locale keys.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+The string to replace was not found in the file.
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The constant is ENV_MCP_SERVER_URL = 'MCP_SERVER_URL' not ENV_MCP_SERVER_URL. Let me fix.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/constants.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Locale interpolation: the project might use {{count}} or {count}. Let me check how t() is used with params in this codebase.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "t\\(.*\\{.*count|t\\(.*\\$\\{|interpolate",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "t\\(.*\\{.*count|t\\(.*\\$\\{|interpolate",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 75,
+  "totalMatches": 220,
+  "topFiles": [
+    {
+      "uri": "./app/results/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/projects/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/projects/[id]/geo/analysis/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./app/projects/[id]/seo/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./components/ProjectHeaderNav.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/SeoKeywordsTable.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/projects/[id]/wcag/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "./app/domain/[id]/page.tsx",
+      "matchCount": 10
+    },
+    {
+      "uri": "./components/GeoQuestionCard.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/geo-eeat/[jobId]/page.tsx",
+      "matchCount": 7
+    },
+    {
+      "uri": "./app/journey-agent/[jobId]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/share/[token]/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "./components/JourneyFlowchart.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./components/SharePanel.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/scan/domain/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/geo/analysis/page.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/app/projects/[id]/seo/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/components/ProjectHeaderNav.tsx",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/i18n/I18nProvider.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So t(key, params) accepts Record<string, string | number>. The locale files likely use {{count}} for interpolation - let me check share.pageOfTotal in de.json.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "\"pageOfTotal\"|\"keywordCount\"|\"aggregatedOver\"",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "\"pageOfTotal\"|\"keywordCount\"|\"aggregatedOver\"",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales",
+  "outputMode": "content",
+  "totalFiles": 10,
+  "totalMatches": 30,
+  "topFiles": [
+    {
+      "uri": "locales/de.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/de.json",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+File not found
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+They use single curly braces {count}, not {{count}}. I need to update the locale keys I added to use {count}, {landmarks}, {headings}, {list} instead of {{count}} etc.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/de.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/locales/en.json</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Todo s1 done. Now implement StructureMap with grouping and cap, then PageIndexCard with aggregation and cap, then the results page with summary bar and accordion. I'll do StructureMap and PageIndexCard first so the page can use them, then the page.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Constants + locale keys for structure section
+- [ ] Summary bar + accordion in results page
+- [ ] Document Outline: cap + accordion item
+- [-] StructureMap: group Landmarks/Headings + cap
+- [ ] PageIndexCard: aggregation + initialVisible cap
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/StructureMap.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+StructureMap needs to:
+1. Split nodes into landmarks (level === 0) and headings (level 1-6); optional "other" for 7, 8
+2. Two sections with headings "Landmarks" and "Headings"
+3. Landmarks: show all
+4. Headings: show initial 15 (STRUCTURE_MAP_HEADINGS_INITIAL), then "show more" button
+5. Use t() for labels - but StructureMap might not have useI18n. I'll need to pass labels from parent or add useI18n. Let me add useI18n to StructureMap and use the locale keys. We need to pass t from parent or use useI18n in StructureMap - the plan says "structureMapLandmarks", "structureMapHeadings", "structureMapShowMore", "structureMapNoData". So I'll use useI18n in StructureMap.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/StructureMap.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Use MsqdxButton for consistency with the design system - let me check what the results page uses.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "MsqdxButton|Button",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "MsqdxButton|Button",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 155,
+  "topFiles": [
+    {
+      "uri": "app/results/[id]/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 5
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 5
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll use MsqdxButton in StructureMap for consistency.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/StructureMap.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/StructureMap.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now PageIndexCard: aggregation row (semanticType counts, above-fold) + initialVisible prop + "show more" state.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Constants + locale keys for structure section
+- [ ] Summary bar + accordion in results page
+- [ ] Document Outline: cap + accordion item
+- [x] StructureMap: group Landmarks/Headings + cap
+- [-] PageIndexCard: aggregation + initialVisible cap
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/PageIndexCard.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+PageIndexCard needs:
+1. Prop initialVisible?: number (default from PAGE_INDEX_INITIAL_VISIBLE)
+2. State showAllRegions
+3. Aggregation row: semanticType counts (e.g. Nav: 1, Main: 2) and Above fold: N / Darunter: M
+4. Render regions.slice(0, visibleCount), then "show more" button if regions.length > initialVisible
+
+t() accepts (key, params) with Record<string, string | number>. So we need to pass count as number - the i18n might coerce. Let me add the aggregation and cap.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/PageIndexCard.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/PageIndexCard.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Fix: t() second argument - the type is Record<string, string | number>. So we need to pass numbers. Let me check - pageIndexAboveFoldCount and pageIndexBelowFoldCount use { count }. Good. For the type counts we're showing chips with label - that's fine. Now implement the results page: summary bar + accordion with three items (Outline, StructureMap, PageIndex).
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Constants + locale keys for structure section
+- [-] Summary bar + accordion in results page
+- [-] Document Outline: cap + accordion item
+- [x] StructureMap: group Landmarks/Headings + cap
+- [x] PageIndexCard: aggregation + initialVisible cap
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to:
+1. Add imports for OUTLINE_INITIAL_VISIBLE, PAGE_INDEX_INITIAL_VISIBLE from constants (STRUCTURE_MAP is used inside StructureMap)
+2. Replace the whole viewMode === 'structure' block with:   - Summary bar (outline counts, structure counts, quality line)
+   - MsqdxAccordion with 3 MsqdxAccordionItems:     - Document Outline (summary: "Document Outline (N Einträge)" + quality chip; children: outline list capped + quality box + show more button)
+     - Structure Map (summary: "Struktur-Map (X Landmarks, Y Headings)"; children: StructureMap)
+     - Seiten-Index (summary: "Seiten-Index (N Regionen)"; children: PageIndexCard)
+
+I need state for outline visible count - outlineExpanded or outlineVisibleCount. Let me add that state in the component. The structure section is inside the same ResultsPage so I can use useState for outlineVisibleCount there. Let me find where the other useState are defined.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add state for outline visible: const [structureOutlineVisibleCount, setStructureOutlineVisibleCount] = useState(OUTLINE_INITIAL_VISIBLE); and when "show more" is clicked set to outline.length (or a big number). Then replace the structure block with the new UI. I need to import OUTLINE_INITIAL_VISIBLE and PAGE_INDEX_INITIAL_VISIBLE from constants.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now replace the entire structure block with the new implementation: summary bar, then accordion with three items.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see a syntax error - there's an extra `)}` at the end and the closing of the IIFE might be wrong. Let me check: the original was `)}` to close the viewMode block. I have `}); })() } )}` - that's one too many. The structure should be:
+{viewMode === 'structure' && (() => { ... return ( <MsqdxMoleculeCard>...</MsqdxMoleculeCard> ); })()}
+
+So the closing should be:
+    ); })() }
+not
+    ); })() } )}
+
+Let me fix - remove the extra `)}` and fix the closing parenthesis.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+t() with two params - the type might be (key: string, params?: Record<string, string | number>). So we need to pass list as string (qualitySkipped is already string). Good. Let me verify the PageIndexCard when there are no regions - we show "No page index" in the accordion summary and in the children we render PageIndexCard which itself returns the no-data message. So when result.pageIndex exists but regions is empty, hasPageIndex is false, so we show "pageIndexNoData" in summary and in children we still render PageIndexCard which will show no data. Actually when !result.pageIndex we don't have pageIndex - so we render the typography. When result.pageIndex exists we always render PageIndexCard - and PageIndexCard handles empty regions. So we're good. Let me double-check: hasPageIndex = result.pageIndex && (result.pageIndex.regions?.length ?? 0) > 0. So when no regions we show "Seiten-Index (0 Regionen)" or "No data"? The plan says "Seiten-Index (N Regionen)" for the summary. So when regionCount is 0 we'd show "Seiten-Index (0 Regionen)" which is fine. And we still render PageIndexCard which shows "Kein Seiten-Index für diesen Scan." So we could simplify and always use t('results.pageIndexRegionsCount', { count: regionCount }) when result.pageIndex exists. Let me leave as is - when hasPageIndex we show count, when not we show noData. Actually when result.pageIndex exists but regions are empty, regionCount is 0, hasPageIndex is false, so we show pageIndexNoData. Good.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/StructureMap.tsx",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/PageIndexCard.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/StructureMap.tsx"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/PageIndexCard.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Check createTranslator - does it support params with number? Let me check if t() is called with { count: number } - the type says string | number. So we're good. Let me run the build to make sure.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 43s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+  Generating static pages using 9 workers (0/47) ...
+  Generating static pages using 9 workers (11/47) 
+  Generating static pages using 9 workers (23/47) 
+  Generating static pages using 9 workers (35/47) 
+✓ Generating static pages using 9 workers (47/47) in 754.2ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build was still running but we got past TypeScript and static generation. Let me read the terminal file to see if it completed with exit 0.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/.cursor/projects/Users-christoph-bordeck-Desktop-ANTIGRAVITY-CHECKION-1/terminals/208091.txt</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build succeeded (exit code 0). Mark todos complete and add a short test if the plan asked for it. The plan said "Optional: Ein kurzer manueller Test oder Vitest-Snapshot" - I'll skip that unless we have time. Let me mark all todos complete.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Constants + locale keys for structure section
+- [x] Summary bar + accordion in results page
+- [x] Document Outline: cap + accordion item
+- [x] StructureMap: group Landmarks/Headings + cap
+- [x] PageIndexCard: aggregation + initialVisible cap
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+All tasks are done. Let me provide a short summary to the user.
+</details></think>
+
+---
+
+
+Die geplante Umsetzung ist erledigt. Kurzüberblick:
+
+## 1. Konstanten und Locale
+
+- **[lib/constants.ts](lib/constants.ts):**  
+  `OUTLINE_INITIAL_VISIBLE = 20`, `STRUCTURE_MAP_HEADINGS_INITIAL = 15`, `PAGE_INDEX_INITIAL_VISIBLE = 10`
+- **locales/de.json & en.json:**  
+  Neue Keys unter `results.*`:  
+  `structureOutlineEntries`, `structureOutlineShowMore`, `structureOutlineShowAll`, `structureOutlineNoData`, `structureMapTitle`, `structureMapLandmarks`, `structureMapHeadings`, `structureMapShowMore`, `structureMapNoData`, `structureQualitySingleH1`, `structureQualityMultipleH1`, `structureQualitySkippedLevels`, `structureSummaryNoData`, `pageIndexRegionsCount`, `pageIndexAboveFoldCount`, `pageIndexBelowFoldCount`, `pageIndexShowMoreRegions`  
+  (Interpolation mit `{count}`, `{landmarks}`, `{headings}`, `{list}`)
+
+## 2. Summary-Leiste und Accordion (Results Page)
+
+- **Summary-Leiste** oben in der Karte:  
+  Chips für Outline (z. B. „1× H1, 5× H2, …“), „X Landmarks, Y Headings“, Qualität („Eine H1“ / „Mehrere H1 (N)“), ggf. „Übersprungene Level: …“  
+  Wenn weder Outline noch StructureMap: Hinweis „Keine Strukturdaten“.
+- **MsqdxAccordion** mit drei **MsqdxAccordionItem**:
+  1. **Document Outline** – Summary: „Document Outline (N Einträge)“ (oder „Keine Outline-Daten“). Inhalt: Liste mit Kappung (initial 20), Button „X weitere Headings anzeigen“, Qualitätsbox (mehrere H1 / übersprungene Level).
+  2. **Struktur-Map** – Summary: „Struktur-Map (X Landmarks, Y Headings)“ (oder „Keine Strukturdaten“). Inhalt: `<StructureMap nodes={...} />`.
+  3. **Seiten-Index** – Summary: „Seiten-Index (N Regionen)“ (oder „Kein Seiten-Index …“). Inhalt: `<PageIndexCard ... initialVisible={PAGE_INDEX_INITIAL_VISIBLE} />`.
+
+- State **structureOutlineVisibleCount** (initial `OUTLINE_INITIAL_VISIBLE`), beim Klick auf „Mehr anzeigen“ auf `outline.length` gesetzt.
+
+## 3. StructureMap
+
+- **[components/StructureMap.tsx](components/StructureMap.tsx):**  
+  Aufteilung in **Landmarks** (level 0) und **Headings** (level 1–6), zwei Blöcke mit Überschriften.  
+  Landmarks vollständig, Headings initial `maxHeadingsInitial` (Default 15), Button „X weitere Headings anzeigen“ mit State `expandedHeadings`.  
+  Prop `maxHeadingsInitial` optional; Nutzung von `useI18n` und Design-System (MsqdxButton, sx).
+
+## 4. PageIndexCard
+
+- **[components/PageIndexCard.tsx](components/PageIndexCard.tsx):**  
+  **Aggregation:** Zeile mit „Above fold: N · Darunter: M“ und Chips pro `semanticType` (z. B. „Nav: 1, Main: 2“).  
+  **Kappung:** Prop `initialVisible` (Default `PAGE_INDEX_INITIAL_VISIBLE`), State `showAllRegions`; Anzeige von `regions.slice(0, visibleCount)` und Button „X weitere Regionen anzeigen“.
+
+Build (`npm run build`) ist durchgelaufen (Exit 0). Alle To-dos aus dem Plan sind abgearbeitet.
+
+---
+
+_**User**_
+
+DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-odfgbo > span.MuiBox-root c.-13o7eu2 > div.MuiBox-root c.-3a.i7l > div.MuiBox-root c.-1.g4afn > div.MuiBox-root c.-1hdbc19 > div.MuiBox-root c.-a1igic > div.MuiBox-root c.-m.1vti > div.MuiChip-root MuiChip-filled MuiChip-.izeMedium MuiChip-colorPrimary MuiChip-filledPrimary c.-1f2yd66[1]
+Position: top=444px, left=173px, width=50px, height=28px
+React Component: ForwardRef
+HTML Element: <div class="MuiChip-root MuiChip-filled MuiChip-sizeMedium MuiChip-colorPrimary MuiChip-filledPrimary css-1f2yd66" data-cursor-element-id="cursor-el-1">10× H2</div> können wir die chips in unterschiedlichen farben darstellen je nach correctness. also 1xh1 wäre ja gut also grün, während 10x h2 vielleicht schon zuviel sind und dann orange oder sogar rot den chip färben. wenn dir das bei den anderen sektionen auch einfällt wie wir das bewerten können, gerne mit umsetzen.
 
 ---
 

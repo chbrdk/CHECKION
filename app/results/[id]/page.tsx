@@ -239,6 +239,29 @@ const SEVERITY_CONFIG: Record<IssueSeverity, { color: string; label: string }> =
     notice: { color: MSQDX_STATUS.info.base, label: 'Notice' },
 };
 
+/** Heading count thresholds for structure summary chips: [goodMax, warningMax]. <= good = green, <= warning = orange, else red. */
+const STRUCTURE_HEADING_LIMITS: Record<number, [number, number]> = {
+    1: [1, 1],   // H1: only 1 is good, >1 = error
+    2: [8, 14],  // H2: 1–8 good, 9–14 warning, 15+ error
+    3: [15, 30], // H3
+    4: [25, 50], // H4
+    5: [35, 70], // H5
+    6: [45, 90], // H6
+};
+function getHeadingChipSeverity(level: number, count: number): 'success' | 'warning' | 'error' {
+    const [goodMax, warningMax] = STRUCTURE_HEADING_LIMITS[level] ?? [99, 199];
+    if (count <= goodMax) return 'success';
+    if (count <= warningMax) return 'warning';
+    return 'error';
+}
+/** Severity for Landmarks/Headings summary chip. */
+function getLandmarksHeadingsSeverity(landmarks: number, headings: number): 'success' | 'warning' | 'error' {
+    if (landmarks === 0) return 'warning';
+    if (landmarks > 20 || headings > 80) return 'error';
+    if (landmarks > 12 || headings > 50) return 'warning';
+    return 'success';
+}
+
 type TabFilter = 'all' | IssueSeverity | 'passed';
 type LevelFilter = 'all' | 'A' | 'AA' | 'AAA' | 'APCA' | 'Unknown';
 
@@ -1381,12 +1404,38 @@ export default function ResultsPage() {
                             </MsqdxTypography>
                         ) : (
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, mb: 2 }}>
-                                {[1, 2, 3, 4, 5, 6].filter((l) => (outlineLevelCounts[l] ?? 0) > 0).map((level) => (
-                                    <MsqdxChip key={level} label={`${outlineLevelCounts[level]}× H${level}`} size="small" sx={{ fontSize: '0.7rem' }} />
-                                ))}
-                                {hasStructure && (
-                                    <MsqdxChip label={`${landmarkCount} Landmarks, ${headingCount} Headings`} size="small" sx={{ fontSize: '0.7rem' }} />
-                                )}
+                                {[1, 2, 3, 4, 5, 6].filter((l) => (outlineLevelCounts[l] ?? 0) > 0).map((level) => {
+                                    const count = outlineLevelCounts[level] ?? 0;
+                                    const severity = getHeadingChipSeverity(level, count);
+                                    const status = severity === 'success' ? MSQDX_STATUS.success : severity === 'warning' ? MSQDX_STATUS.warning : MSQDX_STATUS.error;
+                                    return (
+                                        <MsqdxChip
+                                            key={level}
+                                            label={`${count}× H${level}`}
+                                            size="small"
+                                            sx={{
+                                                fontSize: '0.7rem',
+                                                bgcolor: alpha(status.base, 0.14),
+                                                color: status.base,
+                                            }}
+                                        />
+                                    );
+                                })}
+                                {hasStructure && (() => {
+                                    const severity = getLandmarksHeadingsSeverity(landmarkCount, headingCount);
+                                    const status = severity === 'success' ? MSQDX_STATUS.success : severity === 'warning' ? MSQDX_STATUS.warning : MSQDX_STATUS.error;
+                                    return (
+                                        <MsqdxChip
+                                            label={`${landmarkCount} Landmarks, ${headingCount} Headings`}
+                                            size="small"
+                                            sx={{
+                                                fontSize: '0.7rem',
+                                                bgcolor: alpha(status.base, 0.14),
+                                                color: status.base,
+                                            }}
+                                        />
+                                    );
+                                })()}
                                 {h && (
                                     <MsqdxChip
                                         label={qualitySingleH1 ? t('results.structureQualitySingleH1') : t('results.structureQualityMultipleH1', { count: h.h1Count })}
