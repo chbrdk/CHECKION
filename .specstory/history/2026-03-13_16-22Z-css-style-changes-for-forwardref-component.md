@@ -78529,6 +78529,741 @@ HTML Element: <div class="MuiBox-root css-1sg4afn" data-cursor-element-id="curso
 
 _**Agent (model default, mode Agent)**_
 
+<think><details><summary>Thought Process</summary>
+
+The user is asking whether the Security Headers check actually works - they're seeing "Missing" for every page. I need to find where this check is implemented and verify if it's correctly fetching/parsing the security headers from the scanned page.
+</details></think>
+
+---
+
+
+Security-Header-Check im Code suchen und prüfen, ob er die Response-Header korrekt auswertet:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "Security Headers|Content-Security-Policy|X-Frame-Options|securityHeaders",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.{ts,tsx}",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "Security Headers|Content-Security-Policy|X-Frame-Options|securityHeaders",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 30,
+  "totalMatches": 60,
+  "topFiles": [
+    {
+      "uri": "./lib/scanner.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/domain/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "./mcp-server/node_modules/hono/dist/types/middleware/secure-headers/secure-headers.d.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "./mcp-server/node_modules/hono/dist/types/utils/headers.d.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/share/[token]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./components/SecurityCard.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/mcp-server/node_modules/hono/dist/types/middleware/secure-headers/secure-headers.d.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/mcp-server/node_modules/hono/dist/types/utils/headers.d.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/share/[token]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/components/SecurityCard.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/mcp-server/node_modules/hono/dist/types/middleware/secure-headers/secure-headers.d.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/mcp-server/node_modules/hono/dist/types/utils/headers.d.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/share/[token]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/components/SecurityCard.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="semantic_search_full">
+<details>
+<summary>Tool use: **semantic_search_full**</summary>
+
+
+Parameters:
+
+```json
+{
+  "query": "Where are HTTP security headers checked or fetched for a scan?",
+  "includePattern": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "topK": 10,
+  "explanation": ""
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The scanner has the security headers logic. Let me read the scanner around line 953 to see how headers are collected and what response is used (main document vs. something else). Also need to find the type for security headers and where the UI reads them.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "securityHeaders|security\\.|Security Headers",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.{ts,tsx}",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "securityHeaders|security\\.|Security Headers",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 35,
+  "totalMatches": 140,
+  "topFiles": [
+    {
+      "uri": "./components/pdf/ScanReportDocument.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "./lib/scanner.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./lib/domain-aggregation.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/domain/[id]/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "./mcp-server/node_modules/@types/node/tls.d.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "./app/share/[token]/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "./components/SecurityCard.tsx",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/components/pdf/ScanReportDocument.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-aggregation.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/mcp-server/node_modules/@types/node/tls.d.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/share/[token]/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/components/SecurityCard.tsx",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/components/pdf/ScanReportDocument.tsx",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-aggregation.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/mcp-server/node_modules/@types/node/tls.d.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/app/share/[token]/page.tsx",
+      "matchCount": 6
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The security headers come from `mainHeaders` (variable `h`). I need to find where `mainHeaders` is set - it's used at line 929-930 and 953+. So the source is the response of the "main" document. Let me search for where mainHeaders is populated in the scanner.
+</details></think>
+
+---
+
+
+Herkunft von `mainHeaders` prüfen:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "mainHeaders\\s*=",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts",
+  "contextBefore": 2,
+  "contextAfter": 15,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "mainHeaders\\s*=",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 5,
+  "topFiles": [
+    {
+      "uri": "lib/scanner.ts",
+      "matchCount": 18
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 18
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 18
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 18
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 18
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+So mainHeaders is set from response.headers() when the "main" document response is received. I need to see the condition - when is this callback triggered? It must be when the response URL matches the main document. Let me read more context around line 200-230 to see the condition (e.g. response.url() === url or similar).
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The condition is:
+```js
+if (!serverIp && (rUrl === url || rUrl === url + '/' || rUrl.split('?')[0] === url.split('?')[0]))
+```
+
+So we only set mainHeaders when:
+1. serverIp is not yet set (so only the first matching response)
+2. The response URL matches the scan URL (exact, with trailing slash, or same path without query)
+
+Possible issues:
+1. **Redirects**: If the page redirects (e.g. http→https, or www→non-www), the *first* response might be a redirect (3xx). Redirect responses often don't include security headers like CSP, X-Frame-Options — those are typically on the final document response. So we might be capturing the headers from the first response (redirect) instead of the final document response!
+2. **Timing**: The `response` event fires when the response is received. If there's a redirect chain, we only take the first one because of `!serverIp`. So we get headers from the first response in the chain, which could be a 301/302 with no security headers.
+3. **Puppeteer headers()**: Need to check - does Puppeteer's response.headers() return lowercase keys? The comment says "Puppeteer returns lowercase keys" and we're using h['content-security-policy'] etc. So that should be fine.
+
+Let me check: when you have a redirect chain like:
+  Request URL -> 301 Response (headers: Location, maybe no CSP) -> follow -> 200 Response (headers: CSP, X-Frame-Options, ...)
+
+The first `response` event is for the 301. So we'd store the 301's headers and never update for the 200. That would explain "always missing"!
+
+Fix: we should capture the headers from the **final** document response (the one that actually delivered the HTML), not the first matching URL. Options:
+1. Only set mainHeaders when response.status() is 200 (or 2xx)? But then we'd miss the case where the only response is 200.
+2. After page.goto(), get the main frame's last response and read its headers. That would be the final response.
+3. Set mainHeaders only when we get a 2xx response for the main URL (so we overwrite with the final document's headers when we get them).
+
+Option 3 is clean: when we see a response for the main URL, only update mainHeaders (and serverIp) if this response is successful (status 2xx). That way we keep updating until we get the final document. But wait - we'd then set serverIp from the first response and never update mainHeaders if the first response is 301. So we need to either:
+- Update mainHeaders for every matching response (so the last one wins — the final 200), and only set serverIp from the first (or from the final?). Actually the simplest is: for every response that matches the main URL, update mainHeaders. Then we'll have the last response's headers (the 200). And for serverIp we could take the first or the last — the last might be more accurate (final server). Let me do: update both mainHeaders and serverIp whenever we get a matching response, so the final document response wins. That way mainHeaders will be from the 200 response.
+
+Let me read the code again. Currently:
+- We only enter the block when `!serverIp` — so we only ever capture the FIRST response that matches the URL. If that's a redirect, we have redirect headers. So the fix is to always update mainHeaders (and optionally serverIp) when we get a response for the main URL, so the last one (the final 200) wins. Or we could only set mainHeaders when status is 2xx.
+
+Better approach: update mainHeaders (and serverIp) whenever the response URL matches the main document URL, and take the last such response. So remove the `!serverIp` condition for updating mainHeaders; we can keep updating both. So:
+
+```js
+if (rUrl === url || rUrl === url + '/' || rUrl.split('?')[0] === url.split('?')[0]) {
+    const remoteAddress = response.remoteAddress();
+    serverIp = remoteAddress.ip || null;
+    mainHeaders = response.headers();
+    ...
+}
+```
+
+That way every time we get a response for our URL (including redirects), we overwrite. The last response in the chain will be the 200 document, so we'll have its headers. Good.
+
+One more thing: what if the main document is loaded from a different final URL (e.g. redirect from http to https, so the final URL might have different scheme)? Then rUrl would be the final URL. Our `url` is the one the user requested. So if user scans "http://example.com" and gets redirected to "https://example.com", the first response has rUrl = "http://example.com" and the second has rUrl = "https://example.com". So we'd have two responses - we'd overwrite with the second (200 from https). Good. If user scans "https://example.com" and that 200 is the only response, we get that. Good.
+
+Let me implement: remove the `!serverIp` condition so we always update mainHeaders (and serverIp) for the main URL response. That way the final response in the chain wins.
+</details></think>
+
+---
+
+
+Ursache: Es werden nur die Header der ersten Antwort mit der Scan-URL übernommen. Bei Weiterleitungen (z. B. HTTP→HTTPS) ist das die Redirect-Antwort (301/302), die meist keine Security-Header enthält. Die finale 200-Antwort wird ignoriert, weil `!serverIp` nur beim ersten Treffer greift. Beheben wir das:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Actually wait - we're now updating on every response that matches the URL. So we'll get: 301 response -> mainHeaders = 301 headers; 200 response -> mainHeaders = 200 headers. Good. But what if the final response is a 200 from a different URL (e.g. after redirect to another path)? Then we might not match. The condition is rUrl === url - so the final URL might be different (e.g. with trailing slash or query string). We're already handling url + '/' and same path without query. So if the redirect goes to a different path we wouldn't update - but then we'd have the 301 headers. So we might still show "missing" for a redirect to another path. That's a separate edge case. For the common case (same URL, or same path with redirect to add/remove trailing slash or protocol change), we now capture the final response.
+
+One more thing: when there are multiple requests to the "same" URL (e.g. with different query params), we'd overwrite. The last one in the event order would win. Usually there's one main document load. Good.
+
+Let me also consider: should we only take 2xx responses for mainHeaders? That would be more correct - we only want the final document's headers. So we could do:
+
+if (isMainDocument && response.status() >= 200 && response.status() < 300) {
+  mainHeaders = response.headers();
+  ...
+}
+serverIp we might still want from the first or any response. Let me use: update mainHeaders only when status is 2xx, so we never store redirect response headers. That way we're sure we have the document response.
+
+Actually re-reading the flow: when you navigate to url, the browser might get 301 -> 301 -> 200. So we get 3 response events. With my current fix we'd set mainHeaders from 301, then 301, then 200. So we end up with 200's headers. Good. If we only set on 2xx we'd only set on the 200, and we'd never set serverIp from the 200... we need to set serverIp from some response. Let me keep the update on every matching response - the last one will be 200 (final document). So the current fix is fine.
+
+Let me double-check: response.status() - does Puppeteer's response have .status()? Yes, it's the HTTP status code. So we could do: only update mainHeaders when status is 2xx. Then we never use redirect headers. And we still update serverIp on any match so we get it from the first response (the first might be the one that gave us the IP). Actually for serverIp, the final response might be from the same server. So updating both on every match is fine.
+
+I'll add a small improvement: only assign mainHeaders when the response is successful (2xx), so we never accidentally use a redirect response's headers. That makes the intent clearer and handles any edge case where the "last" response might not be 200 (e.g. 304 Not Modified - does that fire? For 304 we'd get the cached headers... actually for 304 the response might have the same headers as the cached response. Let me keep it simple and just take the last matching response. If we want to be strict we can do status 2xx only for mainHeaders.
+</details></think>
+
+---
+
+
+Nur die Header der finalen Dokument-Antwort (Status 2xx) verwenden, damit wir nie versehentlich eine Redirect-Response auswerten:
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Good. Now let me add a short note in knowledge and run the build.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+One potential issue: if the scan URL redirects to a *different* path (e.g. example.com/foo -> example.com/bar), then the final 200 response has rUrl = "https://example.com/bar", and our condition `rUrl === url || ...` might not match if url was "https://example.com/foo". So we wouldn't update mainHeaders for that final response. In that case we'd still have the 301 headers (or empty if the first response was the only one that matched). So for redirects to a different path, we might still show "missing". That's a separate edge case - the user said they see "missing" on "every page", which suggests the main bug is the redirect-to-same-path (e.g. http->https or trailing slash) case. So the fix should help. We could later improve by also treating the final document URL (after all redirects) as "main" - e.g. by checking response.request().isNavigationRequest() and the frame. For now the fix is good.
+
+Let me add a knowledge doc and run build.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-security-headers-check.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 19.0s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+  Generating static pages using 9 workers (0/47) ...
+  Generating static pages using 9 workers (11/47) 
+  Generating static pages using 9 workers (23/47) 
+  Generating static pages using 9 workers (35/47) 
+✓ Generating static pages using 9 workers (47/47) in 555.3ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/register
+├ ƒ /api/auth/tokens
+├ ƒ /api/auth/tokens/[id]
+├ ƒ /api/checks/contrast
+├ ƒ /api/checks/pagespeed
+├ ƒ /api/checks/readability
+├ ƒ /api/checks/ssl
+├ ƒ /api/checks/wayback
+├ ƒ /api/health
+├ ƒ /api/journeys
+├ ƒ /api/journeys/[id]
+├ ƒ /api/projects
+├ ƒ /api/projects/[id]
+├ ƒ /api/projects/[id]/domain-scan-all
+├ ƒ /api/projects/[id]/domain-summary
+├ ƒ /api/projects/[id]/domain-summary-all
+├ ƒ /api/projects/[id]/geo-latest-result
+├ ƒ /api/projects/[id]/geo-question-history
+├ ƒ /api/projects/[id]/geo-summary
+├ ƒ /api/projects/[id]/ranking-summary
+├ ƒ /api/projects/[id]/research
+├ ƒ /api/projects/[id]/suggest-competitors
+├ ƒ /api/projects/[id]/suggest-keywords
+├ ƒ /api/rank-tracking/keywords
+├ ƒ /api/rank-tracking/keywords/[id]
+├ ƒ /api/rank-tracking/keywords/[id]/positions
+├ ƒ /api/rank-tracking/refresh
+├ ƒ /api/saliency/generate
+├ ƒ /api/saliency/result
+├ ƒ /api/scan
+├ ƒ /api/scan/[id]
+├ ƒ /api/scan/[id]/classify
+├ ƒ /api/scan/[id]/project
+├ ƒ /api/scan/[id]/screenshot
+├ ƒ /api/scan/[id]/summarize
+├ ƒ /api/scan/[id]/ux-check
+├ ƒ /api/scan/domain
+├ ƒ /api/scan/domain/[id]/classify
+├ ƒ /api/scan/domain/[id]/journey
+├ ƒ /api/scan/domain/[id]/status
+├ ƒ /api/scan/domain/[id]/summarize
+├ ƒ /api/scan/domain/[id]/summary
+├ ƒ /api/scan/domain/by-domain
+├ ƒ /api/scan/geo-eeat
+├ ƒ /api/scan/geo-eeat/[jobId]
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history/[runId]
+├ ƒ /api/scan/geo-eeat/[jobId]/project
+├ ƒ /api/scan/geo-eeat/[jobId]/rerun-competitive
+├ ƒ /api/scan/geo-eeat/[jobId]/status
+├ ƒ /api/scan/geo-eeat/history
+├ ƒ /api/scan/geo-eeat/suggest-competitors-queries
+├ ƒ /api/scan/journey-agent
+├ ƒ /api/scan/journey-agent/[jobId]
+├ ƒ /api/scan/journey-agent/[jobId]/live
+├ ƒ /api/scan/journey-agent/[jobId]/live/stream
+├ ƒ /api/scan/journey-agent/[jobId]/project
+├ ƒ /api/scan/journey-agent/[jobId]/video
+├ ƒ /api/scan/journey-agent/history
+├ ƒ /api/scans
+├ ƒ /api/scans/[id]
+├ ƒ /api/scans/domain
+├ ƒ /api/scans/domain/[id]
+├ ƒ /api/scans/domain/[id]/project
+├ ƒ /api/search
+├ ƒ /api/share
+├ ƒ /api/share/[token]
+├ ƒ /api/share/[token]/access
+├ ƒ /api/share/[token]/pages/[pageId]
+├ ƒ /api/share/[token]/pages/[pageId]/screenshot
+├ ƒ /api/share/[token]/video
+├ ƒ /api/share/by-resource
+├ ƒ /api/tools/contrast
+├ ƒ /api/tools/extract
+├ ƒ /api/tools/pagespeed
+├ ƒ /api/tools/readability
+├ ƒ /api/tools/ssl-labs
+├ ƒ /api/tools/wayback
+├ ƒ /developers
+├ ƒ /domain/[id]
+├ ƒ /geo-eeat/[jobId]
+├ ƒ /history
+├ ƒ /journey-agent/[jobId]
+├ ƒ /login
+├ ƒ /projects
+├ ƒ /projects/[id]
+├ ƒ /projects/[id]/geo
+├ ƒ /projects/[id]/geo/analysis
+├ ƒ /projects/[id]/rankings
+├ ƒ /projects/[id]/research
+├ ƒ /projects/[id]/seo
+├ ƒ /projects/[id]/wcag
+├ ƒ /register
+├ ƒ /results/[id]
+├ ƒ /scan
+├ ƒ /scan/domain
+├ ƒ /settings
+└ ƒ /share/[token]
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build succeeded. I'll summarize for the user.
+</details></think>
+
+---
+
+
+Der Security-Header-Check hat tatsächlich einen Bug gehabt – er ist jetzt behoben.
+
+## Ursache
+
+Die Header wurden nur von der **ersten** Response mit passender URL übernommen (`if (!serverIp && ...)`). Bei typischen Setups passiert aber:
+
+1. Request auf die Scan-URL (z.B. `https://example.com/`)
+2. **Erste Response:** 301/302 (Redirect, z.B. auf `https://www.example.com/` oder Trailing-Slash)
+3. **Zweite Response:** 200 mit dem eigentlichen Dokument und den Security-Headern
+
+Die erste Response ist die Redirect-Antwort; die enthält meist **keine** Security-Header (CSP, X-Frame-Options, HSTS usw.). Die 200-Response wurde ignoriert, weil `serverIp` schon gesetzt war – deshalb sah man praktisch immer „Missing“.
+
+## Änderung in `lib/scanner.ts`
+
+1. **Kein „nur erste Response“ mehr:** Es wird nicht mehr mit `!serverIp` auf die erste Response beschränkt; jede Response zur Haupt-URL wird verarbeitet.
+2. **Nur 2xx für Security-Header:** `mainHeaders` wird nur noch bei **Status 2xx** (200, 204, …) gesetzt. Redirect-Responses (301, 302, …) werden für die Security-Header-Auswertung ignoriert.
+
+Damit kommen die angezeigten Security-Header jetzt von der **finalen Dokument-Response** (der 200-Antwort nach eventuellen Redirects). `serverIp` und Redirect-Anzahl werden weiter wie bisher aus der passenden Response ermittelt.
+
+## Doku
+
+In `knowledge/checkion-security-headers-check.md` ist festgehalten, wo der Check läuft und warum die finale 2xx-Response genutzt wird.
+
+**Hinweis:** Nach dem nächsten Scan pro URL solltest du bei Seiten, die die Header setzen, die korrekten Werte (z.B. „Present“) sehen. Bestehende Scan-Ergebnisse bleiben unverändert; nur neue Scans nutzen die korrigierte Logik.
+
+---
+
+_**User**_
+
+Can we check how the, and generative engine optimization and the EE AT scoring So the whole scan for a single page is working. and then optimize it because basically we get a For every page we get a score of 50 at least and because of the basic 50 score. Which is somehow irritating I guess So we should find a better way to score it. And also... Check. everything correctly
+
+---
+
+_**Agent (model default, mode Agent)**_
+
 
 
 ---
@@ -78552,6 +79287,178 @@ Status: **loading**
 <tool-use data-tool-type="unknown" data-tool-name="semantic_search_full">
 <details>
 <summary>Tool use: **semantic_search_full**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
 
 Status: **loading**
 

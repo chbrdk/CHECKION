@@ -11,6 +11,7 @@ import { AXE_RULE_WCAG_LEVEL } from './axe-wcag-levels';
 import { getRemediationUrl } from './remediation-urls';
 import { buildPageIndex } from './page-index';
 import { deduplicateIssues } from './issue-dedupe';
+import { computeGeoEeatPageScore } from './geo-eeat-page-score';
 import { writeScreenshot } from './screenshot-storage';
 import type { Issue, Runner, ScanResult, ScanStats, WcagStandard, Device, ScanOptions, SeoAudit } from './types';
 
@@ -1073,26 +1074,32 @@ export async function runScan(options: ScanOptions & { groupId?: string; targetR
 
         seoAudit = { ...seoAudit, robotsTxtPresent, sitemapUrl };
 
-        // Calculate GEO Score (0-100) with breakdown
-        let geoScore = 50;
+        // GEO / E-E-A-T score (0–100, no baseline; includes EEAT signals)
         const g = seoAndMeta.generative;
-        const breakdown: Array<{ factor: string; points: number }> = [{ factor: 'Basis', points: 50 }];
-
-        if (hasLlmsTxt) { geoScore += 10; breakdown.push({ factor: 'llms.txt', points: 10 }); }
-        if (!hasRobotsAllowingAI) { geoScore -= 20; breakdown.push({ factor: 'Robots blockieren AI', points: -20 }); }
-        if (g.schemaCoverage.length > 0) { geoScore += 10; breakdown.push({ factor: 'Schema.org', points: 10 }); }
-        if (g.tableCount > 0) { geoScore += 5; breakdown.push({ factor: 'Tabellen', points: 5 }); }
-        if (g.faqCount > 0) { geoScore += 10; breakdown.push({ factor: 'FAQs', points: 10 }); }
-        if (g.citationCount > 5) { geoScore += 10; breakdown.push({ factor: 'Zitate', points: 10 }); }
-        if (g.hasAuthorBio) { geoScore += 5; breakdown.push({ factor: 'Autoren-Bio', points: 5 }); }
-
-        geoScore = Math.max(0, Math.min(100, geoScore));
+        const geoEeatResult = computeGeoEeatPageScore({
+            hasLlmsTxt,
+            hasRobotsAllowingAI,
+            schemaCoverage: g.schemaCoverage,
+            tableCount: g.tableCount,
+            faqCount: g.faqCount,
+            citationCount: g.citationCount,
+            hasAuthorBio: g.hasAuthorBio,
+            eeat: eeatSignals
+                ? {
+                    hasImpressum: eeatSignals.hasImpressum,
+                    hasContact: eeatSignals.hasContact,
+                    hasAboutLink: eeatSignals.hasAboutLink,
+                    hasTeamLink: eeatSignals.hasTeamLink,
+                    hasCaseStudyMention: eeatSignals.hasCaseStudyMention,
+                }
+                : undefined,
+        });
 
         const citationsWithLinks = (seoAndMeta.generative as { citationsWithLinks?: number }).citationsWithLinks ?? 0;
 
         const generativeAudit = {
-            score: geoScore,
-            scoreBreakdown: breakdown,
+            score: geoEeatResult.score,
+            scoreBreakdown: geoEeatResult.scoreBreakdown,
             technical: {
                 hasLlmsTxt,
                 hasRobotsAllowingAI,
