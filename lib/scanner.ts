@@ -213,13 +213,20 @@ export async function runScan(options: ScanOptions & { groupId?: string; targetR
                 const u = new URL(rUrl);
                 allRequestHosts.add(u.hostname);
             } catch (_) {}
-            if (!serverIp && (rUrl === url || rUrl === url + '/' || rUrl.split('?')[0] === url.split('?')[0])) {
+            const isMainDocument =
+                rUrl === url || rUrl === url + '/' || rUrl.split('?')[0] === url.split('?')[0];
+            if (isMainDocument) {
                 const remoteAddress = response.remoteAddress();
                 serverIp = remoteAddress.ip || null;
-                mainHeaders = response.headers();
                 try {
                     mainRedirectCount = response.request().redirectChain().length;
                 } catch (_) {}
+                const status = response.status();
+                if (status >= 200 && status < 300) {
+                    // Use headers only from the final document response (2xx), not from 301/302 redirects.
+                    // Redirect responses rarely send security headers, which caused "always missing".
+                    mainHeaders = response.headers();
+                }
             }
             const headers = response.headers();
             if (headers['content-length']) {
