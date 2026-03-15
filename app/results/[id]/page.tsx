@@ -503,46 +503,54 @@ export default function ResultsPage() {
             )}
             {!loading && result && (
         <Box component="span" sx={{ display: 'block' }}>
-            {/* Header with Score */}
-            <Box sx={{ mb: 'var(--msqdx-spacing-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <Box>
-                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: MSQDX_SPACING.scale.xs }}>
+            {/* Header card: Scan result title, URL, Score */}
+            <MsqdxMoleculeCard
+                variant="flat"
+                borderRadius="lg"
+                sx={{ mb: 'var(--msqdx-spacing-sm)', bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-card-border)' }}
+                headerActions={<InfoTooltip title={t('info.scanResult')} ariaLabel={t('common.info')} />}
+            >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+                    <Box sx={{ minWidth: 0, flex: '1 1 auto' }}>
                         <MsqdxTypography
                             variant="h4"
                             sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}
                         >
                             {t('results.scanResult')}
                         </MsqdxTypography>
-                        <InfoTooltip title={t('info.scanResult')} ariaLabel={t('common.info')} />
-                    </Box>
-                    <MsqdxTypography
-                        variant="body2"
-                        sx={{
-                            color: 'var(--color-text-muted-on-light)',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            maxWidth: 600,
-                        }}
-                    >
-                        {result.url}
-                    </MsqdxTypography>
-                </Box>
-
-                {/* Score (no ring, large number) */}
-                <Box sx={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', mr: 'var(--msqdx-spacing-sm)' }}>
-                    <MsqdxTypography sx={{ fontSize: '2.5rem', fontWeight: 800, color: scoreColor, lineHeight: 1, letterSpacing: '-0.02em' }}>
-                        {result.score}
-                    </MsqdxTypography>
-                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
-                        <MsqdxTypography variant="caption" sx={{ fontSize: '0.65rem', color: 'var(--color-text-muted-on-light)', textTransform: 'uppercase', fontWeight: 600 }}>
-                            {t('results.score')}
+                        <MsqdxTypography
+                            variant="body2"
+                            sx={{
+                                color: 'var(--color-text-muted-on-light)',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                maxWidth: 600,
+                            }}
+                        >
+                            {result.url}
                         </MsqdxTypography>
-                        <InfoTooltip title={t('info.score')} ariaLabel={t('common.info')} placement="bottom" />
+                    </Box>
+                    <Box sx={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                        <MsqdxTypography sx={{ fontSize: 48, fontWeight: 800, color: scoreColor, lineHeight: 1, letterSpacing: '-0.02em' }}>
+                            {result.score}
+                        </MsqdxTypography>
+                        <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
+                            <MsqdxTypography variant="caption" sx={{ fontSize: '0.65rem', color: 'var(--color-text-muted-on-light)', textTransform: 'uppercase', fontWeight: 600 }}>
+                                {t('results.score')}
+                            </MsqdxTypography>
+                            <InfoTooltip title={t('info.score')} ariaLabel={t('common.info')} placement="bottom" />
+                        </Box>
                     </Box>
                 </Box>
-            </Box>
+            </MsqdxMoleculeCard>
 
+            {/* Wrapping card: Tabs + tab content */}
+            <MsqdxMoleculeCard
+                variant="flat"
+                borderRadius="lg"
+                sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-card-border)' }}
+            >
             {/* View Toggle & Filters */}
             <Box sx={{ mb: 'var(--msqdx-spacing-md)', display: 'flex', alignItems: 'center', gap: 1 }}>
                 <InfoTooltip title={t('info.viewModes')} ariaLabel={t('common.info')} placement="bottom" />
@@ -1540,6 +1548,7 @@ export default function ResultsPage() {
                     )}
                 </>
             )}
+            </MsqdxMoleculeCard>
         </Box>
             )}
         </Box>
