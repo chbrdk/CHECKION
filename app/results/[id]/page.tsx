@@ -591,200 +591,6 @@ export default function ResultsPage() {
                 </Box>
             </Box>
 
-            {/* Original layout: Left = Scan Verifiziert + Seitenthema | Right = Eco, Performance, UX */}
-            {(result.pageClassification || result.eco || result.performance || result.ux) ? (
-                <Box
-                    sx={{
-                        display: 'grid',
-                        gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
-                        gap: 'var(--msqdx-spacing-md)',
-                        mb: 'var(--msqdx-spacing-md)',
-                        alignItems: 'start',
-                    }}
-                >
-                    {/* Left column: Scan Verifiziert + Seitenthema */}
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-md)', minWidth: 0 }}>
-                        <MsqdxMoleculeCard
-                            variant="flat"
-                            borderRadius="lg"
-                            sx={{ bgcolor: 'var(--color-card-bg)' }}
-                            chips={
-                                <>
-                                    <MsqdxChip label={result.standard} size="small" sx={{ backgroundColor: alpha(MSQDX_BRAND_PRIMARY.purple, 0.12), color: MSQDX_BRAND_PRIMARY.purple, fontWeight: 600, fontSize: '0.7rem', mr: 1 }} />
-                                    <MsqdxChip label={result.device ? result.device.toUpperCase() : 'DESKTOP'} size="small" sx={{ backgroundColor: alpha(MSQDX_STATUS.info.base, 0.12), color: MSQDX_STATUS.info.base, fontWeight: 600, fontSize: '0.7rem', mr: 1 }} />
-                                    <MsqdxChip label={`${result.durationMs}ms`} size="small" sx={{ backgroundColor: alpha(MSQDX_BRAND_PRIMARY.green, 0.12), color: MSQDX_BRAND_PRIMARY.green, fontWeight: 600, fontSize: '0.7rem' }} />
-                                    {result.runners.map((r) => (
-                                        <MsqdxChip key={r} label={r} size="small" sx={{ backgroundColor: alpha(MSQDX_NEUTRAL[400], 0.12), color: 'var(--color-text-muted-on-light)', fontWeight: 600, fontSize: '0.7rem' }} />
-                                    ))}
-                                </>
-                            }
-                            title={t('results.scanVerified')}
-                            headerActions={<InfoTooltip title={t('info.scanVerified')} ariaLabel={t('common.info')} />}
-                            subtitle=""
-                            actions={
-                                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-                                    <MsqdxButton variant="outlined" size="small" disabled={pdfExporting} onClick={handlePdfExport} startIcon={<MsqdxIcon name="Download" size="sm" />}>
-                                        {pdfExporting ? t('results.pdfCreating') : t('results.pdfExport')}
-                                    </MsqdxButton>
-                                    {relatedScans.length > 1 && (
-                                        <>
-                                            {['desktop', 'tablet', 'mobile'].map((d) => {
-                                                const scan = relatedScans.find(s => s.device === d);
-                                                if (!scan) return null;
-                                                return (
-                                                    <MsqdxButton
-                                                        key={d}
-                                                        variant={result.device === d ? 'contained' : 'outlined'}
-                                                        brandColor={result.device === d ? 'green' : undefined}
-                                                        size="small"
-                                                        onClick={() => router.push(pathResults(scan.id))}
-                                                        startIcon={d === 'mobile' ? <MsqdxIcon name="Smartphone" size="sm" /> : d === 'tablet' ? <MsqdxIcon name="TabletMac" size="sm" /> : <MsqdxIcon name="DesktopWindows" size="sm" />}
-                                                    >
-                                                        {d.charAt(0).toUpperCase() + d.slice(1)}
-                                                    </MsqdxButton>
-                                                );
-                                            })}
-                                        </>
-                                    )}
-                                </Box>
-                            }
-                        >
-                            <MsqdxTypography component="div" sx={{ fontSize: '0.75rem', color: MSQDX_NEUTRAL[800], fontWeight: 500, mb: 1 }}>URL: {result.url}</MsqdxTypography>
-                            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(72px, 1fr))', gap: 'var(--msqdx-spacing-xs)', rowGap: 'var(--msqdx-spacing-sm)' }}>
-                                <MiniStat label="Errors" value={result.stats.errors} color={MSQDX_STATUS.error.base} />
-                                <MiniStat label="Warnings" value={result.stats.warnings} color={MSQDX_STATUS.warning.base} />
-                                <MiniStat label="Notices" value={result.stats.notices} color={MSQDX_STATUS.info.base} />
-                                <MiniStat label="Level A" value={levelStats.A} color={MSQDX_NEUTRAL[400]} />
-                                <MiniStat label="Level AA" value={levelStats.AA} color={MSQDX_NEUTRAL[400]} />
-                                <MiniStat label="Level AAA" value={levelStats.AAA} color={MSQDX_NEUTRAL[400]} />
-                            </Box>
-                        </MsqdxMoleculeCard>
-                        {result.pageClassification && (() => {
-                            const pc = result.pageClassification as { tagTiers?: Array<{ tag: string; tier: 1 | 2 | 3 | 4 | 5 }>; tags?: string[]; tier?: 1 | 2 | 3 | 4 | 5; shortSummary?: string };
-                            const tagTiers = pc.tagTiers?.length ? pc.tagTiers : (pc.tags ?? []).map((tag) => ({ tag, tier: (pc.tier ?? 3) as 1 | 2 | 3 | 4 | 5 }));
-                            if (tagTiers.length === 0 && !pc.shortSummary) return null;
-                            const byTier = [5, 4, 3, 2, 1].map((tier) => ({ tier, tags: tagTiers.filter((tt) => tt.tier === tier) })).filter((g) => g.tags.length > 0);
-                            return (
-                                <MsqdxMoleculeCard
-                                    key="classification"
-                                    variant="flat"
-                                    borderRadius="lg"
-                                    sx={{ bgcolor: 'var(--color-card-bg)' }}
-                                    title={t('results.pageClassificationTitle')}
-                                    subtitle={t('results.pageClassificationSubtitle')}
-                                    headerActions={<InfoTooltip title={t('info.pageClassification')} ariaLabel={t('common.info')} placement="bottom" />}
-                                >
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-md)' }}>
-                                        {byTier.map(({ tier, tags }) => (
-                                            <Box key={tier}>
-                                                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
-                                                    {t('results.pageClassificationTier')} {tier}: {t(`results.pageClassificationTier${tier}` as 'results.pageClassificationTier1')}
-                                                </MsqdxTypography>
-                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                    {tags.map((tt, i) => (
-                                                        <MsqdxChip key={`${tier}-${i}`} label={tt.tag} size="small" variant="outlined" sx={{ fontSize: '0.75rem' }} />
-                                                    ))}
-                                                </Box>
-                                            </Box>
-                                        ))}
-                                        {pc.shortSummary && (
-                                            <Box>
-                                                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>{t('results.pageClassificationSummary')}</MsqdxTypography>
-                                                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>{pc.shortSummary}</MsqdxTypography>
-                                            </Box>
-                                        )}
-                                    </Box>
-                                </MsqdxMoleculeCard>
-                            );
-                        })()}
-                    </Box>
-                    {/* Right column: Eco, Performance, UX */}
-                    <Box
-                        sx={{
-                            display: 'grid',
-                            gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
-                            gridTemplateRows: 'auto auto',
-                            gap: 'var(--msqdx-spacing-md)',
-                            minWidth: 0,
-                            alignItems: 'stretch',
-                        }}
-                    >
-                        {result.eco && (
-                            <Box sx={{ minHeight: '100%', height: '100%', width: '100%', minWidth: 0, display: 'flex' }}>
-                                <EcoCard eco={result.eco} sx={{ height: '100%' }} />
-                            </Box>
-                        )}
-                        {result.performance && (
-                            <Box sx={{ minHeight: '100%', height: '100%', width: '100%', minWidth: 0, display: 'flex' }}>
-                                <PerformanceCard perf={result.performance} sx={{ height: '100%', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }} />
-                            </Box>
-                        )}
-                        {result.ux && (
-                            <Box sx={{ minHeight: '100%', gridColumn: { xs: '1', md: '1 / -1' } }}>
-                                <UxCard ux={result.ux} />
-                            </Box>
-                        )}
-                    </Box>
-                </Box>
-            ) : (
-                /* Scan card full width when no masonry/classification */
-                <MsqdxMoleculeCard
-                    variant="flat"
-                    borderRadius="lg"
-                    sx={{ bgcolor: 'var(--color-card-bg)', mb: 'var(--msqdx-spacing-md)' }}
-                    chips={
-                        <>
-                            <MsqdxChip label={result.standard} size="small" sx={{ backgroundColor: alpha(MSQDX_BRAND_PRIMARY.purple, 0.12), color: MSQDX_BRAND_PRIMARY.purple, fontWeight: 600, fontSize: '0.7rem', mr: 1 }} />
-                            <MsqdxChip label={result.device ? result.device.toUpperCase() : 'DESKTOP'} size="small" sx={{ backgroundColor: alpha(MSQDX_STATUS.info.base, 0.12), color: MSQDX_STATUS.info.base, fontWeight: 600, fontSize: '0.7rem', mr: 1 }} />
-                            <MsqdxChip label={`${result.durationMs}ms`} size="small" sx={{ backgroundColor: alpha(MSQDX_BRAND_PRIMARY.green, 0.12), color: MSQDX_BRAND_PRIMARY.green, fontWeight: 600, fontSize: '0.7rem' }} />
-                            {result.runners.map((r) => (
-                                <MsqdxChip key={r} label={r} size="small" sx={{ backgroundColor: alpha(MSQDX_NEUTRAL[400], 0.12), color: 'var(--color-text-muted-on-light)', fontWeight: 600, fontSize: '0.7rem' }} />
-                            ))}
-                        </>
-                    }
-                    title={t('results.scanVerified')}
-                    headerActions={<InfoTooltip title={t('info.scanVerified')} ariaLabel={t('common.info')} />}
-                    subtitle=""
-                    actions={
-                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-                            <MsqdxButton variant="outlined" size="small" disabled={pdfExporting} onClick={handlePdfExport} startIcon={<MsqdxIcon name="Download" size="sm" />}>
-                                {pdfExporting ? t('results.pdfCreating') : t('results.pdfExport')}
-                            </MsqdxButton>
-                            {relatedScans.length > 1 && (
-                                <>
-                                    {['desktop', 'tablet', 'mobile'].map((d) => {
-                                        const scan = relatedScans.find(s => s.device === d);
-                                        if (!scan) return null;
-                                        return (
-                                            <MsqdxButton
-                                                key={d}
-                                                variant={result.device === d ? 'contained' : 'outlined'}
-                                                brandColor={result.device === d ? 'green' : undefined}
-                                                size="small"
-                                                onClick={() => router.push(pathResults(scan.id))}
-                                                startIcon={d === 'mobile' ? <MsqdxIcon name="Smartphone" size="sm" /> : d === 'tablet' ? <MsqdxIcon name="TabletMac" size="sm" /> : <MsqdxIcon name="DesktopWindows" size="sm" />}
-                                            >
-                                                {d.charAt(0).toUpperCase() + d.slice(1)}
-                                            </MsqdxButton>
-                                        );
-                                    })}
-                                </>
-                            )}
-                        </Box>
-                    }
-                >
-                    <MsqdxTypography component="div" sx={{ fontSize: '0.75rem', color: MSQDX_NEUTRAL[800], fontWeight: 500, mb: 1 }}>URL: {result.url}</MsqdxTypography>
-                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(72px, 1fr))', gap: 'var(--msqdx-spacing-xs)', rowGap: 'var(--msqdx-spacing-sm)' }}>
-                        <MiniStat label="Errors" value={result.stats.errors} color={MSQDX_STATUS.error.base} />
-                        <MiniStat label="Warnings" value={result.stats.warnings} color={MSQDX_STATUS.warning.base} />
-                        <MiniStat label="Notices" value={result.stats.notices} color={MSQDX_STATUS.info.base} />
-                        <MiniStat label="Level A" value={levelStats.A} color={MSQDX_NEUTRAL[400]} />
-                        <MiniStat label="Level AA" value={levelStats.AA} color={MSQDX_NEUTRAL[400]} />
-                        <MiniStat label="Level AAA" value={levelStats.AAA} color={MSQDX_NEUTRAL[400]} />
-                    </Box>
-                </MsqdxMoleculeCard>
-            )}
-
             {/* View Toggle & Filters */}
             <Box sx={{ mb: 'var(--msqdx-spacing-md)', display: 'flex', alignItems: 'center', gap: 1 }}>
                 <InfoTooltip title={t('info.viewModes')} ariaLabel={t('common.info')} placement="bottom" />
@@ -806,9 +612,194 @@ export default function ResultsPage() {
             </Box>
 
             {viewMode === 'overview' && (
-                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                    {t('results.overviewHint')}
-                </MsqdxTypography>
+                (result.pageClassification || result.eco || result.performance || result.ux) ? (
+                    <Box
+                        sx={{
+                            display: 'grid',
+                            gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                            gap: 'var(--msqdx-spacing-md)',
+                            alignItems: 'start',
+                        }}
+                    >
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-md)', minWidth: 0 }}>
+                            <MsqdxMoleculeCard
+                                variant="flat"
+                                borderRadius="lg"
+                                sx={{ bgcolor: 'var(--color-card-bg)' }}
+                                chips={
+                                    <>
+                                        <MsqdxChip label={result.standard} size="small" sx={{ backgroundColor: alpha(MSQDX_BRAND_PRIMARY.purple, 0.12), color: MSQDX_BRAND_PRIMARY.purple, fontWeight: 600, fontSize: '0.7rem', mr: 1 }} />
+                                        <MsqdxChip label={result.device ? result.device.toUpperCase() : 'DESKTOP'} size="small" sx={{ backgroundColor: alpha(MSQDX_STATUS.info.base, 0.12), color: MSQDX_STATUS.info.base, fontWeight: 600, fontSize: '0.7rem', mr: 1 }} />
+                                        <MsqdxChip label={`${result.durationMs}ms`} size="small" sx={{ backgroundColor: alpha(MSQDX_BRAND_PRIMARY.green, 0.12), color: MSQDX_BRAND_PRIMARY.green, fontWeight: 600, fontSize: '0.7rem' }} />
+                                        {result.runners.map((r) => (
+                                            <MsqdxChip key={r} label={r} size="small" sx={{ backgroundColor: alpha(MSQDX_NEUTRAL[400], 0.12), color: 'var(--color-text-muted-on-light)', fontWeight: 600, fontSize: '0.7rem' }} />
+                                        ))}
+                                    </>
+                                }
+                                title={t('results.scanVerified')}
+                                headerActions={<InfoTooltip title={t('info.scanVerified')} ariaLabel={t('common.info')} />}
+                                subtitle=""
+                                actions={
+                                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                                        <MsqdxButton variant="outlined" size="small" disabled={pdfExporting} onClick={handlePdfExport} startIcon={<MsqdxIcon name="Download" size="sm" />}>
+                                            {pdfExporting ? t('results.pdfCreating') : t('results.pdfExport')}
+                                        </MsqdxButton>
+                                        {relatedScans.length > 1 && (
+                                            <>
+                                                {['desktop', 'tablet', 'mobile'].map((d) => {
+                                                    const scan = relatedScans.find(s => s.device === d);
+                                                    if (!scan) return null;
+                                                    return (
+                                                        <MsqdxButton
+                                                            key={d}
+                                                            variant={result.device === d ? 'contained' : 'outlined'}
+                                                            brandColor={result.device === d ? 'green' : undefined}
+                                                            size="small"
+                                                            onClick={() => router.push(pathResults(scan.id))}
+                                                            startIcon={d === 'mobile' ? <MsqdxIcon name="Smartphone" size="sm" /> : d === 'tablet' ? <MsqdxIcon name="TabletMac" size="sm" /> : <MsqdxIcon name="DesktopWindows" size="sm" />}
+                                                        >
+                                                            {d.charAt(0).toUpperCase() + d.slice(1)}
+                                                        </MsqdxButton>
+                                                    );
+                                                })}
+                                            </>
+                                        )}
+                                    </Box>
+                                }
+                            >
+                                <MsqdxTypography component="div" sx={{ fontSize: '0.75rem', color: MSQDX_NEUTRAL[800], fontWeight: 500, mb: 1 }}>URL: {result.url}</MsqdxTypography>
+                                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(72px, 1fr))', gap: 'var(--msqdx-spacing-xs)', rowGap: 'var(--msqdx-spacing-sm)' }}>
+                                    <MiniStat label="Errors" value={result.stats.errors} color={MSQDX_STATUS.error.base} />
+                                    <MiniStat label="Warnings" value={result.stats.warnings} color={MSQDX_STATUS.warning.base} />
+                                    <MiniStat label="Notices" value={result.stats.notices} color={MSQDX_STATUS.info.base} />
+                                    <MiniStat label="Level A" value={levelStats.A} color={MSQDX_NEUTRAL[400]} />
+                                    <MiniStat label="Level AA" value={levelStats.AA} color={MSQDX_NEUTRAL[400]} />
+                                    <MiniStat label="Level AAA" value={levelStats.AAA} color={MSQDX_NEUTRAL[400]} />
+                                </Box>
+                            </MsqdxMoleculeCard>
+                            {result.pageClassification && (() => {
+                                const pc = result.pageClassification as { tagTiers?: Array<{ tag: string; tier: 1 | 2 | 3 | 4 | 5 }>; tags?: string[]; tier?: 1 | 2 | 3 | 4 | 5; shortSummary?: string };
+                                const tagTiers = pc.tagTiers?.length ? pc.tagTiers : (pc.tags ?? []).map((tag) => ({ tag, tier: (pc.tier ?? 3) as 1 | 2 | 3 | 4 | 5 }));
+                                if (tagTiers.length === 0 && !pc.shortSummary) return null;
+                                const byTier = [5, 4, 3, 2, 1].map((tier) => ({ tier, tags: tagTiers.filter((tt) => tt.tier === tier) })).filter((g) => g.tags.length > 0);
+                                return (
+                                    <MsqdxMoleculeCard
+                                        key="classification"
+                                        variant="flat"
+                                        borderRadius="lg"
+                                        sx={{ bgcolor: 'var(--color-card-bg)' }}
+                                        title={t('results.pageClassificationTitle')}
+                                        subtitle={t('results.pageClassificationSubtitle')}
+                                        headerActions={<InfoTooltip title={t('info.pageClassification')} ariaLabel={t('common.info')} placement="bottom" />}
+                                    >
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-md)' }}>
+                                            {byTier.map(({ tier, tags }) => (
+                                                <Box key={tier}>
+                                                    <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                                        {t('results.pageClassificationTier')} {tier}: {t(`results.pageClassificationTier${tier}` as 'results.pageClassificationTier1')}
+                                                    </MsqdxTypography>
+                                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                        {tags.map((tt, i) => (
+                                                            <MsqdxChip key={`${tier}-${i}`} label={tt.tag} size="small" variant="outlined" sx={{ fontSize: '0.75rem' }} />
+                                                        ))}
+                                                    </Box>
+                                                </Box>
+                                            ))}
+                                            {pc.shortSummary && (
+                                                <Box>
+                                                    <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>{t('results.pageClassificationSummary')}</MsqdxTypography>
+                                                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>{pc.shortSummary}</MsqdxTypography>
+                                                </Box>
+                                            )}
+                                        </Box>
+                                    </MsqdxMoleculeCard>
+                                );
+                            })()}
+                        </Box>
+                        <Box
+                            sx={{
+                                display: 'grid',
+                                gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                                gridTemplateRows: 'auto auto',
+                                gap: 'var(--msqdx-spacing-md)',
+                                minWidth: 0,
+                                alignItems: 'stretch',
+                            }}
+                        >
+                            {result.eco && (
+                                <Box sx={{ minHeight: '100%', height: '100%', width: '100%', minWidth: 0, display: 'flex' }}>
+                                    <EcoCard eco={result.eco} sx={{ height: '100%' }} />
+                                </Box>
+                            )}
+                            {result.performance && (
+                                <Box sx={{ minHeight: '100%', height: '100%', width: '100%', minWidth: 0, display: 'flex' }}>
+                                    <PerformanceCard perf={result.performance} sx={{ height: '100%', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }} />
+                                </Box>
+                            )}
+                            {result.ux && (
+                                <Box sx={{ minHeight: '100%', gridColumn: { xs: '1', md: '1 / -1' } }}>
+                                    <UxCard ux={result.ux} />
+                                </Box>
+                            )}
+                        </Box>
+                    </Box>
+                ) : (
+                    <MsqdxMoleculeCard
+                        variant="flat"
+                        borderRadius="lg"
+                        sx={{ bgcolor: 'var(--color-card-bg)' }}
+                        chips={
+                            <>
+                                <MsqdxChip label={result.standard} size="small" sx={{ backgroundColor: alpha(MSQDX_BRAND_PRIMARY.purple, 0.12), color: MSQDX_BRAND_PRIMARY.purple, fontWeight: 600, fontSize: '0.7rem', mr: 1 }} />
+                                <MsqdxChip label={result.device ? result.device.toUpperCase() : 'DESKTOP'} size="small" sx={{ backgroundColor: alpha(MSQDX_STATUS.info.base, 0.12), color: MSQDX_STATUS.info.base, fontWeight: 600, fontSize: '0.7rem', mr: 1 }} />
+                                <MsqdxChip label={`${result.durationMs}ms`} size="small" sx={{ backgroundColor: alpha(MSQDX_BRAND_PRIMARY.green, 0.12), color: MSQDX_BRAND_PRIMARY.green, fontWeight: 600, fontSize: '0.7rem' }} />
+                                {result.runners.map((r) => (
+                                    <MsqdxChip key={r} label={r} size="small" sx={{ backgroundColor: alpha(MSQDX_NEUTRAL[400], 0.12), color: 'var(--color-text-muted-on-light)', fontWeight: 600, fontSize: '0.7rem' }} />
+                                ))}
+                            </>
+                        }
+                        title={t('results.scanVerified')}
+                        headerActions={<InfoTooltip title={t('info.scanVerified')} ariaLabel={t('common.info')} />}
+                        subtitle=""
+                        actions={
+                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                                <MsqdxButton variant="outlined" size="small" disabled={pdfExporting} onClick={handlePdfExport} startIcon={<MsqdxIcon name="Download" size="sm" />}>
+                                    {pdfExporting ? t('results.pdfCreating') : t('results.pdfExport')}
+                                </MsqdxButton>
+                                {relatedScans.length > 1 && (
+                                    <>
+                                        {['desktop', 'tablet', 'mobile'].map((d) => {
+                                            const scan = relatedScans.find(s => s.device === d);
+                                            if (!scan) return null;
+                                            return (
+                                                <MsqdxButton
+                                                    key={d}
+                                                    variant={result.device === d ? 'contained' : 'outlined'}
+                                                    brandColor={result.device === d ? 'green' : undefined}
+                                                    size="small"
+                                                    onClick={() => router.push(pathResults(scan.id))}
+                                                    startIcon={d === 'mobile' ? <MsqdxIcon name="Smartphone" size="sm" /> : d === 'tablet' ? <MsqdxIcon name="TabletMac" size="sm" /> : <MsqdxIcon name="DesktopWindows" size="sm" />}
+                                                >
+                                                    {d.charAt(0).toUpperCase() + d.slice(1)}
+                                                </MsqdxButton>
+                                            );
+                                        })}
+                                    </>
+                                )}
+                            </Box>
+                        }
+                    >
+                        <MsqdxTypography component="div" sx={{ fontSize: '0.75rem', color: MSQDX_NEUTRAL[800], fontWeight: 500, mb: 1 }}>URL: {result.url}</MsqdxTypography>
+                        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(72px, 1fr))', gap: 'var(--msqdx-spacing-xs)', rowGap: 'var(--msqdx-spacing-sm)' }}>
+                            <MiniStat label="Errors" value={result.stats.errors} color={MSQDX_STATUS.error.base} />
+                            <MiniStat label="Warnings" value={result.stats.warnings} color={MSQDX_STATUS.warning.base} />
+                            <MiniStat label="Notices" value={result.stats.notices} color={MSQDX_STATUS.info.base} />
+                            <MiniStat label="Level A" value={levelStats.A} color={MSQDX_NEUTRAL[400]} />
+                            <MiniStat label="Level AA" value={levelStats.AA} color={MSQDX_NEUTRAL[400]} />
+                            <MiniStat label="Level AAA" value={levelStats.AAA} color={MSQDX_NEUTRAL[400]} />
+                        </Box>
+                    </MsqdxMoleculeCard>
+                )
             )}
 
             {viewMode === 'summary' && (
