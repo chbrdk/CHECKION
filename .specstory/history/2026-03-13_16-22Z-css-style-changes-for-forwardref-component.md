@@ -79264,10 +79264,26 @@ Can we check how the, and generative engine optimization and the EE AT scoring S
 
 _**Agent (model default, mode Agent)**_
 
+<think><details><summary>Thought Process</summary>
 
+The user is asking about:
+1. How the scan for a single page works - specifically around "generative engine optimization" (GEO) and "EEAT" (Experience, Expertise, Authoritativeness, Trustworthiness) scoring
+2. They're getting a score of at least 50 for every page, which is irritating
+3. They want to find a better way to score it and ensure everything is checked correctly
+
+I need to:
+1. Find where the GEO/EEAT scoring is implemented
+2. Understand why there's a floor of 50
+3. Propose and implement a better scoring approach
+4. Verify the scan logic is correct
+
+Let me search for GEO, EEAT, and scoring logic in the codebase.
+</details></think>
 
 ---
 
+
+GEO- und EEAT-Scoring im Single-Page-Scan suchen und prüfen, warum das Score mindestens 50 ist.
 
 
 ---
@@ -79276,7 +79292,113 @@ _**Agent (model default, mode Agent)**_
 <details>
 <summary>Tool use: **ripgrep_raw_search**</summary>
 
-Status: **loading**
+
+Parameters:
+
+```json
+{
+  "pattern": "geo|eeat|score|50",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib",
+  "glob": "*.ts",
+  "outputMode": "files_with_matches",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "geo|eeat|score|50",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib",
+  "outputMode": "files_with_matches",
+  "totalFiles": 270,
+  "totalMatches": 270,
+  "topFiles": [
+    {
+      "uri": "lib/scanner.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/constants.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/types.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/db/scans.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/llm/ux-check-agent.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/llm/ux-check-prompt.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/ux-check-types.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/issue-dedupe.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/llm/page-classification.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/domain-scan-classify.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/domain-summary.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/domain-aggregation.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/seo-on-page-score.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/wcag-score.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/domain-scan-start.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/db/project-domain-references.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/db/schema.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/geo-eeat/position-matrix.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/db/projects.test.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "lib/api-schemas.ts",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
 
 
 </details>
@@ -79288,7 +79410,18 @@ Status: **loading**
 <details>
 <summary>Tool use: **semantic_search_full**</summary>
 
-Status: **loading**
+
+Parameters:
+
+```json
+{
+  "query": "Where is GEO or EEAT score calculated for a single page scan?",
+  "includePattern": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "topK": 10,
+  "explanation": ""
+}
+```
+Status: **completed**
 
 
 </details>
@@ -79296,23 +79429,1329 @@ Status: **loading**
 
 ---
 
+<think><details><summary>Thought Process</summary>
 
+Let me look at seo-on-page-score.ts (likely the single-page SEO/GEO score) and also search for where "50" appears as a baseline or minimum score. I'll also check the scanner for where GEO/EEAT data is collected and scored.
+</details></think>
 
 ---
 
 
 
+
+
 ---
 
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/seo-on-page-score.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
 <details>
-<summary>Tool use: **read_file_v2**</summary>
+<summary>Tool use: **ripgrep_raw_search**</summary>
 
-Status: **loading**
+
+Parameters:
+
+```json
+{
+  "pattern": "geo|eeat|seoScore|onPageScore",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts",
+  "contextBefore": 0,
+  "contextAfter": 2,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "geo|eeat|seoScore|onPageScore",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 145,
+  "topFiles": [
+    {
+      "uri": "lib/scanner.ts",
+      "matchCount": 56
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 56
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 56
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 56
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 56
+    }
+  ]
+}
+```
+Status: **completed**
 
 
 </details>
 </tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I found it. The GEO score in the scanner starts at 50 ("Basis" = 50 points) and then adds/subtracts. So every page gets at least 50 unless robots block AI (-20). The user wants a better scoring model.
+
+Let me read the full GEO/EEAT section in the scanner to understand:
+1. What data is collected (generative, eeatPage, etc.)
+2. How the score is built and where it's used
+3. EEAT scoring - is there a separate EEAT score or is it merged with GEO?
+
+I need to see the types for generative and eeatPage, and the full result structure that includes this score.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "generative|EeatPageSignals|geoEeat|eeat",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts",
+  "contextAfter": 3,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "generative|EeatPageSignals|geoEeat|eeat",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 45,
+  "topFiles": [
+    {
+      "uri": "lib/types.ts",
+      "matchCount": 28
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 28
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 28
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 28
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 28
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-geo-eeat-intensive-scan.md</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I have a clear picture:
+
+1. **Single-page scan** (in scanner.ts) has a GEO score that starts at 50 ("Basis") and adds/subtracts. So every page gets at least 50 unless robots block AI (-20). That's why the user sees "50 at least" everywhere.
+
+2. **seo-on-page-score.ts** is for *domain* aggregation (totalPages, withTitle, etc.) - not single page. So the single-page GEO score is only in scanner.ts.
+
+3. **EEAT** on single page: there's `eeatPage` (EeatPageSignals: hasImpressum, hasContact, hasAboutLink) and it's collected but I need to check if there's a separate EEAT *score* for single page or if it's only in the GEO breakdown. Looking at the scanner, the generativeAudit has "expertise: { hasAuthorBio, hasExpertCitations }" but no explicit EEAT 0-100 score for single page. The GEO score doesn't include EEAT signals (impressum, contact, about) in the calculation.
+
+Plan:
+1. **Remove the 50-point baseline** and use a 0–100 scale where 0 = nothing, 100 = all signals present. So we need to define a max possible and compute score as (earned / max) * 100 or use weighted sum that tops at 100.
+2. **Include EEAT signals** in the single-page score (impressum, contact, about) so the score reflects both GEO readiness and trust signals.
+3. **Document and possibly centralize** the scoring in a small module so it's testable and transparent.
+
+Let me see what factors we have and design a 0–100 scale:
+
+Current GEO factors (scanner):
+- Basis: 50 (remove)
+- llms.txt: +10
+- Robots block AI: -20
+- Schema.org: +10
+- Tables: +5
+- FAQs: +10
+- Citations > 5: +10
+- Author bio: +5
+Max additive = 10+10+5+10+10+5 = 50, so with basis 50 we get 50–100. If we remove basis, we get 0–50 from these, and we could add more factors or scale to 100.
+
+Better approach: **weighted 0–100**
+- No baseline. Score = sum of (factor points) where each factor is 0 or 1 (present/absent), and we normalize so total = 100 when all present.
+- Or: assign each factor a weight; score = (sum of weights for present) / (sum of all weights) * 100.
+
+Factors we have:
+1. llms.txt (domain-level) — 1
+2. Robots allow AI — 1 (penalize if blocked)
+3. Schema.org present — 1
+4. Tables — 1
+5. FAQs — 1
+6. Citations > 5 — 1
+7. Author bio — 1
+8. (EEAT) Impressum — 1
+9. (EEAT) Contact — 1
+10. (EEAT) About link — 1
+
+So we could have e.g. 10 factors, each worth 10 points → 0–100. Or weight some higher (e.g. robots allow AI = must-have, so 15; schema = 15; rest 10 each). Let me define:
+
+- Robots allow AI: 15 (critical for GEO)
+- llms.txt: 10
+- Schema.org: 15
+- Tables: 5
+- FAQs: 10
+- Citations > 5: 10
+- Author bio: 5
+- EEAT: impressum 10, contact 5, about 5 = 20 total
+Total max = 15+10+15+5+10+10+5+10+5+5 = 90. So we could make it 100 by scaling or add one more. Simpler: 10 factors × 10 = 100.
+- Robots allow AI: 10 (if blocked, 0 for this)
+- llms.txt: 10
+- Schema: 10
+- Tables: 10
+- FAQs: 10
+- Citations > 5: 10
+- Author bio: 10
+- Impressum: 10
+- Contact: 10
+- About: 10
+Total 100. Score = sum of present (and for robots, +10 if allowing AI). So range 0–100, no baseline.
+
+I'll implement this: create a small lib (e.g. geo-eeat-page-score.ts) that takes the scan data (generative + eeatSignals) and returns { score, breakdown }. Then the scanner calls it. This way we can unit test and the UI stays the same (score 0–100 + breakdown).
+</details></think>
+
+---
+
+
+Generative-/EEAT-Datenstrukturen und Erfassung prüfen:
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "GenerativeEngineAudit|interface.*generative",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts",
+  "contextAfter": 35,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "GenerativeEngineAudit|interface.*generative",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 15,
+  "topFiles": [
+    {
+      "uri": "lib/types.ts",
+      "matchCount": 108
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 108
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 108
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 108
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 108
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to see the full GenerativeEngineAudit (content, expertise) and where seoAndMeta.generative is populated so we don't miss any field. Then I'll add a geo-eeat-page-score module.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "generative\\.|seoAndMeta\\.generative|g\\.(schema|faq|table|citation|hasAuthor)",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "generative\\.|seoAndMeta\\.generative|g\\.(schema|faq|table|citation|hasAuthor)",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 70,
+  "topFiles": [
+    {
+      "uri": "lib/scanner.ts",
+      "matchCount": 14
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 14
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 14
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 14
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 14
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The type says `citationDensity` but the scanner uses `g.citationCount`. Let me check - in the scanner it's g.faqCount, g.tableCount, and for citations it's g.citationCount. The type says content.citationDensity. So the generative object in the scanner might have a slightly different shape (e.g. from the extractor). I'll use the same field names the scanner uses: schemaCoverage (array), tableCount, faqCount, citationCount (need to check - might be content.citationDensity or a top-level citationCount). Let me check where seoAndMeta.generative is built.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "generative:|schemaCoverage|faqCount|tableCount|citationCount",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib",
+  "glob": "*.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "generative:|schemaCoverage|faqCount|tableCount|citationCount",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib",
+  "outputMode": "content",
+  "totalFiles": 35,
+  "totalMatches": 140,
+  "topFiles": [
+    {
+      "uri": "lib/scanner.ts",
+      "matchCount": 15
+    },
+    {
+      "uri": "lib/types.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "lib/domain-summary.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "lib/domain-aggregation.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "lib/geo-eeat/run-llm-stages.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "lib/llm/geo-eeat-prompts.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "lib/geo-eeat/stage1.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 15
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-summary.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-aggregation.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/geo-eeat/run-llm-stages.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/llm/geo-eeat-prompts.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/geo-eeat/stage1.ts",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 15
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-summary.ts",
+      "matchCount": 3
+    },
+    {
+      "uri": "../CHECKION-1/lib/domain-aggregation.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/geo-eeat/run-llm-stages.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/llm/geo-eeat-prompts.ts",
+      "matchCount": 2
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I see - the scanner builds a flat `generative` object with schemaCoverage, tableCount, faqCount, citationCount, hasAuthorBio at the top level (from the inline object at 860). The stored GenerativeEngineAudit type has technical/content/expertise nested. So when we build generativeAudit we're building the full structure with technical, content, expertise - and the score/scoreBreakdown. So the scanner creates the flat structure first (g), then builds generativeAudit with the nested structure. I'll create a scoring module that takes the same inputs the scanner has: hasLlmsTxt, hasRobotsAllowingAI, g (generative content), and eeatSignals. The module will return { score, scoreBreakdown } with 0-100 and no 50 baseline. I need to read where eeatSignals is available when we compute the score - it's in eeatPage (seoAndMeta.eeatPage). So in the scanner we have eeatSignals from seoAndMeta.eeatPage. Let me create the module and then call it from the scanner. I'll use factor keys that can be localized later; for now I'll keep the same German labels as in the breakdown so the UI doesn't need to change.
+</details></think>
+
+---
+
+
+Implementierung: Modul für das GEO/EEAT-Scoring erstellen und im Scanner einbinden.
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [-] Create geo-eeat-page-score.ts with 0–100 scale (no 50 baseline)
+- [ ] Wire scanner to use new score + include EEAT signals
+- [ ] Add tests and knowledge doc; verify build
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I have the full picture. I'll create a module that:
+1. Takes: generative (with schemaCoverage, tableCount, faqCount, citationCount, hasAuthorBio), hasLlmsTxt, hasRobotsAllowingAI, eeatSignals (hasImpressum, hasContact, hasAboutLink, hasTeamLink, hasCaseStudyMention).
+2. Uses a 0–100 scale: each factor has a weight; score = (earned / maxPossible) * 100. No baseline.
+3. Critical: if robots block AI, we can either cap the score heavily or treat it as a penalty. Current logic: robots block = -20. So we could make "Robots allow AI" a gate: if blocked, max score is e.g. 30 (or 0 for that factor). I'll do: total max 100 from factors; "Robots allow AI" contributes 15 (if blocked, we don't give those 15). So we have 85 from other factors + 15 from robots = 100. So when robots block, best you can get is 85. That's reasonable.
+4. Factors and weights (sum = 100):
+   - Robots allow AI: 15 (critical for GEO)
+   - llms.txt: 10
+   - Schema.org: 12
+   - Tables: 6
+   - FAQs: 10
+   - Citations > 5: 10
+   - Author bio: 7
+   - EEAT: Impressum 10, Contact 8, About 6, Team 4, Case study 4 = 32? That's a lot. Let me reduce EEAT to one block: Trust/Experience 20 total (Impressum 8, Contact 6, About 6). So:
+   - Robots allow AI: 15
+   - llms.txt: 10
+   - Schema: 12
+   - Tables: 5
+   - FAQs: 10
+   - Citations > 5: 10
+   - Author bio: 8
+   - Impressum: 8
+   - Contact: 6
+   - About: 6
+   Total = 15+10+12+5+10+10+8+8+6+6 = 90. Add 10 for Team+CaseStudy or just scale to 100. So 10 more → Team 5, CaseStudy 5. Total 100.
+   Simpler: 10 factors × 10 = 100.
+   - Robots allow AI: 10
+   - llms.txt: 10
+   - Schema: 10
+   - Tables: 10
+   - FAQs: 10
+   - Citations > 5: 10
+   - Author bio: 10
+   - Impressum: 10
+   - Contact: 10
+   - About: 10
+   Total 100. Clean. So score = sum of present (and for robots +10 if allowing). Range 0–100.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat-page-score.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The GenerativeEngineAudit type has scoreBreakdown as Array<{ factor: string; points: number }>, not with maxPoints. So the UI might expect { factor, points }. I'll keep the breakdown compatible: the scanner currently pushes { factor: string, points: number }. So I should output the same shape for scoreBreakdown so the UI doesn't break. Let me check the results page for how scoreBreakdown is rendered.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "scoreBreakdown|generative\\.score",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "glob": "*.{ts,tsx}",
+  "contextAfter": 1,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "scoreBreakdown|generative\\.score",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 35,
+  "totalMatches": 55,
+  "topFiles": [
+    {
+      "uri": "./lib/geo-eeat-page-score.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "./lib/scanner.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./lib/types.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/domain/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./app/share/[token]/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "./components/GenerativeOptimizerCard.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "./lib/llm/build-summary-payload.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/geo-eeat-page-score.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/share/[token]/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/components/GenerativeOptimizerCard.tsx",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/lib/llm/build-summary-payload.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/geo-eeat-page-score.ts",
+      "matchCount": 4
+    },
+    {
+      "uri": "../CHECKION-1/lib/scanner.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/domain/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/share/[token]/page.tsx",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/components/GenerativeOptimizerCard.tsx",
+      "matchCount": 4
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+GenerativeOptimizerCard uses data.scoreBreakdown and renders b (each item). I need to see how it displays - does it use b.points and b.factor? If we add maxPoints the type in types.ts is Array<{ factor: string; points: number }>. So the UI only uses factor and points. So I should keep the breakdown as { factor, points } for compatibility. I'll change my module to output scoreBreakdown as Array<{ factor: string; points: number }> (optionally we could add maxPoints for tooltip like "8/10" but that would require type change). For now I'll output the same shape so no UI change is needed; the tooltip can show "factor: +N" as before. So in the module I'll return breakdown with { factor, points } only (points = 0 or P). That matches the existing type.
+</details></think>
+
+---
+
+
+Breakdown auf `{ factor, points }` beschränken (wie im bestehenden Typ). Anpassen und Scanner einbinden.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat-page-score.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat-page-score.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now wire the scanner to use computeGeoEeatPageScore and pass eeatSignals. I need to:
+1. Import computeGeoEeatPageScore in scanner.ts
+2. Replace the inline geoScore/breakdown logic with a call to computeGeoEeatPageScore, passing hasLlmsTxt, hasRobotsAllowingAI, g.schemaCoverage, g.tableCount, g.faqCount, g.citationCount, g.hasAuthorBio, and eeatSignals (hasImpressum, hasContact, hasAboutLink, hasTeamLink, hasCaseStudyMention)
+3. Use the returned score and scoreBreakdown for generativeAudit
+
+eeatSignals is in the scanner from seoAndMeta - we have eeatPage: { hasImpressum, hasContact, hasAboutLink, hasTeamLink, hasCaseStudyMention }. So we need to get eeatSignals when we build the score. At the point where we compute the GEO score we have seoAndMeta and we already have eeatSignals from (seoAndMeta as { eeatPage?: ... }).eeatPage. Let me check - the scanner has eeatSignals at line 897: const eeatSignals = (seoAndMeta as { eeatPage?: import('./types').EeatPageSignals }).eeatPage; So that's after the GEO block. So we have eeatSignals in scope when we build generativeAudit. Let me look at the order of declarations again... Actually eeatSignals is used later for something else. So at line 1077 we have hasLlmsTxt, hasRobotsAllowingAI, g = seoAndMeta.generative. We need eeatSignals - but the generative object in seoAndMeta at that point is the raw one we're building (schemaCoverage, tableCount, etc.), and eeatPage is separate. So we need to get eeatPage from seoAndMeta. In the scanner, seoAndMeta is built in page.evaluate and includes eeatPage. So when we're building generativeAudit we have seoAndMeta with eeatPage. So I can do: const eeatPage = (seoAndMeta as { eeatPage?: EeatPageSignals }).eeatPage; and pass it to computeGeoEeatPageScore. Let me read the scanner again to see the exact variable names and where eeatSignals is defined.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+eeatSignals is defined at line 897, and the GEO score block is around 1075. So eeatSignals is in scope. I'll replace the GEO score calculation with a call to computeGeoEeatPageScore. I need to pass:
+- hasLlmsTxt
+- hasRobotsAllowingAI
+- schemaCoverage: g.schemaCoverage
+- tableCount: g.tableCount
+- faqCount: g.faqCount
+- citationCount: g.citationCount
+- hasAuthorBio: g.hasAuthorBio
+- eeat: eeatSignals ? { hasImpressum: eeatSignals.hasImpressum, hasContact: eeatSignals.hasContact, hasAboutLink: eeatSignals.hasAboutLink, hasTeamLink: eeatSignals.hasTeamLink, hasCaseStudyMention: eeatSignals.hasCaseStudyMention } : undefined
+
+Then use result.score and result.scoreBreakdown for generativeAudit.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Create geo-eeat-page-score.ts with 0–100 scale (no 50 baseline)
+- [-] Wire scanner to use new score + include EEAT signals
+- [ ] Add tests and knowledge doc; verify build
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+GenerativeOptimizerCard shows the breakdown - it might show "factor: +N" or "factor: N". Let me check - it uses b.points. So showing "Impressum (E-E-A-T): +10" or "Impressum (E-E-A-T): 0" is fine. We're only pushing entries with points 0 or 10, so the tooltip will list each factor with its points. Good.
+
+Now I need to fix the scanner: the `g` object is from seoAndMeta.generative - but at the time we're building generativeAudit, seoAndMeta.generative is the raw object from page.evaluate (schemaCoverage, tableCount, etc.). So g.schemaCoverage, g.tableCount etc. exist. But wait - in the scanner the structure is: seoAndMeta is the return value of page.evaluate, and it has a property "generative" which is the object with schemaCoverage, tableCount, faqCount, citationCount, hasAuthorBio. So g = seoAndMeta.generative has those. Good.
+
+Let me check - does seoAndMeta.generative have listCount? The evaluate returns generative: { schemaCoverage, ..., tableCount, listCount, faqCount, citationCount, ... }. So we're good. Let me run the build and add tests + knowledge doc.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/GenerativeOptimizerCard.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The UI shows "b.factor: +b.points" so we're good. Now add tests and knowledge doc, then run build.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Create geo-eeat-page-score.ts with 0–100 scale (no 50 baseline)
+- [x] Wire scanner to use new score + include EEAT signals
+- [-] Add tests and knowledge doc; verify build
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/__tests__/lib/geo-eeat-page-score.test.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/knowledge/checkion-geo-eeat-single-page-score.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Fix the test: the second test says "returns 10 for Robots erlauben AI only" but when hasRobotsAllowingAI is true and all others false, we get 10 from Robots only. So the first test has hasRobotsAllowingAI: true, so we get 10 from Robots - so score is 10, not 0. So test 1 is wrong: "returns 0 when no signals are present" - if we have hasRobotsAllowingAI: true we have one signal. So for 0 we need hasRobotsAllowingAI: false and all others false. Let me fix test 1.
+</details></think>
+
+---
+
+
+Korrigieren des ersten Tests: Bei keinen Signalen muss auch „Robots erlauben AI“ fehlen (false).
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/__tests__/lib/geo-eeat-page-score.test.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The second test - "returns 10 for Robots erlauben AI only" - we need hasRobotsAllowingAI: true and all others false. So score = 10. But we're reusing the same input as test 1 with only hasRobotsAllowingAI changed to true. Let me fix test 2 to have hasRobotsAllowingAI: true so we get 10.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/__tests__/lib/geo-eeat-page-score.test.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Fix the "scores citations > 5" test - we're spreading `below` which is the result object (score, scoreBreakdown), not the input. We need to pass an input object with citationCount: 6. Let me fix that test.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/__tests__/lib/geo-eeat-page-score.test.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Fix the "returns 0 for Robots factor when AI is blocked" test - we're passing eeat with hasTeamLink and hasCaseStudyMention. Our add() only uses hasImpressum, hasContact, hasAboutLink. So we have 9 factors (all except Robots) = 90. Good.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build && npx vitest run __tests__/lib/geo-eeat-page-score.test.ts</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build && npx vitest run __tests__/lib/geo-eeat-page-score.test.ts
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 12.4s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+  Generating static pages using 9 workers (0/47) ...
+  Generating static pages using 9 workers (11/47) 
+  Generating static pages using 9 workers (23/47) 
+  Generating static pages using 9 workers (35/47) 
+✓ Generating static pages using 9 workers (47/47) in 586.4ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/register
+├ ƒ /api/auth/tokens
+├ ƒ /api/auth/tokens/[id]
+├ ƒ /api/checks/contrast
+├ ƒ /api/checks/pagespeed
+├ ƒ /api/checks/readability
+├ ƒ /api/checks/ssl
+├ ƒ /api/checks/wayback
+├ ƒ /api/health
+├ ƒ /api/journeys
+├ ƒ /api/journeys/[id]
+├ ƒ /api/projects
+├ ƒ /api/projects/[id]
+├ ƒ /api/projects/[id]/domain-scan-all
+├ ƒ /api/projects/[id]/domain-summary
+├ ƒ /api/projects/[id]/domain-summary-all
+├ ƒ /api/projects/[id]/geo-latest-result
+├ ƒ /api/projects/[id]/geo-question-history
+├ ƒ /api/projects/[id]/geo-summary
+├ ƒ /api/projects/[id]/ranking-summary
+├ ƒ /api/projects/[id]/research
+├ ƒ /api/projects/[id]/suggest-competitors
+├ ƒ /api/projects/[id]/suggest-keywords
+├ ƒ /api/rank-tracking/keywords
+├ ƒ /api/rank-tracking/keywords/[id]
+├ ƒ /api/rank-tracking/keywords/[id]/positions
+├ ƒ /api/rank-tracking/refresh
+├ ƒ /api/saliency/generate
+├ ƒ /api/saliency/result
+├ ƒ /api/scan
+├ ƒ /api/scan/[id]
+├ ƒ /api/scan/[id]/classify
+├ ƒ /api/scan/[id]/project
+├ ƒ /api/scan/[id]/screenshot
+├ ƒ /api/scan/[id]/summarize
+├ ƒ /api/scan/[id]/ux-check
+├ ƒ /api/scan/domain
+├ ƒ /api/scan/domain/[id]/classify
+├ ƒ /api/scan/domain/[id]/journey
+├ ƒ /api/scan/domain/[id]/status
+├ ƒ /api/scan/domain/[id]/summarize
+├ ƒ /api/scan/domain/[id]/summary
+├ ƒ /api/scan/domain/by-domain
+├ ƒ /api/scan/geo-eeat
+├ ƒ /api/scan/geo-eeat/[jobId]
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history/[runId]
+├ ƒ /api/scan/geo-eeat/[jobId]/project
+├ ƒ /api/scan/geo-eeat/[jobId]/rerun-competitive
+├ ƒ /api/scan/geo-eeat/[jobId]/status
+├ ƒ /api/scan/geo-eeat/history
+├ ƒ /api/scan/geo-eeat/suggest-competitors-queries
+├ ƒ /api/scan/journey-agent
+├ ƒ /api/scan/journey-agent/[jobId]
+├ ƒ /api/scan/journey-agent/[jobId]/live
+├ ƒ /api/scan/journey-agent/[jobId]/live/stream
+├ ƒ /api/scan/journey-agent/[jobId]/project
+├ ƒ /api/scan/journey-agent/[jobId]/video
+├ ƒ /api/scan/journey-agent/history
+├ ƒ /api/scans
+├ ƒ /api/scans/[id]
+├ ƒ /api/scans/domain
+├ ƒ /api/scans/domain/[id]
+├ ƒ /api/scans/domain/[id]/project
+├ ƒ /api/search
+├ ƒ /api/share
+├ ƒ /api/share/[token]
+├ ƒ /api/share/[token]/access
+├ ƒ /api/share/[token]/pages/[pageId]
+├ ƒ /api/share/[token]/pages/[pageId]/screenshot
+├ ƒ /api/share/[token]/video
+├ ƒ /api/share/by-resource
+├ ƒ /api/tools/contrast
+├ ƒ /api/tools/extract
+├ ƒ /api/tools/pagespeed
+├ ƒ /api/tools/readability
+├ ƒ /api/tools/ssl-labs
+├ ƒ /api/tools/wayback
+├ ƒ /developers
+├ ƒ /domain/[id]
+├ ƒ /geo-eeat/[jobId]
+├ ƒ /history
+├ ƒ /journey-agent/[jobId]
+├ ƒ /login
+├ ƒ /projects
+├ ƒ /projects/[id]
+├ ƒ /projects/[id]/geo
+├ ƒ /projects/[id]/geo/analysis
+├ ƒ /projects/[id]/rankings
+├ ƒ /projects/[id]/research
+├ ƒ /projects/[id]/seo
+├ ƒ /projects/[id]/wcag
+├ ƒ /register
+├ ƒ /results/[id]
+├ ƒ /scan
+├ ƒ /scan/domain
+├ ƒ /settings
+└ ƒ /share/[token]
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
+
+ RUN  v4.0.18 /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1
+
+ ✓ __tests__/lib/geo-eeat-page-score.test.ts (6 tests) 2ms
+
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+   Start at  13:10:16
+   Duration  187ms (transform 30ms, setup 0ms, import 38ms, tests 2ms, environment 0ms)
+
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build and tests passed. Mark the last todo complete.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="task" data-tool-name="todo_write">
+<details><summary>Tool use: **todo_write** • Todo List</summary>
+
+- [x] Create geo-eeat-page-score.ts with 0–100 scale (no 50 baseline)
+- [x] Wire scanner to use new score + include EEAT signals
+- [x] Add tests and knowledge doc; verify build
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat-page-score.ts",
+    "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/geo-eeat-page-score.ts"
+    },
+    {
+      "relativeWorkspacePath": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/scanner.ts"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+All done. Let me give the user a concise summary.
+</details></think>
+
+---
+
+
+Summary of what was done:
+
+## 1. **Why every page showed at least 50**
+
+The GEO score was computed in `lib/scanner.ts` with a **fixed 50-point baseline** (“Basis”) and then +/- for factors. So with no bonuses you still got 50, which made scores feel flat.
+
+## 2. **New scoring: 0–100, no baseline**
+
+- **New module:** `lib/geo-eeat-page-score.ts`  
+  - `computeGeoEeatPageScore()`  
+  - **10 factors, 10 points each** (max 100), no baseline:
+    - Robots erlauben AI  
+    - llms.txt  
+    - Schema.org  
+    - Tabellen  
+    - FAQs  
+    - Zitate (>5)  
+    - Autoren-Bio  
+    - Impressum (E-E-A-T)  
+    - Kontakt (E-E-A-T)  
+    - Über uns (E-E-A-T)  
+
+- **EEAT in the same score:** Impressum, Kontakt, Über uns (from `eeatSignals` / `eeatPage`) are now part of this single 0–100 score, so GEO and E-E-A-T are scored together.
+
+- **Scanner:** Uses `computeGeoEeatPageScore()` with `hasLlmsTxt`, `hasRobotsAllowingAI`, generative data (`schemaCoverage`, `tableCount`, `faqCount`, `citationCount`, `hasAuthorBio`), and `eeatSignals`. The result’s `score` and `scoreBreakdown` are written into `result.generative`.
+
+## 3. **Checks**
+
+- **Single-page scan:** Unchanged flow; only the score computation was replaced (no baseline, EEAT included).
+- **Types:** `GenerativeEngineAudit.scoreBreakdown` stays `Array<{ factor: string; points: number }>`; the new breakdown only uses `factor` and `points` (0 or 10), so existing UI (e.g. `GenerativeOptimizerCard` tooltip) still works.
+- **Tests:** `__tests__/lib/geo-eeat-page-score.test.ts` — 6 cases (0 when all false, 10 for robots only, 0 for robots when blocked, 100 when all present, EEAT in breakdown, citations > 5).
+- **Docs:** `knowledge/checkion-geo-eeat-single-page-score.md` describes formula, factors, and where to change weights.
+
+## 4. **Result**
+
+- **Before:** Score ≥ 50 for almost every page (50 base + optional bonuses).  
+- **After:** Score 0–100 only from the 10 factors; pages with few or no signals get low scores (e.g. 0–20), pages with many get high (e.g. 70–100).  
+- **Build:** `npm run build` succeeds.  
+- **Tests:** All 6 tests in `geo-eeat-page-score.test.ts` pass.
+
+---
+
+_**User**_
+
+DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-odfgbo > span.MuiBox-root c.-13o7eu2 > div.MuiBox-root c.-27jwf3
+Position: top=-344px, left=104px, width=968px, height=1110px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-27jwf3" data-cursor-element-id="cursor-el-103">Scan Verifiziert info WCAG2AA DESKTOP 9790ms axe htmlcs URL: https://mhp.com 42 ERRORS 0 WARNINGS 0 NOTICES 11 LEVEL A 28 LEVEL AA 0 LEVEL AAA download PDF exportieren Seitenthema info Inhaltliche E</div>  ich möchte diesen ganzen inhalt als neue register integrieren DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-odfgbo > span.MuiBox-root c.-13o7eu2 > div.MuiBox-root c.-1e5zjag
+Position: top=781px, left=104px, width=968px, height=44px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-1e5zjag" data-cursor-element-id="cursor-el-390">info Liste & Details UX/CX Check Visuelle Analyse UX Audit Struktur & Semantik Links & SEO Infrastruktur & Privacy Generative Search (GEO)</div> 
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+
+
+---
+
+
 
 ---
 
@@ -79331,134 +80770,6 @@ Status: **loading**
 <tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
 <details>
 <summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
-
-</details>
-</tool-use>
-
----
-
-
-
----
-
-
-
----
-
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
-
-</details>
-</tool-use>
-
----
-
-<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
-<details>
-<summary>Tool use: **ripgrep_raw_search**</summary>
-
-Status: **loading**
-
-
-</details>
-</tool-use>
-
----
-
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
-
-</details>
-</tool-use>
-
----
-
-
-
----
-
-
-
----
-
-<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
-<details>
-<summary>Tool use: **ripgrep_raw_search**</summary>
-
-Status: **loading**
-
-
-</details>
-</tool-use>
-
----
-
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
-
-</details>
-</tool-use>
-
----
-
-
-
----
-
-
-
----
-
-<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
-<details>
-<summary>Tool use: **read_file_v2**</summary>
-
-Status: **loading**
-
-
-</details>
-</tool-use>
-
----
-
-<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
-<details>
-<summary>Tool use: **ripgrep_raw_search**</summary>
-
-Status: **loading**
-
-
-</details>
-</tool-use>
-
----
-
-
-
----
-
-
-
----
-
-<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
-<details>
-<summary>Tool use: **ripgrep_raw_search**</summary>
 
 Status: **loading**
 
