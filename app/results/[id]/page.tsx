@@ -552,6 +552,69 @@ export default function ResultsPage() {
                 </Box>
             </MsqdxMoleculeCard>
 
+            {/* Page classification (tags + tier) – from single-scan LLM */}
+            {result.pageClassification && (
+                <MsqdxMoleculeCard
+                    variant="flat"
+                    borderRadius="lg"
+                    sx={{ bgcolor: 'var(--color-card-bg)', mb: 'var(--msqdx-spacing-md)' }}
+                    title={t('results.pageClassificationTitle')}
+                    subtitle={t('results.pageClassificationSubtitle')}
+                    headerActions={
+                        <InfoTooltip
+                            title={t('info.pageClassification')}
+                            ariaLabel={t('common.info')}
+                            placement="bottom"
+                        />
+                    }
+                >
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-sm)' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                {t('results.pageClassificationTier')}:
+                            </MsqdxTypography>
+                            <MsqdxChip
+                                label={`${result.pageClassification.tier} – ${t(`results.pageClassificationTier${result.pageClassification.tier}` as 'results.pageClassificationTier1')}`}
+                                size="small"
+                                sx={{
+                                    backgroundColor: alpha(MSQDX_BRAND_PRIMARY.purple, 0.12),
+                                    color: MSQDX_BRAND_PRIMARY.purple,
+                                    fontWeight: 600,
+                                }}
+                            />
+                        </Box>
+                        {result.pageClassification.tags.length > 0 && (
+                            <Box>
+                                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                    {t('results.pageClassificationTags')}
+                                </MsqdxTypography>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                    {result.pageClassification.tags.map((tag, i) => (
+                                        <MsqdxChip
+                                            key={i}
+                                            label={tag}
+                                            size="small"
+                                            variant="outlined"
+                                            sx={{ fontSize: '0.75rem' }}
+                                        />
+                                    ))}
+                                </Box>
+                            </Box>
+                        )}
+                        {result.pageClassification.shortSummary && (
+                            <Box>
+                                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                    {t('results.pageClassificationSummary')}
+                                </MsqdxTypography>
+                                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                    {result.pageClassification.shortSummary}
+                                </MsqdxTypography>
+                            </Box>
+                        )}
+                    </Box>
+                </MsqdxMoleculeCard>
+            )}
+
             {/* Eco & Performance Grid */}
             {(result.eco || result.performance) && (
                 <Box sx={{

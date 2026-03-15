@@ -614,7 +614,17 @@
     "hideRegionHighlight": "Regionen ausblenden",
     "hoverToHighlight": "Hover über eine Region, um sie auf dem Screenshot zu markieren.",
     "fixDocs": "Fix-Anleitung",
-    "fixDocsAria": "Dokumentation und Fix-Anleitung für diese Regel öffnen"
+    "fixDocsAria": "Dokumentation und Fix-Anleitung für diese Regel öffnen",
+    "pageClassificationTitle": "Seitenthema",
+    "pageClassificationSubtitle": "Inhaltliche Einordnung (Tags & Wichtigkeit)",
+    "pageClassificationTier": "Tier",
+    "pageClassificationTags": "Tags",
+    "pageClassificationSummary": "Kurzbeschreibung",
+    "pageClassificationTier1": "Kaum inhaltliche Substanz",
+    "pageClassificationTier2": "Nur am Rande thematisch",
+    "pageClassificationTier3": "Mehrere Themen / Mischung",
+    "pageClassificationTier4": "Eindeutig ein Thema",
+    "pageClassificationTier5": "Klar einem Kernthema gewidmet"
   },
   "domainResult": {
     "loading": "Laden…",
@@ -841,6 +851,7 @@
     "generativeGeo": "Bewertung für Generative Search / GEO (Google) – wie gut die Seite für AI Overviews geeignet ist.",
     "issuesList": "Liste der gefundenen Barrierefreiheits-Probleme mit Schweregrad und WCAG-Level. Filter nach Error, Warning, Notice oder bestanden.",
     "eeat": "E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness): über den Deep Scan aggregierte Signale für Vertrauen, Experience und Expertise. Authoritativeness würde Backlink-Daten erfordern.",
-    "seoOnPage": "On-Page-SEO aus dem Deep Scan: Meta (Title, Description, H1, Canonical), Überschriften-Struktur, Seiten ohne Meta/Keywords und seitenübergreifende Keywords."
+    "seoOnPage": "On-Page-SEO aus dem Deep Scan: Meta (Title, Description, H1, Canonical), Überschriften-Struktur, Seiten ohne Meta/Keywords und seitenübergreifende Keywords.",
+    "pageClassification": "Inhaltliche Einordnung der Seite per KI: Themen-Tags und Tier (1–5) für die Wichtigkeit des Hauptthemas. Basiert nur auf dem Seiteninhalt, nicht auf URL oder Struktur."
   }
 }

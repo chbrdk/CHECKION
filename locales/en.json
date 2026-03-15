@@ -614,7 +614,17 @@
     "hideRegionHighlight": "Hide regions",
     "hoverToHighlight": "Hover over a region to highlight it on the screenshot.",
     "fixDocs": "Fix guide",
-    "fixDocsAria": "Open documentation and fix guide for this rule"
+    "fixDocsAria": "Open documentation and fix guide for this rule",
+    "pageClassificationTitle": "Page topic",
+    "pageClassificationSubtitle": "Content-based classification (tags & importance)",
+    "pageClassificationTier": "Tier",
+    "pageClassificationTags": "Tags",
+    "pageClassificationSummary": "Summary",
+    "pageClassificationTier1": "Little substantive content",
+    "pageClassificationTier2": "Only marginally thematic",
+    "pageClassificationTier3": "Multiple topics / mix",
+    "pageClassificationTier4": "Clearly one topic",
+    "pageClassificationTier5": "Clearly dedicated to one core topic"
   },
   "domainResult": {
     "loading": "Loading…",
@@ -841,6 +851,7 @@
     "generativeGeo": "Rating for Generative Search / GEO (Google) – how well the page is suited for AI overviews.",
     "issuesList": "List of accessibility issues found, with severity and WCAG level. Filter by error, warning, notice or passed.",
     "eeat": "E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness): signals aggregated from the deep scan for trust, experience and expertise. Authoritativeness would require backlink data.",
-    "seoOnPage": "On-page SEO from the deep scan: meta (title, description, H1, canonical), heading structure, pages without meta/keywords, and cross-page keywords."
+    "seoOnPage": "On-page SEO from the deep scan: meta (title, description, H1, canonical), heading structure, pages without meta/keywords, and cross-page keywords.",
+    "pageClassification": "AI-derived content classification: topic tags and tier (1–5) for importance of the main topic. Based on page content only, not URL or structure."
   }
 }
