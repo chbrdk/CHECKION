@@ -30,7 +30,7 @@ export const PerformanceCard: React.FC<PerformanceCardProps> = ({ perf }) => {
             subtitle="Ladezeiten & Core Web Vitals (Lab Data)"
             sx={{ bgcolor: 'var(--color-card-bg)' }}
         >
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 'var(--msqdx-spacing-sm)', height: '100%' }}>
+            <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 'var(--msqdx-spacing-sm)', height: '100%', minWidth: 0 }}>
                 {Object.entries(METRICS_CONFIG).map(([key, config]) => {
                     const raw = perf[key as keyof typeof perf];
                     const value = typeof raw === 'number' ? raw : 0;
@@ -40,6 +40,8 @@ export const PerformanceCard: React.FC<PerformanceCardProps> = ({ perf }) => {
 
                     return (
                         <Box key={key} sx={{
+                            flex: '1 1 0',
+                            minWidth: 0,
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'center',
@@ -65,6 +67,8 @@ export const PerformanceCard: React.FC<PerformanceCardProps> = ({ perf }) => {
                 })}
                 {perf.inp != null && (
                     <Box sx={{
+                        flex: '1 1 0',
+                        minWidth: 0,
                         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                         p: 'var(--msqdx-spacing-sm)', borderRadius: '12px', border: '1px solid var(--color-secondary-dx-grey-light-tint)',
                         backgroundColor: 'var(--color-card-bg)',
