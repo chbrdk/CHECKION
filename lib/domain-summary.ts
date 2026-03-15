@@ -56,6 +56,7 @@ function toSlimPage(p: ScanResult): SlimPage {
         ux: p.ux != null ? { score: p.ux.score } : undefined,
         eeatSignals: p.eeatSignals ?? undefined,
         hasPrivacy: p.privacy?.hasPrivacyPolicy ?? false,
+        pageClassification: p.pageClassification ?? undefined,
     };
 }
 

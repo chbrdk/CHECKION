@@ -22,7 +22,8 @@ export async function POST(req: NextRequest) {
     }
     const parsed = await parseApiBody(req, scanDomainBodySchema);
     if (parsed instanceof NextResponse) return parsed;
-    const { id } = await startDomainScan(user.id, parsed.url, {
+    const url = parsed.url.trim().toLowerCase().startsWith('http') ? parsed.url.trim() : `https://${parsed.url.trim()}`;
+    const { id } = await startDomainScan(user.id, url, {
         projectId: parsed.projectId,
         useSitemap: parsed.useSitemap,
         maxPages: parsed.maxPages,

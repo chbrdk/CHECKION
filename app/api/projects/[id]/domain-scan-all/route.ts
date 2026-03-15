@@ -35,7 +35,9 @@ export async function POST(
   if (!project) return apiError('Project not found', API_STATUS.NOT_FOUND);
 
   const own = project.domain?.trim() ? await (async () => {
-    const { id } = await startDomainScan(user.id, project.domain!, {
+    const raw = project.domain!.trim();
+    const url = raw.startsWith('http://') || raw.startsWith('https://') ? raw : `https://${raw}`;
+    const { id } = await startDomainScan(user.id, url, {
       projectId,
       useSitemap: true,
     });

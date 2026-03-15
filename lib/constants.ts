@@ -116,6 +116,8 @@ export const apiScan = (id: string) => `${API_SCAN}/${encodeURIComponent(id)}`;
 export const apiScanProject = (id: string) => `${apiScan(id)}/project`;
 /** Build: POST /api/scan/[id]/summarize */
 export const apiScanSummarize = (id: string) => `${apiScan(id)}/summarize`;
+/** Build: POST /api/scan/[id]/classify (page classification: tags + tier) */
+export const apiScanClassify = (id: string) => `${apiScan(id)}/classify`;
 /** Build: /api/scan/[id]/screenshot */
 export const apiScanScreenshot = (id: string) => `${apiScan(id)}/screenshot`;
 
@@ -129,6 +131,8 @@ export const apiScanDomainSummary = (id: string) => `${API_SCAN_DOMAIN}/${encode
 export const apiScanDomainSummarize = (id: string) => `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/summarize`;
 /** Build: POST /api/scan/domain/[id]/journey */
 export const apiScanDomainJourney = (id: string) => `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/journey`;
+/** Build: POST /api/scan/domain/[id]/classify (classify all pages of domain scan) */
+export const apiScanDomainClassify = (id: string) => `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/classify`;
 
 /** Build: POST /api/scan/journey-agent */
 export const apiScanJourneyAgentCreate = API_SCAN_JOURNEY_AGENT;

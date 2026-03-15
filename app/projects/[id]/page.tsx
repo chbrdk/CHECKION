@@ -20,6 +20,7 @@ import {
     apiProjectDomainSummaryAll,
     apiProjectDomainScanAll,
     apiScanDomainCreate,
+    apiScanDomainStatus,
     pathDomain,
     pathGeoEeat,
     pathProjectRankings,
@@ -73,6 +74,8 @@ export default function ProjectDetailPage() {
     const [domainSummaryAllCompetitors, setDomainSummaryAllCompetitors] = useState<Record<string, { scanId: string; score: number; totalPageCount: number; status: string } | null>>({});
     const [restartDeepScanLoading, setRestartDeepScanLoading] = useState(false);
     const [scanAllDeepScanLoading, setScanAllDeepScanLoading] = useState(false);
+    const [runningOwnScanId, setRunningOwnScanId] = useState<string | null>(null);
+    const [runningScanProgress, setRunningScanProgress] = useState<{ scanned: number; total: number } | null>(null);
     const [listsLoading, setListsLoading] = useState(false);
     const [addCompetitorValue, setAddCompetitorValue] = useState('');
     const [suggestCompetitorsLoading, setSuggestCompetitorsLoading] = useState(false);
@@ -274,14 +277,39 @@ export default function ProjectDetailPage() {
             const data = await r.json();
             if (data?.success) {
                 await loadDomainSummaryAll();
-                if (data?.data?.own?.scanId) router.push(pathDomain(data.data.own.scanId));
+                if (data?.data?.own?.scanId) {
+                    setRunningOwnScanId(data.data.own.scanId);
+                    setRunningScanProgress({ scanned: 0, total: 0 });
+                }
             }
         } catch {
             // ignore
         } finally {
             setScanAllDeepScanLoading(false);
         }
-    }, [id, loadDomainSummaryAll, router]);
+    }, [id, loadDomainSummaryAll]);
+
+    useEffect(() => {
+        if (!runningOwnScanId) return;
+        const interval = setInterval(async () => {
+            try {
+                const r = await fetch(apiScanDomainStatus(runningOwnScanId!), { credentials: 'same-origin' });
+                const data = await r.json();
+                if (data?.status === 'complete' || data?.status === 'error') {
+                    setRunningOwnScanId(null);
+                    setRunningScanProgress(null);
+                    if (id) loadDomainSummaryAll();
+                    return;
+                }
+                if (data?.progress && typeof data.progress?.scanned === 'number') {
+                    setRunningScanProgress({ scanned: data.progress.scanned, total: data.progress?.total ?? 0 });
+                }
+            } catch {
+                // ignore
+            }
+        }, 3000);
+        return () => clearInterval(interval);
+    }, [runningOwnScanId, id, loadDomainSummaryAll]);
 
     if (!id) {
         return (
@@ -476,6 +504,22 @@ export default function ProjectDetailPage() {
                 >
                     {listsLoading ? (
                         <MsqdxTypography variant="body2" sx={{ py: 1 }}>{t('common.loading')}</MsqdxTypography>
+                    ) : runningOwnScanId ? (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 1, gap: 1 }}>
+                            <MsqdxTypography variant="body1" weight="medium">
+                                {t('projects.deepScanRunning')}
+                            </MsqdxTypography>
+                            {runningScanProgress && runningScanProgress.total > 0 && (
+                                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                    {runningScanProgress.scanned} / {runningScanProgress.total} {t('domainResult.pagesScanned')}
+                                </MsqdxTypography>
+                            )}
+                            <Link href={pathDomain(runningOwnScanId)} style={{ textDecoration: 'none' }}>
+                                <MsqdxButton variant="outlined" size="small">
+                                    {t('projects.openDeepScan')}
+                                </MsqdxButton>
+                            </Link>
+                        </Box>
                     ) : domainSummary ? (
                         <>
                             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 0.5 }}>

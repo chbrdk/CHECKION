@@ -10,6 +10,15 @@ Beim Deep Scan werden **alle relevanten Metriken bereits während des Scans** be
 - **aggregated**: Vorberechnete Aggregationen (issues, ux, seo, links, infra, generative, structure, performance, eco).
 - Wie bisher: `id`, `domain`, `timestamp`, `status`, `progress`, `totalPages`, `score`, `graph`, `systemicIssues`, `eeat`, `error`, `llmSummary`.
 
+## URL-Normalisierung (http/https)
+
+Damit der Spider (Sitemap, Link-Crawl) korrekt arbeitet, muss die Start-URL immer ein gültiges Schema haben. Ohne `http://` oder `https://` liefert der Scan oft deutlich weniger Seiten (z. B. nur ~200 statt 1000+).
+
+- **`POST /api/scan/domain`**: `parsed.url` wird vor `startDomainScan` normalisiert: fehlt das Schema, wird `https://` vorangestellt.
+- **`POST /api/projects/[id]/domain-scan-all`**: Eigenes Projekt-Domain wird vor dem Aufruf von `startDomainScan` mit `https://` versehen, wenn noch kein Schema gesetzt ist.
+
+Siehe `app/api/scan/domain/route.ts` und `app/api/projects/[id]/domain-scan-all/route.ts`.
+
 ## Ablauf Deep Scan
 
 1. `POST /api/scan/domain` startet den Scan, erstellt einen leeren Domain-Eintrag.

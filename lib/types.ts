@@ -119,6 +119,13 @@ export interface LlmSummary {
     generatedAt: string;
 }
 
+/** LLM-derived page topic and importance tier (content-based, not structure). */
+export interface PageClassification {
+    tags: string[];
+    tier: 1 | 2 | 3 | 4 | 5;
+    shortSummary?: string;
+}
+
 export type ScanResult = {
     id: string;
     groupId?: string; // Optional for ad-hoc scans
@@ -171,6 +178,8 @@ export type ScanResult = {
     bodyTextExcerpt?: string;
     /** YMYL classification – stricter E-E-A-T for finance/health/legal. */
     ymyl?: YmylResult;
+    /** LLM-derived: what the page is about (tags) and content intensity tier (1–5). */
+    pageClassification?: PageClassification;
 }
 
 export interface TechnicalInsights {
@@ -394,6 +403,8 @@ export interface SlimPage {
     eeatSignals?: EeatPageSignals;
     /** Has privacy policy (from deep scan). */
     hasPrivacy?: boolean;
+    /** LLM-derived page topic and tier (from classification). */
+    pageClassification?: PageClassification;
 }
 
 /** Precomputed during deep scan; stored in domain_scans.payload. */

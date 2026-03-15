@@ -104,3 +104,8 @@
 {"sessionId":"cafcc0","location":"seo/page.tsx:render","message":"SEO page render","data":{"renderCount":3,"hasFullSummary":true},"timestamp":1773517058417,"hypothesisId":"H1"}
 {"sessionId":"cafcc0","location":"seo/page.tsx:render","message":"SEO page render","data":{"renderCount":1,"hasFullSummary":false},"timestamp":1773518783210,"hypothesisId":"H1"}
 {"sessionId":"cafcc0","location":"seo/page.tsx:render","message":"SEO page render","data":{"renderCount":2,"hasFullSummary":false},"timestamp":1773518785233,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"seo/page.tsx:render","message":"SEO page render","data":{"renderCount":1,"hasFullSummary":false},"timestamp":1773519905196,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"seo/page.tsx:render","message":"SEO page render","data":{"renderCount":2,"hasFullSummary":false},"timestamp":1773519907338,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"seo/page.tsx:render","message":"SEO page render","data":{"renderCount":3,"hasFullSummary":true},"timestamp":1773519907428,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"SeoOnPageTable.tsx:render","message":"table render","data":{"renderCount":1,"rowsLength":193},"timestamp":1773519907449,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"SeoOnPageTable.tsx:viewport","message":"table in viewport","data":{"renderCount":1,"rowsLength":193},"timestamp":1773519907499,"hypothesisId":"H2"}
