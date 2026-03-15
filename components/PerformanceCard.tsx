@@ -29,9 +29,19 @@ export const PerformanceCard: React.FC<PerformanceCardProps> = ({ perf, sx }) =>
         <MsqdxMoleculeCard
             title="Performance"
             subtitle="Ladezeiten & Core Web Vitals (Lab Data)"
-            sx={{ bgcolor: 'var(--color-card-bg)', ...sx }}
+            sx={{
+                bgcolor: 'var(--color-card-bg)',
+                width: '100%',
+                maxWidth: '100%',
+                boxSizing: 'border-box',
+                overflow: 'hidden',
+                /* Ensure content area uses full width (override card content padding if any) */
+                '& > div': { boxSizing: 'border-box' },
+                '& > div:last-of-type': { paddingRight: 0, marginRight: 0, maxWidth: '100%' },
+                ...sx,
+            }}
         >
-            <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 'var(--msqdx-spacing-sm)', height: '100%', minWidth: 0 }}>
+            <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 'var(--msqdx-spacing-sm)', height: '100%', width: '100%', minWidth: 0, boxSizing: 'border-box' }}>
                 {Object.entries(METRICS_CONFIG).map(([key, config]) => {
                     const raw = perf[key as keyof typeof perf];
                     const value = typeof raw === 'number' ? raw : 0;

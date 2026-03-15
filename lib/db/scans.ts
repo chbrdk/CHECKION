@@ -9,6 +9,7 @@ import type { ScanResult, DomainScanResult } from '@/lib/types';
 
 export type DomainScanSummaryRow = { id: string; domain: string; timestamp: string; status: string; score: number; totalPages: number };
 import type { UxCxSummary } from '@/lib/llm-summary-types';
+import type { UxCheckV2Summary } from '@/lib/ux-check-types';
 
 export async function addScan(userId: string, result: ScanResult, options?: { projectId?: string | null }): Promise<void> {
     const db = getDb();
@@ -47,7 +48,7 @@ export async function getScanWithSummary(id: string, userId: string): Promise<{ 
     };
 }
 
-export async function updateScanSummary(id: string, userId: string, summary: UxCxSummary): Promise<boolean> {
+export async function updateScanSummary(id: string, userId: string, summary: UxCxSummary | UxCheckV2Summary): Promise<boolean> {
     const db = getDb();
     const updated = await db.update(scans)
         .set({ llmSummary: summary as unknown as Record<string, unknown> })

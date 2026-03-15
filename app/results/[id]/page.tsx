@@ -33,10 +33,12 @@ import {
     apiScan,
     apiScanList,
     apiScanSummarize,
+    apiScanUxCheck,
     apiSaliencyResult,
     pathResults,
     PATH_HOME,
 } from '@/lib/constants';
+import { isUxCheckV2Summary, type UxCheckV2Summary } from '@/lib/ux-check-types';
 
 const UxIssueList = dynamic(
     () => import('@/components/UxIssueList').then((m) => ({ default: m.UxIssueList })),
@@ -104,6 +106,130 @@ import { PaginationBar } from '@/components/PaginationBar';
 import { RESULTS_ISSUES_PAGE_SIZE } from '@/lib/constants';
 import { SharePanel } from '@/components/SharePanel';
 import { AddToProject } from '@/components/AddToProject';
+
+function UxCheckV2Content({ summary }: { summary: UxCheckV2Summary }) {
+    const { structured, modelUsed, generatedAt } = summary;
+    const s = structured;
+    const severityColor: Record<string, string> = {
+        Kritisch: MSQDX_STATUS.error.base,
+        Schwer: MSQDX_STATUS.error.base,
+        Mittel: MSQDX_STATUS.warning.base,
+        Gering: MSQDX_STATUS.info.base,
+        Kosmetisch: 'var(--color-text-muted-on-light)',
+    };
+    return (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-lg)' }}>
+            {s.header && (
+                <Box>
+                    <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                        {s.header.seitenTitel || 'UX-Analyse'} — {s.header.url}
+                    </MsqdxTypography>
+                    {s.header.analysdatum && (
+                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                            Analysedatum: {s.header.analysdatum}
+                        </MsqdxTypography>
+                    )}
+                </Box>
+            )}
+            {s.problems.length > 0 && (
+                <Box>
+                    <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>UX-Probleme</MsqdxTypography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {s.problems.map((p, i) => (
+                            <Box
+                                key={i}
+                                sx={{
+                                    p: 1.5,
+                                    borderRadius: 1,
+                                    border: '1px solid',
+                                    borderColor: severityColor[p.severity] ?? 'divider',
+                                    bgcolor: alpha(severityColor[p.severity] ?? MSQDX_STATUS.info.base, 0.06),
+                                }}
+                            >
+                                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600 }}>{p.title}</MsqdxTypography>
+                                <MsqdxChip label={p.severity} size="small" sx={{ mt: 0.5, mb: 0.5, fontSize: '0.7rem' }} />
+                                <MsqdxTypography variant="caption" sx={{ display: 'block', color: 'var(--color-text-muted-on-light)', mt: 0.5 }}>{p.heuristik}</MsqdxTypography>
+                                <MsqdxTypography variant="body2" component="div" sx={{ mt: 1 }}>
+                                    <strong>Befund:</strong>
+                                    <Box component="ul" sx={{ m: 0, pl: 2, mt: 0.25 }}>{p.befund.map((b, j) => <li key={j}>{b}</li>)}</Box>
+                                </MsqdxTypography>
+                                <MsqdxTypography variant="body2" component="div" sx={{ mt: 1 }}>
+                                    <strong>Empfehlung:</strong>
+                                    <Box component="ul" sx={{ m: 0, pl: 2, mt: 0.25 }}>{p.empfehlung.map((e, j) => <li key={j}>{e}</li>)}</Box>
+                                </MsqdxTypography>
+                            </Box>
+                        ))}
+                    </Box>
+                </Box>
+            )}
+            {s.positiveAspects.length > 0 && (
+                <Box>
+                    <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Positive Aspekte</MsqdxTypography>
+                    <Box component="ul" sx={{ m: 0, pl: 2 }}>{s.positiveAspects.map((a, i) => <li key={i}><MsqdxTypography variant="body2">{a}</MsqdxTypography></li>)}</Box>
+                </Box>
+            )}
+            {s.ratingTable.length > 0 && (
+                <Box sx={{ overflowX: 'auto' }}>
+                    <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Bewertungstabelle</MsqdxTypography>
+                    <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                        <thead>
+                            <tr>
+                                <Box component="th" sx={{ textAlign: 'left', p: 1, borderBottom: 1, borderColor: 'divider' }}>Kategorie</Box>
+                                <Box component="th" sx={{ textAlign: 'left', p: 1, borderBottom: 1, borderColor: 'divider' }}>Unterkategorien</Box>
+                                <Box component="th" sx={{ textAlign: 'center', p: 1, borderBottom: 1, borderColor: 'divider' }}>Score</Box>
+                                <Box component="th" sx={{ textAlign: 'left', p: 1, borderBottom: 1, borderColor: 'divider' }}>Begründung</Box>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {s.ratingTable.map((r, i) => (
+                                <tr key={i}>
+                                    <Box component="td" sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>{r.kategorie}</Box>
+                                    <Box component="td" sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>{r.unterkategorien ?? '—'}</Box>
+                                    <Box component="td" sx={{ p: 1, borderBottom: 1, borderColor: 'divider', textAlign: 'center' }}>{r.score}/5</Box>
+                                    <Box component="td" sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>{r.begruendung ?? '—'}</Box>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </Box>
+                </Box>
+            )}
+            {s.impactEffortMatrix.length > 0 && (
+                <Box sx={{ overflowX: 'auto' }}>
+                    <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Impact-Effort-Matrix</MsqdxTypography>
+                    <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                        <thead>
+                            <tr>
+                                <Box component="th" sx={{ textAlign: 'left', p: 1, borderBottom: 1, borderColor: 'divider' }}>Problem</Box>
+                                <Box component="th" sx={{ textAlign: 'left', p: 1, borderBottom: 1, borderColor: 'divider' }}>Impact</Box>
+                                <Box component="th" sx={{ textAlign: 'left', p: 1, borderBottom: 1, borderColor: 'divider' }}>Effort</Box>
+                                <Box component="th" sx={{ textAlign: 'left', p: 1, borderBottom: 1, borderColor: 'divider' }}>Priorität</Box>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {s.impactEffortMatrix.map((row, i) => (
+                                <tr key={i}>
+                                    <Box component="td" sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>{row.problem}</Box>
+                                    <Box component="td" sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>{row.impact}</Box>
+                                    <Box component="td" sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>{row.effort}</Box>
+                                    <Box component="td" sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>{row.prioritaet}</Box>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </Box>
+                </Box>
+            )}
+            {s.recommendations.length > 0 && (
+                <Box>
+                    <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Handlungsempfehlungen</MsqdxTypography>
+                    <Box component="ol" sx={{ m: 0, pl: 2.5 }}>{s.recommendations.map((rec, i) => <li key={i}><MsqdxTypography variant="body2">{rec}</MsqdxTypography></li>)}</Box>
+                </Box>
+            )}
+            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }} component="div">
+                Generiert mit {modelUsed} am <span suppressHydrationWarning>{new Date(generatedAt).toLocaleString('de-DE')}</span>.
+            </MsqdxTypography>
+        </Box>
+    );
+}
 
 const SEVERITY_CONFIG: Record<IssueSeverity, { color: string; label: string }> = {
     error: { color: MSQDX_STATUS.error.base, label: 'Error' },
@@ -468,7 +594,11 @@ export default function ResultsPage() {
                             }
                             title={t('results.scanVerified')}
                             headerActions={<InfoTooltip title={t('info.scanVerified')} ariaLabel={t('common.info')} />}
-                            subtitle={`URL: ${result.url}`}
+                            subtitle={
+                                <MsqdxTypography component="span" sx={{ fontSize: '0.75rem', color: MSQDX_NEUTRAL[800], fontWeight: 500 }}>
+                                    URL: {result.url}
+                                </MsqdxTypography>
+                            }
                             actions={
                                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
                                     <MsqdxButton variant="outlined" size="small" disabled={pdfExporting} onClick={handlePdfExport} startIcon={<MsqdxIcon name="Download" size="sm" />}>
@@ -497,7 +627,7 @@ export default function ResultsPage() {
                                 </Box>
                             }
                         >
-                            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 'var(--msqdx-spacing-sm)' }}>
+                            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(72px, 1fr))', gap: 'var(--msqdx-spacing-xs)', rowGap: 'var(--msqdx-spacing-sm)' }}>
                                 <MiniStat label="Errors" value={result.stats.errors} color={MSQDX_STATUS.error.base} />
                                 <MiniStat label="Warnings" value={result.stats.warnings} color={MSQDX_STATUS.warning.base} />
                                 <MiniStat label="Notices" value={result.stats.notices} color={MSQDX_STATUS.info.base} />
@@ -558,13 +688,13 @@ export default function ResultsPage() {
                         }}
                     >
                         {result.eco && (
-                            <Box sx={{ minHeight: '100%', height: '100%', display: 'flex' }}>
+                            <Box sx={{ minHeight: '100%', height: '100%', width: '100%', minWidth: 0, display: 'flex' }}>
                                 <EcoCard eco={result.eco} sx={{ height: '100%' }} />
                             </Box>
                         )}
                         {result.performance && (
-                            <Box sx={{ minHeight: '100%', height: '100%', display: 'flex' }}>
-                                <PerformanceCard perf={result.performance} sx={{ height: '100%' }} />
+                            <Box sx={{ minHeight: '100%', height: '100%', width: '100%', minWidth: 0, display: 'flex' }}>
+                                <PerformanceCard perf={result.performance} sx={{ height: '100%', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }} />
                             </Box>
                         )}
                         {result.ux && (
@@ -592,7 +722,11 @@ export default function ResultsPage() {
                     }
                     title={t('results.scanVerified')}
                     headerActions={<InfoTooltip title={t('info.scanVerified')} ariaLabel={t('common.info')} />}
-                    subtitle={`URL: ${result.url}`}
+                    subtitle={
+                        <MsqdxTypography component="span" sx={{ fontSize: '0.75rem', color: MSQDX_NEUTRAL[800], fontWeight: 500 }}>
+                            URL: {result.url}
+                        </MsqdxTypography>
+                    }
                     actions={
                         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
                             <MsqdxButton variant="outlined" size="small" disabled={pdfExporting} onClick={handlePdfExport} startIcon={<MsqdxIcon name="Download" size="sm" />}>
@@ -621,7 +755,7 @@ export default function ResultsPage() {
                         </Box>
                     }
                 >
-                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 'var(--msqdx-spacing-sm)' }}>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(72px, 1fr))', gap: 'var(--msqdx-spacing-xs)', rowGap: 'var(--msqdx-spacing-sm)' }}>
                         <MiniStat label="Errors" value={result.stats.errors} color={MSQDX_STATUS.error.base} />
                         <MiniStat label="Warnings" value={result.stats.warnings} color={MSQDX_STATUS.warning.base} />
                         <MiniStat label="Notices" value={result.stats.notices} color={MSQDX_STATUS.info.base} />
@@ -655,23 +789,19 @@ export default function ResultsPage() {
                 <MsqdxMoleculeCard
                     title="UX/CX Check"
                     headerActions={<InfoTooltip title={t('info.uxCxCheck')} ariaLabel={t('common.info')} />}
-                    subtitle="Bewertung und Handlungsempfehlungen auf Basis aller Scan-Kategorien"
+                    subtitle="Heuristische Evaluation gemäß DIN EN ISO 9241-110 (Dialogprinzipien)"
                     variant="flat"
                     sx={{ bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}
                     borderRadius="lg"
                 >
-                    {result.llmSummary ? (
+                    {result.llmSummary && isUxCheckV2Summary(result.llmSummary) ? (
+                        <UxCheckV2Content summary={result.llmSummary} />
+                    ) : result.llmSummary && 'summary' in result.llmSummary ? (
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-md)' }}>
                             {result.llmSummary.overallGrade && (
-                                <MsqdxChip
-                                    label={result.llmSummary.overallGrade}
-                                    size="small"
-                                    sx={{ alignSelf: 'flex-start', fontWeight: 600 }}
-                                />
+                                <MsqdxChip label={result.llmSummary.overallGrade} size="small" sx={{ alignSelf: 'flex-start', fontWeight: 600 }} />
                             )}
-                            <MsqdxTypography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-                                {result.llmSummary.summary}
-                            </MsqdxTypography>
+                            <MsqdxTypography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>{result.llmSummary.summary}</MsqdxTypography>
                             {result.llmSummary.themes?.length > 0 && (
                                 <Box>
                                     <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Themen</MsqdxTypography>
@@ -682,9 +812,7 @@ export default function ResultsPage() {
                                                 label={t.description ? `${t.name}: ${t.description}` : t.name}
                                                 size="small"
                                                 variant="outlined"
-                                                sx={{
-                                                    bgcolor: t.severity === 'high' ? alpha(MSQDX_STATUS.error.base, 0.08) : t.severity === 'medium' ? alpha(MSQDX_STATUS.warning.base, 0.08) : undefined,
-                                                }}
+                                                sx={{ bgcolor: t.severity === 'high' ? alpha(MSQDX_STATUS.error.base, 0.08) : t.severity === 'medium' ? alpha(MSQDX_STATUS.warning.base, 0.08) : undefined }}
                                             />
                                         ))}
                                     </Box>
@@ -694,17 +822,13 @@ export default function ResultsPage() {
                                 <Box>
                                     <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Handlungsempfehlungen</MsqdxTypography>
                                     <Box component="ol" sx={{ m: 0, pl: 2.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                        {[...result.llmSummary.recommendations]
-                                            .sort((a, b) => a.priority - b.priority)
-                                            .map((r, i) => (
-                                                <Box component="li" key={i} sx={{ mb: 0.5 }}>
-                                                    <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600 }}>{r.title}</MsqdxTypography>
-                                                    {r.category && (
-                                                        <MsqdxChip label={r.category} size="small" sx={{ ml: 1, height: 18, fontSize: '0.65rem' }} />
-                                                    )}
-                                                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mt: 0.25 }}>{r.description}</MsqdxTypography>
-                                                </Box>
-                                            ))}
+                                        {[...result.llmSummary.recommendations].sort((a, b) => a.priority - b.priority).map((r, i) => (
+                                            <Box component="li" key={i} sx={{ mb: 0.5 }}>
+                                                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600 }}>{r.title}</MsqdxTypography>
+                                                {r.category && <MsqdxChip label={r.category} size="small" sx={{ ml: 1, height: 18, fontSize: '0.65rem' }} />}
+                                                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mt: 0.25 }}>{r.description}</MsqdxTypography>
+                                            </Box>
+                                        ))}
                                     </Box>
                                 </Box>
                             )}
@@ -715,7 +839,7 @@ export default function ResultsPage() {
                     ) : (
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, py: 4 }}>
                             <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', textAlign: 'center' }}>
-                                Hier erscheint eine Gesamtbewertung und konkrete Handlungsempfehlungen auf Basis aller Kategorien (Issues, UX, Performance, SEO, etc.).
+                                Heuristische UX-Evaluation (DIN EN ISO 9241-110): Probleme, Bewertungstabelle, Impact-Effort-Matrix und Handlungsempfehlungen werden von einem Claude-Agenten erzeugt.
                             </MsqdxTypography>
                             {summarizeError && (
                                 <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.error.base }}>{summarizeError}</MsqdxTypography>
@@ -729,9 +853,9 @@ export default function ResultsPage() {
                                     setSummarizeError(null);
                                     setSummarizing(true);
                                     try {
-                                        const res = await fetch(apiScanSummarize(result.id), { method: 'POST' });
+                                        const res = await fetch(apiScanUxCheck(result.id), { method: 'POST' });
                                         const data = await res.json().catch(() => ({}));
-                                        if (!res.ok) throw new Error(data.error ?? 'Fehler beim Generieren');
+                                        if (!res.ok) throw new Error(data.error ?? 'Fehler beim UX-Check');
                                         setResult((prev) => (prev ? { ...prev, llmSummary: data } : null));
                                     } catch (e) {
                                         setSummarizeError(e instanceof Error ? e.message : 'Unbekannter Fehler');
@@ -740,7 +864,7 @@ export default function ResultsPage() {
                                     }
                                 }}
                             >
-                                {summarizing ? 'Wird generiert…' : 'Zusammenfassung generieren'}
+                                {summarizing ? 'UX-Check läuft…' : 'UX-Check starten'}
                             </MsqdxButton>
                         </Box>
                     )}
@@ -1356,27 +1480,29 @@ function MiniStat({ label, value, color }: { label: string; value: number; color
     return (
         <Box
             sx={{
-                p: 'var(--msqdx-spacing-md)',
-                borderRadius: MSQDX_SPACING.borderRadius.md,
+                px: 'var(--msqdx-spacing-xs)',
+                py: 'var(--msqdx-spacing-sm)',
+                borderRadius: MSQDX_SPACING.borderRadius.sm,
                 backgroundColor: 'var(--color-card-bg)',
                 border: '1px solid var(--color-secondary-dx-grey-light-tint)',
                 textAlign: 'center',
             }}
         >
             <MsqdxTypography
-                variant="h5"
-                sx={{ fontWeight: 700, color, letterSpacing: '-0.02em' }}
+                component="span"
+                sx={{ fontWeight: 700, color, letterSpacing: '-0.02em', fontSize: '0.95rem', lineHeight: 1.2, display: 'block' }}
             >
                 {value}
             </MsqdxTypography>
             <MsqdxTypography
-                variant="caption"
+                component="span"
                 sx={{
                     color: 'var(--color-text-muted-on-light)',
                     textTransform: 'uppercase',
-                    letterSpacing: '0.08em',
-                    fontSize: '0.6rem',
+                    letterSpacing: '0.04em',
+                    fontSize: '0.55rem',
                     fontWeight: 600,
+                    display: 'block',
                 }}
             >
                 {label}

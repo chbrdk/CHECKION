@@ -2,6 +2,8 @@
 /*  CHECKION – Core types                                             */
 /* ------------------------------------------------------------------ */
 
+import type { UxCheckV2Summary } from '@/lib/ux-check-types';
+
 export type WcagStandard = 'WCAG2A' | 'WCAG2AA' | 'WCAG2AAA';
 export type IssueSeverity = 'error' | 'warning' | 'notice';
 export type Runner = 'axe' | 'htmlcs';
@@ -175,8 +177,8 @@ export type ScanResult = {
     generative?: GenerativeEngineAudit;
     security?: SecurityAudit;
     technicalInsights?: TechnicalInsights;
-    /** Set when UX/CX summary has been generated (GET includes it, POST /summarize writes it). */
-    llmSummary?: LlmSummary | null;
+    /** Set when UX/CX summary has been generated (POST /summarize or POST /ux-check writes it). */
+    llmSummary?: LlmSummary | UxCheckV2Summary | null;
     /** Page index: regions (what where), findability, optional semantic types (for persona click-path evaluation). */
     pageIndex?: PageIndex;
     /** Estimated scanpath (fixation order) from saliency + DOM heuristic; set when saliency heatmap and pageIndex exist. */

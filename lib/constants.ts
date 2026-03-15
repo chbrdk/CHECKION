@@ -118,6 +118,8 @@ export const apiScanProject = (id: string) => `${apiScan(id)}/project`;
 export const apiScanSummarize = (id: string) => `${apiScan(id)}/summarize`;
 /** Build: POST /api/scan/[id]/classify (page classification: tags + tier) */
 export const apiScanClassify = (id: string) => `${apiScan(id)}/classify`;
+/** Build: POST /api/scan/[id]/ux-check (Claude UX Check v2, DIN EN ISO 9241-110) */
+export const apiScanUxCheck = (id: string) => `${apiScan(id)}/ux-check`;
 /** Build: /api/scan/[id]/screenshot */
 export const apiScanScreenshot = (id: string) => `${apiScan(id)}/screenshot`;
 
