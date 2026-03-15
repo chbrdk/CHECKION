@@ -1,12 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, alpha } from '@mui/material';
-import { MsqdxTypography, MsqdxChip } from '@msqdx/react';
+import { MsqdxTypography, MsqdxChip, MsqdxButton } from '@msqdx/react';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { MSQDX_BRAND_PRIMARY, MSQDX_NEUTRAL, MSQDX_STATUS } from '@msqdx/tokens';
 import type { PageIndex, PageIndexRegion, PageIndexRegionType } from '@/lib/types';
 import { useI18n } from '@/components/i18n/I18nProvider';
+import { PAGE_INDEX_INITIAL_VISIBLE } from '@/lib/constants';
 
 const SEMANTIC_TYPE_LABELS: Record<PageIndexRegionType, string> = {
     pricing: 'Preis',
@@ -27,10 +28,13 @@ export interface PageIndexCardProps {
     pageIndex: PageIndex;
     /** Optional: show saliency prominence bar when value is present */
     showSaliency?: boolean;
+    /** Initial number of regions to show; rest behind "show more". Default from constants. */
+    initialVisible?: number;
 }
 
-export function PageIndexCard({ pageIndex, showSaliency = true }: PageIndexCardProps) {
+export function PageIndexCard({ pageIndex, showSaliency = true, initialVisible = PAGE_INDEX_INITIAL_VISIBLE }: PageIndexCardProps) {
     const { t } = useI18n();
+    const [showAllRegions, setShowAllRegions] = useState(false);
 
     const regions = Array.isArray(pageIndex?.regions) ? pageIndex.regions : [];
     if (regions.length === 0) {
@@ -41,6 +45,16 @@ export function PageIndexCard({ pageIndex, showSaliency = true }: PageIndexCardP
         );
     }
 
+    const visibleCount = showAllRegions ? regions.length : Math.min(regions.length, initialVisible);
+    const hasMore = regions.length > initialVisible && !showAllRegions;
+    const aboveFoldCount = regions.filter((r) => r.aboveFold).length;
+    const belowFoldCount = regions.length - aboveFoldCount;
+    const typeCounts = regions.reduce<Record<string, number>>((acc, r) => {
+        const key = r.semanticType ?? 'unknown';
+        acc[key] = (acc[key] ?? 0) + 1;
+        return acc;
+    }, {});
+
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
@@ -48,6 +62,23 @@ export function PageIndexCard({ pageIndex, showSaliency = true }: PageIndexCardP
                     {t('results.pageIndexTitle')}
                 </MsqdxTypography>
                 <InfoTooltip title={t('info.pageIndex')} ariaLabel={t('common.info')} />
+            </Box>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
+                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', mr: 0.5 }}>
+                    {t('results.pageIndexAboveFoldCount', { count: aboveFoldCount })}
+                    {' · '}
+                    {t('results.pageIndexBelowFoldCount', { count: belowFoldCount })}
+                </MsqdxTypography>
+                {Object.entries(typeCounts)
+                    .filter(([k]) => k !== 'unknown' || typeCounts.unknown > 0)
+                    .map(([type, count]) => (
+                        <MsqdxChip
+                            key={type}
+                            label={`${SEMANTIC_TYPE_LABELS[type as PageIndexRegionType] ?? type}: ${count}`}
+                            size="small"
+                            sx={{ height: 20, fontSize: '0.65rem' }}
+                        />
+                    ))}
             </Box>
             <Box
                 component="ul"
@@ -60,10 +91,20 @@ export function PageIndexCard({ pageIndex, showSaliency = true }: PageIndexCardP
                     gap: 0.75,
                 }}
             >
-                {regions.map((r) => (
+                {regions.slice(0, visibleCount).map((r) => (
                     <RegionRow key={r.id} region={r} showSaliency={showSaliency} t={t} />
                 ))}
             </Box>
+            {hasMore && (
+                <MsqdxButton
+                    variant="text"
+                    size="small"
+                    onClick={() => setShowAllRegions(true)}
+                    sx={{ alignSelf: 'flex-start', mt: 0.5 }}
+                >
+                    {t('results.pageIndexShowMoreRegions', { count: regions.length - initialVisible })}
+                </MsqdxButton>
+            )}
         </Box>
     );
 }

@@ -75268,16 +75268,1251 @@ bau lokal es gibt glaube ich fehler
 
 _**Agent (model default, mode Agent)**_
 
+<think><details><summary>Thought Process</summary>
 
+The user wants me to build the project locally to check for errors. Let me run the build command.
+</details></think>
 
 ---
+
+
 
 
 
 ---
 
 <tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
-<details><summary>Tool use: **run_terminal_command_v2**</summary>
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The build was sent to the background. Let me wait a bit and then read the terminal output file to see if the build completed and if there were any errors.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/.cursor/projects/Users-christoph-bordeck-Desktop-ANTIGRAVITY-CHECKION-1/terminals/283344.txt</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build is still running (TypeScript check). Let me read the file again after a moment to see the full result, or run the build again with a longer timeout to get the complete output.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 24.5s
+  Running TypeScript ...
+Failed to compile.
+
+./app/results/[id]/page.tsx:597:29
+Type error: Type 'Element' is not assignable to type 'string'.
+
+[0m [90m 595 |[39m                             title[33m=[39m{t([32m'results.scanVerified'[39m)}
+ [90m 596 |[39m                             headerActions[33m=[39m{[33m&lt;[39m[33mInfoTooltip[39m title[33m=[39m{t([32m'info.scanVerified'[39m)} ariaLabel[33m=[39m{t([32m'common.info'[39m)} [33m/[39m[33m&gt;[39m}
+[31m[1m&gt;[22m[39m[90m 597 |[39m                             subtitle[33m=[39m{
+ [90m     |[39m                             [31m[1m^[22m[39m
+ [90m 598 |[39m                                 [33m&lt;[39m[33mMsqdxTypography[39m component[33m=[39m[32m"span"[39m sx[33m=[39m{{ fontSize[33m:[39m [32m'0.75rem'[39m[33m,[39m color[33m:[39m [33mMSQDX_NEUTRAL[39m[[35m800[39m][33m,[39m fontWeight[33m:[39m [35m500[39m }}[33m&gt;[39m
+ [90m 599 |[39m                                     [33mURL[39m[33m:[39m {result[33m.[39murl}
+ [90m 600 |[39m                                 [33m&lt;[39m[33m/[39m[33mMsqdxTypography[39m[33m&gt;[39m[0m
+Next.js build worker exited with code: 1 and signal: null
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The build failed because `subtitle` on `MsqdxMoleculeCard` expects a `string` type but we're passing a React Element (the MsqdxTypography). I need to fix this - either the card accepts ReactNode for subtitle or we need to pass a string. Let me check the MsqdxMoleculeCard component or we can cast/wrap. The simplest fix is to pass a string for subtitle and render the URL in the card body, or we need to see if the design system's card accepts ReactNode for subtitle. Given the error says "Type 'Element' is not assignable to type 'string'", the prop is typed as string. So we have two options: 1) Pass subtitle as string again (e.g. `URL: ${result.url}`) and style it via a different mechanism if the card supports it, or 2) Render the URL line inside the card content instead of as subtitle. The user had asked for the URL to be "smaller and darker" - that was done by passing a custom Typography as subtitle. If the component only accepts string, we could render the URL as the first child inside the card with the desired styling, and pass a generic subtitle string or leave subtitle empty. Let me check the page - we have two places where we use this custom subtitle (in the two-column layout and in the fallback). I'll change both to: use subtitle as string "URL: ..." again for the type to pass, and add a small styled Typography as the first child inside the card content for the URL line so we can keep the smaller/darker styling. Actually re-reading the user's request - they wanted the URL text "smaller and with stronger font color". So we need that styling. If subtitle is string only, we have to put the URL inside the card with custom styling. Let me look at the structure: the card has title, headerActions, subtitle, and children. So we can set subtitle to something like "Scan-Info" or leave it empty and render the URL as first child with the small dark styling. Or we could use a type assertion to bypass the type if we know the component actually supports ReactNode at runtime. Let me check the design system - we might not have it in the repo. So the safe fix is: use subtitle as string (e.g. `URL: ${result.url}`) to satisfy the type, and add a wrapper or first child that re-renders the URL with smaller/darker style. But that would duplicate the URL (once in subtitle, once in our styled block). So better: set subtitle to empty string or a short label, and add the URL as the first content element with the desired styling. I'll do: subtitle="" or subtitle="Scan" and then first child in the card content is the URL with MsqdxTypography (fontSize 0.75rem, color MSQDX_NEUTRAL[800], fontWeight 500). Let me read the current structure to see exactly where the subtitle is used and what the card's children are.
+</details></think>
+
+---
+
+
+Beheben des TypeScript-Fehlers: `MsqdxMoleculeCard` erwartet für `subtitle` einen String, wir übergeben ein React-Element.
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "subtitle=\\{",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx",
+  "contextBefore": 1,
+  "contextAfter": 6,
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "subtitle=\\{",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 15,
+  "topFiles": [
+    {
+      "uri": "app/results/[id]/page.tsx",
+      "matchCount": 24
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 24
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 24
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 24
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 24
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to replace the Element subtitle with a string and move the styled URL into the card content. So:
+1. First occurrence (around 597): use subtitle={`URL: ${result.url}`} or just a short string, then add as first child inside the card a Box with the styled URL (small, dark). Actually if we use subtitle as string "URL: ..." we lose the small/dark styling. So the better approach: subtitle="" or subtitle="Scan" and then the first child of the card is the URL line with our styling. Let me read the exact structure of the card children to see where to insert the URL block.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll use subtitle as string `URL: ${result.url}` and add a styled URL block as the first child inside the card content so we keep the smaller/darker look. Actually if the card renders subtitle with default styling, we get the URL in the header - and then we'd duplicate it with custom styling in the body. So the clean approach: use subtitle with the string so TypeScript is happy, and optionally override the subtitle appearance via CSS if the card supports a class. But the user wanted "smaller and darker" - so if we only pass a string, the card might render it with its default (larger, muted) style. So the better approach: don't use subtitle for the URL. Use subtitle="" or a generic text like "Scan-Info", and as the first child of the card content add the URL with our styling. That way we have one URL line, styled as desired. Let me do: subtitle="" (or we could use a short label), and prepend to the card children a Box with the URL in MsqdxTypography (small, dark).
+</details></think>
+
+---
+
+
+Subtitle als String übergeben und die URL als erste Zeile im Karteninhalt mit gewünschter Formatierung einfügen.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I removed the duplicate subtitle in the fallback card - now both cards use subtitle as string and we have the styled URL inside the card body. But wait - if we use subtitle={`URL: ${result.url}`} the card will show the URL in the header (default styling). Then we also added "URL: {result.url}" inside the body - so the URL would appear twice (once in header, once in body with dark styling). Let me fix: use subtitle="" or a short label so we don't duplicate. Then only the body has the URL with our styling. I'll set subtitle to empty string for both cards so only the inner Typography shows the URL (small, dark).
+</details></think>
+
+---
+
+
+Doppelte URL entfernen: Subtitle leer lassen, nur die formatierte URL im Karteninhalt anzeigen.
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now run the build again to confirm it passes.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 23.0s
+  Running TypeScript ...
+Failed to compile.
+
+./components/pdf/ScanReportDocument.tsx:499:34
+Type error: Property 'overallGrade' does not exist on type '{ version: "ux-check-v2"; structured: { problems: { title: string; befund: string[]; empfehlung: string[]; heuristik: string; severity: "Kosmetisch" | "Gering" | "Mittel" | "Schwer" | "Kritisch"; }[]; ... 4 more ...; header?: { ...; } | undefined; }; modelUsed: string; generatedAt: string; reportMarkdown?: string | ...'.
+  Property 'overallGrade' does not exist on type '{ version: "ux-check-v2"; structured: { problems: { title: string; befund: string[]; empfehlung: string[]; heuristik: string; severity: "Kosmetisch" | "Gering" | "Mittel" | "Schwer" | "Kritisch"; }[]; ... 4 more ...; header?: { ...; } | undefined; }; modelUsed: string; generatedAt: string; reportMarkdown?: string | ...'.
+
+[0m [90m 497 |[39m             [33m&lt;[39m[33mReact[39m[33m.[39m[33mFragment[39m key[33m=[39m[32m"summary"[39m[33m&gt;[39m
+ [90m 498 |[39m                 [33m&lt;[39m[33mSectionHeader[39m title[33m=[39m[32m"UX/CX Check"[39m chapter[33m=[39m[32m"summary"[39m [33m/[39m[33m&gt;[39m
+[31m[1m&gt;[22m[39m[90m 499 |[39m                 {scan[33m.[39mllmSummary[33m.[39moverallGrade [33m&amp;&amp;[39m (
+ [90m     |[39m                                  [31m[1m^[22m[39m
+ [90m 500 |[39m                     [33m&lt;[39m[33mView[39m style[33m=[39m{styles[33m.[39mpillRow}[33m&gt;[39m
+ [90m 501 |[39m                         [33m&lt;[39m[33mView[39m style[33m=[39m{[styles[33m.[39mpill[33m,[39m { backgroundColor[33m:[39m chapterColors[33m.[39msummary[33m.[39mmain }]}[33m&gt;[39m[33m&lt;[39m[33mText[39m style[33m=[39m{{ fontSize[33m:[39m [35m8[39m[33m,[39m color[33m:[39m colors[33m.[39mwhite }}[33m&gt;[39m[33mNote[39m[33m:[39m {scan[33m.[39mllmSummary[33m.[39moverallGrade}[33m&lt;[39m[33m/[39m[33mText[39m[33m&gt;[39m[33m&lt;[39m[33m/[39m[33mView[39m[33m&gt;[39m
+ [90m 502 |[39m                     [33m&lt;[39m[33m/[39m[33mView[39m[33m&gt;[39m[0m
+Next.js build worker exited with code: 1 and signal: null
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+The PDF component assumes llmSummary is always the old format (with overallGrade, summary, etc.). We need to handle both formats in ScanReportDocument.tsx - check if it's v2 and then render differently, or use a type guard and optional chaining.
+</details></think>
+
+---
+
+
+PDF-Komponente anpassen, damit sie beide Summary-Formate unterstützt:
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/pdf/ScanReportDocument.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I need to add a type guard: if llmSummary has version 'ux-check-v2', render the v2 content (e.g. structured.recommendations, structured.ratingTable or a short summary); otherwise use the old overallGrade/summary/recommendations. I'll use isUxCheckV2Summary from ux-check-types and then branch the rendering.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "import.*ScanResult|llmSummary",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/pdf/ScanReportDocument.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "import.*ScanResult|llmSummary",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/pdf/ScanReportDocument.tsx",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 35,
+  "topFiles": [
+    {
+      "uri": "components/pdf/ScanReportDocument.tsx",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/components/pdf/ScanReportDocument.tsx",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/components/pdf/ScanReportDocument.tsx",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/components/pdf/ScanReportDocument.tsx",
+      "matchCount": 7
+    },
+    {
+      "uri": "../CHECKION-1/components/pdf/ScanReportDocument.tsx",
+      "matchCount": 7
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I'll add the import for isUxCheckV2Summary and then replace the llmSummary block with a conditional: if v2, render structured summary (e.g. header, first few problems, recommendations); else render old format.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/pdf/ScanReportDocument.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/pdf/ScanReportDocument.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I made a mistake: I used s.reportMarkdown but reportMarkdown is on llm (the summary), not on s (structured). Let me fix: summaryText for v2 - we don't have reportMarkdown on structured. So use llm.reportMarkdown (the full summary object has reportMarkdown). Let me fix the variable - it should be llm.reportMarkdown not s.reportMarkdown.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/pdf/ScanReportDocument.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now run build again.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1</summary>
+
+```bash
+cd /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1 && npm run build 2>&1
+```
+
+```
+
+&gt; checkion@0.1.0 build
+&gt; next build --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 24.8s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+[CHECKION] AUTH_SECRET is missing or too short (min 32 chars). Set AUTH_SECRET in production.
+  Generating static pages using 9 workers (0/47) ...
+  Generating static pages using 9 workers (11/47) 
+  Generating static pages using 9 workers (23/47) 
+  Generating static pages using 9 workers (35/47) 
+✓ Generating static pages using 9 workers (47/47) in 443.6ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/admin/users
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/register
+├ ƒ /api/auth/tokens
+├ ƒ /api/auth/tokens/[id]
+├ ƒ /api/checks/contrast
+├ ƒ /api/checks/pagespeed
+├ ƒ /api/checks/readability
+├ ƒ /api/checks/ssl
+├ ƒ /api/checks/wayback
+├ ƒ /api/health
+├ ƒ /api/journeys
+├ ƒ /api/journeys/[id]
+├ ƒ /api/projects
+├ ƒ /api/projects/[id]
+├ ƒ /api/projects/[id]/domain-scan-all
+├ ƒ /api/projects/[id]/domain-summary
+├ ƒ /api/projects/[id]/domain-summary-all
+├ ƒ /api/projects/[id]/geo-latest-result
+├ ƒ /api/projects/[id]/geo-question-history
+├ ƒ /api/projects/[id]/geo-summary
+├ ƒ /api/projects/[id]/ranking-summary
+├ ƒ /api/projects/[id]/research
+├ ƒ /api/projects/[id]/suggest-competitors
+├ ƒ /api/projects/[id]/suggest-keywords
+├ ƒ /api/rank-tracking/keywords
+├ ƒ /api/rank-tracking/keywords/[id]
+├ ƒ /api/rank-tracking/keywords/[id]/positions
+├ ƒ /api/rank-tracking/refresh
+├ ƒ /api/saliency/generate
+├ ƒ /api/saliency/result
+├ ƒ /api/scan
+├ ƒ /api/scan/[id]
+├ ƒ /api/scan/[id]/classify
+├ ƒ /api/scan/[id]/project
+├ ƒ /api/scan/[id]/screenshot
+├ ƒ /api/scan/[id]/summarize
+├ ƒ /api/scan/[id]/ux-check
+├ ƒ /api/scan/domain
+├ ƒ /api/scan/domain/[id]/classify
+├ ƒ /api/scan/domain/[id]/journey
+├ ƒ /api/scan/domain/[id]/status
+├ ƒ /api/scan/domain/[id]/summarize
+├ ƒ /api/scan/domain/[id]/summary
+├ ƒ /api/scan/domain/by-domain
+├ ƒ /api/scan/geo-eeat
+├ ƒ /api/scan/geo-eeat/[jobId]
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history
+├ ƒ /api/scan/geo-eeat/[jobId]/competitive-history/[runId]
+├ ƒ /api/scan/geo-eeat/[jobId]/project
+├ ƒ /api/scan/geo-eeat/[jobId]/rerun-competitive
+├ ƒ /api/scan/geo-eeat/[jobId]/status
+├ ƒ /api/scan/geo-eeat/history
+├ ƒ /api/scan/geo-eeat/suggest-competitors-queries
+├ ƒ /api/scan/journey-agent
+├ ƒ /api/scan/journey-agent/[jobId]
+├ ƒ /api/scan/journey-agent/[jobId]/live
+├ ƒ /api/scan/journey-agent/[jobId]/live/stream
+├ ƒ /api/scan/journey-agent/[jobId]/project
+├ ƒ /api/scan/journey-agent/[jobId]/video
+├ ƒ /api/scan/journey-agent/history
+├ ƒ /api/scans
+├ ƒ /api/scans/[id]
+├ ƒ /api/scans/domain
+├ ƒ /api/scans/domain/[id]
+├ ƒ /api/scans/domain/[id]/project
+├ ƒ /api/search
+├ ƒ /api/share
+├ ƒ /api/share/[token]
+├ ƒ /api/share/[token]/access
+├ ƒ /api/share/[token]/pages/[pageId]
+├ ƒ /api/share/[token]/pages/[pageId]/screenshot
+├ ƒ /api/share/[token]/video
+├ ƒ /api/share/by-resource
+├ ƒ /api/tools/contrast
+├ ƒ /api/tools/extract
+├ ƒ /api/tools/pagespeed
+├ ƒ /api/tools/readability
+├ ƒ /api/tools/ssl-labs
+├ ƒ /api/tools/wayback
+├ ƒ /developers
+├ ƒ /domain/[id]
+├ ƒ /geo-eeat/[jobId]
+├ ƒ /history
+├ ƒ /journey-agent/[jobId]
+├ ƒ /login
+├ ƒ /projects
+├ ƒ /projects/[id]
+├ ƒ /projects/[id]/geo
+├ ƒ /projects/[id]/geo/analysis
+├ ƒ /projects/[id]/rankings
+├ ƒ /projects/[id]/research
+├ ƒ /projects/[id]/seo
+├ ƒ /projects/[id]/wcag
+├ ƒ /register
+├ ƒ /results/[id]
+├ ƒ /scan
+├ ƒ /scan/domain
+├ ƒ /settings
+└ ƒ /share/[token]
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Build succeeded (exit code 0). The AUTH_SECRET messages are just runtime warnings for production, not build errors. I'll summarize for the user.
+</details></think>
+
+---
+
+
+Der Build läuft jetzt durch. Es gab zwei Anpassungen:
+
+**1. `subtitle` nur als String (`app/results/[id]/page.tsx`)**  
+`MsqdxMoleculeCard` erwartet für `subtitle` einen String, es wurde aber ein React-Element übergeben.  
+- `subtitle` ist jetzt ein leerer String.  
+- Die URL erscheint nur noch im Karteninhalt mit der gewünschten Formatierung (kleiner, dunkel) als erste Zeile:  
+  `<MsqdxTypography ... sx={{ fontSize: '0.75rem', color: MSQDX_NEUTRAL[800], fontWeight: 500, mb: 1 }}>URL: {result.url}</MsqdxTypography>`  
+- Das gilt für beide Stellen (Zwei-Spalten-Layout und Fallback-Karte).
+
+**2. PDF unterstützt beide Summary-Formate (`components/pdf/ScanReportDocument.tsx`)**  
+`scan.llmSummary` kann das alte Format (z. B. `overallGrade`, `summary`, `recommendations`) oder das neue v2-Format haben.  
+- Import von `isUxCheckV2Summary`.  
+- Wenn v2: Ausgabe von Header-URL, Kurztext aus `reportMarkdown` oder aus Header + positive Aspekte, sowie die neuen `structured.recommendations`.  
+- Sonst: bisherige Darstellung (Note, Summary, Empfehlungen mit Priorität).
+
+**Build:** `npm run build` endet mit Exit-Code 0. Die Meldungen zu `AUTH_SECRET` sind Laufzeithinweise für Production, keine Build-Fehler.
+
+---
+
+_**User**_
+
+DOM Path: div.MuiBox-root c.-tg5hlj > div.MuiBox-root c.-182nt7k > div.MuiBox-root c.-pc3j4w > div.MuiBox-root c.-8apcii > div.MuiBox-root c.-1igh1w9 > main.MuiBox-root c.-ukczie > div.MuiBox-root c.-odfgbo > span.MuiBox-root c.-13o7eu2 > div.MuiBox-root c.-3a.i7l > div.MuiBox-root c.-1.g4afn
+Position: top=137px, left=105px, width=1299px, height=7391px
+React Component: ForwardRef
+HTML Element: <div class="MuiBox-root css-1sg4afn" data-cursor-element-id="cursor-el-1">Struktur & Semantik info Visualisierung der Dokumentenstruktur (Headings, Landmarks). Document Outline H5 — Automotive – Turning challenges into opportunities H5 — Logistics & Transportation – Effic</div> hast du eine idee wie wir die struktur und semantik fakten so aggregieren oder visuell wertvoll gestalten können das am ende nicht nur mehrere riesige listen stehen?
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+
+The user is asking about the "Struktur & Semantik" (Structure & Semantics) section in their CHECKION results page. They're saying it currently shows huge lists and they want ideas for how to aggregate or present the structure/semantics facts in a more visually valuable way instead of just having multiple large lists.
+
+I'm in Ask mode, so I should only read the codebase to understand the current implementation and then provide suggestions/recommendations—no edits.
+
+Let me find how the Structure & Semantics section is currently implemented and what data it displays.
+</details></think>
+
+---
+
+
+Wir prüfen, wie die Sektion „Struktur & Semantik“ aktuell aufgebaut ist und welche Daten sie anzeigt.
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "Struktur|Semantik|structure|Document Outline",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results",
+  "glob": "*.tsx",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "Struktur|Semantik|structure|Document Outline",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 55,
+  "topFiles": [
+    {
+      "uri": "app/results/[id]/page.tsx",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 11
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 11
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "viewMode.*structure|structure.*viewMode",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "viewMode.*structure|structure.*viewMode",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1",
+  "outputMode": "content",
+  "totalFiles": 35,
+  "totalMatches": 60,
+  "topFiles": [
+    {
+      "uri": "./app/results/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "./locales/en.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "./.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 2
+    },
+    {
+      "uri": "./.specstory/history/2026-02-27_20-37Z-checkion-project-improvement-opportunities.md",
+      "matchCount": 2
+    },
+    {
+      "uri": "./.specstory/history/2026-02-23_15-12Z-ergebnisse-teilen-für-normale-scans-und-ux-journeys.md",
+      "matchCount": 2
+    },
+    {
+      "uri": "./knowledge/checkion-page-index.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "./Trace-20260219T213538.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_20-37Z-checkion-project-improvement-opportunities.md",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-23_15-12Z-ergebnisse-teilen-für-normale-scans-und-ux-journeys.md",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/knowledge/checkion-page-index.md",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/Trace-20260219T213538.json",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/app/results/[id]/page.tsx",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/locales/en.json",
+      "matchCount": 1
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_16-07Z-geo-and-eeat-analysis-expansion.md",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-27_20-37Z-checkion-project-improvement-opportunities.md",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/.specstory/history/2026-02-23_15-12Z-ergebnisse-teilen-für-normale-scans-und-ux-journeys.md",
+      "matchCount": 2
+    },
+    {
+      "uri": "../CHECKION-1/knowledge/checkion-page-index.md",
+      "matchCount": 1
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Let me read the full structure section in the results page and the StructureMap component to understand the data and current layout.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/app/results/[id]/page.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/StructureMap.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "StructureNode|structureMap|headingHierarchy|outline",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "StructureNode|structureMap|headingHierarchy|outline",
+  "path": "/Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts",
+  "outputMode": "content",
+  "totalFiles": 5,
+  "totalMatches": 30,
+  "topFiles": [
+    {
+      "uri": "lib/types.ts",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 6
+    },
+    {
+      "uri": "../CHECKION-1/lib/types.ts",
+      "matchCount": 6
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+Now I have a clear picture:
+
+1. **Current content in "Struktur & Semantik":**
+   - **Document Outline**: Flat list of `headingHierarchy.outline` (level + text), plus warnings for multiple H1 or skipped levels.
+   - **StructureMap**: Flat list of `structureMap` nodes (tag, text, level) — each node is one row with indent; landmarks (level 0) highlighted.
+   - **PageIndexCard**: At the bottom, with pageIndex (regions, findability, etc.).
+
+2. **Why it becomes "riesige Listen":**
+   - Outline and structureMap are both long 1D lists; on content-heavy pages that’s hundreds of items.
+   - No aggregation (e.g. "42 Headings, 8 Landmarks"), no collapsible sections, no visual hierarchy (tree/chart), no "top N + expand for more".
+
+Let me check StructureNode and PageIndex types to see what we can aggregate.
+</details></think>
+
+---
+
+
+
+
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/lib/types.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/christoph.bordeck/Desktop/ANTIGRAVITY/CHECKION-1/components/PageIndexCard.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+
+I now have a full picture. Let me summarize and give concrete, implementable ideas for aggregating and making the structure/semantics section more visually valuable instead of "several huge lists".
+</details></think>
+
+---
+
+
+Die Sektion „Struktur & Semantik“ baut aktuell so auf:
+
+- **Document Outline**: flache Liste aller `headingHierarchy.outline`-Einträge (H1–H6 + Text) plus Hinweise zu mehreren H1 / übersprungenen Levels  
+- **StructureMap**: flache Liste aller `structureMap`-Nodes (Tag, Text, Level; Landmarks mit level 0)  
+- **PageIndexCard**: Liste aller `pageIndex.regions` mit Findability (und optional Saliency)
+
+Bei vielen Headings/Landmarks/Regions entstehen dadurch sehr lange Listen ohne Zusammenfassung oder klare Hierarchie.
+
+---
+
+## Ideen für Aggregation und bessere Darstellung
+
+### 1. **Kompakte Summary-Leiste oben**
+Zuerst eine Zeile mit Kennzahlen, keine Listen:
+
+- **Outline:** z. B. „1× H1, 8× H2, 24× H3, …“ (aus `headingHierarchy.outline` nach `level` gruppieren und zählen).
+- **Struktur:** z. B. „5 Landmarks, 42 Headings“ (aus `structureMap`: `level === 0` vs. 1–6).
+- **Qualität:** z. B. „✓ Eine H1“ oder „⚠ 2 H1, übersprungene Level: H2→H4“ (bereits vorhandene `headingHierarchy`-Flags nutzen).
+
+So sieht man sofort den Überblick, die langen Listen können darunter bleiben oder reduziert werden.
+
+### 2. **Document Outline: Baum statt flacher Liste**
+`outline` ist bereits hierarchisch (level 1–6). Statt einer flachen Liste mit Einrückung:
+
+- **Echte Baumdarstellung:** z. B. vertikales Tree-UI (nur Headings, keine Landmarks), klappbare Zweige.
+- **Oder „Top-Level + Details“:** Nur H1 und H2 anzeigen; H3–H6 in einem „Alle Headings ein-/ausklappen“ oder pro H2-Bereich aufklappbar.
+
+So bleibt die Liste semantisch erhalten, wird aber visuell als Hierarchie erkennbar und bei Bedarf kollabierbar.
+
+### 3. **StructureMap: Gruppieren und Kappen**
+`structureMap` enthält `tag` (z. B. `nav`, `main`, `h1`–`h6`) und `level`:
+
+- **Nach Typ gruppieren:** Z. B. Abschnitte „Landmarks“ (level 0) und „Headings“ (1–6); innerhalb von Headings optional nach Level (H1, H2, …).
+- **Kappen + „Mehr anzeigen“:** Z. B. pro Gruppe nur die ersten 5–10 Einträge, Rest hinter „12 weitere Headings anzeigen“ mit lokalem State.
+- **Nur Landmarks als kompakte Chips:** Landmarks als kleine Chips (nav, main, footer, …), Headings separat (z. B. als Baum wie oben).
+
+So wird die „riesige“ StructureMap zu wenigen, überschaubaren Blöcken.
+
+### 4. **PageIndex: Aggregation + Fokus**
+`pageIndex.regions` hat u. a. `semanticType`, `aboveFold`, `findabilityScore`:
+
+- **Nach `semanticType` aggregieren:** z. B. „Hero: 1, Nav: 1, Main: 3, FAQ: 1 …“ als kleine Zusammenfassung oder Balken.
+- **Above-the-fold vs. darunter:** Zwei kurze Blöcke (z. B. „Above fold: 5 Regionen“, „Darunter: 12 Regionen“) statt einer langen Liste.
+- **Findability nur für Top-N:** Z. B. „Top-5 findbare Regionen“ mit Bar/Score; Rest optional aufklappbar oder weglassen.
+
+Damit wird die PageIndex-Liste zu einer lesbaren Übersicht mit optionalem Drill-down.
+
+### 5. **Eine Karte mit Tabs oder Akkordeon**
+Statt alles untereinander in einer langen Karte:
+
+- **Tabs:** z. B. „Überblick“ (Summary + Qualitäts-Hinweise) | „Document Outline“ (Baum/gekappte Liste) | „Struktur-Map“ (gruppiert/gekappt) | „Seiten-Index“ (aggregiert + Top-Regionen).
+- **Oder Akkordeon:** Jeder Block (Outline, StructureMap, PageIndex) standardmäßig zugeklappt mit Überschrift und Kennzahl (z. B. „Document Outline (42 Einträge)“); Nutzer öffnet nur, was er braucht.
+
+So bleibt die gleiche Information, wirkt aber nicht mehr wie „mehrere riesige Listen“.
+
+### 6. **Visuelle Hierarchie (Mini-Chart)**
+Für den „Überblick“-Bereich:
+
+- **Kleine Balkengrafik:** z. B. Anteil H1/H2/H3/… an der Gesamtzahl der Headings (oder Anzahl pro Level).
+- **Oder einfache „Depth“-Anzeige:** z. B. „Max. Tiefe: H5“ und „Anzahl pro Level“ als kleine horizontale Bars.
+
+Das nutzt die gleichen Daten (`outline` / `structureMap`), gibt aber sofort ein Bild der Dokumenttiefe.
+
+---
+
+## Empfehlung für die Reihenfolge
+
+1. **Summary-Leiste** (Kennzahlen Outline + Struktur + Qualität) oben in der Karte einbauen – wenig Aufwand, großer Effekt.
+2. **Outline als Baum oder „H1/H2 + Rest aufklappbar“** – Daten sind schon da, nur Darstellung anpassen.
+3. **StructureMap und PageIndex kappen** (z. B. 10–15 Einträge + „Mehr anzeigen“) und optional nach Typ gruppieren.
+4. **Tabs oder Akkordeon** für die drei Blöcke (Outline / StructureMap / PageIndex), damit die Karte nicht mehr 7391px hoch wird.
+
+Wenn du magst, können wir im Agent-Modus als Nächstes konkret eine der Varianten (z. B. Summary-Leiste + gekappte Listen + Akkordeon) in `app/results/[id]/page.tsx` und ggf. in `StructureMap`/`PageIndexCard` ausarbeiten.
+
+---
+
+_**User**_
+
+plane alles genaustens ein
+
+---
+
+_**Agent (model default, mode Agent)**_
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_file_v2">
+<details>
+<summary>Tool use: **read_file_v2**</summary>
+
+Status: **loading**
+
+
+</details>
+</tool-use>
+
+---
+
+
+
+---
+
+
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="create_plan">
+<details>
+<summary>Tool use: **create_plan**</summary>
+
+Additional data:
+
+```json
+{
+  "reviewData": {
+    "status": "Requested",
+    "selectedOption": "none",
+    "isShowingInput": false
+  }
+}
+```
+Status: **loading**
+
 
 </details>
 </tool-use>

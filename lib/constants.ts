@@ -344,3 +344,11 @@ export const ENV_GEO_EEAT_SERVICE_URL = 'GEO_EEAT_SERVICE_URL';
 
 /** If set, Next.js rewrites /mcp and /mcp/* to this URL (MCP server). Enables single-domain deployment: origin/mcp → MCP. Use internal URL in Coolify (e.g. http://checkion-mcp:3100). */
 export const ENV_MCP_SERVER_URL = 'MCP_SERVER_URL';
+
+// ─── Structure & Semantics (results tab) ───────────────────────────────────
+/** Initial number of document outline entries shown before "show more". */
+export const OUTLINE_INITIAL_VISIBLE = 20;
+/** Initial number of headings shown in structure map before "show more". */
+export const STRUCTURE_MAP_HEADINGS_INITIAL = 15;
+/** Initial number of page index regions shown before "show more". */
+export const PAGE_INDEX_INITIAL_VISIBLE = 10;
