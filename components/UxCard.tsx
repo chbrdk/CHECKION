@@ -18,9 +18,10 @@ import type { UxResult } from '@/lib/types';
 
 interface UxCardProps {
     ux: UxResult;
+    sx?: React.ComponentProps<typeof MsqdxMoleculeCard>['sx'];
 }
 
-export const UxCard = ({ ux }: UxCardProps) => {
+export const UxCard = ({ ux, sx }: UxCardProps) => {
     // Determine Score Color
     let scoreColor: string = MSQDX_STATUS.success.base;
     if (ux.score < 50) scoreColor = MSQDX_STATUS.error.base;
@@ -31,7 +32,7 @@ export const UxCard = ({ ux }: UxCardProps) => {
 
     return (
         <MsqdxMoleculeCard
-            sx={{ bgcolor: 'var(--color-card-bg)' }}
+            sx={{ bgcolor: 'var(--color-card-bg)', ...sx }}
             title="User Experience Scan"
             subtitle="Analysis of visual stability, interactivity, and content."
             headerActions={

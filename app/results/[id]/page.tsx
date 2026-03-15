@@ -507,17 +507,20 @@ export default function ResultsPage() {
             <MsqdxMoleculeCard
                 variant="flat"
                 borderRadius="lg"
-                sx={{ mb: 'var(--msqdx-spacing-sm)', bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-card-border)' }}
-                headerActions={<InfoTooltip title={t('info.scanResult')} ariaLabel={t('common.info')} />}
+                sx={{ mb: 'var(--msqdx-spacing-sm)', bgcolor: 'var(--color-card-bg)' }}
             >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
                     <Box sx={{ minWidth: 0, flex: '1 1 auto' }}>
-                        <MsqdxTypography
-                            variant="h4"
-                            sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}
-                        >
-                            {t('results.scanResult')}
-                        </MsqdxTypography>
+                        <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, marginBottom: 0, verticalAlign: 'middle' }}>
+                            <MsqdxTypography
+                                component="span"
+                                variant="h4"
+                                sx={{ fontWeight: 700, letterSpacing: '-0.02em', display: 'inline' }}
+                            >
+                                {t('results.scanResult')}
+                            </MsqdxTypography>
+                            <InfoTooltip title={t('info.scanResult')} ariaLabel={t('common.info')} />
+                        </Box>
                         <MsqdxTypography
                             variant="body2"
                             sx={{
@@ -532,7 +535,7 @@ export default function ResultsPage() {
                         </MsqdxTypography>
                     </Box>
                     <Box sx={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-                        <MsqdxTypography sx={{ fontSize: 48, fontWeight: 800, color: scoreColor, lineHeight: 1, letterSpacing: '-0.02em' }}>
+                        <MsqdxTypography component="span" sx={{ fontSize: 48, fontWeight: 800, color: scoreColor, lineHeight: 1, letterSpacing: '-0.02em' }}>
                             {result.score}
                         </MsqdxTypography>
                         <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
@@ -549,7 +552,7 @@ export default function ResultsPage() {
             <MsqdxMoleculeCard
                 variant="flat"
                 borderRadius="lg"
-                sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-card-border)' }}
+                sx={{ bgcolor: 'var(--color-card-bg)' }}
             >
             {/* View Toggle & Filters */}
             <Box sx={{ mb: 'var(--msqdx-spacing-md)', display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -688,17 +691,17 @@ export default function ResultsPage() {
                         >
                             {result.eco && (
                                 <Box sx={{ minHeight: '100%', height: '100%', width: '100%', minWidth: 0, display: 'flex' }}>
-                                    <EcoCard eco={result.eco} sx={{ height: '100%' }} />
+                                    <EcoCard eco={result.eco} sx={{ height: '100%', border: '1px solid var(--color-card-border)' }} />
                                 </Box>
                             )}
                             {result.performance && (
                                 <Box sx={{ minHeight: '100%', height: '100%', width: '100%', minWidth: 0, display: 'flex' }}>
-                                    <PerformanceCard perf={result.performance} sx={{ height: '100%', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }} />
+                                    <PerformanceCard perf={result.performance} sx={{ height: '100%', width: '100%', maxWidth: '100%', boxSizing: 'border-box', border: '1px solid var(--color-card-border)' }} />
                                 </Box>
                             )}
                             {result.ux && (
                                 <Box sx={{ minHeight: '100%', gridColumn: { xs: '1', md: '1 / -1' } }}>
-                                    <UxCard ux={result.ux} />
+                                    <UxCard ux={result.ux} sx={{ border: '1px solid var(--color-card-border)' }} />
                                 </Box>
                             )}
                         </Box>
