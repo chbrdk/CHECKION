@@ -109,3 +109,33 @@
 {"sessionId":"cafcc0","location":"seo/page.tsx:render","message":"SEO page render","data":{"renderCount":3,"hasFullSummary":true},"timestamp":1773519907428,"hypothesisId":"H1"}
 {"sessionId":"cafcc0","location":"SeoOnPageTable.tsx:render","message":"table render","data":{"renderCount":1,"rowsLength":193},"timestamp":1773519907449,"hypothesisId":"H1"}
 {"sessionId":"cafcc0","location":"SeoOnPageTable.tsx:viewport","message":"table in viewport","data":{"renderCount":1,"rowsLength":193},"timestamp":1773519907499,"hypothesisId":"H2"}
+{"sessionId":"cafcc0","location":"seo/page.tsx:render","message":"SEO page render","data":{"renderCount":1,"hasFullSummary":false},"timestamp":1773593337098,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"seo/page.tsx:render","message":"SEO page render","data":{"renderCount":2,"hasFullSummary":false},"timestamp":1773593338604,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"seo/page.tsx:render","message":"SEO page render","data":{"renderCount":3,"hasFullSummary":true},"timestamp":1773593338982,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"SeoOnPageTable.tsx:render","message":"table render","data":{"renderCount":1,"rowsLength":597},"timestamp":1773593338994,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"SeoOnPageTable.tsx:viewport","message":"table in viewport","data":{"renderCount":1,"rowsLength":597},"timestamp":1773593362555,"hypothesisId":"H2"}
+{"sessionId":"cafcc0","location":"SeoOnPageTable.tsx:render","message":"table render","data":{"renderCount":2,"rowsLength":597},"timestamp":1773593381188,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"seo/page.tsx:render","message":"SEO page render","data":{"renderCount":1,"hasFullSummary":false},"timestamp":1773691819370,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"seo/page.tsx:render","message":"SEO page render","data":{"renderCount":2,"hasFullSummary":false},"timestamp":1773691821138,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"seo/page.tsx:render","message":"SEO page render","data":{"renderCount":3,"hasFullSummary":true},"timestamp":1773691821806,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"SeoOnPageTable.tsx:render","message":"table render","data":{"renderCount":1,"rowsLength":597},"timestamp":1773691821827,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"SeoOnPageTable.tsx:viewport","message":"table in viewport","data":{"renderCount":1,"rowsLength":597},"timestamp":1773691825668,"hypothesisId":"H2"}
+{"sessionId":"cafcc0","location":"SeoOnPageTable.tsx:viewport","message":"table in viewport","data":{"renderCount":1,"rowsLength":597},"timestamp":1773691856512,"hypothesisId":"H2"}
+{"sessionId":"cafcc0","location":"SeoOnPageTable.tsx:render","message":"table render","data":{"renderCount":2,"rowsLength":597},"timestamp":1773691878261,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"SeoOnPageTable.tsx:render","message":"table render","data":{"renderCount":3,"rowsLength":597},"timestamp":1773691880188,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"SeoOnPageTable.tsx:render","message":"table render","data":{"renderCount":5,"rowsLength":597},"timestamp":1773691884091,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"SeoOnPageTable.tsx:render","message":"table render","data":{"renderCount":10,"rowsLength":597},"timestamp":1773691884207,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"SeoOnPageTable.tsx:render","message":"table render","data":{"renderCount":20,"rowsLength":597},"timestamp":1773691884289,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"SeoOnPageTable.tsx:render","message":"table render","data":{"renderCount":50,"rowsLength":597},"timestamp":1773691884543,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"SeoOnPageTable.tsx:render","message":"table render","data":{"renderCount":100,"rowsLength":597},"timestamp":1773691885040,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"SeoOnPageTable.tsx:render","message":"table render","data":{"renderCount":200,"rowsLength":597},"timestamp":1773691902052,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"seo/page.tsx:render","message":"SEO page render","data":{"renderCount":1,"hasFullSummary":false},"timestamp":1773762810043,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"seo/page.tsx:render","message":"SEO page render","data":{"renderCount":2,"hasFullSummary":false},"timestamp":1773762810489,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"seo/page.tsx:render","message":"SEO page render","data":{"renderCount":3,"hasFullSummary":true},"timestamp":1773762810982,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"SeoOnPageTable.tsx:render","message":"table render","data":{"renderCount":1,"rowsLength":1000},"timestamp":1773762810994,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"SeoOnPageTable.tsx:viewport","message":"table in viewport","data":{"renderCount":1,"rowsLength":1000},"timestamp":1773762811021,"hypothesisId":"H2"}
+{"sessionId":"cafcc0","location":"seo/page.tsx:render","message":"SEO page render","data":{"renderCount":1,"hasFullSummary":false},"timestamp":1773772428733,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"seo/page.tsx:render","message":"SEO page render","data":{"renderCount":2,"hasFullSummary":false},"timestamp":1773772429213,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"seo/page.tsx:render","message":"SEO page render","data":{"renderCount":3,"hasFullSummary":true},"timestamp":1773772429843,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"SeoOnPageTable.tsx:render","message":"table render","data":{"renderCount":1,"rowsLength":1000},"timestamp":1773772429853,"hypothesisId":"H1"}
+{"sessionId":"cafcc0","location":"SeoOnPageTable.tsx:viewport","message":"table in viewport","data":{"renderCount":1,"rowsLength":1000},"timestamp":1773772429912,"hypothesisId":"H2"}
