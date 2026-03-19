@@ -4,7 +4,7 @@
 
 import { NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth-api-token';
-import { apiError } from '@/lib/api-error-handler';
+import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { getDomainScan, listScansByGroupId, updateScanResult } from '@/lib/db/scans';
 import { classifyPageWithLlm } from '@/lib/llm/page-classification';
