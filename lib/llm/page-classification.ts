@@ -4,9 +4,13 @@
  */
 
 import { z } from 'zod';
-import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
 import type { ScanResult, PageClassification, TagTier } from '@/lib/types';
-import { OPENAI_MODEL, getOpenAIKey } from '@/lib/llm/config';
+import {
+    PAGE_CLASSIFY_CLAUDE_MODEL,
+    PAGE_CLASSIFY_MAX_TOKENS,
+    getAnthropicKey,
+} from '@/lib/llm/config';
 
 const BODY_EXCERPT_MAX = 2000;
 
@@ -74,29 +78,29 @@ const DEFAULT_FALLBACK: PageClassification = { tagTiers: [] };
 const MIN_BODY_LENGTH = 50;
 
 /**
- * Run LLM classification for a single scan result. Used by scanner (single scan / deep scan).
- * Returns null if bodyTextExcerpt too short, OpenAI not configured, or on error (never throws).
+ * Run LLM classification for a single scan result (Claude Haiku 4.5, low max_tokens).
+ * Used by scanner and by POST /api/scan/…/classify.
+ * Returns null if bodyTextExcerpt too short, ANTHROPIC_API_KEY not set, or on error (never throws).
  */
 export async function classifyPageWithLlm(result: ScanResult): Promise<PageClassification | null> {
     const excerpt = (result.bodyTextExcerpt ?? '').trim();
     if (excerpt.length < MIN_BODY_LENGTH) return null;
-    let openai: OpenAI;
+    const apiKey = getAnthropicKey();
+    if (!apiKey) return null;
     try {
-        openai = new OpenAI({ apiKey: getOpenAIKey() });
-    } catch {
-        return null;
-    }
-    try {
+        const client = new Anthropic({ apiKey });
         const payload = buildClassificationPayload(result);
         const userPrompt = buildClassificationUserPrompt(payload);
-        const completion = await openai.chat.completions.create({
-            model: OPENAI_MODEL,
-            messages: [
-                { role: 'system', content: CLASSIFICATION_SYSTEM_PROMPT },
-                { role: 'user', content: userPrompt },
-            ],
+        const response = await client.messages.create({
+            model: PAGE_CLASSIFY_CLAUDE_MODEL,
+            max_tokens: PAGE_CLASSIFY_MAX_TOKENS,
+            system: CLASSIFICATION_SYSTEM_PROMPT,
+            messages: [{ role: 'user', content: userPrompt }],
         });
-        const rawContent = completion.choices[0]?.message?.content ?? '';
+        const textBlock = response.content.find(
+            (b): b is Anthropic.TextBlock => b.type === 'text'
+        );
+        const rawContent = textBlock?.text ?? '';
         return parseClassificationResponse(rawContent);
     } catch {
         return null;

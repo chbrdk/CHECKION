@@ -3,18 +3,12 @@
 /* ------------------------------------------------------------------ */
 
 import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
 import { getRequestUser } from '@/lib/auth-api-token';
-import { apiError, internalError, API_STATUS } from '@/lib/api-error-handler';
+import { apiError } from '@/lib/api-error-handler';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { getDomainScan, listScansByGroupId, updateScanResult } from '@/lib/db/scans';
-import {
-    buildClassificationPayload,
-    buildClassificationUserPrompt,
-    CLASSIFICATION_SYSTEM_PROMPT,
-    parseClassificationResponse,
-} from '@/lib/llm/page-classification';
-import { OPENAI_MODEL, getOpenAIKey } from '@/lib/llm/config';
+import { classifyPageWithLlm } from '@/lib/llm/page-classification';
+import { getAnthropicKey } from '@/lib/llm/config';
 import { refreshDomainPayloadFromScans } from '@/lib/domain-scan-classify';
 import { reportUsage } from '@/lib/usage-report';
 
@@ -78,37 +72,26 @@ async function runClassificationInBackground(
     userId: string,
     pages: Awaited<ReturnType<typeof listScansByGroupId>>
 ): Promise<void> {
-    let openai: OpenAI;
-    try {
-        openai = new OpenAI({ apiKey: getOpenAIKey() });
-    } catch (e) {
-        console.error('[CHECKION] domain classify: OPENAI_API_KEY missing', e);
+    if (!getAnthropicKey()) {
+        console.error('[CHECKION] domain classify: ANTHROPIC_API_KEY missing');
         return;
     }
 
     for (let i = 0; i < pages.length; i++) {
         const result = pages[i];
         try {
-            const payload = buildClassificationPayload(result);
-            const userPrompt = buildClassificationUserPrompt(payload);
-            const completion = await openai.chat.completions.create({
-                model: OPENAI_MODEL,
-                messages: [
-                    { role: 'system', content: CLASSIFICATION_SYSTEM_PROMPT },
-                    { role: 'user', content: userPrompt },
-                ],
-            });
-            const rawContent = completion.choices[0]?.message?.content ?? '';
-            const pageClassification = parseClassificationResponse(rawContent);
-            await updateScanResult(result.id, userId, { pageClassification });
-            try {
-                reportUsage({
-                    userId,
-                    eventType: 'page_classify',
-                    rawUnits: { pages: 1 },
-                    idempotencyKey: `classify:${result.id}`,
-                });
-            } catch { /* ignore */ }
+            const pageClassification = await classifyPageWithLlm(result);
+            if (pageClassification) {
+                await updateScanResult(result.id, userId, { pageClassification });
+                try {
+                    reportUsage({
+                        userId,
+                        eventType: 'page_classify',
+                        rawUnits: { pages: 1 },
+                        idempotencyKey: `classify:${result.id}`,
+                    });
+                } catch { /* ignore */ }
+            }
         } catch (e) {
             console.error(`[CHECKION] domain classify: page ${result.id} failed`, e);
         }

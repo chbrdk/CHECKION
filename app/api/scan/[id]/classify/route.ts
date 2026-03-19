@@ -3,19 +3,13 @@
 /* ------------------------------------------------------------------ */
 
 import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, internalError, API_STATUS } from '@/lib/api-error-handler';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { getScan, updateScanResult } from '@/lib/db/scans';
 import { invalidateScan } from '@/lib/cache';
-import {
-    buildClassificationPayload,
-    buildClassificationUserPrompt,
-    CLASSIFICATION_SYSTEM_PROMPT,
-    parseClassificationResponse,
-} from '@/lib/llm/page-classification';
-import { OPENAI_MODEL, getOpenAIKey } from '@/lib/llm/config';
+import { classifyPageWithLlm } from '@/lib/llm/page-classification';
+import { getAnthropicKey } from '@/lib/llm/config';
 import { refreshDomainPayloadFromScans } from '@/lib/domain-scan-classify';
 import { reportUsage } from '@/lib/usage-report';
 
@@ -51,34 +45,22 @@ export async function POST(
         );
     }
 
-    let openai: OpenAI;
-    try {
-        openai = new OpenAI({ apiKey: getOpenAIKey() });
-    } catch (e) {
-        console.error('[CHECKION] classify: OPENAI_API_KEY missing', e);
-        return internalError('OpenAI API key not configured.');
+    if (!getAnthropicKey()) {
+        console.error('[CHECKION] classify: ANTHROPIC_API_KEY missing');
+        return internalError('Anthropic API key not configured (required for page classification).');
     }
 
-    const payload = buildClassificationPayload(result);
-    const userPrompt = buildClassificationUserPrompt(payload);
-
-    let rawContent: string;
+    let pageClassification;
     try {
-        const completion = await openai.chat.completions.create({
-            model: OPENAI_MODEL,
-            messages: [
-                { role: 'system', content: CLASSIFICATION_SYSTEM_PROMPT },
-                { role: 'user', content: userPrompt },
-            ],
-        });
-        rawContent = completion.choices[0]?.message?.content ?? '';
+        pageClassification = await classifyPageWithLlm(result);
     } catch (e) {
         const message = e instanceof Error ? e.message : 'LLM request failed';
-        console.error('[CHECKION] classify: OpenAI API error', e);
+        console.error('[CHECKION] classify: Claude API error', e);
         return apiError(message, API_STATUS.INTERNAL_ERROR);
     }
-
-    const pageClassification = parseClassificationResponse(rawContent);
+    if (!pageClassification) {
+        return apiError('Classification failed or returned no result.', API_STATUS.INTERNAL_ERROR);
+    }
     const updated = await updateScanResult(id, user.id, { pageClassification });
     if (!updated) {
         return apiError('Failed to save classification.', API_STATUS.INTERNAL_ERROR);

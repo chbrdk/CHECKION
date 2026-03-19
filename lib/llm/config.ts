@@ -15,6 +15,14 @@ export const COMPETITIVE_BENCHMARK_MODELS_CLAUDE = [
     'claude-haiku-4-5-20251001',
 ] as const;
 
+/** Page tier classification: Claude Haiku 4.5 with low max_tokens. */
+export const PAGE_CLASSIFY_CLAUDE_MODEL =
+    process.env.PAGE_CLASSIFY_CLAUDE_MODEL ?? 'claude-haiku-4-5-20251001';
+export const PAGE_CLASSIFY_MAX_TOKENS = Math.min(
+    4096,
+    Math.max(256, parseInt(process.env.PAGE_CLASSIFY_MAX_TOKENS ?? '1024', 10) || 1024)
+);
+
 /** Gemini models for competitive benchmark (stand 01.03.2026: 2.5/3.x family). */
 export const COMPETITIVE_BENCHMARK_MODELS_GEMINI = [
     'gemini-2.5-flash',
