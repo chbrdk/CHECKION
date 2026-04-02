@@ -4,6 +4,10 @@ import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { getDomainScan } from '@/lib/db/scans';
 import { listGroupPagesPaged } from '@/lib/db/domain-issues';
+import { HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON } from '@/lib/constants';
+
+const jsonPrivate = (body: unknown) =>
+    NextResponse.json(body, { headers: { 'Cache-Control': HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON } });
 
 function clampLimit(v: string | null): number {
     return Math.max(1, Math.min(200, parseInt(v ?? '50', 10) || 50));
@@ -39,9 +43,10 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string;
         cursor,
     });
 
-    return NextResponse.json(
-        { success: true, data: result.data, pagination: { nextCursor: result.nextCursor } },
-        { headers: { 'Cache-Control': 'private, max-age=60' } }
-    );
+    return jsonPrivate({
+        success: true,
+        data: result.data,
+        pagination: { nextCursor: result.nextCursor },
+    });
 }
 

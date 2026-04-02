@@ -29,6 +29,8 @@ import {
     DOMAIN_UX_BROKEN_LINKS_PREVIEW,
     DOMAIN_AGGREGATED_ISSUES_ROW_ESTIMATE_PX,
     apiScanDomainSlimPages,
+    HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON,
+    CACHE_REVALIDATE_DOMAIN,
 } from '@/lib/constants';
 
 describe('Path constants', () => {
@@ -144,5 +146,11 @@ describe('Domain tab virtual list constants', () => {
         expect(DOMAIN_TAB_SYSTEMIC_ISSUE_ROW_ESTIMATE_PX).toBeGreaterThan(DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX);
         expect(DOMAIN_UX_BROKEN_LINKS_PREVIEW).toBeGreaterThan(0);
         expect(DOMAIN_AGGREGATED_ISSUES_ROW_ESTIMATE_PX).toBeGreaterThan(0);
+    });
+});
+
+describe('HTTP cache hints (domain JSON APIs)', () => {
+    it('private max-age matches CACHE_REVALIDATE_DOMAIN', () => {
+        expect(HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON).toBe(`private, max-age=${CACHE_REVALIDATE_DOMAIN}`);
     });
 });

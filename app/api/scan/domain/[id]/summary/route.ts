@@ -6,8 +6,12 @@
 import { NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
+import { HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON } from '@/lib/constants';
 import { getDomainScanWithProjectId } from '@/lib/db/scans';
 import { buildDomainSummary, toLightDomainSummaryApiPayload, type DomainSummaryResponse } from '@/lib/domain-summary';
+
+const jsonPrivate = (body: unknown) =>
+    NextResponse.json(body, { headers: { 'Cache-Control': HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON } });
 
 export async function GET(
     request: Request,
@@ -45,13 +49,13 @@ export async function GET(
     if (seoFull) {
         const seo = safeSummary.aggregated?.seo;
         if (!seo) {
-            return NextResponse.json({
+            return jsonPrivate({
                 projectId: row.projectId,
                 aggregated: {},
                 summaryMeta: { seoPageRowsOmitted: false },
             });
         }
-        return NextResponse.json({
+        return jsonPrivate({
             projectId: row.projectId,
             aggregated: { seo },
             summaryMeta: { seoPageRowsOmitted: false },
@@ -61,5 +65,5 @@ export async function GET(
     const body = light
         ? { ...toLightDomainSummaryApiPayload(safeSummary as DomainSummaryResponse), projectId: row.projectId }
         : { ...safeSummary, projectId: row.projectId };
-    return NextResponse.json(body);
+    return jsonPrivate(body);
 }

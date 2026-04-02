@@ -37,6 +37,10 @@ API-Routen, die schreiben/löschen, rufen die passenden `invalidate*`-Funktionen
 
 Mutationen (POST/PATCH/DELETE) bleiben in `lib/db/*` und triggern danach die zugehörige Invalidierung.
 
+## HTTP `Cache-Control` (Browser)
+
+Für **authentifizierte** Domain-Read-APIs (u. a. Summary, Slim-Pages, Issue-Groups/Page-Issues) setzen die Routen `Cache-Control: private, max-age=<CACHE_REVALIDATE_DOMAIN>` über `HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON` in `lib/constants.ts`. Das ist ein **Hinweis für den Browser** (kurzes Wiederholen identischer GETs), **kein** öffentliches CDN-Caching (`private`).
+
 **Next.js Cache-Limit:** `unstable_cache` speichert nur Einträge ≤ 2 MB. Sehr große Domain-Scans (viele Seiten + Aggregation) können dieses Limit überschreiten; dann erscheint „items over 2MB can not be cached“. Die Status-Route umgeht das durch schlanke Antwort ohne Cache. Summary/Detail nutzen weiterhin `getCachedDomainScan`; bei > 2 MB schlägt nur das Speichern im Cache fehl, die Antwort wird trotzdem geliefert.
 
 ---
@@ -45,6 +49,7 @@ Mutationen (POST/PATCH/DELETE) bleiben in `lib/db/*` und triggern danach die zug
 
 ### Frontend (Domain-Seite)
 
+- **Tab-Sektionen:** Alle Domain-Tabs sind als eigene `memo`-Komponenten unter `components/domain/` ausgelagert (`DomainResultMain` orchestriert nur noch `activeSection`): u. a. `DomainResultOverviewSection`, `DomainResultListDetailsSection`, `DomainResultVisualMapSection`, `DomainResultUxCxSection`, `DomainResultVisualAnalysisSection`, `DomainResultUxAuditSection` (+ `DomainResultUxAuditEmpty`), `DomainResultStructureSection` (+ Empty), `DomainResultLinksSeoSection` (+ Empty), `DomainResultInfraTab`, `DomainResultGenerativeSection` (+ Empty), `DomainResultJourneySection`. So triggern Kontext-Updates in einem Tab nicht unnötig die JSX-Auswertung der anderen.
 - **Code-Splitting:** `DomainGraph`, `DomainAggregatedIssueList` und `JourneyFlowchart` werden auf der Domain-Ergebnisseite per `next/dynamic` mit `ssr: false` nachgeladen. Sie erscheinen nur in bestimmten Tabs; der initiale JS-Bundle wird kleiner, der Long Task beim ersten Load reduziert.
 
 ### Search-API

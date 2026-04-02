@@ -397,6 +397,12 @@ export const CACHE_REVALIDATE_DOMAIN = 60;
 export const CACHE_REVALIDATE_SHARE = 300;
 export const CACHE_REVALIDATE_LIST = 30;
 
+/**
+ * HTTP `Cache-Control` for authenticated domain-scan JSON GETs (summary, slim-pages, paged issues).
+ * `private` — not shared CDNs; `max-age` aligns with {@link CACHE_REVALIDATE_DOMAIN}.
+ */
+export const HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON = `private, max-age=${CACHE_REVALIDATE_DOMAIN}` as const;
+
 /** Screenshot storage: env key for backend (local disk vs S3). Use "s3" for shared storage across instances. */
 export const ENV_SCREENSHOT_STORAGE = 'SCREENSHOT_STORAGE';
 /** Path for local screenshot files. Must match Coolify volume "Source Path" if using persistent storage (e.g. /screenshots or /screenshot). */

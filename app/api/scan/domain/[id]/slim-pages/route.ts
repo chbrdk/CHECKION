@@ -14,6 +14,10 @@ import {
     countPayloadPages,
 } from '@/lib/db/domain-slim-pages';
 import { ensureDomainIssueTablesBackfilled } from '@/lib/domain-issues-backfill';
+import { HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON } from '@/lib/constants';
+
+const jsonPrivate = (body: unknown) =>
+    NextResponse.json(body, { headers: { 'Cache-Control': HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON } });
 
 function clampOffset(v: string | null): number {
     return Math.max(0, parseInt(v ?? '0', 10) || 0);
@@ -59,10 +63,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
             offset,
             limit,
         });
-        return NextResponse.json(
-            { success: true, data, total: dbCount, source: 'db' as const },
-            { headers: { 'Cache-Control': 'private, max-age=60' } }
-        );
+        return jsonPrivate({ success: true, data, total: dbCount, source: 'db' as const });
     }
 
     const scan = await getDomainScan(id, user.id);
@@ -70,8 +71,5 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
 
     const total = countPayloadPages(scan);
     const data = sliceSlimPagesFromPayload(scan, offset, limit, id);
-    return NextResponse.json(
-        { success: true, data, total, source: 'payload' as const },
-        { headers: { 'Cache-Control': 'private, max-age=60' } }
-    );
+    return jsonPrivate({ success: true, data, total, source: 'payload' as const });
 }
