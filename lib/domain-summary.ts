@@ -35,6 +35,16 @@ export interface DomainSummaryResponse extends Omit<DomainScanResult, 'pages'> {
     };
 }
 
+/** Optional fields returned only by GET /api/scan/domain/[id]/summary (not stored in DB). */
+export interface DomainSummaryApiMeta {
+    /** True when `?light=1` omitted per-page SEO rows (`aggregated.seo.pages`) to shrink the JSON. */
+    seoPageRowsOmitted?: boolean;
+}
+
+export interface DomainSummaryApiResponse extends DomainSummaryResponse {
+    summaryMeta?: DomainSummaryApiMeta;
+}
+
 /** True if payload has precomputed aggregated (new format). */
 export function hasStoredAggregated(scan: DomainScanResult): scan is DomainScanResult & { aggregated: NonNullable<DomainScanResult['aggregated']> } {
     return scan.aggregated != null && typeof scan.aggregated === 'object';
@@ -102,6 +112,27 @@ export function buildDomainSummary(scan: DomainScanResult): DomainSummaryRespons
         pages: pages.map(toSlimPage),
         totalPageCount: pageCount,
         aggregated,
+    };
+}
+
+/**
+ * Shrink API JSON: drop `aggregated.seo.pages` (often one row per scanned URL — largest array in summary).
+ * Counts and other `aggregated.seo` fields stay intact for chips and copy.
+ */
+export function toLightDomainSummaryApiPayload(summary: DomainSummaryResponse): DomainSummaryApiResponse {
+    if (!summary.aggregated?.seo) {
+        return { ...summary, summaryMeta: { seoPageRowsOmitted: true } };
+    }
+    return {
+        ...summary,
+        aggregated: {
+            ...summary.aggregated,
+            seo: {
+                ...summary.aggregated.seo,
+                pages: [],
+            },
+        },
+        summaryMeta: { seoPageRowsOmitted: true },
     };
 }
 

@@ -127,8 +127,11 @@ export const apiScanScreenshot = (id: string) => `${apiScan(id)}/screenshot`;
 export const apiScanDomainCreate = API_SCAN_DOMAIN;
 /** Build: GET /api/scan/domain/[id]/status */
 export const apiScanDomainStatus = (id: string) => `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/status`;
-/** Build: GET /api/scan/domain/[id]/summary */
-export const apiScanDomainSummary = (id: string) => `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/summary`;
+/** Build: GET /api/scan/domain/[id]/summary — use `light` to omit heavy `aggregated.seo.pages` until Tab „Links & SEO“ loads full data. */
+export const apiScanDomainSummary = (id: string, opts?: { light?: boolean }) => {
+    const base = `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/summary`;
+    return opts?.light ? `${base}?light=1` : base;
+};
 /** Build: POST /api/scan/domain/[id]/summarize */
 export const apiScanDomainSummarize = (id: string) => `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/summarize`;
 /** Build: POST /api/scan/domain/[id]/journey */
@@ -346,6 +349,17 @@ export const SEO_KEYWORDS_INITIAL_SHOWN = 15;
 export const SEO_URL_LIST_INITIAL = 15;
 /** Share page (deep scan): scanned pages list page size (prev/next pagination). */
 export const SHARE_DOMAIN_PAGES_PAGE_SIZE = 10;
+
+/** Domain result tabs: default row height estimate (px) for `VirtualScrollList` (SEO/GEO URL rows). */
+export const DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX = 52;
+/** Extra rows above/below viewport when virtualizing domain tab lists. */
+export const DOMAIN_TAB_VIRTUAL_OVERSCAN = 12;
+/** Domain overview: systemic issue cards — row height estimate (px) for virtual list. */
+export const DOMAIN_TAB_SYSTEMIC_ISSUE_ROW_ESTIMATE_PX = 108;
+/** Domain UX-Audit tab: max. kaputte Links in der Vorschau-Liste (virtualisiert). */
+export const DOMAIN_UX_BROKEN_LINKS_PREVIEW = 30;
+/** Legacy aggregated-issues table: estimated grid row height for virtualization. */
+export const DOMAIN_AGGREGATED_ISSUES_ROW_ESTIMATE_PX = 56;
 
 /** Base path for public share landing pages. Full URL: origin + SHARE_PATH + '/' + token */
 export const SHARE_PATH = '/share';

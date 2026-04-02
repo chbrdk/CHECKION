@@ -22,6 +22,11 @@ import {
     apiSearch,
     apiSaliencyResult,
     apiShareByResource,
+    DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX,
+    DOMAIN_TAB_VIRTUAL_OVERSCAN,
+    DOMAIN_TAB_SYSTEMIC_ISSUE_ROW_ESTIMATE_PX,
+    DOMAIN_UX_BROKEN_LINKS_PREVIEW,
+    DOMAIN_AGGREGATED_ISSUES_ROW_ESTIMATE_PX,
 } from '@/lib/constants';
 
 describe('Path constants', () => {
@@ -79,6 +84,10 @@ describe('API path builders', () => {
         expect(apiScanDomainSummary('d2')).toBe('/api/scan/domain/d2/summary');
     });
 
+    it('apiScanDomainSummary with light omits heavy SEO page rows via query', () => {
+        expect(apiScanDomainSummary('d2', { light: true })).toBe('/api/scan/domain/d2/summary?light=1');
+    });
+
     it('apiShareToken builds share token URL', () => {
         expect(apiShareToken('t1')).toBe('/api/share/t1');
     });
@@ -111,5 +120,15 @@ describe('API path builders', () => {
 
     it('apiShareByResource builds by-resource URL', () => {
         expect(apiShareByResource('single', 'id1')).toBe('/api/share/by-resource?type=single&id=id1');
+    });
+});
+
+describe('Domain tab virtual list constants', () => {
+    it('exposes positive tuning values for VirtualScrollList', () => {
+        expect(DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX).toBeGreaterThan(0);
+        expect(DOMAIN_TAB_VIRTUAL_OVERSCAN).toBeGreaterThan(0);
+        expect(DOMAIN_TAB_SYSTEMIC_ISSUE_ROW_ESTIMATE_PX).toBeGreaterThan(DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX);
+        expect(DOMAIN_UX_BROKEN_LINKS_PREVIEW).toBeGreaterThan(0);
+        expect(DOMAIN_AGGREGATED_ISSUES_ROW_ESTIMATE_PX).toBeGreaterThan(0);
     });
 });

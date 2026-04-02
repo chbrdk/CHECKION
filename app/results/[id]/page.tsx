@@ -25,7 +25,7 @@ import {
 } from '@msqdx/tokens';
 import { EcoCard } from '@/components/EcoCard';
 import { PerformanceCard } from '@/components/PerformanceCard';
-import { ScanIssueList } from '@/components/ScanIssueList';
+import { ScanIssueList, type ScanIssueListHandle } from '@/components/ScanIssueList';
 import { UxCard } from '@/components/UxCard';
 import type { ScanResult, Issue, IssueSeverity } from '@/lib/types';
 import {
@@ -106,6 +106,7 @@ import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { PaginationBar } from '@/components/PaginationBar';
 import { RESULTS_ISSUES_PAGE_SIZE } from '@/lib/constants';
+import { resultsIssuesOneBasedPageForFilteredIndex } from '@/lib/results-issues-ui';
 
 function UxCheckV2Content({ summary }: { summary: UxCheckV2Summary }) {
     const { structured, modelUsed, generatedAt } = summary;
@@ -290,6 +291,8 @@ export default function ResultsPage() {
     const [pdfExporting, setPdfExporting] = useState(false);
     const [structureOutlineVisibleCount, setStructureOutlineVisibleCount] = useState(OUTLINE_INITIAL_VISIBLE);
     const issueRefs = useRef<(HTMLDivElement | null)[]>([]);
+    const scanIssueListRef = useRef<ScanIssueListHandle>(null);
+    const pendingIssueScrollRef = useRef<number | null>(null);
 
     // Derived stats for WCAG levels
     const [levelStats, setLevelStats] = useState({ A: 0, AA: 0, AAA: 0, APCA: 0, Unknown: 0 });
@@ -378,6 +381,10 @@ export default function ResultsPage() {
         setIssuesPage(1);
     }, [tab, levelFilter]);
 
+    useEffect(() => {
+        pendingIssueScrollRef.current = null;
+    }, [tab, levelFilter]);
+
     const issuesTotalPages = Math.max(1, Math.ceil(filteredIssues.length / RESULTS_ISSUES_PAGE_SIZE));
     const paginatedIssues = useMemo(
         () =>
@@ -388,22 +395,41 @@ export default function ResultsPage() {
         [filteredIssues, issuesPage]
     );
 
-    // Scroll to issue in list
-    const scrollToIssue = (index: number) => {
-        const el = issueRefs.current[index];
-        if (el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    useEffect(() => {
+        const pending = pendingIssueScrollRef.current;
+        if (pending === null) return;
+        const needPage = resultsIssuesOneBasedPageForFilteredIndex(pending, RESULTS_ISSUES_PAGE_SIZE);
+        if (needPage !== issuesPage) return;
+        const run = () => {
+            scanIssueListRef.current?.scrollToGlobalIndex(pending);
+            issueRefs.current[pending]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            pendingIssueScrollRef.current = null;
+        };
+        requestAnimationFrame(() => requestAnimationFrame(run));
+    }, [issuesPage, paginatedIssues]);
+
+    // Scroll to issue in list (index = position in filteredIssues — same as visual overlay boxes)
+    const scrollToIssue = useCallback(
+        (index: number) => {
             setHighlightedIndex(index);
-            // Switch to list view if not already
-            if (viewMode !== 'list') {
-                setViewMode('list');
-                setTimeout(() => {
-                    const el = issueRefs.current[index];
-                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }, 100);
+            const targetPage = resultsIssuesOneBasedPageForFilteredIndex(index, RESULTS_ISSUES_PAGE_SIZE);
+            pendingIssueScrollRef.current = index;
+            const switchingView = viewMode !== 'list';
+            if (switchingView) setViewMode('list');
+            if (targetPage !== issuesPage) {
+                setIssuesPage(targetPage);
+                return;
             }
-        }
-    };
+            const run = () => {
+                scanIssueListRef.current?.scrollToGlobalIndex(index);
+                issueRefs.current[index]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                pendingIssueScrollRef.current = null;
+            };
+            if (switchingView) setTimeout(run, 150);
+            else requestAnimationFrame(run);
+        },
+        [issuesPage, viewMode]
+    );
 
     const handlePdfExport = useCallback(async () => {
         if (!result) return;
@@ -1056,7 +1082,9 @@ export default function ResultsPage() {
                     ) : (
                         <>
                             <ScanIssueList
+                                ref={scanIssueListRef}
                                 issues={paginatedIssues}
+                                issueIndexBase={(issuesPage - 1) * RESULTS_ISSUES_PAGE_SIZE}
                                 highlightedIndex={highlightedIndex}
                                 registerRef={handleRefRegister}
                             />

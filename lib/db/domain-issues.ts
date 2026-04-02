@@ -137,6 +137,16 @@ export async function rebuildDomainIssuesFromPages(params: {
     return { pageCount: pages.length, issueCount: pages.reduce((a, p) => a + (p.issues?.length ?? 0), 0), groupCount: Number(groupRows[0]?.count ?? 0) };
 }
 
+/** How many aggregated groups exist for this scan (unfiltered). Used to avoid spurious backfill when filters yield zero rows. */
+export async function countDomainIssueGroupsForScan(params: { userId: string; domainScanId: string }): Promise<number> {
+    const db = getDb();
+    const rows = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(domainIssueGroups)
+        .where(and(eq(domainIssueGroups.domainScanId, params.domainScanId), eq(domainIssueGroups.userId, params.userId)));
+    return Number(rows[0]?.count ?? 0);
+}
+
 export async function listIssueGroupsPaged(params: {
     userId: string;
     domainScanId: string;

@@ -3,7 +3,7 @@ import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { getDomainScan } from '@/lib/db/scans';
-import { listIssueGroupsPaged } from '@/lib/db/domain-issues';
+import { countDomainIssueGroupsForScan, listIssueGroupsPaged } from '@/lib/db/domain-issues';
 import { ensureDomainIssueTablesBackfilled } from '@/lib/domain-issues-backfill';
 
 function clampLimit(v: string | null): number {
@@ -48,16 +48,20 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
         q: q || null,
     });
 
-    // On-demand backfill for legacy scans: kick off in background on first page only.
-    const isFirstPage = cursor == null && !type && !wcagLevel && !q;
-    if (isFirstPage && (result.data?.length ?? 0) === 0 && scan.status === 'complete') {
-        void (async () => {
-            try {
-                await ensureDomainIssueTablesBackfilled({ userId: user.id, domainScanId: id });
-            } catch (e) {
-                console.error('[CHECKION] domain issues backfill failed', e);
-            }
-        })();
+    // On-demand backfill for legacy scans: only when the first *unfiltered* page is empty
+    // **and** there are truly zero groups in DB (do not backfill when filters/search match nothing).
+    const isUnfilteredFirstPage = cursor == null && !type && !wcagLevel && !q;
+    if (isUnfilteredFirstPage && (result.data?.length ?? 0) === 0 && scan.status === 'complete') {
+        const totalGroups = await countDomainIssueGroupsForScan({ userId: user.id, domainScanId: id });
+        if (totalGroups === 0) {
+            void (async () => {
+                try {
+                    await ensureDomainIssueTablesBackfilled({ userId: user.id, domainScanId: id });
+                } catch (e) {
+                    console.error('[CHECKION] domain issues backfill failed', e);
+                }
+            })();
+        }
     }
 
     return NextResponse.json(

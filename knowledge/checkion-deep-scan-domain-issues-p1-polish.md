@@ -54,9 +54,8 @@ Dieses Dokument sammelt sinnvolle **P1 Verbesserungen**, falls wir noch mehr Sta
 
 ## P1 – UI Skalierung & UX
 
-- **Virtualisierung im linken Gruppen-Panel**
-  - Paged + scroll ist gut; bei sehr vielen Gruppen wäre Virtualisierung zusätzlich sinnvoll.
-  - Kann später ergänzt werden, ohne API zu ändern.
+- **Virtualisierung im Master/Detail (Liste & Details)**
+  - Umgesetzt: `@tanstack/react-virtual` (`useVirtualizer`) in `components/DomainIssuesMasterDetail.tsx` für **Gruppen**, **betroffene URLs** und **Issues der gewählten Seite**; wo nötig `measureElement` für variable Zeilenhöhen. Siehe auch `knowledge/checkion-virtualization-candidates.md`.
 
 - **Filter UX**
   - UI optional: Chips/Select für `type`, `wcagLevel`, Search bar (`q`)
@@ -67,6 +66,10 @@ Dieses Dokument sammelt sinnvolle **P1 Verbesserungen**, falls wir noch mehr Sta
     - erste Page “betroffene Seiten” prefetch
   - Beim Hover über eine Seite:
     - erste Page “Issues (Seite)” prefetch
+
+## Backfill-Verhalten (Implementiert)
+
+- Legacy-Backfill auf `GET .../issue-groups` wird nur noch ausgelöst, wenn **die erste ungefilterte Seite leer ist** und `count(*)` auf `domain_issue_groups` für den Scan **0** ist. So wird kein teurer Re-Import ausgelöst, nur weil ein **Filter/Suche** keine Treffer liefert.
 
 ## P1 – Observability & Safety
 

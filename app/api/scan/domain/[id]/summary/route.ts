@@ -7,7 +7,7 @@ import { NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getDomainScanWithProjectId } from '@/lib/db/scans';
-import { buildDomainSummary } from '@/lib/domain-summary';
+import { buildDomainSummary, toLightDomainSummaryApiPayload, type DomainSummaryResponse } from '@/lib/domain-summary';
 
 export async function GET(
     request: Request,
@@ -40,5 +40,10 @@ export async function GET(
             }
             : summary.aggregated,
     };
-    return NextResponse.json({ ...safeSummary, projectId: row.projectId });
+    const url = new URL(request.url);
+    const light = url.searchParams.get('light') === '1';
+    const body = light
+        ? { ...toLightDomainSummaryApiPayload(safeSummary as DomainSummaryResponse), projectId: row.projectId }
+        : { ...safeSummary, projectId: row.projectId };
+    return NextResponse.json(body);
 }

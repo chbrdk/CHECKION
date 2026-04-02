@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Box, CircularProgress, alpha } from '@mui/material';
 import {
@@ -15,11 +15,12 @@ import {
 import { MSQDX_STATUS, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import type { JourneyResult, JourneyStep } from '@/lib/types';
-import type { DomainSummaryResponse } from '@/lib/domain-summary';
+import type { DomainSummaryApiResponse } from '@/lib/domain-summary';
 import type { SlimPage } from '@/lib/types';
 import { ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react';
 import { SharePanel } from '@/components/SharePanel';
 import { AddToProject } from '@/components/AddToProject';
+import { VirtualScrollList } from '@/components/VirtualScrollList';
 
 const DomainGraph = dynamic(
     () => import('@/components/DomainGraph').then((m) => ({ default: m.DomainGraph })),
@@ -56,6 +57,10 @@ import {
     API_JOURNEYS,
     pathResults,
     PATH_HOME,
+    DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX,
+    DOMAIN_TAB_VIRTUAL_OVERSCAN,
+    DOMAIN_TAB_SYSTEMIC_ISSUE_ROW_ESTIMATE_PX,
+    DOMAIN_UX_BROKEN_LINKS_PREVIEW,
 } from '@/lib/constants';
 
 export default function DomainResultPage() {
@@ -76,7 +81,10 @@ export default function DomainResultPage() {
         { label: t('domainResult.tabGenerative'), value: 9 },
         { label: t('domainResult.tabJourney'), value: 10 },
     ];
-    const [result, setResult] = useState<DomainSummaryResponse | null>(null);
+    const [result, setResult] = useState<DomainSummaryApiResponse | null>(null);
+    const [seoPagesHydrating, setSeoPagesHydrating] = useState(false);
+    const fullSeoHydratedRef = useRef(false);
+    const seoFullFetchInFlightRef = useRef(false);
     const [projectId, setProjectId] = useState<string | null>(null);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [tabValue, setTabValue] = useState(0);
@@ -94,6 +102,10 @@ export default function DomainResultPage() {
     const pages = (result?.pages ?? []) as SlimPage[];
     const totalPageCount = result?.totalPageCount ?? pages.length;
     const aggregated = result?.aggregated ?? null;
+    const uxBrokenLinksPreview = useMemo(
+        () => (aggregated?.ux?.brokenLinks ?? []).slice(0, DOMAIN_UX_BROKEN_LINKS_PREVIEW),
+        [aggregated?.ux?.brokenLinks]
+    );
     const pagesByUrl = useMemo(() => new Map(pages.map((p) => [p.url, p])), [pages]);
     const norm = (u: string) => { try { const x = new URL(u); return x.origin + (x.pathname.replace(/\/$/, '') || '/'); } catch { return u; } };
     const pagesByNormUrl = useMemo(() => { const m = new Map<string, SlimPage>(); for (const p of pages) m.set(norm(p.url), p); return m; }, [pages]);
@@ -105,6 +117,9 @@ export default function DomainResultPage() {
 
     const selectedGroupKey = searchParams.get('group');
     const selectedPageId = searchParams.get('page');
+    const issuesType = searchParams.get('itype');
+    const issuesWcag = searchParams.get('wcag');
+    const issuesQ = searchParams.get('q');
     const selectGroup = useCallback((groupKey: string) => {
         const sp = new URLSearchParams(Array.from(searchParams.entries()));
         sp.set('group', groupKey);
@@ -116,11 +131,26 @@ export default function DomainResultPage() {
         sp.set('page', pageId);
         router.replace(`?${sp.toString()}`);
     }, [router, searchParams]);
+    const setIssuesFilters = useCallback((next: { type?: string | null; wcag?: string | null; q?: string | null }) => {
+        const sp = new URLSearchParams(Array.from(searchParams.entries()));
+        if (next.type === null) sp.delete('itype');
+        else if (typeof next.type === 'string') sp.set('itype', next.type);
+        if (next.wcag === null) sp.delete('wcag');
+        else if (typeof next.wcag === 'string') sp.set('wcag', next.wcag);
+        if (next.q === null) sp.delete('q');
+        else if (typeof next.q === 'string') sp.set('q', next.q);
+        // Reset selection when filters change
+        sp.delete('group');
+        sp.delete('page');
+        router.replace(`?${sp.toString()}`);
+    }, [router, searchParams]);
 
     useEffect(() => {
         if (!domainId) return;
         setLoadError(null);
-        fetch(apiScanDomainSummary(domainId))
+        fullSeoHydratedRef.current = false;
+        seoFullFetchInFlightRef.current = false;
+        fetch(apiScanDomainSummary(domainId, { light: true }))
             .then(res => {
                 if (!res.ok) {
                     setLoadError('not_found');
@@ -128,7 +158,7 @@ export default function DomainResultPage() {
                 }
                 return res.json();
             })
-            .then((data: DomainSummaryResponse & { projectId?: string | null }) => {
+            .then((data: DomainSummaryApiResponse & { projectId?: string | null }) => {
                 if (data) {
                     setResult(data);
                     setProjectId(data.projectId ?? null);
@@ -136,6 +166,31 @@ export default function DomainResultPage() {
             })
             .catch(() => setLoadError('not_found'));
     }, [domainId]);
+
+    useEffect(() => {
+        if (!domainId || tabValue !== 7) return;
+        if (result?.summaryMeta?.seoPageRowsOmitted !== true) return;
+        if (fullSeoHydratedRef.current || seoFullFetchInFlightRef.current) return;
+        seoFullFetchInFlightRef.current = true;
+        setSeoPagesHydrating(true);
+        fetch(apiScanDomainSummary(domainId))
+            .then((res) => {
+                if (!res.ok) throw new Error('fetch failed');
+                return res.json();
+            })
+            .then((data: DomainSummaryApiResponse & { projectId?: string | null }) => {
+                fullSeoHydratedRef.current = true;
+                setResult(data);
+                if (data.projectId != null) setProjectId(data.projectId);
+            })
+            .catch(() => {
+                fullSeoHydratedRef.current = false;
+            })
+            .finally(() => {
+                seoFullFetchInFlightRef.current = false;
+                setSeoPagesHydrating(false);
+            });
+    }, [domainId, tabValue, result?.summaryMeta?.seoPageRowsOmitted]);
 
     const restoreJourneyId = searchParams.get('restoreJourney');
     useEffect(() => {
@@ -189,7 +244,16 @@ export default function DomainResultPage() {
                     </MsqdxButton>
                     {domainId ? (
                         <Box sx={{ display: 'inline-flex', gap: 'var(--msqdx-spacing-sm)' }}>
-                            <AddToProject resourceType="domain" resourceId={domainId} currentProjectId={projectId} onAssigned={() => fetch(apiScanDomainSummary(domainId!)).then((r) => r.json()).then((d: { projectId?: string | null }) => setProjectId(d.projectId ?? null))} />
+                            <AddToProject
+                                resourceType="domain"
+                                resourceId={domainId}
+                                currentProjectId={projectId}
+                                onAssigned={() =>
+                                    fetch(apiScanDomainSummary(domainId!, { light: true }))
+                                        .then((r) => r.json())
+                                        .then((d: { projectId?: string | null }) => setProjectId(d.projectId ?? null))
+                                }
+                            />
                             <SharePanel resourceType="domain" resourceId={domainId} labelNamespace="domainResult" />
                         </Box>
                     ) : null}
@@ -243,26 +307,36 @@ export default function DomainResultPage() {
                                         <MsqdxTypography>{t('domainResult.noSystemicIssues')}</MsqdxTypography>
                                     </Box>
                                 ) : (
-                                    (result.systemicIssues ?? []).map((issue, idx) => (
-                                        <Box key={idx} sx={{
-                                            p: 'var(--msqdx-spacing-md)',
-                                            mb: 'var(--msqdx-spacing-md)',
-                                            border: '1px solid var(--color-secondary-dx-pink-tint)',
-                                            borderRadius: 'var(--msqdx-radius-xs)',
-                                            backgroundColor: 'var(--color-secondary-dx-pink-tint)'
-                                        }}>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-xs)' }}>
-                                                <AlertCircle color="var(--color-secondary-dx-pink)" size={20} />
-                                                <MsqdxTypography variant="subtitle1" sx={{ color: 'var(--color-secondary-dx-pink)' }}>
-                                                    {issue.title}
+                                    <VirtualScrollList
+                                        items={result.systemicIssues ?? []}
+                                        maxHeight={480}
+                                        estimateSize={DOMAIN_TAB_SYSTEMIC_ISSUE_ROW_ESTIMATE_PX}
+                                        overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
+                                        ariaLabel={t('domainResult.systemicIssues')}
+                                        getItemKey={(issue, idx) => `${issue.issueId}-${idx}`}
+                                        renderItem={(issue) => (
+                                            <Box
+                                                sx={{
+                                                    p: 'var(--msqdx-spacing-md)',
+                                                    mb: 'var(--msqdx-spacing-md)',
+                                                    border: '1px solid var(--color-secondary-dx-pink-tint)',
+                                                    borderRadius: 'var(--msqdx-radius-xs)',
+                                                    backgroundColor: 'var(--color-secondary-dx-pink-tint)',
+                                                }}
+                                            >
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-xs)' }}>
+                                                    <AlertCircle color="var(--color-secondary-dx-pink)" size={20} />
+                                                    <MsqdxTypography variant="subtitle1" sx={{ color: 'var(--color-secondary-dx-pink)' }}>
+                                                        {issue.title}
+                                                    </MsqdxTypography>
+                                                    <MsqdxChip label={t('domainResult.issuePagesCount', { count: issue.count })} size="small" brandColor="pink" />
+                                                </Box>
+                                                <MsqdxTypography variant="body2" sx={{ mb: 'var(--msqdx-spacing-xs)' }}>
+                                                    {t('domainResult.fixingRuleAffects', { issueId: issue.issueId, count: issue.count })}
                                                 </MsqdxTypography>
-                                                <MsqdxChip label={t('domainResult.issuePagesCount', { count: issue.count })} size="small" brandColor="pink" />
                                             </Box>
-                                            <MsqdxTypography variant="body2" sx={{ mb: 'var(--msqdx-spacing-xs)' }}>
-                                                {t('domainResult.fixingRuleAffects', { issueId: issue.issueId, count: issue.count })}
-                                            </MsqdxTypography>
-                                        </Box>
-                                    ))
+                                        )}
+                                    />
                                 )}
                             </MsqdxCard>
                         </Box>
@@ -336,35 +410,41 @@ export default function DomainResultPage() {
                 </Box>
             )}
 
-            <Box sx={{ display: tabValue === 2 ? 'block' : 'none' }}>
-                <MsqdxMoleculeCard
-                    title="Gefundene Issues (Domain)"
-                    headerActions={<InfoTooltip title={t('info.issuesList')} ariaLabel={t('common.info')} />}
-                    subtitle={`Paged (DB) · aggregiert über ${totalPageCount} Seite(n)`}
-                    variant="flat"
-                    sx={{ bgcolor: 'var(--color-card-bg)' }}
-                    borderRadius="lg"
-                >
-                    {aggregated?.issues?.stats && (
-                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
-                            <MsqdxChip label={`Errors: ${aggregated.issues.stats.errors}`} size="small" sx={{ bgcolor: alpha(MSQDX_STATUS.error.base, 0.12), color: MSQDX_STATUS.error.base }} />
-                            <MsqdxChip label={`Warnings: ${aggregated.issues.stats.warnings}`} size="small" sx={{ bgcolor: alpha(MSQDX_STATUS.warning.base, 0.12), color: MSQDX_STATUS.warning.base }} />
-                            <MsqdxChip label={`Notices: ${aggregated.issues.stats.notices}`} size="small" sx={{ bgcolor: alpha(MSQDX_STATUS.info.base, 0.12), color: MSQDX_STATUS.info.base }} />
-                        </Box>
-                    )}
-                    {domainId && (
-                        <DomainIssuesMasterDetail
-                            domainId={domainId}
-                            pages={pages}
-                            selectedGroupKey={selectedGroupKey}
-                            selectedPageId={selectedPageId}
-                            onSelectGroup={selectGroup}
-                            onSelectPage={selectPage}
-                            onOpenPageScan={(url) => handleIssuePageClick(url)}
-                        />
-                    )}
-                </MsqdxMoleculeCard>
-            </Box>
+            {tabValue === 2 && (
+                <Box>
+                    <MsqdxMoleculeCard
+                        title="Gefundene Issues (Domain)"
+                        headerActions={<InfoTooltip title={t('info.issuesList')} ariaLabel={t('common.info')} />}
+                        subtitle={`Paged (DB) · aggregiert über ${totalPageCount} Seite(n)`}
+                        variant="flat"
+                        sx={{ bgcolor: 'var(--color-card-bg)' }}
+                        borderRadius="lg"
+                    >
+                        {aggregated?.issues?.stats && (
+                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                                <MsqdxChip label={`Errors: ${aggregated.issues.stats.errors}`} size="small" sx={{ bgcolor: alpha(MSQDX_STATUS.error.base, 0.12), color: MSQDX_STATUS.error.base }} />
+                                <MsqdxChip label={`Warnings: ${aggregated.issues.stats.warnings}`} size="small" sx={{ bgcolor: alpha(MSQDX_STATUS.warning.base, 0.12), color: MSQDX_STATUS.warning.base }} />
+                                <MsqdxChip label={`Notices: ${aggregated.issues.stats.notices}`} size="small" sx={{ bgcolor: alpha(MSQDX_STATUS.info.base, 0.12), color: MSQDX_STATUS.info.base }} />
+                            </Box>
+                        )}
+                        {domainId && (
+                            <DomainIssuesMasterDetail
+                                domainId={domainId}
+                                pages={pages}
+                                selectedGroupKey={selectedGroupKey}
+                                selectedPageId={selectedPageId}
+                                issuesType={issuesType}
+                                issuesWcag={issuesWcag}
+                                issuesQ={issuesQ}
+                                onChangeFilters={setIssuesFilters}
+                                onSelectGroup={selectGroup}
+                                onSelectPage={selectPage}
+                                onOpenPageScan={(url) => handleIssuePageClick(url)}
+                            />
+                        )}
+                    </MsqdxMoleculeCard>
+                </Box>
+            )}
 
             {tabValue === 3 && (
                 <MsqdxMoleculeCard
@@ -472,31 +552,45 @@ export default function DomainResultPage() {
                             {aggregated.ux.focusOrderByPage.length > 0 && (
                                 <Box>
                                     <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Seiten mit Focus-Order-Einträgen</MsqdxTypography>
-                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                        {aggregated.ux.focusOrderByPage.map(({ url, count }) => {
+                                    <VirtualScrollList
+                                        items={aggregated.ux.focusOrderByPage}
+                                        maxHeight={260}
+                                        estimateSize={DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX}
+                                        overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
+                                        getItemKey={(row) => row.url}
+                                        renderItem={({ url, count }) => {
                                             const page = pagesByUrl.get(url);
                                             return page ? (
-                                                <MsqdxButton key={url} size="small" variant="outlined" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none' }}>
+                                                <MsqdxButton size="small" variant="outlined" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', display: 'block', width: '100%', justifyContent: 'flex-start', mb: 0.5 }}>
                                                     {url} ({count})
                                                 </MsqdxButton>
-                                            ) : null;
-                                        })}
-                                    </Box>
+                                            ) : (
+                                                <MsqdxTypography variant="caption" sx={{ display: 'block', py: 0.5 }}>{url} ({count})</MsqdxTypography>
+                                            );
+                                        }}
+                                    />
                                 </Box>
                             )}
                             {aggregated.ux.tapTargets.detailsByPage.length > 0 && (
                                 <Box>
                                     <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Seiten mit Touch-Target-Problemen</MsqdxTypography>
-                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                        {aggregated.ux.tapTargets.detailsByPage.map(({ url, count }) => {
+                                    <VirtualScrollList
+                                        items={aggregated.ux.tapTargets.detailsByPage}
+                                        maxHeight={260}
+                                        estimateSize={DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX}
+                                        overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
+                                        getItemKey={(row) => row.url}
+                                        renderItem={({ url, count }) => {
                                             const page = pagesByUrl.get(url);
                                             return page ? (
-                                                <MsqdxButton key={url} size="small" variant="outlined" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none' }}>
+                                                <MsqdxButton size="small" variant="outlined" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', display: 'block', width: '100%', justifyContent: 'flex-start', mb: 0.5 }}>
                                                     {url} ({count} Probleme)
                                                 </MsqdxButton>
-                                            ) : null;
-                                        })}
-                                    </Box>
+                                            ) : (
+                                                <MsqdxTypography variant="caption" sx={{ display: 'block', py: 0.5 }}>{url} ({count} Probleme)</MsqdxTypography>
+                                            );
+                                        }}
+                                    />
                                 </Box>
                             )}
                         </Box>
@@ -578,16 +672,23 @@ export default function DomainResultPage() {
                     {aggregated.ux.brokenLinks.length > 0 && (
                         <Box sx={{ mt: 2 }}>
                             <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Kaputte Links (Seite)</MsqdxTypography>
-                            <Box component="ul" sx={{ m: 0, pl: 2, maxHeight: 200, overflow: 'auto' }}>
-                                {aggregated.ux.brokenLinks.slice(0, 30).map((l, i) => (
-                                    <li key={i}>
-                                        <MsqdxTypography variant="caption">{l.href} → {l.pageUrl} (HTTP {l.status})</MsqdxTypography>
-                                    </li>
-                                ))}
-                                {aggregated.ux.brokenLinks.length > 30 && (
-                                    <li><MsqdxTypography variant="caption">… und {aggregated.ux.brokenLinks.length - 30} weitere</MsqdxTypography></li>
+                            <VirtualScrollList
+                                items={uxBrokenLinksPreview}
+                                maxHeight={200}
+                                estimateSize={DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX}
+                                overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
+                                getItemKey={(l, i) => `${l.href}|${l.pageUrl}|${l.status}|${i}`}
+                                renderItem={(l) => (
+                                    <MsqdxTypography variant="caption" sx={{ display: 'block', py: 0.25 }}>
+                                        {l.href} → {l.pageUrl} (HTTP {l.status})
+                                    </MsqdxTypography>
                                 )}
-                            </Box>
+                            />
+                            {aggregated.ux.brokenLinks.length > DOMAIN_UX_BROKEN_LINKS_PREVIEW && (
+                                <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'var(--color-text-muted-on-light)' }}>
+                                    … und {aggregated.ux.brokenLinks.length - DOMAIN_UX_BROKEN_LINKS_PREVIEW} weitere
+                                </MsqdxTypography>
+                            )}
                         </Box>
                     )}
                 </MsqdxMoleculeCard>
@@ -626,31 +727,41 @@ export default function DomainResultPage() {
                     {aggregated.structure.pagesWithMultipleH1.length > 0 && (
                         <Box sx={{ mb: 2 }}>
                             <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Seiten mit mehreren H1</MsqdxTypography>
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                {aggregated.structure.pagesWithMultipleH1.map((url) => {
+                            <VirtualScrollList
+                                items={aggregated.structure.pagesWithMultipleH1}
+                                maxHeight={320}
+                                estimateSize={DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX}
+                                overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
+                                getItemKey={(url) => url}
+                                renderItem={(url) => {
                                     const page = pagesByUrl.get(url);
                                     return page ? (
-                                        <MsqdxButton key={url} variant="outlined" size="small" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none' }}>{url}</MsqdxButton>
+                                        <MsqdxButton variant="outlined" size="small" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', display: 'block', width: '100%', justifyContent: 'flex-start', mb: 0.5 }}>{url}</MsqdxButton>
                                     ) : (
-                                        <MsqdxTypography key={url} variant="caption" sx={{ display: 'block' }}>{url}</MsqdxTypography>
+                                        <MsqdxTypography variant="caption" sx={{ display: 'block', py: 0.5 }}>{url}</MsqdxTypography>
                                     );
-                                })}
-                            </Box>
+                                }}
+                            />
                         </Box>
                     )}
                     {aggregated.structure.pagesWithSkippedLevels.length > 0 && (
                         <Box>
                             <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Seiten mit übersprungenen Überschriften-Leveln</MsqdxTypography>
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                {aggregated.structure.pagesWithSkippedLevels.map((url) => {
+                            <VirtualScrollList
+                                items={aggregated.structure.pagesWithSkippedLevels}
+                                maxHeight={320}
+                                estimateSize={DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX}
+                                overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
+                                getItemKey={(url) => url}
+                                renderItem={(url) => {
                                     const page = pagesByUrl.get(url);
                                     return page ? (
-                                        <MsqdxButton key={url} variant="outlined" size="small" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none' }}>{url}</MsqdxButton>
+                                        <MsqdxButton variant="outlined" size="small" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', display: 'block', width: '100%', justifyContent: 'flex-start', mb: 0.5 }}>{url}</MsqdxButton>
                                     ) : (
-                                        <MsqdxTypography key={url} variant="caption">{url}</MsqdxTypography>
+                                        <MsqdxTypography variant="caption" sx={{ display: 'block', py: 0.5 }}>{url}</MsqdxTypography>
                                     );
-                                })}
-                            </Box>
+                                }}
+                            />
                         </Box>
                     )}
                 </MsqdxMoleculeCard>
@@ -712,13 +823,24 @@ export default function DomainResultPage() {
                                     <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1 }}>
                                         Sortiert nach Wortanzahl; &lt;300 Wörter = Skinny Content.
                                     </MsqdxTypography>
-                                    <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0, maxHeight: 280, overflow: 'auto' }}>
-                                        {aggregated.seo.pages.map((row) => {
+                                    {seoPagesHydrating && (
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                            <CircularProgress size={20} sx={{ color: 'var(--color-theme-accent)' }} />
+                                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                                SEO-Seitenliste wird geladen…
+                                            </MsqdxTypography>
+                                        </Box>
+                                    )}
+                                    <VirtualScrollList
+                                        items={aggregated.seo.pages}
+                                        maxHeight={280}
+                                        estimateSize={DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX}
+                                        overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
+                                        getItemKey={(row) => row.url}
+                                        renderItem={(row) => {
                                             const page = pagesByUrl.get(row.url);
                                             return (
                                                 <Box
-                                                    component="li"
-                                                    key={row.url}
                                                     sx={{
                                                         display: 'flex',
                                                         alignItems: 'center',
@@ -744,8 +866,8 @@ export default function DomainResultPage() {
                                                     )}
                                                 </Box>
                                             );
-                                        })}
-                                    </Box>
+                                        }}
+                                    />
                                 </Box>
                             </Box>
                         </MsqdxMoleculeCard>
@@ -856,23 +978,24 @@ export default function DomainResultPage() {
                         <MsqdxTypography variant="caption">Ø Zitat-Dichte: {aggregated.generative.contentSummary.avgCitationDensity}</MsqdxTypography>
                     </Box>
                     <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Pro Seite (Score, llms.txt, empfohlenes Schema)</MsqdxTypography>
-                    <Box component="ul" sx={{ m: 0, pl: 2, maxHeight: 300, overflow: 'auto' }}>
-                        {aggregated.generative.pages.map((p) => {
+                    <VirtualScrollList
+                        items={aggregated.generative.pages}
+                        maxHeight={300}
+                        estimateSize={DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX}
+                        overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
+                        getItemKey={(p) => p.url}
+                        renderItem={(p) => {
                             const page = pagesByUrl.get(p.url);
                             const badges = [`Score ${p.score}`, p.hasLlmsTxt && 'llms.txt', p.hasRecommendedSchema && 'Schema'].filter(Boolean).join(' · ');
-                            return (
-                                <li key={p.url}>
-                                    {page ? (
-                                        <MsqdxButton size="small" variant="text" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', fontSize: '0.8rem' }}>
-                                            {p.url} — {badges || '—'}
-                                        </MsqdxButton>
-                                    ) : (
-                                        <MsqdxTypography variant="caption">{p.url} — {badges || p.score}</MsqdxTypography>
-                                    )}
-                                </li>
+                            return page ? (
+                                <MsqdxButton size="small" variant="text" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', fontSize: '0.8rem', display: 'block', width: '100%', justifyContent: 'flex-start', py: 0.25 }}>
+                                    {p.url} — {badges || '—'}
+                                </MsqdxButton>
+                            ) : (
+                                <MsqdxTypography variant="caption" sx={{ display: 'block', py: 0.25 }}>{p.url} — {badges || p.score}</MsqdxTypography>
                             );
-                        })}
-                    </Box>
+                        }}
+                    />
                 </MsqdxMoleculeCard>
                 ) : (
                     <MsqdxMoleculeCard title="Generative Search / GEO (Domain)" headerActions={<InfoTooltip title={t('info.generativeGeo')} ariaLabel={t('common.info')} />} variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">

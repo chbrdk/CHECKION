@@ -21,15 +21,19 @@ const tableBorder = `1px solid ${MSQDX_NEUTRAL[200]}`;
 
 interface ScanIssueRowProps {
     issue: Issue;
-    index: number;
+    /** Index within the full filtered issue list (matches overlay / scrollToIssue). */
+    globalRowIndex: number;
     registerRef: (index: number, el: HTMLDivElement | null) => void;
 }
 
 /** Highlight is applied via parent CSS (data-highlighted-index + data-row-index) so this row never re-renders when highlight changes. */
-export const ScanIssueRow = memo(({ issue, index, registerRef }: ScanIssueRowProps) => {
+export const ScanIssueRow = memo(({ issue, globalRowIndex, registerRef }: ScanIssueRowProps) => {
     const { t } = useI18n();
     const config = SEVERITY_CONFIG[issue.type] ?? SEVERITY_CONFIG.notice;
-    const handleRef = React.useCallback((el: HTMLDivElement | null) => registerRef(index, el), [index, registerRef]);
+    const handleRef = React.useCallback(
+        (el: HTMLDivElement | null) => registerRef(globalRowIndex, el),
+        [globalRowIndex, registerRef]
+    );
 
     const levelLabel = issue.wcagLevel === 'Unknown' ? '–' : issue.wcagLevel === 'APCA' ? 'APCA' : `Level ${issue.wcagLevel}`;
     const codeShort = issue.code.length > 48 ? issue.code.slice(0, 48) + '…' : issue.code;
@@ -38,9 +42,9 @@ export const ScanIssueRow = memo(({ issue, index, registerRef }: ScanIssueRowPro
     return (
         <Box
             ref={handleRef}
-            id={`issue-${index}-wrapper`}
+            id={`issue-${globalRowIndex}-wrapper`}
             component="div"
-            data-row-index={index}
+            data-row-index={globalRowIndex}
             sx={{
                 display: 'grid',
                 gridTemplateColumns: 'minmax(0, 1fr) minmax(120px, 1.2fr) 80px 72px minmax(0, 1fr) 40px',
