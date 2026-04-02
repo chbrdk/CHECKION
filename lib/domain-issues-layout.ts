@@ -1,8 +1,7 @@
 /**
- * Scrollport-Höhen für `DomainIssuesMasterDetail` (@tanstack/react-virtual).
- * Eltern (z. B. Domain-Tab in `MsqdxMoleculeCard`) haben oft `height: auto` — dann ist
- * `maxHeight: 100%` wirkungslos und die Virtual-List wächst mit `getTotalSize()` mit.
- * Viewport-basierte Caps sind deshalb zwingend.
+ * Scrollport-Höhen für `DomainIssuesMasterDetail` (normale HTML-Listen in `overflow: auto`).
+ * Eltern (z. B. Domain-Tab in `MsqdxMoleculeCard`) haben oft `height: auto` — `maxHeight: 100%`
+ * allein reicht nicht; Viewport-Caps (`vh`/`min()`) begrenzen die sichtbare Fläche zuverlässig.
  */
 export const DOMAIN_ISSUES_SCROLL = {
     xs: 'min(52vh, 420px)',

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { measureElement, useVirtualizer } from '@tanstack/react-virtual';
 import { Box, Button, CircularProgress, IconButton, ToggleButton, ToggleButtonGroup, Tooltip, alpha } from '@mui/material';
 import { MsqdxButton, MsqdxChip, MsqdxFormField, MsqdxMoleculeCard, MsqdxTypography } from '@msqdx/react';
 import { MSQDX_BRAND_PRIMARY, MSQDX_NEUTRAL, MSQDX_STATUS } from '@msqdx/tokens';
@@ -30,13 +29,6 @@ type IssueGroupRow = {
 
 type GroupPageRow = { pageId: string; url: string; issueCount: number; scanId?: string | null };
 type PageIssueRow = { id: string; groupKey: string; type: string; code: string; message: string; runner: string | null; wcagLevel: string | null; helpUrl: string | null; selector: string | null };
-
-/** Fixed row heights — keep in sync with row layout + paddingBottom on virtual wrappers. */
-const V_GROUP_ESTIMATE_PX = 118;
-const V_GROUP_PAGES_ESTIMATE_PX = 88;
-/** Obere Schranke; echte Höhe kommt per `measureElement` (variable Zeilen: Selector, Help-Link). */
-const V_PAGE_ISSUES_ESTIMATE_PX = 200;
-const V_OVERSCAN = 12;
 
 const rowHoverSx = {
     '@media (prefers-reduced-motion: no-preference)': {
@@ -317,46 +309,16 @@ function DomainIssuesMasterDetailInner({
     }, [domainId, selectedPageId, t]);
 
     const groupsScrollRef = useRef<HTMLDivElement>(null);
-    const groupVirtualizer = useVirtualizer({
-        count: groups.length,
-        getScrollElement: () => groupsScrollRef.current,
-        estimateSize: () => V_GROUP_ESTIMATE_PX,
-        measureElement,
-        overscan: V_OVERSCAN,
-        getItemKey: (index) => groups[index]?.groupKey ?? index,
-        useAnimationFrameWithResizeObserver: true,
-    });
-
     useEffect(() => {
         groupsScrollRef.current?.scrollTo({ top: 0 });
     }, [domainId, issuesType, issuesWcag, issuesQ]);
 
     const groupPagesScrollRef = useRef<HTMLDivElement>(null);
-    const groupPagesVirtualizer = useVirtualizer({
-        count: groupPages.length,
-        getScrollElement: () => groupPagesScrollRef.current,
-        estimateSize: () => V_GROUP_PAGES_ESTIMATE_PX,
-        measureElement,
-        overscan: V_OVERSCAN,
-        getItemKey: (index) => groupPages[index]?.pageId ?? index,
-        useAnimationFrameWithResizeObserver: true,
-    });
-
     useEffect(() => {
         groupPagesScrollRef.current?.scrollTo({ top: 0 });
     }, [selectedGroupKey]);
 
     const pageIssuesScrollRef = useRef<HTMLDivElement>(null);
-    const pageIssuesVirtualizer = useVirtualizer({
-        count: pageIssues.length,
-        getScrollElement: () => pageIssuesScrollRef.current,
-        estimateSize: () => V_PAGE_ISSUES_ESTIMATE_PX,
-        measureElement,
-        overscan: V_OVERSCAN,
-        getItemKey: (index) => pageIssues[index]?.id ?? index,
-        useAnimationFrameWithResizeObserver: true,
-    });
-
     useEffect(() => {
         pageIssuesScrollRef.current?.scrollTo({ top: 0 });
     }, [selectedPageId]);
@@ -571,7 +533,7 @@ function DomainIssuesMasterDetailInner({
                         xs: '1fr',
                         lg: gridColsLg,
                     },
-                    // Grid-Items default min-height:auto — sonst wächst die Zeile mit der Virtual-List-Innenhöhe (massive Layouts).
+                    // Grid-Items: minHeight 0, damit die Zeile nicht mit langen Listen unkontrolliert wächst (Scroll in den Karten).
                     '& > *': { minWidth: 0, minHeight: 0 },
                     '@media (prefers-reduced-motion: no-preference)': {
                         transition: 'grid-template-columns 0.22s ease',
@@ -590,89 +552,74 @@ function DomainIssuesMasterDetailInner({
                 ) : (
                     <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                     <Box ref={groupsScrollRef} sx={scrollSx(groupsScrollMaxLg)}>
-                        <Box sx={{ height: `${groupVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
-                            {groupVirtualizer.getVirtualItems().map((vi) => {
-                                const g = groups[vi.index];
-                                if (!g) return null;
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                            {groups.map((g) => {
                                 const active = selectedGroupKey === g.groupKey;
                                 const color = issueTypeColor(g.type);
                                 return (
-                                    <div
-                                        key={vi.key}
-                                        data-index={vi.index}
-                                        ref={groupVirtualizer.measureElement}
-                                        style={{
-                                            position: 'absolute',
-                                            top: 0,
-                                            left: 0,
+                                    <Box
+                                        key={g.groupKey}
+                                        component="button"
+                                        type="button"
+                                        onClick={() => onSelectGroup(g.groupKey)}
+                                        aria-label={g.message}
+                                        aria-selected={active}
+                                        sx={{
+                                            textAlign: 'left',
                                             width: '100%',
-                                            transform: `translateY(${vi.start}px)`,
-                                            paddingBottom: 6,
+                                            border: 'none',
+                                            background: 'none',
+                                            padding: 0,
+                                            font: 'inherit',
+                                            cursor: 'pointer',
+                                            borderRadius: 1,
+                                            overflow: 'hidden',
+                                            ...issueRowFocusSx,
+                                            ...rowHoverSx,
                                         }}
                                     >
                                         <Box
-                                            component="button"
-                                            type="button"
-                                            onClick={() => onSelectGroup(g.groupKey)}
-                                            aria-label={g.message}
-                                            aria-selected={active}
                                             sx={{
-                                                textAlign: 'left',
-                                                width: '100%',
-                                                border: 'none',
-                                                background: 'none',
-                                                padding: 0,
-                                                font: 'inherit',
-                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                minHeight: 112,
+                                                border: `1px solid ${active ? color : 'var(--color-border-subtle, #eee)'}`,
                                                 borderRadius: 1,
-                                                overflow: 'hidden',
-                                                ...issueRowFocusSx,
-                                                ...rowHoverSx,
+                                                bgcolor: active ? alpha(color, 0.06) : 'var(--color-card-bg)',
                                             }}
                                         >
-                                            <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    minHeight: V_GROUP_ESTIMATE_PX - 6,
-                                                    border: `1px solid ${active ? color : 'var(--color-border-subtle, #eee)'}`,
-                                                    borderRadius: 1,
-                                                    bgcolor: active ? alpha(color, 0.06) : 'var(--color-card-bg)',
-                                                }}
-                                            >
-                                                <IssueSeverityRail color={color} />
-                                                <Box sx={{ flex: 1, minWidth: 0, py: 0.5, pr: 1, pl: 0.75 }}>
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
-                                                        <IssueTypeIcon type={g.type} size={15} />
-                                                        <MsqdxChip size="small" label={`${g.pageCount} ${t('domainResult.issuesTablePages')}`} sx={{ fontSize: '0.65rem', height: 22 }} />
-                                                        {g.wcagLevel && g.wcagLevel !== 'Unknown' && (
-                                                            <MsqdxChip size="small" label={g.wcagLevel} sx={{ fontSize: '0.65rem', height: 22 }} />
-                                                        )}
-                                                        {g.runner && <MsqdxChip size="small" label={g.runner} sx={{ fontSize: '0.65rem', height: 22 }} />}
-                                                    </Box>
-                                                    <Tooltip title={g.message} placement="top-start">
-                                                        <MsqdxTypography
-                                                            variant="body2"
-                                                            sx={{
-                                                                mt: 0.5,
-                                                                fontWeight: 600,
-                                                                display: '-webkit-box',
-                                                                WebkitLineClamp: 2,
-                                                                WebkitBoxOrient: 'vertical',
-                                                                overflow: 'hidden',
-                                                            }}
-                                                        >
-                                                            {g.message}
-                                                        </MsqdxTypography>
-                                                    </Tooltip>
-                                                    <Tooltip title={g.code}>
-                                                        <MsqdxTypography variant="caption" noWrap sx={{ color: 'var(--color-text-muted-on-light)', fontFamily: 'ui-monospace, monospace', display: 'block', mt: 0.25 }}>
-                                                            {g.code}
-                                                        </MsqdxTypography>
-                                                    </Tooltip>
+                                            <IssueSeverityRail color={color} />
+                                            <Box sx={{ flex: 1, minWidth: 0, py: 0.5, pr: 1, pl: 0.75 }}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+                                                    <IssueTypeIcon type={g.type} size={15} />
+                                                    <MsqdxChip size="small" label={`${g.pageCount} ${t('domainResult.issuesTablePages')}`} sx={{ fontSize: '0.65rem', height: 22 }} />
+                                                    {g.wcagLevel && g.wcagLevel !== 'Unknown' && (
+                                                        <MsqdxChip size="small" label={g.wcagLevel} sx={{ fontSize: '0.65rem', height: 22 }} />
+                                                    )}
+                                                    {g.runner && <MsqdxChip size="small" label={g.runner} sx={{ fontSize: '0.65rem', height: 22 }} />}
                                                 </Box>
+                                                <Tooltip title={g.message} placement="top-start">
+                                                    <MsqdxTypography
+                                                        variant="body2"
+                                                        sx={{
+                                                            mt: 0.5,
+                                                            fontWeight: 600,
+                                                            display: '-webkit-box',
+                                                            WebkitLineClamp: 2,
+                                                            WebkitBoxOrient: 'vertical',
+                                                            overflow: 'hidden',
+                                                        }}
+                                                    >
+                                                        {g.message}
+                                                    </MsqdxTypography>
+                                                </Tooltip>
+                                                <Tooltip title={g.code}>
+                                                    <MsqdxTypography variant="caption" noWrap sx={{ color: 'var(--color-text-muted-on-light)', fontFamily: 'ui-monospace, monospace', display: 'block', mt: 0.25 }}>
+                                                        {g.code}
+                                                    </MsqdxTypography>
+                                                </Tooltip>
                                             </Box>
                                         </Box>
-                                    </div>
+                                    </Box>
                                 );
                             })}
                         </Box>
@@ -706,85 +653,70 @@ function DomainIssuesMasterDetailInner({
                     ) : (
                         <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                         <Box ref={groupPagesScrollRef} sx={scrollSx(pagesScrollMaxLg)}>
-                            <Box sx={{ height: `${groupPagesVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
-                                {groupPagesVirtualizer.getVirtualItems().map((vi) => {
-                                    const p = groupPages[vi.index];
-                                    if (!p) return null;
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                                {groupPages.map((p) => {
                                     const active = selectedPageId === p.pageId;
                                     const railColor = active ? MSQDX_BRAND_PRIMARY.green : MSQDX_NEUTRAL[300];
                                     return (
-                                        <div
-                                            key={vi.key}
-                                            data-index={vi.index}
-                                            ref={groupPagesVirtualizer.measureElement}
-                                            style={{
-                                                position: 'absolute',
-                                                top: 0,
-                                                left: 0,
+                                        <Box
+                                            key={p.pageId}
+                                            component="button"
+                                            type="button"
+                                            onClick={() => onSelectPage(p.pageId)}
+                                            aria-selected={active}
+                                            sx={{
+                                                textAlign: 'left',
                                                 width: '100%',
-                                                transform: `translateY(${vi.start}px)`,
-                                                paddingBottom: 6,
+                                                border: 'none',
+                                                background: 'none',
+                                                padding: 0,
+                                                font: 'inherit',
+                                                cursor: 'pointer',
+                                                borderRadius: 1,
+                                                overflow: 'hidden',
+                                                ...issueRowFocusSx,
+                                                ...rowHoverSx,
                                             }}
                                         >
                                             <Box
-                                                component="button"
-                                                type="button"
-                                                onClick={() => onSelectPage(p.pageId)}
-                                                aria-selected={active}
                                                 sx={{
-                                                    textAlign: 'left',
-                                                    width: '100%',
-                                                    border: 'none',
-                                                    background: 'none',
-                                                    padding: 0,
-                                                    font: 'inherit',
-                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    minHeight: 82,
+                                                    border: `1px solid ${active ? MSQDX_BRAND_PRIMARY.green : 'var(--color-border-subtle, #eee)'}`,
                                                     borderRadius: 1,
-                                                    overflow: 'hidden',
-                                                    ...issueRowFocusSx,
-                                                    ...rowHoverSx,
+                                                    bgcolor: active ? alpha(MSQDX_BRAND_PRIMARY.green, 0.06) : 'var(--color-card-bg)',
                                                 }}
                                             >
-                                                <Box
-                                                    sx={{
-                                                        display: 'flex',
-                                                        minHeight: V_GROUP_PAGES_ESTIMATE_PX - 6,
-                                                        border: `1px solid ${active ? MSQDX_BRAND_PRIMARY.green : 'var(--color-border-subtle, #eee)'}`,
-                                                        borderRadius: 1,
-                                                        bgcolor: active ? alpha(MSQDX_BRAND_PRIMARY.green, 0.06) : 'var(--color-card-bg)',
-                                                    }}
-                                                >
-                                                    <IssueSeverityRail color={railColor} />
-                                                    <Box sx={{ flex: 1, minWidth: 0, py: 0.5, pr: 0.5, pl: 0.75, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 0.75 }}>
-                                                        <Box sx={{ minWidth: 0, flex: 1 }}>
-                                                            <MsqdxTypography variant="body2" sx={{ fontWeight: 600, fontSize: '0.8125rem', lineHeight: 1.25 }} noWrap title={titleFromUrl(p.url)}>
-                                                                {titleFromUrl(p.url)}
-                                                            </MsqdxTypography>
-                                                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', fontSize: '0.7rem', lineHeight: 1.2 }} noWrap title={p.url}>
-                                                                {p.url}
-                                                            </MsqdxTypography>
-                                                        </Box>
-                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, flexShrink: 0 }}>
-                                                            <MsqdxChip size="small" label={String(p.issueCount)} sx={{ fontSize: '0.6rem', height: 20 }} />
-                                                            <Tooltip title={t('domainResult.openPage')}>
-                                                                <IconButton
-                                                                    size="small"
-                                                                    sx={{ p: 0.35 }}
-                                                                    aria-label={t('domainResult.openPageAria', { url: p.url })}
-                                                                    onClick={(e) => {
-                                                                        e.preventDefault();
-                                                                        e.stopPropagation();
-                                                                        onOpenPageScan(p.url, p.scanId);
-                                                                    }}
-                                                                >
-                                                                    <ExternalLink size={16} strokeWidth={2} aria-hidden />
-                                                                </IconButton>
-                                                            </Tooltip>
-                                                        </Box>
+                                                <IssueSeverityRail color={railColor} />
+                                                <Box sx={{ flex: 1, minWidth: 0, py: 0.5, pr: 0.5, pl: 0.75, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 0.75 }}>
+                                                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                                                        <MsqdxTypography variant="body2" sx={{ fontWeight: 600, fontSize: '0.8125rem', lineHeight: 1.25 }} noWrap title={titleFromUrl(p.url)}>
+                                                            {titleFromUrl(p.url)}
+                                                        </MsqdxTypography>
+                                                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', fontSize: '0.7rem', lineHeight: 1.2 }} noWrap title={p.url}>
+                                                            {p.url}
+                                                        </MsqdxTypography>
+                                                    </Box>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, flexShrink: 0 }}>
+                                                        <MsqdxChip size="small" label={String(p.issueCount)} sx={{ fontSize: '0.6rem', height: 20 }} />
+                                                        <Tooltip title={t('domainResult.openPage')}>
+                                                            <IconButton
+                                                                size="small"
+                                                                sx={{ p: 0.35 }}
+                                                                aria-label={t('domainResult.openPageAria', { url: p.url })}
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    onOpenPageScan(p.url, p.scanId);
+                                                                }}
+                                                            >
+                                                                <ExternalLink size={16} strokeWidth={2} aria-hidden />
+                                                            </IconButton>
+                                                        </Tooltip>
                                                     </Box>
                                                 </Box>
                                             </Box>
-                                        </div>
+                                        </Box>
                                     );
                                 })}
                             </Box>
@@ -823,78 +755,62 @@ function DomainIssuesMasterDetailInner({
                     ) : (
                         <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                         <Box ref={pageIssuesScrollRef} sx={scrollSx(DOMAIN_ISSUES_SCROLL.issuesLg)}>
-                            <Box sx={{ height: `${pageIssuesVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
-                                {pageIssuesVirtualizer.getVirtualItems().map((vi) => {
-                                    const i = pageIssues[vi.index];
-                                    if (!i) return null;
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                                {pageIssues.map((i) => {
                                     const color = issueTypeColor(i.type);
                                     return (
-                                        <div
-                                            key={vi.key}
-                                            data-index={vi.index}
-                                            ref={pageIssuesVirtualizer.measureElement}
-                                            style={{
-                                                position: 'absolute',
-                                                top: 0,
-                                                left: 0,
-                                                width: '100%',
-                                                transform: `translateY(${vi.start}px)`,
-                                                paddingBottom: 6,
+                                        <Box
+                                            key={i.id}
+                                            sx={{
+                                                display: 'flex',
+                                                border: `1px solid var(--color-border-subtle, #eee)`,
+                                                borderRadius: 1,
+                                                bgcolor: 'var(--color-card-bg)',
+                                                overflow: 'hidden',
                                             }}
                                         >
-                                            <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    minHeight: V_PAGE_ISSUES_ESTIMATE_PX - 6,
-                                                    border: `1px solid var(--color-border-subtle, #eee)`,
-                                                    borderRadius: 1,
-                                                    bgcolor: 'var(--color-card-bg)',
-                                                    overflow: 'hidden',
-                                                }}
-                                            >
-                                                <IssueSeverityRail color={color} />
-                                                <Box sx={{ flex: 1, minWidth: 0, py: 0.5, pr: 1, pl: 0.75 }}>
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
-                                                        <IssueTypeIcon type={i.type} size={15} />
-                                                        {i.wcagLevel && i.wcagLevel !== 'Unknown' && (
-                                                            <MsqdxChip size="small" label={i.wcagLevel} sx={{ fontSize: '0.65rem', height: 22 }} />
-                                                        )}
-                                                        {i.runner && <MsqdxChip size="small" label={i.runner} sx={{ fontSize: '0.65rem', height: 22 }} />}
-                                                    </Box>
-                                                    <MsqdxTypography variant="body2" sx={{ mt: 0.5, fontWeight: 600, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                                                        {i.message}
-                                                    </MsqdxTypography>
-                                                    <Tooltip title={i.code}>
-                                                        <MsqdxTypography variant="caption" noWrap sx={{ fontFamily: 'ui-monospace, monospace', color: 'var(--color-text-muted-on-light)', display: 'block' }}>
-                                                            {i.code}
-                                                        </MsqdxTypography>
-                                                    </Tooltip>
-                                                    {i.selector && (
-                                                        <SelectorCopyBlock
-                                                            selector={i.selector}
-                                                            labelCopy={t('domainResult.issuesCopySelector')}
-                                                            copiedLabel={t('domainResult.issuesCopied')}
-                                                        />
+                                            <IssueSeverityRail color={color} />
+                                            <Box sx={{ flex: 1, minWidth: 0, py: 0.5, pr: 1, pl: 0.75 }}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+                                                    <IssueTypeIcon type={i.type} size={15} />
+                                                    {i.wcagLevel && i.wcagLevel !== 'Unknown' && (
+                                                        <MsqdxChip size="small" label={i.wcagLevel} sx={{ fontSize: '0.65rem', height: 22 }} />
                                                     )}
-                                                    {i.helpUrl && (
-                                                        <Box sx={{ mt: 0.75 }}>
-                                                            <Button
-                                                                component="a"
-                                                                href={i.helpUrl}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                variant="outlined"
-                                                                size="small"
-                                                                startIcon={<ExternalLink size={14} strokeWidth={2} aria-hidden />}
-                                                                sx={{ textTransform: 'none' }}
-                                                            >
-                                                                {t('domainResult.issuesGuidelineOpen')}
-                                                            </Button>
-                                                        </Box>
-                                                    )}
+                                                    {i.runner && <MsqdxChip size="small" label={i.runner} sx={{ fontSize: '0.65rem', height: 22 }} />}
                                                 </Box>
+                                                <MsqdxTypography variant="body2" sx={{ mt: 0.5, fontWeight: 600, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                                    {i.message}
+                                                </MsqdxTypography>
+                                                <Tooltip title={i.code}>
+                                                    <MsqdxTypography variant="caption" noWrap sx={{ fontFamily: 'ui-monospace, monospace', color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                                                        {i.code}
+                                                    </MsqdxTypography>
+                                                </Tooltip>
+                                                {i.selector && (
+                                                    <SelectorCopyBlock
+                                                        selector={i.selector}
+                                                        labelCopy={t('domainResult.issuesCopySelector')}
+                                                        copiedLabel={t('domainResult.issuesCopied')}
+                                                    />
+                                                )}
+                                                {i.helpUrl && (
+                                                    <Box sx={{ mt: 0.75 }}>
+                                                        <Button
+                                                            component="a"
+                                                            href={i.helpUrl}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            variant="outlined"
+                                                            size="small"
+                                                            startIcon={<ExternalLink size={14} strokeWidth={2} aria-hidden />}
+                                                            sx={{ textTransform: 'none' }}
+                                                        >
+                                                            {t('domainResult.issuesGuidelineOpen')}
+                                                        </Button>
+                                                    </Box>
+                                                )}
                                             </Box>
-                                        </div>
+                                        </Box>
                                     );
                                 })}
                             </Box>

@@ -1,6 +1,6 @@
 # UI-Virtualisierung: Kandidaten (Auswertung)
 
-Ziel: Weniger DOM-Knoten bei sehr langen Listen. Bereits genutzt: `@tanstack/react-virtual` in `components/DomainIssuesMasterDetail.tsx` (alle drei Spalten: Gruppen, betroffene Seiten, Issues pro Seite) und in `components/ScanIssueList.tsx` (Ergebnisliste Einzelscan, inkl. `measureElement` + sticky Header).
+Ziel: Weniger DOM-Knoten bei sehr langen Listen. Bereits genutzt: `@tanstack/react-virtual` u. a. in `components/ScanIssueList.tsx` (Ergebnisliste Einzelscan). **`DomainIssuesMasterDetail`** (Domain-Tab „Gefundene Issues“) nutzt **keine** Virtualisierung mehr — normale Listen + Pagination/„Mehr laden“; stabileres Layout als `translateY`-Virtualisierung bei großen Viewports.
 
 ## Bereits gut abgefedert (weniger dringend)
 
@@ -29,7 +29,7 @@ Hier geht es nicht um React-Virtualisierung, sondern um **Indizes, Paginierung, 
 ## Domain-Seite: leichtes Summary + Tab-Mount
 
 - **`GET /api/scan/domain/[id]/summary?light=1`** liefert ein schlankeres JSON (`toLightDomainSummaryApiPayload` in `lib/domain-summary.ts`): **`pages` leer**, **`aggregated.seo.pages` leer**, `summaryMeta.seoPageRowsOmitted` + **`slimPagesOmitted`**. Die **SlimPage-Liste** lädt die Domain-Seite bei Tab „Übersicht“ per **`GET /api/scan/domain/[id]/slim-pages`** (DB: `domain_pages`; bei leerer Tabelle optional **`ensureDomainIssueTablesBackfilled`** vor erneutem Count; Fallback: Slice aus Payload). Tab **„Links & SEO“** (7) lädt bei Bedarf **`GET .../summary?seoFull=1`** (nur `aggregated.seo` + `summaryMeta`) und merged clientseitig — kein erneutes Mega-Summary.
-- **Issues-Tab (Tab 2):** `DomainIssuesMasterDetail` wird nur gerendert, wenn `tabValue === 2` (kein `display:none` mehr), damit die schwere Master/Detail-UI nicht im Hintergrund bleibt. **Deep-Link:** Sind `group`, `page`, `itype`, `wcag` oder `q` in der Query, wechselt die Seite per `startTransition` auf Tab 2. Die drei Virtual-Listen nutzen **feste Zeilenhöhen** (ohne `measureElement`), um Layout-Schleifen bei langen Listen zu vermeiden.
+- **Issues-Tab (Tab 2):** `DomainIssuesMasterDetail` wird nur gerendert, wenn `tabValue === 2` (kein `display:none` mehr), damit die schwere Master/Detail-UI nicht im Hintergrund bleibt. **Deep-Link:** Sind `group`, `page`, `itype`, `wcag` oder `q` in der Query, wechselt die Seite per `startTransition` auf Tab 2. Die drei Spalten sind **statische Listen** im Scroll-Container (Höhen-Caps in `lib/domain-issues-layout.ts`); Daten weiter **paged** über die APIs.
 
 ## Kurzregel
 

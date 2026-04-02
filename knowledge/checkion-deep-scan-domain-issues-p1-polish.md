@@ -54,16 +54,15 @@ Dieses Dokument sammelt sinnvolle **P1 Verbesserungen**, falls wir noch mehr Sta
 
 ## P1 – UI Skalierung & UX
 
-- **Virtualisierung im Master/Detail (Liste & Details)**
-  - Umgesetzt: `@tanstack/react-virtual` (`useVirtualizer`) in `components/DomainIssuesMasterDetail.tsx` für **Gruppen**, **betroffene URLs** und **Issues der gewählten Seite**. Pro Zeile `ref={virtualizer.measureElement}` + Option `measureElement` aus dem Paket — **Issues-Zeilen** sind variabel (Selector, Help-Link); nur `estimateSize` führt zu falschen `translateY`-Abständen (Überlappung, „flackernde“/verschwindende Zeilen). Overscan erhöht, optional `useAnimationFrameWithResizeObserver`. Siehe auch `knowledge/checkion-virtualization-candidates.md`.
+- **Master/Detail (Liste & Details)** — **ohne** JS-Virtualisierung: `components/DomainIssuesMasterDetail.tsx` rendert die drei Spalten als **normale HTML-Listen** (`map`) in `overflow: auto` mit Höhen aus `lib/domain-issues-layout.ts`. API bleibt **paginiert** (Load more) — typisch wenige hundert DOM-Zeilen, dafür kein `translateY`/Schätz-Höhen-Chaos. Virtualisierung wäre nur nötig bei extrem vielen geladenen Zeilen ohne Pagination.
 
-- **UX-Polish (Zeilenlayout, feste Höhen)**
+- **UX-Polish (Zeilenlayout)**
   - Gemeinsame Primitives in `components/domain-issues/IssueListPrimitives.tsx` (`IssueSeverityRail`, `IssueTypeIcon`, `issueTypeColor`, Fokus-Styles).
-  - Listenzeilen: linke 4px-Akzentleiste, Icons nach Schweregrad, Message/Code mit Tooltip; **feste** `estimateSize`-Werte (`V_GROUP_ESTIMATE_PX` 118, `V_GROUP_PAGES_ESTIMATE_PX` 88, `V_PAGE_ISSUES_ESTIMATE_PX` 148) — bei Layout-Änderungen diese Konstanten und `paddingBottom` der Virtual-Wrapper mit anpassen, sonst Überlappungen. Scroll-Höhen sind abhängig von der Layout-Stufe (nur Gruppen vs. zwei vs. drei Spalten).
+  - Listenzeilen: linke 4px-Akzentleiste, Icons nach Schweregrad, Message/Code mit Tooltip; natürlicher Zeilenfluss (keine virtuellen `translateY`-Positionen).
   - **Layout:** Oben eine volle Breite **Filter-Karte** (`tabListDetails` + `issuesMasterSubtitle`, Severity/WCAG-Toggles, Suche, Apply/Reset). Darunter ein **Grid** nur mit den drei Listen-Karten. Erste Spalte: Titel `issuesColumnGroupsTitle` („Gruppen“ / „Groups“), ohne doppelten Subtitle.
-  - **Progressive Spalten (`lg`):** Stufe 1 nur Gruppen (volle Breite); Stufe 2 nach Gruppenwahl schmale Gruppen-Spalte + breite URL-Spalte; Stufe 3 nach Seitenwahl drei Spalten (äußere schmal, Issue-Details `minmax(0,1fr)`). Unter `xs` eine Spalte, Karten untereinander; Scroll-Bereiche mit `maxHeight` auf kleinen Viewports, auf `lg` gemeinsame Zeilenhöhe (`minHeight`/`maxHeight` am Listen-Grid, Karten `height: 100%`, Scroll `flex: 1` + `minHeight: 0`, `maxHeight: 100%`).
-  - **Virtualisierung + CSS Grid:** Direkte Grid-Kinder brauchen `minHeight: 0` (z. B. `'& > *': { minWidth: 0, minHeight: 0 }`). Ohne das wächst die Zeile mit der absolut positionierten Virtual-List-Gesamthöhe — kein echter Scroll-Viewport, extrem hohe Seite, „kaputtes“ Layout.
-  - **Scroll-Höhen:** Zentral `lib/domain-issues-layout.ts` (`DOMAIN_ISSUES_SCROLL`). Die Issues-UI sitzt in `app/domain/[id]/page.tsx` in einer weiteren `MsqdxMoleculeCard` ohne feste Höhe — `maxHeight: 100%` auf den Listen-Scrollareas greift dann nicht. Die Caps müssen **vh**/feste `min()`-Strings sein; zusätzlich `flex: 1` / `minHeight: 0` / `overflow: hidden` um `DomainIssuesMasterDetail` herum im Issues-Tab.
+  - **Progressive Spalten (`lg`):** Stufe 1 nur Gruppen (volle Breite); Stufe 2 nach Gruppenwahl schmale Gruppen-Spalte + breite URL-Spalte; Stufe 3 nach Seitenwahl drei Spalten (äußere schmal, Issue-Details `minmax(0,1fr)`). Unter `xs` eine Spalte, Karten untereinander; Scroll-Bereiche mit **vh**-Caps aus `DOMAIN_ISSUES_SCROLL`.
+  - **CSS Grid:** Direkte Grid-Kinder mit `minHeight: 0` (`'& > *'`), damit die Zeilenhöhe begrenzt bleibt und **Scroll** in den Karten stattfindet.
+  - **Scroll-Höhen:** Zentral `lib/domain-issues-layout.ts` (`DOMAIN_ISSUES_SCROLL`). Die Issues-UI sitzt in `app/domain/[id]/page.tsx` in einer weiteren `MsqdxMoleculeCard` ohne feste Höhe — `maxHeight: 100%` auf den Listen-Scrollareas greift allein oft nicht; **vh**-Caps bleiben nötig; um `DomainIssuesMasterDetail` herum `flex: 1` / `minHeight: 0` im Issues-Tab.
   - Filter: MUI `ToggleButtonGroup` für Typ und WCAG (statt vieler Einzel-Chips).
   - Leere Spalten: `IssuesEmptyState`; Detail: Selector-Block + Copy, Help-Link als `Button` mit Icon.
 
