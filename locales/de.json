@@ -720,6 +720,8 @@
     "issuesTablePages": "Seiten",
     "issuesMasterSubtitle": "Gruppen (paginiert)",
     "issuesColumnGroupsTitle": "Gruppen",
+    "issuesBackToGroups": "Zurück zu Gruppen",
+    "issuesBackToPages": "Zurück zu betroffenen Seiten",
     "issuesAffectedPagesTitle": "Betroffene Seiten",
     "issuesAffectedPagesSubtitlePaged": "URLs (paginiert)",
     "issuesAffectedPagesSubtitlePickGroup": "Wähle links eine Gruppe",

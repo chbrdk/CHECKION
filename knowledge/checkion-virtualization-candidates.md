@@ -1,6 +1,6 @@
 # UI-Virtualisierung: Kandidaten (Auswertung)
 
-Ziel: Weniger DOM-Knoten bei sehr langen Listen. Bereits genutzt: `@tanstack/react-virtual` u. a. in `components/ScanIssueList.tsx` (Ergebnisliste Einzelscan). **`DomainIssuesMasterDetail`** (Domain-Tab „Gefundene Issues“) nutzt **keine** Virtualisierung mehr — normale Listen + Pagination/„Mehr laden“; stabileres Layout als `translateY`-Virtualisierung bei großen Viewports.
+Ziel: Weniger DOM-Knoten bei sehr langen Listen. Bereits genutzt: `@tanstack/react-virtual` u. a. in `components/ScanIssueList.tsx` (Ergebnisliste Einzelscan). **`DomainIssuesMasterDetail`** (Domain-Tab „Gefundene Issues“) nutzt **keine** Virtualisierung — normale Listen + Pagination/„Mehr laden“. **Gestaffelte Navigation:** nur eine Liste sichtbar (Gruppen → Seiten → Issues), Zurück-Buttons; kein Drei-Spalten-Grid.
 
 ## Bereits gut abgefedert (weniger dringend)
 

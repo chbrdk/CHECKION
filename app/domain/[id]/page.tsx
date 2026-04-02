@@ -165,6 +165,17 @@ export default function DomainResultPage() {
         sp.set('page', pageId);
         router.replace(`?${sp.toString()}`);
     }, [router, searchParams]);
+    const clearIssuesPageSelection = useCallback(() => {
+        const sp = new URLSearchParams(Array.from(searchParams.entries()));
+        sp.delete('page');
+        router.replace(`?${sp.toString()}`);
+    }, [router, searchParams]);
+    const clearIssuesGroupSelection = useCallback(() => {
+        const sp = new URLSearchParams(Array.from(searchParams.entries()));
+        sp.delete('group');
+        sp.delete('page');
+        router.replace(`?${sp.toString()}`);
+    }, [router, searchParams]);
     const setIssuesFilters = useCallback((next: { type?: string | null; wcag?: string | null; q?: string | null }) => {
         const sp = new URLSearchParams(Array.from(searchParams.entries()));
         if (next.type === null) sp.delete('itype');
@@ -587,6 +598,8 @@ export default function DomainResultPage() {
                                     onSelectGroup={selectGroup}
                                     onSelectPage={selectPage}
                                     onOpenPageScan={handleIssuePageClick}
+                                    onBackToGroups={clearIssuesGroupSelection}
+                                    onBackToPages={clearIssuesPageSelection}
                                 />
                             </Box>
                         )}

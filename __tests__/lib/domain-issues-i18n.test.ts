@@ -18,4 +18,13 @@ describe('domain issues master/detail i18n', () => {
         expect(en.domainResult.issuesColumnGroupsTitle).toBeTruthy();
         expect(de.domainResult.issuesColumnGroupsTitle).not.toBe(en.domainResult.issuesColumnGroupsTitle);
     });
+
+    it('de and en define stepped navigation back labels', () => {
+        const de = loadLocale('de');
+        const en = loadLocale('en');
+        expect(de.domainResult.issuesBackToGroups).toBeTruthy();
+        expect(en.domainResult.issuesBackToGroups).toBeTruthy();
+        expect(de.domainResult.issuesBackToPages).toBeTruthy();
+        expect(en.domainResult.issuesBackToPages).toBeTruthy();
+    });
 });

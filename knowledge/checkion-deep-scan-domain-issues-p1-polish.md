@@ -59,9 +59,8 @@ Dieses Dokument sammelt sinnvolle **P1 Verbesserungen**, falls wir noch mehr Sta
 - **UX-Polish (Zeilenlayout)**
   - Gemeinsame Primitives in `components/domain-issues/IssueListPrimitives.tsx` (`IssueSeverityRail`, `IssueTypeIcon`, `issueTypeColor`, Fokus-Styles).
   - Listenzeilen: linke 4px-Akzentleiste, Icons nach Schweregrad, Message/Code mit Tooltip; natürlicher Zeilenfluss (keine virtuellen `translateY`-Positionen).
-  - **Layout:** Oben eine volle Breite **Filter-Karte** (`tabListDetails` + `issuesMasterSubtitle`, Severity/WCAG-Toggles, Suche, Apply/Reset). Darunter ein **Grid** nur mit den drei Listen-Karten. Erste Spalte: Titel `issuesColumnGroupsTitle` („Gruppen“ / „Groups“), ohne doppelten Subtitle.
-  - **Progressive Spalten (`lg`):** Stufe 1 nur Gruppen (volle Breite); Stufe 2 nach Gruppenwahl schmale Gruppen-Spalte + breite URL-Spalte; Stufe 3 nach Seitenwahl drei Spalten (äußere schmal, Issue-Details `minmax(0,1fr)`). Unter `xs` eine Spalte, Karten untereinander; Scroll-Bereiche mit **vh**-Caps aus `DOMAIN_ISSUES_SCROLL`.
-  - **CSS Grid:** Direkte Grid-Kinder mit `minHeight: 0` (`'& > *'`), damit die Zeilenhöhe begrenzt bleibt und **Scroll** in den Karten stattfindet.
+  - **Layout:** Oben eine volle Breite **Filter-Karte** (`tabListDetails` + `issuesMasterSubtitle`, Severity/WCAG-Toggles, Suche, Apply/Reset). Darunter **eine gestaffelte Liste** (kein 3-Spalten-Grid): Stufe 1 nur **Gruppen**, Stufe 2 nur **betroffene Seiten** (mit Zurück zu Gruppen), Stufe 3 nur **Issues der Seite** (mit Zurück zu Seiten). URL-Query: `group`, `page` — `onBackToGroups` / `onBackToPages` in `app/domain/[id]/page.tsx`.
+  - Scroll-Höhe: `DOMAIN_ISSUES_SCROLL.singleListLg` (+ `xs`).
   - **Scroll-Höhen:** Zentral `lib/domain-issues-layout.ts` (`DOMAIN_ISSUES_SCROLL`). Die Issues-UI sitzt in `app/domain/[id]/page.tsx` in einer weiteren `MsqdxMoleculeCard` ohne feste Höhe — `maxHeight: 100%` auf den Listen-Scrollareas greift allein oft nicht; **vh**-Caps bleiben nötig; um `DomainIssuesMasterDetail` herum `flex: 1` / `minHeight: 0` im Issues-Tab.
   - Filter: MUI `ToggleButtonGroup` für Typ und WCAG (statt vieler Einzel-Chips).
   - Leere Spalten: `IssuesEmptyState`; Detail: Selector-Block + Copy, Help-Link als `Button` mit Icon.

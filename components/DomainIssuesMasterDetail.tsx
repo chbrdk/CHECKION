@@ -4,7 +4,7 @@ import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { Box, Button, CircularProgress, IconButton, ToggleButton, ToggleButtonGroup, Tooltip, alpha } from '@mui/material';
 import { MsqdxButton, MsqdxChip, MsqdxFormField, MsqdxMoleculeCard, MsqdxTypography } from '@msqdx/react';
 import { MSQDX_BRAND_PRIMARY, MSQDX_NEUTRAL, MSQDX_STATUS } from '@msqdx/tokens';
-import { Copy, ExternalLink, FileSearch } from 'lucide-react';
+import { ChevronLeft, Copy, ExternalLink, FileSearch } from 'lucide-react';
 import { apiScanDomainIssueGroupPages, apiScanDomainIssueGroups, apiScanDomainPageIssues } from '@/lib/constants';
 import { DOMAIN_ISSUES_SCROLL } from '@/lib/domain-issues-layout';
 import type { SlimPage } from '@/lib/types';
@@ -170,6 +170,8 @@ function DomainIssuesMasterDetailInner({
     onSelectGroup,
     onSelectPage,
     onOpenPageScan,
+    onBackToGroups,
+    onBackToPages,
 }: {
     domainId: string;
     pagesById: ReadonlyMap<string, SlimPage>;
@@ -182,6 +184,10 @@ function DomainIssuesMasterDetailInner({
     onSelectGroup: (groupKey: string) => void;
     onSelectPage: (pageId: string) => void;
     onOpenPageScan: (url: string, scanId?: string | null) => void;
+    /** Stufe 2 → 1: `group` + `page` aus der URL entfernen */
+    onBackToGroups: () => void;
+    /** Stufe 3 → 2: nur `page` aus der URL entfernen */
+    onBackToPages: () => void;
 }) {
     const { t } = useI18n();
     const [groups, setGroups] = useState<IssueGroupRow[]>([]);
@@ -390,17 +396,16 @@ function DomainIssuesMasterDetailInner({
         },
     } as const;
 
-    /** 1 = nur Gruppen (volle Breite); 2 + Seiten; 3 + Issue-Details — jeweils vorherige Spalten schmaler, letzte Spalte flexibel breit. */
-    const layoutStep = selectedPageId ? 3 : selectedGroupKey ? 2 : 1;
-    const gridColsLg =
-        layoutStep === 1
-            ? 'minmax(0, 1fr)'
-            : layoutStep === 2
-              ? 'minmax(200px, 0.34fr) minmax(0, 1fr)'
-              : 'minmax(176px, 0.2fr) minmax(192px, 0.26fr) minmax(0, 1fr)';
-
-    const groupsScrollMaxLg = layoutStep === 1 ? DOMAIN_ISSUES_SCROLL.groupsLgStep1 : DOMAIN_ISSUES_SCROLL.groupsLgStep23;
-    const pagesScrollMaxLg = layoutStep === 2 ? DOMAIN_ISSUES_SCROLL.pagesLgStep2 : DOMAIN_ISSUES_SCROLL.pagesLgStep3;
+    /** Gestaffelt: 1 = nur Gruppen, 2 = nur betroffene Seiten, 3 = nur Issues der Seite (je eine volle Liste). */
+    const navigStep = selectedPageId ? 3 : selectedGroupKey ? 2 : 1;
+    const listScrollMaxLg = DOMAIN_ISSUES_SCROLL.singleListLg;
+    const selectedGroupRow = selectedGroupKey ? groups.find((g) => g.groupKey === selectedGroupKey) : undefined;
+    const groupListSubtitle =
+        navigStep === 2 && selectedGroupRow?.message
+            ? selectedGroupRow.message.length > 140
+                ? `${selectedGroupRow.message.slice(0, 140)}…`
+                : selectedGroupRow.message
+            : t('domainResult.issuesAffectedPagesSubtitlePaged');
 
     const listColumnCardSx = {
         bgcolor: 'var(--color-card-bg)',
@@ -411,14 +416,13 @@ function DomainIssuesMasterDetailInner({
         height: { lg: '100%' },
     } as const;
 
-    const scrollSx = (maxLg: string) =>
-        ({
-            flex: { lg: 1 },
-            minHeight: { lg: 0, xs: 96 },
-            maxHeight: { xs: DOMAIN_ISSUES_SCROLL.xs, lg: maxLg },
-            overflow: 'auto',
-            overflowAnchor: 'none',
-        }) as const;
+    const listScrollSx = {
+        flex: { lg: 1 },
+        minHeight: { lg: 0, xs: 96 },
+        maxHeight: { xs: DOMAIN_ISSUES_SCROLL.xs, lg: listScrollMaxLg },
+        overflow: 'auto',
+        overflowAnchor: 'none',
+    } as const;
 
     return (
         <Box
@@ -522,24 +526,15 @@ function DomainIssuesMasterDetailInner({
 
             <Box
                 sx={{
-                    display: 'grid',
-                    gap: 2,
-                    minWidth: 0,
-                    alignItems: 'stretch',
                     flex: { lg: 1 },
-                    minHeight: { xs: 'auto', lg: DOMAIN_ISSUES_SCROLL.gridRowLg },
-                    maxHeight: { lg: DOMAIN_ISSUES_SCROLL.gridRowLg },
-                    gridTemplateColumns: {
-                        xs: '1fr',
-                        lg: gridColsLg,
-                    },
-                    // Grid-Items: minHeight 0, damit die Zeile nicht mit langen Listen unkontrolliert wächst (Scroll in den Karten).
-                    '& > *': { minWidth: 0, minHeight: 0 },
-                    '@media (prefers-reduced-motion: no-preference)': {
-                        transition: 'grid-template-columns 0.22s ease',
-                    },
+                    minWidth: 0,
+                    minHeight: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    maxHeight: { xs: 'none', lg: listScrollMaxLg },
                 }}
             >
+                {navigStep === 1 && (
                 <MsqdxMoleculeCard
                     title={t('domainResult.issuesColumnGroupsTitle')}
                     variant="flat"
@@ -551,7 +546,7 @@ function DomainIssuesMasterDetailInner({
                     <Box sx={{ flex: 1, minHeight: { lg: 160 }, py: 3, display: 'flex', justifyContent: 'center', alignItems: 'center' }}><CircularProgress size={24} /></Box>
                 ) : (
                     <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                    <Box ref={groupsScrollRef} sx={scrollSx(groupsScrollMaxLg)}>
+                    <Box ref={groupsScrollRef} sx={listScrollSx}>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
                             {groups.map((g) => {
                                 const active = selectedGroupKey === g.groupKey;
@@ -634,15 +629,21 @@ function DomainIssuesMasterDetailInner({
                     </Box>
                 )}
             </MsqdxMoleculeCard>
+                )}
 
-            {layoutStep >= 2 && (
+                {navigStep === 2 && (
                 <MsqdxMoleculeCard
                     title={t('domainResult.issuesAffectedPagesTitle')}
-                    subtitle={t('domainResult.issuesAffectedPagesSubtitlePaged')}
+                    subtitle={groupListSubtitle}
                     variant="flat"
                     borderRadius="lg"
                     sx={listColumnCardSx}
                 >
+                    <Box sx={{ flexShrink: 0, mb: 1 }}>
+                        <MsqdxButton variant="text" size="small" startIcon={<ChevronLeft size={18} strokeWidth={2} aria-hidden />} onClick={onBackToGroups} sx={{ color: MSQDX_BRAND_PRIMARY.green, textTransform: 'none', px: 0.5 }}>
+                            {t('domainResult.issuesBackToGroups')}
+                        </MsqdxButton>
+                    </Box>
                     {groupPagesError && <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.error.base, flexShrink: 0 }}>{groupPagesError}</MsqdxTypography>}
                     {groupPagesLoading ? (
                         <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', py: 2 }}><CircularProgress size={20} /></Box>
@@ -652,7 +653,7 @@ function DomainIssuesMasterDetailInner({
                         </Box>
                     ) : (
                         <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                        <Box ref={groupPagesScrollRef} sx={scrollSx(pagesScrollMaxLg)}>
+                        <Box ref={groupPagesScrollRef} sx={listScrollSx}>
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
                                 {groupPages.map((p) => {
                                     const active = selectedPageId === p.pageId;
@@ -731,9 +732,9 @@ function DomainIssuesMasterDetailInner({
                         </Box>
                     )}
                 </MsqdxMoleculeCard>
-            )}
+                )}
 
-            {layoutStep >= 3 && (
+                {navigStep === 3 && (
                 <MsqdxMoleculeCard
                     title={t('domainResult.issuesPageDetailTitle')}
                     subtitle={(() => {
@@ -745,6 +746,11 @@ function DomainIssuesMasterDetailInner({
                     borderRadius="lg"
                     sx={listColumnCardSx}
                 >
+                    <Box sx={{ flexShrink: 0, mb: 1 }}>
+                        <MsqdxButton variant="text" size="small" startIcon={<ChevronLeft size={18} strokeWidth={2} aria-hidden />} onClick={onBackToPages} sx={{ color: MSQDX_BRAND_PRIMARY.green, textTransform: 'none', px: 0.5 }}>
+                            {t('domainResult.issuesBackToPages')}
+                        </MsqdxButton>
+                    </Box>
                     {pageIssuesError && <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.error.base, flexShrink: 0 }}>{pageIssuesError}</MsqdxTypography>}
                     {pageIssuesLoading ? (
                         <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', py: 2 }}><CircularProgress size={20} /></Box>
@@ -754,7 +760,7 @@ function DomainIssuesMasterDetailInner({
                         </Box>
                     ) : (
                         <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                        <Box ref={pageIssuesScrollRef} sx={scrollSx(DOMAIN_ISSUES_SCROLL.issuesLg)}>
+                        <Box ref={pageIssuesScrollRef} sx={listScrollSx}>
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
                                 {pageIssues.map((i) => {
                                     const color = issueTypeColor(i.type);
@@ -825,8 +831,8 @@ function DomainIssuesMasterDetailInner({
                         </Box>
                     )}
                 </MsqdxMoleculeCard>
-            )}
-        </Box>
+                )}
+            </Box>
         </Box>
     );
 }
