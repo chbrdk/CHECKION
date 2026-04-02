@@ -719,6 +719,7 @@
     "issuesTableCode": "Code",
     "issuesTablePages": "Pages",
     "issuesMasterSubtitle": "Groups (paged)",
+    "issuesColumnGroupsTitle": "Groups",
     "issuesAffectedPagesTitle": "Affected pages",
     "issuesAffectedPagesSubtitlePaged": "URLs (paged)",
     "issuesAffectedPagesSubtitlePickGroup": "Select a group on the left",

@@ -60,7 +60,8 @@ Dieses Dokument sammelt sinnvolle **P1 Verbesserungen**, falls wir noch mehr Sta
 - **UX-Polish (Zeilenlayout, feste Höhen)**
   - Gemeinsame Primitives in `components/domain-issues/IssueListPrimitives.tsx` (`IssueSeverityRail`, `IssueTypeIcon`, `issueTypeColor`, Fokus-Styles).
   - Listenzeilen: linke 4px-Akzentleiste, Icons nach Schweregrad, Message/Code mit Tooltip; **feste** `estimateSize`-Werte (`V_GROUP_ESTIMATE_PX` 118, `V_GROUP_PAGES_ESTIMATE_PX` 88, `V_PAGE_ISSUES_ESTIMATE_PX` 148) — bei Layout-Änderungen diese Konstanten und `paddingBottom` der Virtual-Wrapper mit anpassen, sonst Überlappungen. Scroll-Höhen sind abhängig von der Layout-Stufe (nur Gruppen vs. zwei vs. drei Spalten).
-  - **Progressive Spalten (`lg`):** Stufe 1 nur Gruppen (volle Breite); Stufe 2 nach Gruppenwahl schmale Gruppen-Spalte + breite URL-Spalte; Stufe 3 nach Seitenwahl drei Spalten (äußere schmal, Issue-Details `minmax(0,1fr)`). Unter `xs` eine Spalte, Karten untereinander.
+  - **Layout:** Oben eine volle Breite **Filter-Karte** (`tabListDetails` + `issuesMasterSubtitle`, Severity/WCAG-Toggles, Suche, Apply/Reset). Darunter ein **Grid** nur mit den drei Listen-Karten. Erste Spalte: Titel `issuesColumnGroupsTitle` („Gruppen“ / „Groups“), ohne doppelten Subtitle.
+  - **Progressive Spalten (`lg`):** Stufe 1 nur Gruppen (volle Breite); Stufe 2 nach Gruppenwahl schmale Gruppen-Spalte + breite URL-Spalte; Stufe 3 nach Seitenwahl drei Spalten (äußere schmal, Issue-Details `minmax(0,1fr)`). Unter `xs` eine Spalte, Karten untereinander; Scroll-Bereiche mit `maxHeight` auf kleinen Viewports, auf `lg` gemeinsame Zeilenhöhe (`minHeight` am Grid, Karten `height: 100%`, Scroll `flex: 1` + `minHeight: 0`).
   - Filter: MUI `ToggleButtonGroup` für Typ und WCAG (statt vieler Einzel-Chips).
   - Leere Spalten: `IssuesEmptyState`; Detail: Selector-Block + Copy, Help-Link als `Button` mit Icon.
 

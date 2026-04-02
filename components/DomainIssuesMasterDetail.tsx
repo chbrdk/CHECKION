@@ -428,27 +428,24 @@ function DomainIssuesMasterDetailInner({
             : layoutStep === 2
               ? 'minmax(200px, 0.34fr) minmax(0, 1fr)'
               : 'minmax(176px, 0.2fr) minmax(192px, 0.26fr) minmax(0, 1fr)';
-    const groupsScrollMaxH = layoutStep === 1 ? 'min(62vh, 720px)' : 'min(50vh, 560px)';
-    const pagesScrollMaxH = layoutStep === 2 ? 'min(58vh, 640px)' : 'min(26vh, 320px)';
-    /** Nur sichtbar bei layoutStep 3 */
-    const issuesScrollMaxH = 'min(58vh, 520px)';
+    const listColumnCardSx = {
+        bgcolor: 'var(--color-card-bg)',
+        minWidth: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        height: { lg: '100%' },
+        minHeight: 0,
+    } as const;
+
+    const listScrollSx = {
+        flex: { lg: 1 },
+        minHeight: { lg: 0, xs: 96 },
+        maxHeight: { xs: 'min(52vh, 420px)', lg: 'none' },
+        overflow: 'auto',
+    } as const;
 
     return (
-        <Box
-            sx={{
-                display: 'grid',
-                gap: 2,
-                minWidth: 0,
-                alignItems: 'start',
-                gridTemplateColumns: {
-                    xs: '1fr',
-                    lg: gridColsLg,
-                },
-                '@media (prefers-reduced-motion: no-preference)': {
-                    transition: 'grid-template-columns 0.22s ease',
-                },
-            }}
-        >
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%', minWidth: 0 }}>
             <MsqdxMoleculeCard
                 title={t('domainResult.tabListDetails')}
                 subtitle={t('domainResult.issuesMasterSubtitle')}
@@ -535,11 +532,36 @@ function DomainIssuesMasterDetailInner({
                         </MsqdxButton>
                     )}
                 </Box>
-                {groupsError && <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.error.base }}>{groupsError}</MsqdxTypography>}
+            </MsqdxMoleculeCard>
+
+            <Box
+                sx={{
+                    display: 'grid',
+                    gap: 2,
+                    minWidth: 0,
+                    alignItems: 'stretch',
+                    minHeight: { xs: 'auto', lg: 'min(68vh, 780px)' },
+                    gridTemplateColumns: {
+                        xs: '1fr',
+                        lg: gridColsLg,
+                    },
+                    '@media (prefers-reduced-motion: no-preference)': {
+                        transition: 'grid-template-columns 0.22s ease',
+                    },
+                }}
+            >
+                <MsqdxMoleculeCard
+                    title={t('domainResult.issuesColumnGroupsTitle')}
+                    variant="flat"
+                    borderRadius="lg"
+                    sx={listColumnCardSx}
+                >
+                {groupsError && <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.error.base, flexShrink: 0 }}>{groupsError}</MsqdxTypography>}
                 {groupsLoading && groups.length === 0 ? (
-                    <Box sx={{ py: 3, display: 'flex', justifyContent: 'center' }}><CircularProgress size={24} /></Box>
+                    <Box sx={{ flex: 1, minHeight: { lg: 160 }, py: 3, display: 'flex', justifyContent: 'center', alignItems: 'center' }}><CircularProgress size={24} /></Box>
                 ) : (
-                    <Box ref={groupsScrollRef} sx={{ maxHeight: groupsScrollMaxH, overflow: 'auto', minHeight: 96 }}>
+                    <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                    <Box ref={groupsScrollRef} sx={listScrollSx}>
                         <Box sx={{ height: `${groupVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
                             {groupVirtualizer.getVirtualItems().map((vi) => {
                                 const g = groups[vi.index];
@@ -633,6 +655,7 @@ function DomainIssuesMasterDetailInner({
                             </Box>
                         )}
                     </Box>
+                    </Box>
                 )}
             </MsqdxMoleculeCard>
 
@@ -642,15 +665,18 @@ function DomainIssuesMasterDetailInner({
                     subtitle={t('domainResult.issuesAffectedPagesSubtitlePaged')}
                     variant="flat"
                     borderRadius="lg"
-                    sx={{ bgcolor: 'var(--color-card-bg)', minWidth: 0 }}
+                    sx={listColumnCardSx}
                 >
-                    {groupPagesError && <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.error.base }}>{groupPagesError}</MsqdxTypography>}
+                    {groupPagesError && <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.error.base, flexShrink: 0 }}>{groupPagesError}</MsqdxTypography>}
                     {groupPagesLoading ? (
-                        <Box sx={{ py: 2, display: 'flex', justifyContent: 'center' }}><CircularProgress size={20} /></Box>
+                        <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', py: 2 }}><CircularProgress size={20} /></Box>
                     ) : groupPages.length === 0 && !groupPagesLoading ? (
-                        <IssuesEmptyState icon={FileSearch} title={t('domainResult.issuesEmptyNoPagesTitle')} />
+                        <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: { lg: 120 } }}>
+                            <IssuesEmptyState icon={FileSearch} title={t('domainResult.issuesEmptyNoPagesTitle')} />
+                        </Box>
                     ) : (
-                        <Box ref={groupPagesScrollRef} sx={{ maxHeight: pagesScrollMaxH, overflow: 'auto', minHeight: 52 }}>
+                        <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                        <Box ref={groupPagesScrollRef} sx={listScrollSx}>
                             <Box sx={{ height: `${groupPagesVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
                                 {groupPagesVirtualizer.getVirtualItems().map((vi) => {
                                     const p = groupPages[vi.index];
@@ -740,6 +766,7 @@ function DomainIssuesMasterDetailInner({
                                 </Box>
                             )}
                         </Box>
+                        </Box>
                     )}
                 </MsqdxMoleculeCard>
             )}
@@ -754,15 +781,18 @@ function DomainIssuesMasterDetailInner({
                     })()}
                     variant="flat"
                     borderRadius="lg"
-                    sx={{ bgcolor: 'var(--color-card-bg)', minWidth: 0 }}
+                    sx={listColumnCardSx}
                 >
-                    {pageIssuesError && <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.error.base }}>{pageIssuesError}</MsqdxTypography>}
+                    {pageIssuesError && <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.error.base, flexShrink: 0 }}>{pageIssuesError}</MsqdxTypography>}
                     {pageIssuesLoading ? (
-                        <Box sx={{ py: 2, display: 'flex', justifyContent: 'center' }}><CircularProgress size={20} /></Box>
+                        <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', py: 2 }}><CircularProgress size={20} /></Box>
                     ) : pageIssues.length === 0 && !pageIssuesLoading ? (
-                        <IssuesEmptyState icon={FileSearch} title={t('domainResult.issuesEmptyNoIssuesTitle')} />
+                        <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: { lg: 120 } }}>
+                            <IssuesEmptyState icon={FileSearch} title={t('domainResult.issuesEmptyNoIssuesTitle')} />
+                        </Box>
                     ) : (
-                        <Box ref={pageIssuesScrollRef} sx={{ maxHeight: issuesScrollMaxH, overflow: 'auto', minHeight: 48 }}>
+                        <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                        <Box ref={pageIssuesScrollRef} sx={listScrollSx}>
                             <Box sx={{ height: `${pageIssuesVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
                                 {pageIssuesVirtualizer.getVirtualItems().map((vi) => {
                                     const i = pageIssues[vi.index];
@@ -845,9 +875,11 @@ function DomainIssuesMasterDetailInner({
                                 </Box>
                             )}
                         </Box>
+                        </Box>
                     )}
                 </MsqdxMoleculeCard>
             )}
+        </Box>
         </Box>
     );
 }
