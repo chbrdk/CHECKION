@@ -724,11 +724,24 @@ export function DomainResultMain() {
                                             <MsqdxTypography variant="body2">Wörter gesamt (alle Seiten): {aggregated.seo.totalWordsAcrossPages.toLocaleString('de-DE')}</MsqdxTypography>
                                         )}
                                     </Box>
-                                    {aggregated.seo.missingMetaDescriptionUrls.length > 0 && (
+                                    {(() => {
+                                        const seoMissingMetaCount = Math.max(
+                                            0,
+                                            aggregated.seo.totalPages - aggregated.seo.withMetaDescription
+                                        );
+                                        const missingMetaUrls = aggregated.seo.missingMetaDescriptionUrls ?? [];
+                                        const showMissingMetaBlock =
+                                            seoMissingMetaCount > 0 || missingMetaUrls.length > 0;
+                                        const moreMissingMeta = Math.max(
+                                            0,
+                                            seoMissingMetaCount - Math.min(5, missingMetaUrls.length)
+                                        );
+                                        if (!showMissingMetaBlock) return null;
+                                        return (
                                         <Box sx={{ mt: 1 }}>
                                             <MsqdxTypography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>Ohne Meta-Description:</MsqdxTypography>
                                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                                                {aggregated.seo.missingMetaDescriptionUrls.slice(0, 5).map((url) => {
+                                                {missingMetaUrls.slice(0, 5).map((url) => {
                                                     const page = pagesByUrl.get(url) ?? pagesByNormUrl.get(norm(url));
                                                     return (
                                                         <Box
@@ -763,15 +776,16 @@ export function DomainResultMain() {
                                                     );
                                                 })}
                                             </Box>
-                                            {aggregated.seo.missingMetaDescriptionUrls.length > 5 && (
+                                            {moreMissingMeta > 0 && (
                                                 <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', mt: 0.5, display: 'block' }}>
                                                     {t('domainResult.missingMetaMoreUrls', {
-                                                        count: aggregated.seo.missingMetaDescriptionUrls.length - 5,
+                                                        count: moreMissingMeta,
                                                     })}
                                                 </MsqdxTypography>
                                             )}
                                         </Box>
-                                    )}
+                                        );
+                                    })()}
                                 </Box>
 
                                 {aggregated.seo.crossPageKeywords.length > 0 && (

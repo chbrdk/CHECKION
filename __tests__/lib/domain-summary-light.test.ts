@@ -1,8 +1,12 @@
 /**
  * Light domain summary API payload: omits per-page SEO rows to shrink JSON.
  */
-import { toLightDomainSummaryApiPayload } from '@/lib/domain-summary';
+import { toLightAggregated, toLightDomainSummaryApiPayload } from '@/lib/domain-summary';
 import type { DomainSummaryResponse } from '@/lib/domain-summary';
+import {
+    DOMAIN_LIGHT_SUMMARY_UX_BROKEN_LINKS_CAP,
+    DOMAIN_LIGHT_SUMMARY_UX_LIST_CAP,
+} from '@/lib/constants';
 
 describe('toLightDomainSummaryApiPayload', () => {
     it('sets summaryMeta and clears aggregated.seo.pages when seo exists', () => {
@@ -78,5 +82,55 @@ describe('toLightDomainSummaryApiPayload', () => {
         const light = toLightDomainSummaryApiPayload(summary);
         expect(light.summaryMeta).toEqual({ seoPageRowsOmitted: true, slimPagesOmitted: true });
         expect(light.pages).toEqual([]);
+    });
+});
+
+describe('toLightAggregated', () => {
+    it('empties issues pagesByIssueCount and caps UX per-page lists', () => {
+        const urls = Array.from({ length: 50 }, (_, i) => `https://ex.test/p${i}`);
+        const aggregated = {
+            issues: {
+                stats: { errors: 1, warnings: 0, notices: 0, total: 1 },
+                issues: [],
+                levelStats: { A: 0, AA: 0, AAA: 0, APCA: 0, Unknown: 0 },
+                pagesByIssueCount: urls.map((url) => ({
+                    url,
+                    errors: 1,
+                    warnings: 0,
+                    notices: 0,
+                })),
+            },
+            ux: {
+                score: 50,
+                cls: 0.1,
+                readability: { grade: 'A', score: 80 },
+                tapTargets: { issues: [], detailsByPage: urls.map((url) => ({ url, count: 2 })) },
+                focusOrderByPage: urls.map((url) => ({ url, count: 1 })),
+                brokenLinks: urls.map((pageUrl) => ({
+                    href: 'x',
+                    status: 404,
+                    text: 't',
+                    pageUrl,
+                })),
+                consoleErrorsByPage: urls.map((url) => ({ url, count: 1 })),
+                headingHierarchy: { pagesWithMultipleH1: 0, pagesWithSkippedLevels: 0, totalPages: 50 },
+                pageCount: 50,
+                pagesByScore: urls.map((url) => ({ url, score: 50, cls: 0 })),
+            },
+            seo: null,
+            links: null,
+            infra: null,
+            generative: null,
+            structure: null,
+            eeatOnPage: { withImpressum: 0, withPrivacy: 0, totalPages: 0 },
+            performance: null,
+            eco: null,
+        } as unknown as DomainSummaryResponse['aggregated'];
+
+        const light = toLightAggregated(aggregated);
+        expect(light.issues?.pagesByIssueCount).toEqual([]);
+        expect(light.ux?.pagesByScore).toHaveLength(DOMAIN_LIGHT_SUMMARY_UX_LIST_CAP);
+        expect(light.ux?.tapTargets.detailsByPage).toHaveLength(DOMAIN_LIGHT_SUMMARY_UX_LIST_CAP);
+        expect(light.ux?.brokenLinks).toHaveLength(DOMAIN_LIGHT_SUMMARY_UX_BROKEN_LINKS_CAP);
     });
 });

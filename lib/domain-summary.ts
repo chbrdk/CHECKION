@@ -14,6 +14,17 @@ import {
     aggregatePerformance,
     aggregateEco,
 } from './domain-aggregation';
+import {
+    DOMAIN_LIGHT_SUMMARY_GENERATIVE_PAGES_CAP,
+    DOMAIN_LIGHT_SUMMARY_INFRA_URL_LIST_CAP,
+    DOMAIN_LIGHT_SUMMARY_LINKS_BROKEN_BY_PAGE_CAP,
+    DOMAIN_LIGHT_SUMMARY_LINKS_BROKEN_CAP,
+    DOMAIN_LIGHT_SUMMARY_SEO_KEYWORDS_CAP,
+    DOMAIN_LIGHT_SUMMARY_SEO_URL_SAMPLE_CAP,
+    DOMAIN_LIGHT_SUMMARY_STRUCTURE_URL_LIST_CAP,
+    DOMAIN_LIGHT_SUMMARY_UX_BROKEN_LINKS_CAP,
+    DOMAIN_LIGHT_SUMMARY_UX_LIST_CAP,
+} from './constants';
 import type { ScanResult, DomainScanResult, SlimPage } from './types';
 
 export type { SlimPage } from './types';
@@ -37,7 +48,7 @@ export interface DomainSummaryResponse extends Omit<DomainScanResult, 'pages'> {
 
 /** Optional fields returned only by GET /api/scan/domain/[id]/summary (not stored in DB). */
 export interface DomainSummaryApiMeta {
-    /** True when `?light=1` omitted per-page SEO rows (`aggregated.seo.pages`) to shrink the JSON. */
+    /** True when `?light=1` omitted per-page SEO rows (`aggregated.seo.pages`) and capped other heavy arrays (see `toLightAggregated`). */
     seoPageRowsOmitted?: boolean;
     /** True when `?light=1` omitted `pages` (SlimPage[]); load via GET .../slim-pages. */
     slimPagesOmitted?: boolean;
@@ -123,20 +134,142 @@ export function buildDomainSummary(scan: DomainScanResult): DomainSummaryRespons
  */
 const LIGHT_META = { seoPageRowsOmitted: true as const, slimPagesOmitted: true as const };
 
+/**
+ * Shrink `aggregated` for `?light=1`: keeps counts/scores, caps per-page URL lists and UX link arrays.
+ * Full lists load via `seoFull` merge or a non-light summary when needed.
+ */
+export function toLightAggregated(
+    aggregated: DomainSummaryResponse['aggregated']
+): DomainSummaryResponse['aggregated'] {
+    return {
+        ...aggregated,
+        issues: aggregated.issues
+            ? {
+                  ...aggregated.issues,
+                  issues: [],
+                  pagesByIssueCount: [],
+              }
+            : aggregated.issues,
+        ux: aggregated.ux
+            ? {
+                  ...aggregated.ux,
+                  brokenLinks: (aggregated.ux.brokenLinks ?? []).slice(0, DOMAIN_LIGHT_SUMMARY_UX_BROKEN_LINKS_CAP),
+                  pagesByScore: (aggregated.ux.pagesByScore ?? []).slice(0, DOMAIN_LIGHT_SUMMARY_UX_LIST_CAP),
+                  consoleErrorsByPage: (aggregated.ux.consoleErrorsByPage ?? []).slice(
+                      0,
+                      DOMAIN_LIGHT_SUMMARY_UX_LIST_CAP
+                  ),
+                  focusOrderByPage: (aggregated.ux.focusOrderByPage ?? []).slice(0, DOMAIN_LIGHT_SUMMARY_UX_LIST_CAP),
+                  tapTargets: {
+                      ...aggregated.ux.tapTargets,
+                      detailsByPage: (aggregated.ux.tapTargets?.detailsByPage ?? []).slice(
+                          0,
+                          DOMAIN_LIGHT_SUMMARY_UX_LIST_CAP
+                      ),
+                  },
+              }
+            : aggregated.ux,
+        seo: aggregated.seo
+            ? {
+                  ...aggregated.seo,
+                  pages: [],
+                  missingMetaDescriptionUrls: (aggregated.seo.missingMetaDescriptionUrls ?? []).slice(
+                      0,
+                      DOMAIN_LIGHT_SUMMARY_SEO_URL_SAMPLE_CAP
+                  ),
+                  missingH1Urls: (aggregated.seo.missingH1Urls ?? []).slice(0, DOMAIN_LIGHT_SUMMARY_SEO_URL_SAMPLE_CAP),
+                  missingCanonicalUrls: (aggregated.seo.missingCanonicalUrls ?? []).slice(
+                      0,
+                      DOMAIN_LIGHT_SUMMARY_SEO_URL_SAMPLE_CAP
+                  ),
+                  pagesWithNoindex: (aggregated.seo.pagesWithNoindex ?? []).slice(
+                      0,
+                      DOMAIN_LIGHT_SUMMARY_SEO_URL_SAMPLE_CAP
+                  ),
+                  crossPageKeywords: (aggregated.seo.crossPageKeywords ?? [])
+                      .slice(0, DOMAIN_LIGHT_SUMMARY_SEO_KEYWORDS_CAP)
+                      .map((kw) => ({
+                          ...kw,
+                          pageUrls: (kw.pageUrls ?? []).slice(0, DOMAIN_LIGHT_SUMMARY_SEO_URL_SAMPLE_CAP),
+                      })),
+              }
+            : aggregated.seo,
+        links: aggregated.links
+            ? {
+                  ...aggregated.links,
+                  broken: (aggregated.links.broken ?? []).slice(0, DOMAIN_LIGHT_SUMMARY_LINKS_BROKEN_CAP),
+                  brokenByPage: (aggregated.links.brokenByPage ?? []).slice(
+                      0,
+                      DOMAIN_LIGHT_SUMMARY_LINKS_BROKEN_BY_PAGE_CAP
+                  ),
+              }
+            : aggregated.links,
+        infra: aggregated.infra
+            ? {
+                  ...aggregated.infra,
+                  privacy: aggregated.infra.privacy
+                      ? {
+                            ...aggregated.infra.privacy,
+                            urlsWithPolicy: (aggregated.infra.privacy.urlsWithPolicy ?? []).slice(
+                                0,
+                                DOMAIN_LIGHT_SUMMARY_INFRA_URL_LIST_CAP
+                            ),
+                            urlsWithCookieBanner: (aggregated.infra.privacy.urlsWithCookieBanner ?? []).slice(
+                                0,
+                                DOMAIN_LIGHT_SUMMARY_INFRA_URL_LIST_CAP
+                            ),
+                            urlsWithTerms: (aggregated.infra.privacy.urlsWithTerms ?? []).slice(
+                                0,
+                                DOMAIN_LIGHT_SUMMARY_INFRA_URL_LIST_CAP
+                            ),
+                        }
+                      : aggregated.infra.privacy,
+                  security: aggregated.infra.security
+                      ? {
+                            ...aggregated.infra.security,
+                            urlsWithCsp: (aggregated.infra.security.urlsWithCsp ?? []).slice(
+                                0,
+                                DOMAIN_LIGHT_SUMMARY_INFRA_URL_LIST_CAP
+                            ),
+                            urlsWithXFrame: (aggregated.infra.security.urlsWithXFrame ?? []).slice(
+                                0,
+                                DOMAIN_LIGHT_SUMMARY_INFRA_URL_LIST_CAP
+                            ),
+                        }
+                      : aggregated.infra.security,
+              }
+            : aggregated.infra,
+        generative: aggregated.generative
+            ? {
+                  ...aggregated.generative,
+                  pages: (aggregated.generative.pages ?? []).slice(0, DOMAIN_LIGHT_SUMMARY_GENERATIVE_PAGES_CAP),
+              }
+            : aggregated.generative,
+        structure: aggregated.structure
+            ? {
+                  ...aggregated.structure,
+                  pagesWithMultipleH1: (aggregated.structure.pagesWithMultipleH1 ?? []).slice(
+                      0,
+                      DOMAIN_LIGHT_SUMMARY_STRUCTURE_URL_LIST_CAP
+                  ),
+                  pagesWithSkippedLevels: (aggregated.structure.pagesWithSkippedLevels ?? []).slice(
+                      0,
+                      DOMAIN_LIGHT_SUMMARY_STRUCTURE_URL_LIST_CAP
+                  ),
+                  pagesWithGoodStructure: (aggregated.structure.pagesWithGoodStructure ?? []).slice(
+                      0,
+                      DOMAIN_LIGHT_SUMMARY_STRUCTURE_URL_LIST_CAP
+                  ),
+              }
+            : aggregated.structure,
+    };
+}
+
 export function toLightDomainSummaryApiPayload(summary: DomainSummaryResponse): DomainSummaryApiResponse {
-    if (!summary.aggregated?.seo) {
-        return { ...summary, pages: [], summaryMeta: LIGHT_META };
-    }
     return {
         ...summary,
         pages: [],
-        aggregated: {
-            ...summary.aggregated,
-            seo: {
-                ...summary.aggregated.seo,
-                pages: [],
-            },
-        },
+        aggregated: summary.aggregated ? toLightAggregated(summary.aggregated) : summary.aggregated,
         summaryMeta: LIGHT_META,
     };
 }

@@ -373,6 +373,18 @@ export const DOMAIN_TAB_VIRTUAL_OVERSCAN = 12;
 export const DOMAIN_TAB_SYSTEMIC_ISSUE_ROW_ESTIMATE_PX = 108;
 /** Domain UX-Audit tab: max. kaputte Links in der Vorschau-Liste (virtualisiert). */
 export const DOMAIN_UX_BROKEN_LINKS_PREVIEW = 30;
+/** GET .../summary?light=1 — cap per-page UX lists (overview cards use similar slice limits). */
+export const DOMAIN_LIGHT_SUMMARY_UX_LIST_CAP = 12;
+/** Light summary: same cap as UX broken-link preview. */
+export const DOMAIN_LIGHT_SUMMARY_UX_BROKEN_LINKS_CAP = DOMAIN_UX_BROKEN_LINKS_PREVIEW;
+/** Light summary: sample URL lists for SEO/infra (full rows via seoFull or full summary). */
+export const DOMAIN_LIGHT_SUMMARY_SEO_URL_SAMPLE_CAP = 5;
+export const DOMAIN_LIGHT_SUMMARY_SEO_KEYWORDS_CAP = 25;
+export const DOMAIN_LIGHT_SUMMARY_LINKS_BROKEN_CAP = 80;
+export const DOMAIN_LIGHT_SUMMARY_LINKS_BROKEN_BY_PAGE_CAP = 25;
+export const DOMAIN_LIGHT_SUMMARY_INFRA_URL_LIST_CAP = 30;
+export const DOMAIN_LIGHT_SUMMARY_GENERATIVE_PAGES_CAP = 40;
+export const DOMAIN_LIGHT_SUMMARY_STRUCTURE_URL_LIST_CAP = 30;
 /** Legacy aggregated-issues table: estimated grid row height for virtualization. */
 export const DOMAIN_AGGREGATED_ISSUES_ROW_ESTIMATE_PX = 56;
 
