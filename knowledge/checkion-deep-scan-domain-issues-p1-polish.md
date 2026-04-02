@@ -59,7 +59,7 @@ Dieses Dokument sammelt sinnvolle **P1 Verbesserungen**, falls wir noch mehr Sta
 
 - **UX-Polish (Zeilenlayout, feste Höhen)**
   - Gemeinsame Primitives in `components/domain-issues/IssueListPrimitives.tsx` (`IssueSeverityRail`, `IssueTypeIcon`, `issueTypeColor`, Fokus-Styles).
-  - Listenzeilen: linke 4px-Akzentleiste, Icons nach Schweregrad, Message/Code mit Tooltip; **feste** `estimateSize`-Werte (`V_GROUP_ESTIMATE_PX` 128, `V_GROUP_PAGES_ESTIMATE_PX` 96, `V_PAGE_ISSUES_ESTIMATE_PX` 156) — bei Layout-Änderungen diese Konstanten und `paddingBottom` der Virtual-Wrapper mit anpassen, sonst Überlappungen.
+  - Listenzeilen: linke 4px-Akzentleiste, Icons nach Schweregrad, Message/Code mit Tooltip; **feste** `estimateSize`-Werte (`V_GROUP_ESTIMATE_PX` 118, `V_GROUP_PAGES_ESTIMATE_PX` 88, `V_PAGE_ISSUES_ESTIMATE_PX` 148) — bei Layout-Änderungen diese Konstanten und `paddingBottom` der Virtual-Wrapper mit anpassen, sonst Überlappungen. Scroll-Ports: Gruppen ca. `50vh`, **Betroffene Seiten** `26vh`, Issue-Details `240px`.
   - Filter: MUI `ToggleButtonGroup` für Typ und WCAG (statt vieler Einzel-Chips).
   - Leere Spalten: `IssuesEmptyState`; Detail: Selector-Block + Copy, Help-Link als `Button` mit Icon.
 

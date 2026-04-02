@@ -31,9 +31,9 @@ type GroupPageRow = { pageId: string; url: string; issueCount: number; scanId?: 
 type PageIssueRow = { id: string; groupKey: string; type: string; code: string; message: string; runner: string | null; wcagLevel: string | null; helpUrl: string | null; selector: string | null };
 
 /** Fixed row heights — keep in sync with row layout + paddingBottom on virtual wrappers. */
-const V_GROUP_ESTIMATE_PX = 128;
-const V_GROUP_PAGES_ESTIMATE_PX = 96;
-const V_PAGE_ISSUES_ESTIMATE_PX = 156;
+const V_GROUP_ESTIMATE_PX = 118;
+const V_GROUP_PAGES_ESTIMATE_PX = 88;
+const V_PAGE_ISSUES_ESTIMATE_PX = 148;
 const V_OVERSCAN = 4;
 
 const rowHoverSx = {
@@ -131,7 +131,7 @@ function SelectorCopyBlock({
                         fontFamily: 'ui-monospace, monospace',
                         fontSize: '0.65rem',
                         lineHeight: 1.35,
-                        maxHeight: 44,
+                        maxHeight: 36,
                         overflow: 'auto',
                         whiteSpace: 'pre-wrap',
                         wordBreak: 'break-word',
@@ -512,7 +512,7 @@ function DomainIssuesMasterDetailInner({
                 {groupsLoading && groups.length === 0 ? (
                     <Box sx={{ py: 3, display: 'flex', justifyContent: 'center' }}><CircularProgress size={24} /></Box>
                 ) : (
-                    <Box ref={groupsScrollRef} sx={{ maxHeight: '65vh', overflow: 'auto', minHeight: 120 }}>
+                    <Box ref={groupsScrollRef} sx={{ maxHeight: '50vh', overflow: 'auto', minHeight: 96 }}>
                         <Box sx={{ height: `${groupVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
                             {groupVirtualizer.getVirtualItems().map((vi) => {
                                 const g = groups[vi.index];
@@ -529,7 +529,7 @@ function DomainIssuesMasterDetailInner({
                                             left: 0,
                                             width: '100%',
                                             transform: `translateY(${vi.start}px)`,
-                                            paddingBottom: 8,
+                                            paddingBottom: 6,
                                         }}
                                     >
                                         <Box
@@ -555,16 +555,16 @@ function DomainIssuesMasterDetailInner({
                                             <Box
                                                 sx={{
                                                     display: 'flex',
-                                                    minHeight: V_GROUP_ESTIMATE_PX - 8,
+                                                    minHeight: V_GROUP_ESTIMATE_PX - 6,
                                                     border: `1px solid ${active ? color : 'var(--color-border-subtle, #eee)'}`,
                                                     borderRadius: 1,
                                                     bgcolor: active ? alpha(color, 0.06) : 'var(--color-card-bg)',
                                                 }}
                                             >
                                                 <IssueSeverityRail color={color} />
-                                                <Box sx={{ flex: 1, minWidth: 0, py: 0.75, pr: 1, pl: 0.75 }}>
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
-                                                        <IssueTypeIcon type={g.type} size={16} />
+                                                <Box sx={{ flex: 1, minWidth: 0, py: 0.5, pr: 1, pl: 0.75 }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+                                                        <IssueTypeIcon type={g.type} size={15} />
                                                         <MsqdxChip size="small" label={`${g.pageCount} ${t('domainResult.issuesTablePages')}`} sx={{ fontSize: '0.65rem', height: 22 }} />
                                                         {g.wcagLevel && g.wcagLevel !== 'Unknown' && (
                                                             <MsqdxChip size="small" label={g.wcagLevel} sx={{ fontSize: '0.65rem', height: 22 }} />
@@ -625,7 +625,7 @@ function DomainIssuesMasterDetailInner({
                     ) : groupPages.length === 0 && !groupPagesLoading ? (
                         <IssuesEmptyState icon={FileSearch} title={t('domainResult.issuesEmptyNoPagesTitle')} />
                     ) : (
-                        <Box ref={groupPagesScrollRef} sx={{ maxHeight: '42vh', overflow: 'auto', minHeight: 80 }}>
+                        <Box ref={groupPagesScrollRef} sx={{ maxHeight: '26vh', overflow: 'auto', minHeight: 52 }}>
                             <Box sx={{ height: `${groupPagesVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
                                 {groupPagesVirtualizer.getVirtualItems().map((vi) => {
                                     const p = groupPages[vi.index];
@@ -642,7 +642,7 @@ function DomainIssuesMasterDetailInner({
                                                 left: 0,
                                                 width: '100%',
                                                 transform: `translateY(${vi.start}px)`,
-                                                paddingBottom: 8,
+                                                paddingBottom: 6,
                                             }}
                                         >
                                             <Box
@@ -667,27 +667,28 @@ function DomainIssuesMasterDetailInner({
                                                 <Box
                                                     sx={{
                                                         display: 'flex',
-                                                        minHeight: V_GROUP_PAGES_ESTIMATE_PX - 8,
+                                                        minHeight: V_GROUP_PAGES_ESTIMATE_PX - 6,
                                                         border: `1px solid ${active ? MSQDX_BRAND_PRIMARY.green : 'var(--color-border-subtle, #eee)'}`,
                                                         borderRadius: 1,
                                                         bgcolor: active ? alpha(MSQDX_BRAND_PRIMARY.green, 0.06) : 'var(--color-card-bg)',
                                                     }}
                                                 >
                                                     <IssueSeverityRail color={railColor} />
-                                                    <Box sx={{ flex: 1, minWidth: 0, py: 0.75, pr: 0.5, pl: 0.75, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
+                                                    <Box sx={{ flex: 1, minWidth: 0, py: 0.5, pr: 0.5, pl: 0.75, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 0.75 }}>
                                                         <Box sx={{ minWidth: 0, flex: 1 }}>
-                                                            <MsqdxTypography variant="body2" sx={{ fontWeight: 600 }} noWrap title={titleFromUrl(p.url)}>
+                                                            <MsqdxTypography variant="body2" sx={{ fontWeight: 600, fontSize: '0.8125rem', lineHeight: 1.25 }} noWrap title={titleFromUrl(p.url)}>
                                                                 {titleFromUrl(p.url)}
                                                             </MsqdxTypography>
-                                                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }} noWrap title={p.url}>
+                                                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', fontSize: '0.7rem', lineHeight: 1.2 }} noWrap title={p.url}>
                                                                 {p.url}
                                                             </MsqdxTypography>
                                                         </Box>
-                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
-                                                            <MsqdxChip size="small" label={String(p.issueCount)} sx={{ fontSize: '0.65rem', height: 22 }} />
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, flexShrink: 0 }}>
+                                                            <MsqdxChip size="small" label={String(p.issueCount)} sx={{ fontSize: '0.6rem', height: 20 }} />
                                                             <Tooltip title={t('domainResult.openPage')}>
                                                                 <IconButton
                                                                     size="small"
+                                                                    sx={{ p: 0.35 }}
                                                                     aria-label={t('domainResult.openPageAria', { url: p.url })}
                                                                     onClick={(e) => {
                                                                         e.preventDefault();
@@ -695,7 +696,7 @@ function DomainIssuesMasterDetailInner({
                                                                         onOpenPageScan(p.url, p.scanId);
                                                                     }}
                                                                 >
-                                                                    <ExternalLink size={18} strokeWidth={2} aria-hidden />
+                                                                    <ExternalLink size={16} strokeWidth={2} aria-hidden />
                                                                 </IconButton>
                                                             </Tooltip>
                                                         </Box>
@@ -736,7 +737,7 @@ function DomainIssuesMasterDetailInner({
                     ) : pageIssues.length === 0 && !pageIssuesLoading ? (
                         <IssuesEmptyState icon={FileSearch} title={t('domainResult.issuesEmptyNoIssuesTitle')} />
                     ) : (
-                        <Box ref={pageIssuesScrollRef} sx={{ maxHeight: 320, overflow: 'auto', minHeight: 60 }}>
+                        <Box ref={pageIssuesScrollRef} sx={{ maxHeight: 240, overflow: 'auto', minHeight: 48 }}>
                             <Box sx={{ height: `${pageIssuesVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
                                 {pageIssuesVirtualizer.getVirtualItems().map((vi) => {
                                     const i = pageIssues[vi.index];
@@ -752,13 +753,13 @@ function DomainIssuesMasterDetailInner({
                                                 left: 0,
                                                 width: '100%',
                                                 transform: `translateY(${vi.start}px)`,
-                                                paddingBottom: 8,
+                                                paddingBottom: 6,
                                             }}
                                         >
                                             <Box
                                                 sx={{
                                                     display: 'flex',
-                                                    minHeight: V_PAGE_ISSUES_ESTIMATE_PX - 8,
+                                                    minHeight: V_PAGE_ISSUES_ESTIMATE_PX - 6,
                                                     border: `1px solid var(--color-border-subtle, #eee)`,
                                                     borderRadius: 1,
                                                     bgcolor: 'var(--color-card-bg)',
@@ -766,9 +767,9 @@ function DomainIssuesMasterDetailInner({
                                                 }}
                                             >
                                                 <IssueSeverityRail color={color} />
-                                                <Box sx={{ flex: 1, minWidth: 0, py: 0.75, pr: 1, pl: 0.75 }}>
+                                                <Box sx={{ flex: 1, minWidth: 0, py: 0.5, pr: 1, pl: 0.75 }}>
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
-                                                        <IssueTypeIcon type={i.type} size={16} />
+                                                        <IssueTypeIcon type={i.type} size={15} />
                                                         {i.wcagLevel && i.wcagLevel !== 'Unknown' && (
                                                             <MsqdxChip size="small" label={i.wcagLevel} sx={{ fontSize: '0.65rem', height: 22 }} />
                                                         )}
