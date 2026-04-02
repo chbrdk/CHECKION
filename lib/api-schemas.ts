@@ -5,6 +5,7 @@
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
 import { apiError, API_STATUS } from './api-error-handler';
+import { isSafeUrlForServerFetch } from './url-safety';
 
 /** URL string that must be valid HTTP/HTTPS */
 export const urlSchema = z
@@ -14,12 +15,13 @@ export const urlSchema = z
     (s) => {
       try {
         const u = new URL(s);
-        return u.protocol === 'https:' || u.protocol === 'http:';
+        const protocolOk = u.protocol === 'https:' || u.protocol === 'http:';
+        return protocolOk && isSafeUrlForServerFetch(s);
       } catch {
         return false;
       }
     },
-    { message: 'Invalid URL format. Include protocol (e.g. https://example.com).' }
+    { message: 'Invalid or unsafe URL. Include protocol and avoid localhost/private IPs.' }
   );
 
 /** WCAG standard */

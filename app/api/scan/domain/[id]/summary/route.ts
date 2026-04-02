@@ -26,5 +26,19 @@ export async function GET(
         return apiError('Scan not found', API_STATUS.NOT_FOUND, { code: 'DOMAIN_SCAN_NOT_FOUND' });
     }
     const summary = buildDomainSummary(row.result);
-    return NextResponse.json({ ...summary, projectId: row.projectId });
+    // Important: do not ship huge issue arrays in the summary response.
+    // The "List & Details" UI is served via paged APIs backed by domain_* tables.
+    const safeSummary = {
+        ...summary,
+        aggregated: summary.aggregated && summary.aggregated.issues
+            ? {
+                ...summary.aggregated,
+                issues: {
+                    ...summary.aggregated.issues,
+                    issues: [],
+                },
+            }
+            : summary.aggregated,
+    };
+    return NextResponse.json({ ...safeSummary, projectId: row.projectId });
 }

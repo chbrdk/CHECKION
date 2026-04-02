@@ -276,6 +276,37 @@ export const apiProjectDomainSummaryAll = (id: string) => `${API_PROJECTS}/${enc
 export const apiProjectDomainScanAll = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/domain-scan-all`;
 /** GET /api/scan/domain/by-domain?domain= – latest completed scan for domain (current user). */
 export const apiScanDomainByDomain = (domain: string) => `${API_SCAN_DOMAIN}/by-domain?domain=${encodeURIComponent(domain)}`;
+
+/** GET /api/scan/domain/[id]/issue-groups */
+export const apiScanDomainIssueGroups = (id: string, params?: { limit?: number; cursorPageCount?: number; cursorGroupKey?: string; type?: string; wcagLevel?: string; q?: string }) => {
+    const base = `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/issue-groups`;
+    const search = new URLSearchParams();
+    if (params?.limit != null) search.set('limit', String(params.limit));
+    if (params?.cursorPageCount != null) search.set('cursorPageCount', String(params.cursorPageCount));
+    if (params?.cursorGroupKey) search.set('cursorGroupKey', params.cursorGroupKey);
+    if (params?.type) search.set('type', params.type);
+    if (params?.wcagLevel) search.set('wcagLevel', params.wcagLevel);
+    if (params?.q) search.set('q', params.q);
+    return search.toString() ? `${base}?${search.toString()}` : base;
+};
+
+/** GET /api/scan/domain/[id]/issue-groups/[groupKey]/pages */
+export const apiScanDomainIssueGroupPages = (id: string, groupKey: string, params?: { limit?: number; cursorUrl?: string }) => {
+    const base = `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/issue-groups/${encodeURIComponent(groupKey)}/pages`;
+    const search = new URLSearchParams();
+    if (params?.limit != null) search.set('limit', String(params.limit));
+    if (params?.cursorUrl) search.set('cursorUrl', params.cursorUrl);
+    return search.toString() ? `${base}?${search.toString()}` : base;
+};
+
+/** GET /api/scan/domain/[id]/pages/[pageId]/issues */
+export const apiScanDomainPageIssues = (id: string, pageId: string, params?: { limit?: number; cursorId?: string }) => {
+    const base = `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/pages/${encodeURIComponent(pageId)}/issues`;
+    const search = new URLSearchParams();
+    if (params?.limit != null) search.set('limit', String(params.limit));
+    if (params?.cursorId) search.set('cursorId', params.cursorId);
+    return search.toString() ? `${base}?${search.toString()}` : base;
+};
 /** Build: GET /api/projects/[id]/geo-question-history?limit= */
 export const apiProjectGeoQuestionHistory = (id: string, limit?: number) => {
     const base = `${API_PROJECTS}/${encodeURIComponent(id)}/geo-question-history`;

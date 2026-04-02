@@ -26,14 +26,9 @@ const DomainGraph = dynamic(
     { ssr: false, loading: () => <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={32} /></Box> }
 );
 
-const DomainAggregatedIssueList = dynamic(
-    () => import('@/components/DomainAggregatedIssueList').then((m) => ({ default: m.DomainAggregatedIssueList })),
+const DomainIssuesMasterDetail = dynamic(
+    () => import('@/components/DomainIssuesMasterDetail').then((m) => ({ default: m.DomainIssuesMasterDetail })),
     { ssr: false, loading: () => <Box sx={{ py: 2 }}><CircularProgress size={24} /></Box> }
-);
-
-const PageIssuesCard = dynamic(
-    () => import('@/components/PageIssuesCard').then((m) => ({ default: m.PageIssuesCard })),
-    { ssr: false }
 );
 
 const JourneyFlowchart = dynamic(
@@ -107,6 +102,20 @@ export default function DomainResultPage() {
         const page = pagesByUrl.get(url);
         if (page) router.push(pathResults(page.id));
     }, [pagesByUrl, router]);
+
+    const selectedGroupKey = searchParams.get('group');
+    const selectedPageId = searchParams.get('page');
+    const selectGroup = useCallback((groupKey: string) => {
+        const sp = new URLSearchParams(Array.from(searchParams.entries()));
+        sp.set('group', groupKey);
+        sp.delete('page');
+        router.replace(`?${sp.toString()}`);
+    }, [router, searchParams]);
+    const selectPage = useCallback((pageId: string) => {
+        const sp = new URLSearchParams(Array.from(searchParams.entries()));
+        sp.set('page', pageId);
+        router.replace(`?${sp.toString()}`);
+    }, [router, searchParams]);
 
     useEffect(() => {
         if (!domainId) return;
@@ -327,46 +336,35 @@ export default function DomainResultPage() {
                 </Box>
             )}
 
-            {tabValue === 2 && aggregated && (
+            <Box sx={{ display: tabValue === 2 ? 'block' : 'none' }}>
                 <MsqdxMoleculeCard
                     title="Gefundene Issues (Domain)"
                     headerActions={<InfoTooltip title={t('info.issuesList')} ariaLabel={t('common.info')} />}
-                    subtitle={`Aggregiert über ${totalPageCount} Seite(n) · gleiche Kategorien wie Einzel-Scan`}
+                    subtitle={`Paged (DB) · aggregiert über ${totalPageCount} Seite(n)`}
                     variant="flat"
                     sx={{ bgcolor: 'var(--color-card-bg)' }}
                     borderRadius="lg"
                 >
-                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
-                        <MsqdxChip label={`Errors: ${aggregated.issues.stats.errors}`} size="small" sx={{ bgcolor: alpha(MSQDX_STATUS.error.base, 0.12), color: MSQDX_STATUS.error.base }} />
-                        <MsqdxChip label={`Warnings: ${aggregated.issues.stats.warnings}`} size="small" sx={{ bgcolor: alpha(MSQDX_STATUS.warning.base, 0.12), color: MSQDX_STATUS.warning.base }} />
-                        <MsqdxChip label={`Notices: ${aggregated.issues.stats.notices}`} size="small" sx={{ bgcolor: alpha(MSQDX_STATUS.info.base, 0.12), color: MSQDX_STATUS.info.base }} />
-                    </Box>
-                    <DomainAggregatedIssueList
-                        issues={aggregated.issues.issues}
-                        onPageClick={handleIssuePageClick}
-                    />
-                    {aggregated.issues.pagesByIssueCount.some((p) => p.errors > 0 || p.warnings > 0) && (
-                        <Box sx={{ mt: 2 }}>
-                            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>Seiten mit den meisten Fehlern (Priorisierung)</MsqdxTypography>
-                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
-                                {aggregated.issues.pagesByIssueCount.slice(0, 15).map((row) => {
-                                    const page = pagesByUrl.get(row.url);
-                                    const issuesForPage = aggregated.issues.issues.filter((i) => i.pageUrls?.includes(row.url));
-                                    return (
-                                        <PageIssuesCard
-                                            key={row.url}
-                                            url={row.url}
-                                            issuesForPage={issuesForPage}
-                                            stats={{ errors: row.errors, warnings: row.warnings, notices: row.notices }}
-                                            onOpenPage={page ? () => router.push(pathResults(page.id)) : undefined}
-                                        />
-                                    );
-                                })}
-                            </Box>
+                    {aggregated?.issues?.stats && (
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                            <MsqdxChip label={`Errors: ${aggregated.issues.stats.errors}`} size="small" sx={{ bgcolor: alpha(MSQDX_STATUS.error.base, 0.12), color: MSQDX_STATUS.error.base }} />
+                            <MsqdxChip label={`Warnings: ${aggregated.issues.stats.warnings}`} size="small" sx={{ bgcolor: alpha(MSQDX_STATUS.warning.base, 0.12), color: MSQDX_STATUS.warning.base }} />
+                            <MsqdxChip label={`Notices: ${aggregated.issues.stats.notices}`} size="small" sx={{ bgcolor: alpha(MSQDX_STATUS.info.base, 0.12), color: MSQDX_STATUS.info.base }} />
                         </Box>
                     )}
+                    {domainId && (
+                        <DomainIssuesMasterDetail
+                            domainId={domainId}
+                            pages={pages}
+                            selectedGroupKey={selectedGroupKey}
+                            selectedPageId={selectedPageId}
+                            onSelectGroup={selectGroup}
+                            onSelectPage={selectPage}
+                            onOpenPageScan={(url) => handleIssuePageClick(url)}
+                        />
+                    )}
                 </MsqdxMoleculeCard>
-            )}
+            </Box>
 
             {tabValue === 3 && (
                 <MsqdxMoleculeCard

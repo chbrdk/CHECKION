@@ -9,6 +9,7 @@ import { buildStoredDomainPayload } from '@/lib/domain-summary';
 import { runDomainScan } from '@/lib/spider';
 import { reportUsage } from '@/lib/usage-report';
 import type { DomainScanResult } from '@/lib/types';
+import { rebuildDomainIssuesFromPages } from '@/lib/db/domain-issues';
 
 export interface StartDomainScanOptions {
   projectId?: string | null;
@@ -74,6 +75,13 @@ export async function startDomainScan(
           });
           await updateDomainScan(id, userId, stored);
           invalidateDomainScan(id);
+          // Persist raw issues + aggregated groups for fast domain-issues UI.
+          // Eventual consistency is OK; failures must not break scan completion.
+          try {
+            await rebuildDomainIssuesFromPages({ userId, domainScanId: id, pages: fullPages });
+          } catch (e) {
+            console.error('[CHECKION] domain issues persist failed', e);
+          }
           try {
             reportUsage({
               userId,
