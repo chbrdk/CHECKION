@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { memo, useEffect, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Box, CircularProgress, alpha } from '@mui/material';
 import { MsqdxButton, MsqdxChip, MsqdxFormField, MsqdxMoleculeCard, MsqdxTypography } from '@msqdx/react';
@@ -23,6 +23,12 @@ type IssueGroupRow = {
 type GroupPageRow = { pageId: string; url: string; issueCount: number };
 type PageIssueRow = { id: string; groupKey: string; type: string; code: string; message: string; runner: string | null; wcagLevel: string | null; helpUrl: string | null; selector: string | null };
 
+/** Fixed row heights avoid `measureElement` resize loops (major CPU cost with long lists). */
+const V_GROUP_ESTIMATE_PX = 120;
+const V_GROUP_PAGES_ESTIMATE_PX = 108;
+const V_PAGE_ISSUES_ESTIMATE_PX = 100;
+const V_OVERSCAN = 4;
+
 const typeColor = (type: string) => type === 'error' ? MSQDX_STATUS.error.base : type === 'warning' ? MSQDX_STATUS.warning.base : MSQDX_STATUS.info.base;
 
 function titleFromUrl(url: string): string {
@@ -36,9 +42,9 @@ function titleFromUrl(url: string): string {
     }
 }
 
-export function DomainIssuesMasterDetail({
+function DomainIssuesMasterDetailInner({
     domainId,
-    pages,
+    pagesById,
     selectedGroupKey,
     selectedPageId,
     issuesType,
@@ -50,7 +56,7 @@ export function DomainIssuesMasterDetail({
     onOpenPageScan,
 }: {
     domainId: string;
-    pages: SlimPage[];
+    pagesById: ReadonlyMap<string, SlimPage>;
     selectedGroupKey: string | null;
     selectedPageId: string | null;
     issuesType: string | null;
@@ -77,7 +83,6 @@ export function DomainIssuesMasterDetail({
     const [pageIssuesLoading, setPageIssuesLoading] = useState(false);
     const [pageIssuesError, setPageIssuesError] = useState<string | null>(null);
 
-    const pagesById = useMemo(() => new Map(pages.map((p) => [p.id, p])), [pages]);
     const [qDraft, setQDraft] = useState(issuesQ ?? '');
     const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -191,8 +196,8 @@ export function DomainIssuesMasterDetail({
     const groupVirtualizer = useVirtualizer({
         count: groups.length,
         getScrollElement: () => groupsScrollRef.current,
-        estimateSize: () => 120,
-        overscan: 8,
+        estimateSize: () => V_GROUP_ESTIMATE_PX,
+        overscan: V_OVERSCAN,
         getItemKey: (index) => groups[index]?.groupKey ?? index,
     });
 
@@ -204,8 +209,8 @@ export function DomainIssuesMasterDetail({
     const groupPagesVirtualizer = useVirtualizer({
         count: groupPages.length,
         getScrollElement: () => groupPagesScrollRef.current,
-        estimateSize: () => 108,
-        overscan: 6,
+        estimateSize: () => V_GROUP_PAGES_ESTIMATE_PX,
+        overscan: V_OVERSCAN,
         getItemKey: (index) => groupPages[index]?.pageId ?? index,
     });
 
@@ -217,8 +222,8 @@ export function DomainIssuesMasterDetail({
     const pageIssuesVirtualizer = useVirtualizer({
         count: pageIssues.length,
         getScrollElement: () => pageIssuesScrollRef.current,
-        estimateSize: () => 100,
-        overscan: 8,
+        estimateSize: () => V_PAGE_ISSUES_ESTIMATE_PX,
+        overscan: V_OVERSCAN,
         getItemKey: (index) => pageIssues[index]?.id ?? index,
     });
 
@@ -386,7 +391,6 @@ export function DomainIssuesMasterDetail({
                                     <div
                                         key={vi.key}
                                         data-index={vi.index}
-                                        ref={groupVirtualizer.measureElement}
                                         style={{
                                             position: 'absolute',
                                             top: 0,
@@ -477,7 +481,6 @@ export function DomainIssuesMasterDetail({
                                         <div
                                             key={vi.key}
                                             data-index={vi.index}
-                                            ref={groupPagesVirtualizer.measureElement}
                                             style={{
                                                 position: 'absolute',
                                                 top: 0,
@@ -575,7 +578,6 @@ export function DomainIssuesMasterDetail({
                                         <div
                                             key={vi.key}
                                             data-index={vi.index}
-                                            ref={pageIssuesVirtualizer.measureElement}
                                             style={{
                                                 position: 'absolute',
                                                 top: 0,
@@ -622,3 +624,4 @@ export function DomainIssuesMasterDetail({
     );
 }
 
+export const DomainIssuesMasterDetail = memo(DomainIssuesMasterDetailInner);

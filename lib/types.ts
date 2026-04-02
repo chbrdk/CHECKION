@@ -404,6 +404,8 @@ export type DomainScanStatus = 'queued' | 'scanning' | 'complete' | 'error';
 /** Minimal page reference stored in domain scan payload (single scan id = link to /results/[id]). */
 export interface SlimPage {
     id: string;
+    /** When set, matches `domain_pages.id` (issues deep links use this key). */
+    domainPageId?: string;
     url: string;
     score: number;
     stats: { errors: number; warnings: number; notices: number };

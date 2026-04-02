@@ -46,7 +46,8 @@ describe('toLightDomainSummaryApiPayload', () => {
         } as unknown as DomainSummaryResponse;
 
         const light = toLightDomainSummaryApiPayload(summary);
-        expect(light.summaryMeta).toEqual({ seoPageRowsOmitted: true });
+        expect(light.summaryMeta).toEqual({ seoPageRowsOmitted: true, slimPagesOmitted: true });
+        expect(light.pages).toEqual([]);
         expect(light.aggregated.seo.pages).toEqual([]);
         expect(light.aggregated.seo.withTitle).toBe(1);
     });
@@ -75,6 +76,7 @@ describe('toLightDomainSummaryApiPayload', () => {
         } as unknown as DomainSummaryResponse;
 
         const light = toLightDomainSummaryApiPayload(summary);
-        expect(light.summaryMeta).toEqual({ seoPageRowsOmitted: true });
+        expect(light.summaryMeta).toEqual({ seoPageRowsOmitted: true, slimPagesOmitted: true });
+        expect(light.pages).toEqual([]);
     });
 });

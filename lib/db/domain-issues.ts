@@ -17,6 +17,11 @@ function stableId(prefix: string, seed: string): string {
     return `${prefix}_${h}`;
 }
 
+/** Matches persisted `domain_pages.id` for a URL within a domain scan (issues UI + slim-pages API). */
+export function domainPageRowId(domainScanId: string, url: string): string {
+    return stableId('dp', `${domainScanId}|${url}`);
+}
+
 export async function rebuildDomainIssuesFromPages(params: {
     userId: string;
     domainScanId: string;
@@ -32,7 +37,7 @@ export async function rebuildDomainIssuesFromPages(params: {
         await tx.delete(domainPages).where(and(eq(domainPages.domainScanId, domainScanId), eq(domainPages.userId, userId)));
 
         const pageRows = pages.map((p) => {
-            const domainPageId = stableId('dp', `${domainScanId}|${p.url}`);
+            const domainPageId = domainPageRowId(domainScanId, p.url);
             return {
                 id: domainPageId,
                 domainScanId,
@@ -66,7 +71,7 @@ export async function rebuildDomainIssuesFromPages(params: {
         }> = [];
 
         for (const p of pages) {
-            const domainPageId = stableId('dp', `${domainScanId}|${p.url}`);
+            const domainPageId = domainPageRowId(domainScanId, p.url);
             for (let idx = 0; idx < (p.issues ?? []).length; idx++) {
                 const issue = (p.issues ?? [])[idx] as Issue;
                 const groupKey = buildDomainIssueGroupKey({ code: issue.code, type: issue.type, message: issue.message });

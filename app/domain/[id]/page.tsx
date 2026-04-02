@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Box, CircularProgress, alpha } from '@mui/material';
 import {
@@ -51,12 +51,15 @@ import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import {
     apiScanDomainSummary,
+    apiScanDomainSlimPages,
     apiScanDomainSummarize,
     apiScanDomainJourney,
     apiJourneys,
     API_JOURNEYS,
     pathResults,
     PATH_HOME,
+    DOMAIN_SLIM_PAGES_CHUNK,
+    DOMAIN_SLIM_PAGES_MAX_CLIENT,
     DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX,
     DOMAIN_TAB_VIRTUAL_OVERSCAN,
     DOMAIN_TAB_SYSTEMIC_ISSUE_ROW_ESTIMATE_PX,
@@ -97,9 +100,16 @@ export default function DomainResultPage() {
     const [journeySaving, setJourneySaving] = useState(false);
     const [journeySaved, setJourneySaved] = useState(false);
     const [journeySaveName, setJourneySaveName] = useState('');
+    const [slimPagesOverride, setSlimPagesOverride] = useState<SlimPage[] | null>(null);
+    const [slimPagesLoading, setSlimPagesLoading] = useState(false);
 
     const searchParams = useSearchParams();
-    const pages = (result?.pages ?? []) as SlimPage[];
+    const pages = useMemo(() => {
+        const fromResult = result?.pages as SlimPage[] | undefined;
+        if (fromResult && fromResult.length > 0) return fromResult;
+        if (slimPagesOverride !== null) return slimPagesOverride;
+        return [];
+    }, [result?.pages, slimPagesOverride]);
     const totalPageCount = result?.totalPageCount ?? pages.length;
     const aggregated = result?.aggregated ?? null;
     const uxBrokenLinksPreview = useMemo(
@@ -107,6 +117,14 @@ export default function DomainResultPage() {
         [aggregated?.ux?.brokenLinks]
     );
     const pagesByUrl = useMemo(() => new Map(pages.map((p) => [p.url, p])), [pages]);
+    const pagesById = useMemo(() => {
+        const m = new Map<string, SlimPage>();
+        for (const p of pages) {
+            m.set(p.id, p);
+            if (p.domainPageId) m.set(p.domainPageId, p);
+        }
+        return m;
+    }, [pages]);
     const norm = (u: string) => { try { const x = new URL(u); return x.origin + (x.pathname.replace(/\/$/, '') || '/'); } catch { return u; } };
     const pagesByNormUrl = useMemo(() => { const m = new Map<string, SlimPage>(); for (const p of pages) m.set(norm(p.url), p); return m; }, [pages]);
 
@@ -148,6 +166,7 @@ export default function DomainResultPage() {
     useEffect(() => {
         if (!domainId) return;
         setLoadError(null);
+        setSlimPagesOverride(null);
         fullSeoHydratedRef.current = false;
         seoFullFetchInFlightRef.current = false;
         fetch(apiScanDomainSummary(domainId, { light: true }))
@@ -166,6 +185,43 @@ export default function DomainResultPage() {
             })
             .catch(() => setLoadError('not_found'));
     }, [domainId]);
+
+    useEffect(() => {
+        const pr = result?.pages as SlimPage[] | undefined;
+        if (pr && pr.length > 0) setSlimPagesOverride(null);
+    }, [result?.pages]);
+
+    useEffect(() => {
+        if (!domainId || result?.summaryMeta?.slimPagesOmitted !== true) return;
+        const fromResult = result?.pages as SlimPage[] | undefined;
+        if (fromResult && fromResult.length > 0) return;
+
+        let cancelled = false;
+        setSlimPagesLoading(true);
+        (async () => {
+            const all: SlimPage[] = [];
+            let offset = 0;
+            try {
+                while (offset < DOMAIN_SLIM_PAGES_MAX_CLIENT) {
+                    const res = await fetch(apiScanDomainSlimPages(domainId, { offset, limit: DOMAIN_SLIM_PAGES_CHUNK }));
+                    if (!res.ok) break;
+                    const json = (await res.json()) as { data?: SlimPage[]; total?: number };
+                    const batch = json.data ?? [];
+                    all.push(...batch);
+                    const total = json.total ?? all.length;
+                    if (batch.length < DOMAIN_SLIM_PAGES_CHUNK || all.length >= total) break;
+                    offset += DOMAIN_SLIM_PAGES_CHUNK;
+                    if (cancelled) return;
+                }
+                if (!cancelled) setSlimPagesOverride(all);
+            } finally {
+                if (!cancelled) setSlimPagesLoading(false);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [domainId, result?.summaryMeta?.slimPagesOmitted, result?.pages]);
 
     useEffect(() => {
         if (!domainId || tabValue !== 7) return;
@@ -207,6 +263,21 @@ export default function DomainResultPage() {
             })
             .catch(() => {});
     }, [restoreJourneyId, domainId, t]);
+
+    const hasIssuesDeepLink = Boolean(
+        searchParams.get('group') ||
+            searchParams.get('page') ||
+            searchParams.get('itype') ||
+            searchParams.get('wcag') ||
+            searchParams.get('q')
+    );
+    useEffect(() => {
+        if (restoreJourneyId) return;
+        if (!hasIssuesDeepLink) return;
+        startTransition(() => {
+            setTabValue(2);
+        });
+    }, [restoreJourneyId, hasIssuesDeepLink]);
 
     return (
         <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto', minHeight: 320 }}>
@@ -392,6 +463,19 @@ export default function DomainResultPage() {
                                 <MsqdxTypography variant="h6">{t('domainResult.scannedPages')}</MsqdxTypography>
                                 <InfoTooltip title={t('info.scannedPages')} ariaLabel={t('common.info')} />
                             </Box>
+                            {slimPagesLoading && (
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                    <CircularProgress size={20} sx={{ color: 'var(--color-theme-accent)' }} />
+                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                        Seitenliste wird geladen…
+                                    </MsqdxTypography>
+                                </Box>
+                            )}
+                            {totalPageCount > DOMAIN_SLIM_PAGES_MAX_CLIENT && pages.length >= DOMAIN_SLIM_PAGES_MAX_CLIENT && (
+                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1 }}>
+                                    Es werden die ersten {DOMAIN_SLIM_PAGES_MAX_CLIENT.toLocaleString()} von {totalPageCount.toLocaleString()} Seiten in der Tabelle angezeigt.
+                                </MsqdxTypography>
+                            )}
                             <ScannedPagesTable
                                 pages={pages}
                                 onPageClick={(page) => router.push(pathResults(page.id))}
@@ -430,7 +514,7 @@ export default function DomainResultPage() {
                         {domainId && (
                             <DomainIssuesMasterDetail
                                 domainId={domainId}
-                                pages={pages}
+                                pagesById={pagesById}
                                 selectedGroupKey={selectedGroupKey}
                                 selectedPageId={selectedPageId}
                                 issuesType={issuesType}

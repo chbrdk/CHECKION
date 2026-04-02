@@ -39,6 +39,8 @@ export interface DomainSummaryResponse extends Omit<DomainScanResult, 'pages'> {
 export interface DomainSummaryApiMeta {
     /** True when `?light=1` omitted per-page SEO rows (`aggregated.seo.pages`) to shrink the JSON. */
     seoPageRowsOmitted?: boolean;
+    /** True when `?light=1` omitted `pages` (SlimPage[]); load via GET .../slim-pages. */
+    slimPagesOmitted?: boolean;
 }
 
 export interface DomainSummaryApiResponse extends DomainSummaryResponse {
@@ -119,12 +121,15 @@ export function buildDomainSummary(scan: DomainScanResult): DomainSummaryRespons
  * Shrink API JSON: drop `aggregated.seo.pages` (often one row per scanned URL — largest array in summary).
  * Counts and other `aggregated.seo` fields stay intact for chips and copy.
  */
+const LIGHT_META = { seoPageRowsOmitted: true as const, slimPagesOmitted: true as const };
+
 export function toLightDomainSummaryApiPayload(summary: DomainSummaryResponse): DomainSummaryApiResponse {
     if (!summary.aggregated?.seo) {
-        return { ...summary, summaryMeta: { seoPageRowsOmitted: true } };
+        return { ...summary, pages: [], summaryMeta: LIGHT_META };
     }
     return {
         ...summary,
+        pages: [],
         aggregated: {
             ...summary.aggregated,
             seo: {
@@ -132,7 +137,7 @@ export function toLightDomainSummaryApiPayload(summary: DomainSummaryResponse): 
                 pages: [],
             },
         },
-        summaryMeta: { seoPageRowsOmitted: true },
+        summaryMeta: LIGHT_META,
     };
 }
 

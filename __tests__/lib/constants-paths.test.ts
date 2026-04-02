@@ -27,6 +27,7 @@ import {
     DOMAIN_TAB_SYSTEMIC_ISSUE_ROW_ESTIMATE_PX,
     DOMAIN_UX_BROKEN_LINKS_PREVIEW,
     DOMAIN_AGGREGATED_ISSUES_ROW_ESTIMATE_PX,
+    apiScanDomainSlimPages,
 } from '@/lib/constants';
 
 describe('Path constants', () => {
@@ -86,6 +87,13 @@ describe('API path builders', () => {
 
     it('apiScanDomainSummary with light omits heavy SEO page rows via query', () => {
         expect(apiScanDomainSummary('d2', { light: true })).toBe('/api/scan/domain/d2/summary?light=1');
+    });
+
+    it('apiScanDomainSlimPages builds paged slim-pages URL', () => {
+        expect(apiScanDomainSlimPages('d1')).toBe('/api/scan/domain/d1/slim-pages');
+        expect(apiScanDomainSlimPages('d1', { offset: 100, limit: 50 })).toBe(
+            '/api/scan/domain/d1/slim-pages?offset=100&limit=50'
+        );
     });
 
     it('apiShareToken builds share token URL', () => {

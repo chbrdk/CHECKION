@@ -28,8 +28,8 @@ Hier geht es nicht um React-Virtualisierung, sondern um **Indizes, Paginierung, 
 
 ## Domain-Seite: leichtes Summary + Tab-Mount
 
-- **`GET /api/scan/domain/[id]/summary?light=1`** liefert ein schlankeres JSON (`toLightDomainSummaryApiPayload` in `lib/domain-summary.ts`): u. a. **`aggregated.seo.pages` leer**, `summaryMeta.seoPageRowsOmitted: true`. Erst beim Öffnen des **SEO-Tabs** (Tab 7) wird die **volle** Summary ohne `light` nachgeladen und die Seitenliste befüllt.
-- **Issues-Tab (Tab 2):** `DomainIssuesMasterDetail` wird nur gerendert, wenn `tabValue === 2` (kein `display:none` mehr), damit die schwere Master/Detail-UI nicht im Hintergrund bleibt.
+- **`GET /api/scan/domain/[id]/summary?light=1`** liefert ein schlankeres JSON (`toLightDomainSummaryApiPayload` in `lib/domain-summary.ts`): **`pages` leer**, **`aggregated.seo.pages` leer**, `summaryMeta.seoPageRowsOmitted` + **`slimPagesOmitted`**. Die **SlimPage-Liste** lädt die Domain-Seite per **`GET /api/scan/domain/[id]/slim-pages`** (DB: `domain_pages` + Join auf `scans` für Stats; Fallback: Slice aus `domain_scans.payload`). Tab **„Links & SEO“** (7) holt weiter die **volle** Summary ohne `light` für die SEO-Seitenliste.
+- **Issues-Tab (Tab 2):** `DomainIssuesMasterDetail` wird nur gerendert, wenn `tabValue === 2` (kein `display:none` mehr), damit die schwere Master/Detail-UI nicht im Hintergrund bleibt. **Deep-Link:** Sind `group`, `page`, `itype`, `wcag` oder `q` in der Query, wechselt die Seite per `startTransition` auf Tab 2. Die drei Virtual-Listen nutzen **feste Zeilenhöhen** (ohne `measureElement`), um Layout-Schleifen bei langen Listen zu vermeiden.
 
 ## Kurzregel
 

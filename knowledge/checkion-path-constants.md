@@ -80,6 +80,7 @@ apiScanScreenshot(id)          // GET /api/scan/[id]/screenshot
 apiScanDomainCreate            // POST /api/scan/domain
 apiScanDomainStatus(id)        // GET /api/scan/domain/[id]/status
 apiScanDomainSummary(id)       // GET /api/scan/domain/[id]/summary
+apiScanDomainSlimPages(id)     // GET /api/scan/domain/[id]/slim-pages?offset=&limit=
 apiScanDomainSummarize(id)     // POST /api/scan/domain/[id]/summarize
 apiScanDomainJourney(id)       // POST /api/scan/domain/[id]/journey
 

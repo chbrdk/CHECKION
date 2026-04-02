@@ -127,10 +127,21 @@ export const apiScanScreenshot = (id: string) => `${apiScan(id)}/screenshot`;
 export const apiScanDomainCreate = API_SCAN_DOMAIN;
 /** Build: GET /api/scan/domain/[id]/status */
 export const apiScanDomainStatus = (id: string) => `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/status`;
-/** Build: GET /api/scan/domain/[id]/summary — use `light` to omit heavy `aggregated.seo.pages` until Tab „Links & SEO“ loads full data. */
+/** Build: GET /api/scan/domain/[id]/summary — `light` omits `pages` + heavy `aggregated.seo.pages`; hydrate via slim-pages + full summary on SEO tab. */
 export const apiScanDomainSummary = (id: string, opts?: { light?: boolean }) => {
     const base = `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/summary`;
     return opts?.light ? `${base}?light=1` : base;
+};
+/** Chunk size when loading SlimPage[] after light summary (client stops at DOMAIN_SLIM_PAGES_MAX_CLIENT). */
+export const DOMAIN_SLIM_PAGES_CHUNK = 500;
+export const DOMAIN_SLIM_PAGES_MAX_CLIENT = 10_000;
+/** Build: GET /api/scan/domain/[id]/slim-pages?offset=&limit= */
+export const apiScanDomainSlimPages = (id: string, params?: { offset?: number; limit?: number }) => {
+    const q = new URLSearchParams();
+    if (params?.offset != null) q.set('offset', String(params.offset));
+    if (params?.limit != null) q.set('limit', String(params.limit));
+    const qs = q.toString();
+    return `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/slim-pages${qs ? `?${qs}` : ''}`;
 };
 /** Build: POST /api/scan/domain/[id]/summarize */
 export const apiScanDomainSummarize = (id: string) => `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/summarize`;
