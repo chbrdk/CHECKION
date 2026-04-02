@@ -57,6 +57,12 @@ Dieses Dokument sammelt sinnvolle **P1 Verbesserungen**, falls wir noch mehr Sta
 - **Virtualisierung im Master/Detail (Liste & Details)**
   - Umgesetzt: `@tanstack/react-virtual` (`useVirtualizer`) in `components/DomainIssuesMasterDetail.tsx` für **Gruppen**, **betroffene URLs** und **Issues der gewählten Seite**; wo nötig `measureElement` für variable Zeilenhöhen. Siehe auch `knowledge/checkion-virtualization-candidates.md`.
 
+- **UX-Polish (Zeilenlayout, feste Höhen)**
+  - Gemeinsame Primitives in `components/domain-issues/IssueListPrimitives.tsx` (`IssueSeverityRail`, `IssueTypeIcon`, `issueTypeColor`, Fokus-Styles).
+  - Listenzeilen: linke 4px-Akzentleiste, Icons nach Schweregrad, Message/Code mit Tooltip; **feste** `estimateSize`-Werte (`V_GROUP_ESTIMATE_PX` 128, `V_GROUP_PAGES_ESTIMATE_PX` 96, `V_PAGE_ISSUES_ESTIMATE_PX` 156) — bei Layout-Änderungen diese Konstanten und `paddingBottom` der Virtual-Wrapper mit anpassen, sonst Überlappungen.
+  - Filter: MUI `ToggleButtonGroup` für Typ und WCAG (statt vieler Einzel-Chips).
+  - Leere Spalten: `IssuesEmptyState`; Detail: Selector-Block + Copy, Help-Link als `Button` mit Icon.
+
 - **Filter UX**
   - UI optional: Chips/Select für `type`, `wcagLevel`, Search bar (`q`)
   - Query-Params direkt in URL abbilden (shareable state).

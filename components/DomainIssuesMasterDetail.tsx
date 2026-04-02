@@ -1,13 +1,20 @@
 'use client';
 
-import React, { memo, useEffect, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Box, CircularProgress, alpha } from '@mui/material';
+import { Box, Button, CircularProgress, IconButton, ToggleButton, ToggleButtonGroup, Tooltip, alpha } from '@mui/material';
 import { MsqdxButton, MsqdxChip, MsqdxFormField, MsqdxMoleculeCard, MsqdxTypography } from '@msqdx/react';
-import { MSQDX_BRAND_PRIMARY, MSQDX_STATUS } from '@msqdx/tokens';
+import { MSQDX_BRAND_PRIMARY, MSQDX_NEUTRAL, MSQDX_STATUS } from '@msqdx/tokens';
+import { Copy, ExternalLink, FileSearch } from 'lucide-react';
 import { apiScanDomainIssueGroupPages, apiScanDomainIssueGroups, apiScanDomainPageIssues } from '@/lib/constants';
 import type { SlimPage } from '@/lib/types';
 import { useI18n } from '@/components/i18n/I18nProvider';
+import {
+    IssueSeverityRail,
+    IssueTypeIcon,
+    issueRowFocusSx,
+    issueTypeColor,
+} from '@/components/domain-issues/IssueListPrimitives';
 
 type IssueGroupRow = {
     groupKey: string;
@@ -23,13 +30,20 @@ type IssueGroupRow = {
 type GroupPageRow = { pageId: string; url: string; issueCount: number; scanId?: string | null };
 type PageIssueRow = { id: string; groupKey: string; type: string; code: string; message: string; runner: string | null; wcagLevel: string | null; helpUrl: string | null; selector: string | null };
 
-/** Fixed row heights avoid `measureElement` resize loops (major CPU cost with long lists). */
-const V_GROUP_ESTIMATE_PX = 120;
-const V_GROUP_PAGES_ESTIMATE_PX = 108;
-const V_PAGE_ISSUES_ESTIMATE_PX = 100;
+/** Fixed row heights — keep in sync with row layout + paddingBottom on virtual wrappers. */
+const V_GROUP_ESTIMATE_PX = 128;
+const V_GROUP_PAGES_ESTIMATE_PX = 96;
+const V_PAGE_ISSUES_ESTIMATE_PX = 156;
 const V_OVERSCAN = 4;
 
-const typeColor = (type: string) => type === 'error' ? MSQDX_STATUS.error.base : type === 'warning' ? MSQDX_STATUS.warning.base : MSQDX_STATUS.info.base;
+const rowHoverSx = {
+    '@media (prefers-reduced-motion: no-preference)': {
+        transition: 'background-color 0.15s ease',
+    },
+    '&:hover': {
+        backgroundColor: alpha(MSQDX_NEUTRAL[500], 0.06),
+    },
+};
 
 function titleFromUrl(url: string): string {
     try {
@@ -40,6 +54,114 @@ function titleFromUrl(url: string): string {
     } catch {
         return url.length > 48 ? url.slice(0, 48) + '…' : url;
     }
+}
+
+function IssuesEmptyState({
+    icon: Icon,
+    title,
+    subtitle,
+}: {
+    icon: React.ComponentType<{ size?: number; strokeWidth?: number }>;
+    title: string;
+    subtitle?: string;
+}) {
+    return (
+        <Box
+            sx={{
+                py: 3,
+                px: 2,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textAlign: 'center',
+                gap: 1,
+                color: 'var(--color-text-muted-on-light)',
+                borderRadius: 1,
+                border: '1px dashed',
+                borderColor: MSQDX_NEUTRAL[300],
+                bgcolor: alpha(MSQDX_NEUTRAL[100], 0.5),
+            }}
+        >
+            <Icon size={28} strokeWidth={1.5} aria-hidden />
+            <MsqdxTypography variant="body2" sx={{ fontWeight: 600, color: 'var(--color-text-secondary-on-light, #404040)' }}>
+                {title}
+            </MsqdxTypography>
+            {subtitle && (
+                <MsqdxTypography variant="caption" sx={{ maxWidth: 280 }}>
+                    {subtitle}
+                </MsqdxTypography>
+            )}
+        </Box>
+    );
+}
+
+function SelectorCopyBlock({
+    selector,
+    labelCopy,
+    copiedLabel,
+}: {
+    selector: string;
+    labelCopy: string;
+    copiedLabel: string;
+}) {
+    const [copied, setCopied] = useState(false);
+    const handle = useCallback(async () => {
+        try {
+            await navigator.clipboard.writeText(selector);
+            setCopied(true);
+            window.setTimeout(() => setCopied(false), 2000);
+        } catch {
+            /* ignore */
+        }
+    }, [selector]);
+
+    return (
+        <Box sx={{ mt: 0.75 }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 0.5 }}>
+                <Box
+                    component="pre"
+                    sx={{
+                        m: 0,
+                        flex: 1,
+                        minWidth: 0,
+                        p: 0.75,
+                        borderRadius: 0.5,
+                        bgcolor: MSQDX_NEUTRAL[100],
+                        border: `1px solid ${MSQDX_NEUTRAL[200]}`,
+                        fontFamily: 'ui-monospace, monospace',
+                        fontSize: '0.65rem',
+                        lineHeight: 1.35,
+                        maxHeight: 44,
+                        overflow: 'auto',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                    }}
+                >
+                    {selector}
+                </Box>
+                <Tooltip title={copied ? copiedLabel : labelCopy}>
+                    <span>
+                        <IconButton
+                            size="small"
+                            aria-label={labelCopy}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                void handle();
+                            }}
+                            sx={{ mt: -0.25 }}
+                        >
+                            <Copy size={16} strokeWidth={2} aria-hidden />
+                        </IconButton>
+                    </span>
+                </Tooltip>
+            </Box>
+            {copied && (
+                <MsqdxTypography variant="caption" sx={{ color: MSQDX_BRAND_PRIMARY.green, mt: 0.25 }} role="status">
+                    {copiedLabel}
+                </MsqdxTypography>
+            )}
+        </Box>
+    );
 }
 
 function DomainIssuesMasterDetailInner({
@@ -286,6 +408,18 @@ function DomainIssuesMasterDetailInner({
         }
     };
 
+    const typeToggleValue = issuesType ?? 'all';
+    const wcagToggleValue = issuesWcag ?? 'all';
+
+    const toggleSx = {
+        '& .MuiToggleButton-root': {
+            textTransform: 'none',
+            fontSize: '0.75rem',
+            py: 0.5,
+            px: 1,
+        },
+    } as const;
+
     return (
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1.1fr 0.9fr' }, gap: 2, minWidth: 0 }}>
             <MsqdxMoleculeCard
@@ -295,47 +429,63 @@ function DomainIssuesMasterDetailInner({
                 borderRadius="lg"
                 sx={{ bgcolor: 'var(--color-card-bg)', minWidth: 0 }}
             >
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1.5 }}>
-                    <MsqdxChip
-                        label={t('domainResult.issuesFilterAll')}
-                        size="small"
-                        variant={!issuesType ? 'filled' : 'outlined'}
-                        brandColor={!issuesType ? 'green' : undefined}
-                        sx={{ cursor: 'pointer' }}
-                        onClick={() => onChangeFilters({ type: null })}
-                    />
-                    <MsqdxChip
-                        label={t('domainResult.issuesFilterErrors')}
-                        size="small"
-                        variant={issuesType === 'error' ? 'filled' : 'outlined'}
-                        sx={{ cursor: 'pointer', ...(issuesType === 'error' ? { backgroundColor: alpha(MSQDX_STATUS.error.base, 0.12), color: MSQDX_STATUS.error.base } : {}) }}
-                        onClick={() => onChangeFilters({ type: issuesType === 'error' ? null : 'error' })}
-                    />
-                    <MsqdxChip
-                        label={t('domainResult.issuesFilterWarnings')}
-                        size="small"
-                        variant={issuesType === 'warning' ? 'filled' : 'outlined'}
-                        sx={{ cursor: 'pointer', ...(issuesType === 'warning' ? { backgroundColor: alpha(MSQDX_STATUS.warning.base, 0.12), color: MSQDX_STATUS.warning.base } : {}) }}
-                        onClick={() => onChangeFilters({ type: issuesType === 'warning' ? null : 'warning' })}
-                    />
-                    <MsqdxChip
-                        label={t('domainResult.issuesFilterNotices')}
-                        size="small"
-                        variant={issuesType === 'notice' ? 'filled' : 'outlined'}
-                        sx={{ cursor: 'pointer', ...(issuesType === 'notice' ? { backgroundColor: alpha(MSQDX_STATUS.info.base, 0.12), color: MSQDX_STATUS.info.base } : {}) }}
-                        onClick={() => onChangeFilters({ type: issuesType === 'notice' ? null : 'notice' })}
-                    />
-                    {(['A', 'AA', 'AAA', 'APCA'] as const).map((lvl) => (
-                        <MsqdxChip
-                            key={lvl}
-                            label={lvl}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25, mb: 1.5 }}>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
+                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', width: '100%', mb: -0.5 }}>
+                            {t('domainResult.issuesFilterSeverityLabel')}
+                        </MsqdxTypography>
+                        <ToggleButtonGroup
+                            exclusive
                             size="small"
-                            variant={issuesWcag === lvl ? 'filled' : 'outlined'}
-                            brandColor={issuesWcag === lvl ? 'green' : undefined}
-                            sx={{ cursor: 'pointer' }}
-                            onClick={() => onChangeFilters({ wcag: issuesWcag === lvl ? null : lvl })}
-                        />
-                    ))}
+                            value={typeToggleValue}
+                            onChange={(_, v: string | null) => {
+                                if (v == null) {
+                                    onChangeFilters({ type: null });
+                                    return;
+                                }
+                                onChangeFilters({ type: v === 'all' ? null : v });
+                            }}
+                            sx={toggleSx}
+                            aria-label={t('domainResult.issuesFilterSeverityLabel')}
+                        >
+                            <ToggleButton value="all">{t('domainResult.issuesFilterAll')}</ToggleButton>
+                            <ToggleButton value="error" sx={{ '&.Mui-selected': { bgcolor: alpha(MSQDX_STATUS.error.base, 0.15), color: MSQDX_STATUS.error.base } }}>
+                                {t('domainResult.issuesFilterErrors')}
+                            </ToggleButton>
+                            <ToggleButton value="warning" sx={{ '&.Mui-selected': { bgcolor: alpha(MSQDX_STATUS.warning.base, 0.15), color: MSQDX_STATUS.warning.base } }}>
+                                {t('domainResult.issuesFilterWarnings')}
+                            </ToggleButton>
+                            <ToggleButton value="notice" sx={{ '&.Mui-selected': { bgcolor: alpha(MSQDX_STATUS.info.base, 0.12), color: MSQDX_STATUS.info.base } }}>
+                                {t('domainResult.issuesFilterNotices')}
+                            </ToggleButton>
+                        </ToggleButtonGroup>
+                    </Box>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
+                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', width: '100%', mb: -0.5 }}>
+                            {t('domainResult.issuesFilterWcagLabel')}
+                        </MsqdxTypography>
+                        <ToggleButtonGroup
+                            exclusive
+                            size="small"
+                            value={wcagToggleValue}
+                            onChange={(_, v: string | null) => {
+                                if (v == null) {
+                                    onChangeFilters({ wcag: null });
+                                    return;
+                                }
+                                onChangeFilters({ wcag: v === 'all' ? null : v });
+                            }}
+                            sx={toggleSx}
+                            aria-label={t('domainResult.issuesFilterWcagLabel')}
+                        >
+                            <ToggleButton value="all">{t('domainResult.issuesFilterAll')}</ToggleButton>
+                            {(['A', 'AA', 'AAA', 'APCA'] as const).map((lvl) => (
+                                <ToggleButton key={lvl} value={lvl}>
+                                    {lvl}
+                                </ToggleButton>
+                            ))}
+                        </ToggleButtonGroup>
+                    </Box>
                 </Box>
                 <MsqdxFormField
                     label={t('domainResult.issuesSearchLabel')}
@@ -349,20 +499,11 @@ function DomainIssuesMasterDetailInner({
                     sx={{ mb: 1.5 }}
                 />
                 <Box sx={{ display: 'flex', gap: 1, mb: 1.5 }}>
-                    <MsqdxButton
-                        variant="outlined"
-                        size="small"
-                        onClick={() => onChangeFilters({ q: qDraft.trim() ? qDraft.trim() : null })}
-                    >
+                    <MsqdxButton variant="outlined" size="small" onClick={() => onChangeFilters({ q: qDraft.trim() ? qDraft.trim() : null })}>
                         {t('domainResult.issuesApply')}
                     </MsqdxButton>
                     {(issuesQ || issuesType || issuesWcag) && (
-                        <MsqdxButton
-                            variant="text"
-                            size="small"
-                            sx={{ color: MSQDX_BRAND_PRIMARY.green }}
-                            onClick={() => onChangeFilters({ type: null, wcag: null, q: null })}
-                        >
+                        <MsqdxButton variant="text" size="small" sx={{ color: MSQDX_BRAND_PRIMARY.green }} onClick={() => onChangeFilters({ type: null, wcag: null, q: null })}>
                             {t('domainResult.issuesResetFilters')}
                         </MsqdxButton>
                     )}
@@ -371,22 +512,13 @@ function DomainIssuesMasterDetailInner({
                 {groupsLoading && groups.length === 0 ? (
                     <Box sx={{ py: 3, display: 'flex', justifyContent: 'center' }}><CircularProgress size={24} /></Box>
                 ) : (
-                    <Box
-                        ref={groupsScrollRef}
-                        sx={{ maxHeight: '65vh', overflow: 'auto', minHeight: 120 }}
-                    >
-                        <Box
-                            sx={{
-                                height: `${groupVirtualizer.getTotalSize()}px`,
-                                width: '100%',
-                                position: 'relative',
-                            }}
-                        >
+                    <Box ref={groupsScrollRef} sx={{ maxHeight: '65vh', overflow: 'auto', minHeight: 120 }}>
+                        <Box sx={{ height: `${groupVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
                             {groupVirtualizer.getVirtualItems().map((vi) => {
                                 const g = groups[vi.index];
                                 if (!g) return null;
                                 const active = selectedGroupKey === g.groupKey;
-                                const color = typeColor(g.type);
+                                const color = issueTypeColor(g.type);
                                 return (
                                     <div
                                         key={vi.key}
@@ -404,6 +536,8 @@ function DomainIssuesMasterDetailInner({
                                             component="button"
                                             type="button"
                                             onClick={() => onSelectGroup(g.groupKey)}
+                                            aria-label={g.message}
+                                            aria-selected={active}
                                             sx={{
                                                 textAlign: 'left',
                                                 width: '100%',
@@ -412,27 +546,52 @@ function DomainIssuesMasterDetailInner({
                                                 padding: 0,
                                                 font: 'inherit',
                                                 cursor: 'pointer',
-                                            }}
-                                            aria-label={g.message}
-                                        >
-                                            <Box sx={{
-                                                border: `1px solid ${active ? color : 'var(--color-border-subtle, #eee)'}`,
                                                 borderRadius: 1,
-                                                p: 1,
-                                                backgroundColor: active ? alpha(color, 0.08) : 'transparent',
-                                            }}>
-                                                <Box sx={{ display: 'flex', gap: 0.75, alignItems: 'center', flexWrap: 'wrap' }}>
-                                                    <MsqdxChip size="small" label={g.type} sx={{ bgcolor: alpha(color, 0.12), color, fontSize: '0.7rem' }} />
-                                                    <MsqdxChip size="small" label={`${g.pageCount} ${t('domainResult.issuesTablePages')}`} sx={{ fontSize: '0.7rem' }} />
-                                                    {g.wcagLevel && g.wcagLevel !== 'Unknown' && <MsqdxChip size="small" label={g.wcagLevel} sx={{ fontSize: '0.7rem' }} />}
-                                                    {g.runner && <MsqdxChip size="small" label={g.runner} sx={{ fontSize: '0.7rem' }} />}
+                                                overflow: 'hidden',
+                                                ...issueRowFocusSx,
+                                                ...rowHoverSx,
+                                            }}
+                                        >
+                                            <Box
+                                                sx={{
+                                                    display: 'flex',
+                                                    minHeight: V_GROUP_ESTIMATE_PX - 8,
+                                                    border: `1px solid ${active ? color : 'var(--color-border-subtle, #eee)'}`,
+                                                    borderRadius: 1,
+                                                    bgcolor: active ? alpha(color, 0.06) : 'var(--color-card-bg)',
+                                                }}
+                                            >
+                                                <IssueSeverityRail color={color} />
+                                                <Box sx={{ flex: 1, minWidth: 0, py: 0.75, pr: 1, pl: 0.75 }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
+                                                        <IssueTypeIcon type={g.type} size={16} />
+                                                        <MsqdxChip size="small" label={`${g.pageCount} ${t('domainResult.issuesTablePages')}`} sx={{ fontSize: '0.65rem', height: 22 }} />
+                                                        {g.wcagLevel && g.wcagLevel !== 'Unknown' && (
+                                                            <MsqdxChip size="small" label={g.wcagLevel} sx={{ fontSize: '0.65rem', height: 22 }} />
+                                                        )}
+                                                        {g.runner && <MsqdxChip size="small" label={g.runner} sx={{ fontSize: '0.65rem', height: 22 }} />}
+                                                    </Box>
+                                                    <Tooltip title={g.message} placement="top-start">
+                                                        <MsqdxTypography
+                                                            variant="body2"
+                                                            sx={{
+                                                                mt: 0.5,
+                                                                fontWeight: 600,
+                                                                display: '-webkit-box',
+                                                                WebkitLineClamp: 2,
+                                                                WebkitBoxOrient: 'vertical',
+                                                                overflow: 'hidden',
+                                                            }}
+                                                        >
+                                                            {g.message}
+                                                        </MsqdxTypography>
+                                                    </Tooltip>
+                                                    <Tooltip title={g.code}>
+                                                        <MsqdxTypography variant="caption" noWrap sx={{ color: 'var(--color-text-muted-on-light)', fontFamily: 'ui-monospace, monospace', display: 'block', mt: 0.25 }}>
+                                                            {g.code}
+                                                        </MsqdxTypography>
+                                                    </Tooltip>
                                                 </Box>
-                                                <MsqdxTypography variant="body2" sx={{ mt: 0.5, fontWeight: 600 }}>
-                                                    {g.message}
-                                                </MsqdxTypography>
-                                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', fontFamily: 'monospace' }}>
-                                                    {g.code}
-                                                </MsqdxTypography>
                                             </Box>
                                         </Box>
                                     </div>
@@ -461,22 +620,18 @@ function DomainIssuesMasterDetailInner({
                     {groupPagesError && <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.error.base }}>{groupPagesError}</MsqdxTypography>}
                     {groupPagesLoading && selectedGroupKey ? (
                         <Box sx={{ py: 2, display: 'flex', justifyContent: 'center' }}><CircularProgress size={20} /></Box>
+                    ) : !selectedGroupKey ? (
+                        <IssuesEmptyState icon={FileSearch} title={t('domainResult.issuesEmptyPickGroupTitle')} subtitle={t('domainResult.issuesEmptyPickGroupSubtitle')} />
+                    ) : groupPages.length === 0 && !groupPagesLoading ? (
+                        <IssuesEmptyState icon={FileSearch} title={t('domainResult.issuesEmptyNoPagesTitle')} />
                     ) : (
-                        <Box
-                            ref={groupPagesScrollRef}
-                            sx={{ maxHeight: '42vh', overflow: 'auto', minHeight: 80 }}
-                        >
-                            <Box
-                                sx={{
-                                    height: `${groupPagesVirtualizer.getTotalSize()}px`,
-                                    width: '100%',
-                                    position: 'relative',
-                                }}
-                            >
+                        <Box ref={groupPagesScrollRef} sx={{ maxHeight: '42vh', overflow: 'auto', minHeight: 80 }}>
+                            <Box sx={{ height: `${groupPagesVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
                                 {groupPagesVirtualizer.getVirtualItems().map((vi) => {
                                     const p = groupPages[vi.index];
                                     if (!p) return null;
                                     const active = selectedPageId === p.pageId;
+                                    const railColor = active ? MSQDX_BRAND_PRIMARY.green : MSQDX_NEUTRAL[300];
                                     return (
                                         <div
                                             key={vi.key}
@@ -494,6 +649,7 @@ function DomainIssuesMasterDetailInner({
                                                 component="button"
                                                 type="button"
                                                 onClick={() => onSelectPage(p.pageId)}
+                                                aria-selected={active}
                                                 sx={{
                                                     textAlign: 'left',
                                                     width: '100%',
@@ -502,34 +658,47 @@ function DomainIssuesMasterDetailInner({
                                                     padding: 0,
                                                     font: 'inherit',
                                                     cursor: 'pointer',
+                                                    borderRadius: 1,
+                                                    overflow: 'hidden',
+                                                    ...issueRowFocusSx,
+                                                    ...rowHoverSx,
                                                 }}
                                             >
-                                                <Box sx={{
-                                                    border: `1px solid ${active ? MSQDX_BRAND_PRIMARY.green : 'var(--color-border-subtle, #eee)'}`,
-                                                    borderRadius: 1,
-                                                    p: 1,
-                                                    backgroundColor: active ? alpha(MSQDX_BRAND_PRIMARY.green, 0.08) : 'transparent',
-                                                }}>
-                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, alignItems: 'center' }}>
-                                                        <Box sx={{ minWidth: 0 }}>
-                                                            <MsqdxTypography variant="body2" sx={{ fontWeight: 600 }}>
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        minHeight: V_GROUP_PAGES_ESTIMATE_PX - 8,
+                                                        border: `1px solid ${active ? MSQDX_BRAND_PRIMARY.green : 'var(--color-border-subtle, #eee)'}`,
+                                                        borderRadius: 1,
+                                                        bgcolor: active ? alpha(MSQDX_BRAND_PRIMARY.green, 0.06) : 'var(--color-card-bg)',
+                                                    }}
+                                                >
+                                                    <IssueSeverityRail color={railColor} />
+                                                    <Box sx={{ flex: 1, minWidth: 0, py: 0.75, pr: 0.5, pl: 0.75, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
+                                                        <Box sx={{ minWidth: 0, flex: 1 }}>
+                                                            <MsqdxTypography variant="body2" sx={{ fontWeight: 600 }} noWrap title={titleFromUrl(p.url)}>
                                                                 {titleFromUrl(p.url)}
                                                             </MsqdxTypography>
-                                                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }} noWrap title={p.url}>
                                                                 {p.url}
                                                             </MsqdxTypography>
                                                         </Box>
-                                                        <MsqdxChip size="small" label={String(p.issueCount)} sx={{ fontSize: '0.7rem' }} />
-                                                    </Box>
-                                                    <Box sx={{ mt: 0.75 }}>
-                                                        <MsqdxButton
-                                                            variant="text"
-                                                            size="small"
-                                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onOpenPageScan(p.url, p.scanId); }}
-                                                            sx={{ color: MSQDX_BRAND_PRIMARY.green }}
-                                                        >
-                                                            {t('domainResult.openPage')}
-                                                        </MsqdxButton>
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
+                                                            <MsqdxChip size="small" label={String(p.issueCount)} sx={{ fontSize: '0.65rem', height: 22 }} />
+                                                            <Tooltip title={t('domainResult.openPage')}>
+                                                                <IconButton
+                                                                    size="small"
+                                                                    aria-label={t('domainResult.openPageAria', { url: p.url })}
+                                                                    onClick={(e) => {
+                                                                        e.preventDefault();
+                                                                        e.stopPropagation();
+                                                                        onOpenPageScan(p.url, p.scanId);
+                                                                    }}
+                                                                >
+                                                                    <ExternalLink size={18} strokeWidth={2} aria-hidden />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        </Box>
                                                     </Box>
                                                 </Box>
                                             </Box>
@@ -552,9 +721,7 @@ function DomainIssuesMasterDetailInner({
                     title={t('domainResult.issuesPageDetailTitle')}
                     subtitle={
                         selectedPageId
-                            ? (groupPages.find((g) => g.pageId === selectedPageId)?.url
-                                ?? pagesById.get(selectedPageId)?.url
-                                ?? '')
+                            ? (groupPages.find((g) => g.pageId === selectedPageId)?.url ?? pagesById.get(selectedPageId)?.url ?? '')
                             : t('domainResult.issuesPageDetailSubtitlePick')
                     }
                     variant="flat"
@@ -564,22 +731,17 @@ function DomainIssuesMasterDetailInner({
                     {pageIssuesError && <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.error.base }}>{pageIssuesError}</MsqdxTypography>}
                     {pageIssuesLoading && selectedPageId ? (
                         <Box sx={{ py: 2, display: 'flex', justifyContent: 'center' }}><CircularProgress size={20} /></Box>
+                    ) : !selectedPageId ? (
+                        <IssuesEmptyState icon={FileSearch} title={t('domainResult.issuesEmptyPickPageTitle')} subtitle={t('domainResult.issuesEmptyPickPageSubtitle')} />
+                    ) : pageIssues.length === 0 && !pageIssuesLoading ? (
+                        <IssuesEmptyState icon={FileSearch} title={t('domainResult.issuesEmptyNoIssuesTitle')} />
                     ) : (
-                        <Box
-                            ref={pageIssuesScrollRef}
-                            sx={{ maxHeight: 320, overflow: 'auto', minHeight: 60 }}
-                        >
-                            <Box
-                                sx={{
-                                    height: `${pageIssuesVirtualizer.getTotalSize()}px`,
-                                    width: '100%',
-                                    position: 'relative',
-                                }}
-                            >
+                        <Box ref={pageIssuesScrollRef} sx={{ maxHeight: 320, overflow: 'auto', minHeight: 60 }}>
+                            <Box sx={{ height: `${pageIssuesVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
                                 {pageIssuesVirtualizer.getVirtualItems().map((vi) => {
                                     const i = pageIssues[vi.index];
                                     if (!i) return null;
-                                    const color = typeColor(i.type);
+                                    const color = issueTypeColor(i.type);
                                     return (
                                         <div
                                             key={vi.key}
@@ -590,26 +752,60 @@ function DomainIssuesMasterDetailInner({
                                                 left: 0,
                                                 width: '100%',
                                                 transform: `translateY(${vi.start}px)`,
-                                                paddingBottom: 6,
+                                                paddingBottom: 8,
                                             }}
                                         >
-                                            <Box sx={{ border: '1px solid var(--color-border-subtle, #eee)', borderRadius: 1, p: 1 }}>
-                                                <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
-                                                    <MsqdxChip size="small" label={i.type} sx={{ bgcolor: alpha(color, 0.12), color, fontSize: '0.7rem' }} />
-                                                    {i.wcagLevel && i.wcagLevel !== 'Unknown' && <MsqdxChip size="small" label={i.wcagLevel} sx={{ fontSize: '0.7rem' }} />}
-                                                    {i.runner && <MsqdxChip size="small" label={i.runner} sx={{ fontSize: '0.7rem' }} />}
+                                            <Box
+                                                sx={{
+                                                    display: 'flex',
+                                                    minHeight: V_PAGE_ISSUES_ESTIMATE_PX - 8,
+                                                    border: `1px solid var(--color-border-subtle, #eee)`,
+                                                    borderRadius: 1,
+                                                    bgcolor: 'var(--color-card-bg)',
+                                                    overflow: 'hidden',
+                                                }}
+                                            >
+                                                <IssueSeverityRail color={color} />
+                                                <Box sx={{ flex: 1, minWidth: 0, py: 0.75, pr: 1, pl: 0.75 }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+                                                        <IssueTypeIcon type={i.type} size={16} />
+                                                        {i.wcagLevel && i.wcagLevel !== 'Unknown' && (
+                                                            <MsqdxChip size="small" label={i.wcagLevel} sx={{ fontSize: '0.65rem', height: 22 }} />
+                                                        )}
+                                                        {i.runner && <MsqdxChip size="small" label={i.runner} sx={{ fontSize: '0.65rem', height: 22 }} />}
+                                                    </Box>
+                                                    <MsqdxTypography variant="body2" sx={{ mt: 0.5, fontWeight: 600, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                                        {i.message}
+                                                    </MsqdxTypography>
+                                                    <Tooltip title={i.code}>
+                                                        <MsqdxTypography variant="caption" noWrap sx={{ fontFamily: 'ui-monospace, monospace', color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                                                            {i.code}
+                                                        </MsqdxTypography>
+                                                    </Tooltip>
+                                                    {i.selector && (
+                                                        <SelectorCopyBlock
+                                                            selector={i.selector}
+                                                            labelCopy={t('domainResult.issuesCopySelector')}
+                                                            copiedLabel={t('domainResult.issuesCopied')}
+                                                        />
+                                                    )}
+                                                    {i.helpUrl && (
+                                                        <Box sx={{ mt: 0.75 }}>
+                                                            <Button
+                                                                component="a"
+                                                                href={i.helpUrl}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                variant="outlined"
+                                                                size="small"
+                                                                startIcon={<ExternalLink size={14} strokeWidth={2} aria-hidden />}
+                                                                sx={{ textTransform: 'none' }}
+                                                            >
+                                                                {t('domainResult.issuesGuidelineOpen')}
+                                                            </Button>
+                                                        </Box>
+                                                    )}
                                                 </Box>
-                                                <MsqdxTypography variant="body2" sx={{ mt: 0.5, fontWeight: 600 }}>
-                                                    {i.message}
-                                                </MsqdxTypography>
-                                                <MsqdxTypography variant="caption" sx={{ fontFamily: 'monospace', color: 'var(--color-text-muted-on-light)' }}>
-                                                    {i.code}
-                                                </MsqdxTypography>
-                                                {i.helpUrl && (
-                                                    <a href={i.helpUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: 6, fontSize: '0.75rem', color: MSQDX_BRAND_PRIMARY.green, textDecoration: 'underline' }}>
-                                                        {t('results.fixDocs')} →
-                                                    </a>
-                                                )}
                                             </Box>
                                         </div>
                                     );
