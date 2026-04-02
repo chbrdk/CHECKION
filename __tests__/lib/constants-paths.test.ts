@@ -23,6 +23,7 @@ import {
     apiSaliencyResult,
     apiShareByResource,
     DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX,
+    DOMAIN_TAB_SEO_PAGE_ROW_ESTIMATE_PX,
     DOMAIN_TAB_VIRTUAL_OVERSCAN,
     DOMAIN_TAB_SYSTEMIC_ISSUE_ROW_ESTIMATE_PX,
     DOMAIN_UX_BROKEN_LINKS_PREVIEW,
@@ -139,6 +140,7 @@ describe('Domain tab virtual list constants', () => {
     it('exposes positive tuning values for VirtualScrollList', () => {
         expect(DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX).toBeGreaterThan(0);
         expect(DOMAIN_TAB_VIRTUAL_OVERSCAN).toBeGreaterThan(0);
+        expect(DOMAIN_TAB_SEO_PAGE_ROW_ESTIMATE_PX).toBeGreaterThan(DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX);
         expect(DOMAIN_TAB_SYSTEMIC_ISSUE_ROW_ESTIMATE_PX).toBeGreaterThan(DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX);
         expect(DOMAIN_UX_BROKEN_LINKS_PREVIEW).toBeGreaterThan(0);
         expect(DOMAIN_AGGREGATED_ISSUES_ROW_ESTIMATE_PX).toBeGreaterThan(0);

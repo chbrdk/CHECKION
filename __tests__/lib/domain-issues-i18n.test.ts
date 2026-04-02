@@ -27,4 +27,14 @@ describe('domain issues master/detail i18n', () => {
         expect(de.domainResult.issuesBackToPages).toBeTruthy();
         expect(en.domainResult.issuesBackToPages).toBeTruthy();
     });
+
+    it('de and en define Links & SEO tab strings (stats, SEO rows)', () => {
+        const de = loadLocale('de');
+        const en = loadLocale('en');
+        expect(de.domainResult.seoWordCount).toBeTruthy();
+        expect(en.domainResult.seoWordCount).toBeTruthy();
+        expect(de.domainResult.linksStatBrokenTitle).toBeTruthy();
+        expect(en.domainResult.linksStatBrokenTitle).toBeTruthy();
+        expect(de.domainResult.linksStatSummaryLine).not.toBe(en.domainResult.linksStatSummaryLine);
+    });
 });

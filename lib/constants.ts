@@ -365,6 +365,8 @@ export const SHARE_DOMAIN_PAGES_PAGE_SIZE = 10;
 
 /** Domain result tabs: default row height estimate (px) for `VirtualScrollList` (SEO/GEO URL rows). */
 export const DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX = 52;
+/** Links & SEO tab: SEO page rows (URL + metrics) — two lines + padding; virtual list initial estimate. */
+export const DOMAIN_TAB_SEO_PAGE_ROW_ESTIMATE_PX = 76;
 /** Extra rows above/below viewport when virtualizing domain tab lists. */
 export const DOMAIN_TAB_VIRTUAL_OVERSCAN = 12;
 /** Domain overview: systemic issue cards — row height estimate (px) for virtual list. */

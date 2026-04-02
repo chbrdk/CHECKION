@@ -25,3 +25,11 @@ Schwellenwerte in `app/results/[id]/page.tsx`: `STRUCTURE_HEADING_LIMITS`.
 - **Rot**: > 20 Landmarks oder > 80 Headings (überladen/unübersichtlich).
 
 Änderung der Schwellen: `STRUCTURE_HEADING_LIMITS` und `getLandmarksHeadingsSeverity()` in derselben Datei anpassen.
+
+## Domain-Ansicht: Struktur & Semantik (Tab)
+
+In `app/domain/[id]/page.tsx` (Tab **Struktur & Semantik**) zeigen Listen von URLs pro Zeile den **URL-Text** und einen **IconButton** (External-Link) mit Tooltip, der zur **Einzelergebnis-Seite** (`pathResults(page.id)`) navigiert. Zuordnung: `pagesByUrl.get(url) ?? pagesByNormUrl.get(norm(url))`, damit leicht abweichende URL-Strings trotzdem eine passende `SlimPage` finden. i18n: `domainResult.openPage` / `domainResult.openPageAria`.
+
+## Domain-Ansicht: Links & SEO (Tab)
+
+Derselbe Tab enthält **SEO (Domain)** und **Links (Domain)**. SEO-Zeilen („Seiten nach Inhalt & Dichte“) sind **Karten** mit URL + Icon zur Einzelanalyse und zweiter Zeile für Wortzahl / Top-Keywords / Skinny-Chip; Virtual-List-Schätzung: `DOMAIN_TAB_SEO_PAGE_ROW_ESTIMATE_PX`. **Links (Domain)** nutzt ein **3-Spalten-Statistik-Raster** (kaputt, eindeutig kaputt, Links gesamt mit intern/extern-Zeile) und die Liste „meiste kaputte Links“ als **Zeilen** mit URL, rotem Count-Chip und Icon. i18n u. a. `domainResult.seoWordCount`, `domainResult.linksStat*`, `domainResult.linksBrokenCount`.
