@@ -420,8 +420,35 @@ function DomainIssuesMasterDetailInner({
         },
     } as const;
 
+    /** 1 = nur Gruppen (volle Breite); 2 + Seiten; 3 + Issue-Details — jeweils vorherige Spalten schmaler, letzte Spalte flexibel breit. */
+    const layoutStep = selectedPageId ? 3 : selectedGroupKey ? 2 : 1;
+    const gridColsLg =
+        layoutStep === 1
+            ? 'minmax(0, 1fr)'
+            : layoutStep === 2
+              ? 'minmax(200px, 0.34fr) minmax(0, 1fr)'
+              : 'minmax(176px, 0.2fr) minmax(192px, 0.26fr) minmax(0, 1fr)';
+    const groupsScrollMaxH = layoutStep === 1 ? 'min(62vh, 720px)' : 'min(50vh, 560px)';
+    const pagesScrollMaxH = layoutStep === 2 ? 'min(58vh, 640px)' : 'min(26vh, 320px)';
+    /** Nur sichtbar bei layoutStep 3 */
+    const issuesScrollMaxH = 'min(58vh, 520px)';
+
     return (
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1.1fr 0.9fr' }, gap: 2, minWidth: 0 }}>
+        <Box
+            sx={{
+                display: 'grid',
+                gap: 2,
+                minWidth: 0,
+                alignItems: 'start',
+                gridTemplateColumns: {
+                    xs: '1fr',
+                    lg: gridColsLg,
+                },
+                '@media (prefers-reduced-motion: no-preference)': {
+                    transition: 'grid-template-columns 0.22s ease',
+                },
+            }}
+        >
             <MsqdxMoleculeCard
                 title={t('domainResult.tabListDetails')}
                 subtitle={t('domainResult.issuesMasterSubtitle')}
@@ -512,7 +539,7 @@ function DomainIssuesMasterDetailInner({
                 {groupsLoading && groups.length === 0 ? (
                     <Box sx={{ py: 3, display: 'flex', justifyContent: 'center' }}><CircularProgress size={24} /></Box>
                 ) : (
-                    <Box ref={groupsScrollRef} sx={{ maxHeight: '50vh', overflow: 'auto', minHeight: 96 }}>
+                    <Box ref={groupsScrollRef} sx={{ maxHeight: groupsScrollMaxH, overflow: 'auto', minHeight: 96 }}>
                         <Box sx={{ height: `${groupVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
                             {groupVirtualizer.getVirtualItems().map((vi) => {
                                 const g = groups[vi.index];
@@ -609,23 +636,21 @@ function DomainIssuesMasterDetailInner({
                 )}
             </MsqdxMoleculeCard>
 
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+            {layoutStep >= 2 && (
                 <MsqdxMoleculeCard
                     title={t('domainResult.issuesAffectedPagesTitle')}
-                    subtitle={selectedGroupKey ? t('domainResult.issuesAffectedPagesSubtitlePaged') : t('domainResult.issuesAffectedPagesSubtitlePickGroup')}
+                    subtitle={t('domainResult.issuesAffectedPagesSubtitlePaged')}
                     variant="flat"
                     borderRadius="lg"
                     sx={{ bgcolor: 'var(--color-card-bg)', minWidth: 0 }}
                 >
                     {groupPagesError && <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.error.base }}>{groupPagesError}</MsqdxTypography>}
-                    {groupPagesLoading && selectedGroupKey ? (
+                    {groupPagesLoading ? (
                         <Box sx={{ py: 2, display: 'flex', justifyContent: 'center' }}><CircularProgress size={20} /></Box>
-                    ) : !selectedGroupKey ? (
-                        <IssuesEmptyState icon={FileSearch} title={t('domainResult.issuesEmptyPickGroupTitle')} subtitle={t('domainResult.issuesEmptyPickGroupSubtitle')} />
                     ) : groupPages.length === 0 && !groupPagesLoading ? (
                         <IssuesEmptyState icon={FileSearch} title={t('domainResult.issuesEmptyNoPagesTitle')} />
                     ) : (
-                        <Box ref={groupPagesScrollRef} sx={{ maxHeight: '26vh', overflow: 'auto', minHeight: 52 }}>
+                        <Box ref={groupPagesScrollRef} sx={{ maxHeight: pagesScrollMaxH, overflow: 'auto', minHeight: 52 }}>
                             <Box sx={{ height: `${groupPagesVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
                                 {groupPagesVirtualizer.getVirtualItems().map((vi) => {
                                     const p = groupPages[vi.index];
@@ -717,27 +742,27 @@ function DomainIssuesMasterDetailInner({
                         </Box>
                     )}
                 </MsqdxMoleculeCard>
+            )}
 
+            {layoutStep >= 3 && (
                 <MsqdxMoleculeCard
                     title={t('domainResult.issuesPageDetailTitle')}
-                    subtitle={
-                        selectedPageId
-                            ? (groupPages.find((g) => g.pageId === selectedPageId)?.url ?? pagesById.get(selectedPageId)?.url ?? '')
-                            : t('domainResult.issuesPageDetailSubtitlePick')
-                    }
+                    subtitle={(() => {
+                        const id = selectedPageId;
+                        if (!id) return '';
+                        return groupPages.find((g) => g.pageId === id)?.url ?? pagesById.get(id)?.url ?? '';
+                    })()}
                     variant="flat"
                     borderRadius="lg"
                     sx={{ bgcolor: 'var(--color-card-bg)', minWidth: 0 }}
                 >
                     {pageIssuesError && <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.error.base }}>{pageIssuesError}</MsqdxTypography>}
-                    {pageIssuesLoading && selectedPageId ? (
+                    {pageIssuesLoading ? (
                         <Box sx={{ py: 2, display: 'flex', justifyContent: 'center' }}><CircularProgress size={20} /></Box>
-                    ) : !selectedPageId ? (
-                        <IssuesEmptyState icon={FileSearch} title={t('domainResult.issuesEmptyPickPageTitle')} subtitle={t('domainResult.issuesEmptyPickPageSubtitle')} />
                     ) : pageIssues.length === 0 && !pageIssuesLoading ? (
                         <IssuesEmptyState icon={FileSearch} title={t('domainResult.issuesEmptyNoIssuesTitle')} />
                     ) : (
-                        <Box ref={pageIssuesScrollRef} sx={{ maxHeight: 240, overflow: 'auto', minHeight: 48 }}>
+                        <Box ref={pageIssuesScrollRef} sx={{ maxHeight: issuesScrollMaxH, overflow: 'auto', minHeight: 48 }}>
                             <Box sx={{ height: `${pageIssuesVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
                                 {pageIssuesVirtualizer.getVirtualItems().map((vi) => {
                                     const i = pageIssues[vi.index];
@@ -822,7 +847,7 @@ function DomainIssuesMasterDetailInner({
                         </Box>
                     )}
                 </MsqdxMoleculeCard>
-            </Box>
+            )}
         </Box>
     );
 }

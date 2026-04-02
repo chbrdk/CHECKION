@@ -59,7 +59,8 @@ Dieses Dokument sammelt sinnvolle **P1 Verbesserungen**, falls wir noch mehr Sta
 
 - **UX-Polish (Zeilenlayout, feste Höhen)**
   - Gemeinsame Primitives in `components/domain-issues/IssueListPrimitives.tsx` (`IssueSeverityRail`, `IssueTypeIcon`, `issueTypeColor`, Fokus-Styles).
-  - Listenzeilen: linke 4px-Akzentleiste, Icons nach Schweregrad, Message/Code mit Tooltip; **feste** `estimateSize`-Werte (`V_GROUP_ESTIMATE_PX` 118, `V_GROUP_PAGES_ESTIMATE_PX` 88, `V_PAGE_ISSUES_ESTIMATE_PX` 148) — bei Layout-Änderungen diese Konstanten und `paddingBottom` der Virtual-Wrapper mit anpassen, sonst Überlappungen. Scroll-Ports: Gruppen ca. `50vh`, **Betroffene Seiten** `26vh`, Issue-Details `240px`.
+  - Listenzeilen: linke 4px-Akzentleiste, Icons nach Schweregrad, Message/Code mit Tooltip; **feste** `estimateSize`-Werte (`V_GROUP_ESTIMATE_PX` 118, `V_GROUP_PAGES_ESTIMATE_PX` 88, `V_PAGE_ISSUES_ESTIMATE_PX` 148) — bei Layout-Änderungen diese Konstanten und `paddingBottom` der Virtual-Wrapper mit anpassen, sonst Überlappungen. Scroll-Höhen sind abhängig von der Layout-Stufe (nur Gruppen vs. zwei vs. drei Spalten).
+  - **Progressive Spalten (`lg`):** Stufe 1 nur Gruppen (volle Breite); Stufe 2 nach Gruppenwahl schmale Gruppen-Spalte + breite URL-Spalte; Stufe 3 nach Seitenwahl drei Spalten (äußere schmal, Issue-Details `minmax(0,1fr)`). Unter `xs` eine Spalte, Karten untereinander.
   - Filter: MUI `ToggleButtonGroup` für Typ und WCAG (statt vieler Einzel-Chips).
   - Leere Spalten: `IssuesEmptyState`; Detail: Selector-Block + Copy, Help-Link als `Button` mit Icon.
 
