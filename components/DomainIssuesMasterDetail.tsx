@@ -431,21 +431,23 @@ function DomainIssuesMasterDetailInner({
     const listColumnCardSx = {
         bgcolor: 'var(--color-card-bg)',
         minWidth: 0,
+        minHeight: 0,
         display: 'flex',
         flexDirection: 'column',
         height: { lg: '100%' },
-        minHeight: 0,
+        overflow: 'hidden',
     } as const;
 
+    /** Scrollport für @tanstack/react-virtual — muss begrenzte Höhe haben (nicht mit Listentotalhöhe mitwachsen). */
     const listScrollSx = {
         flex: { lg: 1 },
         minHeight: { lg: 0, xs: 96 },
-        maxHeight: { xs: 'min(52vh, 420px)', lg: 'none' },
+        maxHeight: { xs: 'min(52vh, 420px)', lg: '100%' },
         overflow: 'auto',
     } as const;
 
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%', minWidth: 0 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%', minWidth: 0, minHeight: 0 }}>
             <MsqdxMoleculeCard
                 title={t('domainResult.tabListDetails')}
                 subtitle={t('domainResult.issuesMasterSubtitle')}
@@ -540,11 +542,15 @@ function DomainIssuesMasterDetailInner({
                     gap: 2,
                     minWidth: 0,
                     alignItems: 'stretch',
+                    flex: { lg: 1 },
                     minHeight: { xs: 'auto', lg: 'min(68vh, 780px)' },
+                    maxHeight: { lg: 'min(68vh, 780px)' },
                     gridTemplateColumns: {
                         xs: '1fr',
                         lg: gridColsLg,
                     },
+                    // Grid-Items default min-height:auto — sonst wächst die Zeile mit der Virtual-List-Innenhöhe (massive Layouts).
+                    '& > *': { minWidth: 0, minHeight: 0 },
                     '@media (prefers-reduced-motion: no-preference)': {
                         transition: 'grid-template-columns 0.22s ease',
                     },
