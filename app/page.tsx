@@ -29,6 +29,7 @@ import {
   pathDomain,
   PATH_SCAN,
 } from '@/lib/constants';
+import { pathDomainSection } from '@/lib/domain-result-sections';
 import { PaginationBar } from '@/components/PaginationBar';
 
 const LIMIT = DASHBOARD_SCANS_PAGE_SIZE;
@@ -372,7 +373,7 @@ export default function DashboardPage() {
                     <MsqdxButton
                       size="small"
                       variant="outlined"
-                      onClick={() => router.push(pathDomain(j.domainScanId, { restoreJourney: j.id }))}
+                      onClick={() => router.push(pathDomainSection(j.domainScanId, 'journey', { restoreJourney: j.id }))}
                     >
                       {t('dashboard.journeyHistoryOpen')}
                     </MsqdxButton>

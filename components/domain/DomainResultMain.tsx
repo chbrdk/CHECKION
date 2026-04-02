@@ -1,6 +1,6 @@
 'use client';
 
-import React, { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React from 'react';
 import dynamic from 'next/dynamic';
 import { Box, CircularProgress, IconButton, Tooltip, alpha } from '@mui/material';
 import {
@@ -8,19 +8,16 @@ import {
     MsqdxButton,
     MsqdxCard,
     MsqdxChip,
-    MsqdxTabs,
     MsqdxMoleculeCard,
     MsqdxFormField,
 } from '@msqdx/react';
 import { MSQDX_STATUS, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import type { JourneyResult, JourneyStep } from '@/lib/types';
-import type { DomainSummaryApiResponse } from '@/lib/domain-summary';
-import type { SlimPage } from '@/lib/types';
-import { ArrowLeft, AlertCircle, CheckCircle, ExternalLink } from 'lucide-react';
-import { SharePanel } from '@/components/SharePanel';
-import { AddToProject } from '@/components/AddToProject';
+import { AlertCircle, CheckCircle, ExternalLink } from 'lucide-react';
 import { VirtualScrollList } from '@/components/VirtualScrollList';
+import { useDomainScan } from '@/context/DomainScanContext';
+import { pathDomainSection } from '@/lib/domain-result-sections';
 
 const DomainGraph = dynamic(
     () => import('@/components/DomainGraph').then((m) => ({ default: m.DomainGraph })),
@@ -50,14 +47,10 @@ const ScannedPagesTable = dynamic(
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import {
-    apiScanDomainSummary,
-    apiScanDomainSlimPages,
     apiScanDomainSummarize,
     apiScanDomainJourney,
-    apiJourneys,
     API_JOURNEYS,
     pathResults,
-    PATH_HOME,
     DOMAIN_SLIM_PAGES_CHUNK,
     DOMAIN_SLIM_PAGES_MAX_CLIENT,
     DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX,
@@ -67,336 +60,63 @@ import {
     DOMAIN_UX_BROKEN_LINKS_PREVIEW,
 } from '@/lib/constants';
 
-export default function DomainResultPage() {
-    const params = useParams();
-    const domainId = typeof params.id === 'string' ? params.id : params.id?.[0] ?? null;
-    const router = useRouter();
+export function DomainResultMain() {
     const { t, locale } = useI18n();
-    const DOMAIN_TABS = [
-        { label: t('domainResult.tabOverview'), value: 0 },
-        { label: t('domainResult.tabVisualMap'), value: 1 },
-        { label: t('domainResult.tabListDetails'), value: 2 },
-        { label: t('domainResult.tabUxCx'), value: 3 },
-        { label: t('domainResult.tabVisualAnalysis'), value: 4 },
-        { label: t('domainResult.tabUxAudit'), value: 5 },
-        { label: t('domainResult.tabStructure'), value: 6 },
-        { label: t('domainResult.tabLinksSeo'), value: 7 },
-        { label: t('domainResult.tabInfra'), value: 8 },
-        { label: t('domainResult.tabGenerative'), value: 9 },
-        { label: t('domainResult.tabJourney'), value: 10 },
-    ];
-    const [result, setResult] = useState<DomainSummaryApiResponse | null>(null);
-    const [seoPagesHydrating, setSeoPagesHydrating] = useState(false);
-    const fullSeoHydratedRef = useRef(false);
-    const seoFullFetchInFlightRef = useRef(false);
-    const [projectId, setProjectId] = useState<string | null>(null);
-    const [loadError, setLoadError] = useState<string | null>(null);
-    const [tabValue, setTabValue] = useState(0);
-    const [summarizing, setSummarizing] = useState(false);
-    const [summarizeError, setSummarizeError] = useState<string | null>(null);
-    const [journeyGoal, setJourneyGoal] = useState('');
-    const [journeyLoading, setJourneyLoading] = useState(false);
-    const [journeyResult, setJourneyResult] = useState<JourneyResult | null>(null);
-    const [journeyError, setJourneyError] = useState<string | null>(null);
-    const [journeySaving, setJourneySaving] = useState(false);
-    const [journeySaved, setJourneySaved] = useState(false);
-    const [journeySaveName, setJourneySaveName] = useState('');
-    const [slimPagesOverride, setSlimPagesOverride] = useState<SlimPage[] | null>(null);
-    const [slimPagesLoading, setSlimPagesLoading] = useState(false);
-    const [slimPagesRemoteTotal, setSlimPagesRemoteTotal] = useState<number | null>(null);
-    const slimPagesInitialChunkDoneRef = useRef(false);
+    const router = useRouter();
+    const {
+        domainId,
+        activeSection,
+        result,
+        setResult,
+        seoPagesHydrating,
+        summarizing,
+        setSummarizing,
+        summarizeError,
+        setSummarizeError,
+        journeyGoal,
+        setJourneyGoal,
+        journeyLoading,
+        setJourneyLoading,
+        journeyResult,
+        setJourneyResult,
+        journeyError,
+        setJourneyError,
+        journeySaving,
+        setJourneySaving,
+        journeySaved,
+        setJourneySaved,
+        journeySaveName,
+        setJourneySaveName,
+        slimPagesLoading,
+        slimPagesRemoteTotal,
+        loadMoreSlimPages,
+        pages,
+        totalPageCount,
+        canLoadMoreSlimPages,
+        aggregated,
+        uxBrokenLinksPreview,
+        pagesByUrl,
+        pagesById,
+        pagesByNormUrl,
+        norm,
+        handleIssuePageClick,
+        selectedGroupKey,
+        selectedPageId,
+        issuesType,
+        issuesWcag,
+        issuesQ,
+        selectGroup,
+        selectPage,
+        clearIssuesPageSelection,
+        clearIssuesGroupSelection,
+        setIssuesFilters,
+    } = useDomainScan();
 
-    const searchParams = useSearchParams();
-    const pages = useMemo(() => {
-        const fromResult = result?.pages as SlimPage[] | undefined;
-        if (fromResult && fromResult.length > 0) return fromResult;
-        if (slimPagesOverride !== null) return slimPagesOverride;
-        return [];
-    }, [result?.pages, slimPagesOverride]);
-    const totalPageCount = result?.totalPageCount ?? pages.length;
-
-    const canLoadMoreSlimPages = useMemo(() => {
-        if (result?.summaryMeta?.slimPagesOmitted !== true) return false;
-        if (slimPagesOverride === null) return false;
-        const len = pages.length;
-        if (len === 0) return false;
-        if (len >= DOMAIN_SLIM_PAGES_MAX_CLIENT) return false;
-        if (slimPagesRemoteTotal !== null && len >= slimPagesRemoteTotal) return false;
-        return true;
-    }, [result?.summaryMeta?.slimPagesOmitted, slimPagesOverride, pages.length, slimPagesRemoteTotal]);
-    const aggregated = result?.aggregated ?? null;
-    const uxBrokenLinksPreview = useMemo(
-        () => (aggregated?.ux?.brokenLinks ?? []).slice(0, DOMAIN_UX_BROKEN_LINKS_PREVIEW),
-        [aggregated?.ux?.brokenLinks]
-    );
-    const pagesByUrl = useMemo(() => new Map(pages.map((p) => [p.url, p])), [pages]);
-    const pagesById = useMemo(() => {
-        const m = new Map<string, SlimPage>();
-        for (const p of pages) {
-            m.set(p.id, p);
-            if (p.domainPageId) m.set(p.domainPageId, p);
-        }
-        return m;
-    }, [pages]);
-    const norm = (u: string) => { try { const x = new URL(u); return x.origin + (x.pathname.replace(/\/$/, '') || '/'); } catch { return u; } };
-    const pagesByNormUrl = useMemo(() => { const m = new Map<string, SlimPage>(); for (const p of pages) m.set(norm(p.url), p); return m; }, [pages]);
-
-    const handleIssuePageClick = useCallback((url: string, scanId?: string | null) => {
-        if (scanId) {
-            router.push(pathResults(scanId));
-            return;
-        }
-        const page = pagesByUrl.get(url);
-        if (page) router.push(pathResults(page.id));
-    }, [pagesByUrl, router]);
-
-    const selectedGroupKey = searchParams.get('group');
-    const selectedPageId = searchParams.get('page');
-    const issuesType = searchParams.get('itype');
-    const issuesWcag = searchParams.get('wcag');
-    const issuesQ = searchParams.get('q');
-    const selectGroup = useCallback((groupKey: string) => {
-        const sp = new URLSearchParams(Array.from(searchParams.entries()));
-        sp.set('group', groupKey);
-        sp.delete('page');
-        router.replace(`?${sp.toString()}`);
-    }, [router, searchParams]);
-    const selectPage = useCallback((pageId: string) => {
-        const sp = new URLSearchParams(Array.from(searchParams.entries()));
-        sp.set('page', pageId);
-        router.replace(`?${sp.toString()}`);
-    }, [router, searchParams]);
-    const clearIssuesPageSelection = useCallback(() => {
-        const sp = new URLSearchParams(Array.from(searchParams.entries()));
-        sp.delete('page');
-        router.replace(`?${sp.toString()}`);
-    }, [router, searchParams]);
-    const clearIssuesGroupSelection = useCallback(() => {
-        const sp = new URLSearchParams(Array.from(searchParams.entries()));
-        sp.delete('group');
-        sp.delete('page');
-        router.replace(`?${sp.toString()}`);
-    }, [router, searchParams]);
-    const setIssuesFilters = useCallback((next: { type?: string | null; wcag?: string | null; q?: string | null }) => {
-        const sp = new URLSearchParams(Array.from(searchParams.entries()));
-        if (next.type === null) sp.delete('itype');
-        else if (typeof next.type === 'string') sp.set('itype', next.type);
-        if (next.wcag === null) sp.delete('wcag');
-        else if (typeof next.wcag === 'string') sp.set('wcag', next.wcag);
-        if (next.q === null) sp.delete('q');
-        else if (typeof next.q === 'string') sp.set('q', next.q);
-        // Reset selection when filters change
-        sp.delete('group');
-        sp.delete('page');
-        router.replace(`?${sp.toString()}`);
-    }, [router, searchParams]);
-
-    useEffect(() => {
-        if (!domainId) return;
-        setLoadError(null);
-        setSlimPagesOverride(null);
-        setSlimPagesRemoteTotal(null);
-        slimPagesInitialChunkDoneRef.current = false;
-        fullSeoHydratedRef.current = false;
-        seoFullFetchInFlightRef.current = false;
-        fetch(apiScanDomainSummary(domainId, { light: true }))
-            .then(res => {
-                if (!res.ok) {
-                    setLoadError('not_found');
-                    return null;
-                }
-                return res.json();
-            })
-            .then((data: DomainSummaryApiResponse & { projectId?: string | null }) => {
-                if (data) {
-                    setResult(data);
-                    setProjectId(data.projectId ?? null);
-                }
-            })
-            .catch(() => setLoadError('not_found'));
-    }, [domainId]);
-
-    useEffect(() => {
-        const pr = result?.pages as SlimPage[] | undefined;
-        if (pr && pr.length > 0) setSlimPagesOverride(null);
-    }, [result?.pages]);
-
-    useEffect(() => {
-        if (!domainId || tabValue !== 0 || result?.summaryMeta?.slimPagesOmitted !== true) return;
-        const fromResult = result?.pages as SlimPage[] | undefined;
-        if (fromResult && fromResult.length > 0) return;
-        if (slimPagesInitialChunkDoneRef.current) return;
-
-        let cancelled = false;
-        setSlimPagesLoading(true);
-        fetch(apiScanDomainSlimPages(domainId, { offset: 0, limit: DOMAIN_SLIM_PAGES_CHUNK }))
-            .then(async (res) => {
-                if (!res.ok) throw new Error('slim-pages failed');
-                return res.json() as Promise<{ data?: SlimPage[]; total?: number }>;
-            })
-            .then((json) => {
-                if (cancelled) return;
-                const batch = json.data ?? [];
-                slimPagesInitialChunkDoneRef.current = true;
-                setSlimPagesOverride(batch);
-                setSlimPagesRemoteTotal(json.total ?? batch.length);
-            })
-            .catch(() => {})
-            .finally(() => {
-                if (!cancelled) setSlimPagesLoading(false);
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, [domainId, tabValue, result?.summaryMeta?.slimPagesOmitted, result?.pages]);
-
-    const loadMoreSlimPages = useCallback(async () => {
-        if (!domainId || slimPagesOverride === null) return;
-        const len = slimPagesOverride.length;
-        if (len >= DOMAIN_SLIM_PAGES_MAX_CLIENT) return;
-        if (slimPagesRemoteTotal !== null && len >= slimPagesRemoteTotal) return;
-        setSlimPagesLoading(true);
-        try {
-            const res = await fetch(apiScanDomainSlimPages(domainId, { offset: len, limit: DOMAIN_SLIM_PAGES_CHUNK }));
-            if (!res.ok) return;
-            const json = (await res.json()) as { data?: SlimPage[]; total?: number };
-            const batch = json.data ?? [];
-            if (json.total != null) setSlimPagesRemoteTotal(json.total);
-            setSlimPagesOverride((prev) => [...(prev ?? []), ...batch]);
-        } finally {
-            setSlimPagesLoading(false);
-        }
-    }, [domainId, slimPagesOverride, slimPagesRemoteTotal]);
-
-    useEffect(() => {
-        if (!domainId || tabValue !== 7) return;
-        if (result?.summaryMeta?.seoPageRowsOmitted !== true) return;
-        if (fullSeoHydratedRef.current || seoFullFetchInFlightRef.current) return;
-        seoFullFetchInFlightRef.current = true;
-        setSeoPagesHydrating(true);
-        fetch(apiScanDomainSummary(domainId, { seoFull: true }))
-            .then((res) => {
-                if (!res.ok) throw new Error('fetch failed');
-                return res.json();
-            })
-            .then((data: { aggregated?: DomainSummaryApiResponse['aggregated']; summaryMeta?: DomainSummaryApiResponse['summaryMeta']; projectId?: string | null }) => {
-                fullSeoHydratedRef.current = true;
-                const seo = data.aggregated?.seo;
-                setResult((prev) => {
-                    if (!prev || !seo) return prev;
-                    return {
-                        ...prev,
-                        aggregated: prev.aggregated ? { ...prev.aggregated, seo } : prev.aggregated,
-                        summaryMeta: {
-                            ...prev.summaryMeta,
-                            ...data.summaryMeta,
-                            seoPageRowsOmitted: false,
-                        },
-                    };
-                });
-                if (data.projectId != null) setProjectId(data.projectId);
-            })
-            .catch(() => {
-                fullSeoHydratedRef.current = false;
-            })
-            .finally(() => {
-                seoFullFetchInFlightRef.current = false;
-                setSeoPagesHydrating(false);
-            });
-    }, [domainId, tabValue, result?.summaryMeta?.seoPageRowsOmitted]);
-
-    const restoreJourneyId = searchParams.get('restoreJourney');
-    useEffect(() => {
-        if (!restoreJourneyId || !domainId) return;
-        fetch(apiJourneys(restoreJourneyId))
-            .then(res => {
-                if (!res.ok) throw new Error(t('domainResult.journeyNotFound'));
-                return res.json();
-            })
-            .then((row: { goal: string; result: JourneyResult }) => {
-                setJourneyGoal(row.goal);
-                setJourneyResult(row.result);
-                setTabValue(10);
-            })
-            .catch(() => {});
-    }, [restoreJourneyId, domainId, t]);
-
-    const hasIssuesDeepLink = Boolean(
-        searchParams.get('group') ||
-            searchParams.get('page') ||
-            searchParams.get('itype') ||
-            searchParams.get('wcag') ||
-            searchParams.get('q')
-    );
-    useEffect(() => {
-        if (restoreJourneyId) return;
-        if (!hasIssuesDeepLink) return;
-        startTransition(() => {
-            setTabValue(2);
-        });
-    }, [restoreJourneyId, hasIssuesDeepLink]);
+    if (!result) return null;
 
     return (
-        <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto', minHeight: 320 }}>
-            {loadError && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', flexDirection: 'column', alignItems: 'center', gap: 'var(--msqdx-spacing-md)', py: 8 }}>
-                    <MsqdxTypography variant="h5" sx={{ color: 'var(--color-text-muted-on-light)', textAlign: 'center', maxWidth: 480 }}>
-                        {t('domainResult.notFound')}
-                    </MsqdxTypography>
-                    <MsqdxButton variant="contained" startIcon={<ArrowLeft size={16} />} onClick={() => router.push(PATH_HOME)}>
-                        {t('domainResult.back')}
-                    </MsqdxButton>
-                </Box>
-            )}
-            {!result && !loadError && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', flexDirection: 'column', alignItems: 'center', gap: 'var(--msqdx-spacing-md)', py: 8 }}>
-                    <MsqdxTypography variant="h5" sx={{ mb: 'var(--msqdx-spacing-md)' }}>{t('domainResult.loading')}</MsqdxTypography>
-                    <CircularProgress sx={{ color: 'var(--color-theme-accent)' }} />
-                </Box>
-            )}
-            {result && (
-        <Box component="span" sx={{ display: 'block' }}>
-            <Box sx={{ mb: 'var(--msqdx-spacing-xl)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Box>
-                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-xs)' }}>
-                        <MsqdxTypography variant="h4" weight="bold">{t('domainResult.title')}</MsqdxTypography>
-                        <InfoTooltip title={t('info.domainResult')} ariaLabel={t('common.info')} />
-                    </Box>
-                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                        {result.domain} • {new Date(result.timestamp).toLocaleDateString()}
-                    </MsqdxTypography>
-                </Box>
-                <Box sx={{ display: 'flex', gap: 'var(--msqdx-spacing-md)' }}>
-                    <MsqdxButton variant="outlined" startIcon={<ArrowLeft size={16} />} onClick={() => router.push(PATH_HOME)}>
-                        {t('domainResult.back')}
-                    </MsqdxButton>
-                    {domainId ? (
-                        <Box sx={{ display: 'inline-flex', gap: 'var(--msqdx-spacing-sm)' }}>
-                            <AddToProject
-                                resourceType="domain"
-                                resourceId={domainId}
-                                currentProjectId={projectId}
-                                onAssigned={() =>
-                                    fetch(apiScanDomainSummary(domainId!, { light: true }))
-                                        .then((r) => r.json())
-                                        .then((d: { projectId?: string | null }) => setProjectId(d.projectId ?? null))
-                                }
-                            />
-                            <SharePanel resourceType="domain" resourceId={domainId} labelNamespace="domainResult" />
-                        </Box>
-                    ) : null}
-                </Box>
-            </Box>
-
-            <Box sx={{ borderBottom: '1px solid var(--color-secondary-dx-grey-light-tint)', mb: 'var(--msqdx-spacing-lg)' }}>
-                <MsqdxTabs
-                    value={tabValue}
-                    onChange={(v) => setTabValue(v as number)}
-                    tabs={DOMAIN_TABS}
-                />
-            </Box>
-
-            {tabValue === 0 && (
+        <>
+            {activeSection === 'overview' && (
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 'var(--msqdx-spacing-md)' }}>
                     <Box sx={{ flex: '0 0 350px' }}>
                         <MsqdxCard variant="flat" sx={{ bgcolor: 'var(--color-card-bg)', p: 'var(--msqdx-spacing-md)', borderRadius: 'var(--msqdx-radius-sm)', border: '1px solid var(--color-secondary-dx-grey-light-tint)', mb: 'var(--msqdx-spacing-md)' }}>
@@ -559,7 +279,7 @@ export default function DomainResultPage() {
                 </Box>
             )}
 
-            {tabValue === 1 && (
+            {activeSection === 'visual-map' && (
                 <Box>
                     <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 1 }}>
                         {t('domainResult.visualMapDescription')}
@@ -568,7 +288,7 @@ export default function DomainResultPage() {
                 </Box>
             )}
 
-            {tabValue === 2 && (
+            {activeSection === 'list-details' && (
                 <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0 }}>
                     <MsqdxMoleculeCard
                         title="Gefundene Issues (Domain)"
@@ -608,7 +328,7 @@ export default function DomainResultPage() {
                 </Box>
             )}
 
-            {tabValue === 3 && (
+            {activeSection === 'ux-cx' && (
                 <MsqdxMoleculeCard
                     title="UX/CX Check (Domain)"
                     headerActions={<InfoTooltip title={t('info.uxCxCheck')} ariaLabel={t('common.info')} />}
@@ -704,7 +424,7 @@ export default function DomainResultPage() {
                 </MsqdxMoleculeCard>
             )}
 
-            {tabValue === 4 && (
+            {activeSection === 'visual-analysis' && (
                 <MsqdxMoleculeCard title="Visuelle Analyse (Domain)" headerActions={<InfoTooltip title={t('info.visualAnalysis')} ariaLabel={t('common.info')} />} subtitle="Focus Order & Touch Targets aus Einzelseiten" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
                     <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
                         Screenshot, Focus Order und Touch Targets sind pro Seite in den Einzel-Scans sichtbar. Unten: Seiten mit relevanten Einträgen.
@@ -760,13 +480,13 @@ export default function DomainResultPage() {
                     <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mt: 2 }}>
                         {t('domainResult.allPagesInOverview')}
                     </MsqdxTypography>
-                    <MsqdxButton size="small" variant="text" onClick={() => setTabValue(0)} sx={{ mt: 0.5, fontSize: '0.75rem' }}>
+                    <MsqdxButton size="small" variant="text" onClick={() => router.push(pathDomainSection(domainId, 'overview'))} sx={{ mt: 0.5, fontSize: '0.75rem' }}>
                         {t('domainResult.tabOverview')} → {t('domainResult.scannedPages')}
                     </MsqdxButton>
                 </MsqdxMoleculeCard>
             )}
 
-            {tabValue === 5 && (
+            {activeSection === 'ux-audit' && (
                 aggregated?.ux ? (
                 <MsqdxMoleculeCard title="UX Audit (Domain)" headerActions={<InfoTooltip title={t('info.uxAudit')} ariaLabel={t('common.info')} />} subtitle="Aggregierte Werte über alle Seiten" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
                     <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2, mb: 2 }}>
@@ -861,7 +581,7 @@ export default function DomainResultPage() {
                 )
             )}
 
-            {tabValue === 6 && (
+            {activeSection === 'structure' && (
                 aggregated?.structure ? (
                 <MsqdxMoleculeCard title="Struktur & Semantik (Domain)" headerActions={<InfoTooltip title={t('info.structureSemantics')} ariaLabel={t('common.info')} />} subtitle="Überschriften-Hierarchie über alle Seiten" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
                     <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
@@ -988,7 +708,7 @@ export default function DomainResultPage() {
                 )
             )}
 
-            {tabValue === 7 && aggregated && (
+            {activeSection === 'links-seo' && aggregated && (
                 (aggregated.seo || aggregated.links) ? (
                 <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 'var(--msqdx-spacing-md)' }}>
                     {aggregated.seo && (
@@ -1274,7 +994,7 @@ export default function DomainResultPage() {
                 )
             )}
 
-            {tabValue === 8 && (
+            {activeSection === 'infra' && (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-md)' }}>
                 {result?.domain && <DomainToolsCard domainUrl={`https://${result.domain}`} />}
                 {aggregated?.infra ? (
@@ -1327,7 +1047,7 @@ export default function DomainResultPage() {
                 </Box>
             )}
 
-            {tabValue === 9 && (
+            {activeSection === 'generative' && (
                 aggregated?.generative ? (
                 <MsqdxMoleculeCard title="Generative Search / GEO (Domain)" headerActions={<InfoTooltip title={t('info.generativeGeo')} ariaLabel={t('common.info')} />} subtitle="Aggregiert über alle Seiten" variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
                     <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
@@ -1370,7 +1090,7 @@ export default function DomainResultPage() {
                 )
             )}
 
-            {tabValue === 10 && (
+            {activeSection === 'journey' && (
                 <MsqdxMoleculeCard
                     title={t('domainResult.journeyTitle')}
                     headerActions={<InfoTooltip title={t('domainResult.journeyDescription')} ariaLabel={t('common.info')} />}
@@ -1500,7 +1220,7 @@ export default function DomainResultPage() {
                                                 const data = await res.json().catch(() => ({}));
                                                 setJourneySaved(true);
                                                 if (data?.id && domainId) {
-                                                    router.replace(`/domain/${domainId}?restoreJourney=${data.id}`, { scroll: false });
+                                                    router.replace(pathDomainSection(domainId, 'journey', { restoreJourney: String(data.id) }), { scroll: false });
                                                 }
                                             } catch {
                                                 setJourneyError(t('domainResult.journeySaveError'));
@@ -1517,8 +1237,6 @@ export default function DomainResultPage() {
                     </Box>
                 </MsqdxMoleculeCard>
             )}
-        </Box>
-            )}
-        </Box>
+        </>
     );
 }
