@@ -574,7 +574,7 @@ export default function DomainResultPage() {
                             </Box>
                         )}
                         {domainId && (
-                            <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                            <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                                 <DomainIssuesMasterDetail
                                     domainId={domainId}
                                     pagesById={pagesById}

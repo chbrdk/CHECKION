@@ -1,7 +1,7 @@
 'use client';
 
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { measureElement, useVirtualizer } from '@tanstack/react-virtual';
 import { Box, Button, CircularProgress, IconButton, ToggleButton, ToggleButtonGroup, Tooltip, alpha } from '@mui/material';
 import { MsqdxButton, MsqdxChip, MsqdxFormField, MsqdxMoleculeCard, MsqdxTypography } from '@msqdx/react';
 import { MSQDX_BRAND_PRIMARY, MSQDX_NEUTRAL, MSQDX_STATUS } from '@msqdx/tokens';
@@ -34,8 +34,9 @@ type PageIssueRow = { id: string; groupKey: string; type: string; code: string; 
 /** Fixed row heights — keep in sync with row layout + paddingBottom on virtual wrappers. */
 const V_GROUP_ESTIMATE_PX = 118;
 const V_GROUP_PAGES_ESTIMATE_PX = 88;
-const V_PAGE_ISSUES_ESTIMATE_PX = 148;
-const V_OVERSCAN = 4;
+/** Obere Schranke; echte Höhe kommt per `measureElement` (variable Zeilen: Selector, Help-Link). */
+const V_PAGE_ISSUES_ESTIMATE_PX = 200;
+const V_OVERSCAN = 12;
 
 const rowHoverSx = {
     '@media (prefers-reduced-motion: no-preference)': {
@@ -320,8 +321,10 @@ function DomainIssuesMasterDetailInner({
         count: groups.length,
         getScrollElement: () => groupsScrollRef.current,
         estimateSize: () => V_GROUP_ESTIMATE_PX,
+        measureElement,
         overscan: V_OVERSCAN,
         getItemKey: (index) => groups[index]?.groupKey ?? index,
+        useAnimationFrameWithResizeObserver: true,
     });
 
     useEffect(() => {
@@ -333,8 +336,10 @@ function DomainIssuesMasterDetailInner({
         count: groupPages.length,
         getScrollElement: () => groupPagesScrollRef.current,
         estimateSize: () => V_GROUP_PAGES_ESTIMATE_PX,
+        measureElement,
         overscan: V_OVERSCAN,
         getItemKey: (index) => groupPages[index]?.pageId ?? index,
+        useAnimationFrameWithResizeObserver: true,
     });
 
     useEffect(() => {
@@ -346,8 +351,10 @@ function DomainIssuesMasterDetailInner({
         count: pageIssues.length,
         getScrollElement: () => pageIssuesScrollRef.current,
         estimateSize: () => V_PAGE_ISSUES_ESTIMATE_PX,
+        measureElement,
         overscan: V_OVERSCAN,
         getItemKey: (index) => pageIssues[index]?.id ?? index,
+        useAnimationFrameWithResizeObserver: true,
     });
 
     useEffect(() => {
@@ -440,7 +447,6 @@ function DomainIssuesMasterDetailInner({
         display: 'flex',
         flexDirection: 'column',
         height: { lg: '100%' },
-        overflow: 'hidden',
     } as const;
 
     const scrollSx = (maxLg: string) =>
@@ -449,6 +455,7 @@ function DomainIssuesMasterDetailInner({
             minHeight: { lg: 0, xs: 96 },
             maxHeight: { xs: DOMAIN_ISSUES_SCROLL.xs, lg: maxLg },
             overflow: 'auto',
+            overflowAnchor: 'none',
         }) as const;
 
     return (
@@ -461,7 +468,6 @@ function DomainIssuesMasterDetailInner({
                 minWidth: 0,
                 minHeight: 0,
                 flex: 1,
-                overflow: 'hidden',
             }}
         >
             <MsqdxMoleculeCard
@@ -594,6 +600,7 @@ function DomainIssuesMasterDetailInner({
                                     <div
                                         key={vi.key}
                                         data-index={vi.index}
+                                        ref={groupVirtualizer.measureElement}
                                         style={{
                                             position: 'absolute',
                                             top: 0,
@@ -709,6 +716,7 @@ function DomainIssuesMasterDetailInner({
                                         <div
                                             key={vi.key}
                                             data-index={vi.index}
+                                            ref={groupPagesVirtualizer.measureElement}
                                             style={{
                                                 position: 'absolute',
                                                 top: 0,
@@ -824,6 +832,7 @@ function DomainIssuesMasterDetailInner({
                                         <div
                                             key={vi.key}
                                             data-index={vi.index}
+                                            ref={pageIssuesVirtualizer.measureElement}
                                             style={{
                                                 position: 'absolute',
                                                 top: 0,

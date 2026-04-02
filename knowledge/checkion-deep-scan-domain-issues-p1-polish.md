@@ -55,7 +55,7 @@ Dieses Dokument sammelt sinnvolle **P1 Verbesserungen**, falls wir noch mehr Sta
 ## P1 – UI Skalierung & UX
 
 - **Virtualisierung im Master/Detail (Liste & Details)**
-  - Umgesetzt: `@tanstack/react-virtual` (`useVirtualizer`) in `components/DomainIssuesMasterDetail.tsx` für **Gruppen**, **betroffene URLs** und **Issues der gewählten Seite**; wo nötig `measureElement` für variable Zeilenhöhen. Siehe auch `knowledge/checkion-virtualization-candidates.md`.
+  - Umgesetzt: `@tanstack/react-virtual` (`useVirtualizer`) in `components/DomainIssuesMasterDetail.tsx` für **Gruppen**, **betroffene URLs** und **Issues der gewählten Seite**. Pro Zeile `ref={virtualizer.measureElement}` + Option `measureElement` aus dem Paket — **Issues-Zeilen** sind variabel (Selector, Help-Link); nur `estimateSize` führt zu falschen `translateY`-Abständen (Überlappung, „flackernde“/verschwindende Zeilen). Overscan erhöht, optional `useAnimationFrameWithResizeObserver`. Siehe auch `knowledge/checkion-virtualization-candidates.md`.
 
 - **UX-Polish (Zeilenlayout, feste Höhen)**
   - Gemeinsame Primitives in `components/domain-issues/IssueListPrimitives.tsx` (`IssueSeverityRail`, `IssueTypeIcon`, `issueTypeColor`, Fokus-Styles).
