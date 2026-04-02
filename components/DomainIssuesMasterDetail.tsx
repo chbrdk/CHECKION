@@ -7,6 +7,7 @@ import { MsqdxButton, MsqdxChip, MsqdxFormField, MsqdxMoleculeCard, MsqdxTypogra
 import { MSQDX_BRAND_PRIMARY, MSQDX_NEUTRAL, MSQDX_STATUS } from '@msqdx/tokens';
 import { Copy, ExternalLink, FileSearch } from 'lucide-react';
 import { apiScanDomainIssueGroupPages, apiScanDomainIssueGroups, apiScanDomainPageIssues } from '@/lib/constants';
+import { DOMAIN_ISSUES_SCROLL } from '@/lib/domain-issues-layout';
 import type { SlimPage } from '@/lib/types';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import {
@@ -428,6 +429,10 @@ function DomainIssuesMasterDetailInner({
             : layoutStep === 2
               ? 'minmax(200px, 0.34fr) minmax(0, 1fr)'
               : 'minmax(176px, 0.2fr) minmax(192px, 0.26fr) minmax(0, 1fr)';
+
+    const groupsScrollMaxLg = layoutStep === 1 ? DOMAIN_ISSUES_SCROLL.groupsLgStep1 : DOMAIN_ISSUES_SCROLL.groupsLgStep23;
+    const pagesScrollMaxLg = layoutStep === 2 ? DOMAIN_ISSUES_SCROLL.pagesLgStep2 : DOMAIN_ISSUES_SCROLL.pagesLgStep3;
+
     const listColumnCardSx = {
         bgcolor: 'var(--color-card-bg)',
         minWidth: 0,
@@ -438,16 +443,27 @@ function DomainIssuesMasterDetailInner({
         overflow: 'hidden',
     } as const;
 
-    /** Scrollport für @tanstack/react-virtual — muss begrenzte Höhe haben (nicht mit Listentotalhöhe mitwachsen). */
-    const listScrollSx = {
-        flex: { lg: 1 },
-        minHeight: { lg: 0, xs: 96 },
-        maxHeight: { xs: 'min(52vh, 420px)', lg: '100%' },
-        overflow: 'auto',
-    } as const;
+    const scrollSx = (maxLg: string) =>
+        ({
+            flex: { lg: 1 },
+            minHeight: { lg: 0, xs: 96 },
+            maxHeight: { xs: DOMAIN_ISSUES_SCROLL.xs, lg: maxLg },
+            overflow: 'auto',
+        }) as const;
 
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%', minWidth: 0, minHeight: 0 }}>
+        <Box
+            sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2,
+                width: '100%',
+                minWidth: 0,
+                minHeight: 0,
+                flex: 1,
+                overflow: 'hidden',
+            }}
+        >
             <MsqdxMoleculeCard
                 title={t('domainResult.tabListDetails')}
                 subtitle={t('domainResult.issuesMasterSubtitle')}
@@ -543,8 +559,8 @@ function DomainIssuesMasterDetailInner({
                     minWidth: 0,
                     alignItems: 'stretch',
                     flex: { lg: 1 },
-                    minHeight: { xs: 'auto', lg: 'min(68vh, 780px)' },
-                    maxHeight: { lg: 'min(68vh, 780px)' },
+                    minHeight: { xs: 'auto', lg: DOMAIN_ISSUES_SCROLL.gridRowLg },
+                    maxHeight: { lg: DOMAIN_ISSUES_SCROLL.gridRowLg },
                     gridTemplateColumns: {
                         xs: '1fr',
                         lg: gridColsLg,
@@ -567,7 +583,7 @@ function DomainIssuesMasterDetailInner({
                     <Box sx={{ flex: 1, minHeight: { lg: 160 }, py: 3, display: 'flex', justifyContent: 'center', alignItems: 'center' }}><CircularProgress size={24} /></Box>
                 ) : (
                     <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                    <Box ref={groupsScrollRef} sx={listScrollSx}>
+                    <Box ref={groupsScrollRef} sx={scrollSx(groupsScrollMaxLg)}>
                         <Box sx={{ height: `${groupVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
                             {groupVirtualizer.getVirtualItems().map((vi) => {
                                 const g = groups[vi.index];
@@ -682,7 +698,7 @@ function DomainIssuesMasterDetailInner({
                         </Box>
                     ) : (
                         <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                        <Box ref={groupPagesScrollRef} sx={listScrollSx}>
+                        <Box ref={groupPagesScrollRef} sx={scrollSx(pagesScrollMaxLg)}>
                             <Box sx={{ height: `${groupPagesVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
                                 {groupPagesVirtualizer.getVirtualItems().map((vi) => {
                                     const p = groupPages[vi.index];
@@ -798,7 +814,7 @@ function DomainIssuesMasterDetailInner({
                         </Box>
                     ) : (
                         <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                        <Box ref={pageIssuesScrollRef} sx={listScrollSx}>
+                        <Box ref={pageIssuesScrollRef} sx={scrollSx(DOMAIN_ISSUES_SCROLL.issuesLg)}>
                             <Box sx={{ height: `${pageIssuesVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
                                 {pageIssuesVirtualizer.getVirtualItems().map((vi) => {
                                     const i = pageIssues[vi.index];

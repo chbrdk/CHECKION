@@ -557,36 +557,38 @@ export default function DomainResultPage() {
             )}
 
             {tabValue === 2 && (
-                <Box>
+                <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0 }}>
                     <MsqdxMoleculeCard
                         title="Gefundene Issues (Domain)"
                         headerActions={<InfoTooltip title={t('info.issuesList')} ariaLabel={t('common.info')} />}
                         subtitle={`Paged (DB) · aggregiert über ${totalPageCount} Seite(n)`}
                         variant="flat"
-                        sx={{ bgcolor: 'var(--color-card-bg)' }}
+                        sx={{ bgcolor: 'var(--color-card-bg)', display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0 }}
                         borderRadius="lg"
                     >
                         {aggregated?.issues?.stats && (
-                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2, flexShrink: 0 }}>
                                 <MsqdxChip label={`Errors: ${aggregated.issues.stats.errors}`} size="small" sx={{ bgcolor: alpha(MSQDX_STATUS.error.base, 0.12), color: MSQDX_STATUS.error.base }} />
                                 <MsqdxChip label={`Warnings: ${aggregated.issues.stats.warnings}`} size="small" sx={{ bgcolor: alpha(MSQDX_STATUS.warning.base, 0.12), color: MSQDX_STATUS.warning.base }} />
                                 <MsqdxChip label={`Notices: ${aggregated.issues.stats.notices}`} size="small" sx={{ bgcolor: alpha(MSQDX_STATUS.info.base, 0.12), color: MSQDX_STATUS.info.base }} />
                             </Box>
                         )}
                         {domainId && (
-                            <DomainIssuesMasterDetail
-                                domainId={domainId}
-                                pagesById={pagesById}
-                                selectedGroupKey={selectedGroupKey}
-                                selectedPageId={selectedPageId}
-                                issuesType={issuesType}
-                                issuesWcag={issuesWcag}
-                                issuesQ={issuesQ}
-                                onChangeFilters={setIssuesFilters}
-                                onSelectGroup={selectGroup}
-                                onSelectPage={selectPage}
-                                onOpenPageScan={handleIssuePageClick}
-                            />
+                            <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                                <DomainIssuesMasterDetail
+                                    domainId={domainId}
+                                    pagesById={pagesById}
+                                    selectedGroupKey={selectedGroupKey}
+                                    selectedPageId={selectedPageId}
+                                    issuesType={issuesType}
+                                    issuesWcag={issuesWcag}
+                                    issuesQ={issuesQ}
+                                    onChangeFilters={setIssuesFilters}
+                                    onSelectGroup={selectGroup}
+                                    onSelectPage={selectPage}
+                                    onOpenPageScan={handleIssuePageClick}
+                                />
+                            </Box>
                         )}
                     </MsqdxMoleculeCard>
                 </Box>
