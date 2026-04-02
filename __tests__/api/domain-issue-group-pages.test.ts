@@ -28,7 +28,7 @@ describe('GET /api/scan/domain/[id]/issue-groups/[groupKey]/pages', () => {
         vi.mocked(auth).mockResolvedValue({ user: { id: 'user-1', email: 't@t.de' }, expires: '' });
         vi.mocked(getDomainScan).mockResolvedValue({ id: 'scan-1' } as any);
         vi.mocked(listGroupPagesPaged).mockResolvedValue({
-            data: [{ pageId: 'p1', url: 'https://example.com/a', issueCount: 2 }],
+            data: [{ pageId: 'p1', url: 'https://example.com/a', issueCount: 2, scanId: 'scan-row-1' }],
             nextCursor: null,
         } as any);
 
@@ -38,6 +38,7 @@ describe('GET /api/scan/domain/[id]/issue-groups/[groupKey]/pages', () => {
         const json = await res.json();
         expect(json.success).toBe(true);
         expect(json.data[0].pageId).toBe('p1');
+        expect(json.data[0].scanId).toBe('scan-row-1');
     });
 });
 

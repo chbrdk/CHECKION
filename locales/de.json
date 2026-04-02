@@ -654,6 +654,7 @@
     "shareCopied": "Link kopiert",
     "domainScore": "Domain Score",
     "pagesScanned": "Seiten gescannt",
+    "slimPagesLoadMore": "Weitere {{count}} laden",
     "performanceEco": "Performance & Eco",
     "performanceAvg": "Performance (Ø)",
     "systemicIssues": "Systemische Probleme",

@@ -20,7 +20,7 @@ type IssueGroupRow = {
     pageCount: number;
 };
 
-type GroupPageRow = { pageId: string; url: string; issueCount: number };
+type GroupPageRow = { pageId: string; url: string; issueCount: number; scanId?: string | null };
 type PageIssueRow = { id: string; groupKey: string; type: string; code: string; message: string; runner: string | null; wcagLevel: string | null; helpUrl: string | null; selector: string | null };
 
 /** Fixed row heights avoid `measureElement` resize loops (major CPU cost with long lists). */
@@ -65,7 +65,7 @@ function DomainIssuesMasterDetailInner({
     onChangeFilters: (next: { type?: string | null; wcag?: string | null; q?: string | null }) => void;
     onSelectGroup: (groupKey: string) => void;
     onSelectPage: (pageId: string) => void;
-    onOpenPageScan: (url: string) => void;
+    onOpenPageScan: (url: string, scanId?: string | null) => void;
 }) {
     const { t } = useI18n();
     const [groups, setGroups] = useState<IssueGroupRow[]>([]);
@@ -525,7 +525,7 @@ function DomainIssuesMasterDetailInner({
                                                         <MsqdxButton
                                                             variant="text"
                                                             size="small"
-                                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onOpenPageScan(p.url); }}
+                                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onOpenPageScan(p.url, p.scanId); }}
                                                             sx={{ color: MSQDX_BRAND_PRIMARY.green }}
                                                         >
                                                             {t('domainResult.openPage')}
@@ -550,7 +550,13 @@ function DomainIssuesMasterDetailInner({
 
                 <MsqdxMoleculeCard
                     title={t('domainResult.issuesPageDetailTitle')}
-                    subtitle={selectedPageId ? (pagesById.get(selectedPageId)?.url ?? '') : t('domainResult.issuesPageDetailSubtitlePick')}
+                    subtitle={
+                        selectedPageId
+                            ? (groupPages.find((g) => g.pageId === selectedPageId)?.url
+                                ?? pagesById.get(selectedPageId)?.url
+                                ?? '')
+                            : t('domainResult.issuesPageDetailSubtitlePick')
+                    }
                     variant="flat"
                     borderRadius="lg"
                     sx={{ bgcolor: 'var(--color-card-bg)', minWidth: 0 }}

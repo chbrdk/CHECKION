@@ -13,6 +13,7 @@ import {
     sliceSlimPagesFromPayload,
     countPayloadPages,
 } from '@/lib/db/domain-slim-pages';
+import { ensureDomainIssueTablesBackfilled } from '@/lib/domain-issues-backfill';
 
 function clampOffset(v: string | null): number {
     return Math.max(0, parseInt(v ?? '0', 10) || 0);
@@ -42,7 +43,15 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
     const offset = clampOffset(url.searchParams.get('offset'));
     const limit = clampLimit(url.searchParams.get('limit'));
 
-    const dbCount = await countDomainPagesInDb(id, user.id);
+    let dbCount = await countDomainPagesInDb(id, user.id);
+    if (dbCount === 0) {
+        try {
+            await ensureDomainIssueTablesBackfilled({ userId: user.id, domainScanId: id });
+        } catch (e) {
+            console.error('[CHECKION] slim-pages domain_pages backfill failed', e);
+        }
+        dbCount = await countDomainPagesInDb(id, user.id);
+    }
     if (dbCount > 0) {
         const data = await listSlimPagesFromDomainPagesTable({
             domainScanId: id,

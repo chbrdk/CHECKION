@@ -127,10 +127,12 @@ export const apiScanScreenshot = (id: string) => `${apiScan(id)}/screenshot`;
 export const apiScanDomainCreate = API_SCAN_DOMAIN;
 /** Build: GET /api/scan/domain/[id]/status */
 export const apiScanDomainStatus = (id: string) => `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/status`;
-/** Build: GET /api/scan/domain/[id]/summary — `light` omits `pages` + heavy `aggregated.seo.pages`; hydrate via slim-pages + full summary on SEO tab. */
-export const apiScanDomainSummary = (id: string, opts?: { light?: boolean }) => {
+/** Build: GET /api/scan/domain/[id]/summary — `light` omits pages + heavy SEO rows; `seoFull` returns only `aggregated.seo` for Tab 7 merge. */
+export const apiScanDomainSummary = (id: string, opts?: { light?: boolean; seoFull?: boolean }) => {
     const base = `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/summary`;
-    return opts?.light ? `${base}?light=1` : base;
+    if (opts?.light) return `${base}?light=1`;
+    if (opts?.seoFull) return `${base}?seoFull=1`;
+    return base;
 };
 /** Chunk size when loading SlimPage[] after light summary (client stops at DOMAIN_SLIM_PAGES_MAX_CLIENT). */
 export const DOMAIN_SLIM_PAGES_CHUNK = 500;

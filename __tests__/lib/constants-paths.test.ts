@@ -89,6 +89,10 @@ describe('API path builders', () => {
         expect(apiScanDomainSummary('d2', { light: true })).toBe('/api/scan/domain/d2/summary?light=1');
     });
 
+    it('apiScanDomainSummary with seoFull loads only aggregated.seo for Tab 7 merge', () => {
+        expect(apiScanDomainSummary('d2', { seoFull: true })).toBe('/api/scan/domain/d2/summary?seoFull=1');
+    });
+
     it('apiScanDomainSlimPages builds paged slim-pages URL', () => {
         expect(apiScanDomainSlimPages('d1')).toBe('/api/scan/domain/d1/slim-pages');
         expect(apiScanDomainSlimPages('d1', { offset: 100, limit: 50 })).toBe(

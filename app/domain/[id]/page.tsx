@@ -102,6 +102,8 @@ export default function DomainResultPage() {
     const [journeySaveName, setJourneySaveName] = useState('');
     const [slimPagesOverride, setSlimPagesOverride] = useState<SlimPage[] | null>(null);
     const [slimPagesLoading, setSlimPagesLoading] = useState(false);
+    const [slimPagesRemoteTotal, setSlimPagesRemoteTotal] = useState<number | null>(null);
+    const slimPagesInitialChunkDoneRef = useRef(false);
 
     const searchParams = useSearchParams();
     const pages = useMemo(() => {
@@ -111,6 +113,16 @@ export default function DomainResultPage() {
         return [];
     }, [result?.pages, slimPagesOverride]);
     const totalPageCount = result?.totalPageCount ?? pages.length;
+
+    const canLoadMoreSlimPages = useMemo(() => {
+        if (result?.summaryMeta?.slimPagesOmitted !== true) return false;
+        if (slimPagesOverride === null) return false;
+        const len = pages.length;
+        if (len === 0) return false;
+        if (len >= DOMAIN_SLIM_PAGES_MAX_CLIENT) return false;
+        if (slimPagesRemoteTotal !== null && len >= slimPagesRemoteTotal) return false;
+        return true;
+    }, [result?.summaryMeta?.slimPagesOmitted, slimPagesOverride, pages.length, slimPagesRemoteTotal]);
     const aggregated = result?.aggregated ?? null;
     const uxBrokenLinksPreview = useMemo(
         () => (aggregated?.ux?.brokenLinks ?? []).slice(0, DOMAIN_UX_BROKEN_LINKS_PREVIEW),
@@ -128,7 +140,11 @@ export default function DomainResultPage() {
     const norm = (u: string) => { try { const x = new URL(u); return x.origin + (x.pathname.replace(/\/$/, '') || '/'); } catch { return u; } };
     const pagesByNormUrl = useMemo(() => { const m = new Map<string, SlimPage>(); for (const p of pages) m.set(norm(p.url), p); return m; }, [pages]);
 
-    const handleIssuePageClick = useCallback((url: string) => {
+    const handleIssuePageClick = useCallback((url: string, scanId?: string | null) => {
+        if (scanId) {
+            router.push(pathResults(scanId));
+            return;
+        }
         const page = pagesByUrl.get(url);
         if (page) router.push(pathResults(page.id));
     }, [pagesByUrl, router]);
@@ -167,6 +183,8 @@ export default function DomainResultPage() {
         if (!domainId) return;
         setLoadError(null);
         setSlimPagesOverride(null);
+        setSlimPagesRemoteTotal(null);
+        slimPagesInitialChunkDoneRef.current = false;
         fullSeoHydratedRef.current = false;
         seoFullFetchInFlightRef.current = false;
         fetch(apiScanDomainSummary(domainId, { light: true }))
@@ -192,36 +210,51 @@ export default function DomainResultPage() {
     }, [result?.pages]);
 
     useEffect(() => {
-        if (!domainId || result?.summaryMeta?.slimPagesOmitted !== true) return;
+        if (!domainId || tabValue !== 0 || result?.summaryMeta?.slimPagesOmitted !== true) return;
         const fromResult = result?.pages as SlimPage[] | undefined;
         if (fromResult && fromResult.length > 0) return;
+        if (slimPagesInitialChunkDoneRef.current) return;
 
         let cancelled = false;
         setSlimPagesLoading(true);
-        (async () => {
-            const all: SlimPage[] = [];
-            let offset = 0;
-            try {
-                while (offset < DOMAIN_SLIM_PAGES_MAX_CLIENT) {
-                    const res = await fetch(apiScanDomainSlimPages(domainId, { offset, limit: DOMAIN_SLIM_PAGES_CHUNK }));
-                    if (!res.ok) break;
-                    const json = (await res.json()) as { data?: SlimPage[]; total?: number };
-                    const batch = json.data ?? [];
-                    all.push(...batch);
-                    const total = json.total ?? all.length;
-                    if (batch.length < DOMAIN_SLIM_PAGES_CHUNK || all.length >= total) break;
-                    offset += DOMAIN_SLIM_PAGES_CHUNK;
-                    if (cancelled) return;
-                }
-                if (!cancelled) setSlimPagesOverride(all);
-            } finally {
+        fetch(apiScanDomainSlimPages(domainId, { offset: 0, limit: DOMAIN_SLIM_PAGES_CHUNK }))
+            .then(async (res) => {
+                if (!res.ok) throw new Error('slim-pages failed');
+                return res.json() as Promise<{ data?: SlimPage[]; total?: number }>;
+            })
+            .then((json) => {
+                if (cancelled) return;
+                const batch = json.data ?? [];
+                slimPagesInitialChunkDoneRef.current = true;
+                setSlimPagesOverride(batch);
+                setSlimPagesRemoteTotal(json.total ?? batch.length);
+            })
+            .catch(() => {})
+            .finally(() => {
                 if (!cancelled) setSlimPagesLoading(false);
-            }
-        })();
+            });
         return () => {
             cancelled = true;
         };
-    }, [domainId, result?.summaryMeta?.slimPagesOmitted, result?.pages]);
+    }, [domainId, tabValue, result?.summaryMeta?.slimPagesOmitted, result?.pages]);
+
+    const loadMoreSlimPages = useCallback(async () => {
+        if (!domainId || slimPagesOverride === null) return;
+        const len = slimPagesOverride.length;
+        if (len >= DOMAIN_SLIM_PAGES_MAX_CLIENT) return;
+        if (slimPagesRemoteTotal !== null && len >= slimPagesRemoteTotal) return;
+        setSlimPagesLoading(true);
+        try {
+            const res = await fetch(apiScanDomainSlimPages(domainId, { offset: len, limit: DOMAIN_SLIM_PAGES_CHUNK }));
+            if (!res.ok) return;
+            const json = (await res.json()) as { data?: SlimPage[]; total?: number };
+            const batch = json.data ?? [];
+            if (json.total != null) setSlimPagesRemoteTotal(json.total);
+            setSlimPagesOverride((prev) => [...(prev ?? []), ...batch]);
+        } finally {
+            setSlimPagesLoading(false);
+        }
+    }, [domainId, slimPagesOverride, slimPagesRemoteTotal]);
 
     useEffect(() => {
         if (!domainId || tabValue !== 7) return;
@@ -229,14 +262,26 @@ export default function DomainResultPage() {
         if (fullSeoHydratedRef.current || seoFullFetchInFlightRef.current) return;
         seoFullFetchInFlightRef.current = true;
         setSeoPagesHydrating(true);
-        fetch(apiScanDomainSummary(domainId))
+        fetch(apiScanDomainSummary(domainId, { seoFull: true }))
             .then((res) => {
                 if (!res.ok) throw new Error('fetch failed');
                 return res.json();
             })
-            .then((data: DomainSummaryApiResponse & { projectId?: string | null }) => {
+            .then((data: { aggregated?: DomainSummaryApiResponse['aggregated']; summaryMeta?: DomainSummaryApiResponse['summaryMeta']; projectId?: string | null }) => {
                 fullSeoHydratedRef.current = true;
-                setResult(data);
+                const seo = data.aggregated?.seo;
+                setResult((prev) => {
+                    if (!prev || !seo) return prev;
+                    return {
+                        ...prev,
+                        aggregated: prev.aggregated ? { ...prev.aggregated, seo } : prev.aggregated,
+                        summaryMeta: {
+                            ...prev.summaryMeta,
+                            ...data.summaryMeta,
+                            seoPageRowsOmitted: false,
+                        },
+                    };
+                });
                 if (data.projectId != null) setProjectId(data.projectId);
             })
             .catch(() => {
@@ -476,6 +521,23 @@ export default function DomainResultPage() {
                                     Es werden die ersten {DOMAIN_SLIM_PAGES_MAX_CLIENT.toLocaleString()} von {totalPageCount.toLocaleString()} Seiten in der Tabelle angezeigt.
                                 </MsqdxTypography>
                             )}
+                            {canLoadMoreSlimPages && domainId && (
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, flexWrap: 'wrap' }}>
+                                    <MsqdxButton
+                                        size="small"
+                                        variant="outlined"
+                                        disabled={slimPagesLoading}
+                                        onClick={() => void loadMoreSlimPages()}
+                                    >
+                                        {t('domainResult.slimPagesLoadMore', { count: DOMAIN_SLIM_PAGES_CHUNK })}
+                                    </MsqdxButton>
+                                    {slimPagesRemoteTotal != null && (
+                                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                            {pages.length.toLocaleString()} / {slimPagesRemoteTotal.toLocaleString()}
+                                        </MsqdxTypography>
+                                    )}
+                                </Box>
+                            )}
                             <ScannedPagesTable
                                 pages={pages}
                                 onPageClick={(page) => router.push(pathResults(page.id))}
@@ -523,7 +585,7 @@ export default function DomainResultPage() {
                                 onChangeFilters={setIssuesFilters}
                                 onSelectGroup={selectGroup}
                                 onSelectPage={selectPage}
-                                onOpenPageScan={(url) => handleIssuePageClick(url)}
+                                onOpenPageScan={handleIssuePageClick}
                             />
                         )}
                     </MsqdxMoleculeCard>

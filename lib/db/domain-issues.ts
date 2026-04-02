@@ -217,7 +217,10 @@ export async function listGroupPagesPaged(params: {
     groupKey: string;
     limit: number;
     cursor?: { url: string } | null;
-}): Promise<{ data: Array<{ pageId: string; url: string; issueCount: number }>; nextCursor: { url: string } | null }> {
+}): Promise<{
+    data: Array<{ pageId: string; url: string; issueCount: number; scanId: string | null }>;
+    nextCursor: { url: string } | null;
+}> {
     const db = getDb();
     const where = [
         eq(domainPageIssues.domainScanId, params.domainScanId),
@@ -231,12 +234,13 @@ export async function listGroupPagesPaged(params: {
         .select({
             pageId: domainPages.id,
             url: domainPages.url,
+            scanId: domainPages.pageScanId,
             issueCount: sql<number>`count(*)::int`,
         })
         .from(domainPageIssues)
         .innerJoin(domainPages, eq(domainPages.id, domainPageIssues.domainPageId))
         .where(and(...where))
-        .groupBy(domainPages.id, domainPages.url)
+        .groupBy(domainPages.id, domainPages.url, domainPages.pageScanId)
         .orderBy(domainPages.url)
         .limit(params.limit + 1);
 
@@ -244,7 +248,12 @@ export async function listGroupPagesPaged(params: {
     const data = hasMore ? rows.slice(0, params.limit) : rows;
     const last = data[data.length - 1];
     return {
-        data: data.map((r) => ({ ...r, issueCount: Number(r.issueCount ?? 0) })),
+        data: data.map((r) => ({
+            pageId: r.pageId,
+            url: r.url,
+            scanId: r.scanId ?? null,
+            issueCount: Number(r.issueCount ?? 0),
+        })),
         nextCursor: hasMore && last ? { url: last.url } : null,
     };
 }

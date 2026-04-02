@@ -6,7 +6,7 @@ Ziel: Weniger DOM-Knoten bei sehr langen Listen. Bereits genutzt: `@tanstack/rea
 
 | Komponente / Bereich | Grund |
 |----------------------|--------|
-| `ScannedPagesTable.tsx` | **Pagination** (`DOMAIN_PAGES_TABLE_PAGE_SIZE`), rendert nur eine Seite Zeilen. |
+| `ScannedPagesTable.tsx` | **`@tanstack/react-virtual`** für Zeilen (fester Zeilen-CSS), volles Sortieren im Client nur auf dem Array — DOM nur für sichtbare Zeilen. |
 | `DomainAggregatedIssueList.tsx` | Pagination + **`@tanstack/react-virtual`** für die aktuelle Seite (`DOMAIN_AGGREGATED_ISSUES_ROW_ESTIMATE_PX` in `lib/constants.ts`). Legacy-Tab „Liste & Details“; Master/Detail bleibt primär. |
 | `GeoAnalysisPagesTable.tsx`, `SeoOnPageTable.tsx`, `SeoKeywordsTable.tsx` | Typisch begrenzte Zeilenzahl oder bereits **overflow + begrenzte Daten** pro Ansicht; bei extremen Domains ggf. nachziehen. |
 
@@ -28,7 +28,7 @@ Hier geht es nicht um React-Virtualisierung, sondern um **Indizes, Paginierung, 
 
 ## Domain-Seite: leichtes Summary + Tab-Mount
 
-- **`GET /api/scan/domain/[id]/summary?light=1`** liefert ein schlankeres JSON (`toLightDomainSummaryApiPayload` in `lib/domain-summary.ts`): **`pages` leer**, **`aggregated.seo.pages` leer**, `summaryMeta.seoPageRowsOmitted` + **`slimPagesOmitted`**. Die **SlimPage-Liste** lädt die Domain-Seite per **`GET /api/scan/domain/[id]/slim-pages`** (DB: `domain_pages` + Join auf `scans` für Stats; Fallback: Slice aus `domain_scans.payload`). Tab **„Links & SEO“** (7) holt weiter die **volle** Summary ohne `light` für die SEO-Seitenliste.
+- **`GET /api/scan/domain/[id]/summary?light=1`** liefert ein schlankeres JSON (`toLightDomainSummaryApiPayload` in `lib/domain-summary.ts`): **`pages` leer**, **`aggregated.seo.pages` leer**, `summaryMeta.seoPageRowsOmitted` + **`slimPagesOmitted`**. Die **SlimPage-Liste** lädt die Domain-Seite bei Tab „Übersicht“ per **`GET /api/scan/domain/[id]/slim-pages`** (DB: `domain_pages`; bei leerer Tabelle optional **`ensureDomainIssueTablesBackfilled`** vor erneutem Count; Fallback: Slice aus Payload). Tab **„Links & SEO“** (7) lädt bei Bedarf **`GET .../summary?seoFull=1`** (nur `aggregated.seo` + `summaryMeta`) und merged clientseitig — kein erneutes Mega-Summary.
 - **Issues-Tab (Tab 2):** `DomainIssuesMasterDetail` wird nur gerendert, wenn `tabValue === 2` (kein `display:none` mehr), damit die schwere Master/Detail-UI nicht im Hintergrund bleibt. **Deep-Link:** Sind `group`, `page`, `itype`, `wcag` oder `q` in der Query, wechselt die Seite per `startTransition` auf Tab 2. Die drei Virtual-Listen nutzen **feste Zeilenhöhen** (ohne `measureElement`), um Layout-Schleifen bei langen Listen zu vermeiden.
 
 ## Kurzregel

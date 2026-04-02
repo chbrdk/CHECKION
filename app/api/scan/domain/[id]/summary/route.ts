@@ -41,6 +41,22 @@ export async function GET(
             : summary.aggregated,
     };
     const url = new URL(request.url);
+    const seoFull = url.searchParams.get('seoFull') === '1';
+    if (seoFull) {
+        const seo = safeSummary.aggregated?.seo;
+        if (!seo) {
+            return NextResponse.json({
+                projectId: row.projectId,
+                aggregated: {},
+                summaryMeta: { seoPageRowsOmitted: false },
+            });
+        }
+        return NextResponse.json({
+            projectId: row.projectId,
+            aggregated: { seo },
+            summaryMeta: { seoPageRowsOmitted: false },
+        });
+    }
     const light = url.searchParams.get('light') === '1';
     const body = light
         ? { ...toLightDomainSummaryApiPayload(safeSummary as DomainSummaryResponse), projectId: row.projectId }

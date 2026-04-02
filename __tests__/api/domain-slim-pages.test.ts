@@ -15,8 +15,12 @@ vi.mock('@/lib/db/domain-slim-pages', () => ({
     sliceSlimPagesFromPayload: vi.fn(),
     countPayloadPages: vi.fn(),
 }));
+vi.mock('@/lib/domain-issues-backfill', () => ({
+    ensureDomainIssueTablesBackfilled: vi.fn(),
+}));
 
 import { getRequestUser } from '@/lib/auth-api-token';
+import { ensureDomainIssueTablesBackfilled } from '@/lib/domain-issues-backfill';
 import { getDomainScan } from '@/lib/db/scans';
 import {
     countDomainPagesInDb,
@@ -34,6 +38,7 @@ describe('GET /api/scan/domain/[id]/slim-pages', () => {
         vi.mocked(listSlimPagesFromDomainPagesTable).mockReset();
         vi.mocked(sliceSlimPagesFromPayload).mockReset();
         vi.mocked(countPayloadPages).mockReset();
+        vi.mocked(ensureDomainIssueTablesBackfilled).mockReset();
     });
 
     it('returns 401 when unauthenticated', async () => {
@@ -68,6 +73,28 @@ describe('GET /api/scan/domain/[id]/slim-pages', () => {
             offset: 0,
             limit: 50,
         });
+    });
+
+    it('attempts backfill when domain_pages is empty, then uses DB when rows appear', async () => {
+        vi.mocked(getRequestUser).mockResolvedValue({ id: 'u1' });
+        vi.mocked(countDomainPagesInDb).mockResolvedValueOnce(0).mockResolvedValueOnce(2);
+        vi.mocked(ensureDomainIssueTablesBackfilled).mockResolvedValue(undefined);
+        vi.mocked(listSlimPagesFromDomainPagesTable).mockResolvedValue([
+            {
+                id: 'scan-a',
+                domainPageId: 'dp_x',
+                url: 'https://ex.com/a',
+                score: 80,
+                stats: { errors: 1, warnings: 0, notices: 0 },
+            },
+        ]);
+        const req = new Request('http://localhost/api/scan/domain/s1/slim-pages?offset=0&limit=50');
+        const res = await GET(req as any, { params: Promise.resolve({ id: 's1' }) });
+        expect(res.status).toBe(200);
+        expect(ensureDomainIssueTablesBackfilled).toHaveBeenCalledWith({ userId: 'u1', domainScanId: 's1' });
+        const body = await res.json();
+        expect(body.source).toBe('db');
+        expect(getDomainScan).not.toHaveBeenCalled();
     });
 
     it('falls back to payload slice when no domain_pages', async () => {
