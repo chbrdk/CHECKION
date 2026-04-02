@@ -4,6 +4,7 @@
  */
 
 import { getDomainScan, listScansByGroupId, updateDomainScan } from '@/lib/db/scans';
+import { countDomainPagesInDb } from '@/lib/db/domain-slim-pages';
 import { buildStoredDomainPayload } from '@/lib/domain-summary';
 import { invalidateDomainScan } from '@/lib/cache';
 
@@ -24,7 +25,8 @@ export async function refreshDomainPayloadFromScans(domainId: string, userId: st
         systemicIssues: current.systemicIssues,
         eeat: current.eeat,
     };
-    const newPayload = buildStoredDomainPayload(fullPages, base);
+    const omitSlimPages = (await countDomainPagesInDb(domainId, userId)) > 0;
+    const newPayload = buildStoredDomainPayload(fullPages, base, { omitSlimPages });
     const updated = await updateDomainScan(domainId, userId, newPayload);
     if (updated) invalidateDomainScan(domainId);
     return updated;

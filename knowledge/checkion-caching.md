@@ -54,7 +54,7 @@ Für **authentifizierte** Domain-Read-APIs (u. a. Summary, Slim-Pages, Issue-Gro
 
 ### Search-API
 
-- **Cached Listen:** Die Suche nutzt `listCachedStandaloneScans` und `listCachedDomainScans` statt direkter DB-Abfragen.
+- **Domain-Zweig:** Lädt **keine** vollen `domain_scans.payload`-Zeilen mehr: `listDomainScanSummariesForSearch` (Metadaten + `hasStoredAggregated` per JSONB) und `listScansByGroupId` bzw. bei Legacy `getDomainScan`. Einzelscans weiter über `listCachedStandaloneScans`.
 - **Gecachte Suchergebnisse:** Das Ergebnis von `GET /api/search` wird pro (userId, q, typeFilter, limit) mit `unstable_cache` und Tags `scans-list-${userId}`, `domain-list-${userId}` gecacht (Revalidate wie Listen). Wiederholte gleiche Suchanfragen treffen nicht erneut die DB.
 
 ### Results-Seite (Einzelscan)

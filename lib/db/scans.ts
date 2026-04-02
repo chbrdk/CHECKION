@@ -8,6 +8,11 @@ import { scans, domainScans } from './schema';
 import type { ScanResult, DomainScanResult } from '@/lib/types';
 
 export type DomainScanSummaryRow = { id: string; domain: string; timestamp: string; status: string; score: number; totalPages: number };
+
+/** Summary row + flag whether payload has `aggregated` (avoids loading full JSONB for search). */
+export type DomainScanSearchRow = DomainScanSummaryRow & {
+    hasStoredAggregated: boolean;
+};
 import type { UxCxSummary } from '@/lib/llm-summary-types';
 import type { UxCheckV2Summary } from '@/lib/ux-check-types';
 
@@ -199,6 +204,47 @@ export async function listDomainScanSummaries(userId: string, options?: { limit?
         status: r.status,
         score: r.score ?? 0,
         totalPages: r.totalPages ?? 0,
+    }));
+}
+
+/**
+ * Same as listDomainScanSummaries plus `hasStoredAggregated` from JSONB (no full payload read).
+ * Use for dashboard search over domain scans instead of listDomainScans.
+ */
+export async function listDomainScanSummariesForSearch(
+    userId: string,
+    options?: { limit?: number; offset?: number; projectId?: string | null }
+): Promise<DomainScanSearchRow[]> {
+    const db = getDb();
+    const whereCond = options?.projectId === undefined
+        ? eq(domainScans.userId, userId)
+        : options.projectId === null
+            ? and(eq(domainScans.userId, userId), isNull(domainScans.projectId))
+            : and(eq(domainScans.userId, userId), eq(domainScans.projectId, options.projectId));
+    const base = db
+        .select({
+            id: domainScans.id,
+            domain: domainScans.domain,
+            timestamp: domainScans.timestamp,
+            status: domainScans.status,
+            score: sql<number>`(${domainScans.payload}->>'score')::int`,
+            totalPages: sql<number>`(${domainScans.payload}->>'totalPages')::int`,
+            hasStoredAggregated: sql<boolean>`(${domainScans.payload}->'aggregated') IS NOT NULL`,
+        })
+        .from(domainScans)
+        .where(whereCond)
+        .orderBy(desc(domainScans.timestamp));
+    const rows = options?.limit != null || options?.offset != null
+        ? await base.limit(options.limit ?? 10000).offset(options.offset ?? 0)
+        : await base;
+    return rows.map(r => ({
+        id: r.id,
+        domain: r.domain,
+        timestamp: r.timestamp,
+        status: r.status,
+        score: r.score ?? 0,
+        totalPages: r.totalPages ?? 0,
+        hasStoredAggregated: Boolean(r.hasStoredAggregated),
     }));
 }
 

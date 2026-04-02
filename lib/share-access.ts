@@ -4,6 +4,18 @@
 /* ------------------------------------------------------------------ */
 
 import { createHmac, timingSafeEqual } from 'crypto';
+import type { DomainScanResult, ScanResult } from '@/lib/types';
+
+/** Page belongs to domain scan if listed in payload `pages` or `groupId` matches (when payload omits `SlimPage[]`). */
+export function isSharedDomainPageAllowed(
+    domain: DomainScanResult,
+    pageId: string,
+    page: ScanResult | null
+): boolean {
+    if (!page) return false;
+    if ((domain.pages ?? []).some((p) => p.id === pageId)) return true;
+    return page.groupId === domain.id;
+}
 
 const ALG = 'sha256';
 const MAX_AGE_SEC = 24 * 60 * 60; // 24h

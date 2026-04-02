@@ -7,7 +7,7 @@
 import { NextResponse } from 'next/server';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getCachedShareByToken, getCachedDomainScan, getCachedScan } from '@/lib/cache';
-import { canAccessShare } from '@/lib/share-access';
+import { canAccessShare, isSharedDomainPageAllowed } from '@/lib/share-access';
 
 export async function GET(
     request: Request,
@@ -28,11 +28,9 @@ export async function GET(
     const domain = await getCachedDomainScan(share.resourceId, share.userId);
     if (!domain) return apiError('Domain scan not found', API_STATUS.NOT_FOUND);
 
-    const inList = (domain.pages ?? []).some((p) => p.id === pageId);
-    if (!inList) return apiError('Page not found', API_STATUS.NOT_FOUND);
-
     const page = await getCachedScan(pageId, share.userId);
     if (!page) return apiError('Page not found', API_STATUS.NOT_FOUND);
+    if (!isSharedDomainPageAllowed(domain, pageId, page)) return apiError('Page not found', API_STATUS.NOT_FOUND);
 
     return NextResponse.json(page);
 }

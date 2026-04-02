@@ -6,8 +6,8 @@ Beim Deep Scan werden **alle relevanten Metriken bereits während des Scans** be
 
 ## Gespeichertes Format (`domain_scans.payload`)
 
-- **pages**: `SlimPage[]` – nur Referenzen: `id` (Scan-ID), `url`, `score`, `stats`, `ux?.score`. Kein `pageIndex`, keine Issues, kein Screenshot.
-- **aggregated**: Vorberechnete Aggregationen (issues, ux, seo, links, infra, generative, structure, performance, eco).
+- **pages**: `SlimPage[]` **oder** nach erfolgreichem Schreiben von **`domain_pages`** (Issues-Pipeline) **`[]`**. Die Seitenliste ist dann nur noch über `GET .../slim-pages` (DB-first) bzw. `domain_pages` verfügbar; **`totalPages`** bleibt im Payload für Zähler und `buildDomainSummary`.
+- **aggregated**: Vorberechnete Aggregationen, **URL-lastige Arrays gekappt** (`toStoredAggregated`, Konstanten `DOMAIN_STORED_SUMMARY_*` in `lib/constants.ts` — zunächst gleich den Light-Summary-Caps, separat tunbar). Volle Detaillisten: `scans` + Domain-APIs.
 - Wie bisher: `id`, `domain`, `timestamp`, `status`, `progress`, `totalPages`, `score`, `graph`, `systemicIssues`, `eeat`, `error`, `llmSummary`.
 
 ## URL-Normalisierung (http/https)
@@ -31,15 +31,16 @@ Die LLM-Klassifikation (Tags + Tier 1–5) läuft **direkt im Single Scan** (`li
 1. `POST /api/scan/domain` startet den Scan, erstellt einen leeren Domain-Eintrag.
 2. Spider liefert am Ende `domainResult.pages` (volle `ScanResult[]`; jede Seite hat ggf. bereits `pageClassification`).
 3. Pro Seite: `addScan(userId, { ...page, groupId: id })` – voller Scan in `scans`.
-4. `buildStoredDomainPayload(fullPages, base)` berechnet Aggregationen und baut `pages: SlimPage[]` (inkl. `pageClassification`).
-5. `updateDomainScan(id, userId, stored)` speichert den einen schlanken Payload.
+4. `rebuildDomainIssuesFromPages` schreibt `domain_pages` / Issues-Tabellen (bei Fehler: Fallback mit `pages: SlimPage[]` im Payload).
+5. `buildStoredDomainPayload(fullPages, base, { omitSlimPages })` — gekapptes `aggregated`; `omitSlimPages: true`, wenn Schritt 4 geklappt hat.
+6. `updateDomainScan(id, userId, stored)` speichert den Payload einmal.
 
 ## Lesen
 
 - **Summary / Domain-Seite**: `getCachedDomainScan` → Payload enthält bereits `aggregated` und `pages` (slim). `buildDomainSummary(scan)` gibt bei neuem Format den Payload 1:1 zurück (Legacy: weiterhin Aggregation aus `scan.pages`).
 - **Journey Agent**: Braucht volle `ScanResult[]` (pageIndex, allLinks, …). Wenn `hasStoredAggregated(scan)`: `listScansByGroupId(userId, domainId)` laden und `{ ...scan, pages: fullPages }` an den Agent übergeben.
-- **Share (eine Seite)**: `getCachedScan(pageId, share.userId)` – Seite kommt aus `scans`, Domain-Payload nur zur Prüfung, ob `pageId` in `domain.pages` vorkommt.
-- **Suche**: Bei Domain-Scans mit gespeichertem Aggregat: `listScansByGroupId(userId, ds.id)` und in den vollen Scans suchen.
+- **Share (eine Seite)**: `getCachedScan(pageId, share.userId)` – Seite kommt aus `scans`. Zugehörigkeit zum Domain-Scan: `isSharedDomainPageAllowed` in `lib/share-access.ts` — `pageId` in `domain.pages` **oder** `scan.groupId === domain.id` (falls `pages` im Payload leer ist).
+- **Suche**: `listDomainScanSummariesForSearch` (kein voller JSONB-Payload) + Flag `hasStoredAggregated` aus `(payload->'aggregated') IS NOT NULL`; bei Domain-Scans mit Aggregat: `listScansByGroupId(userId, id)`; bei Legacy: `getDomainScan` und `pages` aus Payload.
 
 ## Rückwärtskompatibilität
 
@@ -49,7 +50,8 @@ Die LLM-Klassifikation (Tags + Tier 1–5) läuft **direkt im Single Scan** (`li
 
 - `SlimPage`, `DomainScanResult` (mit `pages: SlimPage[] | ScanResult[]`, `aggregated?`) in `lib/types.ts`.
 - `DomainScanResultWithFullPages`: für Journey/LLM, `pages: ScanResult[]`.
-- `buildStoredDomainPayload`, `hasStoredAggregated`, `buildDomainSummary` in `lib/domain-summary.ts`.
+- `buildStoredDomainPayload`, `toStoredAggregated`, `hasStoredAggregated`, `buildDomainSummary` in `lib/domain-summary.ts`.
+- `listDomainScanSummariesForSearch` in `lib/db/scans.ts` (Such- und Listenpfade ohne vollen `payload`).
 
 ## Siehe auch
 

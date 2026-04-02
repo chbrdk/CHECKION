@@ -24,6 +24,15 @@ import {
     DOMAIN_LIGHT_SUMMARY_STRUCTURE_URL_LIST_CAP,
     DOMAIN_LIGHT_SUMMARY_UX_BROKEN_LINKS_CAP,
     DOMAIN_LIGHT_SUMMARY_UX_LIST_CAP,
+    DOMAIN_STORED_SUMMARY_GENERATIVE_PAGES_CAP,
+    DOMAIN_STORED_SUMMARY_INFRA_URL_LIST_CAP,
+    DOMAIN_STORED_SUMMARY_LINKS_BROKEN_BY_PAGE_CAP,
+    DOMAIN_STORED_SUMMARY_LINKS_BROKEN_CAP,
+    DOMAIN_STORED_SUMMARY_SEO_KEYWORDS_CAP,
+    DOMAIN_STORED_SUMMARY_SEO_URL_SAMPLE_CAP,
+    DOMAIN_STORED_SUMMARY_STRUCTURE_URL_LIST_CAP,
+    DOMAIN_STORED_SUMMARY_UX_BROKEN_LINKS_CAP,
+    DOMAIN_STORED_SUMMARY_UX_LIST_CAP,
 } from './constants';
 import type { ScanResult, DomainScanResult, SlimPage } from './types';
 
@@ -134,12 +143,49 @@ export function buildDomainSummary(scan: DomainScanResult): DomainSummaryRespons
  */
 const LIGHT_META = { seoPageRowsOmitted: true as const, slimPagesOmitted: true as const };
 
+type AggregatedCaps = {
+    uxList: number;
+    uxBrokenLinks: number;
+    seoUrlSample: number;
+    seoKeywords: number;
+    linksBroken: number;
+    linksBrokenByPage: number;
+    infraUrlList: number;
+    generativePages: number;
+    structureUrlList: number;
+};
+
+const LIGHT_AGG_CAPS: AggregatedCaps = {
+    uxList: DOMAIN_LIGHT_SUMMARY_UX_LIST_CAP,
+    uxBrokenLinks: DOMAIN_LIGHT_SUMMARY_UX_BROKEN_LINKS_CAP,
+    seoUrlSample: DOMAIN_LIGHT_SUMMARY_SEO_URL_SAMPLE_CAP,
+    seoKeywords: DOMAIN_LIGHT_SUMMARY_SEO_KEYWORDS_CAP,
+    linksBroken: DOMAIN_LIGHT_SUMMARY_LINKS_BROKEN_CAP,
+    linksBrokenByPage: DOMAIN_LIGHT_SUMMARY_LINKS_BROKEN_BY_PAGE_CAP,
+    infraUrlList: DOMAIN_LIGHT_SUMMARY_INFRA_URL_LIST_CAP,
+    generativePages: DOMAIN_LIGHT_SUMMARY_GENERATIVE_PAGES_CAP,
+    structureUrlList: DOMAIN_LIGHT_SUMMARY_STRUCTURE_URL_LIST_CAP,
+};
+
+const STORED_AGG_CAPS: AggregatedCaps = {
+    uxList: DOMAIN_STORED_SUMMARY_UX_LIST_CAP,
+    uxBrokenLinks: DOMAIN_STORED_SUMMARY_UX_BROKEN_LINKS_CAP,
+    seoUrlSample: DOMAIN_STORED_SUMMARY_SEO_URL_SAMPLE_CAP,
+    seoKeywords: DOMAIN_STORED_SUMMARY_SEO_KEYWORDS_CAP,
+    linksBroken: DOMAIN_STORED_SUMMARY_LINKS_BROKEN_CAP,
+    linksBrokenByPage: DOMAIN_STORED_SUMMARY_LINKS_BROKEN_BY_PAGE_CAP,
+    infraUrlList: DOMAIN_STORED_SUMMARY_INFRA_URL_LIST_CAP,
+    generativePages: DOMAIN_STORED_SUMMARY_GENERATIVE_PAGES_CAP,
+    structureUrlList: DOMAIN_STORED_SUMMARY_STRUCTURE_URL_LIST_CAP,
+};
+
 /**
- * Shrink `aggregated` for `?light=1`: keeps counts/scores, caps per-page URL lists and UX link arrays.
- * Full lists load via `seoFull` merge or a non-light summary when needed.
+ * Shrink `aggregated` — shared by `?light=1` API and persisted `domain_scans.payload`.
+ * Keeps counts/scores; caps URL-heavy arrays. Full lists: `seoFull`, non-light summary, or `scans` / domain APIs.
  */
-export function toLightAggregated(
-    aggregated: DomainSummaryResponse['aggregated']
+function capAggregatedForSize(
+    aggregated: DomainSummaryResponse['aggregated'],
+    c: AggregatedCaps
 ): DomainSummaryResponse['aggregated'] {
     return {
         ...aggregated,
@@ -153,19 +199,13 @@ export function toLightAggregated(
         ux: aggregated.ux
             ? {
                   ...aggregated.ux,
-                  brokenLinks: (aggregated.ux.brokenLinks ?? []).slice(0, DOMAIN_LIGHT_SUMMARY_UX_BROKEN_LINKS_CAP),
-                  pagesByScore: (aggregated.ux.pagesByScore ?? []).slice(0, DOMAIN_LIGHT_SUMMARY_UX_LIST_CAP),
-                  consoleErrorsByPage: (aggregated.ux.consoleErrorsByPage ?? []).slice(
-                      0,
-                      DOMAIN_LIGHT_SUMMARY_UX_LIST_CAP
-                  ),
-                  focusOrderByPage: (aggregated.ux.focusOrderByPage ?? []).slice(0, DOMAIN_LIGHT_SUMMARY_UX_LIST_CAP),
+                  brokenLinks: (aggregated.ux.brokenLinks ?? []).slice(0, c.uxBrokenLinks),
+                  pagesByScore: (aggregated.ux.pagesByScore ?? []).slice(0, c.uxList),
+                  consoleErrorsByPage: (aggregated.ux.consoleErrorsByPage ?? []).slice(0, c.uxList),
+                  focusOrderByPage: (aggregated.ux.focusOrderByPage ?? []).slice(0, c.uxList),
                   tapTargets: {
                       ...aggregated.ux.tapTargets,
-                      detailsByPage: (aggregated.ux.tapTargets?.detailsByPage ?? []).slice(
-                          0,
-                          DOMAIN_LIGHT_SUMMARY_UX_LIST_CAP
-                      ),
+                      detailsByPage: (aggregated.ux.tapTargets?.detailsByPage ?? []).slice(0, c.uxList),
                   },
               }
             : aggregated.ux,
@@ -175,33 +215,24 @@ export function toLightAggregated(
                   pages: [],
                   missingMetaDescriptionUrls: (aggregated.seo.missingMetaDescriptionUrls ?? []).slice(
                       0,
-                      DOMAIN_LIGHT_SUMMARY_SEO_URL_SAMPLE_CAP
+                      c.seoUrlSample
                   ),
-                  missingH1Urls: (aggregated.seo.missingH1Urls ?? []).slice(0, DOMAIN_LIGHT_SUMMARY_SEO_URL_SAMPLE_CAP),
-                  missingCanonicalUrls: (aggregated.seo.missingCanonicalUrls ?? []).slice(
-                      0,
-                      DOMAIN_LIGHT_SUMMARY_SEO_URL_SAMPLE_CAP
-                  ),
-                  pagesWithNoindex: (aggregated.seo.pagesWithNoindex ?? []).slice(
-                      0,
-                      DOMAIN_LIGHT_SUMMARY_SEO_URL_SAMPLE_CAP
-                  ),
+                  missingH1Urls: (aggregated.seo.missingH1Urls ?? []).slice(0, c.seoUrlSample),
+                  missingCanonicalUrls: (aggregated.seo.missingCanonicalUrls ?? []).slice(0, c.seoUrlSample),
+                  pagesWithNoindex: (aggregated.seo.pagesWithNoindex ?? []).slice(0, c.seoUrlSample),
                   crossPageKeywords: (aggregated.seo.crossPageKeywords ?? [])
-                      .slice(0, DOMAIN_LIGHT_SUMMARY_SEO_KEYWORDS_CAP)
+                      .slice(0, c.seoKeywords)
                       .map((kw) => ({
                           ...kw,
-                          pageUrls: (kw.pageUrls ?? []).slice(0, DOMAIN_LIGHT_SUMMARY_SEO_URL_SAMPLE_CAP),
+                          pageUrls: (kw.pageUrls ?? []).slice(0, c.seoUrlSample),
                       })),
               }
             : aggregated.seo,
         links: aggregated.links
             ? {
                   ...aggregated.links,
-                  broken: (aggregated.links.broken ?? []).slice(0, DOMAIN_LIGHT_SUMMARY_LINKS_BROKEN_CAP),
-                  brokenByPage: (aggregated.links.brokenByPage ?? []).slice(
-                      0,
-                      DOMAIN_LIGHT_SUMMARY_LINKS_BROKEN_BY_PAGE_CAP
-                  ),
+                  broken: (aggregated.links.broken ?? []).slice(0, c.linksBroken),
+                  brokenByPage: (aggregated.links.brokenByPage ?? []).slice(0, c.linksBrokenByPage),
               }
             : aggregated.links,
         infra: aggregated.infra
@@ -210,31 +241,19 @@ export function toLightAggregated(
                   privacy: aggregated.infra.privacy
                       ? {
                             ...aggregated.infra.privacy,
-                            urlsWithPolicy: (aggregated.infra.privacy.urlsWithPolicy ?? []).slice(
-                                0,
-                                DOMAIN_LIGHT_SUMMARY_INFRA_URL_LIST_CAP
-                            ),
+                            urlsWithPolicy: (aggregated.infra.privacy.urlsWithPolicy ?? []).slice(0, c.infraUrlList),
                             urlsWithCookieBanner: (aggregated.infra.privacy.urlsWithCookieBanner ?? []).slice(
                                 0,
-                                DOMAIN_LIGHT_SUMMARY_INFRA_URL_LIST_CAP
+                                c.infraUrlList
                             ),
-                            urlsWithTerms: (aggregated.infra.privacy.urlsWithTerms ?? []).slice(
-                                0,
-                                DOMAIN_LIGHT_SUMMARY_INFRA_URL_LIST_CAP
-                            ),
+                            urlsWithTerms: (aggregated.infra.privacy.urlsWithTerms ?? []).slice(0, c.infraUrlList),
                         }
                       : aggregated.infra.privacy,
                   security: aggregated.infra.security
                       ? {
                             ...aggregated.infra.security,
-                            urlsWithCsp: (aggregated.infra.security.urlsWithCsp ?? []).slice(
-                                0,
-                                DOMAIN_LIGHT_SUMMARY_INFRA_URL_LIST_CAP
-                            ),
-                            urlsWithXFrame: (aggregated.infra.security.urlsWithXFrame ?? []).slice(
-                                0,
-                                DOMAIN_LIGHT_SUMMARY_INFRA_URL_LIST_CAP
-                            ),
+                            urlsWithCsp: (aggregated.infra.security.urlsWithCsp ?? []).slice(0, c.infraUrlList),
+                            urlsWithXFrame: (aggregated.infra.security.urlsWithXFrame ?? []).slice(0, c.infraUrlList),
                         }
                       : aggregated.infra.security,
               }
@@ -242,27 +261,38 @@ export function toLightAggregated(
         generative: aggregated.generative
             ? {
                   ...aggregated.generative,
-                  pages: (aggregated.generative.pages ?? []).slice(0, DOMAIN_LIGHT_SUMMARY_GENERATIVE_PAGES_CAP),
+                  pages: (aggregated.generative.pages ?? []).slice(0, c.generativePages),
               }
             : aggregated.generative,
         structure: aggregated.structure
             ? {
                   ...aggregated.structure,
-                  pagesWithMultipleH1: (aggregated.structure.pagesWithMultipleH1 ?? []).slice(
-                      0,
-                      DOMAIN_LIGHT_SUMMARY_STRUCTURE_URL_LIST_CAP
-                  ),
+                  pagesWithMultipleH1: (aggregated.structure.pagesWithMultipleH1 ?? []).slice(0, c.structureUrlList),
                   pagesWithSkippedLevels: (aggregated.structure.pagesWithSkippedLevels ?? []).slice(
                       0,
-                      DOMAIN_LIGHT_SUMMARY_STRUCTURE_URL_LIST_CAP
+                      c.structureUrlList
                   ),
                   pagesWithGoodStructure: (aggregated.structure.pagesWithGoodStructure ?? []).slice(
                       0,
-                      DOMAIN_LIGHT_SUMMARY_STRUCTURE_URL_LIST_CAP
+                      c.structureUrlList
                   ),
               }
             : aggregated.structure,
     };
+}
+
+/** Shrink `aggregated` for `?light=1`: keeps counts/scores, caps per-page URL lists and UX link arrays. */
+export function toLightAggregated(
+    aggregated: DomainSummaryResponse['aggregated']
+): DomainSummaryResponse['aggregated'] {
+    return capAggregatedForSize(aggregated, LIGHT_AGG_CAPS);
+}
+
+/** Shrink `aggregated` for persistence in `domain_scans.payload` (same rules as light; separate caps in constants). */
+export function toStoredAggregated(
+    aggregated: DomainSummaryResponse['aggregated']
+): DomainSummaryResponse['aggregated'] {
+    return capAggregatedForSize(aggregated, STORED_AGG_CAPS);
 }
 
 export function toLightDomainSummaryApiPayload(summary: DomainSummaryResponse): DomainSummaryApiResponse {
@@ -274,12 +304,21 @@ export function toLightDomainSummaryApiPayload(summary: DomainSummaryResponse): 
     };
 }
 
+export type BuildStoredDomainPayloadOptions = {
+    /**
+     * When true, persist `pages: []` and rely on `domain_pages` + `/slim-pages` (after successful issue persist).
+     * `totalPages` on `base` must still reflect page count for summary/list UIs.
+     */
+    omitSlimPages?: boolean;
+};
+
 /** Build the payload to store in domain_scans after deep scan (slim pages + precomputed aggregated). */
 export function buildStoredDomainPayload(
     fullPages: ScanResult[],
-    base: Pick<DomainScanResult, 'id' | 'domain' | 'timestamp' | 'status' | 'progress' | 'totalPages' | 'score' | 'graph' | 'systemicIssues' | 'eeat'>
+    base: Pick<DomainScanResult, 'id' | 'domain' | 'timestamp' | 'status' | 'progress' | 'totalPages' | 'score' | 'graph' | 'systemicIssues' | 'eeat'>,
+    options?: BuildStoredDomainPayloadOptions
 ): DomainScanResult {
-    const aggregated = {
+    const aggregatedRaw: DomainSummaryResponse['aggregated'] = {
         issues: aggregateIssues(fullPages),
         ux: aggregateUx(fullPages),
         seo: aggregateSeo(fullPages),
@@ -291,9 +330,11 @@ export function buildStoredDomainPayload(
         performance: aggregatePerformance(fullPages),
         eco: aggregateEco(fullPages),
     };
+    const aggregated = toStoredAggregated(aggregatedRaw);
+    const pages = options?.omitSlimPages ? [] : fullPages.map(toSlimPage);
     return {
         ...base,
-        pages: fullPages.map(toSlimPage),
+        pages,
         aggregated,
     };
 }

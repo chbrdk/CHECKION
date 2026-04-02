@@ -61,27 +61,32 @@ export async function startDomainScan(
           for (const page of fullPages) {
             await addScan(userId, { ...page, groupId: id });
           }
-          const stored: DomainScanResult = buildStoredDomainPayload(fullPages, {
-            id: update.domainResult.id,
-            domain: update.domainResult.domain,
-            timestamp: update.domainResult.timestamp,
-            status: update.domainResult.status,
-            progress: update.domainResult.progress,
-            totalPages: update.domainResult.totalPages,
-            score: update.domainResult.score,
-            graph: update.domainResult.graph,
-            systemicIssues: update.domainResult.systemicIssues,
-            eeat: update.domainResult.eeat,
-          });
-          await updateDomainScan(id, userId, stored);
-          invalidateDomainScan(id);
-          // Persist raw issues + aggregated groups for fast domain-issues UI.
-          // Eventual consistency is OK; failures must not break scan completion.
+          // Persist raw issues + domain_pages first; then omit duplicate SlimPage[] from payload when safe.
+          let domainPagesPersisted = false;
           try {
             await rebuildDomainIssuesFromPages({ userId, domainScanId: id, pages: fullPages });
+            domainPagesPersisted = true;
           } catch (e) {
             console.error('[CHECKION] domain issues persist failed', e);
           }
+          const stored: DomainScanResult = buildStoredDomainPayload(
+            fullPages,
+            {
+              id: update.domainResult.id,
+              domain: update.domainResult.domain,
+              timestamp: update.domainResult.timestamp,
+              status: update.domainResult.status,
+              progress: update.domainResult.progress,
+              totalPages: update.domainResult.totalPages,
+              score: update.domainResult.score,
+              graph: update.domainResult.graph,
+              systemicIssues: update.domainResult.systemicIssues,
+              eeat: update.domainResult.eeat,
+            },
+            { omitSlimPages: domainPagesPersisted }
+          );
+          await updateDomainScan(id, userId, stored);
+          invalidateDomainScan(id);
           try {
             reportUsage({
               userId,

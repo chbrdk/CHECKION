@@ -6,9 +6,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
-import { listCachedStandaloneScans, listCachedDomainScans } from '@/lib/cache';
-import { listScansByGroupId } from '@/lib/db/scans';
-import { hasStoredAggregated } from '@/lib/domain-summary';
+import { listCachedStandaloneScans } from '@/lib/cache';
+import { getDomainScan, listDomainScanSummariesForSearch, listScansByGroupId } from '@/lib/db/scans';
 import type { ScanResult, SearchMatch, SearchMatchType } from '@/lib/types';
 import { CACHE_REVALIDATE_LIST } from '@/lib/constants';
 
@@ -97,16 +96,16 @@ async function runSearch(
     }
 
     if ((typeFilter === 'all' || typeFilter === 'domain') && allMatches.length < limit) {
-        const domainScans = await listCachedDomainScans(userId, { limit: MAX_DOMAIN_LOAD });
-        for (const ds of domainScans) {
+        const domainRows = await listDomainScanSummariesForSearch(userId, { limit: MAX_DOMAIN_LOAD });
+        for (const row of domainRows) {
             if (allMatches.length >= limit) break;
-            const domain = ds.domain;
-            const pagesToSearch = hasStoredAggregated(ds)
-                ? await listScansByGroupId(userId, ds.id)
-                : (ds.pages ?? []) as ScanResult[];
+            const domain = row.domain;
+            const pagesToSearch = row.hasStoredAggregated
+                ? await listScansByGroupId(userId, row.id)
+                : ((await getDomainScan(row.id, userId))?.pages ?? []) as ScanResult[];
             for (const page of pagesToSearch) {
                 if (allMatches.length >= limit) break;
-                const list = searchInScan(page, q, 'domain', ds.id, domain);
+                const list = searchInScan(page, q, 'domain', row.id, domain);
                 for (const m of list) {
                     if (allMatches.length >= limit) break;
                     allMatches.push(m);
