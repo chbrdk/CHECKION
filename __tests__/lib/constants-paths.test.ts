@@ -28,6 +28,10 @@ import {
     DOMAIN_TAB_SYSTEMIC_ISSUE_ROW_ESTIMATE_PX,
     DOMAIN_UX_BROKEN_LINKS_PREVIEW,
     DOMAIN_AGGREGATED_ISSUES_ROW_ESTIMATE_PX,
+    SCAN_ISSUE_LIST_ROW_FALLBACK_PX,
+    PRETEXT_PACKAGE_NAME,
+    PRETEXT_NPM_URL,
+    PRETEXT_REPO_URL,
     apiScanDomainSlimPages,
     HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON,
     CACHE_REVALIDATE_DOMAIN,
@@ -146,6 +150,15 @@ describe('Domain tab virtual list constants', () => {
         expect(DOMAIN_TAB_SYSTEMIC_ISSUE_ROW_ESTIMATE_PX).toBeGreaterThan(DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX);
         expect(DOMAIN_UX_BROKEN_LINKS_PREVIEW).toBeGreaterThan(0);
         expect(DOMAIN_AGGREGATED_ISSUES_ROW_ESTIMATE_PX).toBeGreaterThan(0);
+        expect(SCAN_ISSUE_LIST_ROW_FALLBACK_PX).toBeGreaterThan(0);
+    });
+});
+
+describe('Pretext reference constants', () => {
+    it('points at npm package and repo', () => {
+        expect(PRETEXT_PACKAGE_NAME).toBe('@chenglou/pretext');
+        expect(PRETEXT_NPM_URL).toMatch(/^https:\/\/www\.npmjs\.com\/package\//);
+        expect(PRETEXT_REPO_URL).toBe('https://github.com/chenglou/pretext');
     });
 });
 

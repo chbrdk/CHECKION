@@ -403,6 +403,14 @@ export const DOMAIN_STORED_SUMMARY_STRUCTURE_URL_LIST_CAP = DOMAIN_LIGHT_SUMMARY
 /** Legacy aggregated-issues table: estimated grid row height for virtualization. */
 export const DOMAIN_AGGREGATED_ISSUES_ROW_ESTIMATE_PX = 56;
 
+/** Scan results virtualized issue table: fallback row height when Pretext/canvas is unavailable. */
+export const SCAN_ISSUE_LIST_ROW_FALLBACK_PX = 72;
+
+/** Multiline text measurement for virtual list row heights — reference URLs (do not duplicate in code). */
+export const PRETEXT_PACKAGE_NAME = '@chenglou/pretext';
+export const PRETEXT_NPM_URL = 'https://www.npmjs.com/package/@chenglou/pretext';
+export const PRETEXT_REPO_URL = 'https://github.com/chenglou/pretext';
+
 /** Base path for public share landing pages. Full URL: origin + SHARE_PATH + '/' + token */
 export const SHARE_PATH = '/share';
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Box, alpha } from '@mui/material';
 import { MsqdxTypography, MsqdxChip, MsqdxButton } from '@msqdx/react';
@@ -13,6 +13,7 @@ import {
   DOMAIN_ISSUES_TABLE_PAGE_SIZE,
   DOMAIN_TAB_VIRTUAL_OVERSCAN,
 } from '@/lib/constants';
+import { estimateDomainAggregatedRowHeights } from '@/lib/pretext-issue-row-heights';
 
 const SEVERITY_CONFIG: Record<string, { label: string; color: string }> = {
   error: { label: 'Error', color: MSQDX_STATUS.error.base },
@@ -44,6 +45,7 @@ function DomainAggregatedIssueListInner({
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const tableBodyScrollRef = useRef<HTMLDivElement>(null);
+  const [tableBodyWidth, setTableBodyWidth] = useState(0);
 
   const sortedIssues = useMemo(() => {
     const arr = [...issues];
@@ -86,10 +88,31 @@ function DomainAggregatedIssueListInner({
     [sortedIssues, start, pageSize]
   );
 
+  useLayoutEffect(() => {
+    if (issues.length === 0) {
+      setTableBodyWidth(0);
+      return;
+    }
+    const el = tableBodyScrollRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width ?? el.clientWidth;
+      setTableBodyWidth(w);
+    });
+    ro.observe(el);
+    setTableBodyWidth(el.clientWidth);
+    return () => ro.disconnect();
+  }, [issues.length]);
+
+  const rowHeightEstimates = useMemo(
+    () => estimateDomainAggregatedRowHeights(paginatedRows, tableBodyWidth),
+    [paginatedRows, tableBodyWidth]
+  );
+
   const rowVirtualizer = useVirtualizer({
     count: paginatedRows.length,
     getScrollElement: () => tableBodyScrollRef.current,
-    estimateSize: () => DOMAIN_AGGREGATED_ISSUES_ROW_ESTIMATE_PX,
+    estimateSize: (index) => rowHeightEstimates[index] ?? DOMAIN_AGGREGATED_ISSUES_ROW_ESTIMATE_PX,
     overscan: DOMAIN_TAB_VIRTUAL_OVERSCAN,
     getItemKey: (index) => {
       const issue = paginatedRows[index];

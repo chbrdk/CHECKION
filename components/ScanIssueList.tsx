@@ -1,12 +1,14 @@
 'use client';
 
-import React, { forwardRef, memo, useImperativeHandle, useMemo, useRef } from 'react';
+import React, { forwardRef, memo, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Box, alpha } from '@mui/material';
 import { MSQDX_SPACING, MSQDX_NEUTRAL, MSQDX_THEME, MSQDX_STATUS } from '@msqdx/tokens';
 import { MsqdxTypography } from '@msqdx/react';
 import { ScanIssueRow } from './ScanIssueRow';
 import type { Issue } from '@/lib/types';
+import { SCAN_ISSUE_LIST_ROW_FALLBACK_PX } from '@/lib/constants';
+import { estimateScanIssueListRowHeights } from '@/lib/pretext-issue-row-heights';
 
 export type ScanIssueListHandle = {
     /** Scroll the virtual list so the row for this **filtered-global** index is visible (must be on the current page slice). */
@@ -29,11 +31,29 @@ const ScanIssueListInner = forwardRef<ScanIssueListHandle, ScanIssueListProps>(f
     ref
 ) {
     const scrollRef = useRef<HTMLDivElement>(null);
+    const [scrollInnerWidth, setScrollInnerWidth] = useState(0);
+
+    useEffect(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+        const ro = new ResizeObserver((entries) => {
+            const w = entries[0]?.contentRect.width ?? el.clientWidth;
+            setScrollInnerWidth(w);
+        });
+        ro.observe(el);
+        setScrollInnerWidth(el.clientWidth);
+        return () => ro.disconnect();
+    }, []);
+
+    const rowHeightEstimates = useMemo(
+        () => estimateScanIssueListRowHeights(issues, scrollInnerWidth),
+        [issues, scrollInnerWidth]
+    );
 
     const rowVirtualizer = useVirtualizer({
         count: issues.length,
         getScrollElement: () => scrollRef.current,
-        estimateSize: () => 72,
+        estimateSize: (index) => rowHeightEstimates[index] ?? SCAN_ISSUE_LIST_ROW_FALLBACK_PX,
         overscan: 10,
         getItemKey: (index) => {
             const issue = issues[index];
