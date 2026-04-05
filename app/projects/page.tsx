@@ -11,6 +11,7 @@ import {
 } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { apiProjectsList, apiProjectsCreate, apiProject, pathProject } from '@/lib/constants';
+import { MSQDX_BUTTON_THEME_ACCENT_SX } from '@/lib/theme-accent';
 
 interface ProjectRow {
     id: string;
@@ -123,10 +124,10 @@ export default function ProjectsPage() {
                 </Box>
                 <MsqdxButton
                     variant="contained"
-                    brandColor="green"
                     size="medium"
                     startIcon="add"
                     onClick={openCreate}
+                    sx={MSQDX_BUTTON_THEME_ACCENT_SX}
                 >
                     {t('projects.new')}
                 </MsqdxButton>
@@ -148,7 +149,7 @@ export default function ProjectsPage() {
                         <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
                             {t('projects.noProjects')}
                         </MsqdxTypography>
-                        <MsqdxButton variant="contained" brandColor="green" size="medium" onClick={openCreate}>
+                        <MsqdxButton variant="contained" size="medium" onClick={openCreate} sx={MSQDX_BUTTON_THEME_ACCENT_SX}>
                             {t('projects.noProjectsCta')}
                         </MsqdxButton>
                     </Box>
@@ -194,7 +195,7 @@ export default function ProjectsPage() {
                                     >
                                         {t('projects.deleteProject')}
                                     </MsqdxButton>
-                                    <MsqdxButton variant="contained" brandColor="green" size="small" onClick={() => router.push(pathProject(p.id))}>
+                                    <MsqdxButton variant="contained" size="small" onClick={() => router.push(pathProject(p.id))} sx={MSQDX_BUTTON_THEME_ACCENT_SX}>
                                         {t('projects.open')}
                                     </MsqdxButton>
                                 </Box>
@@ -230,9 +231,9 @@ export default function ProjectsPage() {
                     </MsqdxButton>
                     <MsqdxButton
                         variant="contained"
-                        brandColor="green"
                         onClick={handleSubmit}
                         disabled={!formName.trim() || submitLoading}
+                        sx={MSQDX_BUTTON_THEME_ACCENT_SX}
                     >
                         {submitLoading ? t('projects.creating') : t('projects.save')}
                     </MsqdxButton>

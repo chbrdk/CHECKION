@@ -29,6 +29,7 @@ import {
 } from '@/lib/constants';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import Link from 'next/link';
+import { THEME_ACCENT_CSS } from '@/lib/theme-accent';
 
 interface ProjectData {
     id: string;
@@ -528,7 +529,7 @@ export default function ProjectDetailPage() {
                                         width: 80,
                                         height: 80,
                                         borderRadius: '50%',
-                                        border: `6px solid ${domainSummary.score > 80 ? 'var(--color-secondary-dx-green)' : 'var(--color-secondary-dx-orange)'}`,
+                                        border: `6px solid ${domainSummary.score > 80 ? THEME_ACCENT_CSS : 'var(--color-secondary-dx-orange)'}`,
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
@@ -605,7 +606,7 @@ export default function ProjectDetailPage() {
                                             border: '3px solid',
                                             borderColor:
                                                 (domainSummary.aggregated.eco.gradeDistribution['A+'] ?? domainSummary.aggregated.eco.gradeDistribution['A'])
-                                                    ? 'var(--color-secondary-dx-green)'
+                                                    ? THEME_ACCENT_CSS
                                                     : 'var(--color-secondary-dx-orange)',
                                             display: 'flex',
                                             alignItems: 'center',

@@ -25,6 +25,7 @@ import {
   pathDomain,
   pathScanDomain,
 } from '@/lib/constants';
+import { THEME_ACCENT_CSS } from '@/lib/theme-accent';
 import { GeoAnalysisPagesTable } from '@/components/GeoAnalysisPagesTable';
 import type { GeoEeatPageResult, GeoEeatRecommendation } from '@/lib/types';
 import type { SlimPage } from '@/lib/types';
@@ -306,7 +307,7 @@ export default function ProjectGeoAnalysisPage() {
               titleVariant="h6"
               variant="flat"
               borderRadius="lg"
-              sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-secondary-dx-green)' }}
+              sx={{ bgcolor: 'var(--color-card-bg)', border: `1px solid ${THEME_ACCENT_CSS}` }}
             >
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, width: '100%', alignItems: 'flex-end' }}>
                 <Box sx={{ flex: '1 1 0', minWidth: 100 }}>
@@ -351,7 +352,7 @@ export default function ProjectGeoAnalysisPage() {
               titleVariant="h6"
               variant="flat"
               borderRadius="lg"
-              sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-secondary-dx-green)' }}
+              sx={{ bgcolor: 'var(--color-card-bg)', border: `1px solid ${THEME_ACCENT_CSS}` }}
             >
               <GeoAnalysisPagesTable pages={pages} />
             </MsqdxMoleculeCard>
@@ -361,7 +362,7 @@ export default function ProjectGeoAnalysisPage() {
               titleVariant="h6"
               variant="flat"
               borderRadius="lg"
-              sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-secondary-dx-green)' }}
+              sx={{ bgcolor: 'var(--color-card-bg)', border: `1px solid ${THEME_ACCENT_CSS}` }}
             >
               {recommendations.length === 0 ? (
                 <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>

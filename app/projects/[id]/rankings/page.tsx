@@ -23,6 +23,7 @@ import {
     API_RANK_TRACKING_KEYWORDS,
 } from '@/lib/constants';
 import { SERP_MAIN_MARKETS } from '@/lib/serp-markets';
+import { MSQDX_BUTTON_THEME_ACCENT_SX, THEME_ACCENT_CSS, THEME_ACCENT_CONTRAST_CSS } from '@/lib/theme-accent';
 import { RankTrackingChart } from '@/components/RankTrackingChart';
 
 interface RankKeywordItem {
@@ -325,7 +326,7 @@ export default function ProjectRankingsPage() {
                     footerDivider={false}
                     headerActions={
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                            <MsqdxButton variant="contained" brandColor="green" size="small" onClick={() => setAddKeywordOpen(true)}>
+                            <MsqdxButton variant="contained" size="small" onClick={() => setAddKeywordOpen(true)} sx={MSQDX_BUTTON_THEME_ACCENT_SX}>
                                 {t('projects.addKeyword')}
                             </MsqdxButton>
                             <MsqdxButton
@@ -362,7 +363,17 @@ export default function ProjectRankingsPage() {
                                         color={selectedSuggestedKeywords.has(kw) ? 'primary' : 'default'}
                                         variant={selectedSuggestedKeywords.has(kw) ? 'filled' : 'outlined'}
                                         size="small"
-                                        sx={{ cursor: 'pointer', mb: 0.5 }}
+                                        sx={{
+                                            cursor: 'pointer',
+                                            mb: 0.5,
+                                            ...(selectedSuggestedKeywords.has(kw)
+                                                ? {
+                                                      backgroundColor: `${THEME_ACCENT_CSS} !important`,
+                                                      color: `${THEME_ACCENT_CONTRAST_CSS} !important`,
+                                                      borderColor: THEME_ACCENT_CSS,
+                                                  }
+                                                : {}),
+                                        }}
                                     />
                                 ))}
                             </Box>
@@ -371,6 +382,7 @@ export default function ProjectRankingsPage() {
                                 size="small"
                                 onClick={handleAddSelectedKeywords}
                                 disabled={selectedSuggestedKeywords.size === 0}
+                                sx={MSQDX_BUTTON_THEME_ACCENT_SX}
                             >
                                 {t('projects.addSelectedKeywords')} ({selectedSuggestedKeywords.size})
                             </MsqdxButton>
@@ -386,7 +398,7 @@ export default function ProjectRankingsPage() {
                             <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
                                 {t('projects.emptyRankings')}
                             </MsqdxTypography>
-                            <MsqdxButton variant="contained" brandColor="green" onClick={() => setAddKeywordOpen(true)}>
+                            <MsqdxButton variant="contained" onClick={() => setAddKeywordOpen(true)} sx={MSQDX_BUTTON_THEME_ACCENT_SX}>
                                 {t('projects.addKeyword')}
                             </MsqdxButton>
                         </Box>
@@ -405,7 +417,7 @@ export default function ProjectRankingsPage() {
                                     borderRadius="button"
                                     sx={{
                                         p: 0,
-                                        border: '1px solid var(--color-secondary-dx-green)',
+                                        border: `1px solid ${THEME_ACCENT_CSS}`,
                                         bgcolor: 'var(--color-card-bg)',
                                         color: 'var(--color-text-on-light)',
                                         display: 'flex',
@@ -525,9 +537,9 @@ export default function ProjectRankingsPage() {
                     </MsqdxButton>
                     <MsqdxButton
                         variant="contained"
-                        brandColor="green"
                         onClick={handleAddKeyword}
                         disabled={!addKeywordDomain.trim() || !addKeywordKeyword.trim() || !addKeywordMarket || addKeywordSubmitting}
+                        sx={MSQDX_BUTTON_THEME_ACCENT_SX}
                     >
                         {addKeywordSubmitting ? t('projects.creating') : t('projects.save')}
                     </MsqdxButton>

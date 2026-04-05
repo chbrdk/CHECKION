@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { Box, Stack } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
+import { MSQDX_BUTTON_THEME_ACCENT_SX } from '@/lib/theme-accent';
 import { apiProject, apiProjectResearch, API_RANK_TRACKING_KEYWORDS } from '@/lib/constants';
 import { SERP_MAIN_MARKETS } from '@/lib/serp-markets';
 import { ProjectResearchResultForm } from '@/components/ProjectResearchResultForm';
@@ -262,10 +263,10 @@ export default function ProjectResearchPage() {
                     </MsqdxTypography>
                     <MsqdxButton
                         variant="contained"
-                        brandColor="green"
                         size="small"
                         onClick={handleRunResearch}
                         disabled={researchLoading || !project.domain}
+                        sx={MSQDX_BUTTON_THEME_ACCENT_SX}
                     >
                         {researchLoading ? t('common.loading') : t('projects.researchStart')}
                     </MsqdxButton>

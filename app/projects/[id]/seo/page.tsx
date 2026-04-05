@@ -31,6 +31,7 @@ import type { AggregatedSeo, AggregatedStructure } from '@/lib/domain-aggregatio
 import { computeSeoOnPageScore } from '@/lib/seo-on-page-score';
 import { SeoOnPageTable, type SeoOnPageRow } from '@/components/SeoOnPageTable';
 import { SeoKeywordsTable } from '@/components/SeoKeywordsTable';
+import { THEME_ACCENT_CSS } from '@/lib/theme-accent';
 
 /** Cache per project id so remount shows last data immediately. Max size to avoid unbounded memory growth. */
 const SEO_CACHE_MAX = 5;
@@ -319,13 +320,13 @@ export default function ProjectSeoPage() {
                     >
                         <Box
                             sx={{
-                                borderBottom: '1px solid var(--color-secondary-dx-green)',
+                                borderBottom: `1px solid ${THEME_ACCENT_CSS}`,
                                 mb: 0,
                                 mt: -1,
                                 mx: -2,
                                 px: 2,
-                                '& .MuiTabs-indicator': { backgroundColor: 'var(--color-secondary-dx-green)' },
-                                '& .Mui-selected': { color: 'var(--color-secondary-dx-green)' },
+                                '& .MuiTabs-indicator': { backgroundColor: THEME_ACCENT_CSS },
+                                '& .Mui-selected': { color: THEME_ACCENT_CSS },
                             }}
                         >
                             <MsqdxTabs
@@ -348,7 +349,7 @@ export default function ProjectSeoPage() {
                                 titleVariant="h6"
                                 variant="flat"
                                 borderRadius="lg"
-                                sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-secondary-dx-green)' }}
+                                sx={{ bgcolor: 'var(--color-card-bg)', border: `1px solid ${THEME_ACCENT_CSS}` }}
                             >
                                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, width: '100%', alignItems: 'flex-end' }}>
                                     <Box sx={{ flex: '1 1 0', minWidth: 100 }}>
@@ -502,7 +503,7 @@ export default function ProjectSeoPage() {
                                     subtitle={`${urls.length} ${t('projects.seo.pagesShort')}`}
                                     variant="flat"
                                     borderRadius="lg"
-                                    sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-secondary-dx-green)' }}
+                                    sx={{ bgcolor: 'var(--color-card-bg)', border: `1px solid ${THEME_ACCENT_CSS}` }}
                                 >
                                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
                                         {shown.map((url) => {
@@ -539,7 +540,7 @@ export default function ProjectSeoPage() {
                                     subtitle={`${urls.length} ${t('projects.seo.pagesShort')}`}
                                     variant="flat"
                                     borderRadius="lg"
-                                    sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-secondary-dx-green)' }}
+                                    sx={{ bgcolor: 'var(--color-card-bg)', border: `1px solid ${THEME_ACCENT_CSS}` }}
                                 >
                                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
                                         {shown.map((url) => {
@@ -574,7 +575,7 @@ export default function ProjectSeoPage() {
                                 borderRadius="lg"
                                 sx={{
                                     bgcolor: 'var(--color-card-bg)',
-                                    border: '1px solid var(--color-secondary-dx-green)',
+                                    border: `1px solid ${THEME_ACCENT_CSS}`,
                                     '& p.MuiTypography-body2': { color: '#000' },
                                 }}
                             >
@@ -591,7 +592,7 @@ export default function ProjectSeoPage() {
                                     subtitle={t('projects.seo.keywordsTableSubtitle')}
                                     variant="flat"
                                     borderRadius="lg"
-                                    sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-secondary-dx-green)' }}
+                                    sx={{ bgcolor: 'var(--color-card-bg)', border: `1px solid ${THEME_ACCENT_CSS}` }}
                                 >
                                     <SeoKeywordsTable keywords={aggregatedSeo.crossPageKeywords} />
                                 </MsqdxMoleculeCard>
@@ -600,7 +601,7 @@ export default function ProjectSeoPage() {
 
                         {seoTabValue === 1 && aggregatedSeo && aggregatedSeo.crossPageKeywords.length === 0 && (
                             <Box sx={{ pt: 2 }}>
-                                <MsqdxMoleculeCard variant="flat" borderRadius="lg" sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-secondary-dx-green)' }}>
+                                <MsqdxMoleculeCard variant="flat" borderRadius="lg" sx={{ bgcolor: 'var(--color-card-bg)', border: `1px solid ${THEME_ACCENT_CSS}` }}>
                                     <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
                                         {t('projects.seo.tableEmpty')}
                                     </MsqdxTypography>

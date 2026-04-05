@@ -21,6 +21,7 @@ import {
     apiProjectGeoQuestionHistory,
     pathGeoEeat,
 } from '@/lib/constants';
+import { MSQDX_BUTTON_THEME_ACCENT_SX } from '@/lib/theme-accent';
 import { GeoQuestionCard } from '@/components/GeoQuestionCard';
 import type { GeoQuestionHistoryPoint } from '@/components/GeoQuestionCard';
 
@@ -316,10 +317,10 @@ export default function ProjectGeoPage() {
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1.5 }}>
                 <MsqdxButton
                     variant="contained"
-                    brandColor="green"
                     size="small"
                     onClick={handleStartGeoEeat}
                     disabled={!project.domain || geoStartLoading}
+                    sx={MSQDX_BUTTON_THEME_ACCENT_SX}
                 >
                     {geoStartLoading ? t('common.loading') : geoRuns.length === 0 ? t('projects.startGeoEeat') : t('projects.startNewGeoEeat')}
                 </MsqdxButton>
@@ -404,10 +405,10 @@ export default function ProjectGeoPage() {
                     </MsqdxTypography>
                     <MsqdxButton
                         variant="contained"
-                        brandColor="green"
                         size="small"
                         onClick={handleStartGeoEeat}
                         disabled={!project.domain || geoStartLoading}
+                        sx={MSQDX_BUTTON_THEME_ACCENT_SX}
                     >
                         {geoStartLoading ? t('common.loading') : t('projects.startGeoEeat')}
                     </MsqdxButton>
