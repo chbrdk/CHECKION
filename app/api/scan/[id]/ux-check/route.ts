@@ -9,6 +9,7 @@ import { getScan, updateScanSummary } from '@/lib/db/scans';
 import { invalidateScan } from '@/lib/cache';
 import { getAnthropicKey } from '@/lib/llm/config';
 import { runUxCheckAgent } from '@/lib/llm/ux-check-agent';
+import { reportUsage } from '@/lib/usage-report';
 
 export async function POST(
     request: Request,
@@ -42,6 +43,23 @@ export async function POST(
         return apiError('Failed to save UX Check result.', API_STATUS.INTERNAL_ERROR);
     }
     invalidateScan(id);
+
+    if (agentResult.usage) {
+        reportUsage({
+            userId: user.id,
+            eventType: 'ux_check',
+            rawUnits: {
+                input_tokens: agentResult.usage.input_tokens,
+                output_tokens: agentResult.usage.output_tokens,
+            },
+        });
+    } else {
+        reportUsage({
+            userId: user.id,
+            eventType: 'ux_check',
+            rawUnits: { runs: 1 },
+        });
+    }
 
     return NextResponse.json(agentResult.summary);
 }

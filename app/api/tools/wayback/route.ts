@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { API_WAYBACK_AVAILABLE } from '@/lib/external-apis';
+import { getRequestUser } from '@/lib/auth-api-token';
+import { reportUsage } from '@/lib/usage-report';
 
 export async function GET(req: NextRequest) {
     const urlParam = req.nextUrl.searchParams.get('url');
@@ -22,6 +24,15 @@ export async function GET(req: NextRequest) {
             archived_snapshots?: { closest?: { url?: string; timestamp?: string; available?: boolean } };
         };
         const closest = json.archived_snapshots?.closest;
+
+        const user = await getRequestUser(req);
+        if (user) {
+            reportUsage({
+                userId: user.id,
+                eventType: 'wayback_lookup',
+                rawUnits: { requests: 1 },
+            });
+        }
 
         return NextResponse.json({
             success: true,

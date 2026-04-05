@@ -48,7 +48,9 @@ function extractStructuredJson(content: string): unknown {
     }
 }
 
-export type RunUxCheckAgentResult = { success: true; summary: UxCheckV2Summary } | { success: false; error: string };
+export type RunUxCheckAgentResult =
+    | { success: true; summary: UxCheckV2Summary; usage: { input_tokens: number; output_tokens: number } | null }
+    | { success: false; error: string };
 
 export async function runUxCheckAgent(
     result: ScanResult,
@@ -100,5 +102,14 @@ export async function runUxCheckAgent(
         return { success: false, error: `Summary validation failed: ${validated.error.message}` };
     }
 
-    return { success: true, summary: validated.data };
+    const u = response.usage;
+    const usage =
+        u && (typeof u.input_tokens === 'number' || typeof u.output_tokens === 'number')
+            ? {
+                  input_tokens: typeof u.input_tokens === 'number' ? u.input_tokens : 0,
+                  output_tokens: typeof u.output_tokens === 'number' ? u.output_tokens : 0,
+              }
+            : null;
+
+    return { success: true, summary: validated.data, usage };
 }

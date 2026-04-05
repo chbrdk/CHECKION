@@ -17,6 +17,7 @@ import { insertPosition } from '@/lib/db/rank-tracking-positions';
 import { getProject } from '@/lib/db/projects';
 import { fetchSerpPosition } from '@/lib/serp-api';
 import { SERP_NUM_PAGES } from '@/lib/serp-markets';
+import { reportUsage } from '@/lib/usage-report';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: NextRequest) {
@@ -60,6 +61,13 @@ export async function POST(request: NextRequest) {
             const msg = err instanceof Error ? err.message : 'SERP request failed';
             return apiError(`Rank refresh failed: ${msg}`, API_STATUS.BAD_GATEWAY);
         }
+    }
+    if (results.length > 0) {
+        reportUsage({
+            userId: user.id,
+            eventType: 'serp_refresh',
+            rawUnits: { keywords: results.length },
+        });
     }
     return NextResponse.json({ success: true, updated: results.length, results });
 }

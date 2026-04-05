@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { API_SSL_LABS_BASE } from '@/lib/external-apis';
+import { getRequestUser } from '@/lib/auth-api-token';
+import { reportUsage } from '@/lib/usage-report';
 
 export async function GET(req: NextRequest) {
     const host = req.nextUrl.searchParams.get('host');
@@ -26,6 +28,15 @@ export async function GET(req: NextRequest) {
             endpoints?: Array<{ grade?: string; serverName?: string }>;
             certificates?: Array<{ subject?: string; issuer?: string }>;
         };
+
+        const user = await getRequestUser(req);
+        if (user) {
+            reportUsage({
+                userId: user.id,
+                eventType: 'ssl_labs_analyze',
+                rawUnits: { requests: 1 },
+            });
+        }
 
         if (data.status === 'ERROR') {
             return apiError('SSL Labs analysis failed', API_STATUS.BAD_GATEWAY);

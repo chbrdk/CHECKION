@@ -6,6 +6,7 @@
 import OpenAI from 'openai';
 import type { GeoEeatIntensiveResult, GeoEeatPageResult, EeatLlmScores } from '@/lib/types';
 import { OPENAI_MODEL, getOpenAIKey } from '@/lib/llm/config';
+import { addOpenAIChatUsage, emptyUsageTotals, type LlmUsageTotals } from '@/lib/llm/usage-totals';
 import {
     EEAT_SYSTEM_PROMPT,
     buildEeatUserPrompt,
@@ -62,12 +63,21 @@ function parseGeoFitnessResponse(content: string): { score: number; reasoning: s
     }
 }
 
-export async function runLlmStages(payload: GeoEeatIntensiveResult): Promise<GeoEeatIntensiveResult> {
+export type RunLlmStagesResult = {
+    payload: GeoEeatIntensiveResult;
+    usage: LlmUsageTotals;
+};
+
+export async function runLlmStages(payload: GeoEeatIntensiveResult): Promise<RunLlmStagesResult> {
+    const usage = emptyUsageTotals();
     let openai: OpenAI;
     try {
         openai = new OpenAI({ apiKey: getOpenAIKey() });
     } catch {
-        return payload;
+        return {
+            payload,
+            usage,
+        };
     }
 
     const pages = [...(payload.pages ?? [])];
@@ -96,6 +106,7 @@ export async function runLlmStages(payload: GeoEeatIntensiveResult): Promise<Geo
                     },
                 ],
             });
+            addOpenAIChatUsage(usage, eeatRes.usage);
             const eeatContent = eeatRes.choices[0]?.message?.content ?? '';
             const eeatScores = eeatContent ? parseEeatResponse(eeatContent) : null;
             if (eeatScores) pages[i] = { ...page, eeatScores };
@@ -124,6 +135,7 @@ export async function runLlmStages(payload: GeoEeatIntensiveResult): Promise<Geo
                     },
                 ],
             });
+            addOpenAIChatUsage(usage, geoRes.usage);
             const geoContent = geoRes.choices[0]?.message?.content ?? '';
             const geoParsed = geoContent ? parseGeoFitnessResponse(geoContent) : null;
             if (geoParsed) {
@@ -140,8 +152,11 @@ export async function runLlmStages(payload: GeoEeatIntensiveResult): Promise<Geo
     }
 
     return {
-        ...payload,
-        pages,
-        recommendations: payload.recommendations ?? [],
+        payload: {
+            ...payload,
+            pages,
+            recommendations: payload.recommendations ?? [],
+        },
+        usage,
     };
 }

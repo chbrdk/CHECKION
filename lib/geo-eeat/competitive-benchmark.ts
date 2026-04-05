@@ -21,6 +21,12 @@ import {
     COMPETITIVE_BENCHMARK_MODELS_CLAUDE,
     COMPETITIVE_BENCHMARK_MODELS_GEMINI,
 } from '@/lib/llm/config';
+import {
+    addAnthropicUsage,
+    addGeminiUsage,
+    addOpenAIChatUsage,
+    type LlmUsageTotals,
+} from '@/lib/llm/usage-totals';
 
 /** JSON schema for Structured Outputs: citations list for position metrics. */
 const CITATIONS_RESPONSE_FORMAT = {
@@ -116,7 +122,8 @@ export async function runCompetitiveBenchmark(
     targetUrl: string,
     competitors: string[],
     queries: string[],
-    modelOverride?: string
+    modelOverride?: string,
+    usageTotals?: LlmUsageTotals
 ): Promise<CompetitiveBenchmarkResult | null> {
     let openai: OpenAI;
     try {
@@ -145,6 +152,7 @@ export async function runCompetitiveBenchmark(
                 ],
                 response_format: CITATIONS_RESPONSE_FORMAT,
             });
+            if (usageTotals) addOpenAIChatUsage(usageTotals, res.usage);
             const rawContent = res.choices[0]?.message?.content ?? '';
             const citations = parseStructuredCitations(rawContent);
             return {
@@ -202,7 +210,8 @@ export async function runCompetitiveBenchmarkClaude(
     targetUrl: string,
     competitors: string[],
     queries: string[],
-    model: string
+    model: string,
+    usageTotals?: LlmUsageTotals
 ): Promise<CompetitiveBenchmarkResult | null> {
     const apiKey = getAnthropicKey();
     if (!apiKey) return null;
@@ -231,6 +240,7 @@ export async function runCompetitiveBenchmarkClaude(
                 system: systemPrompt,
                 messages: [{ role: 'user', content: query }],
             });
+            if (usageTotals) addAnthropicUsage(usageTotals, res.usage);
             const rawContent = extractJsonFromClaudeContent(
                 (res.content as Array<{ type: string; text?: string }>) ?? []
             );
@@ -290,7 +300,8 @@ export async function runCompetitiveBenchmarkGemini(
     targetUrl: string,
     competitors: string[],
     queries: string[],
-    model: string
+    model: string,
+    usageTotals?: LlmUsageTotals
 ): Promise<CompetitiveBenchmarkResult | null> {
     const apiKey = getGeminiKey();
     if (!apiKey) return null;
@@ -322,6 +333,12 @@ export async function runCompetitiveBenchmarkGemini(
                     responseMimeType: 'application/json',
                 },
             });
+            if (usageTotals) {
+                const meta = response?.usageMetadata as
+                    | { promptTokenCount?: number; candidatesTokenCount?: number }
+                    | undefined;
+                addGeminiUsage(usageTotals, meta);
+            }
             const rawContent = (response?.text ?? '').trim();
             const citations = parseStructuredCitations(rawContent);
             return {
@@ -380,6 +397,8 @@ export interface CompetitiveBenchmarkMultiModelOptions {
         modelId: string,
         partial: Record<string, CompetitiveBenchmarkResult>
     ) => void | Promise<void>;
+    /** Accumulates OpenAI / Anthropic / Gemini token usage for billing (e.g. PLEXON). */
+    usageTotals?: LlmUsageTotals;
 }
 
 /** Run competitive benchmark with multiple models (OpenAI + Claude + Gemini). Returns results keyed by model name. */
@@ -394,9 +413,10 @@ export async function runCompetitiveBenchmarkMultiModel(
 ): Promise<Record<string, CompetitiveBenchmarkResult>> {
     const out: Record<string, CompetitiveBenchmarkResult> = {};
     const onModelComplete = options?.onModelComplete;
+    const usageTotals = options?.usageTotals;
 
     for (const model of openaiModels) {
-        const result = await runCompetitiveBenchmark(targetUrl, competitors, queries, model);
+        const result = await runCompetitiveBenchmark(targetUrl, competitors, queries, model, usageTotals);
         if (result) {
             out[model] = result;
             await onModelComplete?.(model, { ...out });
@@ -405,7 +425,7 @@ export async function runCompetitiveBenchmarkMultiModel(
 
     if (getAnthropicKey()) {
         for (const model of claudeModels) {
-            const result = await runCompetitiveBenchmarkClaude(targetUrl, competitors, queries, model);
+            const result = await runCompetitiveBenchmarkClaude(targetUrl, competitors, queries, model, usageTotals);
             if (result) {
                 out[model] = result;
                 await onModelComplete?.(model, { ...out });
@@ -415,7 +435,7 @@ export async function runCompetitiveBenchmarkMultiModel(
 
     if (getGeminiKey()) {
         for (const model of geminiModels) {
-            const result = await runCompetitiveBenchmarkGemini(targetUrl, competitors, queries, model);
+            const result = await runCompetitiveBenchmarkGemini(targetUrl, competitors, queries, model, usageTotals);
             if (result) {
                 out[model] = result;
                 await onModelComplete?.(model, { ...out });

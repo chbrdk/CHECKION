@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import puppeteer from 'puppeteer';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
+import { getRequestUser } from '@/lib/auth-api-token';
+import { reportUsage } from '@/lib/usage-report';
 
 export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
@@ -55,6 +57,15 @@ export async function GET(req: NextRequest) {
 
         if (!data) {
             return apiError('Selector not found', API_STATUS.NOT_FOUND, { selector });
+        }
+
+        const user = await getRequestUser(req);
+        if (user) {
+            reportUsage({
+                userId: user.id,
+                eventType: 'tool_extract',
+                rawUnits: { requests: 1 },
+            });
         }
 
         return NextResponse.json({

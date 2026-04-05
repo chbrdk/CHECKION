@@ -14,6 +14,7 @@ import { insertCompetitiveRun, updateCompetitiveRun } from '@/lib/db/geo-eeat-co
 import { buildGeoEeatResultFromScan } from '@/lib/geo-eeat/stage1';
 import { runLlmStages } from '@/lib/geo-eeat/run-llm-stages';
 import { runCompetitiveBenchmarkMultiModel } from '@/lib/geo-eeat/competitive-benchmark';
+import { emptyUsageTotals, mergeUsageTotals } from '@/lib/llm/usage-totals';
 import { v4 as uuidv4 } from 'uuid';
 import { reportUsage } from '@/lib/usage-report';
 
@@ -53,8 +54,11 @@ export async function POST(request: NextRequest) {
                 device: 'desktop',
             });
             let payload = buildGeoEeatResultFromScan(scan);
+            const geoJobUsageTotals = emptyUsageTotals();
             try {
-                payload = await runLlmStages(payload);
+                const llmOut = await runLlmStages(payload);
+                payload = llmOut.payload;
+                mergeUsageTotals(geoJobUsageTotals, llmOut.usage);
             } catch (e) {
                 console.error('[CHECKION] GEO/E-E-A-T LLM stages error:', e);
             }
@@ -64,6 +68,7 @@ export async function POST(request: NextRequest) {
                 const competitiveRunId = uuidv4();
                 const userId = user.id;
                 await insertCompetitiveRun(competitiveRunId, jobId, userId, qs, comps);
+                const competitiveUsageTotals = emptyUsageTotals();
                 const competitiveByModel = await runCompetitiveBenchmarkMultiModel(
                     url,
                     comps,
@@ -78,8 +83,10 @@ export async function POST(request: NextRequest) {
                                 payload: { ...payload, competitiveByModel: partial },
                             });
                         },
+                        usageTotals: competitiveUsageTotals,
                     }
                 );
+                mergeUsageTotals(geoJobUsageTotals, competitiveUsageTotals);
                 if (Object.keys(competitiveByModel).length > 0) payload.competitiveByModel = competitiveByModel;
                 await updateCompetitiveRun(competitiveRunId, userId, {
                     status: 'complete',
@@ -92,13 +99,23 @@ export async function POST(request: NextRequest) {
                 payload,
             });
             try {
-              reportUsage({
-                userId: user.id,
-                eventType: 'geo_eeat',
-                rawUnits: { job: 1 },
-                idempotencyKey: `geo_eeat:${jobId}`,
-              });
-            } catch { /* never affect response */ }
+                const hasLlmTokens =
+                    geoJobUsageTotals.input_tokens > 0 || geoJobUsageTotals.output_tokens > 0;
+                reportUsage({
+                    userId: user.id,
+                    eventType: 'geo_eeat',
+                    rawUnits: hasLlmTokens
+                        ? {
+                              job: 1,
+                              input_tokens: geoJobUsageTotals.input_tokens,
+                              output_tokens: geoJobUsageTotals.output_tokens,
+                          }
+                        : { job: 1 },
+                    idempotencyKey: `geo_eeat:${jobId}`,
+                });
+            } catch {
+                /* never affect response */
+            }
         } catch (e) {
             const message = e instanceof Error ? e.message : String(e);
             console.error('[CHECKION] GEO/E-E-A-T run failed:', e);
