@@ -11,6 +11,7 @@ import {
     PAGE_CLASSIFY_MAX_TOKENS,
     getAnthropicKey,
 } from '@/lib/llm/config';
+import { addAnthropicUsage, emptyUsageTotals, type LlmUsageTotals } from '@/lib/llm/usage-totals';
 
 const BODY_EXCERPT_MAX = 2000;
 
@@ -77,16 +78,21 @@ const DEFAULT_FALLBACK: PageClassification = { tagTiers: [] };
 
 const MIN_BODY_LENGTH = 50;
 
+export type ClassifyPageWithLlmOutcome = {
+    classification: PageClassification | null;
+    usage: LlmUsageTotals | null;
+};
+
 /**
  * Run LLM classification for a single scan result (Claude Haiku 4.5, low max_tokens).
  * Used by scanner and by POST /api/scan/…/classify.
- * Returns null if bodyTextExcerpt too short, ANTHROPIC_API_KEY not set, or on error (never throws).
+ * Returns null classification if bodyTextExcerpt too short, ANTHROPIC_API_KEY not set, or on error (never throws).
  */
-export async function classifyPageWithLlm(result: ScanResult): Promise<PageClassification | null> {
+export async function classifyPageWithLlm(result: ScanResult): Promise<ClassifyPageWithLlmOutcome> {
     const excerpt = (result.bodyTextExcerpt ?? '').trim();
-    if (excerpt.length < MIN_BODY_LENGTH) return null;
+    if (excerpt.length < MIN_BODY_LENGTH) return { classification: null, usage: null };
     const apiKey = getAnthropicKey();
-    if (!apiKey) return null;
+    if (!apiKey) return { classification: null, usage: null };
     try {
         const client = new Anthropic({ apiKey });
         const payload = buildClassificationPayload(result);
@@ -101,9 +107,13 @@ export async function classifyPageWithLlm(result: ScanResult): Promise<PageClass
             (b): b is Anthropic.TextBlock => b.type === 'text'
         );
         const rawContent = textBlock?.text ?? '';
-        return parseClassificationResponse(rawContent);
+        const classification = parseClassificationResponse(rawContent);
+        const usage = emptyUsageTotals();
+        addAnthropicUsage(usage, response.usage);
+        const hasUsage = usage.input_tokens > 0 || usage.output_tokens > 0;
+        return { classification, usage: hasUsage ? usage : null };
     } catch {
-        return null;
+        return { classification: null, usage: null };
     }
 }
 

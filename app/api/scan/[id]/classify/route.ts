@@ -50,14 +50,15 @@ export async function POST(
         return internalError('Anthropic API key not configured (required for page classification).');
     }
 
-    let pageClassification;
+    let classifyOutcome;
     try {
-        pageClassification = await classifyPageWithLlm(result);
+        classifyOutcome = await classifyPageWithLlm(result);
     } catch (e) {
         const message = e instanceof Error ? e.message : 'LLM request failed';
         console.error('[CHECKION] classify: Claude API error', e);
         return apiError(message, API_STATUS.INTERNAL_ERROR);
     }
+    const pageClassification = classifyOutcome?.classification;
     if (!pageClassification) {
         return apiError('Classification failed or returned no result.', API_STATUS.INTERNAL_ERROR);
     }
@@ -76,13 +77,23 @@ export async function POST(
     }
 
     try {
-        reportUsage({
-            userId: user.id,
-            eventType: 'page_classify',
-            rawUnits: { pages: 1 },
-            idempotencyKey: `classify:${id}`,
-        });
-    } catch { /* never affect response */ }
+        if (
+            classifyOutcome?.usage &&
+            (classifyOutcome.usage.input_tokens > 0 || classifyOutcome.usage.output_tokens > 0)
+        ) {
+            reportUsage({
+                userId: user.id,
+                eventType: 'llm_request',
+                rawUnits: {
+                    input_tokens: classifyOutcome.usage.input_tokens,
+                    output_tokens: classifyOutcome.usage.output_tokens,
+                },
+                idempotencyKey: `classify:${id}`,
+            });
+        }
+    } catch {
+        /* never affect response */
+    }
 
     return NextResponse.json({ success: true, data: pageClassification });
 }

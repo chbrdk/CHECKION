@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
         projectId: parsed.projectId,
         useSitemap: parsed.useSitemap,
         maxPages: parsed.maxPages,
+        skipUnchangedPages: parsed.skipUnchangedPages,
     });
     return NextResponse.json({
         success: true,

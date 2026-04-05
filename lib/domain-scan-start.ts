@@ -15,6 +15,8 @@ export interface StartDomainScanOptions {
   projectId?: string | null;
   useSitemap?: boolean;
   maxPages?: number;
+  /** If true, reuse prior scan row when HEAD ETag/Last-Modified matches stored hints. */
+  skipUnchangedPages?: boolean;
   /** If set, store this normalized hostname as domain (for competitor dedup). */
   domainOverride?: string;
 }
@@ -43,12 +45,22 @@ export async function startDomainScan(
 
   const useSitemap = options.useSitemap ?? true;
   const maxPages = options.maxPages;
+  const skipUnchangedPages = options.skipUnchangedPages === true;
+  const projectIdForPages =
+    options.projectId !== undefined ? options.projectId : undefined;
 
   (async () => {
     try {
       await updateDomainScan(id, userId, { status: 'scanning' });
       invalidateDomainScan(id);
-      for await (const update of runDomainScan(url, { useSitemap, maxPages })) {
+      for await (const update of runDomainScan(url, {
+        useSitemap,
+        maxPages,
+        domainScanId: id,
+        userId,
+        projectId: projectIdForPages,
+        skipUnchangedPages,
+      })) {
         const currentScan = await getDomainScan(id, userId);
         if (!currentScan) break;
         if (update.type === 'progress') {
@@ -67,6 +79,7 @@ export async function startDomainScan(
                 page_index: update.pageIndex,
                 ok: update.ok,
                 url: update.url,
+                ...(update.reusedUnchanged ? { reused_unchanged: true } : {}),
               },
               idempotencyKey: `domain_scan_page:${id}:${update.pageIndex}`,
             });
@@ -76,7 +89,9 @@ export async function startDomainScan(
         } else if (update.type === 'complete') {
           const fullPages = update.domainResult.pages;
           for (const page of fullPages) {
-            await addScan(userId, { ...page, groupId: id });
+            await addScan(userId, { ...page, groupId: id }, {
+              projectId: projectIdForPages ?? null,
+            });
           }
           // Persist raw issues + domain_pages first; then omit duplicate SlimPage[] from payload when safe.
           let domainPagesPersisted = false;

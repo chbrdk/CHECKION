@@ -32,6 +32,7 @@ import { reportUsage } from '@/lib/usage-report';
 import { runDomainScan } from '@/lib/spider';
 import { startDomainScan } from '@/lib/domain-scan-start';
 import type { DomainScanResult } from '@/lib/types';
+import type { DomainScanStreamUpdate } from '@/lib/spider';
 
 describe('startDomainScan usage', () => {
   beforeEach(() => {
@@ -52,7 +53,7 @@ describe('startDomainScan usage', () => {
       systemicIssues: [],
     };
 
-    async function* gen() {
+    async function* gen(domainScanId: string): AsyncGenerator<DomainScanStreamUpdate, DomainScanResult, unknown> {
       yield {
         type: 'page_complete' as const,
         pageIndex: 0,
@@ -67,10 +68,15 @@ describe('startDomainScan usage', () => {
         normalizedUrl: 'https://example.com/about',
         ok: false,
       };
-      yield { type: 'complete' as const, domainResult };
+      const fr: DomainScanResult = { ...domainResult, id: domainScanId };
+      yield { type: 'complete' as const, domainResult: fr };
+      return fr;
     }
 
-    vi.mocked(runDomainScan).mockImplementation(() => gen());
+    vi.mocked(runDomainScan).mockImplementation((url, opts) => {
+      const id = (opts as { domainScanId?: string }).domainScanId ?? 'wrong-id';
+      return gen(id);
+    });
 
     const { id } = await startDomainScan('user-plexon-1', 'https://example.com');
 

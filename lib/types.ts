@@ -189,6 +189,10 @@ export type ScanResult = {
     ymyl?: YmylResult;
     /** LLM-derived: what the page is about (tags) and content intensity tier (1–5). */
     pageClassification?: PageClassification;
+    /** Final document response headers (for deep-scan reuse via HEAD). */
+    documentCacheHints?: { etag?: string; lastModified?: string };
+    /** Set when this row was cloned from a prior scan (ETag/Last-Modified match). */
+    reusedUnchanged?: boolean;
 }
 
 export interface TechnicalInsights {

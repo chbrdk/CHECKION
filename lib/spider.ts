@@ -2,6 +2,10 @@ import { runScan } from './scanner';
 import { getSitemapUrlFromRobots, fetchSitemapUrls } from './sitemap';
 import type { ScanResult, DomainScanResult, EeatDomainAggregate } from './types';
 import { v4 as uuidv4 } from 'uuid';
+import { normalizeScanUrl } from '@/lib/url-normalize';
+import { getLatestScanForUrlFingerprint } from '@/lib/db/scans';
+import { checkPageUnchangedByHeaders } from '@/lib/page-unchanged-check';
+import { cloneScanResultForReuse } from '@/lib/domain-scan-reuse';
 
 const DEFAULT_MAX_PAGES = 1000;
 const MAX_DEPTH = 3; // Home + 3 levels; max pages will likely hit first
@@ -19,6 +23,12 @@ export type DomainScanOptions = {
     useSitemap?: boolean;
     /** Max number of pages to scan (default 1000). Capped at DOMAIN_SCAN_MAX_PAGES_CAP (10000). */
     maxPages?: number;
+    /** Same id as `domain_scans.id` when started via {@link startDomainScan}. */
+    domainScanId?: string;
+    userId?: string;
+    projectId?: string | null;
+    /** When true, reuse prior scan if HEAD ETag/Last-Modified matches stored hints. */
+    skipUnchangedPages?: boolean;
 };
 
 /** Streamed updates from {@link runDomainScan} (UI + usage). */
@@ -39,22 +49,10 @@ export type DomainScanStreamUpdate =
           url: string;
           normalizedUrl: string;
           ok: boolean;
+          reusedUnchanged?: boolean;
       }
     | { type: 'complete'; domainResult: DomainScanResult };
 
-
-/**
- * Normalizes a URL to ensure consistent deduplication
- */
-function normalizeUrl(url: string): string {
-    try {
-        const u = new URL(url);
-        // Remove trailing slash, fragments, and queries for cleaner spidering
-        return u.origin + u.pathname.replace(/\/$/, '');
-    } catch (e) {
-        return url;
-    }
-}
 
 /** Treat www and non-www as same domain for internal link detection */
 function isSameDomain(a: string, b: string): boolean {
@@ -151,7 +149,7 @@ export async function* runDomainScan(
     startUrl: string,
     options: DomainScanOptions = {}
 ): AsyncGenerator<DomainScanStreamUpdate, DomainScanResult, unknown> {
-    const domainId = uuidv4();
+    const domainId = options.domainScanId ?? uuidv4();
     const baseUrl = new URL(startUrl);
     const origin = baseUrl.origin;
     const useSitemap = options.useSitemap !== false;
@@ -171,9 +169,9 @@ export async function* runDomainScan(
             const sitemapUrls = await fetchSitemapUrls(sitemapUrl, origin, maxPages);
             // Only use sitemap when it provides enough URLs; otherwise fall back to link crawl so we discover pages from the first scan
             if (sitemapUrls.length > 1) {
-                const startNorm = normalizeUrl(startUrl);
+                const startNorm = normalizeScanUrl(startUrl);
                 sitemapUrls.forEach(u => {
-                    const n = normalizeUrl(u);
+                    const n = normalizeScanUrl(u);
                     if (!visited.has(n)) {
                         visited.add(n);
                         queue.push({ url: u, depth: 0 });
@@ -190,7 +188,7 @@ export async function* runDomainScan(
 
     if (queue.length === 0) {
         queue = [{ url: startUrl, depth: 0 }];
-        visited.add(normalizeUrl(startUrl));
+        visited.add(normalizeScanUrl(startUrl));
     }
 
     const results: Array<{ result: ScanResult, depth: number }> = [];
@@ -214,6 +212,31 @@ export async function* runDomainScan(
     const inFlight: InFlight[] = [];
     let pageCompleteIndex = 0;
 
+    async function tryReuseOrRunFullScan(current: { url: string; depth: number }): Promise<ScanResult> {
+        const normalizedCurrent = normalizeScanUrl(current.url);
+        if (options.skipUnchangedPages && options.userId) {
+            const prev = await getLatestScanForUrlFingerprint(
+                options.userId,
+                normalizedCurrent,
+                'desktop',
+                options.projectId,
+            );
+            if (prev?.documentCacheHints) {
+                const status = await checkPageUnchangedByHeaders(current.url, prev.documentCacheHints);
+                if (status === 'unchanged') {
+                    return cloneScanResultForReuse(prev.scanResult, domainId, current.url);
+                }
+            }
+        }
+        return runScan({
+            url: current.url,
+            device: 'desktop',
+            standard: 'WCAG2AA',
+            groupId: domainId,
+            userId: options.userId,
+        });
+    }
+
     const processCompleted = (completed: InFlight, result: ScanResult | null, error: Error | null) => {
         const { url, depth, normalizedCurrent } = completed;
         if (result) {
@@ -230,7 +253,7 @@ export async function* runDomainScan(
             if (depth < MAX_DEPTH && results.length + queue.length < maxPages * 2) {
                 const newLinks = result.allLinks || [];
                 newLinks.forEach(link => {
-                    const norm = normalizeUrl(link);
+                    const norm = normalizeScanUrl(link);
                     const isInternal = norm.startsWith(origin) || isSameDomain(link, origin);
                     if (isInternal && !visited.has(norm)) {
                         visited.add(norm);
@@ -259,7 +282,7 @@ export async function* runDomainScan(
             results.length + inFlight.length < maxPages
         ) {
             const current = queue.shift()!;
-            const normalizedCurrent = normalizeUrl(current.url);
+            const normalizedCurrent = normalizeScanUrl(current.url);
             yield {
                 type: 'progress',
                 url: current.url,
@@ -267,11 +290,7 @@ export async function* runDomainScan(
                 scannedCount: results.length + inFlight.length + 1,
                 message: `Scanning ${current.url}...`
             };
-            const promise = runScan({
-                url: current.url,
-                device: 'desktop',
-                standard: 'WCAG2AA'
-            });
+            const promise = tryReuseOrRunFullScan(current);
             inFlight.push({
                 promise,
                 url: current.url,
@@ -306,6 +325,7 @@ export async function* runDomainScan(
             url: raceResult.slot.url,
             normalizedUrl: raceResult.slot.normalizedCurrent,
             ok: Boolean(raceResult.result),
+            ...(raceResult.result?.reusedUnchanged ? { reusedUnchanged: true } : {}),
         };
     }
 
@@ -321,7 +341,7 @@ export async function* runDomainScan(
             if (segments.length === 0) return;
             const parentPath = segments.length === 1 ? '/' : '/' + segments.slice(0, -1).join('/');
             const parentUrl = parentPath === '/' ? origin : origin + parentPath;
-            const parentNorm = normalizeUrl(parentUrl);
+            const parentNorm = normalizeScanUrl(parentUrl);
             if (parentNorm === node.id || !nodeIds.has(parentNorm)) return;
             const key = `${parentNorm}\t${node.id}`;
             if (linkKeys.has(key)) return;
@@ -334,11 +354,11 @@ export async function* runDomainScan(
 
     // Link edges from page content: for each scanned page, add edge to every other scanned page it links to (allLinks)
     results.forEach(({ result }) => {
-        const sourceNorm = normalizeUrl(result.url);
+        const sourceNorm = normalizeScanUrl(result.url);
         if (!nodeIds.has(sourceNorm)) return;
         (result.allLinks || []).forEach((href: string) => {
             try {
-                const targetNorm = normalizeUrl(href);
+                const targetNorm = normalizeScanUrl(href);
                 if (!nodeIds.has(targetNorm) || targetNorm === sourceNorm) return;
                 const key = `${sourceNorm}\t${targetNorm}`;
                 if (linkKeys.has(key)) return;

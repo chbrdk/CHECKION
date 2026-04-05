@@ -111,8 +111,11 @@ function calculateScore(counts: ScanStats): number {
     return Math.max(0, Math.round(100 - deductions));
 }
 
-export async function runScan(options: ScanOptions & { groupId?: string; targetRegion?: string }): Promise<ScanResult> {
-    const { url, standard = 'WCAG2AA', runners = ['axe', 'htmlcs'], device = 'desktop', groupId, targetRegion } = options;
+export async function runScan(
+    options: ScanOptions & { groupId?: string; targetRegion?: string; userId?: string },
+): Promise<ScanResult> {
+    const { url, standard = 'WCAG2AA', runners = ['axe', 'htmlcs'], device = 'desktop', groupId, targetRegion, userId } =
+        options;
     const scanId = uuidv4();
 
     // Dynamic import – pa11y is CommonJS and must stay server-only
@@ -1595,9 +1598,40 @@ export async function runScan(options: ScanOptions & { groupId?: string; targetR
             ymyl: ymylResult
         };
 
+        const etag = (mainHeaders['etag'] ?? mainHeaders['ETag'])?.trim();
+        const lastModified = (mainHeaders['last-modified'] ?? mainHeaders['Last-Modified'])?.trim();
+        if (etag || lastModified) {
+            result.documentCacheHints = {
+                ...(etag ? { etag } : {}),
+                ...(lastModified ? { lastModified } : {}),
+            };
+        }
+
         const { classifyPageWithLlm } = await import('./llm/page-classification');
-        const classification = await classifyPageWithLlm(result).catch(() => null);
-        if (classification) result.pageClassification = classification;
+        const { reportUsage } = await import('./usage-report');
+        const classifyOutcome = await classifyPageWithLlm(result).catch(() => null);
+        if (classifyOutcome?.classification) {
+            result.pageClassification = classifyOutcome.classification;
+        }
+        if (
+            userId &&
+            classifyOutcome?.usage &&
+            (classifyOutcome.usage.input_tokens > 0 || classifyOutcome.usage.output_tokens > 0)
+        ) {
+            try {
+                reportUsage({
+                    userId,
+                    eventType: 'llm_request',
+                    rawUnits: {
+                        input_tokens: classifyOutcome.usage.input_tokens,
+                        output_tokens: classifyOutcome.usage.output_tokens,
+                    },
+                    idempotencyKey: `page_classify_inline:${scanId}`,
+                });
+            } catch {
+                /* never affect scan */
+            }
+        }
 
         return result;
     } finally {

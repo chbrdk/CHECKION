@@ -6,6 +6,7 @@ import { eq, and, desc, isNull, count, sql } from 'drizzle-orm';
 import { getDb } from './index';
 import { scans, domainScans } from './schema';
 import type { ScanResult, DomainScanResult } from '@/lib/types';
+import { normalizeScanUrl } from '@/lib/url-normalize';
 
 export type DomainScanSummaryRow = { id: string; domain: string; timestamp: string; status: string; score: number; totalPages: number };
 
@@ -277,4 +278,52 @@ export async function deleteDomainScan(id: string, userId: string): Promise<bool
     const db = getDb();
     const deleted = await db.delete(domainScans).where(and(eq(domainScans.id, id), eq(domainScans.userId, userId)));
     return (deleted.rowCount ?? 0) > 0;
+}
+
+const FINGERPRINT_SCAN_LOOKBACK = 200;
+
+/**
+ * Latest scan row for user/device whose normalized URL matches and optional project filter,
+ * with non-empty document cache hints (for deep-scan HEAD reuse).
+ */
+export async function getLatestScanForUrlFingerprint(
+    userId: string,
+    normalizedUrl: string,
+    device: string,
+    projectId?: string | null,
+): Promise<{ documentCacheHints: NonNullable<ScanResult['documentCacheHints']>; scanResult: ScanResult } | null> {
+    const db = getDb();
+    const rows = await db
+        .select({ result: scans.result, projectId: scans.projectId })
+        .from(scans)
+        .where(and(eq(scans.userId, userId), eq(scans.device, device)))
+        .orderBy(desc(scans.timestamp))
+        .limit(FINGERPRINT_SCAN_LOOKBACK);
+
+    for (const row of rows) {
+        const scanResult = row.result as unknown as ScanResult;
+        if (normalizeScanUrl(scanResult.url) !== normalizedUrl) continue;
+
+        if (projectId === undefined) {
+            // any project
+        } else if (projectId === null) {
+            if (row.projectId != null) continue;
+        } else if (row.projectId !== projectId) {
+            continue;
+        }
+
+        const hints = scanResult.documentCacheHints;
+        const etag = hints?.etag?.trim();
+        const lastModified = hints?.lastModified?.trim();
+        if (!etag && !lastModified) continue;
+
+        return {
+            documentCacheHints: {
+                ...(etag ? { etag } : {}),
+                ...(lastModified ? { lastModified } : {}),
+            },
+            scanResult,
+        };
+    }
+    return null;
 }

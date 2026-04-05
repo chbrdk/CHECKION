@@ -45,6 +45,7 @@ export const scanDomainBodySchema = z.object({
   useSitemap: z.boolean().optional(),
   maxPages: z.number().int().min(1).optional(),
   projectId: z.string().uuid().nullable().optional(),
+  skipUnchangedPages: z.boolean().optional(),
 });
 
 /** POST /api/scan/journey-agent */

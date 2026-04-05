@@ -21,16 +21,27 @@ Siehe `app/api/scan/domain/route.ts` und `app/api/projects/[id]/domain-scan-all/
 
 ## Seitenthemen (Tags + Tier) – im Single Scan
 
-Die LLM-Klassifikation (Tags + Tier 1–5) läuft **direkt im Single Scan** (`lib/scanner.ts`). Nach dem Aufbau des `ScanResult` wird `classifyPageWithLlm(result)` aufgerufen; bei Erfolg wird `pageClassification` ins Result geschrieben. Dadurch hat jede Seite (Einzelscan und Deep Scan) automatisch Tags und Tier, sofern genug `bodyTextExcerpt` vorhanden ist und `OPENAI_API_KEY` gesetzt ist. Siehe `lib/llm/page-classification.ts` (`classifyPageWithLlm`).
+Die LLM-Klassifikation (Tags + Tier 1–5) läuft **direkt im Single Scan** (`lib/scanner.ts`). Nach dem Aufbau des `ScanResult` wird `classifyPageWithLlm(result)` aufgerufen; bei Erfolg wird `pageClassification` ins Result geschrieben. Dadurch hat jede Seite (Einzelscan und Deep Scan) automatisch Tags und Tier, sofern genug `bodyTextExcerpt` vorhanden ist und **`ANTHROPIC_API_KEY`** gesetzt ist. Siehe `lib/llm/page-classification.ts` (`classifyPageWithLlm`). Nutzung wird bei gesetztem `userId` im Lauf als **`llm_request`** an PLEXON gemeldet (`page_classify_inline:{scanId}`).
 
 - Einzelscan: Result enthält `pageClassification` beim Speichern.
 - Deep Scan: Jede von der Spider gescannte Seite wird klassifiziert; `toSlimPage` übernimmt `pageClassification` ins Domain-Payload.
 
+## Unveränderte Seiten überspringen (optional)
+
+- **`skipUnchangedPages: true`** im Body von `POST /api/scan/domain` oder Query `?skipUnchangedPages=true` bei **`POST /api/projects/[id]/domain-scan-all`**.
+- Vor dem Puppeteer-Lauf: HEAD-Request; wenn **ETag** oder **Last-Modified** mit dem letzten gespeicherten Scan (`documentCacheHints` im `ScanResult`) übereinstimmt, wird das vorherige Ergebnis mit neuer `id` / `groupId` geklont (**kein** erneuter WCAG-/LLM-Lauf für diese URL).
+- Grenzen: Viele Sites senden keine stabilen Header → dann voller Scan. Risiko falscher „unchanged“ bei dynamischen Seiten mit statischem ETag (selten).
+
+## Domain-Scan-ID und Projekt
+
+- `runDomainScan` erhält **`domainScanId`** = Zeilen-`id` aus `domain_scans` (gleiche ID im Payload wie in der DB).
+- Nach Abschluss: `addScan(..., { projectId })` setzt `project_id` wie beim Domain-Scan (inkl. `null`), damit Reuse-Lookups pro Projekt stimmen.
+
 ## Ablauf Deep Scan
 
 1. `POST /api/scan/domain` startet den Scan, erstellt einen leeren Domain-Eintrag.
-2. Spider liefert am Ende `domainResult.pages` (volle `ScanResult[]`; jede Seite hat ggf. bereits `pageClassification`).
-3. Pro Seite: `addScan(userId, { ...page, groupId: id })` – voller Scan in `scans`.
+2. Spider liefert am Ende `domainResult.pages` (volle `ScanResult[]`; jede Seite hat ggf. bereits `pageClassification` oder bei Reuse geklonte Daten).
+3. Pro Seite: `addScan(userId, { ...page, groupId: id }, { projectId })` – voller Scan in `scans`.
 4. `rebuildDomainIssuesFromPages` schreibt `domain_pages` / Issues-Tabellen (bei Fehler: Fallback mit `pages: SlimPage[]` im Payload).
 5. `buildStoredDomainPayload(fullPages, base, { omitSlimPages })` — gekapptes `aggregated`; `omitSlimPages: true`, wenn Schritt 4 geklappt hat.
 6. `updateDomainScan(id, userId, stored)` speichert den Payload einmal.

@@ -34,12 +34,15 @@ export async function POST(
   const project = await getProject(projectId, user.id);
   if (!project) return apiError('Project not found', API_STATUS.NOT_FOUND);
 
+  const skipUnchangedPages = req.nextUrl.searchParams.get('skipUnchangedPages') === 'true';
+
   const own = project.domain?.trim() ? await (async () => {
     const raw = project.domain!.trim();
     const url = raw.startsWith('http://') || raw.startsWith('https://') ? raw : `https://${raw}`;
     const { id } = await startDomainScan(user.id, url, {
       projectId,
       useSitemap: true,
+      ...(skipUnchangedPages ? { skipUnchangedPages: true } : {}),
     });
     return { scanId: id, status: 'started' as const };
   })() : null;
@@ -61,6 +64,7 @@ export async function POST(
         projectId: null,
         useSitemap: true,
         domainOverride: domain,
+        ...(skipUnchangedPages ? { skipUnchangedPages: true } : {}),
       });
       await upsertProjectDomainScanReference(projectId, domain, id);
       competitors[domain] = { scanId: id, reused: false };

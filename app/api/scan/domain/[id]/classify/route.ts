@@ -80,17 +80,27 @@ async function runClassificationInBackground(
     for (let i = 0; i < pages.length; i++) {
         const result = pages[i];
         try {
-            const pageClassification = await classifyPageWithLlm(result);
-            if (pageClassification) {
-                await updateScanResult(result.id, userId, { pageClassification });
+            const outcome = await classifyPageWithLlm(result);
+            if (outcome.classification) {
+                await updateScanResult(result.id, userId, { pageClassification: outcome.classification });
                 try {
-                    reportUsage({
-                        userId,
-                        eventType: 'page_classify',
-                        rawUnits: { pages: 1 },
-                        idempotencyKey: `classify:${result.id}`,
-                    });
-                } catch { /* ignore */ }
+                    if (
+                        outcome.usage &&
+                        (outcome.usage.input_tokens > 0 || outcome.usage.output_tokens > 0)
+                    ) {
+                        reportUsage({
+                            userId,
+                            eventType: 'llm_request',
+                            rawUnits: {
+                                input_tokens: outcome.usage.input_tokens,
+                                output_tokens: outcome.usage.output_tokens,
+                            },
+                            idempotencyKey: `classify:${result.id}`,
+                        });
+                    }
+                } catch {
+                    /* ignore */
+                }
             }
         } catch (e) {
             console.error(`[CHECKION] domain classify: page ${result.id} failed`, e);
