@@ -14,6 +14,7 @@ import {
 import { Box } from '@mui/material';
 import { MsqdxTypography, MsqdxCard, MsqdxChip } from '@msqdx/react';
 import { MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
+import { THEME_ACCENT_CSS, msqdxChipThemeAccentSx } from '@/lib/theme-accent';
 
 const CHART_COLORS = [
     MSQDX_BRAND_PRIMARY?.green ?? '#22c55e',
@@ -199,10 +200,9 @@ export function GeoQuestionCard({ queryText, queryIndex, points, targetDomain, c
                                 key={tr.label}
                                 label={tr.label}
                                 variant={timeRangeIndex === idx ? 'filled' : 'outlined'}
-                                brandColor={timeRangeIndex === idx ? 'green' : undefined}
                                 size="small"
                                 onClick={() => setTimeRangeIndex(idx)}
-                                sx={{ cursor: 'pointer' }}
+                                sx={msqdxChipThemeAccentSx(timeRangeIndex === idx)}
                             />
                         ))}
                     </Box>
@@ -215,7 +215,7 @@ export function GeoQuestionCard({ queryText, queryIndex, points, targetDomain, c
                                     variant={localModelIndex === idx ? 'filled' : 'outlined'}
                                     size="small"
                                     onClick={() => setLocalModelIndex(idx)}
-                                    sx={{ cursor: 'pointer', fontSize: 10 }}
+                                    sx={{ ...msqdxChipThemeAccentSx(localModelIndex === idx), fontSize: 10 }}
                                 />
                             ))}
                         </Box>
@@ -251,7 +251,7 @@ export function GeoQuestionCard({ queryText, queryIndex, points, targetDomain, c
                                       type="monotone"
                                       dataKey={dom}
                                       name={dom}
-                                      stroke={CHART_COLORS[idx % CHART_COLORS.length]}
+                                      stroke={idx === 0 ? THEME_ACCENT_CSS : CHART_COLORS[idx % CHART_COLORS.length]}
                                       strokeWidth={dom === targetDomain ? 2.5 : 2}
                                       dot={{ r: dom === targetDomain ? 3 : 2.5 }}
                                       connectNulls

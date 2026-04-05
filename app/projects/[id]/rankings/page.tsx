@@ -23,7 +23,7 @@ import {
     API_RANK_TRACKING_KEYWORDS,
 } from '@/lib/constants';
 import { SERP_MAIN_MARKETS } from '@/lib/serp-markets';
-import { MSQDX_BUTTON_THEME_ACCENT_SX, THEME_ACCENT_CSS, THEME_ACCENT_CONTRAST_CSS } from '@/lib/theme-accent';
+import { MSQDX_BUTTON_THEME_ACCENT_SX, THEME_ACCENT_CSS, msqdxChipThemeAccentSx } from '@/lib/theme-accent';
 import { RankTrackingChart } from '@/components/RankTrackingChart';
 
 interface RankKeywordItem {
@@ -363,17 +363,7 @@ export default function ProjectRankingsPage() {
                                         color={selectedSuggestedKeywords.has(kw) ? 'primary' : 'default'}
                                         variant={selectedSuggestedKeywords.has(kw) ? 'filled' : 'outlined'}
                                         size="small"
-                                        sx={{
-                                            cursor: 'pointer',
-                                            mb: 0.5,
-                                            ...(selectedSuggestedKeywords.has(kw)
-                                                ? {
-                                                      backgroundColor: `${THEME_ACCENT_CSS} !important`,
-                                                      color: `${THEME_ACCENT_CONTRAST_CSS} !important`,
-                                                      borderColor: THEME_ACCENT_CSS,
-                                                  }
-                                                : {}),
-                                        }}
+                                        sx={{ mb: 0.5, ...msqdxChipThemeAccentSx(selectedSuggestedKeywords.has(kw)) }}
                                     />
                                 ))}
                             </Box>

@@ -4,6 +4,7 @@ import {
     THEME_ACCENT_TINT_CSS,
     THEME_ACCENT_CONTRAST_CSS,
     MSQDX_BUTTON_THEME_ACCENT_SX,
+    msqdxChipThemeAccentSx,
 } from '@/lib/theme-accent';
 
 describe('theme-accent', () => {
@@ -17,5 +18,10 @@ describe('theme-accent', () => {
         expect(MSQDX_BUTTON_THEME_ACCENT_SX['&.MuiButton-contained']).toBeDefined();
         expect(MSQDX_BUTTON_THEME_ACCENT_SX['&.MuiButton-outlined']).toBeDefined();
         expect(MSQDX_BUTTON_THEME_ACCENT_SX['&.MuiButton-text']).toBeDefined();
+    });
+
+    it('msqdxChipThemeAccentSx applies accent when selected', () => {
+        expect(msqdxChipThemeAccentSx(true).backgroundColor).toBeDefined();
+        expect(msqdxChipThemeAccentSx(false).borderColor).toBeDefined();
     });
 });

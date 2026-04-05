@@ -49,6 +49,24 @@ export const MSQDX_BUTTON_THEME_ACCENT_SX = {
     },
 } as const;
 
+/**
+ * `sx` für {@link MsqdxChip} (z. B. Zeitraum 7d/30d/90d): ausgewählt = User-Brand, sonst neutraler Rand.
+ */
+export function msqdxChipThemeAccentSx(selected: boolean): Record<string, unknown> {
+    return {
+        cursor: 'pointer',
+        ...(selected
+            ? {
+                  backgroundColor: `${THEME_ACCENT_CSS} !important`,
+                  color: `${THEME_ACCENT_CONTRAST_CSS} !important`,
+                  borderColor: THEME_ACCENT_CSS,
+              }
+            : {
+                  borderColor: 'var(--color-border-subtle, #ccc)',
+              }),
+    };
+}
+
 /** sx für FormField/Input mit Theme-Akzent (1:1 AUDION) */
 export const FORM_FIELD_ACCENT_SX = {
     '& .MuiOutlinedInput-root': {

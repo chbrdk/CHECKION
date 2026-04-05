@@ -14,6 +14,7 @@ import {
 import { Box } from '@mui/material';
 import { MsqdxTypography, MsqdxChip } from '@msqdx/react';
 import { apiRankTrackingKeywordPositions } from '@/lib/constants';
+import { THEME_ACCENT_CSS, msqdxChipThemeAccentSx } from '@/lib/theme-accent';
 
 const CHART_COLORS = [
     '#22c55e', // green – our domain
@@ -177,10 +178,9 @@ export function RankTrackingChart({
                             key={tr.label}
                             label={tr.label}
                             variant={timeRangeIndex === idx ? 'filled' : 'outlined'}
-                            brandColor={timeRangeIndex === idx ? 'green' : undefined}
                             size="small"
                             onClick={() => setTimeRangeIndex(idx)}
-                            sx={{ cursor: 'pointer' }}
+                            sx={msqdxChipThemeAccentSx(timeRangeIndex === idx)}
                         />
                     ))}
                 </Box>
@@ -218,7 +218,7 @@ export function RankTrackingChart({
                             type="monotone"
                             dataKey={ourDomain}
                             name={ourDomain}
-                            stroke={CHART_COLORS[0]}
+                            stroke={THEME_ACCENT_CSS}
                             strokeWidth={2.5}
                             dot={{ r: 3 }}
                             connectNulls
