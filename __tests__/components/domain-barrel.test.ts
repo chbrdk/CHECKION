@@ -10,6 +10,8 @@ import {
   DomainResultListDetailsSection,
   DomainResultMain,
   DomainResultOverviewSection,
+  DomainResultPageTopicsEmpty,
+  DomainResultPageTopicsSection,
   DomainResultShell,
   DomainResultStructureEmpty,
   DomainResultStructureSection,
@@ -25,6 +27,8 @@ describe('components/domain barrel', () => {
     expect(DomainResultMain).toBeDefined();
     expect(DomainResultShell).toBeDefined();
     expect(DomainResultOverviewSection).toBeDefined();
+    expect(DomainResultPageTopicsSection).toBeDefined();
+    expect(DomainResultPageTopicsEmpty).toBeDefined();
     expect(DomainResultListDetailsSection).toBeDefined();
     expect(DomainResultVisualMapSection).toBeDefined();
     expect(DomainResultUxCxSection).toBeDefined();

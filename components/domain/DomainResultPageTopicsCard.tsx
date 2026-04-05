@@ -9,6 +9,8 @@ import type { AggregatedPageClassification, AggregatedPageClassificationProfile 
 export type DomainResultPageTopicsCardProps = {
     t: (key: string, values?: Record<string, string | number>) => string;
     pageClassification: AggregatedPageClassification;
+    /** `overview`: left column spacing; `tab`: full-width tab, no extra top margin */
+    placement?: 'overview' | 'tab';
 };
 
 function profileLabel(t: DomainResultPageTopicsCardProps['t'], p: AggregatedPageClassificationProfile): string {
@@ -27,6 +29,7 @@ function profileLabel(t: DomainResultPageTopicsCardProps['t'], p: AggregatedPage
 export const DomainResultPageTopicsCard = memo(function DomainResultPageTopicsCard({
     t,
     pageClassification,
+    placement = 'overview',
 }: DomainResultPageTopicsCardProps) {
     const { coverage, topThemes, tierDistribution, pageSamples } = pageClassification;
     if (coverage.pagesWithClassification <= 0) return null;
@@ -34,7 +37,7 @@ export const DomainResultPageTopicsCard = memo(function DomainResultPageTopicsCa
     const td = tierDistribution.avgTagsPerPageByTier;
 
     return (
-        <Box sx={{ mt: 'var(--msqdx-spacing-xl)' }}>
+        <Box sx={placement === 'tab' ? { mt: 0 } : { mt: 'var(--msqdx-spacing-xl)' }}>
             <MsqdxCard
                 variant="flat"
                 sx={{

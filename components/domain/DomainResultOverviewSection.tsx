@@ -1,6 +1,7 @@
 'use client';
 
 import React, { memo } from 'react';
+import Link from 'next/link';
 import { Box, CircularProgress } from '@mui/material';
 import {
     MsqdxTypography,
@@ -20,8 +21,7 @@ import {
     DOMAIN_TAB_SYSTEMIC_ISSUE_ROW_ESTIMATE_PX,
     DOMAIN_TAB_VIRTUAL_OVERSCAN,
 } from '@/lib/constants';
-import { DomainResultPageTopicsCard } from '@/components/domain/DomainResultPageTopicsCard';
-
+import { pathDomainSection } from '@/lib/domain-result-sections';
 const ScannedPagesTable = dynamic(
     () => import('@/components/ScannedPagesTable').then((m) => ({ default: m.ScannedPagesTable })),
     { ssr: false, loading: () => <Box sx={{ py: 2 }}><CircularProgress size={24} /></Box> }
@@ -127,10 +127,14 @@ function DomainResultOverviewSectionInner({
                     </MsqdxCard>
                 </Box>
 
-                {result.aggregated?.pageClassification &&
-                    result.aggregated.pageClassification.coverage.pagesWithClassification > 0 && (
-                        <DomainResultPageTopicsCard t={t} pageClassification={result.aggregated.pageClassification} />
-                    )}
+                <Box sx={{ mt: 'var(--msqdx-spacing-md)' }}>
+                    <Link
+                        href={pathDomainSection(domainId, 'page-topics')}
+                        style={{ textDecoration: 'none', color: 'var(--color-theme-accent)', fontWeight: 600, fontSize: '0.8125rem' }}
+                    >
+                        {t('domainResult.pageTopicsOverviewCta')}
+                    </Link>
+                </Box>
 
                 {result.eeat && (
                     <Box sx={{ mt: 'var(--msqdx-spacing-xl)' }}>

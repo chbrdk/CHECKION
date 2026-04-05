@@ -11,6 +11,7 @@ export const DOMAIN_RESULT_NAV_SLUGS = [
     'links-seo',
     'infra',
     'generative',
+    'page-topics',
     'journey',
 ] as const;
 

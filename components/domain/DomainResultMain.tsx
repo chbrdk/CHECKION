@@ -8,6 +8,7 @@ import { pathResults } from '@/lib/constants';
 import { DomainResultGenerativeEmpty, DomainResultGenerativeSection } from './DomainResultGenerativeSection';
 import { DomainResultInfraTab } from './DomainResultInfraSection';
 import { DomainResultJourneySection } from './DomainResultJourneySection';
+import { DomainResultPageTopicsSection } from './DomainResultPageTopicsSection';
 import { DomainResultLinksSeoEmpty, DomainResultLinksSeoSection } from './DomainResultLinksSeoSection';
 import { DomainResultListDetailsSection } from './DomainResultListDetailsSection';
 import { DomainResultOverviewSection } from './DomainResultOverviewSection';
@@ -193,6 +194,10 @@ export function DomainResultMain() {
                 ) : (
                     <DomainResultGenerativeEmpty t={t} />
                 ))}
+
+            {activeSection === 'page-topics' && (
+                <DomainResultPageTopicsSection t={t} pageClassification={aggregated?.pageClassification} />
+            )}
 
             {activeSection === 'journey' && (
                 <DomainResultJourneySection

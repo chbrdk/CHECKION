@@ -35,5 +35,11 @@ export type { DomainResultInfraSectionProps, DomainResultInfraTabProps } from '.
 export { DomainResultGenerativeSection, DomainResultGenerativeEmpty } from './DomainResultGenerativeSection';
 export type { DomainResultGenerativeSectionProps } from './DomainResultGenerativeSection';
 
+export {
+    DomainResultPageTopicsSection,
+    DomainResultPageTopicsEmpty,
+} from './DomainResultPageTopicsSection';
+export type { DomainResultPageTopicsSectionProps } from './DomainResultPageTopicsSection';
+
 export { DomainResultJourneySection } from './DomainResultJourneySection';
 export type { DomainResultJourneySectionProps } from './DomainResultJourneySection';

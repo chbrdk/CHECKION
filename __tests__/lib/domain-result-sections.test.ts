@@ -16,10 +16,12 @@ describe('domain result sections', () => {
         expect(getDomainSectionFromPathname('/domain/xyz', 'xyz')).toBe('overview');
         expect(getDomainSectionFromPathname('/domain/xyz/links-seo', 'xyz')).toBe('links-seo');
         expect(getDomainSectionFromPathname('/domain/xyz/list-details', 'xyz')).toBe('list-details');
+        expect(getDomainSectionFromPathname('/domain/xyz/page-topics', 'xyz')).toBe('page-topics');
     });
 
     it('DOMAIN_RESULT_NAV_SLUGS has expected segments', () => {
         expect(DOMAIN_RESULT_NAV_SLUGS).toContain('links-seo');
+        expect(DOMAIN_RESULT_NAV_SLUGS).toContain('page-topics');
         expect(DOMAIN_RESULT_NAV_SLUGS).toContain('journey');
     });
 });

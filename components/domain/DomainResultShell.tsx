@@ -24,6 +24,7 @@ const NAV_SLUGS = [
     { slug: 'links-seo' as const, labelKey: 'domainResult.tabLinksSeo' },
     { slug: 'infra' as const, labelKey: 'domainResult.tabInfra' },
     { slug: 'generative' as const, labelKey: 'domainResult.tabGenerative' },
+    { slug: 'page-topics' as const, labelKey: 'domainResult.tabPageTopics' },
     { slug: 'journey' as const, labelKey: 'domainResult.tabJourney' },
 ] as const;
 
