@@ -21,6 +21,27 @@ export type DomainScanOptions = {
     maxPages?: number;
 };
 
+/** Streamed updates from {@link runDomainScan} (UI + usage). */
+export type DomainScanStreamUpdate =
+    | { type: 'init'; message: string }
+    | {
+          type: 'progress';
+          url: string;
+          depth: number;
+          scannedCount: number;
+          message: string;
+      }
+    | { type: 'error'; url: string; message: string }
+    | {
+          type: 'page_complete';
+          /** Monotonic index per finished runScan (success or failure), for idempotent usage keys. */
+          pageIndex: number;
+          url: string;
+          normalizedUrl: string;
+          ok: boolean;
+      }
+    | { type: 'complete'; domainResult: DomainScanResult };
+
 
 /**
  * Normalizes a URL to ensure consistent deduplication
@@ -126,7 +147,10 @@ function identifySystemicIssues(pages: Array<ScanResult>) {
  * Main Spider Function (Generator to allow streaming)
  * When useSitemap is true (default), discovers sitemap and uses its URLs as scan list if available; otherwise crawls by following links.
  */
-export async function* runDomainScan(startUrl: string, options: DomainScanOptions = {}): AsyncGenerator<any, DomainScanResult, unknown> {
+export async function* runDomainScan(
+    startUrl: string,
+    options: DomainScanOptions = {}
+): AsyncGenerator<DomainScanStreamUpdate, DomainScanResult, unknown> {
     const domainId = uuidv4();
     const baseUrl = new URL(startUrl);
     const origin = baseUrl.origin;
@@ -188,6 +212,7 @@ export async function* runDomainScan(startUrl: string, options: DomainScanOption
     };
 
     const inFlight: InFlight[] = [];
+    let pageCompleteIndex = 0;
 
     const processCompleted = (completed: InFlight, result: ScanResult | null, error: Error | null) => {
         const { url, depth, normalizedCurrent } = completed;
@@ -275,6 +300,13 @@ export async function* runDomainScan(startUrl: string, options: DomainScanOption
                 message: `Scan failed: ${raceResult.error?.message ?? 'Unknown error'}`
             };
         }
+        yield {
+            type: 'page_complete',
+            pageIndex: pageCompleteIndex++,
+            url: raceResult.slot.url,
+            normalizedUrl: raceResult.slot.normalizedCurrent,
+            ok: Boolean(raceResult.result),
+        };
     }
 
     // Parent links from URL path: link each node to its path parent (e.g. /australia/models → /australia) so the graph shows a tree

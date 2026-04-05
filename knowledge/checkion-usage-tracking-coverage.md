@@ -10,7 +10,8 @@ Alle Nutzungsereignisse werden in CHECKION via `reportUsage()` an PLEXON gesende
 | `llm_request` / `chat` | `POST /api/scan/[id]/summarize`, `POST /api/scan/domain/[id]/summarize`, **suggest-competitors-queries** | `input_tokens`, `output_tokens` | input + 2×output |
 | `scan_screenshot` | `POST /api/scan/[id]/screenshot` | `pages: 1` | 5 × pages |
 | `scan_pagespeed` | `GET /api/tools/pagespeed` | `requests: 1` | 20 |
-| `domain_scan` | `POST /api/scan/domain` | `pages` | 50 × pages |
+| `domain_scan` | PLEXON unterstützt weiterhin Sammel-`pages`; CHECKION sendet es **nicht** mehr (nur noch `domain_scan_page`). | `pages` | 50 × pages |
+| `domain_scan_page` | **Deep Scan:** jede fertiggestellte Seite (Erfolg oder Fehler), `lib/domain-scan-start.ts` | `pages: 1`, `domain_scan_id`, `page_index`, `ok`, `url`; Idempotency `domain_scan_page:{scanId}:{pageIndex}` | 50 × pages (pro Zeile = 50 Tokens) |
 | `saliency_ai` | `POST /api/saliency/generate` | ggf. input/output_tokens, sonst 100 | wie llm_request oder 100 |
 | `journey_agent` | `POST /api/scan/journey-agent` (Job-Start), **POST /api/scan/domain/[id]/journey** (inkl. Stream) | `runs: 1` | 100 (Fallback) |
 | `geo_eeat` | `POST /api/scan/geo-eeat` (Job-Ende) | `job: 1`, optional `input_tokens` / `output_tokens` (Summe aus `runLlmStages` + erstem Competitive Multi-Model) | min. 100; mit Tokens: `max(100, input + 2×output)` (PLEXON) |

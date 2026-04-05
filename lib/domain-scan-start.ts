@@ -56,6 +56,23 @@ export async function startDomainScan(
             progress: { scanned: update.scannedCount, total: 0, currentUrl: update.url },
           });
           invalidateDomainScan(id);
+        } else if (update.type === 'page_complete') {
+          try {
+            reportUsage({
+              userId,
+              eventType: 'domain_scan_page',
+              rawUnits: {
+                pages: 1,
+                domain_scan_id: id,
+                page_index: update.pageIndex,
+                ok: update.ok,
+                url: update.url,
+              },
+              idempotencyKey: `domain_scan_page:${id}:${update.pageIndex}`,
+            });
+          } catch {
+            /* never affect scan */
+          }
         } else if (update.type === 'complete') {
           const fullPages = update.domainResult.pages;
           for (const page of fullPages) {
@@ -87,14 +104,6 @@ export async function startDomainScan(
           );
           await updateDomainScan(id, userId, stored);
           invalidateDomainScan(id);
-          try {
-            reportUsage({
-              userId,
-              eventType: 'domain_scan',
-              rawUnits: { pages: fullPages.length },
-              idempotencyKey: `domain_scan:${id}`,
-            });
-          } catch { /* never affect response */ }
         }
       }
       await updateDomainScan(id, userId, { status: 'complete' });
