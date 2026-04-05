@@ -2,9 +2,10 @@
 
 import React, { memo } from 'react';
 import { Box } from '@mui/material';
-import { MsqdxTypography, MsqdxCard, MsqdxChip } from '@msqdx/react';
+import { MsqdxTypography, MsqdxCard } from '@msqdx/react';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import type { AggregatedPageClassification, AggregatedPageClassificationProfile } from '@/lib/types';
+import { PageTopicsVisualization } from '@/components/domain/PageTopicsVisualization';
 
 export type DomainResultPageTopicsCardProps = {
     t: (key: string, values?: Record<string, string | number>) => string;
@@ -31,10 +32,8 @@ export const DomainResultPageTopicsCard = memo(function DomainResultPageTopicsCa
     pageClassification,
     placement = 'overview',
 }: DomainResultPageTopicsCardProps) {
-    const { coverage, topThemes, tierDistribution, pageSamples } = pageClassification;
+    const { coverage, pageSamples } = pageClassification;
     if (coverage.pagesWithClassification <= 0) return null;
-
-    const td = tierDistribution.avgTagsPerPageByTier;
 
     return (
         <Box sx={placement === 'tab' ? { mt: 0 } : { mt: 'var(--msqdx-spacing-xl)' }}>
@@ -59,42 +58,7 @@ export const DomainResultPageTopicsCard = memo(function DomainResultPageTopicsCa
                     })}
                 </MsqdxTypography>
 
-                <MsqdxTypography variant="subtitle2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 'var(--msqdx-spacing-xs)' }}>
-                    {t('domainResult.pageTopicsTopThemes')}
-                </MsqdxTypography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-md)' }}>
-                    {topThemes.slice(0, 24).map((th, idx) => (
-                        <MsqdxChip
-                            key={`${th.tag}-${idx}`}
-                            size="small"
-                            label={t('domainResult.pageTopicsThemeChip', {
-                                tag: th.tag,
-                                pages: th.pageCount,
-                                maxTier: th.maxTier,
-                            })}
-                        />
-                    ))}
-                </Box>
-
-                <MsqdxTypography variant="subtitle2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 'var(--msqdx-spacing-xs)' }}>
-                    {t('domainResult.pageTopicsTierMix')}
-                </MsqdxTypography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-md)' }}>
-                    <MsqdxChip size="small" label={t('domainResult.pageTopicsAvgT1', { n: td.tier1 })} />
-                    <MsqdxChip size="small" label={t('domainResult.pageTopicsAvgT2', { n: td.tier2 })} />
-                    <MsqdxChip size="small" label={t('domainResult.pageTopicsAvgT3', { n: td.tier3 })} />
-                    <MsqdxChip size="small" label={t('domainResult.pageTopicsAvgT4', { n: td.tier4 })} />
-                    <MsqdxChip size="small" label={t('domainResult.pageTopicsAvgT5', { n: td.tier5 })} />
-                    <MsqdxChip
-                        size="small"
-                        brandColor="green"
-                        label={t('domainResult.pageTopicsCorePages', { count: tierDistribution.pagesWithAtLeastOneTier5 })}
-                    />
-                    <MsqdxChip
-                        size="small"
-                        label={t('domainResult.pageTopicsLowTierDominant', { count: tierDistribution.pagesDominatedByLowTiers })}
-                    />
-                </Box>
+                <PageTopicsVisualization t={t} pageClassification={pageClassification} />
 
                 {pageSamples.length > 0 && (
                     <>
