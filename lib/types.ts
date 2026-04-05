@@ -135,6 +135,46 @@ export interface PageClassification {
     shortSummary?: string;
 }
 
+/** One merged theme across the domain (from {@link aggregatePageClassification}). */
+export interface AggregatedPageClassificationTheme {
+    tag: string;
+    /** Sum of tier² per occurrence, with boilerplate tags damped (×0.25). */
+    score: number;
+    pageCount: number;
+    maxTier: 1 | 2 | 3 | 4 | 5;
+    avgTier: number;
+}
+
+export type AggregatedPageClassificationProfile = 'pillar' | 'hub' | 'utility' | 'mixed';
+
+export interface AggregatedPageClassificationPageSample {
+    url: string;
+    profile: AggregatedPageClassificationProfile;
+    tier5Count: number;
+    lowTierCount: number;
+}
+
+/** Domain-wide rollup of per-page `pageClassification.tagTiers`. */
+export interface AggregatedPageClassification {
+    coverage: {
+        totalPages: number;
+        pagesWithClassification: number;
+    };
+    topThemes: AggregatedPageClassificationTheme[];
+    tierDistribution: {
+        avgTagsPerPageByTier: {
+            tier1: number;
+            tier2: number;
+            tier3: number;
+            tier4: number;
+            tier5: number;
+        };
+        pagesWithAtLeastOneTier5: number;
+        pagesDominatedByLowTiers: number;
+    };
+    pageSamples: AggregatedPageClassificationPageSample[];
+}
+
 export type ScanResult = {
     id: string;
     groupId?: string; // Optional for ad-hoc scans

@@ -20,6 +20,7 @@ import {
     DOMAIN_TAB_SYSTEMIC_ISSUE_ROW_ESTIMATE_PX,
     DOMAIN_TAB_VIRTUAL_OVERSCAN,
 } from '@/lib/constants';
+import { DomainResultPageTopicsCard } from '@/components/domain/DomainResultPageTopicsCard';
 
 const ScannedPagesTable = dynamic(
     () => import('@/components/ScannedPagesTable').then((m) => ({ default: m.ScannedPagesTable })),
@@ -125,6 +126,11 @@ function DomainResultOverviewSectionInner({
                         )}
                     </MsqdxCard>
                 </Box>
+
+                {result.aggregated?.pageClassification &&
+                    result.aggregated.pageClassification.coverage.pagesWithClassification > 0 && (
+                        <DomainResultPageTopicsCard t={t} pageClassification={result.aggregated.pageClassification} />
+                    )}
 
                 {result.eeat && (
                     <Box sx={{ mt: 'var(--msqdx-spacing-xl)' }}>

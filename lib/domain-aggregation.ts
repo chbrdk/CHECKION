@@ -16,6 +16,11 @@ import type {
   SecurityAudit,
   TechnicalInsights,
   GenerativeEngineAudit,
+  AggregatedPageClassification,
+  AggregatedPageClassificationPageSample,
+  AggregatedPageClassificationProfile,
+  AggregatedPageClassificationTheme,
+  TagTier,
 } from './types';
 
 /** Issue grouped by code across pages; one representative issue + page list. */
@@ -648,5 +653,171 @@ export function aggregateStructure(pages: ScanResult[]): AggregatedStructure | n
     pagesWithSkippedLevels,
     pagesWithGoodStructure,
     totalPages: withUx.length,
+  };
+}
+
+// ─── Page classification (tagTiers) domain rollup ─────────────────────────
+
+/** Merge key: trim, lowercase, single spaces. */
+export function normalizePageTopicTagKey(tag: string): string {
+  return tag.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+/**
+ * Tags that are usually chrome/boilerplate in LLM output; dampen weight (×0.25) so real topics rank higher.
+ */
+const PAGE_TOPIC_BOILERPLATE_KEYS = new Set<string>([
+  'navigation',
+  'footer',
+  'footer links',
+  'jump to content',
+  'site structure',
+  'boilerplate',
+  'boilerplate text',
+]);
+
+function isBoilerplateTopicKey(key: string): boolean {
+  return PAGE_TOPIC_BOILERPLATE_KEYS.has(key);
+}
+
+function tierWeight(tier: number): number {
+  return tier * tier;
+}
+
+function classifyPageProfile(
+  counts: { t1: number; t2: number; t3: number; t4: number; t5: number },
+): AggregatedPageClassificationProfile {
+  const { t1, t2, t3, t4, t5 } = counts;
+  const low = t1 + t2;
+  const mid = t3 + t4;
+  if (t5 >= 2) return 'pillar';
+  if (t5 === 0 && low >= 4) return 'utility';
+  if (mid >= 4 && t5 <= 1) return 'hub';
+  return 'mixed';
+}
+
+type ThemeAcc = {
+  displayTag: string;
+  score: number;
+  pages: Set<string>;
+  tierSum: number;
+  tierOccurrences: number;
+  maxTier: 1 | 2 | 3 | 4 | 5;
+};
+
+function ingestTagTier(acc: ThemeAcc, entry: TagTier, pageUrl: string, weightMult: number): void {
+  const w = tierWeight(entry.tier) * weightMult;
+  acc.score += w;
+  acc.pages.add(pageUrl);
+  acc.tierSum += entry.tier;
+  acc.tierOccurrences += 1;
+  if (entry.tier > acc.maxTier) acc.maxTier = entry.tier;
+}
+
+/**
+ * Deterministic domain rollup of `pageClassification.tagTiers` across scanned pages.
+ * Returns `undefined` only when `pages.length === 0`.
+ */
+export function aggregatePageClassification(pages: ScanResult[]): AggregatedPageClassification | undefined {
+  if (pages.length === 0) return undefined;
+
+  const totalPages = pages.length;
+  let pagesWithClassification = 0;
+  let pagesWithAtLeastOneTier5 = 0;
+  let pagesDominatedByLowTiers = 0;
+
+  let sumT1 = 0,
+    sumT2 = 0,
+    sumT3 = 0,
+    sumT4 = 0,
+    sumT5 = 0;
+
+  const themeByKey = new Map<string, ThemeAcc>();
+  const samples: AggregatedPageClassificationPageSample[] = [];
+
+  for (const page of pages) {
+    const tiers = page.pageClassification?.tagTiers;
+    if (!tiers?.length) continue;
+
+    pagesWithClassification += 1;
+
+    let t1 = 0,
+      t2 = 0,
+      t3 = 0,
+      t4 = 0,
+      t5 = 0;
+
+    for (const entry of tiers) {
+      const tier = entry.tier;
+      if (tier === 1) t1++;
+      else if (tier === 2) t2++;
+      else if (tier === 3) t3++;
+      else if (tier === 4) t4++;
+      else t5++;
+
+      const key = normalizePageTopicTagKey(entry.tag);
+      if (!key) continue;
+      const damp = isBoilerplateTopicKey(key) ? 0.25 : 1;
+
+      let acc = themeByKey.get(key);
+      if (!acc) {
+        acc = {
+          displayTag: entry.tag.trim() || key,
+          score: 0,
+          pages: new Set(),
+          tierSum: 0,
+          tierOccurrences: 0,
+          maxTier: tier,
+        };
+        themeByKey.set(key, acc);
+      }
+      ingestTagTier(acc, entry, page.url, damp);
+    }
+
+    sumT1 += t1;
+    sumT2 += t2;
+    sumT3 += t3;
+    sumT4 += t4;
+    sumT5 += t5;
+
+    if (t5 >= 1) pagesWithAtLeastOneTier5 += 1;
+    if (t1 + t2 > t4 + t5) pagesDominatedByLowTiers += 1;
+
+    samples.push({
+      url: page.url,
+      profile: classifyPageProfile({ t1, t2, t3, t4, t5 }),
+      tier5Count: t5,
+      lowTierCount: t1 + t2,
+    });
+  }
+
+  const topThemes: AggregatedPageClassificationTheme[] = Array.from(themeByKey.entries())
+    .map(([, acc]) => ({
+      tag: acc.displayTag,
+      score: Math.round(acc.score * 100) / 100,
+      pageCount: acc.pages.size,
+      maxTier: acc.maxTier,
+      avgTier: acc.tierOccurrences > 0 ? Math.round((acc.tierSum / acc.tierOccurrences) * 10) / 10 : 0,
+    }))
+    .sort((a, b) => b.score - a.score || b.pageCount - a.pageCount);
+
+  return {
+    coverage: {
+      totalPages,
+      pagesWithClassification,
+    },
+    topThemes,
+    tierDistribution: {
+      avgTagsPerPageByTier: {
+        tier1: Math.round((sumT1 / totalPages) * 100) / 100,
+        tier2: Math.round((sumT2 / totalPages) * 100) / 100,
+        tier3: Math.round((sumT3 / totalPages) * 100) / 100,
+        tier4: Math.round((sumT4 / totalPages) * 100) / 100,
+        tier5: Math.round((sumT5 / totalPages) * 100) / 100,
+      },
+      pagesWithAtLeastOneTier5,
+      pagesDominatedByLowTiers,
+    },
+    pageSamples: samples,
   };
 }

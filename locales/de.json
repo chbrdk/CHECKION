@@ -659,6 +659,23 @@
     "performanceAvg": "Performance (Ø)",
     "systemicIssues": "Systemische Probleme",
     "noSystemicIssues": "Keine systemischen Probleme erkannt.",
+    "pageTopicsTitle": "Seitenthemen (Domain)",
+    "pageTopicsCoverage": "{{classified}} von {{total}} Seiten mit KI-Klassifikation (Tags + Tier).",
+    "pageTopicsTopThemes": "Häufigste Themen (gewichtet nach Tier)",
+    "pageTopicsThemeChip": "{{tag}} · {{pages}} Seiten · max. T{{maxTier}}",
+    "pageTopicsTierMix": "Ø Tags pro Seite nach Tier",
+    "pageTopicsAvgT1": "T1 Ø {{n}}",
+    "pageTopicsAvgT2": "T2 Ø {{n}}",
+    "pageTopicsAvgT3": "T3 Ø {{n}}",
+    "pageTopicsAvgT4": "T4 Ø {{n}}",
+    "pageTopicsAvgT5": "T5 Ø {{n}}",
+    "pageTopicsCorePages": "{{count}} Seiten mit mindestens einem Kernthema (T5)",
+    "pageTopicsLowTierDominant": "{{count}} Seiten stark Rand-/Boilerplate-lastig (T1+T2 > T4+T5)",
+    "pageTopicsSamples": "Beispiel-Seiten (Profil)",
+    "pageTopicsProfilePillar": "Kernthema",
+    "pageTopicsProfileHub": "Themen-Hub",
+    "pageTopicsProfileUtility": "Navigation/Utility",
+    "pageTopicsProfileMixed": "Gemischt",
     "scannedPages": "Gescannte Seiten",
     "openPage": "Öffnen",
     "openPageAria": "Seite öffnen: {url}",
@@ -910,6 +927,7 @@
     "issuesList": "Liste der gefundenen Barrierefreiheits-Probleme mit Schweregrad und WCAG-Level. Filter nach Error, Warning, Notice oder bestanden.",
     "eeat": "E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness): über den Deep Scan aggregierte Signale für Vertrauen, Experience und Expertise. Authoritativeness würde Backlink-Daten erfordern.",
     "seoOnPage": "On-Page-SEO aus dem Deep Scan: Meta (Title, Description, H1, Canonical), Überschriften-Struktur, Seiten ohne Meta/Keywords und seitenübergreifende Keywords.",
-    "pageClassification": "Inhaltliche Einordnung der Seite per KI: Themen-Tags und Tier (1–5) für die Wichtigkeit des Hauptthemas. Basiert nur auf dem Seiteninhalt, nicht auf URL oder Struktur."
+    "pageClassification": "Inhaltliche Einordnung der Seite per KI: Themen-Tags und Tier (1–5) für die Wichtigkeit des Hauptthemas. Basiert nur auf dem Seiteninhalt, nicht auf URL oder Struktur.",
+    "pageTopicsAggregate": "Aus allen klassifizierten Seiten berechnet: gleiche Tags werden zusammengeführt, Gewicht = Tier² pro Vorkommen; typische Navigations-/Footer-Begriffe werden abgeschwächt. Kein zweites LLM – nur Statistik über die gespeicherten tagTiers."
   }
 }

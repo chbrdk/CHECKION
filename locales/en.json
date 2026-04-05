@@ -659,6 +659,23 @@
     "performanceAvg": "Performance (avg)",
     "systemicIssues": "Systemic Issues",
     "noSystemicIssues": "No systemic issues detected.",
+    "pageTopicsTitle": "Page topics (domain)",
+    "pageTopicsCoverage": "{{classified}} of {{total}} pages have AI classification (tags + tier).",
+    "pageTopicsTopThemes": "Top themes (tier-weighted)",
+    "pageTopicsThemeChip": "{{tag}} · {{pages}} pages · max T{{maxTier}}",
+    "pageTopicsTierMix": "Avg tags per page by tier",
+    "pageTopicsAvgT1": "T1 avg {{n}}",
+    "pageTopicsAvgT2": "T2 avg {{n}}",
+    "pageTopicsAvgT3": "T3 avg {{n}}",
+    "pageTopicsAvgT4": "T4 avg {{n}}",
+    "pageTopicsAvgT5": "T5 avg {{n}}",
+    "pageTopicsCorePages": "{{count}} pages with at least one core topic (T5)",
+    "pageTopicsLowTierDominant": "{{count}} pages skewed to boilerplate (T1+T2 > T4+T5)",
+    "pageTopicsSamples": "Sample pages (profile)",
+    "pageTopicsProfilePillar": "Pillar",
+    "pageTopicsProfileHub": "Topic hub",
+    "pageTopicsProfileUtility": "Nav / utility",
+    "pageTopicsProfileMixed": "Mixed",
     "scannedPages": "Scanned Pages",
     "openPage": "Open",
     "openPageAria": "Open page: {url}",
@@ -910,6 +927,7 @@
     "issuesList": "List of accessibility issues found, with severity and WCAG level. Filter by error, warning, notice or passed.",
     "eeat": "E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness): signals aggregated from the deep scan for trust, experience and expertise. Authoritativeness would require backlink data.",
     "seoOnPage": "On-page SEO from the deep scan: meta (title, description, H1, canonical), heading structure, pages without meta/keywords, and cross-page keywords.",
-    "pageClassification": "AI-derived content classification: topic tags and tier (1–5) for importance of the main topic. Based on page content only, not URL or structure."
+    "pageClassification": "AI-derived content classification: topic tags and tier (1–5) for importance of the main topic. Based on page content only, not URL or structure.",
+    "pageTopicsAggregate": "Computed from all classified pages: tags are merged with weight = tier² per occurrence; common nav/footer labels are damped. No second LLM – statistics over stored tagTiers only."
   }
 }

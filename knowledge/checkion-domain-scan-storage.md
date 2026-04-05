@@ -26,6 +26,32 @@ Die LLM-Klassifikation (Tags + Tier 1–5) läuft **direkt im Single Scan** (`li
 - Einzelscan: Result enthält `pageClassification` beim Speichern.
 - Deep Scan: Jede von der Spider gescannte Seite wird klassifiziert; `toSlimPage` übernimmt `pageClassification` ins Domain-Payload.
 
+## Aggregierte Seitenthemen (`aggregated.pageClassification`)
+
+Nach dem Deep Scan (und bei Legacy-Neuberechnung über `buildDomainSummary`) liegt unter `aggregated.pageClassification` eine **deterministische Domain-Rollup** aus allen Seiten mit mindestens einem `pageClassification.tagTiers`-Eintrag. Es gibt **kein zweites LLM** – nur Statistik über die bereits gespeicherten Tags/Tiers.
+
+- **Fehlende / alte Payloads**: Ältere `domain_scans`-Einträge ohne diesen Block haben kein `pageClassification`; die UI blendet die Karte aus. Nach erneutem Scan oder Summary-Rebuild erscheint der Block, sobald Seiten klassifiziert sind.
+
+### Felder (Kurz)
+
+| Bereich | Bedeutung |
+|--------|-----------|
+| `coverage` | `totalPages` (alle gescannten Seiten), `pagesWithClassification` (Seiten mit nicht-leerem `tagTiers`). |
+| `topThemes` | Zusammengeführte Tags nach `normalizePageTopicTagKey` (trim, lowercase, Leerzeichen). **Score** = Summe von **Tier²** pro Vorkommen; typische Nav-/Footer-Begriffe (siehe `PAGE_TOPIC_BOILERPLATE_KEYS` in `lib/domain-aggregation.ts`) werden mit **×0,25** gewichtet, damit echte Inhaltsthemen oben stehen. `pageCount` = Anzahl Seiten mit diesem Tag; `maxTier` / `avgTier` aus den Vorkommen. |
+| `tierDistribution.avgTagsPerPageByTier` | Durchschnittliche Tag-Anzahl je Tier **pro Seite der gesamten Site** (Nenner = `totalPages`), damit fehlende Klassifikation die Mittelwerte „verdünnt“. |
+| `tierDistribution.pagesWithAtLeastOneTier5` | Seiten mit mindestens einem T5-Tag. |
+| `tierDistribution.pagesDominatedByLowTiers` | Seiten, auf denen `(T1+T2) > (T4+T5)` (heuristisch boilerplate-lastig). |
+| `pageSamples` | Pro klassifizierter Seite: `url`, `profile` (`pillar` / `hub` / `utility` / `mixed`), `tier5Count`, `lowTierCount` – für schnelle Übersicht; Länge wird beim Speichern/API gekappt. |
+
+### Caps (Payload-Größe)
+
+Wie bei anderen Aggregaten begrenzen `toStoredAggregated` und `toLightAggregated` die Arrays:
+
+- `DOMAIN_LIGHT_SUMMARY_PAGE_CLASSIFICATION_TOP_THEMES_CAP` / `DOMAIN_STORED_SUMMARY_PAGE_CLASSIFICATION_TOP_THEMES_CAP` für `topThemes`.
+- `DOMAIN_LIGHT_SUMMARY_PAGE_CLASSIFICATION_PAGE_SAMPLES_CAP` / `DOMAIN_STORED_SUMMARY_PAGE_CLASSIFICATION_PAGE_SAMPLES_CAP` für `pageSamples`.
+
+Implementierung: `aggregatePageClassification` in `lib/domain-aggregation.ts`, Einbindung und Slicing in `lib/domain-summary.ts` (`capAggregatedForSize`).
+
 ## Unveränderte Seiten überspringen (optional)
 
 - **`skipUnchangedPages: true`** im Body von `POST /api/scan/domain` oder Query `?skipUnchangedPages=true` bei **`POST /api/projects/[id]/domain-scan-all`**.

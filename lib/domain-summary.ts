@@ -13,6 +13,7 @@ import {
     aggregateStructure,
     aggregatePerformance,
     aggregateEco,
+    aggregatePageClassification,
 } from './domain-aggregation';
 import {
     DOMAIN_LIGHT_SUMMARY_GENERATIVE_PAGES_CAP,
@@ -24,6 +25,8 @@ import {
     DOMAIN_LIGHT_SUMMARY_STRUCTURE_URL_LIST_CAP,
     DOMAIN_LIGHT_SUMMARY_UX_BROKEN_LINKS_CAP,
     DOMAIN_LIGHT_SUMMARY_UX_LIST_CAP,
+    DOMAIN_LIGHT_SUMMARY_PAGE_CLASSIFICATION_PAGE_SAMPLES_CAP,
+    DOMAIN_LIGHT_SUMMARY_PAGE_CLASSIFICATION_TOP_THEMES_CAP,
     DOMAIN_STORED_SUMMARY_GENERATIVE_PAGES_CAP,
     DOMAIN_STORED_SUMMARY_INFRA_URL_LIST_CAP,
     DOMAIN_STORED_SUMMARY_LINKS_BROKEN_BY_PAGE_CAP,
@@ -33,8 +36,10 @@ import {
     DOMAIN_STORED_SUMMARY_STRUCTURE_URL_LIST_CAP,
     DOMAIN_STORED_SUMMARY_UX_BROKEN_LINKS_CAP,
     DOMAIN_STORED_SUMMARY_UX_LIST_CAP,
+    DOMAIN_STORED_SUMMARY_PAGE_CLASSIFICATION_PAGE_SAMPLES_CAP,
+    DOMAIN_STORED_SUMMARY_PAGE_CLASSIFICATION_TOP_THEMES_CAP,
 } from './constants';
-import type { ScanResult, DomainScanResult, SlimPage } from './types';
+import type { ScanResult, DomainScanResult, SlimPage, AggregatedPageClassification } from './types';
 
 export type { SlimPage } from './types';
 
@@ -52,6 +57,8 @@ export interface DomainSummaryResponse extends Omit<DomainScanResult, 'pages'> {
         structure: ReturnType<typeof aggregateStructure>;
         performance: ReturnType<typeof aggregatePerformance>;
         eco: ReturnType<typeof aggregateEco>;
+        /** Rollup of per-page LLM tagTiers; absent on older stored payloads. */
+        pageClassification?: AggregatedPageClassification | null;
     };
 }
 
@@ -106,7 +113,8 @@ export function buildDomainSummary(scan: DomainScanResult): DomainSummaryRespons
     }
     const pages = (scan.pages ?? []) as ScanResult[];
     const pageCount = pages.length > 0 ? pages.length : (scan.totalPages ?? 0);
-    const aggregated = {
+    const pageClassification = aggregatePageClassification(pages);
+    const aggregated: DomainSummaryResponse['aggregated'] = {
         issues: aggregateIssues(pages),
         ux: aggregateUx(pages),
         seo: aggregateSeo(pages),
@@ -117,6 +125,7 @@ export function buildDomainSummary(scan: DomainScanResult): DomainSummaryRespons
         structure: aggregateStructure(pages),
         performance: aggregatePerformance(pages),
         eco: aggregateEco(pages),
+        ...(pageClassification ? { pageClassification } : {}),
     };
     return {
         id: scan.id,
@@ -153,6 +162,8 @@ type AggregatedCaps = {
     infraUrlList: number;
     generativePages: number;
     structureUrlList: number;
+    pageClassTopThemes: number;
+    pageClassPageSamples: number;
 };
 
 const LIGHT_AGG_CAPS: AggregatedCaps = {
@@ -165,6 +176,8 @@ const LIGHT_AGG_CAPS: AggregatedCaps = {
     infraUrlList: DOMAIN_LIGHT_SUMMARY_INFRA_URL_LIST_CAP,
     generativePages: DOMAIN_LIGHT_SUMMARY_GENERATIVE_PAGES_CAP,
     structureUrlList: DOMAIN_LIGHT_SUMMARY_STRUCTURE_URL_LIST_CAP,
+    pageClassTopThemes: DOMAIN_LIGHT_SUMMARY_PAGE_CLASSIFICATION_TOP_THEMES_CAP,
+    pageClassPageSamples: DOMAIN_LIGHT_SUMMARY_PAGE_CLASSIFICATION_PAGE_SAMPLES_CAP,
 };
 
 const STORED_AGG_CAPS: AggregatedCaps = {
@@ -177,6 +190,8 @@ const STORED_AGG_CAPS: AggregatedCaps = {
     infraUrlList: DOMAIN_STORED_SUMMARY_INFRA_URL_LIST_CAP,
     generativePages: DOMAIN_STORED_SUMMARY_GENERATIVE_PAGES_CAP,
     structureUrlList: DOMAIN_STORED_SUMMARY_STRUCTURE_URL_LIST_CAP,
+    pageClassTopThemes: DOMAIN_STORED_SUMMARY_PAGE_CLASSIFICATION_TOP_THEMES_CAP,
+    pageClassPageSamples: DOMAIN_STORED_SUMMARY_PAGE_CLASSIFICATION_PAGE_SAMPLES_CAP,
 };
 
 /**
@@ -278,6 +293,13 @@ function capAggregatedForSize(
                   ),
               }
             : aggregated.structure,
+        pageClassification: aggregated.pageClassification
+            ? {
+                  ...aggregated.pageClassification,
+                  topThemes: (aggregated.pageClassification.topThemes ?? []).slice(0, c.pageClassTopThemes),
+                  pageSamples: (aggregated.pageClassification.pageSamples ?? []).slice(0, c.pageClassPageSamples),
+              }
+            : aggregated.pageClassification,
     };
 }
 
@@ -318,6 +340,7 @@ export function buildStoredDomainPayload(
     base: Pick<DomainScanResult, 'id' | 'domain' | 'timestamp' | 'status' | 'progress' | 'totalPages' | 'score' | 'graph' | 'systemicIssues' | 'eeat'>,
     options?: BuildStoredDomainPayloadOptions
 ): DomainScanResult {
+    const pageClassification = aggregatePageClassification(fullPages);
     const aggregatedRaw: DomainSummaryResponse['aggregated'] = {
         issues: aggregateIssues(fullPages),
         ux: aggregateUx(fullPages),
@@ -329,6 +352,7 @@ export function buildStoredDomainPayload(
         structure: aggregateStructure(fullPages),
         performance: aggregatePerformance(fullPages),
         eco: aggregateEco(fullPages),
+        ...(pageClassification ? { pageClassification } : {}),
     };
     const aggregated = toStoredAggregated(aggregatedRaw);
     const pages = options?.omitSlimPages ? [] : fullPages.map(toSlimPage);

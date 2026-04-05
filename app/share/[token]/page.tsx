@@ -21,6 +21,7 @@ import {
     apiShareTokenPagesScreenshot,
 } from '@/lib/constants';
 import { useI18n } from '@/components/i18n/I18nProvider';
+import { DomainResultPageTopicsCard } from '@/components/domain/DomainResultPageTopicsCard';
 
 /** Journey share payload (from GET /api/share/[token] when type=journey). */
 export interface ShareJourneyData {
@@ -412,6 +413,12 @@ function ShareDomainContent({ data, token, accessToken }: { data: DomainSummaryR
                     )}
                 </Box>
             </MsqdxCard>
+
+            {agg?.pageClassification && agg.pageClassification.coverage.pagesWithClassification > 0 && (
+                <Box sx={{ mb: 2 }}>
+                    <DomainResultPageTopicsCard t={t} pageClassification={agg.pageClassification} />
+                </Box>
+            )}
 
             {agg?.performance && (
                 <MsqdxCard variant="flat" sx={{ p: 2, mb: 2, borderRadius: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: '#fff' }}>
