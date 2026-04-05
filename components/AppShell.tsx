@@ -45,7 +45,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         logo: true as const,
         borderWidth: 'thin' as const,
         borderRadius: '2xl' as const,
-        innerBackground: 'grid' as const,
+        innerBackground: 'offwhite' as const,
         sidebar: showSidebar ? <Sidebar open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} /> : null,
         sx: {
             '& > div:last-of-type': {
