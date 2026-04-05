@@ -149,7 +149,7 @@ export function GeoQuestionCard({ queryText, queryIndex, points, targetDomain, c
                 borderRadius="button"
                 sx={{
                     p: 2,
-                    border: '1px solid var(--color-border-subtle, #eee)',
+                    border: `1px solid ${THEME_ACCENT_CSS}`,
                     bgcolor: 'var(--color-card-bg)',
                     minHeight: 280,
                 }}
@@ -170,7 +170,7 @@ export function GeoQuestionCard({ queryText, queryIndex, points, targetDomain, c
             borderRadius="button"
             sx={{
                 p: 0,
-                border: '1px solid var(--color-border-subtle, #eee)',
+                border: `1px solid ${THEME_ACCENT_CSS}`,
                 bgcolor: 'var(--color-card-bg)',
                 color: 'var(--color-text-on-light)',
                 display: 'flex',

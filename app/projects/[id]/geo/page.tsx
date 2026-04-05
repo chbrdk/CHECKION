@@ -21,7 +21,7 @@ import {
     apiProjectGeoQuestionHistory,
     pathGeoEeat,
 } from '@/lib/constants';
-import { MSQDX_BUTTON_THEME_ACCENT_SX } from '@/lib/theme-accent';
+import { MSQDX_BUTTON_THEME_ACCENT_SX, msqdxChipThemeAccentSx } from '@/lib/theme-accent';
 import { GeoQuestionCard } from '@/components/GeoQuestionCard';
 import type { GeoQuestionHistoryPoint } from '@/components/GeoQuestionCard';
 
@@ -313,111 +313,128 @@ export default function ProjectGeoPage() {
                     </Box>
                 </MsqdxMoleculeCard>
 
-                {/* Header: Aktionen (wie SEO-Seite) */}
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1.5 }}>
-                <MsqdxButton
-                    variant="contained"
-                    size="small"
-                    onClick={handleStartGeoEeat}
-                    disabled={!project.domain || geoStartLoading}
-                    sx={MSQDX_BUTTON_THEME_ACCENT_SX}
+                {/* Wie Rankings: eine MoleculeCard mit Titel, Aktionen im Header, Modellzeile + Grid im Body */}
+                <MsqdxMoleculeCard
+                    title={t('projects.geoQuestionTrends')}
+                    variant="flat"
+                    borderRadius="lg"
+                    footerDivider={false}
+                    headerActions={
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                            <MsqdxButton
+                                variant="contained"
+                                size="small"
+                                onClick={handleStartGeoEeat}
+                                disabled={!project.domain || geoStartLoading}
+                                sx={MSQDX_BUTTON_THEME_ACCENT_SX}
+                            >
+                                {geoStartLoading ? t('common.loading') : geoRuns.length === 0 ? t('projects.startGeoEeat') : t('projects.startNewGeoEeat')}
+                            </MsqdxButton>
+                            <MsqdxButton variant="outlined" size="small" onClick={() => setManageQueriesOpen(true)}>
+                                {t('projects.geoQueries')}
+                            </MsqdxButton>
+                        </Box>
+                    }
+                    sx={{ bgcolor: 'var(--color-card-bg)' }}
                 >
-                    {geoStartLoading ? t('common.loading') : geoRuns.length === 0 ? t('projects.startGeoEeat') : t('projects.startNewGeoEeat')}
-                </MsqdxButton>
-                <MsqdxButton variant="outlined" size="small" onClick={() => setManageQueriesOpen(true)}>
-                    {t('projects.geoQueries')}
-                </MsqdxButton>
-                {geoStartError && (
-                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-status-error)' }}>
-                        {geoStartError}
-                    </MsqdxTypography>
-                )}
-            </Box>
+                    {geoStartError && (
+                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-status-error)', mb: 1 }}>
+                            {geoStartError}
+                        </MsqdxTypography>
+                    )}
 
-            {/* Zentrale Modell-Auswahl (gilt für alle Karten) */}
-            {!historyLoading && questionHistory.length > 0 && allModelIds.length > 0 && (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.5, mb: 2 }}>
-                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', mr: 1 }}>
-                        {t('geoEeat.competitiveModelLabel', { model: '' }).replace(': ', '')}:
-                    </MsqdxTypography>
-                    {allModelIds.map((modelId) => (
-                        <MsqdxChip
-                            key={modelId}
-                            label={modelId}
-                            variant={effectiveModelId === modelId ? 'filled' : 'outlined'}
-                            size="small"
-                            onClick={() => setSelectedModelId(modelId)}
-                            sx={{ cursor: 'pointer', fontSize: 11 }}
-                        />
-                    ))}
-                </Box>
-            )}
+                    {!historyLoading && questionHistory.length > 0 && allModelIds.length > 0 && (
+                        <Box sx={{ mb: 2 }}>
+                            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                                {t('geoEeat.competitiveModelLabel', { model: '' }).replace(': ', '')}
+                            </MsqdxTypography>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                {allModelIds.map((modelId) => (
+                                    <MsqdxChip
+                                        key={modelId}
+                                        label={modelId}
+                                        variant={effectiveModelId === modelId ? 'filled' : 'outlined'}
+                                        size="small"
+                                        onClick={() => setSelectedModelId(modelId)}
+                                        sx={{ ...msqdxChipThemeAccentSx(effectiveModelId === modelId), fontSize: 11 }}
+                                    />
+                                ))}
+                            </Box>
+                        </Box>
+                    )}
 
-            {/* Inhalt: Frage-Cards mit Verlauf über alle Analysen (wie SEO Keywords mit Chart) */}
-            {historyLoading && (
-                <Box sx={{ py: 6, textAlign: 'center' }}>
-                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                        {t('common.loading')}
-                    </MsqdxTypography>
-                </Box>
-            )}
+                    {historyLoading && (
+                        <Box sx={{ py: 6, textAlign: 'center' }}>
+                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                {t('common.loading')}
+                            </MsqdxTypography>
+                        </Box>
+                    )}
 
-            {!historyLoading && questionHistory.length > 0 && (
-                <Box
-                    sx={{
-                        display: 'grid',
-                        gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(3, 1fr)' },
-                        gap: 2,
-                    }}
-                >
-                    {questionHistory.map((q, idx) => (
-                        <GeoQuestionCard
-                            key={q.queryText || `q-${q.queryIndex}-${idx}`}
-                            queryText={q.queryText}
-                            queryIndex={q.queryIndex}
-                            points={q.points}
-                            targetDomain={targetDomain}
-                            competitorDomains={competitorDomains}
-                            selectedModelId={effectiveModelId}
-                            t={t}
-                        />
-                    ))}
-                </Box>
-            )}
+                    {!historyLoading && questionHistory.length > 0 && (
+                        <Box
+                            sx={{
+                                display: 'grid',
+                                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(3, 1fr)' },
+                                gap: 2,
+                            }}
+                        >
+                            {questionHistory.map((q, idx) => (
+                                <GeoQuestionCard
+                                    key={q.queryText || `q-${q.queryIndex}-${idx}`}
+                                    queryText={q.queryText}
+                                    queryIndex={q.queryIndex}
+                                    points={q.points}
+                                    targetDomain={targetDomain}
+                                    competitorDomains={competitorDomains}
+                                    selectedModelId={effectiveModelId}
+                                    t={t}
+                                />
+                            ))}
+                        </Box>
+                    )}
 
-            {!historyLoading && questionHistory.length === 0 && geoRuns.length > 0 && project?.domain && (
-                <Box sx={{ py: 6, textAlign: 'center' }}>
-                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
-                        {t('geoEeat.noResultsDisplay')}
-                    </MsqdxTypography>
-                    <Link href={pathGeoEeat(geoRuns[0]!.id)} style={{ textDecoration: 'none' }}>
-                        <MsqdxButton variant="outlined" size="small">
-                            {t('projects.open')}
-                        </MsqdxButton>
-                    </Link>
-                </Box>
-            )}
+                    {!historyLoading && questionHistory.length === 0 && geoRuns.length > 0 && project?.domain && (
+                        <Box sx={{ py: 4, textAlign: 'center' }}>
+                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
+                                {t('geoEeat.noResultsDisplay')}
+                            </MsqdxTypography>
+                            <Link href={pathGeoEeat(geoRuns[0]!.id)} style={{ textDecoration: 'none' }}>
+                                <MsqdxButton variant="outlined" size="small">
+                                    {t('projects.open')}
+                                </MsqdxButton>
+                            </Link>
+                        </Box>
+                    )}
 
-            {!historyLoading && questionHistory.length === 0 && geoRuns.length === 0 && project?.domain && (
-                <Box sx={{ py: 6, textAlign: 'center' }}>
-                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
-                        {t('projects.emptyGeoEeatRuns')}
-                    </MsqdxTypography>
-                    <MsqdxButton
-                        variant="contained"
-                        size="small"
-                        onClick={handleStartGeoEeat}
-                        disabled={!project.domain || geoStartLoading}
-                        sx={MSQDX_BUTTON_THEME_ACCENT_SX}
-                    >
-                        {geoStartLoading ? t('common.loading') : t('projects.startGeoEeat')}
-                    </MsqdxButton>
-                </Box>
-            )}
+                    {!historyLoading && questionHistory.length === 0 && geoRuns.length === 0 && project?.domain && (
+                        <Box sx={{ py: 4, textAlign: 'center' }}>
+                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
+                                {t('projects.emptyGeoEeatRuns')}
+                            </MsqdxTypography>
+                            <MsqdxButton
+                                variant="contained"
+                                size="small"
+                                onClick={handleStartGeoEeat}
+                                disabled={!project.domain || geoStartLoading}
+                                sx={MSQDX_BUTTON_THEME_ACCENT_SX}
+                            >
+                                {geoStartLoading ? t('common.loading') : t('projects.startGeoEeat')}
+                            </MsqdxButton>
+                        </Box>
+                    )}
+                </MsqdxMoleculeCard>
+            </Stack>
 
-            {/* Dialog: Fragen verwalten (Frage hinzufügen, Mit KI vorschlagen, Chips) */}
-            <Dialog open={manageQueriesOpen} onClose={() => setManageQueriesOpen(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>{t('projects.geoQueries')}</DialogTitle>
+            {/* Dialog: Fragen verwalten (wie Rankings: außerhalb des Stack) */}
+            <Dialog
+                open={manageQueriesOpen}
+                onClose={() => setManageQueriesOpen(false)}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{ sx: { borderRadius: 'var(--msqdx-spacing-md, 8px)' } }}
+            >
+                <DialogTitle sx={{ fontWeight: 600 }}>{t('projects.geoQueries')}</DialogTitle>
                 <DialogContent>
                     <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1.5 }}>
                         {t('projects.geoQueriesDescription')}
@@ -467,7 +484,6 @@ export default function ProjectGeoPage() {
                     )}
                 </DialogContent>
             </Dialog>
-            </Stack>
         </Box>
     );
 }
