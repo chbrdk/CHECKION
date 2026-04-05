@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
     PAGE_TOPICS_TREEMAP_MAX_THEMES,
     buildPageTopicsTreemapLeaves,
+    buildPageTopicsBubblePoints,
     buildAvgTierTagStrip,
     pageTopicTierColorCss,
 } from '@/lib/page-topics-viz';
@@ -63,5 +64,14 @@ describe('page-topics-viz', () => {
             expect(pageTopicTierColorCss(tier, accent).length).toBeGreaterThan(2);
         }
         expect(pageTopicTierColorCss(5, accent)).toBe(accent);
+    });
+
+    it('buildPageTopicsBubblePoints aligns with treemap cap and preserves tags', () => {
+        const many = Array.from({ length: PAGE_TOPICS_TREEMAP_MAX_THEMES + 5 }, (_, i) =>
+            theme({ tag: `t${i}`, score: i + 1, pageCount: i % 3, maxTier: 2, avgTier: 2 }),
+        );
+        const pts = buildPageTopicsBubblePoints(many);
+        expect(pts).toHaveLength(PAGE_TOPICS_TREEMAP_MAX_THEMES);
+        expect(pts[0]?.zSize).toBeGreaterThan(pts[pts.length - 1]!.zSize);
     });
 });

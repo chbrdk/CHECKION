@@ -48,6 +48,27 @@ export function buildPageTopicsTreemapLeaves(themes: AggregatedPageClassificatio
     }));
 }
 
+/** Points for scatter / bubble matrix (same cap as treemap for parity). */
+export type PageTopicsBubblePoint = {
+    tag: string;
+    avgTier: number;
+    maxTier: 1 | 2 | 3 | 4 | 5;
+    pageCount: number;
+    /** Bubble area driver (raw score). */
+    zSize: number;
+};
+
+export function buildPageTopicsBubblePoints(themes: AggregatedPageClassificationTheme[]): PageTopicsBubblePoint[] {
+    const sorted = [...themes].sort((a, b) => b.score - a.score).slice(0, PAGE_TOPICS_TREEMAP_MAX_THEMES);
+    return sorted.map((th) => ({
+        tag: th.tag,
+        avgTier: Math.min(5, Math.max(1, th.avgTier)),
+        maxTier: th.maxTier,
+        pageCount: th.pageCount,
+        zSize: Math.max(th.score, 0.25),
+    }));
+}
+
 /** Normalized segments for a single-row “tier spectrum” (share of avg tags per tier). */
 export type TierStripSegment = { tier: 1 | 2 | 3 | 4 | 5; ratio: number };
 

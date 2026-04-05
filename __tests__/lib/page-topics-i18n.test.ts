@@ -18,6 +18,12 @@ describe('page topics visualization i18n', () => {
         const keys = [
             'pageTopicsDiagramTitle',
             'pageTopicsDiagramCaption',
+            'pageTopicsViewTreemap',
+            'pageTopicsViewBubbleMatrix',
+            'pageTopicsBubbleMatrixCaption',
+            'pageTopicsAxisAvgTier',
+            'pageTopicsAxisPages',
+            'pageTopicsBubbleTooltip',
             'pageTopicsTierSpectrumTitle',
             'pageTopicsTierSpectrumCaption',
             'pageTopicsTreemapTooltip',

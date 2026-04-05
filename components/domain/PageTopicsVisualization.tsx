@@ -1,16 +1,31 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Box } from '@mui/material';
-import { Treemap, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+    Treemap,
+    Tooltip,
+    ResponsiveContainer,
+    ScatterChart,
+    Scatter,
+    XAxis,
+    YAxis,
+    ZAxis,
+    CartesianGrid,
+    Cell,
+} from 'recharts';
 import { MsqdxTypography, MsqdxChip } from '@msqdx/react';
 import type { AggregatedPageClassification } from '@/lib/types';
 import {
     buildPageTopicsTreemapLeaves,
+    buildPageTopicsBubblePoints,
     buildAvgTierTagStrip,
     pageTopicTierColorCss,
+    type PageTopicsBubblePoint,
 } from '@/lib/page-topics-viz';
 import { THEME_ACCENT_CSS, THEME_ACCENT_CONTRAST_CSS, msqdxChipThemeAccentSx } from '@/lib/theme-accent';
+
+type MainDiagramView = 'treemap' | 'bubbles';
 
 type Translate = (key: string, values?: Record<string, string | number>) => string;
 
@@ -111,6 +126,45 @@ function PageTopicsTreemapTooltip({
     );
 }
 
+function PageTopicsBubbleTooltip({
+    active,
+    payload,
+    t,
+}: {
+    active?: boolean;
+    payload?: ReadonlyArray<{ payload?: PageTopicsBubblePoint }>;
+    t: Translate;
+}) {
+    if (!active || !payload?.length) return null;
+    const p = payload[0]?.payload;
+    if (!p?.tag) return null;
+    return (
+        <Box
+            sx={{
+                px: 1.25,
+                py: 1,
+                maxWidth: 320,
+                bgcolor: 'var(--color-card-bg, #fff)',
+                border: '1px solid var(--color-border-subtle, #e5e7eb)',
+                borderRadius: 'var(--msqdx-radius-sm, 6px)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+            }}
+        >
+            <MsqdxTypography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.35 }}>
+                {p.tag}
+            </MsqdxTypography>
+            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mt: 0.5 }}>
+                {t('domainResult.pageTopicsBubbleTooltip', {
+                    pages: p.pageCount,
+                    maxTier: p.maxTier,
+                    avgTier: p.avgTier,
+                    score: Math.round(p.zSize * 100) / 100,
+                })}
+            </MsqdxTypography>
+        </Box>
+    );
+}
+
 export type PageTopicsVisualizationProps = {
     t: Translate;
     pageClassification: AggregatedPageClassification;
@@ -118,41 +172,129 @@ export type PageTopicsVisualizationProps = {
 
 export function PageTopicsVisualization({ t, pageClassification }: PageTopicsVisualizationProps) {
     const { topThemes, tierDistribution } = pageClassification;
+    const [mainView, setMainView] = useState<MainDiagramView>('treemap');
     const leaves = useMemo(() => buildPageTopicsTreemapLeaves(topThemes), [topThemes]);
+    const bubblePoints = useMemo(() => buildPageTopicsBubblePoints(topThemes), [topThemes]);
     const strip = useMemo(() => buildAvgTierTagStrip(tierDistribution.avgTagsPerPageByTier), [tierDistribution]);
+
+    const gridStroke = 'var(--color-border-subtle, #e5e7eb)';
+    const axisTick = { fill: 'var(--color-text-muted-on-light)', fontSize: 11 };
 
     return (
         <Box sx={{ mb: 'var(--msqdx-spacing-md)' }}>
             {leaves.length > 0 && (
                 <>
-                    <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
-                        {t('domainResult.pageTopicsDiagramTitle')}
-                    </MsqdxTypography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                            {t('domainResult.pageTopicsDiagramTitle')}
+                        </MsqdxTypography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                            <MsqdxChip
+                                label={t('domainResult.pageTopicsViewTreemap')}
+                                variant={mainView === 'treemap' ? 'filled' : 'outlined'}
+                                size="small"
+                                onClick={() => setMainView('treemap')}
+                                sx={msqdxChipThemeAccentSx(mainView === 'treemap')}
+                            />
+                            <MsqdxChip
+                                label={t('domainResult.pageTopicsViewBubbleMatrix')}
+                                variant={mainView === 'bubbles' ? 'filled' : 'outlined'}
+                                size="small"
+                                onClick={() => setMainView('bubbles')}
+                                sx={msqdxChipThemeAccentSx(mainView === 'bubbles')}
+                            />
+                        </Box>
+                    </Box>
                     <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1.5 }}>
-                        {t('domainResult.pageTopicsDiagramCaption')}
+                        {mainView === 'treemap'
+                            ? t('domainResult.pageTopicsDiagramCaption')
+                            : t('domainResult.pageTopicsBubbleMatrixCaption')}
                     </MsqdxTypography>
                     <Box
                         component="figure"
                         sx={{ m: 0, width: '100%' }}
-                        aria-label={t('domainResult.pageTopicsDiagramTitle')}
+                        aria-label={
+                            mainView === 'treemap'
+                                ? t('domainResult.pageTopicsDiagramTitle')
+                                : t('domainResult.pageTopicsViewBubbleMatrix')
+                        }
                     >
-                        <ResponsiveContainer width="100%" height={320}>
-                            <Treemap
-                                data={leaves}
-                                dataKey="value"
-                                nameKey="name"
-                                stroke="transparent"
-                                isAnimationActive={false}
-                                content={(props: unknown) => (
-                                    <PageTopicsTreemapCell {...(props as TreemapNodeProps)} />
-                                )}
-                            >
-                                <Tooltip
-                                    content={<PageTopicsTreemapTooltip t={t} />}
-                                    cursor={{ stroke: 'var(--color-border-subtle)', strokeWidth: 1 }}
-                                />
-                            </Treemap>
-                        </ResponsiveContainer>
+                        {mainView === 'treemap' ? (
+                            <ResponsiveContainer width="100%" height={320}>
+                                <Treemap
+                                    data={leaves}
+                                    dataKey="value"
+                                    nameKey="name"
+                                    stroke="transparent"
+                                    isAnimationActive={false}
+                                    content={(props: unknown) => (
+                                        <PageTopicsTreemapCell {...(props as TreemapNodeProps)} />
+                                    )}
+                                >
+                                    <Tooltip
+                                        content={<PageTopicsTreemapTooltip t={t} />}
+                                        cursor={{ stroke: 'var(--color-border-subtle)', strokeWidth: 1 }}
+                                    />
+                                </Treemap>
+                            </ResponsiveContainer>
+                        ) : (
+                            <ResponsiveContainer width="100%" height={320}>
+                                <ScatterChart margin={{ top: 12, right: 12, bottom: 28, left: 8 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+                                    <XAxis
+                                        type="number"
+                                        dataKey="avgTier"
+                                        name={t('domainResult.pageTopicsAxisAvgTier')}
+                                        domain={[0.75, 5.25]}
+                                        ticks={[1, 2, 3, 4, 5]}
+                                        tick={axisTick}
+                                        stroke={gridStroke}
+                                        label={{
+                                            value: t('domainResult.pageTopicsAxisAvgTier'),
+                                            position: 'bottom',
+                                            offset: 10,
+                                            fill: 'var(--color-text-muted-on-light)',
+                                            fontSize: 11,
+                                        }}
+                                    />
+                                    <YAxis
+                                        type="number"
+                                        dataKey="pageCount"
+                                        name={t('domainResult.pageTopicsAxisPages')}
+                                        allowDecimals={false}
+                                        tick={axisTick}
+                                        stroke={gridStroke}
+                                        width={36}
+                                        label={{
+                                            value: t('domainResult.pageTopicsAxisPages'),
+                                            angle: -90,
+                                            position: 'insideLeft',
+                                            fill: 'var(--color-text-muted-on-light)',
+                                            fontSize: 11,
+                                        }}
+                                    />
+                                    <ZAxis type="number" dataKey="zSize" range={[120, 2000]} name="score" />
+                                    <Tooltip
+                                        content={<PageTopicsBubbleTooltip t={t} />}
+                                        cursor={{ strokeDasharray: '4 4', stroke: gridStroke }}
+                                    />
+                                    <Scatter
+                                        data={bubblePoints}
+                                        isAnimationActive={false}
+                                        shape="circle"
+                                        stroke="var(--color-card-bg, #fff)"
+                                        strokeWidth={1}
+                                    >
+                                        {bubblePoints.map((pt, i) => (
+                                            <Cell
+                                                key={`${pt.tag}-${i}`}
+                                                fill={pageTopicTierColorCss(pt.maxTier, THEME_ACCENT_CSS)}
+                                            />
+                                        ))}
+                                    </Scatter>
+                                </ScatterChart>
+                            </ResponsiveContainer>
+                        )}
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, alignItems: 'center', mt: 1.5 }}>
                             {([1, 2, 3, 4, 5] as const).map((tier) => (
                                 <Box key={tier} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
