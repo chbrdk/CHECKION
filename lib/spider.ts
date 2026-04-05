@@ -1,6 +1,6 @@
 import { runScan } from './scanner';
 import { getSitemapUrlFromRobots, fetchSitemapUrls } from './sitemap';
-import type { ScanResult, DomainScanResult, EeatDomainAggregate } from './types';
+import type { ScanResult, DomainScanResult, DomainScanResultWithFullPages, EeatDomainAggregate } from './types';
 import { v4 as uuidv4 } from 'uuid';
 import { normalizeScanUrl } from '@/lib/url-normalize';
 import { getLatestScanForUrlFingerprint } from '@/lib/db/scans';
@@ -51,7 +51,7 @@ export type DomainScanStreamUpdate =
           ok: boolean;
           reusedUnchanged?: boolean;
       }
-    | { type: 'complete'; domainResult: DomainScanResult };
+    | { type: 'complete'; domainResult: DomainScanResultWithFullPages };
 
 
 /** Treat www and non-www as same domain for internal link detection */
@@ -148,7 +148,7 @@ function identifySystemicIssues(pages: Array<ScanResult>) {
 export async function* runDomainScan(
     startUrl: string,
     options: DomainScanOptions = {}
-): AsyncGenerator<DomainScanStreamUpdate, DomainScanResult, unknown> {
+): AsyncGenerator<DomainScanStreamUpdate, DomainScanResultWithFullPages, unknown> {
     const domainId = options.domainScanId ?? uuidv4();
     const baseUrl = new URL(startUrl);
     const origin = baseUrl.origin;
@@ -402,7 +402,7 @@ export async function* runDomainScan(
     const domainScore = calculateDomainScore(results);
     const systemicIssues = identifySystemicIssues(results.map(r => r.result));
 
-    const finalResult: DomainScanResult = {
+    const finalResult: DomainScanResultWithFullPages = {
         id: domainId,
         domain: origin,
         timestamp: new Date().toISOString(),
@@ -413,7 +413,7 @@ export async function* runDomainScan(
         },
         totalPages: results.length,
         score: domainScore,
-        pages: results.map(r => r.result),
+        pages: results.map((r) => r.result),
         graph: {
             nodes: graphNodes,
             links: graphLinks

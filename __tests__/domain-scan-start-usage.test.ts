@@ -31,7 +31,7 @@ vi.mock('@/lib/usage-report', () => ({
 import { reportUsage } from '@/lib/usage-report';
 import { runDomainScan } from '@/lib/spider';
 import { startDomainScan } from '@/lib/domain-scan-start';
-import type { DomainScanResult } from '@/lib/types';
+import type { DomainScanResultWithFullPages } from '@/lib/types';
 import type { DomainScanStreamUpdate } from '@/lib/spider';
 
 describe('startDomainScan usage', () => {
@@ -40,7 +40,7 @@ describe('startDomainScan usage', () => {
   });
 
   it('reports domain_scan_page per finished page with per-page idempotency keys', async () => {
-    const domainResult: DomainScanResult = {
+    const domainResult: DomainScanResultWithFullPages = {
       id: 'spider-internal-id',
       domain: 'https://example.com',
       timestamp: new Date().toISOString(),
@@ -53,7 +53,9 @@ describe('startDomainScan usage', () => {
       systemicIssues: [],
     };
 
-    async function* gen(domainScanId: string): AsyncGenerator<DomainScanStreamUpdate, DomainScanResult, unknown> {
+    async function* gen(
+      domainScanId: string
+    ): AsyncGenerator<DomainScanStreamUpdate, DomainScanResultWithFullPages, unknown> {
       yield {
         type: 'page_complete' as const,
         pageIndex: 0,
@@ -68,7 +70,7 @@ describe('startDomainScan usage', () => {
         normalizedUrl: 'https://example.com/about',
         ok: false,
       };
-      const fr: DomainScanResult = { ...domainResult, id: domainScanId };
+      const fr: DomainScanResultWithFullPages = { ...domainResult, id: domainScanId };
       yield { type: 'complete' as const, domainResult: fr };
       return fr;
     }
