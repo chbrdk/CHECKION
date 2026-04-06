@@ -35,7 +35,15 @@ export function DomainResultShell({ children }: { children: React.ReactNode }) {
 
     if (loadError) {
         return (
-            <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto', minHeight: 320 }}>
+            <Box
+                sx={{
+                    p: 'var(--msqdx-spacing-md)',
+                    width: '100%',
+                    maxWidth: '100%',
+                    boxSizing: 'border-box',
+                    minHeight: 320,
+                }}
+            >
                 <Box sx={{ display: 'flex', justifyContent: 'center', flexDirection: 'column', alignItems: 'center', gap: 'var(--msqdx-spacing-md)', py: 8 }}>
                     <MsqdxTypography variant="h5" sx={{ color: 'var(--color-text-muted-on-light)', textAlign: 'center', maxWidth: 480 }}>
                         {t('domainResult.notFound')}
@@ -50,7 +58,15 @@ export function DomainResultShell({ children }: { children: React.ReactNode }) {
 
     if (!result) {
         return (
-            <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto', minHeight: 320 }}>
+            <Box
+                sx={{
+                    p: 'var(--msqdx-spacing-md)',
+                    width: '100%',
+                    maxWidth: '100%',
+                    boxSizing: 'border-box',
+                    minHeight: 320,
+                }}
+            >
                 <Box sx={{ display: 'flex', justifyContent: 'center', flexDirection: 'column', alignItems: 'center', gap: 'var(--msqdx-spacing-md)', py: 8 }}>
                     <MsqdxTypography variant="h5" sx={{ mb: 'var(--msqdx-spacing-md)' }}>{t('domainResult.loading')}</MsqdxTypography>
                     <CircularProgress sx={{ color: 'var(--color-theme-accent)' }} />
@@ -60,7 +76,15 @@ export function DomainResultShell({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto', minHeight: 320 }}>
+        <Box
+            sx={{
+                p: 'var(--msqdx-spacing-md)',
+                width: '100%',
+                maxWidth: '100%',
+                boxSizing: 'border-box',
+                minHeight: 320,
+            }}
+        >
             <Box sx={{ mb: 'var(--msqdx-spacing-xl)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
                 <Box>
                     <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-xs)' }}>

@@ -1,10 +1,10 @@
 import type { AggregatedPageClassificationTheme } from '@/lib/types';
 
-/** Max tiles so the treemap stays readable on domain overviews. */
-export const PAGE_TOPICS_TREEMAP_MAX_THEMES = 40;
+/** Max themes in the bubble chart (readability). */
+export const PAGE_TOPICS_CHART_MAX_THEMES = 40;
 
 /**
- * Fill for treemap tiles and tier-spectrum segments (T1 = Rand … T5 = Kernthema / Akzent).
+ * Fill for bubble chart and tier-spectrum segments (T1 = Rand … T5 = Kernthema / Akzent).
  * `accentCss` should be `THEME_ACCENT_CSS` from the app theme helper.
  */
 export function pageTopicTierColorCss(tier: 1 | 2 | 3 | 4 | 5, accentCss: string): string {
@@ -22,33 +22,7 @@ export function pageTopicTierColorCss(tier: 1 | 2 | 3 | 4 | 5, accentCss: string
     }
 }
 
-export type PageTopicsTreemapLeaf = {
-    /** Short label inside tiles (may be truncated). */
-    name: string;
-    /** Full theme text for tooltips. */
-    fullName: string;
-    /** Area weight (squarified treemap); derived from classification score. */
-    value: number;
-    maxTier: 1 | 2 | 3 | 4 | 5;
-    pageCount: number;
-};
-
-/**
- * Build flat treemap leaves (Recharts `Treemap` expects `data` = array of children).
- * Sorted by score descending; long labels truncated for layout.
- */
-export function buildPageTopicsTreemapLeaves(themes: AggregatedPageClassificationTheme[]): PageTopicsTreemapLeaf[] {
-    const sorted = [...themes].sort((a, b) => b.score - a.score).slice(0, PAGE_TOPICS_TREEMAP_MAX_THEMES);
-    return sorted.map((th) => ({
-        fullName: th.tag,
-        name: th.tag.length > 48 ? `${th.tag.slice(0, 45)}…` : th.tag,
-        value: Math.max(Math.sqrt(th.score), 0.25),
-        maxTier: th.maxTier,
-        pageCount: th.pageCount,
-    }));
-}
-
-/** Points for scatter / bubble matrix (same cap as treemap for parity). */
+/** Points for scatter / bubble matrix. */
 export type PageTopicsBubblePoint = {
     tag: string;
     avgTier: number;
@@ -59,7 +33,7 @@ export type PageTopicsBubblePoint = {
 };
 
 export function buildPageTopicsBubblePoints(themes: AggregatedPageClassificationTheme[]): PageTopicsBubblePoint[] {
-    const sorted = [...themes].sort((a, b) => b.score - a.score).slice(0, PAGE_TOPICS_TREEMAP_MAX_THEMES);
+    const sorted = [...themes].sort((a, b) => b.score - a.score).slice(0, PAGE_TOPICS_CHART_MAX_THEMES);
     return sorted.map((th) => ({
         tag: th.tag,
         avgTier: Math.min(5, Math.max(1, th.avgTier)),

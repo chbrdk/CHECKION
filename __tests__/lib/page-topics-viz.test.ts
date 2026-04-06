@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-    PAGE_TOPICS_TREEMAP_MAX_THEMES,
-    buildPageTopicsTreemapLeaves,
+    PAGE_TOPICS_CHART_MAX_THEMES,
     buildPageTopicsBubblePoints,
     buildAvgTierTagStrip,
     pageTopicTierColorCss,
@@ -18,32 +17,24 @@ const theme = (over: Partial<AggregatedPageClassificationTheme> = {}): Aggregate
 });
 
 describe('page-topics-viz', () => {
-    it('buildPageTopicsTreemapLeaves sorts by score and caps count', () => {
+    it('buildPageTopicsBubblePoints sorts by score and caps count', () => {
         const themes: AggregatedPageClassificationTheme[] = [
             theme({ tag: 'low', score: 1, pageCount: 1, maxTier: 1 }),
             theme({ tag: 'high', score: 100, pageCount: 5, maxTier: 5 }),
             theme({ tag: 'mid', score: 50, pageCount: 3, maxTier: 4 }),
         ];
-        const leaves = buildPageTopicsTreemapLeaves(themes);
-        expect(leaves[0]?.fullName).toBe('high');
-        expect(leaves[1]?.fullName).toBe('mid');
-        expect(leaves[2]?.fullName).toBe('low');
-        expect(leaves.every((l) => l.value > 0)).toBe(true);
+        const pts = buildPageTopicsBubblePoints(themes);
+        expect(pts[0]?.tag).toBe('high');
+        expect(pts[1]?.tag).toBe('mid');
+        expect(pts[2]?.tag).toBe('low');
+        expect(pts.every((p) => p.zSize > 0)).toBe(true);
     });
 
-    it('buildPageTopicsTreemapLeaves truncates long tags and preserves fullName', () => {
-        const longTag = 'x'.repeat(60);
-        const leaves = buildPageTopicsTreemapLeaves([theme({ tag: longTag, score: 5, pageCount: 1, maxTier: 2 })]);
-        expect(leaves[0]?.fullName).toBe(longTag);
-        expect(leaves[0]?.name.endsWith('…')).toBe(true);
-        expect(leaves[0]?.name.length).toBeLessThanOrEqual(48);
-    });
-
-    it('respects PAGE_TOPICS_TREEMAP_MAX_THEMES', () => {
-        const many = Array.from({ length: PAGE_TOPICS_TREEMAP_MAX_THEMES + 12 }, (_, i) =>
+    it('respects PAGE_TOPICS_CHART_MAX_THEMES', () => {
+        const many = Array.from({ length: PAGE_TOPICS_CHART_MAX_THEMES + 12 }, (_, i) =>
             theme({ tag: `t${i}`, score: i + 1, pageCount: 1, maxTier: 2 }),
         );
-        expect(buildPageTopicsTreemapLeaves(many)).toHaveLength(PAGE_TOPICS_TREEMAP_MAX_THEMES);
+        expect(buildPageTopicsBubblePoints(many)).toHaveLength(PAGE_TOPICS_CHART_MAX_THEMES);
     });
 
     it('buildAvgTierTagStrip normalizes ratios to ~1', () => {
@@ -66,12 +57,12 @@ describe('page-topics-viz', () => {
         expect(pageTopicTierColorCss(5, accent)).toBe(accent);
     });
 
-    it('buildPageTopicsBubblePoints aligns with treemap cap and preserves tags', () => {
-        const many = Array.from({ length: PAGE_TOPICS_TREEMAP_MAX_THEMES + 5 }, (_, i) =>
+    it('buildPageTopicsBubblePoints aligns with cap and preserves score order', () => {
+        const many = Array.from({ length: PAGE_TOPICS_CHART_MAX_THEMES + 5 }, (_, i) =>
             theme({ tag: `t${i}`, score: i + 1, pageCount: i % 3, maxTier: 2, avgTier: 2 }),
         );
         const pts = buildPageTopicsBubblePoints(many);
-        expect(pts).toHaveLength(PAGE_TOPICS_TREEMAP_MAX_THEMES);
+        expect(pts).toHaveLength(PAGE_TOPICS_CHART_MAX_THEMES);
         expect(pts[0]?.zSize).toBeGreaterThan(pts[pts.length - 1]!.zSize);
     });
 });

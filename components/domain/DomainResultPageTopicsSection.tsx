@@ -35,7 +35,7 @@ function DomainResultPageTopicsSectionInner({ t, pageClassification }: DomainRes
         pageClassification != null && pageClassification.coverage.pagesWithClassification > 0;
 
     return (
-        <Box sx={{ maxWidth: 960, mx: 'auto' }}>
+        <Box sx={{ width: '100%', maxWidth: '100%' }}>
             <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 'var(--msqdx-spacing-lg)' }}>
                 {t('domainResult.pageTopicsTabSubtitle')}
             </MsqdxTypography>

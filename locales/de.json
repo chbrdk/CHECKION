@@ -663,15 +663,12 @@
     "pageTopicsTitle": "Seitenthemen (Domain)",
     "pageTopicsCoverage": "{{classified}} von {{total}} Seiten mit KI-Klassifikation (Tags + Tier).",
     "pageTopicsDiagramTitle": "Themenlandschaft",
-    "pageTopicsDiagramCaption": "Kachelgröße = relative Bedeutung (gewichteter Score über alle Seiten). Farbe = höchster Tier (T1 Rand … T5 Kernthema) bei diesem Thema.",
-    "pageTopicsViewTreemap": "Treemap",
     "pageTopicsViewBubbleMatrix": "Blasen-Matrix",
     "pageTopicsBubbleMatrixCaption": "Jeder Kreis = ein Thema. Waagerecht: durchschnittlicher Tier (1–5), senkrecht: Seitenzahl. Größe = gewichteter Score. Farbe = höchster Tier.",
     "pageTopicsAxisAvgTier": "Ø Tier",
     "pageTopicsAxisPages": "Seiten",
     "pageTopicsTierSpectrumTitle": "Tier-Spektrum",
     "pageTopicsTierSpectrumCaption": "Ein Streifen aus den Anteilen von Ø Tags pro Seite (T1–T5) am Gesamtmix – kein Ranking einzelner Themen.",
-    "pageTopicsTreemapTooltip": "{{pages}} Seiten · höchster Tier T{{maxTier}}",
     "pageTopicsBubbleTooltip": "{{pages}} Seiten · max. T{{maxTier}} · Ø Tier {{avgTier}} · Score {{score}}",
     "pageTopicsTierLegendShort": "T{{tier}}",
     "pageTopicsTopThemes": "Häufigste Themen (gewichtet nach Tier)",
@@ -683,7 +680,7 @@
     "pageTopicsAvgT4": "T4 Ø {{n}}",
     "pageTopicsAvgT5": "T5 Ø {{n}}",
     "pageTopicsCorePages": "{{count}} Seiten mit mindestens einem Kernthema (T5)",
-    "pageTopicsLowTierDominant": "{{count}} Seiten stark Rand-/Boilerplate-lastig (T1+T2 > T4+T5)",
+    "pageTopicsLowTierDominant": "{{count}} Seiten: Rand-Tags überwiegen Kernthema-Tags (T1+T2 > T4+T5)",
     "pageTopicsSamples": "Beispiel-Seiten (Profil)",
     "pageTopicsProfilePillar": "Kernthema",
     "pageTopicsProfileHub": "Themen-Hub",
@@ -945,6 +942,7 @@
     "eeat": "E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness): über den Deep Scan aggregierte Signale für Vertrauen, Experience und Expertise. Authoritativeness würde Backlink-Daten erfordern.",
     "seoOnPage": "On-Page-SEO aus dem Deep Scan: Meta (Title, Description, H1, Canonical), Überschriften-Struktur, Seiten ohne Meta/Keywords und seitenübergreifende Keywords.",
     "pageClassification": "Inhaltliche Einordnung der Seite per KI: Themen-Tags und Tier (1–5) für die Wichtigkeit des Hauptthemas. Basiert nur auf dem Seiteninhalt, nicht auf URL oder Struktur.",
-    "pageTopicsAggregate": "Aus allen klassifizierten Seiten berechnet: gleiche Tags werden zusammengeführt, Gewicht = Tier² pro Vorkommen; typische Navigations-/Footer-Begriffe werden abgeschwächt. Kein zweites LLM – nur Statistik über die gespeicherten tagTiers."
+    "pageTopicsAggregate": "Aus allen klassifizierten Seiten berechnet: gleiche Tags werden zusammengeführt, Gewicht = Tier² pro Vorkommen; typische Navigations-/Footer-Begriffe werden abgeschwächt. Kein zweites LLM – nur Statistik über die gespeicherten tagTiers.",
+    "pageTopicsLowTierDominant": "Pro Seite zählt die Klassifikation, wie viele Themen-Tags in Tier 1–5 vorkommen. Hier gezählt: Seiten, auf denen (Anzahl T1 + Anzahl T2) größer ist als (Anzahl T4 + Anzahl T5). Tier 3 zählt für diese Kennzahl nicht. Das ist eine Heuristik für eine eher rand-/boilerplate-lastige vs. kernthematische Tag-Verteilung – kein inhaltliches Urteil über die Seitenqualität."
   }
 }
