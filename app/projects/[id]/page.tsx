@@ -257,7 +257,7 @@ export default function ProjectDetailPage() {
             });
             const data = await r.json();
             if (data?.success && data?.data?.id) {
-                router.push(pathDomain(data.data.id));
+                router.push(pathDomain(data.data.id, { projectId: id }));
                 return;
             }
         } catch {
@@ -474,7 +474,7 @@ export default function ProjectDetailPage() {
                     actions={
                         <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                             {domainSummary?.scanId && (
-                                <Link href={pathDomain(domainSummary.scanId)} style={{ textDecoration: 'none' }}>
+                                <Link href={pathDomain(domainSummary.scanId, { projectId: id })} style={{ textDecoration: 'none' }}>
                                     <MsqdxButton variant="outlined" size="small">
                                         {t('projects.open')}
                                     </MsqdxButton>
@@ -515,7 +515,7 @@ export default function ProjectDetailPage() {
                                     {runningScanProgress.scanned} / {runningScanProgress.total} {t('domainResult.pagesScanned')}
                                 </MsqdxTypography>
                             )}
-                            <Link href={pathDomain(runningOwnScanId)} style={{ textDecoration: 'none' }}>
+                            <Link href={pathDomain(runningOwnScanId, { projectId: id })} style={{ textDecoration: 'none' }}>
                                 <MsqdxButton variant="outlined" size="small">
                                     {t('projects.openDeepScan')}
                                 </MsqdxButton>
@@ -555,7 +555,7 @@ export default function ProjectDetailPage() {
                                                     <MsqdxTypography variant="caption" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                         {domain} {comp.status === 'complete' ? `· ${comp.score}` : `· ${comp.status}`}
                                                     </MsqdxTypography>
-                                                    <MsqdxButton variant="outlined" size="small" onClick={() => router.push(pathDomain(comp.scanId))} sx={{ flexShrink: 0 }}>
+                                                    <MsqdxButton variant="outlined" size="small" onClick={() => router.push(pathDomain(comp.scanId, { projectId: id }))} sx={{ flexShrink: 0 }}>
                                                         {t('projects.open')}
                                                     </MsqdxButton>
                                                 </Box>

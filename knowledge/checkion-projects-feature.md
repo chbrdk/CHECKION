@@ -44,7 +44,7 @@ Listen-Endpunkte (GET) unterstützen optionalen Query-Parameter `projectId` zur 
   4. **Keywords (Rank-Tracking)** (MsqdxMoleculeCard): Add keyword (dialog), "Suggest keywords with AI" (calls suggest-keywords; user selects chips and "Add selected"); Refresh rankings; list with last position and competitor positions.
   5. **GEO-Fragen** (MsqdxMoleculeCard): Stored queries as MsqdxChip; input + Add, "Suggest with AI" (calls suggest-competitors and merges `queries` into project.geoQueries).
   6. **Aktivität** (MsqdxMoleculeCard): MsqdxAccordion with Domain Scans, Journey Runs, GEO Runs, Single Scans; each section lists items and empty-state CTA.
-- **Komponente**: `AddToProject` – Menü „Zu Projekt hinzufügen“ / „Projekt ändern“ auf Ergebnis-Seiten (Single, Domain, Journey, GEO)
+- **Komponente**: `AddToProject` – Menü „Zu Projekt hinzufügen“ / „Projekt ändern“ auf Ergebnis-Seiten (Single, Domain, Journey, GEO). **Domain-Ergebnis aus Projektkontext**: Links nutzen `pathDomain(scanId, { projectId })` bzw. `pathScanDomain({ url, projectId })`. Die Domain-Route `/domain/[scanId]?projectId=…` zeigt dieselbe **Header-Navigation wie Projektseiten** (`ProjectHeaderNav` via `AppShellHeaderNav`) und blendet **„Zu Projekt hinzufügen“** aus (`fromProjectId` in `DomainScanContext` / `DomainResultShell`).
 - **Scan-Start**: Optionale Projektauswahl auf `/scan` (alle Modi: Single, Deep, Journey, GEO)
 
 ## i18n

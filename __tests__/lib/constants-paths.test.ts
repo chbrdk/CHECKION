@@ -58,8 +58,11 @@ describe('Path constants', () => {
         expect(pathDomain('xyz', { restoreJourney: 'j1' })).toBe('/domain/xyz?restoreJourney=j1');
     });
 
-    it('pathScanDomain builds /scan/domain?url=...', () => {
+    it('pathScanDomain builds /scan/domain?url=...&projectId=...', () => {
         expect(pathScanDomain({ url: 'https://example.com' })).toBe('/scan/domain?url=https%3A%2F%2Fexample.com');
+        expect(pathScanDomain({ url: 'https://a.com', projectId: '550e8400-e29b-41d4-a716-446655440000' })).toBe(
+            '/scan/domain?url=https%3A%2F%2Fa.com&projectId=550e8400-e29b-41d4-a716-446655440000'
+        );
     });
 
     it('pathJourneyAgent builds /journey-agent/[jobId]', () => {

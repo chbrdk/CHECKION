@@ -38,6 +38,10 @@ export type DomainScanContextValue = {
     loadError: string | null;
     projectId: string | null;
     setProjectId: React.Dispatch<React.SetStateAction<string | null>>;
+    /** When `/domain/[id]?projectId=` is present: project context from URL (not necessarily equal to stored `projectId` until API sync). */
+    fromProjectId: string | null;
+    /** Merge into `pathDomainSection` third argument to keep `?projectId=` on tab links. */
+    domainLinkQuery: Record<string, string>;
     seoPagesHydrating: boolean;
     summarizing: boolean;
     setSummarizing: React.Dispatch<React.SetStateAction<boolean>>;
@@ -116,6 +120,11 @@ export function DomainScanProvider({
     const fullSeoHydratedRef = useRef(false);
     const seoFullFetchInFlightRef = useRef(false);
     const [projectId, setProjectId] = useState<string | null>(null);
+    const fromProjectId = searchParams.get('projectId');
+    const domainLinkQuery = useMemo(
+        () => (fromProjectId ? { projectId: fromProjectId } : ({} as Record<string, string>)),
+        [fromProjectId]
+    );
     const [loadError, setLoadError] = useState<string | null>(null);
     const [summarizing, setSummarizing] = useState(false);
     const [summarizeError, setSummarizeError] = useState<string | null>(null);
@@ -382,10 +391,15 @@ export function DomainScanProvider({
             .then((row: { goal: string; result: JourneyResult }) => {
                 setJourneyGoal(row.goal);
                 setJourneyResult(row.result);
-                router.replace(pathDomainSection(domainId, 'journey', { restoreJourney: restoreJourneyId }));
+                router.replace(
+                    pathDomainSection(domainId, 'journey', {
+                        ...domainLinkQuery,
+                        restoreJourney: restoreJourneyId,
+                    })
+                );
             })
             .catch(() => {});
-    }, [restoreJourneyId, domainId, t, router]);
+    }, [restoreJourneyId, domainId, t, router, domainLinkQuery]);
 
     const hasIssuesDeepLink = Boolean(
         searchParams.get('group') ||
@@ -415,6 +429,8 @@ export function DomainScanProvider({
             loadError,
             projectId,
             setProjectId,
+            fromProjectId,
+            domainLinkQuery,
             seoPagesHydrating,
             summarizing,
             setSummarizing,
@@ -468,6 +484,8 @@ export function DomainScanProvider({
             result,
             loadError,
             projectId,
+            fromProjectId,
+            domainLinkQuery,
             seoPagesHydrating,
             summarizing,
             summarizeError,

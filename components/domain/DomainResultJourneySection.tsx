@@ -33,6 +33,7 @@ function normUrl(u: string) {
 export type DomainResultJourneySectionProps = {
     t: (key: string) => string;
     domainId: string;
+    domainLinkQuery: Record<string, string>;
     pages: SlimPage[];
     pagesByNormUrl: ReadonlyMap<string, SlimPage>;
     journeyGoal: string;
@@ -54,6 +55,7 @@ export type DomainResultJourneySectionProps = {
 function DomainResultJourneySectionInner({
     t,
     domainId,
+    domainLinkQuery,
     pages,
     pagesByNormUrl,
     journeyGoal,
@@ -201,7 +203,13 @@ function DomainResultJourneySectionInner({
                                         const data = await res.json().catch(() => ({}));
                                         setJourneySaved(true);
                                         if (data?.id && domainId) {
-                                            router.replace(pathDomainSection(domainId, 'journey', { restoreJourney: String(data.id) }), { scroll: false });
+                                            router.replace(
+                                                pathDomainSection(domainId, 'journey', {
+                                                    ...domainLinkQuery,
+                                                    restoreJourney: String(data.id),
+                                                }),
+                                                { scroll: false }
+                                            );
                                         }
                                     } catch {
                                         setJourneyError(t('domainResult.journeySaveError'));

@@ -680,7 +680,7 @@
     "pageTopicsAvgT4": "T4 avg {{n}}",
     "pageTopicsAvgT5": "T5 avg {{n}}",
     "pageTopicsCorePages": "{{count}} pages with at least one core topic (T5)",
-    "pageTopicsLowTierDominant": "{{count}} pages: peripheral tags outweigh core-topic tags (T1+T2 > T4+T5)",
+    "pageTopicsLowTierDominant": "{{count}} pages: peripheral tags outweigh core-topic tags",
     "pageTopicsSamples": "Sample pages (profile)",
     "pageTopicsProfilePillar": "Pillar",
     "pageTopicsProfileHub": "Topic hub",
@@ -943,6 +943,6 @@
     "seoOnPage": "On-page SEO from the deep scan: meta (title, description, H1, canonical), heading structure, pages without meta/keywords, and cross-page keywords.",
     "pageClassification": "AI-derived content classification: topic tags and tier (1–5) for importance of the main topic. Based on page content only, not URL or structure.",
     "pageTopicsAggregate": "Computed from all classified pages: tags are merged with weight = tier² per occurrence; common nav/footer labels are damped. No second LLM – statistics over stored tagTiers only.",
-    "pageTopicsLowTierDominant": "Per page we count how many topic tags fall in tiers T1–T5. This metric counts pages where (T1 count + T2 count) > (T4 count + T5 count). Tier 3 is not part of this inequality. It is a heuristic for a more peripheral/boilerplate-heavy vs. core-topic tag mix—not a verdict on page quality."
+    "pageTopicsLowTierDominant": "Per page we count how many topic tags fall in tiers T1–T5. This metric counts pages where the sum of T1 and T2 tag counts is greater than the sum of T4 and T5 tag counts. Tier 3 is not part of this comparison. It is a heuristic for a more peripheral/boilerplate-heavy vs. core-topic tag mix—not a verdict on page quality."
   }
 }

@@ -46,8 +46,8 @@ describe('page topics visualization i18n', () => {
         const enInfo = loadInfo('en');
         expect(deDr.pageTopicsLowTierDominant).toContain('{{count}}');
         expect(enDr.pageTopicsLowTierDominant).toContain('{{count}}');
-        expect(deDr.pageTopicsLowTierDominant).toContain('T1+T2');
-        expect(enDr.pageTopicsLowTierDominant).toContain('T1+T2');
+        expect(deDr.pageTopicsLowTierDominant).toContain('Rand-Tags');
+        expect(enDr.pageTopicsLowTierDominant).toContain('peripheral');
         expect(deInfo.pageTopicsLowTierDominant?.length).toBeGreaterThan(40);
         expect(enInfo.pageTopicsLowTierDominant?.length).toBeGreaterThan(40);
         expect(deInfo.pageTopicsLowTierDominant).not.toBe(enInfo.pageTopicsLowTierDominant);

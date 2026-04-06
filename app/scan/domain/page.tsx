@@ -30,6 +30,7 @@ function ScanContent() {
 
     const startUrl = searchParams.get('url');
     const maxPagesParam = searchParams.get('maxPages');
+    const projectIdParam = searchParams.get('projectId');
 
     // Scroll to bottom of logs
     useEffect(() => {
@@ -40,9 +41,9 @@ function ScanContent() {
     useEffect(() => {
         if (startUrl && !scanId) {
             const limit = maxPagesParam ? Math.min(10000, Math.max(1, Number(maxPagesParam))) : 1000;
-            startScan(startUrl, limit);
+            startScan(startUrl, limit, projectIdParam);
         }
-    }, [startUrl, maxPagesParam]);
+    }, [startUrl, maxPagesParam, projectIdParam]);
 
     // Polling Loop
     useEffect(() => {
@@ -73,7 +74,9 @@ function ScanContent() {
                         setLogs(prev => [...prev, t('domain.completeLog')]);
 
                         setTimeout(() => {
-                            router.push(pathDomain(data.id));
+                            router.push(
+                                pathDomain(data.id, projectIdParam ? { projectId: projectIdParam } : undefined)
+                            );
                         }, 1000);
                     } else if (data.status === 'error') {
                         setLogs(prev => [...prev, `${t('domain.errorLog')}: ${data.error || 'Unknown error'}`]);
@@ -85,9 +88,9 @@ function ScanContent() {
         }, 2000);
 
         return () => clearInterval(interval);
-    }, [scanId, status, router]);
+    }, [scanId, status, router, t, projectIdParam]);
 
-    async function startScan(url: string, pageLimit?: number) {
+    async function startScan(url: string, pageLimit?: number, projectId?: string | null) {
         setStatus('queued');
         setLogs([t('domain.initLog')]);
 
@@ -95,7 +98,11 @@ function ScanContent() {
             const response = await fetch(apiScanDomainCreate, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url, maxPages: pageLimit ?? 1000 })
+                body: JSON.stringify({
+                    url,
+                    maxPages: pageLimit ?? 1000,
+                    ...(projectId ? { projectId } : {}),
+                })
             });
 
             if (response.ok) {
@@ -137,7 +144,13 @@ function ScanContent() {
                         const inputUrl = formData.get('url') as string;
                         if (inputUrl) {
                             const limit = maxPages;
-                            router.push(pathScanDomain({ url: inputUrl, maxPages: limit }));
+                            router.push(
+                                pathScanDomain({
+                                    url: inputUrl,
+                                    maxPages: limit,
+                                    ...(projectIdParam ? { projectId: projectIdParam } : {}),
+                                })
+                            );
                         }
                     }}
                     sx={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--msqdx-spacing-md)', alignItems: 'flex-end' }}

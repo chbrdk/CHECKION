@@ -37,6 +37,8 @@ export type DomainResultOverviewSectionProps = {
     slimPagesRemoteTotal: number | null;
     loadMoreSlimPages: () => Promise<void>;
     domainId: string;
+    /** Preserve `?projectId=` when opening Page Topics from overview. */
+    domainLinkQuery: Record<string, string>;
     onScannedPageOpen: (page: SlimPage) => void;
 };
 
@@ -50,6 +52,7 @@ function DomainResultOverviewSectionInner({
     slimPagesRemoteTotal,
     loadMoreSlimPages,
     domainId,
+    domainLinkQuery,
     onScannedPageOpen,
 }: DomainResultOverviewSectionProps) {
     return (
@@ -129,7 +132,11 @@ function DomainResultOverviewSectionInner({
 
                 <Box sx={{ mt: 'var(--msqdx-spacing-md)' }}>
                     <Link
-                        href={pathDomainSection(domainId, 'page-topics')}
+                        href={pathDomainSection(
+                            domainId,
+                            'page-topics',
+                            Object.keys(domainLinkQuery).length ? domainLinkQuery : undefined
+                        )}
                         style={{ textDecoration: 'none', color: 'var(--color-theme-accent)', fontWeight: 600, fontSize: '0.8125rem' }}
                     >
                         {t('domainResult.pageTopicsOverviewCta')}

@@ -14,11 +14,12 @@ import { pathDomainSection } from '@/lib/domain-result-sections';
 export type DomainResultVisualAnalysisSectionProps = {
     t: (key: string) => string;
     domainId: string;
+    domainLinkQuery: Record<string, string>;
     ux: AggregatedUx | null;
     pagesByUrl: ReadonlyMap<string, SlimPage>;
 };
 
-function DomainResultVisualAnalysisSectionInner({ t, domainId, ux, pagesByUrl }: DomainResultVisualAnalysisSectionProps) {
+function DomainResultVisualAnalysisSectionInner({ t, domainId, domainLinkQuery, ux, pagesByUrl }: DomainResultVisualAnalysisSectionProps) {
     const router = useRouter();
     const hasLists =
         ux && (ux.focusOrderByPage.length > 0 || ux.tapTargets.detailsByPage.length > 0);
@@ -85,7 +86,16 @@ function DomainResultVisualAnalysisSectionInner({ t, domainId, ux, pagesByUrl }:
             <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mt: 2 }}>
                 {t('domainResult.allPagesInOverview')}
             </MsqdxTypography>
-            <MsqdxButton size="small" variant="text" onClick={() => router.push(pathDomainSection(domainId, 'overview'))} sx={{ mt: 0.5, fontSize: '0.75rem' }}>
+            <MsqdxButton
+                size="small"
+                variant="text"
+                onClick={() =>
+                    router.push(
+                        pathDomainSection(domainId, 'overview', Object.keys(domainLinkQuery).length ? domainLinkQuery : undefined)
+                    )
+                }
+                sx={{ mt: 0.5, fontSize: '0.75rem' }}
+            >
                 {t('domainResult.tabOverview')} → {t('domainResult.scannedPages')}
             </MsqdxButton>
         </MsqdxMoleculeCard>

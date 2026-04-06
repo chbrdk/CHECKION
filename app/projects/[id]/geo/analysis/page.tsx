@@ -228,7 +228,13 @@ export default function ProjectGeoAnalysisPage() {
                 {t('projects.geoAnalysis.noDeepScan')}
               </MsqdxTypography>
               <Link
-                href={project?.domain ? pathScanDomain({ url: project.domain }) : (id ? pathProjectGeo(id) : '#')}
+                href={
+                  project?.domain
+                    ? pathScanDomain({ url: project.domain, projectId: id ?? undefined })
+                    : id
+                      ? pathProjectGeo(id)
+                      : '#'
+                }
                 style={{ textDecoration: 'none' }}
               >
                 <MsqdxButton variant="outlined" size="small">

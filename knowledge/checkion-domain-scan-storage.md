@@ -40,7 +40,7 @@ Nach dem Deep Scan (und bei Legacy-Neuberechnung über `buildDomainSummary`) lie
 | `topThemes` | Zusammengeführte Tags nach `normalizePageTopicTagKey` (trim, lowercase, Leerzeichen). **Score** = Summe von **Tier²** pro Vorkommen; typische Nav-/Footer-Begriffe (siehe `PAGE_TOPIC_BOILERPLATE_KEYS` in `lib/domain-aggregation.ts`) werden mit **×0,25** gewichtet, damit echte Inhaltsthemen oben stehen. `pageCount` = Anzahl Seiten mit diesem Tag; `maxTier` / `avgTier` aus den Vorkommen. |
 | `tierDistribution.avgTagsPerPageByTier` | Durchschnittliche Tag-Anzahl je Tier **pro Seite der gesamten Site** (Nenner = `totalPages`), damit fehlende Klassifikation die Mittelwerte „verdünnt“. |
 | `tierDistribution.pagesWithAtLeastOneTier5` | Seiten mit mindestens einem T5-Tag. |
-| `tierDistribution.pagesDominatedByLowTiers` | Seiten, auf denen `(T1+T2) > (T4+T5)` (heuristisch boilerplate-lastig). T3 fließt nicht ein. UI-Texte: `domainResult.pageTopicsLowTierDominant` (Chip), `info.pageTopicsLowTierDominant` (Tooltip) in `locales/de.json` / `en.json`. |
+| `tierDistribution.pagesDominatedByLowTiers` | Seiten, auf denen die Summe der T1- und T2-Tags größer ist als die Summe der T4- und T5-Tags — heuristisch boilerplate-lastig; T3 fließt nicht ein. UI: `domainResult.pageTopicsLowTierDominant`, `info.pageTopicsLowTierDominant` in `locales/de.json` / `en.json`. |
 | `pageSamples` | Pro klassifizierter Seite: `url`, `profile` (`pillar` / `hub` / `utility` / `mixed`), `tier5Count`, `lowTierCount` – für schnelle Übersicht; Länge wird beim Speichern/API gekappt. |
 
 ### Caps (Payload-Größe)

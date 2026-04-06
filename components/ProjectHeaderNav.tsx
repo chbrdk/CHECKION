@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { useParams, usePathname } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useParams, usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Box, Tabs, Tab } from '@mui/material';
 import { MsqdxButton } from '@msqdx/react';
@@ -13,8 +13,16 @@ import { apiProject, pathProject, pathProjectRankings, pathProjectGeo, pathProje
 export function ProjectHeaderNav() {
     const params = useParams();
     const pathname = usePathname();
+    const searchParams = useSearchParams();
     const { t } = useI18n();
-    const id = typeof params.id === 'string' ? params.id : params.id?.[0] ?? null;
+    /** On `/projects/[id]` the route param is the project; on `/domain/[scanId]?projectId=` use the query (path id is the scan, not the project). */
+    const id = useMemo(() => {
+        if (!pathname) return null;
+        if (pathname.startsWith('/projects/')) {
+            return typeof params.id === 'string' ? params.id : params.id?.[0] ?? null;
+        }
+        return searchParams.get('projectId');
+    }, [pathname, params.id, searchParams]);
     const [projectName, setProjectName] = useState<string | null>(null);
     const fetchedForIdRef = useFetchOnceForId();
 

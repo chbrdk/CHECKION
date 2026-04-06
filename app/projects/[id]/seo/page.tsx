@@ -287,7 +287,11 @@ export default function ProjectSeoPage() {
                                 {t('projects.seo.noScan')}
                             </MsqdxTypography>
                             <Link
-                                href={project?.domain ? pathScanDomain({ url: project.domain }) : pathProject(id)}
+                                href={
+                                    project?.domain
+                                        ? pathScanDomain({ url: project.domain, projectId: id ?? undefined })
+                                        : pathProject(id)
+                                }
                                 style={{ textDecoration: 'none' }}
                             >
                                 <MsqdxButton variant="outlined" size="small">

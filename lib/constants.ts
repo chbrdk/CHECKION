@@ -53,10 +53,11 @@ export const pathProjectSeo = (id: string) => `${PATH_PROJECTS}/${encodeURICompo
 export const pathProjectResearch = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}/research`;
 /** Build app route: /share/[token] */
 export const pathShare = (token: string) => `${PATH_SHARE}/${encodeURIComponent(token)}`;
-/** Build app route: /scan/domain?url=...&maxPages=... */
-export const pathScanDomain = (params: { url: string; maxPages?: number }) => {
+/** Build app route: /scan/domain?url=...&maxPages=...&projectId=... (projectId preserves project context for result header + optional API assign). */
+export const pathScanDomain = (params: { url: string; maxPages?: number; projectId?: string }) => {
   const search = new URLSearchParams({ url: params.url });
   if (params.maxPages != null) search.set('maxPages', String(params.maxPages));
+  if (params.projectId) search.set('projectId', params.projectId);
   return `${PATH_SCAN_DOMAIN}?${search.toString()}`;
 };
 

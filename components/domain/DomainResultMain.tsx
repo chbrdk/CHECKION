@@ -69,6 +69,7 @@ export function DomainResultMain() {
         clearIssuesPageSelection,
         clearIssuesGroupSelection,
         setIssuesFilters,
+        domainLinkQuery,
     } = useDomainScan();
 
     const openScannedPage = useCallback(
@@ -95,6 +96,7 @@ export function DomainResultMain() {
                     slimPagesRemoteTotal={slimPagesRemoteTotal}
                     loadMoreSlimPages={loadMoreSlimPages}
                     domainId={domainId}
+                    domainLinkQuery={domainLinkQuery}
                     onScannedPageOpen={openScannedPage}
                 />
             )}
@@ -138,6 +140,7 @@ export function DomainResultMain() {
                 <DomainResultVisualAnalysisSection
                     t={t}
                     domainId={domainId}
+                    domainLinkQuery={domainLinkQuery}
                     ux={aggregated?.ux ?? null}
                     pagesByUrl={pagesByUrl}
                 />
@@ -203,6 +206,7 @@ export function DomainResultMain() {
                 <DomainResultJourneySection
                     t={t}
                     domainId={domainId}
+                    domainLinkQuery={domainLinkQuery}
                     pages={pages}
                     pagesByNormUrl={pagesByNormUrl}
                     journeyGoal={journeyGoal}

@@ -31,7 +31,7 @@ const NAV_SLUGS = [
 export function DomainResultShell({ children }: { children: React.ReactNode }) {
     const { t } = useI18n();
     const router = useRouter();
-    const { loadError, result, domainId, projectId, setProjectId, activeSection } = useDomainScan();
+    const { loadError, result, domainId, projectId, setProjectId, activeSection, fromProjectId, domainLinkQuery } = useDomainScan();
 
     if (loadError) {
         return (
@@ -100,16 +100,18 @@ export function DomainResultShell({ children }: { children: React.ReactNode }) {
                         {t('domainResult.back')}
                     </MsqdxButton>
                     <Box sx={{ display: 'inline-flex', gap: 'var(--msqdx-spacing-sm)' }}>
-                        <AddToProject
-                            resourceType="domain"
-                            resourceId={domainId}
-                            currentProjectId={projectId}
-                            onAssigned={() =>
-                                fetch(apiScanDomainSummary(domainId, { light: true }))
-                                    .then((r) => r.json())
-                                    .then((d: { projectId?: string | null }) => setProjectId(d.projectId ?? null))
-                            }
-                        />
+                        {!fromProjectId && (
+                            <AddToProject
+                                resourceType="domain"
+                                resourceId={domainId}
+                                currentProjectId={projectId}
+                                onAssigned={() =>
+                                    fetch(apiScanDomainSummary(domainId, { light: true }))
+                                        .then((r) => r.json())
+                                        .then((d: { projectId?: string | null }) => setProjectId(d.projectId ?? null))
+                                }
+                            />
+                        )}
                         <SharePanel resourceType="domain" resourceId={domainId} labelNamespace="domainResult" />
                     </Box>
                 </Box>
@@ -127,7 +129,11 @@ export function DomainResultShell({ children }: { children: React.ReactNode }) {
                 }}
             >
                 {NAV_SLUGS.map(({ slug, labelKey }) => {
-                    const href = pathDomainSection(domainId, slug);
+                    const href = pathDomainSection(
+                        domainId,
+                        slug,
+                        Object.keys(domainLinkQuery).length ? domainLinkQuery : undefined
+                    );
                     const selected = activeSection === slug;
                     return (
                         <Link key={slug} href={href} style={{ textDecoration: 'none' }}>
