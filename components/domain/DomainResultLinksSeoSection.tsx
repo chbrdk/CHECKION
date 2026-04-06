@@ -1,40 +1,76 @@
 'use client';
 
-import React, { memo } from 'react';
+import React, { memo, useCallback, useState } from 'react';
 import { Box, CircularProgress, IconButton, Tooltip } from '@mui/material';
-import { MsqdxTypography, MsqdxChip, MsqdxMoleculeCard } from '@msqdx/react';
+import { MsqdxTypography, MsqdxChip, MsqdxButton, MsqdxMoleculeCard } from '@msqdx/react';
 import { ExternalLink } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { VirtualScrollList } from '@/components/VirtualScrollList';
+import { RemotePaginationBar } from '@/components/RemotePaginationBar';
 import { InfoTooltip } from '@/components/InfoTooltip';
-import type { SlimPage } from '@/lib/types';
 import type { DomainSummaryApiResponse } from '@/lib/domain-summary';
+import type { PageSeoSummary } from '@/lib/domain-aggregation';
 import {
-    pathResults,
+    DOMAIN_SEO_PAGES_PAGE_SIZE,
     DOMAIN_TAB_SEO_PAGE_ROW_ESTIMATE_PX,
     DOMAIN_TAB_VIRTUAL_OVERSCAN,
+    apiScanDomainSeoPages,
 } from '@/lib/constants';
 
 export type DomainResultLinksSeoSectionProps = {
     t: (key: string, values?: Record<string, string | number>) => string;
     locale: string;
+    domainId: string;
     aggregated: NonNullable<DomainSummaryApiResponse['aggregated']>;
-    pagesByUrl: ReadonlyMap<string, SlimPage>;
-    pagesByNormUrl: ReadonlyMap<string, SlimPage>;
-    norm: (u: string) => string;
-    seoPagesHydrating: boolean;
+    onOpenPageUrl: (url: string) => void;
 };
 
 function DomainResultLinksSeoSectionInner({
     t,
     locale,
+    domainId,
     aggregated,
-    pagesByUrl,
-    pagesByNormUrl,
-    norm,
-    seoPagesHydrating,
+    onOpenPageUrl,
 }: DomainResultLinksSeoSectionProps) {
-    const router = useRouter();
+    const [seoPageIndex, setSeoPageIndex] = useState(0);
+    const [seoSort, setSeoSort] = useState<'wordCount' | 'url'>('wordCount');
+    const [seoDir, setSeoDir] = useState<'asc' | 'desc'>('desc');
+
+    const handleSeoSort = useCallback((next: 'wordCount' | 'url') => {
+        setSeoPageIndex(0);
+        setSeoSort((prev) => {
+            if (prev === next) {
+                setSeoDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+                return prev;
+            }
+            setSeoDir(next === 'wordCount' ? 'desc' : 'asc');
+            return next;
+        });
+    }, []);
+
+    const seoQuery = useQuery({
+        queryKey: ['domain-seo-pages', domainId, seoPageIndex, seoSort, seoDir],
+        queryFn: async () => {
+            const offset = seoPageIndex * DOMAIN_SEO_PAGES_PAGE_SIZE;
+            const res = await fetch(
+                apiScanDomainSeoPages(domainId, {
+                    offset,
+                    limit: DOMAIN_SEO_PAGES_PAGE_SIZE,
+                    sort: seoSort,
+                    dir: seoDir,
+                }),
+                { credentials: 'same-origin' }
+            );
+            if (!res.ok) throw new Error('seo-pages failed');
+            return res.json() as Promise<{ data?: PageSeoSummary[]; total?: number }>;
+        },
+        enabled: Boolean(domainId) && Boolean(aggregated.seo),
+    });
+
+    const seoRows = seoQuery.data?.data ?? [];
+    const seoTotal = seoQuery.data?.total ?? aggregated.seo?.totalPages ?? 0;
+    const seoLoading = seoQuery.isFetching;
+
     return (
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 'var(--msqdx-spacing-md)' }}>
             {aggregated.seo && (
@@ -67,40 +103,35 @@ function DomainResultLinksSeoSectionInner({
                                     <Box sx={{ mt: 1 }}>
                                         <MsqdxTypography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>Ohne Meta-Description:</MsqdxTypography>
                                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                                            {missingMetaUrls.slice(0, 5).map((url) => {
-                                                const page = pagesByUrl.get(url) ?? pagesByNormUrl.get(norm(url));
-                                                return (
-                                                    <Box
-                                                        key={url}
-                                                        sx={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: 0.5,
-                                                            py: 0.25,
-                                                            pr: 0.5,
-                                                            border: '1px solid var(--color-secondary-dx-grey-light-tint, #e0e0e0)',
-                                                            borderRadius: 1,
-                                                            px: 1,
-                                                        }}
-                                                    >
-                                                        <MsqdxTypography variant="caption" sx={{ flex: 1, minWidth: 0 }} noWrap title={url}>
-                                                            {url}
-                                                        </MsqdxTypography>
-                                                        {page && (
-                                                            <Tooltip title={t('domainResult.openPage')}>
-                                                                <IconButton
-                                                                    size="small"
-                                                                    aria-label={t('domainResult.openPageAria', { url })}
-                                                                    onClick={() => router.push(pathResults(page.id))}
-                                                                    sx={{ flexShrink: 0 }}
-                                                                >
-                                                                    <ExternalLink size={16} strokeWidth={2} aria-hidden />
-                                                                </IconButton>
-                                                            </Tooltip>
-                                                        )}
-                                                    </Box>
-                                                );
-                                            })}
+                                            {missingMetaUrls.slice(0, 5).map((url) => (
+                                                <Box
+                                                    key={url}
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 0.5,
+                                                        py: 0.25,
+                                                        pr: 0.5,
+                                                        border: '1px solid var(--color-secondary-dx-grey-light-tint, #e0e0e0)',
+                                                        borderRadius: 1,
+                                                        px: 1,
+                                                    }}
+                                                >
+                                                    <MsqdxTypography variant="caption" sx={{ flex: 1, minWidth: 0 }} noWrap title={url}>
+                                                        {url}
+                                                    </MsqdxTypography>
+                                                    <Tooltip title={t('domainResult.openPage')}>
+                                                        <IconButton
+                                                            size="small"
+                                                            aria-label={t('domainResult.openPageAria', { url })}
+                                                            onClick={() => onOpenPageUrl(url)}
+                                                            sx={{ flexShrink: 0 }}
+                                                        >
+                                                            <ExternalLink size={16} strokeWidth={2} aria-hidden />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </Box>
+                                            ))}
                                         </Box>
                                         {moreMissingMeta > 0 && (
                                             <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', mt: 0.5, display: 'block' }}>
@@ -136,73 +167,84 @@ function DomainResultLinksSeoSectionInner({
                         <Box>
                             <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Seiten nach Inhalt & Dichte</MsqdxTypography>
                             <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1 }}>
-                                Sortiert nach Wortanzahl; &lt;300 Wörter = Skinny Content.
+                                Sortiert serverseitig; &lt;300 Wörter = Skinny Content.
                             </MsqdxTypography>
-                            {seoPagesHydrating && (
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1, alignItems: 'center' }}>
+                                <MsqdxButton size="small" variant={seoSort === 'wordCount' ? 'contained' : 'outlined'} onClick={() => handleSeoSort('wordCount')}>
+                                    Wörter {seoSort === 'wordCount' ? (seoDir === 'desc' ? '↓' : '↑') : ''}
+                                </MsqdxButton>
+                                <MsqdxButton size="small" variant={seoSort === 'url' ? 'contained' : 'outlined'} onClick={() => handleSeoSort('url')}>
+                                    URL {seoSort === 'url' ? (seoDir === 'desc' ? '↓' : '↑') : ''}
+                                </MsqdxButton>
+                            </Box>
+                            {seoLoading && (
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                                     <CircularProgress size={20} sx={{ color: 'var(--color-theme-accent)' }} />
                                     <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                        {t('domainResult.seoPagesLoading')}
+                                        {t('common.loading')}
                                     </MsqdxTypography>
                                 </Box>
                             )}
                             <VirtualScrollList
-                                items={aggregated.seo.pages}
+                                items={seoRows}
                                 maxHeight={320}
                                 estimateSize={DOMAIN_TAB_SEO_PAGE_ROW_ESTIMATE_PX}
                                 overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
                                 getItemKey={(row) => row.url}
-                                renderItem={(row) => {
-                                    const page = pagesByUrl.get(row.url) ?? pagesByNormUrl.get(norm(row.url));
-                                    return (
-                                        <Box
-                                            sx={{
-                                                width: '100%',
-                                                boxSizing: 'border-box',
-                                                mb: 0.75,
-                                                px: 1,
-                                                py: 0.75,
-                                                border: '1px solid var(--color-secondary-dx-grey-light-tint, #e0e0e0)',
-                                                borderRadius: 1,
-                                            }}
-                                        >
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, width: '100%' }}>
-                                                <MsqdxTypography variant="caption" sx={{ flex: 1, minWidth: 0 }} noWrap title={row.url}>
-                                                    {row.url}
-                                                </MsqdxTypography>
-                                                {page && (
-                                                    <Tooltip title={t('domainResult.openPage')}>
-                                                        <IconButton
-                                                            size="small"
-                                                            aria-label={t('domainResult.openPageAria', { url: row.url })}
-                                                            onClick={() => router.push(pathResults(page.id))}
-                                                            sx={{ flexShrink: 0 }}
-                                                        >
-                                                            <ExternalLink size={16} strokeWidth={2} aria-hidden />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                )}
-                                            </Box>
-                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.75, mt: 0.5, rowGap: 0.5 }}>
-                                                <MsqdxTypography variant="caption" component="span" sx={{ fontWeight: 600 }}>
-                                                    {t('domainResult.seoWordCount', { count: row.wordCount.toLocaleString(locale === 'en' ? 'en-US' : 'de-DE') })}
-                                                </MsqdxTypography>
-                                                {row.topKeywordCount > 0 && (
-                                                    <MsqdxTypography variant="caption" component="span" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                                        {t('domainResult.seoTopKeywords', { count: row.topKeywordCount })}
-                                                    </MsqdxTypography>
-                                                )}
-                                                {row.isSkinny && (
-                                                    <MsqdxChip
-                                                        label={t('domainResult.seoSkinnyChip')}
-                                                        size="small"
-                                                        sx={{ height: 18, fontSize: '0.65rem', bgcolor: 'var(--color-secondary-dx-orange-tint)', color: 'var(--color-secondary-dx-orange)' }}
-                                                    />
-                                                )}
-                                            </Box>
+                                renderItem={(row) => (
+                                    <Box
+                                        sx={{
+                                            width: '100%',
+                                            boxSizing: 'border-box',
+                                            mb: 0.75,
+                                            px: 1,
+                                            py: 0.75,
+                                            border: '1px solid var(--color-secondary-dx-grey-light-tint, #e0e0e0)',
+                                            borderRadius: 1,
+                                        }}
+                                    >
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, width: '100%' }}>
+                                            <MsqdxTypography variant="caption" sx={{ flex: 1, minWidth: 0 }} noWrap title={row.url}>
+                                                {row.url}
+                                            </MsqdxTypography>
+                                            <Tooltip title={t('domainResult.openPage')}>
+                                                <IconButton
+                                                    size="small"
+                                                    aria-label={t('domainResult.openPageAria', { url: row.url })}
+                                                    onClick={() => onOpenPageUrl(row.url)}
+                                                    sx={{ flexShrink: 0 }}
+                                                >
+                                                    <ExternalLink size={16} strokeWidth={2} aria-hidden />
+                                                </IconButton>
+                                            </Tooltip>
                                         </Box>
-                                    );
-                                }}
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.75, mt: 0.5, rowGap: 0.5 }}>
+                                            <MsqdxTypography variant="caption" component="span" sx={{ fontWeight: 600 }}>
+                                                {t('domainResult.seoWordCount', { count: row.wordCount.toLocaleString(locale === 'en' ? 'en-US' : 'de-DE') })}
+                                            </MsqdxTypography>
+                                            {row.topKeywordCount > 0 && (
+                                                <MsqdxTypography variant="caption" component="span" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                                    {t('domainResult.seoTopKeywords', { count: row.topKeywordCount })}
+                                                </MsqdxTypography>
+                                            )}
+                                            {row.isSkinny && (
+                                                <MsqdxChip
+                                                    label={t('domainResult.seoSkinnyChip')}
+                                                    size="small"
+                                                    sx={{ height: 18, fontSize: '0.65rem', bgcolor: 'var(--color-secondary-dx-orange-tint)', color: 'var(--color-secondary-dx-orange)' }}
+                                                />
+                                            )}
+                                        </Box>
+                                    </Box>
+                                )}
+                            />
+                            <RemotePaginationBar
+                                page={seoPageIndex}
+                                pageSize={DOMAIN_SEO_PAGES_PAGE_SIZE}
+                                total={seoTotal}
+                                loading={seoLoading}
+                                onPageChange={setSeoPageIndex}
+                                labels={{ prev: t('share.back'), next: t('share.next') }}
                             />
                         </Box>
                     </Box>
@@ -275,51 +317,46 @@ function DomainResultLinksSeoSectionInner({
                                     {t('domainResult.linksMostBrokenTitle')}
                                 </MsqdxTypography>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                                    {aggregated.links.brokenByPage.slice(0, 10).map(({ url, count }) => {
-                                        const page = pagesByUrl.get(url) ?? pagesByNormUrl.get(norm(url));
-                                        return (
-                                            <Box
-                                                key={url}
+                                    {aggregated.links.brokenByPage.slice(0, 10).map(({ url, count }) => (
+                                        <Box
+                                            key={url}
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 0.75,
+                                                py: 0.35,
+                                                px: 1,
+                                                border: '1px solid var(--color-secondary-dx-grey-light-tint, #e0e0e0)',
+                                                borderRadius: 1,
+                                            }}
+                                        >
+                                            <MsqdxTypography variant="caption" sx={{ flex: 1, minWidth: 0 }} noWrap title={url}>
+                                                {url}
+                                            </MsqdxTypography>
+                                            <MsqdxChip
+                                                label={t('domainResult.linksBrokenCount', { count })}
+                                                size="small"
                                                 sx={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: 0.75,
-                                                    py: 0.35,
-                                                    px: 1,
-                                                    border: '1px solid var(--color-secondary-dx-grey-light-tint, #e0e0e0)',
-                                                    borderRadius: 1,
+                                                    flexShrink: 0,
+                                                    height: 22,
+                                                    fontSize: '0.7rem',
+                                                    fontWeight: 600,
+                                                    bgcolor: 'var(--color-secondary-dx-red-tint)',
+                                                    color: 'var(--color-secondary-dx-red)',
                                                 }}
-                                            >
-                                                <MsqdxTypography variant="caption" sx={{ flex: 1, minWidth: 0 }} noWrap title={url}>
-                                                    {url}
-                                                </MsqdxTypography>
-                                                <MsqdxChip
-                                                    label={t('domainResult.linksBrokenCount', { count })}
+                                            />
+                                            <Tooltip title={t('domainResult.openPage')}>
+                                                <IconButton
                                                     size="small"
-                                                    sx={{
-                                                        flexShrink: 0,
-                                                        height: 22,
-                                                        fontSize: '0.7rem',
-                                                        fontWeight: 600,
-                                                        bgcolor: 'var(--color-secondary-dx-red-tint)',
-                                                        color: 'var(--color-secondary-dx-red)',
-                                                    }}
-                                                />
-                                                {page && (
-                                                    <Tooltip title={t('domainResult.openPage')}>
-                                                        <IconButton
-                                                            size="small"
-                                                            aria-label={t('domainResult.openPageAria', { url })}
-                                                            onClick={() => router.push(pathResults(page.id))}
-                                                            sx={{ flexShrink: 0 }}
-                                                        >
-                                                            <ExternalLink size={16} strokeWidth={2} aria-hidden />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                )}
-                                            </Box>
-                                        );
-                                    })}
+                                                    aria-label={t('domainResult.openPageAria', { url })}
+                                                    onClick={() => onOpenPageUrl(url)}
+                                                    sx={{ flexShrink: 0 }}
+                                                >
+                                                    <ExternalLink size={16} strokeWidth={2} aria-hidden />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </Box>
+                                    ))}
                                 </Box>
                             </Box>
                         )}

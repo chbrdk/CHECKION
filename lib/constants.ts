@@ -135,17 +135,49 @@ export const apiScanDomainSummary = (id: string, opts?: { light?: boolean; seoFu
     if (opts?.seoFull) return `${base}?seoFull=1`;
     return base;
 };
-/** Chunk size when loading SlimPage[] after light summary (client stops at DOMAIN_SLIM_PAGES_MAX_CLIENT). */
-export const DOMAIN_SLIM_PAGES_CHUNK = 500;
-export const DOMAIN_SLIM_PAGES_MAX_CLIENT = 10_000;
-/** Build: GET /api/scan/domain/[id]/slim-pages?offset=&limit= */
-export const apiScanDomainSlimPages = (id: string, params?: { offset?: number; limit?: number }) => {
+/** Build: GET /api/scan/domain/[id]/bundle — single read: light aggregates + totalSlimRows. */
+export const apiScanDomainBundle = (id: string) => `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/bundle`;
+/** Default page size for domain slim + SEO tables (server max per request remains 500 for slim-pages). */
+export const DOMAIN_SLIM_PAGES_PAGE_SIZE = 100;
+/** Page size for GET .../seo-pages (server max 200). */
+export const DOMAIN_SEO_PAGES_PAGE_SIZE = 50;
+/** @deprecated Use DOMAIN_SLIM_PAGES_PAGE_SIZE; kept for tests referencing old chunk name. */
+export const DOMAIN_SLIM_PAGES_CHUNK = DOMAIN_SLIM_PAGES_PAGE_SIZE;
+/** @deprecated Removed client-side 10k cap; use server pagination. */
+export const DOMAIN_SLIM_PAGES_MAX_CLIENT = 1_000_000;
+/** Build: GET /api/scan/domain/[id]/slim-pages?offset=&limit=&sort=&dir= */
+export const apiScanDomainSlimPages = (
+    id: string,
+    params?: { offset?: number; limit?: number; sort?: string; dir?: 'asc' | 'desc' }
+) => {
     const q = new URLSearchParams();
     if (params?.offset != null) q.set('offset', String(params.offset));
     if (params?.limit != null) q.set('limit', String(params.limit));
+    if (params?.sort) q.set('sort', params.sort);
+    if (params?.dir) q.set('dir', params.dir);
     const qs = q.toString();
     return `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/slim-pages${qs ? `?${qs}` : ''}`;
 };
+/** Build: GET /api/scan/domain/[id]/seo-pages?offset=&limit=&sort=&dir= */
+export const apiScanDomainSeoPages = (
+    id: string,
+    params?: { offset?: number; limit?: number; sort?: string; dir?: 'asc' | 'desc' }
+) => {
+    const q = new URLSearchParams();
+    if (params?.offset != null) q.set('offset', String(params.offset));
+    if (params?.limit != null) q.set('limit', String(params.limit));
+    if (params?.sort) q.set('sort', params.sort);
+    if (params?.dir) q.set('dir', params.dir);
+    const qs = q.toString();
+    return `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/seo-pages${qs ? `?${qs}` : ''}`;
+};
+/** Build: GET /api/scan/domain/[id]/page-resolve?url= */
+export const apiScanDomainPageResolve = (id: string, pageUrl: string) => {
+    const q = new URLSearchParams({ url: pageUrl });
+    return `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/page-resolve?${q.toString()}`;
+};
+/** Default page size for domain issue-group lists (cursor APIs). */
+export const DOMAIN_ISSUES_PAGE_SIZE = 50;
 /** Build: POST /api/scan/domain/[id]/summarize */
 export const apiScanDomainSummarize = (id: string) => `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/summarize`;
 /** Build: POST /api/scan/domain/[id]/journey */

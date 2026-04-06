@@ -72,6 +72,8 @@ describe('GET /api/scan/domain/[id]/slim-pages', () => {
             userId: 'u1',
             offset: 0,
             limit: 50,
+            sort: 'url',
+            sortDir: 'asc',
         });
     });
 
@@ -111,5 +113,23 @@ describe('GET /api/scan/domain/[id]/slim-pages', () => {
         const body = await res.json();
         expect(body.source).toBe('payload');
         expect(sliceSlimPagesFromPayload).toHaveBeenCalled();
+    });
+
+    it('passes sort and dir to DB list', async () => {
+        vi.mocked(getRequestUser).mockResolvedValue({ id: 'u1' });
+        vi.mocked(countDomainPagesInDb).mockResolvedValue(1);
+        vi.mocked(listSlimPagesFromDomainPagesTable).mockResolvedValue([]);
+        const req = new Request('http://localhost/api/scan/domain/s1/slim-pages?offset=0&limit=10&sort=score&dir=desc');
+        const res = await GET(req as any, { params: Promise.resolve({ id: 's1' }) });
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.sort).toBe('score');
+        expect(body.sortDir).toBe('desc');
+        expect(listSlimPagesFromDomainPagesTable).toHaveBeenCalledWith(
+            expect.objectContaining({
+                sort: 'score',
+                sortDir: 'desc',
+            })
+        );
     });
 });

@@ -12,7 +12,6 @@ import { pathDomainSection } from '@/lib/domain-result-sections';
 import {
     apiScanDomainJourney,
     API_JOURNEYS,
-    pathResults,
 } from '@/lib/constants';
 import { InfoTooltip } from '@/components/InfoTooltip';
 
@@ -21,21 +20,12 @@ const JourneyFlowchart = dynamic(
     { ssr: false, loading: () => <Box sx={{ py: 2 }}><CircularProgress size={24} /></Box> }
 );
 
-function normUrl(u: string) {
-    try {
-        const x = new URL(u);
-        return x.origin + (x.pathname.replace(/\/$/, '') || '/');
-    } catch {
-        return u;
-    }
-}
-
 export type DomainResultJourneySectionProps = {
     t: (key: string) => string;
     domainId: string;
     domainLinkQuery: Record<string, string>;
     pages: SlimPage[];
-    pagesByNormUrl: ReadonlyMap<string, SlimPage>;
+    onOpenPageUrl: (url: string) => void;
     journeyGoal: string;
     setJourneyGoal: React.Dispatch<React.SetStateAction<string>>;
     journeyLoading: boolean;
@@ -57,7 +47,7 @@ function DomainResultJourneySectionInner({
     domainId,
     domainLinkQuery,
     pages,
-    pagesByNormUrl,
+    onOpenPageUrl,
     journeyGoal,
     setJourneyGoal,
     journeyLoading,
@@ -167,10 +157,7 @@ function DomainResultJourneySectionInner({
                             streaming={journeyLoading}
                             t={t}
                             pages={pages}
-                            onStepClick={(step) => {
-                                const page = pagesByNormUrl.get(normUrl(step.pageUrl));
-                                if (page) router.push(pathResults(page.id));
-                            }}
+                            onStepClick={(step) => onOpenPageUrl(step.pageUrl)}
                         />
                         <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 2, flexWrap: 'wrap', pt: 1 }}>
                             <Box sx={{ minWidth: 200, maxWidth: 320 }}>

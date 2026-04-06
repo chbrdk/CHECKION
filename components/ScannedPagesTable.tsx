@@ -14,7 +14,7 @@ const tableBorder = `1px solid ${MSQDX_NEUTRAL[200]}`;
 const SCANNED_PAGES_ROW_ESTIMATE_PX = 44;
 const SCANNED_PAGES_VIRTUAL_OVERSCAN = 10;
 
-type SortKey = 'url' | 'score' | 'uxScore' | 'issues';
+export type ScannedPagesSortKey = 'url' | 'score' | 'uxScore' | 'issues';
 type SortDir = 'asc' | 'desc';
 
 function getIssuesCount(page: SlimPage): number {
@@ -24,16 +24,30 @@ function getIssuesCount(page: SlimPage): number {
 export function ScannedPagesTable({
   pages,
   onPageClick,
+  serverSort = false,
+  sortKey: controlledSortKey,
+  sortDir: controlledSortDir,
+  onSortChange,
+  paginationFooter,
 }: {
   pages: SlimPage[];
   onPageClick?: (page: SlimPage) => void;
+  /** When true, `pages` are already ordered server-side; sorting toggles call `onSortChange`. */
+  serverSort?: boolean;
+  sortKey?: ScannedPagesSortKey;
+  sortDir?: SortDir;
+  onSortChange?: (key: ScannedPagesSortKey) => void;
+  paginationFooter?: React.ReactNode;
 }) {
   const { t } = useI18n();
-  const [sortKey, setSortKey] = useState<SortKey>('url');
-  const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [localSortKey, setLocalSortKey] = useState<ScannedPagesSortKey>('url');
+  const [localSortDir, setLocalSortDir] = useState<SortDir>('asc');
+  const sortKey = serverSort && controlledSortKey != null ? controlledSortKey : localSortKey;
+  const sortDir = serverSort && controlledSortDir != null ? controlledSortDir : localSortDir;
   const parentRef = useRef<HTMLDivElement>(null);
 
   const sortedPages = useMemo(() => {
+    if (serverSort) return pages;
     const arr = [...pages];
     arr.sort((a, b) => {
       let cmp = 0;
@@ -56,7 +70,7 @@ export function ScannedPagesTable({
       return sortDir === 'asc' ? cmp : -cmp;
     });
     return arr;
-  }, [pages, sortKey, sortDir]);
+  }, [pages, sortKey, sortDir, serverSort]);
 
   const virtualizer = useVirtualizer({
     count: sortedPages.length,
@@ -66,12 +80,16 @@ export function ScannedPagesTable({
     getItemKey: (index) => sortedPages[index]?.id ?? index,
   });
 
-  const handleSort = (key: SortKey) => {
+  const handleSort = (key: ScannedPagesSortKey) => {
+    if (serverSort) {
+      onSortChange?.(key);
+      return;
+    }
     if (sortKey === key) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+      setLocalSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
     } else {
-      setSortKey(key);
-      setSortDir('asc');
+      setLocalSortKey(key);
+      setLocalSortDir('asc');
     }
   };
 
@@ -80,7 +98,7 @@ export function ScannedPagesTable({
     label,
     active,
   }: {
-    id: SortKey;
+    id: ScannedPagesSortKey;
     label: string;
     active: boolean;
   }) => (
@@ -234,11 +252,13 @@ export function ScannedPagesTable({
           </Box>
         </Box>
       </Box>
-      <Box sx={{ mt: 1, px: 0.5 }}>
-        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', fontSize: '0.7rem' }}>
-          {sortedPages.length.toLocaleString()} {t('domainResult.pagesScanned')}
-        </MsqdxTypography>
-      </Box>
+      {paginationFooter ?? (
+        <Box sx={{ mt: 1, px: 0.5 }}>
+          <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', fontSize: '0.7rem' }}>
+            {sortedPages.length.toLocaleString()} {t('domainResult.pagesScanned')}
+          </MsqdxTypography>
+        </Box>
+      )}
     </Box>
   );
 }

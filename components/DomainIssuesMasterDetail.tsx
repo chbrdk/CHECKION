@@ -5,7 +5,12 @@ import { Box, Button, CircularProgress, IconButton, ToggleButton, ToggleButtonGr
 import { MsqdxButton, MsqdxChip, MsqdxFormField, MsqdxMoleculeCard, MsqdxTypography } from '@msqdx/react';
 import { MSQDX_BRAND_PRIMARY, MSQDX_NEUTRAL, MSQDX_STATUS } from '@msqdx/tokens';
 import { ChevronLeft, Copy, ExternalLink, FileSearch } from 'lucide-react';
-import { apiScanDomainIssueGroupPages, apiScanDomainIssueGroups, apiScanDomainPageIssues } from '@/lib/constants';
+import {
+    apiScanDomainIssueGroupPages,
+    apiScanDomainIssueGroups,
+    apiScanDomainPageIssues,
+    DOMAIN_ISSUES_PAGE_SIZE,
+} from '@/lib/constants';
 import { DOMAIN_ISSUES_SCROLL } from '@/lib/domain-issues-layout';
 import type { SlimPage } from '@/lib/types';
 import { useI18n } from '@/components/i18n/I18nProvider';
@@ -241,7 +246,7 @@ function DomainIssuesMasterDetailInner({
         setGroupsLoading(true);
         setGroupsError(null);
         fetch(apiScanDomainIssueGroups(domainId, {
-            limit: 50,
+            limit: DOMAIN_ISSUES_PAGE_SIZE,
             type: issuesType ?? undefined,
             wcagLevel: issuesWcag ?? undefined,
             q: issuesQ ?? undefined,
@@ -271,7 +276,7 @@ function DomainIssuesMasterDetailInner({
         let cancelled = false;
         setGroupPagesLoading(true);
         setGroupPagesError(null);
-        fetch(apiScanDomainIssueGroupPages(domainId, selectedGroupKey, { limit: 50 }))
+        fetch(apiScanDomainIssueGroupPages(domainId, selectedGroupKey, { limit: DOMAIN_ISSUES_PAGE_SIZE }))
             .then(async (res) => {
                 if (!res.ok) throw new Error('failed');
                 return res.json();
@@ -297,7 +302,7 @@ function DomainIssuesMasterDetailInner({
         let cancelled = false;
         setPageIssuesLoading(true);
         setPageIssuesError(null);
-        fetch(apiScanDomainPageIssues(domainId, selectedPageId, { limit: 100 }))
+        fetch(apiScanDomainPageIssues(domainId, selectedPageId, { limit: DOMAIN_ISSUES_PAGE_SIZE }))
             .then(async (res) => {
                 if (!res.ok) throw new Error('failed');
                 return res.json();
@@ -334,7 +339,7 @@ function DomainIssuesMasterDetailInner({
         setGroupsLoading(true);
         try {
             const res = await fetch(apiScanDomainIssueGroups(domainId, {
-                limit: 50,
+                limit: DOMAIN_ISSUES_PAGE_SIZE,
                 cursorPageCount: groupsCursor.pageCount,
                 cursorGroupKey: groupsCursor.groupKey,
                 type: issuesType ?? undefined,
@@ -356,7 +361,12 @@ function DomainIssuesMasterDetailInner({
         if (!selectedGroupKey || !groupPagesCursor || groupPagesLoading) return;
         setGroupPagesLoading(true);
         try {
-            const res = await fetch(apiScanDomainIssueGroupPages(domainId, selectedGroupKey, { limit: 50, cursorUrl: groupPagesCursor.url }));
+            const res = await fetch(
+                apiScanDomainIssueGroupPages(domainId, selectedGroupKey, {
+                    limit: DOMAIN_ISSUES_PAGE_SIZE,
+                    cursorUrl: groupPagesCursor.url,
+                })
+            );
             if (!res.ok) throw new Error('failed');
             const json = await res.json();
             setGroupPages((prev) => [...prev, ...(json.data ?? [])]);
@@ -372,7 +382,12 @@ function DomainIssuesMasterDetailInner({
         if (!selectedPageId || !pageIssuesCursor || pageIssuesLoading) return;
         setPageIssuesLoading(true);
         try {
-            const res = await fetch(apiScanDomainPageIssues(domainId, selectedPageId, { limit: 100, cursorId: pageIssuesCursor.id }));
+            const res = await fetch(
+                apiScanDomainPageIssues(domainId, selectedPageId, {
+                    limit: DOMAIN_ISSUES_PAGE_SIZE,
+                    cursorId: pageIssuesCursor.id,
+                })
+            );
             if (!res.ok) throw new Error('failed');
             const json = await res.json();
             setPageIssues((prev) => [...prev, ...(json.data ?? [])]);

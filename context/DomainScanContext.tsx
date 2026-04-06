@@ -11,17 +11,16 @@ import React, {
     useState,
 } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import type { JourneyResult } from '@/lib/types';
 import type { DomainSummaryApiResponse } from '@/lib/domain-summary';
 import type { SlimPage } from '@/lib/types';
 import {
-    apiScanDomainSummary,
-    apiScanDomainSlimPages,
+    apiScanDomainBundle,
+    apiScanDomainPageResolve,
     apiJourneys,
     pathResults,
-    DOMAIN_SLIM_PAGES_CHUNK,
-    DOMAIN_SLIM_PAGES_MAX_CLIENT,
     DOMAIN_UX_BROKEN_LINKS_PREVIEW,
 } from '@/lib/constants';
 import {
@@ -29,6 +28,8 @@ import {
     pathDomainSection,
     type DomainResultSectionSlug,
 } from '@/lib/domain-result-sections';
+
+const BUNDLE_QUERY_KEY = (domainId: string) => ['domain-scan-bundle', domainId] as const;
 
 export type DomainScanContextValue = {
     domainId: string;
@@ -42,7 +43,6 @@ export type DomainScanContextValue = {
     fromProjectId: string | null;
     /** Merge into `pathDomainSection` third argument to keep `?projectId=` on tab links. */
     domainLinkQuery: Record<string, string>;
-    seoPagesHydrating: boolean;
     summarizing: boolean;
     setSummarizing: React.Dispatch<React.SetStateAction<boolean>>;
     summarizeError: string | null;
@@ -61,22 +61,20 @@ export type DomainScanContextValue = {
     setJourneySaved: React.Dispatch<React.SetStateAction<boolean>>;
     journeySaveName: string;
     setJourneySaveName: React.Dispatch<React.SetStateAction<string>>;
-    slimPagesOverride: SlimPage[] | null;
-    setSlimPagesOverride: React.Dispatch<React.SetStateAction<SlimPage[] | null>>;
-    slimPagesLoading: boolean;
-    setSlimPagesLoading: React.Dispatch<React.SetStateAction<boolean>>;
-    slimPagesRemoteTotal: number | null;
-    setSlimPagesRemoteTotal: React.Dispatch<React.SetStateAction<number | null>>;
+    /** From bundle: total rows for slim-pages pagination (DB or payload). */
+    totalSlimRows: number | null;
+    /** Legacy: embedded pages when present (bundle uses light payload → usually empty). */
     pages: SlimPage[];
     totalPageCount: number;
-    canLoadMoreSlimPages: boolean;
-    loadMoreSlimPages: () => Promise<void>;
     aggregated: DomainSummaryApiResponse['aggregated'] | null;
     uxBrokenLinksPreview: NonNullable<NonNullable<NonNullable<DomainSummaryApiResponse['aggregated']>['ux']>['brokenLinks']>;
+    /** Fast lookup when embedded slim rows exist; often empty — use `openPageScanUrl`. */
     pagesByUrl: Map<string, SlimPage>;
     pagesById: Map<string, SlimPage>;
     pagesByNormUrl: Map<string, SlimPage>;
     norm: (u: string) => string;
+    /** Navigate to single-page scan for a URL (uses cached slim map when possible, else GET page-resolve). */
+    openPageScanUrl: (url: string) => void;
     handleIssuePageClick: (url: string, scanId?: string | null) => void;
     selectedGroupKey: string | null;
     selectedPageId: string | null;
@@ -109,23 +107,55 @@ export function DomainScanProvider({
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const { t } = useI18n();
+    const queryClient = useQueryClient();
 
     const activeSection = useMemo(
         () => getDomainSectionFromPathname(pathname, domainId),
         [pathname, domainId]
     );
 
-    const [result, setResult] = useState<DomainSummaryApiResponse | null>(null);
-    const [seoPagesHydrating, setSeoPagesHydrating] = useState(false);
-    const fullSeoHydratedRef = useRef(false);
-    const seoFullFetchInFlightRef = useRef(false);
+    const bundleQuery = useQuery({
+        queryKey: BUNDLE_QUERY_KEY(domainId),
+        queryFn: async () => {
+            const res = await fetch(apiScanDomainBundle(domainId), { credentials: 'same-origin' });
+            if (!res.ok) throw new Error('not_found');
+            return (await res.json()) as DomainSummaryApiResponse & {
+                projectId?: string | null;
+                totalSlimRows?: number;
+            };
+        },
+        enabled: Boolean(domainId?.trim()),
+    });
+
+    const result = bundleQuery.data ?? null;
+    const loadError = bundleQuery.isError ? 'not_found' : null;
+
+    const setResult = useCallback<React.Dispatch<React.SetStateAction<DomainSummaryApiResponse | null>>>(
+        (action) => {
+            queryClient.setQueryData(BUNDLE_QUERY_KEY(domainId), (prev: DomainSummaryApiResponse | undefined) => {
+                const base = prev ?? null;
+                const next =
+                    typeof action === 'function'
+                        ? (action as (p: DomainSummaryApiResponse | null) => DomainSummaryApiResponse | null)(base)
+                        : action;
+                if (next === null) return prev;
+                return next ?? prev;
+            });
+        },
+        [queryClient, domainId]
+    );
+
     const [projectId, setProjectId] = useState<string | null>(null);
     const fromProjectId = searchParams.get('projectId');
     const domainLinkQuery = useMemo(
         () => (fromProjectId ? { projectId: fromProjectId } : ({} as Record<string, string>)),
         [fromProjectId]
     );
-    const [loadError, setLoadError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (result?.projectId != null) setProjectId(result.projectId);
+    }, [result?.projectId]);
+
     const [summarizing, setSummarizing] = useState(false);
     const [summarizeError, setSummarizeError] = useState<string | null>(null);
     const [journeyGoal, setJourneyGoal] = useState('');
@@ -135,29 +165,15 @@ export function DomainScanProvider({
     const [journeySaving, setJourneySaving] = useState(false);
     const [journeySaved, setJourneySaved] = useState(false);
     const [journeySaveName, setJourneySaveName] = useState('');
-    const [slimPagesOverride, setSlimPagesOverride] = useState<SlimPage[] | null>(null);
-    const [slimPagesLoading, setSlimPagesLoading] = useState(false);
-    const [slimPagesRemoteTotal, setSlimPagesRemoteTotal] = useState<number | null>(null);
-    const slimPagesInitialChunkDoneRef = useRef(false);
+
+    const totalSlimRows = result?.totalSlimRows ?? null;
 
     const pages = useMemo(() => {
         const fromResult = result?.pages as SlimPage[] | undefined;
-        if (fromResult && fromResult.length > 0) return fromResult;
-        if (slimPagesOverride !== null) return slimPagesOverride;
-        return [];
-    }, [result?.pages, slimPagesOverride]);
+        return fromResult && fromResult.length > 0 ? fromResult : [];
+    }, [result?.pages]);
 
-    const totalPageCount = result?.totalPageCount ?? pages.length;
-
-    const canLoadMoreSlimPages = useMemo(() => {
-        if (result?.summaryMeta?.slimPagesOmitted !== true) return false;
-        if (slimPagesOverride === null) return false;
-        const len = pages.length;
-        if (len === 0) return false;
-        if (len >= DOMAIN_SLIM_PAGES_MAX_CLIENT) return false;
-        if (slimPagesRemoteTotal !== null && len >= slimPagesRemoteTotal) return false;
-        return true;
-    }, [result?.summaryMeta?.slimPagesOmitted, slimPagesOverride, pages.length, slimPagesRemoteTotal]);
+    const totalPageCount = result?.totalPageCount ?? result?.totalPages ?? pages.length;
 
     const aggregated = result?.aggregated ?? null;
 
@@ -191,16 +207,42 @@ export function DomainScanProvider({
         return m;
     }, [pages, norm]);
 
+    const resolveCacheRef = useRef<Map<string, string>>(new Map());
+
+    const openPageScanUrl = useCallback(
+        (url: string) => {
+            const direct = pagesByUrl.get(url) ?? pagesByNormUrl.get(norm(url));
+            if (direct) {
+                router.push(pathResults(direct.id));
+                return;
+            }
+            const cached = resolveCacheRef.current.get(url);
+            if (cached) {
+                router.push(pathResults(cached));
+                return;
+            }
+            void (async () => {
+                const res = await fetch(apiScanDomainPageResolve(domainId, url), { credentials: 'same-origin' });
+                if (!res.ok) return;
+                const data = (await res.json()) as { scanId?: string };
+                if (data.scanId) {
+                    resolveCacheRef.current.set(url, data.scanId);
+                    router.push(pathResults(data.scanId));
+                }
+            })();
+        },
+        [domainId, norm, pagesByNormUrl, pagesByUrl, router]
+    );
+
     const handleIssuePageClick = useCallback(
         (url: string, scanId?: string | null) => {
             if (scanId) {
                 router.push(pathResults(scanId));
                 return;
             }
-            const page = pagesByUrl.get(url);
-            if (page) router.push(pathResults(page.id));
+            openPageScanUrl(url);
         },
-        [pagesByUrl, router]
+        [openPageScanUrl, router]
     );
 
     const selectedGroupKey = searchParams.get('group');
@@ -267,119 +309,6 @@ export function DomainScanProvider({
         [router, searchParams, domainId]
     );
 
-    useEffect(() => {
-        setLoadError(null);
-        setSlimPagesOverride(null);
-        setSlimPagesRemoteTotal(null);
-        slimPagesInitialChunkDoneRef.current = false;
-        fullSeoHydratedRef.current = false;
-        seoFullFetchInFlightRef.current = false;
-        fetch(apiScanDomainSummary(domainId, { light: true }))
-            .then((res) => {
-                if (!res.ok) {
-                    setLoadError('not_found');
-                    return null;
-                }
-                return res.json();
-            })
-            .then((data: DomainSummaryApiResponse & { projectId?: string | null }) => {
-                if (data) {
-                    setResult(data);
-                    setProjectId(data.projectId ?? null);
-                }
-            })
-            .catch(() => setLoadError('not_found'));
-    }, [domainId]);
-
-    useEffect(() => {
-        const pr = result?.pages as SlimPage[] | undefined;
-        if (pr && pr.length > 0) setSlimPagesOverride(null);
-    }, [result?.pages]);
-
-    useEffect(() => {
-        if (activeSection !== 'overview' || result?.summaryMeta?.slimPagesOmitted !== true) return;
-        const fromResult = result?.pages as SlimPage[] | undefined;
-        if (fromResult && fromResult.length > 0) return;
-        if (slimPagesInitialChunkDoneRef.current) return;
-
-        let cancelled = false;
-        setSlimPagesLoading(true);
-        fetch(apiScanDomainSlimPages(domainId, { offset: 0, limit: DOMAIN_SLIM_PAGES_CHUNK }))
-            .then(async (res) => {
-                if (!res.ok) throw new Error('slim-pages failed');
-                return res.json() as Promise<{ data?: SlimPage[]; total?: number }>;
-            })
-            .then((json) => {
-                if (cancelled) return;
-                const batch = json.data ?? [];
-                slimPagesInitialChunkDoneRef.current = true;
-                setSlimPagesOverride(batch);
-                setSlimPagesRemoteTotal(json.total ?? batch.length);
-            })
-            .catch(() => {})
-            .finally(() => {
-                if (!cancelled) setSlimPagesLoading(false);
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, [domainId, activeSection, result?.summaryMeta?.slimPagesOmitted, result?.pages]);
-
-    const loadMoreSlimPages = useCallback(async () => {
-        if (slimPagesOverride === null) return;
-        const len = slimPagesOverride.length;
-        if (len >= DOMAIN_SLIM_PAGES_MAX_CLIENT) return;
-        if (slimPagesRemoteTotal !== null && len >= slimPagesRemoteTotal) return;
-        setSlimPagesLoading(true);
-        try {
-            const res = await fetch(apiScanDomainSlimPages(domainId, { offset: len, limit: DOMAIN_SLIM_PAGES_CHUNK }));
-            if (!res.ok) return;
-            const json = (await res.json()) as { data?: SlimPage[]; total?: number };
-            const batch = json.data ?? [];
-            if (json.total != null) setSlimPagesRemoteTotal(json.total);
-            setSlimPagesOverride((prev) => [...(prev ?? []), ...batch]);
-        } finally {
-            setSlimPagesLoading(false);
-        }
-    }, [domainId, slimPagesOverride, slimPagesRemoteTotal]);
-
-    useEffect(() => {
-        if (activeSection !== 'links-seo') return;
-        if (result?.summaryMeta?.seoPageRowsOmitted !== true) return;
-        if (fullSeoHydratedRef.current || seoFullFetchInFlightRef.current) return;
-        seoFullFetchInFlightRef.current = true;
-        setSeoPagesHydrating(true);
-        fetch(apiScanDomainSummary(domainId, { seoFull: true }))
-            .then((res) => {
-                if (!res.ok) throw new Error('fetch failed');
-                return res.json();
-            })
-            .then((data: { aggregated?: DomainSummaryApiResponse['aggregated']; summaryMeta?: DomainSummaryApiResponse['summaryMeta']; projectId?: string | null }) => {
-                fullSeoHydratedRef.current = true;
-                const seo = data.aggregated?.seo;
-                setResult((prev) => {
-                    if (!prev || !seo) return prev;
-                    return {
-                        ...prev,
-                        aggregated: prev.aggregated ? { ...prev.aggregated, seo } : prev.aggregated,
-                        summaryMeta: {
-                            ...prev.summaryMeta,
-                            ...data.summaryMeta,
-                            seoPageRowsOmitted: false,
-                        },
-                    };
-                });
-                if (data.projectId != null) setProjectId(data.projectId);
-            })
-            .catch(() => {
-                fullSeoHydratedRef.current = false;
-            })
-            .finally(() => {
-                seoFullFetchInFlightRef.current = false;
-                setSeoPagesHydrating(false);
-            });
-    }, [domainId, activeSection, result?.summaryMeta?.seoPageRowsOmitted]);
-
     const restoreJourneyId = searchParams.get('restoreJourney');
     useEffect(() => {
         if (!restoreJourneyId) return;
@@ -431,7 +360,6 @@ export function DomainScanProvider({
             setProjectId,
             fromProjectId,
             domainLinkQuery,
-            seoPagesHydrating,
             summarizing,
             setSummarizing,
             summarizeError,
@@ -450,22 +378,16 @@ export function DomainScanProvider({
             setJourneySaved,
             journeySaveName,
             setJourneySaveName,
-            slimPagesOverride,
-            setSlimPagesOverride,
-            slimPagesLoading,
-            setSlimPagesLoading,
-            slimPagesRemoteTotal,
-            setSlimPagesRemoteTotal,
+            totalSlimRows,
             pages,
             totalPageCount,
-            canLoadMoreSlimPages,
-            loadMoreSlimPages,
             aggregated,
             uxBrokenLinksPreview,
             pagesByUrl,
             pagesById,
             pagesByNormUrl,
             norm,
+            openPageScanUrl,
             handleIssuePageClick,
             selectedGroupKey,
             selectedPageId,
@@ -482,11 +404,11 @@ export function DomainScanProvider({
             domainId,
             activeSection,
             result,
+            setResult,
             loadError,
             projectId,
             fromProjectId,
             domainLinkQuery,
-            seoPagesHydrating,
             summarizing,
             summarizeError,
             journeyGoal,
@@ -496,19 +418,16 @@ export function DomainScanProvider({
             journeySaving,
             journeySaved,
             journeySaveName,
-            slimPagesOverride,
-            slimPagesLoading,
-            slimPagesRemoteTotal,
+            totalSlimRows,
             pages,
             totalPageCount,
-            canLoadMoreSlimPages,
-            loadMoreSlimPages,
             aggregated,
             uxBrokenLinksPreview,
             pagesByUrl,
             pagesById,
             pagesByNormUrl,
             norm,
+            openPageScanUrl,
             handleIssuePageClick,
             selectedGroupKey,
             selectedPageId,

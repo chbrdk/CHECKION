@@ -72,6 +72,9 @@ export interface DomainSummaryApiMeta {
 
 export interface DomainSummaryApiResponse extends DomainSummaryResponse {
     summaryMeta?: DomainSummaryApiMeta;
+    /** Present on GET .../bundle and some summary responses. */
+    totalSlimRows?: number;
+    projectId?: string | null;
 }
 
 /** True if payload has precomputed aggregated (new format). */

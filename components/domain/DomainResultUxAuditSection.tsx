@@ -4,13 +4,10 @@ import React, { memo } from 'react';
 import { Box } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard } from '@msqdx/react';
 import { MSQDX_BRAND_PRIMARY, MSQDX_STATUS } from '@msqdx/tokens';
-import { useRouter } from 'next/navigation';
 import { VirtualScrollList } from '@/components/VirtualScrollList';
 import { InfoTooltip } from '@/components/InfoTooltip';
-import type { SlimPage } from '@/lib/types';
 import type { AggregatedUx } from '@/lib/domain-aggregation';
 import {
-    pathResults,
     DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX,
     DOMAIN_TAB_VIRTUAL_OVERSCAN,
     DOMAIN_UX_BROKEN_LINKS_PREVIEW,
@@ -19,12 +16,11 @@ import {
 export type DomainResultUxAuditSectionProps = {
     t: (key: string) => string;
     ux: AggregatedUx;
-    pagesByUrl: ReadonlyMap<string, SlimPage>;
+    onOpenPageUrl: (url: string) => void;
     uxBrokenLinksPreview: AggregatedUx['brokenLinks'];
 };
 
-function DomainResultUxAuditSectionInner({ t, ux, pagesByUrl, uxBrokenLinksPreview }: DomainResultUxAuditSectionProps) {
-    const router = useRouter();
+function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl, uxBrokenLinksPreview }: DomainResultUxAuditSectionProps) {
     return (
         <MsqdxMoleculeCard
             title="UX Audit (Domain)"
@@ -55,14 +51,17 @@ function DomainResultUxAuditSectionInner({ t, ux, pagesByUrl, uxBrokenLinksPrevi
                         <Box sx={{ mb: 1 }}>
                             <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>Seiten mit niedrigstem UX-Score (zuerst prüfen)</MsqdxTypography>
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
-                                {ux.pagesByScore.slice(0, 8).map(({ url, score, cls }) => {
-                                    const page = pagesByUrl.get(url);
-                                    return page ? (
-                                        <MsqdxButton key={url} size="small" variant="outlined" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none' }}>
-                                            {url} — Score {score}, CLS {cls}
-                                        </MsqdxButton>
-                                    ) : null;
-                                })}
+                                {ux.pagesByScore.slice(0, 8).map(({ url, score, cls }) => (
+                                    <MsqdxButton
+                                        key={url}
+                                        size="small"
+                                        variant="outlined"
+                                        onClick={() => onOpenPageUrl(url)}
+                                        sx={{ textTransform: 'none' }}
+                                    >
+                                        {url} — Score {score}, CLS {cls}
+                                    </MsqdxButton>
+                                ))}
                             </Box>
                         </Box>
                     )}
@@ -70,14 +69,17 @@ function DomainResultUxAuditSectionInner({ t, ux, pagesByUrl, uxBrokenLinksPrevi
                         <Box sx={{ mb: 1 }}>
                             <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>Seiten mit Console-Errors</MsqdxTypography>
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
-                                {ux.consoleErrorsByPage.slice(0, 6).map(({ url, count }) => {
-                                    const page = pagesByUrl.get(url);
-                                    return page ? (
-                                        <MsqdxButton key={url} size="small" variant="text" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>
-                                            {url} ({count})
-                                        </MsqdxButton>
-                                    ) : null;
-                                })}
+                                {ux.consoleErrorsByPage.slice(0, 6).map(({ url, count }) => (
+                                    <MsqdxButton
+                                        key={url}
+                                        size="small"
+                                        variant="text"
+                                        onClick={() => onOpenPageUrl(url)}
+                                        sx={{ textTransform: 'none', fontSize: '0.75rem' }}
+                                    >
+                                        {url} ({count})
+                                    </MsqdxButton>
+                                ))}
                             </Box>
                         </Box>
                     )}
@@ -85,12 +87,17 @@ function DomainResultUxAuditSectionInner({ t, ux, pagesByUrl, uxBrokenLinksPrevi
                         <Box>
                             <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>Seiten mit Touch-Target-Problemen</MsqdxTypography>
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
-                                {ux.tapTargets.detailsByPage.slice(0, 6).map(({ url, count }) => {
-                                    const page = pagesByUrl.get(url);
-                                    return page ? (
-                                        <MsqdxButton key={url} size="small" variant="text" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>{url} ({count})</MsqdxButton>
-                                    ) : null;
-                                })}
+                                {ux.tapTargets.detailsByPage.slice(0, 6).map(({ url, count }) => (
+                                    <MsqdxButton
+                                        key={url}
+                                        size="small"
+                                        variant="text"
+                                        onClick={() => onOpenPageUrl(url)}
+                                        sx={{ textTransform: 'none', fontSize: '0.75rem' }}
+                                    >
+                                        {url} ({count})
+                                    </MsqdxButton>
+                                ))}
                             </Box>
                         </Box>
                     )}

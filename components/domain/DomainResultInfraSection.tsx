@@ -3,12 +3,9 @@
 import React, { memo } from 'react';
 import { Box } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard } from '@msqdx/react';
-import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { InfoTooltip } from '@/components/InfoTooltip';
-import type { SlimPage } from '@/lib/types';
 import type { AggregatedInfra } from '@/lib/domain-aggregation';
-import { pathResults } from '@/lib/constants';
 
 const DomainToolsCard = dynamic(
     () => import('@/components/DomainToolsCard').then((m) => ({ default: m.DomainToolsCard })),
@@ -18,11 +15,10 @@ const DomainToolsCard = dynamic(
 export type DomainResultInfraSectionProps = {
     t: (key: string) => string;
     infra: AggregatedInfra;
-    pagesByUrl: ReadonlyMap<string, SlimPage>;
+    onOpenPageUrl: (url: string) => void;
 };
 
-function DomainResultInfraSectionInner({ t, infra, pagesByUrl }: DomainResultInfraSectionProps) {
-    const router = useRouter();
+function DomainResultInfraSectionInner({ t, infra, onOpenPageUrl }: DomainResultInfraSectionProps) {
     return (
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'var(--msqdx-spacing-md)' }}>
             <MsqdxMoleculeCard title="Privacy (Domain)" headerActions={<InfoTooltip title={t('info.infraPrivacy')} ariaLabel={t('common.info')} />} variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
@@ -37,10 +33,17 @@ function DomainResultInfraSectionInner({ t, infra, pagesByUrl }: DomainResultInf
                             )}
                             {infra.privacy.urlsWithPolicy.length > 0 && infra.privacy.urlsWithPolicy.length <= 8 && (
                                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
-                                    {infra.privacy.urlsWithPolicy.slice(0, 5).map((url) => {
-                                        const page = pagesByUrl.get(url);
-                                        return page ? <MsqdxButton key={url} size="small" variant="text" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', fontSize: '0.7rem' }}>{url}</MsqdxButton> : null;
-                                    })}
+                                    {infra.privacy.urlsWithPolicy.slice(0, 5).map((url) => (
+                                        <MsqdxButton
+                                            key={url}
+                                            size="small"
+                                            variant="text"
+                                            onClick={() => onOpenPageUrl(url)}
+                                            sx={{ textTransform: 'none', fontSize: '0.7rem' }}
+                                        >
+                                            {url}
+                                        </MsqdxButton>
+                                    ))}
                                 </Box>
                             )}
                         </Box>
@@ -55,10 +58,17 @@ function DomainResultInfraSectionInner({ t, infra, pagesByUrl }: DomainResultInf
                         <Box sx={{ mt: 1 }}>
                             <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>Seiten mit CSP:</MsqdxTypography>
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
-                                {infra.security.urlsWithCsp.slice(0, 5).map((url) => {
-                                    const page = pagesByUrl.get(url);
-                                    return page ? <MsqdxButton key={url} size="small" variant="text" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', fontSize: '0.7rem' }}>{url}</MsqdxButton> : null;
-                                })}
+                                {infra.security.urlsWithCsp.slice(0, 5).map((url) => (
+                                    <MsqdxButton
+                                        key={url}
+                                        size="small"
+                                        variant="text"
+                                        onClick={() => onOpenPageUrl(url)}
+                                        sx={{ textTransform: 'none', fontSize: '0.7rem' }}
+                                    >
+                                        {url}
+                                    </MsqdxButton>
+                                ))}
                             </Box>
                         </Box>
                     )}
@@ -74,15 +84,15 @@ export type DomainResultInfraTabProps = {
     t: (key: string) => string;
     domainHost: string | undefined;
     infra: AggregatedInfra | null | undefined;
-    pagesByUrl: ReadonlyMap<string, SlimPage>;
+    onOpenPageUrl: (url: string) => void;
 };
 
-function DomainResultInfraTabInner({ t, domainHost, infra, pagesByUrl }: DomainResultInfraTabProps) {
+function DomainResultInfraTabInner({ t, domainHost, infra, onOpenPageUrl }: DomainResultInfraTabProps) {
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-md)' }}>
             {domainHost && <DomainToolsCard domainUrl={`https://${domainHost}`} />}
             {infra ? (
-                <DomainResultInfraSection t={t} infra={infra} pagesByUrl={pagesByUrl} />
+                <DomainResultInfraSection t={t} infra={infra} onOpenPageUrl={onOpenPageUrl} />
             ) : (
                 <MsqdxMoleculeCard title="Infrastruktur & Privacy (Domain)" headerActions={<InfoTooltip title={t('info.infraPrivacy')} ariaLabel={t('common.info')} />} variant="flat" sx={{ bgcolor: 'var(--color-card-bg)' }} borderRadius="lg">
                     <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>Keine Infrastruktur-Daten verfügbar.</MsqdxTypography>

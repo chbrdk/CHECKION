@@ -4,13 +4,10 @@ import React, { memo } from 'react';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import { MsqdxTypography, MsqdxChip, MsqdxMoleculeCard } from '@msqdx/react';
 import { ExternalLink } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { VirtualScrollList } from '@/components/VirtualScrollList';
 import { InfoTooltip } from '@/components/InfoTooltip';
-import type { SlimPage } from '@/lib/types';
 import type { AggregatedStructure } from '@/lib/domain-aggregation';
 import {
-    pathResults,
     DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX,
     DOMAIN_TAB_VIRTUAL_OVERSCAN,
 } from '@/lib/constants';
@@ -18,13 +15,10 @@ import {
 export type DomainResultStructureSectionProps = {
     t: (key: string, values?: Record<string, string>) => string;
     structure: AggregatedStructure;
-    pagesByUrl: ReadonlyMap<string, SlimPage>;
-    pagesByNormUrl: ReadonlyMap<string, SlimPage>;
-    norm: (u: string) => string;
+    onOpenPageUrl: (url: string) => void;
 };
 
-function DomainResultStructureSectionInner({ t, structure, pagesByUrl, pagesByNormUrl, norm }: DomainResultStructureSectionProps) {
-    const router = useRouter();
+function DomainResultStructureSectionInner({ t, structure, onOpenPageUrl }: DomainResultStructureSectionProps) {
     return (
         <MsqdxMoleculeCard
             title="Struktur & Semantik (Domain)"
@@ -45,40 +39,35 @@ function DomainResultStructureSectionInner({ t, structure, pagesByUrl, pagesByNo
                 <Box sx={{ mb: 2 }}>
                     <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Seiten mit guter Überschriften-Struktur</MsqdxTypography>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                        {structure.pagesWithGoodStructure.map((url) => {
-                            const page = pagesByUrl.get(url) ?? pagesByNormUrl.get(norm(url));
-                            return (
-                                <Box
-                                    key={url}
-                                    sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 0.5,
-                                        py: 0.25,
-                                        pr: 0.5,
-                                        border: '1px solid var(--color-secondary-dx-grey-light-tint, #e0e0e0)',
-                                        borderRadius: 1,
-                                        px: 1,
-                                    }}
-                                >
-                                    <MsqdxTypography variant="caption" sx={{ flex: 1, minWidth: 0 }} noWrap title={url}>
-                                        {url}
-                                    </MsqdxTypography>
-                                    {page && (
-                                        <Tooltip title={t('domainResult.openPage')}>
-                                            <IconButton
-                                                size="small"
-                                                aria-label={t('domainResult.openPageAria', { url })}
-                                                onClick={() => router.push(pathResults(page.id))}
-                                                sx={{ flexShrink: 0 }}
-                                            >
-                                                <ExternalLink size={16} strokeWidth={2} aria-hidden />
-                                            </IconButton>
-                                        </Tooltip>
-                                    )}
-                                </Box>
-                            );
-                        })}
+                        {structure.pagesWithGoodStructure.map((url) => (
+                            <Box
+                                key={url}
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 0.5,
+                                    py: 0.25,
+                                    pr: 0.5,
+                                    border: '1px solid var(--color-secondary-dx-grey-light-tint, #e0e0e0)',
+                                    borderRadius: 1,
+                                    px: 1,
+                                }}
+                            >
+                                <MsqdxTypography variant="caption" sx={{ flex: 1, minWidth: 0 }} noWrap title={url}>
+                                    {url}
+                                </MsqdxTypography>
+                                <Tooltip title={t('domainResult.openPage')}>
+                                    <IconButton
+                                        size="small"
+                                        aria-label={t('domainResult.openPageAria', { url })}
+                                        onClick={() => onOpenPageUrl(url)}
+                                        sx={{ flexShrink: 0 }}
+                                    >
+                                        <ExternalLink size={16} strokeWidth={2} aria-hidden />
+                                    </IconButton>
+                                </Tooltip>
+                            </Box>
+                        ))}
                     </Box>
                 </Box>
             )}
@@ -91,28 +80,23 @@ function DomainResultStructureSectionInner({ t, structure, pagesByUrl, pagesByNo
                         estimateSize={DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX}
                         overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
                         getItemKey={(url) => url}
-                        renderItem={(url) => {
-                            const page = pagesByUrl.get(url) ?? pagesByNormUrl.get(norm(url));
-                            return (
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, width: '100%', py: 0.25, pr: 0.5 }}>
-                                    <MsqdxTypography variant="caption" sx={{ flex: 1, minWidth: 0 }} noWrap title={url}>
-                                        {url}
-                                    </MsqdxTypography>
-                                    {page && (
-                                        <Tooltip title={t('domainResult.openPage')}>
-                                            <IconButton
-                                                size="small"
-                                                aria-label={t('domainResult.openPageAria', { url })}
-                                                onClick={() => router.push(pathResults(page.id))}
-                                                sx={{ flexShrink: 0 }}
-                                            >
-                                                <ExternalLink size={16} strokeWidth={2} aria-hidden />
-                                            </IconButton>
-                                        </Tooltip>
-                                    )}
-                                </Box>
-                            );
-                        }}
+                        renderItem={(url) => (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, width: '100%', py: 0.25, pr: 0.5 }}>
+                                <MsqdxTypography variant="caption" sx={{ flex: 1, minWidth: 0 }} noWrap title={url}>
+                                    {url}
+                                </MsqdxTypography>
+                                <Tooltip title={t('domainResult.openPage')}>
+                                    <IconButton
+                                        size="small"
+                                        aria-label={t('domainResult.openPageAria', { url })}
+                                        onClick={() => onOpenPageUrl(url)}
+                                        sx={{ flexShrink: 0 }}
+                                    >
+                                        <ExternalLink size={16} strokeWidth={2} aria-hidden />
+                                    </IconButton>
+                                </Tooltip>
+                            </Box>
+                        )}
                     />
                 </Box>
             )}
@@ -125,28 +109,23 @@ function DomainResultStructureSectionInner({ t, structure, pagesByUrl, pagesByNo
                         estimateSize={DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX}
                         overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
                         getItemKey={(url) => url}
-                        renderItem={(url) => {
-                            const page = pagesByUrl.get(url) ?? pagesByNormUrl.get(norm(url));
-                            return (
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, width: '100%', py: 0.25, pr: 0.5 }}>
-                                    <MsqdxTypography variant="caption" sx={{ flex: 1, minWidth: 0 }} noWrap title={url}>
-                                        {url}
-                                    </MsqdxTypography>
-                                    {page && (
-                                        <Tooltip title={t('domainResult.openPage')}>
-                                            <IconButton
-                                                size="small"
-                                                aria-label={t('domainResult.openPageAria', { url })}
-                                                onClick={() => router.push(pathResults(page.id))}
-                                                sx={{ flexShrink: 0 }}
-                                            >
-                                                <ExternalLink size={16} strokeWidth={2} aria-hidden />
-                                            </IconButton>
-                                        </Tooltip>
-                                    )}
-                                </Box>
-                            );
-                        }}
+                        renderItem={(url) => (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, width: '100%', py: 0.25, pr: 0.5 }}>
+                                <MsqdxTypography variant="caption" sx={{ flex: 1, minWidth: 0 }} noWrap title={url}>
+                                    {url}
+                                </MsqdxTypography>
+                                <Tooltip title={t('domainResult.openPage')}>
+                                    <IconButton
+                                        size="small"
+                                        aria-label={t('domainResult.openPageAria', { url })}
+                                        onClick={() => onOpenPageUrl(url)}
+                                        sx={{ flexShrink: 0 }}
+                                    >
+                                        <ExternalLink size={16} strokeWidth={2} aria-hidden />
+                                    </IconButton>
+                                </Tooltip>
+                            </Box>
+                        )}
                     />
                 </Box>
             )}

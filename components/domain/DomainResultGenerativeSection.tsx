@@ -3,13 +3,10 @@
 import React, { memo } from 'react';
 import { Box } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxChip, MsqdxMoleculeCard } from '@msqdx/react';
-import { useRouter } from 'next/navigation';
 import { VirtualScrollList } from '@/components/VirtualScrollList';
 import { InfoTooltip } from '@/components/InfoTooltip';
-import type { SlimPage } from '@/lib/types';
 import type { AggregatedGenerative } from '@/lib/domain-aggregation';
 import {
-    pathResults,
     DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX,
     DOMAIN_TAB_VIRTUAL_OVERSCAN,
 } from '@/lib/constants';
@@ -17,11 +14,10 @@ import {
 export type DomainResultGenerativeSectionProps = {
     t: (key: string) => string;
     generative: AggregatedGenerative;
-    pagesByUrl: ReadonlyMap<string, SlimPage>;
+    onOpenPageUrl: (url: string) => void;
 };
 
-function DomainResultGenerativeSectionInner({ t, generative, pagesByUrl }: DomainResultGenerativeSectionProps) {
-    const router = useRouter();
+function DomainResultGenerativeSectionInner({ t, generative, onOpenPageUrl }: DomainResultGenerativeSectionProps) {
     return (
         <MsqdxMoleculeCard
             title="Generative Search / GEO (Domain)"
@@ -52,14 +48,16 @@ function DomainResultGenerativeSectionInner({ t, generative, pagesByUrl }: Domai
                 overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
                 getItemKey={(p) => p.url}
                 renderItem={(p) => {
-                    const page = pagesByUrl.get(p.url);
                     const badges = [`Score ${p.score}`, p.hasLlmsTxt && 'llms.txt', p.hasRecommendedSchema && 'Schema'].filter(Boolean).join(' · ');
-                    return page ? (
-                        <MsqdxButton size="small" variant="text" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', fontSize: '0.8rem', display: 'block', width: '100%', justifyContent: 'flex-start', py: 0.25 }}>
+                    return (
+                        <MsqdxButton
+                            size="small"
+                            variant="text"
+                            onClick={() => onOpenPageUrl(p.url)}
+                            sx={{ textTransform: 'none', fontSize: '0.8rem', display: 'block', width: '100%', justifyContent: 'flex-start', py: 0.25 }}
+                        >
                             {p.url} — {badges || '—'}
                         </MsqdxButton>
-                    ) : (
-                        <MsqdxTypography variant="caption" sx={{ display: 'block', py: 0.25 }}>{p.url} — {badges || p.score}</MsqdxTypography>
                     );
                 }}
             />

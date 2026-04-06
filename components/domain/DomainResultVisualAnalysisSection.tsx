@@ -6,9 +6,8 @@ import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard } from '@msqdx/react';
 import { useRouter } from 'next/navigation';
 import { VirtualScrollList } from '@/components/VirtualScrollList';
 import { InfoTooltip } from '@/components/InfoTooltip';
-import type { SlimPage } from '@/lib/types';
 import type { AggregatedUx } from '@/lib/domain-aggregation';
-import { pathResults, DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX, DOMAIN_TAB_VIRTUAL_OVERSCAN } from '@/lib/constants';
+import { DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX, DOMAIN_TAB_VIRTUAL_OVERSCAN } from '@/lib/constants';
 import { pathDomainSection } from '@/lib/domain-result-sections';
 
 export type DomainResultVisualAnalysisSectionProps = {
@@ -16,10 +15,10 @@ export type DomainResultVisualAnalysisSectionProps = {
     domainId: string;
     domainLinkQuery: Record<string, string>;
     ux: AggregatedUx | null;
-    pagesByUrl: ReadonlyMap<string, SlimPage>;
+    onOpenPageUrl: (url: string) => void;
 };
 
-function DomainResultVisualAnalysisSectionInner({ t, domainId, domainLinkQuery, ux, pagesByUrl }: DomainResultVisualAnalysisSectionProps) {
+function DomainResultVisualAnalysisSectionInner({ t, domainId, domainLinkQuery, ux, onOpenPageUrl }: DomainResultVisualAnalysisSectionProps) {
     const router = useRouter();
     const hasLists =
         ux && (ux.focusOrderByPage.length > 0 || ux.tapTargets.detailsByPage.length > 0);
@@ -46,16 +45,16 @@ function DomainResultVisualAnalysisSectionInner({ t, domainId, domainLinkQuery, 
                                 estimateSize={DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX}
                                 overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
                                 getItemKey={(row) => row.url}
-                                renderItem={({ url, count }) => {
-                                    const page = pagesByUrl.get(url);
-                                    return page ? (
-                                        <MsqdxButton size="small" variant="outlined" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', display: 'block', width: '100%', justifyContent: 'flex-start', mb: 0.5 }}>
-                                            {url} ({count})
-                                        </MsqdxButton>
-                                    ) : (
-                                        <MsqdxTypography variant="caption" sx={{ display: 'block', py: 0.5 }}>{url} ({count})</MsqdxTypography>
-                                    );
-                                }}
+                                renderItem={({ url, count }) => (
+                                    <MsqdxButton
+                                        size="small"
+                                        variant="outlined"
+                                        onClick={() => onOpenPageUrl(url)}
+                                        sx={{ textTransform: 'none', display: 'block', width: '100%', justifyContent: 'flex-start', mb: 0.5 }}
+                                    >
+                                        {url} ({count})
+                                    </MsqdxButton>
+                                )}
                             />
                         </Box>
                     )}
@@ -68,16 +67,16 @@ function DomainResultVisualAnalysisSectionInner({ t, domainId, domainLinkQuery, 
                                 estimateSize={DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX}
                                 overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
                                 getItemKey={(row) => row.url}
-                                renderItem={({ url, count }) => {
-                                    const page = pagesByUrl.get(url);
-                                    return page ? (
-                                        <MsqdxButton size="small" variant="outlined" onClick={() => router.push(pathResults(page.id))} sx={{ textTransform: 'none', display: 'block', width: '100%', justifyContent: 'flex-start', mb: 0.5 }}>
-                                            {url} ({count} Probleme)
-                                        </MsqdxButton>
-                                    ) : (
-                                        <MsqdxTypography variant="caption" sx={{ display: 'block', py: 0.5 }}>{url} ({count} Probleme)</MsqdxTypography>
-                                    );
-                                }}
+                                renderItem={({ url, count }) => (
+                                    <MsqdxButton
+                                        size="small"
+                                        variant="outlined"
+                                        onClick={() => onOpenPageUrl(url)}
+                                        sx={{ textTransform: 'none', display: 'block', width: '100%', justifyContent: 'flex-start', mb: 0.5 }}
+                                    >
+                                        {url} ({count} Probleme)
+                                    </MsqdxButton>
+                                )}
                             />
                         </Box>
                     )}

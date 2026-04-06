@@ -27,6 +27,7 @@
     "@msqdx/tokens": "file:../msqdx-design-system/packages/tokens",
     "@mui/material": "^7.3.5",
     "@react-pdf/renderer": "^4.3.2",
+    "@tanstack/react-query": "^5.96.2",
     "@tanstack/react-virtual": "^3.13.23",
     "axe-core": "^4.11.1",
     "bcryptjs": "^3.0.3",

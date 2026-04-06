@@ -27,7 +27,6 @@ export function DomainResultMain() {
         activeSection,
         result,
         setResult,
-        seoPagesHydrating,
         summarizing,
         setSummarizing,
         summarizeError,
@@ -46,18 +45,13 @@ export function DomainResultMain() {
         setJourneySaved,
         journeySaveName,
         setJourneySaveName,
-        slimPagesLoading,
-        slimPagesRemoteTotal,
-        loadMoreSlimPages,
         pages,
         totalPageCount,
-        canLoadMoreSlimPages,
+        totalSlimRows,
         aggregated,
         uxBrokenLinksPreview,
-        pagesByUrl,
         pagesById,
-        pagesByNormUrl,
-        norm,
+        openPageScanUrl,
         handleIssuePageClick,
         selectedGroupKey,
         selectedPageId,
@@ -89,13 +83,9 @@ export function DomainResultMain() {
                 <DomainResultOverviewSection
                     t={t}
                     result={result}
-                    pages={pages}
-                    slimPagesLoading={slimPagesLoading}
-                    totalPageCount={totalPageCount}
-                    canLoadMoreSlimPages={canLoadMoreSlimPages}
-                    slimPagesRemoteTotal={slimPagesRemoteTotal}
-                    loadMoreSlimPages={loadMoreSlimPages}
                     domainId={domainId}
+                    totalPageCount={totalPageCount}
+                    totalSlimRows={totalSlimRows}
                     domainLinkQuery={domainLinkQuery}
                     onScannedPageOpen={openScannedPage}
                 />
@@ -142,7 +132,7 @@ export function DomainResultMain() {
                     domainId={domainId}
                     domainLinkQuery={domainLinkQuery}
                     ux={aggregated?.ux ?? null}
-                    pagesByUrl={pagesByUrl}
+                    onOpenPageUrl={openPageScanUrl}
                 />
             )}
 
@@ -151,7 +141,7 @@ export function DomainResultMain() {
                     <DomainResultUxAuditSection
                         t={t}
                         ux={aggregated.ux}
-                        pagesByUrl={pagesByUrl}
+                        onOpenPageUrl={openPageScanUrl}
                         uxBrokenLinksPreview={uxBrokenLinksPreview}
                     />
                 ) : (
@@ -163,9 +153,7 @@ export function DomainResultMain() {
                     <DomainResultStructureSection
                         t={t}
                         structure={aggregated.structure}
-                        pagesByUrl={pagesByUrl}
-                        pagesByNormUrl={pagesByNormUrl}
-                        norm={norm}
+                        onOpenPageUrl={openPageScanUrl}
                     />
                 ) : (
                     <DomainResultStructureEmpty t={t} />
@@ -177,23 +165,21 @@ export function DomainResultMain() {
                     <DomainResultLinksSeoSection
                         t={t}
                         locale={locale}
+                        domainId={domainId}
                         aggregated={aggregated}
-                        pagesByUrl={pagesByUrl}
-                        pagesByNormUrl={pagesByNormUrl}
-                        norm={norm}
-                        seoPagesHydrating={seoPagesHydrating}
+                        onOpenPageUrl={openPageScanUrl}
                     />
                 ) : (
                     <DomainResultLinksSeoEmpty t={t} />
                 ))}
 
             {activeSection === 'infra' && (
-                <DomainResultInfraTab t={t} domainHost={result.domain} infra={aggregated?.infra} pagesByUrl={pagesByUrl} />
+                <DomainResultInfraTab t={t} domainHost={result.domain} infra={aggregated?.infra} onOpenPageUrl={openPageScanUrl} />
             )}
 
             {activeSection === 'generative' &&
                 (aggregated?.generative ? (
-                    <DomainResultGenerativeSection t={t} generative={aggregated.generative} pagesByUrl={pagesByUrl} />
+                    <DomainResultGenerativeSection t={t} generative={aggregated.generative} onOpenPageUrl={openPageScanUrl} />
                 ) : (
                     <DomainResultGenerativeEmpty t={t} />
                 ))}
@@ -208,7 +194,7 @@ export function DomainResultMain() {
                     domainId={domainId}
                     domainLinkQuery={domainLinkQuery}
                     pages={pages}
-                    pagesByNormUrl={pagesByNormUrl}
+                    onOpenPageUrl={openPageScanUrl}
                     journeyGoal={journeyGoal}
                     setJourneyGoal={setJourneyGoal}
                     journeyLoading={journeyLoading}

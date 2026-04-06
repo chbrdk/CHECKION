@@ -1,27 +1,30 @@
 'use client';
 
-import React, { memo } from 'react';
+import React, { memo, useCallback, useState } from 'react';
 import Link from 'next/link';
 import { Box, CircularProgress } from '@mui/material';
 import {
     MsqdxTypography,
-    MsqdxButton,
     MsqdxCard,
     MsqdxChip,
 } from '@msqdx/react';
 import { AlertCircle, CheckCircle } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { VirtualScrollList } from '@/components/VirtualScrollList';
+import { RemotePaginationBar } from '@/components/RemotePaginationBar';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import dynamic from 'next/dynamic';
 import type { DomainSummaryApiResponse } from '@/lib/domain-summary';
 import type { SlimPage } from '@/lib/types';
 import {
-    DOMAIN_SLIM_PAGES_CHUNK,
-    DOMAIN_SLIM_PAGES_MAX_CLIENT,
+    DOMAIN_SLIM_PAGES_PAGE_SIZE,
     DOMAIN_TAB_SYSTEMIC_ISSUE_ROW_ESTIMATE_PX,
     DOMAIN_TAB_VIRTUAL_OVERSCAN,
+    apiScanDomainSlimPages,
 } from '@/lib/constants';
 import { pathDomainSection } from '@/lib/domain-result-sections';
+import type { ScannedPagesSortKey } from '@/components/ScannedPagesTable';
+
 const ScannedPagesTable = dynamic(
     () => import('@/components/ScannedPagesTable').then((m) => ({ default: m.ScannedPagesTable })),
     { ssr: false, loading: () => <Box sx={{ py: 2 }}><CircularProgress size={24} /></Box> }
@@ -30,13 +33,10 @@ const ScannedPagesTable = dynamic(
 export type DomainResultOverviewSectionProps = {
     t: (key: string, values?: Record<string, string | number>) => string;
     result: DomainSummaryApiResponse;
-    pages: SlimPage[];
-    slimPagesLoading: boolean;
-    totalPageCount: number;
-    canLoadMoreSlimPages: boolean;
-    slimPagesRemoteTotal: number | null;
-    loadMoreSlimPages: () => Promise<void>;
     domainId: string;
+    totalPageCount: number;
+    /** From bundle — total rows for slim table. */
+    totalSlimRows: number | null;
     /** Preserve `?projectId=` when opening Page Topics from overview. */
     domainLinkQuery: Record<string, string>;
     onScannedPageOpen: (page: SlimPage) => void;
@@ -45,16 +45,75 @@ export type DomainResultOverviewSectionProps = {
 function DomainResultOverviewSectionInner({
     t,
     result,
-    pages,
-    slimPagesLoading,
-    totalPageCount,
-    canLoadMoreSlimPages,
-    slimPagesRemoteTotal,
-    loadMoreSlimPages,
     domainId,
+    totalPageCount,
+    totalSlimRows,
     domainLinkQuery,
     onScannedPageOpen,
 }: DomainResultOverviewSectionProps) {
+    const [pageIndex, setPageIndex] = useState(0);
+    const [sortKey, setSortKey] = useState<ScannedPagesSortKey>('url');
+    const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+    const handleServerSort = useCallback(
+        (key: ScannedPagesSortKey) => {
+            setPageIndex(0);
+            setSortKey((prev) => {
+                if (prev === key) {
+                    setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+                    return prev;
+                }
+                setSortDir('asc');
+                return key;
+            });
+        },
+        []
+    );
+
+    const embeddedPages = (result.pages as SlimPage[] | undefined)?.length
+        ? (result.pages as SlimPage[])
+        : null;
+
+    const slimQuery = useQuery({
+        queryKey: ['domain-slim-pages', domainId, pageIndex, sortKey, sortDir],
+        queryFn: async () => {
+            const offset = pageIndex * DOMAIN_SLIM_PAGES_PAGE_SIZE;
+            const res = await fetch(
+                apiScanDomainSlimPages(domainId, {
+                    offset,
+                    limit: DOMAIN_SLIM_PAGES_PAGE_SIZE,
+                    sort: sortKey,
+                    dir: sortDir,
+                }),
+                { credentials: 'same-origin' }
+            );
+            if (!res.ok) throw new Error('slim-pages failed');
+            return res.json() as Promise<{ data?: SlimPage[]; total?: number }>;
+        },
+        enabled: embeddedPages === null && Boolean(domainId),
+    });
+
+    const tablePages: SlimPage[] =
+        embeddedPages ?? slimQuery.data?.data ?? [];
+    const remoteTotal =
+        embeddedPages?.length ??
+        slimQuery.data?.total ??
+        totalSlimRows ??
+        totalPageCount;
+    const slimLoading = embeddedPages === null && slimQuery.isFetching;
+
+    const paginationBar =
+        embeddedPages === null ? (
+            <RemotePaginationBar
+                page={pageIndex}
+                pageSize={DOMAIN_SLIM_PAGES_PAGE_SIZE}
+                total={remoteTotal}
+                loading={slimLoading}
+                onPageChange={setPageIndex}
+                labels={{ prev: t('share.back'), next: t('share.next') }}
+            />
+        ) : null;
+
     return (
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 'var(--msqdx-spacing-md)' }}>
             <Box sx={{ flex: '0 0 350px' }}>
@@ -193,37 +252,32 @@ function DomainResultOverviewSectionInner({
                         <MsqdxTypography variant="h6">{t('domainResult.scannedPages')}</MsqdxTypography>
                         <InfoTooltip title={t('info.scannedPages')} ariaLabel={t('common.info')} />
                     </Box>
-                    {slimPagesLoading && (
+                    {slimLoading && (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                             <CircularProgress size={20} sx={{ color: 'var(--color-theme-accent)' }} />
                             <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                Seitenliste wird geladen…
+                                {t('common.loading')}
                             </MsqdxTypography>
                         </Box>
                     )}
-                    {totalPageCount > DOMAIN_SLIM_PAGES_MAX_CLIENT && pages.length >= DOMAIN_SLIM_PAGES_MAX_CLIENT && (
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1 }}>
-                            Es werden die ersten {DOMAIN_SLIM_PAGES_MAX_CLIENT.toLocaleString()} von {totalPageCount.toLocaleString()} Seiten in der Tabelle angezeigt.
-                        </MsqdxTypography>
-                    )}
-                    {canLoadMoreSlimPages && domainId && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, flexWrap: 'wrap' }}>
-                            <MsqdxButton
-                                size="small"
-                                variant="outlined"
-                                disabled={slimPagesLoading}
-                                onClick={() => void loadMoreSlimPages()}
-                            >
-                                {t('domainResult.slimPagesLoadMore', { count: DOMAIN_SLIM_PAGES_CHUNK })}
-                            </MsqdxButton>
-                            {slimPagesRemoteTotal != null && (
-                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                    {pages.length.toLocaleString()} / {slimPagesRemoteTotal.toLocaleString()}
+                    <ScannedPagesTable
+                        pages={tablePages}
+                        onPageClick={onScannedPageOpen}
+                        serverSort={embeddedPages === null}
+                        sortKey={sortKey}
+                        sortDir={sortDir}
+                        onSortChange={embeddedPages === null ? handleServerSort : undefined}
+                        paginationFooter={
+                            <>
+                                {paginationBar}
+                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', fontSize: '0.7rem', display: 'block', mt: 0.5 }}>
+                                    {embeddedPages !== null
+                                        ? `${tablePages.length.toLocaleString()} ${t('domainResult.pagesScanned')}`
+                                        : `${remoteTotal.toLocaleString()} ${t('domainResult.pagesScanned')}`}
                                 </MsqdxTypography>
-                            )}
-                        </Box>
-                    )}
-                    <ScannedPagesTable pages={pages} onPageClick={onScannedPageOpen} />
+                            </>
+                        }
+                    />
                 </MsqdxCard>
             </Box>
         </Box>

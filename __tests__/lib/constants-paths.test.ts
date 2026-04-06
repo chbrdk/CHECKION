@@ -33,6 +33,12 @@ import {
     PRETEXT_NPM_URL,
     PRETEXT_REPO_URL,
     apiScanDomainSlimPages,
+    apiScanDomainBundle,
+    apiScanDomainSeoPages,
+    apiScanDomainPageResolve,
+    DOMAIN_SLIM_PAGES_PAGE_SIZE,
+    DOMAIN_SEO_PAGES_PAGE_SIZE,
+    DOMAIN_ISSUES_PAGE_SIZE,
     HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON,
     CACHE_REVALIDATE_DOMAIN,
 } from '@/lib/constants';
@@ -108,6 +114,32 @@ describe('API path builders', () => {
         expect(apiScanDomainSlimPages('d1', { offset: 100, limit: 50 })).toBe(
             '/api/scan/domain/d1/slim-pages?offset=100&limit=50'
         );
+        expect(apiScanDomainSlimPages('d1', { offset: 0, limit: 100, sort: 'score', dir: 'desc' })).toBe(
+            '/api/scan/domain/d1/slim-pages?offset=0&limit=100&sort=score&dir=desc'
+        );
+    });
+
+    it('apiScanDomainBundle builds bundle URL', () => {
+        expect(apiScanDomainBundle('d1')).toBe('/api/scan/domain/d1/bundle');
+    });
+
+    it('apiScanDomainSeoPages builds seo-pages URL with sort', () => {
+        expect(apiScanDomainSeoPages('d1', { offset: 50, limit: 50, sort: 'url', dir: 'asc' })).toBe(
+            '/api/scan/domain/d1/seo-pages?offset=50&limit=50&sort=url&dir=asc'
+        );
+    });
+
+    it('apiScanDomainPageResolve encodes url query', () => {
+        expect(apiScanDomainPageResolve('d1', 'https://a.com/x y')).toContain('url=');
+        expect(apiScanDomainPageResolve('d1', 'https://a.com/x')).toBe(
+            '/api/scan/domain/d1/page-resolve?url=https%3A%2F%2Fa.com%2Fx'
+        );
+    });
+
+    it('exposes positive domain pagination sizes', () => {
+        expect(DOMAIN_SLIM_PAGES_PAGE_SIZE).toBeGreaterThan(0);
+        expect(DOMAIN_SEO_PAGES_PAGE_SIZE).toBeGreaterThan(0);
+        expect(DOMAIN_ISSUES_PAGE_SIZE).toBeGreaterThan(0);
     });
 
     it('apiShareToken builds share token URL', () => {

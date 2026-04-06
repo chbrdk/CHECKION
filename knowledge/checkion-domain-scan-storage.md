@@ -79,6 +79,17 @@ Implementierung: `aggregatePageClassification` in `lib/domain-aggregation.ts`, E
 - **Share (eine Seite)**: `getCachedScan(pageId, share.userId)` – Seite kommt aus `scans`. Zugehörigkeit zum Domain-Scan: `isSharedDomainPageAllowed` in `lib/share-access.ts` — `pageId` in `domain.pages` **oder** `scan.groupId === domain.id` (falls `pages` im Payload leer ist).
 - **Suche**: `listDomainScanSummariesForSearch` (kein voller JSONB-Payload) + Flag `hasStoredAggregated` aus `(payload->'aggregated') IS NOT NULL`; bei Domain-Scans mit Aggregat: `listScansByGroupId(userId, id)`; bei Legacy: `getDomainScan` und `pages` aus Payload.
 
+## Domain-Ergebnis-UI: Bundle + paginierte Listen (2026)
+
+Für die **Domain-Ergebnisseite** (`/domain/[id]`) gilt ein klarer Lese-Pfad ohne große Arrays im ersten Response:
+
+- **`GET /api/scan/domain/[id]/bundle`** (`lib/domain-bundle.ts` → `buildDomainBundleForUser`): ein Request mit **Light-Aggregaten** (`toLightDomainSummaryApiPayload`), **`pages: []`**, **`summaryMeta`** mit `slimPagesOmitted` / `seoPageRowsOmitted`, plus **`totalSlimRows`** (Zählung aus `domain_pages` oder Payload) und **`projectId`**. Die React-App lädt dieses Bundle per TanStack Query; Tab-spezifische große Listen kommen aus eigenen Endpoints.
+- **`GET .../slim-pages?offset=&limit=&sort=&dir=`**: DB-first (`listSlimPagesFromDomainPagesTable`) oder Payload-Slice (`sliceSlimPagesFromPayload`); Sortierung **`url` | `score` | `uxScore` | `issues`**. Konstanten: `DOMAIN_SLIM_PAGES_PAGE_SIZE`, Builder `apiScanDomainSlimPages` in `lib/constants.ts`.
+- **`GET .../seo-pages?offset=&limit=&sort=&dir=`**: paginierte **`PageSeoSummary`**-Zeilen (`listSeoPageRowsFromDb` oder `sliceSeoPagesFromPayload`); Sort **`url` | `wordCount`**. Konstante **`DOMAIN_SEO_PAGES_PAGE_SIZE`**.
+- **`GET .../page-resolve?url=`**: löst eine Domain-URL zu einer **`scanId`** auf (DB zuerst, sonst Payload), damit Links aus Aggregationen ohne vorgehaltene `SlimPage[]` funktionieren. Builder: `apiScanDomainPageResolve`.
+
+Legacy **`GET .../summary?light=1`** bleibt für andere Clients nutzbar; die eingebettete App bevorzugt **`/bundle`**.
+
 ## Rückwärtskompatibilität
 
 - Alte Payloads ohne `aggregated` und mit `pages: ScanResult[]`: `buildDomainSummary` erkennt das (z. B. über `hasStoredAggregated` / `isFullPages`) und berechnet Aggregation wie bisher. Journey/Suche nutzen in dem Fall weiterhin `ds.pages` direkt.
