@@ -10,15 +10,12 @@ const NAV_SLUGS = [
     { slug: 'overview' as const, labelKey: 'domainResult.tabOverview' },
     { slug: 'visual-map' as const, labelKey: 'domainResult.tabVisualMap' },
     { slug: 'list-details' as const, labelKey: 'domainResult.tabListDetails' },
-    { slug: 'ux-cx' as const, labelKey: 'domainResult.tabUxCx' },
-    { slug: 'visual-analysis' as const, labelKey: 'domainResult.tabVisualAnalysis' },
     { slug: 'ux-audit' as const, labelKey: 'domainResult.tabUxAudit' },
     { slug: 'structure' as const, labelKey: 'domainResult.tabStructure' },
     { slug: 'links-seo' as const, labelKey: 'domainResult.tabLinksSeo' },
     { slug: 'infra' as const, labelKey: 'domainResult.tabInfra' },
     { slug: 'generative' as const, labelKey: 'domainResult.tabGenerative' },
     { slug: 'page-topics' as const, labelKey: 'domainResult.tabPageTopics' },
-    { slug: 'journey' as const, labelKey: 'domainResult.tabJourney' },
 ] as const;
 
 export type DomainResultNavProps = {

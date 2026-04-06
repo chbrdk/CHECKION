@@ -4,15 +4,12 @@ import { PATH_DOMAIN } from '@/lib/constants';
 export const DOMAIN_RESULT_NAV_SLUGS = [
     'visual-map',
     'list-details',
-    'ux-cx',
-    'visual-analysis',
     'ux-audit',
     'structure',
     'links-seo',
     'infra',
     'generative',
     'page-topics',
-    'journey',
 ] as const;
 
 export type DomainResultNavSlug = (typeof DOMAIN_RESULT_NAV_SLUGS)[number];
@@ -20,10 +17,13 @@ export type DomainResultNavSlug = (typeof DOMAIN_RESULT_NAV_SLUGS)[number];
 /** Logical section including overview (no extra path segment). */
 export type DomainResultSectionSlug = 'overview' | DomainResultNavSlug;
 
+/** Path segments still accepted for `pathDomainSection` (dashboard / deep links); removed from main nav map to overview. */
+export type DomainPathSectionSlug = DomainResultSectionSlug | 'journey' | 'ux-cx' | 'visual-analysis';
+
 /** Build app route: `/domain/[id]` or `/domain/[id]/[section]` with optional query (restoreJourney, issue filters). */
 export function pathDomainSection(
     id: string,
-    section: DomainResultSectionSlug,
+    section: DomainPathSectionSlug,
     query?: Record<string, string>
 ): string {
     const base = `${PATH_DOMAIN}/${encodeURIComponent(id)}`;

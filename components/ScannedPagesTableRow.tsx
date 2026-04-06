@@ -6,6 +6,7 @@ import { MsqdxTypography, MsqdxChip, MsqdxButton } from '@msqdx/react';
 import { MSQDX_NEUTRAL } from '@msqdx/tokens';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import type { SlimPage } from '@/lib/types';
+import { MSQDX_BUTTON_THEME_ACCENT_SX } from '@/lib/theme-accent';
 
 const tableBorder = `1px solid ${MSQDX_NEUTRAL[200]}`;
 
@@ -72,7 +73,7 @@ export const ScannedPagesTableRow = memo(function ScannedPagesTableRow({
                         variant="text"
                         onClick={handleOpen}
                         aria-label={t('domainResult.openPageAria', { url: page.url })}
-                        sx={{ textTransform: 'none', fontSize: '0.7rem' }}
+                        sx={{ ...MSQDX_BUTTON_THEME_ACCENT_SX, textTransform: 'none', fontSize: '0.7rem' }}
                     >
                         {t('domainResult.openPage')}
                     </MsqdxButton>

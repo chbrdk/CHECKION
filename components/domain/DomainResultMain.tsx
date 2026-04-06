@@ -7,15 +7,12 @@ import { useDomainScan } from '@/context/DomainScanContext';
 import { pathResults } from '@/lib/constants';
 import { DomainResultGenerativeEmpty, DomainResultGenerativeSection } from './DomainResultGenerativeSection';
 import { DomainResultInfraTab } from './DomainResultInfraSection';
-import { DomainResultJourneySection } from './DomainResultJourneySection';
 import { DomainResultPageTopicsSection } from './DomainResultPageTopicsSection';
 import { DomainResultLinksSeoEmpty, DomainResultLinksSeoSection } from './DomainResultLinksSeoSection';
 import { DomainResultListDetailsSection } from './DomainResultListDetailsSection';
 import { DomainResultOverviewSection } from './DomainResultOverviewSection';
 import { DomainResultStructureEmpty, DomainResultStructureSection } from './DomainResultStructureSection';
 import { DomainResultUxAuditEmpty, DomainResultUxAuditSection } from './DomainResultUxAuditSection';
-import { DomainResultUxCxSection } from './DomainResultUxCxSection';
-import { DomainResultVisualAnalysisSection } from './DomainResultVisualAnalysisSection';
 import { DomainResultVisualMapSection } from './DomainResultVisualMapSection';
 import { useI18n } from '@/components/i18n/I18nProvider';
 
@@ -26,26 +23,6 @@ export function DomainResultMain() {
         domainId,
         activeSection,
         result,
-        setResult,
-        summarizing,
-        setSummarizing,
-        summarizeError,
-        setSummarizeError,
-        journeyGoal,
-        setJourneyGoal,
-        journeyLoading,
-        setJourneyLoading,
-        journeyResult,
-        setJourneyResult,
-        journeyError,
-        setJourneyError,
-        journeySaving,
-        setJourneySaving,
-        journeySaved,
-        setJourneySaved,
-        journeySaveName,
-        setJourneySaveName,
-        pages,
         totalPageCount,
         totalSlimRows,
         aggregated,
@@ -114,28 +91,6 @@ export function DomainResultMain() {
                 />
             )}
 
-            {activeSection === 'ux-cx' && (
-                <DomainResultUxCxSection
-                    t={t}
-                    result={result}
-                    summarizing={summarizing}
-                    setSummarizing={setSummarizing}
-                    summarizeError={summarizeError}
-                    setSummarizeError={setSummarizeError}
-                    setResult={setResult}
-                />
-            )}
-
-            {activeSection === 'visual-analysis' && (
-                <DomainResultVisualAnalysisSection
-                    t={t}
-                    domainId={domainId}
-                    domainLinkQuery={domainLinkQuery}
-                    ux={aggregated?.ux ?? null}
-                    onOpenPageUrl={openPageScanUrl}
-                />
-            )}
-
             {activeSection === 'ux-audit' &&
                 (aggregated?.ux ? (
                     <DomainResultUxAuditSection
@@ -188,29 +143,6 @@ export function DomainResultMain() {
                 <DomainResultPageTopicsSection t={t} pageClassification={aggregated?.pageClassification} />
             )}
 
-            {activeSection === 'journey' && (
-                <DomainResultJourneySection
-                    t={t}
-                    domainId={domainId}
-                    domainLinkQuery={domainLinkQuery}
-                    pages={pages}
-                    onOpenPageUrl={openPageScanUrl}
-                    journeyGoal={journeyGoal}
-                    setJourneyGoal={setJourneyGoal}
-                    journeyLoading={journeyLoading}
-                    setJourneyLoading={setJourneyLoading}
-                    journeyResult={journeyResult}
-                    setJourneyResult={setJourneyResult}
-                    journeyError={journeyError}
-                    setJourneyError={setJourneyError}
-                    journeySaving={journeySaving}
-                    setJourneySaving={setJourneySaving}
-                    journeySaved={journeySaved}
-                    setJourneySaved={setJourneySaved}
-                    journeySaveName={journeySaveName}
-                    setJourneySaveName={setJourneySaveName}
-                />
-            )}
         </>
     );
 }

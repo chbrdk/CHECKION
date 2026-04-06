@@ -12,6 +12,7 @@ import {
     DOMAIN_TAB_VIRTUAL_OVERSCAN,
 } from '@/lib/constants';
 import { StructureUrlScrollRow } from '@/components/domain/StructureUrlScrollRow';
+import { THEME_ACCENT_CSS, THEME_ACCENT_TINT_CSS } from '@/lib/theme-accent';
 
 export type DomainResultStructureSectionProps = {
     t: (key: string, values?: Record<string, string>) => string;
@@ -33,7 +34,14 @@ function DomainResultStructureSectionInner({ t, structure, onOpenPageUrl }: Doma
                 <MsqdxChip label={`Seiten mit mehreren H1: ${structure.pagesWithMultipleH1.length}`} size="small" brandColor="pink" />
                 <MsqdxChip label={`Seiten mit übersprungenen Leveln: ${structure.pagesWithSkippedLevels.length}`} size="small" brandColor="yellow" />
                 {structure.pagesWithGoodStructure.length > 0 && (
-                    <MsqdxChip label={`Seiten mit guter Struktur: ${structure.pagesWithGoodStructure.length}`} size="small" brandColor="green" />
+                    <MsqdxChip
+                        label={`Seiten mit guter Struktur: ${structure.pagesWithGoodStructure.length}`}
+                        size="small"
+                        sx={{
+                            bgcolor: `${THEME_ACCENT_TINT_CSS} !important`,
+                            color: `${THEME_ACCENT_CSS} !important`,
+                        }}
+                    />
                 )}
             </Box>
             {structure.pagesWithGoodStructure.length > 0 && structure.pagesWithGoodStructure.length <= 10 && (

@@ -10,6 +10,7 @@ import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { useDomainScan } from '@/context/DomainScanContext';
 import { apiScanDomainSummary, PATH_HOME } from '@/lib/constants';
+import { MSQDX_BUTTON_THEME_ACCENT_SX } from '@/lib/theme-accent';
 import { DomainResultNav } from '@/components/domain/DomainResultNav';
 
 export function DomainResultShell({ children }: { children: React.ReactNode }) {
@@ -32,7 +33,12 @@ export function DomainResultShell({ children }: { children: React.ReactNode }) {
                     <MsqdxTypography variant="h5" sx={{ color: 'var(--color-text-muted-on-light)', textAlign: 'center', maxWidth: 480 }}>
                         {t('domainResult.notFound')}
                     </MsqdxTypography>
-                    <MsqdxButton variant="contained" startIcon={<ArrowLeft size={16} />} onClick={() => router.push(PATH_HOME)}>
+                    <MsqdxButton
+                        variant="contained"
+                        startIcon={<ArrowLeft size={16} />}
+                        onClick={() => router.push(PATH_HOME)}
+                        sx={MSQDX_BUTTON_THEME_ACCENT_SX}
+                    >
                         {t('domainResult.back')}
                     </MsqdxButton>
                 </Box>
@@ -80,7 +86,12 @@ export function DomainResultShell({ children }: { children: React.ReactNode }) {
                     </MsqdxTypography>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 'var(--msqdx-spacing-md)', flexWrap: 'wrap' }}>
-                    <MsqdxButton variant="outlined" startIcon={<ArrowLeft size={16} />} onClick={() => router.push(PATH_HOME)}>
+                    <MsqdxButton
+                        variant="outlined"
+                        startIcon={<ArrowLeft size={16} />}
+                        onClick={() => router.push(PATH_HOME)}
+                        sx={MSQDX_BUTTON_THEME_ACCENT_SX}
+                    >
                         {t('domainResult.back')}
                     </MsqdxButton>
                     <Box sx={{ display: 'inline-flex', gap: 'var(--msqdx-spacing-sm)' }}>

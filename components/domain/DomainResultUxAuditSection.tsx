@@ -3,7 +3,8 @@
 import React, { memo } from 'react';
 import { Box } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard } from '@msqdx/react';
-import { MSQDX_BRAND_PRIMARY, MSQDX_STATUS } from '@msqdx/tokens';
+import { MSQDX_STATUS } from '@msqdx/tokens';
+import { THEME_ACCENT_CSS } from '@/lib/theme-accent';
 import { VirtualScrollList } from '@/components/VirtualScrollList';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import type { AggregatedUx } from '@/lib/domain-aggregation';
@@ -34,7 +35,7 @@ function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl, uxBrokenLinksPr
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2, mb: 2 }}>
                 <Box sx={{ p: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', borderRadius: 1 }}>
                     <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>Ø UX-Score</MsqdxTypography>
-                    <MsqdxTypography variant="h4" sx={{ fontWeight: 700, color: ux.score >= 80 ? MSQDX_BRAND_PRIMARY.green : MSQDX_STATUS.warning.base }}>{ux.score}</MsqdxTypography>
+                    <MsqdxTypography variant="h4" sx={{ fontWeight: 700, color: ux.score >= 80 ? THEME_ACCENT_CSS : MSQDX_STATUS.warning.base }}>{ux.score}</MsqdxTypography>
                 </Box>
                 <Box sx={{ p: 2, border: '1px solid var(--color-secondary-dx-grey-light-tint)', borderRadius: 1 }}>
                     <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>Ø CLS</MsqdxTypography>

@@ -7,6 +7,7 @@ import { MSQDX_BRAND_PRIMARY, MSQDX_NEUTRAL, MSQDX_STATUS, MSQDX_THEME } from '@
 import { ExternalLink } from 'lucide-react';
 import type { AggregatedIssue } from '@/lib/domain-aggregation';
 import { useI18n } from '@/components/i18n/I18nProvider';
+import { THEME_ACCENT_CSS } from '@/lib/theme-accent';
 
 const SEVERITY_CONFIG: Record<string, { label: string; color: string }> = {
     error: { label: 'Error', color: MSQDX_STATUS.error.base },
@@ -108,7 +109,7 @@ export const AggregatedIssueTableRow = memo(function AggregatedIssueTableRow({ i
                         sx={{
                             ml: 0.5,
                             cursor: 'pointer',
-                            color: MSQDX_BRAND_PRIMARY.green,
+                            color: THEME_ACCENT_CSS,
                             textDecoration: 'underline',
                             border: 'none',
                             background: 'none',
@@ -131,7 +132,7 @@ export const AggregatedIssueTableRow = memo(function AggregatedIssueTableRow({ i
                             display: 'inline-flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            color: MSQDX_BRAND_PRIMARY.green,
+                            color: THEME_ACCENT_CSS,
                             padding: 4,
                             borderRadius: 4,
                         }}

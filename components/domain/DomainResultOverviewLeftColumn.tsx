@@ -11,6 +11,12 @@ import type { DomainSummaryApiResponse } from '@/lib/domain-summary';
 import { DOMAIN_TAB_SYSTEMIC_ISSUE_ROW_ESTIMATE_PX, DOMAIN_TAB_VIRTUAL_OVERSCAN } from '@/lib/constants';
 import { pathDomainSection } from '@/lib/domain-result-sections';
 import { SystemicIssueScrollRow } from '@/components/domain/SystemicIssueScrollRow';
+import { THEME_ACCENT_CSS, THEME_ACCENT_TINT_CSS } from '@/lib/theme-accent';
+
+const EEAT_POSITIVE_CHIP_SX = {
+    bgcolor: `${THEME_ACCENT_TINT_CSS} !important`,
+    color: `${THEME_ACCENT_CSS} !important`,
+} as const;
 
 export type DomainResultOverviewLeftColumnProps = {
     t: (key: string, values?: Record<string, string | number>) => string;
@@ -61,7 +67,7 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                             width: 120,
                             height: 120,
                             borderRadius: '50%',
-                            border: `8px solid ${score > 80 ? 'var(--color-secondary-dx-green)' : 'var(--color-secondary-dx-orange)'}`,
+                            border: `8px solid ${score > 80 ? THEME_ACCENT_CSS : 'var(--color-secondary-dx-orange)'}`,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -91,7 +97,7 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                     </Box>
                     {!hasIssues ? (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-md)' }}>
-                            <CheckCircle color="var(--color-secondary-dx-green)" />
+                            <CheckCircle color={THEME_ACCENT_CSS} />
                             <MsqdxTypography>{t('domainResult.noSystemicIssues')}</MsqdxTypography>
                         </Box>
                     ) : (
@@ -145,17 +151,17 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                                     <MsqdxChip
                                         size="small"
                                         label={t('domainResult.eeatImpressum', { count: eeat.trust.pagesWithImpressum, total: eeat.trust.totalPages })}
-                                        brandColor={eeat.trust.pagesWithImpressum > 0 ? 'green' : undefined}
+                                        sx={eeat.trust.pagesWithImpressum > 0 ? EEAT_POSITIVE_CHIP_SX : undefined}
                                     />
                                     <MsqdxChip
                                         size="small"
                                         label={t('domainResult.eeatContact', { count: eeat.trust.pagesWithContact, total: eeat.trust.totalPages })}
-                                        brandColor={eeat.trust.pagesWithContact > 0 ? 'green' : undefined}
+                                        sx={eeat.trust.pagesWithContact > 0 ? EEAT_POSITIVE_CHIP_SX : undefined}
                                     />
                                     <MsqdxChip
                                         size="small"
                                         label={t('domainResult.eeatPrivacy', { count: eeat.trust.pagesWithPrivacy, total: eeat.trust.totalPages })}
-                                        brandColor={eeat.trust.pagesWithPrivacy > 0 ? 'green' : undefined}
+                                        sx={eeat.trust.pagesWithPrivacy > 0 ? EEAT_POSITIVE_CHIP_SX : undefined}
                                     />
                                 </Box>
                             </Box>
@@ -167,12 +173,12 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                                     <MsqdxChip
                                         size="small"
                                         label={t('domainResult.eeatAbout', { count: eeat.experience.pagesWithAbout, total: eeat.experience.totalPages })}
-                                        brandColor={eeat.experience.pagesWithAbout > 0 ? 'green' : undefined}
+                                        sx={eeat.experience.pagesWithAbout > 0 ? EEAT_POSITIVE_CHIP_SX : undefined}
                                     />
                                     <MsqdxChip
                                         size="small"
                                         label={t('domainResult.eeatTeam', { count: eeat.experience.pagesWithTeam, total: eeat.experience.totalPages })}
-                                        brandColor={eeat.experience.pagesWithTeam > 0 ? 'green' : undefined}
+                                        sx={eeat.experience.pagesWithTeam > 0 ? EEAT_POSITIVE_CHIP_SX : undefined}
                                     />
                                     <MsqdxChip
                                         size="small"
@@ -180,7 +186,7 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                                             count: eeat.experience.pagesWithCaseStudyMention,
                                             total: eeat.experience.totalPages,
                                         })}
-                                        brandColor={eeat.experience.pagesWithCaseStudyMention > 0 ? 'green' : undefined}
+                                        sx={eeat.experience.pagesWithCaseStudyMention > 0 ? EEAT_POSITIVE_CHIP_SX : undefined}
                                     />
                                 </Box>
                             </Box>
@@ -192,7 +198,7 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                                     <MsqdxChip
                                         size="small"
                                         label={t('domainResult.eeatAuthorBio', { count: eeat.expertise.pagesWithAuthorBio, total: eeat.expertise.totalPages })}
-                                        brandColor={eeat.expertise.pagesWithAuthorBio > 0 ? 'green' : undefined}
+                                        sx={eeat.expertise.pagesWithAuthorBio > 0 ? EEAT_POSITIVE_CHIP_SX : undefined}
                                     />
                                     <MsqdxChip
                                         size="small"
@@ -200,7 +206,7 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                                             count: eeat.expertise.pagesWithArticleAuthor,
                                             total: eeat.expertise.totalPages,
                                         })}
-                                        brandColor={eeat.expertise.pagesWithArticleAuthor > 0 ? 'green' : undefined}
+                                        sx={eeat.expertise.pagesWithArticleAuthor > 0 ? EEAT_POSITIVE_CHIP_SX : undefined}
                                     />
                                     <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
                                         {t('domainResult.eeatAvgCitations', { avg: eeat.expertise.avgCitationsPerPage.toFixed(1) })}
