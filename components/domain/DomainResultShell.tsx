@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Box, CircularProgress } from '@mui/material';
 import { MsqdxTypography, MsqdxButton } from '@msqdx/react';
@@ -11,22 +10,7 @@ import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { useDomainScan } from '@/context/DomainScanContext';
 import { apiScanDomainSummary, PATH_HOME } from '@/lib/constants';
-import { pathDomainSection } from '@/lib/domain-result-sections';
-
-const NAV_SLUGS = [
-    { slug: 'overview' as const, labelKey: 'domainResult.tabOverview' },
-    { slug: 'visual-map' as const, labelKey: 'domainResult.tabVisualMap' },
-    { slug: 'list-details' as const, labelKey: 'domainResult.tabListDetails' },
-    { slug: 'ux-cx' as const, labelKey: 'domainResult.tabUxCx' },
-    { slug: 'visual-analysis' as const, labelKey: 'domainResult.tabVisualAnalysis' },
-    { slug: 'ux-audit' as const, labelKey: 'domainResult.tabUxAudit' },
-    { slug: 'structure' as const, labelKey: 'domainResult.tabStructure' },
-    { slug: 'links-seo' as const, labelKey: 'domainResult.tabLinksSeo' },
-    { slug: 'infra' as const, labelKey: 'domainResult.tabInfra' },
-    { slug: 'generative' as const, labelKey: 'domainResult.tabGenerative' },
-    { slug: 'page-topics' as const, labelKey: 'domainResult.tabPageTopics' },
-    { slug: 'journey' as const, labelKey: 'domainResult.tabJourney' },
-] as const;
+import { DomainResultNav } from '@/components/domain/DomainResultNav';
 
 export function DomainResultShell({ children }: { children: React.ReactNode }) {
     const { t } = useI18n();
@@ -117,47 +101,7 @@ export function DomainResultShell({ children }: { children: React.ReactNode }) {
                 </Box>
             </Box>
 
-            <Box
-                sx={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: 0.5,
-                    mb: 'var(--msqdx-spacing-lg)',
-                    pb: 1,
-                    borderBottom: '1px solid var(--color-secondary-dx-grey-light-tint)',
-                    rowGap: 0.75,
-                }}
-            >
-                {NAV_SLUGS.map(({ slug, labelKey }) => {
-                    const href = pathDomainSection(
-                        domainId,
-                        slug,
-                        Object.keys(domainLinkQuery).length ? domainLinkQuery : undefined
-                    );
-                    const selected = activeSection === slug;
-                    return (
-                        <Link key={slug} href={href} style={{ textDecoration: 'none' }}>
-                            <Box
-                                component="span"
-                                sx={{
-                                    display: 'inline-block',
-                                    px: 1.25,
-                                    py: 0.5,
-                                    borderRadius: 1,
-                                    fontSize: '0.875rem',
-                                    fontWeight: selected ? 600 : 400,
-                                    color: selected ? 'var(--color-theme-accent)' : 'var(--color-text-on-light)',
-                                    bgcolor: selected ? 'var(--color-secondary-dx-grey-light-tint)' : 'transparent',
-                                    border: selected ? '1px solid var(--color-theme-accent)' : '1px solid transparent',
-                                    '&:hover': { bgcolor: 'var(--color-secondary-dx-grey-light-tint)' },
-                                }}
-                            >
-                                {t(labelKey)}
-                            </Box>
-                        </Link>
-                    );
-                })}
-            </Box>
+            <DomainResultNav domainId={domainId} activeSection={activeSection} domainLinkQuery={domainLinkQuery} />
 
             {children}
         </Box>

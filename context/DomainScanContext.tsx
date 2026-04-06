@@ -125,6 +125,9 @@ export function DomainScanProvider({
             };
         },
         enabled: Boolean(domainId?.trim()),
+        /** Reduces full-page flicker when switching back to the tab; invalidate manually or rely on staleTime. */
+        staleTime: 60_000,
+        refetchOnWindowFocus: false,
     });
 
     const result = bundleQuery.data ?? null;

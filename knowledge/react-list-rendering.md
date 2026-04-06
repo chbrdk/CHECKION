@@ -23,3 +23,6 @@ Nicht die gesamte App mit `React.memo` ausstatten. **Priorität:** lange Listen,
 - `UxBrokenLinkScrollRow.tsx` — UX Audit kaputte Links
 - `VisualUxUrlCountScrollRow.tsx` — Visuelle Analyse (Focus / Touch Targets)
 - `components/domain/DomainResultOverviewSection.tsx` — `useMemo` für `slimPaginationFooter`
+- `DomainResultOverviewLeftColumn.tsx` — linke Overview-Spalte (Score, Issues, E-E-A-T) per `memo` von Slim-Pages-Query entkoppelt
+- `DomainResultNav.tsx` — Tab-Leiste nur `memo` + `useI18n`, nicht `DomainScanContext` (weniger Flackern bei Journey/Refetch)
+- `DomainScanContext`: Bundle-Query `staleTime` / `refetchOnWindowFocus: false`; Slim-Pages in Overview ebenfalls `refetchOnWindowFocus: false`

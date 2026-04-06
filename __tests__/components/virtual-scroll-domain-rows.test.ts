@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { DomainResultNav } from '@/components/domain/DomainResultNav';
+import { DomainResultOverviewLeftColumn } from '@/components/domain/DomainResultOverviewLeftColumn';
 import { GenerativePageScrollRow } from '@/components/domain/GenerativePageScrollRow';
 import { StructureUrlScrollRow } from '@/components/domain/StructureUrlScrollRow';
 import { SystemicIssueScrollRow } from '@/components/domain/SystemicIssueScrollRow';
@@ -13,5 +15,7 @@ describe('VirtualScrollList memo row components', () => {
         expect(StructureUrlScrollRow).toBeDefined();
         expect(UxBrokenLinkScrollRow).toBeDefined();
         expect(VisualUxUrlCountScrollRow).toBeDefined();
+        expect(DomainResultNav).toBeDefined();
+        expect(DomainResultOverviewLeftColumn).toBeDefined();
     });
 });
