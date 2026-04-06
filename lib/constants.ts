@@ -402,6 +402,12 @@ export const DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX = 52;
 export const DOMAIN_TAB_SEO_PAGE_ROW_ESTIMATE_PX = 76;
 /** Extra rows above/below viewport when virtualizing domain tab lists. */
 export const DOMAIN_TAB_VIRTUAL_OVERSCAN = 12;
+/** Virtual chip lists (`VirtualChipList`): one chip per row when scroll mode; ~MsqdxChip small + gap. */
+export const VIRTUAL_CHIP_LIST_ROW_ESTIMATE_PX = 30;
+export const VIRTUAL_CHIP_LIST_OVERSCAN = 8;
+export const VIRTUAL_CHIP_LIST_MAX_HEIGHT_PX = 260;
+/** At or above this item count, use virtualization; below, plain flex-wrap (cheap for small lists). */
+export const VIRTUAL_CHIP_LIST_INLINE_THRESHOLD = 16;
 /** Domain overview: systemic issue cards — row height estimate (px) for virtual list. */
 export const DOMAIN_TAB_SYSTEMIC_ISSUE_ROW_ESTIMATE_PX = 108;
 /** Domain UX-Audit tab: max. kaputte Links in der Vorschau-Liste (virtualisiert). */

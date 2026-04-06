@@ -41,6 +41,10 @@ import {
     DOMAIN_ISSUES_PAGE_SIZE,
     HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON,
     CACHE_REVALIDATE_DOMAIN,
+    VIRTUAL_CHIP_LIST_ROW_ESTIMATE_PX,
+    VIRTUAL_CHIP_LIST_OVERSCAN,
+    VIRTUAL_CHIP_LIST_MAX_HEIGHT_PX,
+    VIRTUAL_CHIP_LIST_INLINE_THRESHOLD,
 } from '@/lib/constants';
 
 describe('Path constants', () => {
@@ -186,6 +190,10 @@ describe('Domain tab virtual list constants', () => {
         expect(DOMAIN_UX_BROKEN_LINKS_PREVIEW).toBeGreaterThan(0);
         expect(DOMAIN_AGGREGATED_ISSUES_ROW_ESTIMATE_PX).toBeGreaterThan(0);
         expect(SCAN_ISSUE_LIST_ROW_FALLBACK_PX).toBeGreaterThan(0);
+        expect(VIRTUAL_CHIP_LIST_ROW_ESTIMATE_PX).toBeGreaterThan(0);
+        expect(VIRTUAL_CHIP_LIST_OVERSCAN).toBeGreaterThan(0);
+        expect(VIRTUAL_CHIP_LIST_MAX_HEIGHT_PX).toBeGreaterThan(0);
+        expect(VIRTUAL_CHIP_LIST_INLINE_THRESHOLD).toBeGreaterThan(1);
     });
 });
 

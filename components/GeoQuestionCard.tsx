@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
     LineChart,
     Line,
@@ -15,6 +15,7 @@ import { Box } from '@mui/material';
 import { MsqdxTypography, MsqdxCard, MsqdxChip } from '@msqdx/react';
 import { MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
 import { THEME_ACCENT_CSS, msqdxChipThemeAccentSx } from '@/lib/theme-accent';
+import { VirtualChipList } from '@/components/VirtualChipList';
 
 const CHART_COLORS = [
     MSQDX_BRAND_PRIMARY?.green ?? '#22c55e',
@@ -81,6 +82,19 @@ export function GeoQuestionCard({ queryText, queryIndex, points, targetDomain, c
     const allDomains = useMemo(
         () => [targetDomain, ...competitorDomains],
         [targetDomain, competitorDomains]
+    );
+
+    const renderModelChip = useCallback(
+        (modelId: string, index: number) => (
+            <MsqdxChip
+                label={modelId}
+                variant={localModelIndex === index ? 'filled' : 'outlined'}
+                size="small"
+                onClick={() => setLocalModelIndex(index)}
+                sx={{ ...msqdxChipThemeAccentSx(localModelIndex === index), fontSize: 10 }}
+            />
+        ),
+        [localModelIndex]
     );
 
     const { chartData, maxPos } = useMemo(() => {
@@ -207,18 +221,12 @@ export function GeoQuestionCard({ queryText, queryIndex, points, targetDomain, c
                         ))}
                     </Box>
                     {hasCompetitors && modelIds.length > 0 && !isModelControlled && (
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                            {modelIds.map((modelId, idx) => (
-                                <MsqdxChip
-                                    key={modelId}
-                                    label={modelId}
-                                    variant={localModelIndex === idx ? 'filled' : 'outlined'}
-                                    size="small"
-                                    onClick={() => setLocalModelIndex(idx)}
-                                    sx={{ ...msqdxChipThemeAccentSx(localModelIndex === idx), fontSize: 10 }}
-                                />
-                            ))}
-                        </Box>
+                        <VirtualChipList
+                            items={modelIds}
+                            getItemKey={(modelId, index) => `${modelId}-${index}`}
+                            renderChip={renderModelChip}
+                            maxHeight={200}
+                        />
                     )}
                 </Box>
             </Box>

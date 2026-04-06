@@ -23,6 +23,7 @@ import {
 } from '@/lib/constants';
 import { MSQDX_BUTTON_THEME_ACCENT_SX, msqdxChipThemeAccentSx } from '@/lib/theme-accent';
 import { GeoQuestionCard } from '@/components/GeoQuestionCard';
+import { VirtualChipList } from '@/components/VirtualChipList';
 import type { GeoQuestionHistoryPoint } from '@/components/GeoQuestionCard';
 
 interface GeoQuestionHistoryItem {
@@ -170,6 +171,26 @@ export default function ProjectGeoPage() {
             }
         },
         [id, geoQueries, loadProject]
+    );
+
+    const renderGeoModelChip = useCallback(
+        (modelId: string) => (
+            <MsqdxChip
+                label={modelId}
+                variant={effectiveModelId === modelId ? 'filled' : 'outlined'}
+                size="small"
+                onClick={() => setSelectedModelId(modelId)}
+                sx={{ ...msqdxChipThemeAccentSx(effectiveModelId === modelId), fontSize: 11 }}
+            />
+        ),
+        [effectiveModelId]
+    );
+
+    const renderGeoQueryChip = useCallback(
+        (query: string) => (
+            <MsqdxChip label={query} onDelete={() => void handleRemoveGeoQuery(query)} size="small" sx={{ mr: 0.5, mb: 0.5 }} />
+        ),
+        [handleRemoveGeoQuery]
     );
 
     const handleSuggestGeoQueries = useCallback(async () => {
@@ -348,18 +369,7 @@ export default function ProjectGeoPage() {
                             <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
                                 {t('geoEeat.competitiveModelLabel', { model: '' }).replace(': ', '')}
                             </MsqdxTypography>
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                {allModelIds.map((modelId) => (
-                                    <MsqdxChip
-                                        key={modelId}
-                                        label={modelId}
-                                        variant={effectiveModelId === modelId ? 'filled' : 'outlined'}
-                                        size="small"
-                                        onClick={() => setSelectedModelId(modelId)}
-                                        sx={{ ...msqdxChipThemeAccentSx(effectiveModelId === modelId), fontSize: 11 }}
-                                    />
-                                ))}
-                            </Box>
+                            <VirtualChipList items={allModelIds} getItemKey={(modelId) => modelId} renderChip={renderGeoModelChip} />
                         </Box>
                     )}
 
@@ -470,17 +480,7 @@ export default function ProjectGeoPage() {
                             {t('projects.emptyGeoQueries')}
                         </MsqdxTypography>
                     ) : (
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                            {geoQueries.map((query) => (
-                                <MsqdxChip
-                                    key={query}
-                                    label={query}
-                                    onDelete={() => handleRemoveGeoQuery(query)}
-                                    size="small"
-                                    sx={{ mr: 0.5, mb: 0.5 }}
-                                />
-                            ))}
-                        </Box>
+                        <VirtualChipList items={geoQueries} getItemKey={(query) => query} renderChip={renderGeoQueryChip} />
                     )}
                 </DialogContent>
             </Dialog>

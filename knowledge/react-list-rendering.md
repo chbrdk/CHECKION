@@ -16,7 +16,8 @@ Nicht die gesamte App mit `React.memo` ausstatten. **Priorität:** lange Listen,
 - `components/ScannedPagesTable.tsx` + `ScannedPagesTableRow.tsx`
 - `components/DomainAggregatedIssueList.tsx` + `AggregatedIssueTableRow.tsx`
 - `components/ScanIssueList.tsx` + `ScanIssueRow.tsx` (bereits memo)
-- `components/domain/SeoDensityScrollRow.tsx` — Links & SEO
+- `components/domain/SeoDensityScrollRow.tsx` — Links & SEO (bekommt `t` vom Parent, kein `useI18n` pro Zeile)
+- `DomainResultLinksSeoSection.tsx` — `DomainResultSeoPanel` (Query + VirtualScrollList) und `DomainResultLinksPanel` getrennt per `memo`, damit SEO-Fetch die Links-Karte nicht neu rendert
 - `SystemicIssueScrollRow.tsx` — Overview Systemic Issues
 - `GenerativePageScrollRow.tsx` — GEO pro Seite
 - `StructureUrlScrollRow.tsx` — Struktur-Tab (mehrere H1 / übersprungene Level)
@@ -26,3 +27,4 @@ Nicht die gesamte App mit `React.memo` ausstatten. **Priorität:** lange Listen,
 - `DomainResultOverviewLeftColumn.tsx` — linke Overview-Spalte (Score, Issues, E-E-A-T) per `memo` von Slim-Pages-Query entkoppelt
 - `DomainResultNav.tsx` — Tab-Leiste nur `memo` + `useI18n`, nicht `DomainScanContext` (weniger Flackern bei Journey/Refetch)
 - `DomainScanContext`: Bundle-Query `staleTime` / `refetchOnWindowFocus: false`; Slim-Pages in Overview ebenfalls `refetchOnWindowFocus: false`
+- `VirtualChipList.tsx` — viele `MsqdxChip` in einem Bereich: unter `VIRTUAL_CHIP_LIST_INLINE_THRESHOLD` weiter flex-wrap, darüber vertikale Virtualisierung (`VirtualScrollList`); Konstanten in `lib/constants.ts`

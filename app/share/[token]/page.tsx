@@ -22,6 +22,8 @@ import {
 } from '@/lib/constants';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { DomainResultPageTopicsCard } from '@/components/domain/DomainResultPageTopicsCard';
+import { VirtualChipList } from '@/components/VirtualChipList';
+import type { CrossPageKeyword } from '@/lib/domain-aggregation';
 
 /** Journey share payload (from GET /api/share/[token] when type=journey). */
 export interface ShareJourneyData {
@@ -376,6 +378,16 @@ function ShareDomainContent({ data, token, accessToken }: { data: DomainSummaryR
     const totalPages = Math.max(1, Math.ceil(pages.length / SHARE_DOMAIN_PAGES_PAGE_SIZE));
     const paginatedPages = pages.slice((listPage - 1) * SHARE_DOMAIN_PAGES_PAGE_SIZE, listPage * SHARE_DOMAIN_PAGES_PAGE_SIZE);
 
+    const renderShareSeoKeywordChip = useCallback((k: CrossPageKeyword) => {
+        return (
+            <MsqdxChip
+                label={`${k.keyword} (${k.totalCount})`}
+                size="small"
+                sx={{ fontSize: '0.7rem', bgcolor: alpha(STATUS.good, 0.1), color: STATUS.good }}
+            />
+        );
+    }, []);
+
     const openPageDetail = async (pageId: string) => {
         setLoadingPageId(pageId);
         setLoadingDetail(true);
@@ -487,10 +499,12 @@ function ShareDomainContent({ data, token, accessToken }: { data: DomainSummaryR
                     {agg.seo.crossPageKeywords.length > 0 && (
                         <Box>
                             <MsqdxTypography variant="caption" sx={{ color: STATUS.neutral }}>Top-Keywords (domainweit)</MsqdxTypography>
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
-                                {agg.seo.crossPageKeywords.slice(0, 10).map((k) => (
-                                    <MsqdxChip key={k.keyword} label={`${k.keyword} (${k.totalCount})`} size="small" sx={{ fontSize: '0.7rem', bgcolor: alpha(STATUS.good, 0.1), color: STATUS.good }} />
-                                ))}
+                            <Box sx={{ mt: 0.5 }}>
+                                <VirtualChipList
+                                    items={agg.seo.crossPageKeywords}
+                                    getItemKey={(k) => k.keyword}
+                                    renderChip={renderShareSeoKeywordChip}
+                                />
                             </Box>
                         </Box>
                     )}

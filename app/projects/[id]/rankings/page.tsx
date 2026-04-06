@@ -25,6 +25,7 @@ import {
 import { SERP_MAIN_MARKETS } from '@/lib/serp-markets';
 import { MSQDX_BUTTON_THEME_ACCENT_SX, THEME_ACCENT_CSS, msqdxChipThemeAccentSx } from '@/lib/theme-accent';
 import { RankTrackingChart } from '@/components/RankTrackingChart';
+import { VirtualChipList } from '@/components/VirtualChipList';
 
 interface RankKeywordItem {
     id: string;
@@ -181,6 +182,20 @@ export default function ProjectRankingsPage() {
             return next;
         });
     }, []);
+
+    const renderSuggestedKeywordChip = useCallback(
+        (kw: string) => (
+            <MsqdxChip
+                label={kw}
+                onClick={() => handleToggleSuggestedKeyword(kw)}
+                color={selectedSuggestedKeywords.has(kw) ? 'primary' : 'default'}
+                variant={selectedSuggestedKeywords.has(kw) ? 'filled' : 'outlined'}
+                size="small"
+                sx={{ mb: 0.5, ...msqdxChipThemeAccentSx(selectedSuggestedKeywords.has(kw)) }}
+            />
+        ),
+        [handleToggleSuggestedKeyword, selectedSuggestedKeywords]
+    );
 
     const handleAddSelectedKeywords = useCallback(async () => {
         if (!id || !project?.domain || selectedSuggestedKeywords.size === 0) return;
@@ -354,18 +369,8 @@ export default function ProjectRankingsPage() {
                             <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
                                 {t('projects.suggestedKeywords')}
                             </MsqdxTypography>
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
-                                {suggestedKeywords.map((kw) => (
-                                    <MsqdxChip
-                                        key={kw}
-                                        label={kw}
-                                        onClick={() => handleToggleSuggestedKeyword(kw)}
-                                        color={selectedSuggestedKeywords.has(kw) ? 'primary' : 'default'}
-                                        variant={selectedSuggestedKeywords.has(kw) ? 'filled' : 'outlined'}
-                                        size="small"
-                                        sx={{ mb: 0.5, ...msqdxChipThemeAccentSx(selectedSuggestedKeywords.has(kw)) }}
-                                    />
-                                ))}
+                            <Box sx={{ mb: 1 }}>
+                                <VirtualChipList items={suggestedKeywords} getItemKey={(kw) => kw} renderChip={renderSuggestedKeywordChip} />
                             </Box>
                             <MsqdxButton
                                 variant="contained"

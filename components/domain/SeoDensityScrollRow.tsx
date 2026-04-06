@@ -4,18 +4,23 @@ import React, { memo, useCallback } from 'react';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import { MsqdxTypography, MsqdxChip } from '@msqdx/react';
 import { ExternalLink } from 'lucide-react';
-import { useI18n } from '@/components/i18n/I18nProvider';
 import type { PageSeoSummary } from '@/lib/domain-aggregation';
 
 export type SeoDensityScrollRowProps = {
     row: PageSeoSummary;
     locale: string;
     onOpenPageUrl: (url: string) => void;
+    /** Passed from parent so virtualized rows do not each subscribe to i18n context. */
+    t: (key: string, values?: Record<string, string | number>) => string;
 };
 
 /** Memoized row for VirtualScrollList — scroll position updates skip re-rendering unchanged rows. */
-export const SeoDensityScrollRow = memo(function SeoDensityScrollRow({ row, locale, onOpenPageUrl }: SeoDensityScrollRowProps) {
-    const { t } = useI18n();
+export const SeoDensityScrollRow = memo(function SeoDensityScrollRow({
+    row,
+    locale,
+    onOpenPageUrl,
+    t,
+}: SeoDensityScrollRowProps) {
     const open = useCallback(() => onOpenPageUrl(row.url), [onOpenPageUrl, row.url]);
     const lc = locale === 'en' ? 'en-US' : 'de-DE';
 
