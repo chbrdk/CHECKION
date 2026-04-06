@@ -9,6 +9,7 @@ import { InfoTooltip } from '@/components/InfoTooltip';
 import type { AggregatedUx } from '@/lib/domain-aggregation';
 import { DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX, DOMAIN_TAB_VIRTUAL_OVERSCAN } from '@/lib/constants';
 import { pathDomainSection } from '@/lib/domain-result-sections';
+import { VisualUxUrlCountScrollRow } from '@/components/domain/VisualUxUrlCountScrollRow';
 
 export type DomainResultVisualAnalysisSectionProps = {
     t: (key: string) => string;
@@ -46,14 +47,12 @@ function DomainResultVisualAnalysisSectionInner({ t, domainId, domainLinkQuery, 
                                 overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
                                 getItemKey={(row) => row.url}
                                 renderItem={({ url, count }) => (
-                                    <MsqdxButton
-                                        size="small"
-                                        variant="outlined"
-                                        onClick={() => onOpenPageUrl(url)}
-                                        sx={{ textTransform: 'none', display: 'block', width: '100%', justifyContent: 'flex-start', mb: 0.5 }}
-                                    >
-                                        {url} ({count})
-                                    </MsqdxButton>
+                                    <VisualUxUrlCountScrollRow
+                                        variant="focus"
+                                        url={url}
+                                        count={count}
+                                        onOpenPageUrl={onOpenPageUrl}
+                                    />
                                 )}
                             />
                         </Box>
@@ -68,14 +67,12 @@ function DomainResultVisualAnalysisSectionInner({ t, domainId, domainLinkQuery, 
                                 overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
                                 getItemKey={(row) => row.url}
                                 renderItem={({ url, count }) => (
-                                    <MsqdxButton
-                                        size="small"
-                                        variant="outlined"
-                                        onClick={() => onOpenPageUrl(url)}
-                                        sx={{ textTransform: 'none', display: 'block', width: '100%', justifyContent: 'flex-start', mb: 0.5 }}
-                                    >
-                                        {url} ({count} Probleme)
-                                    </MsqdxButton>
+                                    <VisualUxUrlCountScrollRow
+                                        variant="tap"
+                                        url={url}
+                                        count={count}
+                                        onOpenPageUrl={onOpenPageUrl}
+                                    />
                                 )}
                             />
                         </Box>

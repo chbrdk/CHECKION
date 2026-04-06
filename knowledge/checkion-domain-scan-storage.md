@@ -90,6 +90,8 @@ Für die **Domain-Ergebnisseite** (`/domain/[id]`) gilt ein klarer Lese-Pfad ohn
 
 Legacy **`GET .../summary?light=1`** bleibt für andere Clients nutzbar; die eingebettete App bevorzugt **`/bundle`**.
 
+**UI (Flackern / verschwindende Zeilen):** In Flex-Layouts brauchen scrollende Bereiche mit `@tanstack/react-virtual` typischerweise **`minHeight: 0`** (und oft **`minWidth: 0`** neben `flex: 1`), sonst kann die Scroll-Container-Höhe je nach Viewport unstabil werden. TanStack Query: bei Seitenwechsel **`placeholderData: keepPreviousData`**, damit die Tabelle nicht kurz leer wird; Ladeindikator nur beim **ersten** Pending ohne Zeilen, nicht bei jedem `isFetching`.
+
 ## Rückwärtskompatibilität
 
 - Alte Payloads ohne `aggregated` und mit `pages: ScanResult[]`: `buildDomainSummary` erkennt das (z. B. über `hasStoredAggregated` / `isFullPages`) und berechnet Aggregation wie bisher. Journey/Suche nutzen in dem Fall weiterhin `ds.pages` direkt.

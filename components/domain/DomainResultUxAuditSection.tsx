@@ -12,6 +12,7 @@ import {
     DOMAIN_TAB_VIRTUAL_OVERSCAN,
     DOMAIN_UX_BROKEN_LINKS_PREVIEW,
 } from '@/lib/constants';
+import { UxBrokenLinkScrollRow } from '@/components/domain/UxBrokenLinkScrollRow';
 
 export type DomainResultUxAuditSectionProps = {
     t: (key: string) => string;
@@ -112,11 +113,7 @@ function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl, uxBrokenLinksPr
                         estimateSize={DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX}
                         overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
                         getItemKey={(l, i) => `${l.href}|${l.pageUrl}|${l.status}|${i}`}
-                        renderItem={(l) => (
-                            <MsqdxTypography variant="caption" sx={{ display: 'block', py: 0.25 }}>
-                                {l.href} → {l.pageUrl} (HTTP {l.status})
-                            </MsqdxTypography>
-                        )}
+                        renderItem={(l) => <UxBrokenLinkScrollRow link={l} />}
                     />
                     {ux.brokenLinks.length > DOMAIN_UX_BROKEN_LINKS_PREVIEW && (
                         <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'var(--color-text-muted-on-light)' }}>

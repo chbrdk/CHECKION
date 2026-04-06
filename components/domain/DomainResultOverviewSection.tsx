@@ -1,6 +1,6 @@
 'use client';
 
-import React, { memo, useCallback, useState } from 'react';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Box, CircularProgress } from '@mui/material';
 import {
@@ -8,8 +8,8 @@ import {
     MsqdxCard,
     MsqdxChip,
 } from '@msqdx/react';
-import { AlertCircle, CheckCircle } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { CheckCircle } from 'lucide-react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { VirtualScrollList } from '@/components/VirtualScrollList';
 import { RemotePaginationBar } from '@/components/RemotePaginationBar';
 import { InfoTooltip } from '@/components/InfoTooltip';
@@ -24,6 +24,7 @@ import {
 } from '@/lib/constants';
 import { pathDomainSection } from '@/lib/domain-result-sections';
 import type { ScannedPagesSortKey } from '@/components/ScannedPagesTable';
+import { SystemicIssueScrollRow } from '@/components/domain/SystemicIssueScrollRow';
 
 const ScannedPagesTable = dynamic(
     () => import('@/components/ScannedPagesTable').then((m) => ({ default: m.ScannedPagesTable })),
@@ -91,6 +92,7 @@ function DomainResultOverviewSectionInner({
             return res.json() as Promise<{ data?: SlimPage[]; total?: number }>;
         },
         enabled: embeddedPages === null && Boolean(domainId),
+        placeholderData: keepPreviousData,
     });
 
     const tablePages: SlimPage[] =
@@ -100,23 +102,48 @@ function DomainResultOverviewSectionInner({
         slimQuery.data?.total ??
         totalSlimRows ??
         totalPageCount;
-    const slimLoading = embeddedPages === null && slimQuery.isFetching;
+    const hasSlimRows = tablePages.length > 0;
+    /** Erstes Laden ohne Zeilen: Placeholder greift bei Seitenwechsel — kein Leeren der Tabelle. */
+    const slimInitialLoading = embeddedPages === null && slimQuery.isPending && !hasSlimRows;
+    const slimRefetching = embeddedPages === null && slimQuery.isFetching && !slimQuery.isPending;
 
-    const paginationBar =
-        embeddedPages === null ? (
-            <RemotePaginationBar
-                page={pageIndex}
-                pageSize={DOMAIN_SLIM_PAGES_PAGE_SIZE}
-                total={remoteTotal}
-                loading={slimLoading}
-                onPageChange={setPageIndex}
-                labels={{ prev: t('share.back'), next: t('share.next') }}
-            />
-        ) : null;
+    const slimPaginationFooter = useMemo(
+        () => (
+            <>
+                {embeddedPages === null ? (
+                    <RemotePaginationBar
+                        page={pageIndex}
+                        pageSize={DOMAIN_SLIM_PAGES_PAGE_SIZE}
+                        total={remoteTotal}
+                        loading={slimRefetching}
+                        onPageChange={setPageIndex}
+                        labels={{ prev: t('share.back'), next: t('share.next') }}
+                    />
+                ) : null}
+                <MsqdxTypography
+                    variant="caption"
+                    sx={{ color: 'var(--color-text-muted-on-light)', fontSize: '0.7rem', display: 'block', mt: 0.5 }}
+                >
+                    {embeddedPages !== null
+                        ? `${tablePages.length.toLocaleString()} ${t('domainResult.pagesScanned')}`
+                        : `${remoteTotal.toLocaleString()} ${t('domainResult.pagesScanned')}`}
+                </MsqdxTypography>
+            </>
+        ),
+        [embeddedPages, pageIndex, remoteTotal, slimRefetching, tablePages.length, t]
+    );
 
     return (
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 'var(--msqdx-spacing-md)' }}>
-            <Box sx={{ flex: '0 0 350px' }}>
+        <Box
+            sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                gap: 'var(--msqdx-spacing-md)',
+                minHeight: 0,
+                alignItems: 'flex-start',
+            }}
+        >
+            <Box sx={{ flex: '0 0 350px', minWidth: 0 }}>
                 <MsqdxCard variant="flat" sx={{ bgcolor: 'var(--color-card-bg)', p: 'var(--msqdx-spacing-md)', borderRadius: 'var(--msqdx-radius-sm)', border: '1px solid var(--color-secondary-dx-grey-light-tint)', mb: 'var(--msqdx-spacing-md)' }}>
                     <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-md)' }}>
                         <MsqdxTypography variant="h6">{t('domainResult.domainScore')}</MsqdxTypography>
@@ -162,28 +189,7 @@ function DomainResultOverviewSectionInner({
                                 overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
                                 ariaLabel={t('domainResult.systemicIssues')}
                                 getItemKey={(issue, idx) => `${issue.issueId}-${idx}`}
-                                renderItem={(issue) => (
-                                    <Box
-                                        sx={{
-                                            p: 'var(--msqdx-spacing-md)',
-                                            mb: 'var(--msqdx-spacing-md)',
-                                            border: '1px solid var(--color-secondary-dx-pink-tint)',
-                                            borderRadius: 'var(--msqdx-radius-xs)',
-                                            backgroundColor: 'var(--color-secondary-dx-pink-tint)',
-                                        }}
-                                    >
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-xs)' }}>
-                                            <AlertCircle color="var(--color-secondary-dx-pink)" size={20} />
-                                            <MsqdxTypography variant="subtitle1" sx={{ color: 'var(--color-secondary-dx-pink)' }}>
-                                                {issue.title}
-                                            </MsqdxTypography>
-                                            <MsqdxChip label={t('domainResult.issuePagesCount', { count: issue.count })} size="small" brandColor="pink" />
-                                        </Box>
-                                        <MsqdxTypography variant="body2" sx={{ mb: 'var(--msqdx-spacing-xs)' }}>
-                                            {t('domainResult.fixingRuleAffects', { issueId: issue.issueId, count: issue.count })}
-                                        </MsqdxTypography>
-                                    </Box>
-                                )}
+                                renderItem={(issue) => <SystemicIssueScrollRow issue={issue} t={t} />}
                             />
                         )}
                     </MsqdxCard>
@@ -246,38 +252,40 @@ function DomainResultOverviewSectionInner({
                 )}
             </Box>
 
-            <Box sx={{ flex: 1 }}>
-                <MsqdxCard variant="flat" sx={{ bgcolor: 'var(--color-card-bg)', p: 'var(--msqdx-spacing-md)', borderRadius: 'var(--msqdx-radius-sm)', border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
+            <Box sx={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                <MsqdxCard
+                    variant="flat"
+                    sx={{
+                        bgcolor: 'var(--color-card-bg)',
+                        p: 'var(--msqdx-spacing-md)',
+                        borderRadius: 'var(--msqdx-radius-sm)',
+                        border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                        minHeight: 0,
+                        display: 'flex',
+                        flexDirection: 'column',
+                    }}
+                >
                     <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-md)' }}>
                         <MsqdxTypography variant="h6">{t('domainResult.scannedPages')}</MsqdxTypography>
                         <InfoTooltip title={t('info.scannedPages')} ariaLabel={t('common.info')} />
                     </Box>
-                    {slimLoading && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                            <CircularProgress size={20} sx={{ color: 'var(--color-theme-accent)' }} />
-                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                {t('common.loading')}
-                            </MsqdxTypography>
-                        </Box>
-                    )}
-                    <ScannedPagesTable
-                        pages={tablePages}
-                        onPageClick={onScannedPageOpen}
-                        serverSort={embeddedPages === null}
-                        sortKey={sortKey}
-                        sortDir={sortDir}
-                        onSortChange={embeddedPages === null ? handleServerSort : undefined}
-                        paginationFooter={
-                            <>
-                                {paginationBar}
-                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', fontSize: '0.7rem', display: 'block', mt: 0.5 }}>
-                                    {embeddedPages !== null
-                                        ? `${tablePages.length.toLocaleString()} ${t('domainResult.pagesScanned')}`
-                                        : `${remoteTotal.toLocaleString()} ${t('domainResult.pagesScanned')}`}
-                                </MsqdxTypography>
-                            </>
-                        }
-                    />
+                    <Box sx={{ flex: 1, minHeight: 0, minWidth: 0 }}>
+                        {slimInitialLoading ? (
+                            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 6 }}>
+                                <CircularProgress size={28} sx={{ color: 'var(--color-theme-accent)' }} />
+                            </Box>
+                        ) : (
+                            <ScannedPagesTable
+                                pages={tablePages}
+                                onPageClick={onScannedPageOpen}
+                                serverSort={embeddedPages === null}
+                                sortKey={sortKey}
+                                sortDir={sortDir}
+                                onSortChange={embeddedPages === null ? handleServerSort : undefined}
+                                paginationFooter={slimPaginationFooter}
+                            />
+                        )}
+                    </Box>
                 </MsqdxCard>
             </Box>
         </Box>

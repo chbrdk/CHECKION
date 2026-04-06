@@ -50,7 +50,16 @@ export function VirtualScrollList<T>({
             ref={parentRef}
             role="list"
             aria-label={ariaLabel}
-            sx={{ maxHeight, minHeight, overflow: 'auto', width: '100%' }}
+            sx={{
+                maxHeight,
+                minHeight,
+                overflow: 'auto',
+                width: '100%',
+                minWidth: 0,
+                flexShrink: 1,
+                WebkitOverflowScrolling: 'touch',
+                contain: 'content',
+            }}
         >
             <Box sx={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative', width: '100%' }}>
                 {virtualizer.getVirtualItems().map((vi) => {

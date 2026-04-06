@@ -4,12 +4,13 @@ import React, { memo, useCallback, useState } from 'react';
 import { Box, CircularProgress, IconButton, Tooltip } from '@mui/material';
 import { MsqdxTypography, MsqdxChip, MsqdxButton, MsqdxMoleculeCard } from '@msqdx/react';
 import { ExternalLink } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { VirtualScrollList } from '@/components/VirtualScrollList';
 import { RemotePaginationBar } from '@/components/RemotePaginationBar';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import type { DomainSummaryApiResponse } from '@/lib/domain-summary';
 import type { PageSeoSummary } from '@/lib/domain-aggregation';
+import { SeoDensityScrollRow } from '@/components/domain/SeoDensityScrollRow';
 import {
     DOMAIN_SEO_PAGES_PAGE_SIZE,
     DOMAIN_TAB_SEO_PAGE_ROW_ESTIMATE_PX,
@@ -65,11 +66,14 @@ function DomainResultLinksSeoSectionInner({
             return res.json() as Promise<{ data?: PageSeoSummary[]; total?: number }>;
         },
         enabled: Boolean(domainId) && Boolean(aggregated.seo),
+        placeholderData: keepPreviousData,
     });
 
     const seoRows = seoQuery.data?.data ?? [];
     const seoTotal = seoQuery.data?.total ?? aggregated.seo?.totalPages ?? 0;
-    const seoLoading = seoQuery.isFetching;
+    const hasSeoRows = seoRows.length > 0;
+    const seoInitialLoading = seoQuery.isPending && !hasSeoRows;
+    const seoRefetching = seoQuery.isFetching && !seoQuery.isPending;
 
     return (
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 'var(--msqdx-spacing-md)' }}>
@@ -177,14 +181,11 @@ function DomainResultLinksSeoSectionInner({
                                     URL {seoSort === 'url' ? (seoDir === 'desc' ? '↓' : '↑') : ''}
                                 </MsqdxButton>
                             </Box>
-                            {seoLoading && (
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                    <CircularProgress size={20} sx={{ color: 'var(--color-theme-accent)' }} />
-                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                        {t('common.loading')}
-                                    </MsqdxTypography>
+                            {seoInitialLoading ? (
+                                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                                    <CircularProgress size={28} sx={{ color: 'var(--color-theme-accent)' }} />
                                 </Box>
-                            )}
+                            ) : (
                             <VirtualScrollList
                                 items={seoRows}
                                 maxHeight={320}
@@ -192,57 +193,15 @@ function DomainResultLinksSeoSectionInner({
                                 overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
                                 getItemKey={(row) => row.url}
                                 renderItem={(row) => (
-                                    <Box
-                                        sx={{
-                                            width: '100%',
-                                            boxSizing: 'border-box',
-                                            mb: 0.75,
-                                            px: 1,
-                                            py: 0.75,
-                                            border: '1px solid var(--color-secondary-dx-grey-light-tint, #e0e0e0)',
-                                            borderRadius: 1,
-                                        }}
-                                    >
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, width: '100%' }}>
-                                            <MsqdxTypography variant="caption" sx={{ flex: 1, minWidth: 0 }} noWrap title={row.url}>
-                                                {row.url}
-                                            </MsqdxTypography>
-                                            <Tooltip title={t('domainResult.openPage')}>
-                                                <IconButton
-                                                    size="small"
-                                                    aria-label={t('domainResult.openPageAria', { url: row.url })}
-                                                    onClick={() => onOpenPageUrl(row.url)}
-                                                    sx={{ flexShrink: 0 }}
-                                                >
-                                                    <ExternalLink size={16} strokeWidth={2} aria-hidden />
-                                                </IconButton>
-                                            </Tooltip>
-                                        </Box>
-                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.75, mt: 0.5, rowGap: 0.5 }}>
-                                            <MsqdxTypography variant="caption" component="span" sx={{ fontWeight: 600 }}>
-                                                {t('domainResult.seoWordCount', { count: row.wordCount.toLocaleString(locale === 'en' ? 'en-US' : 'de-DE') })}
-                                            </MsqdxTypography>
-                                            {row.topKeywordCount > 0 && (
-                                                <MsqdxTypography variant="caption" component="span" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                                    {t('domainResult.seoTopKeywords', { count: row.topKeywordCount })}
-                                                </MsqdxTypography>
-                                            )}
-                                            {row.isSkinny && (
-                                                <MsqdxChip
-                                                    label={t('domainResult.seoSkinnyChip')}
-                                                    size="small"
-                                                    sx={{ height: 18, fontSize: '0.65rem', bgcolor: 'var(--color-secondary-dx-orange-tint)', color: 'var(--color-secondary-dx-orange)' }}
-                                                />
-                                            )}
-                                        </Box>
-                                    </Box>
+                                    <SeoDensityScrollRow row={row} locale={locale} onOpenPageUrl={onOpenPageUrl} />
                                 )}
                             />
+                            )}
                             <RemotePaginationBar
                                 page={seoPageIndex}
                                 pageSize={DOMAIN_SEO_PAGES_PAGE_SIZE}
                                 total={seoTotal}
-                                loading={seoLoading}
+                                loading={seoRefetching}
                                 onPageChange={setSeoPageIndex}
                                 labels={{ prev: t('share.back'), next: t('share.next') }}
                             />

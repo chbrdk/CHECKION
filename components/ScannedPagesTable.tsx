@@ -1,17 +1,18 @@
 'use client';
 
-import React, { useMemo, useState, useRef } from 'react';
+import React, { memo, useCallback, useMemo, useState, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Box } from '@mui/material';
-import { MsqdxTypography, MsqdxChip, MsqdxButton } from '@msqdx/react';
+import { MsqdxTypography } from '@msqdx/react';
 import { MSQDX_NEUTRAL, MSQDX_THEME } from '@msqdx/tokens';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import type { SlimPage } from '@/lib/types';
+import { ScannedPagesTableRow } from '@/components/ScannedPagesTableRow';
 
 const tableBorder = `1px solid ${MSQDX_NEUTRAL[200]}`;
 
 /** Fixed row height for virtualization (avoids measureElement thrash). */
-const SCANNED_PAGES_ROW_ESTIMATE_PX = 44;
+export const SCANNED_PAGES_ROW_ESTIMATE_PX = 44;
 const SCANNED_PAGES_VIRTUAL_OVERSCAN = 10;
 
 export type ScannedPagesSortKey = 'url' | 'score' | 'uxScore' | 'issues';
@@ -21,7 +22,7 @@ function getIssuesCount(page: SlimPage): number {
   return (page.stats?.errors ?? 0) + (page.stats?.warnings ?? 0) + (page.stats?.notices ?? 0);
 }
 
-export function ScannedPagesTable({
+function ScannedPagesTableInner({
   pages,
   onPageClick,
   serverSort = false,
@@ -32,7 +33,6 @@ export function ScannedPagesTable({
 }: {
   pages: SlimPage[];
   onPageClick?: (page: SlimPage) => void;
-  /** When true, `pages` are already ordered server-side; sorting toggles call `onSortChange`. */
   serverSort?: boolean;
   sortKey?: ScannedPagesSortKey;
   sortDir?: SortDir;
@@ -80,18 +80,21 @@ export function ScannedPagesTable({
     getItemKey: (index) => sortedPages[index]?.id ?? index,
   });
 
-  const handleSort = (key: ScannedPagesSortKey) => {
-    if (serverSort) {
-      onSortChange?.(key);
-      return;
-    }
-    if (sortKey === key) {
-      setLocalSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setLocalSortKey(key);
-      setLocalSortDir('asc');
-    }
-  };
+  const handleSort = useCallback(
+    (key: ScannedPagesSortKey) => {
+      if (serverSort) {
+        onSortChange?.(key);
+        return;
+      }
+      if (sortKey === key) {
+        setLocalSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+      } else {
+        setLocalSortKey(key);
+        setLocalSortDir('asc');
+      }
+    },
+    [serverSort, onSortChange, sortKey]
+  );
 
   const SortHeader = ({
     id,
@@ -144,7 +147,7 @@ export function ScannedPagesTable({
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, flex: '1 1 auto' }}>
       <Box
         sx={{
           border: tableBorder,
@@ -154,6 +157,8 @@ export function ScannedPagesTable({
           backgroundColor: MSQDX_THEME.light.surface.primary,
           display: 'flex',
           flexDirection: 'column',
+          minHeight: 0,
+          flex: '1 1 auto',
         }}
       >
         <Box
@@ -180,7 +185,13 @@ export function ScannedPagesTable({
           ref={parentRef}
           component="div"
           aria-label={t('domainResult.scannedPages')}
-          sx={{ overflow: 'auto', flex: 1, minHeight: 120, maxHeight: 'calc(65vh - 32px)' }}
+          sx={{
+            overflow: 'auto',
+            flex: '1 1 auto',
+            minHeight: 0,
+            maxHeight: 'calc(65vh - 32px)',
+            WebkitOverflowScrolling: 'touch',
+          }}
         >
           <Box
             sx={{
@@ -198,54 +209,22 @@ export function ScannedPagesTable({
                   key={vi.key}
                   data-index={vi.index}
                   component="div"
-                  role="row"
+                  role="presentation"
                   sx={{
                     position: 'absolute',
                     top: 0,
                     left: 0,
                     width: '100%',
                     height: vi.size,
-                    display: 'grid',
-                    gridTemplateColumns: 'minmax(180px, 2fr) 80px 90px 80px 90px',
-                    gap: 0,
-                    borderBottom: tableBorder,
-                    alignItems: 'stretch',
                     transform: `translateY(${vi.start}px)`,
-                    '&:hover': { backgroundColor: 'var(--color-theme-accent-tint, rgba(0,0,0,0.04))' },
                   }}
                 >
-                  <Box sx={{ px: 1, py: 0.5, display: 'flex', alignItems: 'center', minWidth: 0, borderRight: tableBorder }}>
-                    <MsqdxTypography variant="caption" noWrap title={page.url} sx={{ fontWeight: 500, fontSize: '0.75rem' }}>
-                      {page.url}
-                    </MsqdxTypography>
-                  </Box>
-                  <Box sx={{ px: 1, py: 0.5, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
-                    <MsqdxChip
-                      label={String(page.score ?? 0)}
-                      size="small"
-                      brandColor={page.score > 80 ? 'green' : 'orange'}
-                      sx={{ fontSize: '0.7rem', height: 20, minHeight: 20 }}
-                    />
-                  </Box>
-                  <Box sx={{ px: 1, py: 0.5, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
-                    <MsqdxTypography variant="caption" sx={{ fontSize: '0.75rem' }}>{page.ux?.score ?? '–'}</MsqdxTypography>
-                  </Box>
-                  <Box sx={{ px: 1, py: 0.5, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
-                    <MsqdxTypography variant="caption" sx={{ fontSize: '0.75rem' }}>{issuesCount}</MsqdxTypography>
-                  </Box>
-                  <Box sx={{ px: 1, py: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {onPageClick && (
-                      <MsqdxButton
-                        size="small"
-                        variant="text"
-                        onClick={() => onPageClick(page)}
-                        aria-label={t('domainResult.openPageAria', { url: page.url })}
-                        sx={{ textTransform: 'none', fontSize: '0.7rem' }}
-                      >
-                        {t('domainResult.openPage')}
-                      </MsqdxButton>
-                    )}
-                  </Box>
+                  <ScannedPagesTableRow
+                    page={page}
+                    issuesCount={issuesCount}
+                    rowHeightPx={vi.size}
+                    onPageClick={onPageClick}
+                  />
                 </Box>
               );
             })}
@@ -262,3 +241,6 @@ export function ScannedPagesTable({
     </Box>
   );
 }
+
+/** Memoized: avoids re-rendering the full table when parent passes stable props (e.g. same pages reference). */
+export const ScannedPagesTable = memo(ScannedPagesTableInner);

@@ -2,7 +2,7 @@
 
 import React, { memo } from 'react';
 import { Box } from '@mui/material';
-import { MsqdxTypography, MsqdxButton, MsqdxChip, MsqdxMoleculeCard } from '@msqdx/react';
+import { MsqdxTypography, MsqdxChip, MsqdxMoleculeCard } from '@msqdx/react';
 import { VirtualScrollList } from '@/components/VirtualScrollList';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import type { AggregatedGenerative } from '@/lib/domain-aggregation';
@@ -10,6 +10,7 @@ import {
     DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX,
     DOMAIN_TAB_VIRTUAL_OVERSCAN,
 } from '@/lib/constants';
+import { GenerativePageScrollRow } from '@/components/domain/GenerativePageScrollRow';
 
 export type DomainResultGenerativeSectionProps = {
     t: (key: string) => string;
@@ -47,19 +48,7 @@ function DomainResultGenerativeSectionInner({ t, generative, onOpenPageUrl }: Do
                 estimateSize={DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX}
                 overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
                 getItemKey={(p) => p.url}
-                renderItem={(p) => {
-                    const badges = [`Score ${p.score}`, p.hasLlmsTxt && 'llms.txt', p.hasRecommendedSchema && 'Schema'].filter(Boolean).join(' · ');
-                    return (
-                        <MsqdxButton
-                            size="small"
-                            variant="text"
-                            onClick={() => onOpenPageUrl(p.url)}
-                            sx={{ textTransform: 'none', fontSize: '0.8rem', display: 'block', width: '100%', justifyContent: 'flex-start', py: 0.25 }}
-                        >
-                            {p.url} — {badges || '—'}
-                        </MsqdxButton>
-                    );
-                }}
+                renderItem={(p) => <GenerativePageScrollRow page={p} onOpenPageUrl={onOpenPageUrl} />}
             />
         </MsqdxMoleculeCard>
     );

@@ -11,6 +11,7 @@ import {
     DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX,
     DOMAIN_TAB_VIRTUAL_OVERSCAN,
 } from '@/lib/constants';
+import { StructureUrlScrollRow } from '@/components/domain/StructureUrlScrollRow';
 
 export type DomainResultStructureSectionProps = {
     t: (key: string, values?: Record<string, string>) => string;
@@ -80,23 +81,7 @@ function DomainResultStructureSectionInner({ t, structure, onOpenPageUrl }: Doma
                         estimateSize={DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX}
                         overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
                         getItemKey={(url) => url}
-                        renderItem={(url) => (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, width: '100%', py: 0.25, pr: 0.5 }}>
-                                <MsqdxTypography variant="caption" sx={{ flex: 1, minWidth: 0 }} noWrap title={url}>
-                                    {url}
-                                </MsqdxTypography>
-                                <Tooltip title={t('domainResult.openPage')}>
-                                    <IconButton
-                                        size="small"
-                                        aria-label={t('domainResult.openPageAria', { url })}
-                                        onClick={() => onOpenPageUrl(url)}
-                                        sx={{ flexShrink: 0 }}
-                                    >
-                                        <ExternalLink size={16} strokeWidth={2} aria-hidden />
-                                    </IconButton>
-                                </Tooltip>
-                            </Box>
-                        )}
+                        renderItem={(url) => <StructureUrlScrollRow url={url} t={t} onOpenPageUrl={onOpenPageUrl} />}
                     />
                 </Box>
             )}
@@ -109,23 +94,7 @@ function DomainResultStructureSectionInner({ t, structure, onOpenPageUrl }: Doma
                         estimateSize={DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX}
                         overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
                         getItemKey={(url) => url}
-                        renderItem={(url) => (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, width: '100%', py: 0.25, pr: 0.5 }}>
-                                <MsqdxTypography variant="caption" sx={{ flex: 1, minWidth: 0 }} noWrap title={url}>
-                                    {url}
-                                </MsqdxTypography>
-                                <Tooltip title={t('domainResult.openPage')}>
-                                    <IconButton
-                                        size="small"
-                                        aria-label={t('domainResult.openPageAria', { url })}
-                                        onClick={() => onOpenPageUrl(url)}
-                                        sx={{ flexShrink: 0 }}
-                                    >
-                                        <ExternalLink size={16} strokeWidth={2} aria-hidden />
-                                    </IconButton>
-                                </Tooltip>
-                            </Box>
-                        )}
+                        renderItem={(url) => <StructureUrlScrollRow url={url} t={t} onOpenPageUrl={onOpenPageUrl} />}
                     />
                 </Box>
             )}
