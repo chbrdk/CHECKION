@@ -128,7 +128,12 @@ export function DomainResultMain() {
 
             {activeSection === 'generative' &&
                 (aggregated?.generative ? (
-                    <DomainResultGenerativeSection t={t} generative={aggregated.generative} onOpenPageUrl={openPageScanUrl} />
+                    <DomainResultGenerativeSection
+                        t={t}
+                        locale={locale}
+                        generative={aggregated.generative}
+                        onOpenPageUrl={openPageScanUrl}
+                    />
                 ) : (
                     <DomainResultGenerativeEmpty t={t} />
                 ))}

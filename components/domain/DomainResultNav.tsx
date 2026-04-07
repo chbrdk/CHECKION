@@ -51,6 +51,7 @@ export const DomainResultNav = memo(function DomainResultNav({
         >
             <Tabs
                 value={activeSection}
+                textColor="inherit"
                 variant="scrollable"
                 scrollButtons="auto"
                 allowScrollButtonsMobile
@@ -58,7 +59,15 @@ export const DomainResultNav = memo(function DomainResultNav({
                     minHeight: 40,
                     color: '#000',
                     '& .MuiTabs-flexContainer': { gap: 0 },
-                    '& .MuiTab-root': { minHeight: 40, py: 0, color: '#000', opacity: 0.85, textTransform: 'none' },
+                    '& .MuiTab-root': {
+                        minHeight: 40,
+                        py: 0,
+                        textTransform: 'none',
+                    },
+                    '& .MuiTab-root:not(.Mui-selected)': {
+                        color: '#000 !important',
+                        opacity: 0.85,
+                    },
                     ...MSQDX_TABS_THEME_ACCENT_SX,
                 }}
             >
