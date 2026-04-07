@@ -14,12 +14,12 @@ function domainResultKeys(locale: 'de' | 'en'): Record<string, unknown> {
 describe('domain links & SEO section i18n', () => {
     it('defines links/SEO panel copy in de and en', () => {
         const keys = [
-            'linksSeoSeoTitle',
+            'linksSeoSectionTitle',
+            'linksSeoSectionSubtitle',
             'linksSeoMetaCardTitle',
             'linksSeoKpiWithTitle',
             'linksSeoKeywordChip',
             'linksSeoDensityCardTitle',
-            'linksSeoLinksTitle',
             'linksSeoLinksStatsCardTitle',
             'linksSeoMostBrokenCardTitle',
             'linksSeoEmpty',
