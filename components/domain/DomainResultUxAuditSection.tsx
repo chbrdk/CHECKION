@@ -121,17 +121,151 @@ function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl, uxBrokenLinksPr
           })
         : t('domainResult.uxAuditKpiReadabilityEmpty');
 
+    const hasPriority = ux.pagesByScore.length > 0;
+    const hasDetailContent =
+        ux.consoleErrorsByPage.length > 0 ||
+        ux.tapTargets.detailsByPage.length > 0 ||
+        ux.focusOrderByPage.length > 0 ||
+        ux.brokenLinks.length > 0;
+
+    const priorityCard = hasPriority ? (
+        <MsqdxMoleculeCard
+            title={t('domainResult.uxAuditSectionPriority')}
+            titleVariant="h6"
+            subtitle={t('domainResult.uxAuditSectionPriorityIntro')}
+            variant="flat"
+            borderRadius="1.5xl"
+            footerDivider={false}
+            sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX, height: '100%' }}
+        >
+            <Stack spacing={1}>
+                {ux.pagesByScore.slice(0, 10).map(({ url, score, cls }) => (
+                    <UxAuditPageRow
+                        key={url}
+                        url={url}
+                        ariaLabel={t('domainResult.uxAuditOpenScanAria', { url })}
+                        onOpen={() => onOpenPageUrl(url)}
+                        chipLabel={t('domainResult.uxAuditScoreChip', { score, cls })}
+                    />
+                ))}
+            </Stack>
+        </MsqdxMoleculeCard>
+    ) : null;
+
+    const detailColumn = hasDetailContent ? (
+        <Stack spacing={2} sx={{ minWidth: 0 }}>
+            {ux.consoleErrorsByPage.length > 0 ? (
+                <MsqdxMoleculeCard
+                    title={t('domainResult.uxAuditSectionConsole')}
+                    titleVariant="h6"
+                    subtitle={t('domainResult.uxAuditSectionConsoleIntro')}
+                    variant="flat"
+                    borderRadius="1.5xl"
+                    footerDivider={false}
+                    sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX }}
+                >
+                    <Stack spacing={1}>
+                        {ux.consoleErrorsByPage.slice(0, 8).map(({ url, count }) => (
+                            <UxAuditPageRow
+                                key={`c-${url}`}
+                                url={url}
+                                ariaLabel={t('domainResult.uxAuditOpenScanAria', { url })}
+                                onOpen={() => onOpenPageUrl(url)}
+                                chipLabel={t('domainResult.uxAuditCountChip', { count })}
+                            />
+                        ))}
+                    </Stack>
+                </MsqdxMoleculeCard>
+            ) : null}
+
+            {ux.tapTargets.detailsByPage.length > 0 ? (
+                <MsqdxMoleculeCard
+                    title={t('domainResult.uxAuditSectionTap')}
+                    titleVariant="h6"
+                    subtitle={t('domainResult.uxAuditSectionTapIntro')}
+                    variant="flat"
+                    borderRadius="1.5xl"
+                    footerDivider={false}
+                    sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX }}
+                >
+                    <Stack spacing={1}>
+                        {ux.tapTargets.detailsByPage.slice(0, 8).map(({ url, count }) => (
+                            <UxAuditPageRow
+                                key={`t-${url}`}
+                                url={url}
+                                ariaLabel={t('domainResult.uxAuditOpenScanAria', { url })}
+                                onOpen={() => onOpenPageUrl(url)}
+                                chipLabel={t('domainResult.uxAuditCountChip', { count })}
+                            />
+                        ))}
+                    </Stack>
+                </MsqdxMoleculeCard>
+            ) : null}
+
+            {ux.focusOrderByPage.length > 0 ? (
+                <MsqdxMoleculeCard
+                    title={t('domainResult.uxAuditSectionFocus')}
+                    titleVariant="h6"
+                    subtitle={t('domainResult.uxAuditSectionFocusIntro')}
+                    variant="flat"
+                    borderRadius="1.5xl"
+                    footerDivider={false}
+                    sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX }}
+                >
+                    <Stack spacing={1}>
+                        {ux.focusOrderByPage.slice(0, 8).map(({ url, count }) => (
+                            <UxAuditPageRow
+                                key={`f-${url}`}
+                                url={url}
+                                ariaLabel={t('domainResult.uxAuditOpenScanAria', { url })}
+                                onOpen={() => onOpenPageUrl(url)}
+                                chipLabel={t('domainResult.uxAuditCountChip', { count })}
+                            />
+                        ))}
+                    </Stack>
+                </MsqdxMoleculeCard>
+            ) : null}
+
+            {ux.brokenLinks.length > 0 ? (
+                <MsqdxMoleculeCard
+                    title={t('domainResult.uxAuditBrokenTitle')}
+                    titleVariant="h6"
+                    variant="flat"
+                    borderRadius="1.5xl"
+                    footerDivider={false}
+                    sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX }}
+                >
+                    <VirtualScrollList
+                        items={uxBrokenLinksPreview}
+                        maxHeight={220}
+                        estimateSize={DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX}
+                        overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
+                        getItemKey={(l, i) => `${l.href}|${l.pageUrl}|${l.status}|${i}`}
+                        renderItem={(l) => <UxBrokenLinkScrollRow link={l} />}
+                    />
+                    {ux.brokenLinks.length > DOMAIN_UX_BROKEN_LINKS_PREVIEW ? (
+                        <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 1, color: 'var(--color-text-muted-on-light)' }}>
+                            {t('domainResult.uxAuditBrokenMore', {
+                                count: ux.brokenLinks.length - DOMAIN_UX_BROKEN_LINKS_PREVIEW,
+                            })}
+                        </MsqdxTypography>
+                    ) : null}
+                </MsqdxMoleculeCard>
+            ) : null}
+        </Stack>
+    ) : null;
+
     return (
-        <Stack spacing={2} sx={{ width: '100%', minWidth: 0 }}>
-            <MsqdxMoleculeCard
-                title={t('domainResult.uxAuditTitle')}
-                headerActions={<InfoTooltip title={t('info.uxAudit')} ariaLabel={t('common.info')} />}
-                subtitle={t('domainResult.uxAuditSubtitle')}
-                variant="flat"
-                borderRadius="1.5xl"
-                footerDivider={false}
-                sx={{ bgcolor: 'var(--color-card-bg)' }}
-            >
+        <MsqdxMoleculeCard
+            title={t('domainResult.uxAuditTitle')}
+            headerActions={<InfoTooltip title={t('info.uxAudit')} ariaLabel={t('common.info')} />}
+            subtitle={t('domainResult.uxAuditSubtitle')}
+            variant="flat"
+            borderRadius="1.5xl"
+            footerDivider={false}
+            sx={{ bgcolor: 'var(--color-card-bg)' }}
+        >
+            <Stack spacing={2} sx={{ width: '100%', minWidth: 0 }}>
                 <Box
                     sx={{
                         display: 'grid',
@@ -208,7 +342,7 @@ function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl, uxBrokenLinksPr
                     </Box>
                 </Box>
                 {showHeadingsHint ? (
-                    <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 1.5, color: 'var(--color-text-muted-on-light)', lineHeight: 1.45 }}>
+                    <MsqdxTypography variant="caption" sx={{ display: 'block', color: 'var(--color-text-muted-on-light)', lineHeight: 1.45 }}>
                         {t('domainResult.uxAuditHeadingsHint', {
                             multiH1: hh.pagesWithMultipleH1,
                             skipped: hh.pagesWithSkippedLevels,
@@ -216,126 +350,24 @@ function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl, uxBrokenLinksPr
                         })}
                     </MsqdxTypography>
                 ) : null}
-            </MsqdxMoleculeCard>
 
-            {ux.pagesByScore.length > 0 ? (
-                <MsqdxMoleculeCard
-                    title={t('domainResult.uxAuditSectionPriority')}
-                    subtitle={t('domainResult.uxAuditSectionPriorityIntro')}
-                    variant="flat"
-                    borderRadius="1.5xl"
-                    footerDivider={false}
-                    sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX }}
-                >
-                    <Stack spacing={1}>
-                        {ux.pagesByScore.slice(0, 10).map(({ url, score, cls }) => (
-                            <UxAuditPageRow
-                                key={url}
-                                url={url}
-                                ariaLabel={t('domainResult.uxAuditOpenScanAria', { url })}
-                                onOpen={() => onOpenPageUrl(url)}
-                                chipLabel={t('domainResult.uxAuditScoreChip', { score, cls })}
-                            />
-                        ))}
-                    </Stack>
-                </MsqdxMoleculeCard>
-            ) : null}
-
-            {ux.consoleErrorsByPage.length > 0 ? (
-                <MsqdxMoleculeCard
-                    title={t('domainResult.uxAuditSectionConsole')}
-                    subtitle={t('domainResult.uxAuditSectionConsoleIntro')}
-                    variant="flat"
-                    borderRadius="1.5xl"
-                    footerDivider={false}
-                    sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX }}
-                >
-                    <Stack spacing={1}>
-                        {ux.consoleErrorsByPage.slice(0, 8).map(({ url, count }) => (
-                            <UxAuditPageRow
-                                key={`c-${url}`}
-                                url={url}
-                                ariaLabel={t('domainResult.uxAuditOpenScanAria', { url })}
-                                onOpen={() => onOpenPageUrl(url)}
-                                chipLabel={t('domainResult.uxAuditCountChip', { count })}
-                            />
-                        ))}
-                    </Stack>
-                </MsqdxMoleculeCard>
-            ) : null}
-
-            {ux.tapTargets.detailsByPage.length > 0 ? (
-                <MsqdxMoleculeCard
-                    title={t('domainResult.uxAuditSectionTap')}
-                    subtitle={t('domainResult.uxAuditSectionTapIntro')}
-                    variant="flat"
-                    borderRadius="1.5xl"
-                    footerDivider={false}
-                    sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX }}
-                >
-                    <Stack spacing={1}>
-                        {ux.tapTargets.detailsByPage.slice(0, 8).map(({ url, count }) => (
-                            <UxAuditPageRow
-                                key={`t-${url}`}
-                                url={url}
-                                ariaLabel={t('domainResult.uxAuditOpenScanAria', { url })}
-                                onOpen={() => onOpenPageUrl(url)}
-                                chipLabel={t('domainResult.uxAuditCountChip', { count })}
-                            />
-                        ))}
-                    </Stack>
-                </MsqdxMoleculeCard>
-            ) : null}
-
-            {ux.focusOrderByPage.length > 0 ? (
-                <MsqdxMoleculeCard
-                    title={t('domainResult.uxAuditSectionFocus')}
-                    subtitle={t('domainResult.uxAuditSectionFocusIntro')}
-                    variant="flat"
-                    borderRadius="1.5xl"
-                    footerDivider={false}
-                    sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX }}
-                >
-                    <Stack spacing={1}>
-                        {ux.focusOrderByPage.slice(0, 8).map(({ url, count }) => (
-                            <UxAuditPageRow
-                                key={`f-${url}`}
-                                url={url}
-                                ariaLabel={t('domainResult.uxAuditOpenScanAria', { url })}
-                                onOpen={() => onOpenPageUrl(url)}
-                                chipLabel={t('domainResult.uxAuditCountChip', { count })}
-                            />
-                        ))}
-                    </Stack>
-                </MsqdxMoleculeCard>
-            ) : null}
-
-            {ux.brokenLinks.length > 0 ? (
-                <MsqdxMoleculeCard
-                    title={t('domainResult.uxAuditBrokenTitle')}
-                    variant="flat"
-                    borderRadius="1.5xl"
-                    footerDivider={false}
-                    sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX }}
-                >
-                    <VirtualScrollList
-                        items={uxBrokenLinksPreview}
-                        maxHeight={220}
-                        estimateSize={DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX}
-                        overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
-                        getItemKey={(l, i) => `${l.href}|${l.pageUrl}|${l.status}|${i}`}
-                        renderItem={(l) => <UxBrokenLinkScrollRow link={l} />}
-                    />
-                    {ux.brokenLinks.length > DOMAIN_UX_BROKEN_LINKS_PREVIEW ? (
-                        <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 1, color: 'var(--color-text-muted-on-light)' }}>
-                            {t('domainResult.uxAuditBrokenMore', {
-                                count: ux.brokenLinks.length - DOMAIN_UX_BROKEN_LINKS_PREVIEW,
-                            })}
-                        </MsqdxTypography>
-                    ) : null}
-                </MsqdxMoleculeCard>
-            ) : null}
-        </Stack>
+                {hasPriority && hasDetailContent ? (
+                    <Box
+                        sx={{
+                            display: 'grid',
+                            gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) minmax(0, 1fr)' },
+                            gap: 2,
+                            alignItems: 'stretch',
+                        }}
+                    >
+                        <Box sx={{ minWidth: 0 }}>{priorityCard}</Box>
+                        <Box sx={{ minWidth: 0 }}>{detailColumn}</Box>
+                    </Box>
+                ) : null}
+                {hasPriority && !hasDetailContent ? <Box sx={{ minWidth: 0 }}>{priorityCard}</Box> : null}
+                {!hasPriority && hasDetailContent ? <Box sx={{ minWidth: 0 }}>{detailColumn}</Box> : null}
+            </Stack>
+        </MsqdxMoleculeCard>
     );
 }
 
