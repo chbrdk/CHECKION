@@ -8,6 +8,7 @@ import { MsqdxButton } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { useFetchOnceForId } from '@/hooks/useFetchOnceForId';
 import { apiProject, pathProject, pathProjectRankings, pathProjectGeo, pathProjectGeoAnalysis, pathProjectResearch, pathProjectWcag, pathProjectSeo } from '@/lib/constants';
+import { MSQDX_TABS_THEME_ACCENT_SX } from '@/lib/theme-accent';
 
 /** Renders back button + project sub-nav for use in the app header (headerEnd) when on a project route. */
 export function ProjectHeaderNav() {
@@ -91,8 +92,7 @@ export function ProjectHeaderNav() {
                     color: '#000',
                     '& .MuiTabs-flexContainer': { gap: 0 },
                     '& .MuiTab-root': { minHeight: 40, py: 0, color: '#000', opacity: 0.85, textTransform: 'none' },
-                    '& .Mui-selected': { opacity: 1, fontWeight: 600 },
-                    '& .MuiTabs-indicator': { backgroundColor: '#000' },
+                    ...MSQDX_TABS_THEME_ACCENT_SX,
                 }}
             >
                 <Tab label={t('projects.navOverview')} value="overview" href={id ? pathProject(id) : '#'} component={Link} />

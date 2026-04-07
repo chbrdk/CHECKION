@@ -21,6 +21,20 @@ export const THEME_ACCENT_TINT_CSS = 'var(--color-theme-accent-tint, var(--color
 export const THEME_ACCENT_CONTRAST_CSS = 'var(--color-theme-accent-contrast, #000000)';
 
 /**
+ * MUI `Tabs`: Unterstreich-Indikator und ausgewählter Tab-Text nutzen die User-Brand-Akzentfarbe.
+ */
+export const MSQDX_TABS_THEME_ACCENT_SX = {
+    '& .MuiTabs-indicator': {
+        backgroundColor: THEME_ACCENT_CSS,
+    },
+    '& .MuiTab-root.Mui-selected': {
+        color: `${THEME_ACCENT_CSS} !important`,
+        opacity: 1,
+        fontWeight: 600,
+    },
+} as const;
+
+/**
  * `sx` für {@link MsqdxButton}: ersetzt `brandColor="green"` durch die dynamische Akzentfarbe.
  * Enthaltene Varianten: contained, outlined, text.
  */

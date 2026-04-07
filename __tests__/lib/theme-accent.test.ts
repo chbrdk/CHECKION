@@ -4,6 +4,7 @@ import {
     THEME_ACCENT_TINT_CSS,
     THEME_ACCENT_CONTRAST_CSS,
     MSQDX_BUTTON_THEME_ACCENT_SX,
+    MSQDX_TABS_THEME_ACCENT_SX,
     msqdxChipThemeAccentSx,
 } from '@/lib/theme-accent';
 
@@ -18,6 +19,13 @@ describe('theme-accent', () => {
         expect(MSQDX_BUTTON_THEME_ACCENT_SX['&.MuiButton-contained']).toBeDefined();
         expect(MSQDX_BUTTON_THEME_ACCENT_SX['&.MuiButton-outlined']).toBeDefined();
         expect(MSQDX_BUTTON_THEME_ACCENT_SX['&.MuiButton-text']).toBeDefined();
+    });
+
+    it('MSQDX_TABS_THEME_ACCENT_SX uses theme accent for indicator and selected tab', () => {
+        expect(MSQDX_TABS_THEME_ACCENT_SX['& .MuiTabs-indicator']?.backgroundColor).toBe(THEME_ACCENT_CSS);
+        expect(String(MSQDX_TABS_THEME_ACCENT_SX['& .MuiTab-root.Mui-selected']?.color)).toContain(
+            '--color-theme-accent',
+        );
     });
 
     it('msqdxChipThemeAccentSx applies accent when selected', () => {
