@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Box, CircularProgress, Stack } from '@mui/material';
+import { Box, CircularProgress, Divider, Stack } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard } from '@msqdx/react';
 import { ArrowLeft } from 'lucide-react';
 import { SharePanel } from '@/components/SharePanel';
@@ -113,15 +113,16 @@ export function DomainResultShell({ children }: { children: React.ReactNode }) {
                             <SharePanel resourceType="domain" resourceId={domainId} labelNamespace="domainResult" />
                         </Box>
                     }
-                />
-
-                <MsqdxMoleculeCard variant="flat" borderRadius="lg" footerDivider={false} sx={{ bgcolor: 'var(--color-card-bg)' }}>
-                    <DomainResultNav
-                        domainId={domainId}
-                        activeSection={activeSection}
-                        domainLinkQuery={domainLinkQuery}
-                        embedded
-                    />
+                >
+                    <Divider sx={{ borderColor: 'var(--color-secondary-dx-grey-light-tint)' }} />
+                    <Box sx={{ pt: 1.5 }}>
+                        <DomainResultNav
+                            domainId={domainId}
+                            activeSection={activeSection}
+                            domainLinkQuery={domainLinkQuery}
+                            embedded
+                        />
+                    </Box>
                 </MsqdxMoleculeCard>
 
                 {children}

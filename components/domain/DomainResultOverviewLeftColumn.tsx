@@ -11,7 +11,7 @@ import type { DomainSummaryApiResponse } from '@/lib/domain-summary';
 import { DOMAIN_TAB_SYSTEMIC_ISSUE_ROW_ESTIMATE_PX, DOMAIN_TAB_VIRTUAL_OVERSCAN } from '@/lib/constants';
 import { pathDomainSection } from '@/lib/domain-result-sections';
 import { SystemicIssueScrollRow } from '@/components/domain/SystemicIssueScrollRow';
-import { THEME_ACCENT_CSS, THEME_ACCENT_TINT_CSS } from '@/lib/theme-accent';
+import { MSQDX_INNER_CARD_BORDER_SX, THEME_ACCENT_CSS, THEME_ACCENT_TINT_CSS } from '@/lib/theme-accent';
 
 const EEAT_POSITIVE_CHIP_SX = {
     bgcolor: `${THEME_ACCENT_TINT_CSS} !important`,
@@ -54,7 +54,7 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                 borderRadius="lg"
                 footerDivider={false}
                 headerActions={<InfoTooltip title={t('info.domainScore')} ariaLabel={t('common.info')} />}
-                sx={{ bgcolor: 'var(--color-card-bg)' }}
+                sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX }}
             >
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 'var(--msqdx-spacing-md)' }}>
                     <Box
@@ -84,7 +84,7 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                     borderRadius="lg"
                     footerDivider={false}
                     headerActions={<InfoTooltip title={t('info.systemicIssues')} ariaLabel={t('common.info')} />}
-                    sx={{ bgcolor: 'var(--color-card-bg)' }}
+                    sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX }}
                 >
                     {!hasIssues ? (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-md)' }}>
@@ -125,7 +125,7 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                         borderRadius="lg"
                         footerDivider={false}
                         headerActions={<InfoTooltip title={t('info.eeat')} ariaLabel={t('common.info')} />}
-                        sx={{ bgcolor: 'var(--color-card-bg)' }}
+                        sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX }}
                     >
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-md)' }}>
                             <Box>

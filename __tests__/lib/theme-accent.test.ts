@@ -4,6 +4,7 @@ import {
     THEME_ACCENT_TINT_CSS,
     THEME_ACCENT_CONTRAST_CSS,
     MSQDX_BUTTON_THEME_ACCENT_SX,
+    MSQDX_INNER_CARD_BORDER_SX,
     MSQDX_TABS_THEME_ACCENT_SX,
     msqdxChipThemeAccentSx,
 } from '@/lib/theme-accent';
@@ -19,6 +20,10 @@ describe('theme-accent', () => {
         expect(MSQDX_BUTTON_THEME_ACCENT_SX['&.MuiButton-contained']).toBeDefined();
         expect(MSQDX_BUTTON_THEME_ACCENT_SX['&.MuiButton-outlined']).toBeDefined();
         expect(MSQDX_BUTTON_THEME_ACCENT_SX['&.MuiButton-text']).toBeDefined();
+    });
+
+    it('MSQDX_INNER_CARD_BORDER_SX matches project rankings inner cards', () => {
+        expect(MSQDX_INNER_CARD_BORDER_SX.border).toContain('--color-theme-accent');
     });
 
     it('MSQDX_TABS_THEME_ACCENT_SX uses theme accent for indicator and selected tab', () => {

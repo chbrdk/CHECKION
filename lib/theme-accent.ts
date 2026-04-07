@@ -21,6 +21,13 @@ export const THEME_ACCENT_TINT_CSS = 'var(--color-theme-accent-tint, var(--color
 export const THEME_ACCENT_CONTRAST_CSS = 'var(--color-theme-accent-contrast, #000000)';
 
 /**
+ * Innenkarten wie auf Projekt-Rankings (Keyword-Kacheln): 1px Rand in User-Akzentfarbe.
+ */
+export const MSQDX_INNER_CARD_BORDER_SX = {
+    border: `1px solid ${THEME_ACCENT_CSS}`,
+} as const;
+
+/**
  * MUI `Tabs`: Unterstreich-Indikator und ausgewählter Tab-Text nutzen die User-Brand-Akzentfarbe.
  */
 export const MSQDX_TABS_THEME_ACCENT_SX = {

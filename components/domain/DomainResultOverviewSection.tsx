@@ -15,6 +15,7 @@ import {
 } from '@/lib/constants';
 import type { ScannedPagesSortKey } from '@/components/ScannedPagesTable';
 import { DomainResultOverviewLeftColumn } from '@/components/domain/DomainResultOverviewLeftColumn';
+import { MSQDX_INNER_CARD_BORDER_SX } from '@/lib/theme-accent';
 
 const ScannedPagesTable = dynamic(
     () => import('@/components/ScannedPagesTable').then((m) => ({ default: m.ScannedPagesTable })),
@@ -125,62 +126,65 @@ function DomainResultOverviewSectionInner({
     );
 
     return (
-        <Box
-            sx={{
-                display: 'flex',
-                flexDirection: { xs: 'column', md: 'row' },
-                gap: 'var(--msqdx-spacing-md)',
-                minHeight: 0,
-                alignItems: 'flex-start',
-            }}
-        >
-            <DomainResultOverviewLeftColumn
-                t={t}
-                score={result.score}
-                totalPages={result.totalPages}
-                systemicIssues={result.systemicIssues}
-                eeat={result.eeat}
-                domainId={domainId}
-                domainLinkQuery={domainLinkQuery}
-            />
+        <MsqdxMoleculeCard variant="flat" borderRadius="lg" footerDivider={false} sx={{ bgcolor: 'var(--color-card-bg)' }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    flexDirection: { xs: 'column', md: 'row' },
+                    gap: 'var(--msqdx-spacing-md)',
+                    minHeight: 0,
+                    alignItems: 'flex-start',
+                }}
+            >
+                <DomainResultOverviewLeftColumn
+                    t={t}
+                    score={result.score}
+                    totalPages={result.totalPages}
+                    systemicIssues={result.systemicIssues}
+                    eeat={result.eeat}
+                    domainId={domainId}
+                    domainLinkQuery={domainLinkQuery}
+                />
 
-            <Box sx={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                <MsqdxMoleculeCard
-                    title={t('domainResult.scannedPages')}
-                    titleVariant="h6"
-                    variant="flat"
-                    borderRadius="lg"
-                    footerDivider={false}
-                    headerActions={<InfoTooltip title={t('info.scannedPages')} ariaLabel={t('common.info')} />}
-                    sx={{
-                        bgcolor: 'var(--color-card-bg)',
-                        flex: 1,
-                        minHeight: 0,
-                        minWidth: 0,
-                        display: 'flex',
-                        flexDirection: 'column',
-                    }}
-                >
-                    <Box sx={{ flex: 1, minHeight: 0, minWidth: 0 }}>
-                        {slimInitialLoading ? (
-                            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 6 }}>
-                                <CircularProgress size={28} sx={{ color: 'var(--color-theme-accent)' }} />
-                            </Box>
-                        ) : (
-                            <ScannedPagesTable
-                                pages={tablePages}
-                                onPageClick={onScannedPageOpen}
-                                serverSort={embeddedPages === null}
-                                sortKey={sortKey}
-                                sortDir={sortDir}
-                                onSortChange={embeddedPages === null ? handleServerSort : undefined}
-                                paginationFooter={slimPaginationFooter}
-                            />
-                        )}
-                    </Box>
-                </MsqdxMoleculeCard>
+                <Box sx={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                    <MsqdxMoleculeCard
+                        title={t('domainResult.scannedPages')}
+                        titleVariant="h6"
+                        variant="flat"
+                        borderRadius="lg"
+                        footerDivider={false}
+                        headerActions={<InfoTooltip title={t('info.scannedPages')} ariaLabel={t('common.info')} />}
+                        sx={{
+                            bgcolor: 'var(--color-card-bg)',
+                            flex: 1,
+                            minHeight: 0,
+                            minWidth: 0,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            ...MSQDX_INNER_CARD_BORDER_SX,
+                        }}
+                    >
+                        <Box sx={{ flex: 1, minHeight: 0, minWidth: 0 }}>
+                            {slimInitialLoading ? (
+                                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 6 }}>
+                                    <CircularProgress size={28} sx={{ color: 'var(--color-theme-accent)' }} />
+                                </Box>
+                            ) : (
+                                <ScannedPagesTable
+                                    pages={tablePages}
+                                    onPageClick={onScannedPageOpen}
+                                    serverSort={embeddedPages === null}
+                                    sortKey={sortKey}
+                                    sortDir={sortDir}
+                                    onSortChange={embeddedPages === null ? handleServerSort : undefined}
+                                    paginationFooter={slimPaginationFooter}
+                                />
+                            )}
+                        </Box>
+                    </MsqdxMoleculeCard>
+                </Box>
             </Box>
-        </Box>
+        </MsqdxMoleculeCard>
     );
 }
 
