@@ -2,9 +2,10 @@
 
 import React, { memo } from 'react';
 import Link from 'next/link';
-import { Box } from '@mui/material';
+import { Box, Tabs, Tab } from '@mui/material';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { pathDomainSection, type DomainResultSectionSlug } from '@/lib/domain-result-sections';
+import { MSQDX_TABS_THEME_ACCENT_SX } from '@/lib/theme-accent';
 
 const NAV_SLUGS = [
     { slug: 'overview' as const, labelKey: 'domainResult.tabOverview' },
@@ -42,40 +43,36 @@ export const DomainResultNav = memo(function DomainResultNav({
     return (
         <Box
             sx={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: 0.5,
+                width: '100%',
+                minWidth: 0,
                 mb: embedded ? 0 : 'var(--msqdx-spacing-lg)',
                 pb: embedded ? 0 : 1,
                 borderBottom: embedded ? 'none' : '1px solid var(--color-secondary-dx-grey-light-tint)',
-                rowGap: 0.75,
             }}
         >
-            {NAV_SLUGS.map(({ slug, labelKey }) => {
-                const href = pathDomainSection(domainId, slug, query);
-                const selected = activeSection === slug;
-                return (
-                    <Link key={slug} href={href} style={{ textDecoration: 'none' }}>
-                        <Box
-                            component="span"
-                            sx={{
-                                display: 'inline-block',
-                                px: 1.25,
-                                py: 0.5,
-                                borderRadius: 1,
-                                fontSize: '0.875rem',
-                                fontWeight: selected ? 600 : 400,
-                                color: selected ? 'var(--color-theme-accent)' : 'var(--color-text-on-light)',
-                                bgcolor: selected ? 'var(--color-secondary-dx-grey-light-tint)' : 'transparent',
-                                border: selected ? '1px solid var(--color-theme-accent)' : '1px solid transparent',
-                                '&:hover': { bgcolor: 'var(--color-secondary-dx-grey-light-tint)' },
-                            }}
-                        >
-                            {t(labelKey)}
-                        </Box>
-                    </Link>
-                );
-            })}
+            <Tabs
+                value={activeSection}
+                variant="scrollable"
+                scrollButtons="auto"
+                allowScrollButtonsMobile
+                sx={{
+                    minHeight: 40,
+                    color: '#000',
+                    '& .MuiTabs-flexContainer': { gap: 0 },
+                    '& .MuiTab-root': { minHeight: 40, py: 0, color: '#000', opacity: 0.85, textTransform: 'none' },
+                    ...MSQDX_TABS_THEME_ACCENT_SX,
+                }}
+            >
+                {NAV_SLUGS.map(({ slug, labelKey }) => (
+                    <Tab
+                        key={slug}
+                        label={t(labelKey)}
+                        value={slug}
+                        href={pathDomainSection(domainId, slug, query)}
+                        component={Link}
+                    />
+                ))}
+            </Tabs>
         </Box>
     );
 });

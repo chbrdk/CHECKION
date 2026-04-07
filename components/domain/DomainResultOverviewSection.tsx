@@ -126,12 +126,12 @@ function DomainResultOverviewSectionInner({
     );
 
     return (
-        <MsqdxMoleculeCard variant="flat" borderRadius="lg" footerDivider={false} sx={{ bgcolor: 'var(--color-card-bg)' }}>
+        <MsqdxMoleculeCard variant="flat" borderRadius="1.5xl" footerDivider={false} sx={{ bgcolor: 'var(--color-card-bg)' }}>
             <Box
                 sx={{
                     display: 'flex',
                     flexDirection: { xs: 'column', md: 'row' },
-                    gap: 'var(--msqdx-spacing-md)',
+                    gap: 'var(--msqdx-spacing-sm)',
                     minHeight: 0,
                     alignItems: 'flex-start',
                 }}
@@ -151,7 +151,7 @@ function DomainResultOverviewSectionInner({
                         title={t('domainResult.scannedPages')}
                         titleVariant="h6"
                         variant="flat"
-                        borderRadius="lg"
+                        borderRadius="1.5xl"
                         footerDivider={false}
                         headerActions={<InfoTooltip title={t('info.scannedPages')} ariaLabel={t('common.info')} />}
                         sx={{

@@ -45,33 +45,33 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
     const hasIssues = issues.length > 0;
 
     return (
-        <Box sx={{ flex: '0 0 350px', minWidth: 0 }}>
-            <Stack spacing={2}>
+        <Box sx={{ flex: '0 0 300px', minWidth: 0 }}>
+            <Stack spacing={1.5}>
             <MsqdxMoleculeCard
                 title={t('domainResult.domainScore')}
                 titleVariant="h6"
                 variant="flat"
-                borderRadius="lg"
+                borderRadius="1.5xl"
                 footerDivider={false}
                 headerActions={<InfoTooltip title={t('info.domainScore')} ariaLabel={t('common.info')} />}
                 sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX }}
             >
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 'var(--msqdx-spacing-md)' }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 'var(--msqdx-spacing-sm)' }}>
                     <Box
                         sx={{
                             position: 'relative',
-                            width: 120,
-                            height: 120,
+                            width: 100,
+                            height: 100,
                             borderRadius: '50%',
-                            border: `8px solid ${score > 80 ? THEME_ACCENT_CSS : 'var(--color-secondary-dx-orange)'}`,
+                            border: `6px solid ${score > 80 ? THEME_ACCENT_CSS : 'var(--color-secondary-dx-orange)'}`,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                         }}
                     >
-                        <MsqdxTypography variant="h2">{score}</MsqdxTypography>
+                        <MsqdxTypography variant="h3">{score}</MsqdxTypography>
                     </Box>
-                    <MsqdxTypography variant="body2" sx={{ mt: 'var(--msqdx-spacing-md)', color: 'var(--color-text-muted-on-light)' }}>
+                    <MsqdxTypography variant="body2" sx={{ mt: 'var(--msqdx-spacing-sm)', fontSize: '0.8125rem', color: 'var(--color-text-muted-on-light)' }}>
                         {totalPages} {t('domainResult.pagesScanned')}
                     </MsqdxTypography>
                 </Box>
@@ -81,7 +81,7 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                     title={t('domainResult.systemicIssues')}
                     titleVariant="h6"
                     variant="flat"
-                    borderRadius="lg"
+                    borderRadius="1.5xl"
                     footerDivider={false}
                     headerActions={<InfoTooltip title={t('info.systemicIssues')} ariaLabel={t('common.info')} />}
                     sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX }}
@@ -94,7 +94,7 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                     ) : (
                         <VirtualScrollList
                             items={issues}
-                            maxHeight={480}
+                            maxHeight={400}
                             estimateSize={DOMAIN_TAB_SYSTEMIC_ISSUE_ROW_ESTIMATE_PX}
                             overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
                             ariaLabel={t('domainResult.systemicIssues')}
@@ -122,12 +122,12 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                         title={t('domainResult.eeatTitle')}
                         titleVariant="h6"
                         variant="flat"
-                        borderRadius="lg"
+                        borderRadius="1.5xl"
                         footerDivider={false}
                         headerActions={<InfoTooltip title={t('info.eeat')} ariaLabel={t('common.info')} />}
                         sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX }}
                     >
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-md)' }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-sm)' }}>
                             <Box>
                                 <MsqdxTypography variant="subtitle2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 0.5 }}>
                                     {t('domainResult.eeatTrust')}

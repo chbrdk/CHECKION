@@ -21,21 +21,39 @@ export const SystemicIssueScrollRow = memo(function SystemicIssueScrollRow({ iss
     return (
         <Box
             sx={{
-                p: 'var(--msqdx-spacing-md)',
-                mb: 'var(--msqdx-spacing-md)',
+                py: 1,
+                px: 1.25,
+                mb: 1,
                 border: '1px solid var(--color-secondary-dx-pink-tint)',
-                borderRadius: 'var(--msqdx-radius-xs)',
+                borderRadius: 'var(--msqdx-radius-md)',
                 backgroundColor: 'var(--color-secondary-dx-pink-tint)',
             }}
         >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-xs)' }}>
-                <AlertCircle color="var(--color-secondary-dx-pink)" size={20} />
-                <MsqdxTypography variant="subtitle1" sx={{ color: 'var(--color-secondary-dx-pink)' }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 0.75,
+                    mb: 0.5,
+                    flexWrap: 'wrap',
+                }}
+            >
+                <AlertCircle color="var(--color-secondary-dx-pink)" size={16} style={{ marginTop: 2, flexShrink: 0 }} />
+                <MsqdxTypography
+                    variant="subtitle2"
+                    sx={{
+                        color: 'var(--color-secondary-dx-pink)',
+                        fontSize: '0.8125rem',
+                        lineHeight: 1.35,
+                        flex: '1 1 120px',
+                        minWidth: 0,
+                    }}
+                >
                     {issue.title}
                 </MsqdxTypography>
                 <MsqdxChip label={t('domainResult.issuePagesCount', { count: issue.count })} size="small" brandColor="pink" />
             </Box>
-            <MsqdxTypography variant="body2" sx={{ mb: 'var(--msqdx-spacing-xs)' }}>
+            <MsqdxTypography variant="body2" sx={{ fontSize: '0.8125rem', lineHeight: 1.35, color: 'var(--color-text-on-light)' }}>
                 {fixText}
             </MsqdxTypography>
         </Box>

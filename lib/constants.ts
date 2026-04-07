@@ -409,7 +409,8 @@ export const VIRTUAL_CHIP_LIST_MAX_HEIGHT_PX = 260;
 /** At or above this item count, use virtualization; below, plain flex-wrap (cheap for small lists). */
 export const VIRTUAL_CHIP_LIST_INLINE_THRESHOLD = 16;
 /** Domain overview: systemic issue cards — row height estimate (px) for virtual list. */
-export const DOMAIN_TAB_SYSTEMIC_ISSUE_ROW_ESTIMATE_PX = 108;
+/** Kompakte SystemicIssueScrollRow: py/px/kleinere Typo (VirtualScrollList). */
+export const DOMAIN_TAB_SYSTEMIC_ISSUE_ROW_ESTIMATE_PX = 96;
 /** Domain UX-Audit tab: max. kaputte Links in der Vorschau-Liste (virtualisiert). */
 export const DOMAIN_UX_BROKEN_LINKS_PREVIEW = 30;
 /** GET .../summary?light=1 — cap per-page UX lists (overview cards use similar slice limits). */

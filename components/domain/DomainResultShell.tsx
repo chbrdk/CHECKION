@@ -84,7 +84,7 @@ export function DomainResultShell({ children }: { children: React.ReactNode }) {
                     titleVariant="h4"
                     subtitle={`${result.domain} • ${new Date(result.timestamp).toLocaleDateString()}`}
                     variant="flat"
-                    borderRadius="lg"
+                    borderRadius="1.5xl"
                     footerDivider={false}
                     sx={{ bgcolor: 'var(--color-card-bg)' }}
                     headerActions={
