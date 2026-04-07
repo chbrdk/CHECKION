@@ -10,7 +10,6 @@ import { MSQDX_TABS_THEME_ACCENT_SX } from '@/lib/theme-accent';
 const NAV_SLUGS = [
     { slug: 'overview' as const, labelKey: 'domainResult.tabOverview' },
     { slug: 'visual-map' as const, labelKey: 'domainResult.tabVisualMap' },
-    { slug: 'list-details' as const, labelKey: 'domainResult.tabListDetails' },
     { slug: 'ux-audit' as const, labelKey: 'domainResult.tabUxAudit' },
     { slug: 'structure' as const, labelKey: 'domainResult.tabStructure' },
     { slug: 'links-seo' as const, labelKey: 'domainResult.tabLinksSeo' },
