@@ -2,7 +2,7 @@
 
 import React, { memo, useCallback, useMemo, useState } from 'react';
 import type { CrossPageKeyword } from '@/lib/domain-aggregation';
-import { Box, CircularProgress, IconButton, Tooltip } from '@mui/material';
+import { Box, CircularProgress, IconButton, Stack, Tooltip } from '@mui/material';
 import { MsqdxTypography, MsqdxChip, MsqdxButton, MsqdxMoleculeCard } from '@msqdx/react';
 import { ExternalLink } from 'lucide-react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
@@ -19,6 +19,7 @@ import {
     DOMAIN_TAB_VIRTUAL_OVERSCAN,
     apiScanDomainSeoPages,
 } from '@/lib/constants';
+import { MSQDX_INNER_CARD_BORDER_SX, MSQDX_BUTTON_THEME_ACCENT_SX } from '@/lib/theme-accent';
 
 export type DomainResultLinksSeoSectionProps = {
     t: (key: string, values?: Record<string, string | number>) => string;
@@ -36,11 +37,18 @@ type SeoPanelProps = {
     onOpenPageUrl: (url: string) => void;
 };
 
+const INNER_CARD_SX = {
+    bgcolor: 'var(--color-card-bg)',
+    ...MSQDX_INNER_CARD_BORDER_SX,
+    width: '100%',
+} as const;
+
 /** SEO card + paginated API + virtual list — isolated so refetch does not re-render the Links card. */
 const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, domainId, seo, onOpenPageUrl }: SeoPanelProps) {
     const [seoPageIndex, setSeoPageIndex] = useState(0);
     const [seoSort, setSeoSort] = useState<'wordCount' | 'url'>('wordCount');
     const [seoDir, setSeoDir] = useState<'asc' | 'desc'>('desc');
+    const lc = locale === 'en' ? 'en-US' : 'de-DE';
 
     const handleSeoSort = useCallback((next: 'wordCount' | 'url') => {
         setSeoPageIndex(0);
@@ -98,12 +106,35 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
     const renderCrossPageKeywordChip = useCallback(
         (kw: CrossPageKeyword) => (
             <MsqdxChip
-                label={`${kw.keyword} (${kw.totalCount}×, ${kw.pageCount} Seite(n), Ø ${kw.avgDensityPercent}%)`}
+                label={t('domainResult.linksSeoKeywordChip', {
+                    keyword: kw.keyword,
+                    totalCount: kw.totalCount,
+                    pageCount: kw.pageCount,
+                    avg: kw.avgDensityPercent,
+                })}
                 size="small"
                 sx={{ fontSize: '0.7rem', height: 22 }}
             />
         ),
-        []
+        [t]
+    );
+
+    const kpiCell = (labelKey: string, value: string) => (
+        <Box
+            sx={{
+                p: 1.5,
+                borderRadius: 'var(--msqdx-radius-md)',
+                ...MSQDX_INNER_CARD_BORDER_SX,
+                bgcolor: 'var(--color-card-bg)',
+            }}
+        >
+            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                {t(labelKey)}
+            </MsqdxTypography>
+            <MsqdxTypography variant="h5" sx={{ fontWeight: 700, mt: 0.5, lineHeight: 1.2 }}>
+                {value}
+            </MsqdxTypography>
+        </Box>
     );
 
     const missingMetaBlock = useMemo(() => {
@@ -113,11 +144,11 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
         const moreMissingMeta = Math.max(0, seoMissingMetaCount - Math.min(5, missingMetaUrls.length));
         if (!showMissingMetaBlock) return null;
         return (
-            <Box sx={{ mt: 1 }}>
-                <MsqdxTypography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
-                    Ohne Meta-Description:
+            <Box sx={{ mt: 0.5 }}>
+                <MsqdxTypography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.75 }}>
+                    {t('domainResult.linksSeoMissingMetaTitle')}
                 </MsqdxTypography>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <Stack spacing={0.5}>
                     {missingMetaUrls.slice(0, 5).map((url) => (
                         <Box
                             key={url}
@@ -125,10 +156,10 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 0.5,
-                                py: 0.25,
+                                py: 0.5,
                                 pr: 0.5,
-                                border: '1px solid var(--color-secondary-dx-grey-light-tint, #e0e0e0)',
-                                borderRadius: 1,
+                                borderRadius: 'var(--msqdx-radius-md)',
+                                border: '1px solid var(--color-secondary-dx-grey-light-tint)',
                                 px: 1,
                             }}
                         >
@@ -147,9 +178,9 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                             </Tooltip>
                         </Box>
                     ))}
-                </Box>
+                </Stack>
                 {moreMissingMeta > 0 && (
-                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', mt: 0.5, display: 'block' }}>
+                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', mt: 0.75, display: 'block' }}>
                         {t('domainResult.missingMetaMoreUrls', {
                             count: moreMissingMeta,
                         })}
@@ -161,66 +192,106 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
 
     return (
         <MsqdxMoleculeCard
-            title="SEO (Domain)"
+            title={t('domainResult.linksSeoSeoTitle')}
             headerActions={<InfoTooltip title={t('info.linksSeo')} ariaLabel={t('common.info')} />}
-            subtitle="Meta, Keywords seitenübergreifend, Inhaltsdichte"
+            subtitle={t('domainResult.linksSeoSeoSubtitle')}
             variant="flat"
+            borderRadius="1.5xl"
+            footerDivider={false}
             sx={{ bgcolor: 'var(--color-card-bg)' }}
-            borderRadius="lg"
         >
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Box>
-                    <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                        Meta & Struktur
-                    </MsqdxTypography>
-                    <Box sx={{ display: 'grid', gap: 0.5 }}>
-                        <MsqdxTypography variant="body2">
-                            Seiten mit Title: {seo.withTitle} / {seo.totalPages}
-                        </MsqdxTypography>
-                        <MsqdxTypography variant="body2">
-                            Seiten mit Meta-Description: {seo.withMetaDescription} / {seo.totalPages}
-                        </MsqdxTypography>
-                        <MsqdxTypography variant="body2">
-                            Seiten mit H1: {seo.withH1} / {seo.totalPages}
-                        </MsqdxTypography>
-                        {seo.totalWordsAcrossPages > 0 && (
-                            <MsqdxTypography variant="body2">
-                                Wörter gesamt (alle Seiten): {seo.totalWordsAcrossPages.toLocaleString('de-DE')}
-                            </MsqdxTypography>
-                        )}
+            <Stack spacing={2} sx={{ width: '100%', minWidth: 0 }}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        flexDirection: { xs: 'column', md: 'row' },
+                        alignItems: 'stretch',
+                        gap: 2,
+                        width: '100%',
+                        minWidth: 0,
+                    }}
+                >
+                    <Box sx={{ flex: { md: '1 1 0' }, minWidth: 0, width: { xs: '100%', md: 'auto' } }}>
+                        <MsqdxMoleculeCard
+                            title={t('domainResult.linksSeoMetaCardTitle')}
+                            titleVariant="h6"
+                            subtitle={t('domainResult.linksSeoMetaCardIntro')}
+                            variant="flat"
+                            borderRadius="1.5xl"
+                            footerDivider={false}
+                            sx={INNER_CARD_SX}
+                        >
+                            <Stack spacing={1.5}>
+                                <Box
+                                    sx={{
+                                        display: 'grid',
+                                        gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+                                        gap: 1.5,
+                                    }}
+                                >
+                                    {kpiCell('domainResult.linksSeoKpiWithTitle', `${seo.withTitle} / ${seo.totalPages}`)}
+                                    {kpiCell('domainResult.linksSeoKpiWithMeta', `${seo.withMetaDescription} / ${seo.totalPages}`)}
+                                    {kpiCell('domainResult.linksSeoKpiWithH1', `${seo.withH1} / ${seo.totalPages}`)}
+                                    {seo.totalWordsAcrossPages > 0
+                                        ? kpiCell(
+                                              'domainResult.linksSeoKpiTotalWords',
+                                              seo.totalWordsAcrossPages.toLocaleString(lc)
+                                          )
+                                        : null}
+                                </Box>
+                                {missingMetaBlock}
+                            </Stack>
+                        </MsqdxMoleculeCard>
                     </Box>
-                    {missingMetaBlock}
+
+                    {seo.crossPageKeywords.length > 0 ? (
+                        <Box sx={{ flex: { md: '1 1 0' }, minWidth: 0, width: { xs: '100%', md: 'auto' } }}>
+                            <MsqdxMoleculeCard
+                                title={t('domainResult.linksSeoKeywordsCardTitle')}
+                                titleVariant="h6"
+                                subtitle={t('domainResult.linksSeoKeywordsCardIntro')}
+                                variant="flat"
+                                borderRadius="1.5xl"
+                                footerDivider={false}
+                                sx={INNER_CARD_SX}
+                            >
+                                <VirtualChipList
+                                    items={crossPageKeywordItems}
+                                    getItemKey={(kw) => kw.keyword}
+                                    renderChip={renderCrossPageKeywordChip}
+                                />
+                            </MsqdxMoleculeCard>
+                        </Box>
+                    ) : null}
                 </Box>
 
-                {seo.crossPageKeywords.length > 0 && (
-                    <Box>
-                        <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                            Keywords seitenübergreifend (Top)
-                        </MsqdxTypography>
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1 }}>
-                            Begriffe, die auf mehreren Seiten vorkommen; sortiert nach Gesamt-Vorkommen.
-                        </MsqdxTypography>
-                        <VirtualChipList
-                            items={crossPageKeywordItems}
-                            getItemKey={(kw) => kw.keyword}
-                            renderChip={renderCrossPageKeywordChip}
-                        />
-                    </Box>
-                )}
-
-                <Box>
-                    <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                        Seiten nach Inhalt & Dichte
-                    </MsqdxTypography>
-                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1 }}>
-                        Sortiert serverseitig; &lt;300 Wörter = Skinny Content.
-                    </MsqdxTypography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1, alignItems: 'center' }}>
-                        <MsqdxButton size="small" variant={seoSort === 'wordCount' ? 'contained' : 'outlined'} onClick={() => handleSeoSort('wordCount')}>
-                            Wörter {seoSort === 'wordCount' ? (seoDir === 'desc' ? '↓' : '↑') : ''}
+                <MsqdxMoleculeCard
+                    title={t('domainResult.linksSeoDensityCardTitle')}
+                    titleVariant="h6"
+                    subtitle={t('domainResult.linksSeoDensityCardIntro')}
+                    variant="flat"
+                    borderRadius="1.5xl"
+                    footerDivider={false}
+                    sx={INNER_CARD_SX}
+                >
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 1.25, alignItems: 'center' }}>
+                        <MsqdxButton
+                            size="small"
+                            variant={seoSort === 'wordCount' ? 'contained' : 'outlined'}
+                            onClick={() => handleSeoSort('wordCount')}
+                            sx={MSQDX_BUTTON_THEME_ACCENT_SX}
+                        >
+                            {t('domainResult.linksSeoSortWords')}
+                            {seoSort === 'wordCount' ? (seoDir === 'desc' ? ' ↓' : ' ↑') : ''}
                         </MsqdxButton>
-                        <MsqdxButton size="small" variant={seoSort === 'url' ? 'contained' : 'outlined'} onClick={() => handleSeoSort('url')}>
-                            URL {seoSort === 'url' ? (seoDir === 'desc' ? '↓' : '↑') : ''}
+                        <MsqdxButton
+                            size="small"
+                            variant={seoSort === 'url' ? 'contained' : 'outlined'}
+                            onClick={() => handleSeoSort('url')}
+                            sx={MSQDX_BUTTON_THEME_ACCENT_SX}
+                        >
+                            {t('domainResult.linksSeoSortUrl')}
+                            {seoSort === 'url' ? (seoDir === 'desc' ? ' ↓' : ' ↑') : ''}
                         </MsqdxButton>
                     </Box>
                     {seoInitialLoading ? (
@@ -245,8 +316,8 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                         onPageChange={setSeoPageIndex}
                         labels={paginationLabels}
                     />
-                </Box>
-            </Box>
+                </MsqdxMoleculeCard>
+            </Stack>
         </MsqdxMoleculeCard>
     );
 });
@@ -262,80 +333,87 @@ type LinksPanelProps = {
 const DomainResultLinksPanel = memo(function DomainResultLinksPanel({ t, locale, links, onOpenPageUrl }: LinksPanelProps) {
     const lc = locale === 'en' ? 'en-US' : 'de-DE';
 
+    const statCell = (label: string, value: string, summaryLine?: string, emphasizeBroken?: boolean) => (
+        <Box
+            sx={{
+                p: 1.5,
+                borderRadius: 'var(--msqdx-radius-md)',
+                ...MSQDX_INNER_CARD_BORDER_SX,
+                bgcolor: emphasizeBroken
+                    ? 'color-mix(in srgb, var(--color-secondary-dx-red) 8%, var(--color-card-bg))'
+                    : 'var(--color-card-bg)',
+            }}
+        >
+            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                {label}
+            </MsqdxTypography>
+            <MsqdxTypography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.2, mt: 0.5 }}>
+                {value}
+            </MsqdxTypography>
+            {summaryLine ? (
+                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', mt: 0.75, display: 'block' }}>
+                    {summaryLine}
+                </MsqdxTypography>
+            ) : null}
+        </Box>
+    );
+
     return (
         <MsqdxMoleculeCard
-            title="Links (Domain)"
+            title={t('domainResult.linksSeoLinksTitle')}
             headerActions={<InfoTooltip title={t('info.linksSeo')} ariaLabel={t('common.info')} />}
-            subtitle="Kaputte Links über alle Seiten"
+            subtitle={t('domainResult.linksSeoLinksSubtitle')}
             variant="flat"
+            borderRadius="1.5xl"
+            footerDivider={false}
             sx={{ bgcolor: 'var(--color-card-bg)' }}
-            borderRadius="lg"
         >
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                <Box
-                    sx={{
-                        display: 'grid',
-                        gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
-                        gap: 1,
-                    }}
+            <Stack spacing={2} sx={{ width: '100%', minWidth: 0 }}>
+                <MsqdxMoleculeCard
+                    title={t('domainResult.linksSeoLinksStatsCardTitle')}
+                    titleVariant="h6"
+                    subtitle={t('domainResult.linksSeoLinksStatsCardIntro')}
+                    variant="flat"
+                    borderRadius="1.5xl"
+                    footerDivider={false}
+                    sx={INNER_CARD_SX}
                 >
                     <Box
                         sx={{
-                            p: 1.25,
-                            borderRadius: 1,
-                            border: '1px solid var(--color-secondary-dx-grey-light-tint, #e0e0e0)',
-                            bgcolor: 'color-mix(in srgb, var(--color-secondary-dx-red) 7%, transparent)',
+                            display: 'grid',
+                            gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))' },
+                            gap: 1.5,
                         }}
                     >
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.25 }}>
-                            {t('domainResult.linksStatBrokenTitle')}
-                        </MsqdxTypography>
-                        <MsqdxTypography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
-                            {links.broken.length.toLocaleString(lc)}
-                        </MsqdxTypography>
-                    </Box>
-                    <Box
-                        sx={{
-                            p: 1.25,
-                            borderRadius: 1,
-                            border: '1px solid var(--color-secondary-dx-grey-light-tint, #e0e0e0)',
-                        }}
-                    >
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.25 }}>
-                            {t('domainResult.linksStatUniqueTitle')}
-                        </MsqdxTypography>
-                        <MsqdxTypography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
-                            {links.uniqueBrokenUrls.toLocaleString(lc)}
-                        </MsqdxTypography>
-                    </Box>
-                    <Box
-                        sx={{
-                            p: 1.25,
-                            borderRadius: 1,
-                            border: '1px solid var(--color-secondary-dx-grey-light-tint, #e0e0e0)',
-                            gridColumn: { xs: '1', sm: 'auto' },
-                        }}
-                    >
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.25 }}>
-                            {t('domainResult.linksStatTotalLinksTitle')}
-                        </MsqdxTypography>
-                        <MsqdxTypography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
-                            {links.totalLinks.toLocaleString(lc)}
-                        </MsqdxTypography>
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', mt: 0.5, display: 'block' }}>
-                            {t('domainResult.linksStatSummaryLine', {
+                        {statCell(
+                            t('domainResult.linksStatBrokenTitle'),
+                            links.broken.length.toLocaleString(lc),
+                            undefined,
+                            true
+                        )}
+                        {statCell(t('domainResult.linksStatUniqueTitle'), links.uniqueBrokenUrls.toLocaleString(lc))}
+                        {statCell(
+                            t('domainResult.linksStatTotalLinksTitle'),
+                            links.totalLinks.toLocaleString(lc),
+                            t('domainResult.linksStatSummaryLine', {
                                 internal: links.internal,
                                 external: links.external,
-                            })}
-                        </MsqdxTypography>
+                            })
+                        )}
                     </Box>
-                </Box>
-                {links.brokenByPage.length > 0 && (
-                    <Box sx={{ mt: 0.5 }}>
-                        <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                            {t('domainResult.linksMostBrokenTitle')}
-                        </MsqdxTypography>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                </MsqdxMoleculeCard>
+
+                {links.brokenByPage.length > 0 ? (
+                    <MsqdxMoleculeCard
+                        title={t('domainResult.linksSeoMostBrokenCardTitle')}
+                        titleVariant="h6"
+                        subtitle={t('domainResult.linksSeoMostBrokenCardIntro')}
+                        variant="flat"
+                        borderRadius="1.5xl"
+                        footerDivider={false}
+                        sx={INNER_CARD_SX}
+                    >
+                        <Stack spacing={0.75}>
                             {links.brokenByPage.slice(0, 10).map(({ url, count }) => (
                                 <Box
                                     key={url}
@@ -343,10 +421,10 @@ const DomainResultLinksPanel = memo(function DomainResultLinksPanel({ t, locale,
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: 0.75,
-                                        py: 0.35,
+                                        py: 0.5,
                                         px: 1,
-                                        border: '1px solid var(--color-secondary-dx-grey-light-tint, #e0e0e0)',
-                                        borderRadius: 1,
+                                        borderRadius: 'var(--msqdx-radius-md)',
+                                        border: '1px solid var(--color-secondary-dx-grey-light-tint)',
                                     }}
                                 >
                                     <MsqdxTypography variant="caption" sx={{ flex: 1, minWidth: 0 }} noWrap title={url}>
@@ -376,10 +454,10 @@ const DomainResultLinksPanel = memo(function DomainResultLinksPanel({ t, locale,
                                     </Tooltip>
                                 </Box>
                             ))}
-                        </Box>
-                    </Box>
-                )}
-            </Box>
+                        </Stack>
+                    </MsqdxMoleculeCard>
+                ) : null}
+            </Stack>
         </MsqdxMoleculeCard>
     );
 });
@@ -392,30 +470,44 @@ function DomainResultLinksSeoSectionInner({
     onOpenPageUrl,
 }: DomainResultLinksSeoSectionProps) {
     return (
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 'var(--msqdx-spacing-md)' }}>
-            {aggregated.seo && (
-                <DomainResultSeoPanel t={t} locale={locale} domainId={domainId} seo={aggregated.seo} onOpenPageUrl={onOpenPageUrl} />
-            )}
-            {aggregated.links && (
-                <DomainResultLinksPanel t={t} locale={locale} links={aggregated.links} onOpenPageUrl={onOpenPageUrl} />
-            )}
+        <Box
+            sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', lg: 'row' },
+                alignItems: 'stretch',
+                gap: 2,
+                width: '100%',
+                minWidth: 0,
+            }}
+        >
+            {aggregated.seo ? (
+                <Box sx={{ flex: { lg: '1 1 0' }, minWidth: 0, width: { xs: '100%', lg: 'auto' } }}>
+                    <DomainResultSeoPanel t={t} locale={locale} domainId={domainId} seo={aggregated.seo} onOpenPageUrl={onOpenPageUrl} />
+                </Box>
+            ) : null}
+            {aggregated.links ? (
+                <Box sx={{ flex: { lg: '1 1 0' }, minWidth: 0, width: { xs: '100%', lg: 'auto' } }}>
+                    <DomainResultLinksPanel t={t} locale={locale} links={aggregated.links} onOpenPageUrl={onOpenPageUrl} />
+                </Box>
+            ) : null}
         </Box>
     );
 }
 
 export const DomainResultLinksSeoSection = memo(DomainResultLinksSeoSectionInner);
 
-function DomainResultLinksSeoEmptyInner({ t }: { t: (key: string) => string }) {
+function DomainResultLinksSeoEmptyInner({ t }: { t: (key: string, params?: Record<string, string | number>) => string }) {
     return (
         <MsqdxMoleculeCard
-            title="Links & SEO (Domain)"
+            title={t('domainResult.linksSeoEmptyCardTitle')}
             headerActions={<InfoTooltip title={t('info.linksSeo')} ariaLabel={t('common.info')} />}
             variant="flat"
+            borderRadius="1.5xl"
+            footerDivider={false}
             sx={{ bgcolor: 'var(--color-card-bg)' }}
-            borderRadius="lg"
         >
             <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                Keine SEO- oder Link-Daten verfügbar.
+                {t('domainResult.linksSeoEmpty')}
             </MsqdxTypography>
         </MsqdxMoleculeCard>
     );
