@@ -61,6 +61,9 @@ export const pathScanDomain = (params: { url: string; maxPages?: number; project
   return `${PATH_SCAN_DOMAIN}?${search.toString()}`;
 };
 
+/** Max content width (px) for centered long-form pages (domain/single-scan/dashboard-style). */
+export const LAYOUT_MAX_CONTENT_WIDTH_PX = 1600;
+
 // ─── API Routes ────────────────────────────────────────────────────────────
 /** Base path for API URLs (e.g. '' or '/checkion' when app is under subpath). Use for client-side fetch. */
 export const getApiBase = () => APP_BASE_URL;

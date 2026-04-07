@@ -9,27 +9,28 @@ import { AddToProject } from '@/components/AddToProject';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { useDomainScan } from '@/context/DomainScanContext';
-import { apiScanDomainSummary, PATH_HOME } from '@/lib/constants';
+import { apiScanDomainSummary, LAYOUT_MAX_CONTENT_WIDTH_PX, PATH_HOME } from '@/lib/constants';
 import { MSQDX_BUTTON_THEME_ACCENT_SX } from '@/lib/theme-accent';
 import { DomainResultNav } from '@/components/domain/DomainResultNav';
 
+const shellContainerSx = {
+    py: 'var(--msqdx-spacing-md)',
+    px: 1.5,
+    width: '100%',
+    maxWidth: LAYOUT_MAX_CONTENT_WIDTH_PX,
+    mx: 'auto',
+    boxSizing: 'border-box' as const,
+    minHeight: 320,
+};
+
 export function DomainResultShell({ children }: { children: React.ReactNode }) {
-    const { t } = useI18n();
+    const { t, locale } = useI18n();
     const router = useRouter();
     const { loadError, result, domainId, projectId, setProjectId, activeSection, fromProjectId, domainLinkQuery } = useDomainScan();
 
     if (loadError) {
         return (
-            <Box
-                sx={{
-                    py: 'var(--msqdx-spacing-md)',
-                    px: 1.5,
-                    width: '100%',
-                    maxWidth: '100%',
-                    boxSizing: 'border-box',
-                    minHeight: 320,
-                }}
-            >
+            <Box sx={shellContainerSx}>
                 <Box sx={{ display: 'flex', justifyContent: 'center', flexDirection: 'column', alignItems: 'center', gap: 'var(--msqdx-spacing-md)', py: 8 }}>
                     <MsqdxTypography variant="h5" sx={{ color: 'var(--color-text-muted-on-light)', textAlign: 'center', maxWidth: 480 }}>
                         {t('domainResult.notFound')}
@@ -49,16 +50,7 @@ export function DomainResultShell({ children }: { children: React.ReactNode }) {
 
     if (!result) {
         return (
-            <Box
-                sx={{
-                    py: 'var(--msqdx-spacing-md)',
-                    px: 1.5,
-                    width: '100%',
-                    maxWidth: '100%',
-                    boxSizing: 'border-box',
-                    minHeight: 320,
-                }}
-            >
+            <Box sx={shellContainerSx}>
                 <Box sx={{ display: 'flex', justifyContent: 'center', flexDirection: 'column', alignItems: 'center', gap: 'var(--msqdx-spacing-md)', py: 8 }}>
                     <MsqdxTypography variant="h5" sx={{ mb: 'var(--msqdx-spacing-md)' }}>{t('domainResult.loading')}</MsqdxTypography>
                     <CircularProgress sx={{ color: 'var(--color-theme-accent)' }} />
@@ -67,26 +59,29 @@ export function DomainResultShell({ children }: { children: React.ReactNode }) {
         );
     }
 
+    const scanDateLabel = new Date(result.timestamp).toLocaleDateString(locale === 'en' ? 'en-US' : 'de-DE', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+    });
+
     return (
-        <Box
-            sx={{
-                py: 'var(--msqdx-spacing-md)',
-                px: 1.5,
-                width: '100%',
-                maxWidth: '100%',
-                boxSizing: 'border-box',
-                minHeight: 320,
-            }}
-        >
-            <Stack sx={{ gap: 2 }}>
+        <Box sx={shellContainerSx}>
+            <Stack sx={{ gap: { xs: 1.5, md: 2 } }}>
                 <MsqdxMoleculeCard
                     title={t('domainResult.title')}
                     titleVariant="h4"
-                    subtitle={`${result.domain} • ${new Date(result.timestamp).toLocaleDateString()}`}
+                    subtitle={`${result.domain} • ${scanDateLabel}`}
                     variant="flat"
                     borderRadius="1.5xl"
                     footerDivider={false}
-                    sx={{ bgcolor: 'var(--color-card-bg)' }}
+                    sx={{
+                        bgcolor: 'var(--color-card-bg)',
+                        position: 'sticky',
+                        top: 0,
+                        zIndex: 8,
+                        boxShadow: '0 6px 20px -14px rgba(0,0,0,0.18)',
+                    }}
                     headerActions={
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
                             <InfoTooltip title={t('info.domainResult')} ariaLabel={t('common.info')} />

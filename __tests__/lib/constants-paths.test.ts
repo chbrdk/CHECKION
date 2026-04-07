@@ -45,6 +45,7 @@ import {
     VIRTUAL_CHIP_LIST_OVERSCAN,
     VIRTUAL_CHIP_LIST_MAX_HEIGHT_PX,
     VIRTUAL_CHIP_LIST_INLINE_THRESHOLD,
+    LAYOUT_MAX_CONTENT_WIDTH_PX,
 } from '@/lib/constants';
 
 describe('Path constants', () => {
@@ -194,6 +195,12 @@ describe('Domain tab virtual list constants', () => {
         expect(VIRTUAL_CHIP_LIST_OVERSCAN).toBeGreaterThan(0);
         expect(VIRTUAL_CHIP_LIST_MAX_HEIGHT_PX).toBeGreaterThan(0);
         expect(VIRTUAL_CHIP_LIST_INLINE_THRESHOLD).toBeGreaterThan(1);
+    });
+});
+
+describe('Layout constants', () => {
+    it('defines max content width for centered pages', () => {
+        expect(LAYOUT_MAX_CONTENT_WIDTH_PX).toBe(1600);
     });
 });
 

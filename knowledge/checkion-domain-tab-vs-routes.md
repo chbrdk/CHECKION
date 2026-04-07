@@ -33,6 +33,6 @@ Auch wenn nur **ein** Tab-Inhalt gerendert wird, bleibt die **gesamte Komponente
 
 - **`DomainScanProvider`** (`context/DomainScanContext.tsx`): ein Fetch für Summary (light), Slim-Pages- und SEO-Full-Effekte abhängig von **`activeSection`** (aus `pathname` via `getDomainSectionFromPathname`).
 - **Routing:** `app/domain/[id]/layout.tsx` + **`app/domain/[id]/[[...section]]/page.tsx`** — eine Client-Page rendert `DomainResultMain`; URLs z. B. `/domain/{id}/links-seo`, Übersicht bleibt `/domain/{id}`.
-- **Navigation:** `DomainResultShell` — horizontale **Links** statt `MsqdxTabs`; Pfade zentral **`pathDomainSection`** in `lib/domain-result-sections.ts`.
+- **Navigation:** `DomainResultShell` — horizontale **Tabs** (`DomainResultNav`), max. Breite **`LAYOUT_MAX_CONTENT_WIDTH_PX`** (zentriert, gleiches Raster wie Results/Home), **sticky** Header-Karte mit Tab-Leiste beim Scrollen; Datumszeile locale-aware (`de-DE` / `en-US`); Pfade zentral **`pathDomainSection`** in `lib/domain-result-sections.ts`.
 - **Issue-Deep-Links:** Query-Parameter bleiben erhalten; Navigation zu **`list-details`** inkl. Query über `pathDomainSection(id, 'list-details')?…`.
 - **Journey:** Dashboard und Speichern nutzen **`pathDomainSection(id, 'journey', { restoreJourney })`**.
