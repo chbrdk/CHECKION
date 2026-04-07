@@ -136,7 +136,7 @@ function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl, uxBrokenLinksPr
             variant="flat"
             borderRadius="1.5xl"
             footerDivider={false}
-            sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX, height: '100%' }}
+            sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX, width: '100%' }}
         >
             <Stack spacing={1}>
                 {ux.pagesByScore.slice(0, 10).map(({ url, score, cls }) => (
@@ -354,14 +354,16 @@ function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl, uxBrokenLinksPr
                 {hasPriority && hasDetailContent ? (
                     <Box
                         sx={{
-                            display: 'grid',
-                            gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) minmax(0, 1fr)' },
+                            display: 'flex',
+                            flexDirection: { xs: 'column', md: 'row' },
+                            alignItems: 'flex-start',
                             gap: 2,
-                            alignItems: 'stretch',
+                            width: '100%',
+                            minWidth: 0,
                         }}
                     >
-                        <Box sx={{ minWidth: 0 }}>{priorityCard}</Box>
-                        <Box sx={{ minWidth: 0 }}>{detailColumn}</Box>
+                        <Box sx={{ flex: { md: '1 1 0' }, minWidth: 0, width: { xs: '100%', md: 'auto' } }}>{priorityCard}</Box>
+                        <Box sx={{ flex: { md: '1 1 0' }, minWidth: 0, width: { xs: '100%', md: 'auto' } }}>{detailColumn}</Box>
                     </Box>
                 ) : null}
                 {hasPriority && !hasDetailContent ? <Box sx={{ minWidth: 0 }}>{priorityCard}</Box> : null}
