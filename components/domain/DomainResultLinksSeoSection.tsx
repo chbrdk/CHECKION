@@ -43,6 +43,25 @@ const INNER_CARD_SX = {
     width: '100%',
 } as const;
 
+/** Fill grid/flex row height: atom padding box → molecule column → body grow (design-system MsqdxCard). */
+const KEYWORDS_CARD_STRETCH_SX = {
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: { md: 0 },
+    '& > div': {
+        flex: 1,
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+    },
+    '& > div > div': {
+        flex: 1,
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+    },
+} as const;
+
 /** SEO card + paginated API + virtual list — isolated so refetch does not re-render the Links card. */
 const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, domainId, seo, onOpenPageUrl }: SeoPanelProps) {
     const [seoPageIndex, setSeoPageIndex] = useState(0);
@@ -194,15 +213,15 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
         <Stack spacing={2} sx={{ width: '100%', minWidth: 0 }}>
             <Box
                 sx={{
-                    display: 'flex',
-                    flexDirection: { xs: 'column', md: 'row' },
-                    alignItems: 'stretch',
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
                     gap: 2,
+                    alignItems: 'stretch',
                     width: '100%',
                     minWidth: 0,
                 }}
             >
-                <Box sx={{ flex: { md: '1 1 0' }, minWidth: 0, width: { xs: '100%', md: 'auto' } }}>
+                <Box sx={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                     <MsqdxMoleculeCard
                         title={t('domainResult.linksSeoMetaCardTitle')}
                         titleVariant="h6"
@@ -210,7 +229,7 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                         variant="flat"
                         borderRadius="1.5xl"
                         footerDivider={false}
-                        sx={INNER_CARD_SX}
+                        sx={{ ...INNER_CARD_SX, height: { md: '100%' } }}
                     >
                         <Stack spacing={1.5}>
                             <Box
@@ -236,7 +255,7 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                 </Box>
 
                 {seo.crossPageKeywords.length > 0 ? (
-                    <Box sx={{ flex: { md: '1 1 0' }, minWidth: 0, width: { xs: '100%', md: 'auto' } }}>
+                    <Box sx={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                         <MsqdxMoleculeCard
                             title={t('domainResult.linksSeoKeywordsCardTitle')}
                             titleVariant="h6"
@@ -244,13 +263,20 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                             variant="flat"
                             borderRadius="1.5xl"
                             footerDivider={false}
-                            sx={INNER_CARD_SX}
+                            sx={{
+                                ...INNER_CARD_SX,
+                                height: { md: '100%' },
+                                ...KEYWORDS_CARD_STRETCH_SX,
+                            }}
                         >
-                            <VirtualChipList
-                                items={crossPageKeywordItems}
-                                getItemKey={(kw) => kw.keyword}
-                                renderChip={renderCrossPageKeywordChip}
-                            />
+                            <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                                <VirtualChipList
+                                    items={crossPageKeywordItems}
+                                    getItemKey={(kw) => kw.keyword}
+                                    renderChip={renderCrossPageKeywordChip}
+                                    maxHeight="100%"
+                                />
+                            </Box>
                         </MsqdxMoleculeCard>
                     </Box>
                 ) : null}
