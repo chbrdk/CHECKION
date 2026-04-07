@@ -22,13 +22,20 @@ export type DomainResultNavProps = {
     domainId: string;
     activeSection: DomainResultSectionSlug;
     domainLinkQuery: Record<string, string>;
+    /** Kein unterer Rand — z. B. innerhalb einer MoleculeCard wie auf Projekt-Unterseiten. */
+    embedded?: boolean;
 };
 
 /**
  * Tab strip only subscribes to i18n — avoids re-rendering on unrelated DomainScanContext updates
  * (journey state, slim-pages fetch, etc.).
  */
-export const DomainResultNav = memo(function DomainResultNav({ domainId, activeSection, domainLinkQuery }: DomainResultNavProps) {
+export const DomainResultNav = memo(function DomainResultNav({
+    domainId,
+    activeSection,
+    domainLinkQuery,
+    embedded = false,
+}: DomainResultNavProps) {
     const { t } = useI18n();
     const query = Object.keys(domainLinkQuery).length ? domainLinkQuery : undefined;
 
@@ -38,9 +45,9 @@ export const DomainResultNav = memo(function DomainResultNav({ domainId, activeS
                 display: 'flex',
                 flexWrap: 'wrap',
                 gap: 0.5,
-                mb: 'var(--msqdx-spacing-lg)',
-                pb: 1,
-                borderBottom: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                mb: embedded ? 0 : 'var(--msqdx-spacing-lg)',
+                pb: embedded ? 0 : 1,
+                borderBottom: embedded ? 'none' : '1px solid var(--color-secondary-dx-grey-light-tint)',
                 rowGap: 0.75,
             }}
         >

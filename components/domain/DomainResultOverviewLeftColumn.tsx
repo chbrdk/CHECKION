@@ -2,8 +2,8 @@
 
 import React, { memo } from 'react';
 import Link from 'next/link';
-import { Box } from '@mui/material';
-import { MsqdxTypography, MsqdxCard, MsqdxChip } from '@msqdx/react';
+import { Box, Stack } from '@mui/material';
+import { MsqdxTypography, MsqdxMoleculeCard, MsqdxChip } from '@msqdx/react';
 import { CheckCircle } from 'lucide-react';
 import { VirtualScrollList } from '@/components/VirtualScrollList';
 import { InfoTooltip } from '@/components/InfoTooltip';
@@ -46,20 +46,16 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
 
     return (
         <Box sx={{ flex: '0 0 350px', minWidth: 0 }}>
-            <MsqdxCard
+            <Stack spacing={2}>
+            <MsqdxMoleculeCard
+                title={t('domainResult.domainScore')}
+                titleVariant="h6"
                 variant="flat"
-                sx={{
-                    bgcolor: 'var(--color-card-bg)',
-                    p: 'var(--msqdx-spacing-md)',
-                    borderRadius: 'var(--msqdx-radius-sm)',
-                    border: '1px solid var(--color-secondary-dx-grey-light-tint)',
-                    mb: 'var(--msqdx-spacing-md)',
-                }}
+                borderRadius="lg"
+                footerDivider={false}
+                headerActions={<InfoTooltip title={t('info.domainScore')} ariaLabel={t('common.info')} />}
+                sx={{ bgcolor: 'var(--color-card-bg)' }}
             >
-                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-md)' }}>
-                    <MsqdxTypography variant="h6">{t('domainResult.domainScore')}</MsqdxTypography>
-                    <InfoTooltip title={t('info.domainScore')} ariaLabel={t('common.info')} />
-                </Box>
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 'var(--msqdx-spacing-md)' }}>
                     <Box
                         sx={{
@@ -79,22 +75,17 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                         {totalPages} {t('domainResult.pagesScanned')}
                     </MsqdxTypography>
                 </Box>
-            </MsqdxCard>
+            </MsqdxMoleculeCard>
 
-            <Box sx={{ mt: 'var(--msqdx-spacing-xl)' }}>
-                <MsqdxCard
+                <MsqdxMoleculeCard
+                    title={t('domainResult.systemicIssues')}
+                    titleVariant="h6"
                     variant="flat"
-                    sx={{
-                        bgcolor: 'var(--color-card-bg)',
-                        p: 'var(--msqdx-spacing-md)',
-                        borderRadius: 'var(--msqdx-radius-sm)',
-                        border: '1px solid var(--color-secondary-dx-grey-light-tint)',
-                    }}
+                    borderRadius="lg"
+                    footerDivider={false}
+                    headerActions={<InfoTooltip title={t('info.systemicIssues')} ariaLabel={t('common.info')} />}
+                    sx={{ bgcolor: 'var(--color-card-bg)' }}
                 >
-                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-md)' }}>
-                        <MsqdxTypography variant="h6">{t('domainResult.systemicIssues')}</MsqdxTypography>
-                        <InfoTooltip title={t('info.systemicIssues')} ariaLabel={t('common.info')} />
-                    </Box>
                     {!hasIssues ? (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-md)' }}>
                             <CheckCircle color={THEME_ACCENT_CSS} />
@@ -111,10 +102,9 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                             renderItem={(issue) => <SystemicIssueScrollRow issue={issue} t={t} />}
                         />
                     )}
-                </MsqdxCard>
-            </Box>
+                </MsqdxMoleculeCard>
 
-            <Box sx={{ mt: 'var(--msqdx-spacing-md)' }}>
+                <Box>
                 <Link
                     href={pathDomainSection(
                         domainId,
@@ -125,23 +115,18 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                 >
                     {t('domainResult.pageTopicsOverviewCta')}
                 </Link>
-            </Box>
+                </Box>
 
             {eeat && (
-                <Box sx={{ mt: 'var(--msqdx-spacing-xl)' }}>
-                    <MsqdxCard
+                    <MsqdxMoleculeCard
+                        title={t('domainResult.eeatTitle')}
+                        titleVariant="h6"
                         variant="flat"
-                        sx={{
-                            bgcolor: 'var(--color-card-bg)',
-                            p: 'var(--msqdx-spacing-md)',
-                            borderRadius: 'var(--msqdx-radius-sm)',
-                            border: '1px solid var(--color-secondary-dx-grey-light-tint)',
-                        }}
+                        borderRadius="lg"
+                        footerDivider={false}
+                        headerActions={<InfoTooltip title={t('info.eeat')} ariaLabel={t('common.info')} />}
+                        sx={{ bgcolor: 'var(--color-card-bg)' }}
                     >
-                        <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-md)' }}>
-                            <MsqdxTypography variant="h6">{t('domainResult.eeatTitle')}</MsqdxTypography>
-                            <InfoTooltip title={t('info.eeat')} ariaLabel={t('common.info')} />
-                        </Box>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-md)' }}>
                             <Box>
                                 <MsqdxTypography variant="subtitle2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 0.5 }}>
@@ -222,9 +207,9 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                                 </Box>
                             )}
                         </Box>
-                    </MsqdxCard>
-                </Box>
+                    </MsqdxMoleculeCard>
             )}
+            </Stack>
         </Box>
     );
 });

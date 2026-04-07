@@ -2,7 +2,7 @@
 
 import React, { memo, useCallback, useMemo, useState } from 'react';
 import { Box, CircularProgress } from '@mui/material';
-import { MsqdxTypography, MsqdxCard } from '@msqdx/react';
+import { MsqdxTypography, MsqdxMoleculeCard } from '@msqdx/react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { RemotePaginationBar } from '@/components/RemotePaginationBar';
 import { InfoTooltip } from '@/components/InfoTooltip';
@@ -145,22 +145,22 @@ function DomainResultOverviewSectionInner({
             />
 
             <Box sx={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                <MsqdxCard
+                <MsqdxMoleculeCard
+                    title={t('domainResult.scannedPages')}
+                    titleVariant="h6"
                     variant="flat"
+                    borderRadius="lg"
+                    footerDivider={false}
+                    headerActions={<InfoTooltip title={t('info.scannedPages')} ariaLabel={t('common.info')} />}
                     sx={{
                         bgcolor: 'var(--color-card-bg)',
-                        p: 'var(--msqdx-spacing-md)',
-                        borderRadius: 'var(--msqdx-radius-sm)',
-                        border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                        flex: 1,
                         minHeight: 0,
+                        minWidth: 0,
                         display: 'flex',
                         flexDirection: 'column',
                     }}
                 >
-                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-md)' }}>
-                        <MsqdxTypography variant="h6">{t('domainResult.scannedPages')}</MsqdxTypography>
-                        <InfoTooltip title={t('info.scannedPages')} ariaLabel={t('common.info')} />
-                    </Box>
                     <Box sx={{ flex: 1, minHeight: 0, minWidth: 0 }}>
                         {slimInitialLoading ? (
                             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 6 }}>
@@ -178,7 +178,7 @@ function DomainResultOverviewSectionInner({
                             />
                         )}
                     </Box>
-                </MsqdxCard>
+                </MsqdxMoleculeCard>
             </Box>
         </Box>
     );

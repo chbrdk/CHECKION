@@ -1,8 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Box, CircularProgress } from '@mui/material';
-import { MsqdxTypography, MsqdxButton } from '@msqdx/react';
+import { Box, CircularProgress, Stack } from '@mui/material';
+import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard } from '@msqdx/react';
 import { ArrowLeft } from 'lucide-react';
 import { SharePanel } from '@/components/SharePanel';
 import { AddToProject } from '@/components/AddToProject';
@@ -22,7 +22,8 @@ export function DomainResultShell({ children }: { children: React.ReactNode }) {
         return (
             <Box
                 sx={{
-                    p: 'var(--msqdx-spacing-md)',
+                    py: 'var(--msqdx-spacing-md)',
+                    px: 1.5,
                     width: '100%',
                     maxWidth: '100%',
                     boxSizing: 'border-box',
@@ -50,7 +51,8 @@ export function DomainResultShell({ children }: { children: React.ReactNode }) {
         return (
             <Box
                 sx={{
-                    p: 'var(--msqdx-spacing-md)',
+                    py: 'var(--msqdx-spacing-md)',
+                    px: 1.5,
                     width: '100%',
                     maxWidth: '100%',
                     boxSizing: 'border-box',
@@ -68,53 +70,62 @@ export function DomainResultShell({ children }: { children: React.ReactNode }) {
     return (
         <Box
             sx={{
-                p: 'var(--msqdx-spacing-md)',
+                py: 'var(--msqdx-spacing-md)',
+                px: 1.5,
                 width: '100%',
                 maxWidth: '100%',
                 boxSizing: 'border-box',
                 minHeight: 320,
             }}
         >
-            <Box sx={{ mb: 'var(--msqdx-spacing-xl)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-                <Box>
-                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-xs)' }}>
-                        <MsqdxTypography variant="h4" weight="bold">{t('domainResult.title')}</MsqdxTypography>
-                        <InfoTooltip title={t('info.domainResult')} ariaLabel={t('common.info')} />
-                    </Box>
-                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                        {result.domain} • {new Date(result.timestamp).toLocaleDateString()}
-                    </MsqdxTypography>
-                </Box>
-                <Box sx={{ display: 'flex', gap: 'var(--msqdx-spacing-md)', flexWrap: 'wrap' }}>
-                    <MsqdxButton
-                        variant="outlined"
-                        startIcon={<ArrowLeft size={16} />}
-                        onClick={() => router.push(PATH_HOME)}
-                        sx={MSQDX_BUTTON_THEME_ACCENT_SX}
-                    >
-                        {t('domainResult.back')}
-                    </MsqdxButton>
-                    <Box sx={{ display: 'inline-flex', gap: 'var(--msqdx-spacing-sm)' }}>
-                        {!fromProjectId && (
-                            <AddToProject
-                                resourceType="domain"
-                                resourceId={domainId}
-                                currentProjectId={projectId}
-                                onAssigned={() =>
-                                    fetch(apiScanDomainSummary(domainId, { light: true }))
-                                        .then((r) => r.json())
-                                        .then((d: { projectId?: string | null }) => setProjectId(d.projectId ?? null))
-                                }
-                            />
-                        )}
-                        <SharePanel resourceType="domain" resourceId={domainId} labelNamespace="domainResult" />
-                    </Box>
-                </Box>
-            </Box>
+            <Stack sx={{ gap: 2 }}>
+                <MsqdxMoleculeCard
+                    title={t('domainResult.title')}
+                    titleVariant="h4"
+                    subtitle={`${result.domain} • ${new Date(result.timestamp).toLocaleDateString()}`}
+                    variant="flat"
+                    borderRadius="lg"
+                    footerDivider={false}
+                    sx={{ bgcolor: 'var(--color-card-bg)' }}
+                    headerActions={
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
+                            <InfoTooltip title={t('info.domainResult')} ariaLabel={t('common.info')} />
+                            <MsqdxButton
+                                variant="outlined"
+                                startIcon={<ArrowLeft size={16} />}
+                                onClick={() => router.push(PATH_HOME)}
+                                sx={MSQDX_BUTTON_THEME_ACCENT_SX}
+                            >
+                                {t('domainResult.back')}
+                            </MsqdxButton>
+                            {!fromProjectId && (
+                                <AddToProject
+                                    resourceType="domain"
+                                    resourceId={domainId}
+                                    currentProjectId={projectId}
+                                    onAssigned={() =>
+                                        fetch(apiScanDomainSummary(domainId, { light: true }))
+                                            .then((r) => r.json())
+                                            .then((d: { projectId?: string | null }) => setProjectId(d.projectId ?? null))
+                                    }
+                                />
+                            )}
+                            <SharePanel resourceType="domain" resourceId={domainId} labelNamespace="domainResult" />
+                        </Box>
+                    }
+                />
 
-            <DomainResultNav domainId={domainId} activeSection={activeSection} domainLinkQuery={domainLinkQuery} />
+                <MsqdxMoleculeCard variant="flat" borderRadius="lg" footerDivider={false} sx={{ bgcolor: 'var(--color-card-bg)' }}>
+                    <DomainResultNav
+                        domainId={domainId}
+                        activeSection={activeSection}
+                        domainLinkQuery={domainLinkQuery}
+                        embedded
+                    />
+                </MsqdxMoleculeCard>
 
-            {children}
+                {children}
+            </Stack>
         </Box>
     );
 }
