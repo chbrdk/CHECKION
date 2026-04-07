@@ -729,6 +729,18 @@
     "uxAuditBrokenTitle": "Kaputte Links (Auszug)",
     "uxAuditBrokenMore": "… und {count} weitere",
     "uxAuditEmpty": "Keine UX-Daten über die gescannten Seiten verfügbar.",
+    "uxAuditReadabilityTitle": "Lesbarkeit (Flesch–Kincaid-Grad)",
+    "uxAuditReadabilityIntro": "Geschätzte US-Schulstufe des Fließtexts pro Seite — niedrigere Werte sind leichter zu lesen. Der Mittelwert bezieht sich nur auf Seiten mit Lesbarkeitsdaten.",
+    "uxAuditReadabilityRange": "Mittelwert {avg} (Spanne {min}–{max}) · Lesbarkeitsdaten für {withData} von {total} Seiten mit UX-Auswertung.",
+    "uxAuditReadabilityNoData": "Keine Lesbarkeitswerte in dieser Auswertung (zu wenig Fließtext oder älterer Snapshot).",
+    "uxAuditReadabilityHardest": "Anspruchsvollste Seiten (höchste Stufe)",
+    "uxAuditReadabilityChip": "{score} · {grade}",
+    "uxAuditReadabilityBand": {
+      "easy": "Einfach (≈ bis 6. Klasse)",
+      "standard": "Standard (ca. 7–10)",
+      "complex": "Komplex (ca. 11–14)",
+      "veryComplex": "Sehr komplex (15+)"
+    },
     "tabStructure": "Struktur & Semantik",
     "tabLinksSeo": "Links & SEO",
     "tabInfra": "Infrastruktur & Privacy",

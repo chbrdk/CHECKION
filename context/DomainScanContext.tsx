@@ -16,13 +16,7 @@ import { useI18n } from '@/components/i18n/I18nProvider';
 import type { JourneyResult } from '@/lib/types';
 import type { DomainSummaryApiResponse } from '@/lib/domain-summary';
 import type { SlimPage } from '@/lib/types';
-import {
-    apiScanDomainBundle,
-    apiScanDomainPageResolve,
-    apiJourneys,
-    pathResults,
-    DOMAIN_UX_BROKEN_LINKS_PREVIEW,
-} from '@/lib/constants';
+import { apiScanDomainBundle, apiScanDomainPageResolve, apiJourneys, pathResults } from '@/lib/constants';
 import {
     getDomainSectionFromPathname,
     pathDomainSection,
@@ -67,7 +61,6 @@ export type DomainScanContextValue = {
     pages: SlimPage[];
     totalPageCount: number;
     aggregated: DomainSummaryApiResponse['aggregated'] | null;
-    uxBrokenLinksPreview: NonNullable<NonNullable<NonNullable<DomainSummaryApiResponse['aggregated']>['ux']>['brokenLinks']>;
     /** Fast lookup when embedded slim rows exist; often empty — use `openPageScanUrl`. */
     pagesByUrl: Map<string, SlimPage>;
     pagesById: Map<string, SlimPage>;
@@ -179,11 +172,6 @@ export function DomainScanProvider({
     const totalPageCount = result?.totalPageCount ?? result?.totalPages ?? pages.length;
 
     const aggregated = result?.aggregated ?? null;
-
-    const uxBrokenLinksPreview = useMemo(
-        () => (aggregated?.ux?.brokenLinks ?? []).slice(0, DOMAIN_UX_BROKEN_LINKS_PREVIEW),
-        [aggregated?.ux?.brokenLinks]
-    );
 
     const pagesByUrl = useMemo(() => new Map(pages.map((p) => [p.url, p])), [pages]);
     const pagesById = useMemo(() => {
@@ -385,7 +373,6 @@ export function DomainScanProvider({
             pages,
             totalPageCount,
             aggregated,
-            uxBrokenLinksPreview,
             pagesByUrl,
             pagesById,
             pagesByNormUrl,
@@ -425,7 +412,6 @@ export function DomainScanProvider({
             pages,
             totalPageCount,
             aggregated,
-            uxBrokenLinksPreview,
             pagesByUrl,
             pagesById,
             pagesByNormUrl,

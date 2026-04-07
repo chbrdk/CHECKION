@@ -26,7 +26,6 @@ export function DomainResultMain() {
         totalPageCount,
         totalSlimRows,
         aggregated,
-        uxBrokenLinksPreview,
         pagesById,
         openPageScanUrl,
         handleIssuePageClick,
@@ -93,12 +92,7 @@ export function DomainResultMain() {
 
             {activeSection === 'ux-audit' &&
                 (aggregated?.ux ? (
-                    <DomainResultUxAuditSection
-                        t={t}
-                        ux={aggregated.ux}
-                        onOpenPageUrl={openPageScanUrl}
-                        uxBrokenLinksPreview={uxBrokenLinksPreview}
-                    />
+                    <DomainResultUxAuditSection t={t} ux={aggregated.ux} onOpenPageUrl={openPageScanUrl} />
                 ) : (
                     <DomainResultUxAuditEmpty t={t} />
                 ))}

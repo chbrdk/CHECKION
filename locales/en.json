@@ -729,6 +729,18 @@
     "uxAuditBrokenTitle": "Broken links (sample)",
     "uxAuditBrokenMore": "… and {count} more",
     "uxAuditEmpty": "No UX data available for the scanned pages.",
+    "uxAuditReadabilityTitle": "Readability (Flesch–Kincaid grade)",
+    "uxAuditReadabilityIntro": "Estimated US grade level of body copy per page — lower is easier to read. The domain average includes only pages that produced a readability score.",
+    "uxAuditReadabilityRange": "Average {avg} (range {min}–{max}) · readability on {withData} of {total} pages with UX data.",
+    "uxAuditReadabilityNoData": "No readability scores in this result (too little body text or an older snapshot).",
+    "uxAuditReadabilityHardest": "Hardest pages (highest grade level)",
+    "uxAuditReadabilityChip": "{score} · {grade}",
+    "uxAuditReadabilityBand": {
+      "easy": "Easy (≈ up to 6th grade)",
+      "standard": "Standard (≈ 7–10)",
+      "complex": "Complex (≈ 11–14)",
+      "veryComplex": "Very complex (15+)"
+    },
     "tabStructure": "Structure & Semantics",
     "tabLinksSeo": "Links & SEO",
     "tabInfra": "Infrastructure & Privacy",

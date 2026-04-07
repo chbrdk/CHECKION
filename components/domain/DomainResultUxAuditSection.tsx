@@ -6,21 +6,13 @@ import { MsqdxTypography, MsqdxMoleculeCard, MsqdxChip } from '@msqdx/react';
 import { MSQDX_STATUS } from '@msqdx/tokens';
 import { MSQDX_INNER_CARD_BORDER_SX, THEME_ACCENT_CSS, THEME_ACCENT_TINT_CSS } from '@/lib/theme-accent';
 import { formatUrlForList } from '@/lib/format-url-display';
-import { VirtualScrollList } from '@/components/VirtualScrollList';
 import { InfoTooltip } from '@/components/InfoTooltip';
-import type { AggregatedUx } from '@/lib/domain-aggregation';
-import {
-    DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX,
-    DOMAIN_TAB_VIRTUAL_OVERSCAN,
-    DOMAIN_UX_BROKEN_LINKS_PREVIEW,
-} from '@/lib/constants';
-import { UxBrokenLinkScrollRow } from '@/components/domain/UxBrokenLinkScrollRow';
+import type { AggregatedUx, ReadabilityBandKey } from '@/lib/domain-aggregation';
 
 export type DomainResultUxAuditSectionProps = {
     t: (key: string, params?: Record<string, string | number>) => string;
     ux: AggregatedUx;
     onOpenPageUrl: (url: string) => void;
-    uxBrokenLinksPreview: AggregatedUx['brokenLinks'];
 };
 
 function kpiScoreColor(score: number): string {
@@ -28,6 +20,21 @@ function kpiScoreColor(score: number): string {
     if (score >= 55) return MSQDX_STATUS.warning.base;
     return MSQDX_STATUS.error.base;
 }
+
+/** Flex-Wrap in der rechten UX-Spalte: Karten nutzen die Breite, umbrechen auf kleiner Viewport/untereinander. */
+const UX_DETAIL_WRAP_ITEM_SX = {
+    flex: { xs: '1 1 100%', sm: '1 1 240px' },
+    minWidth: { xs: 0, sm: 220 },
+    maxWidth: '100%',
+    display: 'flex',
+} as const;
+
+const UX_DETAIL_WRAP_FULL_SX = {
+    flex: '1 1 100%',
+    minWidth: 0,
+    width: '100%',
+    display: 'flex',
+} as const;
 
 type PageRowProps = {
     url: string;
@@ -109,24 +116,32 @@ const UxAuditPageRow = memo(function UxAuditPageRow({ url, ariaLabel, onOpen, ch
     );
 });
 
-function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl, uxBrokenLinksPreview }: DomainResultUxAuditSectionProps) {
+const READABILITY_BAND_KEYS: ReadabilityBandKey[] = ['easy', 'standard', 'complex', 'veryComplex'];
+
+function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl }: DomainResultUxAuditSectionProps) {
     const hh = ux.headingHierarchy;
     const showHeadingsHint =
         hh.totalPages > 0 && (hh.pagesWithMultipleH1 > 0 || hh.pagesWithSkippedLevels > 0);
 
-    const readLine = ux.readability.grade
+    const read = ux.readability;
+    const readLine = read.pagesWithReadability > 0
         ? t('domainResult.uxAuditKpiReadabilityLine', {
-              grade: ux.readability.grade,
-              score: ux.readability.score,
+              grade: read.grade,
+              score: read.score,
           })
         : t('domainResult.uxAuditKpiReadabilityEmpty');
 
     const hasPriority = ux.pagesByScore.length > 0;
+    const hasReadabilitySection = ux.pageCount > 0;
+    const hasReadabilityRows = read.pagesWithReadability > 0;
+    const readabilityBands =
+        read.bandCounts ??
+        ({ easy: 0, standard: 0, complex: 0, veryComplex: 0 } satisfies Record<ReadabilityBandKey, number>);
     const hasDetailContent =
         ux.consoleErrorsByPage.length > 0 ||
         ux.tapTargets.detailsByPage.length > 0 ||
         ux.focusOrderByPage.length > 0 ||
-        ux.brokenLinks.length > 0;
+        hasReadabilitySection;
 
     const priorityCard = hasPriority ? (
         <MsqdxMoleculeCard
@@ -153,106 +168,182 @@ function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl, uxBrokenLinksPr
     ) : null;
 
     const detailColumn = hasDetailContent ? (
-        <Stack spacing={2} sx={{ minWidth: 0 }}>
+        <Box
+            sx={{
+                display: 'flex',
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+                gap: 2,
+                alignItems: 'stretch',
+                alignContent: 'flex-start',
+                minWidth: 0,
+                width: '100%',
+            }}
+        >
+            {hasReadabilitySection ? (
+                <Box sx={UX_DETAIL_WRAP_FULL_SX}>
+                    <MsqdxMoleculeCard
+                        title={t('domainResult.uxAuditReadabilityTitle')}
+                        titleVariant="h6"
+                        subtitle={t('domainResult.uxAuditReadabilityIntro')}
+                        variant="flat"
+                        borderRadius="1.5xl"
+                        footerDivider={false}
+                        sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX, width: '100%' }}
+                    >
+                        {!hasReadabilityRows ? (
+                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', lineHeight: 1.45 }}>
+                                {t('domainResult.uxAuditReadabilityNoData')}
+                            </MsqdxTypography>
+                        ) : (
+                            <Stack spacing={2}>
+                                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-on-light)', lineHeight: 1.45 }}>
+                                    {t('domainResult.uxAuditReadabilityRange', {
+                                        avg: read.score,
+                                        min: read.minScore,
+                                        max: read.maxScore,
+                                        withData: read.pagesWithReadability,
+                                        total: ux.pageCount,
+                                    })}
+                                </MsqdxTypography>
+                                <Stack spacing={1}>
+                                    {READABILITY_BAND_KEYS.map((band) => {
+                                        const n = readabilityBands[band];
+                                        const total = read.pagesWithReadability;
+                                        const pct = total > 0 ? Math.round((n / total) * 100) : 0;
+                                        return (
+                                            <Box key={band}>
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.25, gap: 1 }}>
+                                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                                        {t(`domainResult.uxAuditReadabilityBand.${band}`)}
+                                                    </MsqdxTypography>
+                                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                                        {n} ({pct}%)
+                                                    </MsqdxTypography>
+                                                </Box>
+                                                <Box
+                                                    sx={{
+                                                        height: 6,
+                                                        borderRadius: 1,
+                                                        bgcolor: 'var(--color-secondary-dx-grey-light-tint)',
+                                                        overflow: 'hidden',
+                                                    }}
+                                                >
+                                                    <Box
+                                                        sx={{
+                                                            height: '100%',
+                                                            width: `${pct}%`,
+                                                            bgcolor: THEME_ACCENT_CSS,
+                                                            transition: 'width 0.2s ease',
+                                                        }}
+                                                    />
+                                                </Box>
+                                            </Box>
+                                        );
+                                    })}
+                                </Stack>
+                                {(read.hardestPages ?? []).length > 0 ? (
+                                    <Stack spacing={0.5}>
+                                        <MsqdxTypography variant="caption" sx={{ fontWeight: 600, color: 'var(--color-text-muted-on-light)' }}>
+                                            {t('domainResult.uxAuditReadabilityHardest')}
+                                        </MsqdxTypography>
+                                        <Stack spacing={1}>
+                                            {(read.hardestPages ?? []).map(({ url, score, grade }) => (
+                                                <UxAuditPageRow
+                                                    key={`r-${url}`}
+                                                    url={url}
+                                                    ariaLabel={t('domainResult.uxAuditOpenScanAria', { url })}
+                                                    onOpen={() => onOpenPageUrl(url)}
+                                                    chipLabel={t('domainResult.uxAuditReadabilityChip', { score, grade })}
+                                                />
+                                            ))}
+                                        </Stack>
+                                    </Stack>
+                                ) : null}
+                            </Stack>
+                        )}
+                    </MsqdxMoleculeCard>
+                </Box>
+            ) : null}
+
             {ux.consoleErrorsByPage.length > 0 ? (
-                <MsqdxMoleculeCard
-                    title={t('domainResult.uxAuditSectionConsole')}
-                    titleVariant="h6"
-                    subtitle={t('domainResult.uxAuditSectionConsoleIntro')}
-                    variant="flat"
-                    borderRadius="1.5xl"
-                    footerDivider={false}
-                    sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX }}
-                >
-                    <Stack spacing={1}>
-                        {ux.consoleErrorsByPage.slice(0, 8).map(({ url, count }) => (
-                            <UxAuditPageRow
-                                key={`c-${url}`}
-                                url={url}
-                                ariaLabel={t('domainResult.uxAuditOpenScanAria', { url })}
-                                onOpen={() => onOpenPageUrl(url)}
-                                chipLabel={t('domainResult.uxAuditCountChip', { count })}
-                            />
-                        ))}
-                    </Stack>
-                </MsqdxMoleculeCard>
+                <Box sx={UX_DETAIL_WRAP_ITEM_SX}>
+                    <MsqdxMoleculeCard
+                        title={t('domainResult.uxAuditSectionConsole')}
+                        titleVariant="h6"
+                        subtitle={t('domainResult.uxAuditSectionConsoleIntro')}
+                        variant="flat"
+                        borderRadius="1.5xl"
+                        footerDivider={false}
+                        sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX, width: '100%' }}
+                    >
+                        <Stack spacing={1}>
+                            {ux.consoleErrorsByPage.slice(0, 8).map(({ url, count }) => (
+                                <UxAuditPageRow
+                                    key={`c-${url}`}
+                                    url={url}
+                                    ariaLabel={t('domainResult.uxAuditOpenScanAria', { url })}
+                                    onOpen={() => onOpenPageUrl(url)}
+                                    chipLabel={t('domainResult.uxAuditCountChip', { count })}
+                                />
+                            ))}
+                        </Stack>
+                    </MsqdxMoleculeCard>
+                </Box>
             ) : null}
 
             {ux.tapTargets.detailsByPage.length > 0 ? (
-                <MsqdxMoleculeCard
-                    title={t('domainResult.uxAuditSectionTap')}
-                    titleVariant="h6"
-                    subtitle={t('domainResult.uxAuditSectionTapIntro')}
-                    variant="flat"
-                    borderRadius="1.5xl"
-                    footerDivider={false}
-                    sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX }}
-                >
-                    <Stack spacing={1}>
-                        {ux.tapTargets.detailsByPage.slice(0, 8).map(({ url, count }) => (
-                            <UxAuditPageRow
-                                key={`t-${url}`}
-                                url={url}
-                                ariaLabel={t('domainResult.uxAuditOpenScanAria', { url })}
-                                onOpen={() => onOpenPageUrl(url)}
-                                chipLabel={t('domainResult.uxAuditCountChip', { count })}
-                            />
-                        ))}
-                    </Stack>
-                </MsqdxMoleculeCard>
+                <Box sx={UX_DETAIL_WRAP_ITEM_SX}>
+                    <MsqdxMoleculeCard
+                        title={t('domainResult.uxAuditSectionTap')}
+                        titleVariant="h6"
+                        subtitle={t('domainResult.uxAuditSectionTapIntro')}
+                        variant="flat"
+                        borderRadius="1.5xl"
+                        footerDivider={false}
+                        sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX, width: '100%' }}
+                    >
+                        <Stack spacing={1}>
+                            {ux.tapTargets.detailsByPage.slice(0, 8).map(({ url, count }) => (
+                                <UxAuditPageRow
+                                    key={`t-${url}`}
+                                    url={url}
+                                    ariaLabel={t('domainResult.uxAuditOpenScanAria', { url })}
+                                    onOpen={() => onOpenPageUrl(url)}
+                                    chipLabel={t('domainResult.uxAuditCountChip', { count })}
+                                />
+                            ))}
+                        </Stack>
+                    </MsqdxMoleculeCard>
+                </Box>
             ) : null}
 
             {ux.focusOrderByPage.length > 0 ? (
-                <MsqdxMoleculeCard
-                    title={t('domainResult.uxAuditSectionFocus')}
-                    titleVariant="h6"
-                    subtitle={t('domainResult.uxAuditSectionFocusIntro')}
-                    variant="flat"
-                    borderRadius="1.5xl"
-                    footerDivider={false}
-                    sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX }}
-                >
-                    <Stack spacing={1}>
-                        {ux.focusOrderByPage.slice(0, 8).map(({ url, count }) => (
-                            <UxAuditPageRow
-                                key={`f-${url}`}
-                                url={url}
-                                ariaLabel={t('domainResult.uxAuditOpenScanAria', { url })}
-                                onOpen={() => onOpenPageUrl(url)}
-                                chipLabel={t('domainResult.uxAuditCountChip', { count })}
-                            />
-                        ))}
-                    </Stack>
-                </MsqdxMoleculeCard>
+                <Box sx={UX_DETAIL_WRAP_ITEM_SX}>
+                    <MsqdxMoleculeCard
+                        title={t('domainResult.uxAuditSectionFocus')}
+                        titleVariant="h6"
+                        subtitle={t('domainResult.uxAuditSectionFocusIntro')}
+                        variant="flat"
+                        borderRadius="1.5xl"
+                        footerDivider={false}
+                        sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX, width: '100%' }}
+                    >
+                        <Stack spacing={1}>
+                            {ux.focusOrderByPage.slice(0, 8).map(({ url, count }) => (
+                                <UxAuditPageRow
+                                    key={`f-${url}`}
+                                    url={url}
+                                    ariaLabel={t('domainResult.uxAuditOpenScanAria', { url })}
+                                    onOpen={() => onOpenPageUrl(url)}
+                                    chipLabel={t('domainResult.uxAuditCountChip', { count })}
+                                />
+                            ))}
+                        </Stack>
+                    </MsqdxMoleculeCard>
+                </Box>
             ) : null}
-
-            {ux.brokenLinks.length > 0 ? (
-                <MsqdxMoleculeCard
-                    title={t('domainResult.uxAuditBrokenTitle')}
-                    titleVariant="h6"
-                    variant="flat"
-                    borderRadius="1.5xl"
-                    footerDivider={false}
-                    sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX }}
-                >
-                    <VirtualScrollList
-                        items={uxBrokenLinksPreview}
-                        maxHeight={220}
-                        estimateSize={DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX}
-                        overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
-                        getItemKey={(l, i) => `${l.href}|${l.pageUrl}|${l.status}|${i}`}
-                        renderItem={(l) => <UxBrokenLinkScrollRow link={l} />}
-                    />
-                    {ux.brokenLinks.length > DOMAIN_UX_BROKEN_LINKS_PREVIEW ? (
-                        <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 1, color: 'var(--color-text-muted-on-light)' }}>
-                            {t('domainResult.uxAuditBrokenMore', {
-                                count: ux.brokenLinks.length - DOMAIN_UX_BROKEN_LINKS_PREVIEW,
-                            })}
-                        </MsqdxTypography>
-                    ) : null}
-                </MsqdxMoleculeCard>
-            ) : null}
-        </Stack>
+        </Box>
     ) : null;
 
     return (

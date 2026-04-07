@@ -217,6 +217,12 @@ function capAggregatedForSize(
         ux: aggregated.ux
             ? {
                   ...aggregated.ux,
+                  readability: aggregated.ux.readability
+                      ? {
+                            ...aggregated.ux.readability,
+                            hardestPages: (aggregated.ux.readability.hardestPages ?? []).slice(0, c.uxList),
+                        }
+                      : aggregated.ux.readability,
                   brokenLinks: (aggregated.ux.brokenLinks ?? []).slice(0, c.uxBrokenLinks),
                   pagesByScore: (aggregated.ux.pagesByScore ?? []).slice(0, c.uxList),
                   consoleErrorsByPage: (aggregated.ux.consoleErrorsByPage ?? []).slice(0, c.uxList),

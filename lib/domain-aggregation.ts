@@ -86,11 +86,45 @@ export function aggregateIssues(pages: ScanResult[]): AggregatedIssuesResult {
   return { issues, stats, levelStats: levelCounts, pagesByIssueCount };
 }
 
+/** FK grade-level buckets (aligned with `lib/scanner.ts`). */
+export type ReadabilityBandKey = 'easy' | 'standard' | 'complex' | 'veryComplex';
+
+const READABILITY_EMPTY_BANDS: Record<ReadabilityBandKey, number> = {
+  easy: 0,
+  standard: 0,
+  complex: 0,
+  veryComplex: 0,
+};
+
+function readabilityBandFromScore(score: number): ReadabilityBandKey {
+  if (score <= 6) return 'easy';
+  if (score <= 10) return 'standard';
+  if (score <= 14) return 'complex';
+  return 'veryComplex';
+}
+
+/** Bucket labels match per-page FK grade in `lib/scanner.ts` (English strings on purpose). */
+function readabilityGradeFromLevel(level: number): string {
+  if (level <= 6) return 'Easy (6th Grade)';
+  if (level <= 10) return 'Standard (High School)';
+  if (level <= 14) return 'Complex (College)';
+  return 'Very Complex (Academic)';
+}
+
 /** Aggregated UX: averages + merged lists (broken links with pageUrl). */
 export interface AggregatedUx {
   score: number;
   cls: number;
-  readability: { grade: string; score: number };
+  readability: {
+    grade: string;
+    /** Mean FK grade level over pages that have readability (one decimal). */
+    score: number;
+    minScore: number;
+    maxScore: number;
+    bandCounts: Record<ReadabilityBandKey, number>;
+    hardestPages: Array<{ url: string; score: number; grade: string }>;
+    pagesWithReadability: number;
+  };
   tapTargets: { issues: string[]; detailsByPage: Array<{ url: string; count: number }> };
   /** Focus-order items per page (for visual/tab-order analysis). */
   focusOrderByPage: Array<{ url: string; count: number }>;
@@ -118,7 +152,8 @@ export function aggregateUx(pages: ScanResult[]): AggregatedUx | null {
   const consoleErrorsByPage: AggregatedUx['consoleErrorsByPage'] = [];
   const pagesByScore: Array<{ url: string; score: number; cls: number }> = [];
   let pagesWithMultipleH1 = 0, pagesWithSkippedLevels = 0;
-  let readGrade = '';
+  const bandCounts: Record<ReadabilityBandKey, number> = { ...READABILITY_EMPTY_BANDS };
+  const readabilityRows: Array<{ url: string; score: number; grade: string }> = [];
 
   for (const p of withUx) {
     const ux = p.ux!;
@@ -126,8 +161,11 @@ export function aggregateUx(pages: ScanResult[]): AggregatedUx | null {
     clsSum += ux.cls;
     pagesByScore.push({ url: p.url, score: ux.score, cls: ux.cls });
     if (ux.readability?.score != null) {
-      readScoreSum += ux.readability.score;
-      if (!readGrade) readGrade = ux.readability.grade ?? '';
+      const sc = ux.readability.score;
+      readScoreSum += sc;
+      const grade = ux.readability.grade ?? readabilityGradeFromLevel(sc);
+      readabilityRows.push({ url: p.url, score: sc, grade });
+      bandCounts[readabilityBandFromScore(sc)]++;
     }
     (ux.tapTargets?.issues ?? []).forEach((i) => tapIssuesSet.add(i));
     const tapCount = ux.tapTargets?.details?.length ?? 0;
@@ -146,10 +184,28 @@ export function aggregateUx(pages: ScanResult[]): AggregatedUx | null {
   pagesByScore.sort((a, b) => a.score - b.score);
 
   const n = withUx.length;
+  const pagesWithReadability = readabilityRows.length;
+  const avgReadLevel = pagesWithReadability > 0 ? readScoreSum / pagesWithReadability : 0;
+  const minScore =
+    pagesWithReadability > 0 ? Math.min(...readabilityRows.map((r) => r.score)) : 0;
+  const maxScore =
+    pagesWithReadability > 0 ? Math.max(...readabilityRows.map((r) => r.score)) : 0;
+  const hardestPages = [...readabilityRows]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8);
+
   return {
     score: Math.round(scoreSum / n),
     cls: Math.round((clsSum / n) * 1000) / 1000,
-    readability: { grade: readGrade, score: n ? Math.round(readScoreSum / n) : 0 },
+    readability: {
+      grade: pagesWithReadability ? readabilityGradeFromLevel(avgReadLevel) : '',
+      score: pagesWithReadability ? Number(avgReadLevel.toFixed(1)) : 0,
+      minScore: pagesWithReadability ? Number(minScore.toFixed(1)) : 0,
+      maxScore: pagesWithReadability ? Number(maxScore.toFixed(1)) : 0,
+      bandCounts,
+      hardestPages,
+      pagesWithReadability,
+    },
     tapTargets: { issues: Array.from(tapIssuesSet), detailsByPage },
     focusOrderByPage,
     brokenLinks,
