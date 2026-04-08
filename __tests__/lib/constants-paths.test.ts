@@ -46,6 +46,7 @@ import {
     VIRTUAL_CHIP_LIST_MAX_HEIGHT_PX,
     VIRTUAL_CHIP_LIST_INLINE_THRESHOLD,
     LAYOUT_MAX_CONTENT_WIDTH_PX,
+    APP_LAYOUT_INNER_BORDER_WIDTH_PX,
 } from '@/lib/constants';
 
 describe('Path constants', () => {
@@ -201,6 +202,10 @@ describe('Domain tab virtual list constants', () => {
 describe('Layout constants', () => {
     it('defines max content width for centered pages', () => {
         expect(LAYOUT_MAX_CONTENT_WIDTH_PX).toBe(1600);
+    });
+
+    it('inner app frame border width matches MsqdxAppLayout thin', () => {
+        expect(APP_LAYOUT_INNER_BORDER_WIDTH_PX).toBe(3);
     });
 });
 

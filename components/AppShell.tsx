@@ -9,7 +9,7 @@ import { Sidebar } from './Sidebar';
 import { AppShellHeaderNav } from './AppShellHeaderNav';
 import { BrandColorInitializer } from './settings/BrandColorInitializer';
 import { THEME_ACCENT_WITH_FALLBACK } from '@/lib/theme-accent';
-import { PATH_LOGIN, PATH_REGISTER, PATH_SHARE } from '@/lib/constants';
+import { APP_LAYOUT_INNER_BORDER_WIDTH_PX, PATH_LOGIN, PATH_REGISTER, PATH_SHARE } from '@/lib/constants';
 
 const AUTH_PATHS = [PATH_LOGIN, PATH_REGISTER];
 /** Share landing pages: use app layout + logo but hide navigation. */
@@ -21,7 +21,8 @@ const HEADER_HEIGHT_MD = 64;
 export function AppShell({ children }: { children: ReactNode }) {
     const pathname = usePathname();
     const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    /** Matches MsqdxAdminNav drawer: overlay + menu control below `lg`. */
+    const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
     const [mobileNavOpen, setMobileNavOpen] = useState(true);
     const isAuthPage = AUTH_PATHS.some(p => pathname === p || pathname?.startsWith(p + '/'));
     const isSharePage = SHARE_PATHS.some(p => pathname === p || pathname?.startsWith(p + '/'));
@@ -45,6 +46,15 @@ export function AppShell({ children }: { children: ReactNode }) {
             },
             '& > div:last-of-type > div': {
                 borderColor: `${THEME_ACCENT_WITH_FALLBACK.borderColor} !important`,
+                ...(showSidebar
+                    ? {
+                          /* MsqdxAppLayout sets borderLeft: none when hasSidebar (docked rail). On small viewports the nav is a drawer, so restore the left edge to match top/right/bottom. */
+                          borderLeft: {
+                              xs: `${APP_LAYOUT_INNER_BORDER_WIDTH_PX}px solid ${THEME_ACCENT_WITH_FALLBACK.borderColor} !important`,
+                              lg: 'none !important',
+                          },
+                      }
+                    : {}),
             },
             '& > div:last-of-type > div > div:first-of-type': {
                 position: 'absolute !important',
@@ -77,13 +87,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                         flexDirection: 'column',
                     }}
                 >
-                    {/* Header bar – starts right of logo so nav is never covered; above corner in stacking order. */}
+                    {/* Header bar: im Inhaltsbereich neben der CornerBox (Layout); kein zusätzliches left — sonst schrumpft die Nav auf Mobile stark ein. */}
                     <Box
                         component="header"
                         sx={{
                             position: 'absolute',
                             top: 0,
-                            left: { xs: 240, md: 260 },
+                            left: 0,
                             right: 0,
                             zIndex: 100001,
                             display: 'flex',
@@ -94,6 +104,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                             backgroundColor: 'transparent',
                             overflow: 'visible',
                             color: '#000',
+                            minWidth: 0,
                         }}
                     >
                         <AppShellHeaderNav />
@@ -131,17 +142,18 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <IconButton
                     onClick={() => setMobileNavOpen(true)}
                     aria-label="Menü öffnen"
+                    size="large"
                     sx={{
                         position: 'fixed',
                         top: 12,
                         left: 12,
-                        zIndex: 1100,
+                        zIndex: 100_003,
                         backgroundColor: THEME_ACCENT_WITH_FALLBACK.backgroundColor,
                         color: 'var(--color-theme-accent-contrast, #fff)',
                         '&:hover': { backgroundColor: THEME_ACCENT_WITH_FALLBACK.backgroundColor, filter: 'brightness(1.1)' },
                     }}
                 >
-                    <MsqdxIcon name="menu" customSize={24} />
+                    <MsqdxIcon name="menu" customSize={28} />
                 </IconButton>
             )}
         </>

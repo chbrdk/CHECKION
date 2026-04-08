@@ -64,6 +64,12 @@ export const pathScanDomain = (params: { url: string; maxPages?: number; project
 /** Max content width (px) for centered long-form pages (domain/single-scan/dashboard-style). */
 export const LAYOUT_MAX_CONTENT_WIDTH_PX = 1600;
 
+/**
+ * Inner app frame border thickness when the app shell uses MsqdxAppLayout `borderWidth="thin"`.
+ * Keep in sync with `APP_LAYOUT_BORDER_WIDTH.thin` in `@msqdx/react` MsqdxAppLayout.
+ */
+export const APP_LAYOUT_INNER_BORDER_WIDTH_PX = 3;
+
 // ─── API Routes ────────────────────────────────────────────────────────────
 /** Base path for API URLs (e.g. '' or '/checkion' when app is under subpath). Use for client-side fetch. */
 export const getApiBase = () => APP_BASE_URL;
