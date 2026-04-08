@@ -661,6 +661,7 @@
     "systemicIssues": "Systemic Issues",
     "noSystemicIssues": "No systemic issues detected.",
     "pageTopicsTitle": "Page topics (domain)",
+    "pageTopicsKpiCoverage": "AI classification",
     "pageTopicsCoverage": "{{classified}} of {{total}} pages have AI classification (tags + tier).",
     "pageTopicsDiagramTitle": "Topic landscape",
     "pageTopicsViewBubbleMatrix": "Bubble matrix",

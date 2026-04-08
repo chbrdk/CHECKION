@@ -1,11 +1,11 @@
 'use client';
 
 import React, { memo } from 'react';
-import { Box } from '@mui/material';
-import { MsqdxTypography, MsqdxCard } from '@msqdx/react';
-import { InfoTooltip } from '@/components/InfoTooltip';
+import { Box, Stack } from '@mui/material';
+import { MsqdxTypography, MsqdxMoleculeCard } from '@msqdx/react';
 import type { AggregatedPageClassification, AggregatedPageClassificationProfile } from '@/lib/types';
 import { PageTopicsVisualization } from '@/components/domain/PageTopicsVisualization';
+import { MSQDX_INNER_CARD_BORDER_SX } from '@/lib/theme-accent';
 
 export type DomainResultPageTopicsCardProps = {
     t: (key: string, values?: Record<string, string | number>) => string;
@@ -13,6 +13,12 @@ export type DomainResultPageTopicsCardProps = {
     /** `overview`: left column spacing; `tab`: full-width tab, no extra top margin */
     placement?: 'overview' | 'tab';
 };
+
+const INNER_CARD_SX = {
+    bgcolor: 'var(--color-card-bg)',
+    ...MSQDX_INNER_CARD_BORDER_SX,
+    width: '100%',
+} as const;
 
 function profileLabel(t: DomainResultPageTopicsCardProps['t'], p: AggregatedPageClassificationProfile): string {
     switch (p) {
@@ -32,51 +38,103 @@ export const DomainResultPageTopicsCard = memo(function DomainResultPageTopicsCa
     pageClassification,
     placement = 'overview',
 }: DomainResultPageTopicsCardProps) {
-    const { coverage, pageSamples } = pageClassification;
+    const { coverage, pageSamples, tierDistribution } = pageClassification;
     if (coverage.pagesWithClassification <= 0) return null;
 
     return (
         <Box sx={placement === 'tab' ? { mt: 0 } : { mt: 'var(--msqdx-spacing-xl)' }}>
-            <MsqdxCard
-                variant="flat"
-                sx={{
-                    bgcolor: 'var(--color-card-bg)',
-                    p: 'var(--msqdx-spacing-md)',
-                    borderRadius: 'var(--msqdx-radius-sm)',
-                    border: '1px solid var(--color-secondary-dx-grey-light-tint)',
-                }}
-            >
-                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-md)' }}>
-                    <MsqdxTypography variant="h6">{t('domainResult.pageTopicsTitle')}</MsqdxTypography>
-                    <InfoTooltip title={t('info.pageTopicsAggregate')} ariaLabel={t('common.info')} />
+            <Stack spacing={2} sx={{ width: '100%', minWidth: 0 }}>
+                <Box
+                    sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(4, minmax(0, 1fr))' },
+                        gap: 1.5,
+                    }}
+                >
+                    <Box
+                        sx={{
+                            p: 1.5,
+                            borderRadius: 'var(--msqdx-radius-md)',
+                            ...MSQDX_INNER_CARD_BORDER_SX,
+                            bgcolor: 'var(--color-card-bg)',
+                            gridColumn: { xs: 'span 2', md: 'span 2' },
+                        }}
+                    >
+                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                            {t('domainResult.pageTopicsKpiCoverage')}
+                        </MsqdxTypography>
+                        <MsqdxTypography variant="h5" sx={{ fontWeight: 700, mt: 0.5, lineHeight: 1.2 }}>
+                            {coverage.pagesWithClassification} / {coverage.totalPages}
+                        </MsqdxTypography>
+                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mt: 0.75, lineHeight: 1.35 }}>
+                            {t('domainResult.pageTopicsCoverage', {
+                                classified: coverage.pagesWithClassification,
+                                total: coverage.totalPages,
+                            })}
+                        </MsqdxTypography>
+                    </Box>
+                    <Box
+                        sx={{
+                            p: 1.5,
+                            borderRadius: 'var(--msqdx-radius-md)',
+                            ...MSQDX_INNER_CARD_BORDER_SX,
+                            bgcolor: 'var(--color-card-bg)',
+                        }}
+                    >
+                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                            T5
+                        </MsqdxTypography>
+                        <MsqdxTypography variant="h5" sx={{ fontWeight: 700, mt: 0.5, lineHeight: 1.2 }}>
+                            {tierDistribution.pagesWithAtLeastOneTier5}
+                        </MsqdxTypography>
+                    </Box>
+                    <Box
+                        sx={{
+                            p: 1.5,
+                            borderRadius: 'var(--msqdx-radius-md)',
+                            ...MSQDX_INNER_CARD_BORDER_SX,
+                            bgcolor: 'var(--color-card-bg)',
+                        }}
+                    >
+                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                            T1–2 &gt; T4–5
+                        </MsqdxTypography>
+                        <MsqdxTypography variant="h5" sx={{ fontWeight: 700, mt: 0.5, lineHeight: 1.2 }}>
+                            {tierDistribution.pagesDominatedByLowTiers}
+                        </MsqdxTypography>
+                    </Box>
                 </Box>
 
-                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 'var(--msqdx-spacing-md)' }}>
-                    {t('domainResult.pageTopicsCoverage', {
-                        classified: coverage.pagesWithClassification,
-                        total: coverage.totalPages,
-                    })}
-                </MsqdxTypography>
+                <MsqdxMoleculeCard
+                    variant="flat"
+                    borderRadius="1.5xl"
+                    footerDivider={false}
+                    sx={INNER_CARD_SX}
+                >
+                    <PageTopicsVisualization t={t} pageClassification={pageClassification} />
+                </MsqdxMoleculeCard>
 
-                <PageTopicsVisualization t={t} pageClassification={pageClassification} />
-
-                {pageSamples.length > 0 && (
-                    <>
-                        <MsqdxTypography variant="subtitle2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 'var(--msqdx-spacing-xs)' }}>
-                            {t('domainResult.pageTopicsSamples')}
-                        </MsqdxTypography>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-xs)' }}>
+                {pageSamples.length > 0 ? (
+                    <MsqdxMoleculeCard
+                        title={t('domainResult.pageTopicsSamples')}
+                        titleVariant="h6"
+                        variant="flat"
+                        borderRadius="1.5xl"
+                        footerDivider={false}
+                        sx={INNER_CARD_SX}
+                    >
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
                             {pageSamples.map((s) => (
-                                <MsqdxTypography key={s.url} variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                <MsqdxTypography key={s.url} variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', lineHeight: 1.4 }}>
                                     <strong>{profileLabel(t, s.profile)}</strong>
                                     {' · '}
-                                    {s.url.length > 64 ? `${s.url.slice(0, 61)}…` : s.url}
+                                    {s.url.length > 88 ? `${s.url.slice(0, 85)}…` : s.url}
                                 </MsqdxTypography>
                             ))}
                         </Box>
-                    </>
-                )}
-            </MsqdxCard>
+                    </MsqdxMoleculeCard>
+                ) : null}
+            </Stack>
         </Box>
     );
 });

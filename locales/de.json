@@ -661,6 +661,7 @@
     "systemicIssues": "Systemische Probleme",
     "noSystemicIssues": "Keine systemischen Probleme erkannt.",
     "pageTopicsTitle": "Seitenthemen (Domain)",
+    "pageTopicsKpiCoverage": "KI-Klassifikation",
     "pageTopicsCoverage": "{{classified}} von {{total}} Seiten mit KI-Klassifikation (Tags + Tier).",
     "pageTopicsDiagramTitle": "Themenlandschaft",
     "pageTopicsViewBubbleMatrix": "Blasen-Matrix",
