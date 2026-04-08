@@ -63,10 +63,10 @@ export function ProjectHeaderNav() {
         <Box
             sx={{
                 display: 'flex',
-                flexDirection: { xs: 'column', lg: 'row' },
-                alignItems: { xs: 'stretch', lg: 'center' },
+                flexDirection: 'row',
+                alignItems: 'center',
                 justifyContent: { xs: 'flex-start', lg: 'flex-end' },
-                gap: { xs: 1.25, lg: 2 },
+                gap: { xs: 1, lg: 2 },
                 flexWrap: 'nowrap',
                 marginLeft: { xs: 0, lg: 'auto' },
                 width: '100%',
@@ -74,14 +74,18 @@ export function ProjectHeaderNav() {
                 maxWidth: '100%',
             }}
         >
-            <Link href={id ? pathProject(id) : '/projects'} style={{ textDecoration: 'none', flexShrink: 0 }}>
+            <Link
+                href={id ? pathProject(id) : '/projects'}
+                style={{ textDecoration: 'none', flexShrink: 0, width: 'auto', display: 'inline-flex' }}
+            >
                 <MsqdxButton
                     variant="outlined"
                     size="small"
                     sx={{
                         color: '#000',
                         borderColor: 'currentColor',
-                        width: { xs: '100%', lg: 'auto' },
+                        width: 'auto',
+                        flexShrink: 0,
                         '&:hover': { borderColor: 'currentColor', backgroundColor: 'rgba(0,0,0,0.06)' },
                     }}
                 >
@@ -95,9 +99,8 @@ export function ProjectHeaderNav() {
                 allowScrollButtonsMobile
                 sx={{
                     minHeight: 44,
-                    width: { xs: '100%', lg: 'auto' },
                     minWidth: 0,
-                    flex: { xs: 1, lg: 'none' },
+                    flex: { xs: '1 1 0%', lg: '0 1 auto' },
                     color: '#000',
                     '& .MuiTabs-flexContainer': { gap: 0 },
                     '& .MuiTab-root': {

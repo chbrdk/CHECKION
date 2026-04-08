@@ -14,9 +14,9 @@ import {
 } from '@/lib/constants';
 import type { ScanResult, TagTier } from '@/lib/types';
 
-function page(url: string, tagTiers: TagTier[]): ScanResult {
+function page(id: string, url: string, tagTiers: TagTier[]): ScanResult {
     return {
-        id: 'x',
+        id,
         url,
         timestamp: 't',
         standard: 'WCAG2AA',
@@ -47,8 +47,8 @@ describe('aggregatePageClassification', () => {
 
     it('counts coverage when only some pages have tagTiers', () => {
         const pages: ScanResult[] = [
-            page('https://a.test/', [{ tag: 'Alpha', tier: 5 }]),
-            { ...page('https://a.test/b', []), pageClassification: undefined },
+            page('p1', 'https://a.test/', [{ tag: 'Alpha', tier: 5 }]),
+            { ...page('p2', 'https://a.test/b', []), pageClassification: undefined },
         ];
         const agg = aggregatePageClassification(pages);
         expect(agg).toBeDefined();
@@ -58,11 +58,11 @@ describe('aggregatePageClassification', () => {
 
     it('merges tags by normalized key and ranks tier-5 themes above damped boilerplate', () => {
         const pages: ScanResult[] = [
-            page('https://a.test/', [
+            page('p1', 'https://a.test/', [
                 { tag: 'Navigation', tier: 1 },
                 { tag: 'Industry 4.0', tier: 5 },
             ]),
-            page('https://a.test/p', [
+            page('p2', 'https://a.test/p', [
                 { tag: 'navigation', tier: 2 },
                 { tag: 'Industry 4.0', tier: 5 },
             ]),
@@ -78,8 +78,8 @@ describe('aggregatePageClassification', () => {
 
     it('assigns page profiles and tier distribution denominators use totalPages', () => {
         const pages: ScanResult[] = [
-            page('https://a.test/', [{ tag: 'Core', tier: 5 }, { tag: 'Core2', tier: 5 }]),
-            page('https://a.test/u', [
+            page('p1', 'https://a.test/', [{ tag: 'Core', tier: 5 }, { tag: 'Core2', tier: 5 }]),
+            page('p2', 'https://a.test/u', [
                 { tag: 'Nav', tier: 1 },
                 { tag: 'Foot', tier: 1 },
                 { tag: 'X', tier: 1 },
@@ -92,16 +92,51 @@ describe('aggregatePageClassification', () => {
         const pillar = agg.pageSamples.find((s) => s.url.includes('a.test/') && !s.url.includes('/u'));
         expect(pillar?.profile).toBe('pillar');
     });
+
+    it('emits themeTagKey, relatedPages, and subset avg tiers for pages mentioning the theme', () => {
+        const pages: ScanResult[] = [
+            page('p1', 'https://a.test/', [
+                { tag: 'Alpha', tier: 5 },
+                { tag: 'Beta', tier: 1 },
+            ]),
+            page('p2', 'https://a.test/b', [{ tag: 'Alpha', tier: 4 }]),
+            page('p3', 'https://a.test/c', [{ tag: 'Gamma', tier: 2 }]),
+        ];
+        const agg = aggregatePageClassification(pages)!;
+        const alpha = agg.topThemes.find((t) => t.tag === 'Alpha');
+        expect(alpha?.themeTagKey).toBe('alpha');
+        expect(alpha?.pageCount).toBe(2);
+        expect(alpha?.subsetAvgTagsPerPageByTier).toEqual({
+            tier1: 0.5,
+            tier2: 0,
+            tier3: 0,
+            tier4: 0.5,
+            tier5: 0.5,
+        });
+        const relatedIds = new Set((alpha?.relatedPages ?? []).map((r) => r.id));
+        expect(relatedIds.has('p1')).toBe(true);
+        expect(relatedIds.has('p2')).toBe(true);
+        expect(relatedIds.has('p3')).toBe(false);
+    });
 });
 
 describe('toStoredAggregated pageClassification caps', () => {
     it('slices topThemes to stored cap', () => {
         const themes = Array.from({ length: 100 }, (_, i) => ({
             tag: `Theme-${i}`,
+            themeTagKey: `theme-${i}`,
             score: 100 - i,
             pageCount: 1,
             maxTier: 5 as const,
             avgTier: 5,
+            relatedPages: [],
+            subsetAvgTagsPerPageByTier: {
+                tier1: 0,
+                tier2: 0,
+                tier3: 0,
+                tier4: 0,
+                tier5: 0,
+            },
         }));
         const aggregated = {
             issues: null,

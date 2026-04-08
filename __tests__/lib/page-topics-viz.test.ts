@@ -9,10 +9,13 @@ import type { AggregatedPageClassificationTheme } from '@/lib/types';
 
 const theme = (over: Partial<AggregatedPageClassificationTheme> = {}): AggregatedPageClassificationTheme => ({
     tag: 'Alpha',
+    themeTagKey: 'alpha',
     score: 10,
     pageCount: 2,
     maxTier: 3,
     avgTier: 2.5,
+    relatedPages: [],
+    subsetAvgTagsPerPageByTier: { tier1: 0, tier2: 0, tier3: 0, tier4: 0, tier5: 0 },
     ...over,
 });
 
@@ -64,5 +67,12 @@ describe('page-topics-viz', () => {
         const pts = buildPageTopicsBubblePoints(many);
         expect(pts).toHaveLength(PAGE_TOPICS_CHART_MAX_THEMES);
         expect(pts[0]?.zSize).toBeGreaterThan(pts[pts.length - 1]!.zSize);
+    });
+
+    it('includes themeTagKey on each bubble point', () => {
+        const pts = buildPageTopicsBubblePoints([
+            theme({ tag: 'Beta', themeTagKey: 'beta', score: 5, pageCount: 1, maxTier: 2, avgTier: 2 }),
+        ]);
+        expect(pts[0]?.themeTagKey).toBe('beta');
     });
 });

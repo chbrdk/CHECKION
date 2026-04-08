@@ -26,6 +26,7 @@ import {
     DOMAIN_LIGHT_SUMMARY_UX_BROKEN_LINKS_CAP,
     DOMAIN_LIGHT_SUMMARY_UX_LIST_CAP,
     DOMAIN_LIGHT_SUMMARY_PAGE_CLASSIFICATION_PAGE_SAMPLES_CAP,
+    DOMAIN_LIGHT_SUMMARY_PAGE_CLASSIFICATION_THEME_RELATED_PAGES_CAP,
     DOMAIN_LIGHT_SUMMARY_PAGE_CLASSIFICATION_TOP_THEMES_CAP,
     DOMAIN_STORED_SUMMARY_GENERATIVE_PAGES_CAP,
     DOMAIN_STORED_SUMMARY_INFRA_URL_LIST_CAP,
@@ -37,6 +38,7 @@ import {
     DOMAIN_STORED_SUMMARY_UX_BROKEN_LINKS_CAP,
     DOMAIN_STORED_SUMMARY_UX_LIST_CAP,
     DOMAIN_STORED_SUMMARY_PAGE_CLASSIFICATION_PAGE_SAMPLES_CAP,
+    DOMAIN_STORED_SUMMARY_PAGE_CLASSIFICATION_THEME_RELATED_PAGES_CAP,
     DOMAIN_STORED_SUMMARY_PAGE_CLASSIFICATION_TOP_THEMES_CAP,
 } from './constants';
 import type { ScanResult, DomainScanResult, SlimPage, AggregatedPageClassification } from './types';
@@ -167,6 +169,7 @@ type AggregatedCaps = {
     structureUrlList: number;
     pageClassTopThemes: number;
     pageClassPageSamples: number;
+    pageClassThemeRelatedPages: number;
 };
 
 const LIGHT_AGG_CAPS: AggregatedCaps = {
@@ -181,6 +184,7 @@ const LIGHT_AGG_CAPS: AggregatedCaps = {
     structureUrlList: DOMAIN_LIGHT_SUMMARY_STRUCTURE_URL_LIST_CAP,
     pageClassTopThemes: DOMAIN_LIGHT_SUMMARY_PAGE_CLASSIFICATION_TOP_THEMES_CAP,
     pageClassPageSamples: DOMAIN_LIGHT_SUMMARY_PAGE_CLASSIFICATION_PAGE_SAMPLES_CAP,
+    pageClassThemeRelatedPages: DOMAIN_LIGHT_SUMMARY_PAGE_CLASSIFICATION_THEME_RELATED_PAGES_CAP,
 };
 
 const STORED_AGG_CAPS: AggregatedCaps = {
@@ -195,6 +199,7 @@ const STORED_AGG_CAPS: AggregatedCaps = {
     structureUrlList: DOMAIN_STORED_SUMMARY_STRUCTURE_URL_LIST_CAP,
     pageClassTopThemes: DOMAIN_STORED_SUMMARY_PAGE_CLASSIFICATION_TOP_THEMES_CAP,
     pageClassPageSamples: DOMAIN_STORED_SUMMARY_PAGE_CLASSIFICATION_PAGE_SAMPLES_CAP,
+    pageClassThemeRelatedPages: DOMAIN_STORED_SUMMARY_PAGE_CLASSIFICATION_THEME_RELATED_PAGES_CAP,
 };
 
 /**
@@ -305,7 +310,12 @@ function capAggregatedForSize(
         pageClassification: aggregated.pageClassification
             ? {
                   ...aggregated.pageClassification,
-                  topThemes: (aggregated.pageClassification.topThemes ?? []).slice(0, c.pageClassTopThemes),
+                  topThemes: (aggregated.pageClassification.topThemes ?? [])
+                      .slice(0, c.pageClassTopThemes)
+                      .map((th) => ({
+                          ...th,
+                          relatedPages: (th.relatedPages ?? []).slice(0, c.pageClassThemeRelatedPages),
+                      })),
                   pageSamples: (aggregated.pageClassification.pageSamples ?? []).slice(0, c.pageClassPageSamples),
               }
             : aggregated.pageClassification,

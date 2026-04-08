@@ -135,14 +135,35 @@ export interface PageClassification {
     shortSummary?: string;
 }
 
+/** Capped sample of pages that mention a theme (for navigation without loading full slim list). */
+export interface AggregatedPageClassificationThemeRelatedPage {
+    id: string;
+    url: string;
+}
+
 /** One merged theme across the domain (from {@link aggregatePageClassification}). */
 export interface AggregatedPageClassificationTheme {
     tag: string;
+    /** Normalized merge key (trim, lower, spaces). Stable selection id for UI. Absent on older stored payloads. */
+    themeTagKey?: string;
     /** Sum of tier² per occurrence, with boilerplate tags damped (×0.25). */
     score: number;
     pageCount: number;
     maxTier: 1 | 2 | 3 | 4 | 5;
     avgTier: number;
+    /** Top pages mentioning this theme (by scan score); length capped in aggregation / light summary. */
+    relatedPages?: AggregatedPageClassificationThemeRelatedPage[];
+    /**
+     * Like {@link AggregatedPageClassification.tierDistribution} but only pages where this theme appears;
+     * denominators = count of those pages. Same tier counting rules as domain-wide rollup.
+     */
+    subsetAvgTagsPerPageByTier?: {
+        tier1: number;
+        tier2: number;
+        tier3: number;
+        tier4: number;
+        tier5: number;
+    };
 }
 
 export type AggregatedPageClassificationProfile = 'pillar' | 'hub' | 'utility' | 'mixed';

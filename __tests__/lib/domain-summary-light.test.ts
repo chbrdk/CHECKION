@@ -4,6 +4,7 @@
 import { toLightAggregated, toLightDomainSummaryApiPayload } from '@/lib/domain-summary';
 import type { DomainSummaryResponse } from '@/lib/domain-summary';
 import {
+    DOMAIN_LIGHT_SUMMARY_PAGE_CLASSIFICATION_THEME_RELATED_PAGES_CAP,
     DOMAIN_LIGHT_SUMMARY_UX_BROKEN_LINKS_CAP,
     DOMAIN_LIGHT_SUMMARY_UX_LIST_CAP,
 } from '@/lib/constants';
@@ -132,5 +133,55 @@ describe('toLightAggregated', () => {
         expect(light.ux?.pagesByScore).toHaveLength(DOMAIN_LIGHT_SUMMARY_UX_LIST_CAP);
         expect(light.ux?.tapTargets.detailsByPage).toHaveLength(DOMAIN_LIGHT_SUMMARY_UX_LIST_CAP);
         expect(light.ux?.brokenLinks).toHaveLength(DOMAIN_LIGHT_SUMMARY_UX_BROKEN_LINKS_CAP);
+    });
+
+    it('caps pageClassification.topThemes relatedPages for light payload', () => {
+        const manyRelated = Array.from({ length: 30 }, (_, i) => ({
+            id: `scan-${i}`,
+            url: `https://ex.test/p${i}`,
+        }));
+        const aggregated = {
+            issues: null,
+            ux: null,
+            seo: null,
+            links: null,
+            infra: null,
+            generative: null,
+            structure: null,
+            performance: null,
+            eco: null,
+            pageClassification: {
+                coverage: { totalPages: 2, pagesWithClassification: 2 },
+                topThemes: [
+                    {
+                        tag: 'Alpha',
+                        themeTagKey: 'alpha',
+                        score: 10,
+                        pageCount: 30,
+                        maxTier: 5 as const,
+                        avgTier: 5,
+                        relatedPages: manyRelated,
+                        subsetAvgTagsPerPageByTier: {
+                            tier1: 0,
+                            tier2: 0,
+                            tier3: 0,
+                            tier4: 0,
+                            tier5: 0,
+                        },
+                    },
+                ],
+                tierDistribution: {
+                    avgTagsPerPageByTier: { tier1: 0, tier2: 0, tier3: 0, tier4: 0, tier5: 0 },
+                    pagesWithAtLeastOneTier5: 0,
+                    pagesDominatedByLowTiers: 0,
+                },
+                pageSamples: [],
+            },
+        } as unknown as DomainSummaryResponse['aggregated'];
+
+        const light = toLightAggregated(aggregated);
+        expect(light.pageClassification?.topThemes[0]?.relatedPages).toHaveLength(
+            DOMAIN_LIGHT_SUMMARY_PAGE_CLASSIFICATION_THEME_RELATED_PAGES_CAP
+        );
     });
 });

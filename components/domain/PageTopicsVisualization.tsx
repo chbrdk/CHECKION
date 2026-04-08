@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo } from 'react';
-import { Box } from '@mui/material';
+import { useEffect, useMemo, useState } from 'react';
+import { Box, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import Link from 'next/link';
 import {
     Tooltip,
     ResponsiveContainer,
@@ -13,18 +14,25 @@ import {
     CartesianGrid,
     Cell,
 } from 'recharts';
-import { MsqdxTypography, MsqdxChip } from '@msqdx/react';
+import { MsqdxTypography, MsqdxChip, MsqdxButton } from '@msqdx/react';
 import { InfoTooltip } from '@/components/InfoTooltip';
-import type { AggregatedPageClassification } from '@/lib/types';
+import { normalizePageTopicTagKey } from '@/lib/domain-aggregation';
+import { pathResults } from '@/lib/constants';
+import type { AggregatedPageClassification, AggregatedPageClassificationTheme } from '@/lib/types';
 import {
     buildPageTopicsBubblePoints,
     buildAvgTierTagStrip,
     pageTopicTierColorCss,
     type PageTopicsBubblePoint,
+    type TierStripSegment,
 } from '@/lib/page-topics-viz';
 import { THEME_ACCENT_CSS, msqdxChipThemeAccentSx } from '@/lib/theme-accent';
 
 type Translate = (key: string, values?: Record<string, string | number>) => string;
+
+function themeRowKey(th: AggregatedPageClassificationTheme): string {
+    return th.themeTagKey ?? normalizePageTopicTagKey(th.tag);
+}
 
 function PageTopicsBubbleTooltip({
     active,
@@ -61,6 +69,40 @@ function PageTopicsBubbleTooltip({
                     score: Math.round(p.zSize * 100) / 100,
                 })}
             </MsqdxTypography>
+            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mt: 0.75, fontStyle: 'italic' }}>
+                {t('domainResult.pageTopicsBubbleTooltipClick')}
+            </MsqdxTypography>
+        </Box>
+    );
+}
+
+function TierSpectrumStrip({ strip }: { strip: TierStripSegment[] }) {
+    return (
+        <Box
+            sx={{
+                display: 'flex',
+                width: '100%',
+                height: 12,
+                borderRadius: 'var(--msqdx-radius-sm, 6px)',
+                overflow: 'hidden',
+                gap: '3px',
+                bgcolor: 'var(--color-border-subtle, #eee)',
+                p: '3px',
+            }}
+        >
+            {strip.map((s) => (
+                <Box
+                    key={s.tier}
+                    sx={{
+                        flexGrow: s.ratio,
+                        flexBasis: 0,
+                        minWidth: s.ratio > 0.04 ? 4 : 0,
+                        borderRadius: '4px',
+                        bgcolor: pageTopicTierColorCss(s.tier, THEME_ACCENT_CSS),
+                        transition: 'flex-grow 0.2s ease',
+                    }}
+                />
+            ))}
         </Box>
     );
 }
@@ -70,14 +112,52 @@ export type PageTopicsVisualizationProps = {
     pageClassification: AggregatedPageClassification;
 };
 
+type SpectrumScope = 'domain' | 'theme';
+
 export function PageTopicsVisualization({ t, pageClassification }: PageTopicsVisualizationProps) {
     const { topThemes, tierDistribution } = pageClassification;
     const bubblePoints = useMemo(() => buildPageTopicsBubblePoints(topThemes), [topThemes]);
-    const strip = useMemo(() => buildAvgTierTagStrip(tierDistribution.avgTagsPerPageByTier), [tierDistribution]);
+    const stripDomain = useMemo(() => buildAvgTierTagStrip(tierDistribution.avgTagsPerPageByTier), [tierDistribution]);
     const hasBubbleChart = bubblePoints.length > 0;
+
+    const [selectedThemeKey, setSelectedThemeKey] = useState<string | null>(null);
+    const [spectrumScope, setSpectrumScope] = useState<SpectrumScope>('domain');
+
+    useEffect(() => {
+        if (!selectedThemeKey) setSpectrumScope('domain');
+    }, [selectedThemeKey]);
+
+    const selectedTheme = useMemo(
+        () => topThemes.find((th) => themeRowKey(th) === selectedThemeKey),
+        [topThemes, selectedThemeKey],
+    );
+
+    const hasThemeSubset = Boolean(selectedTheme?.subsetAvgTagsPerPageByTier);
+
+    const activeStrip = useMemo(() => {
+        if (spectrumScope === 'theme' && selectedTheme?.subsetAvgTagsPerPageByTier) {
+            return buildAvgTierTagStrip(selectedTheme.subsetAvgTagsPerPageByTier);
+        }
+        return stripDomain;
+    }, [spectrumScope, selectedTheme, stripDomain]);
 
     const gridStroke = 'var(--color-border-subtle, #e5e7eb)';
     const axisTick = { fill: 'var(--color-text-muted-on-light)', fontSize: 11 };
+
+    const handleScatterClick = (data: unknown) => {
+        const row = data as { payload?: PageTopicsBubblePoint } | PageTopicsBubblePoint | null | undefined;
+        const payload =
+            row && typeof row === 'object' && 'payload' in row && row.payload
+                ? row.payload
+                : (row as PageTopicsBubblePoint | undefined);
+        const key = payload?.themeTagKey;
+        if (!key) return;
+        setSelectedThemeKey((prev) => (prev === key ? null : key));
+    };
+
+    const related = selectedTheme?.relatedPages ?? [];
+    const relatedShown = related.length;
+    const relatedTotal = selectedTheme?.pageCount ?? 0;
 
     return (
         <Box sx={{ mb: 'var(--msqdx-spacing-md)' }}>
@@ -86,8 +166,11 @@ export function PageTopicsVisualization({ t, pageClassification }: PageTopicsVis
                     <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
                         {t('domainResult.pageTopicsDiagramTitle')}
                     </MsqdxTypography>
-                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1.5 }}>
+                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}>
                         {t('domainResult.pageTopicsBubbleMatrixCaption')}
+                    </MsqdxTypography>
+                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1.5 }}>
+                        {t('domainResult.pageTopicsClickBubbleHint')}
                     </MsqdxTypography>
                     <Box
                         component="figure"
@@ -143,15 +226,20 @@ export function PageTopicsVisualization({ t, pageClassification }: PageTopicsVis
                                     data={bubblePoints}
                                     isAnimationActive={false}
                                     shape="circle"
-                                    stroke="var(--color-card-bg, #fff)"
-                                    strokeWidth={1}
+                                    onClick={handleScatterClick}
                                 >
-                                    {bubblePoints.map((pt, i) => (
-                                        <Cell
-                                            key={`${pt.tag}-${i}`}
-                                            fill={pageTopicTierColorCss(pt.maxTier, THEME_ACCENT_CSS)}
-                                        />
-                                    ))}
+                                    {bubblePoints.map((pt, i) => {
+                                        const isSel = pt.themeTagKey === selectedThemeKey;
+                                        return (
+                                            <Cell
+                                                key={`${pt.tag}-${i}`}
+                                                fill={pageTopicTierColorCss(pt.maxTier, THEME_ACCENT_CSS)}
+                                                stroke={isSel ? THEME_ACCENT_CSS : 'var(--color-card-bg, #fff)'}
+                                                strokeWidth={isSel ? 3 : 1}
+                                                style={{ cursor: 'pointer' }}
+                                            />
+                                        );
+                                    })}
                                 </Scatter>
                             </ScatterChart>
                         </ResponsiveContainer>
@@ -177,38 +265,86 @@ export function PageTopicsVisualization({ t, pageClassification }: PageTopicsVis
                 </>
             )}
 
+            {selectedTheme && (
+                <Box
+                    sx={{
+                        mt: 2,
+                        mb: 1,
+                        p: 1.5,
+                        borderRadius: 'var(--msqdx-radius-md)',
+                        border: '1px solid var(--color-border-subtle, #e5e7eb)',
+                        bgcolor: 'var(--color-card-bg, #fff)',
+                    }}
+                >
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1, flexWrap: 'wrap' }}>
+                        <Box sx={{ minWidth: 0 }}>
+                            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                {selectedTheme.tag}
+                            </MsqdxTypography>
+                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mt: 0.5 }}>
+                                {t('domainResult.pageTopicsBubbleTooltip', {
+                                    pages: selectedTheme.pageCount,
+                                    maxTier: selectedTheme.maxTier,
+                                    avgTier: selectedTheme.avgTier,
+                                    score: selectedTheme.score,
+                                })}
+                            </MsqdxTypography>
+                        </Box>
+                        <MsqdxButton size="small" variant="text" onClick={() => setSelectedThemeKey(null)} sx={{ flexShrink: 0 }}>
+                            {t('domainResult.pageTopicsClearSelection')}
+                        </MsqdxButton>
+                    </Box>
+
+                    {hasThemeSubset && (
+                        <Box sx={{ mt: 1.5 }}>
+                            <ToggleButtonGroup
+                                value={spectrumScope}
+                                exclusive
+                                size="small"
+                                onChange={(_, v: SpectrumScope | null) => {
+                                    if (v != null) setSpectrumScope(v);
+                                }}
+                                aria-label={t('domainResult.pageTopicsTierSpectrumTitle')}
+                            >
+                                <ToggleButton value="domain">{t('domainResult.pageTopicsSpectrumScopeDomain')}</ToggleButton>
+                                <ToggleButton value="theme">{t('domainResult.pageTopicsSpectrumScopeTheme')}</ToggleButton>
+                            </ToggleButtonGroup>
+                        </Box>
+                    )}
+
+                    {relatedShown > 0 ? (
+                        <Box sx={{ mt: 1.5 }}>
+                            <MsqdxTypography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.75 }}>
+                                {t('domainResult.pageTopicsThemeRelatedPages')}
+                            </MsqdxTypography>
+                            <Box component="ul" sx={{ m: 0, pl: 2, mb: 0.5 }}>
+                                {related.map((rp) => (
+                                    <Box component="li" key={rp.id} sx={{ mb: 0.5 }}>
+                                        <Link href={pathResults(rp.id)} style={{ fontSize: 13, wordBreak: 'break-all' }}>
+                                            {rp.url.length > 96 ? `${rp.url.slice(0, 93)}…` : rp.url}
+                                        </Link>
+                                    </Box>
+                                ))}
+                            </Box>
+                            {relatedTotal > relatedShown ? (
+                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                    {t('domainResult.pageTopicsThemeRelatedPagesMore', { shown: relatedShown, total: relatedTotal })}
+                                </MsqdxTypography>
+                            ) : null}
+                        </Box>
+                    ) : null}
+                </Box>
+            )}
+
             <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5, mt: hasBubbleChart ? 2 : 0 }}>
                 {t('domainResult.pageTopicsTierSpectrumTitle')}
             </MsqdxTypography>
             <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1 }}>
-                {t('domainResult.pageTopicsTierSpectrumCaption')}
+                {spectrumScope === 'theme' && hasThemeSubset
+                    ? t('domainResult.pageTopicsTierSpectrumCaptionTheme')
+                    : t('domainResult.pageTopicsTierSpectrumCaption')}
             </MsqdxTypography>
-            <Box
-                sx={{
-                    display: 'flex',
-                    width: '100%',
-                    height: 12,
-                    borderRadius: 'var(--msqdx-radius-sm, 6px)',
-                    overflow: 'hidden',
-                    gap: '3px',
-                    bgcolor: 'var(--color-border-subtle, #eee)',
-                    p: '3px',
-                }}
-            >
-                {strip.map((s) => (
-                    <Box
-                        key={s.tier}
-                        sx={{
-                            flexGrow: s.ratio,
-                            flexBasis: 0,
-                            minWidth: s.ratio > 0.04 ? 4 : 0,
-                            borderRadius: '4px',
-                            bgcolor: pageTopicTierColorCss(s.tier, THEME_ACCENT_CSS),
-                            transition: 'flex-grow 0.2s ease',
-                        }}
-                    />
-                ))}
-            </Box>
+            <TierSpectrumStrip strip={activeStrip} />
 
             <MsqdxTypography variant="subtitle2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 'var(--msqdx-spacing-xs)', mt: 2 }}>
                 {t('domainResult.pageTopicsTierMix')}

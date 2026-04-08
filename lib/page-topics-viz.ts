@@ -1,3 +1,4 @@
+import { normalizePageTopicTagKey } from '@/lib/domain-aggregation';
 import type { AggregatedPageClassificationTheme } from '@/lib/types';
 
 /** Max themes in the bubble chart (readability). */
@@ -25,6 +26,7 @@ export function pageTopicTierColorCss(tier: 1 | 2 | 3 | 4 | 5, accentCss: string
 /** Points for scatter / bubble matrix. */
 export type PageTopicsBubblePoint = {
     tag: string;
+    themeTagKey: string;
     avgTier: number;
     maxTier: 1 | 2 | 3 | 4 | 5;
     pageCount: number;
@@ -36,6 +38,7 @@ export function buildPageTopicsBubblePoints(themes: AggregatedPageClassification
     const sorted = [...themes].sort((a, b) => b.score - a.score).slice(0, PAGE_TOPICS_CHART_MAX_THEMES);
     return sorted.map((th) => ({
         tag: th.tag,
+        themeTagKey: th.themeTagKey ?? normalizePageTopicTagKey(th.tag),
         avgTier: Math.min(5, Math.max(1, th.avgTier)),
         maxTier: th.maxTier,
         pageCount: th.pageCount,

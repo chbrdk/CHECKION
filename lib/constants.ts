@@ -438,6 +438,8 @@ export const DOMAIN_LIGHT_SUMMARY_STRUCTURE_URL_LIST_CAP = 30;
 export const DOMAIN_LIGHT_SUMMARY_PAGE_CLASSIFICATION_TOP_THEMES_CAP = 20;
 /** Light summary: max rows in `aggregated.pageClassification.pageSamples`. */
 export const DOMAIN_LIGHT_SUMMARY_PAGE_CLASSIFICATION_PAGE_SAMPLES_CAP = 5;
+/** Light summary: max `relatedPages` entries per theme in `aggregated.pageClassification.topThemes`. */
+export const DOMAIN_LIGHT_SUMMARY_PAGE_CLASSIFICATION_THEME_RELATED_PAGES_CAP = 12;
 
 /**
  * Persisted `domain_scans.payload.aggregated`: same caps as light summary by default
@@ -454,6 +456,8 @@ export const DOMAIN_STORED_SUMMARY_GENERATIVE_PAGES_CAP = DOMAIN_LIGHT_SUMMARY_G
 export const DOMAIN_STORED_SUMMARY_STRUCTURE_URL_LIST_CAP = DOMAIN_LIGHT_SUMMARY_STRUCTURE_URL_LIST_CAP;
 export const DOMAIN_STORED_SUMMARY_PAGE_CLASSIFICATION_TOP_THEMES_CAP = 40;
 export const DOMAIN_STORED_SUMMARY_PAGE_CLASSIFICATION_PAGE_SAMPLES_CAP = 8;
+/** Stored payload: max `relatedPages` per theme (id + url for deep links without slim list). */
+export const DOMAIN_STORED_SUMMARY_PAGE_CLASSIFICATION_THEME_RELATED_PAGES_CAP = 32;
 
 /** Legacy aggregated-issues table: estimated grid row height for virtualization. */
 export const DOMAIN_AGGREGATED_ISSUES_ROW_ESTIMATE_PX = 56;

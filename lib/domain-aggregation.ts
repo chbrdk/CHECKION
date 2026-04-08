@@ -2,6 +2,7 @@
  * Domain (deep) scan aggregation: same categories as single scan,
  * with values intelligently aggregated across all pages.
  */
+import { DOMAIN_STORED_SUMMARY_PAGE_CLASSIFICATION_THEME_RELATED_PAGES_CAP } from './constants';
 import { isSeoStopword } from './seo-stopwords';
 import type {
   ScanResult,
@@ -20,6 +21,7 @@ import type {
   AggregatedPageClassificationPageSample,
   AggregatedPageClassificationProfile,
   AggregatedPageClassificationTheme,
+  AggregatedPageClassificationThemeRelatedPage,
   TagTier,
 } from './types';
 
@@ -755,19 +757,107 @@ function classifyPageProfile(
 type ThemeAcc = {
   displayTag: string;
   score: number;
-  pages: Set<string>;
+  pageScanIds: Set<string>;
   tierSum: number;
   tierOccurrences: number;
   maxTier: 1 | 2 | 3 | 4 | 5;
 };
 
-function ingestTagTier(acc: ThemeAcc, entry: TagTier, pageUrl: string, weightMult: number): void {
+function ingestTagTier(acc: ThemeAcc, entry: TagTier, pageScanId: string, weightMult: number): void {
   const w = tierWeight(entry.tier) * weightMult;
   acc.score += w;
-  acc.pages.add(pageUrl);
+  acc.pageScanIds.add(pageScanId);
   acc.tierSum += entry.tier;
   acc.tierOccurrences += 1;
   if (entry.tier > acc.maxTier) acc.maxTier = entry.tier;
+}
+
+function countTiersFromTagTiers(tiers: TagTier[]): {
+  t1: number;
+  t2: number;
+  t3: number;
+  t4: number;
+  t5: number;
+} {
+  let t1 = 0,
+    t2 = 0,
+    t3 = 0,
+    t4 = 0,
+    t5 = 0;
+  for (const entry of tiers) {
+    const tier = entry.tier;
+    if (tier === 1) t1++;
+    else if (tier === 2) t2++;
+    else if (tier === 3) t3++;
+    else if (tier === 4) t4++;
+    else t5++;
+  }
+  return { t1, t2, t3, t4, t5 };
+}
+
+function pageHasThemeTag(tiers: TagTier[], themeKey: string): boolean {
+  for (const entry of tiers) {
+    const key = normalizePageTopicTagKey(entry.tag);
+    if (key && key === themeKey) return true;
+  }
+  return false;
+}
+
+function computeSubsetAvgTagsPerPageByTier(
+  pages: ScanResult[],
+  themeKey: string,
+): {
+  tier1: number;
+  tier2: number;
+  tier3: number;
+  tier4: number;
+  tier5: number;
+} {
+  let s1 = 0,
+    s2 = 0,
+    s3 = 0,
+    s4 = 0,
+    s5 = 0;
+  let n = 0;
+  for (const page of pages) {
+    const tiers = page.pageClassification?.tagTiers;
+    if (!tiers?.length) continue;
+    if (!pageHasThemeTag(tiers, themeKey)) continue;
+    const { t1, t2, t3, t4, t5 } = countTiersFromTagTiers(tiers);
+    s1 += t1;
+    s2 += t2;
+    s3 += t3;
+    s4 += t4;
+    s5 += t5;
+    n++;
+  }
+  if (n === 0) {
+    return { tier1: 0, tier2: 0, tier3: 0, tier4: 0, tier5: 0 };
+  }
+  return {
+    tier1: Math.round((s1 / n) * 100) / 100,
+    tier2: Math.round((s2 / n) * 100) / 100,
+    tier3: Math.round((s3 / n) * 100) / 100,
+    tier4: Math.round((s4 / n) * 100) / 100,
+    tier5: Math.round((s5 / n) * 100) / 100,
+  };
+}
+
+function pickRelatedPages(pageScanIds: Set<string>, pages: ScanResult[], cap: number): AggregatedPageClassificationThemeRelatedPage[] {
+  const pageById = new Map(pages.map((p) => [p.id, p]));
+  return [...pageScanIds]
+    .filter((id) => pageById.has(id))
+    .sort((a, b) => {
+      const pa = pageById.get(a)!;
+      const pb = pageById.get(b)!;
+      if (pb.score !== pa.score) return pb.score - pa.score;
+      return pa.url.localeCompare(pb.url);
+    })
+    .slice(0, cap)
+    .map((id) => {
+      const p = pageById.get(id)!;
+      return { id: p.id, url: p.url };
+    });
 }
 
 /**
@@ -820,14 +910,14 @@ export function aggregatePageClassification(pages: ScanResult[]): AggregatedPage
         acc = {
           displayTag: entry.tag.trim() || key,
           score: 0,
-          pages: new Set(),
+          pageScanIds: new Set(),
           tierSum: 0,
           tierOccurrences: 0,
           maxTier: tier,
         };
         themeByKey.set(key, acc);
       }
-      ingestTagTier(acc, entry, page.url, damp);
+      ingestTagTier(acc, entry, page.id, damp);
     }
 
     sumT1 += t1;
@@ -847,13 +937,17 @@ export function aggregatePageClassification(pages: ScanResult[]): AggregatedPage
     });
   }
 
+  const relatedCap = DOMAIN_STORED_SUMMARY_PAGE_CLASSIFICATION_THEME_RELATED_PAGES_CAP;
   const topThemes: AggregatedPageClassificationTheme[] = Array.from(themeByKey.entries())
-    .map(([, acc]) => ({
+    .map(([themeKey, acc]) => ({
       tag: acc.displayTag,
+      themeTagKey: themeKey,
       score: Math.round(acc.score * 100) / 100,
-      pageCount: acc.pages.size,
+      pageCount: acc.pageScanIds.size,
       maxTier: acc.maxTier,
       avgTier: acc.tierOccurrences > 0 ? Math.round((acc.tierSum / acc.tierOccurrences) * 10) / 10 : 0,
+      relatedPages: pickRelatedPages(acc.pageScanIds, pages, relatedCap),
+      subsetAvgTagsPerPageByTier: computeSubsetAvgTagsPerPageByTier(pages, themeKey),
     }))
     .sort((a, b) => b.score - a.score || b.pageCount - a.pageCount);
 
