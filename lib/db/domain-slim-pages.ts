@@ -5,7 +5,7 @@
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import { getDb } from '@/lib/db';
 import { domainPages, scans } from '@/lib/db/schema';
-import type { DomainScanResult, SlimPage } from '@/lib/types';
+import type { DomainScanResult, PageClassification, SlimPage } from '@/lib/types';
 import { domainPageRowId } from '@/lib/db/domain-issues';
 
 export type SlimSortKey = 'url' | 'score' | 'uxScore' | 'issues';
@@ -39,6 +39,20 @@ export function sortSlimPagesInMemory(pages: SlimPage[], sort: SlimSortKey, dir:
         return dir === 'asc' ? cmp : -cmp;
     });
     return arr;
+}
+
+function parsePageClassificationFromScanResult(raw: unknown): PageClassification | undefined {
+    if (raw == null || raw === '') return undefined;
+    if (typeof raw === 'object' && !Array.isArray(raw)) return raw as PageClassification;
+    if (typeof raw === 'string') {
+        try {
+            const p = JSON.parse(raw) as unknown;
+            if (p && typeof p === 'object' && !Array.isArray(p)) return p as PageClassification;
+        } catch {
+            return undefined;
+        }
+    }
+    return undefined;
 }
 
 export async function countDomainPagesInDb(domainScanId: string, userId: string): Promise<number> {
@@ -95,6 +109,8 @@ export async function listSlimPagesFromDomainPagesTable(params: {
             statsErrors: sql<number>`COALESCE((${scans.result}->'stats'->>'errors')::int, 0)`,
             statsWarnings: sql<number>`COALESCE((${scans.result}->'stats'->>'warnings')::int, 0)`,
             statsNotices: sql<number>`COALESCE((${scans.result}->'stats'->>'notices')::int, 0)`,
+            /** Joined per-page scan result (AUDION site-topics + UI need tag tiers). */
+            pageClassificationRaw: sql<unknown>`(${scans.result}->'pageClassification')`,
         })
         .from(domainPages)
         .leftJoin(scans, eq(scans.id, domainPages.pageScanId))
@@ -105,7 +121,8 @@ export async function listSlimPagesFromDomainPagesTable(params: {
 
     return rows.map((r) => {
         const scanId = r.pageScanId ?? r.domainPageId;
-        return {
+        const pageClassification = parsePageClassificationFromScanResult(r.pageClassificationRaw);
+        const slim: SlimPage = {
             id: scanId,
             domainPageId: r.domainPageId,
             url: r.url,
@@ -117,6 +134,8 @@ export async function listSlimPagesFromDomainPagesTable(params: {
             },
             ux: r.uxScore != null ? { score: r.uxScore } : undefined,
         };
+        if (pageClassification) slim.pageClassification = pageClassification;
+        return slim;
     });
 }
 
