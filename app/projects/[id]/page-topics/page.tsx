@@ -8,7 +8,7 @@ import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { useFetchOnceForId } from '@/hooks/useFetchOnceForId';
-import { apiProject, apiProjectDomainSummaryAll, pathDomain } from '@/lib/constants';
+import { apiProject, apiProjectDomainSummaryAll, pathDomain, pathProject } from '@/lib/constants';
 import { DomainResultPageTopicsCard } from '@/components/domain/DomainResultPageTopicsCard';
 import type { AggregatedPageClassification } from '@/lib/types';
 
