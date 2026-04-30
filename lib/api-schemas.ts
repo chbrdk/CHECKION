@@ -61,6 +61,11 @@ export const domainJourneyBodySchema = z.object({
   stream: z.boolean().optional(),
 });
 
+/** POST /api/scan/domain/[id]/control */
+export const domainScanControlBodySchema = z.object({
+  action: z.enum(['pause', 'resume', 'cancel']),
+});
+
 /** POST /api/scan/geo-eeat */
 export const geoEeatBodySchema = z.object({
   url: urlSchema,

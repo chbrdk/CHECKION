@@ -15,7 +15,7 @@ import { MSQDX_COLORS, MSQDX_SPACING } from '@msqdx/tokens';
 import type { DomainScanStatus } from '@/lib/types';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
-import { apiScanDomainStatus, apiScanDomainCreate, pathDomain, pathScanDomain } from '@/lib/constants';
+import { apiScanDomainStatus, apiScanDomainCreate, apiScanDomainControl, pathDomain, pathScanDomain } from '@/lib/constants';
 
 function ScanContent() {
     const searchParams = useSearchParams();
@@ -26,6 +26,7 @@ function ScanContent() {
     const [status, setStatus] = useState<DomainScanStatus>('queued');
     const logsEndRef = useRef<HTMLDivElement>(null);
     const [scannedCount, setScannedCount] = useState(0);
+    const [progressTotal, setProgressTotal] = useState(0);
     const [maxPages, setMaxPages] = useState(1000);
 
     const startUrl = searchParams.get('url');
@@ -45,50 +46,84 @@ function ScanContent() {
         }
     }, [startUrl, maxPagesParam, projectIdParam]);
 
-    // Polling Loop
+    const pollOnce = async (sid: string) => {
+        const res = await fetch(apiScanDomainStatus(sid), { credentials: 'same-origin' });
+        if (!res.ok) return null;
+        return res.json();
+    };
+
+    // Polling Loop (runs until terminal status from API)
     useEffect(() => {
-        if (!scanId || status === 'complete' || status === 'error') return;
+        if (!scanId) return;
 
-        const interval = setInterval(async () => {
+        let cancelled = false;
+        let intervalId: ReturnType<typeof setInterval> | undefined;
+
+        const tick = async () => {
+            if (cancelled) return;
             try {
-                const res = await fetch(apiScanDomainStatus(scanId));
-                if (res.ok) {
-                    const data = await res.json();
+                const data = await pollOnce(scanId);
+                if (!data || cancelled) return;
 
-                    // Update State
-                    setStatus(data.status);
-
-                    if (data.progress) {
-                        setScannedCount(data.progress.scanned);
-                        if (data.progress.currentUrl) {
-                            setLogs(prev => {
-                                const msg = `Scanning: ${data.progress.currentUrl}`;
-                                // Simple dedup
-                                if (prev[prev.length - 1] !== msg) return [...prev, msg];
-                                return prev;
-                            });
-                        }
-                    }
-
-                    if (data.status === 'complete') {
-                        setLogs(prev => [...prev, t('domain.completeLog')]);
-
-                        setTimeout(() => {
-                            router.push(
-                                pathDomain(data.id, projectIdParam ? { projectId: projectIdParam } : undefined)
-                            );
-                        }, 1000);
-                    } else if (data.status === 'error') {
-                        setLogs(prev => [...prev, `${t('domain.errorLog')}: ${data.error || 'Unknown error'}`]);
+                setStatus(data.status);
+                if (data.progress) {
+                    setScannedCount(typeof data.progress.scanned === 'number' ? data.progress.scanned : 0);
+                    setProgressTotal(typeof data.progress.total === 'number' ? data.progress.total : 0);
+                    if (data.progress.currentUrl) {
+                        setLogs((prev) => {
+                            const msg = `Scanning: ${data.progress.currentUrl}`;
+                            if (prev[prev.length - 1] !== msg) return [...prev, msg];
+                            return prev;
+                        });
                     }
                 }
-            } catch (e) {
-                console.error("Polling error", e);
-            }
-        }, 2000);
 
-        return () => clearInterval(interval);
-    }, [scanId, status, router, t, projectIdParam]);
+                if (data.status === 'complete') {
+                    setLogs((prev) => [...prev, t('domain.completeLog')]);
+                    if (intervalId) clearInterval(intervalId);
+                    setTimeout(() => {
+                        router.push(pathDomain(data.id, projectIdParam ? { projectId: projectIdParam } : undefined));
+                    }, 1000);
+                } else if (data.status === 'error') {
+                    setLogs((prev) => [...prev, `${t('domain.errorLog')}: ${data.error || 'Unknown error'}`]);
+                    if (intervalId) clearInterval(intervalId);
+                } else if (data.status === 'cancelled') {
+                    setLogs((prev) => [...prev, t('domain.cancelledLog')]);
+                    if (intervalId) clearInterval(intervalId);
+                }
+            } catch (e) {
+                console.error('Polling error', e);
+            }
+        };
+
+        intervalId = setInterval(tick, 2000);
+        void tick();
+        return () => {
+            cancelled = true;
+            if (intervalId) clearInterval(intervalId);
+        };
+    }, [scanId, router, t, projectIdParam]);
+
+    const sendScanControl = async (action: 'pause' | 'resume' | 'cancel') => {
+        if (!scanId) return;
+        try {
+            const res = await fetch(apiScanDomainControl(scanId), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ action }),
+            });
+            if (res.ok) {
+                const j = await res.json().catch(() => ({}));
+                if (j?.status) setStatus(j.status);
+                if (action === 'pause') setLogs((prev) => [...prev, t('domain.pauseLog')]);
+                if (action === 'resume') setLogs((prev) => [...prev, t('domain.resumeLog')]);
+                if (action === 'cancel') setLogs((prev) => [...prev, t('domain.cancelRequestLog')]);
+            }
+        } catch {
+            // ignore
+        }
+    };
 
     async function startScan(url: string, pageLimit?: number, projectId?: string | null) {
         setStatus('queued');
@@ -109,6 +144,7 @@ function ScanContent() {
                 const data = await response.json();
                 if (data.success && data.data) {
                     setScanId(data.data.id);
+                    setProgressTotal(pageLimit ?? 1000);
                     setLogs(prev => [...prev, t('domain.startedLog')]);
                     setStatus('scanning');
                 } else {
@@ -196,8 +232,28 @@ function ScanContent() {
                     {t('domain.scanningTitle').replace('{url}', startUrl || '')}
                 </MsqdxTypography>
                 <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-secondary)' }}>
-                    {t('domain.status')}: {status.toUpperCase()} | {t('domain.scannedPages')}: {scannedCount} {t('domain.pages')}
+                    {t('domain.status')}: {status.toUpperCase()} | {t('domain.scannedPages')}: {scannedCount}
+                    {progressTotal > 0 ? ` / ${progressTotal}` : ''} {t('domain.pages')}
                 </MsqdxTypography>
+                {(status === 'scanning' || status === 'queued' || status === 'paused' || status === 'cancelling') && (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--msqdx-spacing-xs)', mt: 'var(--msqdx-spacing-sm)' }}>
+                        {(status === 'scanning' || status === 'queued') && (
+                            <MsqdxButton variant="outlined" size="small" onClick={() => void sendScanControl('pause')}>
+                                {t('domain.pauseScan')}
+                            </MsqdxButton>
+                        )}
+                        {status === 'paused' && (
+                            <MsqdxButton variant="outlined" size="small" onClick={() => void sendScanControl('resume')}>
+                                {t('domain.resumeScan')}
+                            </MsqdxButton>
+                        )}
+                        {(status === 'scanning' || status === 'queued' || status === 'paused') && (
+                            <MsqdxButton variant="outlined" size="small" onClick={() => void sendScanControl('cancel')}>
+                                {t('domain.cancelScan')}
+                            </MsqdxButton>
+                        )}
+                    </Box>
+                )}
             </Box>
 
             <Box sx={{ maxWidth: 800, mx: 'auto', mt: 'var(--msqdx-spacing-md)' }}>
@@ -209,7 +265,13 @@ function ScanContent() {
                     footerDivider={false}
                     sx={{ bgcolor: 'var(--color-card-bg)' }}
                 >
-                    {(status === 'queued' || status === 'scanning') && <LinearProgress sx={{ mb: 'var(--msqdx-spacing-sm)' }} />}
+                    {(status === 'queued' || status === 'scanning' || status === 'cancelling' || status === 'paused') && (
+                        <LinearProgress
+                            variant={progressTotal > 0 ? 'determinate' : 'indeterminate'}
+                            value={progressTotal > 0 ? Math.min(100, (scannedCount / progressTotal) * 100) : undefined}
+                            sx={{ mb: 'var(--msqdx-spacing-sm)' }}
+                        />
+                    )}
 
                     <Box
                         sx={{

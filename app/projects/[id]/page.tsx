@@ -21,6 +21,7 @@ import {
     apiProjectDomainScanAll,
     apiScanDomainCreate,
     apiScanDomainStatus,
+    apiScanDomainControl,
     pathDomain,
     pathGeoEeat,
     pathProjectRankings,
@@ -62,6 +63,13 @@ interface DomainSummaryData {
     };
 }
 
+interface ActiveDeepScanRow {
+    scanId: string;
+    label: string;
+    status?: string;
+    progress?: { scanned: number; total: number; currentUrl?: string };
+}
+
 export default function ProjectDetailPage() {
     const params = useParams();
     const router = useRouter();
@@ -75,8 +83,7 @@ export default function ProjectDetailPage() {
     const [domainSummaryAllCompetitors, setDomainSummaryAllCompetitors] = useState<Record<string, { scanId: string; score: number; totalPageCount: number; status: string } | null>>({});
     const [restartDeepScanLoading, setRestartDeepScanLoading] = useState(false);
     const [scanAllDeepScanLoading, setScanAllDeepScanLoading] = useState(false);
-    const [runningOwnScanId, setRunningOwnScanId] = useState<string | null>(null);
-    const [runningScanProgress, setRunningScanProgress] = useState<{ scanned: number; total: number } | null>(null);
+    const [activeDeepScans, setActiveDeepScans] = useState<ActiveDeepScanRow[]>([]);
     const [listsLoading, setListsLoading] = useState(false);
     const [addCompetitorValue, setAddCompetitorValue] = useState('');
     const [suggestCompetitorsLoading, setSuggestCompetitorsLoading] = useState(false);
@@ -276,41 +283,125 @@ export default function ProjectDetailPage() {
                 credentials: 'same-origin',
             });
             const data = await r.json();
-            if (data?.success) {
+            if (data?.success && data?.data) {
                 await loadDomainSummaryAll();
-                if (data?.data?.own?.scanId) {
-                    setRunningOwnScanId(data.data.own.scanId);
-                    setRunningScanProgress({ scanned: 0, total: 0 });
+                const rows: ActiveDeepScanRow[] = [];
+                const own = data.data.own as { scanId?: string } | null;
+                if (own?.scanId) {
+                    rows.push({
+                        scanId: own.scanId,
+                        label: project?.domain?.trim() || t('projects.ownDomainScanLabel'),
+                    });
                 }
+                const comps = data.data.competitors as Record<string, { scanId: string; reused?: boolean }> | undefined;
+                for (const [dom, info] of Object.entries(comps ?? {})) {
+                    if (info?.scanId && !info.reused) {
+                        rows.push({ scanId: info.scanId, label: dom });
+                    }
+                }
+                if (rows.length > 0) setActiveDeepScans(rows);
             }
         } catch {
             // ignore
         } finally {
             setScanAllDeepScanLoading(false);
         }
-    }, [id, loadDomainSummaryAll]);
+    }, [id, loadDomainSummaryAll, project?.domain, t]);
 
-    useEffect(() => {
-        if (!runningOwnScanId) return;
-        const interval = setInterval(async () => {
+    const handleDeepScanControl = useCallback(
+        async (scanId: string, action: 'pause' | 'resume' | 'cancel') => {
             try {
-                const r = await fetch(apiScanDomainStatus(runningOwnScanId!), { credentials: 'same-origin' });
-                const data = await r.json();
-                if (data?.status === 'complete' || data?.status === 'error') {
-                    setRunningOwnScanId(null);
-                    setRunningScanProgress(null);
-                    if (id) loadDomainSummaryAll();
-                    return;
-                }
-                if (data?.progress && typeof data.progress?.scanned === 'number') {
-                    setRunningScanProgress({ scanned: data.progress.scanned, total: data.progress?.total ?? 0 });
+                const r = await fetch(apiScanDomainControl(scanId), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ action }),
+                });
+                if (r.ok) {
+                    const j = await r.json().catch(() => ({}));
+                    const st = typeof j?.status === 'string' ? j.status : undefined;
+                    if (st) {
+                        setActiveDeepScans((prev) =>
+                            prev.map((row) => (row.scanId === scanId ? { ...row, status: st } : row))
+                        );
+                    }
                 }
             } catch {
                 // ignore
             }
-        }, 3000);
+        },
+        []
+    );
+
+    const activeDeepScansRef = useRef<ActiveDeepScanRow[]>([]);
+    activeDeepScansRef.current = activeDeepScans;
+    const activeScanIdsKey = activeDeepScans
+        .map((r) => r.scanId)
+        .sort()
+        .join(',');
+
+    useEffect(() => {
+        if (!activeScanIdsKey) return;
+
+        const tick = async () => {
+            const snapshot = activeDeepScansRef.current;
+            if (snapshot.length === 0) return;
+            try {
+                const updates = await Promise.all(
+                    snapshot.map(async (row) => {
+                        try {
+                            const r = await fetch(apiScanDomainStatus(row.scanId), { credentials: 'same-origin' });
+                            if (!r.ok) return { scanId: row.scanId, data: null };
+                            const data = await r.json();
+                            return { scanId: row.scanId, data };
+                        } catch {
+                            return { scanId: row.scanId, data: null };
+                        }
+                    })
+                );
+                setActiveDeepScans((prev) => {
+                    const next: ActiveDeepScanRow[] = [];
+                    for (const row of prev) {
+                        const u = updates.find((x) => x.scanId === row.scanId);
+                        const data = u?.data as {
+                            status?: string;
+                            progress?: { scanned?: number; total?: number; currentUrl?: string };
+                        } | null;
+                        if (!data?.status) {
+                            next.push(row);
+                            continue;
+                        }
+                        const st = data.status;
+                        if (st === 'complete' || st === 'error' || st === 'cancelled') {
+                            continue;
+                        }
+                        next.push({
+                            ...row,
+                            status: st,
+                            progress:
+                                data.progress && typeof data.progress.scanned === 'number'
+                                    ? {
+                                          scanned: data.progress.scanned,
+                                          total: data.progress.total ?? 0,
+                                          currentUrl: data.progress.currentUrl,
+                                      }
+                                    : row.progress,
+                        });
+                    }
+                    if (prev.length > 0 && next.length === 0 && id) {
+                        void loadDomainSummaryAll();
+                    }
+                    return next;
+                });
+            } catch {
+                // ignore
+            }
+        };
+
+        void tick();
+        const interval = setInterval(tick, 3000);
         return () => clearInterval(interval);
-    }, [runningOwnScanId, id, loadDomainSummaryAll]);
+    }, [activeScanIdsKey, id, loadDomainSummaryAll]);
 
     if (!id) {
         return (
@@ -505,21 +596,66 @@ export default function ProjectDetailPage() {
                 >
                     {listsLoading ? (
                         <MsqdxTypography variant="body2" sx={{ py: 1 }}>{t('common.loading')}</MsqdxTypography>
-                    ) : runningOwnScanId ? (
-                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 1, gap: 1 }}>
-                            <MsqdxTypography variant="body1" weight="medium">
+                    ) : activeDeepScans.length > 0 ? (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, py: 0.5, width: '100%' }}>
+                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
                                 {t('projects.deepScanRunning')}
                             </MsqdxTypography>
-                            {runningScanProgress && runningScanProgress.total > 0 && (
-                                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                    {runningScanProgress.scanned} / {runningScanProgress.total} {t('domainResult.pagesScanned')}
-                                </MsqdxTypography>
-                            )}
-                            <Link href={pathDomain(runningOwnScanId, { projectId: id })} style={{ textDecoration: 'none' }}>
-                                <MsqdxButton variant="outlined" size="small">
-                                    {t('projects.openDeepScan')}
-                                </MsqdxButton>
-                            </Link>
+                            {activeDeepScans.map((row) => {
+                                const st = row.status ?? 'scanning';
+                                const canPause = st === 'scanning' || st === 'queued';
+                                const canResume = st === 'paused';
+                                const canCancel = st === 'scanning' || st === 'queued' || st === 'paused';
+                                return (
+                                    <Box
+                                        key={row.scanId}
+                                        sx={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: 0.5,
+                                            pb: 1,
+                                            borderBottom: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                                        }}
+                                    >
+                                        <MsqdxTypography variant="body2" weight="medium">
+                                            {row.label}
+                                        </MsqdxTypography>
+                                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                            {st}
+                                            {row.progress && row.progress.total > 0
+                                                ? ` · ${row.progress.scanned} / ${row.progress.total} ${t('domainResult.pagesScanned')}`
+                                                : ''}
+                                        </MsqdxTypography>
+                                        {row.progress?.currentUrl ? (
+                                            <MsqdxTypography variant="caption" sx={{ wordBreak: 'break-all', color: 'var(--color-text-muted-on-light)' }}>
+                                                {row.progress.currentUrl}
+                                            </MsqdxTypography>
+                                        ) : null}
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, alignItems: 'center' }}>
+                                            <Link href={pathDomain(row.scanId, { projectId: id })} style={{ textDecoration: 'none' }}>
+                                                <MsqdxButton variant="outlined" size="small">
+                                                    {t('projects.openDeepScan')}
+                                                </MsqdxButton>
+                                            </Link>
+                                            {canPause ? (
+                                                <MsqdxButton variant="outlined" size="small" onClick={() => handleDeepScanControl(row.scanId, 'pause')}>
+                                                    {t('projects.deepScanPause')}
+                                                </MsqdxButton>
+                                            ) : null}
+                                            {canResume ? (
+                                                <MsqdxButton variant="outlined" size="small" onClick={() => handleDeepScanControl(row.scanId, 'resume')}>
+                                                    {t('projects.deepScanResume')}
+                                                </MsqdxButton>
+                                            ) : null}
+                                            {canCancel ? (
+                                                <MsqdxButton variant="outlined" size="small" onClick={() => handleDeepScanControl(row.scanId, 'cancel')}>
+                                                    {t('projects.deepScanCancel')}
+                                                </MsqdxButton>
+                                            ) : null}
+                                        </Box>
+                                    </Box>
+                                );
+                            })}
                         </Box>
                     ) : domainSummary ? (
                         <>

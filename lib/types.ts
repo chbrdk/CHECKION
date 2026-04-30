@@ -464,7 +464,17 @@ export interface LinkResult {
     internal: boolean;
 }
 
-export type DomainScanStatus = 'queued' | 'scanning' | 'complete' | 'error';
+export type DomainScanStatus =
+    | 'queued'
+    | 'scanning'
+    | 'cancelling'
+    | 'paused'
+    | 'complete'
+    | 'error'
+    | 'cancelled';
+
+/** POST /api/scan/domain/[id]/control body.action */
+export type DomainScanControlAction = 'pause' | 'resume' | 'cancel';
 
 /** Minimal page reference stored in domain scan payload (single scan id = link to /results/[id]). */
 export interface SlimPage {

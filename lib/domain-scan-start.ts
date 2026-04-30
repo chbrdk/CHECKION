@@ -6,7 +6,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { createDomainScan, updateDomainScan, getDomainScan, addScan } from '@/lib/db/scans';
 import { invalidateDomainScan, invalidateDomainList } from '@/lib/cache';
 import { buildStoredDomainPayload } from '@/lib/domain-summary';
-import { runDomainScan } from '@/lib/spider';
+import { runDomainScan, resolveDomainScanMaxPages } from '@/lib/spider';
+import type { DomainScanControlState } from '@/lib/spider';
 import { reportUsage } from '@/lib/usage-report';
 import type { DomainScanResult } from '@/lib/types';
 import { rebuildDomainIssuesFromPages } from '@/lib/db/domain-issues';
@@ -28,12 +29,13 @@ export async function startDomainScan(
 ): Promise<{ id: string }> {
   const id = uuidv4();
   const domain = options.domainOverride ?? url;
+  const pageCap = resolveDomainScanMaxPages(options.maxPages);
   const initial: DomainScanResult = {
     id,
     domain,
     timestamp: new Date().toISOString(),
     status: 'queued',
-    progress: { scanned: 0, total: 0 },
+    progress: { scanned: 0, total: pageCap },
     totalPages: 0,
     score: 0,
     pages: [],
@@ -51,7 +53,40 @@ export async function startDomainScan(
 
   (async () => {
     try {
-      await updateDomainScan(id, userId, { status: 'scanning' });
+      const initialRow = await getDomainScan(id, userId);
+      if (!initialRow) {
+        invalidateDomainList(userId);
+        return;
+      }
+      if (initialRow.status === 'cancelling') {
+        await updateDomainScan(id, userId, {
+          status: 'cancelled',
+          error: 'Cancelled by user',
+          progress: { scanned: 0, total: pageCap },
+        } as Partial<DomainScanResult>);
+        invalidateDomainScan(id);
+        invalidateDomainList(userId);
+        return;
+      }
+      if (initialRow.status === 'cancelled') {
+        invalidateDomainList(userId);
+        return;
+      }
+      const beforeStart = await getDomainScan(id, userId);
+      if (beforeStart?.status === 'cancelling') {
+        await updateDomainScan(id, userId, {
+          status: 'cancelled',
+          error: 'Cancelled by user',
+          progress: { scanned: 0, total: pageCap },
+        } as Partial<DomainScanResult>);
+        invalidateDomainScan(id);
+        invalidateDomainList(userId);
+        return;
+      }
+      const liveBeforeSpider = await getDomainScan(id, userId);
+      if (liveBeforeSpider?.status !== 'paused') {
+        await updateDomainScan(id, userId, { status: 'scanning', progress: { scanned: 0, total: pageCap } });
+      }
       invalidateDomainScan(id);
       for await (const update of runDomainScan(url, {
         useSitemap,
@@ -60,12 +95,23 @@ export async function startDomainScan(
         userId,
         projectId: projectIdForPages,
         skipUnchangedPages,
+        getScanControl: async (): Promise<DomainScanControlState> => {
+          const row = await getDomainScan(id, userId);
+          if (!row) return 'cancel';
+          if (row.status === 'cancelling' || row.status === 'cancelled') return 'cancel';
+          if (row.status === 'paused') return 'pause';
+          return 'run';
+        },
       })) {
         const currentScan = await getDomainScan(id, userId);
         if (!currentScan) break;
         if (update.type === 'progress') {
           await updateDomainScan(id, userId, {
-            progress: { scanned: update.scannedCount, total: 0, currentUrl: update.url },
+            progress: {
+              scanned: update.scannedCount,
+              total: update.total,
+              currentUrl: update.url,
+            },
           });
           invalidateDomainScan(id);
         } else if (update.type === 'page_complete') {
@@ -119,10 +165,41 @@ export async function startDomainScan(
           );
           await updateDomainScan(id, userId, stored);
           invalidateDomainScan(id);
+        } else if (update.type === 'cancelled') {
+          const fullPages = update.domainResult.pages;
+          const stored: DomainScanResult = buildStoredDomainPayload(
+            fullPages,
+            {
+              id: update.domainResult.id,
+              domain: update.domainResult.domain,
+              timestamp: update.domainResult.timestamp,
+              status: 'cancelled',
+              progress: update.domainResult.progress,
+              totalPages: update.domainResult.totalPages,
+              score: update.domainResult.score,
+              graph: update.domainResult.graph,
+              systemicIssues: update.domainResult.systemicIssues,
+              eeat: update.domainResult.eeat,
+            },
+            { omitSlimPages: false }
+          );
+          await updateDomainScan(id, userId, { ...stored, error: 'Cancelled by user' });
+          invalidateDomainScan(id);
         }
       }
-      await updateDomainScan(id, userId, { status: 'complete' });
-      invalidateDomainScan(id);
+      const finalRow = await getDomainScan(id, userId);
+      if (
+        finalRow &&
+        (finalRow.status === 'scanning' ||
+          finalRow.status === 'queued' ||
+          finalRow.status === 'cancelling')
+      ) {
+        await updateDomainScan(id, userId, {
+          status: 'error',
+          error: 'Scan ended unexpectedly',
+        } as Partial<DomainScanResult>);
+        invalidateDomainScan(id);
+      }
       invalidateDomainList(userId);
     } catch (e) {
       console.error('Background Scan Error:', e);

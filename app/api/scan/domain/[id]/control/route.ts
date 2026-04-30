@@ -1,0 +1,65 @@
+/* POST /api/scan/domain/[id]/control — pause, resume, or cancel an in-flight deep scan */
+import { NextRequest, NextResponse } from 'next/server';
+import { getRequestUser } from '@/lib/auth-api-token';
+import { apiError, API_STATUS } from '@/lib/api-error-handler';
+import { parseApiBody, domainScanControlBodySchema } from '@/lib/api-schemas';
+import { getDomainScan, updateDomainScan } from '@/lib/db/scans';
+import { invalidateDomainScan } from '@/lib/cache';
+import type { DomainScanResult, DomainScanStatus } from '@/lib/types';
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const user = await getRequestUser(request);
+  if (!user) {
+    return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
+  }
+
+  const { id } = await params;
+  const body = await parseApiBody(request, domainScanControlBodySchema);
+  if (body instanceof NextResponse) return body;
+
+  const scan = await getDomainScan(id, user.id);
+  if (!scan) {
+    return apiError('Scan not found', API_STATUS.NOT_FOUND);
+  }
+
+  const status = scan.status as DomainScanStatus;
+  let nextStatus: DomainScanStatus | null = null;
+
+  if (body.action === 'pause') {
+    if (status === 'scanning' || status === 'queued') {
+      nextStatus = 'paused';
+    } else if (status === 'paused') {
+      return NextResponse.json({ success: true, status: 'paused', message: 'Already paused' });
+    } else {
+      return apiError(`Cannot pause scan in status "${status}"`, API_STATUS.BAD_REQUEST);
+    }
+  } else if (body.action === 'resume') {
+    if (status === 'paused') {
+      nextStatus = 'scanning';
+    } else if (status === 'scanning') {
+      return NextResponse.json({ success: true, status: 'scanning', message: 'Already running' });
+    } else {
+      return apiError(`Cannot resume scan in status "${status}"`, API_STATUS.BAD_REQUEST);
+    }
+  } else if (body.action === 'cancel') {
+    if (status === 'complete' || status === 'error' || status === 'cancelled') {
+      return apiError(`Cannot cancel scan in status "${status}"`, API_STATUS.BAD_REQUEST);
+    }
+    if (status === 'cancelling') {
+      return NextResponse.json({ success: true, status: 'cancelling', message: 'Cancel already requested' });
+    }
+    nextStatus = 'cancelling';
+  }
+
+  if (nextStatus == null) {
+    return apiError('Invalid transition', API_STATUS.BAD_REQUEST);
+  }
+
+  await updateDomainScan(id, user.id, { status: nextStatus });
+  invalidateDomainScan(id);
+
+  return NextResponse.json({ success: true, status: nextStatus });
+}

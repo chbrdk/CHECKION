@@ -137,6 +137,8 @@ export const apiScanScreenshot = (id: string) => `${apiScan(id)}/screenshot`;
 export const apiScanDomainCreate = API_SCAN_DOMAIN;
 /** Build: GET /api/scan/domain/[id]/status */
 export const apiScanDomainStatus = (id: string) => `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/status`;
+/** Build: POST /api/scan/domain/[id]/control — pause / resume / cancel deep scan */
+export const apiScanDomainControl = (id: string) => `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/control`;
 /** Build: GET /api/scan/domain/[id]/summary — `light` omits pages + heavy SEO rows; `seoFull` returns only `aggregated.seo` for Tab 7 merge. */
 export const apiScanDomainSummary = (id: string, opts?: { light?: boolean; seoFull?: boolean }) => {
     const base = `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/summary`;

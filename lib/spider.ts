@@ -7,16 +7,25 @@ import { getLatestScanForUrlFingerprint } from '@/lib/db/scans';
 import { checkPageUnchangedByHeaders } from '@/lib/page-unchanged-check';
 import { cloneScanResultForReuse } from '@/lib/domain-scan-reuse';
 
-const DEFAULT_MAX_PAGES = 1000;
+/** Default max pages when `maxPages` is omitted (aligned with UI default). */
+export const DOMAIN_SCAN_DEFAULT_MAX_PAGES = 1000;
 const MAX_DEPTH = 3; // Home + 3 levels; max pages will likely hit first
 /** Upper cap for maxPages (e.g. "Alle" in UI). */
 export const DOMAIN_SCAN_MAX_PAGES_CAP = 10000;
+
+/** Resolved page cap for a domain scan (same formula as {@link runDomainScan}). */
+export function resolveDomainScanMaxPages(maxPages?: number): number {
+    return Math.min(DOMAIN_SCAN_MAX_PAGES_CAP, Math.max(1, maxPages ?? DOMAIN_SCAN_DEFAULT_MAX_PAGES));
+}
 
 /** How many pages to scan in parallel during domain scan (env: DOMAIN_SCAN_CONCURRENCY). */
 const DOMAIN_SCAN_CONCURRENCY = Math.min(
     12,
     Math.max(1, parseInt(process.env.DOMAIN_SCAN_CONCURRENCY || '12', 10) || 12)
 );
+
+/** Return value from DB-backed scan control (pause / resume / cancel). */
+export type DomainScanControlState = 'run' | 'pause' | 'cancel';
 
 export type DomainScanOptions = {
     /** If true (default), discover sitemap and use its URLs as scan list when available; otherwise pure link crawl. */
@@ -29,6 +38,11 @@ export type DomainScanOptions = {
     projectId?: string | null;
     /** When true, reuse prior scan if HEAD ETag/Last-Modified matches stored hints. */
     skipUnchangedPages?: boolean;
+    /**
+     * Poll user-requested pause/cancel from persistence. Omit for unmanaged runs.
+     * `pause` blocks before dequeuing new URLs; in-flight scans still finish.
+     */
+    getScanControl?: () => Promise<DomainScanControlState>;
 };
 
 /** Streamed updates from {@link runDomainScan} (UI + usage). */
@@ -39,6 +53,8 @@ export type DomainScanStreamUpdate =
           url: string;
           depth: number;
           scannedCount: number;
+          /** Upper bound (maxPages) for UI progress bars. */
+          total: number;
           message: string;
       }
     | { type: 'error'; url: string; message: string }
@@ -51,7 +67,8 @@ export type DomainScanStreamUpdate =
           ok: boolean;
           reusedUnchanged?: boolean;
       }
-    | { type: 'complete'; domainResult: DomainScanResultWithFullPages };
+    | { type: 'complete'; domainResult: DomainScanResultWithFullPages }
+    | { type: 'cancelled'; domainResult: DomainScanResultWithFullPages };
 
 
 /** Treat www and non-www as same domain for internal link detection */
@@ -153,10 +170,22 @@ export async function* runDomainScan(
     const baseUrl = new URL(startUrl);
     const origin = baseUrl.origin;
     const useSitemap = options.useSitemap !== false;
-    const maxPages = Math.min(
-        DOMAIN_SCAN_MAX_PAGES_CAP,
-        Math.max(1, options.maxPages ?? DEFAULT_MAX_PAGES)
-    );
+    const maxPages = resolveDomainScanMaxPages(options.maxPages);
+
+    const controlPollMs = 1000;
+    const pollControl = async (): Promise<DomainScanControlState> =>
+        (await options.getScanControl?.()) ?? 'run';
+
+    async function waitUntilRunOrCancel(): Promise<'run' | 'cancel'> {
+        for (;;) {
+            const c = await pollControl();
+            if (c === 'cancel') return 'cancel';
+            if (c === 'run') return 'run';
+            await new Promise((r) => setTimeout(r, controlPollMs));
+        }
+    }
+
+    let userCancel = false;
 
     // Queue: { url, depth }; seed from sitemap or start URL
     let queue: Array<{ url: string, depth: number }> = [];
@@ -277,10 +306,17 @@ export async function* runDomainScan(
     while (results.length < maxPages && (queue.length > 0 || inFlight.length > 0)) {
         // Start new scans up to CONCURRENCY
         while (
+            !userCancel &&
             inFlight.length < DOMAIN_SCAN_CONCURRENCY &&
             queue.length > 0 &&
             results.length + inFlight.length < maxPages
         ) {
+            const gate = await waitUntilRunOrCancel();
+            if (gate === 'cancel') {
+                userCancel = true;
+                queue.length = 0;
+                break;
+            }
             const current = queue.shift()!;
             const normalizedCurrent = normalizeScanUrl(current.url);
             yield {
@@ -288,6 +324,7 @@ export async function* runDomainScan(
                 url: current.url,
                 depth: current.depth,
                 scannedCount: results.length + inFlight.length + 1,
+                total: maxPages,
                 message: `Scanning ${current.url}...`
             };
             const promise = tryReuseOrRunFullScan(current);
@@ -402,14 +439,15 @@ export async function* runDomainScan(
     const domainScore = calculateDomainScore(results);
     const systemicIssues = identifySystemicIssues(results.map(r => r.result));
 
+    const terminalStatus = userCancel ? 'cancelled' : 'complete';
     const finalResult: DomainScanResultWithFullPages = {
         id: domainId,
         domain: origin,
         timestamp: new Date().toISOString(),
-        status: 'complete',
+        status: terminalStatus,
         progress: {
             scanned: results.length,
-            total: results.length
+            total: maxPages,
         },
         totalPages: results.length,
         score: domainScore,
@@ -422,6 +460,10 @@ export async function* runDomainScan(
         eeat
     };
 
-    yield { type: 'complete', domainResult: finalResult };
+    if (userCancel) {
+        yield { type: 'cancelled', domainResult: finalResult };
+    } else {
+        yield { type: 'complete', domainResult: finalResult };
+    }
     return finalResult;
 }
