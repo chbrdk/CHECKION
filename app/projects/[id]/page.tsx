@@ -18,11 +18,14 @@ import {
     apiProjectRankingSummary,
     apiProjectGeoSummary,
     apiProjectDomainSummaryAll,
+    apiProjectDomainScansActive,
     apiProjectDomainScanAll,
     apiScanDomainCreate,
     apiScanDomainStatus,
     apiScanDomainControl,
     pathDomain,
+    pathScanDomain,
+    pathScanDomainResume,
     pathGeoEeat,
     pathProjectRankings,
     pathProjectGeo,
@@ -33,6 +36,7 @@ import { InfoTooltip } from '@/components/InfoTooltip';
 import Link from 'next/link';
 import { THEME_ACCENT_CSS } from '@/lib/theme-accent';
 import type { AggregatedPageClassification } from '@/lib/types';
+import { toScanStartUrl } from '@/lib/url-normalize';
 
 interface ProjectData {
     id: string;
@@ -69,6 +73,8 @@ interface DomainSummaryData {
 interface ActiveDeepScanRow {
     scanId: string;
     label: string;
+    /** When set, „Deep scan öffnen“ uses live `/scan/domain` with `scanId` for resume. */
+    scanRootUrl?: string | null;
     status?: string;
     progress?: { scanned: number; total: number; currentUrl?: string };
 }
@@ -203,6 +209,60 @@ export default function ProjectDetailPage() {
         }
     }, [id, competitors, normalizeDomainInput, loadProject, t]);
 
+    const refreshActiveDomainScans = useCallback(
+        async (signal?: AbortSignal) => {
+            if (!id) return;
+            try {
+                const r = await fetch(apiProjectDomainScansActive(id), { credentials: 'same-origin', signal });
+                if (signal?.aborted) return;
+                const j = await r.json();
+                if (signal?.aborted) return;
+                if (j?.success && Array.isArray(j.data?.scans)) {
+                    setActiveDeepScans(
+                        j.data.scans.map((s: { scanId: string; label: string; status: string }) => ({
+                            scanId: s.scanId,
+                            label: s.label,
+                            scanRootUrl: toScanStartUrl(s.label),
+                            status: s.status,
+                        }))
+                    );
+                }
+            } catch {
+                /* ignore */
+            }
+        },
+        [id]
+    );
+
+    const loadDomainSummaryAll = useCallback(async () => {
+        if (!id) return;
+        try {
+            const r = await fetch(apiProjectDomainSummaryAll(id), { credentials: 'same-origin' });
+            const res = await r.json();
+            if (res?.success && res?.data) {
+                const d = res.data as {
+                    own: DomainSummaryData | null;
+                    competitors: Record<
+                        string,
+                        | {
+                              scanId: string;
+                              score: number;
+                              totalPageCount: number;
+                              status: string;
+                              aggregated?: { pageClassification?: AggregatedPageClassification | null };
+                          }
+                        | null
+                    >;
+                };
+                setDomainSummary(d.own ?? null);
+                setDomainSummaryAllCompetitors(d.competitors ?? {});
+            }
+        } catch {
+            // ignore
+        }
+        await refreshActiveDomainScans();
+    }, [id, refreshActiveDomainScans]);
+
     useEffect(() => {
         if (!id) return;
         if (fetchedForIdRef.current === id) return;
@@ -248,6 +308,9 @@ export default function ProjectDetailPage() {
                     setDomainSummary(null);
                     setDomainSummaryAllCompetitors({});
                 }
+                if (!signal.aborted) {
+                    void refreshActiveDomainScans(signal);
+                }
             })
             .catch((err) => {
                 if (err?.name === 'AbortError') return;
@@ -263,35 +326,7 @@ export default function ProjectDetailPage() {
                 }
             });
         return () => ac.abort();
-    }, [id, fetchedForIdRef]);
-
-    const loadDomainSummaryAll = useCallback(async () => {
-        if (!id) return;
-        try {
-            const r = await fetch(apiProjectDomainSummaryAll(id), { credentials: 'same-origin' });
-            const res = await r.json();
-            if (res?.success && res?.data) {
-                const d = res.data as {
-                    own: DomainSummaryData | null;
-                    competitors: Record<
-                        string,
-                        | {
-                              scanId: string;
-                              score: number;
-                              totalPageCount: number;
-                              status: string;
-                              aggregated?: { pageClassification?: AggregatedPageClassification | null };
-                          }
-                        | null
-                    >;
-                };
-                setDomainSummary(d.own ?? null);
-                setDomainSummaryAllCompetitors(d.competitors ?? {});
-            }
-        } catch {
-            // ignore
-        }
-    }, [id]);
+    }, [id, fetchedForIdRef, refreshActiveDomainScans]);
 
     const handleRestartDeepScan = useCallback(async () => {
         if (!id || !project?.domain) return;
@@ -305,7 +340,13 @@ export default function ProjectDetailPage() {
             });
             const data = await r.json();
             if (data?.success && data?.data?.id) {
-                router.push(pathDomain(data.data.id, { projectId: id }));
+                router.push(
+                    pathScanDomainResume({
+                        domainOrUrl: project.domain,
+                        scanId: data.data.id as string,
+                        projectId: id,
+                    })
+                );
                 return;
             }
         } catch {
@@ -329,15 +370,21 @@ export default function ProjectDetailPage() {
                 const rows: ActiveDeepScanRow[] = [];
                 const own = data.data.own as { scanId?: string } | null;
                 if (own?.scanId) {
+                    const ownDomain = project?.domain?.trim() ?? '';
                     rows.push({
                         scanId: own.scanId,
-                        label: project?.domain?.trim() || t('projects.ownDomainScanLabel'),
+                        label: ownDomain || t('projects.ownDomainScanLabel'),
+                        scanRootUrl: ownDomain ? toScanStartUrl(ownDomain) : null,
                     });
                 }
                 const comps = data.data.competitors as Record<string, { scanId: string; reused?: boolean }> | undefined;
                 for (const [dom, info] of Object.entries(comps ?? {})) {
                     if (info?.scanId && !info.reused) {
-                        rows.push({ scanId: info.scanId, label: dom });
+                        rows.push({
+                            scanId: info.scanId,
+                            label: dom,
+                            scanRootUrl: toScanStartUrl(dom),
+                        });
                     }
                 }
                 if (rows.length > 0) setActiveDeepScans(rows);
@@ -647,6 +694,17 @@ export default function ProjectDetailPage() {
                                 const canPause = st === 'scanning' || st === 'queued';
                                 const canResume = st === 'paused';
                                 const canCancel = st === 'scanning' || st === 'queued' || st === 'paused';
+                                const openDeepScanHref =
+                                    row.scanRootUrl != null && row.scanRootUrl !== ''
+                                        ? pathScanDomain({
+                                              url: row.scanRootUrl,
+                                              ...(row.progress && row.progress.total > 0
+                                                  ? { maxPages: row.progress.total }
+                                                  : {}),
+                                              projectId: id,
+                                              scanId: row.scanId,
+                                          })
+                                        : pathDomain(row.scanId, { projectId: id });
                                 return (
                                     <Box
                                         key={row.scanId}
@@ -673,7 +731,7 @@ export default function ProjectDetailPage() {
                                             </MsqdxTypography>
                                         ) : null}
                                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, alignItems: 'center' }}>
-                                            <Link href={pathDomain(row.scanId, { projectId: id })} style={{ textDecoration: 'none' }}>
+                                            <Link href={openDeepScanHref} style={{ textDecoration: 'none' }}>
                                                 <MsqdxButton variant="outlined" size="small">
                                                     {t('projects.openDeepScan')}
                                                 </MsqdxButton>

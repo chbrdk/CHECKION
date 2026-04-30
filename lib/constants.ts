@@ -3,6 +3,8 @@
  * Do not hardcode paths in components – reference these constants.
  */
 
+import { toScanStartUrl } from '@/lib/url-normalize';
+
 /** When the app is served under a subpath (e.g. /checkion), set NEXT_PUBLIC_APP_BASE_URL to that path so API fetches hit the correct origin path. */
 const APP_BASE_URL = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_APP_BASE_URL) ? process.env.NEXT_PUBLIC_APP_BASE_URL.replace(/\/$/, '') : '';
 
@@ -56,12 +58,35 @@ export const pathProjectResearch = (id: string) => `${PATH_PROJECTS}/${encodeURI
 /** Build app route: /share/[token] */
 export const pathShare = (token: string) => `${PATH_SHARE}/${encodeURIComponent(token)}`;
 /** Build app route: /scan/domain?url=...&maxPages=...&projectId=... (projectId preserves project context for result header + optional API assign). */
-export const pathScanDomain = (params: { url: string; maxPages?: number; projectId?: string }) => {
+export const pathScanDomain = (params: { url: string; maxPages?: number; projectId?: string; scanId?: string }) => {
   const search = new URLSearchParams({ url: params.url });
   if (params.maxPages != null) search.set('maxPages', String(params.maxPages));
   if (params.projectId) search.set('projectId', params.projectId);
+  if (params.scanId) search.set('scanId', params.scanId);
   return `${PATH_SCAN_DOMAIN}?${search.toString()}`;
 };
+
+/**
+ * Navigate to the live deep-scan page with an existing scan id (resume/progress UI).
+ * If `domainOrUrl` cannot be turned into a URL, falls back to the domain result route.
+ */
+export function pathScanDomainResume(params: {
+  domainOrUrl: string;
+  scanId: string;
+  projectId?: string;
+  maxPages?: number;
+}): string {
+  const url = toScanStartUrl(params.domainOrUrl);
+  if (!url) {
+    return pathDomain(params.scanId, params.projectId ? { projectId: params.projectId } : undefined);
+  }
+  return pathScanDomain({
+    url,
+    ...(params.maxPages != null ? { maxPages: params.maxPages } : {}),
+    ...(params.projectId ? { projectId: params.projectId } : {}),
+    scanId: params.scanId,
+  });
+}
 
 /** Max content width (px) for centered long-form pages (domain/single-scan/dashboard-style). */
 export const LAYOUT_MAX_CONTENT_WIDTH_PX = 1600;
@@ -336,6 +361,9 @@ export const apiProjectDomainSummary = (id: string) => `${API_PROJECTS}/${encode
 export const apiProjectDomainSummaryAll = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/domain-summary-all`;
 /** POST /api/projects/[id]/domain-scan-all – start deep scan for own + all competitors. */
 export const apiProjectDomainScanAll = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/domain-scan-all`;
+/** GET /api/projects/[id]/domain-scans/active – queued/scanning/paused/cancelling deep scans for this project. */
+export const apiProjectDomainScansActive = (id: string) =>
+  `${API_PROJECTS}/${encodeURIComponent(id)}/domain-scans/active`;
 /** GET /api/scan/domain/by-domain?domain= – latest completed scan for domain (current user). */
 export const apiScanDomainByDomain = (domain: string) => `${API_SCAN_DOMAIN}/by-domain?domain=${encodeURIComponent(domain)}`;
 

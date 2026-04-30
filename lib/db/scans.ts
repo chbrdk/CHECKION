@@ -2,9 +2,10 @@
 /*  CHECKION – Scan persistence (DB)                                   */
 /* ------------------------------------------------------------------ */
 
-import { eq, and, desc, isNull, count, sql } from 'drizzle-orm';
+import { eq, and, desc, isNull, count, sql, inArray } from 'drizzle-orm';
 import { getDb } from './index';
 import { scans, domainScans } from './schema';
+import { getProjectDomainScanReferences } from './project-domain-references';
 import type { ScanResult, DomainScanResult } from '@/lib/types';
 import { normalizeScanUrl } from '@/lib/url-normalize';
 
@@ -14,6 +15,66 @@ export type DomainScanSummaryRow = { id: string; domain: string; timestamp: stri
 export type DomainScanSearchRow = DomainScanSummaryRow & {
     hasStoredAggregated: boolean;
 };
+
+/** Domain scan rows still in progress (UI polling / resume). */
+const ACTIVE_DOMAIN_SCAN_STATUSES = ['queued', 'scanning', 'paused', 'cancelling'] as const;
+
+/**
+ * Active deep scans for a project: rows with `project_id = projectId` plus competitor scans
+ * linked via `project_domain_scan_references` (non-terminal status only).
+ */
+export async function listActiveDomainScansForProject(
+    userId: string,
+    projectId: string
+): Promise<Array<{ scanId: string; label: string; status: string }>> {
+    const db = getDb();
+    const statusList = [...ACTIVE_DOMAIN_SCAN_STATUSES];
+
+    const byId = new Map<string, { scanId: string; label: string; status: string }>();
+
+    const ownRows = await db
+        .select({
+            id: domainScans.id,
+            domain: domainScans.domain,
+            status: domainScans.status,
+        })
+        .from(domainScans)
+        .where(
+            and(
+                eq(domainScans.userId, userId),
+                eq(domainScans.projectId, projectId),
+                inArray(domainScans.status, statusList)
+            )
+        );
+
+    for (const row of ownRows) {
+        byId.set(row.id, { scanId: row.id, label: row.domain, status: row.status });
+    }
+
+    const refs = await getProjectDomainScanReferences(projectId);
+    for (const ref of refs) {
+        const rows = await db
+            .select({
+                id: domainScans.id,
+                status: domainScans.status,
+            })
+            .from(domainScans)
+            .where(
+                and(
+                    eq(domainScans.userId, userId),
+                    eq(domainScans.id, ref.domainScanId),
+                    inArray(domainScans.status, statusList)
+                )
+            )
+            .limit(1);
+        const hit = rows[0];
+        if (hit) {
+            byId.set(hit.id, { scanId: hit.id, label: ref.domain, status: hit.status });
+        }
+    }
+
+    return Array.from(byId.values());
+}
 import type { UxCxSummary } from '@/lib/llm-summary-types';
 import type { UxCheckV2Summary } from '@/lib/ux-check-types';
 

@@ -7,6 +7,7 @@ import {
     pathResults,
     pathDomain,
     pathScanDomain,
+    pathScanDomainResume,
     pathJourneyAgent,
     pathGeoEeat,
     pathShare,
@@ -74,6 +75,32 @@ describe('Path constants', () => {
         expect(pathScanDomain({ url: 'https://example.com' })).toBe('/scan/domain?url=https%3A%2F%2Fexample.com');
         expect(pathScanDomain({ url: 'https://a.com', projectId: '550e8400-e29b-41d4-a716-446655440000' })).toBe(
             '/scan/domain?url=https%3A%2F%2Fa.com&projectId=550e8400-e29b-41d4-a716-446655440000'
+        );
+        expect(
+            pathScanDomain({
+                url: 'https://a.com',
+                maxPages: 500,
+                projectId: '550e8400-e29b-41d4-a716-446655440000',
+                scanId: 'scan-resume-1',
+            })
+        ).toBe(
+            '/scan/domain?url=https%3A%2F%2Fa.com&maxPages=500&projectId=550e8400-e29b-41d4-a716-446655440000&scanId=scan-resume-1'
+        );
+    });
+
+    it('pathScanDomainResume uses live scan URL when domain is valid', () => {
+        const pid = '550e8400-e29b-41d4-a716-446655440000';
+        expect(
+            pathScanDomainResume({ domainOrUrl: 'myshop.example', scanId: 's1', projectId: pid })
+        ).toBe(
+            `/scan/domain?url=${encodeURIComponent('https://myshop.example')}&projectId=${pid}&scanId=s1`
+        );
+    });
+
+    it('pathScanDomainResume falls back to pathDomain when domain is empty', () => {
+        const pid = '550e8400-e29b-41d4-a716-446655440000';
+        expect(pathScanDomainResume({ domainOrUrl: '   ', scanId: 's2', projectId: pid })).toBe(
+            `/domain/s2?projectId=${pid}`
         );
     });
 

@@ -582,6 +582,7 @@
     "liveProgress": "Live Scan Progress",
     "initLog": "Initializing Async Deep Scan...",
     "startedLog": "Scan started in background. Polling for updates...",
+    "resumedLog": "Fortsetzung eines laufenden Scans – Status wird geladen …",
     "completeLog": "Scan Complete! Redirecting...",
     "cancelledLog": "Scan abgebrochen.",
     "pauseLog": "Pause angefordert.",

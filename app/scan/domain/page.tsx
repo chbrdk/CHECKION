@@ -32,19 +32,26 @@ function ScanContent() {
     const startUrl = searchParams.get('url');
     const maxPagesParam = searchParams.get('maxPages');
     const projectIdParam = searchParams.get('projectId');
+    const scanIdParam = searchParams.get('scanId');
 
     // Scroll to bottom of logs
     useEffect(() => {
         logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [logs]);
 
-    // Initial Start
+    // Resume existing scan (scanId in URL) or start new one
     useEffect(() => {
-        if (startUrl && !scanId) {
-            const limit = maxPagesParam ? Math.min(10000, Math.max(1, Number(maxPagesParam))) : 1000;
-            startScan(startUrl, limit, projectIdParam);
+        if (!startUrl) return;
+        if (scanIdParam) {
+            setScanId(scanIdParam);
+            setLogs((prev) => (prev.length === 0 ? [t('domain.resumedLog')] : prev));
+            return;
         }
-    }, [startUrl, maxPagesParam, projectIdParam]);
+        if (!scanId) {
+            const limit = maxPagesParam ? Math.min(10000, Math.max(1, Number(maxPagesParam))) : 1000;
+            void startScan(startUrl, limit, projectIdParam);
+        }
+    }, [startUrl, maxPagesParam, projectIdParam, scanIdParam, t]);
 
     const pollOnce = async (sid: string) => {
         const res = await fetch(apiScanDomainStatus(sid), { credentials: 'same-origin' });
@@ -143,10 +150,19 @@ function ScanContent() {
             if (response.ok) {
                 const data = await response.json();
                 if (data.success && data.data) {
-                    setScanId(data.data.id);
+                    const newId = data.data.id as string;
+                    setScanId(newId);
                     setProgressTotal(pageLimit ?? 1000);
                     setLogs(prev => [...prev, t('domain.startedLog')]);
                     setStatus('scanning');
+                    router.replace(
+                        pathScanDomain({
+                            url,
+                            maxPages: pageLimit ?? 1000,
+                            ...(projectId ? { projectId } : {}),
+                            scanId: newId,
+                        })
+                    );
                 } else {
                     throw new Error(data.error || t('domain.failedStart'));
                 }
