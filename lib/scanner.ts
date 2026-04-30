@@ -4,6 +4,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import puppeteer from 'puppeteer';
+import { PUPPETEER_PROTOCOL_TIMEOUT_MS } from '@/lib/constants';
 import fs from 'fs';
 import path from 'path';
 import { dismissCookieBanner } from './cookie-banner-dismiss';
@@ -133,6 +134,7 @@ export async function runScan(
     const browser = await puppeteer.launch({
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
         headless: true, // Use new headless mode if supported (default)
+        protocolTimeout: PUPPETEER_PROTOCOL_TIMEOUT_MS,
     });
 
     // Create page and set viewport

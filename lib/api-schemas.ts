@@ -39,6 +39,11 @@ export const scanBodySchema = z.object({
   projectId: z.string().uuid().nullable().optional(),
 });
 
+/** POST /api/projects/[id]/domain-scan-competitor */
+export const projectCompetitorDomainScanBodySchema = z.object({
+  domain: z.string().min(1, 'Domain is required').max(512),
+});
+
 /** POST /api/scan/domain */
 export const scanDomainBodySchema = z.object({
   url: urlSchema,

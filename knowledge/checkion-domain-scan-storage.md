@@ -15,7 +15,8 @@ Beim Deep Scan werden **alle relevanten Metriken bereits während des Scans** be
 Damit der Spider (Sitemap, Link-Crawl) korrekt arbeitet, muss die Start-URL immer ein gültiges Schema haben. Ohne `http://` oder `https://` liefert der Scan oft deutlich weniger Seiten (z. B. nur ~200 statt 1000+).
 
 - **`POST /api/scan/domain`**: `parsed.url` wird vor `startDomainScan` normalisiert: fehlt das Schema, wird `https://` vorangestellt.
-- **`POST /api/projects/[id]/domain-scan-all`**: Eigenes Projekt-Domain wird vor dem Aufruf von `startDomainScan` mit `https://` versehen, wenn noch kein Schema gesetzt ist.
+- **`POST /api/projects/[id]/domain-scan-all`**: Eigenes Projekt-Domain wird vor dem Aufruf von `startDomainScan` mit `https://` versehen, wenn noch kein Schema gesetzt ist. **Konkurrenten:** Es wird immer ein **neuer** Deep Scan pro Eintrag gestartet und die Projekt-Referenz (`project_domain_scan_references`) auf die neue `domain_scans.id` gesetzt — kein stiller Reuse eines alten „complete“-Scans mehr (sonst lief kein Crawl und die UI zeigte die Zeilen wegen `reused` oft nicht).
+- **`POST /api/projects/[id]/domain-scan-competitor`**: Body `{ domain }` — nur wenn `normalizeDomain(domain)` in den Projekt-Wettbewerbern vorkommt; gleiche Scan-/Referenz-Logik wie einzelner Konkurrent bei `domain-scan-all` (`lib/project-competitor-domain-scan.ts`).
 
 Siehe `app/api/scan/domain/route.ts` und `app/api/projects/[id]/domain-scan-all/route.ts`.
 

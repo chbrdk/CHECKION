@@ -8,6 +8,18 @@ import { toScanStartUrl } from '@/lib/url-normalize';
 /** When the app is served under a subpath (e.g. /checkion), set NEXT_PUBLIC_APP_BASE_URL to that path so API fetches hit the correct origin path. */
 const APP_BASE_URL = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_APP_BASE_URL) ? process.env.NEXT_PUBLIC_APP_BASE_URL.replace(/\/$/, '') : '';
 
+/**
+ * Puppeteer CDP `protocolTimeout` (ms). Full-page `page.screenshot()` maps to `Page.captureScreenshot`
+ * and can exceed Puppeteer’s default (~180s) on long / heavy pages.
+ * Override with `PUPPETEER_PROTOCOL_TIMEOUT_MS` (minimum 60_000).
+ */
+export const PUPPETEER_PROTOCOL_TIMEOUT_MS = (() => {
+  const raw = typeof process !== 'undefined' ? process.env?.PUPPETEER_PROTOCOL_TIMEOUT_MS : undefined;
+  const n = raw != null && raw !== '' ? Number(raw) : NaN;
+  if (Number.isFinite(n) && n >= 60_000) return Math.floor(n);
+  return 600_000;
+})();
+
 // ─── App Routes (pages) ────────────────────────────────────────────────────
 export const PATH_HOME = '/';
 export const PATH_SCAN = '/scan';
@@ -361,6 +373,9 @@ export const apiProjectDomainSummary = (id: string) => `${API_PROJECTS}/${encode
 export const apiProjectDomainSummaryAll = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/domain-summary-all`;
 /** POST /api/projects/[id]/domain-scan-all – start deep scan for own + all competitors. */
 export const apiProjectDomainScanAll = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/domain-scan-all`;
+/** POST /api/projects/[id]/domain-scan-competitor – body `{ domain }` (hostname or URL). */
+export const apiProjectDomainScanCompetitor = (id: string) =>
+  `${API_PROJECTS}/${encodeURIComponent(id)}/domain-scan-competitor`;
 /** GET /api/projects/[id]/domain-scans/active – queued/scanning/paused/cancelling deep scans for this project. */
 export const apiProjectDomainScansActive = (id: string) =>
   `${API_PROJECTS}/${encodeURIComponent(id)}/domain-scans/active`;

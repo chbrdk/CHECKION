@@ -48,7 +48,14 @@ import {
     VIRTUAL_CHIP_LIST_INLINE_THRESHOLD,
     LAYOUT_MAX_CONTENT_WIDTH_PX,
     APP_LAYOUT_INNER_BORDER_WIDTH_PX,
+    PUPPETEER_PROTOCOL_TIMEOUT_MS,
 } from '@/lib/constants';
+
+describe('Puppeteer config', () => {
+    it('PUPPETEER_PROTOCOL_TIMEOUT_MS is at least 60s', () => {
+        expect(PUPPETEER_PROTOCOL_TIMEOUT_MS).toBeGreaterThanOrEqual(60_000);
+    });
+});
 
 describe('Path constants', () => {
     it('PATH_HOME is /', () => {

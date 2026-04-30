@@ -20,6 +20,7 @@ import {
     apiProjectDomainSummaryAll,
     apiProjectDomainScansActive,
     apiProjectDomainScanAll,
+    apiProjectDomainScanCompetitor,
     apiScanDomainCreate,
     apiScanDomainStatus,
     apiScanDomainControl,
@@ -36,6 +37,7 @@ import { InfoTooltip } from '@/components/InfoTooltip';
 import Link from 'next/link';
 import { THEME_ACCENT_CSS } from '@/lib/theme-accent';
 import type { AggregatedPageClassification } from '@/lib/types';
+import { normalizeDomain } from '@/lib/domain-normalize';
 import { toScanStartUrl } from '@/lib/url-normalize';
 
 interface ProjectData {
@@ -104,6 +106,7 @@ export default function ProjectDetailPage() {
     >({});
     const [restartDeepScanLoading, setRestartDeepScanLoading] = useState(false);
     const [scanAllDeepScanLoading, setScanAllDeepScanLoading] = useState(false);
+    const [competitorScanLoadingDomain, setCompetitorScanLoadingDomain] = useState<string | null>(null);
     const [activeDeepScans, setActiveDeepScans] = useState<ActiveDeepScanRow[]>([]);
     const [listsLoading, setListsLoading] = useState(false);
     const [addCompetitorValue, setAddCompetitorValue] = useState('');
@@ -355,6 +358,30 @@ export default function ProjectDetailPage() {
             setRestartDeepScanLoading(false);
         }
     }, [id, project?.domain, router]);
+
+    const handleStartCompetitorDeepScan = useCallback(
+        async (domain: string) => {
+            if (!id || !domain.trim()) return;
+            setCompetitorScanLoadingDomain(domain);
+            try {
+                const r = await fetch(apiProjectDomainScanCompetitor(id), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ domain }),
+                });
+                const data = await r.json().catch(() => ({}));
+                if (r.ok && data?.success) {
+                    await loadDomainSummaryAll();
+                }
+            } catch {
+                // ignore
+            } finally {
+                setCompetitorScanLoadingDomain(null);
+            }
+        },
+        [id, loadDomainSummaryAll]
+    );
 
     const handleScanAllDeepScan = useCallback(async () => {
         if (!id) return;
@@ -784,18 +811,53 @@ export default function ProjectDetailPage() {
                                         {t('projects.competitorDeepScans')}
                                     </MsqdxTypography>
                                     <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
-                                        {Object.entries(domainSummaryAllCompetitors).map(([domain, comp]) => (
-                                            comp && (
-                                                <Box key={domain} component="li" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 0.25, gap: 0.5 }}>
-                                                    <MsqdxTypography variant="caption" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                        {domain} {comp.status === 'complete' ? `· ${comp.score}` : `· ${comp.status}`}
-                                                    </MsqdxTypography>
-                                                    <MsqdxButton variant="outlined" size="small" onClick={() => router.push(pathDomain(comp.scanId, { projectId: id }))} sx={{ flexShrink: 0 }}>
-                                                        {t('projects.open')}
+                                        {Object.entries(domainSummaryAllCompetitors).map(([domain, comp]) => {
+                                            const scanBusy =
+                                                competitorScanLoadingDomain != null &&
+                                                normalizeDomain(competitorScanLoadingDomain) === normalizeDomain(domain);
+                                            return (
+                                            <Box
+                                                key={domain}
+                                                component="li"
+                                                sx={{
+                                                    display: 'flex',
+                                                    flexWrap: 'wrap',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
+                                                    py: 0.35,
+                                                    gap: 0.5,
+                                                }}
+                                            >
+                                                <MsqdxTypography variant="caption" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: '1 1 120px', minWidth: 0 }}>
+                                                    {domain}
+                                                    {comp
+                                                        ? comp.status === 'complete'
+                                                            ? ` · ${comp.score}`
+                                                            : ` · ${comp.status}`
+                                                        : ' · —'}
+                                                </MsqdxTypography>
+                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, flexShrink: 0 }}>
+                                                    {comp ? (
+                                                        <MsqdxButton
+                                                            variant="outlined"
+                                                            size="small"
+                                                            onClick={() => router.push(pathDomain(comp.scanId, { projectId: id }))}
+                                                        >
+                                                            {t('projects.open')}
+                                                        </MsqdxButton>
+                                                    ) : null}
+                                                    <MsqdxButton
+                                                        variant="outlined"
+                                                        size="small"
+                                                        disabled={scanBusy}
+                                                        onClick={() => void handleStartCompetitorDeepScan(domain)}
+                                                    >
+                                                        {scanBusy ? t('common.loading') : t('projects.competitorDeepScan')}
                                                     </MsqdxButton>
                                                 </Box>
-                                            )
-                                        ))}
+                                            </Box>
+                                            );
+                                        })}
                                     </Box>
                                 </Box>
                             )}
@@ -908,16 +970,37 @@ export default function ProjectDetailPage() {
                             {t('projects.noCompetitors')}
                         </MsqdxTypography>
                     ) : (
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1.5 }}>
-                            {competitors.map((domain) => (
-                                <MsqdxChip
-                                    key={domain}
-                                    label={domain}
-                                    onDelete={() => handleRemoveCompetitor(domain)}
-                                    size="small"
-                                    sx={{ mr: 0.5, mb: 0.5 }}
-                                />
-                            ))}
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 1.5 }}>
+                            {competitors.map((domain) => {
+                                const scanBusy = competitorScanLoadingDomain != null && normalizeDomain(competitorScanLoadingDomain) === normalizeDomain(domain);
+                                return (
+                                    <Box
+                                        key={domain}
+                                        sx={{
+                                            display: 'flex',
+                                            flexWrap: 'wrap',
+                                            alignItems: 'center',
+                                            gap: 1,
+                                            py: 0.25,
+                                        }}
+                                    >
+                                        <MsqdxTypography variant="body2" sx={{ flex: '1 1 140px', minWidth: 0, wordBreak: 'break-all' }}>
+                                            {domain}
+                                        </MsqdxTypography>
+                                        <MsqdxButton
+                                            variant="outlined"
+                                            size="small"
+                                            disabled={scanBusy}
+                                            onClick={() => void handleStartCompetitorDeepScan(domain)}
+                                        >
+                                            {scanBusy ? t('common.loading') : t('projects.competitorDeepScan')}
+                                        </MsqdxButton>
+                                        <MsqdxButton variant="text" size="small" color="inherit" onClick={() => handleRemoveCompetitor(domain)}>
+                                            {t('projects.removeCompetitor')}
+                                        </MsqdxButton>
+                                    </Box>
+                                );
+                            })}
                         </Box>
                     )}
                     {suggestCompetitorsError && (

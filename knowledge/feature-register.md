@@ -105,6 +105,7 @@ Dieses Register ist die **Source of Truth**, welche Funktionen/Integrationen exi
   - `app/api/projects/[id]/domain-summary/route.ts`
   - `app/api/projects/[id]/domain-summary-all/route.ts`
   - `app/api/projects/[id]/domain-scan-all/route.ts`
+  - `app/api/projects/[id]/domain-scan-competitor/route.ts`
   - `app/api/projects/[id]/geo-question-history/route.ts`
   - `app/api/projects/[id]/geo-latest-result/route.ts`
 - **UI**:
