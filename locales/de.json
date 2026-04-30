@@ -193,7 +193,14 @@
     "navResearch": "Research",
     "navPerformance": "Performance",
     "navWcag": "WCAG",
+    "navPageTopics": "Seitenthemen",
     "navComingSoon": "Demnächst",
+    "pageTopicsCompareTitle": "Seitenthemen (Vergleich)",
+    "pageTopicsCompareSubtitle": "Themenlandschaften nebeneinander: eigener Deep Scan und je verknüpfter Konkurrenz-Scan (gleiche Visualisierung wie in den Domain-Ergebnissen).",
+    "pageTopicsCompareCta": "Vergleich öffnen",
+    "pageTopicsCompareHint": "Eigenes Projekt: {{own}} Seiten mit KI-Klassifikation. Konkurrenten mit Themen-Daten: {{competitorsReady}} / {{competitorsTotal}}.",
+    "pageTopicsCompareHintNoCompetitors": "Konkurrenten hinzufügen und Deep Scans ausführen, um Themenlandschaften zu vergleichen.",
+    "pageTopicsCompetitorIncomplete": "Deep Scan noch nicht fertig (Status: {{status}}). Abgeschlossenen Scan abwarten oder starten, um Themen zu sehen.",
     "openDeepScan": "Deep Scan öffnen",
     "wcag": {
       "fromScan": "Aus letztem Deep Scan",
@@ -1051,6 +1058,7 @@
     "seoOnPage": "On-Page-SEO aus dem Deep Scan: Meta (Title, Description, H1, Canonical), Überschriften-Struktur, Seiten ohne Meta/Keywords und seitenübergreifende Keywords.",
     "pageClassification": "Inhaltliche Einordnung der Seite per KI: Themen-Tags und Tier (1–5) für die Wichtigkeit des Hauptthemas. Basiert nur auf dem Seiteninhalt, nicht auf URL oder Struktur.",
     "pageTopicsAggregate": "Aus allen klassifizierten Seiten berechnet: gleiche Tags werden zusammengeführt, Gewicht = Tier² pro Vorkommen; typische Navigations-/Footer-Begriffe werden abgeschwächt. Kein zweites LLM – nur Statistik über die gespeicherten tagTiers.",
+    "pageTopicsCompareCard": "Nutzt dieselben gekappten Themen-Aggregate wie die Domain-Summary-API. Vergleicht den Deep Scan des Projekts mit jedem verknüpften Konkurrenz-Scan.",
     "pageTopicsLowTierDominant": "Pro Seite zählt die Klassifikation, wie viele Themen-Tags in Tier 1–5 vorkommen. Hier gezählt: Seiten, auf denen die Summe der T1- und T2-Tags größer ist als die Summe der T4- und T5-Tags. Tier 3 zählt für diese Kennzahl nicht. Das ist eine Heuristik für eine eher rand-/boilerplate-lastige vs. kernthematische Tag-Verteilung – kein inhaltliches Urteil über die Seitenqualität."
   }
 }

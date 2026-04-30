@@ -27,10 +27,12 @@ import {
     pathProjectRankings,
     pathProjectGeo,
     pathProjectResearch,
+    pathProjectPageTopics,
 } from '@/lib/constants';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import Link from 'next/link';
 import { THEME_ACCENT_CSS } from '@/lib/theme-accent';
+import type { AggregatedPageClassification } from '@/lib/types';
 
 interface ProjectData {
     id: string;
@@ -60,6 +62,7 @@ interface DomainSummaryData {
     aggregated: {
         performance?: { avgTtfb: number; avgFcp: number; avgLcp: number; avgDomLoad: number; pageCount: number } | null;
         eco?: { avgCo2: number; totalPageWeight: number; gradeDistribution: Record<string, number>; pageCount: number } | null;
+        pageClassification?: AggregatedPageClassification | null;
     };
 }
 
@@ -80,7 +83,19 @@ export default function ProjectDetailPage() {
     const [rankingSummary, setRankingSummary] = useState<RankingSummaryData | null>(null);
     const [geoSummary, setGeoSummary] = useState<GeoSummaryData | null>(null);
     const [domainSummary, setDomainSummary] = useState<DomainSummaryData | null>(null);
-    const [domainSummaryAllCompetitors, setDomainSummaryAllCompetitors] = useState<Record<string, { scanId: string; score: number; totalPageCount: number; status: string } | null>>({});
+    const [domainSummaryAllCompetitors, setDomainSummaryAllCompetitors] = useState<
+        Record<
+            string,
+            | {
+                  scanId: string;
+                  score: number;
+                  totalPageCount: number;
+                  status: string;
+                  aggregated?: { pageClassification?: AggregatedPageClassification | null };
+              }
+            | null
+        >
+    >({});
     const [restartDeepScanLoading, setRestartDeepScanLoading] = useState(false);
     const [scanAllDeepScanLoading, setScanAllDeepScanLoading] = useState(false);
     const [activeDeepScans, setActiveDeepScans] = useState<ActiveDeepScanRow[]>([]);
@@ -213,7 +228,20 @@ export default function ProjectDetailPage() {
                     setGeoSummary(geoSummaryRes.data as GeoSummaryData);
                 } else setGeoSummary(null);
                 if (domainSummaryAllRes?.success && domainSummaryAllRes?.data) {
-                    const d = domainSummaryAllRes.data as { own: DomainSummaryData | null; competitors: Record<string, { scanId: string; score: number; totalPageCount: number; status: string } | null> };
+                    const d = domainSummaryAllRes.data as {
+                        own: DomainSummaryData | null;
+                        competitors: Record<
+                            string,
+                            | {
+                                  scanId: string;
+                                  score: number;
+                                  totalPageCount: number;
+                                  status: string;
+                                  aggregated?: { pageClassification?: AggregatedPageClassification | null };
+                              }
+                            | null
+                        >;
+                    };
                     setDomainSummary(d.own ?? null);
                     setDomainSummaryAllCompetitors(d.competitors ?? {});
                 } else {
@@ -243,7 +271,20 @@ export default function ProjectDetailPage() {
             const r = await fetch(apiProjectDomainSummaryAll(id), { credentials: 'same-origin' });
             const res = await r.json();
             if (res?.success && res?.data) {
-                const d = res.data as { own: DomainSummaryData | null; competitors: Record<string, { scanId: string; score: number; totalPageCount: number; status: string } | null> };
+                const d = res.data as {
+                    own: DomainSummaryData | null;
+                    competitors: Record<
+                        string,
+                        | {
+                              scanId: string;
+                              score: number;
+                              totalPageCount: number;
+                              status: string;
+                              aggregated?: { pageClassification?: AggregatedPageClassification | null };
+                          }
+                        | null
+                    >;
+                };
                 setDomainSummary(d.own ?? null);
                 setDomainSummaryAllCompetitors(d.competitors ?? {});
             }
@@ -434,7 +475,7 @@ export default function ProjectDetailPage() {
                 sx={{
                     display: 'grid',
                     gridTemplateColumns: { xs: '1fr', md: 'minmax(280px, 320px) 1fr 1fr' },
-                    gridTemplateRows: { xs: 'auto auto auto auto auto auto', md: 'auto auto' },
+                    gridTemplateRows: { xs: 'auto auto auto auto auto auto auto', md: 'auto auto auto' },
                     gap: 2,
                     alignItems: 'stretch',
                 }}
@@ -840,6 +881,51 @@ export default function ProjectDetailPage() {
                             '& .MuiInputBase-input': { py: 0.5, height: 40, boxSizing: 'border-box' },
                         }}
                     />
+                </MsqdxMoleculeCard>
+
+                <MsqdxMoleculeCard
+                    title={t('projects.pageTopicsCompareTitle')}
+                    variant="flat"
+                    borderRadius="lg"
+                    footerDivider
+                    headerActions={<InfoTooltip title={t('info.pageTopicsCompareCard')} ariaLabel={t('common.info')} />}
+                    actions={
+                        <Link href={pathProjectPageTopics(id)} style={{ textDecoration: 'none' }}>
+                            <MsqdxButton variant="outlined" size="small">
+                                {t('projects.pageTopicsCompareCta')}
+                            </MsqdxButton>
+                        </Link>
+                    }
+                    sx={{ gridColumn: { xs: 1, md: '1 / -1' }, gridRow: { xs: 7, md: 3 }, bgcolor: 'var(--color-card-bg)' }}
+                >
+                    {listsLoading ? (
+                        <MsqdxTypography variant="body2">{t('common.loading')}</MsqdxTypography>
+                    ) : (
+                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                            {(() => {
+                                const ownPc = domainSummary?.aggregated?.pageClassification;
+                                const ownN =
+                                    ownPc && ownPc.coverage.pagesWithClassification > 0
+                                        ? `${ownPc.coverage.pagesWithClassification}/${ownPc.coverage.totalPages}`
+                                        : null;
+                                const compReady = Object.entries(domainSummaryAllCompetitors).filter(
+                                    ([, c]) =>
+                                        c?.status === 'complete' &&
+                                        c.aggregated?.pageClassification &&
+                                        c.aggregated.pageClassification.coverage.pagesWithClassification > 0
+                                ).length;
+                                const compTotal = Object.keys(domainSummaryAllCompetitors).length;
+                                if (!ownN && compTotal === 0) {
+                                    return t('projects.pageTopicsCompareHintNoCompetitors');
+                                }
+                                return t('projects.pageTopicsCompareHint', {
+                                    own: ownN ?? '—',
+                                    competitorsReady: String(compReady),
+                                    competitorsTotal: String(compTotal),
+                                });
+                            })()}
+                        </MsqdxTypography>
+                    )}
                 </MsqdxMoleculeCard>
             </Box>
         </Box>

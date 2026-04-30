@@ -5,8 +5,9 @@ import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getProject } from '@/lib/db/projects';
 import { listDomainScanSummaries, getDomainScanWithProjectId } from '@/lib/db/scans';
 import { getProjectDomainScanReferences } from '@/lib/db/project-domain-references';
-import { buildDomainSummary } from '@/lib/domain-summary';
+import { buildDomainSummary, toLightAggregated } from '@/lib/domain-summary';
 import type { AggregatedPerformance, AggregatedEco } from '@/lib/domain-aggregation';
+import type { AggregatedPageClassification } from '@/lib/types';
 import { computeWcagScore } from '@/lib/wcag-score';
 import { computeSeoOnPageScore } from '@/lib/seo-on-page-score';
 
@@ -30,7 +31,11 @@ export async function GET(
     wcagScore: number;
     seoOnPageScore: number;
     seoOnPageLabel: string;
-    aggregated: { performance: AggregatedPerformance | null; eco: AggregatedEco | null };
+    aggregated: {
+      performance: AggregatedPerformance | null;
+      eco: AggregatedEco | null;
+      pageClassification: AggregatedPageClassification | null;
+    };
   } | null;
 
   type CompetitorSummary = {
@@ -41,6 +46,9 @@ export async function GET(
     seoOnPageScore: number;
     seoOnPageLabel: string;
     status: string;
+    aggregated: {
+      pageClassification: AggregatedPageClassification | null;
+    };
   } | null;
 
   let own: OwnSummary = null;
@@ -62,6 +70,7 @@ export async function GET(
         seo: summary.aggregated?.seo ?? null,
         structure: summary.aggregated?.structure ?? null,
       });
+      const lightAgg = summary.aggregated ? toLightAggregated(summary.aggregated) : null;
       own = {
         scanId,
         score: summary.score ?? 0,
@@ -72,6 +81,7 @@ export async function GET(
         aggregated: {
           performance: (summary.aggregated?.performance as AggregatedPerformance) ?? null,
           eco: (summary.aggregated?.eco as AggregatedEco) ?? null,
+          pageClassification: lightAgg?.pageClassification ?? null,
         },
       };
     }
@@ -95,6 +105,7 @@ export async function GET(
         seoOnPageScore: 0,
         seoOnPageLabel: 'critical',
         status,
+        aggregated: { pageClassification: null },
       };
       continue;
     }
@@ -111,6 +122,7 @@ export async function GET(
       seo: summary.aggregated?.seo ?? null,
       structure: summary.aggregated?.structure ?? null,
     });
+    const lightAggComp = summary.aggregated ? toLightAggregated(summary.aggregated) : null;
     competitors[ref.domain] = {
       scanId: ref.domainScanId,
       score: summary.score ?? 0,
@@ -119,6 +131,9 @@ export async function GET(
       seoOnPageScore: seoOnPage.score,
       seoOnPageLabel: seoOnPage.label,
       status: 'complete',
+      aggregated: {
+        pageClassification: lightAggComp?.pageClassification ?? null,
+      },
     };
   }
 

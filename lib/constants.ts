@@ -49,6 +49,8 @@ export const pathProjectGeoAnalysis = (id: string) => `${PATH_PROJECTS}/${encode
 export const pathProjectWcag = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}/wcag`;
 /** Build app route: /projects/[id]/seo */
 export const pathProjectSeo = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}/seo`;
+/** Build app route: /projects/[id]/page-topics — compare page topic landscapes (own + competitors) */
+export const pathProjectPageTopics = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}/page-topics`;
 /** Build app route: /projects/[id]/research */
 export const pathProjectResearch = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}/research`;
 /** Build app route: /share/[token] */

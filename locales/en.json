@@ -193,7 +193,14 @@
     "navResearch": "Research",
     "navPerformance": "Performance",
     "navWcag": "WCAG",
+    "navPageTopics": "Page topics",
     "navComingSoon": "Coming soon",
+    "pageTopicsCompareTitle": "Page topics (compare)",
+    "pageTopicsCompareSubtitle": "Side-by-side topic landscapes from your latest deep scans and each competitor’s linked domain scan (same charts as on domain results).",
+    "pageTopicsCompareCta": "Open comparison",
+    "pageTopicsCompareHint": "Your domain: {{own}} pages with AI classification. Competitors with topic data: {{competitorsReady}} / {{competitorsTotal}}.",
+    "pageTopicsCompareHintNoCompetitors": "Add competitors and run deep scans to compare topic landscapes.",
+    "pageTopicsCompetitorIncomplete": "Deep scan not complete (status: {{status}}). Run or wait for a finished scan to see topics.",
     "openDeepScan": "Open deep scan",
     "wcag": {
       "fromScan": "From latest deep scan",
@@ -1051,6 +1058,7 @@
     "seoOnPage": "On-page SEO from the deep scan: meta (title, description, H1, canonical), heading structure, pages without meta/keywords, and cross-page keywords.",
     "pageClassification": "AI-derived content classification: topic tags and tier (1–5) for importance of the main topic. Based on page content only, not URL or structure.",
     "pageTopicsAggregate": "Computed from all classified pages: tags are merged with weight = tier² per occurrence; common nav/footer labels are damped. No second LLM – statistics over stored tagTiers only.",
+    "pageTopicsCompareCard": "Uses the same capped topic aggregates as the domain summary API. Compare your project’s deep scan with each competitor scan linked to this project.",
     "pageTopicsLowTierDominant": "Per page we count how many topic tags fall in tiers T1–T5. This metric counts pages where the sum of T1 and T2 tag counts is greater than the sum of T4 and T5 tag counts. Tier 3 is not part of this comparison. It is a heuristic for a more peripheral/boilerplate-heavy vs. core-topic tag mix—not a verdict on page quality."
   }
 }
