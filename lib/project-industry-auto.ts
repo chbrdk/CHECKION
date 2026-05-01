@@ -11,6 +11,7 @@ import {
     isAutoProjectIndustryInferDisabled,
 } from '@/lib/llm/project-industry-infer';
 import { reportUsage } from '@/lib/usage-report';
+import type { AggregatedPageClassification } from '@/lib/types';
 
 function shouldOverwriteExistingIndustry(): boolean {
     const v = process.env.CHECKION_AUTO_INDUSTRY_OVERWRITE?.trim().toLowerCase();
@@ -37,7 +38,7 @@ export async function maybeAutoFillProjectIndustryFromDomainScan(args: {
         if (project.industry?.trim() && !shouldOverwriteExistingIndustry()) return;
 
         const row = await getDomainScan(domainScanId, userId);
-        const pc = row?.aggregated?.pageClassification;
+        const pc = row?.aggregated?.pageClassification as AggregatedPageClassification | undefined;
         const themes = buildThemesForIndustryInfer(pc, 18);
         if (themes.length < 2) return;
 
