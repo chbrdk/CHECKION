@@ -9,6 +9,21 @@ export type IssueSeverity = 'error' | 'warning' | 'notice';
 export type Runner = 'axe' | 'htmlcs';
 export type Device = 'desktop' | 'tablet' | 'mobile';
 
+/** Phases emitted per device from {@link runScan} (NDJSON / UI). */
+export const SCAN_DEVICE_PHASES = [
+    'starting',
+    'browser_ready',
+    'navigate',
+    'wcag_checks',
+    'scroll_and_layout',
+    'screenshot',
+    'issue_details',
+    'ux_and_content',
+    'page_classification',
+] as const;
+
+export type ScanDevicePhase = (typeof SCAN_DEVICE_PHASES)[number];
+
 export interface Issue {
     /** WCAG criterion code, e.g. "WCAG2AA.Principle1.Guideline1_1.1_1_1.H37" */
     code: string;
@@ -832,4 +847,6 @@ export interface ScanOptions {
     standard?: WcagStandard;
     device?: Device;
     runners?: Runner[];
+    /** Optional: single-page scan progress (e.g. NDJSON stream to the client). */
+    onProgress?: (event: { phase: ScanDevicePhase; device: Device }) => void;
 }

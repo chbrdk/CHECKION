@@ -517,7 +517,30 @@
     "scanningCta": "Scanning…",
     "error": "Scan failed",
     "networkError": "Network error. Please check your connection.",
-    "analyzing": "Loading and analyzing the page. This may take a few seconds…"
+    "analyzing": "Loading and analyzing the page. This may take a few seconds…",
+    "progress": {
+      "title": "Scan in progress",
+      "meta": {
+        "session_created": "Session created",
+        "saving_results": "Saving results to the database…"
+      },
+      "device": {
+        "desktop": "Desktop",
+        "tablet": "Tablet",
+        "mobile": "Mobile"
+      },
+      "phase": {
+        "starting": "Starting engine…",
+        "browser_ready": "Preparing browser view…",
+        "navigate": "Loading page…",
+        "wcag_checks": "Running WCAG checks (Pa11y)…",
+        "scroll_and_layout": "Scroll & layout (CLS)…",
+        "screenshot": "Capturing screenshot…",
+        "issue_details": "Enriching issue details…",
+        "ux_and_content": "UX, SEO, links, privacy…",
+        "page_classification": "Page topic classification (AI)…"
+      }
+    }
   },
   "dashboard": {
     "title": "Dashboard",

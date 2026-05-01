@@ -176,6 +176,13 @@ export const apiRankTrackingRefresh = () => API_RANK_TRACKING_REFRESH;
 /** POST /api/scan (single-page scan) */
 export const apiScanCreate = API_SCAN;
 
+/**
+ * When set to `1`, `POST /api/scan` responds with `Content-Type: application/x-ndjson` and one JSON object
+ * per line: progress events, then `complete` or `error`. Default remains a single JSON body (tests / legacy).
+ */
+export const HEADER_CHECKION_SCAN_STREAM = 'x-checkion-scan-stream';
+export const HEADER_CHECKION_SCAN_STREAM_ON = '1';
+
 /** Build: GET /api/scan?limit=&page=&projectId=&industry=&tag= — paginated **summaries**. Use `groupId` for all devices in one session. */
 export const apiScanList = (params?: {
   limit?: number;

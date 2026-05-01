@@ -3,6 +3,7 @@
 /* ------------------------------------------------------------------ */
 
 import { NextRequest, NextResponse } from 'next/server';
+import type { z } from 'zod';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, handleApiError, API_STATUS } from '@/lib/api-error-handler';
 import { parseApiBody, scanBodySchema } from '@/lib/api-schemas';
@@ -16,11 +17,103 @@ import {
 import { getProject } from '@/lib/db/projects';
 import { normalizeTagList } from '@/lib/tag-utils';
 import { listCachedStandaloneScanSummaries, getCachedStandaloneScansCount, invalidateScansList } from '@/lib/cache';
-import type { Device } from '@/lib/types';
+import type { Device, ScanDevicePhase, ScanResult } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
-import { DASHBOARD_SCANS_PAGE_SIZE } from '@/lib/constants';
+import {
+    DASHBOARD_SCANS_PAGE_SIZE,
+    HEADER_CHECKION_SCAN_STREAM,
+    HEADER_CHECKION_SCAN_STREAM_ON,
+} from '@/lib/constants';
 import { reportUsage } from '@/lib/usage-report';
 import { maybeAutoFillProjectClassificationFromStandaloneScan } from '@/lib/project-industry-auto';
+import type { ScanNdjsonLine } from '@/lib/scan-progress';
+
+type ScanBody = z.infer<typeof scanBodySchema>;
+
+function wantsNdjsonStream(request: Request): boolean {
+    return request.headers.get(HEADER_CHECKION_SCAN_STREAM) === HEADER_CHECKION_SCAN_STREAM_ON;
+}
+
+async function executeStandaloneScan(
+    user: { id: string },
+    body: ScanBody,
+    hooks?: {
+        onDeviceProgress?: (e: { phase: ScanDevicePhase; device: Device }) => void;
+        afterSessionInsert?: () => void | Promise<void>;
+        beforePersist?: () => void | Promise<void>;
+    }
+): Promise<ScanResult> {
+    const groupId = uuidv4();
+    const devices: Device[] = ['desktop', 'tablet', 'mobile'];
+
+    await insertScanSession({
+        id: groupId,
+        userId: user.id,
+        url: body.url,
+        projectId: body.projectId,
+        standard: body.standard ?? null,
+        runners: body.runners ?? null,
+        targetRegion: body.targetRegion?.trim() || null,
+    });
+
+    await hooks?.afterSessionInsert?.();
+
+    let sessionTags: string[] = [];
+    if (body.projectId) {
+        const proj = await getProject(body.projectId, user.id);
+        if (proj) sessionTags = normalizeTagList(proj.tags);
+    }
+
+    const results = await Promise.all(
+        devices.map((device) =>
+            runScan({
+                url: body.url,
+                standard: body.standard,
+                runners: body.runners,
+                device,
+                groupId,
+                targetRegion: body.targetRegion,
+                userId: user.id,
+                onProgress: hooks?.onDeviceProgress,
+            })
+        )
+    );
+
+    await hooks?.beforePersist?.();
+
+    for (const result of results) {
+        await persistStandaloneScanRow(user.id, result, {
+            projectId: body.projectId,
+            scanSessionId: groupId,
+            tags: sessionTags,
+        });
+    }
+    invalidateScansList(user.id);
+
+    try {
+        reportUsage({
+            userId: user.id,
+            eventType: 'scan_wcag',
+            rawUnits: { scans: results.length },
+        });
+    } catch {
+        /* never let usage reporting affect the response */
+    }
+
+    const desktopResult = results.find((r) => r.device === 'desktop') || results[0];
+
+    if (body.projectId) {
+        void maybeAutoFillProjectClassificationFromStandaloneScan({
+            userId: user.id,
+            projectId: body.projectId,
+            scanUrl: body.url,
+            scanSessionId: groupId,
+            desktopResult,
+        });
+    }
+
+    return desktopResult;
+}
 
 export async function POST(request: Request) {
     const user = await getRequestUser(request);
@@ -40,77 +133,52 @@ export async function POST(request: Request) {
         if (parsed instanceof NextResponse) return parsed;
         const body = parsed;
 
-        const groupId = uuidv4();
-        const devices: Device[] = ['desktop', 'tablet', 'mobile'];
-
-        await insertScanSession({
-            id: groupId,
-            userId: user.id,
-            url: body.url,
-            projectId: body.projectId,
-            standard: body.standard ?? null,
-            runners: body.runners ?? null,
-            targetRegion: body.targetRegion?.trim() || null,
-        });
-
-        let sessionTags: string[] = [];
-        if (body.projectId) {
-            const proj = await getProject(body.projectId, user.id);
-            if (proj) sessionTags = normalizeTagList(proj.tags);
-        }
-
-        // Run scans in parallel
-        const results = await Promise.all(
-            devices.map(device =>
-                runScan({
-                    url: body.url,
-                    standard: body.standard,
-                    runners: body.runners,
-                    device,
-                    groupId,
-                    targetRegion: body.targetRegion,
-                    userId: user.id,
-                })
-            )
-        );
-
-        for (const result of results) {
-            await persistStandaloneScanRow(user.id, result, {
-                projectId: body.projectId,
-                scanSessionId: groupId,
-                tags: sessionTags,
+        if (wantsNdjsonStream(request)) {
+            const encoder = new TextEncoder();
+            const stream = new ReadableStream<Uint8Array>({
+                async start(controller) {
+                    const send = (line: ScanNdjsonLine) => {
+                        controller.enqueue(encoder.encode(`${JSON.stringify(line)}\n`));
+                    };
+                    try {
+                        const desktopResult = await executeStandaloneScan(user, body, {
+                            afterSessionInsert: () => {
+                                send({ type: 'progress', phase: 'session_created' });
+                            },
+                            onDeviceProgress: (e) => {
+                                send({ type: 'progress', ...e });
+                            },
+                            beforePersist: () => {
+                                send({ type: 'progress', phase: 'saving_results' });
+                            },
+                        });
+                        send({ type: 'complete', data: desktopResult });
+                    } catch (err) {
+                        const message = err instanceof Error ? err.message : 'Unknown error';
+                        console.error('[CHECKION] POST /api/scan (stream) failed:', message);
+                        send({ type: 'error', message: `Scan failed: ${message}` });
+                    } finally {
+                        try {
+                            controller.close();
+                        } catch {
+                            /* already closed */
+                        }
+                    }
+                },
             });
-        }
-        invalidateScansList(user.id);
-
-        try {
-          reportUsage({
-            userId: user.id,
-            eventType: 'scan_wcag',
-            rawUnits: { scans: results.length },
-          });
-        } catch {
-          // never let usage reporting affect the response
-        }
-
-        // Saliency heatmap: user starts it on the result page (POST /api/saliency/generate → jobId → poll /api/saliency/result) to avoid timeouts.
-
-        // Find desktop result to return (for redirect)
-        const desktopResult = results.find(r => r.device === 'desktop') || results[0];
-
-        if (body.projectId) {
-            void maybeAutoFillProjectClassificationFromStandaloneScan({
-                userId: user.id,
-                projectId: body.projectId,
-                scanUrl: body.url,
-                scanSessionId: groupId,
-                desktopResult,
+            return new Response(stream, {
+                status: 200,
+                headers: {
+                    'Content-Type': 'application/x-ndjson; charset=utf-8',
+                    'Cache-Control': 'no-store',
+                },
             });
         }
 
+        const desktopResult = await executeStandaloneScan(user, body);
         return NextResponse.json({
             success: true,
-            data: desktopResult
+            data: desktopResult,
         });
     } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';

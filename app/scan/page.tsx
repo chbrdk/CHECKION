@@ -20,7 +20,7 @@ import {
     MSQDX_BRAND_PRIMARY,
     MSQDX_STATUS,
 } from '@msqdx/tokens';
-import type { ScanResult, WcagStandard, Runner } from '@/lib/types';
+import type { ScanResult, WcagStandard, Runner, Device, ScanDevicePhase } from '@/lib/types';
 import type { SelectChangeEvent } from '@mui/material';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import {
@@ -36,7 +36,12 @@ import {
     pathJourneyAgent,
     pathResults,
     pathScanDomain,
+    HEADER_CHECKION_SCAN_STREAM,
+    HEADER_CHECKION_SCAN_STREAM_ON,
 } from '@/lib/constants';
+import { ScanProgressSnackbar } from '@/components/ScanProgressSnackbar';
+import type { ScanMetaPhase } from '@/lib/scan-progress';
+import { readScanNdjsonStream } from '@/lib/scan-stream-parse';
 import { ensureUrlWithScheme } from '@/lib/url-normalize';
 
 export default function ScanPage() {
@@ -70,6 +75,10 @@ export default function ScanPage() {
     const [geoEeatSuggestMessage, setGeoEeatSuggestMessage] = useState<string | null>(null);
     const [projects, setProjects] = useState<Array<{ id: string; name: string }>>([]);
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+
+    const [progressSnackbarOpen, setProgressSnackbarOpen] = useState(false);
+    const [scanMetaPhase, setScanMetaPhase] = useState<ScanMetaPhase | null>(null);
+    const [devicePhaseByDevice, setDevicePhaseByDevice] = useState<Partial<Record<Device, ScanDevicePhase>>>({});
 
     useEffect(() => {
         fetch(apiProjectsList, { credentials: 'same-origin' })
@@ -153,22 +162,83 @@ export default function ScanPage() {
                 return;
             }
             if (scanMode === 'single') {
+                setScanMetaPhase(null);
+                setDevicePhaseByDevice({});
+                setProgressSnackbarOpen(true);
+
                 const res = await fetch(apiScanCreate, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: urlForRequest, standard, runners: selectedRunners, ...(targetRegion.trim() && { targetRegion: targetRegion.trim() }), ...(selectedProjectId && { projectId: selectedProjectId }) }),
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [HEADER_CHECKION_SCAN_STREAM]: HEADER_CHECKION_SCAN_STREAM_ON,
+                    },
+                    body: JSON.stringify({
+                        url: urlForRequest,
+                        standard,
+                        runners: selectedRunners,
+                        ...(targetRegion.trim() && { targetRegion: targetRegion.trim() }),
+                        ...(selectedProjectId && { projectId: selectedProjectId }),
+                    }),
                 });
 
-                const data = await res.json();
-                if (!res.ok || !data.success) {
+                const ct = res.headers.get('Content-Type') ?? '';
+
+                if (!res.ok) {
+                    const data = (await res.json().catch(() => ({}))) as { error?: string };
                     setError(data.error || t('scan.error'));
+                    setProgressSnackbarOpen(false);
+                    setScanning(false);
+                    return;
+                }
+
+                if (ct.includes('ndjson')) {
+                    try {
+                        for await (const line of readScanNdjsonStream(res.body)) {
+                            if (line.type === 'progress') {
+                                if ('device' in line && line.device) {
+                                    setDevicePhaseByDevice((prev) => ({
+                                        ...prev,
+                                        [line.device]: line.phase,
+                                    }));
+                                } else {
+                                    setScanMetaPhase(line.phase as ScanMetaPhase);
+                                }
+                            } else if (line.type === 'complete') {
+                                setProgressSnackbarOpen(false);
+                                router.push(pathResults(line.data.id));
+                                setScanning(false);
+                                return;
+                            } else if (line.type === 'error') {
+                                setError(line.message);
+                                setProgressSnackbarOpen(false);
+                                setScanning(false);
+                                return;
+                            }
+                        }
+                    } catch {
+                        setError(t('scan.networkError'));
+                        setProgressSnackbarOpen(false);
+                        setScanning(false);
+                        return;
+                    }
+                    setProgressSnackbarOpen(false);
+                    setScanning(false);
+                    return;
+                }
+
+                const data = await res.json();
+                if (!data.success) {
+                    setError(data.error || t('scan.error'));
+                    setProgressSnackbarOpen(false);
                     setScanning(false);
                     return;
                 }
 
                 const result = data.data as ScanResult;
-                // Heatmap: user starts it on the result page (async job + poll) to avoid timeouts
-                router.push(`/results/${result.id}`);
+                setProgressSnackbarOpen(false);
+                router.push(pathResults(result.id));
+                setScanning(false);
+                return;
             } else {
                 // Deep Scan
                 // We use the existing progress page for viewing progress, so we can just redirect there with the URL check logic
@@ -196,6 +266,7 @@ export default function ScanPage() {
 
         } catch (err) {
             setError(t('scan.networkError'));
+            setProgressSnackbarOpen(false);
             setScanning(false);
         }
     };
@@ -575,7 +646,7 @@ export default function ScanPage() {
                 )}
             </MsqdxMoleculeCard>
 
-            {scanning && (
+            {scanning && scanMode !== 'single' && (
                 <Box sx={{ mt: 'var(--msqdx-spacing-md)', textAlign: 'center' }}>
                     <CircularProgress size={28} sx={{ color: MSQDX_BRAND_PRIMARY.green }} />
                     <MsqdxTypography
@@ -586,6 +657,20 @@ export default function ScanPage() {
                     </MsqdxTypography>
                 </Box>
             )}
+
+            <ScanProgressSnackbar
+                open={progressSnackbarOpen}
+                onClose={(_, reason) => {
+                    if (reason === 'clickaway') return;
+                    setProgressSnackbarOpen(false);
+                }}
+                title={t('scan.progress.title')}
+                metaPhase={scanMetaPhase}
+                devicePhaseByDevice={devicePhaseByDevice}
+                tDevice={(d) => t(`scan.progress.device.${d}`)}
+                tPhase={(p) => t(`scan.progress.phase.${p}`)}
+                tMeta={(m) => t(`scan.progress.meta.${m}`)}
+            />
         </Box>
     );
 }

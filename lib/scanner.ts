@@ -14,7 +14,18 @@ import { buildPageIndex } from './page-index';
 import { deduplicateIssues } from './issue-dedupe';
 import { computeGeoEeatPageScore } from './geo-eeat-page-score';
 import { writeScreenshot } from './screenshot-storage';
-import type { Issue, Pass, Runner, ScanResult, ScanStats, WcagStandard, Device, ScanOptions, SeoAudit } from './types';
+import type {
+    Issue,
+    Pass,
+    Runner,
+    ScanResult,
+    ScanStats,
+    WcagStandard,
+    Device,
+    ScanOptions,
+    SeoAudit,
+    ScanDevicePhase,
+} from './types';
 import { normalizeScanResultForPersist } from '@/lib/scan-result-shape';
 import { scanDebugLog, scanDebugWarn } from './scan-debug-log';
 
@@ -117,9 +128,19 @@ function calculateScore(counts: ScanStats): number {
 export async function runScan(
     options: ScanOptions & { groupId?: string; targetRegion?: string; userId?: string },
 ): Promise<ScanResult> {
-    const { url, standard = 'WCAG2AA', runners = ['axe', 'htmlcs'], device = 'desktop', groupId, targetRegion, userId } =
-        options;
+    const {
+        url,
+        standard = 'WCAG2AA',
+        runners = ['axe', 'htmlcs'],
+        device = 'desktop',
+        groupId,
+        targetRegion,
+        userId,
+        onProgress,
+    } = options;
     const scanId = uuidv4();
+
+    const report = (phase: ScanDevicePhase) => onProgress?.({ phase, device });
 
     // Dynamic import – pa11y is CommonJS and must stay server-only
     const pa11yModule = await import('pa11y');
@@ -131,6 +152,7 @@ export async function runScan(
     if (runners.includes('htmlcs')) pa11yRunners.push('htmlcs');
 
     const startTime = Date.now();
+    report('starting');
 
     // Launch browser manually to enable screenshot and bounding box extraction
     const browser = await puppeteer.launch({
@@ -143,6 +165,7 @@ export async function runScan(
     const page = await browser.newPage();
     const viewport = VIEWPORTS[device];
     await page.setViewport(viewport);
+    report('browser_ready');
 
     // Inject CLS, LCP, INP observers immediately
     await page.evaluateOnNewDocument(function () {
@@ -254,9 +277,11 @@ export async function runScan(
 
     try {
         // Navigate first so we can dismiss cookie banners before pa11y runs
+        report('navigate');
         await page.goto(url, { waitUntil: 'networkidle2', timeout: 60_000 });
         await dismissCookieBanner(page);
 
+        report('wcag_checks');
         const results = await pa11y(url, {
             browser,
             page,
@@ -269,6 +294,7 @@ export async function runScan(
         } as any);
 
         // --- Aggressive Scroll for CLS ---
+        report('scroll_and_layout');
         // Scroll down and up to trigger lazy loads and layout shifts
         await page.evaluate(async function () {
             const distance = 100;
@@ -330,6 +356,7 @@ export async function runScan(
         else if (co2Grams < 0.850) ecoGrade = 'E';
 
         // 1. Capture Full Page Screenshot → save to disk, store URL in result
+        report('screenshot');
         const screenshotBuffer = await page.screenshot({
             fullPage: true,
             type: 'jpeg',
@@ -378,6 +405,7 @@ export async function runScan(
             };
         });
 
+        report('issue_details');
         const rawIssues: Issue[] = await Promise.all(issuePromises);
         const issues = deduplicateIssues(rawIssues);
 
@@ -454,6 +482,7 @@ export async function runScan(
 
 
         // --- UX Audit Collection ---
+        report('ux_and_content');
 
         // 1. CLS (Cumulative Layout Shift)
         // We'll trust the performance observer if it ran, or default to 0
@@ -1611,6 +1640,7 @@ export async function runScan(
             };
         }
 
+        report('page_classification');
         const { classifyPageWithLlm } = await import('./llm/page-classification');
         const { reportUsage } = await import('./usage-report');
         const classifyOutcome = await classifyPageWithLlm(result).catch(() => null);
