@@ -603,11 +603,25 @@ export default function ProjectDetailPage() {
                     footerDivider
                     actions={
                         id ? (
-                            <Link href={pathProjectResearch(id)} style={{ textDecoration: 'none' }}>
-                                <MsqdxButton variant="outlined" size="small">
-                                    {t('projects.researchStart')}
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'flex-end' }}>
+                                <MsqdxButton
+                                    variant="outlined"
+                                    size="small"
+                                    loading={restartDeepScanLoading}
+                                    disabled={!project.domain?.trim() || restartDeepScanLoading}
+                                    title={
+                                        !project.domain?.trim() ? t('projects.domainRequiredForGeo') : undefined
+                                    }
+                                    onClick={() => void handleRestartDeepScan()}
+                                >
+                                    {t('projects.startDeepScan')}
                                 </MsqdxButton>
-                            </Link>
+                                <Link href={pathProjectResearch(id)} style={{ textDecoration: 'none' }}>
+                                    <MsqdxButton variant="outlined" size="small">
+                                        {t('projects.researchStart')}
+                                    </MsqdxButton>
+                                </Link>
+                            </Box>
                         ) : null
                     }
                     sx={{
