@@ -635,12 +635,12 @@ export default function ProjectDetailPage() {
                         <MsqdxTypography variant="caption" sx={{ display: 'block', mb: 1, color: 'var(--color-text-muted-on-light)' }}>
                             {t('projects.classificationTitle')}
                         </MsqdxTypography>
-                        <Typography
+                        <MsqdxTypography
                             variant="caption"
                             sx={{ display: 'block', mb: 0.5, color: 'var(--color-text-muted-on-light)' }}
                         >
                             {t('projects.industryLabel')}
-                        </Typography>
+                        </MsqdxTypography>
                         <select
                             aria-label={t('projects.industryLabel')}
                             value={isIndustryPoolId(classificationIndustry) ? classificationIndustry : ''}
