@@ -353,14 +353,10 @@ export type BuildStoredDomainPayloadOptions = {
     omitSlimPages?: boolean;
 };
 
-/** Build the payload to store in domain_scans after deep scan (slim pages + precomputed aggregated). */
-export function buildStoredDomainPayload(
-    fullPages: ScanResult[],
-    base: Pick<DomainScanResult, 'id' | 'domain' | 'timestamp' | 'status' | 'progress' | 'totalPages' | 'score' | 'graph' | 'systemicIssues' | 'eeat'>,
-    options?: BuildStoredDomainPayloadOptions
-): DomainScanResult {
+/** Full aggregated block before caps / optional LLM theme refinement (same math as `buildStoredDomainPayload`). */
+export function buildAggregatedFromFullPages(fullPages: ScanResult[]): DomainSummaryResponse['aggregated'] {
     const pageClassification = aggregatePageClassification(fullPages);
-    const aggregatedRaw: DomainSummaryResponse['aggregated'] = {
+    return {
         issues: aggregateIssues(fullPages),
         ux: aggregateUx(fullPages),
         seo: aggregateSeo(fullPages),
@@ -373,6 +369,15 @@ export function buildStoredDomainPayload(
         eco: aggregateEco(fullPages),
         ...(pageClassification ? { pageClassification } : {}),
     };
+}
+
+/** Persist-sized payload from a pre-built aggregated block (e.g. after async theme refinement). */
+export function buildStoredDomainPayloadFromAggregated(
+    aggregatedRaw: DomainSummaryResponse['aggregated'],
+    fullPages: ScanResult[],
+    base: Pick<DomainScanResult, 'id' | 'domain' | 'timestamp' | 'status' | 'progress' | 'totalPages' | 'score' | 'graph' | 'systemicIssues' | 'eeat'>,
+    options?: BuildStoredDomainPayloadOptions
+): DomainScanResult {
     const aggregated = toStoredAggregated(aggregatedRaw);
     const pages = options?.omitSlimPages ? [] : fullPages.map(toSlimPage);
     return {
@@ -380,4 +385,14 @@ export function buildStoredDomainPayload(
         pages,
         aggregated,
     };
+}
+
+/** Build the payload to store in domain_scans after deep scan (slim pages + precomputed aggregated). */
+export function buildStoredDomainPayload(
+    fullPages: ScanResult[],
+    base: Pick<DomainScanResult, 'id' | 'domain' | 'timestamp' | 'status' | 'progress' | 'totalPages' | 'score' | 'graph' | 'systemicIssues' | 'eeat'>,
+    options?: BuildStoredDomainPayloadOptions
+): DomainScanResult {
+    const aggregatedRaw = buildAggregatedFromFullPages(fullPages);
+    return buildStoredDomainPayloadFromAggregated(aggregatedRaw, fullPages, base, options);
 }

@@ -29,7 +29,17 @@ Die LLM-Klassifikation (Tags + Tier 1–5) läuft **direkt im Single Scan** (`li
 
 ## Aggregierte Seitenthemen (`aggregated.pageClassification`)
 
-Nach dem Deep Scan (und bei Legacy-Neuberechnung über `buildDomainSummary`) liegt unter `aggregated.pageClassification` eine **deterministische Domain-Rollup** aus allen Seiten mit mindestens einem `pageClassification.tagTiers`-Eintrag. Es gibt **kein zweites LLM** – nur Statistik über die bereits gespeicherten Tags/Tiers.
+Nach dem Deep Scan (und bei Legacy-Neuberechnung über `buildDomainSummary`) liegt unter `aggregated.pageClassification` eine **deterministische Domain-Rollup** aus allen Seiten mit mindestens einem `pageClassification.tagTiers`-Eintrag (Statistik über bereits gespeicherte Tags/Tiers).
+
+### Optionales LLM-Refinement der `topThemes`
+
+Beim **Persistieren** nach Scan-Ende (`lib/domain-scan-start.ts`): Vor `toStoredAggregated` kann ein **einzelner** Claude-Haiku-Aufruf (`lib/llm/domain-theme-rollup-refine.ts`) die Liste `topThemes` **filtern und neu sortieren** (nur Keys aus der deterministischen Liste; keine neuen Tags). Ziel: irrelevante / boilerplate-artige Themen für den Domain-Überblick entfernen.
+
+- **Voraussetzung:** `ANTHROPIC_API_KEY` gesetzt; Abschaltung: `CHECKION_DISABLE_PAGE_TOPIC_ROLLUP_REFINE=1`.
+- **Kandidaten:** bis zu `DOMAIN_THEME_ROLLUP_REFINE_LLM_CANDIDATES_CAP` Einträge aus der sortierten Rollup-Liste (vor Storage-Cap).
+- **Metadaten:** Bei Erfolg optional `themeRollup: { refinedWithLlm, model, refinedAt }` auf `aggregated.pageClassification`.
+- **Legacy `buildDomainSummary`:** Ohne Scan-Persist läuft weiterhin nur die deterministische Aggregation (kein Refinement).
+- **Usage:** Ereignis `domain_theme_rollup_refine` an PLEXON (Idempotency `domain_theme_rollup_refine:{domainScanId}`).
 
 - **Fehlende / alte Payloads**: Ältere `domain_scans`-Einträge ohne diesen Block haben kein `pageClassification`; die UI blendet die Karte aus. Nach erneutem Scan oder Summary-Rebuild erscheint der Block, sobald Seiten klassifiziert sind.
 
@@ -38,7 +48,8 @@ Nach dem Deep Scan (und bei Legacy-Neuberechnung über `buildDomainSummary`) lie
 | Bereich | Bedeutung |
 |--------|-----------|
 | `coverage` | `totalPages` (alle gescannten Seiten), `pagesWithClassification` (Seiten mit nicht-leerem `tagTiers`). |
-| `topThemes` | Zusammengeführte Tags nach `normalizePageTopicTagKey` (trim, lowercase, Leerzeichen). **Score** = Summe von **Tier²** pro Vorkommen; typische Nav-/Footer-Begriffe (siehe `PAGE_TOPIC_BOILERPLATE_KEYS` in `lib/domain-aggregation.ts`) werden mit **×0,25** gewichtet, damit echte Inhaltsthemen oben stehen. `pageCount` = Anzahl Seiten mit diesem Tag; `maxTier` / `avgTier` aus den Vorkommen. |
+| `topThemes` | Zusammengeführte Tags nach `normalizePageTopicTagKey` (trim, lowercase, Leerzeichen). **Score** = Summe von **Tier²** pro Vorkommen; typische Nav-/Footer-Begriffe (siehe `PAGE_TOPIC_BOILERPLATE_KEYS` in `lib/domain-aggregation.ts`) werden mit **×0,25** gewichtet, damit echte Inhaltsthemen oben stehen. `pageCount` = Anzahl Seiten mit diesem Tag; `maxTier` / `avgTier` aus den Vorkommen. Nach optionalem LLM-Refinement können Reihenfolge und Anzahl von der rein statistischen Liste abweichen. |
+| `themeRollup` | Optional: Kennzeichnet erfolgreiches Haiku-Refinement (`refinedWithLlm`, `model`, `refinedAt`). |
 | `tierDistribution.avgTagsPerPageByTier` | Durchschnittliche Tag-Anzahl je Tier **pro Seite der gesamten Site** (Nenner = `totalPages`), damit fehlende Klassifikation die Mittelwerte „verdünnt“. |
 | `tierDistribution.pagesWithAtLeastOneTier5` | Seiten mit mindestens einem T5-Tag. |
 | `tierDistribution.pagesDominatedByLowTiers` | Seiten, auf denen die Summe der T1- und T2-Tags größer ist als die Summe der T4- und T5-Tags — heuristisch boilerplate-lastig; T3 fließt nicht ein. UI: `domainResult.pageTopicsLowTierDominant`, `info.pageTopicsLowTierDominant` in `locales/de.json` / `en.json`. |
@@ -70,7 +81,7 @@ Implementierung: `aggregatePageClassification` in `lib/domain-aggregation.ts`, E
 2. Spider liefert am Ende `domainResult.pages` (volle `ScanResult[]`; jede Seite hat ggf. bereits `pageClassification` oder bei Reuse geklonte Daten).
 3. Pro Seite: `addScan(userId, { ...page, groupId: id }, { projectId })` – voller Scan in `scans`.
 4. `rebuildDomainIssuesFromPages` schreibt `domain_pages` / Issues-Tabellen (bei Fehler: Fallback mit `pages: SlimPage[]` im Payload).
-5. `buildStoredDomainPayload(fullPages, base, { omitSlimPages })` — gekapptes `aggregated`; `omitSlimPages: true`, wenn Schritt 4 geklappt hat.
+5. `buildAggregatedFromFullPages` → optional `refineAggregatedPageClassificationWithLlm` → `buildStoredDomainPayloadFromAggregated` — gekapptes `aggregated`; `omitSlimPages: true`, wenn Schritt 4 geklappt hat.
 6. `updateDomainScan(id, userId, stored)` speichert den Payload einmal.
 
 ## Lesen
@@ -101,7 +112,7 @@ Legacy **`GET .../summary?light=1`** bleibt für andere Clients nutzbar; die ein
 
 - `SlimPage`, `DomainScanResult` (mit `pages: SlimPage[] | ScanResult[]`, `aggregated?`) in `lib/types.ts`.
 - `DomainScanResultWithFullPages`: für Journey/LLM, `pages: ScanResult[]`.
-- `buildStoredDomainPayload`, `toStoredAggregated`, `hasStoredAggregated`, `buildDomainSummary` in `lib/domain-summary.ts`.
+- `buildStoredDomainPayload`, `buildAggregatedFromFullPages`, `buildStoredDomainPayloadFromAggregated`, `toStoredAggregated`, `hasStoredAggregated`, `buildDomainSummary` in `lib/domain-summary.ts`.
 - `listDomainScanSummariesForSearch` in `lib/db/scans.ts` (Such- und Listenpfade ohne vollen `payload`).
 
 ## Siehe auch

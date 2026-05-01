@@ -175,6 +175,13 @@ export interface AggregatedPageClassificationPageSample {
     lowTierCount: number;
 }
 
+/** Optional metadata when `topThemes` were filtered/reordered by the rollup-refinement LLM. */
+export interface PageClassificationThemeRollupMeta {
+    refinedWithLlm: boolean;
+    model?: string;
+    refinedAt?: string;
+}
+
 /** Domain-wide rollup of per-page `pageClassification.tagTiers`. */
 export interface AggregatedPageClassification {
     coverage: {
@@ -182,6 +189,8 @@ export interface AggregatedPageClassification {
         pagesWithClassification: number;
     };
     topThemes: AggregatedPageClassificationTheme[];
+    /** Present after optional Haiku pass on deep-scan persist. */
+    themeRollup?: PageClassificationThemeRollupMeta;
     tierDistribution: {
         avgTagsPerPageByTier: {
             tier1: number;

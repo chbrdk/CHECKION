@@ -5,7 +5,11 @@
 import { v4 as uuidv4 } from 'uuid';
 import { createDomainScan, updateDomainScan, getDomainScan, addScan } from '@/lib/db/scans';
 import { invalidateDomainScan, invalidateDomainList } from '@/lib/cache';
-import { buildStoredDomainPayload } from '@/lib/domain-summary';
+import {
+  buildAggregatedFromFullPages,
+  buildStoredDomainPayloadFromAggregated,
+} from '@/lib/domain-summary';
+import { refineAggregatedPageClassificationWithLlm } from '@/lib/llm/domain-theme-rollup-refine';
 import { runDomainScan, resolveDomainScanMaxPages } from '@/lib/spider';
 import type { DomainScanControlState } from '@/lib/spider';
 import { reportUsage } from '@/lib/usage-report';
@@ -147,7 +151,22 @@ export async function startDomainScan(
           } catch (e) {
             console.error('[CHECKION] domain issues persist failed', e);
           }
-          const stored: DomainScanResult = buildStoredDomainPayload(
+          let aggregatedRaw = buildAggregatedFromFullPages(fullPages);
+          if (aggregatedRaw.pageClassification) {
+            aggregatedRaw = {
+              ...aggregatedRaw,
+              pageClassification: await refineAggregatedPageClassificationWithLlm(
+                aggregatedRaw.pageClassification,
+                {
+                  domainOrigin: update.domainResult.domain,
+                  userId,
+                  domainScanId: id,
+                },
+              ),
+            };
+          }
+          const stored: DomainScanResult = buildStoredDomainPayloadFromAggregated(
+            aggregatedRaw,
             fullPages,
             {
               id: update.domainResult.id,
@@ -161,13 +180,28 @@ export async function startDomainScan(
               systemicIssues: update.domainResult.systemicIssues,
               eeat: update.domainResult.eeat,
             },
-            { omitSlimPages: domainPagesPersisted }
+            { omitSlimPages: domainPagesPersisted },
           );
           await updateDomainScan(id, userId, stored);
           invalidateDomainScan(id);
         } else if (update.type === 'cancelled') {
           const fullPages = update.domainResult.pages;
-          const stored: DomainScanResult = buildStoredDomainPayload(
+          let aggregatedCancelled = buildAggregatedFromFullPages(fullPages);
+          if (aggregatedCancelled.pageClassification) {
+            aggregatedCancelled = {
+              ...aggregatedCancelled,
+              pageClassification: await refineAggregatedPageClassificationWithLlm(
+                aggregatedCancelled.pageClassification,
+                {
+                  domainOrigin: update.domainResult.domain,
+                  userId,
+                  domainScanId: id,
+                },
+              ),
+            };
+          }
+          const stored: DomainScanResult = buildStoredDomainPayloadFromAggregated(
+            aggregatedCancelled,
             fullPages,
             {
               id: update.domainResult.id,
@@ -181,7 +215,7 @@ export async function startDomainScan(
               systemicIssues: update.domainResult.systemicIssues,
               eeat: update.domainResult.eeat,
             },
-            { omitSlimPages: false }
+            { omitSlimPages: false },
           );
           await updateDomainScan(id, userId, { ...stored, error: 'Cancelled by user' });
           invalidateDomainScan(id);

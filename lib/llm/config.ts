@@ -23,6 +23,15 @@ export const PAGE_CLASSIFY_MAX_TOKENS = Math.min(
     Math.max(256, parseInt(process.env.PAGE_CLASSIFY_MAX_TOKENS ?? '1024', 10) || 1024)
 );
 
+/** One Haiku call per deep scan: filter/reorder domain `topThemes` after deterministic rollup. */
+export const PAGE_TOPIC_ROLLUP_REFINE_CLAUDE_MODEL =
+    process.env.PAGE_TOPIC_ROLLUP_REFINE_CLAUDE_MODEL ?? 'claude-haiku-4-5-20251001';
+
+export const PAGE_TOPIC_ROLLUP_REFINE_MAX_TOKENS = Math.min(
+    4096,
+    Math.max(256, parseInt(process.env.PAGE_TOPIC_ROLLUP_REFINE_MAX_TOKENS ?? '2048', 10) || 2048)
+);
+
 /** Gemini models for competitive benchmark (stand 01.03.2026: 2.5/3.x family). */
 export const COMPETITIVE_BENCHMARK_MODELS_GEMINI = [
     'gemini-2.5-flash',

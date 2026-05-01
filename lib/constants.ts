@@ -506,6 +506,9 @@ export const DOMAIN_STORED_SUMMARY_PAGE_CLASSIFICATION_PAGE_SAMPLES_CAP = 8;
 /** Stored payload: max `relatedPages` per theme (id + url for deep links without slim list). */
 export const DOMAIN_STORED_SUMMARY_PAGE_CLASSIFICATION_THEME_RELATED_PAGES_CAP = 32;
 
+/** Max themes sent to the rollup-refinement LLM (before `toStoredAggregated` caps to stored limit). */
+export const DOMAIN_THEME_ROLLUP_REFINE_LLM_CANDIDATES_CAP = 55;
+
 /** Legacy aggregated-issues table: estimated grid row height for virtualization. */
 export const DOMAIN_AGGREGATED_ISSUES_ROW_ESTIMATE_PX = 56;
 
