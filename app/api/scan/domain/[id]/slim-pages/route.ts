@@ -15,7 +15,9 @@ import {
     listSlimPagesFromDomainPagesTable,
     sliceSlimPagesFromPayload,
     countPayloadPages,
+    type SlimKeysetCursor,
 } from '@/lib/db/domain-slim-pages';
+import { decodeSlimKeysetCursor, encodeSlimKeysetCursor, slimRowToKeysetPayload } from '@/lib/domain-pagination-cursor';
 import { ensureDomainIssueTablesBackfilled } from '@/lib/domain-issues-backfill';
 import { HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON } from '@/lib/constants';
 
@@ -65,6 +67,18 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
     const limit = clampLimit(url.searchParams.get('limit'));
     const sort = parseSlimSort(url.searchParams.get('sort'));
     const sortDir = parseSortDir(url.searchParams.get('dir'));
+    const afterRaw = url.searchParams.get('after')?.trim() ?? '';
+    let keysetAfter: SlimKeysetCursor | null = null;
+    if (afterRaw) {
+        const decoded = decodeSlimKeysetCursor(afterRaw, sort, sortDir);
+        if (!decoded) {
+            return apiError('Invalid pagination cursor.', API_STATUS.BAD_REQUEST);
+        }
+        keysetAfter = {
+            domainPageId: decoded.id,
+            primary: decoded.p,
+        };
+    }
 
     let dbCount = await countDomainPagesInDb(id, owner);
     if (dbCount === 0) {
@@ -79,12 +93,25 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
         const data = await listSlimPagesFromDomainPagesTable({
             domainScanId: id,
             userId: owner,
-            offset,
+            offset: keysetAfter != null ? 0 : offset,
             limit,
             sort,
             sortDir,
+            ...(keysetAfter != null ? { after: keysetAfter } : {}),
         });
-        return jsonPrivate({ success: true, data, total: dbCount, source: 'db' as const, sort, sortDir });
+        const last = data[data.length - 1];
+        const nextPayload = last ? slimRowToKeysetPayload(last, sort, sortDir) : null;
+        const nextCursor =
+            nextPayload && data.length === limit ? encodeSlimKeysetCursor(nextPayload) : undefined;
+        return jsonPrivate({
+            success: true,
+            data,
+            total: dbCount,
+            source: 'db' as const,
+            sort,
+            sortDir,
+            ...(nextCursor ? { nextCursor } : {}),
+        });
     }
 
     const scan = await getDomainScan(id, owner);

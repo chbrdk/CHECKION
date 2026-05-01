@@ -217,7 +217,11 @@ export async function addScan(userId: string, result: ScanResult, options?: { pr
 
 export async function getScan(id: string, userId: string): Promise<ScanResult | null> {
     const db = getDb();
-    const rows = await db.select().from(scans).where(and(eq(scans.id, id), eq(scans.userId, userId))).limit(1);
+    const rows = await db
+        .select({ result: scans.result })
+        .from(scans)
+        .where(and(eq(scans.id, id), eq(scans.userId, userId)))
+        .limit(1);
     if (rows.length === 0) return null;
     return rows[0].result as unknown as ScanResult;
 }
@@ -343,7 +347,11 @@ export async function createDomainScan(userId: string, scan: DomainScanResult, o
 
 export async function updateDomainScan(id: string, userId: string, update: Partial<DomainScanResult>): Promise<boolean> {
     const db = getDb();
-    const existing = await db.select().from(domainScans).where(and(eq(domainScans.id, id), eq(domainScans.userId, userId))).limit(1);
+    const existing = await db
+        .select({ payload: domainScans.payload })
+        .from(domainScans)
+        .where(and(eq(domainScans.id, id), eq(domainScans.userId, userId)))
+        .limit(1);
     if (existing.length === 0) return false;
     const merged = { ...(existing[0].payload as DomainScanResult), ...update };
     await db.update(domainScans).set({ payload: merged as unknown as Record<string, unknown>, status: merged.status, timestamp: merged.timestamp }).where(and(eq(domainScans.id, id), eq(domainScans.userId, userId)));
@@ -352,7 +360,11 @@ export async function updateDomainScan(id: string, userId: string, update: Parti
 
 export async function getDomainScan(id: string, userId: string): Promise<DomainScanResult | null> {
     const db = getDb();
-    const rows = await db.select().from(domainScans).where(and(eq(domainScans.id, id), eq(domainScans.userId, userId))).limit(1);
+    const rows = await db
+        .select({ payload: domainScans.payload })
+        .from(domainScans)
+        .where(and(eq(domainScans.id, id), eq(domainScans.userId, userId)))
+        .limit(1);
     if (rows.length === 0) return null;
     return rows[0].payload as unknown as DomainScanResult;
 }

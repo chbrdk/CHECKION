@@ -51,11 +51,18 @@ import {
     LAYOUT_MAX_CONTENT_WIDTH_PX,
     APP_LAYOUT_INNER_BORDER_WIDTH_PX,
     PUPPETEER_PROTOCOL_TIMEOUT_MS,
+    ENV_DATABASE_POOL_MAX,
 } from '@/lib/constants';
 
 describe('Puppeteer config', () => {
     it('PUPPETEER_PROTOCOL_TIMEOUT_MS is at least 60s', () => {
         expect(PUPPETEER_PROTOCOL_TIMEOUT_MS).toBeGreaterThanOrEqual(60_000);
+    });
+});
+
+describe('Database env key', () => {
+    it('ENV_DATABASE_POOL_MAX matches process.env name', () => {
+        expect(ENV_DATABASE_POOL_MAX).toBe('DATABASE_POOL_MAX');
     });
 });
 
@@ -182,6 +189,9 @@ describe('API path builders', () => {
         );
         expect(apiScanDomainSlimPages('d1', { offset: 0, limit: 100, sort: 'score', dir: 'desc' })).toBe(
             '/api/scan/domain/d1/slim-pages?offset=0&limit=100&sort=score&dir=desc'
+        );
+        expect(apiScanDomainSlimPages('d1', { offset: 0, limit: 50, after: 'abc' })).toBe(
+            '/api/scan/domain/d1/slim-pages?offset=0&limit=50&after=abc'
         );
     });
 

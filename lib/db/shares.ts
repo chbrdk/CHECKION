@@ -58,7 +58,19 @@ export async function createShare(
 
 export async function getShareByToken(token: string): Promise<ShareLinkRow | null> {
     const db = getDb();
-    const rows = await db.select().from(shareLinks).where(eq(shareLinks.token, token)).limit(1);
+    const rows = await db
+        .select({
+            token: shareLinks.token,
+            userId: shareLinks.userId,
+            resourceType: shareLinks.resourceType,
+            resourceId: shareLinks.resourceId,
+            passwordHash: shareLinks.passwordHash,
+            createdAt: shareLinks.createdAt,
+            expiresAt: shareLinks.expiresAt,
+        })
+        .from(shareLinks)
+        .where(eq(shareLinks.token, token))
+        .limit(1);
     if (rows.length === 0) return null;
     const row = rows[0];
     if (row.expiresAt && new Date(row.expiresAt) < new Date()) return null;
@@ -81,7 +93,12 @@ export async function getShareByResource(
 ): Promise<ShareInfo | null> {
     const db = getDb();
     const rows = await db
-        .select()
+        .select({
+            token: shareLinks.token,
+            passwordHash: shareLinks.passwordHash,
+            createdAt: shareLinks.createdAt,
+            expiresAt: shareLinks.expiresAt,
+        })
         .from(shareLinks)
         .where(
             and(

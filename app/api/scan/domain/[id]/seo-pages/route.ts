@@ -6,7 +6,13 @@ import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { getDomainScanAccess } from '@/lib/domain-scan-access';
 import { getDomainScan } from '@/lib/db/scans';
-import { listSeoPageRowsFromDb, sliceSeoPagesFromPayload, type SeoPagesSortKey } from '@/lib/db/domain-seo-pages';
+import {
+    listSeoPageRowsFromDb,
+    sliceSeoPagesFromPayload,
+    type SeoPagesSortKey,
+    type SeoKeysetCursor,
+} from '@/lib/db/domain-seo-pages';
+import { decodeSeoKeysetCursor, encodeSeoKeysetCursor, seoRowToKeysetPayload } from '@/lib/domain-pagination-cursor';
 import { HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON } from '@/lib/constants';
 
 const jsonPrivate = (body: unknown) =>
@@ -55,16 +61,34 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
     const limit = clampLimit(url.searchParams.get('limit'));
     const sort = parseSeoSort(url.searchParams.get('sort'));
     const sortDir = parseDir(url.searchParams.get('dir'));
+    const afterRaw = url.searchParams.get('after')?.trim() ?? '';
+    let keysetAfter: SeoKeysetCursor | null = null;
+    if (afterRaw) {
+        const decoded = decodeSeoKeysetCursor(afterRaw, sort, sortDir);
+        if (!decoded) {
+            return apiError('Invalid pagination cursor.', API_STATUS.BAD_REQUEST);
+        }
+        keysetAfter = {
+            domainPageId: decoded.id,
+            wordCount: decoded.wordCount,
+            url: decoded.url,
+        };
+    }
 
     const fromDb = await listSeoPageRowsFromDb({
         domainScanId: id,
         userId: owner,
-        offset,
+        offset: keysetAfter != null ? 0 : offset,
         limit,
         sort,
         sortDir,
+        ...(keysetAfter != null ? { after: keysetAfter } : {}),
     });
     if (fromDb.total > 0) {
+        const last = fromDb.rows[fromDb.rows.length - 1];
+        const nextPayload =
+            last && fromDb.rows.length === limit ? seoRowToKeysetPayload(last, sort, sortDir) : null;
+        const nextCursor = nextPayload ? encodeSeoKeysetCursor(nextPayload) : undefined;
         return jsonPrivate({
             success: true,
             data: fromDb.rows,
@@ -74,6 +98,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
             sort,
             sortDir,
             source: 'db' as const,
+            ...(nextCursor ? { nextCursor } : {}),
         });
     }
 

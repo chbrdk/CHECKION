@@ -88,7 +88,15 @@ export async function getSavedJourneysCount(userId: string, domainScanId?: strin
 export async function getSavedJourney(id: string, userId: string): Promise<SavedJourneyRow | null> {
     const db = getDb();
     const rows = await db
-        .select()
+        .select({
+            id: savedJourneys.id,
+            userId: savedJourneys.userId,
+            domainScanId: savedJourneys.domainScanId,
+            name: savedJourneys.name,
+            goal: savedJourneys.goal,
+            result: savedJourneys.result,
+            createdAt: savedJourneys.createdAt,
+        })
         .from(savedJourneys)
         .where(and(eq(savedJourneys.id, id), eq(savedJourneys.userId, userId)))
         .limit(1);

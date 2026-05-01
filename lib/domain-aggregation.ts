@@ -241,6 +241,8 @@ export interface PageSeoSummary {
   topKeywordCount: number;
   /** True if body word count < 300 (skinny content). */
   isSkinny: boolean;
+  /** Present when row comes from DB (`domain_pages.id`) — keyset pagination. */
+  domainPageId?: string;
 }
 
 /** SEO: counts across pages + cross-page keywords + per-page density. */

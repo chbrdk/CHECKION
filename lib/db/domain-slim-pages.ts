@@ -2,13 +2,58 @@
 /*  Paged SlimPage[] for domain UI — DB-first, payload slice fallback   */
 /* ------------------------------------------------------------------ */
 
-import { and, asc, desc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, sql, type SQL } from 'drizzle-orm';
 import { getDb } from '@/lib/db';
 import { domainPages, scans } from '@/lib/db/schema';
 import type { DomainScanResult, PageClassification, SlimPage } from '@/lib/types';
 import { domainPageRowId } from '@/lib/db/domain-issues';
 
 export type SlimSortKey = 'url' | 'score' | 'uxScore' | 'issues';
+
+/** Last row of previous page — enables keyset pagination without large OFFSET. */
+export type SlimKeysetCursor = {
+    domainPageId: string;
+    /** Primary sort value (matches DB ordering). */
+    primary: string | number;
+};
+
+function buildSlimKeysetWhere(
+    sort: SlimSortKey,
+    sortDir: 'asc' | 'desc',
+    issuesSum: SQL,
+    scoreCoalesced: SQL,
+    uxCoalesced: SQL,
+    after: SlimKeysetCursor
+): SQL {
+    const id = after.domainPageId;
+    const p = after.primary;
+    if (sort === 'url') {
+        const u = typeof p === 'string' ? p : String(p);
+        if (sortDir === 'asc') {
+            return sql`(${domainPages.url} > ${u} OR (${domainPages.url} = ${u} AND ${domainPages.id} > ${id}))`;
+        }
+        return sql`(${domainPages.url} < ${u} OR (${domainPages.url} = ${u} AND ${domainPages.id} < ${id}))`;
+    }
+    if (sort === 'score') {
+        const n = typeof p === 'number' ? p : Number(p);
+        if (sortDir === 'asc') {
+            return sql`(${scoreCoalesced} > ${n} OR (${scoreCoalesced} = ${n} AND ${domainPages.id} > ${id}))`;
+        }
+        return sql`(${scoreCoalesced} < ${n} OR (${scoreCoalesced} = ${n} AND ${domainPages.id} < ${id}))`;
+    }
+    if (sort === 'uxScore') {
+        const n = typeof p === 'number' ? p : Number(p);
+        if (sortDir === 'asc') {
+            return sql`(${uxCoalesced} > ${n} OR (${uxCoalesced} = ${n} AND ${domainPages.id} > ${id}))`;
+        }
+        return sql`(${uxCoalesced} < ${n} OR (${uxCoalesced} = ${n} AND ${domainPages.id} < ${id}))`;
+    }
+    const n = typeof p === 'number' ? p : Number(p);
+    if (sortDir === 'asc') {
+        return sql`(${issuesSum} > ${n} OR (${issuesSum} = ${n} AND ${domainPages.id} > ${id}))`;
+    }
+    return sql`(${issuesSum} < ${n} OR (${issuesSum} = ${n} AND ${domainPages.id} < ${id}))`;
+}
 
 /**
  * Sort SlimPage[] in memory (payload fallback) before offset/limit slice.
@@ -74,6 +119,7 @@ export async function listSlimPagesFromDomainPagesTable(params: {
     limit: number;
     sort?: SlimSortKey;
     sortDir?: 'asc' | 'desc';
+    after?: SlimKeysetCursor | null;
 }): Promise<SlimPage[]> {
     const db = getDb();
     const sort = params.sort ?? 'url';
@@ -85,21 +131,28 @@ export async function listSlimPagesFromDomainPagesTable(params: {
     const orderBy =
         sort === 'url'
             ? sortDir === 'asc'
-                ? asc(domainPages.url)
-                : desc(domainPages.url)
+                ? [asc(domainPages.url), asc(domainPages.id)]
+                : [desc(domainPages.url), desc(domainPages.id)]
             : sort === 'score'
               ? sortDir === 'asc'
-                  ? asc(scoreCoalesced)
-                  : desc(scoreCoalesced)
+                  ? [asc(scoreCoalesced), asc(domainPages.id)]
+                  : [desc(scoreCoalesced), desc(domainPages.id)]
               : sort === 'uxScore'
                 ? sortDir === 'asc'
-                    ? asc(uxCoalesced)
-                    : desc(uxCoalesced)
+                    ? [asc(uxCoalesced), asc(domainPages.id)]
+                    : [desc(uxCoalesced), desc(domainPages.id)]
                 : sortDir === 'asc'
-                  ? asc(issuesSum)
-                  : desc(issuesSum);
+                  ? [asc(issuesSum), asc(domainPages.id)]
+                  : [desc(issuesSum), desc(domainPages.id)];
 
-    const rows = await db
+    const baseWhere = and(eq(domainPages.domainScanId, params.domainScanId), eq(domainPages.userId, params.userId));
+    const keysetSql =
+        params.after != null
+            ? buildSlimKeysetWhere(sort, sortDir, issuesSum, scoreCoalesced, uxCoalesced, params.after)
+            : undefined;
+    const pageWhere = keysetSql != null ? and(baseWhere, keysetSql) : baseWhere;
+
+    const baseQuery = db
         .select({
             domainPageId: domainPages.id,
             url: domainPages.url,
@@ -109,15 +162,18 @@ export async function listSlimPagesFromDomainPagesTable(params: {
             statsErrors: sql<number>`COALESCE((${scans.result}->'stats'->>'errors')::int, 0)`,
             statsWarnings: sql<number>`COALESCE((${scans.result}->'stats'->>'warnings')::int, 0)`,
             statsNotices: sql<number>`COALESCE((${scans.result}->'stats'->>'notices')::int, 0)`,
-            /** Joined per-page scan result (AUDION site-topics + UI need tag tiers). */
             pageClassificationRaw: sql<unknown>`(${scans.result}->'pageClassification')`,
         })
         .from(domainPages)
         .leftJoin(scans, eq(scans.id, domainPages.pageScanId))
-        .where(and(eq(domainPages.domainScanId, params.domainScanId), eq(domainPages.userId, params.userId)))
-        .orderBy(orderBy)
-        .limit(params.limit)
-        .offset(params.offset);
+        .where(pageWhere)
+        .orderBy(...orderBy)
+        .limit(params.limit);
+
+    const rows =
+        params.after != null
+            ? await baseQuery
+            : await baseQuery.offset(params.offset);
 
     return rows.map((r) => {
         const scanId = r.pageScanId ?? r.domainPageId;
