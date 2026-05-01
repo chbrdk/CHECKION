@@ -551,6 +551,11 @@ export type DomainScanResult = {
     error?: string;
     /** LLM-generated domain-wide UX/CX summary (from POST /api/scan/domain/[id]/summarize). */
     llmSummary?: LlmSummary | null;
+    /** Options from scan start; preserved across payload merges for async classification jobs. */
+    scanOptions?: {
+        /** When false, skip AI fill of project industry + tags. Default: treat as true if omitted. */
+        aiFillProjectMetadata?: boolean;
+    };
 };
 
 /** Link with label for section/region assignment. */

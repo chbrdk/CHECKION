@@ -36,6 +36,7 @@ export async function POST(
 
   const skipUnchangedPages = req.nextUrl.searchParams.get('skipUnchangedPages') === 'true';
   const classifyPageTopics = req.nextUrl.searchParams.get('classifyPageTopics') === 'true';
+  const aiFillProjectMetadataDisabled = req.nextUrl.searchParams.get('aiFillProjectMetadata') === 'false';
 
   const own = project.domain?.trim() ? await (async () => {
     const raw = project.domain!.trim();
@@ -45,6 +46,7 @@ export async function POST(
       useSitemap: true,
       ...(skipUnchangedPages ? { skipUnchangedPages: true } : {}),
       ...(classifyPageTopics ? { classifyPageTopics: true } : {}),
+      ...(aiFillProjectMetadataDisabled ? { aiFillProjectMetadata: false } : {}),
     });
     return { scanId: id, status: 'started' as const };
   })() : null;
@@ -60,6 +62,7 @@ export async function POST(
     const { scanId } = await startProjectCompetitorDomainScan(user.id, projectId, domain, {
       ...(skipUnchangedPages ? { skipUnchangedPages: true } : {}),
       ...(classifyPageTopics ? { classifyPageTopics: true } : {}),
+      ...(aiFillProjectMetadataDisabled ? { aiFillProjectMetadata: false } : {}),
     });
     competitors[domain] = { scanId, reused: false };
   }

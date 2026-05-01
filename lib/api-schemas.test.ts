@@ -65,6 +65,16 @@ describe('api-schemas', () => {
       const result = scanDomainBodySchema.safeParse({ url: 'https://example.com' });
       expect(result.success).toBe(true);
     });
+
+    it('accepts aiFillProjectMetadata false', () => {
+      const result = scanDomainBodySchema.safeParse({
+        url: 'https://example.com',
+        projectId: '550e8400-e29b-41d4-a716-446655440000',
+        aiFillProjectMetadata: false,
+      });
+      expect(result.success).toBe(true);
+      if (result.success) expect(result.data.aiFillProjectMetadata).toBe(false);
+    });
   });
 
   describe('scanBodySchema', () => {

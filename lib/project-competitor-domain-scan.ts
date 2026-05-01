@@ -9,7 +9,7 @@ export async function startProjectCompetitorDomainScan(
   userId: string,
   projectId: string,
   normalizedDomain: string,
-  options?: { skipUnchangedPages?: boolean; classifyPageTopics?: boolean }
+  options?: { skipUnchangedPages?: boolean; classifyPageTopics?: boolean; aiFillProjectMetadata?: boolean }
 ): Promise<{ scanId: string }> {
   const d = normalizedDomain.trim();
   const url = d.startsWith('http') ? d : `https://${d}`;
@@ -19,6 +19,7 @@ export async function startProjectCompetitorDomainScan(
     domainOverride: d,
     ...(options?.skipUnchangedPages ? { skipUnchangedPages: true } : {}),
     ...(options?.classifyPageTopics ? { classifyPageTopics: true } : {}),
+    ...(options?.aiFillProjectMetadata === false ? { aiFillProjectMetadata: false } : {}),
   });
   await upsertProjectDomainScanReference(projectId, d, id);
   return { scanId: id };

@@ -3,7 +3,8 @@
  * Shared by POST /api/scan/domain/[id]/classify and optional post-deep-scan hook.
  */
 
-import { listScansByGroupId, updateScanResult } from '@/lib/db/scans';
+import { shouldAiFillProjectMetadata } from '@/lib/domain-scan-ai-metadata';
+import { listScansByGroupId, updateScanResult, getDomainScan } from '@/lib/db/scans';
 import { refreshDomainPayloadFromScans } from '@/lib/domain-scan-classify';
 import {
     classifyPageWithLlm,
@@ -77,7 +78,10 @@ export async function runDomainScanPageClassificationJob(
         }
 
         await refreshDomainPayloadFromScans(domainScanId, userId);
-        void maybeAutoFillProjectClassificationFromDomainScan({ userId, domainScanId });
+        const payload = await getDomainScan(domainScanId, userId);
+        if (shouldAiFillProjectMetadata(payload)) {
+            void maybeAutoFillProjectClassificationFromDomainScan({ userId, domainScanId });
+        }
     } catch (e) {
         console.error('[CHECKION] domain page classification job', domainScanId, e);
     }

@@ -16,6 +16,7 @@ import { reportUsage } from '@/lib/usage-report';
 import type { DomainScanResult } from '@/lib/types';
 import { rebuildDomainIssuesFromPages } from '@/lib/db/domain-issues';
 import { runDomainScanPageClassificationJob } from '@/lib/domain-scan-page-classification-job';
+import { shouldAiFillProjectMetadata } from '@/lib/domain-scan-ai-metadata';
 import { maybeAutoFillProjectClassificationFromDomainScan } from '@/lib/project-industry-auto';
 
 export interface StartDomainScanOptions {
@@ -28,6 +29,11 @@ export interface StartDomainScanOptions {
   domainOverride?: string;
   /** After successful completion, run per-page LLM classification in the background. */
   classifyPageTopics?: boolean;
+  /**
+   * When false, do not run AI project industry + tags after scan (when project-linked).
+   * Omit or true: same as today (fill when allowed). Stored on payload for async jobs.
+   */
+  aiFillProjectMetadata?: boolean;
 }
 
 export async function startDomainScan(
@@ -38,6 +44,7 @@ export async function startDomainScan(
   const id = uuidv4();
   const domain = options.domainOverride ?? url;
   const pageCap = resolveDomainScanMaxPages(options.maxPages);
+  const aiFillProjectMetadata = options.aiFillProjectMetadata !== false;
   const initial: DomainScanResult = {
     id,
     domain,
@@ -49,6 +56,9 @@ export async function startDomainScan(
     pages: [],
     graph: { nodes: [], links: [] },
     systemicIssues: [],
+    scanOptions: {
+      aiFillProjectMetadata,
+    },
   };
   await createDomainScan(userId, initial, options.projectId !== undefined ? { projectId: options.projectId } : undefined);
   invalidateDomainList(userId);
@@ -190,7 +200,12 @@ export async function startDomainScan(
           await updateDomainScan(id, userId, stored);
           invalidateDomainScan(id);
           if (projectIdForPages && !classifyPageTopics) {
-            void maybeAutoFillProjectClassificationFromDomainScan({ userId, domainScanId: id });
+            void (async () => {
+              const row = await getDomainScan(id, userId);
+              if (shouldAiFillProjectMetadata(row)) {
+                await maybeAutoFillProjectClassificationFromDomainScan({ userId, domainScanId: id });
+              }
+            })();
           }
           if (classifyPageTopics) {
             void runDomainScanPageClassificationJob({ domainScanId: id, userId });

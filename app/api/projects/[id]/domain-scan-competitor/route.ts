@@ -50,10 +50,12 @@ export async function POST(
 
   const skipUnchangedPages = req.nextUrl.searchParams.get('skipUnchangedPages') === 'true';
   const classifyPageTopics = req.nextUrl.searchParams.get('classifyPageTopics') === 'true';
+  const aiFillProjectMetadataDisabled = req.nextUrl.searchParams.get('aiFillProjectMetadata') === 'false';
 
   const { scanId } = await startProjectCompetitorDomainScan(user.id, projectId, normalized, {
     ...(skipUnchangedPages ? { skipUnchangedPages: true } : {}),
     ...(classifyPageTopics ? { classifyPageTopics: true } : {}),
+    ...(aiFillProjectMetadataDisabled ? { aiFillProjectMetadata: false } : {}),
   });
 
   return NextResponse.json({

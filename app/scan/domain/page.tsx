@@ -37,9 +37,20 @@ function ScanContent() {
     const classifyPageTopicsParam = searchParams.get('classifyPageTopics') === 'true';
     const [classifyPageTopics, setClassifyPageTopics] = useState(classifyPageTopicsParam);
 
+    const aiFillProjectMetadataParam = searchParams.get('aiFillProjectMetadata') !== 'false';
+    const [aiFillProjectMetadata, setAiFillProjectMetadata] = useState(
+        projectIdParam ? aiFillProjectMetadataParam : true
+    );
+
     useEffect(() => {
         setClassifyPageTopics(classifyPageTopicsParam);
     }, [classifyPageTopicsParam]);
+
+    useEffect(() => {
+        if (projectIdParam) {
+            setAiFillProjectMetadata(aiFillProjectMetadataParam);
+        }
+    }, [aiFillProjectMetadataParam, projectIdParam]);
 
     // Scroll to bottom of logs
     useEffect(() => {
@@ -56,9 +67,15 @@ function ScanContent() {
         }
         if (!scanId) {
             const limit = maxPagesParam ? Math.min(10000, Math.max(1, Number(maxPagesParam))) : 1000;
-            void startScan(startUrl, limit, projectIdParam, classifyPageTopicsParam);
+            void startScan(
+                startUrl,
+                limit,
+                projectIdParam,
+                classifyPageTopicsParam,
+                projectIdParam ? aiFillProjectMetadataParam : true
+            );
         }
-    }, [startUrl, maxPagesParam, projectIdParam, scanIdParam, classifyPageTopicsParam, t]);
+    }, [startUrl, maxPagesParam, projectIdParam, scanIdParam, classifyPageTopicsParam, aiFillProjectMetadataParam, t]);
 
     const pollOnce = async (sid: string) => {
         const res = await fetch(apiScanDomainStatus(sid), { credentials: 'same-origin' });
@@ -148,7 +165,8 @@ function ScanContent() {
         url: string,
         pageLimit?: number,
         projectId?: string | null,
-        runClassifyPageTopics?: boolean
+        runClassifyPageTopics?: boolean,
+        runAiFillProjectMetadata?: boolean
     ) {
         setStatus('queued');
         setLogs([t('domain.initLog')]);
@@ -162,6 +180,9 @@ function ScanContent() {
                     maxPages: pageLimit ?? 1000,
                     ...(projectId ? { projectId } : {}),
                     ...(runClassifyPageTopics ? { classifyPageTopics: true } : {}),
+                    ...(projectId && runAiFillProjectMetadata === false
+                        ? { aiFillProjectMetadata: false }
+                        : {}),
                 })
             });
 
@@ -179,6 +200,9 @@ function ScanContent() {
                             maxPages: pageLimit ?? 1000,
                             ...(projectId ? { projectId } : {}),
                             ...(runClassifyPageTopics ? { classifyPageTopics: true } : {}),
+                            ...(projectId && runAiFillProjectMetadata === false
+                                ? { aiFillProjectMetadata: false }
+                                : {}),
                             scanId: newId,
                         })
                     );
@@ -221,6 +245,9 @@ function ScanContent() {
                                     maxPages: limit,
                                     ...(projectIdParam ? { projectId: projectIdParam } : {}),
                                     ...(classifyPageTopics ? { classifyPageTopics: true } : {}),
+                                    ...(projectIdParam && aiFillProjectMetadata === false
+                                        ? { aiFillProjectMetadata: false }
+                                        : {}),
                                 })
                             );
                         }
@@ -259,6 +286,18 @@ function ScanContent() {
                             onChange={(val) => setClassifyPageTopics(Array.isArray(val) && val.includes('on'))}
                         />
                     </Box>
+                    {projectIdParam ? (
+                        <Box sx={{ flex: '1 1 100%', minWidth: 200 }}>
+                            <MsqdxCheckboxField
+                                label={t('domain.aiFillProjectMetadataLabel')}
+                                options={[{ value: 'on', label: t('domain.aiFillProjectMetadataOption') }]}
+                                value={aiFillProjectMetadata ? ['on'] : []}
+                                onChange={(val) =>
+                                    setAiFillProjectMetadata(Array.isArray(val) && val.includes('on'))
+                                }
+                            />
+                        </Box>
+                    ) : null}
                     <Box sx={{ pt: '28px' }}>
                         <MsqdxButton type="submit" variant="contained" size="large">
                             {t('domain.startCta')}

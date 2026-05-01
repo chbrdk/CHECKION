@@ -76,7 +76,7 @@ export const pathDeepScansCompare = (scanIdA: string, scanIdB: string) => {
 };
 /** Build app route: /share/[token] */
 export const pathShare = (token: string) => `${PATH_SHARE}/${encodeURIComponent(token)}`;
-/** Build app route: /scan/domain?url=...&maxPages=...&projectId=...&classifyPageTopics=... (projectId preserves project context for result header + optional API assign). */
+/** Build app route: /scan/domain?url=...&maxPages=...&projectId=...&classifyPageTopics=...&aiFillProjectMetadata=... (projectId preserves project context for result header + optional API assign). */
 export const pathScanDomain = (params: {
   url: string;
   maxPages?: number;
@@ -84,12 +84,15 @@ export const pathScanDomain = (params: {
   scanId?: string;
   /** When true, adds `classifyPageTopics=true` so the deep scan triggers per-page LLM classification after completion. */
   classifyPageTopics?: boolean;
+  /** When false, adds `aiFillProjectMetadata=false` (skip AI project industry/tags after linked scan). */
+  aiFillProjectMetadata?: boolean;
 }) => {
   const search = new URLSearchParams({ url: params.url });
   if (params.maxPages != null) search.set('maxPages', String(params.maxPages));
   if (params.projectId) search.set('projectId', params.projectId);
   if (params.scanId) search.set('scanId', params.scanId);
   if (params.classifyPageTopics) search.set('classifyPageTopics', 'true');
+  if (params.aiFillProjectMetadata === false) search.set('aiFillProjectMetadata', 'false');
   return `${PATH_SCAN_DOMAIN}?${search.toString()}`;
 };
 
@@ -103,6 +106,7 @@ export function pathScanDomainResume(params: {
   projectId?: string;
   maxPages?: number;
   classifyPageTopics?: boolean;
+  aiFillProjectMetadata?: boolean;
 }): string {
   const url = toScanStartUrl(params.domainOrUrl);
   if (!url) {
@@ -113,6 +117,7 @@ export function pathScanDomainResume(params: {
     ...(params.maxPages != null ? { maxPages: params.maxPages } : {}),
     ...(params.projectId ? { projectId: params.projectId } : {}),
     ...(params.classifyPageTopics ? { classifyPageTopics: true } : {}),
+    ...(params.aiFillProjectMetadata === false ? { aiFillProjectMetadata: false } : {}),
     scanId: params.scanId,
   });
 }
@@ -409,8 +414,20 @@ export const apiProjectGeoLatestResult = (id: string) => `${API_PROJECTS}/${enco
 export const apiProjectDomainSummary = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/domain-summary`;
 /** GET /api/projects/[id]/domain-summary-all – own + competitor domain summaries. */
 export const apiProjectDomainSummaryAll = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/domain-summary-all`;
-/** POST /api/projects/[id]/domain-scan-all – start deep scan for own + all competitors. */
-export const apiProjectDomainScanAll = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/domain-scan-all`;
+/** POST /api/projects/[id]/domain-scan-all — optional query flags match route search params. */
+export function apiProjectDomainScanAll(
+  projectId: string,
+  query?: { classifyPageTopics?: boolean; skipUnchangedPages?: boolean; aiFillProjectMetadata?: boolean }
+): string {
+  const base = `${API_PROJECTS}/${encodeURIComponent(projectId)}/domain-scan-all`;
+  if (!query) return base;
+  const sp = new URLSearchParams();
+  if (query.classifyPageTopics) sp.set('classifyPageTopics', 'true');
+  if (query.skipUnchangedPages) sp.set('skipUnchangedPages', 'true');
+  if (query.aiFillProjectMetadata === false) sp.set('aiFillProjectMetadata', 'false');
+  const s = sp.toString();
+  return s ? `${base}?${s}` : base;
+}
 /** POST /api/projects/[id]/domain-scan-competitor – body `{ domain }` (hostname or URL). */
 export const apiProjectDomainScanCompetitor = (id: string) =>
   `${API_PROJECTS}/${encodeURIComponent(id)}/domain-scan-competitor`;

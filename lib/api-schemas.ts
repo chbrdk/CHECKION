@@ -54,6 +54,8 @@ export const scanDomainBodySchema = z.object({
   skipUnchangedPages: z.boolean().optional(),
   /** After a successful deep scan, run per-page LLM classification in the background (same as POST …/classify). */
   classifyPageTopics: z.boolean().optional(),
+  /** When false, skip AI-derived project industry + tags after a linked scan (default: fill when eligible). */
+  aiFillProjectMetadata: z.boolean().optional(),
 });
 
 /** POST /api/scans/domain/compare */

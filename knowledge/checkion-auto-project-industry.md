@@ -30,6 +30,12 @@ Ohne Projekt (`domain_scans.project_id` leer) passiert nichts.
 | `CHECKION_DISABLE_AUTO_PROJECT_TAGS=1` | Keine automatischen Projekt-Tags aus Rollup. |
 | `CHECKION_AUTO_TAGS_OVERWRITE=1` | Bestehende Projekt-Tags durch Rollup-Tags ersetzen. |
 
+### Deep-Scan-UI / API
+
+- **`POST /api/scan/domain`**: Body-Feld `aiFillProjectMetadata: false` → keine KI-Branche/Tags für diesen Lauf (Flag liegt in `payload.scanOptions` und gilt auch nach **Seitenthemen-Job**).
+- **`/scan/domain`**: Bei `projectId` in der URL erscheint die Checkbox **Projekt: Branche & Tags (KI)** (Standard: an). URL-Parameter `aiFillProjectMetadata=false` entspricht „aus“.
+- **`POST /api/projects/[id]/domain-scan-all`** / **`domain-scan-competitor`**: Query `aiFillProjectMetadata=false` durchreichen (z. B. `apiProjectDomainScanAll(id, { aiFillProjectMetadata: false })`).
+
 Modell/Tokens: wie Theme-Rollup-Refine (`PAGE_TOPIC_ROLLUP_REFINE_CLAUDE_MODEL`, max. 512 Output-Tokens für diesen Call).
 
 ## Automatische Tags

@@ -697,7 +697,9 @@
     "maxPagesLabel": "Max. Seiten",
     "maxPagesAll": "Alle (10000)",
     "classifyPageTopicsLabel": "Seitenthemen (LLM)",
-    "classifyPageTopicsOption": "Nach erfolgreichem Scan Seitenthemen erneut per LLM bestimmen (Hintergrund; zusätzliche Nutzung)"
+    "classifyPageTopicsOption": "Nach erfolgreichem Scan Seitenthemen erneut per LLM bestimmen (Hintergrund; zusätzliche Nutzung)",
+    "aiFillProjectMetadataLabel": "Projekt: Branche & Tags (KI)",
+    "aiFillProjectMetadataOption": "Nach dem Scan Projekt-Branche und Tags per KI aus Domain/Themen vorschlagen (wenn noch leer bzw. je nach Einstellung)"
   },
   "results": {
     "errorNotFound": "Ergebnis nicht gefunden",

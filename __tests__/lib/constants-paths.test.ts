@@ -113,6 +113,15 @@ describe('Path constants', () => {
                 classifyPageTopics: true,
             })
         ).toBe('/scan/domain?url=https%3A%2F%2Fa.com&classifyPageTopics=true');
+        expect(
+            pathScanDomain({
+                url: 'https://a.com',
+                projectId: '550e8400-e29b-41d4-a716-446655440000',
+                aiFillProjectMetadata: false,
+            })
+        ).toBe(
+            '/scan/domain?url=https%3A%2F%2Fa.com&projectId=550e8400-e29b-41d4-a716-446655440000&aiFillProjectMetadata=false'
+        );
     });
 
     it('pathDeepScansCompare builds /deep-scans/compare?ids=', () => {

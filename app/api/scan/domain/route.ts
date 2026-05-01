@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
         maxPages: parsed.maxPages,
         skipUnchangedPages: parsed.skipUnchangedPages,
         classifyPageTopics: parsed.classifyPageTopics,
+        ...(parsed.aiFillProjectMetadata === false ? { aiFillProjectMetadata: false } : {}),
     });
     return NextResponse.json({
         success: true,
