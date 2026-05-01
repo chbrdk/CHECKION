@@ -90,20 +90,19 @@ export async function runDomainPayloadRefreshBatch(
 
     const whereClause = conds.length === 0 ? undefined : conds.length === 1 ? conds[0] : and(...conds);
 
-    let q = db
-        .select({
-            id: domainScans.id,
-            userId: domainScans.userId,
-            domain: domainScans.domain,
-            status: domainScans.status,
-        })
-        .from(domainScans);
-
-    if (whereClause) q = q.where(whereClause);
-    q = q.orderBy(desc(domainScans.timestamp));
-    if (opts.limit != null) q = q.limit(opts.limit);
-
-    const rows = await q;
+    const selectCols = {
+        id: domainScans.id,
+        userId: domainScans.userId,
+        domain: domainScans.domain,
+        status: domainScans.status,
+    };
+    const fromFiltered = whereClause
+        ? db.select(selectCols).from(domainScans).where(whereClause)
+        : db.select(selectCols).from(domainScans);
+    const rows =
+        opts.limit != null
+            ? await fromFiltered.orderBy(desc(domainScans.timestamp)).limit(opts.limit)
+            : await fromFiltered.orderBy(desc(domainScans.timestamp));
 
     let updated = 0;
     let skipped = 0;

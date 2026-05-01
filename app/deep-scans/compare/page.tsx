@@ -1,8 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Box, LinearProgress, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
 import { MsqdxButton, MsqdxMoleculeCard, MsqdxTypography } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
@@ -23,6 +22,7 @@ function parseTwoIds(raw: string): [string, string] | null {
 
 function CompareInner() {
     const { t } = useI18n();
+    const router = useRouter();
     const searchParams = useSearchParams();
     const idsParam = searchParams.get('ids') ?? '';
     const parsed = parseTwoIds(idsParam);
@@ -78,7 +78,7 @@ function CompareInner() {
                 <MsqdxTypography variant="body1" sx={{ mb: 2 }}>
                     {t('deepScans.compareInvalid')}
                 </MsqdxTypography>
-                <MsqdxButton variant="outlined" component={Link} href={PATH_DEEP_SCANS}>
+                <MsqdxButton variant="outlined" onClick={() => router.push(PATH_DEEP_SCANS)}>
                     {t('deepScans.backToList')}
                 </MsqdxButton>
             </Box>
@@ -96,16 +96,16 @@ function CompareInner() {
                 {t('deepScans.compareSubtitle')}
             </MsqdxTypography>
             <Box sx={{ mb: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                <MsqdxButton variant="outlined" component={Link} href={PATH_DEEP_SCANS}>
+                <MsqdxButton variant="outlined" onClick={() => router.push(PATH_DEEP_SCANS)}>
                     {t('deepScans.backToList')}
                 </MsqdxButton>
                 {left && (
-                    <MsqdxButton variant="text" component={Link} href={pathDomain(left.id)}>
+                    <MsqdxButton variant="text" onClick={() => router.push(pathDomain(left.id))}>
                         {t('deepScans.open')} A
                     </MsqdxButton>
                 )}
                 {right && (
-                    <MsqdxButton variant="text" component={Link} href={pathDomain(right.id)}>
+                    <MsqdxButton variant="text" onClick={() => router.push(pathDomain(right.id))}>
                         {t('deepScans.open')} B
                     </MsqdxButton>
                 )}
