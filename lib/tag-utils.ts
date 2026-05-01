@@ -1,6 +1,6 @@
 /** Normalize tags / industry for projects and domain scans (filtering + storage). */
 
-import type { AggregatedPageClassification } from '@/lib/types';
+import type { AggregatedPageClassification, PageClassification } from '@/lib/types';
 
 export const MAX_TAGS_PER_ENTITY = 32;
 export const MAX_TAG_LEN = 48;
@@ -69,6 +69,32 @@ export function rollupThemesToProjectTags(
             .slice(0, MAX_TAG_LEN);
         const t = normalizeTagFilter(slug);
         if (t) candidates.push(t);
+    }
+    return normalizeTagList(candidates).slice(0, maxTags);
+}
+
+/** Single-page `classifyPageWithLlm` output → project filter tags (tier-high first). */
+export function rollupTagTiersToProjectTags(
+    pc: PageClassification | null | undefined,
+    maxTags = 12
+): string[] {
+    if (!pc?.tagTiers?.length) return [];
+    const sorted = [...pc.tagTiers].sort(
+        (a, b) => b.tier - a.tier || a.tag.localeCompare(b.tag)
+    );
+    const candidates: string[] = [];
+    for (const t of sorted) {
+        const raw = (t.tag ?? '').trim();
+        if (!raw) continue;
+        const slug = raw
+            .toLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/[^a-z0-9_-]+/g, '')
+            .replace(/-+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .slice(0, MAX_TAG_LEN);
+        const norm = normalizeTagFilter(slug);
+        if (norm) candidates.push(norm);
     }
     return normalizeTagList(candidates).slice(0, maxTags);
 }

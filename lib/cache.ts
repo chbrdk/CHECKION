@@ -11,9 +11,10 @@ import {
     CACHE_REVALIDATE_LIST,
 } from '@/lib/constants';
 import * as dbScans from '@/lib/db/scans';
+import type { StandaloneScanListQueryOptions } from '@/lib/db/scans';
 import * as dbShares from '@/lib/db/shares';
 import * as dbJourneys from '@/lib/db/journeys';
-import type { ScanResult, DomainScanResult, DomainScanStatus } from '@/lib/types';
+import type { ScanResult, DomainScanResult, DomainScanStatus, StandaloneScanSummary } from '@/lib/types';
 import { DOMAIN_SCAN_LIST_QUERY_MAX_LEN } from '@/lib/db/scans';
 import { normalizeIndustry, normalizeTagFilter } from '@/lib/tag-utils';
 import type { UxCxSummary } from '@/lib/llm-summary-types';
@@ -64,21 +65,43 @@ export async function getCachedShareByToken(token: string): Promise<ShareLinkRow
     )();
 }
 
-/** Cached: standalone scans list (paginated). Optional projectId filter. Exceeds 2MB, skipping cache. */
-export async function listCachedStandaloneScans(
+/**
+ * Cached: standalone scan list — **summary rows** (no full JSONB `result`).
+ * Optional projectId, industry, tag (same semantics as domain scan list).
+ */
+export async function listCachedStandaloneScanSummaries(
     userId: string,
-    options?: { limit?: number; offset?: number; projectId?: string | null }
-): Promise<ScanResult[]> {
+    options?: StandaloneScanListQueryOptions
+): Promise<StandaloneScanSummary[]> {
     const limit = options?.limit ?? 10000;
     const offset = options?.offset ?? 0;
-    return dbScans.listStandaloneScans(userId, { limit, offset, projectId: options?.projectId });
+    return unstable_cache(
+        () => dbScans.listStandaloneScanSummaries(userId, { ...options, limit, offset }),
+        [
+            'standalone-scans-summaries',
+            userId,
+            String(limit),
+            String(offset),
+            domainScanListProjectCacheKey(options?.projectId),
+            domainScanListFilterCacheKey({ industry: options?.industry, tag: options?.tag }),
+        ],
+        { revalidate: CACHE_REVALIDATE_LIST, tags: [`scans-list-${userId}`] }
+    )();
 }
 
-/** Cached: standalone scans count. Optional projectId filter. */
-export async function getCachedStandaloneScansCount(userId: string, projectId?: string | null): Promise<number> {
+/** Cached: standalone scans count. */
+export async function getCachedStandaloneScansCount(
+    userId: string,
+    options?: { projectId?: string | null; industry?: string; tag?: string }
+): Promise<number> {
     return unstable_cache(
-        () => dbScans.getStandaloneScansCount(userId, projectId),
-        ['scans-count', userId, domainScanListProjectCacheKey(projectId)],
+        () => dbScans.getStandaloneScansCount(userId, options),
+        [
+            'scans-count',
+            userId,
+            domainScanListProjectCacheKey(options?.projectId),
+            domainScanListFilterCacheKey({ industry: options?.industry, tag: options?.tag }),
+        ],
         { revalidate: CACHE_REVALIDATE_LIST, tags: [`scans-list-${userId}`] }
     )();
 }

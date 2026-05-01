@@ -10,7 +10,7 @@ import {
 } from '@/lib/llm/config';
 import { extractJsonFromResponse } from '@/lib/llm/page-classification';
 import { addAnthropicUsage, emptyUsageTotals, type LlmUsageTotals } from '@/lib/llm/usage-totals';
-import type { AggregatedPageClassification } from '@/lib/types';
+import type { AggregatedPageClassification, PageClassification } from '@/lib/types';
 import {
     industryPoolForLlmPrompt,
     isIndustryPoolId,
@@ -145,4 +145,20 @@ export function buildThemesForIndustryInfer(
     maxThemes = 18
 ): InferProjectIndustryThemeInput[] {
     return themesFromPageClassification(pc, maxThemes);
+}
+
+/** Single-page WCAG scan: map `pageClassification.tagTiers` into theme inputs for industry infer. */
+export function buildThemesForIndustryInferFromPageClassification(
+    pc: PageClassification | null | undefined,
+    maxThemes = 18
+): InferProjectIndustryThemeInput[] {
+    if (!pc?.tagTiers?.length) return [];
+    const sorted = [...pc.tagTiers].sort(
+        (a, b) => b.tier - a.tier || a.tag.localeCompare(b.tag)
+    );
+    return sorted.slice(0, maxThemes).map((t) => ({
+        tag: t.tag,
+        score: t.tier * t.tier,
+        pageCount: 1,
+    }));
 }

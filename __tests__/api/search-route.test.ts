@@ -11,24 +11,20 @@ vi.mock('@/lib/auth-api-token', () => ({
     getRequestUser: vi.fn(),
 }));
 
-vi.mock('@/lib/cache', () => ({
-    listCachedStandaloneScans: vi.fn(),
-}));
-
 vi.mock('@/lib/db/scans', () => ({
     getDomainScan: vi.fn(),
     listDomainScanSummariesForSearch: vi.fn(),
     listScansByGroupId: vi.fn(),
+    listStandaloneScansFull: vi.fn(),
 }));
 
 import { getRequestUser } from '@/lib/auth-api-token';
-import { listCachedStandaloneScans } from '@/lib/cache';
-import { getDomainScan, listDomainScanSummariesForSearch, listScansByGroupId } from '@/lib/db/scans';
+import { getDomainScan, listDomainScanSummariesForSearch, listScansByGroupId, listStandaloneScansFull } from '@/lib/db/scans';
 
 describe('GET /api/search — domain branch uses lightweight rows', () => {
     beforeEach(() => {
         vi.mocked(getRequestUser).mockResolvedValue({ id: 'u1' } as any);
-        vi.mocked(listCachedStandaloneScans).mockResolvedValue([]);
+        vi.mocked(listStandaloneScansFull).mockResolvedValue([]);
         vi.mocked(listDomainScanSummariesForSearch).mockReset();
         vi.mocked(listScansByGroupId).mockReset();
         vi.mocked(getDomainScan).mockReset();

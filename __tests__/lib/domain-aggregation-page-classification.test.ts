@@ -56,10 +56,11 @@ describe('aggregatePageClassification', () => {
         expect(agg!.coverage.pagesWithClassification).toBe(1);
     });
 
-    it('merges tags by normalized key and ranks tier-5 themes above damped boilerplate', () => {
+    it('excludes boilerplate/chrome tags from topThemes rollup', () => {
         const pages: ScanResult[] = [
             page('p1', 'https://a.test/', [
                 { tag: 'Navigation', tier: 1 },
+                { tag: 'Menu items', tier: 1 },
                 { tag: 'Industry 4.0', tier: 5 },
             ]),
             page('p2', 'https://a.test/p', [
@@ -71,8 +72,7 @@ describe('aggregatePageClassification', () => {
         const nav = agg.topThemes.find((t) => t.tag.toLowerCase().includes('navigation'));
         const ind = agg.topThemes.find((t) => t.tag.includes('Industry'));
         expect(ind).toBeDefined();
-        expect(nav).toBeDefined();
-        expect((ind!.score ?? 0) > (nav!.score ?? 0)).toBe(true);
+        expect(nav).toBeUndefined();
         expect(ind!.pageCount).toBe(2);
     });
 

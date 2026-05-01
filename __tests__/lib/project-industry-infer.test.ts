@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { parseIndustryInferResponse, buildThemesForIndustryInfer } from '@/lib/llm/project-industry-infer';
-import type { AggregatedPageClassification } from '@/lib/types';
+import {
+    parseIndustryInferResponse,
+    buildThemesForIndustryInfer,
+    buildThemesForIndustryInferFromPageClassification,
+} from '@/lib/llm/project-industry-infer';
+import type { AggregatedPageClassification, PageClassification } from '@/lib/types';
 
 describe('parseIndustryInferResponse', () => {
     it('parses industryId from JSON object', () => {
@@ -47,5 +51,24 @@ describe('buildThemesForIndustryInfer', () => {
 
     it('returns empty when missing', () => {
         expect(buildThemesForIndustryInfer(undefined, 5)).toEqual([]);
+    });
+});
+
+describe('buildThemesForIndustryInferFromPageClassification', () => {
+    it('maps tagTiers by tier desc with score tier² and pageCount 1', () => {
+        const pc: PageClassification = {
+            tagTiers: [
+                { tag: 'low', tier: 2 },
+                { tag: 'high', tier: 5 },
+            ],
+        };
+        expect(buildThemesForIndustryInferFromPageClassification(pc, 10)).toEqual([
+            { tag: 'high', score: 25, pageCount: 1 },
+            { tag: 'low', score: 4, pageCount: 1 },
+        ]);
+    });
+
+    it('returns empty when missing', () => {
+        expect(buildThemesForIndustryInferFromPageClassification(undefined)).toEqual([]);
     });
 });

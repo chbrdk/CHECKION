@@ -205,6 +205,30 @@ export interface AggregatedPageClassification {
     pageSamples: AggregatedPageClassificationPageSample[];
 }
 
+/**
+ * Paginated single-scan list (GET /api/scan) — relational columns + stats only, no full `result` JSONB.
+ * Use {@link ScanResult} for detail routes and search indexing.
+ */
+export type StandaloneScanSummary = {
+    id: string;
+    url: string;
+    timestamp: string;
+    score: number;
+    stats: ScanStats;
+    projectId: string | null;
+    groupId: string | null;
+    scanSessionId: string | null;
+    device: Device;
+    /** Normalized tags stored on the scan row (filters). */
+    tags: string[];
+    /** Tags from the linked project when `projectId` is set. */
+    projectTags: string[];
+    /** From linked project (list filters). */
+    industry: string | null;
+    /** Present when session row stores POST /api/scan `targetRegion`. */
+    targetRegion?: string | null;
+};
+
 export type ScanResult = {
     id: string;
     groupId?: string; // Optional for ad-hoc scans

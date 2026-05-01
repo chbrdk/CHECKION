@@ -52,7 +52,7 @@ Beim **Persistieren** nach Scan-Ende (`lib/domain-scan-start.ts`): Vor `toStored
 | Bereich | Bedeutung |
 |--------|-----------|
 | `coverage` | `totalPages` (alle gescannten Seiten), `pagesWithClassification` (Seiten mit nicht-leerem `tagTiers`). |
-| `topThemes` | Zusammengeführte Tags nach `normalizePageTopicTagKey` (trim, lowercase, Leerzeichen). **Score** = Summe von **Tier²** pro Vorkommen; typische Nav-/Footer-Begriffe (siehe `PAGE_TOPIC_BOILERPLATE_KEYS` in `lib/domain-aggregation.ts`) werden mit **×0,25** gewichtet, damit echte Inhaltsthemen oben stehen. `pageCount` = Anzahl Seiten mit diesem Tag; `maxTier` / `avgTier` aus den Vorkommen. Nach optionalem LLM-Refinement können Reihenfolge und Anzahl von der rein statistischen Liste abweichen. |
+| `topThemes` | Zusammengeführte Tags nach `normalizePageTopicTagKey` (trim, lowercase, Leerzeichen). **Score** = Summe von **Tier²** pro Vorkommen. Chrome/Boilerplate-Labels (Nav, Footer, Menü-Struktur u. a.; siehe `PAGE_TOPIC_BOILERPLATE_KEYS` in `lib/domain-aggregation.ts`) werden bei der Aggregation **ganz ausgeschlossen**; beim Einzelscan zusätzlich in `parseClassificationResponse` aus `tagTiers` entfernt. `pageCount` = Anzahl Seiten mit diesem Tag; `maxTier` / `avgTier` aus den Vorkommen. Nach optionalem LLM-Refinement können Reihenfolge und Anzahl von der rein statistischen Liste abweichen. |
 | `themeRollup` | Optional: Kennzeichnet erfolgreiches Haiku-Refinement (`refinedWithLlm`, `model`, `refinedAt`). |
 | `tierDistribution.avgTagsPerPageByTier` | Durchschnittliche Tag-Anzahl je Tier **pro Seite der gesamten Site** (Nenner = `totalPages`), damit fehlende Klassifikation die Mittelwerte „verdünnt“. |
 | `tierDistribution.pagesWithAtLeastOneTier5` | Seiten mit mindestens einem T5-Tag. |

@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
-import { listCachedStandaloneScans } from '@/lib/cache';
+import { listStandaloneScansFull } from '@/lib/db/scans';
 import { getDomainScan, listDomainScanSummariesForSearch, listScansByGroupId } from '@/lib/db/scans';
 import type { ScanResult, SearchMatch, SearchMatchType } from '@/lib/types';
 import { CACHE_REVALIDATE_LIST } from '@/lib/constants';
@@ -84,7 +84,7 @@ async function runSearch(
     const allMatches: SearchMatch[] = [];
 
     if (typeFilter === 'all' || typeFilter === 'single') {
-        const singleScans = await listCachedStandaloneScans(userId, { limit: MAX_SINGLE_LOAD });
+        const singleScans = await listStandaloneScansFull(userId, { limit: MAX_SINGLE_LOAD });
         for (const result of singleScans) {
             const list = searchInScan(result, q, 'single', result.id);
             for (const m of list) {

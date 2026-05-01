@@ -14,7 +14,15 @@
 
 ## Standalone list
 
-- [`listStandaloneScans`](../lib/db/scans.ts) / count: rows whose **`group_id` is not a `domain_scans.id`**, and **one row per batch** when `group_id` is set (`device = 'desktop'`). Fixes prior logic that required `group_id IS NULL` and hid POST /api/scan results.
+- [`listStandaloneScanSummaries`](../lib/db/scans.ts) / [`listStandaloneScansFull`](../lib/db/scans.ts): gleiche WHERE-Logik — **`group_id` is not a `domain_scans.id`**, **one row per batch** bei Liste (`device = 'desktop'`). Summaries = nur Tabellen-Spalten + Join `scan_sessions` (`target_region`); Full = JSONB `result` (z. B. Suche).
+- **GET /api/scan?groupId=** — alle Geräte einer Session (`listScansByGroupId`), volle `ScanResult`-Zeilen für Geräte-Tabs.
+
+### Tags & Filter (Standalone)
+
+- Spalte **`scans.tags`** (JSONB, Migration **0017**): gleiche Rolle wie **`domain_scans.tags`** — normalisierte Filter-Tags; bei Projekt-Link werden sie aus **`projects.tags`** befüllt (`POST /api/scan`, **`updateScanProject`**). Aggregierte Liste/Suche: **`scan.tags ∪ project.tags`** via Join (`buildStandaloneScanSummaryWhere`).
+- **`PATCH /api/scans/[id]/tags`** (`apiScansTags`) — alle Geräte einer Session (gemeinsames `group_id`) werden mitgeschrieben.
+- Admin **`POST /api/admin/domain-scans/sync-project-tags`** synchronisiert jetzt **Domain- und Standalone**-Zeilen (`syncStandaloneScansTagsFromProjects`); Script **`scripts/sync-domain-scan-tags-from-projects.ts`** ebenfalls.
+- Nach Auto-Tags aus Deep-/Single-Scan: **`syncStandaloneScansTagsForProjectId`** + **`invalidateScansList`** (`lib/project-industry-auto.ts`).
 
 ## Migration
 

@@ -29,6 +29,20 @@
       "when": 1772000000002,
       "tag": "0015_scan_sessions_and_scan_index",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1772000000003,
+      "tag": "0016_standalone_scan_session_meta_and_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1772000000004,
+      "tag": "0017_scans_tags",
+      "breakpoints": true
     }
   ]
 }

@@ -50,6 +50,8 @@ export const scanSessions = pgTable('scan_sessions', {
     url: text('url').notNull(),
     standard: text('standard'),
     runners: jsonb('runners'),
+    /** WCAG regional variant when set (e.g. DE). */
+    targetRegion: text('target_region'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -71,6 +73,8 @@ export const scans = pgTable('scans', {
     noticesCount: integer('notices_count'),
     durationMs: integer('duration_ms'),
     score: integer('score'),
+    /** Normalized filter tags (union with project.tags in list queries). */
+    tags: jsonb('tags').notNull().default([]),
 });
 
 export const domainScans = pgTable(

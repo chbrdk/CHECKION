@@ -5,7 +5,7 @@ import { Box, CircularProgress } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxChip } from '@msqdx/react';
 import { MSQDX_BRAND_PRIMARY, MSQDX_STATUS } from '@msqdx/tokens';
 import { Trash2 } from 'lucide-react';
-import type { ScanResult } from '@/lib/types';
+import type { StandaloneScanSummary } from '@/lib/types';
 import { useI18n } from '@/components/i18n/I18nProvider';
 
 export type DomainScanSummary = {
@@ -38,7 +38,7 @@ export function SingleScanRow({
   onClick,
   onDelete,
 }: {
-  scan: ScanResult;
+  scan: StandaloneScanSummary;
   onClick: () => void;
   onDelete?: (id: string) => void;
 }) {

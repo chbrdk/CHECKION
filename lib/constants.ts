@@ -176,12 +176,23 @@ export const apiRankTrackingRefresh = () => API_RANK_TRACKING_REFRESH;
 /** POST /api/scan (single-page scan) */
 export const apiScanCreate = API_SCAN;
 
-/** Build: GET /api/scan?limit=&page=&projectId= */
-export const apiScanList = (params?: { limit?: number; page?: number; projectId?: string | null }) => {
+/** Build: GET /api/scan?limit=&page=&projectId=&industry=&tag= — paginated **summaries**. Use `groupId` for all devices in one session. */
+export const apiScanList = (params?: {
+  limit?: number;
+  page?: number;
+  projectId?: string | null;
+  industry?: string;
+  tag?: string;
+  /** When set, returns full `ScanResult[]` for each device (sibling tabs); ignores pagination params. */
+  groupId?: string;
+}) => {
   const search = new URLSearchParams();
   if (params?.limit != null) search.set('limit', String(params.limit));
   if (params?.page != null) search.set('page', String(params.page));
   if (params?.projectId !== undefined) search.set('projectId', params.projectId ?? '');
+  if (params?.industry) search.set('industry', params.industry);
+  if (params?.tag) search.set('tag', params.tag);
+  if (params?.groupId) search.set('groupId', params.groupId);
   return search.toString() ? `${API_SCAN}?${search.toString()}` : API_SCAN;
 };
 
@@ -348,6 +359,8 @@ export const apiSearch = (q: string, limit?: number) => {
 
 /** Build: DELETE /api/scans/[id] */
 export const apiScansDelete = (id: string) => `${API_SCANS}/${encodeURIComponent(id)}`;
+/** PATCH /api/scans/[id]/tags — standalone scan-level tags (owner only). */
+export const apiScansTags = (id: string) => `${API_SCANS}/${encodeURIComponent(id)}/tags`;
 /** Build: GET /api/scans/domain?limit=&page=&projectId=&q=&status=&industry=&tag=&scope= */
 export const apiScansDomainList = (params?: {
   limit?: number;

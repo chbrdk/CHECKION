@@ -468,12 +468,11 @@ export default function ResultsPage() {
                 // Fetch all scans to find siblings with same groupId
                 // (In a real app, we'd have an endpoint like /api/scan?groupId=...)
                 if (data.groupId) {
-                    fetch(apiScanList({ limit: 100 }))
-                        .then(res => res.json())
-                        .then((response: { data?: ScanResult[]; pagination?: unknown }) => {
+                    fetch(apiScanList({ groupId: data.groupId }))
+                        .then((res) => res.json())
+                        .then((response: { data?: ScanResult[] }) => {
                             const list = Array.isArray(response?.data) ? response.data : [];
-                            const siblings = list.filter((s: ScanResult) => s.groupId === data.groupId);
-                            setRelatedScans(siblings);
+                            setRelatedScans(list);
                         });
                 }
 

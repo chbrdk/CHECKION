@@ -12,7 +12,7 @@ import {
   MsqdxFormField,
 } from '@msqdx/react';
 import { MSQDX_SPACING, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
-import type { ScanResult, SearchMatch } from '@/lib/types';
+import type { StandaloneScanSummary, SearchMatch } from '@/lib/types';
 import { HistoryList, SingleScanRow, DomainScanRow, type DomainScanSummary } from '@/components/HistoryList';
 import { SearchResultsList } from '@/components/SearchResultsList';
 import { useI18n } from '@/components/i18n/I18nProvider';
@@ -41,7 +41,7 @@ type Pagination = { total: number; page: number; limit: number; totalPages: numb
 export default function DashboardPage() {
   const router = useRouter();
   const { t } = useI18n();
-  const [scans, setScans] = useState<ScanResult[]>([]);
+  const [scans, setScans] = useState<StandaloneScanSummary[]>([]);
   const [domainScans, setDomainScans] = useState<DomainScanSummary[]>([]);
   const [scanPagination, setScanPagination] = useState<Pagination | null>(null);
   const [domainPagination, setDomainPagination] = useState<Pagination | null>(null);

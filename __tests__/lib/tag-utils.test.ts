@@ -4,9 +4,10 @@ import {
     normalizeTagList,
     normalizeIndustry,
     parseTagsFromInput,
+    rollupTagTiersToProjectTags,
     rollupThemesToProjectTags,
 } from '@/lib/tag-utils';
-import type { AggregatedPageClassification } from '@/lib/types';
+import type { AggregatedPageClassification, PageClassification } from '@/lib/types';
 
 describe('tag-utils', () => {
     it('normalizeTagFilter accepts word chars and hyphen', () => {
@@ -46,5 +47,19 @@ describe('tag-utils', () => {
 
     it('rollupThemesToProjectTags returns empty without themes', () => {
         expect(rollupThemesToProjectTags(undefined)).toEqual([]);
+    });
+
+    it('rollupTagTiersToProjectTags prefers higher tier and slugifies', () => {
+        const pc: PageClassification = {
+            tagTiers: [
+                { tag: 'Foo Bar', tier: 3 },
+                { tag: 'baz', tier: 4 },
+            ],
+        };
+        expect(rollupTagTiersToProjectTags(pc, 10)).toEqual(['baz', 'foo-bar']);
+    });
+
+    it('rollupTagTiersToProjectTags returns empty without tiers', () => {
+        expect(rollupTagTiersToProjectTags(undefined)).toEqual([]);
     });
 });

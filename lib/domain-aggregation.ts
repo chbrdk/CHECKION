@@ -722,20 +722,80 @@ export function normalizePageTopicTagKey(tag: string): string {
 }
 
 /**
- * Tags that are usually chrome/boilerplate in LLM output; dampen weight (×0.25) so real topics rank higher.
+ * Normalized labels that describe site chrome / UI structure, not page content topics.
+ * Dropped from per-page `tagTiers` at parse time and excluded from domain `topThemes` rollup.
  */
 const PAGE_TOPIC_BOILERPLATE_KEYS = new Set<string>([
-  'navigation',
+  'banner',
+  'boilerplate',
+  'boilerplate content',
+  'boilerplate text',
+  'bottom navigation',
+  'breadcrumb navigation',
+  'breadcrumbs',
+  'chrome',
+  'cookie banner',
+  'cookie consent',
+  'dropdown menu',
   'footer',
   'footer links',
+  'footer menu',
+  'footer navigation',
+  'global navigation',
+  'hamburger menu',
+  'header',
+  'header navigation',
   'jump to content',
+  'legal footer',
+  'legal links',
+  'main header',
+  'main menu',
+  'main navigation',
+  'mega menu',
+  'menu',
+  'menu items',
+  'menu structure',
+  'mobile menu',
+  'mobile navigation',
+  'navigation',
+  'navigation footer',
+  'navigation menu',
+  'page footer',
+  'page header',
+  'primary menu',
+  'primary navigation',
+  'secondary navigation',
+  'sidebar navigation',
+  'site chrome',
+  'site footer',
+  'site header',
+  'site menu',
+  'site navigation',
   'site structure',
-  'boilerplate',
-  'boilerplate text',
+  'skip link',
+  'skip links',
+  'skip navigation',
+  'skip to content',
+  'skip to main content',
+  'structural navigation',
+  'top navigation',
+  'ui chrome',
+  'website footer',
+  'website navigation',
+  'website structure',
 ]);
 
-function isBoilerplateTopicKey(key: string): boolean {
+/** @param key Output of {@link normalizePageTopicTagKey} */
+export function isBoilerplateTopicKey(key: string): boolean {
   return PAGE_TOPIC_BOILERPLATE_KEYS.has(key);
+}
+
+/** Remove chrome/boilerplate rows from LLM `tagTiers` before persist/UI. */
+export function filterNonBoilerplateTagTiers(tiers: TagTier[]): TagTier[] {
+  return tiers.filter((e) => {
+    const k = normalizePageTopicTagKey(e.tag);
+    return k.length > 0 && !isBoilerplateTopicKey(k);
+  });
 }
 
 function tierWeight(tier: number): number {
@@ -894,16 +954,15 @@ export function aggregatePageClassification(pages: ScanResult[]): AggregatedPage
       t5 = 0;
 
     for (const entry of tiers) {
+      const key = normalizePageTopicTagKey(entry.tag);
+      if (!key || isBoilerplateTopicKey(key)) continue;
+
       const tier = entry.tier;
       if (tier === 1) t1++;
       else if (tier === 2) t2++;
       else if (tier === 3) t3++;
       else if (tier === 4) t4++;
       else t5++;
-
-      const key = normalizePageTopicTagKey(entry.tag);
-      if (!key) continue;
-      const damp = isBoilerplateTopicKey(key) ? 0.25 : 1;
 
       let acc = themeByKey.get(key);
       if (!acc) {
@@ -917,7 +976,7 @@ export function aggregatePageClassification(pages: ScanResult[]): AggregatedPage
         };
         themeByKey.set(key, acc);
       }
-      ingestTagTier(acc, entry, page.id, damp);
+      ingestTagTier(acc, entry, page.id, 1);
     }
 
     sumT1 += t1;

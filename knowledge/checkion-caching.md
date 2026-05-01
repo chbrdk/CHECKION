@@ -14,7 +14,7 @@ Um Datenbankabfragen zu reduzieren, nutzt CHECKION **Next.js `unstable_cache`** 
 | Einzelscan | `getCachedScan`, `getCachedScanWithSummary` | `scan-${id}` | 60 s |
 | Domain-Scan | `getCachedDomainScan` | `domain-${id}` | 60 s |
 | Share-Link | `getCachedShareByToken` | `share-${token}` | 300 s |
-| Liste Einzelscans | `listCachedStandaloneScans`, `getCachedStandaloneScansCount` | `scans-list-${userId}` | 30 s |
+| Liste Einzelscans | `listCachedStandaloneScanSummaries`, `getCachedStandaloneScansCount` | `scans-list-${userId}` | 30 s |
 | Liste Domain-Scans (Summaries) | `listCachedDomainScanSummaries`, `getCachedDomainScansCount` | `domain-list-${userId}` | 30 s |
 | Liste Domain-Scans (voll, für Suche) | `listCachedDomainScans` | `domain-list-${userId}` | 30 s (kann >2MB sein) |
 | Saved Journeys | `listCachedSavedJourneys`, `getCachedSavedJourneysCount` | `journeys-${userId}`, optional `journeys-${userId}-${domainScanId}` | 30 s |
@@ -56,7 +56,7 @@ Für **authentifizierte** Domain-Read-APIs (u. a. Summary, Slim-Pages, Issue-Gro
 
 ### Search-API
 
-- **Domain-Zweig:** Lädt **keine** vollen `domain_scans.payload`-Zeilen mehr: `listDomainScanSummariesForSearch` (Metadaten + `hasStoredAggregated` per JSONB) und `listScansByGroupId` bzw. bei Legacy `getDomainScan`. Einzelscans weiter über `listCachedStandaloneScans`.
+- **Domain-Zweig:** Lädt **keine** vollen `domain_scans.payload`-Zeilen mehr: `listDomainScanSummariesForSearch` (Metadaten + `hasStoredAggregated` per JSONB) und `listScansByGroupId` bzw. bei Legacy `getDomainScan`. Einzelscan-Dashboard: **`listCachedStandaloneScanSummaries`** (relationale Spalten, kein großes JSONB); Volltext-Suche: **`listStandaloneScansFull`** (teuer).
 - **Gecachte Suchergebnisse:** Das Ergebnis von `GET /api/search` wird pro (userId, q, typeFilter, limit) mit `unstable_cache` und Tags `scans-list-${userId}`, `domain-list-${userId}` gecacht (Revalidate wie Listen). Wiederholte gleiche Suchanfragen treffen nicht erneut die DB.
 
 ### Results-Seite (Einzelscan)

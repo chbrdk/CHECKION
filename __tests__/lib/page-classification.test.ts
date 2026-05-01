@@ -68,6 +68,21 @@ describe('parseClassificationResponse', () => {
         const result = parseClassificationResponse(raw);
         expect(result.tagTiers).toEqual([{ tag: 'X', tier: 1 }, { tag: 'Y', tier: 2 }]);
     });
+
+    it('strips boilerplate/chrome tags from LLM output', () => {
+        const raw = JSON.stringify({
+            tagTiers: [
+                { tag: 'Navigation', tier: 1 },
+                { tag: 'Footer', tier: 1 },
+                { tag: 'Boilerplate text', tier: 1 },
+                { tag: 'Site structure', tier: 2 },
+                { tag: 'Menu items', tier: 2 },
+                { tag: 'Hydraulic pumps', tier: 5 },
+            ],
+        });
+        const result = parseClassificationResponse(raw);
+        expect(result.tagTiers).toEqual([{ tag: 'Hydraulic pumps', tier: 5 }]);
+    });
 });
 
 describe('extractJsonFromResponse', () => {

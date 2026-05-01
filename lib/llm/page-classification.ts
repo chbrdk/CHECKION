@@ -12,6 +12,7 @@ import {
     getAnthropicKey,
 } from '@/lib/llm/config';
 import { addAnthropicUsage, emptyUsageTotals, type LlmUsageTotals } from '@/lib/llm/usage-totals';
+import { filterNonBoilerplateTagTiers } from '@/lib/domain-aggregation';
 
 const BODY_EXCERPT_MAX = 2000;
 
@@ -28,20 +29,23 @@ export function buildClassificationPayload(result: ScanResult): Record<string, u
 
 export const CLASSIFICATION_SYSTEM_PROMPT = `You are an expert at classifying web page content.
 
-Your task: Identify **all topics and aspects** of the page from its **page content only** (not URL or site structure) and assign each topic a **tier (1–5)** indicating how central or intensively that topic is treated on the page.
+Your task: Identify **substantive topics and aspects** of what the page is **about** (products, services, audience, claims, editorial themes) from **visible page content**. Assign each topic a **tier (1–5)** for how central that topic is on the page.
 
-**Tier meaning:**
+**Do not include in tagTiers (omit entirely — these are not content topics):**
+Site chrome and scaffolding: navigation, menus, footers, headers, breadcrumbs, cookie/consent banners, "site structure", "boilerplate", generic "menu items", skip links, or any label that only describes UI layout rather than subject matter.
+
+**Tier meaning (for substantive topics only):**
 - 5: Core topic of the page, very central and intensively covered.
 - 4: Important topic, clearly present.
 - 3: Topic appears with medium relevance.
 - 2: Only mentioned in passing or hinted at.
-- 1: Little substance (e.g. navigation, footer, boilerplate).
+- 1: Peripheral but still a **real content** topic (e.g. a brief legal note, a minor related service) — **not** navigation/footer/chrome.
 
 **Output (valid JSON only, no text before or after):**
-- tagTiers: Array of objects { "tag": string, "tier": 1|2|3|4|5 }. **At least 5 entries per tier** (1, 2, 3, 4, 5), so at least 25 topics/tags in total. Each "tag" is an English keyword/topic (e.g. "Pumps", "Technical specs", "Contact", "Imprint").
-- shortSummary (optional): One sentence in English: "What is this page mainly about?"
+- tagTiers: Array of objects { "tag": string, "tier": 1|2|3|4|5 }. **At least 5 entries per tier** (1–5), so at least 25 **content** tags total. Each "tag" is a short English topic label (e.g. "Centrifugal pumps", "Technical specifications", "Warranty terms").
+- shortSummary (optional): One sentence in English: what this page is mainly about.
 
-Important: Assign each topic only once. Use different aspects (product name, category, benefits, audience, etc.) per tier to reach at least 5 per tier.`;
+Important: One row per distinct topic. Use varied aspects (product lines, use cases, benefits, compliance, etc.) to fill tiers — never pad with chrome labels.`;
 
 export function buildClassificationUserPrompt(payload: Record<string, unknown>): string {
     return `Classify this web page: put all topics/tags into tagTiers, at least 5 per tier (1–5). Reply with JSON only: { "tagTiers": [ { "tag": string, "tier": 1|2|3|4|5 }, ... ], "shortSummary"?: string }
@@ -135,8 +139,11 @@ export function parseClassificationResponse(rawContent: string): PageClassificat
             if (legacy.success) {
                 const L = legacy.data;
                 const tier = (typeof L.tier === 'number' && L.tier >= 1 && L.tier <= 5) ? (L.tier as 1 | 2 | 3 | 4 | 5) : 3;
-                const tagTiers: TagTier[] = (Array.isArray(L.tags) ? L.tags.filter((t): t is string => typeof t === 'string').slice(0, 20) : [])
-                    .map((tag) => ({ tag: tag.trim(), tier }));
+                const tagTiers: TagTier[] = filterNonBoilerplateTagTiers(
+                    (Array.isArray(L.tags) ? L.tags.filter((t): t is string => typeof t === 'string').slice(0, 20) : [])
+                        .map((tag) => ({ tag: tag.trim(), tier }))
+                        .filter((x) => x.tag.length > 0)
+                );
                 return { tagTiers, shortSummary: typeof L.shortSummary === 'string' ? L.shortSummary : undefined };
             }
         }
@@ -145,9 +152,11 @@ export function parseClassificationResponse(rawContent: string): PageClassificat
             const result = PageClassificationSchema.safeParse(parsed);
             if (result.success) {
                 const d = result.data;
-                const tagTiers: TagTier[] = (d.tagTiers ?? [])
-                    .map((x) => ({ tag: String(x.tag).trim(), tier: x.tier }))
-                    .filter((x) => x.tag.length > 0);
+                const tagTiers: TagTier[] = filterNonBoilerplateTagTiers(
+                    (d.tagTiers ?? [])
+                        .map((x) => ({ tag: String(x.tag).trim(), tier: x.tier }))
+                        .filter((x) => x.tag.length > 0)
+                );
                 return {
                     tagTiers,
                     shortSummary: typeof d.shortSummary === 'string' ? d.shortSummary : undefined,

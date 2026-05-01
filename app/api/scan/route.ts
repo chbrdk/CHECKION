@@ -8,12 +8,19 @@ import { apiError, handleApiError, API_STATUS } from '@/lib/api-error-handler';
 import { parseApiBody, scanBodySchema } from '@/lib/api-schemas';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { runScan } from '@/lib/scanner';
-import { insertScanSession, persistStandaloneScanRow } from '@/lib/db/scans';
-import { listCachedStandaloneScans, getCachedStandaloneScansCount, invalidateScansList } from '@/lib/cache';
+import {
+    insertScanSession,
+    persistStandaloneScanRow,
+    listScansByGroupId,
+} from '@/lib/db/scans';
+import { getProject } from '@/lib/db/projects';
+import { normalizeTagList } from '@/lib/tag-utils';
+import { listCachedStandaloneScanSummaries, getCachedStandaloneScansCount, invalidateScansList } from '@/lib/cache';
 import type { Device } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 import { DASHBOARD_SCANS_PAGE_SIZE } from '@/lib/constants';
 import { reportUsage } from '@/lib/usage-report';
+import { maybeAutoFillProjectClassificationFromStandaloneScan } from '@/lib/project-industry-auto';
 
 export async function POST(request: Request) {
     const user = await getRequestUser(request);
@@ -43,7 +50,14 @@ export async function POST(request: Request) {
             projectId: body.projectId,
             standard: body.standard ?? null,
             runners: body.runners ?? null,
+            targetRegion: body.targetRegion?.trim() || null,
         });
+
+        let sessionTags: string[] = [];
+        if (body.projectId) {
+            const proj = await getProject(body.projectId, user.id);
+            if (proj) sessionTags = normalizeTagList(proj.tags);
+        }
 
         // Run scans in parallel
         const results = await Promise.all(
@@ -64,6 +78,7 @@ export async function POST(request: Request) {
             await persistStandaloneScanRow(user.id, result, {
                 projectId: body.projectId,
                 scanSessionId: groupId,
+                tags: sessionTags,
             });
         }
         invalidateScansList(user.id);
@@ -82,6 +97,16 @@ export async function POST(request: Request) {
 
         // Find desktop result to return (for redirect)
         const desktopResult = results.find(r => r.device === 'desktop') || results[0];
+
+        if (body.projectId) {
+            void maybeAutoFillProjectClassificationFromStandaloneScan({
+                userId: user.id,
+                projectId: body.projectId,
+                scanUrl: body.url,
+                scanSessionId: groupId,
+                desktopResult,
+            });
+        }
 
         return NextResponse.json({
             success: true,
@@ -104,14 +129,29 @@ export async function GET(req: NextRequest) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     const { searchParams } = new URL(req.url);
+    const groupId = searchParams.get('groupId')?.trim();
+    if (groupId) {
+        const devices = await listScansByGroupId(user.id, groupId);
+        const total = devices.length;
+        return NextResponse.json({
+            data: devices,
+            pagination: { total, page: 1, limit: Math.max(total, 1), totalPages: 1 },
+        });
+    }
     const limit = Math.min(Math.max(1, Number(searchParams.get('limit')) || DASHBOARD_SCANS_PAGE_SIZE), 100);
     const page = Math.max(1, Number(searchParams.get('page')) || 1);
     const offset = (page - 1) * limit;
     const projectIdParam = searchParams.get('projectId');
     const projectId = projectIdParam === '' || projectIdParam === null ? null : projectIdParam ?? undefined;
+    const industryRaw = searchParams.get('industry');
+    const industry =
+        industryRaw && industryRaw.trim().length > 0 ? industryRaw.trim().slice(0, 128) : undefined;
+    const tagRaw = searchParams.get('tag');
+    const tag = tagRaw && tagRaw.trim().length > 0 ? tagRaw.trim().slice(0, 48) : undefined;
+    const listOpts = { limit, offset, projectId, industry, tag };
     const [list, total] = await Promise.all([
-        listCachedStandaloneScans(user.id, { limit, offset, projectId }),
-        getCachedStandaloneScansCount(user.id, projectId),
+        listCachedStandaloneScanSummaries(user.id, listOpts),
+        getCachedStandaloneScansCount(user.id, { projectId, industry, tag }),
     ]);
     const totalPages = Math.ceil(total / limit) || 1;
     return NextResponse.json({

@@ -4,6 +4,8 @@
 
 Nach einem **Deep Scan mit verknüpftem Projekt** wird `projects.industry` per **Claude Haiku** aus den **Domain-Content-Themen** (`aggregated.pageClassification.topThemes`) vorgeschlagen, sofern die Branche noch leer ist. Das Modell wählt **genau eine ID** aus dem festen **Branchen-Pool** (`lib/industry-pool.ts`), nicht Freitext.
 
+**Single-Scan (`POST /api/scan`)** mit `projectId`: dieselbe Pipeline über **`maybeAutoFillProjectClassificationFromStandaloneScan`** — Tags aus **`pageClassification.tagTiers`** der **Desktop**-Zeile, Branche aus diesen Themes (oder nur Hostname/Projektname, falls Klassifikation fehlt). Läuft **fire-and-forget** nach Persistenz; Idempotency-Key `project_industry_infer:standalone:<scanSessionId>`.
+
 ## Ablauf
 
 1. Deterministischer Rollup der Seiten-Themen → optional **Theme-Rollup-Refine** (bestehend).

@@ -34,7 +34,7 @@ export async function GET(
         getDomainScansCount(user.id, { projectId: id }),
         listJourneyRuns(user.id, 10000, { projectId: id }).then((r) => r.length),
         listGeoEeatRuns(user.id, 10000, { projectId: id }).then((r) => r.length),
-        getStandaloneScansCount(user.id, id),
+        getStandaloneScansCount(user.id, { projectId: id }),
         getKeywordsCountByProject(id),
     ]);
     return NextResponse.json({

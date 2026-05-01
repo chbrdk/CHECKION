@@ -4,18 +4,26 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
-vi.mock('@/lib/cache', () => ({ invalidateDomainList: vi.fn() }));
+vi.mock('@/lib/cache', () => ({ invalidateDomainList: vi.fn(), invalidateScansList: vi.fn() }));
 vi.mock('@/lib/db/sync-domain-scan-tags-from-projects', () => ({
     syncDomainScanTagsFromProjects: vi.fn(),
     listDistinctDomainScanUserIds: vi.fn(),
 }));
+vi.mock('@/lib/db/sync-standalone-scan-tags-from-projects', () => ({
+    syncStandaloneScansTagsFromProjects: vi.fn(),
+    listDistinctStandaloneScanUserIds: vi.fn(),
+}));
 
 import { POST } from '@/app/api/admin/domain-scans/sync-project-tags/route';
-import { invalidateDomainList } from '@/lib/cache';
+import { invalidateDomainList, invalidateScansList } from '@/lib/cache';
 import {
     syncDomainScanTagsFromProjects,
     listDistinctDomainScanUserIds,
 } from '@/lib/db/sync-domain-scan-tags-from-projects';
+import {
+    syncStandaloneScansTagsFromProjects,
+    listDistinctStandaloneScanUserIds,
+} from '@/lib/db/sync-standalone-scan-tags-from-projects';
 
 const ADMIN_KEY = 'a'.repeat(16);
 
@@ -26,9 +34,14 @@ describe('POST /api/admin/domain-scans/sync-project-tags', () => {
         process.env.CHECKION_ADMIN_API_KEY = ADMIN_KEY;
         vi.mocked(syncDomainScanTagsFromProjects).mockReset();
         vi.mocked(listDistinctDomainScanUserIds).mockReset();
+        vi.mocked(syncStandaloneScansTagsFromProjects).mockReset();
+        vi.mocked(listDistinctStandaloneScanUserIds).mockReset();
         vi.mocked(invalidateDomainList).mockReset();
+        vi.mocked(invalidateScansList).mockReset();
         vi.mocked(syncDomainScanTagsFromProjects).mockResolvedValue(3);
+        vi.mocked(syncStandaloneScansTagsFromProjects).mockResolvedValue(4);
         vi.mocked(listDistinctDomainScanUserIds).mockResolvedValue(['u1', 'u2']);
+        vi.mocked(listDistinctStandaloneScanUserIds).mockResolvedValue(['u2', 'u3']);
     });
 
     afterEach(() => {
@@ -52,16 +65,23 @@ describe('POST /api/admin/domain-scans/sync-project-tags', () => {
         const res = await POST(req);
         expect(res.status).toBe(200);
         expect(syncDomainScanTagsFromProjects).toHaveBeenCalledWith('replaceFromProject');
+        expect(syncStandaloneScansTagsFromProjects).toHaveBeenCalledWith('replaceFromProject');
         const body = (await res.json()) as {
             mode: string;
-            updatedRows: number;
+            updatedDomainScanRows: number;
+            updatedStandaloneScanRows: number;
             invalidatedUserListCaches: number;
         };
         expect(body.mode).toBe('replaceFromProject');
-        expect(body.updatedRows).toBe(3);
-        expect(body.invalidatedUserListCaches).toBe(2);
+        expect(body.updatedDomainScanRows).toBe(3);
+        expect(body.updatedStandaloneScanRows).toBe(4);
+        expect(body.invalidatedUserListCaches).toBe(3);
         expect(vi.mocked(invalidateDomainList)).toHaveBeenCalledWith('u1');
         expect(vi.mocked(invalidateDomainList)).toHaveBeenCalledWith('u2');
+        expect(vi.mocked(invalidateDomainList)).toHaveBeenCalledWith('u3');
+        expect(vi.mocked(invalidateScansList)).toHaveBeenCalledWith('u1');
+        expect(vi.mocked(invalidateScansList)).toHaveBeenCalledWith('u2');
+        expect(vi.mocked(invalidateScansList)).toHaveBeenCalledWith('u3');
     });
 
     it('passes fillEmpty mode from JSON body', async () => {
