@@ -18,7 +18,7 @@ export async function POST(
     if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
-    const rl = checkRateLimit(`classify:${user.id}`, 'default');
+    const rl = await checkRateLimit(`classify:${user.id}`, 'default');
     if (!rl.allowed) {
         return apiError(
             'Too many requests. Please try again later.',

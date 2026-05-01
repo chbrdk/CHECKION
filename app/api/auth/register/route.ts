@@ -20,7 +20,7 @@ export async function POST(request: Request) {
         return apiError('Server misconfiguration: database not configured.', API_STATUS.UNAVAILABLE);
     }
     const ip = getClientIpForRateLimit(request);
-    const rl = checkRateLimit(`register:${ip}`, 'register');
+    const rl = await checkRateLimit(`register:${ip}`, 'register');
     if (!rl.allowed) {
         return apiError(
             'Too many registration attempts. Please try again later.',

@@ -31,12 +31,12 @@ describe('rate-limit', () => {
         __resetRateLimitStoresForTests();
 
         for (let i = 0; i < 3; i++) {
-            expect(checkRateLimit(`scan:user1`, 'default').allowed).toBe(true);
+            expect((await checkRateLimit(`scan:user1`, 'default')).allowed).toBe(true);
         }
-        expect(checkRateLimit(`scan:user1`, 'default').allowed).toBe(false);
+        expect((await checkRateLimit(`scan:user1`, 'default')).allowed).toBe(false);
 
-        expect(checkRateLimit(`register:203.0.113.1`, 'register').allowed).toBe(true);
-        expect(checkRateLimit(`register:203.0.113.1`, 'register').allowed).toBe(true);
-        expect(checkRateLimit(`register:203.0.113.1`, 'register').allowed).toBe(false);
+        expect((await checkRateLimit(`register:203.0.113.1`, 'register')).allowed).toBe(true);
+        expect((await checkRateLimit(`register:203.0.113.1`, 'register')).allowed).toBe(true);
+        expect((await checkRateLimit(`register:203.0.113.1`, 'register')).allowed).toBe(false);
     });
 });

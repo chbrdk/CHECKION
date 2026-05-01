@@ -51,7 +51,14 @@ import {
     LAYOUT_MAX_CONTENT_WIDTH_PX,
     APP_LAYOUT_INNER_BORDER_WIDTH_PX,
     PUPPETEER_PROTOCOL_TIMEOUT_MS,
+    ENV_REDIS_URL,
 } from '@/lib/constants';
+
+describe('Redis env key', () => {
+    it('ENV_REDIS_URL matches process.env name', () => {
+        expect(ENV_REDIS_URL).toBe('REDIS_URL');
+    });
+});
 
 describe('Puppeteer config', () => {
     it('PUPPETEER_PROTOCOL_TIMEOUT_MS is at least 60s', () => {

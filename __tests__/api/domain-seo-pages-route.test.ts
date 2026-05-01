@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/lib/rate-limit', () => ({
-    checkRateLimit: () => ({ allowed: true, remaining: 999 }),
+    checkRateLimit: async () => ({ allowed: true, remaining: 999 }),
     getClientIpForRateLimit: () => '127.0.0.1',
 }));
 vi.mock('@/lib/auth-api-token', () => ({

@@ -34,7 +34,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
     const viewer = await getRequestUser(req);
     if (!viewer && !isAdminApiRequest(req)) return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
 
-    const rl = checkRateLimit(`domain-seo-pages:${viewer?.id ?? 'admin-api'}`, 'default');
+    const rl = await checkRateLimit(`domain-seo-pages:${viewer?.id ?? 'admin-api'}`, 'default');
     if (!rl.allowed) {
         return apiError(
             'Too many requests. Please try again later.',
