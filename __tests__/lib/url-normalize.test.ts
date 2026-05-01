@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeScanUrl, toScanStartUrl } from '@/lib/url-normalize';
+import { ensureUrlWithScheme, normalizeScanUrl, toScanStartUrl } from '@/lib/url-normalize';
 
 describe('toScanStartUrl', () => {
     it('returns null for empty input', () => {
@@ -19,6 +19,18 @@ describe('toScanStartUrl', () => {
 
     it('trims whitespace', () => {
         expect(toScanStartUrl('  c.test  ')).toBe('https://c.test');
+    });
+});
+
+describe('ensureUrlWithScheme', () => {
+    it('returns empty string for empty input', () => {
+        expect(ensureUrlWithScheme('')).toBe('');
+        expect(ensureUrlWithScheme('  ')).toBe('');
+    });
+
+    it('matches toScanStartUrl for non-empty', () => {
+        expect(ensureUrlWithScheme('url.de')).toBe('https://url.de');
+        expect(ensureUrlWithScheme('www.url.de')).toBe('https://www.url.de');
     });
 });
 

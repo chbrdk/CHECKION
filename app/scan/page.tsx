@@ -37,6 +37,7 @@ import {
     pathResults,
     pathScanDomain,
 } from '@/lib/constants';
+import { ensureUrlWithScheme } from '@/lib/url-normalize';
 
 export default function ScanPage() {
     const router = useRouter();
@@ -99,13 +100,16 @@ export default function ScanPage() {
 
     const handleScan = async () => {
         if (!url.trim()) return;
+        const urlForRequest = ensureUrlWithScheme(url);
+        if (!urlForRequest) return;
+        if (urlForRequest !== url) setUrl(urlForRequest);
         if (scanMode === 'journey' && !task.trim()) return;
         setError(null);
         setScanning(true);
 
         try {
             if (scanMode === 'geoEeat') {
-                const body: { url: string; runCompetitive?: boolean; competitors?: string[]; queries?: string[]; projectId?: string | null } = { url: url.trim() };
+                const body: { url: string; runCompetitive?: boolean; competitors?: string[]; queries?: string[]; projectId?: string | null } = { url: urlForRequest };
                 if (geoEeatCompetitive) {
                     body.runCompetitive = true;
                     body.competitors = geoEeatCompetitors.trim().split(/\n/).map((s) => s.trim()).filter(Boolean);
@@ -131,7 +135,7 @@ export default function ScanPage() {
                 const res = await fetch(apiScanJourneyAgentCreate, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: url.trim(), task: task.trim(), ...(selectedProjectId && { projectId: selectedProjectId }) }),
+                    body: JSON.stringify({ url: urlForRequest, task: task.trim(), ...(selectedProjectId && { projectId: selectedProjectId }) }),
                 });
                 const data = await res.json();
                 if (res.status === 501) {
@@ -152,7 +156,7 @@ export default function ScanPage() {
                 const res = await fetch(apiScanCreate, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: url.trim(), standard, runners: selectedRunners, ...(targetRegion.trim() && { targetRegion: targetRegion.trim() }), ...(selectedProjectId && { projectId: selectedProjectId }) }),
+                    body: JSON.stringify({ url: urlForRequest, standard, runners: selectedRunners, ...(targetRegion.trim() && { targetRegion: targetRegion.trim() }), ...(selectedProjectId && { projectId: selectedProjectId }) }),
                 });
 
                 const data = await res.json();
@@ -174,7 +178,7 @@ export default function ScanPage() {
                 const res = await fetch(apiScanDomainCreate, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: url.trim(), ...(selectedProjectId && { projectId: selectedProjectId }) }),
+                    body: JSON.stringify({ url: urlForRequest, ...(selectedProjectId && { projectId: selectedProjectId }) }),
                 });
 
                 const data = await res.json();
@@ -187,7 +191,7 @@ export default function ScanPage() {
                 // Redirect to the Domain Scan Progress page
                 // We pass the URL parameter so the page knows what we are looking for, 
                 // but since we already started it, let's redirect to monitoring
-                router.push(pathScanDomain({ url: url.trim() }));
+                router.push(pathScanDomain({ url: urlForRequest }));
             }
 
         } catch (err) {
@@ -265,6 +269,11 @@ export default function ScanPage() {
                             placeholder={scanMode === 'single' ? t('scan.urlPlaceholderSingle') : scanMode === 'deep' ? t('scan.urlPlaceholderDeep') : scanMode === 'geoEeat' ? t('scan.urlPlaceholderSingle') : 'https://example.com'}
                             value={url}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUrl(e.target.value)}
+                            onBlur={() => {
+                                if (!url.trim() || scanning) return;
+                                const next = ensureUrlWithScheme(url);
+                                if (next && next !== url) setUrl(next);
+                            }}
                             disabled={scanning}
                             onKeyDown={(e: React.KeyboardEvent) => e.key === 'Enter' && handleScan()}
                             autoFocus
@@ -319,6 +328,9 @@ export default function ScanPage() {
                                             disabled={!url.trim() || scanning || geoEeatSuggesting}
                                             onClick={async () => {
                                                 if (!url.trim()) return;
+                                                const suggestUrl = ensureUrlWithScheme(url);
+                                                if (!suggestUrl) return;
+                                                if (suggestUrl !== url) setUrl(suggestUrl);
                                                 setGeoEeatSuggestError(null);
                                                 setGeoEeatSuggestMessage(null);
                                                 setGeoEeatSuggesting(true);
@@ -328,7 +340,7 @@ export default function ScanPage() {
                                                     const res = await fetch(apiScanGeoEeatSuggestQueries, {
                                                         method: 'POST',
                                                         headers: { 'Content-Type': 'application/json' },
-                                                        body: JSON.stringify({ url: url.trim() }),
+                                                        body: JSON.stringify({ url: suggestUrl }),
                                                         signal: controller.signal,
                                                     });
                                                     clearTimeout(timeoutId);
