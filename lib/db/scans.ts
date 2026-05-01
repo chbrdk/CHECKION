@@ -357,6 +357,18 @@ export async function getDomainScan(id: string, userId: string): Promise<DomainS
     return rows[0].payload as unknown as DomainScanResult;
 }
 
+/** DB `project_id` for a domain scan (not stored inside JSON payload). */
+export async function getDomainScanProjectId(id: string, userId: string): Promise<string | null> {
+    const db = getDb();
+    const rows = await db
+        .select({ projectId: domainScans.projectId })
+        .from(domainScans)
+        .where(and(eq(domainScans.id, id), eq(domainScans.userId, userId)))
+        .limit(1);
+    const pid = rows[0]?.projectId;
+    return pid != null && pid !== '' ? pid : null;
+}
+
 /** Returns domain scan payload, project link, and project classification fields (when joined). */
 export async function getDomainScanWithProjectId(
     id: string,

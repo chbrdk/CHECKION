@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { NextResponse } from 'next/server';
 import { apiError, API_STATUS } from './api-error-handler';
 import { isSafeUrlForServerFetch } from './url-safety';
+import { projectIndustryApiZod } from './industry-pool';
 
 /** URL string that must be valid HTTP/HTTPS */
 export const urlSchema = z
@@ -171,14 +172,13 @@ export const journeysBodySchema = z.object({
   name: z.string().optional(),
 });
 
-const projectIndustrySchema = z.string().max(128).optional().nullable();
 const projectTagsSchema = z.array(z.string().trim().min(1).max(48)).max(32).optional();
 
 /** POST /api/projects (create project) */
 export const projectCreateBodySchema = z.object({
   name: z.string().min(1, 'Name is required'),
   domain: z.string().optional().nullable(),
-  industry: projectIndustrySchema,
+  industry: projectIndustryApiZod,
   tags: projectTagsSchema,
 });
 
@@ -186,7 +186,7 @@ export const projectCreateBodySchema = z.object({
 export const projectUpdateBodySchema = z.object({
   name: z.string().min(1).optional(),
   domain: z.string().optional().nullable(),
-  industry: projectIndustrySchema,
+  industry: projectIndustryApiZod,
   valueProposition: z.string().max(2000).optional().nullable(),
   competitors: z.array(z.string().trim().min(1)).optional(),
   geoQueries: z.array(z.string().trim().min(1)).optional(),

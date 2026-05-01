@@ -52,11 +52,16 @@ import {
     APP_LAYOUT_INNER_BORDER_WIDTH_PX,
     PUPPETEER_PROTOCOL_TIMEOUT_MS,
     ENV_REDIS_URL,
+    ENV_CHECKION_DISABLE_REDIS_RATE_LIMIT,
 } from '@/lib/constants';
 
 describe('Redis env key', () => {
     it('ENV_REDIS_URL matches process.env name', () => {
         expect(ENV_REDIS_URL).toBe('REDIS_URL');
+    });
+
+    it('ENV_CHECKION_DISABLE_REDIS_RATE_LIMIT matches process.env name', () => {
+        expect(ENV_CHECKION_DISABLE_REDIS_RATE_LIMIT).toBe('CHECKION_DISABLE_REDIS_RATE_LIMIT');
     });
 });
 

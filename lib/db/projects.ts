@@ -5,7 +5,8 @@
 import { eq, and, desc } from 'drizzle-orm';
 import { getDb } from './index';
 import { projects } from './schema';
-import { normalizeIndustry, normalizeTagList } from '@/lib/tag-utils';
+import { normalizeTagList } from '@/lib/tag-utils';
+import { normalizeStoredProjectIndustry } from '@/lib/industry-pool';
 
 export interface ProjectRow {
     id: string;
@@ -61,7 +62,7 @@ export async function insertProject(
         userId,
         name: data.name,
         domain: data.domain ?? null,
-        industry: normalizeIndustry(data.industry ?? undefined),
+        industry: normalizeStoredProjectIndustry(data.industry ?? undefined),
         valueProposition: data.valueProposition ?? null,
         competitors,
         geoQueries,
@@ -111,7 +112,7 @@ export async function updateProject(
         .set({
             ...(data.name !== undefined && { name: data.name }),
             ...(data.domain !== undefined && { domain: data.domain }),
-            ...(data.industry !== undefined && { industry: normalizeIndustry(data.industry ?? undefined) }),
+            ...(data.industry !== undefined && { industry: normalizeStoredProjectIndustry(data.industry ?? undefined) }),
             ...(data.valueProposition !== undefined && { valueProposition: data.valueProposition }),
             ...(data.competitors !== undefined && { competitors: data.competitors }),
             ...(data.geoQueries !== undefined && { geoQueries: data.geoQueries }),

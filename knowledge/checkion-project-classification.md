@@ -1,11 +1,28 @@
 # Projekt- & Deep-Scan-Klassifizierung
 
+## Branchen-Pool
+
+Zentrale Liste: **`lib/industry-pool.ts`** (`INDUSTRY_POOL`, stabile englische **IDs** wie `software_saas`, `healthcare_medical`). Anzeige: i18n `industryPool.<id>` (DE/EN). In der DB steht die **ID** (oder historischer Freitext bis zur Migration).
+
+API (`POST`/`PATCH` Projekt) akzeptiert nur **Pool-IDs** oder `null`. Auto-Inferenz (LLM) wählt ebenfalls nur IDs.
+
 ## Datenbank
 
-- **`projects`**: `industry` (text, optional), `tags` (jsonb `string[]`, normalisiert).
+- **`projects`**: `industry` (text, optional; bevorzugt Pool-ID), `tags` (jsonb `string[]`, normalisiert).
 - **`domain_scans`**: `tags` (jsonb `string[]`) für Scan-spezifische Tags.
 
 Migration: `lib/db/migrations/0014_project_industry_domain_scan_tags.sql`.
+
+## Automatische Branche (`projects.industry`)
+
+Wenn ein Deep Scan **einem Projekt zugeordnet** ist und `projects.industry` noch **leer** ist (optional: Überschreiben per Env), führt CHECKION **einen Haiku-Aufruf** aus (`lib/llm/project-industry-infer.ts`): Eingabe sind Domain-Hostname, Projektname und die **gerollten Top-Themen** (`aggregated.pageClassification.topThemes`, nach optionalem Rollup-Refine). Ausgabe ist **ein** kurzer Branchen-String (wie manuell gepflegt).
+
+- **Trigger:** nach erfolgreichem Deep-Scan-Abschluss (`lib/domain-scan-start.ts`), sofern **kein** `classifyPageTopics` — sonst erst nach dem **Seiten-Klassifikations-Job** (`lib/domain-scan-page-classification-job.ts`), damit die Themenbasis dichter ist.
+- **Abschalten:** `CHECKION_DISABLE_AUTO_PROJECT_INDUSTRY=1`
+- **Bestehende Branche überschreiben:** `CHECKION_AUTO_INDUSTRY_OVERWRITE=1` (Vorsicht: erneuter Scan triggert erneut).
+- **Voraussetzungen:** `ANTHROPIC_API_KEY`, mindestens **2** Top-Themen, sonst kein Aufruf.
+
+Details: `knowledge/checkion-auto-project-industry.md`.
 
 ## Normalisierung (`lib/tag-utils.ts`)
 

@@ -40,6 +40,7 @@ import type { AggregatedPageClassification } from '@/lib/types';
 import { normalizeDomain } from '@/lib/domain-normalize';
 import { toScanStartUrl } from '@/lib/url-normalize';
 import { parseTagsFromInput } from '@/lib/tag-utils';
+import { INDUSTRY_POOL, isIndustryPoolId } from '@/lib/industry-pool';
 
 interface ProjectData {
     id: string;
@@ -141,14 +142,18 @@ export default function ProjectDetailPage() {
         setClassificationSaving(true);
         try {
             const tags = parseTagsFromInput(classificationTagsStr);
+            const ind = classificationIndustry.trim();
+            const body: { tags: string[]; industry?: string | null } = { tags };
+            if (ind === '') {
+                body.industry = null;
+            } else if (isIndustryPoolId(ind)) {
+                body.industry = ind;
+            }
             const res = await fetch(apiProject(id), {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'same-origin',
-                body: JSON.stringify({
-                    industry: classificationIndustry.trim() || null,
-                    tags,
-                }),
+                body: JSON.stringify(body),
             });
             if (res.ok) await loadProject();
         } catch {
@@ -630,11 +635,41 @@ export default function ProjectDetailPage() {
                         <MsqdxTypography variant="caption" sx={{ display: 'block', mb: 1, color: 'var(--color-text-muted-on-light)' }}>
                             {t('projects.classificationTitle')}
                         </MsqdxTypography>
-                        <MsqdxFormField
-                            label={t('projects.industryLabel')}
-                            value={classificationIndustry}
-                            onChange={(e) => setClassificationIndustry((e.target as HTMLInputElement).value)}
-                        />
+                        <Typography
+                            variant="caption"
+                            sx={{ display: 'block', mb: 0.5, color: 'var(--color-text-muted-on-light)' }}
+                        >
+                            {t('projects.industryLabel')}
+                        </Typography>
+                        <select
+                            aria-label={t('projects.industryLabel')}
+                            value={isIndustryPoolId(classificationIndustry) ? classificationIndustry : ''}
+                            onChange={(e) => setClassificationIndustry(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '10px 12px',
+                                borderRadius: 8,
+                                border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                            }}
+                        >
+                            <option value="">{t('projects.industrySelectPlaceholder')}</option>
+                            {INDUSTRY_POOL.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                    {t(`industryPool.${p.id}`)}
+                                </option>
+                            ))}
+                        </select>
+                        {!isIndustryPoolId(classificationIndustry) && classificationIndustry.trim() ? (
+                            <MsqdxTypography
+                                variant="caption"
+                                sx={{ display: 'block', mt: 0.5, color: 'var(--color-text-muted-on-light)' }}
+                            >
+                                {t('projects.industryLegacyHint').replace(
+                                    '{{value}}',
+                                    classificationIndustry.trim()
+                                )}
+                            </MsqdxTypography>
+                        ) : null}
                         <Box sx={{ mt: 1.5 }}>
                             <MsqdxFormField
                                 label={t('projects.tagsLabel')}

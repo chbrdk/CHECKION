@@ -4,7 +4,7 @@
  */
 
 import { createClient, type RedisClientType } from 'redis';
-import { ENV_REDIS_URL } from '@/lib/constants';
+import { ENV_CHECKION_DISABLE_REDIS_RATE_LIMIT, ENV_REDIS_URL } from '@/lib/constants';
 import type { RateLimitBucket } from '@/lib/rate-limit-bucket';
 
 export type RateLimitRedisResult = {
@@ -34,31 +34,101 @@ redis.call('PEXPIRE', key, windowMs)
 return {1, 0, max - cnt - 1}
 `;
 
+const CIRCUIT_MS = Math.max(
+    60_000,
+    Math.min(3_600_000, parseInt(process.env.CHECKION_REDIS_RATE_LIMIT_CIRCUIT_MS ?? '300000', 10) || 300_000)
+);
+
 let client: RedisClientType | null = null;
 let connectPromise: Promise<RedisClientType | null> | null = null;
+/** While `Date.now() < this`, skip Redis (avoids connect/reconnect log spam on DNS/network failures). */
+let redisCircuitOpenUntil = 0;
+
+function isRedisRateLimitDisabled(): boolean {
+    const v = process.env[ENV_CHECKION_DISABLE_REDIS_RATE_LIMIT]?.trim().toLowerCase();
+    return v === '1' || v === 'true' || v === 'yes';
+}
 
 function getRedisUrl(): string | undefined {
+    if (isRedisRateLimitDisabled()) return undefined;
     const u = process.env[ENV_REDIS_URL]?.trim();
     return u || undefined;
+}
+
+function redisHostForLog(url: string): string {
+    try {
+        return new URL(url).hostname;
+    } catch {
+        return 'invalid-redis-url';
+    }
+}
+
+/** Errors that usually mean misconfiguration or unreachable Redis — stop retrying for a while. */
+function shouldTripCircuit(message: string): boolean {
+    return /EAI_AGAIN|ENOTFOUND|ECONNREFUSED|ETIMEDOUT|getaddrinfo|WRONGPASS|NOAUTH/i.test(message);
+}
+
+function tearDownInstance(c: RedisClientType): void {
+    try {
+        c.removeAllListeners('error');
+    } catch {
+        /* ignore */
+    }
+    void c.disconnect().catch(() => {});
+}
+
+function detachClient(c: RedisClientType | null): void {
+    if (!c) return;
+    tearDownInstance(c);
+    if (client === c) client = null;
+}
+
+/**
+ * Open circuit: no Redis attempts until cooldown. Single WARN per open (no per-tick spam).
+ */
+function scheduleCircuit(reason: string): void {
+    const now = Date.now();
+    if (now < redisCircuitOpenUntil) return;
+    redisCircuitOpenUntil = now + CIRCUIT_MS;
+    const url = process.env[ENV_REDIS_URL]?.trim() ?? '';
+    const host = url ? redisHostForLog(url) : '(no-url)';
+    console.warn(
+        `[CHECKION] Redis rate-limit: ${reason} (host: ${host}). Using in-memory limits for ~${Math.round(
+            CIRCUIT_MS / 60_000
+        )}m. Fix REDIS_URL / DNS / firewall, unset REDIS_URL, or set ${ENV_CHECKION_DISABLE_REDIS_RATE_LIMIT}=1.`
+    );
 }
 
 async function getRedisClient(): Promise<RedisClientType | null> {
     const url = getRedisUrl();
     if (!url) return null;
+    if (Date.now() < redisCircuitOpenUntil) return null;
     if (client?.isReady) return client;
     if (connectPromise) return connectPromise;
     connectPromise = (async () => {
+        let c: RedisClientType | null = null;
         try {
-            const c = createClient({ url });
-            c.on('error', (err) => {
-                console.error('[CHECKION] Redis rate-limit client error:', err.message);
+            c = createClient({ url }) as RedisClientType;
+            const attached = c;
+            attached.on('error', (err) => {
+                const msg = err?.message ?? String(err);
+                detachClient(attached);
+                connectPromise = null;
+                if (shouldTripCircuit(msg)) scheduleCircuit(msg);
+                else console.error('[CHECKION] Redis rate-limit client error:', msg);
             });
-            await c.connect();
-            client = c as RedisClientType;
+            await attached.connect();
+            if (Date.now() < redisCircuitOpenUntil) {
+                detachClient(attached);
+                return null;
+            }
+            client = attached;
             return client;
         } catch (e) {
-            console.error('[CHECKION] Redis rate-limit connect failed:', e instanceof Error ? e.message : e);
-            client = null;
+            if (c) detachClient(c);
+            const msg = e instanceof Error ? e.message : String(e);
+            if (shouldTripCircuit(msg)) scheduleCircuit(msg);
+            else console.error('[CHECKION] Redis rate-limit connect failed:', msg);
             return null;
         } finally {
             connectPromise = null;
@@ -70,7 +140,8 @@ async function getRedisClient(): Promise<RedisClientType | null> {
 /** @internal tests */
 export function __resetRedisClientForTests(): void {
     connectPromise = null;
-    client = null;
+    redisCircuitOpenUntil = 0;
+    detachClient(client);
 }
 
 /**
@@ -84,7 +155,7 @@ export async function checkRateLimitRedis(
     windowMs: number
 ): Promise<RateLimitRedisResult | null> {
     const c = await getRedisClient();
-    if (!c) return null;
+    if (!c?.isReady) return null;
     const now = Date.now();
     const member = `${now}-${Math.random().toString(36).slice(2, 12)}`;
     const redisKey = `checkion:rl:${bucket}:${storageKey}`;
@@ -108,7 +179,11 @@ export async function checkRateLimitRedis(
             remaining: Math.max(0, remaining),
         };
     } catch (e) {
-        console.error('[CHECKION] Redis rate-limit eval failed:', e instanceof Error ? e.message : e);
+        const msg = e instanceof Error ? e.message : String(e);
+        detachClient(c);
+        connectPromise = null;
+        if (shouldTripCircuit(msg)) scheduleCircuit(msg);
+        else console.error('[CHECKION] Redis rate-limit eval failed:', msg);
         return null;
     }
 }

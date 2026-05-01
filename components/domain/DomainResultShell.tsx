@@ -11,6 +11,7 @@ import { InfoTooltip } from '@/components/InfoTooltip';
 import { useDomainScan } from '@/context/DomainScanContext';
 import { apiScanDomainSummary, LAYOUT_MAX_CONTENT_WIDTH_PX, PATH_HOME } from '@/lib/constants';
 import { MSQDX_BUTTON_THEME_ACCENT_SX } from '@/lib/theme-accent';
+import { industryDisplayLabel } from '@/lib/industry-pool';
 import { DomainResultNav } from '@/components/domain/DomainResultNav';
 
 const shellContainerSx = {
@@ -66,11 +67,12 @@ export function DomainResultShell({ children }: { children: React.ReactNode }) {
         year: 'numeric',
     });
 
-    const industry = result.industry?.trim() ?? '';
+    const industryRaw = result.industry?.trim() ?? '';
+    const industry = industryDisplayLabel(industryRaw || null, t);
     const mergedTags = [
         ...new Set([...(result.projectTags ?? []), ...(result.scanTags ?? [])]),
     ];
-    const showClassification = Boolean(industry || mergedTags.length > 0);
+    const showClassification = Boolean(industryRaw || mergedTags.length > 0);
 
     return (
         <Box sx={shellContainerSx}>

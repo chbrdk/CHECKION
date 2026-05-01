@@ -590,6 +590,9 @@ export const ENV_CHECKION_SCAN_DEBUG = 'CHECKION_SCAN_DEBUG';
 /** When set (e.g. `redis://redis:6379`), rate limits use Redis so multiple app instances share counters. Falls back to in-memory if unset or connection fails. */
 export const ENV_REDIS_URL = 'REDIS_URL';
 
+/** When `1`/`true`/`yes`, never connects to Redis for rate limiting (in-memory only). Use if `REDIS_URL` points at an unreachable host and logs spam `EAI_AGAIN` / `getaddrinfo`. */
+export const ENV_CHECKION_DISABLE_REDIS_RATE_LIMIT = 'CHECKION_DISABLE_REDIS_RATE_LIMIT';
+
 /** Optional base URL for the UX Journey Agent (Python/Browser Use). If set, POST /api/scan/journey-agent forwards to this service. On Coolify: use internal service URL (e.g. http://ux-journey-agent:8320). */
 export const ENV_UX_JOURNEY_AGENT_URL = 'UX_JOURNEY_AGENT_URL';
 
@@ -606,3 +609,11 @@ export const OUTLINE_INITIAL_VISIBLE = 20;
 export const STRUCTURE_MAP_HEADINGS_INITIAL = 15;
 /** Initial number of page index regions shown before "show more". */
 export const PAGE_INDEX_INITIAL_VISIBLE = 10;
+
+// ─── Project industry taxonomy (IDs in DB; labels in locales `industryPool.*`) ─
+export {
+    INDUSTRY_POOL,
+    INDUSTRY_POOL_IDS,
+    isIndustryPoolId,
+    type IndustryPoolId,
+} from '@/lib/industry-pool';

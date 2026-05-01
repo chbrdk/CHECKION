@@ -25,6 +25,7 @@ import {
     pathDomain,
 } from '@/lib/constants';
 import { parseTagsFromInput } from '@/lib/tag-utils';
+import { INDUSTRY_POOL, industryDisplayLabel } from '@/lib/industry-pool';
 import type { DomainScanStatus } from '@/lib/types';
 
 type Row = {
@@ -276,13 +277,29 @@ export default function DeepScansPage() {
                             ))}
                         </select>
                     </Box>
-                    <Box sx={{ flex: '1 1 140px', minWidth: 120 }}>
-                        <MsqdxFormField
-                            label={t('deepScans.filterIndustry')}
+                    <Box sx={{ flex: '1 1 200px', minWidth: 160 }}>
+                        <Typography component="label" variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                            {t('deepScans.filterIndustry')}
+                        </Typography>
+                        <select
+                            aria-label={t('deepScans.filterIndustry')}
                             value={industryInput}
-                            onChange={(e) => setIndustryInput((e.target as HTMLInputElement).value)}
+                            onChange={(e) => setIndustryInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
-                        />
+                            style={{
+                                width: '100%',
+                                padding: '10px 12px',
+                                borderRadius: 8,
+                                border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                            }}
+                        >
+                            <option value="">{t('deepScans.filterIndustryAll')}</option>
+                            {INDUSTRY_POOL.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                    {t(`industryPool.${p.id}`)}
+                                </option>
+                            ))}
+                        </select>
                     </Box>
                     <Box sx={{ flex: '1 1 120px', minWidth: 100 }}>
                         <MsqdxFormField
@@ -368,8 +385,13 @@ export default function DeepScansPage() {
                                         </TableCell>
                                     ) : null}
                                     <TableCell>
-                                        <Typography variant="body2" noWrap sx={{ maxWidth: 120 }} title={r.industry ?? ''}>
-                                            {r.industry?.trim() ? r.industry : '—'}
+                                        <Typography
+                                            variant="body2"
+                                            noWrap
+                                            sx={{ maxWidth: 160 }}
+                                            title={r.industry?.trim() ? industryDisplayLabel(r.industry, t) : ''}
+                                        >
+                                            {r.industry?.trim() ? industryDisplayLabel(r.industry, t) : '—'}
                                         </Typography>
                                     </TableCell>
                                     <TableCell>
