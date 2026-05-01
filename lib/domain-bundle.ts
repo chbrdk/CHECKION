@@ -11,6 +11,9 @@ export type DomainBundleApiResponse = DomainSummaryApiResponse & {
     projectId: string | null;
     /** Total rows for slim table / pagination (DB or payload). */
     totalSlimRows: number;
+    industry: string | null;
+    projectTags: string[];
+    scanTags: string[];
 };
 
 export async function buildDomainBundleForOwner(domainScanId: string, ownerUserId: string): Promise<DomainBundleApiResponse | null> {
@@ -26,6 +29,9 @@ export async function buildDomainBundleForOwner(domainScanId: string, ownerUserI
         ...light,
         projectId: row.projectId,
         totalSlimRows,
+        industry: row.industry,
+        projectTags: row.projectTags,
+        scanTags: row.scanTags,
     };
 }
 

@@ -6,6 +6,8 @@
 
 **Kein** LLM, **kein** Crawl — nur SQL + Cache.
 
+**Branche (`industry`)** wird **nicht** kopiert; die steht nur auf `projects`. Im UI erscheint sie, wenn der Scan einem Projekt zugeordnet ist und dort eine Branche gespeichert ist (Deep-Scan-Liste und Domain-Ergebnis-Kopf).
+
 ## Trigger beim Container-Start
 
 Im Runner-Image ist das Script vorhanden. Der Entrypoint kann es optional vor `npm run start` ausführen:

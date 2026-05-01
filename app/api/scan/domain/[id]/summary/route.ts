@@ -35,6 +35,11 @@ export async function GET(
     if (!row) {
         return apiError('Scan not found', API_STATUS.NOT_FOUND, { code: 'DOMAIN_SCAN_NOT_FOUND' });
     }
+    const classification = {
+        industry: row.industry,
+        projectTags: row.projectTags,
+        scanTags: row.scanTags,
+    };
     const summary = buildDomainSummary(row.result);
     // Important: do not ship huge issue arrays in the summary response.
     // The "List & Details" UI is served via paged APIs backed by domain_* tables.
@@ -57,19 +62,25 @@ export async function GET(
         if (!seo) {
             return jsonPrivate({
                 projectId: row.projectId,
+                ...classification,
                 aggregated: {},
                 summaryMeta: { seoPageRowsOmitted: false },
             });
         }
         return jsonPrivate({
             projectId: row.projectId,
+            ...classification,
             aggregated: { seo },
             summaryMeta: { seoPageRowsOmitted: false },
         });
     }
     const light = url.searchParams.get('light') === '1';
     const body = light
-        ? { ...toLightDomainSummaryApiPayload(safeSummary as DomainSummaryResponse), projectId: row.projectId }
-        : { ...safeSummary, projectId: row.projectId };
+        ? {
+              ...toLightDomainSummaryApiPayload(safeSummary as DomainSummaryResponse),
+              projectId: row.projectId,
+              ...classification,
+          }
+        : { ...safeSummary, projectId: row.projectId, ...classification };
     return jsonPrivate(body);
 }

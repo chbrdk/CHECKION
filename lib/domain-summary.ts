@@ -77,6 +77,11 @@ export interface DomainSummaryApiResponse extends DomainSummaryResponse {
     /** Present on GET .../bundle and some summary responses. */
     totalSlimRows?: number;
     projectId?: string | null;
+    /** From linked `projects.industry` when `project_id` is set. */
+    industry?: string | null;
+    projectTags?: string[];
+    /** `domain_scans.tags` (scan-level). */
+    scanTags?: string[];
 }
 
 /** True if payload has precomputed aggregated (new format). */

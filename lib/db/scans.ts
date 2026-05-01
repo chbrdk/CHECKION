@@ -357,15 +357,38 @@ export async function getDomainScan(id: string, userId: string): Promise<DomainS
     return rows[0].payload as unknown as DomainScanResult;
 }
 
-/** Returns domain scan payload and projectId for API response. */
-export async function getDomainScanWithProjectId(id: string, userId: string): Promise<{ result: DomainScanResult; projectId: string | null } | null> {
+/** Returns domain scan payload, project link, and project classification fields (when joined). */
+export async function getDomainScanWithProjectId(
+    id: string,
+    userId: string
+): Promise<{
+    result: DomainScanResult;
+    projectId: string | null;
+    industry: string | null;
+    projectTags: string[];
+    scanTags: string[];
+} | null> {
     const db = getDb();
-    const rows = await db.select({ payload: domainScans.payload, projectId: domainScans.projectId })
-        .from(domainScans).where(and(eq(domainScans.id, id), eq(domainScans.userId, userId))).limit(1);
+    const rows = await db
+        .select({
+            payload: domainScans.payload,
+            projectId: domainScans.projectId,
+            scanTagsCol: domainScans.tags,
+            industry: projects.industry,
+            projectTagsCol: projects.tags,
+        })
+        .from(domainScans)
+        .leftJoin(projects, eq(domainScans.projectId, projects.id))
+        .where(and(eq(domainScans.id, id), eq(domainScans.userId, userId)))
+        .limit(1);
     if (rows.length === 0) return null;
+    const r = rows[0];
     return {
-        result: rows[0].payload as unknown as DomainScanResult,
-        projectId: rows[0].projectId ?? null,
+        result: r.payload as unknown as DomainScanResult,
+        projectId: r.projectId ?? null,
+        industry: r.industry ?? null,
+        projectTags: coerceJsonStringArray(r.projectTagsCol),
+        scanTags: coerceJsonStringArray(r.scanTagsCol),
     };
 }
 

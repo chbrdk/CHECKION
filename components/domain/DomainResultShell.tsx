@@ -26,7 +26,8 @@ const shellContainerSx = {
 export function DomainResultShell({ children }: { children: React.ReactNode }) {
     const { t, locale } = useI18n();
     const router = useRouter();
-    const { loadError, result, domainId, projectId, setProjectId, activeSection, fromProjectId, domainLinkQuery } = useDomainScan();
+    const { loadError, result, domainId, projectId, setProjectId, activeSection, fromProjectId, domainLinkQuery } =
+        useDomainScan();
 
     if (loadError) {
         return (
@@ -64,6 +65,12 @@ export function DomainResultShell({ children }: { children: React.ReactNode }) {
         month: 'long',
         year: 'numeric',
     });
+
+    const industry = result.industry?.trim() ?? '';
+    const mergedTags = [
+        ...new Set([...(result.projectTags ?? []), ...(result.scanTags ?? [])]),
+    ];
+    const showClassification = Boolean(industry || mergedTags.length > 0);
 
     return (
         <Box sx={shellContainerSx}>
@@ -109,6 +116,39 @@ export function DomainResultShell({ children }: { children: React.ReactNode }) {
                         </Box>
                     }
                 >
+                    {showClassification ? (
+                        <Box sx={{ pt: 0.5, pb: 0.5 }}>
+                            <MsqdxTypography
+                                variant="body2"
+                                sx={{ color: 'var(--color-text-secondary)', lineHeight: 1.5 }}
+                            >
+                                {industry ? (
+                                    <>
+                                        <Box component="span" sx={{ fontWeight: 600 }}>
+                                            {t('projects.industryLabel')}
+                                        </Box>
+                                        : {industry}
+                                    </>
+                                ) : null}
+                                {industry && mergedTags.length > 0 ? ' · ' : null}
+                                {mergedTags.length > 0 ? (
+                                    <>
+                                        <Box component="span" sx={{ fontWeight: 600 }}>
+                                            {t('deepScans.colTags')}
+                                        </Box>
+                                        : {mergedTags.join(', ')}
+                                    </>
+                                ) : null}
+                            </MsqdxTypography>
+                        </Box>
+                    ) : projectId ? (
+                        <MsqdxTypography
+                            variant="caption"
+                            sx={{ display: 'block', color: 'var(--color-text-secondary)', pt: 0.5 }}
+                        >
+                            {t('domainResult.classificationEmptyHint')}
+                        </MsqdxTypography>
+                    ) : null}
                     <Divider sx={{ borderColor: 'var(--color-secondary-dx-grey-light-tint)' }} />
                     <Box sx={{ pt: 1.5 }}>
                         <DomainResultNav

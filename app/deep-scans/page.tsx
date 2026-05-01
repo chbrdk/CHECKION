@@ -304,6 +304,9 @@ export default function DeepScansPage() {
                         {t('deepScans.compareNeedTwo')}
                     </Typography>
                 )}
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5, maxWidth: 720 }}>
+                    {t('deepScans.classificationListHint')}
+                </Typography>
             </MsqdxMoleculeCard>
 
             <MsqdxMoleculeCard title="" variant="flat" borderRadius="lg" footerDivider={false} sx={{ bgcolor: 'var(--color-card-bg)' }}>
