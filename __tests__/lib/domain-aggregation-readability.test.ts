@@ -23,7 +23,7 @@ function page(url: string, ux: Partial<NonNullable<ScanResult['ux']>>): ScanResu
         stats: { errors: 0, warnings: 0, notices: 0, total: 0 },
         issues: [],
         ux: { ...baseUx, ...ux },
-    } as ScanResult;
+    } as unknown as ScanResult;
 }
 
 /** Page with UX payload but no readability block (treated like missing score in aggregation). */
@@ -39,7 +39,7 @@ function pageWithoutReadability(url: string): ScanResult {
         stats: { errors: 0, warnings: 0, notices: 0, total: 0 },
         issues: [],
         ux: ux as NonNullable<ScanResult['ux']>,
-    } as ScanResult;
+    } as unknown as ScanResult;
 }
 
 describe('aggregateUx readability', () => {

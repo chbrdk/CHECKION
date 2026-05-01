@@ -95,7 +95,7 @@ describe('buildClassificationPayload', () => {
             runners: [],
             issues: [],
             passes: [],
-            stats: { errors: 0, warnings: 0, notices: 0 },
+            stats: { errors: 0, warnings: 0, notices: 0, total: 0 },
             durationMs: 0,
             score: 90,
             screenshot: '',
@@ -107,7 +107,7 @@ describe('buildClassificationPayload', () => {
                 h1: 'Example H1',
                 metaDescription: 'Short meta.',
             },
-        } as ScanResult;
+        } as unknown as ScanResult;
         const payload = buildClassificationPayload(result);
         expect(payload.url).toBe('https://example.com/page');
         expect(payload.title).toBe('Example Page');
@@ -126,13 +126,13 @@ describe('buildClassificationPayload', () => {
             runners: [],
             issues: [],
             passes: [],
-            stats: { errors: 0, warnings: 0, notices: 0 },
+            stats: { errors: 0, warnings: 0, notices: 0, total: 0 },
             durationMs: 0,
             score: 80,
             screenshot: '',
             performance: { ttfb: 0, fcp: 0, domLoad: 0, windowLoad: 0, lcp: 0 },
             eco: { co2: 0, grade: 'A', pageWeight: 0 },
-        } as ScanResult;
+        } as unknown as ScanResult;
         const payload = buildClassificationPayload(result);
         expect(payload.url).toBe('https://example.com');
         expect(payload.title).toBeUndefined();

@@ -8,7 +8,7 @@ import { apiError, handleApiError, API_STATUS } from '@/lib/api-error-handler';
 import { parseApiBody, scanBodySchema } from '@/lib/api-schemas';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { runScan } from '@/lib/scanner';
-import { addScan } from '@/lib/db/scans';
+import { insertScanSession, persistStandaloneScanRow } from '@/lib/db/scans';
 import { listCachedStandaloneScans, getCachedStandaloneScansCount, invalidateScansList } from '@/lib/cache';
 import type { Device } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
@@ -36,6 +36,15 @@ export async function POST(request: Request) {
         const groupId = uuidv4();
         const devices: Device[] = ['desktop', 'tablet', 'mobile'];
 
+        await insertScanSession({
+            id: groupId,
+            userId: user.id,
+            url: body.url,
+            projectId: body.projectId,
+            standard: body.standard ?? null,
+            runners: body.runners ?? null,
+        });
+
         // Run scans in parallel
         const results = await Promise.all(
             devices.map(device =>
@@ -52,11 +61,10 @@ export async function POST(request: Request) {
         );
 
         for (const result of results) {
-            await addScan(
-                user.id,
-                result,
-                body.projectId !== undefined ? { projectId: body.projectId } : undefined
-            );
+            await persistStandaloneScanRow(user.id, result, {
+                projectId: body.projectId,
+                scanSessionId: groupId,
+            });
         }
         invalidateScansList(user.id);
 

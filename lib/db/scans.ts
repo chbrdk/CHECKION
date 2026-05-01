@@ -2,10 +2,11 @@
 /*  CHECKION – Scan persistence (DB)                                   */
 /* ------------------------------------------------------------------ */
 
-import { eq, and, desc, isNull, count, sql, inArray, ilike } from 'drizzle-orm';
+import { eq, and, desc, isNull, count, sql, inArray, ilike, or } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 import { getDb } from './index';
-import { scans, domainScans, projects } from './schema';
+import { scans, domainScans, projects, scanSessions } from './schema';
+import { mergeScanResultPatch, normalizeScanResultForPersist } from '@/lib/scan-result-shape';
 import { coerceJsonStringArray, normalizeIndustry, normalizeTagFilter, normalizeTagList } from '@/lib/tag-utils';
 import { getProjectDomainScanReferences } from './project-domain-references';
 import type { ScanResult, DomainScanResult, DomainScanStatus } from '@/lib/types';
@@ -201,17 +202,65 @@ export async function listActiveDomainScansForProject(
     return Array.from(byId.values());
 }
 
-export async function addScan(userId: string, result: ScanResult, options?: { projectId?: string | null }): Promise<void> {
+/** Insert `scan_sessions` before persisting device rows (POST /api/scan). */
+export async function insertScanSession(row: {
+    id: string;
+    userId: string;
+    url: string;
+    projectId?: string | null;
+    standard?: string | null;
+    runners?: unknown;
+}): Promise<void> {
     const db = getDb();
+    await db.insert(scanSessions).values({
+        id: row.id,
+        userId: row.userId,
+        projectId: row.projectId ?? null,
+        url: row.url,
+        standard: row.standard ?? null,
+        runners: row.runners != null ? (row.runners as Record<string, unknown>) : null,
+    });
+}
+
+/**
+ * Persist one page scan row (standalone or domain crawl). Normalizes JSON + index columns.
+ * For POST /api/scan batches, pass `scanSessionId` equal to `result.groupId`.
+ */
+export async function addScan(
+    userId: string,
+    result: ScanResult,
+    options?: { projectId?: string | null; scanSessionId?: string | null }
+): Promise<void> {
+    const db = getDb();
+    const normalized = normalizeScanResultForPersist(result);
     await db.insert(scans).values({
-        id: result.id,
+        id: normalized.id,
         userId,
         projectId: options?.projectId ?? null,
-        url: result.url,
-        device: result.device,
-        groupId: result.groupId ?? null,
-        timestamp: result.timestamp,
-        result: result as unknown as Record<string, unknown>,
+        url: normalized.url,
+        device: normalized.device,
+        groupId: normalized.groupId ?? null,
+        scanSessionId: options?.scanSessionId ?? null,
+        timestamp: normalized.timestamp,
+        result: normalized as unknown as Record<string, unknown>,
+        resultSchemaVersion: normalized.scanSchemaVersion ?? null,
+        errorsCount: normalized.stats.errors,
+        warningsCount: normalized.stats.warnings,
+        noticesCount: normalized.stats.notices,
+        durationMs: normalized.durationMs,
+        score: Math.round(normalized.score),
+    });
+}
+
+/** Standalone-only: session row must already exist. */
+export async function persistStandaloneScanRow(
+    userId: string,
+    result: ScanResult,
+    options: { projectId?: string | null; scanSessionId: string }
+): Promise<void> {
+    await addScan(userId, result, {
+        projectId: options.projectId,
+        scanSessionId: options.scanSessionId,
     });
 }
 
@@ -252,9 +301,18 @@ export async function updateScanResult(id: string, userId: string, patch: Partia
     const rows = await db.select({ result: scans.result }).from(scans).where(and(eq(scans.id, id), eq(scans.userId, userId))).limit(1);
     if (rows.length === 0) return false;
     const current = rows[0].result as unknown as ScanResult;
-    const merged = { ...current, ...patch };
-    const updated = await db.update(scans)
-        .set({ result: merged as unknown as Record<string, unknown> })
+    const merged = mergeScanResultPatch(current, patch);
+    const updated = await db
+        .update(scans)
+        .set({
+            result: merged as unknown as Record<string, unknown>,
+            resultSchemaVersion: merged.scanSchemaVersion ?? null,
+            errorsCount: merged.stats.errors,
+            warningsCount: merged.stats.warnings,
+            noticesCount: merged.stats.notices,
+            durationMs: merged.durationMs,
+            score: Math.round(merged.score),
+        })
         .where(and(eq(scans.id, id), eq(scans.userId, userId)));
     return (updated.rowCount ?? 0) > 0;
 }
@@ -265,19 +323,34 @@ export async function listScans(userId: string): Promise<ScanResult[]> {
     return rows.map(r => r.result as unknown as ScanResult);
 }
 
+/** Rows that are not domain-crawl pages: `group_id` null or not a `domain_scans.id`. One list row per multi-device batch (`desktop` only when `group_id` set). */
+function standaloneScanListWhere(
+    userId: string,
+    projectId?: string | null
+): SQL {
+    const notDomainCrawlPage = or(
+        isNull(scans.groupId),
+        sql`NOT EXISTS (SELECT 1 FROM ${domainScans} WHERE ${domainScans.id} = ${scans.groupId})`
+    )!;
+    const oneDevicePerBatch = or(isNull(scans.groupId), eq(scans.device, 'desktop'))!;
+    if (projectId === undefined) {
+        return and(eq(scans.userId, userId), notDomainCrawlPage, oneDevicePerBatch)!;
+    }
+    if (projectId === null) {
+        return and(eq(scans.userId, userId), notDomainCrawlPage, oneDevicePerBatch, isNull(scans.projectId))!;
+    }
+    return and(eq(scans.userId, userId), notDomainCrawlPage, oneDevicePerBatch, eq(scans.projectId, projectId))!;
+}
+
 /** Only scans that are not part of a domain scan (standalone single-URL scans). Optional projectId filter. */
 export async function listStandaloneScans(userId: string, options?: { limit?: number; offset?: number; projectId?: string | null }): Promise<ScanResult[]> {
     const db = getDb();
-    const whereCond = options?.projectId === undefined
-        ? and(eq(scans.userId, userId), isNull(scans.groupId))
-        : options.projectId === null
-            ? and(eq(scans.userId, userId), isNull(scans.groupId), isNull(scans.projectId))
-            : and(eq(scans.userId, userId), isNull(scans.groupId), eq(scans.projectId, options.projectId));
+    const whereCond = standaloneScanListWhere(userId, options?.projectId);
     const base = db.select({ result: scans.result }).from(scans).where(whereCond).orderBy(desc(scans.timestamp));
     const rows = options?.limit != null || options?.offset != null
         ? await base.limit(options.limit ?? 10000).offset(options.offset ?? 0)
         : await base;
-    return rows.map(r => r.result as unknown as ScanResult);
+    return rows.map((r) => r.result as unknown as ScanResult);
 }
 
 /** All single-scan results belonging to a domain (deep) scan; for journey/buildPageContexts. */
@@ -291,11 +364,7 @@ export async function listScansByGroupId(userId: string, groupId: string): Promi
 
 export async function getStandaloneScansCount(userId: string, projectId?: string | null): Promise<number> {
     const db = getDb();
-    const whereCond = projectId === undefined
-        ? and(eq(scans.userId, userId), isNull(scans.groupId))
-        : projectId === null
-            ? and(eq(scans.userId, userId), isNull(scans.groupId), isNull(scans.projectId))
-            : and(eq(scans.userId, userId), isNull(scans.groupId), eq(scans.projectId, projectId));
+    const whereCond = standaloneScanListWhere(userId, projectId);
     const rows = await db.select({ count: count() }).from(scans).where(whereCond);
     return Number(rows[0]?.count ?? 0);
 }

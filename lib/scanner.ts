@@ -14,7 +14,8 @@ import { buildPageIndex } from './page-index';
 import { deduplicateIssues } from './issue-dedupe';
 import { computeGeoEeatPageScore } from './geo-eeat-page-score';
 import { writeScreenshot } from './screenshot-storage';
-import type { Issue, Runner, ScanResult, ScanStats, WcagStandard, Device, ScanOptions, SeoAudit } from './types';
+import type { Issue, Pass, Runner, ScanResult, ScanStats, WcagStandard, Device, ScanOptions, SeoAudit } from './types';
+import { normalizeScanResultForPersist } from '@/lib/scan-result-shape';
 import { scanDebugLog, scanDebugWarn } from './scan-debug-log';
 
 /**
@@ -381,7 +382,7 @@ export async function runScan(
         const issues = deduplicateIssues(rawIssues);
 
         // 3. Capture Passed Audits using axe-core directly
-        let passes: any[] = [];
+        let passes: Pass[] = [];
         try {
             scanDebugLog("Injecting axe-core...");
             // Resolve path relative to CWD (project root)
@@ -430,15 +431,15 @@ export async function runScan(
             const axe = axeResults as { passes?: Array<{ id: string; description: string; help: string; nodes: Array<{ html: string; target: string[]; failureSummary?: string }> }>; error?: string } | null;
             if (axe && axe.passes) {
                 scanDebugLog(`Found ${axe.passes.length} passed rules.`);
-                passes = axe.passes.map((p: any) => ({
-                    id: p.id,
-                    description: p.description,
-                    help: p.help,
-                    nodes: p.nodes.map((n: any) => ({
-                        html: n.html,
-                        target: n.target,
-                        failureSummary: n.failureSummary
-                    }))
+                passes = axe.passes.map((p) => ({
+                    id: String(p.id ?? ''),
+                    description: String(p.description ?? ''),
+                    help: String(p.help ?? ''),
+                    nodes: (p.nodes ?? []).map((n) => ({
+                        html: String(n.html ?? ''),
+                        target: Array.isArray(n.target) ? n.target.map(String) : [],
+                        ...(n.failureSummary != null ? { failureSummary: String(n.failureSummary) } : {}),
+                    })),
                 }));
             } else if (axe && axe.error) {
                 console.error("Axe run returned error:", axe.error);
@@ -1636,7 +1637,7 @@ export async function runScan(
             }
         }
 
-        return result;
+        return normalizeScanResultForPersist(result);
     } finally {
         await browser.close();
     }

@@ -42,6 +42,17 @@ export const projects = pgTable('projects', {
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+/** One multi-device standalone run (POST /api/scan); `id` matches `scans.group_id` for that batch. */
+export const scanSessions = pgTable('scan_sessions', {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull(),
+    projectId: text('project_id').references(() => projects.id, { onDelete: 'set null' }),
+    url: text('url').notNull(),
+    standard: text('standard'),
+    runners: jsonb('runners'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const scans = pgTable('scans', {
     id: text('id').primaryKey(),
     userId: text('user_id').notNull(), // PLEXON user id when using central auth
@@ -49,9 +60,17 @@ export const scans = pgTable('scans', {
     url: text('url').notNull(),
     device: text('device').notNull(),
     groupId: text('group_id'),
+    /** When set, row belongs to {@link scanSessions} (standalone batch). Domain crawl pages keep this null. */
+    scanSessionId: text('scan_session_id').references(() => scanSessions.id, { onDelete: 'set null' }),
     timestamp: text('timestamp').notNull(),
     result: jsonb('result').notNull(), // ScanResult
     llmSummary: jsonb('llm_summary'), // UxCxSummary | null
+    resultSchemaVersion: integer('result_schema_version'),
+    errorsCount: integer('errors_count'),
+    warningsCount: integer('warnings_count'),
+    noticesCount: integer('notices_count'),
+    durationMs: integer('duration_ms'),
+    score: integer('score'),
 });
 
 export const domainScans = pgTable(

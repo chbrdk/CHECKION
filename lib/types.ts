@@ -214,7 +214,9 @@ export type ScanResult = {
     device: Device;
     runners: Runner[];
     issues: Issue[];
-    passes: any[];
+    /** Persisted document schema version; omit on legacy rows. */
+    scanSchemaVersion?: number;
+    passes: Pass[];
     stats: ScanStats;
     durationMs: number;
     score: number;
