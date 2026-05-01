@@ -11,6 +11,7 @@ import {
     YAxis,
     ZAxis,
     CartesianGrid,
+    type ScatterShapeProps,
 } from 'recharts';
 import { MsqdxTypography, MsqdxButton } from '@msqdx/react';
 import {
@@ -215,7 +216,7 @@ export function PageTopicsCompareBubbleMatrix({ t, sources }: PageTopicsCompareB
                         <Scatter
                             data={points}
                             isAnimationActive={false}
-                            shape={(props: Record<string, unknown>) => {
+                            shape={(props: ScatterShapeProps) => {
                                 const cx = props.cx as number;
                                 const cy = props.cy as number;
                                 const payload = props.payload as PageTopicsBubblePointCompare;
