@@ -2,7 +2,7 @@
 /*  CHECKION – Rank tracking keywords (DB)                             */
 /* ------------------------------------------------------------------ */
 
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, count } from 'drizzle-orm';
 import { getDb } from './index';
 import { rankTrackingKeywords } from './schema';
 
@@ -41,10 +41,23 @@ export async function insertKeyword(
     });
 }
 
+const keywordRowSelect = {
+    id: rankTrackingKeywords.id,
+    userId: rankTrackingKeywords.userId,
+    projectId: rankTrackingKeywords.projectId,
+    domain: rankTrackingKeywords.domain,
+    keyword: rankTrackingKeywords.keyword,
+    country: rankTrackingKeywords.country,
+    language: rankTrackingKeywords.language,
+    device: rankTrackingKeywords.device,
+    createdAt: rankTrackingKeywords.createdAt,
+    updatedAt: rankTrackingKeywords.updatedAt,
+} as const;
+
 export async function getKeyword(id: string, userId: string): Promise<RankTrackingKeywordRow | null> {
     const db = getDb();
     const rows = await db
-        .select()
+        .select(keywordRowSelect)
         .from(rankTrackingKeywords)
         .where(and(eq(rankTrackingKeywords.id, id), eq(rankTrackingKeywords.userId, userId)))
         .limit(1);
@@ -54,7 +67,7 @@ export async function getKeyword(id: string, userId: string): Promise<RankTracki
 export async function listKeywordsByProject(userId: string, projectId: string): Promise<RankTrackingKeywordRow[]> {
     const db = getDb();
     const rows = await db
-        .select()
+        .select(keywordRowSelect)
         .from(rankTrackingKeywords)
         .where(and(eq(rankTrackingKeywords.userId, userId), eq(rankTrackingKeywords.projectId, projectId)))
         .orderBy(desc(rankTrackingKeywords.updatedAt));
@@ -72,10 +85,10 @@ export async function deleteKeyword(id: string, userId: string): Promise<boolean
 export async function getKeywordsCountByProject(projectId: string): Promise<number> {
     const db = getDb();
     const rows = await db
-        .select({ id: rankTrackingKeywords.id })
+        .select({ c: count() })
         .from(rankTrackingKeywords)
         .where(eq(rankTrackingKeywords.projectId, projectId));
-    return rows.length;
+    return Number(rows[0]?.c ?? 0);
 }
 
 export async function listKeywordIdsByProject(projectId: string): Promise<string[]> {

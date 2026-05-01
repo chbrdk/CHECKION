@@ -47,10 +47,23 @@ export async function updateGeoEeatRunProject(id: string, userId: string, projec
     return (updated.rowCount ?? 0) > 0;
 }
 
+const geoEeatRunRowSelect = {
+    id: geoEeatRuns.id,
+    userId: geoEeatRuns.userId,
+    projectId: geoEeatRuns.projectId,
+    url: geoEeatRuns.url,
+    domainScanId: geoEeatRuns.domainScanId,
+    status: geoEeatRuns.status,
+    payload: geoEeatRuns.payload,
+    error: geoEeatRuns.error,
+    createdAt: geoEeatRuns.createdAt,
+    updatedAt: geoEeatRuns.updatedAt,
+} as const;
+
 export async function getGeoEeatRun(id: string, userId: string): Promise<GeoEeatRunRow | null> {
     const db = getDb();
     const rows = await db
-        .select()
+        .select(geoEeatRunRowSelect)
         .from(geoEeatRuns)
         .where(and(eq(geoEeatRuns.id, id), eq(geoEeatRuns.userId, userId)))
         .limit(1);
@@ -90,7 +103,7 @@ export async function listGeoEeatRuns(
             ? and(eq(geoEeatRuns.userId, userId), isNull(geoEeatRuns.projectId))
             : and(eq(geoEeatRuns.userId, userId), eq(geoEeatRuns.projectId, options.projectId));
     const rows = await db
-        .select()
+        .select(geoEeatRunRowSelect)
         .from(geoEeatRuns)
         .where(whereCond)
         .orderBy(desc(geoEeatRuns.createdAt))

@@ -5,11 +5,12 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from './schema';
+import { getDatabasePoolMax } from '@/lib/db/pool-config';
 
 function createDb() {
     const connectionString = process.env.DATABASE_URL;
     if (!connectionString) throw new Error('DATABASE_URL is required');
-    const pool = new Pool({ connectionString, max: 10 });
+    const pool = new Pool({ connectionString, max: getDatabasePoolMax() });
     const db = drizzle(pool, { schema });
     return { db, pool };
 }

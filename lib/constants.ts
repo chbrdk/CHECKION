@@ -585,6 +585,9 @@ export const ENV_SCREENSHOT_AWS_REGION = 'SCREENSHOT_AWS_REGION';
 /** When `1`/`true`/`yes`, enables verbose scanner and journey-agent debug logs (axe injection, CLS, tool traces). */
 export const ENV_CHECKION_SCAN_DEBUG = 'CHECKION_SCAN_DEBUG';
 
+/** Max PostgreSQL connections per app process (`pg` Pool). Default 10; clamped 1–100. */
+export const ENV_DATABASE_POOL_MAX = 'DATABASE_POOL_MAX';
+
 /** Optional base URL for the UX Journey Agent (Python/Browser Use). If set, POST /api/scan/journey-agent forwards to this service. On Coolify: use internal service URL (e.g. http://ux-journey-agent:8320). */
 export const ENV_UX_JOURNEY_AGENT_URL = 'UX_JOURNEY_AGENT_URL';
 
