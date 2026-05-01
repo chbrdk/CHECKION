@@ -1,9 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import {
     PAGE_TOPICS_CHART_MAX_THEMES,
+    PAGE_TOPICS_COMPARE_MAX_TOTAL,
     buildPageTopicsBubblePoints,
+    buildCombinedCompareBubblePoints,
     buildAvgTierTagStrip,
     pageTopicTierColorCss,
+    pageTopicsCompareSeriesStrokeColor,
 } from '@/lib/page-topics-viz';
 import type { AggregatedPageClassificationTheme } from '@/lib/types';
 
@@ -74,5 +77,32 @@ describe('page-topics-viz', () => {
             theme({ tag: 'Beta', themeTagKey: 'beta', score: 5, pageCount: 1, maxTier: 2, avgTier: 2 }),
         ]);
         expect(pts[0]?.themeTagKey).toBe('beta');
+    });
+
+    it('buildPageTopicsBubblePoints respects maxThemes override', () => {
+        const many = Array.from({ length: 20 }, (_, i) =>
+            theme({ tag: `t${i}`, themeTagKey: `k${i}`, score: i + 1, pageCount: 1, maxTier: 2, avgTier: 2 }),
+        );
+        expect(buildPageTopicsBubblePoints(many, { maxThemes: 5 })).toHaveLength(5);
+    });
+
+    it('buildCombinedCompareBubblePoints merges sources and tags series', () => {
+        const merged = buildCombinedCompareBubblePoints(
+            [
+                { key: 'own', label: 'Us', themes: [theme({ tag: 'A', score: 100, pageCount: 3, maxTier: 5, avgTier: 4 })] },
+                {
+                    key: 'c:x',
+                    label: 'Them',
+                    themes: [theme({ tag: 'B', themeTagKey: 'beta', score: 50, pageCount: 2, maxTier: 3, avgTier: 2 })],
+                },
+            ],
+            { perSourceMax: 10, maxTotal: PAGE_TOPICS_COMPARE_MAX_TOTAL }
+        );
+        expect(merged.length).toBe(2);
+        expect(merged[0]?.seriesLabel).toBe('Us');
+        expect(merged[0]?.themeTagKey.startsWith('own::')).toBe(true);
+        expect(merged[0]?.baseTagKey).toBe('alpha');
+        expect(merged.find((m) => m.seriesKey === 'c:x')?.baseTagKey).toBe('beta');
+        expect(pageTopicsCompareSeriesStrokeColor(0)).not.toBe(pageTopicsCompareSeriesStrokeColor(1));
     });
 });

@@ -197,7 +197,16 @@
     "navPageTopics": "Seitenthemen",
     "navComingSoon": "Demnächst",
     "pageTopicsCompareTitle": "Seitenthemen (Vergleich)",
-    "pageTopicsCompareSubtitle": "Themenlandschaften nebeneinander: eigener Deep Scan und je verknüpfter Konkurrenz-Scan (gleiche Visualisierung wie in den Domain-Ergebnissen).",
+    "pageTopicsCompareSubtitle": "Oben eine gemeinsame Themen-Matrix (eigene Domain + alle Konkurrenten mit fertigen Scans) zum schnellen Live-Vergleich; darunter dieselben Detailkarten wie in den Domain-Ergebnissen.",
+    "pageTopicsCombinedDiagramTitle": "Gemeinsame Themen-Matrix",
+    "pageTopicsCombinedDiagramCaption": "Jeder Kreis ist ein Thema einer Quelle. Füllfarbe = höchstes Tag-Tier (T1–T5), Randfarbe = Quelle (Legende unten). Größe ~ Themen-Score.",
+    "pageTopicsCompareSeriesLegend": "Quelle (Randfarbe)",
+    "pageTopicsCompareTierFillCaption": "Füllfarbe = höchstes Tag-Tier",
+    "pageTopicsCompareBubbleTooltip": "{{pages}} Seiten · max T{{maxTier}} · Ø-Tier {{avgTier}} · Score {{score}}",
+    "pageTopicsCompareInteractionHint": "Quelle in der Legende anklicken, um nur diese Marke hervorzuheben. Kreis anklicken: gleiches Thema über Quellen verbinden (gestrichelte Linie, wenn das Thema mindestens zweimal vorkommt).",
+    "pageTopicsCompareClearFocus": "Auswahl aufheben",
+    "pageTopicsCompareTagLinkHint": "Gleiches Thema bei {{count}} Quellen — Linie nach Ø-Tier (links → rechts).",
+    "pageTopicsCompareTooltipHint": "Klick auf den Kreis verbindet gleiche Themen; Klick auf die Legende filtert eine Quelle.",
     "pageTopicsCompareCta": "Vergleich öffnen",
     "pageTopicsCompareHint": "Eigenes Projekt: {{own}} Seiten mit KI-Klassifikation. Konkurrenten mit Themen-Daten: {{competitorsReady}} / {{competitorsTotal}}.",
     "pageTopicsCompareHintNoCompetitors": "Konkurrenten hinzufügen und Deep Scans ausführen, um Themenlandschaften zu vergleichen.",
@@ -1061,6 +1070,7 @@
     "pageClassification": "Inhaltliche Einordnung der Seite per KI: Themen-Tags und Tier (1–5) für die Wichtigkeit des Hauptthemas. Basiert nur auf dem Seiteninhalt, nicht auf URL oder Struktur.",
     "pageTopicsAggregate": "Aus allen klassifizierten Seiten berechnet: gleiche Tags werden zusammengeführt, Gewicht = Tier² pro Vorkommen; typische Navigations-/Footer-Begriffe werden abgeschwächt. Kein zweites LLM – nur Statistik über die gespeicherten tagTiers.",
     "pageTopicsCompareCard": "Nutzt dieselben gekappten Themen-Aggregate wie die Domain-Summary-API. Vergleicht den Deep Scan des Projekts mit jedem verknüpften Konkurrenz-Scan.",
+    "pageTopicsCompareMatrix": "Eine Matrix mischt die Top-Themen aller Quellen (eigene Domain + Konkurrenten) in einem Diagramm: gleiche Achsen wie im Einzel-Scan (Ø-Tier vs. Seitenanzahl), Füllfarbe nach höchstem Tag-Tier, Randfarbe nach Quelle. Legende: eine Quelle isolieren. Kreis: gleiches Thema (normalisierter Tag-Schlüssel) über Quellen mit gestrichelter Linie verbinden. Pro Quelle werden Themen begrenzt, dann global nach Score gekappt.",
     "pageTopicsLowTierDominant": "Pro Seite zählt die Klassifikation, wie viele Themen-Tags in Tier 1–5 vorkommen. Hier gezählt: Seiten, auf denen die Summe der T1- und T2-Tags größer ist als die Summe der T4- und T5-Tags. Tier 3 zählt für diese Kennzahl nicht. Das ist eine Heuristik für eine eher rand-/boilerplate-lastige vs. kernthematische Tag-Verteilung – kein inhaltliches Urteil über die Seitenqualität."
   }
 }

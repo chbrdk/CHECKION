@@ -197,7 +197,16 @@
     "navPageTopics": "Page topics",
     "navComingSoon": "Coming soon",
     "pageTopicsCompareTitle": "Page topics (compare)",
-    "pageTopicsCompareSubtitle": "Side-by-side topic landscapes from your latest deep scans and each competitor’s linked domain scan (same charts as on domain results).",
+    "pageTopicsCompareSubtitle": "A shared topic matrix at the top (your domain plus every competitor with a completed scan) for quick live comparison; below that, the same per-domain detail cards as on domain results.",
+    "pageTopicsCombinedDiagramTitle": "Combined topic matrix",
+    "pageTopicsCombinedDiagramCaption": "Each circle is one theme from one source. Fill = highest tag tier (T1–T5); stroke color = source (see legend). Size reflects theme score.",
+    "pageTopicsCompareSeriesLegend": "Source (stroke color)",
+    "pageTopicsCompareTierFillCaption": "Fill = highest tag tier",
+    "pageTopicsCompareBubbleTooltip": "{{pages}} pages · max T{{maxTier}} · avg tier {{avgTier}} · score {{score}}",
+    "pageTopicsCompareInteractionHint": "Click a source in the legend to highlight only that brand. Click a bubble to connect the same normalized topic across sources (dashed line when it appears at least twice).",
+    "pageTopicsCompareClearFocus": "Clear selection",
+    "pageTopicsCompareTagLinkHint": "Same topic across {{count}} sources — line ordered by avg tier (left → right).",
+    "pageTopicsCompareTooltipHint": "Click the circle to link the same topics; click the legend to filter one source.",
     "pageTopicsCompareCta": "Open comparison",
     "pageTopicsCompareHint": "Your domain: {{own}} pages with AI classification. Competitors with topic data: {{competitorsReady}} / {{competitorsTotal}}.",
     "pageTopicsCompareHintNoCompetitors": "Add competitors and run deep scans to compare topic landscapes.",
@@ -1061,6 +1070,7 @@
     "pageClassification": "AI-derived content classification: topic tags and tier (1–5) for importance of the main topic. Based on page content only, not URL or structure.",
     "pageTopicsAggregate": "Computed from all classified pages: tags are merged with weight = tier² per occurrence; common nav/footer labels are damped. No second LLM – statistics over stored tagTiers only.",
     "pageTopicsCompareCard": "Uses the same capped topic aggregates as the domain summary API. Compare your project’s deep scan with each competitor scan linked to this project.",
+    "pageTopicsCompareMatrix": "One chart blends top themes from every source (your domain + competitors): same axes as single-domain view (avg tier vs. page count), fill color by highest tag tier, stroke color by source. Legend isolates one source. Clicking a bubble connects the same normalized topic across sources with a dashed line. Per source we cap themes, then cap globally by score so the chart stays readable.",
     "pageTopicsLowTierDominant": "Per page we count how many topic tags fall in tiers T1–T5. This metric counts pages where the sum of T1 and T2 tag counts is greater than the sum of T4 and T5 tag counts. Tier 3 is not part of this comparison. It is a heuristic for a more peripheral/boilerplate-heavy vs. core-topic tag mix—not a verdict on page quality."
   }
 }

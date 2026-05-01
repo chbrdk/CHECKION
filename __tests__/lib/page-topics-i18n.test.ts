@@ -17,6 +17,12 @@ function loadInfo(name: 'de' | 'en'): Record<string, string> {
     return parsed.info;
 }
 
+function loadProjects(name: 'de' | 'en'): Record<string, string> {
+    const raw = readFileSync(join(__dirname, `../../locales/${name}.json`), 'utf8');
+    const parsed = JSON.parse(raw) as { projects: Record<string, string> };
+    return parsed.projects;
+}
+
 describe('page topics visualization i18n', () => {
     it('de and en define treemap and spectrum copy', () => {
         const de = loadDomainResult('de');
@@ -51,5 +57,20 @@ describe('page topics visualization i18n', () => {
         expect(deInfo.pageTopicsLowTierDominant?.length).toBeGreaterThan(40);
         expect(enInfo.pageTopicsLowTierDominant?.length).toBeGreaterThan(40);
         expect(deInfo.pageTopicsLowTierDominant).not.toBe(enInfo.pageTopicsLowTierDominant);
+    });
+
+    it('de and en define combined compare matrix copy', () => {
+        const de = loadProjects('de');
+        const en = loadProjects('en');
+        expect(de.pageTopicsCombinedDiagramTitle.length).toBeGreaterThan(5);
+        expect(en.pageTopicsCombinedDiagramTitle.length).toBeGreaterThan(5);
+        expect(de.pageTopicsCompareBubbleTooltip).toContain('{{pages}}');
+        expect(en.pageTopicsCompareBubbleTooltip).toContain('{{pages}}');
+        expect(de.pageTopicsCompareClearFocus.length).toBeGreaterThan(3);
+        expect(de.pageTopicsCompareInteractionHint.length).toBeGreaterThan(40);
+        const deInfo = loadInfo('de');
+        const enInfo = loadInfo('en');
+        expect(deInfo.pageTopicsCompareMatrix?.length).toBeGreaterThan(80);
+        expect(enInfo.pageTopicsCompareMatrix?.length).toBeGreaterThan(80);
     });
 });

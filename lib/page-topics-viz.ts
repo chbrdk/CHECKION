@@ -34,8 +34,12 @@ export type PageTopicsBubblePoint = {
     zSize: number;
 };
 
-export function buildPageTopicsBubblePoints(themes: AggregatedPageClassificationTheme[]): PageTopicsBubblePoint[] {
-    const sorted = [...themes].sort((a, b) => b.score - a.score).slice(0, PAGE_TOPICS_CHART_MAX_THEMES);
+export function buildPageTopicsBubblePoints(
+    themes: AggregatedPageClassificationTheme[],
+    options?: { maxThemes?: number }
+): PageTopicsBubblePoint[] {
+    const cap = options?.maxThemes ?? PAGE_TOPICS_CHART_MAX_THEMES;
+    const sorted = [...themes].sort((a, b) => b.score - a.score).slice(0, cap);
     return sorted.map((th) => ({
         tag: th.tag,
         themeTagKey: th.themeTagKey ?? normalizePageTopicTagKey(th.tag),
@@ -44,6 +48,63 @@ export function buildPageTopicsBubblePoints(themes: AggregatedPageClassification
         pageCount: th.pageCount,
         zSize: Math.max(th.score, 0.25),
     }));
+}
+
+/** Stroke / legend color for compare-matrix series (distinct from tier fill colors). */
+export const PAGE_TOPICS_COMPARE_SERIES_STROKE: readonly string[] = [
+    '#1d4ed8',
+    '#b91c1c',
+    '#a16207',
+    '#7e22ce',
+    '#0e7490',
+    '#c2410c',
+    '#3f6212',
+    '#be185d',
+] as const;
+
+export function pageTopicsCompareSeriesStrokeColor(seriesIndex: number): string {
+    return PAGE_TOPICS_COMPARE_SERIES_STROKE[seriesIndex % PAGE_TOPICS_COMPARE_SERIES_STROKE.length]!;
+}
+
+/** Max bubbles in project compare matrix (own + competitors merged). */
+export const PAGE_TOPICS_COMPARE_MAX_TOTAL = 72;
+
+/** Per-source cap before global merge (keeps chart readable). */
+export const PAGE_TOPICS_COMPARE_PER_SOURCE = 22;
+
+/** Bubble point with source (own vs competitor) for combined project view. */
+export type PageTopicsBubblePointCompare = PageTopicsBubblePoint & {
+    seriesKey: string;
+    seriesLabel: string;
+    seriesIndex: number;
+    /** Normalized theme key shared across sources (for matching + connectors). */
+    baseTagKey: string;
+};
+
+export function buildCombinedCompareBubblePoints(
+    sources: ReadonlyArray<{ key: string; label: string; themes: AggregatedPageClassificationTheme[] }>,
+    options?: { perSourceMax?: number; maxTotal?: number }
+): PageTopicsBubblePointCompare[] {
+    const perSourceMax = options?.perSourceMax ?? PAGE_TOPICS_COMPARE_PER_SOURCE;
+    const maxTotal = options?.maxTotal ?? PAGE_TOPICS_COMPARE_MAX_TOTAL;
+    const flat: PageTopicsBubblePointCompare[] = [];
+    sources.forEach((src, seriesIndex) => {
+        if (!src.themes?.length) return;
+        const pts = buildPageTopicsBubblePoints(src.themes, { maxThemes: perSourceMax });
+        for (const p of pts) {
+            const baseTagKey = p.themeTagKey;
+            flat.push({
+                ...p,
+                seriesKey: src.key,
+                seriesLabel: src.label,
+                seriesIndex,
+                baseTagKey,
+                themeTagKey: `${src.key}::${baseTagKey}`,
+            });
+        }
+    });
+    flat.sort((a, b) => b.zSize - a.zSize);
+    return flat.slice(0, maxTotal);
 }
 
 /** Normalized segments for a single-row “tier spectrum” (share of avg tags per tier). */

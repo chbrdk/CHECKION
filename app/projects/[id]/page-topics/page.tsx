@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Box, Stack } from '@mui/material';
@@ -10,7 +10,8 @@ import { InfoTooltip } from '@/components/InfoTooltip';
 import { useFetchOnceForId } from '@/hooks/useFetchOnceForId';
 import { apiProject, apiProjectDomainSummaryAll, pathDomain, pathProject } from '@/lib/constants';
 import { DomainResultPageTopicsCard } from '@/components/domain/DomainResultPageTopicsCard';
-import type { AggregatedPageClassification } from '@/lib/types';
+import { PageTopicsCompareBubbleMatrix } from '@/components/domain/PageTopicsCompareBubbleMatrix';
+import type { AggregatedPageClassification, AggregatedPageClassificationTheme } from '@/lib/types';
 
 type SummaryAggregated = {
     pageClassification?: AggregatedPageClassification | null;
@@ -103,6 +104,22 @@ export default function ProjectPageTopicsPage() {
                 c.aggregated.pageClassification.coverage.pagesWithClassification > 0
         );
 
+    const compareTopicSources = useMemo(() => {
+        const out: { key: string; label: string; themes: AggregatedPageClassificationTheme[] }[] = [];
+        if (ownPc && ownPc.topThemes.length > 0 && ownPc.coverage.pagesWithClassification > 0) {
+            out.push({ key: 'own', label: ownLabel, themes: ownPc.topThemes });
+        }
+        for (const [dom, comp] of competitorEntries) {
+            if (!comp || comp.status !== 'complete') continue;
+            const pc = comp.aggregated?.pageClassification;
+            if (!pc || pc.topThemes.length === 0 || pc.coverage.pagesWithClassification <= 0) continue;
+            out.push({ key: `c:${dom}`, label: dom, themes: pc.topThemes });
+        }
+        return out;
+    }, [ownPc, ownLabel, competitorEntries]);
+
+    const showCombinedMatrix = compareTopicSources.length >= 2;
+
     return (
         <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto', width: '100%', boxSizing: 'border-box' }}>
             <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
@@ -132,6 +149,17 @@ export default function ProjectPageTopicsPage() {
                 </MsqdxMoleculeCard>
             ) : (
                 <Stack spacing={4}>
+                    {showCombinedMatrix ? (
+                        <MsqdxMoleculeCard
+                            title={t('projects.pageTopicsCombinedDiagramTitle')}
+                            variant="flat"
+                            borderRadius="lg"
+                            headerActions={<InfoTooltip title={t('info.pageTopicsCompareMatrix')} ariaLabel={t('common.info')} />}
+                            sx={{ bgcolor: 'var(--color-card-bg)' }}
+                        >
+                            <PageTopicsCompareBubbleMatrix t={t} sources={compareTopicSources} />
+                        </MsqdxMoleculeCard>
+                    ) : null}
                     {own && (
                         <Box>
                             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1, mb: 1 }}>

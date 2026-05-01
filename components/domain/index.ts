@@ -41,5 +41,8 @@ export {
 } from './DomainResultPageTopicsSection';
 export type { DomainResultPageTopicsSectionProps } from './DomainResultPageTopicsSection';
 
+export { PageTopicsCompareBubbleMatrix } from './PageTopicsCompareBubbleMatrix';
+export type { PageTopicsCompareBubbleMatrixProps } from './PageTopicsCompareBubbleMatrix';
+
 export { DomainResultJourneySection } from './DomainResultJourneySection';
 export type { DomainResultJourneySectionProps } from './DomainResultJourneySection';
