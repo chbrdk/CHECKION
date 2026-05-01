@@ -51,6 +51,13 @@ export const scanDomainBodySchema = z.object({
   maxPages: z.number().int().min(1).optional(),
   projectId: z.string().uuid().nullable().optional(),
   skipUnchangedPages: z.boolean().optional(),
+  /** After a successful deep scan, run per-page LLM classification in the background (same as POST …/classify). */
+  classifyPageTopics: z.boolean().optional(),
+});
+
+/** POST /api/scans/domain/compare */
+export const domainScanCompareBodySchema = z.object({
+  ids: z.array(z.string().uuid()).length(2),
 });
 
 /** POST /api/scan/journey-agent */

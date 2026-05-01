@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Box } from '@mui/material';
 import {
   MsqdxTypography,
@@ -28,6 +29,7 @@ import {
   pathResults,
   pathDomain,
   PATH_SCAN,
+  PATH_DEEP_SCANS,
 } from '@/lib/constants';
 import { pathDomainSection } from '@/lib/domain-result-sections';
 import { PaginationBar } from '@/components/PaginationBar';
@@ -301,7 +303,14 @@ export default function DashboardPage() {
 
           <MsqdxMoleculeCard
             title={t('dashboard.domainHistoryTitle')}
-            headerActions={<InfoTooltip title={t('info.domainHistory')} ariaLabel={t('common.info')} />}
+            headerActions={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                <InfoTooltip title={t('info.domainHistory')} ariaLabel={t('common.info')} />
+                <Link href={PATH_DEEP_SCANS} style={{ color: 'inherit', fontSize: '0.875rem' }}>
+                  {t('dashboard.viewAllDeepScans')}
+                </Link>
+              </Box>
+            }
             variant="flat"
             borderRadius="lg"
             footerDivider={false}

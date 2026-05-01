@@ -18,4 +18,41 @@ else
   echo "[CHECKION] DATABASE_URL not set, skipping schema push."
 fi
 
+# Optional: rebuild domain_scans.payload + aggregates from stored page scans (no crawl, no LLM).
+# Set CHECKION_REFRESH_DOMAIN_PAYLOADS_ON_START=1 or dry-run once after deploy / migration.
+# See knowledge/checkion-docker-refresh-domain-payloads.md
+if [ -n "$DATABASE_URL" ] && [ -n "$CHECKION_REFRESH_DOMAIN_PAYLOADS_ON_START" ]; then
+  case "$CHECKION_REFRESH_DOMAIN_PAYLOADS_ON_START" in
+    0|false|no|off|"")
+      ;;
+    1|true|yes|run)
+      REFRESH_ARGS=""
+      if [ -n "$CHECKION_REFRESH_DOMAIN_PAYLOADS_LIMIT" ]; then
+        REFRESH_ARGS="$REFRESH_ARGS --limit=$CHECKION_REFRESH_DOMAIN_PAYLOADS_LIMIT"
+      fi
+      if [ "$CHECKION_REFRESH_DOMAIN_PAYLOADS_ALL_STATUS" = "1" ] || [ "$CHECKION_REFRESH_DOMAIN_PAYLOADS_ALL_STATUS" = "true" ]; then
+        REFRESH_ARGS="$REFRESH_ARGS --all-status"
+      fi
+      echo "[CHECKION] Running refresh-domain-payloads (live)...$REFRESH_ARGS"
+      if ! npx tsx scripts/refresh-domain-payloads.ts $REFRESH_ARGS; then
+        echo "[CHECKION] refresh-domain-payloads failed — starting app anyway."
+      fi
+      ;;
+    dry-run)
+      REFRESH_ARGS=""
+      if [ -n "$CHECKION_REFRESH_DOMAIN_PAYLOADS_LIMIT" ]; then
+        REFRESH_ARGS="$REFRESH_ARGS --limit=$CHECKION_REFRESH_DOMAIN_PAYLOADS_LIMIT"
+      fi
+      if [ "$CHECKION_REFRESH_DOMAIN_PAYLOADS_ALL_STATUS" = "1" ] || [ "$CHECKION_REFRESH_DOMAIN_PAYLOADS_ALL_STATUS" = "true" ]; then
+        REFRESH_ARGS="$REFRESH_ARGS --all-status"
+      fi
+      echo "[CHECKION] Running refresh-domain-payloads (--dry-run)...$REFRESH_ARGS"
+      npx tsx scripts/refresh-domain-payloads.ts --dry-run $REFRESH_ARGS || true
+      ;;
+    *)
+      echo "[CHECKION] Unknown CHECKION_REFRESH_DOMAIN_PAYLOADS_ON_START=$CHECKION_REFRESH_DOMAIN_PAYLOADS_ON_START (expected 1, true, dry-run, or 0)"
+      ;;
+  esac
+fi
+
 exec npm run start

@@ -24,6 +24,10 @@ Siehe `app/api/scan/domain/route.ts` und `app/api/projects/[id]/domain-scan-all/
 
 Die LLM-Klassifikation (Tags + Tier 1–5) läuft **direkt im Single Scan** (`lib/scanner.ts`). Nach dem Aufbau des `ScanResult` wird `classifyPageWithLlm(result)` aufgerufen; bei Erfolg wird `pageClassification` ins Result geschrieben. Dadurch hat jede Seite (Einzelscan und Deep Scan) automatisch Tags und Tier, sofern genug `bodyTextExcerpt` vorhanden ist und **`ANTHROPIC_API_KEY`** gesetzt ist. Siehe `lib/llm/page-classification.ts` (`classifyPageWithLlm`). Nutzung wird bei gesetztem `userId` im Lauf als **`llm_request`** an PLEXON gemeldet (`page_classify_inline:{scanId}`).
 
+### Optional: Klassifikation nach Deep-Scan erneut anstoßen
+
+Zusätzlich kann beim Start des Deep Scans **`classifyPageTopics: true`** gesetzt werden (`POST /api/scan/domain`, optional Query **`classifyPageTopics=true`** bei `POST …/domain-scan-all` und `…/domain-scan-competitor`). Nach **`complete`** startet dann derselbe Hintergrund-Job wie **`POST /api/scan/domain/[id]/classify`** (`lib/domain-scan-page-classification-job.ts`: erneutes `classifyPageWithLlm` pro Zeile in `scans`, dann `refreshDomainPayloadFromScans`). Sinnvoll, wenn die initiale Inline-Klassifikation fehlgeschlagen ist, das Modell gewechselt wurde, oder Themen bewusst neu berechnet werden sollen (zusätzliche LLM-Nutzung; Idempotency-Key `classify:{scanRowId}`).
+
 - Einzelscan: Result enthält `pageClassification` beim Speichern.
 - Deep Scan: Jede von der Spider gescannte Seite wird klassifiziert; `toSlimPage` übernimmt `pageClassification` ins Domain-Payload.
 

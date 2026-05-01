@@ -30,7 +30,7 @@ export async function GET(
         return apiError('Project not found', API_STATUS.NOT_FOUND);
     }
     const [domainScansCount, journeyRunsCount, geoEeatRunsCount, singleScansCount, rankTrackingKeywordsCount] = await Promise.all([
-        getDomainScansCount(user.id, id),
+        getDomainScansCount(user.id, { projectId: id }),
         listJourneyRuns(user.id, 10000, { projectId: id }).then((r) => r.length),
         listGeoEeatRuns(user.id, 10000, { projectId: id }).then((r) => r.length),
         getStandaloneScansCount(user.id, id),

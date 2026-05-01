@@ -15,6 +15,7 @@ import type { DomainScanControlState } from '@/lib/spider';
 import { reportUsage } from '@/lib/usage-report';
 import type { DomainScanResult } from '@/lib/types';
 import { rebuildDomainIssuesFromPages } from '@/lib/db/domain-issues';
+import { runDomainScanPageClassificationJob } from '@/lib/domain-scan-page-classification-job';
 
 export interface StartDomainScanOptions {
   projectId?: string | null;
@@ -24,6 +25,8 @@ export interface StartDomainScanOptions {
   skipUnchangedPages?: boolean;
   /** If set, store this normalized hostname as domain (for competitor dedup). */
   domainOverride?: string;
+  /** After successful completion, run per-page LLM classification in the background. */
+  classifyPageTopics?: boolean;
 }
 
 export async function startDomainScan(
@@ -52,6 +55,7 @@ export async function startDomainScan(
   const useSitemap = options.useSitemap ?? true;
   const maxPages = options.maxPages;
   const skipUnchangedPages = options.skipUnchangedPages === true;
+  const classifyPageTopics = options.classifyPageTopics === true;
   const projectIdForPages =
     options.projectId !== undefined ? options.projectId : undefined;
 
@@ -184,6 +188,9 @@ export async function startDomainScan(
           );
           await updateDomainScan(id, userId, stored);
           invalidateDomainScan(id);
+          if (classifyPageTopics) {
+            void runDomainScanPageClassificationJob({ domainScanId: id, userId });
+          }
         } else if (update.type === 'cancelled') {
           const fullPages = update.domainResult.pages;
           let aggregatedCancelled = buildAggregatedFromFullPages(fullPages);

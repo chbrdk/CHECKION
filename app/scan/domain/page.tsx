@@ -6,7 +6,8 @@ import {
     MsqdxTypography,
     MsqdxButton,
     MsqdxFormField,
-    MsqdxSelect
+    MsqdxSelect,
+    MsqdxCheckboxField,
 } from '@msqdx/react';
 import type { SelectChangeEvent } from '@mui/material';
 import { Box, LinearProgress } from '@mui/material';
@@ -33,6 +34,12 @@ function ScanContent() {
     const maxPagesParam = searchParams.get('maxPages');
     const projectIdParam = searchParams.get('projectId');
     const scanIdParam = searchParams.get('scanId');
+    const classifyPageTopicsParam = searchParams.get('classifyPageTopics') === 'true';
+    const [classifyPageTopics, setClassifyPageTopics] = useState(classifyPageTopicsParam);
+
+    useEffect(() => {
+        setClassifyPageTopics(classifyPageTopicsParam);
+    }, [classifyPageTopicsParam]);
 
     // Scroll to bottom of logs
     useEffect(() => {
@@ -49,9 +56,9 @@ function ScanContent() {
         }
         if (!scanId) {
             const limit = maxPagesParam ? Math.min(10000, Math.max(1, Number(maxPagesParam))) : 1000;
-            void startScan(startUrl, limit, projectIdParam);
+            void startScan(startUrl, limit, projectIdParam, classifyPageTopicsParam);
         }
-    }, [startUrl, maxPagesParam, projectIdParam, scanIdParam, t]);
+    }, [startUrl, maxPagesParam, projectIdParam, scanIdParam, classifyPageTopicsParam, t]);
 
     const pollOnce = async (sid: string) => {
         const res = await fetch(apiScanDomainStatus(sid), { credentials: 'same-origin' });
@@ -137,7 +144,12 @@ function ScanContent() {
         }
     };
 
-    async function startScan(url: string, pageLimit?: number, projectId?: string | null) {
+    async function startScan(
+        url: string,
+        pageLimit?: number,
+        projectId?: string | null,
+        runClassifyPageTopics?: boolean
+    ) {
         setStatus('queued');
         setLogs([t('domain.initLog')]);
 
@@ -149,6 +161,7 @@ function ScanContent() {
                     url,
                     maxPages: pageLimit ?? 1000,
                     ...(projectId ? { projectId } : {}),
+                    ...(runClassifyPageTopics ? { classifyPageTopics: true } : {}),
                 })
             });
 
@@ -165,6 +178,7 @@ function ScanContent() {
                             url,
                             maxPages: pageLimit ?? 1000,
                             ...(projectId ? { projectId } : {}),
+                            ...(runClassifyPageTopics ? { classifyPageTopics: true } : {}),
                             scanId: newId,
                         })
                     );
@@ -206,6 +220,7 @@ function ScanContent() {
                                     url: inputUrl,
                                     maxPages: limit,
                                     ...(projectIdParam ? { projectId: projectIdParam } : {}),
+                                    ...(classifyPageTopics ? { classifyPageTopics: true } : {}),
                                 })
                             );
                         }
@@ -234,6 +249,14 @@ function ScanContent() {
                                 { value: '10000', label: t('domain.maxPagesAll') },
                             ]}
                             fullWidth
+                        />
+                    </Box>
+                    <Box sx={{ flex: '1 1 100%', minWidth: 200 }}>
+                        <MsqdxCheckboxField
+                            label={t('domain.classifyPageTopicsLabel')}
+                            options={[{ value: 'on', label: t('domain.classifyPageTopicsOption') }]}
+                            value={classifyPageTopics ? ['on'] : []}
+                            onChange={(val) => setClassifyPageTopics(Array.isArray(val) && val.includes('on'))}
                         />
                     </Box>
                     <Box sx={{ pt: '28px' }}>

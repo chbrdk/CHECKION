@@ -8,6 +8,8 @@ import {
     pathDomain,
     pathScanDomain,
     pathScanDomainResume,
+    pathDeepScansCompare,
+    PATH_DEEP_SCANS,
     pathJourneyAgent,
     pathGeoEeat,
     pathShare,
@@ -93,6 +95,20 @@ describe('Path constants', () => {
         ).toBe(
             '/scan/domain?url=https%3A%2F%2Fa.com&maxPages=500&projectId=550e8400-e29b-41d4-a716-446655440000&scanId=scan-resume-1'
         );
+        expect(
+            pathScanDomain({
+                url: 'https://a.com',
+                classifyPageTopics: true,
+            })
+        ).toBe('/scan/domain?url=https%3A%2F%2Fa.com&classifyPageTopics=true');
+    });
+
+    it('pathDeepScansCompare builds /deep-scans/compare?ids=', () => {
+        const a = '550e8400-e29b-41d4-a716-446655440000';
+        const b = '550e8400-e29b-41d4-a716-446655440001';
+        expect(pathDeepScansCompare(a, b)).toBe(
+            `${PATH_DEEP_SCANS}/compare?ids=${encodeURIComponent(`${a},${b}`)}`
+        );
     });
 
     it('pathScanDomainResume uses live scan URL when domain is valid', () => {
@@ -101,6 +117,16 @@ describe('Path constants', () => {
             pathScanDomainResume({ domainOrUrl: 'myshop.example', scanId: 's1', projectId: pid })
         ).toBe(
             `/scan/domain?url=${encodeURIComponent('https://myshop.example')}&projectId=${pid}&scanId=s1`
+        );
+        expect(
+            pathScanDomainResume({
+                domainOrUrl: 'myshop.example',
+                scanId: 's1',
+                projectId: pid,
+                classifyPageTopics: true,
+            })
+        ).toBe(
+            `/scan/domain?url=${encodeURIComponent('https://myshop.example')}&projectId=${pid}&scanId=s1&classifyPageTopics=true`
         );
     });
 

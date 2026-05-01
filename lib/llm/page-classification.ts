@@ -76,7 +76,8 @@ export function extractJsonFromResponse(content: string): string {
 
 const DEFAULT_FALLBACK: PageClassification = { tagTiers: [] };
 
-const MIN_BODY_LENGTH = 50;
+/** Minimum trimmed `bodyTextExcerpt` length for LLM page-topic classification (deep scan + classify API). */
+export const PAGE_CLASSIFY_MIN_BODY_EXCERPT_CHARS = 50;
 
 export type ClassifyPageWithLlmOutcome = {
     classification: PageClassification | null;
@@ -90,7 +91,7 @@ export type ClassifyPageWithLlmOutcome = {
  */
 export async function classifyPageWithLlm(result: ScanResult): Promise<ClassifyPageWithLlmOutcome> {
     const excerpt = (result.bodyTextExcerpt ?? '').trim();
-    if (excerpt.length < MIN_BODY_LENGTH) return { classification: null, usage: null };
+    if (excerpt.length < PAGE_CLASSIFY_MIN_BODY_EXCERPT_CHARS) return { classification: null, usage: null };
     const apiKey = getAnthropicKey();
     if (!apiKey) return { classification: null, usage: null };
     try {

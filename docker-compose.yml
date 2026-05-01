@@ -15,6 +15,11 @@ services:
       - DATABASE_URL=${DATABASE_URL:-postgresql://checkion:checkion@db:5432/checkion}
       - AUTH_SECRET=${AUTH_SECRET:-change-me-in-production}
       - AUTH_URL=${AUTH_URL:-http://localhost:3333}
+      # Optional one-shot after image update (omit or set 0 in normal operation):
+      # - CHECKION_REFRESH_DOMAIN_PAYLOADS_ON_START=1
+      # - CHECKION_REFRESH_DOMAIN_PAYLOADS_ON_START=dry-run
+      # - CHECKION_REFRESH_DOMAIN_PAYLOADS_LIMIT=100
+      # - CHECKION_REFRESH_DOMAIN_PAYLOADS_ALL_STATUS=1
     depends_on:
       db:
         condition: service_healthy

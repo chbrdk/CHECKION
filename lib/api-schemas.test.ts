@@ -5,6 +5,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   scanBodySchema,
+  scanDomainBodySchema,
+  domainScanCompareBodySchema,
   registerBodySchema,
   urlSchema,
   parseApiBody,
@@ -30,6 +32,38 @@ describe('api-schemas', () => {
     it('rejects invalid URL', () => {
       const result = urlSchema.safeParse('not-a-url');
       expect(result.success).toBe(false);
+    });
+  });
+
+  describe('domainScanCompareBodySchema', () => {
+    it('accepts exactly two UUIDs', () => {
+      const a = '550e8400-e29b-41d4-a716-446655440000';
+      const b = '550e8400-e29b-41d4-a716-446655440001';
+      const result = domainScanCompareBodySchema.safeParse({ ids: [a, b] });
+      expect(result.success).toBe(true);
+    });
+
+    it('rejects one id', () => {
+      const result = domainScanCompareBodySchema.safeParse({
+        ids: ['550e8400-e29b-41d4-a716-446655440000'],
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe('scanDomainBodySchema', () => {
+    it('accepts classifyPageTopics', () => {
+      const result = scanDomainBodySchema.safeParse({
+        url: 'https://example.com',
+        classifyPageTopics: true,
+      });
+      expect(result.success).toBe(true);
+      if (result.success) expect(result.data.classifyPageTopics).toBe(true);
+    });
+
+    it('accepts minimal body without classifyPageTopics', () => {
+      const result = scanDomainBodySchema.safeParse({ url: 'https://example.com' });
+      expect(result.success).toBe(true);
     });
   });
 

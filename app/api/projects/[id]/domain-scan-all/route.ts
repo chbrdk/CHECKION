@@ -35,6 +35,7 @@ export async function POST(
   if (!project) return apiError('Project not found', API_STATUS.NOT_FOUND);
 
   const skipUnchangedPages = req.nextUrl.searchParams.get('skipUnchangedPages') === 'true';
+  const classifyPageTopics = req.nextUrl.searchParams.get('classifyPageTopics') === 'true';
 
   const own = project.domain?.trim() ? await (async () => {
     const raw = project.domain!.trim();
@@ -43,6 +44,7 @@ export async function POST(
       projectId,
       useSitemap: true,
       ...(skipUnchangedPages ? { skipUnchangedPages: true } : {}),
+      ...(classifyPageTopics ? { classifyPageTopics: true } : {}),
     });
     return { scanId: id, status: 'started' as const };
   })() : null;
@@ -57,6 +59,7 @@ export async function POST(
   for (const domain of uniqueCompetitors) {
     const { scanId } = await startProjectCompetitorDomainScan(user.id, projectId, domain, {
       ...(skipUnchangedPages ? { skipUnchangedPages: true } : {}),
+      ...(classifyPageTopics ? { classifyPageTopics: true } : {}),
     });
     competitors[domain] = { scanId, reused: false };
   }

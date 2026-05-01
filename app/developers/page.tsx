@@ -48,7 +48,8 @@ export default function DevelopersPage() {
 
                     <Endpoint method="GET" path="/api/scans" desc={t('developers.scansDesc')} />
                     <Endpoint method="POST" path="/api/scan" desc={t('developers.scanPostDesc')} body='{ "url": "..." }' />
-                    <Endpoint method="GET" path="/api/scans/domain" desc={t('developers.scansDomainDesc')} />
+                    <Endpoint method="GET" path="/api/scans/domain" desc={t('developers.scansDomainDesc')} params="?page=1&limit=20&q=&status=complete&projectId=" />
+                    <Endpoint method="POST" path="/api/scans/domain/compare" desc={t('developers.scansDomainCompareDesc')} body='{ "ids": ["uuid-a", "uuid-b"] }' />
                     <Endpoint method="POST" path="/api/scan/domain" desc={t('developers.scanDomainPostDesc')} body='{ "url": "https://...", "useSitemap": true }' />
                     <Endpoint method="DELETE" path="/api/scans/:id" desc={t('developers.deleteDesc')} />
                 </MsqdxCard>

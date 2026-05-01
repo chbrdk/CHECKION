@@ -35,6 +35,8 @@ export const PATH_SETTINGS = '/settings';
 export const PATH_HISTORY = '/history';
 export const PATH_DEVELOPERS = '/developers';
 export const PATH_PROJECTS = '/projects';
+/** Central list of all domain deep scans for the signed-in user (filters, compare). */
+export const PATH_DEEP_SCANS = '/deep-scans';
 
 /** Build app route: /results/[id] */
 export const pathResults = (id: string) => `${PATH_RESULTS}/${encodeURIComponent(id)}`;
@@ -67,14 +69,27 @@ export const pathProjectSeo = (id: string) => `${PATH_PROJECTS}/${encodeURICompo
 export const pathProjectPageTopics = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}/page-topics`;
 /** Build app route: /projects/[id]/research */
 export const pathProjectResearch = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}/research`;
+/** Build app route: /deep-scans/compare?ids=uuid1,uuid2 */
+export const pathDeepScansCompare = (scanIdA: string, scanIdB: string) => {
+    const params = new URLSearchParams({ ids: `${scanIdA},${scanIdB}` });
+    return `${PATH_DEEP_SCANS}/compare?${params.toString()}`;
+};
 /** Build app route: /share/[token] */
 export const pathShare = (token: string) => `${PATH_SHARE}/${encodeURIComponent(token)}`;
-/** Build app route: /scan/domain?url=...&maxPages=...&projectId=... (projectId preserves project context for result header + optional API assign). */
-export const pathScanDomain = (params: { url: string; maxPages?: number; projectId?: string; scanId?: string }) => {
+/** Build app route: /scan/domain?url=...&maxPages=...&projectId=...&classifyPageTopics=... (projectId preserves project context for result header + optional API assign). */
+export const pathScanDomain = (params: {
+  url: string;
+  maxPages?: number;
+  projectId?: string;
+  scanId?: string;
+  /** When true, adds `classifyPageTopics=true` so the deep scan triggers per-page LLM classification after completion. */
+  classifyPageTopics?: boolean;
+}) => {
   const search = new URLSearchParams({ url: params.url });
   if (params.maxPages != null) search.set('maxPages', String(params.maxPages));
   if (params.projectId) search.set('projectId', params.projectId);
   if (params.scanId) search.set('scanId', params.scanId);
+  if (params.classifyPageTopics) search.set('classifyPageTopics', 'true');
   return `${PATH_SCAN_DOMAIN}?${search.toString()}`;
 };
 
@@ -87,6 +102,7 @@ export function pathScanDomainResume(params: {
   scanId: string;
   projectId?: string;
   maxPages?: number;
+  classifyPageTopics?: boolean;
 }): string {
   const url = toScanStartUrl(params.domainOrUrl);
   if (!url) {
@@ -96,6 +112,7 @@ export function pathScanDomainResume(params: {
     url,
     ...(params.maxPages != null ? { maxPages: params.maxPages } : {}),
     ...(params.projectId ? { projectId: params.projectId } : {}),
+    ...(params.classifyPageTopics ? { classifyPageTopics: true } : {}),
     scanId: params.scanId,
   });
 }
@@ -326,14 +343,24 @@ export const apiSearch = (q: string, limit?: number) => {
 
 /** Build: DELETE /api/scans/[id] */
 export const apiScansDelete = (id: string) => `${API_SCANS}/${encodeURIComponent(id)}`;
-/** Build: GET /api/scans/domain?limit=&page=&projectId= */
-export const apiScansDomainList = (params?: { limit?: number; page?: number; projectId?: string | null }) => {
+/** Build: GET /api/scans/domain?limit=&page=&projectId=&q=&status= */
+export const apiScansDomainList = (params?: {
+  limit?: number;
+  page?: number;
+  projectId?: string | null;
+  q?: string;
+  status?: string;
+}) => {
   const search = new URLSearchParams();
   if (params?.limit != null) search.set('limit', String(params.limit));
   if (params?.page != null) search.set('page', String(params.page));
   if (params?.projectId !== undefined) search.set('projectId', params.projectId ?? '');
+  if (params?.q != null && params.q.trim() !== '') search.set('q', params.q.trim());
+  if (params?.status != null && params.status !== '') search.set('status', params.status);
   return search.toString() ? `${API_SCANS_DOMAIN}?${search.toString()}` : API_SCANS_DOMAIN;
 };
+/** Build: POST /api/scans/domain/compare */
+export const API_SCANS_DOMAIN_COMPARE = `${API_SCANS_DOMAIN}/compare`;
 /** Build: DELETE /api/scans/domain/[id] */
 export const apiScansDomainDelete = (id: string) => `${API_SCANS_DOMAIN}/${encodeURIComponent(id)}`;
 /** Build: PATCH /api/scans/domain/[id]/project (assign domain scan to project) */

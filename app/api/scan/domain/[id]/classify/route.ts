@@ -6,18 +6,9 @@ import { NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { getDomainScan, listScansByGroupId, updateScanResult } from '@/lib/db/scans';
-import { classifyPageWithLlm } from '@/lib/llm/page-classification';
-import { getAnthropicKey } from '@/lib/llm/config';
-import { refreshDomainPayloadFromScans } from '@/lib/domain-scan-classify';
-import { reportUsage } from '@/lib/usage-report';
-
-const MIN_BODY_LENGTH = 50;
-const DELAY_MS = 150;
-
-function delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-}
+import { getDomainScan, listScansByGroupId } from '@/lib/db/scans';
+import { PAGE_CLASSIFY_MIN_BODY_EXCERPT_CHARS } from '@/lib/llm/page-classification';
+import { runDomainScanPageClassificationJob } from '@/lib/domain-scan-page-classification-job';
 
 export async function POST(
     _request: Request,
@@ -43,7 +34,7 @@ export async function POST(
     }
     const pages = await listScansByGroupId(user.id, domainId);
     const toClassify = pages.filter(
-        (p) => (p.bodyTextExcerpt ?? '').trim().length >= MIN_BODY_LENGTH
+        (p) => (p.bodyTextExcerpt ?? '').trim().length >= PAGE_CLASSIFY_MIN_BODY_EXCERPT_CHARS
     );
     const pageCount = toClassify.length;
 
@@ -55,7 +46,7 @@ export async function POST(
         });
     }
 
-    void runClassificationInBackground(domainId, user.id, toClassify);
+    void runDomainScanPageClassificationJob({ domainScanId: domainId, userId: user.id });
 
     return NextResponse.json(
         {
@@ -65,52 +56,4 @@ export async function POST(
         },
         { status: 202 }
     );
-}
-
-async function runClassificationInBackground(
-    domainId: string,
-    userId: string,
-    pages: Awaited<ReturnType<typeof listScansByGroupId>>
-): Promise<void> {
-    if (!getAnthropicKey()) {
-        console.error('[CHECKION] domain classify: ANTHROPIC_API_KEY missing');
-        return;
-    }
-
-    for (let i = 0; i < pages.length; i++) {
-        const result = pages[i];
-        try {
-            const outcome = await classifyPageWithLlm(result);
-            if (outcome.classification) {
-                await updateScanResult(result.id, userId, { pageClassification: outcome.classification });
-                try {
-                    if (
-                        outcome.usage &&
-                        (outcome.usage.input_tokens > 0 || outcome.usage.output_tokens > 0)
-                    ) {
-                        reportUsage({
-                            userId,
-                            eventType: 'llm_request',
-                            rawUnits: {
-                                input_tokens: outcome.usage.input_tokens,
-                                output_tokens: outcome.usage.output_tokens,
-                            },
-                            idempotencyKey: `classify:${result.id}`,
-                        });
-                    }
-                } catch {
-                    /* ignore */
-                }
-            }
-        } catch (e) {
-            console.error(`[CHECKION] domain classify: page ${result.id} failed`, e);
-        }
-        if (i < pages.length - 1) await delay(DELAY_MS);
-    }
-
-    try {
-        await refreshDomainPayloadFromScans(domainId, userId);
-    } catch (e) {
-        console.error('[CHECKION] domain classify: refresh payload failed', e);
-    }
 }

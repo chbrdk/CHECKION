@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
         useSitemap: parsed.useSitemap,
         maxPages: parsed.maxPages,
         skipUnchangedPages: parsed.skipUnchangedPages,
+        classifyPageTopics: parsed.classifyPageTopics,
     });
     return NextResponse.json({
         success: true,

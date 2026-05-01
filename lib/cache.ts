@@ -13,7 +13,8 @@ import {
 import * as dbScans from '@/lib/db/scans';
 import * as dbShares from '@/lib/db/shares';
 import * as dbJourneys from '@/lib/db/journeys';
-import type { ScanResult, DomainScanResult } from '@/lib/types';
+import type { ScanResult, DomainScanResult, DomainScanStatus } from '@/lib/types';
+import { DOMAIN_SCAN_LIST_QUERY_MAX_LEN } from '@/lib/db/scans';
 import type { UxCxSummary } from '@/lib/llm-summary-types';
 import type { ShareLinkRow } from '@/lib/db/shares';
 import type { SavedJourneyRow } from '@/lib/db/journeys';
@@ -74,25 +75,39 @@ export async function listCachedDomainScans(
     return dbScans.listDomainScans(userId, { limit, offset, projectId: options?.projectId });
 }
 
-/** Cached: domain scan summaries only (id, domain, timestamp, status, score, totalPages). Optional projectId filter. Stays under 2MB. */
+/** Cached: domain scan summaries only (id, domain, timestamp, status, score, totalPages). Optional projectId / q / status filter. Stays under 2MB. */
 export async function listCachedDomainScanSummaries(
     userId: string,
-    options?: { limit?: number; offset?: number; projectId?: string | null }
+    options?: { limit?: number; offset?: number; projectId?: string | null; q?: string; status?: DomainScanStatus }
 ): Promise<Array<{ id: string; domain: string; timestamp: string; status: string; score: number; totalPages: number }>> {
     const limit = options?.limit ?? 100;
     const offset = options?.offset ?? 0;
+    const qKey = options?.q?.trim().slice(0, DOMAIN_SCAN_LIST_QUERY_MAX_LEN) ?? '';
+    const statusKey = options?.status ?? '';
     return unstable_cache(
-        () => dbScans.listDomainScanSummaries(userId, { limit, offset, projectId: options?.projectId }),
-        ['domain-summaries', userId, String(limit), String(offset), options?.projectId ?? 'all'],
+        () =>
+            dbScans.listDomainScanSummaries(userId, {
+                limit,
+                offset,
+                projectId: options?.projectId,
+                q: options?.q,
+                status: options?.status,
+            }),
+        ['domain-summaries', userId, String(limit), String(offset), options?.projectId ?? 'all', qKey, statusKey],
         { revalidate: CACHE_REVALIDATE_LIST, tags: [`domain-list-${userId}`] }
     )();
 }
 
-/** Cached: domain scans count. Optional projectId filter. */
-export async function getCachedDomainScansCount(userId: string, projectId?: string | null): Promise<number> {
+/** Cached: domain scans count. Optional projectId / q / status filter. */
+export async function getCachedDomainScansCount(
+    userId: string,
+    options?: { projectId?: string | null; q?: string; status?: DomainScanStatus }
+): Promise<number> {
+    const qKey = options?.q?.trim().slice(0, DOMAIN_SCAN_LIST_QUERY_MAX_LEN) ?? '';
+    const statusKey = options?.status ?? '';
     return unstable_cache(
-        () => dbScans.getDomainScansCount(userId, projectId),
-        ['domain-count', userId, projectId ?? 'all'],
+        () => dbScans.getDomainScansCount(userId, { projectId: options?.projectId, q: options?.q, status: options?.status }),
+        ['domain-count', userId, options?.projectId ?? 'all', qKey, statusKey],
         { revalidate: CACHE_REVALIDATE_LIST, tags: [`domain-list-${userId}`] }
     )();
 }

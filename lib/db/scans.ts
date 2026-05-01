@@ -2,11 +2,11 @@
 /*  CHECKION – Scan persistence (DB)                                   */
 /* ------------------------------------------------------------------ */
 
-import { eq, and, desc, isNull, count, sql, inArray } from 'drizzle-orm';
+import { eq, and, desc, isNull, count, sql, inArray, ilike } from 'drizzle-orm';
 import { getDb } from './index';
 import { scans, domainScans } from './schema';
 import { getProjectDomainScanReferences } from './project-domain-references';
-import type { ScanResult, DomainScanResult } from '@/lib/types';
+import type { ScanResult, DomainScanResult, DomainScanStatus } from '@/lib/types';
 import { normalizeScanUrl } from '@/lib/url-normalize';
 
 export type DomainScanSummaryRow = { id: string; domain: string; timestamp: string; status: string; score: number; totalPages: number };
@@ -15,6 +15,43 @@ export type DomainScanSummaryRow = { id: string; domain: string; timestamp: stri
 export type DomainScanSearchRow = DomainScanSummaryRow & {
     hasStoredAggregated: boolean;
 };
+
+/** Max length for `q` domain substring filter (`listDomainScanSummaries` / count). */
+export const DOMAIN_SCAN_LIST_QUERY_MAX_LEN = 200;
+
+export type DomainScanListQueryOptions = {
+    limit?: number;
+    offset?: number;
+    projectId?: string | null;
+    /** Case-insensitive substring match on `domain_scans.domain`; `%` `_` `\` stripped from input. */
+    q?: string;
+    status?: DomainScanStatus;
+};
+
+function buildDomainScanListWhere(
+    userId: string,
+    options?: Pick<DomainScanListQueryOptions, 'projectId' | 'q' | 'status'>
+) {
+    const conditions = [eq(domainScans.userId, userId)];
+    if (options?.projectId !== undefined) {
+        if (options.projectId === null) {
+            conditions.push(isNull(domainScans.projectId));
+        } else {
+            conditions.push(eq(domainScans.projectId, options.projectId));
+        }
+    }
+    const rawQ = options?.q?.trim();
+    if (rawQ) {
+        const safe = rawQ.slice(0, DOMAIN_SCAN_LIST_QUERY_MAX_LEN).replace(/[%_\\]/g, '');
+        if (safe.length > 0) {
+            conditions.push(ilike(domainScans.domain, `%${safe}%`));
+        }
+    }
+    if (options?.status) {
+        conditions.push(eq(domainScans.status, options.status));
+    }
+    return and(...conditions);
+}
 
 /** Domain scan rows still in progress (UI polling / resume). */
 const ACTIVE_DOMAIN_SCAN_STATUSES = ['queued', 'scanning', 'paused', 'cancelling'] as const;
@@ -236,14 +273,10 @@ export async function updateDomainScanProject(id: string, userId: string, projec
     return (updated.rowCount ?? 0) > 0;
 }
 
-/** List only summary fields (no payload) to keep response small for list/cache. Optional projectId filter. */
-export async function listDomainScanSummaries(userId: string, options?: { limit?: number; offset?: number; projectId?: string | null }): Promise<DomainScanSummaryRow[]> {
+/** List only summary fields (no payload) to keep response small for list/cache. Optional projectId / q / status filter. */
+export async function listDomainScanSummaries(userId: string, options?: DomainScanListQueryOptions): Promise<DomainScanSummaryRow[]> {
     const db = getDb();
-    const whereCond = options?.projectId === undefined
-        ? eq(domainScans.userId, userId)
-        : options.projectId === null
-            ? and(eq(domainScans.userId, userId), isNull(domainScans.projectId))
-            : and(eq(domainScans.userId, userId), eq(domainScans.projectId, options.projectId));
+    const whereCond = buildDomainScanListWhere(userId, options);
     const base = db
         .select({
             id: domainScans.id,
@@ -324,13 +357,12 @@ export async function listDomainScans(userId: string, options?: { limit?: number
     return rows.map(r => r.payload as unknown as DomainScanResult);
 }
 
-export async function getDomainScansCount(userId: string, projectId?: string | null): Promise<number> {
+export async function getDomainScansCount(
+    userId: string,
+    options?: Pick<DomainScanListQueryOptions, 'projectId' | 'q' | 'status'>
+): Promise<number> {
     const db = getDb();
-    const whereCond = projectId === undefined
-        ? eq(domainScans.userId, userId)
-        : projectId === null
-            ? and(eq(domainScans.userId, userId), isNull(domainScans.projectId))
-            : and(eq(domainScans.userId, userId), eq(domainScans.projectId, projectId));
+    const whereCond = buildDomainScanListWhere(userId, options);
     const rows = await db.select({ count: count() }).from(domainScans).where(whereCond);
     return Number(rows[0]?.count ?? 0);
 }
