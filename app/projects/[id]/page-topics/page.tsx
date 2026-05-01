@@ -75,34 +75,9 @@ export default function ProjectPageTopicsPage() {
         return () => ac.abort();
     }, [id, fetchedForIdRef]);
 
-    if (!id) {
-        return (
-            <Box sx={{ p: 'var(--msqdx-spacing-md)' }}>
-                <MsqdxTypography variant="body2">{t('common.error')}</MsqdxTypography>
-            </Box>
-        );
-    }
-
-    if (loading) {
-        return (
-            <Box sx={{ p: 'var(--msqdx-spacing-md)' }}>
-                <MsqdxTypography variant="body2">{t('common.loading')}</MsqdxTypography>
-            </Box>
-        );
-    }
-
     const ownPc = own?.aggregated?.pageClassification ?? null;
     const ownLabel = project?.domain?.trim() || t('projects.ownDomainScanLabel');
     const competitorEntries = Object.entries(competitors).sort(([a], [b]) => a.localeCompare(b));
-
-    const hasAnyTopics =
-        (ownPc && ownPc.coverage.pagesWithClassification > 0) ||
-        competitorEntries.some(
-            ([, c]) =>
-                c?.status === 'complete' &&
-                c?.aggregated?.pageClassification &&
-                c.aggregated.pageClassification.coverage.pagesWithClassification > 0
-        );
 
     const compareTopicSources = useMemo(() => {
         const out: { key: string; label: string; themes: AggregatedPageClassificationTheme[] }[] = [];
@@ -118,7 +93,32 @@ export default function ProjectPageTopicsPage() {
         return out;
     }, [ownPc, ownLabel, competitorEntries]);
 
+    const hasAnyTopics =
+        (ownPc && ownPc.coverage.pagesWithClassification > 0) ||
+        competitorEntries.some(
+            ([, c]) =>
+                c?.status === 'complete' &&
+                c?.aggregated?.pageClassification &&
+                c.aggregated.pageClassification.coverage.pagesWithClassification > 0
+        );
+
     const showCombinedMatrix = compareTopicSources.length >= 2;
+
+    if (!id) {
+        return (
+            <Box sx={{ p: 'var(--msqdx-spacing-md)' }}>
+                <MsqdxTypography variant="body2">{t('common.error')}</MsqdxTypography>
+            </Box>
+        );
+    }
+
+    if (loading) {
+        return (
+            <Box sx={{ p: 'var(--msqdx-spacing-md)' }}>
+                <MsqdxTypography variant="body2">{t('common.loading')}</MsqdxTypography>
+            </Box>
+        );
+    }
 
     return (
         <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto', width: '100%', boxSizing: 'border-box' }}>
