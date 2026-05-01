@@ -210,10 +210,6 @@ export const apiScanDomainBundle = (id: string) => `${API_SCAN_DOMAIN}/${encodeU
 export const DOMAIN_SLIM_PAGES_PAGE_SIZE = 100;
 /** Page size for GET .../seo-pages (server max 200). */
 export const DOMAIN_SEO_PAGES_PAGE_SIZE = 50;
-/** @deprecated Use DOMAIN_SLIM_PAGES_PAGE_SIZE; kept for tests referencing old chunk name. */
-export const DOMAIN_SLIM_PAGES_CHUNK = DOMAIN_SLIM_PAGES_PAGE_SIZE;
-/** @deprecated Removed client-side 10k cap; use server pagination. */
-export const DOMAIN_SLIM_PAGES_MAX_CLIENT = 1_000_000;
 /** Build: GET /api/scan/domain/[id]/slim-pages?offset=&limit=&sort=&dir= */
 export const apiScanDomainSlimPages = (
     id: string,
@@ -585,6 +581,9 @@ export const ENV_SCREENSHOT_S3_BUCKET = 'SCREENSHOT_S3_BUCKET';
 export const ENV_SCREENSHOT_S3_PREFIX = 'SCREENSHOT_S3_PREFIX';
 /** AWS region for S3 (default eu-central-1). */
 export const ENV_SCREENSHOT_AWS_REGION = 'SCREENSHOT_AWS_REGION';
+
+/** When `1`/`true`/`yes`, enables verbose scanner and journey-agent debug logs (axe injection, CLS, tool traces). */
+export const ENV_CHECKION_SCAN_DEBUG = 'CHECKION_SCAN_DEBUG';
 
 /** Optional base URL for the UX Journey Agent (Python/Browser Use). If set, POST /api/scan/journey-agent forwards to this service. On Coolify: use internal service URL (e.g. http://ux-journey-agent:8320). */
 export const ENV_UX_JOURNEY_AGENT_URL = 'UX_JOURNEY_AGENT_URL';

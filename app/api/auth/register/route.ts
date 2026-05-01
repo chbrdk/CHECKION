@@ -5,6 +5,7 @@
 import { NextResponse } from 'next/server';
 import { apiError, handleApiError, API_STATUS } from '@/lib/api-error-handler';
 import { parseApiBody, registerBodySchema } from '@/lib/api-schemas';
+import { checkRateLimit, getClientIpForRateLimit } from '@/lib/rate-limit';
 import { eq } from 'drizzle-orm';
 import { getDb } from '@/lib/db';
 import { users } from '@/lib/db/schema';
@@ -17,6 +18,15 @@ export async function POST(request: Request) {
     if (!process.env.DATABASE_URL) {
         console.error('[CHECKION] DATABASE_URL is not set');
         return apiError('Server misconfiguration: database not configured.', API_STATUS.UNAVAILABLE);
+    }
+    const ip = getClientIpForRateLimit(request);
+    const rl = checkRateLimit(`register:${ip}`, 'register');
+    if (!rl.allowed) {
+        return apiError(
+            'Too many registration attempts. Please try again later.',
+            API_STATUS.TOO_MANY_REQUESTS,
+            rl.retryAfter ? { retryAfter: rl.retryAfter } : undefined
+        );
     }
     try {
         const parsed = await parseApiBody(request, registerBodySchema);

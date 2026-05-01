@@ -15,6 +15,7 @@ import { deduplicateIssues } from './issue-dedupe';
 import { computeGeoEeatPageScore } from './geo-eeat-page-score';
 import { writeScreenshot } from './screenshot-storage';
 import type { Issue, Runner, ScanResult, ScanStats, WcagStandard, Device, ScanOptions, SeoAudit } from './types';
+import { scanDebugLog, scanDebugWarn } from './scan-debug-log';
 
 /**
  * Viewport definitions for supported devices.
@@ -382,7 +383,7 @@ export async function runScan(
         // 3. Capture Passed Audits using axe-core directly
         let passes: any[] = [];
         try {
-            console.log("Injecting axe-core...");
+            scanDebugLog("Injecting axe-core...");
             // Resolve path relative to CWD (project root)
             // This is safer in Next.js serverless/webpack context than require.resolve sometimes
             const axePath = path.join(process.cwd(), 'node_modules', 'axe-core', 'axe.min.js');
@@ -390,13 +391,13 @@ export async function runScan(
             if (fs.existsSync(axePath)) {
                 const axeSource = fs.readFileSync(axePath, 'utf8');
                 await page.addScriptTag({ content: axeSource });
-                console.log("Axe injected via content. Running axe...");
+                scanDebugLog("Axe injected via content. Running axe...");
             } else {
-                console.warn("Axe file not found at:", axePath);
+                scanDebugWarn("Axe file not found at:", axePath);
                 // Fallback to require.resolve - sometimes works local dev
                 const fallbackPath = require.resolve('axe-core');
                 await page.addScriptTag({ path: fallbackPath });
-                console.log("Axe injected via fallback path.");
+                scanDebugLog("Axe injected via fallback path.");
             }
 
             // Run axe with APCA enabled
@@ -425,10 +426,10 @@ export async function runScan(
                 }
             });
 
-            console.log("Axe run complete.");
+            scanDebugLog("Axe run complete.");
             const axe = axeResults as { passes?: Array<{ id: string; description: string; help: string; nodes: Array<{ html: string; target: string[]; failureSummary?: string }> }>; error?: string } | null;
             if (axe && axe.passes) {
-                console.log(`Found ${axe.passes.length} passed rules.`);
+                scanDebugLog(`Found ${axe.passes.length} passed rules.`);
                 passes = axe.passes.map((p: any) => ({
                     id: p.id,
                     description: p.description,
@@ -442,7 +443,7 @@ export async function runScan(
             } else if (axe && axe.error) {
                 console.error("Axe run returned error:", axe.error);
             } else {
-                console.warn("Axe results structure unexpected:", axe ? Object.keys(axe) : []);
+                scanDebugWarn("Axe results structure unexpected:", axe ? Object.keys(axe) : []);
             }
         } catch (e) {
             console.error('Failed to capture passed audits:', e);
@@ -458,7 +459,7 @@ export async function runScan(
         const clsScore = await page.evaluate(function () {
             return (window as Window & { __cls_score?: number }).__cls_score ?? 0;
         });
-        console.log(`[UX] CLS Score for ${url}:`, clsScore); // Debug log
+        scanDebugLog(`[UX] CLS Score for ${url}:`, clsScore);
 
         // 2. Tap Targets (Mobile Only - or general check)
         const tapIssues = await page.evaluate(function () {

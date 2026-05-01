@@ -4,17 +4,25 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { POST } from '@/app/api/auth/register/route';
+import { __resetRateLimitStoresForTests } from '@/lib/rate-limit';
 
 describe('POST /api/auth/register', () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
     vi.resetModules();
-    process.env = { ...originalEnv, DATABASE_URL: 'postgresql://test:test@localhost:5432/test' };
+    process.env = {
+      ...originalEnv,
+      DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
+      RATE_LIMIT_REGISTER_MAX: '10',
+      RATE_LIMIT_REGISTER_WINDOW_MS: '60000',
+    };
+    __resetRateLimitStoresForTests();
   });
 
   afterEach(() => {
     process.env = originalEnv;
+    __resetRateLimitStoresForTests();
   });
 
   it('returns 400 when email is missing', async () => {
@@ -85,6 +93,31 @@ describe('POST /api/auth/register', () => {
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.error).toMatch(/lowercase/i);
+  });
+
+  it('returns 429 when IP exceeds register rate limit (before body validation)', async () => {
+    process.env.RATE_LIMIT_REGISTER_MAX = '2';
+    process.env.RATE_LIMIT_REGISTER_WINDOW_MS = '60000';
+    __resetRateLimitStoresForTests();
+
+    const mkReq = () =>
+      new Request('http://localhost/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-forwarded-for': '203.0.113.99',
+        },
+        body: JSON.stringify({ password: 'Password123' }),
+      });
+
+    let res = await POST(mkReq());
+    expect(res.status).toBe(400);
+    res = await POST(mkReq());
+    expect(res.status).toBe(400);
+    res = await POST(mkReq());
+    expect(res.status).toBe(429);
+    const json = await res.json();
+    expect(json.error).toMatch(/too many registration/i);
   });
 
   it('returns 400 when password lacks digit', async () => {
