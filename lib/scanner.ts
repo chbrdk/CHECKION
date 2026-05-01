@@ -28,6 +28,16 @@ import type {
 } from './types';
 import { normalizeScanResultForPersist } from '@/lib/scan-result-shape';
 import { scanDebugLog, scanDebugWarn } from './scan-debug-log';
+import { buildPrivacyAudit } from '@/lib/privacy-scan-heuristics';
+
+/** Puppeteer / CDP may return mixed-case header names — normalize for security audit. */
+function getHeader(headers: Record<string, string>, canonicalName: string): string | undefined {
+    const want = canonicalName.toLowerCase();
+    for (const [k, v] of Object.entries(headers)) {
+        if (k.toLowerCase() === want) return v;
+    }
+    return undefined;
+}
 
 /**
  * Viewport definitions for supported devices.
@@ -244,9 +254,11 @@ export async function runScan(
                 const u = new URL(rUrl);
                 allRequestHosts.add(u.hostname);
             } catch (_) {}
-            const isMainDocument =
-                rUrl === url || rUrl === url + '/' || rUrl.split('?')[0] === url.split('?')[0];
-            if (isMainDocument) {
+            const req = response.request();
+            /** Final URL after redirects often differs from `url` (slash, scheme, www) — match navigation doc on main frame. */
+            const isMainDocumentResponse =
+                req.resourceType() === 'document' && response.frame() === page.mainFrame();
+            if (isMainDocumentResponse) {
                 const remoteAddress = response.remoteAddress();
                 serverIp = remoteAddress.ip || null;
                 try {
@@ -255,7 +267,6 @@ export async function runScan(
                 const status = response.status();
                 if (status >= 200 && status < 300) {
                     // Use headers only from the final document response (2xx), not from 301/302 redirects.
-                    // Redirect responses rarely send security headers, which caused "always missing".
                     mainHeaders = response.headers();
                 }
             }
@@ -677,17 +688,28 @@ export async function runScan(
                 href: el.getAttribute('href') || ''
             }));
 
-            // Privacy Markers
-            const links = Array.from(document.querySelectorAll('a')).map(a => ({ text: a.textContent?.toLowerCase() || '', href: a.getAttribute('href') }));
-            const privacyKeywords = ['privacy', 'datenschutz', 'legal', 'impressum', 'terms', 'nutzungsbedingungen'];
-            const privacyLink = links.find(l => privacyKeywords.some(kw => l.text.includes(kw)));
-
-            const cookieKeywords = ['cookie', 'consent', 'akzeptieren', 'accept', 'einstellungen'];
-            const hasCookieBannerHeuristic = !!document.body.innerText.toLowerCase().includes('cookie') ||
-                !!document.querySelector('#cookie-banner, .cookie-banner, #consent-manager, .consent-banner');
+            const anchorList = Array.from(document.querySelectorAll('a[href]')).map(function (a) {
+                const href = (a.getAttribute('href') || '').trim();
+                const textRaw = (a.textContent || '').trim();
+                return { textLower: textRaw.toLowerCase(), textRaw: textRaw, href: href };
+            });
+            const links = anchorList.map(function (a) {
+                return { text: a.textLower, href: a.href };
+            });
+            const privacyLinkRows = anchorList.map(function (a) {
+                return { text: a.textRaw, href: a.href };
+            });
 
             // E-E-A-T page signals (for domain-scan aggregation)
             const bodyLower = document.body.innerText.toLowerCase();
+            const hasCookieBannerHeuristic =
+                /cookie|cookies|einwilligung|consent|tracking|zustimmung|zwecke|privatsphäre|preference/i.test(
+                    bodyLower
+                ) ||
+                !!document.querySelector(
+                    '[id*="cookie" i], [class*="cookie" i], [class*="consent" i], [class*="Cookiebot" i], [id*="CybotCookiebotDialog"], #usercentrics-root, .fc-consent-root, #onetrust-consent-sdk, [aria-label*="cookie" i], [data-testid*="cookie"], #cookie-banner, .cookie-banner, #consent-manager, .consent-banner'
+                );
+
             const hasImpressum = links.some(function(l) { return /impressum|imprint|legal notice/i.test(l.text) || (l.href && /impressum|imprint/i.test(l.href)); });
             const hasContact = links.some(function(l) { return /kontakt|contact|get in touch/i.test(l.text) || (l.href && /contact|kontakt/i.test(l.href)); });
             const hasAboutLink = links.some(function(l) { return /über uns|about us|about we|who we|ueber uns/i.test(l.text) || (l.href && /about|ueber-uns|about-us/i.test(l.href)); });
@@ -881,12 +903,8 @@ export async function runScan(
                     htmlLang,
                     hreflangs
                 },
-                privacy: {
-                    hasPrivacyPolicy: privacyLink?.text.includes('privacy') || privacyLink?.text.includes('datenschutz') || false,
-                    privacyPolicyUrl: privacyLink?.href || null,
-                    hasCookieBanner: hasCookieBannerHeuristic,
-                    hasTermsOfService: privacyLink?.text.includes('terms') || privacyLink?.text.includes('bedingungen') || false,
-                },
+                privacyLinkRows: privacyLinkRows,
+                cookieBannerHeuristic: hasCookieBannerHeuristic,
                 eeatPage: {
                     hasImpressum,
                     hasContact,
@@ -930,14 +948,30 @@ export async function runScan(
         });
 
         let seoAudit: SeoAudit = seoAndMeta.seo as SeoAudit;
-        const privacyAudit = seoAndMeta.privacy;
+        const seoExtras = seoAndMeta as {
+            privacyLinkRows?: Array<{ text: string; href: string }>;
+            cookieBannerHeuristic?: boolean;
+        };
+        const privacyAudit = buildPrivacyAudit(
+            seoExtras.privacyLinkRows ?? [],
+            url,
+            seoExtras.cookieBannerHeuristic ?? false
+        );
         const eeatSignals = (seoAndMeta as { eeatPage?: import('./types').EeatPageSignals }).eeatPage;
         const bodyTextExcerpt = (seoAndMeta as { bodyTextExcerpt?: string }).bodyTextExcerpt;
 
         // 5c. Geo Location Lookup & CDN Detection
         let locationData: any = null;
         const ip = serverIp as string | null;
-        const isPublicIp = ip && typeof ip === 'string' && ip !== '' && !ip.startsWith('127.') && !ip.startsWith('192.168.');
+        const isPublicIp =
+            !!ip &&
+            typeof ip === 'string' &&
+            ip !== '' &&
+            ip !== '0.0.0.0' &&
+            !ip.startsWith('127.') &&
+            !ip.startsWith('10.') &&
+            !ip.startsWith('192.168.') &&
+            !/^172\.(1[6-9]|2\d|3[01])\./.test(ip);
         if (isPublicIp) {
             try {
                 const { API_IP_API_BASE } = await import('./external-apis');
@@ -973,11 +1007,12 @@ export async function runScan(
         // CDN Detection Heuristics
         const h = mainHeaders;
         let cdnProvider: string | null = null;
-        if (h['cf-ray'] || h['server'] === 'cloudflare') cdnProvider = 'Cloudflare';
-        else if (h['x-amz-cf-id']) cdnProvider = 'Amazon CloudFront';
-        else if (h['x-fastly-request-id']) cdnProvider = 'Fastly';
-        else if (h['server']?.includes('Akamai')) cdnProvider = 'Akamai';
-        else if (h['x-cdn']) cdnProvider = h['x-cdn'];
+        const serverHdr = getHeader(h, 'server') ?? '';
+        if (getHeader(h, 'cf-ray') || serverHdr.toLowerCase().includes('cloudflare')) cdnProvider = 'Cloudflare';
+        else if (getHeader(h, 'x-amz-cf-id')) cdnProvider = 'Amazon CloudFront';
+        else if (getHeader(h, 'x-fastly-request-id')) cdnProvider = 'Fastly';
+        else if (serverHdr.includes('Akamai')) cdnProvider = 'Akamai';
+        else if (getHeader(h, 'x-cdn')) cdnProvider = getHeader(h, 'x-cdn') ?? null;
 
         const countryCode = locationData?.countryCode ?? null;
         const targetRegionMismatch = !!targetRegion && !!countryCode && !matchesTargetRegion(countryCode, targetRegion);
@@ -1009,33 +1044,33 @@ export async function runScan(
         } | undefined;
 
         const cookieWarnings: Array<{ message: string }> = [];
-        const setCookieRaw = mainHeaders['set-cookie'] ?? mainHeaders['Set-Cookie'];
+        const setCookieRaw = getHeader(h, 'set-cookie');
         if (setCookieRaw) {
-            const setCookieStr = Array.isArray(setCookieRaw) ? setCookieRaw.join('; ') : String(setCookieRaw);
+            const setCookieStr = String(setCookieRaw);
             if (setCookieStr.toLowerCase().indexOf('samesite') === -1) cookieWarnings.push({ message: 'Set-Cookie ohne SameSite' });
             if (pageIsHttps && setCookieStr.toLowerCase().indexOf('secure') === -1) cookieWarnings.push({ message: 'Set-Cookie ohne Secure auf HTTPS' });
         }
 
         const securityAudit = {
             contentSecurityPolicy: {
-                present: !!h['content-security-policy'],
-                value: h['content-security-policy'] || undefined
+                present: !!getHeader(h, 'content-security-policy'),
+                value: getHeader(h, 'content-security-policy')
             },
             xFrameOptions: {
-                present: !!h['x-frame-options'],
-                value: h['x-frame-options'] || undefined
+                present: !!getHeader(h, 'x-frame-options'),
+                value: getHeader(h, 'x-frame-options')
             },
             xContentTypeOptions: {
-                present: !!h['x-content-type-options'],
-                value: h['x-content-type-options'] || undefined
+                present: !!getHeader(h, 'x-content-type-options'),
+                value: getHeader(h, 'x-content-type-options')
             },
             strictTransportSecurity: {
-                present: !!h['strict-transport-security'],
-                value: h['strict-transport-security'] || undefined
+                present: !!getHeader(h, 'strict-transport-security'),
+                value: getHeader(h, 'strict-transport-security')
             },
             referrerPolicy: {
-                present: !!h['referrer-policy'],
-                value: h['referrer-policy'] || undefined
+                present: !!getHeader(h, 'referrer-policy'),
+                value: getHeader(h, 'referrer-policy')
             },
             mixedContentUrls: mixedContentUrls.length > 0 ? mixedContentUrls : undefined,
             sriMissing: ext?.sriMissing && ext.sriMissing.length > 0 ? ext.sriMissing : undefined,
@@ -1631,8 +1666,8 @@ export async function runScan(
             ymyl: ymylResult
         };
 
-        const etag = (mainHeaders['etag'] ?? mainHeaders['ETag'])?.trim();
-        const lastModified = (mainHeaders['last-modified'] ?? mainHeaders['Last-Modified'])?.trim();
+        const etag = getHeader(mainHeaders, 'etag')?.trim();
+        const lastModified = getHeader(mainHeaders, 'last-modified')?.trim();
         if (etag || lastModified) {
             result.documentCacheHints = {
                 ...(etag ? { etag } : {}),

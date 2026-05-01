@@ -36,9 +36,16 @@ export function InfraCard({ geo }: { geo: GeoAudit }) {
                             </MsqdxTypography>
                         </Box>
                     ) : (
-                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                            Standort konnte nicht ermittelt werden.
-                        </MsqdxTypography>
+                        <Box>
+                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                Standort konnte nicht ermittelt werden (z. B. localhost, private IP oder keine Geo-API).
+                            </MsqdxTypography>
+                            {geo.serverIp && /^127\.|^10\.|^192\.168\.|^172\.(1[6-9]|2\d|3[01])\./.test(geo.serverIp.trim()) ? (
+                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mt: 0.5 }}>
+                                    Hinweis: Bei lokaler Entwicklung ist die Server-IP oft privat — Geo-Lookup ist dann nicht möglich.
+                                </MsqdxTypography>
+                            ) : null}
+                        </Box>
                     )}
                 </Box>
 

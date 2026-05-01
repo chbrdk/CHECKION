@@ -20,7 +20,7 @@ import {
     MSQDX_BRAND_PRIMARY,
     MSQDX_STATUS,
 } from '@msqdx/tokens';
-import type { ScanResult, WcagStandard, Runner, Device, ScanDevicePhase } from '@/lib/types';
+import type { ScanResult, WcagStandard, Runner } from '@/lib/types';
 import type { SelectChangeEvent } from '@mui/material';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import {
@@ -39,14 +39,14 @@ import {
     HEADER_CHECKION_SCAN_STREAM,
     HEADER_CHECKION_SCAN_STREAM_ON,
 } from '@/lib/constants';
-import { ScanProgressSnackbar } from '@/components/ScanProgressSnackbar';
-import type { ScanMetaPhase } from '@/lib/scan-progress';
 import { readScanNdjsonStream } from '@/lib/scan-stream-parse';
+import { useStatusUi } from '@/components/status/StatusUiContext';
 import { ensureUrlWithScheme } from '@/lib/url-normalize';
 
 export default function ScanPage() {
     const router = useRouter();
     const { t } = useI18n();
+    const { singlePageScan } = useStatusUi();
     const STANDARDS: { value: WcagStandard; label: string }[] = [
         { value: 'WCAG2A', label: t('standards.wcag2a') },
         { value: 'WCAG2AA', label: t('standards.wcag2aa') },
@@ -75,10 +75,6 @@ export default function ScanPage() {
     const [geoEeatSuggestMessage, setGeoEeatSuggestMessage] = useState<string | null>(null);
     const [projects, setProjects] = useState<Array<{ id: string; name: string }>>([]);
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-
-    const [progressSnackbarOpen, setProgressSnackbarOpen] = useState(false);
-    const [scanMetaPhase, setScanMetaPhase] = useState<ScanMetaPhase | null>(null);
-    const [devicePhaseByDevice, setDevicePhaseByDevice] = useState<Partial<Record<Device, ScanDevicePhase>>>({});
 
     useEffect(() => {
         fetch(apiProjectsList, { credentials: 'same-origin' })
@@ -162,9 +158,7 @@ export default function ScanPage() {
                 return;
             }
             if (scanMode === 'single') {
-                setScanMetaPhase(null);
-                setDevicePhaseByDevice({});
-                setProgressSnackbarOpen(true);
+                singlePageScan.openSession();
 
                 const res = await fetch(apiScanCreate, {
                     method: 'POST',
@@ -186,7 +180,7 @@ export default function ScanPage() {
                 if (!res.ok) {
                     const data = (await res.json().catch(() => ({}))) as { error?: string };
                     setError(data.error || t('scan.error'));
-                    setProgressSnackbarOpen(false);
+                    singlePageScan.close();
                     setScanning(false);
                     return;
                 }
@@ -195,33 +189,26 @@ export default function ScanPage() {
                     try {
                         for await (const line of readScanNdjsonStream(res.body)) {
                             if (line.type === 'progress') {
-                                if ('device' in line && line.device) {
-                                    setDevicePhaseByDevice((prev) => ({
-                                        ...prev,
-                                        [line.device]: line.phase,
-                                    }));
-                                } else {
-                                    setScanMetaPhase(line.phase as ScanMetaPhase);
-                                }
+                                singlePageScan.applyProgressLine(line);
                             } else if (line.type === 'complete') {
-                                setProgressSnackbarOpen(false);
+                                singlePageScan.close();
                                 router.push(pathResults(line.data.id));
                                 setScanning(false);
                                 return;
                             } else if (line.type === 'error') {
                                 setError(line.message);
-                                setProgressSnackbarOpen(false);
+                                singlePageScan.close();
                                 setScanning(false);
                                 return;
                             }
                         }
                     } catch {
                         setError(t('scan.networkError'));
-                        setProgressSnackbarOpen(false);
+                        singlePageScan.close();
                         setScanning(false);
                         return;
                     }
-                    setProgressSnackbarOpen(false);
+                    singlePageScan.close();
                     setScanning(false);
                     return;
                 }
@@ -229,13 +216,13 @@ export default function ScanPage() {
                 const data = await res.json();
                 if (!data.success) {
                     setError(data.error || t('scan.error'));
-                    setProgressSnackbarOpen(false);
+                    singlePageScan.close();
                     setScanning(false);
                     return;
                 }
 
                 const result = data.data as ScanResult;
-                setProgressSnackbarOpen(false);
+                singlePageScan.close();
                 router.push(pathResults(result.id));
                 setScanning(false);
                 return;
@@ -266,7 +253,7 @@ export default function ScanPage() {
 
         } catch (err) {
             setError(t('scan.networkError'));
-            setProgressSnackbarOpen(false);
+            singlePageScan.close();
             setScanning(false);
         }
     };
@@ -658,19 +645,6 @@ export default function ScanPage() {
                 </Box>
             )}
 
-            <ScanProgressSnackbar
-                open={progressSnackbarOpen}
-                onClose={(_, reason) => {
-                    if (reason === 'clickaway') return;
-                    setProgressSnackbarOpen(false);
-                }}
-                title={t('scan.progress.title')}
-                metaPhase={scanMetaPhase}
-                devicePhaseByDevice={devicePhaseByDevice}
-                tDevice={(d) => t(`scan.progress.device.${d}`)}
-                tPhase={(p) => t(`scan.progress.phase.${p}`)}
-                tMeta={(m) => t(`scan.progress.meta.${m}`)}
-            />
         </Box>
     );
 }

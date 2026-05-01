@@ -3,6 +3,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { AppShell } from '@/components/AppShell';
 import { Providers } from '@/components/Providers';
 import { I18nProvider } from '@/components/i18n/I18nProvider';
+import { StatusUiProvider } from '@/components/status/StatusUiContext';
 import { getServerLocale } from '@/lib/i18n/server';
 import '@/styles/globals.css';
 
@@ -30,7 +31,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <ThemeProvider>
           <Providers>
             <I18nProvider initialLocale={locale}>
-              <AppShell>{children}</AppShell>
+              <StatusUiProvider>
+                <AppShell>{children}</AppShell>
+              </StatusUiProvider>
             </I18nProvider>
           </Providers>
         </ThemeProvider>
