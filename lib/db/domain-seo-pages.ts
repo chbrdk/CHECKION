@@ -1,15 +1,42 @@
 /* Paginated PageSeoSummary rows — DB join (domain_pages + scans) or payload fallback */
-import { and, asc, desc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, sql, type SQL } from 'drizzle-orm';
 import { getDb } from '@/lib/db';
 import { domainPages, scans } from '@/lib/db/schema';
-import { getDomainScan } from '@/lib/db/scans';
 import type { DomainScanResult } from '@/lib/types';
 import { buildDomainSummary } from '@/lib/domain-summary';
 import type { PageSeoSummary } from '@/lib/domain-aggregation';
 
 export type SeoPagesSortKey = 'url' | 'wordCount';
 
+export type SeoKeysetCursor = {
+    domainPageId: string;
+    wordCount: number;
+    url: string;
+};
+
+function buildSeoKeysetWhere(
+    sort: SeoPagesSortKey,
+    sortDir: 'asc' | 'desc',
+    wordCountExpr: SQL,
+    after: SeoKeysetCursor
+): SQL {
+    const wc = after.wordCount;
+    const id = after.domainPageId;
+    const u = after.url;
+    if (sort === 'wordCount') {
+        if (sortDir === 'asc') {
+            return sql`(${wordCountExpr} > ${wc} OR (${wordCountExpr} = ${wc} AND ${domainPages.id} > ${id}))`;
+        }
+        return sql`(${wordCountExpr} < ${wc} OR (${wordCountExpr} = ${wc} AND ${domainPages.id} < ${id}))`;
+    }
+    if (sortDir === 'asc') {
+        return sql`(${domainPages.url} > ${u} OR (${domainPages.url} = ${u} AND ${domainPages.id} > ${id}))`;
+    }
+    return sql`(${domainPages.url} < ${u} OR (${domainPages.url} = ${u} AND ${domainPages.id} < ${id}))`;
+}
+
 function mapRowToPageSeoSummary(r: {
+    domainPageId?: string;
     url: string;
     title: string | null;
     hasMeta: boolean;
@@ -19,6 +46,7 @@ function mapRowToPageSeoSummary(r: {
 }): PageSeoSummary {
     const wordCount = r.wordCount;
     return {
+        ...(r.domainPageId ? { domainPageId: r.domainPageId } : {}),
         url: r.url,
         title: r.title,
         hasMeta: r.hasMeta,
@@ -39,6 +67,8 @@ export async function listSeoPageRowsFromDb(params: {
     limit: number;
     sort: SeoPagesSortKey;
     sortDir: 'asc' | 'desc';
+    /** Keyset (preferred over large offset when provided). */
+    after?: SeoKeysetCursor | null;
 }): Promise<{ rows: PageSeoSummary[]; total: number }> {
     const db = getDb();
     const wordCountExpr = sql<number>`COALESCE(
@@ -67,14 +97,22 @@ export async function listSeoPageRowsFromDb(params: {
     const orderBy =
         params.sort === 'wordCount'
             ? params.sortDir === 'asc'
-                ? asc(wordCountExpr)
-                : desc(wordCountExpr)
+                ? [asc(wordCountExpr), asc(domainPages.id)]
+                : [desc(wordCountExpr), desc(domainPages.id)]
             : params.sortDir === 'asc'
-              ? asc(domainPages.url)
-              : desc(domainPages.url);
+              ? [asc(domainPages.url), asc(domainPages.id)]
+              : [desc(domainPages.url), desc(domainPages.id)];
 
-    const raw = await db
+    const keysetSql =
+        params.after != null
+            ? buildSeoKeysetWhere(params.sort, params.sortDir, wordCountExpr, params.after)
+            : undefined;
+
+    const pageWhere = keysetSql != null ? and(where, seoPresent, keysetSql) : and(where, seoPresent);
+
+    const baseQuery = db
         .select({
+            domainPageId: domainPages.id,
             url: domainPages.url,
             title: titleExpr,
             hasMeta: hasMetaExpr,
@@ -84,14 +122,16 @@ export async function listSeoPageRowsFromDb(params: {
         })
         .from(domainPages)
         .innerJoin(scans, eq(scans.id, domainPages.pageScanId))
-        .where(and(where, seoPresent))
-        .orderBy(orderBy)
-        .limit(params.limit)
-        .offset(params.offset);
+        .where(pageWhere!)
+        .orderBy(...orderBy)
+        .limit(params.limit);
+
+    const raw = params.after != null ? await baseQuery : await baseQuery.offset(params.offset);
 
     return {
         rows: raw.map((x) =>
             mapRowToPageSeoSummary({
+                domainPageId: x.domainPageId,
                 url: x.url,
                 title: x.title,
                 hasMeta: Boolean(x.hasMeta),

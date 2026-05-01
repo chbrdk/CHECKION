@@ -5,7 +5,7 @@ import type { CrossPageKeyword } from '@/lib/domain-aggregation';
 import { Box, CircularProgress, IconButton, Stack, Tooltip } from '@mui/material';
 import { MsqdxTypography, MsqdxChip, MsqdxButton, MsqdxMoleculeCard } from '@msqdx/react';
 import { ExternalLink } from 'lucide-react';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { VirtualScrollList } from '@/components/VirtualScrollList';
 import { VirtualChipList } from '@/components/VirtualChipList';
 import { RemotePaginationBar } from '@/components/RemotePaginationBar';
@@ -67,6 +67,7 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
     const [seoPageIndex, setSeoPageIndex] = useState(0);
     const [seoSort, setSeoSort] = useState<'wordCount' | 'url'>('wordCount');
     const [seoDir, setSeoDir] = useState<'asc' | 'desc'>('desc');
+    const queryClient = useQueryClient();
     const lc = locale === 'en' ? 'en-US' : 'de-DE';
 
     const handleSeoSort = useCallback((next: 'wordCount' | 'url') => {
@@ -84,18 +85,44 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
     const seoQuery = useQuery({
         queryKey: ['domain-seo-pages', domainId, seoPageIndex, seoSort, seoDir],
         queryFn: async () => {
-            const offset = seoPageIndex * DOMAIN_SEO_PAGES_PAGE_SIZE;
+            let prevCursor: string | undefined;
+            if (seoPageIndex > 0) {
+                const prevData = queryClient.getQueryData<{ nextCursor?: string }>([
+                    'domain-seo-pages',
+                    domainId,
+                    seoPageIndex - 1,
+                    seoSort,
+                    seoDir,
+                ]);
+                prevCursor = prevData?.nextCursor;
+            }
+            const useKeyset = seoPageIndex > 0 && Boolean(prevCursor);
             const res = await fetch(
                 apiScanDomainSeoPages(domainId, {
-                    offset,
-                    limit: DOMAIN_SEO_PAGES_PAGE_SIZE,
-                    sort: seoSort,
-                    dir: seoDir,
+                    ...(useKeyset
+                        ? {
+                              offset: 0,
+                              limit: DOMAIN_SEO_PAGES_PAGE_SIZE,
+                              sort: seoSort,
+                              dir: seoDir,
+                              after: prevCursor,
+                          }
+                        : {
+                              offset: seoPageIndex * DOMAIN_SEO_PAGES_PAGE_SIZE,
+                              limit: DOMAIN_SEO_PAGES_PAGE_SIZE,
+                              sort: seoSort,
+                              dir: seoDir,
+                          }),
                 }),
                 { credentials: 'same-origin' }
             );
             if (!res.ok) throw new Error('seo-pages failed');
-            return res.json() as Promise<{ data?: PageSeoSummary[]; total?: number }>;
+            return res.json() as Promise<{
+                data?: PageSeoSummary[];
+                total?: number;
+                nextCursor?: string;
+                source?: string;
+            }>;
         },
         enabled: Boolean(domainId),
         placeholderData: keepPreviousData,
@@ -107,9 +134,10 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
     const hasSeoRows = seoRows.length > 0;
     const seoInitialLoading = seoQuery.isPending && !hasSeoRows;
     const seoRefetching = seoQuery.isFetching && !seoQuery.isPending;
+    const seoUseKeyset = seoQuery.data?.source === 'db';
 
     const renderSeoRow = useCallback(
-        (row: PageSeoSummary, _index: number) => (
+        (row: PageSeoSummary) => (
             <SeoDensityScrollRow row={row} locale={locale} onOpenPageUrl={onOpenPageUrl} t={t} />
         ),
         [locale, onOpenPageUrl, t]
@@ -321,7 +349,7 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                         maxHeight={320}
                         estimateSize={DOMAIN_TAB_SEO_PAGE_ROW_ESTIMATE_PX}
                         overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
-                        getItemKey={(row) => row.url}
+                        getItemKey={(row) => row.domainPageId ?? row.url}
                         renderItem={renderSeoRow}
                     />
                 )}
@@ -331,6 +359,14 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                     total={seoTotal}
                     loading={seoRefetching}
                     onPageChange={setSeoPageIndex}
+                    onPrevCursor={
+                        seoUseKeyset
+                            ? () => {
+                                  setSeoPageIndex((p) => Math.max(0, p - 1));
+                              }
+                            : undefined
+                    }
+                    disablePrevCursor={seoUseKeyset ? seoPageIndex <= 0 : undefined}
                     labels={paginationLabels}
                 />
             </MsqdxMoleculeCard>

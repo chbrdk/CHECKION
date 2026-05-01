@@ -190,6 +190,9 @@ describe('API path builders', () => {
         expect(apiScanDomainSlimPages('d1', { offset: 0, limit: 100, sort: 'score', dir: 'desc' })).toBe(
             '/api/scan/domain/d1/slim-pages?offset=0&limit=100&sort=score&dir=desc'
         );
+        expect(apiScanDomainSlimPages('d1', { offset: 0, limit: 50, after: 'abc' })).toBe(
+            '/api/scan/domain/d1/slim-pages?offset=0&limit=50&after=abc'
+        );
     });
 
     it('apiScanDomainBundle builds bundle URL', () => {

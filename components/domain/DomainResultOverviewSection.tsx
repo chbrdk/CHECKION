@@ -3,7 +3,7 @@
 import React, { memo, useCallback, useMemo, useState } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import { MsqdxTypography, MsqdxMoleculeCard } from '@msqdx/react';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { RemotePaginationBar } from '@/components/RemotePaginationBar';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import dynamic from 'next/dynamic';
@@ -46,6 +46,7 @@ function DomainResultOverviewSectionInner({
     const [pageIndex, setPageIndex] = useState(0);
     const [sortKey, setSortKey] = useState<ScannedPagesSortKey>('url');
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+    const queryClient = useQueryClient();
 
     const handleServerSort = useCallback(
         (key: ScannedPagesSortKey) => {
@@ -69,18 +70,39 @@ function DomainResultOverviewSectionInner({
     const slimQuery = useQuery({
         queryKey: ['domain-slim-pages', domainId, pageIndex, sortKey, sortDir],
         queryFn: async () => {
-            const offset = pageIndex * DOMAIN_SLIM_PAGES_PAGE_SIZE;
+            let prevCursor: string | undefined;
+            if (pageIndex > 0) {
+                const prevData = queryClient.getQueryData<{ nextCursor?: string }>([
+                    'domain-slim-pages',
+                    domainId,
+                    pageIndex - 1,
+                    sortKey,
+                    sortDir,
+                ]);
+                prevCursor = prevData?.nextCursor;
+            }
+            const useKeyset = pageIndex > 0 && Boolean(prevCursor);
             const res = await fetch(
                 apiScanDomainSlimPages(domainId, {
-                    offset,
-                    limit: DOMAIN_SLIM_PAGES_PAGE_SIZE,
-                    sort: sortKey,
-                    dir: sortDir,
+                    ...(useKeyset
+                        ? {
+                              offset: 0,
+                              limit: DOMAIN_SLIM_PAGES_PAGE_SIZE,
+                              sort: sortKey,
+                              dir: sortDir,
+                              after: prevCursor,
+                          }
+                        : {
+                              offset: pageIndex * DOMAIN_SLIM_PAGES_PAGE_SIZE,
+                              limit: DOMAIN_SLIM_PAGES_PAGE_SIZE,
+                              sort: sortKey,
+                              dir: sortDir,
+                          }),
                 }),
                 { credentials: 'same-origin' }
             );
             if (!res.ok) throw new Error('slim-pages failed');
-            return res.json() as Promise<{ data?: SlimPage[]; total?: number }>;
+            return res.json() as Promise<{ data?: SlimPage[]; total?: number; nextCursor?: string; source?: string }>;
         },
         enabled: embeddedPages === null && Boolean(domainId),
         placeholderData: keepPreviousData,
@@ -99,6 +121,8 @@ function DomainResultOverviewSectionInner({
     const slimInitialLoading = embeddedPages === null && slimQuery.isPending && !hasSlimRows;
     const slimRefetching = embeddedPages === null && slimQuery.isFetching && !slimQuery.isPending;
 
+    const slimUseKeyset = embeddedPages === null && slimQuery.data?.source === 'db';
+
     const slimPaginationFooter = useMemo(
         () => (
             <>
@@ -109,6 +133,14 @@ function DomainResultOverviewSectionInner({
                         total={remoteTotal}
                         loading={slimRefetching}
                         onPageChange={setPageIndex}
+                        onPrevCursor={
+                            slimUseKeyset
+                                ? () => {
+                                      setPageIndex((p) => Math.max(0, p - 1));
+                                  }
+                                : undefined
+                        }
+                        disablePrevCursor={slimUseKeyset ? pageIndex <= 0 : undefined}
                         labels={{ prev: t('share.back'), next: t('share.next') }}
                     />
                 ) : null}
@@ -122,7 +154,15 @@ function DomainResultOverviewSectionInner({
                 </MsqdxTypography>
             </>
         ),
-        [embeddedPages, pageIndex, remoteTotal, slimRefetching, tablePages.length, t]
+        [
+            embeddedPages,
+            pageIndex,
+            remoteTotal,
+            slimRefetching,
+            slimUseKeyset,
+            tablePages.length,
+            t,
+        ]
     );
 
     return (

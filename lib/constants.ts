@@ -210,29 +210,31 @@ export const apiScanDomainBundle = (id: string) => `${API_SCAN_DOMAIN}/${encodeU
 export const DOMAIN_SLIM_PAGES_PAGE_SIZE = 100;
 /** Page size for GET .../seo-pages (server max 200). */
 export const DOMAIN_SEO_PAGES_PAGE_SIZE = 50;
-/** Build: GET /api/scan/domain/[id]/slim-pages?offset=&limit=&sort=&dir= */
+/** Build: GET /api/scan/domain/[id]/slim-pages?offset=&limit=&sort=&dir=&after= */
 export const apiScanDomainSlimPages = (
     id: string,
-    params?: { offset?: number; limit?: number; sort?: string; dir?: 'asc' | 'desc' }
+    params?: { offset?: number; limit?: number; sort?: string; dir?: 'asc' | 'desc'; after?: string }
 ) => {
     const q = new URLSearchParams();
     if (params?.offset != null) q.set('offset', String(params.offset));
     if (params?.limit != null) q.set('limit', String(params.limit));
     if (params?.sort) q.set('sort', params.sort);
     if (params?.dir) q.set('dir', params.dir);
+    if (params?.after) q.set('after', params.after);
     const qs = q.toString();
     return `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/slim-pages${qs ? `?${qs}` : ''}`;
 };
-/** Build: GET /api/scan/domain/[id]/seo-pages?offset=&limit=&sort=&dir= */
+/** Build: GET /api/scan/domain/[id]/seo-pages?offset=&limit=&sort=&dir=&after= */
 export const apiScanDomainSeoPages = (
     id: string,
-    params?: { offset?: number; limit?: number; sort?: string; dir?: 'asc' | 'desc' }
+    params?: { offset?: number; limit?: number; sort?: string; dir?: 'asc' | 'desc'; after?: string }
 ) => {
     const q = new URLSearchParams();
     if (params?.offset != null) q.set('offset', String(params.offset));
     if (params?.limit != null) q.set('limit', String(params.limit));
     if (params?.sort) q.set('sort', params.sort);
     if (params?.dir) q.set('dir', params.dir);
+    if (params?.after) q.set('after', params.after);
     const qs = q.toString();
     return `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/seo-pages${qs ? `?${qs}` : ''}`;
 };
