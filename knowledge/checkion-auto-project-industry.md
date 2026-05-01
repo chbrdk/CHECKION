@@ -7,8 +7,8 @@ Nach einem **Deep Scan mit verknüpftem Projekt** wird `projects.industry` per *
 ## Ablauf
 
 1. Deterministischer Rollup der Seiten-Themen → optional **Theme-Rollup-Refine** (bestehend).
-2. **`maybeAutoFillProjectIndustryFromDomainScan`** (`lib/project-industry-auto.ts`) lädt Projekt + neueste Payload.
-3. **`inferProjectIndustryWithLlm`** (`lib/llm/project-industry-infer.ts`): ein JSON `{ "industry": string }`, normalisiert mit `normalizeIndustry` (max. 128 Zeichen).
+2. **`maybeAutoFillProjectClassificationFromDomainScan`** (`lib/project-industry-auto.ts`): zuerst Tags aus Rollup (falls leer), dann Branche.
+3. **`inferProjectIndustryWithLlm`** (`lib/llm/project-industry-infer.ts`): ein JSON `{ "industryId": string | null }`, gültige Pool-ID aus `lib/industry-pool.ts`.
 4. **`updateProject`** + **`invalidateDomainList`**.
 5. Usage-Event: `project_industry_infer` (PLEXON/Report analog zu anderen LLM-Events).
 
@@ -27,11 +27,16 @@ Ohne Projekt (`domain_scans.project_id` leer) passiert nichts.
 |----------|---------|
 | `CHECKION_DISABLE_AUTO_PROJECT_INDUSTRY=1` | Keine automatische Branche. |
 | `CHECKION_AUTO_INDUSTRY_OVERWRITE=1` | Auch gesetzte Branche wird neu inferiert (bei erneutem Trigger). |
+| `CHECKION_DISABLE_AUTO_PROJECT_TAGS=1` | Keine automatischen Projekt-Tags aus Rollup. |
+| `CHECKION_AUTO_TAGS_OVERWRITE=1` | Bestehende Projekt-Tags durch Rollup-Tags ersetzen. |
 
 Modell/Tokens: wie Theme-Rollup-Refine (`PAGE_TOPIC_ROLLUP_REFINE_CLAUDE_MODEL`, max. 512 Output-Tokens für diesen Call).
 
+## Automatische Tags
+
+`maybeAutoFillProjectTagsFromDomainScan` (über **`maybeAutoFillProjectClassificationFromDomainScan`**) setzt `projects.tags` aus **`topThemes`** (slug aus `themeTagKey` / `tag`), wenn noch keine Tags existieren — außer `CHECKION_AUTO_TAGS_OVERWRITE=1`. Danach **`syncDomainScanTagsForProjectId`**, damit verknüpfte Scans dieselben Tags tragen.
+
 ## Grenzen
 
-- Mindestens **2** `topThemes`, sonst kein LLM-Call.
-- Qualität hängt von **Seiten-Klassifikation / Themen** ab; reine Navigation/Boilerplate kann zu leerem `industry` führen (Modell darf `""` liefern).
-- **Tags** am Projekt werden hier **nicht** automatisch gesetzt (nur `industry`).
+- **Branche:** auch bei **0** `topThemes` läuft ein Haiku-Call mit **Domain + Projektname** (best-effort); bei leeren Themes kann das Ergebnis `null` sein.
+- Qualität hängt von **Seiten-Klassifikation / Themen** ab; ohne `classifyPageTopics` sind oft weniger oder keine Rollup-Themen → dann keine Auto-Tags, aber weiterhin Domain-basierte Branche möglich.

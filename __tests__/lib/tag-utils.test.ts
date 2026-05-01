@@ -4,7 +4,9 @@ import {
     normalizeTagList,
     normalizeIndustry,
     parseTagsFromInput,
+    rollupThemesToProjectTags,
 } from '@/lib/tag-utils';
+import type { AggregatedPageClassification } from '@/lib/types';
 
 describe('tag-utils', () => {
     it('normalizeTagFilter accepts word chars and hyphen', () => {
@@ -23,5 +25,26 @@ describe('tag-utils', () => {
 
     it('parseTagsFromInput splits on comma and whitespace', () => {
         expect(parseTagsFromInput('foo, bar  baz')).toEqual(['foo', 'bar', 'baz']);
+    });
+
+    it('rollupThemesToProjectTags slugifies theme keys', () => {
+        const pc: AggregatedPageClassification = {
+            coverage: { totalPages: 2, pagesWithClassification: 2 },
+            topThemes: [
+                { tag: 'Foo Bar', themeTagKey: 'foo-bar', score: 1, pageCount: 1, maxTier: 3, avgTier: 3 },
+                { tag: 'baz_qux', score: 1, pageCount: 1, maxTier: 3, avgTier: 3 },
+            ],
+            tierDistribution: {
+                avgTagsPerPageByTier: { tier1: 0, tier2: 0, tier3: 0, tier4: 0, tier5: 0 },
+                pagesWithAtLeastOneTier5: 0,
+                pagesDominatedByLowTiers: 0,
+            },
+            pageSamples: [],
+        };
+        expect(rollupThemesToProjectTags(pc, 10)).toEqual(['foo-bar', 'baz_qux']);
+    });
+
+    it('rollupThemesToProjectTags returns empty without themes', () => {
+        expect(rollupThemesToProjectTags(undefined)).toEqual([]);
     });
 });

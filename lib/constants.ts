@@ -593,6 +593,11 @@ export const ENV_REDIS_URL = 'REDIS_URL';
 /** When `1`/`true`/`yes`, never connects to Redis for rate limiting (in-memory only). Use if `REDIS_URL` points at an unreachable host and logs spam `EAI_AGAIN` / `getaddrinfo`. */
 export const ENV_CHECKION_DISABLE_REDIS_RATE_LIMIT = 'CHECKION_DISABLE_REDIS_RATE_LIMIT';
 
+/** When `1`/`true`/`yes`, skip auto-filling `projects.tags` from domain `topThemes` after a linked deep scan. */
+export const ENV_CHECKION_DISABLE_AUTO_PROJECT_TAGS = 'CHECKION_DISABLE_AUTO_PROJECT_TAGS';
+/** When `1`/`true`/`yes`, replace existing project tags with rollup-derived tags when auto-tags run. */
+export const ENV_CHECKION_AUTO_TAGS_OVERWRITE = 'CHECKION_AUTO_TAGS_OVERWRITE';
+
 /** Optional base URL for the UX Journey Agent (Python/Browser Use). If set, POST /api/scan/journey-agent forwards to this service. On Coolify: use internal service URL (e.g. http://ux-journey-agent:8320). */
 export const ENV_UX_JOURNEY_AGENT_URL = 'UX_JOURNEY_AGENT_URL';
 

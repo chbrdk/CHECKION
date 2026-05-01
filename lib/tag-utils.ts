@@ -1,5 +1,7 @@
 /** Normalize tags / industry for projects and domain scans (filtering + storage). */
 
+import type { AggregatedPageClassification } from '@/lib/types';
+
 export const MAX_TAGS_PER_ENTITY = 32;
 export const MAX_TAG_LEN = 48;
 export const MAX_INDUSTRY_LEN = 128;
@@ -46,4 +48,27 @@ export function normalizeIndustry(raw: string | null | undefined): string | null
 export function coerceJsonStringArray(value: unknown): string[] {
     if (!Array.isArray(value)) return [];
     return normalizeTagList(value);
+}
+
+/** Slug `aggregated.pageClassification.topThemes` keys into stored filter tags (deduped, capped). */
+export function rollupThemesToProjectTags(
+    pc: AggregatedPageClassification | null | undefined,
+    maxTags = 12,
+): string[] {
+    const top = pc?.topThemes ?? [];
+    const candidates: string[] = [];
+    for (const th of top) {
+        const raw = (th.themeTagKey ?? th.tag ?? '').trim();
+        if (!raw) continue;
+        const slug = raw
+            .toLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/[^a-z0-9_-]+/g, '')
+            .replace(/-+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .slice(0, MAX_TAG_LEN);
+        const t = normalizeTagFilter(slug);
+        if (t) candidates.push(t);
+    }
+    return normalizeTagList(candidates).slice(0, maxTags);
 }

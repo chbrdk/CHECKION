@@ -11,7 +11,7 @@ import {
 } from '@/lib/llm/page-classification';
 import { getAnthropicKey } from '@/lib/llm/config';
 import { reportUsage } from '@/lib/usage-report';
-import { maybeAutoFillProjectIndustryFromDomainScan } from '@/lib/project-industry-auto';
+import { maybeAutoFillProjectClassificationFromDomainScan } from '@/lib/project-industry-auto';
 
 const CLASSIFY_DELAY_MS = 150;
 
@@ -77,7 +77,7 @@ export async function runDomainScanPageClassificationJob(
         }
 
         await refreshDomainPayloadFromScans(domainScanId, userId);
-        void maybeAutoFillProjectIndustryFromDomainScan({ userId, domainScanId });
+        void maybeAutoFillProjectClassificationFromDomainScan({ userId, domainScanId });
     } catch (e) {
         console.error('[CHECKION] domain page classification job', domainScanId, e);
     }

@@ -51,6 +51,20 @@ function countExecuteRows(res: unknown): number {
     return 0;
 }
 
+/** Copy `projects.tags` onto all `domain_scans` rows for this project only (after auto-tag update). */
+export async function syncDomainScanTagsForProjectId(projectId: string): Promise<number> {
+    const db = getDb();
+    const res = await db.execute(sql`
+        UPDATE "domain_scans" AS ds
+        SET "tags" = p."tags"
+        FROM "projects" AS p
+        WHERE ds."project_id" = p."id"
+          AND p."id" = ${projectId}
+        RETURNING ds."id"
+    `);
+    return countExecuteRows(res);
+}
+
 export async function listDistinctDomainScanUserIds(): Promise<string[]> {
     const db = getDb();
     const rows = await db.selectDistinct({ userId: domainScans.userId }).from(domainScans);

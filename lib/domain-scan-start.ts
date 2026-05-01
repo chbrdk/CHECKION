@@ -16,7 +16,7 @@ import { reportUsage } from '@/lib/usage-report';
 import type { DomainScanResult } from '@/lib/types';
 import { rebuildDomainIssuesFromPages } from '@/lib/db/domain-issues';
 import { runDomainScanPageClassificationJob } from '@/lib/domain-scan-page-classification-job';
-import { maybeAutoFillProjectIndustryFromDomainScan } from '@/lib/project-industry-auto';
+import { maybeAutoFillProjectClassificationFromDomainScan } from '@/lib/project-industry-auto';
 
 export interface StartDomainScanOptions {
   projectId?: string | null;
@@ -190,7 +190,7 @@ export async function startDomainScan(
           await updateDomainScan(id, userId, stored);
           invalidateDomainScan(id);
           if (projectIdForPages && !classifyPageTopics) {
-            void maybeAutoFillProjectIndustryFromDomainScan({ userId, domainScanId: id });
+            void maybeAutoFillProjectClassificationFromDomainScan({ userId, domainScanId: id });
           }
           if (classifyPageTopics) {
             void runDomainScanPageClassificationJob({ domainScanId: id, userId });

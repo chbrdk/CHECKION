@@ -21,14 +21,15 @@ function buildIndustryPoolSystemPrompt(): string {
     const catalog = industryPoolForLlmPrompt();
     return `You classify a website into exactly ONE industry category from a fixed list (project metadata for filtering).
 
-You receive the site's domain, optional project name, ranked content themes (from crawling pages), and the allowed categories as JSON objects with "id" and "hint".
+You receive JSON with "domain", optional "projectName", optional ranked "themes" (content signals from crawled pages), and the allowed categories as JSON objects with "id" and "hint".
 
 Reply with valid JSON only: { "industryId": string | null }
 
 Rules:
-- "industryId" MUST be exactly one of the allowed "id" values, OR null if themes are too weak, contradictory, or unrelated to any category.
-- Pick the single best-matching category from the hints; prefer specificity over "other" when a clearer id fits.
-- Do not invent new ids. Do not use the hostname as industryId. No markdown outside JSON.
+- "industryId" MUST be exactly one of the allowed "id" values, OR null if nothing fits better than guessing wildly.
+- When "themes" is missing or empty (no page-topic rollup yet), infer the best category using **domain hostname** and **projectName** only (best-effort). Same id rules apply.
+- When themes exist, prefer them over the raw hostname; prefer specificity over "other" when a clearer id fits.
+- Do not invent new ids. No markdown outside JSON.
 
 Allowed categories:
 ${JSON.stringify(catalog)}`;
@@ -85,7 +86,8 @@ export type InferProjectIndustryOutcome = {
 };
 
 /**
- * Returns normalized industry or null if disabled, no key, too few themes, parse failure, or empty string from model.
+ * Returns normalized industry or null if disabled, no key, parse failure, or empty string from model.
+ * Empty `themes` triggers domain/project-name-only inference (still one Haiku call).
  */
 export async function inferProjectIndustryWithLlm(input: {
     domainOrigin: string;
@@ -95,13 +97,20 @@ export async function inferProjectIndustryWithLlm(input: {
     if (isAutoProjectIndustryInferDisabled()) return { industry: null, usage: null };
     const apiKey = getAnthropicKey();
     if (!apiKey) return { industry: null, usage: null };
-    if (input.themes.length < 2) return { industry: null, usage: null };
 
-    const userPayload = {
-        domain: input.domainOrigin,
-        ...(input.projectName?.trim() ? { projectName: input.projectName.trim() } : {}),
-        themes: input.themes,
-    };
+    const userPayload =
+        input.themes.length > 0
+            ? {
+                  domain: input.domainOrigin,
+                  ...(input.projectName?.trim() ? { projectName: input.projectName.trim() } : {}),
+                  themes: input.themes,
+              }
+            : {
+                  domain: input.domainOrigin,
+                  ...(input.projectName?.trim() ? { projectName: input.projectName.trim() } : {}),
+                  themes: [],
+                  note: 'No page-topic rollup in payload yet — use domain and project name only.',
+              };
 
     try {
         const client = new Anthropic({ apiKey });
