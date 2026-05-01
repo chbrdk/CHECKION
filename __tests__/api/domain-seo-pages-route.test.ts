@@ -6,6 +6,9 @@ vi.mock('@/lib/rate-limit', () => ({
 vi.mock('@/lib/auth-api-token', () => ({
     getRequestUser: vi.fn(),
 }));
+vi.mock('@/lib/domain-scan-access', () => ({
+    getDomainScanAccess: vi.fn(),
+}));
 vi.mock('@/lib/db/scans', () => ({
     getDomainScan: vi.fn(),
 }));
@@ -15,6 +18,7 @@ vi.mock('@/lib/db/domain-seo-pages', () => ({
 }));
 
 import { getRequestUser } from '@/lib/auth-api-token';
+import { getDomainScanAccess } from '@/lib/domain-scan-access';
 import { getDomainScan } from '@/lib/db/scans';
 import { listSeoPageRowsFromDb, sliceSeoPagesFromPayload } from '@/lib/db/domain-seo-pages';
 import { GET } from '@/app/api/scan/domain/[id]/seo-pages/route';
@@ -22,6 +26,13 @@ import { GET } from '@/app/api/scan/domain/[id]/seo-pages/route';
 describe('GET /api/scan/domain/[id]/seo-pages', () => {
     beforeEach(() => {
         vi.mocked(getRequestUser).mockReset();
+        vi.mocked(getDomainScanAccess).mockReset();
+        vi.mocked(getDomainScanAccess).mockResolvedValue({
+            ok: true,
+            ownerUserId: 'u1',
+            viewerUserId: 'u1',
+            bypassUserScope: false,
+        });
         vi.mocked(getDomainScan).mockReset();
         vi.mocked(listSeoPageRowsFromDb).mockReset();
         vi.mocked(sliceSeoPagesFromPayload).mockReset();

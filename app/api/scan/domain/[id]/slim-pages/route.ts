@@ -4,8 +4,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth-api-token';
+import { isAdminApiRequest } from '@/lib/auth-admin-api';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { getDomainScanAccess } from '@/lib/domain-scan-access';
 import { getDomainScan } from '@/lib/db/scans';
 import type { SlimSortKey } from '@/lib/db/domain-slim-pages';
 import {
@@ -39,10 +41,10 @@ function parseSortDir(v: string | null): 'asc' | 'desc' {
 }
 
 export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
-    const user = await getRequestUser(req);
-    if (!user) return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
+    const viewer = await getRequestUser(req);
+    if (!viewer && !isAdminApiRequest(req)) return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
 
-    const rl = checkRateLimit(`domain-slim-pages:${user.id}`);
+    const rl = checkRateLimit(`domain-slim-pages:${viewer?.id ?? 'admin-api'}`);
     if (!rl.allowed) {
         return apiError(
             'Too many requests. Please try again later.',
@@ -54,25 +56,29 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
     const { id } = await ctx.params;
     if (!id?.trim()) return apiError('Domain scan id is required', API_STATUS.BAD_REQUEST);
 
+    const access = await getDomainScanAccess(req, id);
+    if (!access.ok) return apiError('Not found', API_STATUS.NOT_FOUND);
+    const owner = access.ownerUserId;
+
     const url = new URL(req.url);
     const offset = clampOffset(url.searchParams.get('offset'));
     const limit = clampLimit(url.searchParams.get('limit'));
     const sort = parseSlimSort(url.searchParams.get('sort'));
     const sortDir = parseSortDir(url.searchParams.get('dir'));
 
-    let dbCount = await countDomainPagesInDb(id, user.id);
+    let dbCount = await countDomainPagesInDb(id, owner);
     if (dbCount === 0) {
         try {
-            await ensureDomainIssueTablesBackfilled({ userId: user.id, domainScanId: id });
+            await ensureDomainIssueTablesBackfilled({ userId: owner, domainScanId: id });
         } catch (e) {
             console.error('[CHECKION] slim-pages domain_pages backfill failed', e);
         }
-        dbCount = await countDomainPagesInDb(id, user.id);
+        dbCount = await countDomainPagesInDb(id, owner);
     }
     if (dbCount > 0) {
         const data = await listSlimPagesFromDomainPagesTable({
             domainScanId: id,
-            userId: user.id,
+            userId: owner,
             offset,
             limit,
             sort,
@@ -81,7 +87,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
         return jsonPrivate({ success: true, data, total: dbCount, source: 'db' as const, sort, sortDir });
     }
 
-    const scan = await getDomainScan(id, user.id);
+    const scan = await getDomainScan(id, owner);
     if (!scan) return apiError('Not found', API_STATUS.NOT_FOUND);
 
     const total = countPayloadPages(scan);

@@ -6,19 +6,25 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth-api-token';
+import { isAdminApiRequest } from '@/lib/auth-admin-api';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
+import { getDomainScanAccess } from '@/lib/domain-scan-access';
 import { getDomainScan } from '@/lib/db/scans';
 
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const user = await getRequestUser(request);
-    if (!user) {
+    const viewer = await getRequestUser(request);
+    if (!viewer && !isAdminApiRequest(request)) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
     const { id } = await params;
-    const scan = await getDomainScan(id, user.id);
+    const access = await getDomainScanAccess(request, id);
+    if (!access.ok) {
+        return apiError('Scan not found', API_STATUS.NOT_FOUND);
+    }
+    const scan = await getDomainScan(id, access.ownerUserId);
 
     if (!scan) {
         return apiError('Scan not found', API_STATUS.NOT_FOUND);

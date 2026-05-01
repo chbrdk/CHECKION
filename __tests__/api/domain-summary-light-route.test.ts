@@ -6,6 +6,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('@/lib/auth-api-token', () => ({
     getRequestUser: vi.fn(),
 }));
+vi.mock('@/lib/auth-admin-api', () => ({
+    isAdminApiRequest: () => false,
+}));
+vi.mock('@/lib/domain-scan-access', () => ({
+    getDomainScanAccess: vi.fn(),
+}));
 vi.mock('@/lib/db/scans', () => ({
     getDomainScanWithProjectId: vi.fn(),
 }));
@@ -18,6 +24,7 @@ vi.mock('@/lib/domain-summary', async (importOriginal) => {
 });
 
 import { getRequestUser } from '@/lib/auth-api-token';
+import { getDomainScanAccess } from '@/lib/domain-scan-access';
 import { getDomainScanWithProjectId } from '@/lib/db/scans';
 import { buildDomainSummary } from '@/lib/domain-summary';
 import type { DomainSummaryResponse } from '@/lib/domain-summary';
@@ -193,6 +200,13 @@ function makeHugeDomainSummary(): DomainSummaryResponse {
 describe('GET /api/scan/domain/[id]/summary?light=1', () => {
     beforeEach(() => {
         vi.mocked(getRequestUser).mockReset();
+        vi.mocked(getDomainScanAccess).mockReset();
+        vi.mocked(getDomainScanAccess).mockResolvedValue({
+            ok: true,
+            ownerUserId: 'u1',
+            viewerUserId: 'u1',
+            bypassUserScope: false,
+        });
         vi.mocked(getDomainScanWithProjectId).mockReset();
         vi.mocked(buildDomainSummary).mockReset();
     });

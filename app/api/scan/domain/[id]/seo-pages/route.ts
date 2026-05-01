@@ -1,8 +1,10 @@
 /* GET /api/scan/domain/[id]/seo-pages — paginated PageSeoSummary rows */
 import { NextRequest, NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth-api-token';
+import { isAdminApiRequest } from '@/lib/auth-admin-api';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { getDomainScanAccess } from '@/lib/domain-scan-access';
 import { getDomainScan } from '@/lib/db/scans';
 import { listSeoPageRowsFromDb, sliceSeoPagesFromPayload, type SeoPagesSortKey } from '@/lib/db/domain-seo-pages';
 import { HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON } from '@/lib/constants';
@@ -29,10 +31,10 @@ function parseDir(v: string | null): 'asc' | 'desc' {
 }
 
 export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
-    const user = await getRequestUser(req);
-    if (!user) return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
+    const viewer = await getRequestUser(req);
+    if (!viewer && !isAdminApiRequest(req)) return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
 
-    const rl = checkRateLimit(`domain-seo-pages:${user.id}`);
+    const rl = checkRateLimit(`domain-seo-pages:${viewer?.id ?? 'admin-api'}`);
     if (!rl.allowed) {
         return apiError(
             'Too many requests. Please try again later.',
@@ -44,6 +46,10 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
     const { id } = await ctx.params;
     if (!id?.trim()) return apiError('Domain scan id is required', API_STATUS.BAD_REQUEST);
 
+    const access = await getDomainScanAccess(req, id);
+    if (!access.ok) return apiError('Not found', API_STATUS.NOT_FOUND);
+    const owner = access.ownerUserId;
+
     const url = new URL(req.url);
     const offset = clampOffset(url.searchParams.get('offset'));
     const limit = clampLimit(url.searchParams.get('limit'));
@@ -52,7 +58,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
 
     const fromDb = await listSeoPageRowsFromDb({
         domainScanId: id,
-        userId: user.id,
+        userId: owner,
         offset,
         limit,
         sort,
@@ -71,7 +77,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
         });
     }
 
-    const scan = await getDomainScan(id, user.id);
+    const scan = await getDomainScan(id, owner);
     if (!scan) return apiError('Not found', API_STATUS.NOT_FOUND);
 
     const sliced = sliceSeoPagesFromPayload(scan, offset, limit, sort, sortDir);

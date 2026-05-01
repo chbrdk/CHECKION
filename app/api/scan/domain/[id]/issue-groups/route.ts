@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth-api-token';
+import { isAdminApiRequest } from '@/lib/auth-admin-api';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { getDomainScanAccess } from '@/lib/domain-scan-access';
 import { getDomainScan } from '@/lib/db/scans';
 import { countDomainIssueGroupsForScan, listIssueGroupsPaged } from '@/lib/db/domain-issues';
 import { ensureDomainIssueTablesBackfilled } from '@/lib/domain-issues-backfill';
@@ -16,10 +18,10 @@ function clampLimit(v: string | null): number {
 }
 
 export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
-    const user = await getRequestUser(req);
-    if (!user) return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
+    const viewer = await getRequestUser(req);
+    if (!viewer && !isAdminApiRequest(req)) return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
 
-    const rl = checkRateLimit(`domain-issues:${user.id}`);
+    const rl = checkRateLimit(`domain-issues:${viewer?.id ?? 'admin-api'}`);
     if (!rl.allowed) {
         return apiError(
             'Too many requests. Please try again later.',
@@ -29,7 +31,10 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
     }
 
     const { id } = await ctx.params;
-    const scan = await getDomainScan(id, user.id);
+    const access = await getDomainScanAccess(req, id);
+    if (!access.ok) return apiError('Not found', API_STATUS.NOT_FOUND);
+    const owner = access.ownerUserId;
+    const scan = await getDomainScan(id, owner);
     if (!scan) return apiError('Not found', API_STATUS.NOT_FOUND);
 
     const url = new URL(req.url);
@@ -43,7 +48,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
     const q = url.searchParams.get('q');
 
     const result = await listIssueGroupsPaged({
-        userId: user.id,
+        userId: owner,
         domainScanId: id,
         limit,
         cursor,
@@ -56,11 +61,11 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
     // **and** there are truly zero groups in DB (do not backfill when filters/search match nothing).
     const isUnfilteredFirstPage = cursor == null && !type && !wcagLevel && !q;
     if (isUnfilteredFirstPage && (result.data?.length ?? 0) === 0 && scan.status === 'complete') {
-        const totalGroups = await countDomainIssueGroupsForScan({ userId: user.id, domainScanId: id });
+        const totalGroups = await countDomainIssueGroupsForScan({ userId: owner, domainScanId: id });
         if (totalGroups === 0) {
             void (async () => {
                 try {
-                    await ensureDomainIssueTablesBackfilled({ userId: user.id, domainScanId: id });
+                    await ensureDomainIssueTablesBackfilled({ userId: owner, domainScanId: id });
                 } catch (e) {
                     console.error('[CHECKION] domain issues backfill failed', e);
                 }

@@ -134,6 +134,8 @@ export const API_AUTH_REGISTER = `${APP_BASE_URL}/api/auth/register`;
 export const API_AUTH_PROFILE = `${APP_BASE_URL}/api/auth/profile`;
 export const API_AUTH_CHANGE_PASSWORD = `${APP_BASE_URL}/api/auth/change-password`;
 export const API_AUTH_TOKENS = `${APP_BASE_URL}/api/auth/tokens`;
+/** GET /api/auth/capabilities — UI feature flags for signed-in user */
+export const API_AUTH_CAPABILITIES = `${APP_BASE_URL}/api/auth/capabilities`;
 /** DELETE /api/auth/tokens/[id] */
 export const apiAuthTokenRevoke = (id: string) => `${APP_BASE_URL}/api/auth/tokens/${encodeURIComponent(id)}`;
 export const API_SCAN = `${APP_BASE_URL}/api/scan`;
@@ -343,13 +345,15 @@ export const apiSearch = (q: string, limit?: number) => {
 
 /** Build: DELETE /api/scans/[id] */
 export const apiScansDelete = (id: string) => `${API_SCANS}/${encodeURIComponent(id)}`;
-/** Build: GET /api/scans/domain?limit=&page=&projectId=&q=&status= */
+/** Build: GET /api/scans/domain?limit=&page=&projectId=&q=&status=&scope= */
 export const apiScansDomainList = (params?: {
   limit?: number;
   page?: number;
   projectId?: string | null;
   q?: string;
   status?: string;
+  /** `allUsers` requires `CHECKION_GLOBAL_DOMAIN_SCAN_USER_IDS` or admin API key. */
+  scope?: 'mine' | 'allUsers';
 }) => {
   const search = new URLSearchParams();
   if (params?.limit != null) search.set('limit', String(params.limit));
@@ -357,8 +361,10 @@ export const apiScansDomainList = (params?: {
   if (params?.projectId !== undefined) search.set('projectId', params.projectId ?? '');
   if (params?.q != null && params.q.trim() !== '') search.set('q', params.q.trim());
   if (params?.status != null && params.status !== '') search.set('status', params.status);
+  if (params?.scope === 'allUsers') search.set('scope', 'allUsers');
   return search.toString() ? `${API_SCANS_DOMAIN}?${search.toString()}` : API_SCANS_DOMAIN;
 };
+
 /** Build: POST /api/scans/domain/compare */
 export const API_SCANS_DOMAIN_COMPARE = `${API_SCANS_DOMAIN}/compare`;
 /** Build: DELETE /api/scans/domain/[id] */

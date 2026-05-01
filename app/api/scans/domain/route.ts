@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth-api-token';
+import { canListAllUsersDomainScans } from '@/lib/auth-global-domain-list';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { listCachedDomainScanSummaries, getCachedDomainScansCount } from '@/lib/cache';
 import { DASHBOARD_SCANS_PAGE_SIZE } from '@/lib/constants';
-import { DOMAIN_SCAN_LIST_QUERY_MAX_LEN } from '@/lib/db/scans';
+import { DOMAIN_SCAN_LIST_QUERY_MAX_LEN, getDomainScansCountAllUsers, listDomainScanSummariesAllUsers } from '@/lib/db/scans';
 import type { DomainScanStatus } from '@/lib/types';
 
 const DOMAIN_SCAN_STATUS_SET: ReadonlySet<string> = new Set<DomainScanStatus>([
@@ -18,9 +19,16 @@ const DOMAIN_SCAN_STATUS_SET: ReadonlySet<string> = new Set<DomainScanStatus>([
 
 export async function GET(req: NextRequest) {
     const user = await getRequestUser(req);
-    if (!user) {
+    const allUsersScope = new URL(req.url).searchParams.get('scope') === 'allUsers';
+    const allowAllUsers = canListAllUsersDomainScans(req, user?.id ?? null);
+
+    if (allUsersScope && !allowAllUsers) {
+        return apiError('Forbidden', API_STATUS.FORBIDDEN);
+    }
+    if (!allUsersScope && !user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
+
     const { searchParams } = new URL(req.url);
     const limit = Math.min(Math.max(1, Number(searchParams.get('limit')) || DASHBOARD_SCANS_PAGE_SIZE), 100);
     const page = Math.max(1, Number(searchParams.get('page')) || 1);
@@ -39,13 +47,30 @@ export async function GET(req: NextRequest) {
     const statusRaw = searchParams.get('status');
     const status =
         statusRaw && DOMAIN_SCAN_STATUS_SET.has(statusRaw) ? (statusRaw as DomainScanStatus) : undefined;
+
+    if (allUsersScope) {
+        const [data, total] = await Promise.all([
+            listDomainScanSummariesAllUsers({ limit, offset, projectId, q, status }),
+            getDomainScansCountAllUsers({ projectId, q, status }),
+        ]);
+        const totalPages = Math.ceil(total / limit) || 1;
+        return NextResponse.json({
+            success: true,
+            scope: 'allUsers',
+            count: data.length,
+            data,
+            pagination: { total, page, limit, totalPages },
+        });
+    }
+
     const [data, total] = await Promise.all([
-        listCachedDomainScanSummaries(user.id, { limit, offset, projectId, q, status }),
-        getCachedDomainScansCount(user.id, { projectId, q, status }),
+        listCachedDomainScanSummaries(user!.id, { limit, offset, projectId, q, status }),
+        getCachedDomainScansCount(user!.id, { projectId, q, status }),
     ]);
     const totalPages = Math.ceil(total / limit) || 1;
     return NextResponse.json({
         success: true,
+        scope: 'mine',
         count: data.length,
         data,
         pagination: { total, page, limit, totalPages },

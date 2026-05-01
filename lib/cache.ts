@@ -99,6 +99,7 @@ export async function listCachedDomainScanSummaries(
         totalPages: number;
         lineageVersion: number;
         projectId: string | null;
+        userId: string;
     }>
 > {
     const limit = options?.limit ?? 100;

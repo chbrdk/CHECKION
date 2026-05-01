@@ -5,6 +5,7 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getRequestUser } from '@/lib/auth-api-token';
+import { canMutateDomainScanAsOwner, getDomainScanAccess } from '@/lib/domain-scan-access';
 import { apiError, internalError, API_STATUS } from '@/lib/api-error-handler';
 import { getDomainScan, updateDomainScan } from '@/lib/db/scans';
 import { invalidateDomainScan } from '@/lib/cache';
@@ -25,13 +26,20 @@ export async function POST(
     request: Request,
     { params }: { params: Promise<{ id: string }> },
 ) {
-    const user = await getRequestUser(request);
-    if (!user) {
+    const viewer = await getRequestUser(request);
+    if (!viewer) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
 
     const { id } = await params;
-    const domainResult = await getDomainScan(id, user.id);
+    const access = await getDomainScanAccess(request, id);
+    if (!access.ok) {
+        return apiError('Domain scan not found.', API_STATUS.NOT_FOUND);
+    }
+    if (!canMutateDomainScanAsOwner(access)) {
+        return apiError('Forbidden', API_STATUS.FORBIDDEN);
+    }
+    const domainResult = await getDomainScan(id, access.ownerUserId);
     if (!domainResult) {
         return apiError('Domain scan not found.', API_STATUS.NOT_FOUND);
     }
@@ -97,7 +105,7 @@ export async function POST(
         generatedAt: new Date().toISOString(),
     };
 
-    const updated = await updateDomainScan(id, user.id, { llmSummary: summary });
+    const updated = await updateDomainScan(id, access.ownerUserId, { llmSummary: summary });
     if (!updated) {
         return apiError('Failed to save summary.', API_STATUS.INTERNAL_ERROR);
     }
@@ -105,7 +113,7 @@ export async function POST(
 
     try {
       reportUsage({
-        userId: user.id,
+        userId: viewer.id,
         eventType: 'llm_request',
         rawUnits: {
           input_tokens: completion.usage?.prompt_tokens ?? 0,

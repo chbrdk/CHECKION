@@ -16,6 +16,7 @@ import { MsqdxButton, MsqdxFormField, MsqdxMoleculeCard, MsqdxTypography } from 
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { PaginationBar } from '@/components/PaginationBar';
 import {
+    API_AUTH_CAPABILITIES,
     DASHBOARD_SCANS_PAGE_SIZE,
     apiScansDomainDelete,
     apiScansDomainList,
@@ -33,6 +34,7 @@ type Row = {
     totalPages: number;
     lineageVersion?: number;
     projectId?: string | null;
+    userId?: string;
 };
 
 const STATUSES: DomainScanStatus[] = [
@@ -58,8 +60,27 @@ export default function DeepScansPage() {
     /** `all` = every deep scan; `unassigned` = only rows with project_id IS NULL. */
     const [projectFilter, setProjectFilter] = useState<'all' | 'unassigned'>('all');
     const [selected, setSelected] = useState<string[]>([]);
+    const [listScope, setListScope] = useState<'mine' | 'allUsers'>('mine');
+    const [canListAllUsers, setCanListAllUsers] = useState(false);
+    const [sessionUserId, setSessionUserId] = useState<string | null>(null);
 
     const limit = DASHBOARD_SCANS_PAGE_SIZE;
+
+    useEffect(() => {
+        void (async () => {
+            try {
+                const res = await fetch(API_AUTH_CAPABILITIES, { credentials: 'same-origin' });
+                const data = (await res.json()) as {
+                    userId?: string;
+                    domainScansListAllUsers?: boolean;
+                };
+                if (typeof data.userId === 'string') setSessionUserId(data.userId);
+                setCanListAllUsers(data.domainScansListAllUsers === true);
+            } catch {
+                setCanListAllUsers(false);
+            }
+        })();
+    }, []);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -71,6 +92,7 @@ export default function DeepScansPage() {
                     ...(projectFilter === 'unassigned' ? { projectId: null } : {}),
                     ...(qApplied.trim() ? { q: qApplied.trim() } : {}),
                     ...(statusFilter ? { status: statusFilter } : {}),
+                    ...(listScope === 'allUsers' && canListAllUsers ? { scope: 'allUsers' } : {}),
                 }),
                 { credentials: 'same-origin' }
             );
@@ -88,7 +110,7 @@ export default function DeepScansPage() {
         } finally {
             setLoading(false);
         }
-    }, [page, limit, projectFilter, qApplied, statusFilter]);
+    }, [page, limit, projectFilter, qApplied, statusFilter, listScope, canListAllUsers]);
 
     useEffect(() => {
         void load();
@@ -144,6 +166,30 @@ export default function DeepScansPage() {
                             onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
                         />
                     </Box>
+                    {canListAllUsers ? (
+                        <Box sx={{ minWidth: 200 }}>
+                            <Typography component="label" variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                                {t('deepScans.scopeLabel')}
+                            </Typography>
+                            <select
+                                aria-label={t('deepScans.scopeLabel')}
+                                value={listScope}
+                                onChange={(e) => {
+                                    setListScope(e.target.value as 'mine' | 'allUsers');
+                                    setPage(1);
+                                }}
+                                style={{
+                                    width: '100%',
+                                    padding: '10px 12px',
+                                    borderRadius: 8,
+                                    border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                                }}
+                            >
+                                <option value="mine">{t('deepScans.scopeMine')}</option>
+                                <option value="allUsers">{t('deepScans.scopeAllUsers')}</option>
+                            </select>
+                        </Box>
+                    ) : null}
                     <Box sx={{ minWidth: 200 }}>
                         <Typography component="label" variant="caption" sx={{ display: 'block', mb: 0.5 }}>
                             {t('deepScans.filterProject')}
@@ -217,6 +263,7 @@ export default function DeepScansPage() {
                             <TableRow>
                                 <TableCell padding="checkbox">{t('deepScans.colSelect')}</TableCell>
                                 <TableCell>{t('deepScans.colDomain')}</TableCell>
+                                {listScope === 'allUsers' ? <TableCell>{t('deepScans.colOwner')}</TableCell> : null}
                                 <TableCell>{t('deepScans.colProject')}</TableCell>
                                 <TableCell>{t('deepScans.colDate')}</TableCell>
                                 <TableCell>{t('deepScans.colStatus')}</TableCell>
@@ -252,6 +299,15 @@ export default function DeepScansPage() {
                                             ) : null}
                                         </Typography>
                                     </TableCell>
+                                    {listScope === 'allUsers' ? (
+                                        <TableCell>
+                                            <Typography variant="body2" noWrap sx={{ maxWidth: 140 }} title={r.userId ?? ''}>
+                                                {r.userId
+                                                    ? `${r.userId.slice(0, 8)}…`
+                                                    : t('deepScans.ownerUnknown')}
+                                            </Typography>
+                                        </TableCell>
+                                    ) : null}
                                     <TableCell>
                                         <Typography variant="body2" noWrap sx={{ maxWidth: 120 }} title={r.projectId ?? ''}>
                                             {r.projectId == null || r.projectId === ''
@@ -281,9 +337,16 @@ export default function DeepScansPage() {
                                             >
                                                 {t('deepScans.open')}
                                             </MsqdxButton>
-                                            <MsqdxButton variant="text" size="small" onClick={() => void handleDelete(r.id)}>
-                                                {t('deepScans.delete')}
-                                            </MsqdxButton>
+                                            {(listScope === 'mine' ||
+                                                (sessionUserId != null && r.userId === sessionUserId)) && (
+                                                <MsqdxButton
+                                                    variant="text"
+                                                    size="small"
+                                                    onClick={() => void handleDelete(r.id)}
+                                                >
+                                                    {t('deepScans.delete')}
+                                                </MsqdxButton>
+                                            )}
                                         </Box>
                                     </TableCell>
                                 </TableRow>

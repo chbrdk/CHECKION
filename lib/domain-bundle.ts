@@ -1,6 +1,7 @@
 /**
  * Single-read payload for domain result shell: light aggregates + totals (no large arrays).
  */
+import { getDomainScanAccess } from '@/lib/domain-scan-access';
 import { countDomainPagesInDb, countPayloadPages } from '@/lib/db/domain-slim-pages';
 import { getDomainScanWithProjectId } from '@/lib/db/scans';
 import { buildDomainSummary, toLightDomainSummaryApiPayload, type DomainSummaryApiResponse } from '@/lib/domain-summary';
@@ -12,12 +13,12 @@ export type DomainBundleApiResponse = DomainSummaryApiResponse & {
     totalSlimRows: number;
 };
 
-export async function buildDomainBundleForUser(domainScanId: string, userId: string): Promise<DomainBundleApiResponse | null> {
-    const row = await getDomainScanWithProjectId(domainScanId, userId);
+export async function buildDomainBundleForOwner(domainScanId: string, ownerUserId: string): Promise<DomainBundleApiResponse | null> {
+    const row = await getDomainScanWithProjectId(domainScanId, ownerUserId);
     if (!row) return null;
     const summary = buildDomainSummary(row.result as DomainScanResult);
     const light = toLightDomainSummaryApiPayload(summary);
-    let totalSlimRows = await countDomainPagesInDb(domainScanId, userId);
+    let totalSlimRows = await countDomainPagesInDb(domainScanId, ownerUserId);
     if (totalSlimRows === 0) {
         totalSlimRows = countPayloadPages(row.result as DomainScanResult);
     }
@@ -26,4 +27,15 @@ export async function buildDomainBundleForUser(domainScanId: string, userId: str
         projectId: row.projectId,
         totalSlimRows,
     };
+}
+
+/** @deprecated Prefer `buildDomainBundleForRequest` or `buildDomainBundleForOwner`. */
+export async function buildDomainBundleForUser(domainScanId: string, userId: string): Promise<DomainBundleApiResponse | null> {
+    return buildDomainBundleForOwner(domainScanId, userId);
+}
+
+export async function buildDomainBundleForRequest(request: Request, domainScanId: string): Promise<DomainBundleApiResponse | null> {
+    const access = await getDomainScanAccess(request, domainScanId);
+    if (!access.ok) return null;
+    return buildDomainBundleForOwner(domainScanId, access.ownerUserId);
 }

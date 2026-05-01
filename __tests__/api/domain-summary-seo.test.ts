@@ -6,6 +6,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('@/lib/auth-api-token', () => ({
     getRequestUser: vi.fn(),
 }));
+vi.mock('@/lib/auth-admin-api', () => ({
+    isAdminApiRequest: () => false,
+}));
+vi.mock('@/lib/domain-scan-access', () => ({
+    getDomainScanAccess: vi.fn(),
+}));
 vi.mock('@/lib/db/scans', () => ({
     getDomainScanWithProjectId: vi.fn(),
 }));
@@ -21,12 +27,20 @@ vi.mock('@/lib/domain-summary', () => ({
 }));
 
 import { getRequestUser } from '@/lib/auth-api-token';
+import { getDomainScanAccess } from '@/lib/domain-scan-access';
 import { getDomainScanWithProjectId } from '@/lib/db/scans';
 import { GET } from '@/app/api/scan/domain/[id]/summary/route';
 
 describe('GET /api/scan/domain/[id]/summary?seoFull=1', () => {
     beforeEach(() => {
         vi.mocked(getRequestUser).mockReset();
+        vi.mocked(getDomainScanAccess).mockReset();
+        vi.mocked(getDomainScanAccess).mockResolvedValue({
+            ok: true,
+            ownerUserId: 'u1',
+            viewerUserId: 'u1',
+            bypassUserScope: false,
+        });
         vi.mocked(getDomainScanWithProjectId).mockReset();
     });
 

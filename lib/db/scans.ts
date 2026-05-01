@@ -22,6 +22,8 @@ export type DomainScanSummaryRow = {
     lineageVersion: number;
     /** Null when the deep scan was started outside a project. */
     projectId: string | null;
+    /** Owner (`domain_scans.user_id`). */
+    userId: string;
 };
 
 /** Summary row + flag whether payload has `aggregated` (avoids loading full JSONB for search). */
@@ -42,10 +44,13 @@ export type DomainScanListQueryOptions = {
 };
 
 function buildDomainScanListWhere(
-    userId: string,
+    userId: string | undefined,
     options?: Pick<DomainScanListQueryOptions, 'projectId' | 'q' | 'status'>
 ) {
-    const conditions = [eq(domainScans.userId, userId)];
+    const conditions = [];
+    if (userId !== undefined) {
+        conditions.push(eq(domainScans.userId, userId));
+    }
     if (options?.projectId !== undefined) {
         if (options.projectId === null) {
             conditions.push(isNull(domainScans.projectId));
@@ -63,7 +68,13 @@ function buildDomainScanListWhere(
     if (options?.status) {
         conditions.push(eq(domainScans.status, options.status));
     }
-    return and(...conditions);
+    if (conditions.length === 0) {
+        return sql`true`;
+    }
+    if (conditions.length === 1) {
+        return conditions[0];
+    }
+    return and(...conditions)!;
 }
 
 function isPgUniqueViolation(err: unknown): boolean {
@@ -335,12 +346,15 @@ export async function updateDomainScanProject(id: string, userId: string, projec
 }
 
 /** List only summary fields (no payload) to keep response small for list/cache. Optional projectId / q / status filter. */
-export async function listDomainScanSummaries(userId: string, options?: DomainScanListQueryOptions): Promise<DomainScanSummaryRow[]> {
+async function queryDomainScanSummaries(
+    filterUserId: string | undefined,
+    options?: DomainScanListQueryOptions
+): Promise<DomainScanSummaryRow[]> {
     const db = getDb();
-    const lineageScope = buildDomainScanListWhere(userId, { projectId: options?.projectId });
+    const lineageScope = buildDomainScanListWhere(filterUserId, { projectId: options?.projectId });
     const latestSq = buildLatestDomainScanHeadSubquery(db, lineageScope);
     const joinLatest = sql`coalesce(${domainScans.lineageKey}, ${domainScans.id}) = ${latestSq.groupKey} AND ${domainScans.lineageVersion} = ${latestSq.maxVersion}`;
-    const whereCond = buildDomainScanListWhere(userId, options);
+    const whereCond = buildDomainScanListWhere(filterUserId, options);
     const base = db
         .select({
             id: domainScans.id,
@@ -351,6 +365,7 @@ export async function listDomainScanSummaries(userId: string, options?: DomainSc
             totalPages: sql<number>`(${domainScans.payload}->>'totalPages')::int`,
             lineageVersion: domainScans.lineageVersion,
             projectId: domainScans.projectId,
+            userId: domainScans.userId,
         })
         .from(domainScans)
         .innerJoin(latestSq, joinLatest)
@@ -368,7 +383,17 @@ export async function listDomainScanSummaries(userId: string, options?: DomainSc
         totalPages: r.totalPages ?? 0,
         lineageVersion: r.lineageVersion ?? 1,
         projectId: r.projectId ?? null,
+        userId: r.userId,
     }));
+}
+
+export async function listDomainScanSummaries(userId: string, options?: DomainScanListQueryOptions): Promise<DomainScanSummaryRow[]> {
+    return queryDomainScanSummaries(userId, options);
+}
+
+/** All users’ deep scans (latest lineage head per key). For ops only — enforce auth in the API layer. */
+export async function listDomainScanSummariesAllUsers(options?: DomainScanListQueryOptions): Promise<DomainScanSummaryRow[]> {
+    return queryDomainScanSummaries(undefined, options);
 }
 
 /**
@@ -399,6 +424,7 @@ export async function listDomainScanSummariesForSearch(
             hasStoredAggregated: sql<boolean>`(${domainScans.payload}->'aggregated') IS NOT NULL`,
             lineageVersion: domainScans.lineageVersion,
             projectId: domainScans.projectId,
+            userId: domainScans.userId,
         })
         .from(domainScans)
         .innerJoin(latestSq, joinLatest)
@@ -417,6 +443,7 @@ export async function listDomainScanSummariesForSearch(
         hasStoredAggregated: Boolean(r.hasStoredAggregated),
         lineageVersion: r.lineageVersion ?? 1,
         projectId: r.projectId ?? null,
+        userId: r.userId,
     }));
 }
 
@@ -442,21 +469,35 @@ export async function listDomainScans(userId: string, options?: { limit?: number
     return rows.map(r => r.payload as unknown as DomainScanResult);
 }
 
-export async function getDomainScansCount(
-    userId: string,
+async function queryDomainScansCount(
+    filterUserId: string | undefined,
     options?: Pick<DomainScanListQueryOptions, 'projectId' | 'q' | 'status'>
 ): Promise<number> {
     const db = getDb();
-    const lineageScope = buildDomainScanListWhere(userId, { projectId: options?.projectId });
+    const lineageScope = buildDomainScanListWhere(filterUserId, { projectId: options?.projectId });
     const latestSq = buildLatestDomainScanHeadSubquery(db, lineageScope);
     const joinLatest = sql`coalesce(${domainScans.lineageKey}, ${domainScans.id}) = ${latestSq.groupKey} AND ${domainScans.lineageVersion} = ${latestSq.maxVersion}`;
-    const whereCond = buildDomainScanListWhere(userId, options);
+    const whereCond = buildDomainScanListWhere(filterUserId, options);
     const rows = await db
         .select({ count: count() })
         .from(domainScans)
         .innerJoin(latestSq, joinLatest)
         .where(whereCond);
     return Number(rows[0]?.count ?? 0);
+}
+
+export async function getDomainScansCount(
+    userId: string,
+    options?: Pick<DomainScanListQueryOptions, 'projectId' | 'q' | 'status'>
+): Promise<number> {
+    return queryDomainScansCount(userId, options);
+}
+
+/** Count across all users (ops). Enforce auth in the API layer. */
+export async function getDomainScansCountAllUsers(
+    options?: Pick<DomainScanListQueryOptions, 'projectId' | 'q' | 'status'>
+): Promise<number> {
+    return queryDomainScansCount(undefined, options);
 }
 
 export async function deleteDomainScan(id: string, userId: string): Promise<boolean> {

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth-api-token';
+import { isAdminApiRequest } from '@/lib/auth-admin-api';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { getDomainScanAccess } from '@/lib/domain-scan-access';
 import { getDomainScan } from '@/lib/db/scans';
 import { listPageIssuesPaged } from '@/lib/db/domain-issues';
 import { HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON } from '@/lib/constants';
@@ -14,10 +16,10 @@ function clampLimit(v: string | null): number {
 }
 
 export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string; pageId: string }> }) {
-    const user = await getRequestUser(req);
-    if (!user) return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
+    const viewer = await getRequestUser(req);
+    if (!viewer && !isAdminApiRequest(req)) return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
 
-    const rl = checkRateLimit(`domain-issues:${user.id}`);
+    const rl = checkRateLimit(`domain-issues:${viewer?.id ?? 'admin-api'}`);
     if (!rl.allowed) {
         return apiError(
             'Too many requests. Please try again later.',
@@ -27,7 +29,10 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string;
     }
 
     const { id, pageId } = await ctx.params;
-    const scan = await getDomainScan(id, user.id);
+    const access = await getDomainScanAccess(req, id);
+    if (!access.ok) return apiError('Not found', API_STATUS.NOT_FOUND);
+    const owner = access.ownerUserId;
+    const scan = await getDomainScan(id, owner);
     if (!scan) return apiError('Not found', API_STATUS.NOT_FOUND);
 
     const url = new URL(req.url);
@@ -36,7 +41,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string;
     const cursor = cursorId ? { id: cursorId } : null;
 
     const result = await listPageIssuesPaged({
-        userId: user.id,
+        userId: owner,
         domainScanId: id,
         pageId,
         limit,

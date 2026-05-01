@@ -3,18 +3,21 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('@/lib/auth-api-token', () => ({
     getRequestUser: vi.fn(),
 }));
+vi.mock('@/lib/auth-admin-api', () => ({
+    isAdminApiRequest: () => false,
+}));
 vi.mock('@/lib/domain-bundle', () => ({
-    buildDomainBundleForUser: vi.fn(),
+    buildDomainBundleForRequest: vi.fn(),
 }));
 
 import { getRequestUser } from '@/lib/auth-api-token';
-import { buildDomainBundleForUser } from '@/lib/domain-bundle';
+import { buildDomainBundleForRequest } from '@/lib/domain-bundle';
 import { GET } from '@/app/api/scan/domain/[id]/bundle/route';
 
 describe('GET /api/scan/domain/[id]/bundle', () => {
     beforeEach(() => {
         vi.mocked(getRequestUser).mockReset();
-        vi.mocked(buildDomainBundleForUser).mockReset();
+        vi.mocked(buildDomainBundleForRequest).mockReset();
     });
 
     it('returns 401 when unauthenticated', async () => {
@@ -27,7 +30,7 @@ describe('GET /api/scan/domain/[id]/bundle', () => {
 
     it('returns 404 when bundle builder returns null', async () => {
         vi.mocked(getRequestUser).mockResolvedValue({ id: 'u1' } as any);
-        vi.mocked(buildDomainBundleForUser).mockResolvedValue(null);
+        vi.mocked(buildDomainBundleForRequest).mockResolvedValue(null);
         const res = await GET(new Request('http://localhost/api/scan/domain/missing/bundle') as any, {
             params: Promise.resolve({ id: 'missing' }),
         });
@@ -36,7 +39,7 @@ describe('GET /api/scan/domain/[id]/bundle', () => {
 
     it('returns JSON with totalSlimRows and empty pages array', async () => {
         vi.mocked(getRequestUser).mockResolvedValue({ id: 'u1' } as any);
-        vi.mocked(buildDomainBundleForUser).mockResolvedValue({
+        vi.mocked(buildDomainBundleForRequest).mockResolvedValue({
             id: 'd1',
             domain: 'ex.com',
             timestamp: '2020-01-01T00:00:00Z',
@@ -60,6 +63,6 @@ describe('GET /api/scan/domain/[id]/bundle', () => {
         expect(body.totalSlimRows).toBe(3);
         expect(body.pages).toEqual([]);
         expect(body.projectId).toBe('p1');
-        expect(buildDomainBundleForUser).toHaveBeenCalledWith('d1', 'u1');
+        expect(buildDomainBundleForRequest).toHaveBeenCalledWith(expect.any(Request), 'd1');
     });
 });

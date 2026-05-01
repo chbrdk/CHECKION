@@ -5,6 +5,8 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getRequestUser } from '@/lib/auth-api-token';
+import { isAdminApiRequest } from '@/lib/auth-admin-api';
+import { getDomainScanAccess } from '@/lib/domain-scan-access';
 import { apiError, internalError, API_STATUS } from '@/lib/api-error-handler';
 import { parseApiBody, domainJourneyBodySchema } from '@/lib/api-schemas';
 import { getDomainScan, listScansByGroupId } from '@/lib/db/scans';
@@ -19,13 +21,18 @@ export async function POST(
     request: Request,
     { params }: { params: Promise<{ id: string }> },
 ) {
-    const user = await getRequestUser(request);
-    if (!user) {
+    const viewer = await getRequestUser(request);
+    if (!viewer && !isAdminApiRequest(request)) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
 
     const { id } = await params;
-    const domainPayload = await getDomainScan(id, user.id);
+    const access = await getDomainScanAccess(request, id);
+    if (!access.ok) {
+        return apiError('Domain scan not found.', API_STATUS.NOT_FOUND);
+    }
+    const owner = access.ownerUserId;
+    const domainPayload = await getDomainScan(id, owner);
     if (!domainPayload) {
         return apiError('Domain scan not found.', API_STATUS.NOT_FOUND);
     }
@@ -37,7 +44,7 @@ export async function POST(
     /** Journey needs full ScanResult[] (pageIndex, allLinks, etc.). Load from scans table when stored payload has slim pages. */
     let domainResult: DomainScanResult & { pages: ScanResult[] };
     if (hasStoredAggregated(domainPayload)) {
-        const fullPages = await listScansByGroupId(user.id, id);
+        const fullPages = await listScansByGroupId(owner, id);
         domainResult = { ...domainPayload, pages: fullPages };
     } else {
         domainResult = domainPayload as DomainScanResult & { pages: ScanResult[] };
@@ -71,7 +78,7 @@ export async function POST(
                 } finally {
                     try {
                         reportUsage({
-                            userId: user.id,
+                            userId: viewer?.id ?? owner,
                             eventType: 'journey_agent',
                             rawUnits: { runs: 1 },
                             idempotencyKey: `domain-journey-stream:${id}:${Date.now()}`,
@@ -93,7 +100,7 @@ export async function POST(
     const result = await runJourneyAgent(openai, goal, domainResult);
     try {
         reportUsage({
-            userId: user.id,
+            userId: viewer?.id ?? owner,
             eventType: 'journey_agent',
             rawUnits: { runs: 1 },
             idempotencyKey: `domain-journey:${id}:${goal.slice(0, 50)}:${Date.now()}`,

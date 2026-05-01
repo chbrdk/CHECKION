@@ -6,6 +6,9 @@ vi.mock('@/lib/rate-limit', () => ({
 vi.mock('@/lib/auth-api-token', () => ({
     getRequestUser: vi.fn(),
 }));
+vi.mock('@/lib/domain-scan-access', () => ({
+    getDomainScanAccess: vi.fn(),
+}));
 vi.mock('@/lib/db/scans', () => ({
     getDomainScan: vi.fn(),
 }));
@@ -20,6 +23,7 @@ vi.mock('@/lib/domain-issues-backfill', () => ({
 }));
 
 import { getRequestUser } from '@/lib/auth-api-token';
+import { getDomainScanAccess } from '@/lib/domain-scan-access';
 import { ensureDomainIssueTablesBackfilled } from '@/lib/domain-issues-backfill';
 import { getDomainScan } from '@/lib/db/scans';
 import {
@@ -33,6 +37,13 @@ import { GET } from '@/app/api/scan/domain/[id]/slim-pages/route';
 describe('GET /api/scan/domain/[id]/slim-pages', () => {
     beforeEach(() => {
         vi.mocked(getRequestUser).mockReset();
+        vi.mocked(getDomainScanAccess).mockReset();
+        vi.mocked(getDomainScanAccess).mockResolvedValue({
+            ok: true,
+            ownerUserId: 'u1',
+            viewerUserId: 'u1',
+            bypassUserScope: false,
+        });
         vi.mocked(getDomainScan).mockReset();
         vi.mocked(countDomainPagesInDb).mockReset();
         vi.mocked(listSlimPagesFromDomainPagesTable).mockReset();
