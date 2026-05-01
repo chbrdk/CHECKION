@@ -435,7 +435,10 @@ export default function ProjectDetailPage() {
                 if (r.ok) {
                     const j = await r.json().catch(() => ({}));
                     const st = typeof j?.status === 'string' ? j.status : undefined;
-                    if (st) {
+                    if (st === 'complete' || st === 'error' || st === 'cancelled') {
+                        setActiveDeepScans((prev) => prev.filter((row) => row.scanId !== scanId));
+                        void loadDomainSummaryAll();
+                    } else if (st) {
                         setActiveDeepScans((prev) =>
                             prev.map((row) => (row.scanId === scanId ? { ...row, status: st } : row))
                         );
@@ -445,7 +448,7 @@ export default function ProjectDetailPage() {
                 // ignore
             }
         },
-        []
+        [loadDomainSummaryAll]
     );
 
     const activeDeepScansRef = useRef<ActiveDeepScanRow[]>([]);
@@ -720,7 +723,8 @@ export default function ProjectDetailPage() {
                                 const st = row.status ?? 'scanning';
                                 const canPause = st === 'scanning' || st === 'queued';
                                 const canResume = st === 'paused';
-                                const canCancel = st === 'scanning' || st === 'queued' || st === 'paused';
+                                const canCancel =
+                                    st === 'scanning' || st === 'queued' || st === 'paused' || st === 'cancelling';
                                 const openDeepScanHref =
                                     row.scanRootUrl != null && row.scanRootUrl !== ''
                                         ? pathScanDomain({
@@ -775,7 +779,7 @@ export default function ProjectDetailPage() {
                                             ) : null}
                                             {canCancel ? (
                                                 <MsqdxButton variant="outlined" size="small" onClick={() => handleDeepScanControl(row.scanId, 'cancel')}>
-                                                    {t('projects.deepScanCancel')}
+                                                    {st === 'cancelling' ? t('domain.finalizeCancelScan') : t('projects.deepScanCancel')}
                                                 </MsqdxButton>
                                             ) : null}
                                         </Box>

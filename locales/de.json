@@ -601,6 +601,7 @@
     "pauseScan": "Pause",
     "resumeScan": "Fortsetzen",
     "cancelScan": "Scan abbrechen",
+    "finalizeCancelScan": "Abbruch abschließen",
     "errorLog": "Error",
     "failedStart": "Failed to start scan",
     "failedConnection": "Failed to initiate scan connection.",

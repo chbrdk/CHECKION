@@ -128,6 +128,31 @@ describe('POST /api/scan/domain/[id]/control', () => {
         expect(updateDomainScan).toHaveBeenCalledWith('d1', 'u1', { status: 'cancelling' });
     });
 
+    it('finalizes stuck cancelling → cancelled on second cancel', async () => {
+        vi.mocked(getRequestUser).mockResolvedValue({ id: 'u1' } as any);
+        vi.mocked(getDomainScan).mockResolvedValue({
+            id: 'd1',
+            status: 'cancelling',
+            progress: { scanned: 3, total: 100 },
+        } as any);
+        vi.mocked(updateDomainScan).mockResolvedValue(true);
+        const res = await POST(
+            new Request('http://localhost/api/scan/domain/d1/control', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'cancel' }),
+            }) as any,
+            { params: Promise.resolve({ id: 'd1' }) }
+        );
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.status).toBe('cancelled');
+        expect(updateDomainScan).toHaveBeenCalledWith('d1', 'u1', {
+            status: 'cancelled',
+            error: 'Cancelled by user',
+        });
+    });
+
     it('returns 400 when cancelling a completed scan', async () => {
         vi.mocked(getRequestUser).mockResolvedValue({ id: 'u1' } as any);
         vi.mocked(getDomainScan).mockResolvedValue({

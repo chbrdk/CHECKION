@@ -125,7 +125,12 @@ function ScanContent() {
                 if (j?.status) setStatus(j.status);
                 if (action === 'pause') setLogs((prev) => [...prev, t('domain.pauseLog')]);
                 if (action === 'resume') setLogs((prev) => [...prev, t('domain.resumeLog')]);
-                if (action === 'cancel') setLogs((prev) => [...prev, t('domain.cancelRequestLog')]);
+                if (action === 'cancel') {
+                    setLogs((prev) => [
+                        ...prev,
+                        j?.status === 'cancelled' ? t('domain.cancelledLog') : t('domain.cancelRequestLog'),
+                    ]);
+                }
             }
         } catch {
             // ignore
@@ -263,9 +268,9 @@ function ScanContent() {
                                 {t('domain.resumeScan')}
                             </MsqdxButton>
                         )}
-                        {(status === 'scanning' || status === 'queued' || status === 'paused') && (
+                        {(status === 'scanning' || status === 'queued' || status === 'paused' || status === 'cancelling') && (
                             <MsqdxButton variant="outlined" size="small" onClick={() => void sendScanControl('cancel')}>
-                                {t('domain.cancelScan')}
+                                {status === 'cancelling' ? t('domain.finalizeCancelScan') : t('domain.cancelScan')}
                             </MsqdxButton>
                         )}
                     </Box>

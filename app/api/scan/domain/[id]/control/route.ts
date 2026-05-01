@@ -49,7 +49,17 @@ export async function POST(
       return apiError(`Cannot cancel scan in status "${status}"`, API_STATUS.BAD_REQUEST);
     }
     if (status === 'cancelling') {
-      return NextResponse.json({ success: true, status: 'cancelling', message: 'Cancel already requested' });
+      /** Worker may have exited (deploy restart, serverless timeout, crash) before persisting `cancelled`. */
+      await updateDomainScan(id, user.id, {
+        status: 'cancelled',
+        error: 'Cancelled by user',
+      } as Partial<DomainScanResult>);
+      invalidateDomainScan(id);
+      return NextResponse.json({
+        success: true,
+        status: 'cancelled',
+        message: 'Scan marked as cancelled',
+      });
     }
     nextStatus = 'cancelling';
   }
