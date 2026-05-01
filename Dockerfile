@@ -78,6 +78,7 @@ COPY --from=builder /app/drizzle.config.ts ./
 COPY --from=builder /app/tsconfig.json ./
 COPY --from=builder /app/scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh
 COPY --from=builder /app/scripts/refresh-domain-payloads.ts ./scripts/refresh-domain-payloads.ts
+COPY --from=builder /app/scripts/backfill-domain-scan-lineage.ts ./scripts/backfill-domain-scan-lineage.ts
 RUN chmod +x ./scripts/docker-entrypoint.sh
 
 CMD ["./scripts/docker-entrypoint.sh"]

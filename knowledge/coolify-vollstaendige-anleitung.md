@@ -89,6 +89,8 @@ In Coolify unter **CHECKION** → **Environment Variables** eintragen:
 | `OPENAI_API_KEY` | Optional | Für AI-Features (GEO, Journey, Saliency, …) |
 | `DS_BASE` | Build (Docker) | Im Dockerfile gesetzt; normalerweise nicht in Coolify setzen |
 | `SALIENCY_SERVICE_URL`, `UX_JOURNEY_AGENT_URL`, S3, etc. | Optional | Siehe CHECKION `.env.example` |
+| `CHECKION_BACKFILL_DOMAIN_SCAN_LINEAGE_ON_START` | Optional (einmalig) | `1` = vor App-Start `scripts/backfill-domain-scan-lineage.ts` ausführen (nach Schema-Push). Nach erstem Deploy setzen, danach wieder entfernen. Siehe `knowledge/checkion-domain-scan-lineage.md` |
+| `CHECKION_REFRESH_DOMAIN_PAYLOADS_ON_START` | Optional (einmalig) | Siehe `knowledge/checkion-docker-refresh-domain-payloads.md` |
 
 **Wichtig:**  
 - `NEXTAUTH_URL` = exakt die CHECKION-URL.  

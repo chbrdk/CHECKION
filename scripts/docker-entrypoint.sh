@@ -18,6 +18,25 @@ else
   echo "[CHECKION] DATABASE_URL not set, skipping schema push."
 fi
 
+# Optional: assign lineage_key + lineage_version for existing domain_scans (idempotent).
+# Set CHECKION_BACKFILL_DOMAIN_SCAN_LINEAGE_ON_START=1 once after deploy when lineage columns are new.
+# See knowledge/checkion-domain-scan-lineage.md
+if [ -n "$DATABASE_URL" ] && [ -n "$CHECKION_BACKFILL_DOMAIN_SCAN_LINEAGE_ON_START" ]; then
+  case "$CHECKION_BACKFILL_DOMAIN_SCAN_LINEAGE_ON_START" in
+    0|false|no|off|"")
+      ;;
+    1|true|yes|run)
+      echo "[CHECKION] Running backfill-domain-scan-lineage..."
+      if ! npx tsx scripts/backfill-domain-scan-lineage.ts; then
+        echo "[CHECKION] backfill-domain-scan-lineage failed — starting app anyway."
+      fi
+      ;;
+    *)
+      echo "[CHECKION] Unknown CHECKION_BACKFILL_DOMAIN_SCAN_LINEAGE_ON_START=$CHECKION_BACKFILL_DOMAIN_SCAN_LINEAGE_ON_START (expected 1, true, or 0)"
+      ;;
+  esac
+fi
+
 # Optional: rebuild domain_scans.payload + aggregates from stored page scans (no crawl, no LLM).
 # Set CHECKION_REFRESH_DOMAIN_PAYLOADS_ON_START=1 or dry-run once after deploy / migration.
 # See knowledge/checkion-docker-refresh-domain-payloads.md

@@ -25,6 +25,25 @@ Legacy-Zeilen ohne `lineage_key`: Abfragen nutzen `coalesce(lineage_key, id)` al
 DATABASE_URL=… npx tsx scripts/backfill-domain-scan-lineage.ts
 ```
 
+### Docker / Coolify (ohne npm auf dem Host)
+
+Das Image enthält das Script. Im **Entrypoint** (`scripts/docker-entrypoint.sh`) läuft es optional **nach** `drizzle-kit push` und **vor** `npm run start`:
+
+| Env | Bedeutung |
+|-----|-----------|
+| `CHECKION_BACKFILL_DOMAIN_SCAN_LINEAGE_ON_START=1` | Backfill einmalig nach Deploy ausführen |
+| `0` / leer / weglassen | Kein Backfill |
+
+**Empfehlung:** Nach dem ersten Deploy mit Lineage-Spalten die Variable setzen, einen Neustart abwarten, danach wieder entfernen oder auf `0` — der Lauf ist idempotent, aber bei vielen Zeilen unnötig bei jedem Container-Start.
+
+Manuell im laufenden Container:
+
+```sh
+docker exec -it <container> npx tsx scripts/backfill-domain-scan-lineage.ts
+```
+
+`Dockerfile` kopiert `scripts/backfill-domain-scan-lineage.ts` ins Runner-Image.
+
 Optional: SQL `lib/db/migrations/0013_domain_scan_lineage.sql` für leere Datenbanken / manuelle Migration.
 
 ## API
