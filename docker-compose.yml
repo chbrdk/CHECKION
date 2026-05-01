@@ -17,6 +17,8 @@ services:
       - AUTH_URL=${AUTH_URL:-http://localhost:3333}
       # Optional one-shot after image update (omit or set 0 in normal operation):
       # - CHECKION_BACKFILL_DOMAIN_SCAN_LINEAGE_ON_START=1
+      # - CHECKION_SYNC_DOMAIN_SCAN_TAGS_ON_START=1
+      # - CHECKION_SYNC_DOMAIN_SCAN_TAGS_MODE=replaceFromProject
       # - CHECKION_REFRESH_DOMAIN_PAYLOADS_ON_START=1
       # - CHECKION_REFRESH_DOMAIN_PAYLOADS_ON_START=dry-run
       # - CHECKION_REFRESH_DOMAIN_PAYLOADS_LIMIT=100

@@ -198,6 +198,12 @@ export const domainScanTagsBodySchema = z.object({
   tags: z.array(z.string().trim().min(1).max(48)).max(32),
 });
 
+/** POST /api/admin/domain-scans/sync-project-tags (admin API key only). */
+export const adminSyncDomainScanTagsBodySchema = z.object({
+  /** `fillEmpty` only fills scans with empty tags; `replaceFromProject` overwrites all linked scans from project tags. */
+  mode: z.enum(['fillEmpty', 'replaceFromProject']).optional(),
+});
+
 /** PATCH .../project (assign resource to project) */
 export const projectAssignmentBodySchema = z.object({
   projectId: z.string().uuid().nullable(),
@@ -242,7 +248,8 @@ export async function parseApiBody<T>(
 ): Promise<NextResponse | T> {
   let raw: unknown;
   try {
-    raw = await request.json();
+    const text = await request.text();
+    raw = text.trim() === '' ? {} : JSON.parse(text);
   } catch {
     return apiError('Invalid JSON', API_STATUS.BAD_REQUEST);
   }

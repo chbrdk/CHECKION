@@ -155,6 +155,13 @@ describe('api-schemas', () => {
       expect((result as Response).status).toBe(400);
     });
 
+    it('treats empty body as {} and fails schema validation', async () => {
+      const req = new Request('http://localhost', { method: 'POST' });
+      const result = await parseApiBody(req, scanBodySchema);
+      expect(result).toBeInstanceOf(Response);
+      expect((result as Response).status).toBe(400);
+    });
+
     it('returns apiError for validation failure', async () => {
       const req = new Request('http://localhost', {
         method: 'POST',

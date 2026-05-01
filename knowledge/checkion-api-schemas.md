@@ -37,7 +37,8 @@ export async function POST(request: Request) {
 
 ## parseApiBody
 
-- Liest `request.json()` und fängt JSON-Parse-Fehler ab → 400 "Invalid JSON"
+- Liest den Body per `request.text()`; **leerer oder nur-Whitespace-Body** wird wie `{}` behandelt (kein „Invalid JSON“ mehr).
+- Sonst `JSON.parse`; Parse-Fehler → 400 "Invalid JSON"
 - Validiert mit dem angegebenen Zod-Schema
 - Bei Fehlern: formatiert erste Zod-Issue-Message → 400
 - Bei Erfolg: gibt typisierte Daten zurück

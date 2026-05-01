@@ -150,6 +150,8 @@ export const API_SHARE = `${APP_BASE_URL}/api/share`;
 export const API_SEARCH = `${APP_BASE_URL}/api/search`;
 export const API_JOURNEYS = `${APP_BASE_URL}/api/journeys`;
 export const API_PROJECTS = `${APP_BASE_URL}/api/projects`;
+/** POST — Bearer CHECKION_ADMIN_API_KEY: copy `projects.tags` → `domain_scans.tags` for existing scans; invalidates domain lists. */
+export const API_ADMIN_DOMAIN_SCANS_SYNC_PROJECT_TAGS = `${APP_BASE_URL}/api/admin/domain-scans/sync-project-tags`;
 export const API_RANK_TRACKING_KEYWORDS = `${APP_BASE_URL}/api/rank-tracking/keywords`;
 export const API_RANK_TRACKING_REFRESH = `${APP_BASE_URL}/api/rank-tracking/refresh`;
 

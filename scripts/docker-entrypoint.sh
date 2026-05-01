@@ -37,6 +37,26 @@ if [ -n "$DATABASE_URL" ] && [ -n "$CHECKION_BACKFILL_DOMAIN_SCAN_LINEAGE_ON_STA
   esac
 fi
 
+# Optional: copy projects.tags -> domain_scans.tags (same as admin POST sync-project-tags).
+# Set CHECKION_SYNC_DOMAIN_SCAN_TAGS_ON_START=1 once after deploy / classification changes.
+# Optional: CHECKION_SYNC_DOMAIN_SCAN_TAGS_MODE=fillEmpty|replaceFromProject (default replaceFromProject).
+# See knowledge/checkion-docker-sync-domain-scan-tags.md
+if [ -n "$DATABASE_URL" ] && [ -n "$CHECKION_SYNC_DOMAIN_SCAN_TAGS_ON_START" ]; then
+  case "$CHECKION_SYNC_DOMAIN_SCAN_TAGS_ON_START" in
+    0|false|no|off|"")
+      ;;
+    1|true|yes|run)
+      echo "[CHECKION] Running sync-domain-scan-tags-from-projects..."
+      if ! npx tsx scripts/sync-domain-scan-tags-from-projects.ts; then
+        echo "[CHECKION] sync-domain-scan-tags-from-projects failed — starting app anyway."
+      fi
+      ;;
+    *)
+      echo "[CHECKION] Unknown CHECKION_SYNC_DOMAIN_SCAN_TAGS_ON_START=$CHECKION_SYNC_DOMAIN_SCAN_TAGS_ON_START (expected 1, true, or 0)"
+      ;;
+  esac
+fi
+
 # Optional: rebuild domain_scans.payload + aggregates from stored page scans (no crawl, no LLM).
 # Set CHECKION_REFRESH_DOMAIN_PAYLOADS_ON_START=1 or dry-run once after deploy / migration.
 # See knowledge/checkion-docker-refresh-domain-payloads.md
