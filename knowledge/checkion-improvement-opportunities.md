@@ -12,9 +12,9 @@
 | **Scan-Modi** | Single, Deep, Journey, GEO/E-E-A-T | ✅ 4 Modi |
 | **API-Routen** | 44 Endpoints | ✅ Umfangreich |
 | **i18n** | DE/EN, 526 Keys | ✅ Gut |
-| **Tests** | 7 Unit-Tests (lib) | ⚠️ Lücken |
-| **Knowledge** | 26 Dokumente | ✅ Ausgeprägt |
-| **Sicherheit** | Auth, Hashing | ⚠️ Kein Rate Limit |
+| **Tests** | Vitest (`npm run test`, `test:api`) | ✅ Erweitert (API + lib) |
+| **Knowledge** | `knowledge/*.md` | ✅ Ausgeprägt |
+| **Sicherheit** | Auth, Hashing | ✅ Rate limiting (Scan-Bucket + Register pro IP; In-Memory) |
 
 ---
 
@@ -34,8 +34,8 @@
 ### Hohe Priorität
 
 1. **Testabdeckung** – ~~API- und Komponententests; Start: kritische Scan- und Auth-Routen~~ ✅ API-Tests für Health, Auth-Register (Validierung), Scan (401, URL-Validierung) – Vitest + `npm run test`/`test:api`  
-2. **`.env.example`** – Dokumentation aller Umgebungsvariablen  
-3. **Rate Limiting** – Schutz der Scan-Endpoints (z. B. @upstash/ratelimit)  
+2. **`.env.example`** – ✅ Root `/.env.example` (Secrets nicht committen; siehe `.gitignore` + `!.env.example`)  
+3. **Rate Limiting** – ✅ `lib/rate-limit.ts` (Scan-/Domain-Bucket + separates Register-Limit pro IP); Multi-Instanz: Redis siehe Dateikommentar  
 4. **i18n-Audit** – ~~restliche hardcodierte Strings (z. B. Journey-Agent) in i18n überführen~~ ✅ Erledigt (Journey-Agent: Schritt X/Y, ARIA, Action-Labels; Domain: journeyNotFound, issuePagesCount, fixingRuleAffects)  
 
 ### Mittlere Priorität
@@ -47,7 +47,7 @@
 ### Niedrige Priorität
 
 8. **ARIA-Labels** – Audit aller interaktiven Elemente ✅ HistoryList/SearchResultsList: role="button", tabIndex, aria-label, onKeyDown; BrandColorSelector/DomainAggregatedIssueList: aria-label; Delete- und Open-Buttons über i18n  
-9. **TypeScript Strict** – `@ts-ignore`-Stellen beseitigen ✅ extract route, scanner (pa11y, axe, __cls_score), debug_ux_metrics – ersetzt durch Typ-Assertions / erweiterte Interface  
+9. **TypeScript Strict** – `@ts-ignore`-Stellen beseitigen ✅ extract route, scanner (pa11y, axe, __cls_score), `scripts/debug-ux-metrics.ts` – Typ-Assertions / erweiterte Interface  
 10. **URL/Path-Konstanten** – zentrale API-Routen-Konstanten ✅ `lib/constants.ts`: PATH_*, path*(), API_*, api*(); App/API-Routen migriert, Tests in `__tests__/lib/constants-paths.test.ts`  
 
 ---

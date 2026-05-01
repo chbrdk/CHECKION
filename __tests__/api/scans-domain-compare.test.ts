@@ -5,7 +5,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
 vi.mock('@/lib/auth-api-token', () => ({ getRequestUser: vi.fn() }));
-vi.mock('@/lib/rate-limit', () => ({ checkRateLimit: () => ({ allowed: true, remaining: 999 }) }));
+vi.mock('@/lib/rate-limit', () => ({
+    checkRateLimit: () => ({ allowed: true, remaining: 999 }),
+    getClientIpForRateLimit: () => '127.0.0.1',
+}));
 vi.mock('@/lib/db/scans', () => ({ getDomainScan: vi.fn() }));
 
 import { POST } from '@/app/api/scans/domain/compare/route';

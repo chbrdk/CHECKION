@@ -6,6 +6,7 @@
 import OpenAI from 'openai';
 import type { DomainScanResultWithFullPages, ScanResult, JourneyStep, JourneyResult } from '@/lib/types';
 import { OPENAI_MODEL, getOpenAIKey } from '@/lib/llm/config';
+import { scanDebugLog } from '@/lib/scan-debug-log';
 
 const MAX_STEPS = 15;
 const MAX_TURNS = 35; // LLM calls (advances + backtrack re-tries)
@@ -14,8 +15,8 @@ const MAX_OUTBOUND_LINKS = 50;
 
 function debugJourney(label: string, data: unknown): void {
     const out = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-    console.log('[CHECKION journey]', label);
-    console.log(out);
+    scanDebugLog('[CHECKION journey]', label);
+    scanDebugLog(out);
 }
 
 function normalizeUrl(url: string): string {

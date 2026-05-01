@@ -29,11 +29,6 @@ export async function buildDomainBundleForOwner(domainScanId: string, ownerUserI
     };
 }
 
-/** @deprecated Prefer `buildDomainBundleForRequest` or `buildDomainBundleForOwner`. */
-export async function buildDomainBundleForUser(domainScanId: string, userId: string): Promise<DomainBundleApiResponse | null> {
-    return buildDomainBundleForOwner(domainScanId, userId);
-}
-
 export async function buildDomainBundleForRequest(request: Request, domainScanId: string): Promise<DomainBundleApiResponse | null> {
     const access = await getDomainScanAccess(request, domainScanId);
     if (!access.ok) return null;

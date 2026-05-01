@@ -24,6 +24,15 @@
 .DS_Store
 *.pem
 
+# IDE / local tooling
+.cursor/debug*.log
+
+# Chrome DevTools / profiler traces (do not commit)
+Trace-*.json
+
+# SpecStory chat exports (large; regenerate locally if needed)
+.specstory/
+
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -35,6 +44,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
