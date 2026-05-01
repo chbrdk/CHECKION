@@ -71,10 +71,24 @@ export async function insertProject(
     });
 }
 
+const projectRowSelect = {
+    id: projects.id,
+    userId: projects.userId,
+    name: projects.name,
+    domain: projects.domain,
+    industry: projects.industry,
+    valueProposition: projects.valueProposition,
+    competitors: projects.competitors,
+    geoQueries: projects.geoQueries,
+    tags: projects.tags,
+    createdAt: projects.createdAt,
+    updatedAt: projects.updatedAt,
+} as const;
+
 export async function getProject(id: string, userId: string): Promise<ProjectRow | null> {
     const db = getDb();
     const rows = await db
-        .select()
+        .select(projectRowSelect)
         .from(projects)
         .where(and(eq(projects.id, id), eq(projects.userId, userId)))
         .limit(1);
@@ -85,7 +99,7 @@ export async function getProject(id: string, userId: string): Promise<ProjectRow
 export async function listProjects(userId: string): Promise<ProjectRow[]> {
     const db = getDb();
     const rows = await db
-        .select()
+        .select(projectRowSelect)
         .from(projects)
         .where(eq(projects.userId, userId))
         .orderBy(desc(projects.updatedAt));

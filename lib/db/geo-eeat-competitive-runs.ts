@@ -42,13 +42,26 @@ export async function insertCompetitiveRun(
     });
 }
 
+const competitiveRunRowSelect = {
+    id: geoEeatCompetitiveRuns.id,
+    geoEeatRunId: geoEeatCompetitiveRuns.geoEeatRunId,
+    userId: geoEeatCompetitiveRuns.userId,
+    startedAt: geoEeatCompetitiveRuns.startedAt,
+    completedAt: geoEeatCompetitiveRuns.completedAt,
+    status: geoEeatCompetitiveRuns.status,
+    competitiveByModel: geoEeatCompetitiveRuns.competitiveByModel,
+    queries: geoEeatCompetitiveRuns.queries,
+    competitors: geoEeatCompetitiveRuns.competitors,
+    error: geoEeatCompetitiveRuns.error,
+} as const;
+
 export async function getCompetitiveRun(
     id: string,
     userId: string
 ): Promise<CompetitiveRunRow | null> {
     const db = getDb();
     const rows = await db
-        .select()
+        .select(competitiveRunRowSelect)
         .from(geoEeatCompetitiveRuns)
         .where(and(eq(geoEeatCompetitiveRuns.id, id), eq(geoEeatCompetitiveRuns.userId, userId)))
         .limit(1);
@@ -62,7 +75,7 @@ export async function listCompetitiveRunsByGeoEeatJob(
 ): Promise<CompetitiveRunRow[]> {
     const db = getDb();
     const rows = await db
-        .select()
+        .select(competitiveRunRowSelect)
         .from(geoEeatCompetitiveRuns)
         .where(
             and(

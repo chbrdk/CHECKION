@@ -47,10 +47,23 @@ export async function updateJourneyRunProject(id: string, userId: string, projec
     return (updated.rowCount ?? 0) > 0;
 }
 
+const journeyRunRowSelect = {
+    id: journeyRuns.id,
+    userId: journeyRuns.userId,
+    projectId: journeyRuns.projectId,
+    url: journeyRuns.url,
+    task: journeyRuns.task,
+    status: journeyRuns.status,
+    result: journeyRuns.result,
+    error: journeyRuns.error,
+    createdAt: journeyRuns.createdAt,
+    updatedAt: journeyRuns.updatedAt,
+} as const;
+
 export async function getJourneyRun(id: string, userId: string): Promise<JourneyRunRow | null> {
     const db = getDb();
     const rows = await db
-        .select()
+        .select(journeyRunRowSelect)
         .from(journeyRuns)
         .where(and(eq(journeyRuns.id, id), eq(journeyRuns.userId, userId)))
         .limit(1);
@@ -101,7 +114,7 @@ export async function listJourneyRuns(
             ? and(eq(journeyRuns.userId, userId), isNull(journeyRuns.projectId))
             : and(eq(journeyRuns.userId, userId), eq(journeyRuns.projectId, options.projectId));
     const rows = await db
-        .select()
+        .select(journeyRunRowSelect)
         .from(journeyRuns)
         .where(whereCond)
         .orderBy(desc(journeyRuns.createdAt))
