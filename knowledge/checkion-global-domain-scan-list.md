@@ -3,7 +3,8 @@
 ## Berechtigung
 
 - **`CHECKION_ADMIN_API_KEY`**: `Authorization: Bearer …` auf betroffenen APIs (u. a. `GET /api/scans/domain?scope=allUsers`).
-- **`CHECKION_GLOBAL_DOMAIN_SCAN_USER_IDS`**: Komma-getrennte User-IDs, die in der **Session** die Systemliste in der UI nutzen dürfen (`domainScansListAllUsers` via `GET /api/auth/capabilities`).
+- **`CHECKION_GLOBAL_DOMAIN_SCAN_ALL_AUTHENTICATED`**: auf `1` / `true` / `yes` setzen → **jeder eingeloggte Nutzer** sieht die Systemliste und kann fremde Domain-Scans lesen (nur für vertrauenswürdige / interne Instanzen).
+- **`CHECKION_GLOBAL_DOMAIN_SCAN_USER_IDS`**: Komma-getrennte User-IDs für **einzelne** Operator-Konten, wenn ihr nicht alle User öffnen wollt.
 
 ## UI
 

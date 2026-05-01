@@ -352,7 +352,7 @@ export const apiScansDomainList = (params?: {
   projectId?: string | null;
   q?: string;
   status?: string;
-  /** `allUsers` requires `CHECKION_GLOBAL_DOMAIN_SCAN_USER_IDS` or admin API key. */
+  /** `allUsers` requires allowlist env, `CHECKION_GLOBAL_DOMAIN_SCAN_ALL_AUTHENTICATED`, or admin API key. */
   scope?: 'mine' | 'allUsers';
 }) => {
   const search = new URLSearchParams();
