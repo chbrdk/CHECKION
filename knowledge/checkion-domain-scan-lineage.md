@@ -2,7 +2,7 @@
 
 ## Zweck
 
-Mehrere Deep Scans **dieselbe Kunde/URL** (gleicher Nutzer, gleiches Projekt, gleicher normalisierter Host) bilden eine **Lineage**. In Listen und Counts erscheint nur der **Kopf** (`max(lineage_version)`). Ältere Läufe bleiben in `domain_scans` und sind per ID weiterhin abrufbar (z. B. Vergleich, direkter Link).
+Mehrere Deep Scans **dieselbe Kunde/URL** (gleicher Nutzer, gleiches Projekt bzw. gleicher „Projekt-Scope“, gleicher normalisierter Host) bilden eine **Lineage**. Scans **ohne Projekt** (`project_id IS NULL`) nutzen im Key ein leeres Projekt-Segment (`userId||host`) und sind von projektgebundenen Lineages getrennt. In Listen und Counts erscheint nur der **Kopf** (`max(lineage_version)`). Ältere Läufe bleiben in `domain_scans` und sind per ID weiterhin abrufbar (z. B. Vergleich, direkter Link).
 
 ## Spalten
 

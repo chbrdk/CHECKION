@@ -327,7 +327,11 @@ export default function DashboardPage() {
                 <DomainScanRow
                   key={ds.id}
                   item={ds}
-                  onClick={() => router.push(pathDomain(ds.id))}
+                  onClick={() =>
+                    router.push(
+                      pathDomain(ds.id, ds.projectId ? { projectId: ds.projectId } : undefined)
+                    )
+                  }
                   onDelete={handleDeleteDomainScan}
                 />
               ))}

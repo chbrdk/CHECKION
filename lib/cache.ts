@@ -19,6 +19,16 @@ import type { UxCxSummary } from '@/lib/llm-summary-types';
 import type { ShareLinkRow } from '@/lib/db/shares';
 import type { SavedJourneyRow } from '@/lib/db/journeys';
 
+/**
+ * Segment for `unstable_cache` keys: `undefined` (no filter / all rows) must differ from
+ * `null` (only `project_id IS NULL`, e.g. deep scans started outside a project).
+ */
+export function domainScanListProjectCacheKey(projectId: string | null | undefined): string {
+    if (projectId === undefined) return 'all';
+    if (projectId === null) return 'unassigned';
+    return projectId;
+}
+
 /** Cached: single scan by id (user-scoped). Exceeds 2MB, skipping cache. */
 export async function getCachedScan(id: string, userId: string): Promise<ScanResult | null> {
     return dbScans.getScan(id, userId);
@@ -60,7 +70,7 @@ export async function listCachedStandaloneScans(
 export async function getCachedStandaloneScansCount(userId: string, projectId?: string | null): Promise<number> {
     return unstable_cache(
         () => dbScans.getStandaloneScansCount(userId, projectId),
-        ['scans-count', userId, projectId ?? 'all'],
+        ['scans-count', userId, domainScanListProjectCacheKey(projectId)],
         { revalidate: CACHE_REVALIDATE_LIST, tags: [`scans-list-${userId}`] }
     )();
 }
@@ -88,12 +98,14 @@ export async function listCachedDomainScanSummaries(
         score: number;
         totalPages: number;
         lineageVersion: number;
+        projectId: string | null;
     }>
 > {
     const limit = options?.limit ?? 100;
     const offset = options?.offset ?? 0;
     const qKey = options?.q?.trim().slice(0, DOMAIN_SCAN_LIST_QUERY_MAX_LEN) ?? '';
     const statusKey = options?.status ?? '';
+    const projectKey = domainScanListProjectCacheKey(options?.projectId);
     return unstable_cache(
         () =>
             dbScans.listDomainScanSummaries(userId, {
@@ -103,7 +115,7 @@ export async function listCachedDomainScanSummaries(
                 q: options?.q,
                 status: options?.status,
             }),
-        ['domain-summaries', userId, String(limit), String(offset), options?.projectId ?? 'all', qKey, statusKey],
+        ['domain-summaries', userId, String(limit), String(offset), projectKey, qKey, statusKey],
         { revalidate: CACHE_REVALIDATE_LIST, tags: [`domain-list-${userId}`] }
     )();
 }
@@ -115,9 +127,10 @@ export async function getCachedDomainScansCount(
 ): Promise<number> {
     const qKey = options?.q?.trim().slice(0, DOMAIN_SCAN_LIST_QUERY_MAX_LEN) ?? '';
     const statusKey = options?.status ?? '';
+    const projectKey = domainScanListProjectCacheKey(options?.projectId);
     return unstable_cache(
         () => dbScans.getDomainScansCount(userId, { projectId: options?.projectId, q: options?.q, status: options?.status }),
-        ['domain-count', userId, options?.projectId ?? 'all', qKey, statusKey],
+        ['domain-count', userId, projectKey, qKey, statusKey],
         { revalidate: CACHE_REVALIDATE_LIST, tags: [`domain-list-${userId}`] }
     )();
 }

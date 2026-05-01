@@ -32,6 +32,7 @@ type Row = {
     score: number;
     totalPages: number;
     lineageVersion?: number;
+    projectId?: string | null;
 };
 
 const STATUSES: DomainScanStatus[] = [
@@ -54,6 +55,8 @@ export default function DeepScansPage() {
     const [qInput, setQInput] = useState('');
     const [qApplied, setQApplied] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('');
+    /** `all` = every deep scan; `unassigned` = only rows with project_id IS NULL. */
+    const [projectFilter, setProjectFilter] = useState<'all' | 'unassigned'>('all');
     const [selected, setSelected] = useState<string[]>([]);
 
     const limit = DASHBOARD_SCANS_PAGE_SIZE;
@@ -65,6 +68,7 @@ export default function DeepScansPage() {
                 apiScansDomainList({
                     page,
                     limit,
+                    ...(projectFilter === 'unassigned' ? { projectId: null } : {}),
                     ...(qApplied.trim() ? { q: qApplied.trim() } : {}),
                     ...(statusFilter ? { status: statusFilter } : {}),
                 }),
@@ -84,7 +88,7 @@ export default function DeepScansPage() {
         } finally {
             setLoading(false);
         }
-    }, [page, limit, qApplied, statusFilter]);
+    }, [page, limit, projectFilter, qApplied, statusFilter]);
 
     useEffect(() => {
         void load();
@@ -140,6 +144,28 @@ export default function DeepScansPage() {
                             onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
                         />
                     </Box>
+                    <Box sx={{ minWidth: 200 }}>
+                        <Typography component="label" variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                            {t('deepScans.filterProject')}
+                        </Typography>
+                        <select
+                            aria-label={t('deepScans.filterProject')}
+                            value={projectFilter}
+                            onChange={(e) => {
+                                setProjectFilter(e.target.value as 'all' | 'unassigned');
+                                setPage(1);
+                            }}
+                            style={{
+                                width: '100%',
+                                padding: '10px 12px',
+                                borderRadius: 8,
+                                border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                            }}
+                        >
+                            <option value="all">{t('deepScans.filterProjectAll')}</option>
+                            <option value="unassigned">{t('deepScans.filterProjectUnassigned')}</option>
+                        </select>
+                    </Box>
                     <Box sx={{ minWidth: 180 }}>
                         <Typography component="label" variant="caption" sx={{ display: 'block', mb: 0.5 }}>
                             {t('deepScans.filterStatus')}
@@ -191,6 +217,7 @@ export default function DeepScansPage() {
                             <TableRow>
                                 <TableCell padding="checkbox">{t('deepScans.colSelect')}</TableCell>
                                 <TableCell>{t('deepScans.colDomain')}</TableCell>
+                                <TableCell>{t('deepScans.colProject')}</TableCell>
                                 <TableCell>{t('deepScans.colDate')}</TableCell>
                                 <TableCell>{t('deepScans.colStatus')}</TableCell>
                                 <TableCell align="right">{t('deepScans.colScore')}</TableCell>
@@ -226,6 +253,13 @@ export default function DeepScansPage() {
                                         </Typography>
                                     </TableCell>
                                     <TableCell>
+                                        <Typography variant="body2" noWrap sx={{ maxWidth: 120 }} title={r.projectId ?? ''}>
+                                            {r.projectId == null || r.projectId === ''
+                                                ? t('deepScans.noProject')
+                                                : `${r.projectId.slice(0, 8)}…`}
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell>
                                         <span suppressHydrationWarning>{new Date(r.timestamp).toLocaleString()}</span>
                                     </TableCell>
                                     <TableCell>{r.status}</TableCell>
@@ -236,7 +270,14 @@ export default function DeepScansPage() {
                                             <MsqdxButton
                                                 variant="text"
                                                 size="small"
-                                                onClick={() => router.push(pathDomain(r.id))}
+                                                onClick={() =>
+                                                    router.push(
+                                                        pathDomain(
+                                                            r.id,
+                                                            r.projectId ? { projectId: r.projectId } : undefined
+                                                        )
+                                                    )
+                                                }
                                             >
                                                 {t('deepScans.open')}
                                             </MsqdxButton>

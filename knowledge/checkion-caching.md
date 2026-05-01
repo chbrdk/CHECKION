@@ -31,7 +31,7 @@ API-Routen, die schreiben/löschen, rufen die passenden `invalidate*`-Funktionen
 ## Wo Cache genutzt wird
 
 - **GET** `/api/scan`, `/api/scans/domain`, `/api/journeys` → gecachte Listen/Counts.
-- **GET** `/api/scans/domain`: optionale Query-Parameter **`q`** (Domain-Substring, `ilike`) und **`status`** (Domain-Scan-Status); beide fließen in den `unstable_cache`-Key von `listCachedDomainScanSummaries` / `getCachedDomainScansCount`. **`projectId`**: Parameter fehlt → kein Projektfilter (alle Scans des Users); leerer String → nur Zeilen ohne Projekt (`project_id IS NULL`); UUID → Filter auf dieses Projekt.
+- **GET** `/api/scans/domain`: optionale Query-Parameter **`q`** (Domain-Substring, `ilike`) und **`status`** (Domain-Scan-Status); beide fließen in den `unstable_cache`-Key von `listCachedDomainScanSummaries` / `getCachedDomainScansCount`. **`projectId`**: Parameter fehlt → kein Projektfilter (alle Scans des Users); leerer String → nur Zeilen ohne Projekt (`project_id IS NULL`); UUID → Filter auf dieses Projekt. **Wichtig:** Im Cache-Key müssen **`undefined` (alle)** und **`null` (nur ohne Projekt)** getrennt sein — dafür `domainScanListProjectCacheKey()` in `lib/cache.ts` (`all` vs. `unassigned` vs. UUID), nicht `projectId ?? 'all'`.
 - **POST** `/api/scans/domain/compare`: kein List-Cache; zwei UUIDs im Body → schlanke Vergleichs-DTOs aus `domain_scans.payload`.
 - **GET** `/api/scan/[id]`, `/api/scan/domain/[id]/summary` → gecachte Einzelabfragen.
 - **GET** `/api/scan/domain/[id]/status` → **kein Cache**: liefert nur Status/Progress (slim), direkte DB-Abfrage. Vermeidet „items over 2MB can not be cached“ bei großen Domain-Scans beim Polling.

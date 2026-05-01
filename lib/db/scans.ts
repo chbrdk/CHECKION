@@ -20,6 +20,8 @@ export type DomainScanSummaryRow = {
     score: number;
     totalPages: number;
     lineageVersion: number;
+    /** Null when the deep scan was started outside a project. */
+    projectId: string | null;
 };
 
 /** Summary row + flag whether payload has `aggregated` (avoids loading full JSONB for search). */
@@ -348,6 +350,7 @@ export async function listDomainScanSummaries(userId: string, options?: DomainSc
             score: sql<number>`(${domainScans.payload}->>'score')::int`,
             totalPages: sql<number>`(${domainScans.payload}->>'totalPages')::int`,
             lineageVersion: domainScans.lineageVersion,
+            projectId: domainScans.projectId,
         })
         .from(domainScans)
         .innerJoin(latestSq, joinLatest)
@@ -364,6 +367,7 @@ export async function listDomainScanSummaries(userId: string, options?: DomainSc
         score: r.score ?? 0,
         totalPages: r.totalPages ?? 0,
         lineageVersion: r.lineageVersion ?? 1,
+        projectId: r.projectId ?? null,
     }));
 }
 
@@ -394,6 +398,7 @@ export async function listDomainScanSummariesForSearch(
             totalPages: sql<number>`(${domainScans.payload}->>'totalPages')::int`,
             hasStoredAggregated: sql<boolean>`(${domainScans.payload}->'aggregated') IS NOT NULL`,
             lineageVersion: domainScans.lineageVersion,
+            projectId: domainScans.projectId,
         })
         .from(domainScans)
         .innerJoin(latestSq, joinLatest)
@@ -411,6 +416,7 @@ export async function listDomainScanSummariesForSearch(
         totalPages: r.totalPages ?? 0,
         hasStoredAggregated: Boolean(r.hasStoredAggregated),
         lineageVersion: r.lineageVersion ?? 1,
+        projectId: r.projectId ?? null,
     }));
 }
 

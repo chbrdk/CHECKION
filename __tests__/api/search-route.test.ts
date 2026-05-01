@@ -44,6 +44,7 @@ describe('GET /api/search — domain branch uses lightweight rows', () => {
                 score: 80,
                 totalPages: 1,
                 lineageVersion: 1,
+                projectId: null,
                 hasStoredAggregated: true,
             },
         ]);
@@ -76,6 +77,7 @@ describe('GET /api/search — domain branch uses lightweight rows', () => {
                 score: 50,
                 totalPages: 1,
                 lineageVersion: 1,
+                projectId: null,
                 hasStoredAggregated: false,
             },
         ]);

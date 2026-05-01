@@ -8,7 +8,16 @@ import { Trash2 } from 'lucide-react';
 import type { ScanResult } from '@/lib/types';
 import { useI18n } from '@/components/i18n/I18nProvider';
 
-export type DomainScanSummary = { id: string; domain: string; timestamp: string; status: string; score: number; totalPages: number };
+export type DomainScanSummary = {
+    id: string;
+    domain: string;
+    timestamp: string;
+    status: string;
+    score: number;
+    totalPages: number;
+    projectId?: string | null;
+    lineageVersion?: number;
+};
 
 const listItemSx = {
   cursor: 'pointer',
@@ -124,7 +133,14 @@ export function DomainScanRow({
           {item.domain}
         </MsqdxTypography>
         <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-          <span suppressHydrationWarning>{new Date(item.timestamp).toLocaleString('de-DE')}</span> · {item.totalPages} Seiten
+          <span suppressHydrationWarning>{new Date(item.timestamp).toLocaleString('de-DE')}</span> · {item.totalPages}{' '}
+          {t('deepScans.listPagesSuffix')}
+          {item.projectId == null || item.projectId === ''
+            ? ` · ${t('deepScans.noProject')}`
+            : ` · ${t('deepScans.colProject')}: ${item.projectId.slice(0, 8)}…`}
+          {typeof item.lineageVersion === 'number' && item.lineageVersion > 0
+            ? ` · ${t('deepScans.lineageVersion').replace('{version}', String(item.lineageVersion))}`
+            : ''}
         </MsqdxTypography>
       </Box>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)' }}>
