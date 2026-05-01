@@ -6,7 +6,7 @@ import { NextRequest } from 'next/server';
 
 vi.mock('@/lib/auth-api-token', () => ({ getRequestUser: vi.fn() }));
 vi.mock('@/lib/rate-limit', () => ({
-    checkRateLimit: () => ({ allowed: true, remaining: 999 }),
+    checkRateLimit: async () => ({ allowed: true, remaining: 999 }),
     getClientIpForRateLimit: () => '127.0.0.1',
 }));
 vi.mock('@/lib/db/scans', () => ({ getDomainScan: vi.fn() }));

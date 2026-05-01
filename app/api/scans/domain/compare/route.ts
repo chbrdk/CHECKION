@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     if (!viewer && !isAdminApiRequest(req)) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
-    const rl = checkRateLimit(`domain-compare:${viewer?.id ?? 'admin-api'}`, 'default');
+    const rl = await checkRateLimit(`domain-compare:${viewer?.id ?? 'admin-api'}`, 'default');
     if (!rl.allowed) {
         return apiError(
             'Too many requests. Please try again later.',

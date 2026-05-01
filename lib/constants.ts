@@ -585,6 +585,9 @@ export const ENV_SCREENSHOT_AWS_REGION = 'SCREENSHOT_AWS_REGION';
 /** When `1`/`true`/`yes`, enables verbose scanner and journey-agent debug logs (axe injection, CLS, tool traces). */
 export const ENV_CHECKION_SCAN_DEBUG = 'CHECKION_SCAN_DEBUG';
 
+/** When set (e.g. `redis://redis:6379`), rate limits use Redis so multiple app instances share counters. Falls back to in-memory if unset or connection fails. */
+export const ENV_REDIS_URL = 'REDIS_URL';
+
 /** Optional base URL for the UX Journey Agent (Python/Browser Use). If set, POST /api/scan/journey-agent forwards to this service. On Coolify: use internal service URL (e.g. http://ux-journey-agent:8320). */
 export const ENV_UX_JOURNEY_AGENT_URL = 'UX_JOURNEY_AGENT_URL';
 

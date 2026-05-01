@@ -14,7 +14,7 @@
 | **i18n** | DE/EN, 526 Keys | ✅ Gut |
 | **Tests** | Vitest (`npm run test`, `test:api`) | ✅ Erweitert (API + lib) |
 | **Knowledge** | `knowledge/*.md` | ✅ Ausgeprägt |
-| **Sicherheit** | Auth, Hashing | ✅ Rate limiting (Scan-Bucket + Register pro IP; In-Memory) |
+| **Sicherheit** | Auth, Hashing | ✅ Rate limiting (Scan + Register); optional **Redis** (`REDIS_URL`) für mehrere Instanzen |
 
 ---
 
@@ -35,7 +35,7 @@
 
 1. **Testabdeckung** – ~~API- und Komponententests; Start: kritische Scan- und Auth-Routen~~ ✅ API-Tests für Health, Auth-Register (Validierung), Scan (401, URL-Validierung) – Vitest + `npm run test`/`test:api`  
 2. **`.env.example`** – ✅ Root `/.env.example` (Secrets nicht committen; siehe `.gitignore` + `!.env.example`)  
-3. **Rate Limiting** – ✅ `lib/rate-limit.ts` (Scan-/Domain-Bucket + separates Register-Limit pro IP); Multi-Instanz: Redis siehe Dateikommentar  
+3. **Rate Limiting** – ✅ `lib/rate-limit.ts` + optional `lib/rate-limit-redis.ts` bei `REDIS_URL`; sonst In-Memory pro Prozess  
 4. **i18n-Audit** – ~~restliche hardcodierte Strings (z. B. Journey-Agent) in i18n überführen~~ ✅ Erledigt (Journey-Agent: Schritt X/Y, ARIA, Action-Labels; Domain: journeyNotFound, issuePagesCount, fixingRuleAffects)  
 
 ### Mittlere Priorität

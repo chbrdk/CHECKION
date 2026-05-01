@@ -1,15 +1,18 @@
 /**
- * In-memory rate limiter for API routes.
+ * Rate limiter for API routes.
  *
  * Buckets:
  * - `default` — scans, domain APIs, classify, etc. Uses RATE_LIMIT_SCAN_MAX / RATE_LIMIT_SCAN_WINDOW_MS.
  * - `register` — POST /api/auth/register per IP. Uses RATE_LIMIT_REGISTER_MAX / RATE_LIMIT_REGISTER_WINDOW_MS.
  *
- * Note: In-memory = per process. For multi-instance deployments, use Redis-based
- * rate limiting (e.g. @upstash/ratelimit).
+ * When **REDIS_URL** is set, limits are enforced in **Redis** (shared across processes). Otherwise **in-memory**
+ * per Node process (see `lib/rate-limit-redis.ts`).
  */
 
-export type RateLimitBucket = 'default' | 'register';
+import { checkRateLimitRedis } from '@/lib/rate-limit-redis';
+import type { RateLimitBucket } from '@/lib/rate-limit-bucket';
+
+export type { RateLimitBucket };
 
 const stores: Record<RateLimitBucket, Map<string, number[]>> = {
     default: new Map(),
@@ -57,12 +60,7 @@ export function getClientIpForRateLimit(request: Request): string {
     return 'unknown';
 }
 
-/**
- * Check rate limit. Call before processing expensive or abuse-prone requests.
- * @param key — Unique key within the bucket (e.g. `scan:${userId}`, `domain-slim-pages:${id}`).
- * @param bucket — `default` for scan-style limits; `register` for registration per IP.
- */
-export function checkRateLimit(key: string, bucket: RateLimitBucket = 'default'): RateLimitResult {
+function checkRateLimitMemory(key: string, bucket: RateLimitBucket): RateLimitResult {
     const { max, windowMs } = limitsForBucket(bucket);
     const store = stores[bucket];
     const now = Date.now();
@@ -79,6 +77,17 @@ export function checkRateLimit(key: string, bucket: RateLimitBucket = 'default')
         allowed: true,
         remaining: max - timestamps.length,
     };
+}
+
+/**
+ * Check rate limit. Call before processing expensive or abuse-prone requests.
+ * Uses Redis when `REDIS_URL` is set; otherwise in-memory.
+ */
+export async function checkRateLimit(key: string, bucket: RateLimitBucket = 'default'): Promise<RateLimitResult> {
+    const { max, windowMs } = limitsForBucket(bucket);
+    const redisResult = await checkRateLimitRedis(key, bucket, max, windowMs);
+    if (redisResult != null) return redisResult;
+    return checkRateLimitMemory(key, bucket);
 }
 
 /** Clears in-memory counters (Vitest only). */

@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
     }
-    const rl = checkRateLimit(`scan:${user.id}`, 'default');
+    const rl = await checkRateLimit(`scan:${user.id}`, 'default');
     if (!rl.allowed) {
         return apiError(
             'Too many requests. Please try again later.',
