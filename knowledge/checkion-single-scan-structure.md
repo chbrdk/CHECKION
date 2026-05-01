@@ -23,6 +23,7 @@
 - **`PATCH /api/scans/[id]/tags`** (`apiScansTags`) — alle Geräte einer Session (gemeinsames `group_id`) werden mitgeschrieben.
 - Admin **`POST /api/admin/domain-scans/sync-project-tags`** synchronisiert jetzt **Domain- und Standalone**-Zeilen (`syncStandaloneScansTagsFromProjects`); Script **`scripts/sync-domain-scan-tags-from-projects.ts`** ebenfalls.
 - Nach Auto-Tags aus Deep-/Single-Scan: **`syncStandaloneScansTagsForProjectId`** + **`invalidateScansList`** (`lib/project-industry-auto.ts`).
+- **`PATCH /api/projects/[id]`** mit **`tags`**: **`syncDomainScanTagsForProjectId`** + **`syncStandaloneScansTagsForProjectId`** + **`invalidateScansList`** (Domain-Liste weiter **`invalidateDomainList`** bei jedem erfolgreichen Update).
 
 ## Migration
 

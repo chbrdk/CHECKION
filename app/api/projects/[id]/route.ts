@@ -6,7 +6,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { parseApiBody, projectUpdateBodySchema } from '@/lib/api-schemas';
-import { invalidateDomainList } from '@/lib/cache';
+import { invalidateDomainList, invalidateScansList } from '@/lib/cache';
+import { syncDomainScanTagsForProjectId } from '@/lib/db/sync-domain-scan-tags-from-projects';
+import { syncStandaloneScansTagsForProjectId } from '@/lib/db/sync-standalone-scan-tags-from-projects';
 import { getProject, updateProject, deleteProject } from '@/lib/db/projects';
 import { getDomainScansCount } from '@/lib/db/scans';
 import { listJourneyRuns } from '@/lib/db/journey-runs';
@@ -79,7 +81,14 @@ export async function PATCH(
         ...(parsed.geoQueries !== undefined && { geoQueries: parsed.geoQueries }),
         ...(parsed.tags !== undefined && { tags: parsed.tags }),
     });
-    if (updated) invalidateDomainList(user.id);
+    if (updated) {
+        invalidateDomainList(user.id);
+        if (parsed.tags !== undefined) {
+            await syncDomainScanTagsForProjectId(id);
+            await syncStandaloneScansTagsForProjectId(id);
+            invalidateScansList(user.id);
+        }
+    }
     return NextResponse.json({ success: updated });
 }
 
