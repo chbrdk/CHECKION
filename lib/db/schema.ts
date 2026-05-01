@@ -31,9 +31,13 @@ export const projects = pgTable('projects', {
     userId: text('user_id').notNull(), // PLEXON user id when using central auth
     name: text('name').notNull(),
     domain: text('domain'),
+    /** Optional sector label for filtering (e.g. healthcare, saas). */
+    industry: text('industry'),
     valueProposition: text('value_proposition'),
     competitors: jsonb('competitors').notNull().default([]), // string[] – competitor domains
     geoQueries: jsonb('geo_queries').notNull().default([]), // string[] – GEO/E-E-A-T queries for this project
+    /** Normalized tag strings (lowercase) for list filters. */
+    tags: jsonb('tags').notNull().default([]),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -64,6 +68,8 @@ export const domainScans = pgTable(
         lineageKey: text('lineage_key'),
         /** Increments per re-scan for the same lineage_key; legacy rows default to 1. */
         lineageVersion: integer('lineage_version').notNull().default(1),
+        /** Scan-level tags (normalized strings); union with project.tags for filters. */
+        tags: jsonb('tags').notNull().default([]),
     },
     (t) => [
         uniqueIndex('domain_scans_lineage_key_version_uniq')

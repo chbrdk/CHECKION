@@ -45,6 +45,10 @@ describe('GET /api/search — domain branch uses lightweight rows', () => {
                 totalPages: 1,
                 lineageVersion: 1,
                 projectId: null,
+                userId: 'u1',
+                industry: null,
+                projectTags: [],
+                tags: [],
                 hasStoredAggregated: true,
             },
         ]);
@@ -78,6 +82,10 @@ describe('GET /api/search — domain branch uses lightweight rows', () => {
                 totalPages: 1,
                 lineageVersion: 1,
                 projectId: null,
+                userId: 'u1',
+                industry: null,
+                projectTags: [],
+                tags: [],
                 hasStoredAggregated: false,
             },
         ]);

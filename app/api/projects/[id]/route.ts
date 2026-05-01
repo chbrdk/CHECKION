@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { parseApiBody, projectUpdateBodySchema } from '@/lib/api-schemas';
+import { invalidateDomainList } from '@/lib/cache';
 import { getProject, updateProject, deleteProject } from '@/lib/db/projects';
 import { getDomainScansCount } from '@/lib/db/scans';
 import { listJourneyRuns } from '@/lib/db/journey-runs';
@@ -72,10 +73,13 @@ export async function PATCH(
     const updated = await updateProject(id, user.id, {
         ...(parsed.name !== undefined && { name: parsed.name }),
         ...(parsed.domain !== undefined && { domain: parsed.domain }),
+        ...(parsed.industry !== undefined && { industry: parsed.industry }),
         ...(parsed.valueProposition !== undefined && { valueProposition: parsed.valueProposition }),
         ...(parsed.competitors !== undefined && { competitors: parsed.competitors }),
         ...(parsed.geoQueries !== undefined && { geoQueries: parsed.geoQueries }),
+        ...(parsed.tags !== undefined && { tags: parsed.tags }),
     });
+    if (updated) invalidateDomainList(user.id);
     return NextResponse.json({ success: updated });
 }
 

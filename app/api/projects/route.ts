@@ -29,6 +29,8 @@ export async function POST(request: Request) {
     await insertProject(id, user.id, {
         name: parsed.name,
         domain: parsed.domain ?? null,
+        industry: parsed.industry ?? undefined,
+        tags: parsed.tags,
     });
     return NextResponse.json({ success: true, id, name: parsed.name, domain: parsed.domain ?? null });
 }

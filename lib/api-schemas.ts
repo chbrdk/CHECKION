@@ -171,19 +171,31 @@ export const journeysBodySchema = z.object({
   name: z.string().optional(),
 });
 
+const projectIndustrySchema = z.string().max(128).optional().nullable();
+const projectTagsSchema = z.array(z.string().trim().min(1).max(48)).max(32).optional();
+
 /** POST /api/projects (create project) */
 export const projectCreateBodySchema = z.object({
   name: z.string().min(1, 'Name is required'),
   domain: z.string().optional().nullable(),
+  industry: projectIndustrySchema,
+  tags: projectTagsSchema,
 });
 
 /** PATCH /api/projects/[id] (update project) */
 export const projectUpdateBodySchema = z.object({
   name: z.string().min(1).optional(),
   domain: z.string().optional().nullable(),
+  industry: projectIndustrySchema,
   valueProposition: z.string().max(2000).optional().nullable(),
   competitors: z.array(z.string().trim().min(1)).optional(),
   geoQueries: z.array(z.string().trim().min(1)).optional(),
+  tags: projectTagsSchema,
+});
+
+/** PATCH /api/scans/domain/[id]/tags — scan-level tags for filtering. */
+export const domainScanTagsBodySchema = z.object({
+  tags: z.array(z.string().trim().min(1).max(48)).max(32),
 });
 
 /** PATCH .../project (assign resource to project) */

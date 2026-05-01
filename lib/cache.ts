@@ -15,6 +15,7 @@ import * as dbShares from '@/lib/db/shares';
 import * as dbJourneys from '@/lib/db/journeys';
 import type { ScanResult, DomainScanResult, DomainScanStatus } from '@/lib/types';
 import { DOMAIN_SCAN_LIST_QUERY_MAX_LEN } from '@/lib/db/scans';
+import { normalizeIndustry, normalizeTagFilter } from '@/lib/tag-utils';
 import type { UxCxSummary } from '@/lib/llm-summary-types';
 import type { ShareLinkRow } from '@/lib/db/shares';
 import type { SavedJourneyRow } from '@/lib/db/journeys';
@@ -27,6 +28,13 @@ export function domainScanListProjectCacheKey(projectId: string | null | undefin
     if (projectId === undefined) return 'all';
     if (projectId === null) return 'unassigned';
     return projectId;
+}
+
+/** Extra list filters for stable `unstable_cache` keys (industry + tag). */
+export function domainScanListFilterCacheKey(options?: { industry?: string; tag?: string }): string {
+    const i = normalizeIndustry(options?.industry ?? undefined) ?? '';
+    const t = normalizeTagFilter(options?.tag) ?? '';
+    return `${i}\0${t}`;
 }
 
 /** Cached: single scan by id (user-scoped). Exceeds 2MB, skipping cache. */
@@ -88,7 +96,15 @@ export async function listCachedDomainScans(
 /** Cached: domain scan summaries only (id, domain, timestamp, status, score, totalPages). Optional projectId / q / status filter. Stays under 2MB. */
 export async function listCachedDomainScanSummaries(
     userId: string,
-    options?: { limit?: number; offset?: number; projectId?: string | null; q?: string; status?: DomainScanStatus }
+    options?: {
+        limit?: number;
+        offset?: number;
+        projectId?: string | null;
+        q?: string;
+        status?: DomainScanStatus;
+        industry?: string;
+        tag?: string;
+    }
 ): Promise<
     Array<{
         id: string;
@@ -100,6 +116,9 @@ export async function listCachedDomainScanSummaries(
         lineageVersion: number;
         projectId: string | null;
         userId: string;
+        industry: string | null;
+        projectTags: string[];
+        tags: string[];
     }>
 > {
     const limit = options?.limit ?? 100;
@@ -107,6 +126,7 @@ export async function listCachedDomainScanSummaries(
     const qKey = options?.q?.trim().slice(0, DOMAIN_SCAN_LIST_QUERY_MAX_LEN) ?? '';
     const statusKey = options?.status ?? '';
     const projectKey = domainScanListProjectCacheKey(options?.projectId);
+    const filterKey = domainScanListFilterCacheKey({ industry: options?.industry, tag: options?.tag });
     return unstable_cache(
         () =>
             dbScans.listDomainScanSummaries(userId, {
@@ -115,8 +135,10 @@ export async function listCachedDomainScanSummaries(
                 projectId: options?.projectId,
                 q: options?.q,
                 status: options?.status,
+                industry: options?.industry,
+                tag: options?.tag,
             }),
-        ['domain-summaries', userId, String(limit), String(offset), projectKey, qKey, statusKey],
+        ['domain-summaries', userId, String(limit), String(offset), projectKey, qKey, statusKey, filterKey],
         { revalidate: CACHE_REVALIDATE_LIST, tags: [`domain-list-${userId}`] }
     )();
 }
@@ -124,14 +146,28 @@ export async function listCachedDomainScanSummaries(
 /** Cached: domain scans count. Optional projectId / q / status filter. */
 export async function getCachedDomainScansCount(
     userId: string,
-    options?: { projectId?: string | null; q?: string; status?: DomainScanStatus }
+    options?: {
+        projectId?: string | null;
+        q?: string;
+        status?: DomainScanStatus;
+        industry?: string;
+        tag?: string;
+    }
 ): Promise<number> {
     const qKey = options?.q?.trim().slice(0, DOMAIN_SCAN_LIST_QUERY_MAX_LEN) ?? '';
     const statusKey = options?.status ?? '';
     const projectKey = domainScanListProjectCacheKey(options?.projectId);
+    const filterKey = domainScanListFilterCacheKey({ industry: options?.industry, tag: options?.tag });
     return unstable_cache(
-        () => dbScans.getDomainScansCount(userId, { projectId: options?.projectId, q: options?.q, status: options?.status }),
-        ['domain-count', userId, projectKey, qKey, statusKey],
+        () =>
+            dbScans.getDomainScansCount(userId, {
+                projectId: options?.projectId,
+                q: options?.q,
+                status: options?.status,
+                industry: options?.industry,
+                tag: options?.tag,
+            }),
+        ['domain-count', userId, projectKey, qKey, statusKey, filterKey],
         { revalidate: CACHE_REVALIDATE_LIST, tags: [`domain-list-${userId}`] }
     )();
 }

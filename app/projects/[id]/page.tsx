@@ -39,11 +39,14 @@ import { THEME_ACCENT_CSS } from '@/lib/theme-accent';
 import type { AggregatedPageClassification } from '@/lib/types';
 import { normalizeDomain } from '@/lib/domain-normalize';
 import { toScanStartUrl } from '@/lib/url-normalize';
+import { parseTagsFromInput } from '@/lib/tag-utils';
 
 interface ProjectData {
     id: string;
     name: string;
     domain: string | null;
+    industry?: string | null;
+    tags?: string[];
     valueProposition?: string | null;
     competitors?: string[];
     geoQueries?: string[];
@@ -112,6 +115,9 @@ export default function ProjectDetailPage() {
     const [addCompetitorValue, setAddCompetitorValue] = useState('');
     const [suggestCompetitorsLoading, setSuggestCompetitorsLoading] = useState(false);
     const [suggestCompetitorsError, setSuggestCompetitorsError] = useState<string | null>(null);
+    const [classificationIndustry, setClassificationIndustry] = useState('');
+    const [classificationTagsStr, setClassificationTagsStr] = useState('');
+    const [classificationSaving, setClassificationSaving] = useState(false);
     const fetchedForIdRef = useFetchOnceForId();
 
     const loadProject = useCallback(async () => {
@@ -119,12 +125,38 @@ export default function ProjectDetailPage() {
         try {
             const res = await fetch(apiProject(id), { credentials: 'same-origin' });
             const data = await res.json();
-            if (data?.data) setProject(data.data);
-            else setProject(null);
+            if (data?.data) {
+                setProject(data.data);
+                const p = data.data as ProjectData;
+                setClassificationIndustry(p.industry ?? '');
+                setClassificationTagsStr(Array.isArray(p.tags) ? p.tags.join(', ') : '');
+            } else setProject(null);
         } catch {
             setProject(null);
         }
     }, [id]);
+
+    const handleSaveClassification = useCallback(async () => {
+        if (!id) return;
+        setClassificationSaving(true);
+        try {
+            const tags = parseTagsFromInput(classificationTagsStr);
+            const res = await fetch(apiProject(id), {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    industry: classificationIndustry.trim() || null,
+                    tags,
+                }),
+            });
+            if (res.ok) await loadProject();
+        } catch {
+            /* ignore */
+        } finally {
+            setClassificationSaving(false);
+        }
+    }, [id, classificationIndustry, classificationTagsStr, loadProject]);
 
     const competitors = Array.isArray(project?.competitors) ? project.competitors : [];
 
@@ -594,6 +626,33 @@ export default function ProjectDetailPage() {
                             {project.valueProposition}
                         </MsqdxTypography>
                     )}
+                    <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid var(--color-border-subtle, #eee)' }}>
+                        <MsqdxTypography variant="caption" sx={{ display: 'block', mb: 1, color: 'var(--color-text-muted-on-light)' }}>
+                            {t('projects.classificationTitle')}
+                        </MsqdxTypography>
+                        <MsqdxFormField
+                            label={t('projects.industryLabel')}
+                            value={classificationIndustry}
+                            onChange={(e) => setClassificationIndustry((e.target as HTMLInputElement).value)}
+                        />
+                        <Box sx={{ mt: 1.5 }}>
+                            <MsqdxFormField
+                                label={t('projects.tagsLabel')}
+                                value={classificationTagsStr}
+                                onChange={(e) => setClassificationTagsStr((e.target as HTMLInputElement).value)}
+                            />
+                        </Box>
+                        <Box sx={{ mt: 1.5 }}>
+                            <MsqdxButton
+                                variant="outlined"
+                                size="small"
+                                loading={classificationSaving}
+                                onClick={() => void handleSaveClassification()}
+                            >
+                                {t('projects.saveClassification')}
+                            </MsqdxButton>
+                        </Box>
+                    </Box>
                 </MsqdxMoleculeCard>
 
                 {/* Row 1 col 2: Ranking-Score */}

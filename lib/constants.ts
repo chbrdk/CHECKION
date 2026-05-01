@@ -345,13 +345,16 @@ export const apiSearch = (q: string, limit?: number) => {
 
 /** Build: DELETE /api/scans/[id] */
 export const apiScansDelete = (id: string) => `${API_SCANS}/${encodeURIComponent(id)}`;
-/** Build: GET /api/scans/domain?limit=&page=&projectId=&q=&status=&scope= */
+/** Build: GET /api/scans/domain?limit=&page=&projectId=&q=&status=&industry=&tag=&scope= */
 export const apiScansDomainList = (params?: {
   limit?: number;
   page?: number;
   projectId?: string | null;
   q?: string;
   status?: string;
+  industry?: string;
+  /** Single normalized tag (scan or project). */
+  tag?: string;
   /** `allUsers` requires allowlist env, `CHECKION_GLOBAL_DOMAIN_SCAN_ALL_AUTHENTICATED`, or admin API key. */
   scope?: 'mine' | 'allUsers';
 }) => {
@@ -361,6 +364,8 @@ export const apiScansDomainList = (params?: {
   if (params?.projectId !== undefined) search.set('projectId', params.projectId ?? '');
   if (params?.q != null && params.q.trim() !== '') search.set('q', params.q.trim());
   if (params?.status != null && params.status !== '') search.set('status', params.status);
+  if (params?.industry != null && params.industry.trim() !== '') search.set('industry', params.industry.trim());
+  if (params?.tag != null && params.tag.trim() !== '') search.set('tag', params.tag.trim());
   if (params?.scope === 'allUsers') search.set('scope', 'allUsers');
   return search.toString() ? `${API_SCANS_DOMAIN}?${search.toString()}` : API_SCANS_DOMAIN;
 };
@@ -371,6 +376,8 @@ export const API_SCANS_DOMAIN_COMPARE = `${API_SCANS_DOMAIN}/compare`;
 export const apiScansDomainDelete = (id: string) => `${API_SCANS_DOMAIN}/${encodeURIComponent(id)}`;
 /** Build: PATCH /api/scans/domain/[id]/project (assign domain scan to project) */
 export const apiScansDomainProject = (id: string) => `${API_SCANS_DOMAIN}/${encodeURIComponent(id)}/project`;
+/** Build: PATCH /api/scans/domain/[id]/tags */
+export const apiScansDomainTags = (id: string) => `${API_SCANS_DOMAIN}/${encodeURIComponent(id)}/tags`;
 
 /** Build: GET/POST /api/journeys?limit=&page= */
 export const apiJourneysList = (params?: { limit?: number; page?: number }) => {

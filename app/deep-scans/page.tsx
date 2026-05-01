@@ -20,9 +20,11 @@ import {
     DASHBOARD_SCANS_PAGE_SIZE,
     apiScansDomainDelete,
     apiScansDomainList,
+    apiScansDomainTags,
     pathDeepScansCompare,
     pathDomain,
 } from '@/lib/constants';
+import { parseTagsFromInput } from '@/lib/tag-utils';
 import type { DomainScanStatus } from '@/lib/types';
 
 type Row = {
@@ -35,6 +37,9 @@ type Row = {
     lineageVersion?: number;
     projectId?: string | null;
     userId?: string;
+    industry?: string | null;
+    projectTags?: string[];
+    tags?: string[];
 };
 
 const STATUSES: DomainScanStatus[] = [
@@ -63,6 +68,10 @@ export default function DeepScansPage() {
     const [listScope, setListScope] = useState<'mine' | 'allUsers'>('mine');
     const [canListAllUsers, setCanListAllUsers] = useState(false);
     const [sessionUserId, setSessionUserId] = useState<string | null>(null);
+    const [industryInput, setIndustryInput] = useState('');
+    const [tagInput, setTagInput] = useState('');
+    const [industryApplied, setIndustryApplied] = useState('');
+    const [tagApplied, setTagApplied] = useState('');
 
     const limit = DASHBOARD_SCANS_PAGE_SIZE;
 
@@ -92,6 +101,8 @@ export default function DeepScansPage() {
                     ...(projectFilter === 'unassigned' ? { projectId: null } : {}),
                     ...(qApplied.trim() ? { q: qApplied.trim() } : {}),
                     ...(statusFilter ? { status: statusFilter } : {}),
+                    ...(industryApplied.trim() ? { industry: industryApplied.trim() } : {}),
+                    ...(tagApplied.trim() ? { tag: tagApplied.trim() } : {}),
                     ...(listScope === 'allUsers' && canListAllUsers ? { scope: 'allUsers' } : {}),
                 }),
                 { credentials: 'same-origin' }
@@ -110,7 +121,7 @@ export default function DeepScansPage() {
         } finally {
             setLoading(false);
         }
-    }, [page, limit, projectFilter, qApplied, statusFilter, listScope, canListAllUsers]);
+    }, [page, limit, projectFilter, qApplied, statusFilter, industryApplied, tagApplied, listScope, canListAllUsers]);
 
     useEffect(() => {
         void load();
@@ -119,6 +130,33 @@ export default function DeepScansPage() {
     const applyFilters = () => {
         setPage(1);
         setQApplied(qInput);
+        setIndustryApplied(industryInput);
+        setTagApplied(tagInput);
+    };
+
+    const editScanTags = async (scanId: string, current: string[]) => {
+        const raw = window.prompt(t('deepScans.editTagsPrompt'), current.join(', '));
+        if (raw == null) return;
+        const tags = parseTagsFromInput(raw);
+        try {
+            const res = await fetch(apiScansDomainTags(scanId), {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ tags }),
+            });
+            if (res.ok) void load();
+        } catch {
+            /* ignore */
+        }
+    };
+
+    const tagSummary = (r: Row) => {
+        const merged = [...new Set([...(r.projectTags ?? []), ...(r.tags ?? [])])];
+        if (merged.length === 0) return '—';
+        const shown = merged.slice(0, 5);
+        const suffix = merged.length > 5 ? '…' : '';
+        return `${shown.join(', ')}${suffix}`;
     };
 
     const toggleSelect = (id: string) => {
@@ -238,6 +276,22 @@ export default function DeepScansPage() {
                             ))}
                         </select>
                     </Box>
+                    <Box sx={{ flex: '1 1 140px', minWidth: 120 }}>
+                        <MsqdxFormField
+                            label={t('deepScans.filterIndustry')}
+                            value={industryInput}
+                            onChange={(e) => setIndustryInput((e.target as HTMLInputElement).value)}
+                            onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
+                        />
+                    </Box>
+                    <Box sx={{ flex: '1 1 120px', minWidth: 100 }}>
+                        <MsqdxFormField
+                            label={t('deepScans.filterTag')}
+                            value={tagInput}
+                            onChange={(e) => setTagInput((e.target as HTMLInputElement).value)}
+                            onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
+                        />
+                    </Box>
                     <MsqdxButton variant="outlined" onClick={applyFilters}>
                         {t('dashboard.searchButton')}
                     </MsqdxButton>
@@ -264,6 +318,8 @@ export default function DeepScansPage() {
                                 <TableCell padding="checkbox">{t('deepScans.colSelect')}</TableCell>
                                 <TableCell>{t('deepScans.colDomain')}</TableCell>
                                 {listScope === 'allUsers' ? <TableCell>{t('deepScans.colOwner')}</TableCell> : null}
+                                <TableCell>{t('deepScans.colIndustry')}</TableCell>
+                                <TableCell>{t('deepScans.colTags')}</TableCell>
                                 <TableCell>{t('deepScans.colProject')}</TableCell>
                                 <TableCell>{t('deepScans.colDate')}</TableCell>
                                 <TableCell>{t('deepScans.colStatus')}</TableCell>
@@ -309,6 +365,16 @@ export default function DeepScansPage() {
                                         </TableCell>
                                     ) : null}
                                     <TableCell>
+                                        <Typography variant="body2" noWrap sx={{ maxWidth: 120 }} title={r.industry ?? ''}>
+                                            {r.industry?.trim() ? r.industry : '—'}
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Typography variant="body2" noWrap sx={{ maxWidth: 200 }} title={tagSummary(r)}>
+                                            {tagSummary(r)}
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell>
                                         <Typography variant="body2" noWrap sx={{ maxWidth: 120 }} title={r.projectId ?? ''}>
                                             {r.projectId == null || r.projectId === ''
                                                 ? t('deepScans.noProject')
@@ -337,6 +403,18 @@ export default function DeepScansPage() {
                                             >
                                                 {t('deepScans.open')}
                                             </MsqdxButton>
+                                            {(listScope === 'mine' ||
+                                                (sessionUserId != null && r.userId === sessionUserId)) && (
+                                                <MsqdxButton
+                                                    variant="text"
+                                                    size="small"
+                                                    onClick={() =>
+                                                        void editScanTags(r.id, [...(r.tags ?? [])])
+                                                    }
+                                                >
+                                                    {t('deepScans.editTags')}
+                                                </MsqdxButton>
+                                            )}
                                             {(listScope === 'mine' ||
                                                 (sessionUserId != null && r.userId === sessionUserId)) && (
                                                 <MsqdxButton

@@ -47,11 +47,16 @@ export async function GET(req: NextRequest) {
     const statusRaw = searchParams.get('status');
     const status =
         statusRaw && DOMAIN_SCAN_STATUS_SET.has(statusRaw) ? (statusRaw as DomainScanStatus) : undefined;
+    const industryRaw = searchParams.get('industry');
+    const industry =
+        industryRaw && industryRaw.trim().length > 0 ? industryRaw.trim().slice(0, 128) : undefined;
+    const tagRaw = searchParams.get('tag');
+    const tag = tagRaw && tagRaw.trim().length > 0 ? tagRaw.trim().slice(0, 48) : undefined;
 
     if (allUsersScope) {
         const [data, total] = await Promise.all([
-            listDomainScanSummariesAllUsers({ limit, offset, projectId, q, status }),
-            getDomainScansCountAllUsers({ projectId, q, status }),
+            listDomainScanSummariesAllUsers({ limit, offset, projectId, q, status, industry, tag }),
+            getDomainScansCountAllUsers({ projectId, q, status, industry, tag }),
         ]);
         const totalPages = Math.ceil(total / limit) || 1;
         return NextResponse.json({
@@ -64,8 +69,8 @@ export async function GET(req: NextRequest) {
     }
 
     const [data, total] = await Promise.all([
-        listCachedDomainScanSummaries(user!.id, { limit, offset, projectId, q, status }),
-        getCachedDomainScansCount(user!.id, { projectId, q, status }),
+        listCachedDomainScanSummaries(user!.id, { limit, offset, projectId, q, status, industry, tag }),
+        getCachedDomainScansCount(user!.id, { projectId, q, status, industry, tag }),
     ]);
     const totalPages = Math.ceil(total / limit) || 1;
     return NextResponse.json({

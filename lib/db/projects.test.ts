@@ -18,9 +18,11 @@ function run(): void {
         userId: 'user-1',
         name: 'Test Project',
         domain: 'https://example.com',
+        industry: null,
         valueProposition: null,
         competitors: [],
         geoQueries: [],
+        tags: [],
         createdAt: new Date(),
         updatedAt: new Date(),
     };
