@@ -244,12 +244,12 @@ export async function maybeAutoFillProjectClassificationFromStandaloneScan(args:
     desktopResult: ScanResult;
 }): Promise<void> {
     await maybeAutoFillProjectTagsFromStandaloneScan({
-        userId,
+        userId: args.userId,
         projectId: args.projectId,
         desktopResult: args.desktopResult,
     });
     await maybeAutoFillProjectIndustryFromStandaloneScan({
-        userId,
+        userId: args.userId,
         projectId: args.projectId,
         scanUrl: args.scanUrl,
         scanSessionId: args.scanSessionId,
