@@ -43,6 +43,7 @@ describe('GET /api/search — domain branch uses lightweight rows', () => {
                 status: 'complete',
                 score: 80,
                 totalPages: 1,
+                lineageVersion: 1,
                 hasStoredAggregated: true,
             },
         ]);
@@ -74,6 +75,7 @@ describe('GET /api/search — domain branch uses lightweight rows', () => {
                 status: 'complete',
                 score: 50,
                 totalPages: 1,
+                lineageVersion: 1,
                 hasStoredAggregated: false,
             },
         ]);

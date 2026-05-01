@@ -15,7 +15,8 @@
     "test:api": "vitest run __tests__/api",
     "test:saliency-fusion": "tsx lib/saliency-fusion.test.ts",
     "test:scanpath": "tsx lib/scanpath.test.ts",
-    "scripts:refresh-domain-payloads": "tsx scripts/refresh-domain-payloads.ts"
+    "scripts:refresh-domain-payloads": "tsx scripts/refresh-domain-payloads.ts",
+    "scripts:backfill-domain-scan-lineage": "tsx scripts/backfill-domain-scan-lineage.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

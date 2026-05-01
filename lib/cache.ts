@@ -79,7 +79,17 @@ export async function listCachedDomainScans(
 export async function listCachedDomainScanSummaries(
     userId: string,
     options?: { limit?: number; offset?: number; projectId?: string | null; q?: string; status?: DomainScanStatus }
-): Promise<Array<{ id: string; domain: string; timestamp: string; status: string; score: number; totalPages: number }>> {
+): Promise<
+    Array<{
+        id: string;
+        domain: string;
+        timestamp: string;
+        status: string;
+        score: number;
+        totalPages: number;
+        lineageVersion: number;
+    }>
+> {
     const limit = options?.limit ?? 100;
     const offset = options?.offset ?? 0;
     const qKey = options?.q?.trim().slice(0, DOMAIN_SCAN_LIST_QUERY_MAX_LEN) ?? '';

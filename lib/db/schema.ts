@@ -2,7 +2,8 @@
 /*  CHECKION – Database schema (Drizzle + PostgreSQL)                 */
 /* ------------------------------------------------------------------ */
 
-import { pgTable, text, timestamp, jsonb, integer, primaryKey } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
+import { pgTable, text, timestamp, jsonb, integer, primaryKey, uniqueIndex } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
     id: text('id').primaryKey(),
@@ -49,15 +50,27 @@ export const scans = pgTable('scans', {
     llmSummary: jsonb('llm_summary'), // UxCxSummary | null
 });
 
-export const domainScans = pgTable('domain_scans', {
-    id: text('id').primaryKey(),
-    userId: text('user_id').notNull(), // PLEXON user id when using central auth
-    projectId: text('project_id').references(() => projects.id, { onDelete: 'set null' }),
-    domain: text('domain').notNull(),
-    status: text('status').notNull(),
-    timestamp: text('timestamp').notNull(),
-    payload: jsonb('payload').notNull(), // DomainScanResult
-});
+export const domainScans = pgTable(
+    'domain_scans',
+    {
+        id: text('id').primaryKey(),
+        userId: text('user_id').notNull(), // PLEXON user id when using central auth
+        projectId: text('project_id').references(() => projects.id, { onDelete: 'set null' }),
+        domain: text('domain').notNull(),
+        status: text('status').notNull(),
+        timestamp: text('timestamp').notNull(),
+        payload: jsonb('payload').notNull(), // DomainScanResult
+        /** Stable key: user + project + normalized host; null on legacy rows until backfill (then coalesce with id in queries). */
+        lineageKey: text('lineage_key'),
+        /** Increments per re-scan for the same lineage_key; legacy rows default to 1. */
+        lineageVersion: integer('lineage_version').notNull().default(1),
+    },
+    (t) => [
+        uniqueIndex('domain_scans_lineage_key_version_uniq')
+            .on(t.lineageKey, t.lineageVersion)
+            .where(sql`${t.lineageKey} IS NOT NULL`),
+    ]
+);
 
 /**
  * Domain scan pages (one row per URL).

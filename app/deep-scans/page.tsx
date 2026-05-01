@@ -24,7 +24,15 @@ import {
 } from '@/lib/constants';
 import type { DomainScanStatus } from '@/lib/types';
 
-type Row = { id: string; domain: string; timestamp: string; status: string; score: number; totalPages: number };
+type Row = {
+    id: string;
+    domain: string;
+    timestamp: string;
+    status: string;
+    score: number;
+    totalPages: number;
+    lineageVersion?: number;
+};
 
 const STATUSES: DomainScanStatus[] = [
     'queued',
@@ -203,6 +211,18 @@ export default function DeepScansPage() {
                                     <TableCell>
                                         <Typography variant="body2" noWrap sx={{ maxWidth: 280 }}>
                                             {r.domain}
+                                            {typeof r.lineageVersion === 'number' ? (
+                                                <Typography
+                                                    component="span"
+                                                    variant="caption"
+                                                    sx={{ ml: 0.75, color: 'var(--color-text-secondary)' }}
+                                                >
+                                                    {t('deepScans.lineageVersion').replace(
+                                                        '{version}',
+                                                        String(r.lineageVersion)
+                                                    )}
+                                                </Typography>
+                                            ) : null}
                                         </Typography>
                                     </TableCell>
                                     <TableCell>

@@ -7,9 +7,20 @@ import { getDb } from './index';
 import { scans, domainScans } from './schema';
 import { getProjectDomainScanReferences } from './project-domain-references';
 import type { ScanResult, DomainScanResult, DomainScanStatus } from '@/lib/types';
+import type { UxCxSummary } from '@/lib/llm-summary-types';
+import type { UxCheckV2Summary } from '@/lib/ux-check-types';
 import { normalizeScanUrl } from '@/lib/url-normalize';
+import { buildDomainScanLineageKey } from '@/lib/domain-scan-lineage';
 
-export type DomainScanSummaryRow = { id: string; domain: string; timestamp: string; status: string; score: number; totalPages: number };
+export type DomainScanSummaryRow = {
+    id: string;
+    domain: string;
+    timestamp: string;
+    status: string;
+    score: number;
+    totalPages: number;
+    lineageVersion: number;
+};
 
 /** Summary row + flag whether payload has `aggregated` (avoids loading full JSONB for search). */
 export type DomainScanSearchRow = DomainScanSummaryRow & {
@@ -53,6 +64,36 @@ function buildDomainScanListWhere(
     return and(...conditions);
 }
 
+function isPgUniqueViolation(err: unknown): boolean {
+    return (
+        typeof err === 'object' &&
+        err !== null &&
+        'code' in err &&
+        (err as { code?: string }).code === '23505'
+    );
+}
+
+/** `coalesce(lineage_key, id)` — legacy rows without lineage_key stay one row per id. */
+function domainScanLineageGroupSql() {
+    return sql<string>`coalesce(${domainScans.lineageKey}, ${domainScans.id})`;
+}
+
+function buildLatestDomainScanHeadSubquery(
+    db: ReturnType<typeof getDb>,
+    lineageScopeWhere: ReturnType<typeof buildDomainScanListWhere>
+) {
+    const grp = domainScanLineageGroupSql();
+    return db
+        .select({
+            groupKey: grp.as('group_key'),
+            maxVersion: sql<number>`max(${domainScans.lineageVersion})`.as('max_version'),
+        })
+        .from(domainScans)
+        .where(lineageScopeWhere)
+        .groupBy(grp)
+        .as('domain_lineage_head');
+}
+
 /** Domain scan rows still in progress (UI polling / resume). */
 const ACTIVE_DOMAIN_SCAN_STATUSES = ['queued', 'scanning', 'paused', 'cancelling'] as const;
 
@@ -69,6 +110,10 @@ export async function listActiveDomainScansForProject(
 
     const byId = new Map<string, { scanId: string; label: string; status: string }>();
 
+    const lineageScope = buildDomainScanListWhere(userId, { projectId });
+    const latestSq = buildLatestDomainScanHeadSubquery(db, lineageScope);
+    const joinLatest = sql`coalesce(${domainScans.lineageKey}, ${domainScans.id}) = ${latestSq.groupKey} AND ${domainScans.lineageVersion} = ${latestSq.maxVersion}`;
+
     const ownRows = await db
         .select({
             id: domainScans.id,
@@ -76,6 +121,7 @@ export async function listActiveDomainScansForProject(
             status: domainScans.status,
         })
         .from(domainScans)
+        .innerJoin(latestSq, joinLatest)
         .where(
             and(
                 eq(domainScans.userId, userId),
@@ -112,8 +158,6 @@ export async function listActiveDomainScansForProject(
 
     return Array.from(byId.values());
 }
-import type { UxCxSummary } from '@/lib/llm-summary-types';
-import type { UxCheckV2Summary } from '@/lib/ux-check-types';
 
 export async function addScan(userId: string, result: ScanResult, options?: { projectId?: string | null }): Promise<void> {
     const db = getDb();
@@ -228,15 +272,30 @@ export async function deleteScan(id: string, userId: string): Promise<boolean> {
 
 export async function createDomainScan(userId: string, scan: DomainScanResult, options?: { projectId?: string | null }): Promise<void> {
     const db = getDb();
-    await db.insert(domainScans).values({
-        id: scan.id,
-        userId,
-        projectId: options?.projectId ?? null,
-        domain: scan.domain,
-        status: scan.status,
-        timestamp: scan.timestamp,
-        payload: scan as unknown as Record<string, unknown>,
-    });
+    const lineageKey = buildDomainScanLineageKey(userId, options?.projectId ?? null, scan.domain);
+    for (let attempt = 0; attempt < 6; attempt++) {
+        const maxRows = await db
+            .select({ m: sql<number>`coalesce(max(${domainScans.lineageVersion}), 0)` })
+            .from(domainScans)
+            .where(eq(domainScans.lineageKey, lineageKey));
+        const nextVersion = Number(maxRows[0]?.m ?? 0) + 1;
+        try {
+            await db.insert(domainScans).values({
+                id: scan.id,
+                userId,
+                projectId: options?.projectId ?? null,
+                domain: scan.domain,
+                status: scan.status,
+                timestamp: scan.timestamp,
+                payload: scan as unknown as Record<string, unknown>,
+                lineageKey,
+                lineageVersion: nextVersion,
+            });
+            return;
+        } catch (err) {
+            if (!isPgUniqueViolation(err) || attempt === 5) throw err;
+        }
+    }
 }
 
 export async function updateDomainScan(id: string, userId: string, update: Partial<DomainScanResult>): Promise<boolean> {
@@ -276,6 +335,9 @@ export async function updateDomainScanProject(id: string, userId: string, projec
 /** List only summary fields (no payload) to keep response small for list/cache. Optional projectId / q / status filter. */
 export async function listDomainScanSummaries(userId: string, options?: DomainScanListQueryOptions): Promise<DomainScanSummaryRow[]> {
     const db = getDb();
+    const lineageScope = buildDomainScanListWhere(userId, { projectId: options?.projectId });
+    const latestSq = buildLatestDomainScanHeadSubquery(db, lineageScope);
+    const joinLatest = sql`coalesce(${domainScans.lineageKey}, ${domainScans.id}) = ${latestSq.groupKey} AND ${domainScans.lineageVersion} = ${latestSq.maxVersion}`;
     const whereCond = buildDomainScanListWhere(userId, options);
     const base = db
         .select({
@@ -285,8 +347,10 @@ export async function listDomainScanSummaries(userId: string, options?: DomainSc
             status: domainScans.status,
             score: sql<number>`(${domainScans.payload}->>'score')::int`,
             totalPages: sql<number>`(${domainScans.payload}->>'totalPages')::int`,
+            lineageVersion: domainScans.lineageVersion,
         })
         .from(domainScans)
+        .innerJoin(latestSq, joinLatest)
         .where(whereCond)
         .orderBy(desc(domainScans.timestamp));
     const rows = options?.limit != null || options?.offset != null
@@ -299,6 +363,7 @@ export async function listDomainScanSummaries(userId: string, options?: DomainSc
         status: r.status,
         score: r.score ?? 0,
         totalPages: r.totalPages ?? 0,
+        lineageVersion: r.lineageVersion ?? 1,
     }));
 }
 
@@ -311,6 +376,9 @@ export async function listDomainScanSummariesForSearch(
     options?: { limit?: number; offset?: number; projectId?: string | null }
 ): Promise<DomainScanSearchRow[]> {
     const db = getDb();
+    const lineageScope = buildDomainScanListWhere(userId, { projectId: options?.projectId });
+    const latestSq = buildLatestDomainScanHeadSubquery(db, lineageScope);
+    const joinLatest = sql`coalesce(${domainScans.lineageKey}, ${domainScans.id}) = ${latestSq.groupKey} AND ${domainScans.lineageVersion} = ${latestSq.maxVersion}`;
     const whereCond = options?.projectId === undefined
         ? eq(domainScans.userId, userId)
         : options.projectId === null
@@ -325,8 +393,10 @@ export async function listDomainScanSummariesForSearch(
             score: sql<number>`(${domainScans.payload}->>'score')::int`,
             totalPages: sql<number>`(${domainScans.payload}->>'totalPages')::int`,
             hasStoredAggregated: sql<boolean>`(${domainScans.payload}->'aggregated') IS NOT NULL`,
+            lineageVersion: domainScans.lineageVersion,
         })
         .from(domainScans)
+        .innerJoin(latestSq, joinLatest)
         .where(whereCond)
         .orderBy(desc(domainScans.timestamp));
     const rows = options?.limit != null || options?.offset != null
@@ -340,17 +410,26 @@ export async function listDomainScanSummariesForSearch(
         score: r.score ?? 0,
         totalPages: r.totalPages ?? 0,
         hasStoredAggregated: Boolean(r.hasStoredAggregated),
+        lineageVersion: r.lineageVersion ?? 1,
     }));
 }
 
 export async function listDomainScans(userId: string, options?: { limit?: number; offset?: number; projectId?: string | null }): Promise<DomainScanResult[]> {
     const db = getDb();
+    const lineageScope = buildDomainScanListWhere(userId, { projectId: options?.projectId });
+    const latestSq = buildLatestDomainScanHeadSubquery(db, lineageScope);
+    const joinLatest = sql`coalesce(${domainScans.lineageKey}, ${domainScans.id}) = ${latestSq.groupKey} AND ${domainScans.lineageVersion} = ${latestSq.maxVersion}`;
     const whereCond = options?.projectId === undefined
         ? eq(domainScans.userId, userId)
         : options.projectId === null
             ? and(eq(domainScans.userId, userId), isNull(domainScans.projectId))
             : and(eq(domainScans.userId, userId), eq(domainScans.projectId, options.projectId));
-    const base = db.select({ payload: domainScans.payload }).from(domainScans).where(whereCond).orderBy(desc(domainScans.timestamp));
+    const base = db
+        .select({ payload: domainScans.payload })
+        .from(domainScans)
+        .innerJoin(latestSq, joinLatest)
+        .where(whereCond)
+        .orderBy(desc(domainScans.timestamp));
     const rows = options?.limit != null || options?.offset != null
         ? await base.limit(options.limit ?? 10000).offset(options.offset ?? 0)
         : await base;
@@ -362,8 +441,15 @@ export async function getDomainScansCount(
     options?: Pick<DomainScanListQueryOptions, 'projectId' | 'q' | 'status'>
 ): Promise<number> {
     const db = getDb();
+    const lineageScope = buildDomainScanListWhere(userId, { projectId: options?.projectId });
+    const latestSq = buildLatestDomainScanHeadSubquery(db, lineageScope);
+    const joinLatest = sql`coalesce(${domainScans.lineageKey}, ${domainScans.id}) = ${latestSq.groupKey} AND ${domainScans.lineageVersion} = ${latestSq.maxVersion}`;
     const whereCond = buildDomainScanListWhere(userId, options);
-    const rows = await db.select({ count: count() }).from(domainScans).where(whereCond);
+    const rows = await db
+        .select({ count: count() })
+        .from(domainScans)
+        .innerJoin(latestSq, joinLatest)
+        .where(whereCond);
     return Number(rows[0]?.count ?? 0);
 }
 

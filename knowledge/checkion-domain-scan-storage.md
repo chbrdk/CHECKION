@@ -118,6 +118,7 @@ Legacy **`GET .../summary?light=1`** bleibt für andere Clients nutzbar; die ein
 - `DomainScanResultWithFullPages`: für Journey/LLM, `pages: ScanResult[]`.
 - `buildStoredDomainPayload`, `buildAggregatedFromFullPages`, `buildStoredDomainPayloadFromAggregated`, `toStoredAggregated`, `hasStoredAggregated`, `buildDomainSummary` in `lib/domain-summary.ts`.
 - `listDomainScanSummariesForSearch` in `lib/db/scans.ts` (Such- und Listenpfade ohne vollen `payload`).
+- **Lineage / Versionierung** (nur Kopf je URL+Projekt in Listen): `knowledge/checkion-domain-scan-lineage.md`.
 
 ## Siehe auch
 

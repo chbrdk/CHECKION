@@ -574,6 +574,7 @@
     "delete": "Delete",
     "deleteConfirm": "Really delete this deep scan?",
     "colDomain": "Domain",
+    "lineageVersion": "v{version}",
     "colDate": "Date",
     "colStatus": "Status",
     "colScore": "Score",
