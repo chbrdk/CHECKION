@@ -8,7 +8,7 @@ import { MSQDX_INNER_CARD_BORDER_SX, THEME_ACCENT_CSS, THEME_ACCENT_TINT_CSS } f
 import { formatUrlForList } from '@/lib/format-url-display';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import type { AggregatedUx, ReadabilityBandKey } from '@/lib/domain-aggregation';
-import { useLocale } from 'next-intl';
+import { useI18n } from '@/components/i18n/I18nProvider';
 import { formatDwellSeconds, type DwellLocale } from '@/lib/format-dwell-duration';
 
 export type DomainResultUxAuditSectionProps = {
@@ -121,7 +121,7 @@ const UxAuditPageRow = memo(function UxAuditPageRow({ url, ariaLabel, onOpen, ch
 const READABILITY_BAND_KEYS: ReadabilityBandKey[] = ['easy', 'standard', 'complex', 'veryComplex'];
 
 function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl }: DomainResultUxAuditSectionProps) {
-    const locale = useLocale();
+    const { locale } = useI18n();
     const dwellLocale: DwellLocale = locale === 'en' ? 'en' : 'de';
     const hh = ux.headingHierarchy;
     const showHeadingsHint =

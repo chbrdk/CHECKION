@@ -23,6 +23,6 @@
 
 ## UI
 
-- Einzelseite: `components/UxCard.tsx` (neben Lesbarkeit), Locale über `next-intl` (`results.*`).
+- Einzelseite: `components/UxCard.tsx` (neben Lesbarkeit), Texte über `useI18n()` / `t('results.*')`, Locale für Zahlenformat aus `useI18n().locale`.
 - Domain: `components/domain/DomainResultUxAuditSection.tsx` (`domainResult.uxAuditDwell*`).
 - Dauer-Strings: `lib/format-dwell-duration.ts`.

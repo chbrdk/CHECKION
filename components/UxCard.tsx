@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Box, LinearProgress, Stack } from '@mui/material';
-import { useLocale, useTranslations } from 'next-intl';
+import { useI18n } from '@/components/i18n/I18nProvider';
 import {
     MsqdxTypography,
     MsqdxMoleculeCard,
@@ -26,8 +26,7 @@ interface UxCardProps {
 }
 
 export const UxCard = ({ ux, sx }: UxCardProps) => {
-    const t = useTranslations('results');
-    const locale = useLocale();
+    const { t, locale } = useI18n();
     const dwellLocale: DwellLocale = locale === 'en' ? 'en' : 'de';
 
     // CLS Color
@@ -107,7 +106,7 @@ export const UxCard = ({ ux, sx }: UxCardProps) => {
                             <Stack direction="row" alignItems="center" spacing={1} mb={0.5}>
                                 <Clock size={16} />
                                 <MsqdxTypography variant="body2" color="textSecondary">
-                                    {t('dwellEstimateTitle')}
+                                    {t('results.dwellEstimateTitle')}
                                 </MsqdxTypography>
                                 <MsqdxTooltip title={ux.dwellEstimate.summaryDe}>
                                     <MsqdxTypography variant="caption" sx={{ cursor: 'help', color: MSQDX_BRAND_PRIMARY.purple }}>
@@ -126,17 +125,17 @@ export const UxCard = ({ ux, sx }: UxCardProps) => {
                                     size="small"
                                     label={
                                         ux.dwellEstimate.confidence === 'high'
-                                            ? t('dwellConfidenceHigh')
+                                            ? t('results.dwellConfidenceHigh')
                                             : ux.dwellEstimate.confidence === 'low'
-                                              ? t('dwellConfidenceLow')
-                                              : t('dwellConfidenceMedium')
+                                              ? t('results.dwellConfidenceLow')
+                                              : t('results.dwellConfidenceMedium')
                                     }
                                     variant="outlined"
                                     sx={{ height: 22, fontSize: '0.65rem' }}
                                 />
                             </Stack>
                             <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'text.secondary', lineHeight: 1.4 }}>
-                                {t('dwellEstimateHint')}
+                                {t('results.dwellEstimateHint')}
                             </MsqdxTypography>
                         </Box>
                     ) : null}
