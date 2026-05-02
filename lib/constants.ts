@@ -20,6 +20,20 @@ export const PUPPETEER_PROTOCOL_TIMEOUT_MS = (() => {
   return 600_000;
 })();
 
+/** Set to `1` / `true` to disable cross-user reuse of recent standalone WCAG scans (`standalone_scan_entitlements`). */
+export const ENV_DISABLE_STANDALONE_SCAN_REUSE = 'DISABLE_STANDALONE_SCAN_REUSE';
+
+/**
+ * How long (hours) a completed standalone session may be reused by another user (same normalized URL + settings).
+ * Env: `STANDALONE_SCAN_REUSE_MAX_AGE_HOURS` — default 168 (7 days), min 1, max 8760 (1y).
+ */
+export function getStandaloneScanReuseMaxAgeHours(): number {
+  const raw = typeof process !== 'undefined' ? process.env?.STANDALONE_SCAN_REUSE_MAX_AGE_HOURS : undefined;
+  const n = raw != null && raw !== '' ? Number(raw) : NaN;
+  if (Number.isFinite(n) && n >= 1 && n <= 8760) return Math.floor(n);
+  return 168;
+}
+
 // ─── App Routes (pages) ────────────────────────────────────────────────────
 export const PATH_HOME = '/';
 export const PATH_SCAN = '/scan';

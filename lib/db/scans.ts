@@ -5,7 +5,7 @@
 import { eq, and, desc, isNull, count, sql, inArray, ilike, or } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 import { getDb } from './index';
-import { scans, domainScans, projects, scanSessions } from './schema';
+import { scans, domainScans, projects, scanSessions, standaloneScanEntitlements } from './schema';
 import { mergeScanResultPatch, normalizeScanResultForPersist } from '@/lib/scan-result-shape';
 import { coerceJsonStringArray, normalizeIndustry, normalizeTagFilter, normalizeTagList } from '@/lib/tag-utils';
 import { getProjectDomainScanReferences } from './project-domain-references';
@@ -314,24 +314,54 @@ export async function persistStandaloneScanRow(
 
 export async function getScan(id: string, userId: string): Promise<ScanResult | null> {
     const db = getDb();
-    const rows = await db.select().from(scans).where(and(eq(scans.id, id), eq(scans.userId, userId))).limit(1);
-    if (rows.length === 0) return null;
-    return rows[0].result as unknown as ScanResult;
+    const own = await db.select({ result: scans.result }).from(scans).where(and(eq(scans.id, id), eq(scans.userId, userId))).limit(1);
+    if (own.length > 0) return own[0].result as unknown as ScanResult;
+
+    const borrowed = await db
+        .select({ result: scans.result })
+        .from(standaloneScanEntitlements)
+        .innerJoin(scans, eq(scans.id, standaloneScanEntitlements.canonicalDesktopScanId))
+        .where(and(eq(standaloneScanEntitlements.userId, userId), eq(standaloneScanEntitlements.canonicalDesktopScanId, id)))
+        .limit(1);
+    if (borrowed.length > 0) return borrowed[0].result as unknown as ScanResult;
+    return null;
 }
 
 /** Returns scan result plus llm_summary and projectId for API response. */
 export async function getScanWithSummary(id: string, userId: string): Promise<{ result: ScanResult; llmSummary: UxCxSummary | null; projectId: string | null } | null> {
     const db = getDb();
-    const rows = await db.select({
-        result: scans.result,
-        llmSummary: scans.llmSummary,
-        projectId: scans.projectId,
-    }).from(scans).where(and(eq(scans.id, id), eq(scans.userId, userId))).limit(1);
-    if (rows.length === 0) return null;
+    const own = await db
+        .select({
+            result: scans.result,
+            llmSummary: scans.llmSummary,
+            projectId: scans.projectId,
+        })
+        .from(scans)
+        .where(and(eq(scans.id, id), eq(scans.userId, userId)))
+        .limit(1);
+    if (own.length > 0) {
+        return {
+            result: own[0].result as unknown as ScanResult,
+            llmSummary: (own[0].llmSummary as UxCxSummary | null) ?? null,
+            projectId: own[0].projectId ?? null,
+        };
+    }
+
+    const borrowed = await db
+        .select({
+            result: scans.result,
+            llmSummary: scans.llmSummary,
+            projectId: standaloneScanEntitlements.projectId,
+        })
+        .from(standaloneScanEntitlements)
+        .innerJoin(scans, eq(scans.id, standaloneScanEntitlements.canonicalDesktopScanId))
+        .where(and(eq(standaloneScanEntitlements.userId, userId), eq(standaloneScanEntitlements.canonicalDesktopScanId, id)))
+        .limit(1);
+    if (borrowed.length === 0) return null;
     return {
-        result: rows[0].result as unknown as ScanResult,
-        llmSummary: (rows[0].llmSummary as UxCxSummary | null) ?? null,
-        projectId: rows[0].projectId ?? null,
+        result: borrowed[0].result as unknown as ScanResult,
+        llmSummary: (borrowed[0].llmSummary as UxCxSummary | null) ?? null,
+        projectId: borrowed[0].projectId ?? null,
     };
 }
 
@@ -408,6 +438,34 @@ export function buildStandaloneScanSummaryWhere(
     return cond;
 }
 
+/** Filters for rows visible via {@link standaloneScanEntitlements} (viewer’s project + industry/tag). */
+export function buildBorrowedStandaloneScanSummaryWhere(
+    userId: string,
+    options?: { projectId?: string | null; industry?: string; tag?: string }
+): SQL {
+    const parts: SQL[] = [eq(standaloneScanEntitlements.userId, userId)];
+    const pid = options?.projectId;
+    if (pid === undefined) {
+        /* all projects */
+    } else if (pid === null) {
+        parts.push(isNull(standaloneScanEntitlements.projectId));
+    } else {
+        parts.push(eq(standaloneScanEntitlements.projectId, pid));
+    }
+    const ind = normalizeIndustry(options?.industry ?? undefined);
+    if (ind) {
+        parts.push(eq(projects.industry, ind));
+    }
+    const tag = normalizeTagFilter(options?.tag);
+    if (tag) {
+        const jsonbLiteral = `'${JSON.stringify([tag]).replace(/'/g, "''")}'::jsonb`;
+        parts.push(
+            sql`(coalesce(${scans.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)} OR coalesce(${projects.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)})`
+        );
+    }
+    return parts.length === 1 ? parts[0] : and(...parts)!;
+}
+
 export type StandaloneScanListQueryOptions = {
     limit?: number;
     offset?: number;
@@ -416,10 +474,9 @@ export type StandaloneScanListQueryOptions = {
     tag?: string;
 };
 
-/**
- * Paginated standalone list for dashboard — columns only (fast). One desktop row per batch when `group_id` set.
- */
-export async function listStandaloneScanSummaries(
+const STANDALONE_LIST_MERGE_CAP = 8000;
+
+async function listOwnedStandaloneScanSummaries(
     userId: string,
     options?: StandaloneScanListQueryOptions
 ): Promise<StandaloneScanSummary[]> {
@@ -465,6 +522,83 @@ export async function listStandaloneScanSummaries(
 }
 
 /**
+ * Standalone rows linked via {@link standaloneScanEntitlements} (reused canonical scan).
+ */
+export async function listBorrowedStandaloneScanSummaries(
+    userId: string,
+    options?: StandaloneScanListQueryOptions
+): Promise<StandaloneScanSummary[]> {
+    const db = getDb();
+    const whereCond = buildBorrowedStandaloneScanSummaryWhere(userId, {
+        projectId: options?.projectId,
+        industry: options?.industry,
+        tag: options?.tag,
+    });
+    const base = db
+        .select({
+            id: scans.id,
+            url: scans.url,
+            timestamp: scans.timestamp,
+            score: scans.score,
+            errorsCount: scans.errorsCount,
+            warningsCount: scans.warningsCount,
+            noticesCount: scans.noticesCount,
+            projectId: standaloneScanEntitlements.projectId,
+            groupId: scans.groupId,
+            scanSessionId: scans.scanSessionId,
+            device: scans.device,
+            targetRegion: scanSessions.targetRegion,
+            scanTagsJson: scans.tags,
+            projectTagsJson: projects.tags,
+            industry: projects.industry,
+        })
+        .from(standaloneScanEntitlements)
+        .innerJoin(scans, eq(scans.id, standaloneScanEntitlements.canonicalDesktopScanId))
+        .leftJoin(scanSessions, eq(scanSessions.id, scans.scanSessionId))
+        .leftJoin(projects, eq(projects.id, standaloneScanEntitlements.projectId))
+        .where(whereCond)
+        .orderBy(desc(scans.timestamp));
+    const rows =
+        options?.limit != null || options?.offset != null
+            ? await base.limit(options.limit ?? 10000).offset(options.offset ?? 0)
+            : await base;
+    return rows.map((r) =>
+        mapRowToStandaloneScanSummary({
+            ...r,
+            targetRegion: r.targetRegion ?? null,
+        })
+    );
+}
+
+/**
+ * Paginated standalone list for dashboard — columns only (fast). One desktop row per batch when `group_id` set.
+ * Merges owned scans with borrowed (cross-user reuse) rows, then sorts by timestamp.
+ */
+export async function listStandaloneScanSummaries(
+    userId: string,
+    options?: StandaloneScanListQueryOptions
+): Promise<StandaloneScanSummary[]> {
+    const offset = options?.offset ?? 0;
+    const limit = options?.limit ?? 10000;
+    const owned = await listOwnedStandaloneScanSummaries(userId, {
+        ...options,
+        limit: STANDALONE_LIST_MERGE_CAP,
+        offset: 0,
+    });
+    const borrowed = await listBorrowedStandaloneScanSummaries(userId, {
+        ...options,
+        limit: STANDALONE_LIST_MERGE_CAP,
+        offset: 0,
+    });
+    const merged = [...owned, ...borrowed].sort((a, b) => {
+        if (a.timestamp < b.timestamp) return 1;
+        if (a.timestamp > b.timestamp) return -1;
+        return 0;
+    });
+    return merged.slice(offset, offset + limit);
+}
+
+/**
  * Full `ScanResult` JSON per row — expensive; use for search indexing or rare bulk export.
  * Prefer {@link listStandaloneScanSummaries} for lists.
  */
@@ -494,10 +628,19 @@ export async function listStandaloneScansFull(
 /** All single-scan results belonging to a domain (deep) scan; for journey/buildPageContexts. */
 export async function listScansByGroupId(userId: string, groupId: string): Promise<ScanResult[]> {
     const db = getDb();
-    const rows = await db.select({ result: scans.result })
+    const access = or(
+        eq(scans.userId, userId),
+        sql`exists (
+            select 1 from standalone_scan_entitlements e
+            where e.user_id = ${userId}
+            and e.scan_session_id = ${scans.scanSessionId}
+        )`
+    );
+    const rows = await db
+        .select({ result: scans.result })
         .from(scans)
-        .where(and(eq(scans.userId, userId), eq(scans.groupId, groupId)));
-    return rows.map(r => r.result as unknown as ScanResult);
+        .where(and(eq(scans.groupId, groupId), access));
+    return rows.map((r) => r.result as unknown as ScanResult);
 }
 
 export async function getStandaloneScansCount(
@@ -505,17 +648,28 @@ export async function getStandaloneScansCount(
     options?: { projectId?: string | null; industry?: string; tag?: string }
 ): Promise<number> {
     const db = getDb();
-    const whereCond = buildStandaloneScanSummaryWhere(userId, {
+    const whereOwned = buildStandaloneScanSummaryWhere(userId, {
         projectId: options?.projectId,
         industry: options?.industry,
         tag: options?.tag,
     });
-    const rows = await db
+    const ownedRows = await db
         .select({ count: count() })
         .from(scans)
         .leftJoin(projects, eq(scans.projectId, projects.id))
-        .where(whereCond);
-    return Number(rows[0]?.count ?? 0);
+        .where(whereOwned);
+    const whereBorrowed = buildBorrowedStandaloneScanSummaryWhere(userId, {
+        projectId: options?.projectId,
+        industry: options?.industry,
+        tag: options?.tag,
+    });
+    const borrowedRows = await db
+        .select({ count: count() })
+        .from(standaloneScanEntitlements)
+        .innerJoin(scans, eq(scans.id, standaloneScanEntitlements.canonicalDesktopScanId))
+        .leftJoin(projects, eq(projects.id, standaloneScanEntitlements.projectId))
+        .where(whereBorrowed);
+    return Number(ownedRows[0]?.count ?? 0) + Number(borrowedRows[0]?.count ?? 0);
 }
 
 export async function updateScanProject(scanId: string, userId: string, projectId: string | null): Promise<boolean> {
@@ -525,7 +679,22 @@ export async function updateScanProject(scanId: string, userId: string, projectI
         .from(scans)
         .where(and(eq(scans.id, scanId), eq(scans.userId, userId)))
         .limit(1);
-    if (rows.length === 0) return false;
+    if (rows.length === 0) {
+        if (projectId) {
+            const project = await getProject(projectId, userId);
+            if (!project) return false;
+        }
+        const entUpdated = await db
+            .update(standaloneScanEntitlements)
+            .set({ projectId })
+            .where(
+                and(
+                    eq(standaloneScanEntitlements.userId, userId),
+                    eq(standaloneScanEntitlements.canonicalDesktopScanId, scanId)
+                )
+            );
+        return (entUpdated.rowCount ?? 0) > 0;
+    }
 
     let tags: string[] = [];
     if (projectId) {
@@ -571,6 +740,10 @@ export async function updateStandaloneScanTags(scanId: string, userId: string, t
 
 export async function deleteScan(id: string, userId: string): Promise<boolean> {
     const db = getDb();
+    const delEnt = await db
+        .delete(standaloneScanEntitlements)
+        .where(and(eq(standaloneScanEntitlements.userId, userId), eq(standaloneScanEntitlements.canonicalDesktopScanId, id)));
+    if ((delEnt.rowCount ?? 0) > 0) return true;
     const deleted = await db.delete(scans).where(and(eq(scans.id, id), eq(scans.userId, userId)));
     return (deleted.rowCount ?? 0) > 0;
 }

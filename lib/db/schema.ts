@@ -77,6 +77,28 @@ export const scans = pgTable('scans', {
     tags: jsonb('tags').notNull().default([]),
 });
 
+/**
+ * Reuse of another user’s standalone session: no duplicate `scans` rows; `project_id` is the viewer’s project.
+ */
+export const standaloneScanEntitlements = pgTable(
+    'standalone_scan_entitlements',
+    {
+        id: text('id').primaryKey(),
+        userId: text('user_id').notNull(),
+        projectId: text('project_id').references(() => projects.id, { onDelete: 'set null' }),
+        scanSessionId: text('scan_session_id')
+            .notNull()
+            .references(() => scanSessions.id, { onDelete: 'cascade' }),
+        canonicalDesktopScanId: text('canonical_desktop_scan_id')
+            .notNull()
+            .references(() => scans.id, { onDelete: 'cascade' }),
+        createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    },
+    (t) => ({
+        userSessionUniq: uniqueIndex('standalone_scan_entitlements_user_session_uniq').on(t.userId, t.scanSessionId),
+    })
+);
+
 export const domainScans = pgTable(
     'domain_scans',
     {

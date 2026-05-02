@@ -27,6 +27,7 @@ import { reportUsage } from '@/lib/usage-report';
 import { maybeAutoFillProjectClassificationFromStandaloneScan } from '@/lib/project-industry-auto';
 import type { ScanNdjsonLine } from '@/lib/scan-progress';
 import { resolveStandaloneScanDevices } from '@/lib/standalone-scan-devices';
+import { tryReuseStandaloneScan } from '@/lib/standalone-scan-reuse';
 
 /** Puppeteer requires Node runtime (Edge would fail loading native deps). */
 export const runtime = 'nodejs';
@@ -50,6 +51,23 @@ async function executeStandaloneScan(
         beforePersist?: () => void | Promise<void>;
     }
 ): Promise<ScanResult> {
+    const reused = await tryReuseStandaloneScan(user.id, body);
+    if (reused) {
+        await hooks?.afterSessionInsert?.();
+        await hooks?.beforePersist?.();
+        invalidateScansList(user.id);
+        try {
+            reportUsage({
+                userId: user.id,
+                eventType: 'scan_wcag_reuse',
+                rawUnits: { scans: 0 },
+            });
+        } catch {
+            /* ignore */
+        }
+        return reused.desktopResult;
+    }
+
     /** Dynamic import so this route module never loads Puppeteer until a scan runs (avoids top-level 500 if Chromium/deps missing). */
     const { runScan, launchStandaloneScanBrowser } = await import('@/lib/scanner');
 
