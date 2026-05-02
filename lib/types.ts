@@ -360,8 +360,49 @@ export type ScanResult = {
     pageClassification?: PageClassification;
     /** Final document response headers (for deep-scan reuse via HEAD). */
     documentCacheHints?: { etag?: string; lastModified?: string };
+    /** Combined HTTP + structured-data estimate of content recency vs scan time. */
+    contentFreshness?: ContentFreshness;
     /** Set when this row was cloned from a prior scan (ETag/Last-Modified match). */
     reusedUnchanged?: boolean;
+}
+
+/** Raw hints from the page (JSON-LD + Open Graph) before server-side scoring. */
+export interface ContentFreshnessHints {
+    jsonLdDatePublished?: string | null;
+    jsonLdDateModified?: string | null;
+    ogArticlePublishedTime?: string | null;
+    ogArticleModifiedTime?: string | null;
+    ogUpdatedTime?: string | null;
+}
+
+export type ContentFreshnessSource =
+    | 'http_last_modified'
+    | 'jsonld_date_modified'
+    | 'jsonld_date_published'
+    | 'og_article_modified_time'
+    | 'og_updated_time'
+    | 'og_article_published_time';
+
+export type ContentFreshnessNoteCode = 'html_long_cache' | 'source_spread';
+
+export interface ContentFreshnessSignalEntry {
+    source: ContentFreshnessSource;
+    /** Parsed instant in ISO 8601 (UTC where applicable). */
+    valueIso: string;
+    raw?: string;
+}
+
+export interface ContentFreshness {
+    /** How much we trust the best-as-of instant. */
+    confidence: 'high' | 'medium' | 'low' | 'unknown';
+    /** Latest credible content timestamp we could derive (ISO). */
+    bestAsOfIso: string | null;
+    bestAsOfSource: ContentFreshnessSource | null;
+    /** Days between scan and bestAsOf (non-negative); null if unknown. */
+    ageDays: number | null;
+    /** All usable dated signals (for transparency). */
+    signals: ContentFreshnessSignalEntry[];
+    notes?: ContentFreshnessNoteCode[];
 }
 
 export interface TechnicalInsights {

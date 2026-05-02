@@ -32,8 +32,10 @@ import type {
     ScanOptions,
     SeoAudit,
     ScanDevicePhase,
+    ContentFreshnessHints,
 } from './types';
 import { normalizeScanResultForPersist } from '@/lib/scan-result-shape';
+import { computeContentFreshness } from '@/lib/content-freshness';
 import { scanDebugLog, scanDebugWarn } from './scan-debug-log';
 import { buildPrivacyAudit } from '@/lib/privacy-scan-heuristics';
 import { estimateDwellTime } from '@/lib/estimate-dwell-time';
@@ -2146,6 +2148,15 @@ export async function runScan(
                 ...(lastModified ? { lastModified } : {}),
             };
         }
+
+        const contentFreshnessHints = (seoAndMeta as { contentFreshnessHints?: ContentFreshnessHints })
+            .contentFreshnessHints;
+        result.contentFreshness = computeContentFreshness({
+            documentCacheHints: result.documentCacheHints,
+            mainDocumentCache: technicalInsights.mainDocumentCache,
+            structured: contentFreshnessHints,
+            scanTimestampIso: result.timestamp,
+        });
 
         report('page_classification');
         phaseTiming.mark('pre_classification');

@@ -98,6 +98,10 @@ const TechnicalInsightsCard = dynamic(
     () => import('@/components/TechnicalInsightsCard').then((m) => ({ default: m.TechnicalInsightsCard })),
     { ssr: false, loading: () => <Box sx={{ py: 2 }}><CircularProgress size={24} /></Box> }
 );
+const ContentFreshnessCard = dynamic(
+    () => import('@/components/ContentFreshnessCard').then((m) => ({ default: m.ContentFreshnessCard })),
+    { ssr: false, loading: () => <Box sx={{ py: 2 }}><CircularProgress size={24} /></Box> }
+);
 const GenerativeOptimizerCard = dynamic(
     () => import('@/components/GenerativeOptimizerCard').then((m) => ({ default: m.GenerativeOptimizerCard })),
     { ssr: false, loading: () => <Box sx={{ py: 2 }}><CircularProgress size={24} /></Box> }
@@ -1496,6 +1500,10 @@ export default function ResultsPage() {
 
                     {result.technicalInsights ? (
                         <TechnicalInsightsCard insights={result.technicalInsights} />
+                    ) : null}
+
+                    {result.contentFreshness ? (
+                        <ContentFreshnessCard data={result.contentFreshness} />
                     ) : null}
                 </Box>
             )}
