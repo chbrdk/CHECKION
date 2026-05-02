@@ -101,6 +101,15 @@ describe('api-schemas', () => {
       const result = scanBodySchema.safeParse({ url: 'x' });
       expect(result.success).toBe(false);
     });
+
+    it('accepts quickScan and devices', () => {
+      const r = scanBodySchema.safeParse({
+        url: 'https://example.com',
+        quickScan: true,
+        devices: ['desktop'],
+      });
+      expect(r.success).toBe(true);
+    });
   });
 
   describe('registerBodySchema', () => {

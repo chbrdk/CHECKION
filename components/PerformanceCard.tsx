@@ -1,9 +1,12 @@
+'use client';
+
 import React from 'react';
 import { Box } from '@mui/material';
 import { Timer, Zap, Layout } from 'lucide-react';
 import { MsqdxMoleculeCard, MsqdxTypography } from '@msqdx/react';
 import { ScanResult } from '../lib/types';
-import { MSQDX_SPACING, MSQDX_STATUS, MSQDX_NEUTRAL } from '@msqdx/tokens';
+import { MSQDX_STATUS, MSQDX_NEUTRAL } from '@msqdx/tokens';
+import { useI18n } from '@/components/i18n/I18nProvider';
 
 interface PerformanceCardProps {
     perf: NonNullable<ScanResult['performance']>;
@@ -25,10 +28,11 @@ function getStatusColor(value: number, metric: keyof typeof METRICS_CONFIG) {
 }
 
 export const PerformanceCard: React.FC<PerformanceCardProps> = ({ perf, sx }) => {
+    const { t } = useI18n();
     return (
         <MsqdxMoleculeCard
             title="Performance"
-            subtitle="Ladezeiten & Core Web Vitals (Lab Data)"
+            subtitle={t('results.performanceCardSubtitle')}
             sx={{
                 bgcolor: 'var(--color-card-bg)',
                 width: '100%',

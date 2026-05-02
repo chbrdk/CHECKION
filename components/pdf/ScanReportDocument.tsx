@@ -444,6 +444,12 @@ export function ScanReportDocument({ scan }: ScanReportProps) {
                     </View>
                 )}
             </View>
+            {scan.eco?.greenWebHosted !== undefined && scan.eco?.greenWebHosted !== null && (
+                <Text style={[styles.metaText, { marginTop: 6 }]}>
+                    Green Web (heuristic): {scan.eco.greenWebHosted ? 'listed' : 'not listed'}
+                    {scan.eco.greenWebCheckedAt ? ` · checked ${scan.eco.greenWebCheckedAt}` : ''}
+                </Text>
+            )}
             {scan.performance && (
                 <View style={[styles.cardBox, { marginTop: 8 }]}>
                     <Text style={styles.subsectionTitle}>Performance (ms)</Text>
@@ -459,6 +465,20 @@ export function ScanReportDocument({ scan }: ScanReportProps) {
                             {scan.performance.domLoad} / {scan.performance.windowLoad}
                         </Text>
                     </View>
+                    {scan.performance.nextHopProtocol ? (
+                        <View style={styles.tableRow}>
+                            <Text style={styles.tableLabel}>HTTP (nextHopProtocol)</Text>
+                            <Text style={styles.tableValue}>{scan.performance.nextHopProtocol}</Text>
+                        </View>
+                    ) : null}
+                    {scan.performance.scriptTransferBytesApprox != null && scan.performance.scriptTransferBytesApprox > 0 ? (
+                        <View style={styles.tableRow}>
+                            <Text style={styles.tableLabel}>Script transfer (approx.)</Text>
+                            <Text style={styles.tableValue}>
+                                {Math.round(scan.performance.scriptTransferBytesApprox / 1024)} KB
+                            </Text>
+                        </View>
+                    ) : null}
                 </View>
             )}
         </React.Fragment>
@@ -644,6 +664,17 @@ export function ScanReportDocument({ scan }: ScanReportProps) {
                                     ))}
                                 </View>
                             ) : null}
+                            {scan.seo.jsonLdRichResultGaps && scan.seo.jsonLdRichResultGaps.length > 0 ? (
+                                <>
+                                    <Text style={styles.subsectionTitle}>JSON-LD rich result gaps</Text>
+                                    {scan.seo.jsonLdRichResultGaps.slice(0, 6).map((g, i) => (
+                                        <View key={i} style={styles.kvInline}>
+                                            <Text style={styles.kvKey}>{g.schemaType}</Text>
+                                            <Text style={styles.kvVal}>{g.missing.join(', ')}</Text>
+                                        </View>
+                                    ))}
+                                </>
+                            ) : null}
                         </>
                     )}
                     {scan.links && (
@@ -681,18 +712,37 @@ export function ScanReportDocument({ scan }: ScanReportProps) {
                             <View style={[styles.pill, { backgroundColor: scan.privacy.hasCookieBanner ? colors.warning : colors.gray400 }]}><Text style={{ fontSize: 7, color: colors.white }}>Cookie-Banner {scan.privacy.hasCookieBanner ? '✓' : '–'}</Text></View>
                         </View>
                     )}
+                    {scan.consentSignals?.tcfApiPresent ? (
+                        <View style={styles.kvInline}>
+                            <Text style={styles.kvKey}>Consent (heuristic)</Text>
+                            <Text style={styles.kvVal}>TCF API detected</Text>
+                        </View>
+                    ) : null}
                     {scan.security && (
                         <View style={styles.pillRow}>
                             <View style={[styles.pill, { backgroundColor: scan.security.contentSecurityPolicy?.present ? colors.success : colors.gray400 }]}><Text style={{ fontSize: 7, color: colors.white }}>CSP</Text></View>
                             <View style={[styles.pill, { backgroundColor: scan.security.xFrameOptions?.present ? colors.success : colors.gray400 }]}><Text style={{ fontSize: 7, color: colors.white }}>X-Frame</Text></View>
                             <View style={[styles.pill, { backgroundColor: scan.security.strictTransportSecurity?.present ? colors.success : colors.gray400 }]}><Text style={{ fontSize: 7, color: colors.white }}>HSTS</Text></View>
+                            <View style={[styles.pill, { backgroundColor: scan.security.permissionsPolicy?.present ? colors.success : colors.gray400 }]}><Text style={{ fontSize: 7, color: colors.white }}>Perm-Policy</Text></View>
+                            <View style={[styles.pill, { backgroundColor: scan.security.crossOriginOpenerPolicy?.present ? colors.success : colors.gray400 }]}><Text style={{ fontSize: 7, color: colors.white }}>COOP</Text></View>
                         </View>
                     )}
                     {scan.technicalInsights && (
-                        <View style={styles.kvInline}>
-                            <Text style={styles.kvKey}>Manifest / Theme / Apple</Text>
-                            <Text style={styles.kvVal}>{scan.technicalInsights.manifest?.present ? 'Ja' : 'Nein'} · {scan.technicalInsights.themeColor ?? '-'} · {scan.technicalInsights.appleTouchIcon ? 'Ja' : 'Nein'}</Text>
-                        </View>
+                        <>
+                            <View style={styles.kvInline}>
+                                <Text style={styles.kvKey}>Manifest / Theme / Apple</Text>
+                                <Text style={styles.kvVal}>{scan.technicalInsights.manifest?.present ? 'Ja' : 'Nein'} · {scan.technicalInsights.themeColor ?? '-'} · {scan.technicalInsights.appleTouchIcon ? 'Ja' : 'Nein'}</Text>
+                            </View>
+                            {scan.technicalInsights.mainDocumentCache ? (
+                                <View style={styles.kvInline}>
+                                    <Text style={styles.kvKey}>HTML cache hint</Text>
+                                    <Text style={styles.kvVal}>
+                                        {scan.technicalInsights.mainDocumentCache.htmlLongCache ? 'long max-age' : 'short/typical'}
+                                        {scan.technicalInsights.staticAssetCacheWeak ? ' · static cache weak (heuristic)' : ''}
+                                    </Text>
+                                </View>
+                            ) : null}
+                        </>
                     )}
                 </View>
             </React.Fragment>

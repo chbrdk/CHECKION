@@ -27,6 +27,7 @@ import {
 import { reportUsage } from '@/lib/usage-report';
 import { maybeAutoFillProjectClassificationFromStandaloneScan } from '@/lib/project-industry-auto';
 import type { ScanNdjsonLine } from '@/lib/scan-progress';
+import { resolveStandaloneScanDevices } from '@/lib/standalone-scan-devices';
 
 type ScanBody = z.infer<typeof scanBodySchema>;
 
@@ -44,7 +45,7 @@ async function executeStandaloneScan(
     }
 ): Promise<ScanResult> {
     const groupId = uuidv4();
-    const devices: Device[] = ['desktop', 'tablet', 'mobile'];
+    const devices: Device[] = resolveStandaloneScanDevices(body);
 
     await insertScanSession({
         id: groupId,

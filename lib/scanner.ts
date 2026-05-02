@@ -4,7 +4,14 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import puppeteer from 'puppeteer';
-import { PUPPETEER_PROTOCOL_TIMEOUT_MS } from '@/lib/constants';
+import {
+    PUPPETEER_PROTOCOL_TIMEOUT_MS,
+    SCAN_NAVIGATION_TIMEOUT_MS,
+    SCAN_EARLY_THIRD_PARTY_SCRIPT_HOST_CAP,
+    SCAN_GREEN_WEB_FETCH_TIMEOUT_MS,
+    SCAN_SCRIPT_RESOURCE_COUNT_CAP,
+} from '@/lib/constants';
+import { createScanPhaseTimer } from '@/lib/scan-phase-timing';
 import fs from 'fs';
 import path from 'path';
 import { dismissCookieBanner } from './cookie-banner-dismiss';
@@ -166,6 +173,7 @@ export async function runScan(
     if (runners.includes('htmlcs')) pa11yRunners.push('htmlcs');
 
     const startTime = Date.now();
+    const phaseTiming = createScanPhaseTimer();
     report('starting');
 
     // Launch browser manually to enable screenshot and bounding box extraction
@@ -241,6 +249,7 @@ export async function runScan(
     const allRequestHosts = new Set<string>();
     const earlyThirdPartyScriptHosts: string[] = [];
     const earlyHostSeen = new Set<string>();
+    let scriptResourceSamples = 0;
     const pageOrigin = (() => {
         try {
             return new URL(url).origin;
@@ -259,7 +268,7 @@ export async function runScan(
             const pageHostNorm = new URL(url).hostname.replace(/^www\./i, '').toLowerCase();
             const reqHostNorm = u.hostname.replace(/^www\./i, '').toLowerCase();
             if (reqHostNorm === pageHostNorm) return;
-            if (earlyHostSeen.size >= 40) return;
+            if (earlyHostSeen.size >= SCAN_EARLY_THIRD_PARTY_SCRIPT_HOST_CAP) return;
             if (!earlyHostSeen.has(reqHostNorm)) {
                 earlyHostSeen.add(reqHostNorm);
                 earlyThirdPartyScriptHosts.push(u.hostname);
@@ -280,9 +289,12 @@ export async function runScan(
             } catch (_) {}
             const req = response.request();
             if (req.resourceType() === 'script') {
-                const headers = response.headers();
-                const cl = parseInt(headers['content-length'] || '0', 10);
-                if (Number.isFinite(cl) && cl > 0) scriptTransferBytesApprox += cl;
+                if (scriptResourceSamples < SCAN_SCRIPT_RESOURCE_COUNT_CAP) {
+                    scriptResourceSamples += 1;
+                    const headers = response.headers();
+                    const cl = parseInt(headers['content-length'] || '0', 10);
+                    if (Number.isFinite(cl) && cl > 0) scriptTransferBytesApprox += cl;
+                }
             }
             /** Final URL after redirects often differs from `url` (slash, scheme, www) — match navigation doc on main frame. */
             const isMainDocumentResponse =
@@ -315,11 +327,18 @@ export async function runScan(
         await page.setUserAgent('Mozilla/5.0 (iPad; CPU OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1');
     }
 
+    phaseTiming.mark('browser_setup');
+
     try {
+        /**
+         * Navigation uses `networkidle2` (waits until ≤2 connections for ~500ms). Slow or endless SPAs may hit
+         * {@link SCAN_NAVIGATION_TIMEOUT_MS}: then this throws, and WCAG/heuristic extraction is skipped for this run.
+         */
         // Navigate first so we can dismiss cookie banners before pa11y runs
         report('navigate');
-        await page.goto(url, { waitUntil: 'networkidle2', timeout: 60_000 });
+        await page.goto(url, { waitUntil: 'networkidle2', timeout: SCAN_NAVIGATION_TIMEOUT_MS });
         await dismissCookieBanner(page);
+        phaseTiming.mark('navigation');
 
         report('wcag_checks');
         const results = await pa11y(url, {
@@ -328,7 +347,7 @@ export async function runScan(
             viewport,
             standard,
             runners: pa11yRunners,
-            timeout: 60_000, // Increase timeout for visual scan
+            timeout: SCAN_NAVIGATION_TIMEOUT_MS, // Align with goto; pa11y reuses the loaded page
             wait: 1_000,
             ignoreUrl: true, // Page already loaded and banner dismissed above
         } as any);
@@ -358,6 +377,7 @@ export async function runScan(
 
         // Re-apply cookie banner hide before screenshot (in case of late-loading banners)
         await dismissCookieBanner(page);
+        phaseTiming.mark('pa11y_scroll');
 
         // --- Extract Performance Metrics (incl. LCP/INP from observers) ---
         const perfData = await page.evaluate(function () {
@@ -421,6 +441,7 @@ export async function runScan(
             quality: 70
         }) as Buffer;
         const screenshot = await writeScreenshot(scanId, screenshotBuffer);
+        phaseTiming.mark('screenshot');
 
         // 2. Extract Bounding Boxes for Issues
         const issuePromises = (results.issues || []).map(async (raw: any) => {
@@ -466,6 +487,7 @@ export async function runScan(
         report('issue_details');
         const rawIssues: Issue[] = await Promise.all(issuePromises);
         const issues = deduplicateIssues(rawIssues);
+        phaseTiming.mark('issues');
 
         // 3. Capture Passed Audits using axe-core directly
         let passes: Pass[] = [];
@@ -536,8 +558,7 @@ export async function runScan(
             console.error('Failed to capture passed audits:', e);
         }
 
-
-
+        phaseTiming.mark('axe_passes');
 
         // --- UX Audit Collection ---
         report('ux_and_content');
@@ -1891,6 +1912,7 @@ export async function runScan(
             .filter(l => isInternalLink(l.href, pageOrigin))
             .map(l => ({ href: l.href, text: (l.text || '').slice(0, 100).trim() }));
 
+        phaseTiming.mark('content_pipeline');
         const durationMs = Date.now() - startTime;
         const stats = computeStats(issues);
 
@@ -1917,7 +1939,7 @@ export async function runScan(
                 const { API_GREEN_WEB_GREENCHECK_BASE } = await import('./external-apis');
                 const gr = await fetch(
                     `${API_GREEN_WEB_GREENCHECK_BASE}/greencheck/v3/${encodeURIComponent(pageHost)}`,
-                    { signal: AbortSignal.timeout(4500) }
+                    { signal: AbortSignal.timeout(SCAN_GREEN_WEB_FETCH_TIMEOUT_MS) }
                 );
                 if (gr.ok) {
                     const j = (await gr.json()) as { green?: boolean };
@@ -1988,6 +2010,7 @@ export async function runScan(
         }
 
         report('page_classification');
+        phaseTiming.mark('pre_classification');
         const { classifyPageWithLlm } = await import('./llm/page-classification');
         const { reportUsage } = await import('./usage-report');
         const classifyOutcome = await classifyPageWithLlm(result).catch(() => null);
@@ -2013,6 +2036,14 @@ export async function runScan(
                 /* never affect scan */
             }
         }
+
+        phaseTiming.mark('classification');
+        phaseTiming.finishAndLog({
+            scanId,
+            device,
+            url,
+            totalMs: Date.now() - startTime,
+        });
 
         return normalizeScanResultForPersist(result);
     } finally {

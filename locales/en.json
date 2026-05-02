@@ -474,6 +474,8 @@
     "deepTab": "Deep Domain Scan",
     "journeyTab": "UX Journey Agent",
     "singleHint": "Analyzes exactly ONE page immediately (Sync). Includes screenshots & visual analysis.",
+    "quickScanLabel": "Quick scan",
+    "quickScanOption": "Desktop only (one viewport, faster and less server load)",
     "deepHint": "Analyzes the entire domain in the background (Async). Finds systemic issues.",
     "journeyHint": "A browser agent navigates the site and completes a task you describe (e.g. find product X, add to cart).",
     "taskLabel": "Task (natural language)",
@@ -732,6 +734,10 @@
     "shareCreating": "Creating link…",
     "shareCopied": "Link copied",
     "scanResult": "Scan Result",
+    "sessionPartialDevicesHint": "This session has fewer than three device runs (e.g. quick scan = desktop only). No tablet/mobile results for this run.",
+    "performanceCardSubtitle": "Load times & vitals (lab, not RUM)",
+    "securityCardSubtitle": "Main document HTTP headers (snapshot)",
+    "privacyConsentHeuristicTitle": "Consent / CMP (heuristic)",
     "score": "SCORE",
     "pdfExport": "Export PDF",
     "pdfCreating": "Creating PDF…",
@@ -1179,6 +1185,7 @@
     "positionNotCited": "Not cited"
   },
   "info": {
+    "heuristicSignalsBrief": "Heuristic signals from the lab scan (not real-user analytics, not legal advice).",
     "dashboard": "Overview of all WCAG accessibility checks you have run. Use \"New Scan\" to check a single page or an entire domain.",
     "dashboardStats": "Scans: number of checks run. Errors/Warnings/Notices: total accessibility issues found (errors = critical, warnings = medium, notices = hints).",
     "scanHistory": "List of your single-page scans. Each entry links to the detailed result view with issues, screenshot and metrics.",

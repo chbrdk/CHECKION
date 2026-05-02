@@ -38,6 +38,10 @@ export const scanBodySchema = z.object({
   runners: runnersSchema,
   targetRegion: z.string().max(10).optional(),
   projectId: z.string().uuid().nullable().optional(),
+  /** Run only these viewports (default: all three; env `SCAN_STANDALONE_DEVICES` may override). */
+  devices: z.array(z.enum(['desktop', 'tablet', 'mobile'])).min(1).max(3).optional(),
+  /** Shorthand for `devices: ['desktop']` when `devices` is omitted. */
+  quickScan: z.boolean().optional(),
 });
 
 /** POST /api/projects/[id]/domain-scan-competitor */

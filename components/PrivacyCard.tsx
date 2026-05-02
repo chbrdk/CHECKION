@@ -1,3 +1,5 @@
+'use client';
+
 import { Box, alpha } from '@mui/material';
 import {
     MsqdxTypography,
@@ -7,8 +9,11 @@ import {
 import { MSQDX_STATUS, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
 import type { ConsentSignals, PrivacyAudit } from '@/lib/types';
 import { ShieldCheck, FileText, Cookie } from 'lucide-react';
+import { useI18n } from '@/components/i18n/I18nProvider';
+import { InfoTooltip } from '@/components/InfoTooltip';
 
 export function PrivacyCard({ privacy, consentSignals }: { privacy: PrivacyAudit; consentSignals?: ConsentSignals }) {
+    const { t } = useI18n();
     if (!privacy) return null;
 
     return (
@@ -39,9 +44,12 @@ export function PrivacyCard({ privacy, consentSignals }: { privacy: PrivacyAudit
 
                 {consentSignals && (
                     <Box sx={{ p: 'var(--msqdx-spacing-sm)', borderRadius: 1, bgcolor: alpha(MSQDX_BRAND_PRIMARY.purple, 0.06), border: `1px solid ${alpha(MSQDX_BRAND_PRIMARY.purple, 0.2)}` }}>
-                        <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5, fontSize: '0.8rem' }}>
-                            Consent / CMP (Heuristik)
-                        </MsqdxTypography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.8rem' }}>
+                                {t('results.privacyConsentHeuristicTitle')}
+                            </MsqdxTypography>
+                            <InfoTooltip title={t('info.heuristicSignalsBrief')} ariaLabel={t('common.info')} />
+                        </Box>
                         {consentSignals.tcfApiPresent && (
                             <MsqdxTypography variant="caption" sx={{ display: 'block', color: 'var(--color-text-on-light)' }}>TCF: __tcfapi erkannt</MsqdxTypography>
                         )}

@@ -624,6 +624,44 @@ export const ENV_SCREENSHOT_AWS_REGION = 'SCREENSHOT_AWS_REGION';
 /** When `1`/`true`/`yes`, enables verbose scanner and journey-agent debug logs (axe injection, CLS, tool traces). */
 export const ENV_CHECKION_SCAN_DEBUG = 'CHECKION_SCAN_DEBUG';
 
+/** When `1`/`true`/`yes`, emits one JSON line per scan to stdout: `{"type":"checkion.scan.timing",...}` for log aggregation. */
+export const ENV_CHECKION_SCAN_TIMING_LOG = 'CHECKION_SCAN_TIMING_LOG';
+
+/**
+ * `page.goto` / pa11y timeout (ms). On timeout, navigation fails and many heuristic fields may be empty.
+ * Override: `SCAN_NAVIGATION_TIMEOUT_MS` (min 10_000, default 60_000).
+ */
+export const SCAN_NAVIGATION_TIMEOUT_MS = (() => {
+    const raw = typeof process !== 'undefined' ? process.env?.SCAN_NAVIGATION_TIMEOUT_MS : undefined;
+    const n = raw != null && raw !== '' ? Number(raw) : NaN;
+    if (Number.isFinite(n) && n >= 10_000) return Math.floor(n);
+    return 60_000;
+})();
+
+/** Max distinct third-party script hostnames collected early (consentSignals). Env: `SCAN_EARLY_THIRD_PARTY_SCRIPT_HOST_CAP`. */
+export const SCAN_EARLY_THIRD_PARTY_SCRIPT_HOST_CAP = (() => {
+    const raw = typeof process !== 'undefined' ? process.env?.SCAN_EARLY_THIRD_PARTY_SCRIPT_HOST_CAP : undefined;
+    const n = raw != null && raw !== '' ? Number(raw) : NaN;
+    if (Number.isFinite(n) && n >= 4 && n <= 200) return Math.floor(n);
+    return 40;
+})();
+
+/** Max script `response` events counted toward `scriptTransferBytesApprox` (limits work on huge SPAs). Env: `SCAN_SCRIPT_RESOURCE_COUNT_CAP`. */
+export const SCAN_SCRIPT_RESOURCE_COUNT_CAP = (() => {
+    const raw = typeof process !== 'undefined' ? process.env?.SCAN_SCRIPT_RESOURCE_COUNT_CAP : undefined;
+    const n = raw != null && raw !== '' ? Number(raw) : NaN;
+    if (Number.isFinite(n) && n >= 20 && n <= 10_000) return Math.floor(n);
+    return 500;
+})();
+
+/** Green Web greencheck fetch timeout (ms). Env: `SCAN_GREEN_WEB_FETCH_TIMEOUT_MS`. */
+export const SCAN_GREEN_WEB_FETCH_TIMEOUT_MS = (() => {
+    const raw = typeof process !== 'undefined' ? process.env?.SCAN_GREEN_WEB_FETCH_TIMEOUT_MS : undefined;
+    const n = raw != null && raw !== '' ? Number(raw) : NaN;
+    if (Number.isFinite(n) && n >= 500 && n <= 60_000) return Math.floor(n);
+    return 4500;
+})();
+
 /** When set (e.g. `redis://redis:6379`), rate limits use Redis so multiple app instances share counters. Falls back to in-memory if unset or connection fails. */
 export const ENV_REDIS_URL = 'REDIS_URL';
 

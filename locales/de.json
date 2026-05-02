@@ -474,6 +474,8 @@
     "deepTab": "Deep Domain Scan",
     "journeyTab": "UX Journey Agent",
     "singleHint": "Analysiert genau EINE Seite sofort (Synchron). Inklusive Screenshots & Visueller Analyse.",
+    "quickScanLabel": "Schnellscan",
+    "quickScanOption": "Nur Desktop (ein Viewport, schneller und weniger Server-Last)",
     "deepHint": "Analysiert die gesamte Domain im Hintergrund (Asynchron). Findet systemische Fehler.",
     "journeyHint": "Ein Browser-Agent navigiert die Seite und erledigt eine von dir beschriebene Aufgabe (z. B. Produkt X finden, in den Warenkorb).",
     "taskLabel": "Aufgabe (in natürlicher Sprache)",
@@ -732,6 +734,10 @@
     "shareCreating": "Link wird erstellt…",
     "shareCopied": "Link kopiert",
     "scanResult": "Scan-Ergebnis",
+    "sessionPartialDevicesHint": "Diese Session umfasst weniger als drei Geräte (z. B. Schnellscan nur Desktop). Keine weiteren Tablet-/Mobile-Ergebnisse für diesen Lauf.",
+    "performanceCardSubtitle": "Ladezeiten & Vitals (Lab, kein RUM)",
+    "securityCardSubtitle": "HTTP-Header des Hauptdokuments (Momentaufnahme)",
+    "privacyConsentHeuristicTitle": "Consent / CMP (Heuristik)",
     "score": "SCORE",
     "pdfExport": "PDF exportieren",
     "pdfCreating": "PDF wird erstellt…",
@@ -1179,6 +1185,7 @@
     "positionNotCited": "Nicht genannt"
   },
   "info": {
+    "heuristicSignalsBrief": "Heuristische Signale aus dem Lab-Scan (kein Echtzeit-Analytics, keine Rechtsberatung).",
     "dashboard": "Hier siehst du alle durchgeführten WCAG-Barrierefreiheits-Checks. Ein Klick auf „Neuer Scan“ startet einen Check für eine einzelne Seite oder eine ganze Domain.",
     "dashboardStats": "Scans: Anzahl durchgeführter Checks. Errors/Warnings/Notices: Summe der gefundenen Barrierefreiheits-Probleme (Fehler = kritisch, Warnings = mittel, Notices = Hinweise).",
     "scanHistory": "Liste deiner Single-Page-Scans. Jeder Eintrag führt zur detaillierten Ergebnisansicht mit Issues, Screenshot und Metriken.",

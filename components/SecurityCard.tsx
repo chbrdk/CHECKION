@@ -1,3 +1,5 @@
+'use client';
+
 import { Box, alpha } from '@mui/material';
 import {
     MsqdxTypography,
@@ -7,6 +9,7 @@ import {
 import { MSQDX_STATUS, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
 import type { SecurityAudit } from '@/lib/types';
 import { ShieldCheck, ShieldAlert } from 'lucide-react';
+import { useI18n } from '@/components/i18n/I18nProvider';
 
 type SecurityHeaderKey =
     | 'contentSecurityPolicy'
@@ -31,12 +34,13 @@ const HEADER_LABELS: Array<{ key: SecurityHeaderKey; label: string }> = [
 ];
 
 export function SecurityCard({ security }: { security: SecurityAudit }) {
+    const { t } = useI18n();
     if (!security) return null;
 
     return (
         <MsqdxMoleculeCard
             title="Security Headers"
-            subtitle="Recommended HTTP security headers for the main document."
+            subtitle={t('results.securityCardSubtitle')}
             variant="flat"
             borderRadius="lg"
             sx={{ bgcolor: 'var(--color-card-bg)', height: '100%' }}

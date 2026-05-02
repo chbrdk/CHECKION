@@ -485,6 +485,10 @@ export default function ResultsPage() {
         ? (result.score >= 90 ? MSQDX_BRAND_PRIMARY.green : result.score >= 70 ? MSQDX_BRAND_PRIMARY.yellow : MSQDX_STATUS.error.base)
         : '';
 
+    const showPartialDeviceSession = Boolean(
+        result?.groupId && relatedScans.length > 0 && relatedScans.length < 3
+    );
+
     return (
         <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto', minHeight: 360 }}>
             {loading && (
@@ -504,6 +508,11 @@ export default function ResultsPage() {
             )}
             {!loading && result && (
         <Box component="span" sx={{ display: 'block' }}>
+            {showPartialDeviceSession && (
+                <Alert severity="info" sx={{ mb: 'var(--msqdx-spacing-sm)' }}>
+                    {t('results.sessionPartialDevicesHint')}
+                </Alert>
+            )}
             {/* Header card: Scan result title, URL, Score */}
             <MsqdxMoleculeCard
                 variant="flat"

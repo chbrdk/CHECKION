@@ -60,6 +60,7 @@ export default function ScanPage() {
     const [standard, setStandard] = useState<WcagStandard>('WCAG2AA');
     const [selectedRunners, setSelectedRunners] = useState<Runner[]>(['axe', 'htmlcs']);
     const [targetRegion, setTargetRegion] = useState('');
+    const [quickScan, setQuickScan] = useState(false);
     const [scanning, setScanning] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -172,6 +173,7 @@ export default function ScanPage() {
                         runners: selectedRunners,
                         ...(targetRegion.trim() && { targetRegion: targetRegion.trim() }),
                         ...(selectedProjectId && { projectId: selectedProjectId }),
+                        ...(quickScan ? { quickScan: true } : {}),
                     }),
                 });
 
@@ -341,16 +343,26 @@ export default function ScanPage() {
 
                     {/* Target Region (optional, single scan only) */}
                     {scanMode === 'single' && (
-                        <Box sx={{ gridColumn: { xs: '1 / -1', md: '1 / -1' } }}>
-                            <MsqdxFormField
-                                label={t('scan.targetRegionLabel')}
-                                placeholder={t('scan.targetRegionPlaceholder')}
-                                value={targetRegion}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTargetRegion(e.target.value)}
-                                disabled={scanning}
-                                fullWidth
-                            />
-                        </Box>
+                        <>
+                            <Box sx={{ gridColumn: { xs: '1 / -1', md: '1 / -1' } }}>
+                                <MsqdxFormField
+                                    label={t('scan.targetRegionLabel')}
+                                    placeholder={t('scan.targetRegionPlaceholder')}
+                                    value={targetRegion}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTargetRegion(e.target.value)}
+                                    disabled={scanning}
+                                    fullWidth
+                                />
+                            </Box>
+                            <Box sx={{ gridColumn: { xs: '1 / -1', md: '1 / -1' }, opacity: scanning ? 0.6 : 1, pointerEvents: scanning ? 'none' : 'auto' }}>
+                                <MsqdxCheckboxField
+                                    label={t('scan.quickScanLabel')}
+                                    options={[{ value: 'on', label: t('scan.quickScanOption') }]}
+                                    value={quickScan ? ['on'] : []}
+                                    onChange={(val) => setQuickScan(Array.isArray(val) && val.includes('on'))}
+                                />
+                            </Box>
+                        </>
                     )}
 
                     {/* Task (only for UX Journey) */}
