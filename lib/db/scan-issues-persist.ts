@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { and, asc, eq } from 'drizzle-orm';
 import type { Issue } from '@/lib/types';
 import { scanIssues } from '@/lib/db/schema';
-import type { Db } from '@/lib/db';
+import type { Db, DbClient } from '@/lib/db';
 
 function chunk<T>(arr: T[], size: number): T[][] {
     if (arr.length === 0) return [];
@@ -16,7 +16,7 @@ function chunk<T>(arr: T[], size: number): T[][] {
 
 /** Replace all issue rows for a scan (idempotent). */
 export async function replaceScanIssuesForScan(
-    db: Db,
+    db: DbClient,
     userId: string,
     scanId: string,
     issues: Issue[] | undefined

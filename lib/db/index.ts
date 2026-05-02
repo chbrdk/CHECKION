@@ -22,3 +22,9 @@ export function getDb() {
 }
 
 export type Db = ReturnType<typeof createDb>['db'];
+
+/** First argument to `db.transaction(async (tx) => …)` — not assignable to `Db` (no `$client`). */
+export type DbTransaction = Parameters<Parameters<Db['transaction']>[0]>[0];
+
+/** Pool-backed DB or in-flight transaction (use for helpers called inside `transaction`). */
+export type DbClient = Db | DbTransaction;
