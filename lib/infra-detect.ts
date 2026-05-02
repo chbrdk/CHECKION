@@ -3,10 +3,14 @@
  * collected in the scanner and optional HTTP response headers.
  */
 
+import { collectDetectedPlatforms } from '@/lib/infra-platform-detect';
+
 export interface DomInfraHints {
     generatorMeta: string | null;
     scriptSrcs: string[];
     linkHrefs: string[];
+    /** `img[src]` URLs — improves headless CMS / CDN detection when scripts are server-only. */
+    imgSrcs?: string[];
     inlineScriptFingerprint: string;
     hasNextData: boolean;
     hasWpJsonLink: boolean;
@@ -270,46 +274,14 @@ function collectTracking(scriptSrcs: string[], linkHrefs: string[], inline: stri
 }
 
 function collectPlatforms(hints: DomInfraHints, haystackLower: string, bundleLower: string): string[] {
-    const out: string[] = [];
-    const add = (p: string) => {
-        if (!out.includes(p)) out.push(p);
-    };
-
-    const gen = (hints.generatorMeta || '').toLowerCase();
-
-    if (hints.hasNextData || bundleLower.includes('/_next/static')) add('Next.js');
-    if (bundleLower.includes('/_nuxt/')) add('Nuxt');
-    if (/\/_app\/immutable|\/_app\/env\.js/i.test(bundleLower)) add('SvelteKit');
-    if (bundleLower.includes('@remix-run') || bundleLower.includes('/build/_shared')) add('Remix');
-    if (bundleLower.includes('astro') && /\/_astro\//i.test(bundleLower)) add('Astro');
-
-    if (
-        /cdn\.shopify\.com|shopifycdn\.com|cdn\.shopify\.com\/s\/files|myshopify\.com/i.test(bundleLower) ||
-        gen.includes('shopify')
-    ) {
-        add('Shopify');
-    }
-
-    if (hints.hasWpJsonLink || hints.hasWpContentScript || gen.includes('wordpress')) {
-        add('WordPress');
-        if (/woocommerce|wc-add-to-cart/i.test(haystackLower)) add('WooCommerce');
-    }
-
-    if (/webflow\.com|website-files\.com/i.test(bundleLower) || gen.includes('webflow')) add('Webflow');
-    if (/wix\.com|wixstatic\.com|parastorage\.com/i.test(bundleLower) || gen.includes('wix')) add('Wix');
-    if (/squarespace\.com|squarespace-cdn\.com/i.test(bundleLower) || gen.includes('squarespace')) add('Squarespace');
-    if (/framer\.com|framerusercontent\.com/i.test(bundleLower) || gen.includes('framer')) add('Framer');
-    if (/ghost\.org|ghost\.io/i.test(bundleLower) || gen.includes('ghost')) add('Ghost');
-
-    if (gen.includes('drupal') || bundleLower.includes('drupal.js')) add('Drupal');
-    if (gen.includes('joomla')) add('Joomla');
-    if (gen.includes('typo3') || bundleLower.includes('/typo3')) add('TYPO3');
-    if (gen.includes('magento') || bundleLower.includes('magento')) add('Magento');
-
-    if (/vue\.runtime|vue\.min\.js/i.test(bundleLower) && !out.includes('Nuxt')) add('Vue.js');
-    if (/angular(\.min)?\.js|ng\.version/i.test(bundleLower)) add('Angular');
-
-    return out;
+    return collectDetectedPlatforms({
+        generatorMeta: hints.generatorMeta,
+        hasNextData: hints.hasNextData,
+        hasWpJsonLink: hints.hasWpJsonLink,
+        hasWpContentScript: hints.hasWpContentScript,
+        bundleLower,
+        haystackLower,
+    });
 }
 
 function hostingFromHeaders(serverHeader: string | null, xPoweredBy: string | null): { server: string | null; poweredBy: string | null } {
@@ -342,8 +314,9 @@ export function inferInfraStackAndTracking(input: {
 
     const scriptSrcs = hints.scriptSrcs || [];
     const linkHrefs = hints.linkHrefs || [];
+    const imgSrcs = hints.imgSrcs || [];
     const inline = hints.inlineScriptFingerprint || '';
-    const bundle = [...scriptSrcs, ...linkHrefs].join('\n');
+    const bundle = [...scriptSrcs, ...linkHrefs, ...imgSrcs].join('\n');
     const bundleLower = bundle.toLowerCase();
     const haystackLower = (bundle + '\n' + inline).toLowerCase();
 

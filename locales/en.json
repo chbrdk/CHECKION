@@ -789,7 +789,12 @@
     "pageClassificationTier3": "Multiple topics / mix",
     "pageClassificationTier4": "Clearly one topic",
     "pageClassificationTier5": "Clearly dedicated to one core topic",
-    "overviewHint": "Scan details, page topic, and Eco, Performance, and UX cards are shown above."
+    "overviewHint": "Scan details, page topic, and Eco, Performance, and UX cards are shown above.",
+    "dwellEstimateTitle": "Estimated dwell time",
+    "dwellEstimateHint": "Model from text volume, readability, and interaction — not analytics.",
+    "dwellConfidenceHigh": "Higher confidence",
+    "dwellConfidenceMedium": "Medium",
+    "dwellConfidenceLow": "Low confidence"
   },
   "domainResult": {
     "loading": "Loading…",
@@ -892,6 +897,9 @@
     "uxAuditKpiReadability": "Readability",
     "uxAuditKpiReadabilityLine": "{grade} · score {score}",
     "uxAuditKpiReadabilityEmpty": "—",
+    "uxAuditDwellTitle": "Estimated dwell time (model)",
+    "uxAuditDwellLine": "Avg {avg} · range {min}–{max} · {pages}/{total} pages with estimate",
+    "uxAuditDwellHint": "Mean of per-page model estimates — not analytics.",
     "uxAuditHeadingsHint": "{multiH1} pages with H1 issues · {skipped} with skipped heading levels (out of {total} pages with UX data).",
     "uxAuditSectionPriority": "Review first (lowest UX score)",
     "uxAuditSectionPriorityIntro": "Weakest pages first. Click or press Enter to open the single-page scan with screenshots and full UX metrics.",

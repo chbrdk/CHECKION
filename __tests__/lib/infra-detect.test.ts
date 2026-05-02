@@ -103,6 +103,38 @@ describe('inferInfraStackAndTracking', () => {
         expect(gtm.length).toBe(1);
     });
 
+    it('detects TYPO3 from asset paths and Storyblok from CDN', () => {
+        const typo = inferInfraStackAndTracking({
+            hints: {
+                generatorMeta: null,
+                scriptSrcs: ['https://example.com/typo3temp/assets/js/some.js'],
+                linkHrefs: [],
+                inlineScriptFingerprint: '',
+                hasNextData: false,
+                hasWpJsonLink: false,
+                hasWpContentScript: false,
+            },
+            serverHeader: null,
+            xPoweredBy: null,
+        });
+        expect(typo.detectedPlatforms).toContain('TYPO3');
+
+        const sb = inferInfraStackAndTracking({
+            hints: {
+                generatorMeta: null,
+                scriptSrcs: ['https://a.storyblok.com/f/12345/x.jpg/m/800x0'],
+                linkHrefs: [],
+                inlineScriptFingerprint: '',
+                hasNextData: false,
+                hasWpJsonLink: false,
+                hasWpContentScript: false,
+            },
+            serverHeader: null,
+            xPoweredBy: null,
+        });
+        expect(sb.detectedPlatforms).toContain('Storyblok');
+    });
+
     it('detects a CMP from script URL (Consent Manager)', () => {
         const r = inferInfraStackAndTracking({
             hints: {

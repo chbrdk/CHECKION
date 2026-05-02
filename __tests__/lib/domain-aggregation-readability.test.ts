@@ -74,4 +74,17 @@ describe('aggregateUx readability', () => {
         ]);
         expect(out!.readability.hardestPages[0].score).toBe(16);
     });
+
+    it('aggregates dwell model medians across pages', () => {
+        const out = aggregateUx([
+            page('https://ex.test/a', { dwellEstimate: { model: 'dwell_v1', secondsMedian: 60, secondsMin: 40, secondsMax: 90, confidence: 'medium', summaryDe: '', factors: { readingBaseSeconds: 40, wordsPerMinuteUsed: 200, interactionBonusSeconds: 10, frictionPenaltySeconds: 0, scrollBonusSeconds: 10, archetype: 'content' } } }),
+            page('https://ex.test/b', { dwellEstimate: { model: 'dwell_v1', secondsMedian: 120, secondsMin: 80, secondsMax: 160, confidence: 'high', summaryDe: '', factors: { readingBaseSeconds: 100, wordsPerMinuteUsed: 200, interactionBonusSeconds: 0, frictionPenaltySeconds: 0, scrollBonusSeconds: 20, archetype: 'content' } } }),
+        ]);
+        expect(out!.dwellTime).toEqual({
+            avgMedianSeconds: 90,
+            minPageMedianSeconds: 60,
+            maxPageMedianSeconds: 120,
+            pagesWithEstimate: 2,
+        });
+    });
 });

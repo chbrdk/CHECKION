@@ -140,6 +140,15 @@ export interface AggregatedUx {
   pageCount: number;
   /** Pages sorted by UX score asc (worst first) for prioritization. */
   pagesByScore: Array<{ url: string; score: number; cls: number }>;
+  /**
+   * Mean of per-page `dwellEstimate.secondsMedian` where present (modelled, not analytics).
+   */
+  dwellTime?: {
+    avgMedianSeconds: number;
+    minPageMedianSeconds: number;
+    maxPageMedianSeconds: number;
+    pagesWithEstimate: number;
+  };
 }
 
 export function aggregateUx(pages: ScanResult[]): AggregatedUx | null {
@@ -196,6 +205,23 @@ export function aggregateUx(pages: ScanResult[]): AggregatedUx | null {
     .sort((a, b) => b.score - a.score)
     .slice(0, 8);
 
+  const dwellMedians: number[] = [];
+  for (const p of withUx) {
+    const m = p.ux?.dwellEstimate?.secondsMedian;
+    if (m != null && Number.isFinite(m)) dwellMedians.push(m);
+  }
+  const dwellTime: AggregatedUx['dwellTime'] =
+    dwellMedians.length > 0
+      ? {
+          avgMedianSeconds: Math.round(
+            dwellMedians.reduce((a, b) => a + b, 0) / dwellMedians.length
+          ),
+          minPageMedianSeconds: Math.min(...dwellMedians),
+          maxPageMedianSeconds: Math.max(...dwellMedians),
+          pagesWithEstimate: dwellMedians.length,
+        }
+      : undefined;
+
   return {
     score: Math.round(scoreSum / n),
     cls: Math.round((clsSum / n) * 1000) / 1000,
@@ -219,6 +245,7 @@ export function aggregateUx(pages: ScanResult[]): AggregatedUx | null {
     },
     pageCount: n,
     pagesByScore,
+    ...(dwellTime ? { dwellTime } : {}),
   };
 }
 

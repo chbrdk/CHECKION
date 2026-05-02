@@ -72,6 +72,39 @@ export interface FocusOrder {
     rect: { x: number; y: number; width: number; height: number };
 }
 
+export type DwellPageArchetype = 'thin' | 'content' | 'interactive' | 'mixed';
+
+/** Inputs for `estimateDwellTime` (crawl-derived). */
+export interface DwellTimeEstimateInput {
+    bodyWordCount: number;
+    readabilityGradeLevel: number;
+    brokenLinkCount: number;
+    internalLinkCount: number;
+    formFieldCount: number;
+    videoCount: number;
+    audioCount: number;
+    scrollHeightOverVh: number;
+    skinnyContent: boolean;
+}
+
+/** Heuristic time-on-page estimate from crawl metrics (not analytics). See `lib/estimate-dwell-time.ts`. */
+export interface DwellTimeEstimate {
+    model: 'dwell_v1';
+    secondsMedian: number;
+    secondsMin: number;
+    secondsMax: number;
+    confidence: 'low' | 'medium' | 'high';
+    summaryDe: string;
+    factors: {
+        readingBaseSeconds: number;
+        wordsPerMinuteUsed: number;
+        interactionBonusSeconds: number;
+        frictionPenaltySeconds: number;
+        scrollBonusSeconds: number;
+        archetype: DwellPageArchetype;
+    };
+}
+
 export interface UxResult {
     score: number;
     cls: number;
@@ -79,6 +112,8 @@ export interface UxResult {
         grade: string;
         score: number;
     };
+    /** Optional: modelled dwell time — no real user sessions. */
+    dwellEstimate?: DwellTimeEstimate | null;
     tapTargets: {
         issues: string[];
         details?: TouchTargetIssue[]; // Added details

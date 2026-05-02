@@ -1,5 +1,8 @@
+'use client';
+
 import React from 'react';
 import { Box, LinearProgress, Stack } from '@mui/material';
+import { useLocale, useTranslations } from 'next-intl';
 import {
     MsqdxTypography,
     MsqdxMoleculeCard,
@@ -13,8 +16,9 @@ import {
     MSQDX_STATUS,
     MSQDX_NEUTRAL
 } from '@msqdx/tokens';
-import { Laptop, Smartphone, Type, MousePointerClick } from 'lucide-react';
+import { Smartphone, Type, MousePointerClick, Clock } from 'lucide-react';
 import type { UxResult } from '@/lib/types';
+import { formatDwellRange, formatDwellSeconds, type DwellLocale } from '@/lib/format-dwell-duration';
 
 interface UxCardProps {
     ux: UxResult;
@@ -22,10 +26,9 @@ interface UxCardProps {
 }
 
 export const UxCard = ({ ux, sx }: UxCardProps) => {
-    // Determine Score Color
-    let scoreColor: string = MSQDX_STATUS.success.base;
-    if (ux.score < 50) scoreColor = MSQDX_STATUS.error.base;
-    else if (ux.score < 80) scoreColor = MSQDX_STATUS.warning.base;
+    const t = useTranslations('results');
+    const locale = useLocale();
+    const dwellLocale: DwellLocale = locale === 'en' ? 'en' : 'de';
 
     // CLS Color
     const clsColor = ux.cls <= 0.1 ? MSQDX_STATUS.success.base : ux.cls <= 0.25 ? MSQDX_STATUS.warning.base : MSQDX_STATUS.error.base;
@@ -98,6 +101,45 @@ export const UxCard = ({ ux, sx }: UxCardProps) => {
                             </MsqdxTypography>
                         </Stack>
                     </Box>
+
+                    {ux.dwellEstimate ? (
+                        <Box>
+                            <Stack direction="row" alignItems="center" spacing={1} mb={0.5}>
+                                <Clock size={16} />
+                                <MsqdxTypography variant="body2" color="textSecondary">
+                                    {t('dwellEstimateTitle')}
+                                </MsqdxTypography>
+                                <MsqdxTooltip title={ux.dwellEstimate.summaryDe}>
+                                    <MsqdxTypography variant="caption" sx={{ cursor: 'help', color: MSQDX_BRAND_PRIMARY.purple }}>
+                                        ?
+                                    </MsqdxTypography>
+                                </MsqdxTooltip>
+                            </Stack>
+                            <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap" useFlexGap>
+                                <MsqdxTypography variant="subtitle1" sx={{ fontWeight: 600, color: MSQDX_BRAND_PRIMARY.green }}>
+                                    {formatDwellSeconds(ux.dwellEstimate.secondsMedian, dwellLocale)}
+                                </MsqdxTypography>
+                                <MsqdxTypography variant="caption" color="textSecondary">
+                                    ({formatDwellRange(ux.dwellEstimate.secondsMin, ux.dwellEstimate.secondsMax, dwellLocale)})
+                                </MsqdxTypography>
+                                <MsqdxChip
+                                    size="small"
+                                    label={
+                                        ux.dwellEstimate.confidence === 'high'
+                                            ? t('dwellConfidenceHigh')
+                                            : ux.dwellEstimate.confidence === 'low'
+                                              ? t('dwellConfidenceLow')
+                                              : t('dwellConfidenceMedium')
+                                    }
+                                    variant="outlined"
+                                    sx={{ height: 22, fontSize: '0.65rem' }}
+                                />
+                            </Stack>
+                            <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'text.secondary', lineHeight: 1.4 }}>
+                                {t('dwellEstimateHint')}
+                            </MsqdxTypography>
+                        </Box>
+                    ) : null}
 
                     {/* Mobile & Touch */}
                     <Stack direction="row" spacing={2}>

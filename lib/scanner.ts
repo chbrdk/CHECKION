@@ -29,6 +29,7 @@ import type {
 import { normalizeScanResultForPersist } from '@/lib/scan-result-shape';
 import { scanDebugLog, scanDebugWarn } from './scan-debug-log';
 import { buildPrivacyAudit } from '@/lib/privacy-scan-heuristics';
+import { estimateDwellTime } from '@/lib/estimate-dwell-time';
 import { inferInfraStackAndTracking, mergeTrackingFromThirdPartyHosts } from '@/lib/infra-detect';
 import type { DomInfraHints } from '@/lib/infra-detect';
 
@@ -966,17 +967,56 @@ export async function runScan(
                             return el.getAttribute('href') || '';
                         }
                     }).filter(Boolean).slice(0, 60),
+                    imgSrcs: Array.from(document.querySelectorAll('img[src]')).map(function (el) {
+                        try {
+                            return (el as HTMLImageElement).src || el.getAttribute('src') || '';
+                        } catch {
+                            return el.getAttribute('src') || '';
+                        }
+                    }).filter(Boolean).slice(0, 120),
                     inlineScriptFingerprint: Array.from(document.querySelectorAll('script:not([src])')).slice(0, 30).map(function (s) {
                         return (s.textContent || '').slice(0, 400);
                     }).join('\n').slice(0, 15000),
                     hasNextData: !!document.getElementById('__NEXT_DATA__'),
                     hasWpJsonLink: !!document.querySelector('link[href*="wp-json"]'),
                     hasWpContentScript: !!document.querySelector('script[src*="wp-content"], script[src*="wp-includes"]')
+                },
+                dwellSignals: {
+                    formFieldCount: document.querySelectorAll(
+                        'form input:not([type="hidden"]), form select, form textarea'
+                    ).length,
+                    videoCount: document.querySelectorAll('video').length,
+                    audioCount: document.querySelectorAll('audio').length,
+                    scrollHeightOverVh: Math.min(
+                        50,
+                        Math.round(document.documentElement.scrollHeight / Math.max(window.innerHeight, 1))
+                    )
                 }
             };
         });
 
         let seoAudit: SeoAudit = seoAndMeta.seo as SeoAudit;
+        const metaDwell = (
+            seoAndMeta as {
+                dwellSignals?: {
+                    formFieldCount: number;
+                    videoCount: number;
+                    audioCount: number;
+                    scrollHeightOverVh: number;
+                };
+            }
+        ).dwellSignals;
+        const dwellEstimate = estimateDwellTime({
+            bodyWordCount: seoAudit.bodyWordCount ?? 0,
+            readabilityGradeLevel: readabilityResult.score,
+            brokenLinkCount: linkAudit.broken.length,
+            internalLinkCount: linkAudit.internal,
+            formFieldCount: metaDwell?.formFieldCount ?? 0,
+            videoCount: metaDwell?.videoCount ?? 0,
+            audioCount: metaDwell?.audioCount ?? 0,
+            scrollHeightOverVh: metaDwell?.scrollHeightOverVh ?? 1,
+            skinnyContent: !!seoAudit.skinnyContent
+        });
         const seoExtras = seoAndMeta as {
             privacyLinkRows?: Array<{ text: string; href: string }>;
             cookieBannerHeuristic?: boolean;
@@ -1580,6 +1620,7 @@ export async function runScan(
         const uxResult: ScanResult['ux'] = {
             score: uxScore,
             cls: parseFloat(clsScore.toFixed(3)),
+            ...(dwellEstimate != null ? { dwellEstimate } : {}),
             readability: readabilityResult,
             viewport: {
                 isMobileFriendly: viewportCheck.isMobileFriendly,

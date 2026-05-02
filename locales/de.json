@@ -789,7 +789,12 @@
     "pageClassificationTier3": "Mehrere Themen / Mischung",
     "pageClassificationTier4": "Eindeutig ein Thema",
     "pageClassificationTier5": "Klar einem Kernthema gewidmet",
-    "overviewHint": "Scan-Infos, Seitenthema sowie Eco-, Performance- und UX-Karten befinden sich oben."
+    "overviewHint": "Scan-Infos, Seitenthema sowie Eco-, Performance- und UX-Karten befinden sich oben.",
+    "dwellEstimateTitle": "Geschätzte Verweildauer",
+    "dwellEstimateHint": "Modell aus Textumfang, Lesbarkeit und Interaktion — kein Analytics-Wert.",
+    "dwellConfidenceHigh": "Relativ sicher",
+    "dwellConfidenceMedium": "Mittel",
+    "dwellConfidenceLow": "Unsicher"
   },
   "domainResult": {
     "loading": "Laden…",
@@ -892,6 +897,9 @@
     "uxAuditKpiReadability": "Lesbarkeit",
     "uxAuditKpiReadabilityLine": "{grade} · Score {score}",
     "uxAuditKpiReadabilityEmpty": "—",
+    "uxAuditDwellTitle": "Geschätzte Verweildauer (Modell)",
+    "uxAuditDwellLine": "Ø {avg} · Spanne {min}–{max} · {pages}/{total} Seiten mit Schätzung",
+    "uxAuditDwellHint": "Mittelwert aus den Seiten-Modellschätzungen — kein Analytics-Wert.",
     "uxAuditHeadingsHint": "{multiH1} Seiten mit H1-Auffälligkeiten · {skipped} mit übersprungenen Überschriften-Ebenen (von {total} Seiten mit UX-Daten).",
     "uxAuditSectionPriority": "Zuerst prüfen (niedrigster UX-Score)",
     "uxAuditSectionPriorityIntro": "Oben die schwächsten Seiten. Klick oder Enter öffnet den Einzelscan mit Screenshots und allen UX-Metriken.",

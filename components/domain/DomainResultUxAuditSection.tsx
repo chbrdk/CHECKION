@@ -8,6 +8,8 @@ import { MSQDX_INNER_CARD_BORDER_SX, THEME_ACCENT_CSS, THEME_ACCENT_TINT_CSS } f
 import { formatUrlForList } from '@/lib/format-url-display';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import type { AggregatedUx, ReadabilityBandKey } from '@/lib/domain-aggregation';
+import { useLocale } from 'next-intl';
+import { formatDwellSeconds, type DwellLocale } from '@/lib/format-dwell-duration';
 
 export type DomainResultUxAuditSectionProps = {
     t: (key: string, params?: Record<string, string | number>) => string;
@@ -119,6 +121,8 @@ const UxAuditPageRow = memo(function UxAuditPageRow({ url, ariaLabel, onOpen, ch
 const READABILITY_BAND_KEYS: ReadabilityBandKey[] = ['easy', 'standard', 'complex', 'veryComplex'];
 
 function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl }: DomainResultUxAuditSectionProps) {
+    const locale = useLocale();
+    const dwellLocale: DwellLocale = locale === 'en' ? 'en' : 'de';
     const hh = ux.headingHierarchy;
     const showHeadingsHint =
         hh.totalPages > 0 && (hh.pagesWithMultipleH1 > 0 || hh.pagesWithSkippedLevels > 0);
@@ -432,6 +436,32 @@ function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl }: DomainResultU
                         </MsqdxTypography>
                     </Box>
                 </Box>
+                {ux.dwellTime ? (
+                    <Box
+                        sx={{
+                            p: 1.5,
+                            borderRadius: 'var(--msqdx-radius-md)',
+                            ...MSQDX_INNER_CARD_BORDER_SX,
+                            bgcolor: 'var(--color-card-bg)',
+                        }}
+                    >
+                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                            {t('domainResult.uxAuditDwellTitle')}
+                        </MsqdxTypography>
+                        <MsqdxTypography variant="body1" sx={{ fontWeight: 600, mt: 0.5, lineHeight: 1.35 }}>
+                            {t('domainResult.uxAuditDwellLine', {
+                                avg: formatDwellSeconds(ux.dwellTime.avgMedianSeconds, dwellLocale),
+                                min: formatDwellSeconds(ux.dwellTime.minPageMedianSeconds, dwellLocale),
+                                max: formatDwellSeconds(ux.dwellTime.maxPageMedianSeconds, dwellLocale),
+                                pages: ux.dwellTime.pagesWithEstimate,
+                                total: ux.pageCount,
+                            })}
+                        </MsqdxTypography>
+                        <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 0.75, color: 'var(--color-text-muted-on-light)', lineHeight: 1.45 }}>
+                            {t('domainResult.uxAuditDwellHint')}
+                        </MsqdxTypography>
+                    </Box>
+                ) : null}
                 {showHeadingsHint ? (
                     <MsqdxTypography variant="caption" sx={{ display: 'block', color: 'var(--color-text-muted-on-light)', lineHeight: 1.45 }}>
                         {t('domainResult.uxAuditHeadingsHint', {
