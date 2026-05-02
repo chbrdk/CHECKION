@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Box, CircularProgress, alpha } from '@mui/material';
@@ -43,9 +44,21 @@ import { readScanNdjsonStream } from '@/lib/scan-stream-parse';
 import { useStatusUi } from '@/components/status/StatusUiContext';
 import { ensureUrlWithScheme } from '@/lib/url-normalize';
 
+/** Cookie-based API calls: always send credentials; retry once after 401 so the first click works once NextAuth session is synced. */
+async function fetchWithSessionCookies(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+    const merged: RequestInit = { ...init, credentials: 'include' };
+    let res = await fetch(input, merged);
+    if (res.status === 401) {
+        await getSession();
+        res = await fetch(input, merged);
+    }
+    return res;
+}
+
 export default function ScanPage() {
     const router = useRouter();
     const { t } = useI18n();
+    const { status: sessionStatus } = useSession();
     const { singlePageScan } = useStatusUi();
     const STANDARDS: { value: WcagStandard; label: string }[] = [
         { value: 'WCAG2A', label: t('standards.wcag2a') },
@@ -114,6 +127,10 @@ export default function ScanPage() {
         setScanning(true);
 
         try {
+            if (sessionStatus === 'loading') {
+                await getSession();
+            }
+
             if (scanMode === 'geoEeat') {
                 const body: { url: string; runCompetitive?: boolean; competitors?: string[]; queries?: string[]; projectId?: string | null } = { url: urlForRequest };
                 if (geoEeatCompetitive) {
@@ -122,7 +139,7 @@ export default function ScanPage() {
                     body.queries = geoEeatQueries.trim().split(/\n/).map((s) => s.trim()).filter(Boolean);
                 }
                 if (selectedProjectId) body.projectId = selectedProjectId;
-                const res = await fetch(apiScanGeoEeatCreate, {
+                const res = await fetchWithSessionCookies(apiScanGeoEeatCreate, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body),
@@ -138,7 +155,7 @@ export default function ScanPage() {
                 return;
             }
             if (scanMode === 'journey') {
-                const res = await fetch(apiScanJourneyAgentCreate, {
+                const res = await fetchWithSessionCookies(apiScanJourneyAgentCreate, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url: urlForRequest, task: task.trim(), ...(selectedProjectId && { projectId: selectedProjectId }) }),
@@ -161,7 +178,7 @@ export default function ScanPage() {
             if (scanMode === 'single') {
                 singlePageScan.openSession();
 
-                const res = await fetch(apiScanCreate, {
+                const res = await fetchWithSessionCookies(apiScanCreate, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -188,11 +205,13 @@ export default function ScanPage() {
                 }
 
                 if (ct.includes('ndjson')) {
+                    let streamFinished = false;
                     try {
                         for await (const line of readScanNdjsonStream(res.body)) {
                             if (line.type === 'progress') {
                                 singlePageScan.applyProgressLine(line);
                             } else if (line.type === 'complete') {
+                                streamFinished = true;
                                 singlePageScan.close();
                                 router.push(pathResults(line.data.id));
                                 setScanning(false);
@@ -210,9 +229,12 @@ export default function ScanPage() {
                         setScanning(false);
                         return;
                     }
-                    singlePageScan.close();
-                    setScanning(false);
-                    return;
+                    if (!streamFinished) {
+                        setError(t('scan.streamIncomplete'));
+                        singlePageScan.close();
+                        setScanning(false);
+                        return;
+                    }
                 }
 
                 const data = await res.json();
@@ -234,7 +256,7 @@ export default function ScanPage() {
                 // Or better, start it here and redirect to /scan/domain?url=... which handles picking up the ID
 
                 // Let's trigger it directly via API to be cleaner
-                const res = await fetch(apiScanDomainCreate, {
+                const res = await fetchWithSessionCookies(apiScanDomainCreate, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url: urlForRequest, ...(selectedProjectId && { projectId: selectedProjectId }) }),
@@ -295,7 +317,12 @@ export default function ScanPage() {
                         brandColor="green"
                         size="medium"
                         onClick={handleScan}
-                        disabled={!url.trim() || scanning || (scanMode === 'journey' && !task.trim())}
+                        disabled={
+                            !url.trim() ||
+                            scanning ||
+                            sessionStatus === 'loading' ||
+                            (scanMode === 'journey' && !task.trim())
+                        }
                         loading={scanning}
                         sx={{ minWidth: 150 }}
                     >
@@ -407,7 +434,7 @@ export default function ScanPage() {
                                                 const controller = new AbortController();
                                                 const timeoutId = setTimeout(() => controller.abort(), 60000);
                                                 try {
-                                                    const res = await fetch(apiScanGeoEeatSuggestQueries, {
+                                                    const res = await fetchWithSessionCookies(apiScanGeoEeatSuggestQueries, {
                                                         method: 'POST',
                                                         headers: { 'Content-Type': 'application/json' },
                                                         body: JSON.stringify({ url: suggestUrl }),

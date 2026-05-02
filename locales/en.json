@@ -518,6 +518,7 @@
     "startCta": "Start scan",
     "scanningCta": "Scanning…",
     "error": "Scan failed",
+    "streamIncomplete": "The scan response was incomplete. Please try again.",
     "networkError": "Network error. Please check your connection.",
     "analyzing": "Loading and analyzing the page. This may take a few seconds…",
     "progress": {
