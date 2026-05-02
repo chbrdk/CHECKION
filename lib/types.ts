@@ -142,7 +142,20 @@ export interface UxResult {
     resourceHints?: { preload: string[]; preconnect: string[] };
     reducedMotionInCss?: boolean;
     focusVisibleFailCount?: number;
-    mediaAccessibility?: { videosWithoutCaptions: number; audiosWithoutTranscript: number };
+    mediaAccessibility?: {
+        videosWithoutCaptions: number;
+        audiosWithoutTranscript: number;
+        /** `<video>` elements missing a captions/subtitles track. */
+        videosMissingCaptionTrack?: number;
+    };
+    /** Long tasks observed after load (lab; browser-dependent). */
+    longTasks?: { count: number; maxDurationMs: number };
+    /** Form field heuristics beyond orphan inputs. */
+    formAccessibility?: {
+        missingAutocomplete: number;
+        suspiciousInputType: number;
+        ariaInvalidWithoutDescription: number;
+    };
     headingHierarchy?: {
         hasSingleH1: boolean;
         h1Count: number;
@@ -307,17 +320,27 @@ export type ScanResult = {
         windowLoad: number;
         lcp: number;
         inp?: number | null;
+        /** Navigation Timing `nextHopProtocol` when available (e.g. h2, h3). */
+        nextHopProtocol?: string | null;
+        /** Sum of Content-Length for script responses (approximate; 0 if unknown). */
+        scriptTransferBytesApprox?: number;
     };
     eco: {
         co2: number;
         grade: 'A+' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
         pageWeight: number;
+        /** The Green Web Foundation (optional; requires API / env). */
+        greenWebHosted?: boolean | null;
+        greenWebCheckedAt?: string;
+        greenWebSource?: string;
     };
     ux?: UxResult;
     seo?: SeoAudit;
     links?: LinkAudit;
     geo?: GeoAudit;
     privacy?: PrivacyAudit;
+    /** Heuristic consent/CMP signals (separate from PrivacyAudit legal links). */
+    consentSignals?: ConsentSignals;
     /** E-E-A-T page-level signals (for domain aggregation). */
     eeatSignals?: EeatPageSignals;
     generative?: GenerativeEngineAudit;
@@ -349,6 +372,15 @@ export interface TechnicalInsights {
     serviceWorkerRegistered?: boolean;
     redirectCount?: number;
     metaRefreshPresent?: boolean;
+    /** Main HTML `Cache-Control` / `ETag` hints (lab snapshot). */
+    mainDocumentCache?: {
+        cacheControl: string | null;
+        etagPresent: boolean;
+        /** Heuristic: long max-age on HTML may be undesirable for freshness. */
+        htmlLongCache?: boolean;
+    };
+    /** Heuristic: static JS/CSS assets with short/no cache (first N samples). */
+    staticAssetCacheWeak?: boolean;
 }
 
 /** Single keyword with frequency and density (content analysis). */
@@ -393,6 +425,8 @@ export interface SeoAudit {
     structuredDataRequiredFields?: Array<{ type: string; missing: string[] }>;
     /** Keyword extraction from body, density, and presence in title/H1/meta. */
     keywordAnalysis?: SeoKeywordAnalysis;
+    /** VideoObject / Product JSON-LD missing recommended fields for rich results. */
+    jsonLdRichResultGaps?: Array<{ schemaType: string; missing: string[] }>;
 }
 
 /** AI-recommended Schema.org types for GEO */
@@ -495,6 +529,21 @@ export interface PrivacyAudit {
     hasTermsOfService: boolean;
 }
 
+/** Heuristic consent / CMP signals (single scan); not legal advice. */
+export interface ConsentSignals {
+    tcfApiPresent?: boolean;
+    /** CMP-related DOM hints matched (e.g. cookiebot, onetrust). */
+    cmpDomHints?: string[];
+    /** First N `dataLayer` entries stringified (truncated). */
+    dataLayerPreview?: string[];
+    /** True when inline or external gtag/gtm patterns detected. */
+    inlineGtmOrGtagDetected?: boolean;
+    /** Substrings suggesting Google Consent Mode v2-style config. */
+    consentModeHints?: string[];
+    /** Third-party script hosts seen early in navigation (capped). */
+    earlyThirdPartyScriptHosts?: string[];
+}
+
 /** Per-page E-E-A-T signals (for domain-scan aggregation). */
 export interface EeatPageSignals {
     hasImpressum: boolean;
@@ -533,6 +582,10 @@ export interface SecurityAudit {
     xContentTypeOptions: { present: boolean; value?: string };
     strictTransportSecurity: { present: boolean; value?: string };
     referrerPolicy: { present: boolean; value?: string };
+    permissionsPolicy?: { present: boolean; value?: string };
+    crossOriginOpenerPolicy?: { present: boolean; value?: string };
+    crossOriginEmbedderPolicy?: { present: boolean; value?: string };
+    crossOriginResourcePolicy?: { present: boolean; value?: string };
     mixedContentUrls?: string[];
     sriMissing?: Array<{ tag: string; url: string }>;
     cookieWarnings?: Array<{ message: string }>;

@@ -8,13 +8,26 @@ import { MSQDX_STATUS, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
 import type { SecurityAudit } from '@/lib/types';
 import { ShieldCheck, ShieldAlert } from 'lucide-react';
 
-type SecurityHeaderKey = 'contentSecurityPolicy' | 'xFrameOptions' | 'xContentTypeOptions' | 'strictTransportSecurity' | 'referrerPolicy';
+type SecurityHeaderKey =
+    | 'contentSecurityPolicy'
+    | 'xFrameOptions'
+    | 'xContentTypeOptions'
+    | 'strictTransportSecurity'
+    | 'referrerPolicy'
+    | 'permissionsPolicy'
+    | 'crossOriginOpenerPolicy'
+    | 'crossOriginEmbedderPolicy'
+    | 'crossOriginResourcePolicy';
 const HEADER_LABELS: Array<{ key: SecurityHeaderKey; label: string }> = [
     { key: 'contentSecurityPolicy', label: 'Content-Security-Policy' },
     { key: 'xFrameOptions', label: 'X-Frame-Options' },
     { key: 'xContentTypeOptions', label: 'X-Content-Type-Options' },
     { key: 'strictTransportSecurity', label: 'Strict-Transport-Security' },
     { key: 'referrerPolicy', label: 'Referrer-Policy' },
+    { key: 'permissionsPolicy', label: 'Permissions-Policy' },
+    { key: 'crossOriginOpenerPolicy', label: 'Cross-Origin-Opener-Policy' },
+    { key: 'crossOriginEmbedderPolicy', label: 'Cross-Origin-Embedder-Policy' },
+    { key: 'crossOriginResourcePolicy', label: 'Cross-Origin-Resource-Policy' },
 ];
 
 export function SecurityCard({ security }: { security: SecurityAudit }) {

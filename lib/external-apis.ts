@@ -23,3 +23,12 @@ export const API_SERP_BASE =
 
 /** ScrapingRobot – Google SERP API. Free tier ~5,000 requests/month. Single endpoint. */
 export const API_SCRAPINGROBOT_BASE = 'https://api.scrapingrobot.com';
+
+/**
+ * The Green Web Foundation – hostname greencheck (optional; enable via env).
+ * @see https://developers.thegreenwebfoundation.org/
+ */
+export const API_GREEN_WEB_GREENCHECK_BASE =
+    (typeof process !== 'undefined' && process.env?.GREEN_WEB_API_BASE?.trim())
+        ? process.env.GREEN_WEB_API_BASE.replace(/\/$/, '')
+        : 'https://api.thegreenwebfoundation.org';

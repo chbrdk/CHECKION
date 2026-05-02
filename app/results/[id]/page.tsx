@@ -1466,13 +1466,17 @@ export default function ResultsPage() {
                     gap: 'var(--msqdx-spacing-md)'
                 }}>
                     {result.geo ? (
-                        <InfraCard geo={result.geo} />
+                        <InfraCard
+                            geo={result.geo}
+                            performance={result.performance}
+                            technicalInsights={result.technicalInsights}
+                        />
                     ) : (
                         <MsqdxMoleculeCard title="Infrastruktur" subtitle="No data." sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-card-border)' }}><MsqdxTypography>Keine Infrastruktur-Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
                     )}
 
                     {result.privacy ? (
-                        <PrivacyCard privacy={result.privacy} />
+                        <PrivacyCard privacy={result.privacy} consentSignals={result.consentSignals} />
                     ) : (
                         <MsqdxMoleculeCard title="Privacy Audit" subtitle="No Privacy data." sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-card-border)' }}><MsqdxTypography>Keine Privacy-Daten verfügbar.</MsqdxTypography></MsqdxMoleculeCard>
                     )}

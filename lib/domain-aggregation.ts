@@ -23,6 +23,7 @@ import type {
   AggregatedPageClassificationTheme,
   AggregatedPageClassificationThemeRelatedPage,
   TagTier,
+  ConsentSignals,
 } from './types';
 
 /** Issue grouped by code across pages; one representative issue + page list. */
@@ -149,6 +150,10 @@ export interface AggregatedUx {
     maxPageMedianSeconds: number;
     pagesWithEstimate: number;
   };
+  /** Lab long-task stats (browser-dependent). */
+  labLongTasks?: { totalCount: number; maxMaxDurationMs: number; pagesWithAny: number };
+  /** Approximate script transfer bytes (lab). */
+  labScriptBytesAvg?: number;
 }
 
 export function aggregateUx(pages: ScanResult[]): AggregatedUx | null {
@@ -206,9 +211,25 @@ export function aggregateUx(pages: ScanResult[]): AggregatedUx | null {
     .slice(0, 8);
 
   const dwellMedians: number[] = [];
+  let longTaskCountSum = 0;
+  let longTaskMaxOfMax = 0;
+  let pagesWithLongTasks = 0;
+  let scriptBytesSum = 0;
+  let pagesWithScriptBytes = 0;
   for (const p of withUx) {
     const m = p.ux?.dwellEstimate?.secondsMedian;
     if (m != null && Number.isFinite(m)) dwellMedians.push(m);
+    const lt = p.ux?.longTasks;
+    if (lt && lt.count > 0) {
+      longTaskCountSum += lt.count;
+      pagesWithLongTasks++;
+      if (lt.maxDurationMs > longTaskMaxOfMax) longTaskMaxOfMax = lt.maxDurationMs;
+    }
+    const sb = p.performance?.scriptTransferBytesApprox;
+    if (sb != null && sb > 0) {
+      scriptBytesSum += sb;
+      pagesWithScriptBytes++;
+    }
   }
   const dwellTime: AggregatedUx['dwellTime'] =
     dwellMedians.length > 0
@@ -221,6 +242,17 @@ export function aggregateUx(pages: ScanResult[]): AggregatedUx | null {
           pagesWithEstimate: dwellMedians.length,
         }
       : undefined;
+
+  const labLongTasks: AggregatedUx['labLongTasks'] =
+    pagesWithLongTasks > 0
+      ? {
+          totalCount: longTaskCountSum,
+          maxMaxDurationMs: longTaskMaxOfMax,
+          pagesWithAny: pagesWithLongTasks,
+        }
+      : undefined;
+  const labScriptBytesAvg =
+    pagesWithScriptBytes > 0 ? Math.round(scriptBytesSum / pagesWithScriptBytes) : undefined;
 
   return {
     score: Math.round(scoreSum / n),
@@ -246,6 +278,8 @@ export function aggregateUx(pages: ScanResult[]): AggregatedUx | null {
     pageCount: n,
     pagesByScore,
     ...(dwellTime ? { dwellTime } : {}),
+    ...(labLongTasks ? { labLongTasks } : {}),
+    ...(labScriptBytesAvg != null ? { labScriptBytesAvg } : {}),
   };
 }
 
@@ -293,9 +327,32 @@ export interface AggregatedSeo {
   crossPageKeywords: CrossPageKeyword[];
   /** Total words across all pages (for domain-wide density context). */
   totalWordsAcrossPages: number;
+  /** Same normalized title on 2+ URLs (capped list). */
+  duplicateTitleGroups?: Array<{ normalizedTitle: string; urls: string[] }>;
+  /** Same normalized meta description on 2+ URLs (capped). */
+  duplicateMetaDescriptionGroups?: Array<{ normalizedMeta: string; urls: string[] }>;
+  /** Canonical URL does not match page URL after normalization. */
+  canonicalMismatchUrls?: string[];
+  /** Distinct `x-default` href targets (hreflang); >1 suggests inconsistency. */
+  hreflangXDefaultDistinctTargets?: string[];
+  hreflangXDefaultConflict?: boolean;
 }
 
 const SKINNY_WORD_THRESHOLD = 300;
+
+function normalizeSeoText(s: string | null | undefined): string {
+  if (s == null) return '';
+  return s.replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+function normalizeUrlForCompare(pageUrl: string, href: string | null | undefined): string | null {
+  if (href == null || !String(href).trim()) return null;
+  try {
+    return new URL(href, pageUrl).href.replace(/\/$/, '');
+  } catch {
+    return null;
+  }
+}
 
 export function aggregateSeo(pages: ScanResult[]): AggregatedSeo | null {
   const withSeo = pages.filter((p) => p.seo != null);
@@ -310,6 +367,10 @@ export function aggregateSeo(pages: ScanResult[]): AggregatedSeo | null {
   const pagesList: PageSeoSummary[] = [];
   const keywordMap = new Map<string, { totalCount: number; pageUrls: Set<string>; densitySum: number; densityCount: number }>();
   let totalWordsAcrossPages = 0;
+  const titleToUrls = new Map<string, string[]>();
+  const metaToUrls = new Map<string, string[]>();
+  const canonicalMismatchUrls: string[] = [];
+  const xDefaultTargets = new Set<string>();
 
   for (const p of withSeo) {
     const seo = p.seo!;
@@ -340,6 +401,33 @@ export function aggregateSeo(pages: ScanResult[]): AggregatedSeo | null {
       topKeywordCount,
       isSkinny: wordCount > 0 && wordCount < SKINNY_WORD_THRESHOLD,
     });
+
+    const nt = normalizeSeoText(seo.title);
+    if (nt.length >= 3) {
+      const arr = titleToUrls.get(nt) ?? [];
+      arr.push(p.url);
+      titleToUrls.set(nt, arr);
+    }
+    const nm = normalizeSeoText(seo.metaDescription);
+    if (nm.length >= 20) {
+      const arr = metaToUrls.get(nm) ?? [];
+      arr.push(p.url);
+      metaToUrls.set(nm, arr);
+    }
+    const can = seo.canonical?.trim();
+    if (can) {
+      const resolved = normalizeUrlForCompare(p.url, can);
+      const pageNorm = normalizeUrlForCompare(p.url, p.url);
+      if (resolved && pageNorm && resolved !== pageNorm) canonicalMismatchUrls.push(p.url);
+    }
+    const hreflangs = p.geo?.languages?.hreflangs ?? [];
+    for (const h of hreflangs) {
+      const lang = (h.lang || '').toLowerCase().trim();
+      if (lang === 'x-default' && h.href) {
+        const t = normalizeUrlForCompare(p.url, h.href);
+        if (t) xDefaultTargets.add(t);
+      }
+    }
 
     for (const item of topKeywords) {
       const key = item.keyword.toLowerCase().trim();
@@ -373,6 +461,19 @@ export function aggregateSeo(pages: ScanResult[]): AggregatedSeo | null {
     .sort((a, b) => b.totalCount - a.totalCount)
     .slice(0, 50);
 
+  const duplicateTitleGroups = Array.from(titleToUrls.entries())
+    .filter(([, urls]) => urls.length > 1)
+    .map(([normalizedTitle, urls]) => ({ normalizedTitle, urls: [...new Set(urls)].slice(0, 25) }))
+    .slice(0, 30);
+
+  const duplicateMetaDescriptionGroups = Array.from(metaToUrls.entries())
+    .filter(([, urls]) => urls.length > 1)
+    .map(([normalizedMeta, urls]) => ({ normalizedMeta: normalizedMeta.slice(0, 120), urls: [...new Set(urls)].slice(0, 25) }))
+    .slice(0, 20);
+
+  const hreflangXDefaultDistinctTargets = Array.from(xDefaultTargets);
+  const hreflangXDefaultConflict = hreflangXDefaultDistinctTargets.length > 1;
+
   return {
     totalPages: withSeo.length,
     withTitle,
@@ -390,6 +491,15 @@ export function aggregateSeo(pages: ScanResult[]): AggregatedSeo | null {
     pages: pagesList.sort((a, b) => b.wordCount - a.wordCount),
     crossPageKeywords,
     totalWordsAcrossPages,
+    ...(duplicateTitleGroups.length > 0 ? { duplicateTitleGroups } : {}),
+    ...(duplicateMetaDescriptionGroups.length > 0 ? { duplicateMetaDescriptionGroups } : {}),
+    ...(canonicalMismatchUrls.length > 0 ? { canonicalMismatchUrls } : {}),
+    ...(hreflangXDefaultDistinctTargets.length > 0
+      ? {
+          hreflangXDefaultDistinctTargets,
+          hreflangXDefaultConflict,
+        }
+      : {}),
   };
 }
 
@@ -524,13 +634,23 @@ export interface AggregatedInfra {
     urlsWithPolicy: string[];
     urlsWithCookieBanner: string[];
     urlsWithTerms: string[];
+    /** From {@link ConsentSignals} (heuristic). */
+    consent?: {
+      pagesWithTcfApi: number;
+      pagesWithCmpHint: number;
+      earlyScriptHostCounts: Array<{ host: string; count: number }>;
+    };
   };
   security: {
     withCsp: number;
     withXFrame: number;
+    withPermissionsPolicy: number;
+    withCoop: number;
     totalPages: number;
     urlsWithCsp: string[];
     urlsWithXFrame: string[];
+    urlsWithPermissionsPolicy: string[];
+    urlsWithCoop: string[];
   };
   technical: TechnicalInsights | null;
   /** Aggregated counts for technical insights (for share). */
@@ -539,7 +659,12 @@ export interface AggregatedInfra {
 
 export function aggregateInfra(pages: ScanResult[]): AggregatedInfra | null {
   const withAny = pages.filter(
-    (p) => p.geo != null || p.privacy != null || p.security != null || p.technicalInsights != null
+    (p) =>
+      p.geo != null ||
+      p.privacy != null ||
+      p.security != null ||
+      p.technicalInsights != null ||
+      p.consentSignals != null
   );
   if (withAny.length === 0) return null;
 
@@ -548,8 +673,13 @@ export function aggregateInfra(pages: ScanResult[]): AggregatedInfra | null {
   const urlsWithTerms: string[] = [];
   const urlsWithCsp: string[] = [];
   const urlsWithXFrame: string[] = [];
+  const urlsWithPermissionsPolicy: string[] = [];
+  const urlsWithCoop: string[] = [];
   let geoSample: GeoAudit | null = null;
   let technical: TechnicalInsights | null = null;
+  let pagesWithTcf = 0;
+  let pagesWithCmp = 0;
+  const earlyHostAgg = new Map<string, number>();
 
   for (const p of pages) {
     if (p.geo) geoSample ??= p.geo;
@@ -561,6 +691,18 @@ export function aggregateInfra(pages: ScanResult[]): AggregatedInfra | null {
     if (p.security) {
       if (p.security.contentSecurityPolicy?.present) urlsWithCsp.push(p.url);
       if (p.security.xFrameOptions?.present) urlsWithXFrame.push(p.url);
+      if (p.security.permissionsPolicy?.present) urlsWithPermissionsPolicy.push(p.url);
+      if (p.security.crossOriginOpenerPolicy?.present) urlsWithCoop.push(p.url);
+    }
+    const cs = p.consentSignals;
+    if (cs?.tcfApiPresent) {
+      pagesWithTcf++;
+    }
+    if (cs?.cmpDomHints && cs.cmpDomHints.length > 0) {
+      pagesWithCmp++;
+    }
+    for (const h of cs?.earlyThirdPartyScriptHosts ?? []) {
+      earlyHostAgg.set(h, (earlyHostAgg.get(h) ?? 0) + 1);
     }
     if (p.technicalInsights) technical ??= p.technicalInsights;
   }
@@ -596,6 +738,19 @@ export function aggregateInfra(pages: ScanResult[]): AggregatedInfra | null {
     };
   }
 
+  const earlyScriptHostCounts = Array.from(earlyHostAgg.entries())
+    .map(([host, count]) => ({ host, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 25);
+  const consentRollup =
+    pagesWithTcf > 0 || pagesWithCmp > 0 || earlyScriptHostCounts.length > 0
+      ? {
+          pagesWithTcfApi: pagesWithTcf,
+          pagesWithCmpHint: pagesWithCmp,
+          earlyScriptHostCounts,
+        }
+      : undefined;
+
   return {
     geo: { pageCount: pages.filter((p) => p.geo != null).length, sample: geoSample },
     privacy: {
@@ -606,13 +761,18 @@ export function aggregateInfra(pages: ScanResult[]): AggregatedInfra | null {
       urlsWithPolicy,
       urlsWithCookieBanner,
       urlsWithTerms,
+      ...(consentRollup ? { consent: consentRollup } : {}),
     },
     security: {
       withCsp: urlsWithCsp.length,
       withXFrame: urlsWithXFrame.length,
+      withPermissionsPolicy: urlsWithPermissionsPolicy.length,
+      withCoop: urlsWithCoop.length,
       totalPages: withSecurity || pages.length,
       urlsWithCsp,
       urlsWithXFrame,
+      urlsWithPermissionsPolicy,
+      urlsWithCoop,
     },
     technical,
     technicalCounts,

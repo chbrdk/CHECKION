@@ -219,11 +219,52 @@ export const UxCard = ({ ux, sx }: UxCardProps) => {
                             </Box>
                         );
                     }
-                    if (ux.mediaAccessibility && (ux.mediaAccessibility.videosWithoutCaptions > 0 || ux.mediaAccessibility.audiosWithoutTranscript > 0)) {
+                    if (ux.longTasks && ux.longTasks.count > 0) {
+                        items.push(
+                            <Box key="longtasks" sx={itemBoxSx}>
+                                <MsqdxTypography variant="caption" sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}>
+                                    {t('results.labLongTasksTitle')}
+                                </MsqdxTypography>
+                                <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.warning.base }}>
+                                    {t('results.labLongTasksLine', {
+                                        count: ux.longTasks.count,
+                                        maxMs: ux.longTasks.maxDurationMs,
+                                    })}
+                                </MsqdxTypography>
+                            </Box>
+                        );
+                    }
+                    if (
+                        ux.formAccessibility &&
+                        (ux.formAccessibility.missingAutocomplete > 0 ||
+                            ux.formAccessibility.suspiciousInputType > 0 ||
+                            ux.formAccessibility.ariaInvalidWithoutDescription > 0)
+                    ) {
+                        items.push(
+                            <Box key="forma11y" sx={itemBoxSx}>
+                                <MsqdxTypography variant="caption" sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}>
+                                    {t('results.formA11yTitle')}
+                                </MsqdxTypography>
+                                <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.warning.base }}>
+                                    {t('results.formA11yLine', {
+                                        auto: ux.formAccessibility.missingAutocomplete,
+                                        type: ux.formAccessibility.suspiciousInputType,
+                                        aria: ux.formAccessibility.ariaInvalidWithoutDescription,
+                                    })}
+                                </MsqdxTypography>
+                            </Box>
+                        );
+                    }
+                    if (ux.mediaAccessibility && (ux.mediaAccessibility.videosWithoutCaptions > 0 || ux.mediaAccessibility.audiosWithoutTranscript > 0 || (ux.mediaAccessibility.videosMissingCaptionTrack ?? 0) > 0)) {
                         items.push(
                             <Box key="media" sx={itemBoxSx}>
                                 <MsqdxTypography variant="caption" sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}>Video/Audio</MsqdxTypography>
                                 <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.warning.base }}>
+                                    {(ux.mediaAccessibility.videosMissingCaptionTrack ?? 0) > 0 &&
+                                        `${ux.mediaAccessibility.videosMissingCaptionTrack} Video(s) ohne Caption-Track`}
+                                    {(ux.mediaAccessibility.videosMissingCaptionTrack ?? 0) > 0 &&
+                                        (ux.mediaAccessibility.videosWithoutCaptions > 0 || ux.mediaAccessibility.audiosWithoutTranscript > 0) &&
+                                        ' · '}
                                     {ux.mediaAccessibility.videosWithoutCaptions > 0 && `${ux.mediaAccessibility.videosWithoutCaptions} Video(s) ohne Captions`}
                                     {ux.mediaAccessibility.videosWithoutCaptions > 0 && ux.mediaAccessibility.audiosWithoutTranscript > 0 && ', '}
                                     {ux.mediaAccessibility.audiosWithoutTranscript > 0 && `${ux.mediaAccessibility.audiosWithoutTranscript} Audio(s) ohne Transcript`}

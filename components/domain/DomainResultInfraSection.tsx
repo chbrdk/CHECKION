@@ -26,6 +26,30 @@ function DomainResultInfraSectionInner({ t, infra, onOpenPageUrl }: DomainResult
                     <MsqdxTypography variant="body2">Seiten mit Datenschutz: {infra.privacy.withPolicy} / {infra.privacy.totalPages}</MsqdxTypography>
                     <MsqdxTypography variant="body2">Seiten mit Cookie-Banner: {infra.privacy.withCookieBanner} / {infra.privacy.totalPages}</MsqdxTypography>
                     <MsqdxTypography variant="body2">Seiten mit AGB: {infra.privacy.withTerms} / {infra.privacy.totalPages}</MsqdxTypography>
+                    {infra.privacy.consent && (
+                        <>
+                            <MsqdxTypography variant="body2">
+                                {t('domainResult.infraConsentTcf')}: {infra.privacy.consent.pagesWithTcfApi} / {infra.privacy.totalPages}
+                            </MsqdxTypography>
+                            <MsqdxTypography variant="body2">
+                                {t('domainResult.infraConsentCmp')}: {infra.privacy.consent.pagesWithCmpHint} / {infra.privacy.totalPages}
+                            </MsqdxTypography>
+                            {infra.privacy.consent.earlyScriptHostCounts.length > 0 && (
+                                <Box sx={{ mt: 0.5 }}>
+                                    <MsqdxTypography variant="caption" sx={{ fontWeight: 600, display: 'block' }}>
+                                        {t('domainResult.infraConsentEarlyHosts')}
+                                    </MsqdxTypography>
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                                        {infra.privacy.consent.earlyScriptHostCounts.slice(0, 12).map((h) => (
+                                            <MsqdxTypography key={h.host} variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                                {h.host} ({h.count})
+                                            </MsqdxTypography>
+                                        ))}
+                                    </Box>
+                                </Box>
+                            )}
+                        </>
+                    )}
                     {(infra.privacy.urlsWithPolicy.length > 0 || infra.privacy.urlsWithCookieBanner.length > 0) && (
                         <Box sx={{ mt: 1 }}>
                             {infra.privacy.urlsWithPolicy.length > 0 && infra.privacy.urlsWithPolicy.length <= 8 && (
@@ -54,6 +78,12 @@ function DomainResultInfraSectionInner({ t, infra, onOpenPageUrl }: DomainResult
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                     <MsqdxTypography variant="body2">Seiten mit CSP: {infra.security.withCsp} / {infra.security.totalPages}</MsqdxTypography>
                     <MsqdxTypography variant="body2">Seiten mit X-Frame-Options: {infra.security.withXFrame} / {infra.security.totalPages}</MsqdxTypography>
+                    <MsqdxTypography variant="body2">
+                        {t('domainResult.infraSecurityPermissionsPolicy')}: {infra.security.withPermissionsPolicy} / {infra.security.totalPages}
+                    </MsqdxTypography>
+                    <MsqdxTypography variant="body2">
+                        {t('domainResult.infraSecurityCoop')}: {infra.security.withCoop} / {infra.security.totalPages}
+                    </MsqdxTypography>
                     {infra.security.urlsWithCsp.length > 0 && infra.security.urlsWithCsp.length <= 8 && (
                         <Box sx={{ mt: 1 }}>
                             <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>Seiten mit CSP:</MsqdxTypography>

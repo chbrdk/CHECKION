@@ -288,6 +288,11 @@ function capAggregatedForSize(
                             ...aggregated.infra.security,
                             urlsWithCsp: (aggregated.infra.security.urlsWithCsp ?? []).slice(0, c.infraUrlList),
                             urlsWithXFrame: (aggregated.infra.security.urlsWithXFrame ?? []).slice(0, c.infraUrlList),
+                            urlsWithPermissionsPolicy: (aggregated.infra.security.urlsWithPermissionsPolicy ?? []).slice(
+                                0,
+                                c.infraUrlList
+                            ),
+                            urlsWithCoop: (aggregated.infra.security.urlsWithCoop ?? []).slice(0, c.infraUrlList),
                         }
                       : aggregated.infra.security,
               }

@@ -5,10 +5,10 @@ import {
     MsqdxChip,
 } from '@msqdx/react';
 import { MSQDX_STATUS, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
-import type { PrivacyAudit } from '@/lib/types';
+import type { ConsentSignals, PrivacyAudit } from '@/lib/types';
 import { ShieldCheck, FileText, Cookie } from 'lucide-react';
 
-export function PrivacyCard({ privacy }: { privacy: PrivacyAudit }) {
+export function PrivacyCard({ privacy, consentSignals }: { privacy: PrivacyAudit; consentSignals?: ConsentSignals }) {
     if (!privacy) return null;
 
     return (
@@ -37,6 +37,32 @@ export function PrivacyCard({ privacy }: { privacy: PrivacyAudit }) {
                     icon={<ShieldCheck size={18} />}
                 />
 
+                {consentSignals && (
+                    <Box sx={{ p: 'var(--msqdx-spacing-sm)', borderRadius: 1, bgcolor: alpha(MSQDX_BRAND_PRIMARY.purple, 0.06), border: `1px solid ${alpha(MSQDX_BRAND_PRIMARY.purple, 0.2)}` }}>
+                        <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5, fontSize: '0.8rem' }}>
+                            Consent / CMP (Heuristik)
+                        </MsqdxTypography>
+                        {consentSignals.tcfApiPresent && (
+                            <MsqdxTypography variant="caption" sx={{ display: 'block', color: 'var(--color-text-on-light)' }}>TCF: __tcfapi erkannt</MsqdxTypography>
+                        )}
+                        {(consentSignals.cmpDomHints?.length ?? 0) > 0 && (
+                            <MsqdxTypography variant="caption" sx={{ display: 'block', color: 'var(--color-text-muted-on-light)' }}>
+                                CMP-Hinweise: {consentSignals.cmpDomHints!.join(', ')}
+                            </MsqdxTypography>
+                        )}
+                        {(consentSignals.consentModeHints?.length ?? 0) > 0 && (
+                            <MsqdxTypography variant="caption" sx={{ display: 'block', color: 'var(--color-text-muted-on-light)' }}>
+                                Consent-Mode-ähnlich: {consentSignals.consentModeHints!.join(', ')}
+                            </MsqdxTypography>
+                        )}
+                        {(consentSignals.earlyThirdPartyScriptHosts?.length ?? 0) > 0 && (
+                            <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'var(--color-text-muted-on-light)', wordBreak: 'break-all' }}>
+                                Frühe Drittanbieter-Skript-Hosts: {consentSignals.earlyThirdPartyScriptHosts!.slice(0, 12).join(', ')}
+                                {(consentSignals.earlyThirdPartyScriptHosts!.length ?? 0) > 12 ? '…' : ''}
+                            </MsqdxTypography>
+                        )}
+                    </Box>
+                )}
                 <Box sx={{ mt: 'var(--msqdx-spacing-xs)', p: 'var(--msqdx-spacing-sm)', borderRadius: 1, bgcolor: alpha(MSQDX_STATUS.info.base, 0.05), border: `1px dashed ${alpha(MSQDX_STATUS.info.base, 0.3)}` }}>
                     <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', lineHeight: 1.4, display: 'block' }}>
                         Hinweis: Diese Prüfung basiert auf Heuristiken (Keywords, Selektoren) und ersetzt keine rechtliche Beratung.

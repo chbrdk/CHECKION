@@ -1,9 +1,12 @@
+'use client';
+
 import React from 'react';
 import { Box } from '@mui/material';
 import { Leaf } from 'lucide-react';
 import { MsqdxMoleculeCard, MsqdxTypography } from '@msqdx/react';
 import { ScanResult } from '../lib/types';
-import { MSQDX_SPACING, MSQDX_NEUTRAL } from '@msqdx/tokens';
+import { MSQDX_NEUTRAL } from '@msqdx/tokens';
+import { useI18n } from '@/components/i18n/I18nProvider';
 
 interface EcoCardProps {
     eco: NonNullable<ScanResult['eco']>;
@@ -21,7 +24,12 @@ const GRADE_COLORS: Record<string, string> = {
 };
 
 export const EcoCard: React.FC<EcoCardProps> = ({ eco, sx }) => {
+    const { t } = useI18n();
     const gradeColor = GRADE_COLORS[eco.grade] || MSQDX_NEUTRAL[500];
+    const hasGreenWebInfo =
+        eco.greenWebCheckedAt != null ||
+        eco.greenWebSource != null ||
+        eco.greenWebHosted !== undefined;
 
     return (
         <MsqdxMoleculeCard
@@ -73,6 +81,20 @@ export const EcoCard: React.FC<EcoCardProps> = ({ eco, sx }) => {
                     <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 1, color: 'var(--color-text-muted-on-light)' }}>
                         Cleaner than ~{getPercentile(eco.co2)}% of pages
                     </MsqdxTypography>
+                    {hasGreenWebInfo ? (
+                        <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 1.25, color: 'var(--color-text-muted-on-light)' }}>
+                            {t('results.ecoGreenWebPrefix')}{' '}
+                            {eco.greenWebHosted === true
+                                ? t('results.ecoGreenWebYes')
+                                : eco.greenWebHosted === false
+                                  ? t('results.ecoGreenWebNo')
+                                  : t('results.ecoGreenWebUnknown')}
+                            {eco.greenWebCheckedAt
+                                ? t('results.ecoGreenWebDateSuffix', { date: eco.greenWebCheckedAt })
+                                : ''}
+                            {eco.greenWebSource ? ` · ${eco.greenWebSource}` : ''}
+                        </MsqdxTypography>
+                    ) : null}
                 </Box>
             </Box>
         </MsqdxMoleculeCard>

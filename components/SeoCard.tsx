@@ -60,6 +60,18 @@ export function SeoCard({ seo }: { seo: SeoAudit }) {
                         ))}
                     </Box>
                 )}
+                {seo.jsonLdRichResultGaps && seo.jsonLdRichResultGaps.length > 0 && (
+                    <Box sx={{ mt: 1 }}>
+                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 'var(--msqdx-spacing-xxs)' }}>
+                            JSON-LD (Rich Results)
+                        </MsqdxTypography>
+                        {seo.jsonLdRichResultGaps.map((item, i) => (
+                            <MsqdxTypography key={i} variant="caption" sx={{ color: MSQDX_STATUS.warning.base, display: 'block' }}>
+                                {item.schemaType}: {item.missing.join(', ')}
+                            </MsqdxTypography>
+                        ))}
+                    </Box>
+                )}
 
                 {seo.keywordAnalysis && seo.keywordAnalysis.topKeywords.length > 0 && (
                     <>

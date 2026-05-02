@@ -32,6 +32,7 @@ import { buildPrivacyAudit } from '@/lib/privacy-scan-heuristics';
 import { estimateDwellTime } from '@/lib/estimate-dwell-time';
 import { inferInfraStackAndTracking, mergeTrackingFromThirdPartyHosts } from '@/lib/infra-detect';
 import type { DomInfraHints } from '@/lib/infra-detect';
+import { buildConsentSignals, extractConsentModeHintsFromInline, type ConsentPageProbe } from '@/lib/consent-signals-merge';
 
 /** Puppeteer / CDP may return mixed-case header names — normalize for security audit. */
 function getHeader(headers: Record<string, string>, canonicalName: string): string | undefined {
@@ -235,8 +236,11 @@ export async function runScan(
     let serverIp: string | null = null;
     let mainHeaders: Record<string, string> = {};
     let mainRedirectCount = 0;
+    let scriptTransferBytesApprox = 0;
     const mixedContentUrls: string[] = [];
     const allRequestHosts = new Set<string>();
+    const earlyThirdPartyScriptHosts: string[] = [];
+    const earlyHostSeen = new Set<string>();
     const pageOrigin = (() => {
         try {
             return new URL(url).origin;
@@ -247,6 +251,23 @@ export async function runScan(
     const pageIsHttps = pageOrigin.toLowerCase().startsWith('https://');
 
     await page.setRequestInterception(false);
+    page.on('request', (req) => {
+        if (req.resourceType() !== 'script') return;
+        try {
+            const ru = req.url();
+            const u = new URL(ru);
+            const pageHostNorm = new URL(url).hostname.replace(/^www\./i, '').toLowerCase();
+            const reqHostNorm = u.hostname.replace(/^www\./i, '').toLowerCase();
+            if (reqHostNorm === pageHostNorm) return;
+            if (earlyHostSeen.size >= 40) return;
+            if (!earlyHostSeen.has(reqHostNorm)) {
+                earlyHostSeen.add(reqHostNorm);
+                earlyThirdPartyScriptHosts.push(u.hostname);
+            }
+        } catch {
+            /* ignore */
+        }
+    });
     page.on('response', async (response) => {
         try {
             const rUrl = response.url();
@@ -258,6 +279,11 @@ export async function runScan(
                 allRequestHosts.add(u.hostname);
             } catch (_) {}
             const req = response.request();
+            if (req.resourceType() === 'script') {
+                const headers = response.headers();
+                const cl = parseInt(headers['content-length'] || '0', 10);
+                if (Number.isFinite(cl) && cl > 0) scriptTransferBytesApprox += cl;
+            }
             /** Final URL after redirects often differs from `url` (slash, scheme, www) — match navigation doc on main frame. */
             const isMainDocumentResponse =
                 req.resourceType() === 'document' && response.frame() === page.mainFrame();
@@ -335,7 +361,9 @@ export async function runScan(
 
         // --- Extract Performance Metrics (incl. LCP/INP from observers) ---
         const perfData = await page.evaluate(function () {
-            const navHeading = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+            const navHeading = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming & {
+                nextHopProtocol?: string;
+            };
             const paint = performance.getEntriesByName('first-contentful-paint')[0];
             const ttfb = navHeading ? (navHeading.responseStart - navHeading.requestStart) : 0;
             const domLoad = navHeading ? (navHeading.domContentLoadedEventEnd - navHeading.fetchStart) : 0;
@@ -343,14 +371,30 @@ export async function runScan(
             const fcp = paint ? paint.startTime : 0;
             const lcp = (window as any).__lcp_value != null ? Math.round((window as any).__lcp_value) : 0;
             const inp = (window as any).__inp_value != null ? Math.round((window as any).__inp_value) : null;
+            const nextHopProtocol = navHeading && navHeading.nextHopProtocol ? String(navHeading.nextHopProtocol) : null;
             return {
                 ttfb: Math.round(ttfb),
                 fcp: Math.round(fcp),
                 domLoad: Math.round(domLoad),
                 windowLoad: Math.round(windowLoad),
                 lcp,
-                inp
+                inp,
+                nextHopProtocol
             };
+        });
+
+        const longTaskStats = await page.evaluate(function () {
+            try {
+                const entries = performance.getEntriesByType('longtask');
+                let max = 0;
+                for (let i = 0; i < entries.length; i++) {
+                    const d = entries[i].duration;
+                    if (d > max) max = d;
+                }
+                return { count: entries.length, maxDurationMs: Math.round(max) };
+            } catch {
+                return { count: 0, maxDurationMs: 0 };
+            }
         });
 
         // --- Calculate Eco Score ---
@@ -828,6 +872,40 @@ export async function runScan(
                 } catch (_) {}
             });
 
+            const jsonLdRichResultGaps: Array<{ schemaType: string; missing: string[] }> = [];
+            function inspectJsonLdRich(o: Record<string, unknown>, depth: number) {
+                if (!o || typeof o !== 'object' || depth > 8) return;
+                const g = o['@graph'];
+                if (Array.isArray(g)) {
+                    g.forEach(function (node) {
+                        inspectJsonLdRich(node as Record<string, unknown>, depth + 1);
+                    });
+                }
+                const type = o['@type'];
+                const types = Array.isArray(type) ? type : (type ? [type] : []);
+                types.forEach(function (ty) {
+                    if (ty === 'VideoObject') {
+                        const miss: string[] = [];
+                        if (!o['name'] && !o['headline']) miss.push('name');
+                        if (!o['thumbnailUrl'] && !o['image']) miss.push('thumbnailUrl|image');
+                        if (miss.length) jsonLdRichResultGaps.push({ schemaType: 'VideoObject', missing: miss });
+                    }
+                    if (ty === 'Product') {
+                        const miss: string[] = [];
+                        if (!o['name']) miss.push('name');
+                        if (!o['image']) miss.push('image');
+                        if (!o['offers'] && !o['aggregateRating']) miss.push('offers');
+                        if (miss.length) jsonLdRichResultGaps.push({ schemaType: 'Product', missing: miss });
+                    }
+                });
+            }
+            document.querySelectorAll('script[type="application/ld+json"]').forEach(function (el) {
+                try {
+                    const json = JSON.parse(el.textContent || '{}') as Record<string, unknown>;
+                    inspectJsonLdRich(json, 0);
+                } catch (_) {}
+            });
+
             const preloadLinks = Array.from(document.querySelectorAll('link[rel="preload"]')).map(function(l) { return l.getAttribute('href') || ''; }).filter(Boolean);
             const preconnectLinks = Array.from(document.querySelectorAll('link[rel="preconnect"]')).map(function(l) { return l.getAttribute('href') || ''; }).filter(Boolean);
             const sriMissing: { tag: string; url: string }[] = [];
@@ -900,7 +978,8 @@ export async function runScan(
                     skinnyContent: skinnyContent,
                     bodyWordCount: bodyWordCount,
                     structuredDataRequiredFields: structuredDataRequiredFields.length > 0 ? structuredDataRequiredFields : undefined,
-                    keywordAnalysis: keywordAnalysis
+                    keywordAnalysis: keywordAnalysis,
+                    jsonLdRichResultGaps: jsonLdRichResultGaps.length > 0 ? jsonLdRichResultGaps.slice(0, 25) : undefined
                 },
                 geo: {
                     htmlLang,
@@ -991,7 +1070,43 @@ export async function runScan(
                         50,
                         Math.round(document.documentElement.scrollHeight / Math.max(window.innerHeight, 1))
                     )
-                }
+                },
+                consentProbe: (function () {
+                    var w = window;
+                    var tcf = typeof (w as any).__tcfapi === 'function';
+                    var hints: string[] = [];
+                    if (document.querySelector('[id*="CybotCookiebotDialog"], .CybotCookiebotDialogInner, #Cookiebot')) hints.push('cookiebot');
+                    if (document.querySelector('#onetrust-consent-sdk, .onetrust-pc-dark-filter')) hints.push('onetrust');
+                    if (document.querySelector('#usercentrics-root, .uc-embed')) hints.push('usercentrics');
+                    if (document.querySelector('.fc-consent-root')) hints.push('funding-choices');
+                    var dl = (w as any).dataLayer;
+                    var dataLayerPreview: string[] = [];
+                    if (Array.isArray(dl)) {
+                        for (var i = 0; i < Math.min(5, dl.length); i++) {
+                            try {
+                                var s = JSON.stringify(dl[i]);
+                                dataLayerPreview.push(s.length > 120 ? s.slice(0, 120) + '…' : s);
+                            } catch (e) {
+                                dataLayerPreview.push('[object]');
+                            }
+                        }
+                    }
+                    var inlineGtm = false;
+                    document.querySelectorAll('script[src]').forEach(function (el) {
+                        var src = (el.getAttribute('src') || '').toLowerCase();
+                        if (src.indexOf('googletagmanager.com') !== -1 || src.indexOf('gtag/js') !== -1) inlineGtm = true;
+                    });
+                    document.querySelectorAll('script:not([src])').forEach(function (el) {
+                        var t = (el.textContent || '').slice(0, 2000);
+                        if (/gtag\s*\(|GTM-|googletagmanager/i.test(t)) inlineGtm = true;
+                    });
+                    return {
+                        tcfApiPresent: tcf,
+                        cmpDomHints: hints,
+                        dataLayerPreview: dataLayerPreview,
+                        inlineGtmOrGtagDetected: inlineGtm
+                    };
+                })()
             };
         });
 
@@ -1025,6 +1140,20 @@ export async function runScan(
             seoExtras.privacyLinkRows ?? [],
             url,
             seoExtras.cookieBannerHeuristic ?? false
+        );
+        const consentProbeRaw = (seoAndMeta as { consentProbe?: ConsentPageProbe }).consentProbe;
+        const domHintsForConsent = (seoAndMeta as { domInfraHints?: DomInfraHints }).domInfraHints;
+        const consentModeFromInline = extractConsentModeHintsFromInline(domHintsForConsent?.inlineScriptFingerprint ?? '');
+        const defaultConsentProbe: ConsentPageProbe = {
+            tcfApiPresent: false,
+            cmpDomHints: [],
+            dataLayerPreview: [],
+            inlineGtmOrGtagDetected: false,
+        };
+        const consentSignals = buildConsentSignals(
+            consentProbeRaw ?? defaultConsentProbe,
+            consentModeFromInline,
+            earlyThirdPartyScriptHosts
         );
         const eeatSignals = (seoAndMeta as { eeatPage?: import('./types').EeatPageSignals }).eeatPage;
         const bodyTextExcerpt = (seoAndMeta as { bodyTextExcerpt?: string }).bodyTextExcerpt;
@@ -1152,6 +1281,22 @@ export async function runScan(
             referrerPolicy: {
                 present: !!getHeader(h, 'referrer-policy'),
                 value: getHeader(h, 'referrer-policy')
+            },
+            permissionsPolicy: {
+                present: !!(getHeader(h, 'permissions-policy') || getHeader(h, 'feature-policy')),
+                value: getHeader(h, 'permissions-policy') ?? getHeader(h, 'feature-policy')
+            },
+            crossOriginOpenerPolicy: {
+                present: !!getHeader(h, 'cross-origin-opener-policy'),
+                value: getHeader(h, 'cross-origin-opener-policy')
+            },
+            crossOriginEmbedderPolicy: {
+                present: !!getHeader(h, 'cross-origin-embedder-policy'),
+                value: getHeader(h, 'cross-origin-embedder-policy')
+            },
+            crossOriginResourcePolicy: {
+                present: !!getHeader(h, 'cross-origin-resource-policy'),
+                value: getHeader(h, 'cross-origin-resource-policy')
             },
             mixedContentUrls: mixedContentUrls.length > 0 ? mixedContentUrls : undefined,
             sriMissing: ext?.sriMissing && ext.sriMissing.length > 0 ? ext.sriMissing : undefined,
@@ -1521,6 +1666,9 @@ export async function runScan(
 
                 // --- 7e. Form UX (Orphan Inputs) ---
                 const formIssues = [];
+                let missingAutocomplete = 0;
+                let suspiciousInputType = 0;
+                let ariaInvalidWithoutDescription = 0;
                 document.querySelectorAll('input:not([type="hidden"]), select, textarea').forEach(function(el) {
                     const parentLabel = el.closest('label');
                     const hasId = el.id && document.querySelector('label[for="' + el.id + '"]');
@@ -1540,8 +1688,30 @@ export async function runScan(
                         });
                     }
                 });
+                document.querySelectorAll('input, select, textarea').forEach(function(el) {
+                    const tag = el.tagName.toLowerCase();
+                    const name = (el.getAttribute('name') || '').toLowerCase();
+                    const typ = (el.getAttribute('type') || 'text').toLowerCase();
+                    if (tag === 'input' && (typ === 'email' || typ === 'tel' || name.indexOf('email') !== -1 || name.indexOf('phone') !== -1 || name.indexOf('tel') !== -1)) {
+                        if (!el.getAttribute('autocomplete')) missingAutocomplete++;
+                    }
+                    if (tag === 'input' && typ === 'text' && (name === 'email' || name.indexOf('email') !== -1)) suspiciousInputType++;
+                    if (el.getAttribute('aria-invalid') === 'true' && !el.getAttribute('aria-describedby')) ariaInvalidWithoutDescription++;
+                });
 
-                return { structureMap: structureMap, touchTargets: touchTargets, altTextIssues: altTextIssues, ariaIssues: ariaIssues, formIssues: formIssues, imageIssues: imageIssues };
+                return {
+                    structureMap: structureMap,
+                    touchTargets: touchTargets,
+                    altTextIssues: altTextIssues,
+                    ariaIssues: ariaIssues,
+                    formIssues: formIssues,
+                    imageIssues: imageIssues,
+                    formAccessibility: {
+                        missingAutocomplete: missingAutocomplete,
+                        suspiciousInputType: suspiciousInputType,
+                        ariaInvalidWithoutDescription: ariaInvalidWithoutDescription
+                    }
+                };
             })();
         `;
 
@@ -1638,7 +1808,16 @@ export async function runScan(
             resourceHints: ext?.resourceHints,
             reducedMotionInCss: ext?.reducedMotionInCss,
             focusVisibleFailCount: ext?.focusVisibleFailCount,
-            mediaAccessibility: ext?.mediaAccessibility,
+            mediaAccessibility: ext?.mediaAccessibility
+                ? {
+                      ...ext.mediaAccessibility,
+                      videosMissingCaptionTrack: ext.mediaAccessibility.videosWithoutCaptions,
+                  }
+                : undefined,
+            formAccessibility: (advancedChecks as { formAccessibility?: NonNullable<ScanResult['ux']>['formAccessibility'] })
+                .formAccessibility,
+            longTasks:
+                longTaskStats.count > 0 || longTaskStats.maxDurationMs > 0 ? longTaskStats : undefined,
             tapTargets: {
                 issues: advancedChecks.touchTargets.map((t: any) => `${t.element} (${t.size.width}x${t.size.height}px)`),
                 details: advancedChecks.touchTargets
@@ -1676,6 +1855,13 @@ export async function runScan(
         const geoForResult =
             mergedTracking.length > 0 ? { ...geoAudit, detectedTracking: mergedTracking } : geoAudit;
 
+        const cacheCtlMain = getHeader(mainHeaders, 'cache-control');
+        const maxAgeMatch = cacheCtlMain?.match(/max-age=(\d+)/i);
+        const maxAgeHtml = maxAgeMatch ? parseInt(maxAgeMatch[1], 10) : 0;
+        const htmlLongCache = maxAgeHtml > 3600;
+        const staticAssetCacheWeak =
+            scriptTransferBytesApprox > 400_000 && (maxAgeHtml < 600 || !cacheCtlMain);
+
         const technicalInsights = {
             thirdPartyDomains,
             manifest: {
@@ -1688,7 +1874,13 @@ export async function runScan(
             appleTouchIcon: ext?.appleTouchIcon ?? null,
             serviceWorkerRegistered,
             redirectCount: mainRedirectCount,
-            metaRefreshPresent: ext?.metaRefreshPresent
+            metaRefreshPresent: ext?.metaRefreshPresent,
+            mainDocumentCache: {
+                cacheControl: cacheCtlMain ?? null,
+                etagPresent: !!getHeader(mainHeaders, 'etag'),
+                htmlLongCache,
+            },
+            staticAssetCacheWeak,
         };
 
         const pageOrigin = new URL(url).origin;
@@ -1716,6 +1908,29 @@ export async function runScan(
             seoAudit.metaDescription ?? ''
         );
 
+        let greenWebHosted: boolean | null | undefined;
+        let greenWebCheckedAt: string | undefined;
+        let greenWebSource: string | undefined;
+        if (process.env.GREEN_WEB_API_ENABLED === '1' && pageHost) {
+            greenWebSource = 'thegreenwebfoundation.org';
+            try {
+                const { API_GREEN_WEB_GREENCHECK_BASE } = await import('./external-apis');
+                const gr = await fetch(
+                    `${API_GREEN_WEB_GREENCHECK_BASE}/greencheck/v3/${encodeURIComponent(pageHost)}`,
+                    { signal: AbortSignal.timeout(4500) }
+                );
+                if (gr.ok) {
+                    const j = (await gr.json()) as { green?: boolean };
+                    greenWebHosted = j.green === true;
+                    greenWebCheckedAt = new Date().toISOString();
+                } else {
+                    greenWebHosted = null;
+                }
+            } catch {
+                greenWebHosted = null;
+            }
+        }
+
         const result: ScanResult = {
             id: scanId,
             groupId,
@@ -1732,17 +1947,28 @@ export async function runScan(
             screenshot,
             allLinks: internalLinks,
             allLinksWithLabels: internalLinksWithLabels,
-            performance: perfData,
+            performance: {
+                ...perfData,
+                ...(scriptTransferBytesApprox > 0 ? { scriptTransferBytesApprox } : {}),
+            },
             eco: {
                 co2: parseFloat(co2Grams.toFixed(3)),
                 grade: ecoGrade,
-                pageWeight: totalBytes
+                pageWeight: totalBytes,
+                ...(greenWebHosted !== undefined
+                    ? {
+                          greenWebHosted,
+                          ...(greenWebCheckedAt ? { greenWebCheckedAt } : {}),
+                          ...(greenWebSource ? { greenWebSource } : {}),
+                      }
+                    : {}),
             },
             ux: uxResult,
             seo: seoAudit,
             links: linkAudit,
             geo: geoForResult,
             privacy: privacyAudit,
+            ...(consentSignals ? { consentSignals } : {}),
             eeatSignals: eeatSignals ?? undefined,
             generative: generativeAudit,
             security: securityAudit,

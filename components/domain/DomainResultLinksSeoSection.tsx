@@ -209,6 +209,132 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
         );
     }, [onOpenPageUrl, seo.missingMetaDescriptionUrls, seo.totalPages, seo.withMetaDescription, t]);
 
+    const duplicateSeoBlock = useMemo(() => {
+        const dupTitles = seo.duplicateTitleGroups ?? [];
+        const dupMetas = seo.duplicateMetaDescriptionGroups ?? [];
+        const canMis = seo.canonicalMismatchUrls ?? [];
+        const hrefTargets = seo.hreflangXDefaultDistinctTargets ?? [];
+        const hrefConflict = seo.hreflangXDefaultConflict === true;
+        if (
+            dupTitles.length === 0 &&
+            dupMetas.length === 0 &&
+            canMis.length === 0 &&
+            !hrefConflict &&
+            hrefTargets.length <= 1
+        ) {
+            return null;
+        }
+        const urlRow = (url: string) => (
+            <Box
+                key={url}
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    py: 0.5,
+                    pr: 0.5,
+                    borderRadius: 'var(--msqdx-radius-md)',
+                    border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                    px: 1,
+                }}
+            >
+                <MsqdxTypography variant="caption" sx={{ flex: 1, minWidth: 0 }} noWrap title={url}>
+                    {url}
+                </MsqdxTypography>
+                <Tooltip title={t('domainResult.openPage')}>
+                    <IconButton
+                        size="small"
+                        aria-label={t('domainResult.openPageAria', { url })}
+                        onClick={() => onOpenPageUrl(url)}
+                        sx={{ flexShrink: 0 }}
+                    >
+                        <ExternalLink size={16} strokeWidth={2} aria-hidden />
+                    </IconButton>
+                </Tooltip>
+            </Box>
+        );
+        return (
+            <Box sx={{ mt: 1.5 }}>
+                <MsqdxTypography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.75 }}>
+                    {t('domainResult.linksSeoDuplicatesSectionTitle')}
+                </MsqdxTypography>
+                {dupTitles.length > 0 && (
+                    <Box sx={{ mb: 1.25 }}>
+                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}>
+                            {t('domainResult.linksSeoDupTitlesSubtitle')}
+                        </MsqdxTypography>
+                        <Stack spacing={1}>
+                            {dupTitles.slice(0, 8).map((g) => (
+                                <Box key={g.normalizedTitle}>
+                                    <MsqdxTypography variant="caption" sx={{ display: 'block', mb: 0.35, fontStyle: 'italic' }} noWrap title={g.normalizedTitle}>
+                                        {g.normalizedTitle.slice(0, 100)}
+                                        {g.normalizedTitle.length > 100 ? '…' : ''}
+                                    </MsqdxTypography>
+                                    <Stack spacing={0.5}>{g.urls.map(urlRow)}</Stack>
+                                </Box>
+                            ))}
+                        </Stack>
+                    </Box>
+                )}
+                {dupMetas.length > 0 && (
+                    <Box sx={{ mb: 1.25 }}>
+                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}>
+                            {t('domainResult.linksSeoDupMetasSubtitle')}
+                        </MsqdxTypography>
+                        <Stack spacing={1}>
+                            {dupMetas.slice(0, 6).map((g) => (
+                                <Box key={g.normalizedMeta}>
+                                    <MsqdxTypography variant="caption" sx={{ display: 'block', mb: 0.35, fontStyle: 'italic' }} noWrap title={g.normalizedMeta}>
+                                        {g.normalizedMeta.slice(0, 100)}
+                                        {g.normalizedMeta.length > 100 ? '…' : ''}
+                                    </MsqdxTypography>
+                                    <Stack spacing={0.5}>{g.urls.map(urlRow)}</Stack>
+                                </Box>
+                            ))}
+                        </Stack>
+                    </Box>
+                )}
+                {canMis.length > 0 && (
+                    <Box sx={{ mb: hrefConflict || hrefTargets.length > 1 ? 1.25 : 0 }}>
+                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}>
+                            {t('domainResult.linksSeoCanonicalMismatchSubtitle')}
+                        </MsqdxTypography>
+                        <Stack spacing={0.5}>{canMis.slice(0, 12).map(urlRow)}</Stack>
+                    </Box>
+                )}
+                {(hrefConflict || hrefTargets.length > 1) && (
+                    <Box>
+                        <MsqdxTypography
+                            variant="caption"
+                            sx={{
+                                color: hrefConflict ? 'var(--color-secondary-dx-amber, #b45309)' : 'var(--color-text-muted-on-light)',
+                                display: 'block',
+                                mb: 0.5,
+                            }}
+                        >
+                            {hrefConflict
+                                ? t('domainResult.linksSeoHreflangConflict')
+                                : t('domainResult.linksSeoHreflangTargets')}
+                        </MsqdxTypography>
+                        <Stack direction="row" flexWrap="wrap" gap={0.5}>
+                            {hrefTargets.map((u) => (
+                                <MsqdxChip key={u} label={u} size="small" sx={{ fontSize: '0.65rem', maxWidth: '100%' }} />
+                            ))}
+                        </Stack>
+                    </Box>
+                )}
+            </Box>
+        );
+    }, [
+        onOpenPageUrl,
+        seo.canonicalMismatchUrls,
+        seo.duplicateMetaDescriptionGroups,
+        seo.duplicateTitleGroups,
+        seo.hreflangXDefaultConflict,
+        seo.hreflangXDefaultDistinctTargets,
+        t,
+    ]);
+
     return (
         <Stack spacing={2} sx={{ width: '100%', minWidth: 0 }}>
             <Box
@@ -250,6 +376,7 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                                     : null}
                             </Box>
                             {missingMetaBlock}
+                            {duplicateSeoBlock}
                         </Stack>
                     </MsqdxMoleculeCard>
                 </Box>

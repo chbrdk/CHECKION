@@ -462,6 +462,40 @@ function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl }: DomainResultU
                         </MsqdxTypography>
                     </Box>
                 ) : null}
+                {ux.labLongTasks || ux.labScriptBytesAvg != null ? (
+                    <Box
+                        sx={{
+                            p: 1.5,
+                            borderRadius: 'var(--msqdx-radius-md)',
+                            ...MSQDX_INNER_CARD_BORDER_SX,
+                            bgcolor: 'var(--color-card-bg)',
+                        }}
+                    >
+                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                            {t('domainResult.uxAuditLabMetricsTitle')}
+                        </MsqdxTypography>
+                        {ux.labLongTasks ? (
+                            <MsqdxTypography variant="body2" sx={{ mt: 0.75, lineHeight: 1.45 }}>
+                                {t('domainResult.uxAuditLabLongTasks', {
+                                    count: ux.labLongTasks.totalCount,
+                                    maxMs: ux.labLongTasks.maxMaxDurationMs,
+                                    pages: ux.labLongTasks.pagesWithAny,
+                                    total: ux.pageCount,
+                                })}
+                            </MsqdxTypography>
+                        ) : null}
+                        {ux.labScriptBytesAvg != null ? (
+                            <MsqdxTypography variant="body2" sx={{ mt: ux.labLongTasks ? 0.75 : 0.75, lineHeight: 1.45 }}>
+                                {t('domainResult.uxAuditLabScriptKb', {
+                                    kb: Math.round(ux.labScriptBytesAvg / 1024),
+                                })}
+                            </MsqdxTypography>
+                        ) : null}
+                        <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 0.75, color: 'var(--color-text-muted-on-light)', lineHeight: 1.45 }}>
+                            {t('domainResult.uxAuditLabMetricsHint')}
+                        </MsqdxTypography>
+                    </Box>
+                ) : null}
                 {showHeadingsHint ? (
                     <MsqdxTypography variant="caption" sx={{ display: 'block', color: 'var(--color-text-muted-on-light)', lineHeight: 1.45 }}>
                         {t('domainResult.uxAuditHeadingsHint', {

@@ -24,6 +24,11 @@ describe('domain links & SEO section i18n', () => {
             'linksSeoMostBrokenCardTitle',
             'linksSeoEmpty',
             'linksSeoEmptyCardTitle',
+            'linksSeoDuplicatesSectionTitle',
+            'linksSeoDupTitlesSubtitle',
+            'linksSeoCanonicalMismatchSubtitle',
+            'infraConsentTcf',
+            'infraSecurityCoop',
         ] as const;
         for (const locale of ['de', 'en'] as const) {
             const dr = domainResultKeys(locale);

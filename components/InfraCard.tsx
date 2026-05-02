@@ -5,10 +5,18 @@ import {
     MsqdxChip,
 } from '@msqdx/react';
 import { MSQDX_SPACING, MSQDX_THEME, MSQDX_STATUS, MSQDX_BRAND_PRIMARY, MSQDX_NEUTRAL } from '@msqdx/tokens';
-import type { GeoAudit } from '@/lib/types';
+import type { GeoAudit, ScanResult } from '@/lib/types';
 import { Globe, Server, Cloud, Languages, Layers, Radar } from 'lucide-react';
 
-export function InfraCard({ geo }: { geo: GeoAudit }) {
+export function InfraCard({
+    geo,
+    performance,
+    technicalInsights,
+}: {
+    geo: GeoAudit;
+    performance?: ScanResult['performance'];
+    technicalInsights?: ScanResult['technicalInsights'];
+}) {
     if (!geo) return null;
 
     return (
@@ -159,6 +167,35 @@ export function InfraCard({ geo }: { geo: GeoAudit }) {
                         )}
                     </Box>
                 </Box>
+
+                {(performance?.nextHopProtocol || performance?.scriptTransferBytesApprox || technicalInsights?.mainDocumentCache) && (
+                    <Box sx={{ mt: 1, p: 1.5, borderRadius: 1, bgcolor: 'var(--color-secondary-dx-grey-light-tint)', border: '1px solid var(--color-secondary-dx-grey-light-tint)' }}>
+                        <MsqdxTypography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
+                            Transport & Cache (Lab)
+                        </MsqdxTypography>
+                        {performance?.nextHopProtocol && (
+                            <MsqdxTypography variant="caption" sx={{ display: 'block', color: 'var(--color-text-muted-on-light)' }}>
+                                Protokoll: {performance.nextHopProtocol}
+                            </MsqdxTypography>
+                        )}
+                        {performance?.scriptTransferBytesApprox != null && performance.scriptTransferBytesApprox > 0 && (
+                            <MsqdxTypography variant="caption" sx={{ display: 'block', color: 'var(--color-text-muted-on-light)' }}>
+                                Skript-Transfer (ca.): {(performance.scriptTransferBytesApprox / 1024).toFixed(0)} KB
+                            </MsqdxTypography>
+                        )}
+                        {technicalInsights?.mainDocumentCache?.cacheControl && (
+                            <MsqdxTypography variant="caption" sx={{ display: 'block', color: 'var(--color-text-muted-on-light)', wordBreak: 'break-word' }}>
+                                HTML Cache-Control: {technicalInsights.mainDocumentCache.cacheControl}
+                                {technicalInsights.mainDocumentCache.htmlLongCache ? ' · langes max-age' : ''}
+                            </MsqdxTypography>
+                        )}
+                        {technicalInsights?.staticAssetCacheWeak && (
+                            <MsqdxTypography variant="caption" sx={{ color: MSQDX_STATUS.warning.base, display: 'block', mt: 0.5 }}>
+                                Hinweis: großes Skript-Volumen bei schwachem HTML-Caching (Heuristik).
+                            </MsqdxTypography>
+                        )}
+                    </Box>
+                )}
             </Box>
         </MsqdxMoleculeCard>
     );
