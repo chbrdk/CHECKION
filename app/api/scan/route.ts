@@ -8,7 +8,7 @@ import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, handleApiError, API_STATUS } from '@/lib/api-error-handler';
 import { parseApiBody, scanBodySchema } from '@/lib/api-schemas';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { runScan } from '@/lib/scanner';
+import { launchStandaloneScanBrowser, runScan } from '@/lib/scanner';
 import {
     insertScanSession,
     persistStandaloneScanRow,
@@ -66,20 +66,48 @@ async function executeStandaloneScan(
         if (proj) sessionTags = normalizeTagList(proj.tags);
     }
 
-    const results = await Promise.all(
-        devices.map((device) =>
-            runScan({
-                url: body.url,
-                standard: body.standard,
-                runners: body.runners,
-                device,
-                groupId,
-                targetRegion: body.targetRegion,
-                userId: user.id,
-                onProgress: hooks?.onDeviceProgress,
-            })
-        )
-    );
+    let results: ScanResult[];
+    if (devices.length <= 1) {
+        results = await Promise.all(
+            devices.map((device) =>
+                runScan({
+                    url: body.url,
+                    standard: body.standard,
+                    runners: body.runners,
+                    device,
+                    groupId,
+                    targetRegion: body.targetRegion,
+                    userId: user.id,
+                    onProgress: hooks?.onDeviceProgress,
+                })
+            )
+        );
+    } else {
+        const sharedBrowser = await launchStandaloneScanBrowser();
+        try {
+            results = await Promise.all(
+                devices.map((device) =>
+                    runScan({
+                        url: body.url,
+                        standard: body.standard,
+                        runners: body.runners,
+                        device,
+                        groupId,
+                        targetRegion: body.targetRegion,
+                        userId: user.id,
+                        onProgress: hooks?.onDeviceProgress,
+                        sharedBrowser,
+                    })
+                )
+            );
+        } finally {
+            try {
+                await sharedBrowser.close();
+            } catch {
+                /* ignore */
+            }
+        }
+    }
 
     await hooks?.beforePersist?.();
 

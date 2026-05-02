@@ -987,4 +987,9 @@ export interface ScanOptions {
     runners?: Runner[];
     /** Optional: single-page scan progress (e.g. NDJSON stream to the client). */
     onProgress?: (event: { phase: ScanDevicePhase; device: Device }) => void;
+    /**
+     * Reuse one Chromium for multi-viewport `POST /api/scan` (see `launchStandaloneScanBrowser` in `lib/scanner.ts`).
+     * Avoids three parallel browser processes (OOM / “The client is closed” on small hosts).
+     */
+    sharedBrowser?: import('puppeteer').Browser;
 }

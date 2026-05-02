@@ -148,6 +148,11 @@ function calculateScore(counts: ScanStats): number {
 
 const PUPPETEER_LAUNCH_RETRIES = 3;
 
+/** One Chromium process for multi-device standalone scans; caller must `close()` after all `runScan` calls finish. */
+export async function launchStandaloneScanBrowser(): Promise<Awaited<ReturnType<typeof puppeteer.launch>>> {
+    return launchPuppeteerWithRetry();
+}
+
 async function launchPuppeteerWithRetry(): Promise<Awaited<ReturnType<typeof puppeteer.launch>>> {
     let last: unknown;
     for (let attempt = 0; attempt < PUPPETEER_LAUNCH_RETRIES; attempt++) {
@@ -179,6 +184,7 @@ export async function runScan(
         targetRegion,
         userId,
         onProgress,
+        sharedBrowser,
     } = options;
     const scanId = uuidv4();
 
@@ -197,8 +203,9 @@ export async function runScan(
     const phaseTiming = createScanPhaseTimer();
     report('starting');
 
-    // Launch browser manually to enable screenshot and bounding box extraction (retry: first launch can fail on cold workers)
-    const browser = await launchPuppeteerWithRetry();
+    // One browser per run, or reuse caller’s browser for multi-device standalone (avoids 3× Chromium RAM).
+    const ownBrowser = !sharedBrowser;
+    const browser = sharedBrowser ?? (await launchPuppeteerWithRetry());
 
     // Create page and set viewport
     const page = await browser.newPage();
@@ -2178,6 +2185,17 @@ export async function runScan(
 
         return normalizeScanResultForPersist(result);
     } finally {
-        await browser.close();
+        try {
+            await page.close();
+        } catch {
+            /* page may already be closed */
+        }
+        if (ownBrowser) {
+            try {
+                await browser.close();
+            } catch {
+                /* browser may already be closed */
+            }
+        }
     }
 }
