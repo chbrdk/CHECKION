@@ -1,5 +1,7 @@
 # Struktur-Chip-Severity (Struktur & Semantik)
 
+**Update:** In der Einzelergebnis-Ansicht (`app/results/[id]/page.tsx`, Tab Struktur) wurden die farbigen Summary-Chips **entfernt** zugunsten einer kompakten Textzeile + optional `Alert` (siehe `knowledge/checkion-structure-ui.md`). Die folgende Logik kann für andere Oberflächen (z. B. Domain) weiter relevant sein.
+
 Die Chips in der Summary-Leiste von **Struktur & Semantik** werden je nach Korrektheit eingefärbt (grün = gut, orange = Warnung, rot = Problem).
 
 ## Heading-Chips (H1–H6)

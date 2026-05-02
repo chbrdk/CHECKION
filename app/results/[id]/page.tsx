@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useParams, useRouter } from 'next/navigation';
-import { Box, alpha, Collapse, CircularProgress } from '@mui/material';
+import { Box, alpha, Collapse, CircularProgress, Alert } from '@mui/material';
 import {
     MsqdxTypography,
     MsqdxButton,
@@ -35,12 +35,12 @@ import {
     apiScanSummarize,
     apiScanUxCheck,
     apiSaliencyResult,
-    OUTLINE_INITIAL_VISIBLE,
     PAGE_INDEX_INITIAL_VISIBLE,
     pathResults,
     PATH_HOME,
 } from '@/lib/constants';
 import { isUxCheckV2Summary, type UxCheckV2Summary } from '@/lib/ux-check-types';
+import { formatStructureLevelParts } from '@/lib/format-structure-level-parts';
 
 const UxIssueList = dynamic(
     () => import('@/components/UxIssueList').then((m) => ({ default: m.UxIssueList })),
@@ -238,29 +238,6 @@ const SEVERITY_CONFIG: Record<IssueSeverity, { color: string; label: string }> =
     notice: { color: MSQDX_STATUS.info.base, label: 'Notice' },
 };
 
-/** Heading count thresholds for structure summary chips: [goodMax, warningMax]. <= good = green, <= warning = orange, else red. */
-const STRUCTURE_HEADING_LIMITS: Record<number, [number, number]> = {
-    1: [1, 1],   // H1: only 1 is good, >1 = error
-    2: [8, 14],  // H2: 1–8 good, 9–14 warning, 15+ error
-    3: [15, 30], // H3
-    4: [25, 50], // H4
-    5: [35, 70], // H5
-    6: [45, 90], // H6
-};
-function getHeadingChipSeverity(level: number, count: number): 'success' | 'warning' | 'error' {
-    const [goodMax, warningMax] = STRUCTURE_HEADING_LIMITS[level] ?? [99, 199];
-    if (count <= goodMax) return 'success';
-    if (count <= warningMax) return 'warning';
-    return 'error';
-}
-/** Severity for Landmarks/Headings summary chip. */
-function getLandmarksHeadingsSeverity(landmarks: number, headings: number): 'success' | 'warning' | 'error' {
-    if (landmarks === 0) return 'warning';
-    if (landmarks > 20 || headings > 80) return 'error';
-    if (landmarks > 12 || headings > 50) return 'warning';
-    return 'success';
-}
-
 type TabFilter = 'all' | IssueSeverity | 'passed';
 type LevelFilter = 'all' | 'A' | 'AA' | 'AAA' | 'APCA' | 'Unknown';
 
@@ -289,7 +266,6 @@ export default function ResultsPage() {
     const [summarizing, setSummarizing] = useState(false);
     const [summarizeError, setSummarizeError] = useState<string | null>(null);
     const [pdfExporting, setPdfExporting] = useState(false);
-    const [structureOutlineVisibleCount, setStructureOutlineVisibleCount] = useState(OUTLINE_INITIAL_VISIBLE);
     const issueRefs = useRef<(HTMLDivElement | null)[]>([]);
     const scanIssueListRef = useRef<ScanIssueListHandle>(null);
     const pendingIssueScrollRef = useRef<number | null>(null);
@@ -591,7 +567,7 @@ export default function ResultsPage() {
                         { value: 'summary', label: 'UX/CX Check' },
                         { value: 'visual', label: 'Visuelle Analyse' },
                         { value: 'ux', label: 'UX Audit' },
-                        { value: 'structure', label: 'Struktur & Semantik' },
+                        { value: 'structure', label: t('results.structureSemanticsCardTitle') },
                         { value: 'seo', label: 'Links & SEO' },
                         { value: 'infra', label: 'Infrastruktur & Privacy' },
                         { value: 'generative', label: 'Generative Search (GEO)' },
@@ -1368,155 +1344,97 @@ export default function ResultsPage() {
                 }, {});
                 const landmarkCount = structureMapNodes.filter((n) => n.level === 0).length;
                 const headingCount = structureMapNodes.filter((n) => n.level >= 1 && n.level <= 6).length;
-                const hasOutline = outline.length > 0;
                 const hasStructure = structureMapNodes.length > 0;
                 const hasPageIndex = result.pageIndex && (result.pageIndex.regions?.length ?? 0) > 0;
-                const outlineVisible = Math.min(outline.length, structureOutlineVisibleCount);
-                const outlineHasMore = outline.length > OUTLINE_INITIAL_VISIBLE && outlineVisible < outline.length;
                 const h = result.ux?.headingHierarchy;
                 const qualitySingleH1 = h?.hasSingleH1 ?? true;
                 const qualitySkipped = (h?.skippedLevels?.length ?? 0) > 0 ? h!.skippedLevels.map((s) => `H${s.from}→H${s.to}`).join(', ') : '';
                 const regionCount = result.pageIndex?.regions?.length ?? 0;
+                const levelLine = formatStructureLevelParts(outlineLevelCounts);
+                const hasQualityIssue = Boolean(h && (!qualitySingleH1 || !!qualitySkipped));
 
                 return (
                     <MsqdxMoleculeCard
-                        title="Struktur & Semantik"
+                        title={t('results.structureSemanticsCardTitle')}
                         headerActions={<InfoTooltip title={t('info.structureSemantics')} ariaLabel={t('common.info')} />}
-                        subtitle="Visualisierung der Dokumentenstruktur (Headings, Landmarks)."
+                        subtitle={t('results.structureSemanticsCardSubtitle')}
                         sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-card-border)' }}
                     >
-                        {!hasOutline && !hasStructure ? (
+                        {!hasStructure ? (
                             <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
                                 {t('results.structureSummaryNoData')}
                             </MsqdxTypography>
                         ) : (
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, mb: 2 }}>
-                                {[1, 2, 3, 4, 5, 6].filter((l) => (outlineLevelCounts[l] ?? 0) > 0).map((level) => {
-                                    const count = outlineLevelCounts[level] ?? 0;
-                                    const severity = getHeadingChipSeverity(level, count);
-                                    const status = severity === 'success' ? MSQDX_STATUS.success : severity === 'warning' ? MSQDX_STATUS.warning : MSQDX_STATUS.error;
-                                    return (
-                                        <MsqdxChip
-                                            key={level}
-                                            label={`${count}× H${level}`}
-                                            size="small"
-                                            sx={{
-                                                fontSize: '0.7rem',
-                                                bgcolor: alpha(status.base, 0.14),
-                                                color: status.base,
-                                            }}
-                                        />
-                                    );
-                                })}
-                                {hasStructure && (() => {
-                                    const severity = getLandmarksHeadingsSeverity(landmarkCount, headingCount);
-                                    const status = severity === 'success' ? MSQDX_STATUS.success : severity === 'warning' ? MSQDX_STATUS.warning : MSQDX_STATUS.error;
-                                    return (
-                                        <MsqdxChip
-                                            label={`${landmarkCount} Landmarks, ${headingCount} Headings`}
-                                            size="small"
-                                            sx={{
-                                                fontSize: '0.7rem',
-                                                bgcolor: alpha(status.base, 0.14),
-                                                color: status.base,
-                                            }}
-                                        />
-                                    );
-                                })()}
-                                {h && (
-                                    <MsqdxChip
-                                        label={qualitySingleH1 ? t('results.structureQualitySingleH1') : t('results.structureQualityMultipleH1', { count: h.h1Count })}
-                                        size="small"
-                                        sx={{
-                                            fontSize: '0.7rem',
-                                            bgcolor: qualitySingleH1 ? alpha(MSQDX_STATUS.success.base, 0.12) : alpha(MSQDX_STATUS.warning.base, 0.12),
-                                            color: qualitySingleH1 ? MSQDX_STATUS.success.base : MSQDX_STATUS.warning.base,
-                                        }}
-                                    />
-                                )}
-                                {qualitySkipped && (
-                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-warning)' }}>
-                                        {t('results.structureQualitySkippedLevels', { list: qualitySkipped })}
+                            <>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25, mb: 2 }}>
+                                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-on-light)', lineHeight: 1.55 }}>
+                                        {levelLine
+                                            ? t('results.structureSummaryLine', { landmarks: landmarkCount, headings: headingCount, levels: levelLine })
+                                            : t('results.structureSummaryHeadingsOnly', { landmarks: landmarkCount, headings: headingCount })}
                                     </MsqdxTypography>
-                                )}
-                            </Box>
-                        )}
-                        <MsqdxAccordion allowMultiple size="small" borderRadius="md" sx={{ display: 'flex', flexDirection: 'column', gap: 1, background: 'transparent', border: 'none' }}>
-                            <MsqdxAccordionItem
-                                id="structure-outline"
-                                summary={
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                                        <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                                            {hasOutline ? t('results.structureOutlineEntries', { count: outline.length }) : t('results.structureOutlineNoData')}
+                                    {h && !hasQualityIssue && (
+                                        <MsqdxTypography variant="caption" sx={{ color: MSQDX_STATUS.success.base, fontWeight: 600 }}>
+                                            {t('results.structureQualityOk')}
                                         </MsqdxTypography>
-                                    </Box>
-                                }
-                            >
-                                {hasOutline ? (
-                                    <Box>
-                                        <Box component="ul" sx={{ pl: 2, m: 0, listStyle: 'none' }}>
-                                            {outline.slice(0, outlineVisible).map((item, i) => (
-                                                <Box
-                                                    key={i}
-                                                    component="li"
-                                                    sx={{
-                                                        pl: (item.level - 1) * 16,
-                                                        py: 0.25,
-                                                        fontSize: item.level === 1 ? '1rem' : item.level === 2 ? '0.95rem' : '0.85rem',
-                                                        color: 'var(--color-text-on-light)',
-                                                    }}
-                                                >
-                                                    <Box component="span" sx={{ fontWeight: item.level <= 2 ? 600 : 400 }}>H{item.level}</Box>
-                                                    {' — '}
-                                                    {item.text || '(leer)'}
-                                                </Box>
-                                            ))}
-                                        </Box>
-                                        {outlineHasMore && (
-                                            <MsqdxButton variant="text" size="small" onClick={() => setStructureOutlineVisibleCount(outline.length)} sx={{ mt: 1 }}>
-                                                {t('results.structureOutlineShowMore', { count: outline.length - outlineVisible })}
-                                            </MsqdxButton>
-                                        )}
-                                        {(!qualitySingleH1 || qualitySkipped) && h && (
-                                            <Box sx={{ mt: 1, p: 1, bgcolor: 'var(--color-secondary-dx-grey-light-tint)', borderRadius: 1 }}>
+                                    )}
+                                    {hasQualityIssue && h && (
+                                        <Alert severity="warning" variant="outlined" sx={{ py: 0.75, '& .MuiAlert-message': { width: '100%' } }}>
+                                            <Box component="div">
                                                 {!qualitySingleH1 && (
-                                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-warning)', display: 'block' }}>
+                                                    <MsqdxTypography variant="caption" sx={{ display: 'block', color: 'inherit' }}>
                                                         {t('results.structureQualityMultipleH1', { count: h.h1Count })}
                                                     </MsqdxTypography>
                                                 )}
-                                                {qualitySkipped && (
-                                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-warning)', display: 'block' }}>
+                                                {!!qualitySkipped && (
+                                                    <MsqdxTypography variant="caption" sx={{ display: 'block', color: 'inherit', mt: !qualitySingleH1 ? 0.5 : 0 }}>
                                                         {t('results.structureQualitySkippedLevels', { list: qualitySkipped })}
                                                     </MsqdxTypography>
                                                 )}
                                             </Box>
+                                        </Alert>
+                                    )}
+                                </Box>
+                                <MsqdxAccordion
+                                    allowMultiple
+                                    defaultExpanded={['structure-order']}
+                                    size="small"
+                                    borderRadius="md"
+                                    sx={{ display: 'flex', flexDirection: 'column', gap: 1, background: 'transparent', border: 'none' }}
+                                >
+                                    <MsqdxAccordionItem
+                                        id="structure-order"
+                                        summary={
+                                            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                                {t('results.structureMapSectionTitle')}
+                                            </MsqdxTypography>
+                                        }
+                                    >
+                                        <StructureMap nodes={structureMapNodes} embedded />
+                                    </MsqdxAccordionItem>
+                                    <MsqdxAccordionItem
+                                        id="structure-page-index"
+                                        summary={
+                                            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                                {hasPageIndex ? t('results.pageIndexRegionsCount', { count: regionCount }) : t('results.pageIndexNoData')}
+                                            </MsqdxTypography>
+                                        }
+                                    >
+                                        {result.pageIndex ? (
+                                            <PageIndexCard
+                                                pageIndex={result.pageIndex}
+                                                showSaliency
+                                                showHeader={false}
+                                                initialVisible={PAGE_INDEX_INITIAL_VISIBLE}
+                                            />
+                                        ) : (
+                                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                                {t('results.pageIndexNoData')}
+                                            </MsqdxTypography>
                                         )}
-                                    </Box>
-                                ) : (
-                                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>{t('results.structureOutlineNoData')}</MsqdxTypography>
-                                )}
-                            </MsqdxAccordionItem>
-                            <MsqdxAccordionItem
-                                id="structure-map"
-                                summary={
-                                    <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                                        {hasStructure ? t('results.structureMapTitle', { landmarks: landmarkCount, headings: headingCount }) : t('results.structureMapNoData')}
-                                    </MsqdxTypography>
-                                }
-                            >
-                                {hasStructure ? <StructureMap nodes={structureMapNodes} /> : <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>{t('results.structureMapNoData')}</MsqdxTypography>}
-                            </MsqdxAccordionItem>
-                            <MsqdxAccordionItem
-                                id="structure-page-index"
-                                summary={
-                                    <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                                        {hasPageIndex ? t('results.pageIndexRegionsCount', { count: regionCount }) : t('results.pageIndexNoData')}
-                                    </MsqdxTypography>
-                                }
-                            >
-                                {result.pageIndex ? <PageIndexCard pageIndex={result.pageIndex} showSaliency initialVisible={PAGE_INDEX_INITIAL_VISIBLE} /> : <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>{t('results.pageIndexNoData')}</MsqdxTypography>}
-                            </MsqdxAccordionItem>
-                        </MsqdxAccordion>
+                                    </MsqdxAccordionItem>
+                                </MsqdxAccordion>
+                            </>
+                        )}
                     </MsqdxMoleculeCard>
                 );
             })()}

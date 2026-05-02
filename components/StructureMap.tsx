@@ -12,6 +12,8 @@ interface StructureMapProps {
     nodes: StructureNode[];
     /** Max headings to show initially before "show more". Default from constants. */
     maxHeadingsInitial?: number;
+    /** Inside accordion: no outer card border/background (avoids double framing). */
+    embedded?: boolean;
 }
 
 function NodeRow({ node, isLandmark }: { node: StructureNode; isLandmark: boolean }) {
@@ -58,7 +60,7 @@ function NodeRow({ node, isLandmark }: { node: StructureNode; isLandmark: boolea
     );
 }
 
-export const StructureMap: React.FC<StructureMapProps> = ({ nodes, maxHeadingsInitial = STRUCTURE_MAP_HEADINGS_INITIAL }) => {
+export const StructureMap: React.FC<StructureMapProps> = ({ nodes, maxHeadingsInitial = STRUCTURE_MAP_HEADINGS_INITIAL, embedded = false }) => {
     const { t } = useI18n();
     const [expandedHeadings, setExpandedHeadings] = useState(false);
 
@@ -79,10 +81,11 @@ export const StructureMap: React.FC<StructureMapProps> = ({ nodes, maxHeadingsIn
     return (
         <Box
             sx={{
-                p: 2,
-                bgcolor: 'var(--color-card-bg)',
-                borderRadius: 1,
-                border: `1px solid ${MSQDX_NEUTRAL[200]}`,
+                p: embedded ? 0 : 2,
+                pt: embedded ? 0.5 : 2,
+                bgcolor: embedded ? 'transparent' : 'var(--color-card-bg)',
+                borderRadius: embedded ? 0 : 1,
+                border: embedded ? 'none' : `1px solid ${MSQDX_NEUTRAL[200]}`,
             }}
         >
             {landmarks.length > 0 && (
@@ -115,8 +118,8 @@ export const StructureMap: React.FC<StructureMapProps> = ({ nodes, maxHeadingsIn
                 </Box>
             )}
             {landmarks.length > 0 || headings.length > 0 ? (
-                <Box sx={{ mt: 2, fontSize: '0.8rem', color: MSQDX_NEUTRAL[500] }}>
-                    * Landmarks (nav, main, etc.) are highlighted. Headings are indented.
+                <Box sx={{ mt: embedded ? 1.5 : 2, fontSize: '0.75rem', color: MSQDX_NEUTRAL[500] }}>
+                    {t('results.structureMapFootnote')}
                 </Box>
             ) : null}
         </Box>

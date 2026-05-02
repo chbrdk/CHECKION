@@ -30,9 +30,16 @@ export interface PageIndexCardProps {
     showSaliency?: boolean;
     /** Initial number of regions to show; rest behind "show more". Default from constants. */
     initialVisible?: number;
+    /** When false, omit the in-card title row (e.g. accordion already has a section title). @default true */
+    showHeader?: boolean;
 }
 
-export function PageIndexCard({ pageIndex, showSaliency = true, initialVisible = PAGE_INDEX_INITIAL_VISIBLE }: PageIndexCardProps) {
+export function PageIndexCard({
+    pageIndex,
+    showSaliency = true,
+    initialVisible = PAGE_INDEX_INITIAL_VISIBLE,
+    showHeader = true,
+}: PageIndexCardProps) {
     const { t } = useI18n();
     const [showAllRegions, setShowAllRegions] = useState(false);
 
@@ -57,12 +64,14 @@ export function PageIndexCard({ pageIndex, showSaliency = true, initialVisible =
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}>
-                    {t('results.pageIndexTitle')}
-                </MsqdxTypography>
-                <InfoTooltip title={t('info.pageIndex')} ariaLabel={t('common.info')} />
-            </Box>
+            {showHeader && (
+                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                    <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}>
+                        {t('results.pageIndexTitle')}
+                    </MsqdxTypography>
+                    <InfoTooltip title={t('info.pageIndex')} ariaLabel={t('common.info')} />
+                </Box>
+            )}
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
                 <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', mr: 0.5 }}>
                     {t('results.pageIndexAboveFoldCount', { count: aboveFoldCount })}
