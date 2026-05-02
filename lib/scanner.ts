@@ -36,6 +36,7 @@ import type {
 } from './types';
 import { normalizeScanResultForPersist } from '@/lib/scan-result-shape';
 import { computeContentFreshness } from '@/lib/content-freshness';
+import { SEO_STOPWORD_LIST } from '@/lib/seo-stopwords';
 import { scanDebugLog, scanDebugWarn } from './scan-debug-log';
 import { buildPrivacyAudit } from '@/lib/privacy-scan-heuristics';
 import { estimateDwellTime } from '@/lib/estimate-dwell-time';
@@ -771,7 +772,8 @@ export async function runScan(
         };
 
         // 5b. SEO Meta Extraction (Enhanced with Languages & Privacy)
-        const seoAndMeta = await page.evaluate(function () {
+        const seoAndMeta = await page.evaluate(function (stopList: string[]) {
+            const stopWords = new Set(stopList);
             const getMeta = (name: string) => document.querySelector(`meta[name="${name}"]`)?.getAttribute('content') || null;
             const getOg = (prop: string) => document.querySelector(`meta[property="${prop}"]`)?.getAttribute('content') || null;
 
@@ -869,8 +871,13 @@ export async function runScan(
             const duplicateContentWarning = titleStr.length > 10 && metaDesc.length > 10 &&
                 (titleStr.indexOf(metaDesc.slice(0, 30)) !== -1 || metaDesc.indexOf(titleStr.slice(0, 30)) !== -1);
 
-            const stopWords = new Set(['der','die','das','den','dem','des','ein','eine','einer','eines','und','oder','aber','dass','ist','sind','war','waren','werden','wird','hat','haben','had','kann','können','muss','müssen','soll','sollen','noch','auch','nur','schon','sehr','bei','von','zum','zur','mit','für','auf','aus','nach','bis','durch','gegen','ohne','um','the','a','an','and','or','but','that','is','are','was','were','will','would','has','have','had','can','could','must','should','also','only','just','very','with','for','from','to','in','on','at','by','as','it','its','this','these','that','those','i','you','he','she','we','they','what','which','who','when','where','how','all','each','every','both','some','any','not','en','de','fr','es','it','nl','pl','pt','ru','ja','zh','access','denied','don','permission','http','https','www','com','org','net','href','url','link','click','login','sign','cookie','session','error','page','content','index','home','null','undefined','view','edit','search','menu','submit','back','next','previous','loading','please','wait','ok','cancel','yes','no','true','false','default','custom','select','optional','required']);
-            const rawWords = bodyText.toLowerCase().replace(/[^a-zäöüß\s]/g, ' ').split(/\s+/).filter(function(w) { return w.length >= 2; });
+            const rawWords = bodyText
+                .toLowerCase()
+                .replace(/[^a-zäöüß\s]/g, ' ')
+                .split(/\s+/)
+                .filter(function (w) {
+                    return w.length >= 3 && !/^\d+$/.test(w);
+                });
             const wordFreq: Record<string, number> = {};
             rawWords.forEach(function(w) {
                 if (!stopWords.has(w)) wordFreq[w] = (wordFreq[w] || 0) + 1;
@@ -1227,7 +1234,7 @@ export async function runScan(
                     };
                 })()
             };
-        });
+        }, SEO_STOPWORD_LIST);
 
         let seoAudit: SeoAudit = seoAndMeta.seo as SeoAudit;
         const metaDwell = (
