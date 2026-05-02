@@ -8,7 +8,6 @@ import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, handleApiError, API_STATUS } from '@/lib/api-error-handler';
 import { parseApiBody, scanBodySchema } from '@/lib/api-schemas';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { launchStandaloneScanBrowser, runScan } from '@/lib/scanner';
 import {
     insertScanSession,
     persistStandaloneScanRow,
@@ -51,6 +50,9 @@ async function executeStandaloneScan(
         beforePersist?: () => void | Promise<void>;
     }
 ): Promise<ScanResult> {
+    /** Dynamic import so this route module never loads Puppeteer until a scan runs (avoids top-level 500 if Chromium/deps missing). */
+    const { runScan, launchStandaloneScanBrowser } = await import('@/lib/scanner');
+
     const groupId = uuidv4();
     const devices: Device[] = resolveStandaloneScanDevices(body);
 
@@ -167,7 +169,13 @@ export async function POST(request: Request) {
             console.error('[CHECKION] POST /api/scan getRequestUser failed:', authErr);
             return apiError('Authentication temporarily unavailable', API_STATUS.UNAVAILABLE);
         }
-        const rl = await checkRateLimit(`scan:${user.id}`, 'default');
+        let rl: Awaited<ReturnType<typeof checkRateLimit>>;
+        try {
+            rl = await checkRateLimit(`scan:${user.id}`, 'default');
+        } catch (rlErr) {
+            console.error('[CHECKION] POST /api/scan checkRateLimit failed:', rlErr);
+            return apiError('Service temporarily unavailable', API_STATUS.UNAVAILABLE);
+        }
         if (!rl.allowed) {
             return apiError(
                 'Too many requests. Please try again later.',
@@ -184,7 +192,11 @@ export async function POST(request: Request) {
             const stream = new ReadableStream<Uint8Array>({
                 async start(controller) {
                     const send = (line: ScanNdjsonLine) => {
-                        controller.enqueue(encoder.encode(`${JSON.stringify(line)}\n`));
+                        try {
+                            controller.enqueue(encoder.encode(`${JSON.stringify(line)}\n`));
+                        } catch (enqueueErr) {
+                            console.error('[CHECKION] POST /api/scan NDJSON enqueue failed:', enqueueErr);
+                        }
                     };
                     try {
                         const desktopResult = await executeStandaloneScan(user, body, {

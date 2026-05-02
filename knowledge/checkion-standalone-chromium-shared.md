@@ -10,6 +10,8 @@
 - `runScan` schließt nur die **Page** im `finally`; den **Browser** schließt nur der Aufrufer, wenn er ihn selbst gestartet hat (`ownBrowser`).
 - Ein Gerät (`quickScan` oder nur `desktop`): unverändert ein Browser pro `runScan`.
 - `app/api/scan/route.ts`: `export const runtime = 'nodejs'` (Puppeteer bricht auf Edge ab → oft **500**). Legacy-JSON (`x-checkion-scan-stream: 0`): Scan-Fehler → **422** + JSON, nicht 500.
+- **Dynamischer Import** von `@/lib/scanner` erst in `executeStandaloneScan` — die Route lädt **kein** Puppeteer beim Modul-Start; fehlende Chromium-Deps würden sonst schon beim ersten Request einen **500** auslösen, bevor der NDJSON-Stream antwortet.
+- **Immer noch 500 auf POST /api/scan:** Oft **nicht** die App, sondern **Proxy/Timeout** (langer Scan, Verbindung abgebrochen). In Coolify/Nginx `proxy_read_timeout` / ggf. `Body` der Antwort prüfen; Server-Logs nach `[CHECKION] POST /api/scan` durchsuchen.
 
 ## Relevante Dateien
 
