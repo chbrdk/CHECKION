@@ -29,6 +29,12 @@ import { maybeAutoFillProjectClassificationFromStandaloneScan } from '@/lib/proj
 import type { ScanNdjsonLine } from '@/lib/scan-progress';
 import { resolveStandaloneScanDevices } from '@/lib/standalone-scan-devices';
 
+/** Puppeteer requires Node runtime (Edge would fail loading native deps). */
+export const runtime = 'nodejs';
+
+/** Auth, rate limit, scan — never cache as static. */
+export const dynamic = 'force-dynamic';
+
 type ScanBody = z.infer<typeof scanBodySchema>;
 
 /** NDJSON unless client explicitly opts into legacy JSON (`x-checkion-scan-stream: 0`). */
@@ -83,11 +89,13 @@ async function executeStandaloneScan(
             )
         );
     } else {
+        // One Chromium, one page at a time — parallel pages still stressed RAM on small hosts.
         const sharedBrowser = await launchStandaloneScanBrowser();
         try {
-            results = await Promise.all(
-                devices.map((device) =>
-                    runScan({
+            const sequential: ScanResult[] = [];
+            for (const device of devices) {
+                sequential.push(
+                    await runScan({
                         url: body.url,
                         standard: body.standard,
                         runners: body.runners,
@@ -98,8 +106,9 @@ async function executeStandaloneScan(
                         onProgress: hooks?.onDeviceProgress,
                         sharedBrowser,
                     })
-                )
-            );
+                );
+            }
+            results = sequential;
         } finally {
             try {
                 await sharedBrowser.close();
@@ -147,9 +156,16 @@ async function executeStandaloneScan(
 
 export async function POST(request: Request) {
     try {
-        const user = await getRequestUser(request);
-        if (!user) {
-            return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
+        let user: { id: string };
+        try {
+            const resolved = await getRequestUser(request);
+            if (!resolved) {
+                return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
+            }
+            user = resolved;
+        } catch (authErr) {
+            console.error('[CHECKION] POST /api/scan getRequestUser failed:', authErr);
+            return apiError('Authentication temporarily unavailable', API_STATUS.UNAVAILABLE);
         }
         const rl = await checkRateLimit(`scan:${user.id}`, 'default');
         if (!rl.allowed) {
@@ -205,11 +221,20 @@ export async function POST(request: Request) {
             });
         }
 
-        const desktopResult = await executeStandaloneScan(user, body);
-        return NextResponse.json({
-            success: true,
-            data: desktopResult,
-        });
+        try {
+            const desktopResult = await executeStandaloneScan(user, body);
+            return NextResponse.json({
+                success: true,
+                data: desktopResult,
+            });
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Unknown error';
+            console.error('[CHECKION] POST /api/scan (legacy JSON) failed:', message);
+            return NextResponse.json(
+                { success: false, error: `Scan failed: ${message}` },
+                { status: 422 }
+            );
+        }
     } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
         const stack = err instanceof Error ? err.stack : undefined;

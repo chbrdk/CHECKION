@@ -6,9 +6,10 @@
 
 ## Änderung
 
-- Bei **mehr als einem Gerät**: ein Aufruf `launchStandaloneScanBrowser()` in `executeStandaloneScan`, dieselbe `Browser`-Instanz an jeden `runScan` als `sharedBrowser`.
+- Bei **mehr als einem Gerät**: ein Aufruf `launchStandaloneScanBrowser()` in `executeStandaloneScan`, dieselbe `Browser`-Instanz an jeden `runScan` als `sharedBrowser`. Geräte **nacheinander** (`for` + `await`), nicht drei Pages parallel — sonst weiterhin hoher RAM-Druck auf kleinen Hosts.
 - `runScan` schließt nur die **Page** im `finally`; den **Browser** schließt nur der Aufrufer, wenn er ihn selbst gestartet hat (`ownBrowser`).
 - Ein Gerät (`quickScan` oder nur `desktop`): unverändert ein Browser pro `runScan`.
+- `app/api/scan/route.ts`: `export const runtime = 'nodejs'` (Puppeteer bricht auf Edge ab → oft **500**). Legacy-JSON (`x-checkion-scan-stream: 0`): Scan-Fehler → **422** + JSON, nicht 500.
 
 ## Relevante Dateien
 
