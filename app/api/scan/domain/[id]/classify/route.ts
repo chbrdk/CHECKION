@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { getDomainScan, listScansByGroupId } from '@/lib/db/scans';
+import { getDomainScan, listScansByGroupIdOmitImageBlobs } from '@/lib/db/scans';
 import { PAGE_CLASSIFY_MIN_BODY_EXCERPT_CHARS } from '@/lib/llm/page-classification';
 import { runDomainScanPageClassificationJob } from '@/lib/domain-scan-page-classification-job';
 
@@ -32,7 +32,7 @@ export async function POST(
     if (!domainScan) {
         return apiError('Domain scan not found.', API_STATUS.NOT_FOUND);
     }
-    const pages = await listScansByGroupId(user.id, domainId);
+    const pages = await listScansByGroupIdOmitImageBlobs(user.id, domainId);
     const toClassify = pages.filter(
         (p) => (p.bodyTextExcerpt ?? '').trim().length >= PAGE_CLASSIFY_MIN_BODY_EXCERPT_CHARS
     );

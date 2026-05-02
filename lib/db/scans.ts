@@ -15,6 +15,14 @@ import type { UxCheckV2Summary } from '@/lib/ux-check-types';
 import { normalizeScanUrl } from '@/lib/url-normalize';
 import { buildDomainScanLineageKey } from '@/lib/domain-scan-lineage';
 import { getProject } from './projects';
+import { replaceScanIssuesForScan } from '@/lib/db/scan-issues-persist';
+
+/**
+ * Drop heavy top-level keys in SQL (Postgres `jsonb - key`) for bulk reads.
+ * Keeps issues/seo/ux for aggregation & search; omits image blobs and axe `passes` (often large).
+ * Not used for {@link getScan} or {@link listScansByGroupId} (full row for API thumbnails).
+ */
+const scanResultForBulkRead = sql<ScanResult>`(${scans.result})::jsonb - 'screenshot' - 'saliencyHeatmap' - 'passes'`;
 
 export type DomainScanSummaryRow = {
     id: string;
@@ -279,23 +287,26 @@ export async function addScan(
 ): Promise<void> {
     const db = getDb();
     const normalized = normalizeScanResultForPersist(result);
-    await db.insert(scans).values({
-        id: normalized.id,
-        userId,
-        projectId: options?.projectId ?? null,
-        url: normalized.url,
-        device: normalized.device,
-        groupId: normalized.groupId ?? null,
-        scanSessionId: options?.scanSessionId ?? null,
-        timestamp: normalized.timestamp,
-        result: normalized as unknown as Record<string, unknown>,
-        resultSchemaVersion: normalized.scanSchemaVersion ?? null,
-        errorsCount: normalized.stats.errors,
-        warningsCount: normalized.stats.warnings,
-        noticesCount: normalized.stats.notices,
-        durationMs: normalized.durationMs,
-        score: Math.round(normalized.score),
-        tags: normalizeTagList(options?.tags ?? []),
+    await db.transaction(async (tx) => {
+        await tx.insert(scans).values({
+            id: normalized.id,
+            userId,
+            projectId: options?.projectId ?? null,
+            url: normalized.url,
+            device: normalized.device,
+            groupId: normalized.groupId ?? null,
+            scanSessionId: options?.scanSessionId ?? null,
+            timestamp: normalized.timestamp,
+            result: normalized as unknown as Record<string, unknown>,
+            resultSchemaVersion: normalized.scanSchemaVersion ?? null,
+            errorsCount: normalized.stats.errors,
+            warningsCount: normalized.stats.warnings,
+            noticesCount: normalized.stats.notices,
+            durationMs: normalized.durationMs,
+            score: Math.round(normalized.score),
+            tags: normalizeTagList(options?.tags ?? []),
+        });
+        await replaceScanIssuesForScan(tx, userId, normalized.id, normalized.issues);
     });
 }
 
@@ -380,19 +391,23 @@ export async function updateScanResult(id: string, userId: string, patch: Partia
     if (rows.length === 0) return false;
     const current = rows[0].result as unknown as ScanResult;
     const merged = mergeScanResultPatch(current, patch);
-    const updated = await db
-        .update(scans)
-        .set({
-            result: merged as unknown as Record<string, unknown>,
-            resultSchemaVersion: merged.scanSchemaVersion ?? null,
-            errorsCount: merged.stats.errors,
-            warningsCount: merged.stats.warnings,
-            noticesCount: merged.stats.notices,
-            durationMs: merged.durationMs,
-            score: Math.round(merged.score),
-        })
-        .where(and(eq(scans.id, id), eq(scans.userId, userId)));
-    return (updated.rowCount ?? 0) > 0;
+    return await db.transaction(async (tx) => {
+        const updated = await tx
+            .update(scans)
+            .set({
+                result: merged as unknown as Record<string, unknown>,
+                resultSchemaVersion: merged.scanSchemaVersion ?? null,
+                errorsCount: merged.stats.errors,
+                warningsCount: merged.stats.warnings,
+                noticesCount: merged.stats.notices,
+                durationMs: merged.durationMs,
+                score: Math.round(merged.score),
+            })
+            .where(and(eq(scans.id, id), eq(scans.userId, userId)));
+        if ((updated.rowCount ?? 0) === 0) return false;
+        await replaceScanIssuesForScan(tx, userId, id, merged.issues);
+        return true;
+    });
 }
 
 export async function listScans(userId: string): Promise<ScanResult[]> {
@@ -613,7 +628,7 @@ export async function listStandaloneScansFull(
         tag: options?.tag,
     });
     const base = db
-        .select({ result: scans.result })
+        .select({ result: scanResultForBulkRead })
         .from(scans)
         .leftJoin(projects, eq(scans.projectId, projects.id))
         .where(whereCond)
@@ -638,6 +653,30 @@ export async function listScansByGroupId(userId: string, groupId: string): Promi
     );
     const rows = await db
         .select({ result: scans.result })
+        .from(scans)
+        .where(and(eq(scans.groupId, groupId), access));
+    return rows.map((r) => r.result as unknown as ScanResult);
+}
+
+/**
+ * Same as {@link listScansByGroupId} but drops `screenshot`, `saliencyHeatmap`, and `passes` in SQL.
+ * Use for aggregation refresh, search, LLM jobs — not for API responses that may show thumbnails.
+ */
+export async function listScansByGroupIdOmitImageBlobs(
+    userId: string,
+    groupId: string
+): Promise<ScanResult[]> {
+    const db = getDb();
+    const access = or(
+        eq(scans.userId, userId),
+        sql`exists (
+            select 1 from standalone_scan_entitlements e
+            where e.user_id = ${userId}
+            and e.scan_session_id = ${scans.scanSessionId}
+        )`
+    );
+    const rows = await db
+        .select({ result: scanResultForBulkRead })
         .from(scans)
         .where(and(eq(scans.groupId, groupId), access));
     return rows.map((r) => r.result as unknown as ScanResult);
@@ -1034,16 +1073,22 @@ export async function getLatestScanForUrlFingerprint(
     projectId?: string | null,
 ): Promise<{ documentCacheHints: NonNullable<ScanResult['documentCacheHints']>; scanResult: ScanResult } | null> {
     const db = getDb();
+    /** Project URL + hints only — avoid loading 200× full `result` JSON; load one full row on match for reuse. */
     const rows = await db
-        .select({ result: scans.result, projectId: scans.projectId })
+        .select({
+            id: scans.id,
+            projectId: scans.projectId,
+            urlFromResult: sql<string | null>`(${scans.result})::jsonb->>'url'`,
+            hintsJson: sql<unknown>`(${scans.result})::jsonb->'documentCacheHints'`,
+        })
         .from(scans)
         .where(and(eq(scans.userId, userId), eq(scans.device, device)))
         .orderBy(desc(scans.timestamp))
         .limit(FINGERPRINT_SCAN_LOOKBACK);
 
     for (const row of rows) {
-        const scanResult = row.result as unknown as ScanResult;
-        if (normalizeScanUrl(scanResult.url) !== normalizedUrl) continue;
+        const urlRaw = row.urlFromResult ?? '';
+        if (normalizeScanUrl(urlRaw) !== normalizedUrl) continue;
 
         if (projectId === undefined) {
             // any project
@@ -1053,17 +1098,20 @@ export async function getLatestScanForUrlFingerprint(
             continue;
         }
 
-        const hints = scanResult.documentCacheHints;
+        const hints = row.hintsJson as ScanResult['documentCacheHints'] | null;
         const etag = hints?.etag?.trim();
         const lastModified = hints?.lastModified?.trim();
         if (!etag && !lastModified) continue;
+
+        const full = await getScan(row.id, userId);
+        if (!full) continue;
 
         return {
             documentCacheHints: {
                 ...(etag ? { etag } : {}),
                 ...(lastModified ? { lastModified } : {}),
             },
-            scanResult,
+            scanResult: full,
         };
     }
     return null;

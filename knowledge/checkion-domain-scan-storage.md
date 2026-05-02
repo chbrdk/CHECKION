@@ -122,6 +122,6 @@ Legacy **`GET .../summary?light=1`** bleibt für andere Clients nutzbar; die ein
 
 ## Siehe auch
 
-- `lib/db/scans.ts`: `listScansByGroupId(userId, groupId)`.
+- `lib/db/scans.ts`: `listScansByGroupId` (voll, z. B. `GET /api/scan?groupId=`), `listScansByGroupIdOmitImageBlobs` (Bulk ohne Screenshot/Heatmap — siehe `knowledge/checkion-deep-scan-db-hot-paths.md`).
 - `app/api/scan/domain/route.ts`: Speicherlogik nach Scan-Ende.
 - `knowledge/checkion-caching.md`: Cache-Tags für Domain-Scans.

@@ -231,6 +231,8 @@ export const apiScanClassify = (id: string) => `${apiScan(id)}/classify`;
 export const apiScanUxCheck = (id: string) => `${apiScan(id)}/ux-check`;
 /** Build: /api/scan/[id]/screenshot */
 export const apiScanScreenshot = (id: string) => `${apiScan(id)}/screenshot`;
+/** Build: GET /api/scan/[id]/issues — WCAG issues from `scan_issues` (same access as GET /api/scan/[id]). */
+export const apiScanIssues = (id: string) => `${apiScan(id)}/issues`;
 
 /** Build: POST /api/scan/domain */
 export const apiScanDomainCreate = API_SCAN_DOMAIN;

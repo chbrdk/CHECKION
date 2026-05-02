@@ -50,6 +50,13 @@
       "when": 1772000000005,
       "tag": "0018_standalone_scan_entitlements",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1772000000006,
+      "tag": "0019_scan_issues",
+      "breakpoints": true
     }
   ]
 }

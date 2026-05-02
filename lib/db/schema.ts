@@ -3,7 +3,7 @@
 /* ------------------------------------------------------------------ */
 
 import { sql } from 'drizzle-orm';
-import { pgTable, text, timestamp, jsonb, integer, primaryKey, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, jsonb, integer, primaryKey, uniqueIndex, index } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
     id: text('id').primaryKey(),
@@ -76,6 +76,36 @@ export const scans = pgTable('scans', {
     /** Normalized filter tags (union with project.tags in list queries). */
     tags: jsonb('tags').notNull().default([]),
 });
+
+/** WCAG issues for a single `scans` row (mirror of `result.issues` for SQL / reporting). */
+export const scanIssues = pgTable(
+    'scan_issues',
+    {
+        id: text('id').primaryKey(),
+        scanId: text('scan_id')
+            .notNull()
+            .references(() => scans.id, { onDelete: 'cascade' }),
+        userId: text('user_id').notNull(),
+        ordinal: integer('ordinal').notNull(),
+        code: text('code').notNull(),
+        type: text('type').notNull(),
+        message: text('message').notNull(),
+        context: text('context').notNull().default(''),
+        selector: text('selector').notNull().default(''),
+        runner: text('runner').notNull(),
+        wcagLevel: text('wcag_level').notNull(),
+        helpUrl: text('help_url'),
+        boundingBox: jsonb('bounding_box'),
+        createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    },
+    (t) => ({
+        scanOrdinalUniq: uniqueIndex('scan_issues_scan_ordinal_uniq').on(t.scanId, t.ordinal),
+        scanIdIdx: index('scan_issues_scan_id_idx').on(t.scanId),
+        userIdIdx: index('scan_issues_user_id_idx').on(t.userId),
+        scanCodeIdx: index('scan_issues_scan_code_idx').on(t.scanId, t.code),
+        scanTypeIdx: index('scan_issues_scan_type_idx').on(t.scanId, t.type),
+    })
+);
 
 /**
  * Reuse of another user’s standalone session: no duplicate `scans` rows; `project_id` is the viewer’s project.

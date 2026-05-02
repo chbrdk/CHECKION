@@ -9,7 +9,7 @@ import { isAdminApiRequest } from '@/lib/auth-admin-api';
 import { getDomainScanAccess } from '@/lib/domain-scan-access';
 import { apiError, internalError, API_STATUS } from '@/lib/api-error-handler';
 import { parseApiBody, domainJourneyBodySchema } from '@/lib/api-schemas';
-import { getDomainScan, listScansByGroupId } from '@/lib/db/scans';
+import { getDomainScan, listScansByGroupIdOmitImageBlobs } from '@/lib/db/scans';
 import { getOpenAIKey } from '@/lib/llm/config';
 import { runJourneyAgent, runJourneyAgentStream, type JourneyStreamEvent } from '@/lib/llm/journey-agent';
 import { reportUsage } from '@/lib/usage-report';
@@ -44,7 +44,7 @@ export async function POST(
     /** Journey needs full ScanResult[] (pageIndex, allLinks, etc.). Load from scans table when stored payload has slim pages. */
     let domainResult: DomainScanResult & { pages: ScanResult[] };
     if (hasStoredAggregated(domainPayload)) {
-        const fullPages = await listScansByGroupId(owner, id);
+        const fullPages = await listScansByGroupIdOmitImageBlobs(owner, id);
         domainResult = { ...domainPayload, pages: fullPages };
     } else {
         domainResult = domainPayload as DomainScanResult & { pages: ScanResult[] };

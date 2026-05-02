@@ -1,7 +1,7 @@
 import { getDb } from '@/lib/db';
 import { and, eq, sql } from 'drizzle-orm';
 import { domainIssueGroups } from '@/lib/db/schema';
-import { listScansByGroupId } from '@/lib/db/scans';
+import { listScansByGroupIdOmitImageBlobs } from '@/lib/db/scans';
 import { rebuildDomainIssuesFromPages } from '@/lib/db/domain-issues';
 
 /**
@@ -17,7 +17,7 @@ export async function ensureDomainIssueTablesBackfilled(params: { userId: string
     const count = Number(existing[0]?.count ?? 0);
     if (count > 0) return;
 
-    const pages = await listScansByGroupId(params.userId, params.domainScanId);
+    const pages = await listScansByGroupIdOmitImageBlobs(params.userId, params.domainScanId);
     if (!pages || pages.length === 0) return;
     await rebuildDomainIssuesFromPages({ userId: params.userId, domainScanId: params.domainScanId, pages });
 }

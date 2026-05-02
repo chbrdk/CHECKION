@@ -15,6 +15,7 @@ import {
     pathShare,
     apiScan,
     apiScanScreenshot,
+    apiScanIssues,
     apiScanDomainStatus,
     apiScanDomainSummary,
     apiShareToken,
@@ -178,6 +179,10 @@ describe('API path builders', () => {
 
     it('apiScanScreenshot builds screenshot URL', () => {
         expect(apiScanScreenshot('s1')).toBe('/api/scan/s1/screenshot');
+    });
+
+    it('apiScanIssues builds issues URL', () => {
+        expect(apiScanIssues('s1')).toBe('/api/scan/s1/issues');
     });
 
     it('apiScanDomainStatus builds status URL', () => {

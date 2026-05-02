@@ -4,7 +4,7 @@
  */
 
 import { shouldAiFillProjectMetadata } from '@/lib/domain-scan-ai-metadata';
-import { listScansByGroupId, updateScanResult, getDomainScan } from '@/lib/db/scans';
+import { listScansByGroupIdOmitImageBlobs, updateScanResult, getDomainScan } from '@/lib/db/scans';
 import { refreshDomainPayloadFromScans } from '@/lib/domain-scan-classify';
 import {
     classifyPageWithLlm,
@@ -39,7 +39,7 @@ export async function runDomainScanPageClassificationJob(
             return;
         }
 
-        const pages = await listScansByGroupId(userId, domainScanId);
+        const pages = await listScansByGroupIdOmitImageBlobs(userId, domainScanId);
         const toClassify = pages.filter(
             (p) => (p.bodyTextExcerpt ?? '').trim().length >= PAGE_CLASSIFY_MIN_BODY_EXCERPT_CHARS,
         );
