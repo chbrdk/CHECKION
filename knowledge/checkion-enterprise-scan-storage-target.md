@@ -51,6 +51,8 @@ CHECKION kennt **`SCREENSHOT_STORAGE`** (`lib/constants.ts`: `ENV_SCREENSHOT_STO
 | `scan_issues` | **Umgesetzt** — Issues pro `scans`-Zeile (parallel zu JSON); siehe `knowledge/checkion-scan-issues-table.md`. |
 | `domain_pages` / `domain_page_issues` | Deep-Scan-Domain-UI (unverändert). |
 
+**Abgleich Single- vs. Deep-Scan-Issues (Tabellen, Backfills, Ablauf):** [checkion-wcag-issues-storage-overview.md](checkion-wcag-issues-storage-overview.md).
+
 ### D. Analytics / Warehouse
 
 - Optional; Produkt-DB nicht für schwere BI-Queries über Roh-JSON.

@@ -1,15 +1,10 @@
 import { and, eq, sql, desc } from 'drizzle-orm';
+import { chunkArray } from '@/lib/array-chunk';
 import { getDb } from '@/lib/db';
 import { domainIssueGroups, domainPageIssues, domainPages } from '@/lib/db/schema';
 import type { Issue, ScanResult } from '@/lib/types';
 import { buildDomainIssueGroupKey } from '@/lib/domain-issues-group-key';
-
-function chunk<T>(arr: T[], size: number): T[][] {
-    if (arr.length === 0) return [];
-    const out: T[][] = [];
-    for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
-    return out;
-}
+import { issueToFlatColumns, metaFromWcagIssueFlat } from '@/lib/wcag-issue-flat';
 
 function stableId(prefix: string, seed: string): string {
     // Keep id short but deterministic; text PK is fine.
@@ -50,7 +45,7 @@ export async function rebuildDomainIssuesFromPages(params: {
             };
         });
 
-        for (const c of chunk(pageRows, 500)) {
+        for (const c of chunkArray(pageRows, 500)) {
             await tx.insert(domainPages).values(c);
         }
 
@@ -74,26 +69,27 @@ export async function rebuildDomainIssuesFromPages(params: {
             const domainPageId = domainPageRowId(domainScanId, p.url);
             for (let idx = 0; idx < (p.issues ?? []).length; idx++) {
                 const issue = (p.issues ?? [])[idx] as Issue;
-                const groupKey = buildDomainIssueGroupKey({ code: issue.code, type: issue.type, message: issue.message });
+                const f = issueToFlatColumns(issue);
+                const groupKey = buildDomainIssueGroupKey({ code: f.code, type: f.type, message: f.message });
                 issueRows.push({
                     id: stableId('dpi', `${domainPageId}|${groupKey}|${issue.selector ?? ''}|${idx}`),
                     domainScanId,
                     domainPageId,
                     userId,
                     groupKey,
-                    type: issue.type,
-                    code: issue.code,
-                    message: issue.message,
-                    runner: issue.runner ?? null,
-                    wcagLevel: issue.wcagLevel ?? null,
-                    helpUrl: issue.helpUrl ?? null,
+                    type: f.type,
+                    code: f.code,
+                    message: f.message,
+                    runner: f.runner ?? null,
+                    wcagLevel: f.wcagLevel ?? null,
+                    helpUrl: f.helpUrl,
                     selector: issue.selector ?? null,
-                    meta: issue.boundingBox ? { boundingBox: issue.boundingBox } : null,
+                    meta: metaFromWcagIssueFlat(f),
                 });
             }
         }
 
-        for (const c of chunk(issueRows, 1000)) {
+        for (const c of chunkArray(issueRows, 1000)) {
             await tx.insert(domainPageIssues).values(
                 c.map((r) => ({
                     ...r,

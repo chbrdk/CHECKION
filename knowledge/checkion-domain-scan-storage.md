@@ -1,5 +1,7 @@
 # Domain (Deep) Scan Storage – Refactor
 
+**WCAG-Issues über alle Speicherorte:** [checkion-wcag-issues-storage-overview.md](checkion-wcag-issues-storage-overview.md)
+
 ## Übersicht
 
 Beim Deep Scan werden **alle relevanten Metriken bereits während des Scans** berechnet und in **einem einzigen DB-Eintrag** (`domain_scans.payload`) gespeichert. Die einzelnen Seiten bleiben als Single-Scans in der Tabelle `scans` (mit `group_id` = Domain-Scan-ID) und sind über `/results/[id]` verlinkt.

@@ -1,5 +1,7 @@
 # Tabelle `scan_issues` (Single-Scan)
 
+**Querschnitt Single vs. Deep:** [checkion-wcag-issues-storage-overview.md](checkion-wcag-issues-storage-overview.md)
+
 ## Zweck
 
 - **Relationale** Abbildung von `ScanResult.issues` pro Zeile in `scans`.
