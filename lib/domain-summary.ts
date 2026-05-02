@@ -301,6 +301,10 @@ function capAggregatedForSize(
             ? {
                   ...aggregated.generative,
                   pages: (aggregated.generative.pages ?? []).slice(0, c.generativePages),
+                  weakestRepurposingPages: (aggregated.generative.weakestRepurposingPages ?? []).slice(
+                      0,
+                      c.generativePages
+                  ),
               }
             : aggregated.generative,
         structure: aggregated.structure

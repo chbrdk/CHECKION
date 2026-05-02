@@ -814,13 +814,34 @@ export function aggregateEeatOnPage(pages: ScanResult[]): AggregatedEeatOnPage {
 /** Generative (GEO): average score + content summary + per-page. */
 export interface AggregatedGenerative {
   score: number;
+  /** Average Auffindbarkeit (0–100); omitted if no page has `dimensions`. */
+  avgDiscoverability?: number;
+  /** Average Wiederverwertbarkeit (0–100); omitted if no page has `dimensions`. */
+  avgRepurposing?: number;
   pageCount: number;
   withLlmsTxt: number;
   withRobotsAllowingAi: number;
   /** Averages across pages (faqCount, listDensity, citationDensity). */
   contentSummary: { avgFaqCount: number; avgListDensity: number; avgCitationDensity: number };
-  pages: Array<{ url: string; score: number; hasLlmsTxt: boolean; hasRecommendedSchema: boolean }>;
+  /** Domain-level pattern counts for GEO prioritization. */
+  issuePatterns?: {
+    pagesWithoutFaqSchema: number;
+    pagesWithoutHowToOrFaqSchema: number;
+    pagesWithoutBreadcrumbSchema: number;
+  };
+  pages: Array<{
+    url: string;
+    score: number;
+    discoverability?: number;
+    repurposing?: number;
+    hasLlmsTxt: boolean;
+    hasRecommendedSchema: boolean;
+  }>;
+  /** Bottom pages by repurposing score (for quick wins). */
+  weakestRepurposingPages?: Array<{ url: string; repurposing: number }>;
 }
+
+const WEAKEST_REPURPOSING_LIST_CAP = 12;
 
 export function aggregateGenerative(pages: ScanResult[]): AggregatedGenerative | null {
   const withGen = pages.filter((p) => p.generative != null);
@@ -828,7 +849,14 @@ export function aggregateGenerative(pages: ScanResult[]): AggregatedGenerative |
 
   let scoreSum = 0, withLlmsTxt = 0, withRobotsAllowingAi = 0;
   let faqSum = 0, listDensitySum = 0, citationDensitySum = 0;
+  let discSum = 0, repSum = 0;
+  let discN = 0, repN = 0;
+  let pagesWithoutFaqSchema = 0;
+  let pagesWithoutHowToOrFaqSchema = 0;
+  let pagesWithoutBreadcrumbSchema = 0;
+  let patternSignalPages = 0;
   const pagesList: AggregatedGenerative['pages'] = [];
+  const repurposingForSort: Array<{ url: string; repurposing: number }> = [];
 
   for (const p of withGen) {
     const g = p.generative!;
@@ -842,17 +870,44 @@ export function aggregateGenerative(pages: ScanResult[]): AggregatedGenerative |
       citationDensitySum += content.citationDensity ?? 0;
     }
     const hasRecommendedSchema = (g.technical?.recommendedSchemaTypesFound?.length ?? 0) > 0;
+    const rs = g.repurposingSignals;
+    if (rs) {
+      patternSignalPages++;
+      if (!rs.hasFaqPageSchema) pagesWithoutFaqSchema++;
+      if (!rs.hasFaqPageSchema && !rs.hasHowToSchema) pagesWithoutHowToOrFaqSchema++;
+      if (!rs.hasBreadcrumbList) pagesWithoutBreadcrumbSchema++;
+    }
+
+    const d = g.dimensions?.discoverability;
+    const r = g.dimensions?.repurposing;
+    if (d != null) {
+      discSum += d;
+      discN++;
+    }
+    if (r != null) {
+      repSum += r;
+      repN++;
+      repurposingForSort.push({ url: p.url, repurposing: r });
+    }
+
     pagesList.push({
       url: p.url,
       score: g.score,
+      ...(d != null ? { discoverability: d } : {}),
+      ...(r != null ? { repurposing: r } : {}),
       hasLlmsTxt: g.technical?.hasLlmsTxt ?? false,
       hasRecommendedSchema,
     });
   }
 
   const n = withGen.length;
+  repurposingForSort.sort((a, b) => a.repurposing - b.repurposing);
+  const weakestRepurposingPages = repurposingForSort.slice(0, WEAKEST_REPURPOSING_LIST_CAP);
+
   return {
     score: Math.round(scoreSum / n),
+    ...(discN > 0 ? { avgDiscoverability: Math.round(discSum / discN) } : {}),
+    ...(repN > 0 ? { avgRepurposing: Math.round(repSum / repN) } : {}),
     pageCount: n,
     withLlmsTxt,
     withRobotsAllowingAi,
@@ -861,7 +916,17 @@ export function aggregateGenerative(pages: ScanResult[]): AggregatedGenerative |
       avgListDensity: Math.round((listDensitySum / n) * 100) / 100,
       avgCitationDensity: Math.round((citationDensitySum / n) * 100) / 100,
     },
+    ...(patternSignalPages > 0
+      ? {
+          issuePatterns: {
+            pagesWithoutFaqSchema,
+            pagesWithoutHowToOrFaqSchema,
+            pagesWithoutBreadcrumbSchema,
+          },
+        }
+      : {}),
     pages: pagesList,
+    ...(weakestRepurposingPages.length > 0 ? { weakestRepurposingPages } : {}),
   };
 }
 

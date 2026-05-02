@@ -80,11 +80,21 @@ function DomainResultGenerativeSectionInner({
                 <Box
                     sx={{
                         display: 'grid',
-                        gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(4, minmax(0, 1fr))' },
+                        gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(3, minmax(0, 1fr))', lg: 'repeat(6, minmax(0, 1fr))' },
                         gap: 1.5,
                     }}
                 >
                     {kpiCell('domainResult.generativeKpiGeoScore', String(generative.score), geoScoreColor(generative.score))}
+                    {kpiCell(
+                        'domainResult.generativeKpiDiscoverability',
+                        generative.avgDiscoverability != null ? String(generative.avgDiscoverability) : '—',
+                        generative.avgDiscoverability != null ? geoScoreColor(generative.avgDiscoverability) : undefined
+                    )}
+                    {kpiCell(
+                        'domainResult.generativeKpiRepurposing',
+                        generative.avgRepurposing != null ? String(generative.avgRepurposing) : '—',
+                        generative.avgRepurposing != null ? geoScoreColor(generative.avgRepurposing) : undefined
+                    )}
                     {kpiCell(
                         'domainResult.generativeKpiLlmsTxt',
                         `${generative.withLlmsTxt.toLocaleString(lc)} / ${n.toLocaleString(lc)}`
@@ -95,6 +105,85 @@ function DomainResultGenerativeSectionInner({
                     )}
                     {kpiCell('domainResult.generativeKpiPagesGeo', n.toLocaleString(lc))}
                 </Box>
+
+                {generative.issuePatterns && (
+                    <MsqdxMoleculeCard
+                        title={t('domainResult.generativePatternsTitle')}
+                        titleVariant="h6"
+                        subtitle={t('domainResult.generativePatternsIntro')}
+                        variant="flat"
+                        borderRadius="1.5xl"
+                        footerDivider={false}
+                        sx={INNER_CARD_SX}
+                    >
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                {t('domainResult.generativePatternNoFaq', {
+                                    count: generative.issuePatterns.pagesWithoutFaqSchema,
+                                    total: n,
+                                })}
+                            </MsqdxTypography>
+                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                {t('domainResult.generativePatternNoFaqHowTo', {
+                                    count: generative.issuePatterns.pagesWithoutHowToOrFaqSchema,
+                                    total: n,
+                                })}
+                            </MsqdxTypography>
+                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                {t('domainResult.generativePatternNoBreadcrumb', {
+                                    count: generative.issuePatterns.pagesWithoutBreadcrumbSchema,
+                                    total: n,
+                                })}
+                            </MsqdxTypography>
+                        </Box>
+                    </MsqdxMoleculeCard>
+                )}
+
+                {generative.weakestRepurposingPages && generative.weakestRepurposingPages.length > 0 && (
+                    <MsqdxMoleculeCard
+                        title={t('domainResult.generativeWeakestTitle')}
+                        titleVariant="h6"
+                        subtitle={t('domainResult.generativeWeakestIntro')}
+                        variant="flat"
+                        borderRadius="1.5xl"
+                        footerDivider={false}
+                        sx={INNER_CARD_SX}
+                    >
+                        <Stack spacing={0.75}>
+                            {generative.weakestRepurposingPages.map((row) => (
+                                <Box
+                                    key={row.url}
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        gap: 1,
+                                        py: 0.5,
+                                        borderBottom: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                                    }}
+                                >
+                                    <MsqdxTypography
+                                        variant="caption"
+                                        sx={{
+                                            color: THEME_ACCENT_CSS,
+                                            fontWeight: 600,
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap',
+                                            minWidth: 0,
+                                        }}
+                                        title={row.url}
+                                    >
+                                        {row.url}
+                                    </MsqdxTypography>
+                                    <MsqdxTypography variant="caption" sx={{ flexShrink: 0, fontWeight: 700 }}>
+                                        R {row.repurposing}
+                                    </MsqdxTypography>
+                                </Box>
+                            ))}
+                        </Stack>
+                    </MsqdxMoleculeCard>
+                )}
 
                 <MsqdxMoleculeCard
                     title={t('domainResult.generativeContentTitle')}

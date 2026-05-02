@@ -757,6 +757,16 @@ export function ScanReportDocument({ scan }: ScanReportProps) {
                 <View style={[styles.cardBox, { borderLeftColor: chapterColors.geo.main, padding: 8, marginBottom: 6 }]}>
                     <View style={styles.pillRow}>
                         <View style={[styles.pill, { backgroundColor: chapterColors.geo.main }]}><Text style={{ fontSize: 8, color: colors.white }}>Score {g.score}</Text></View>
+                        {g.dimensions ? (
+                            <>
+                                <View style={[styles.pill, { backgroundColor: colors.gray500 }]}>
+                                    <Text style={{ fontSize: 7, color: colors.white }}>D {g.dimensions.discoverability}</Text>
+                                </View>
+                                <View style={[styles.pill, { backgroundColor: colors.gray500 }]}>
+                                    <Text style={{ fontSize: 7, color: colors.white }}>R {g.dimensions.repurposing}</Text>
+                                </View>
+                            </>
+                        ) : null}
                         <View style={[styles.pill, { backgroundColor: g.technical?.hasLlmsTxt ? colors.success : colors.gray400 }]}><Text style={{ fontSize: 7, color: colors.white }}>llms.txt</Text></View>
                         <View style={[styles.pill, { backgroundColor: g.technical?.hasRobotsAllowingAI ? colors.success : colors.gray400 }]}><Text style={{ fontSize: 7, color: colors.white }}>Robots AI</Text></View>
                         <View style={[styles.pill, { backgroundColor: colors.gray500 }]}><Text style={{ fontSize: 7, color: colors.white }}>FAQ: {g.content?.faqCount ?? 0}</Text></View>

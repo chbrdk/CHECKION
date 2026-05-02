@@ -1,4 +1,5 @@
-import { Box, alpha } from '@mui/material';
+import type { ReactNode } from 'react';
+import { Box, alpha, LinearProgress } from '@mui/material';
 import {
     MsqdxTypography,
     MsqdxMoleculeCard,
@@ -97,6 +98,54 @@ export function GenerativeOptimizerCard({
                         sx={{ bgcolor: alpha(getScoreColor(data.score), 0.12), color: getScoreColor(data.score), fontWeight: 700 }}
                     />
                 </Box>
+
+                {data.dimensions && (
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 'var(--msqdx-spacing-sm)' }}>
+                        <GeoDimensionColumn
+                            label="Auffindbarkeit"
+                            subtitle="Gefunden werden (Robots, llms.txt, Indexierung)"
+                            value={data.dimensions.discoverability}
+                            breakdown={data.dimensionBreakdown?.discoverability}
+                            getScoreColor={getScoreColor}
+                            textTertiary={textTertiary}
+                        />
+                        <GeoDimensionColumn
+                            label="Wiederverwertbarkeit"
+                            subtitle="Zitier- & Antworttauglichkeit (Struktur, Schema)"
+                            value={data.dimensions.repurposing}
+                            breakdown={data.dimensionBreakdown?.repurposing}
+                            getScoreColor={getScoreColor}
+                            textTertiary={textTertiary}
+                        />
+                    </Box>
+                )}
+
+                {data.repurposingSignals && (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--msqdx-spacing-xxs)', alignItems: 'center' }}>
+                        <MsqdxTypography variant="caption" sx={{ color: textTertiary, width: '100%', mb: 0.25 }}>
+                            On-Page-Signale
+                        </MsqdxTypography>
+                        {data.repurposingSignals.hasFaqPageSchema ? (
+                            <MsqdxChip label="FAQPage JSON-LD" size="small" sx={{ height: 22, fontSize: '0.65rem' }} />
+                        ) : null}
+                        {data.repurposingSignals.hasHowToSchema ? (
+                            <MsqdxChip label="HowTo JSON-LD" size="small" sx={{ height: 22, fontSize: '0.65rem' }} />
+                        ) : null}
+                        {data.repurposingSignals.hasBreadcrumbList ? (
+                            <MsqdxChip label="BreadcrumbList" size="small" sx={{ height: 22, fontSize: '0.65rem' }} />
+                        ) : null}
+                        {data.repurposingSignals.organizationOrWebSiteWithTrust ? (
+                            <MsqdxChip label="Org / WebSite" size="small" sx={{ height: 22, fontSize: '0.65rem' }} />
+                        ) : null}
+                        {(data.repurposingSignals.headingH2Count ?? 0) > 0 ? (
+                            <MsqdxChip
+                                label={`H2: ${data.repurposingSignals.headingH2Count}`}
+                                size="small"
+                                sx={{ height: 22, fontSize: '0.65rem' }}
+                            />
+                        ) : null}
+                    </Box>
+                )}
 
                 {/* Technical Section */}
                 <Box>
@@ -303,7 +352,79 @@ export function GenerativeOptimizerCard({
     );
 }
 
-function SectionHeader({ icon, title, color }: { icon: React.ReactNode, title: string, color: string }) {
+function GeoDimensionColumn({
+    label,
+    subtitle,
+    value,
+    breakdown,
+    getScoreColor,
+    textTertiary,
+}: {
+    label: string;
+    subtitle: string;
+    value: number;
+    breakdown?: Array<{ factor: string; points: number }>;
+    getScoreColor: (score: number) => string;
+    textTertiary: string;
+}) {
+    const color = getScoreColor(value);
+    return (
+        <Box
+            sx={{
+                p: 'var(--msqdx-spacing-sm)',
+                borderRadius: 2,
+                border: `1px solid ${alpha(color, 0.28)}`,
+                bgcolor: alpha(color, 0.07),
+            }}
+        >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.75 }}>
+                <Box sx={{ pr: 1, minWidth: 0 }}>
+                    <MsqdxTypography variant="caption" sx={{ fontWeight: 800, color, display: 'block' }}>
+                        {label}
+                    </MsqdxTypography>
+                    <MsqdxTypography variant="caption" sx={{ color: textTertiary, display: 'block', fontSize: '0.65rem', lineHeight: 1.35 }}>
+                        {subtitle}
+                    </MsqdxTypography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
+                    <MsqdxTypography variant="h6" sx={{ fontWeight: 800, color, fontSize: '1.1rem' }}>
+                        {value}
+                    </MsqdxTypography>
+                    {breakdown && breakdown.length > 0 ? (
+                        <MsqdxTooltip
+                            title={
+                                <Box component="ul" sx={{ m: 0, pl: 1.5, fontSize: '0.75rem' }}>
+                                    {breakdown.map((b, i) => (
+                                        <li key={i} style={{ marginBottom: 4 }}>
+                                            {b.factor}: {b.points > 0 ? '+' : ''}
+                                            {b.points}
+                                        </li>
+                                    ))}
+                                </Box>
+                            }
+                        >
+                            <Box component="span" sx={{ display: 'inline-flex', cursor: 'help' }}>
+                                <Info size={14} style={{ color: textTertiary }} aria-label={label} />
+                            </Box>
+                        </MsqdxTooltip>
+                    ) : null}
+                </Box>
+            </Box>
+            <LinearProgress
+                variant="determinate"
+                value={Math.min(100, Math.max(0, value))}
+                sx={{
+                    height: 8,
+                    borderRadius: 1,
+                    bgcolor: alpha(color, 0.14),
+                    '& .MuiLinearProgress-bar': { borderRadius: 1, bgcolor: color },
+                }}
+            />
+        </Box>
+    );
+}
+
+function SectionHeader({ icon, title, color }: { icon: ReactNode; title: string; color: string }) {
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-xs)', color }}>
             {icon}

@@ -131,6 +131,11 @@ export async function runLlmStages(payload: GeoEeatIntensiveResult): Promise<Run
                             listDensity: technical?.generative?.content?.listDensity,
                             citationDensity: technical?.generative?.content?.citationDensity,
                             hasAuthorBio: technical?.generative?.expertise?.hasAuthorBio,
+                            discoverability: technical?.generative?.dimensions?.discoverability,
+                            repurposing: technical?.generative?.dimensions?.repurposing,
+                            repurposingSignals: technical?.generative?.repurposingSignals as
+                                | Record<string, unknown>
+                                | undefined,
                         }),
                     },
                 ],

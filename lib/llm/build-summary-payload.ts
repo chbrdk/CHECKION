@@ -98,6 +98,10 @@ export function buildSummaryPayload(result: ScanResult): Record<string, unknown>
     const generative = result.generative
         ? {
             score: result.generative.score,
+            dimensions: result.generative.dimensions,
+            discoverabilitySignals: result.generative.discoverabilitySignals,
+            repurposingSignals: result.generative.repurposingSignals,
+            dimensionBreakdown: result.generative.dimensionBreakdown,
             technical: result.generative.technical,
             content: result.generative.content,
             expertise: result.generative.expertise,

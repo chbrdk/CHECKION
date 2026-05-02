@@ -1283,6 +1283,12 @@ function ShareSingleContent({ data, shareToken, accessToken }: { data: ScanResul
                         <Box sx={{ mb: geo ? 1.5 : 0 }}>
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center', mb: 0.5 }}>
                                 <MsqdxChip size="small" label={`GEO-Score ${generative.score}`} sx={{ bgcolor: alpha(getScoreColor(generative.score), 0.12), color: getScoreColor(generative.score), fontWeight: 600 }} />
+                                {generative.dimensions && (
+                                    <>
+                                        <MsqdxChip size="small" label={`Auffindbarkeit ${generative.dimensions.discoverability}`} sx={{ bgcolor: alpha(STATUS.good, 0.08), fontWeight: 600 }} />
+                                        <MsqdxChip size="small" label={`Wiederverwertbarkeit ${generative.dimensions.repurposing}`} sx={{ bgcolor: alpha(STATUS.good, 0.08), fontWeight: 600 }} />
+                                    </>
+                                )}
                                 <MsqdxChip size="small" label={generative.technical.hasLlmsTxt ? 'llms.txt' : 'Kein llms.txt'} sx={generative.technical.hasLlmsTxt ? { bgcolor: alpha(STATUS.good, 0.12), color: STATUS.good } : { bgcolor: alpha(STATUS.warning, 0.12), color: STATUS.warning }} />
                                 <MsqdxChip size="small" label={generative.technical.hasRobotsAllowingAI ? 'Robots (AI)' : 'Robots (AI blockiert)'} sx={generative.technical.hasRobotsAllowingAI ? { bgcolor: alpha(STATUS.good, 0.12), color: STATUS.good } : { bgcolor: alpha(STATUS.warning, 0.12), color: STATUS.warning }} />
                                 {generative.technical.metaRobotsIndexable === false && (

@@ -434,8 +434,47 @@ export const GEO_RECOMMENDED_SCHEMA_TYPES = [
     'Article', 'FAQPage', 'HowTo', 'Organization', 'Person', 'WebPage', 'NewsArticle', 'WebSite'
 ] as const;
 
+/** GEO dimension scores (0–100): findability vs. content reusability for AI/citations. */
+export interface GenerativeGeoDimensions {
+    discoverability: number;
+    repurposing: number;
+}
+
+/** Raw signals for Auffindbarkeit (persisted for UI/PDF/tooltips). */
+export interface GenerativeDiscoverabilitySignals {
+    robotsTxtPresent?: boolean;
+    sitemapUrlPresent?: boolean;
+    jsonLdErrorCount?: number;
+    llmsRobotsWarningCount?: number;
+    recommendedSchemaCount?: number;
+}
+
+/** Raw signals for Wiederverwertbarkeit (chunking, schema depth, E-E-A-T content). */
+export interface GenerativeRepurposingSignals {
+    hasFaqPageSchema?: boolean;
+    hasHowToSchema?: boolean;
+    faqMainEntityCount?: number;
+    howToStepCount?: number;
+    hasBreadcrumbList?: boolean;
+    organizationOrWebSiteWithTrust?: boolean;
+    /** Organization/WebSite JSON-LD has sameAs or logo */
+    hasSameAsOrLogo?: boolean;
+    structuredDataGapCount?: number;
+    jsonLdRichResultGapCount?: number;
+    headingH2Count?: number;
+    headingH3Count?: number;
+    hasSingleH1?: boolean;
+    /** Approximate share of body words inside <main> (0–1); undefined if no main */
+    mainContentWordRatio?: number;
+    definitionListPairCount?: number;
+}
+
 export interface GenerativeEngineAudit {
     score: number;
+    /** Two-axis GEO model; omitted on legacy stored scans. */
+    dimensions?: GenerativeGeoDimensions;
+    discoverabilitySignals?: GenerativeDiscoverabilitySignals;
+    repurposingSignals?: GenerativeRepurposingSignals;
     technical: {
         hasLlmsTxt: boolean;
         hasRobotsAllowingAI: boolean;
@@ -482,7 +521,12 @@ export interface GenerativeEngineAudit {
         hasAuthorBio: boolean;
         hasExpertCitations: boolean;
     };
-    /** Human-readable score breakdown for GEO tooltip */
+    /** Per-dimension factor list for tooltips (Auffindbarkeit / Wiederverwertbarkeit). */
+    dimensionBreakdown?: {
+        discoverability: Array<{ factor: string; points: number }>;
+        repurposing: Array<{ factor: string; points: number }>;
+    };
+    /** Human-readable score breakdown for GEO tooltip (legacy + optional summary lines) */
     scoreBreakdown?: Array<{ factor: string; points: number }>;
 }
 

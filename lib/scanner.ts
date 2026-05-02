@@ -19,7 +19,7 @@ import { AXE_RULE_WCAG_LEVEL } from './axe-wcag-levels';
 import { getRemediationUrl } from './remediation-urls';
 import { buildPageIndex } from './page-index';
 import { deduplicateIssues } from './issue-dedupe';
-import { computeGeoEeatPageScore } from './geo-eeat-page-score';
+import { computeGeoDimensionsScore } from './geo-dimensions-score';
 import { writeScreenshot } from './screenshot-storage';
 import type {
     Issue,
@@ -927,6 +927,66 @@ export async function runScan(
                 } catch (_) {}
             });
 
+            let hasFaqPageSchema = false;
+            let faqMainEntityCount = 0;
+            let hasHowToSchema = false;
+            let howToStepCount = 0;
+            let hasBreadcrumbList = false;
+            let organizationOrWebSiteWithTrust = false;
+            let hasSameAsOrLogo = false;
+            function walkGeoSchema(o: Record<string, unknown>, depth: number) {
+                if (!o || typeof o !== 'object' || depth > 10) return;
+                if (Array.isArray(o)) {
+                    for (let i = 0; i < o.length; i++) walkGeoSchema(o[i] as Record<string, unknown>, depth + 1);
+                    return;
+                }
+                const g = o['@graph'];
+                if (Array.isArray(g)) {
+                    for (let j = 0; j < g.length; j++) walkGeoSchema(g[j] as Record<string, unknown>, depth + 1);
+                }
+                const type = o['@type'];
+                const types = Array.isArray(type) ? type : (type ? [type] : []);
+                for (let k = 0; k < types.length; k++) {
+                    var ty = types[k] as string;
+                    if (ty === 'FAQPage') {
+                        hasFaqPageSchema = true;
+                        var me = o['mainEntity'];
+                        if (Array.isArray(me)) faqMainEntityCount += me.length;
+                        else if (me) faqMainEntityCount += 1;
+                    }
+                    if (ty === 'HowTo') {
+                        hasHowToSchema = true;
+                        var st = o['step'];
+                        if (Array.isArray(st)) howToStepCount += st.length;
+                        else if (st) howToStepCount += 1;
+                    }
+                    if (ty === 'BreadcrumbList') hasBreadcrumbList = true;
+                    if (ty === 'Organization' || ty === 'WebSite') {
+                        organizationOrWebSiteWithTrust = true;
+                        if (o['sameAs'] || o['logo']) hasSameAsOrLogo = true;
+                    }
+                }
+            }
+            document.querySelectorAll('script[type="application/ld+json"]').forEach(function (el) {
+                try {
+                    const json = JSON.parse(el.textContent || '{}') as Record<string, unknown>;
+                    walkGeoSchema(json, 0);
+                } catch (_) {}
+            });
+
+            const h1CountForGeo = document.querySelectorAll('h1').length;
+            const hasSingleH1Geo = h1CountForGeo === 1;
+            const headingH2Count = document.querySelectorAll('h2').length;
+            const headingH3Count = document.querySelectorAll('h3').length;
+            const definitionListPairCount = document.querySelectorAll('dl dt').length;
+            var mainContentWordRatio: number | undefined = undefined;
+            const mainElGeo = document.querySelector('main');
+            if (mainElGeo && bodyWordCount > 0) {
+                var mainTextGeo = mainElGeo.innerText || '';
+                var mainWordsGeo = mainTextGeo.trim().split(/\s+/).filter(Boolean).length;
+                mainContentWordRatio = mainWordsGeo / bodyWordCount;
+            }
+
             const preloadLinks = Array.from(document.querySelectorAll('link[rel="preload"]')).map(function(l) { return l.getAttribute('href') || ''; }).filter(Boolean);
             const preconnectLinks = Array.from(document.querySelectorAll('link[rel="preconnect"]')).map(function(l) { return l.getAttribute('href') || ''; }).filter(Boolean);
             const sriMissing: { tag: string; url: string }[] = [];
@@ -1033,7 +1093,19 @@ export async function runScan(
                     citationCount: citations,
                     citationsWithLinks: citationsWithLinks,
                     hasAuthorBio: hasAuthorBio,
-                    listDensity: Number((lists / (document.querySelectorAll('div, section, article').length || 1)).toFixed(2))
+                    listDensity: Number((lists / (document.querySelectorAll('div, section, article').length || 1)).toFixed(2)),
+                    hasFaqPageSchema: hasFaqPageSchema,
+                    hasHowToSchema: hasHowToSchema,
+                    faqMainEntityCount: faqMainEntityCount,
+                    howToStepCount: howToStepCount,
+                    hasBreadcrumbList: hasBreadcrumbList,
+                    organizationOrWebSiteWithTrust: organizationOrWebSiteWithTrust,
+                    hasSameAsOrLogo: hasSameAsOrLogo,
+                    headingH2Count: headingH2Count,
+                    headingH3Count: headingH3Count,
+                    hasSingleH1: hasSingleH1Geo,
+                    mainContentWordRatio: mainContentWordRatio,
+                    definitionListPairCount: definitionListPairCount
                 },
                 extended: {
                     resourceHints: { preload: preloadLinks, preconnect: preconnectLinks },
@@ -1392,32 +1464,82 @@ export async function runScan(
 
         seoAudit = { ...seoAudit, robotsTxtPresent, sitemapUrl };
 
-        // GEO / E-E-A-T score (0–100, no baseline; includes EEAT signals)
-        const g = seoAndMeta.generative;
-        const geoEeatResult = computeGeoEeatPageScore({
-            hasLlmsTxt,
+        const { detectYmyl } = await import('./ymyl-heuristic');
+        const ymylResult = detectYmyl(
+            url,
+            seoAudit.title,
+            (bodyTextExcerpt ?? '').toLowerCase(),
+            seoAudit.metaDescription ?? ''
+        );
+
+        // GEO dimensions: Auffindbarkeit + Wiederverwertbarkeit (0–100 each) + blended headline score
+        const g = seoAndMeta.generative as typeof seoAndMeta.generative & {
+            hasFaqPageSchema?: boolean;
+            hasHowToSchema?: boolean;
+            faqMainEntityCount?: number;
+            howToStepCount?: number;
+            hasBreadcrumbList?: boolean;
+            organizationOrWebSiteWithTrust?: boolean;
+            hasSameAsOrLogo?: boolean;
+            headingH2Count?: number;
+            headingH3Count?: number;
+            hasSingleH1?: boolean;
+            mainContentWordRatio?: number;
+            definitionListPairCount?: number;
+        };
+        const citationsWithLinks = g.citationsWithLinks ?? 0;
+
+        const geoDim = computeGeoDimensionsScore({
             hasRobotsAllowingAI,
-            schemaCoverage: g.schemaCoverage,
+            hasLlmsTxt,
+            metaRobotsIndexable: g.metaRobotsIndexable ?? true,
+            recommendedSchemaTypesFound: g.recommendedSchemaTypesFound ?? [],
+            robotsTxtPresent: seoAudit.robotsTxtPresent,
+            sitemapUrlPresent: !!seoAudit.sitemapUrl,
+            jsonLdErrors: g.schemaParseErrors,
+            llmsTxtRobotsConsistencyWarnings,
+            repurposing: {
+                hasFaqPageSchema: g.hasFaqPageSchema,
+                hasHowToSchema: g.hasHowToSchema,
+                faqMainEntityCount: g.faqMainEntityCount,
+                howToStepCount: g.howToStepCount,
+                hasBreadcrumbList: g.hasBreadcrumbList,
+                organizationOrWebSiteWithTrust: g.organizationOrWebSiteWithTrust,
+                hasSameAsOrLogo: g.hasSameAsOrLogo,
+                headingH2Count: g.headingH2Count,
+                headingH3Count: g.headingH3Count,
+                hasSingleH1: g.hasSingleH1,
+                mainContentWordRatio: g.mainContentWordRatio,
+                definitionListPairCount: g.definitionListPairCount,
+            },
             tableCount: g.tableCount,
-            faqCount: g.faqCount,
+            faqDomCount: g.faqCount,
+            listDensity: g.listDensity,
             citationCount: g.citationCount,
+            citationsWithLinks,
             hasAuthorBio: g.hasAuthorBio,
+            articleSchemaQuality: g.articleSchemaQuality,
+            structuredDataRequiredFields: seoAudit.structuredDataRequiredFields,
+            jsonLdRichResultGaps: seoAudit.jsonLdRichResultGaps,
             eeat: eeatSignals
                 ? {
-                    hasImpressum: eeatSignals.hasImpressum,
-                    hasContact: eeatSignals.hasContact,
-                    hasAboutLink: eeatSignals.hasAboutLink,
-                    hasTeamLink: eeatSignals.hasTeamLink,
-                    hasCaseStudyMention: eeatSignals.hasCaseStudyMention,
-                }
+                      hasImpressum: eeatSignals.hasImpressum,
+                      hasContact: eeatSignals.hasContact,
+                      hasAboutLink: eeatSignals.hasAboutLink,
+                      hasTeamLink: eeatSignals.hasTeamLink,
+                      hasCaseStudyMention: eeatSignals.hasCaseStudyMention,
+                  }
                 : undefined,
+            isYmyl: ymylResult.isYmyl,
         });
 
-        const citationsWithLinks = (seoAndMeta.generative as { citationsWithLinks?: number }).citationsWithLinks ?? 0;
-
         const generativeAudit = {
-            score: geoEeatResult.score,
-            scoreBreakdown: geoEeatResult.scoreBreakdown,
+            score: geoDim.score,
+            dimensions: geoDim.dimensions,
+            discoverabilitySignals: geoDim.discoverabilitySignals,
+            repurposingSignals: geoDim.repurposingSignals,
+            dimensionBreakdown: geoDim.dimensionBreakdown,
+            scoreBreakdown: geoDim.scoreBreakdown,
             technical: {
                 hasLlmsTxt,
                 hasRobotsAllowingAI,
@@ -1920,14 +2042,6 @@ export async function runScan(
             advancedChecks.structureMap || [],
             viewport.height,
             url
-        );
-
-        const { detectYmyl } = await import('./ymyl-heuristic');
-        const ymylResult = detectYmyl(
-            url,
-            seoAudit.title,
-            (bodyTextExcerpt ?? '').toLowerCase(),
-            seoAudit.metaDescription ?? ''
         );
 
         let greenWebHosted: boolean | null | undefined;
