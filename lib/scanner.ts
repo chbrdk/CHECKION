@@ -146,6 +146,27 @@ function calculateScore(counts: ScanStats): number {
     return Math.max(0, Math.round(100 - deductions));
 }
 
+const PUPPETEER_LAUNCH_RETRIES = 3;
+
+async function launchPuppeteerWithRetry(): Promise<Awaited<ReturnType<typeof puppeteer.launch>>> {
+    let last: unknown;
+    for (let attempt = 0; attempt < PUPPETEER_LAUNCH_RETRIES; attempt++) {
+        try {
+            return await puppeteer.launch({
+                args: ['--no-sandbox', '--disable-setuid-sandbox'],
+                headless: true,
+                protocolTimeout: PUPPETEER_PROTOCOL_TIMEOUT_MS,
+            });
+        } catch (e) {
+            last = e;
+            if (attempt < PUPPETEER_LAUNCH_RETRIES - 1) {
+                await new Promise((r) => setTimeout(r, 250 * (attempt + 1)));
+            }
+        }
+    }
+    throw last instanceof Error ? last : new Error(String(last));
+}
+
 export async function runScan(
     options: ScanOptions & { groupId?: string; targetRegion?: string; userId?: string },
 ): Promise<ScanResult> {
@@ -176,12 +197,8 @@ export async function runScan(
     const phaseTiming = createScanPhaseTimer();
     report('starting');
 
-    // Launch browser manually to enable screenshot and bounding box extraction
-    const browser = await puppeteer.launch({
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        headless: true, // Use new headless mode if supported (default)
-        protocolTimeout: PUPPETEER_PROTOCOL_TIMEOUT_MS,
-    });
+    // Launch browser manually to enable screenshot and bounding box extraction (retry: first launch can fail on cold workers)
+    const browser = await launchPuppeteerWithRetry();
 
     // Create page and set viewport
     const page = await browser.newPage();

@@ -27,7 +27,11 @@ export function registerCheckionTools(server: { registerTool: (name: string, con
     async (args) => {
       const { url, projectId } = args as { url: string; projectId?: string };
       const body = { url, standard: 'WCAG2AA', runners: ['axe', 'htmlcs'], projectId };
-      const res = await base('/api/scan', { method: 'POST', body: JSON.stringify(body) });
+      const res = await base('/api/scan', {
+        method: 'POST',
+        headers: { 'x-checkion-scan-stream': '0' },
+        body: JSON.stringify(body),
+      });
       if (isCheckionError(res)) return { content: [{ type: 'text' as const, text: JSON.stringify(res) }] };
       const data = res as { data?: { id?: string }; success?: boolean };
       return { content: [{ type: 'text', text: toTextContent(data) }] };

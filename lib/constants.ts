@@ -177,11 +177,13 @@ export const apiRankTrackingRefresh = () => API_RANK_TRACKING_REFRESH;
 export const apiScanCreate = API_SCAN;
 
 /**
- * When set to `1`, `POST /api/scan` responds with `Content-Type: application/x-ndjson` and one JSON object
- * per line: progress events, then `complete` or `error`. Default remains a single JSON body (tests / legacy).
+ * POST /api/scan: **NDJSON stream by default** (progress + complete/error) — avoids HTTP 500 on scan failures
+ * when clients omit this header (legacy sync JSON path ran the scan before returning).
+ * Set to `0` for legacy `{ success, data }` JSON (scripts/tests).
  */
 export const HEADER_CHECKION_SCAN_STREAM = 'x-checkion-scan-stream';
 export const HEADER_CHECKION_SCAN_STREAM_ON = '1';
+export const HEADER_CHECKION_SCAN_STREAM_OFF = '0';
 
 /** Build: GET /api/scan?limit=&page=&projectId=&industry=&tag= — paginated **summaries**. Use `groupId` for all devices in one session. */
 export const apiScanList = (params?: {

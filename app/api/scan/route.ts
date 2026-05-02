@@ -22,7 +22,7 @@ import { v4 as uuidv4 } from 'uuid';
 import {
     DASHBOARD_SCANS_PAGE_SIZE,
     HEADER_CHECKION_SCAN_STREAM,
-    HEADER_CHECKION_SCAN_STREAM_ON,
+    HEADER_CHECKION_SCAN_STREAM_OFF,
 } from '@/lib/constants';
 import { reportUsage } from '@/lib/usage-report';
 import { maybeAutoFillProjectClassificationFromStandaloneScan } from '@/lib/project-industry-auto';
@@ -31,8 +31,9 @@ import { resolveStandaloneScanDevices } from '@/lib/standalone-scan-devices';
 
 type ScanBody = z.infer<typeof scanBodySchema>;
 
+/** NDJSON unless client explicitly opts into legacy JSON (`x-checkion-scan-stream: 0`). */
 function wantsNdjsonStream(request: Request): boolean {
-    return request.headers.get(HEADER_CHECKION_SCAN_STREAM) === HEADER_CHECKION_SCAN_STREAM_ON;
+    return request.headers.get(HEADER_CHECKION_SCAN_STREAM) !== HEADER_CHECKION_SCAN_STREAM_OFF;
 }
 
 async function executeStandaloneScan(
@@ -117,19 +118,19 @@ async function executeStandaloneScan(
 }
 
 export async function POST(request: Request) {
-    const user = await getRequestUser(request);
-    if (!user) {
-        return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
-    }
-    const rl = await checkRateLimit(`scan:${user.id}`, 'default');
-    if (!rl.allowed) {
-        return apiError(
-            'Too many requests. Please try again later.',
-            API_STATUS.TOO_MANY_REQUESTS,
-            rl.retryAfter ? { retryAfter: rl.retryAfter } : undefined
-        );
-    }
     try {
+        const user = await getRequestUser(request);
+        if (!user) {
+            return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
+        }
+        const rl = await checkRateLimit(`scan:${user.id}`, 'default');
+        if (!rl.allowed) {
+            return apiError(
+                'Too many requests. Please try again later.',
+                API_STATUS.TOO_MANY_REQUESTS,
+                rl.retryAfter ? { retryAfter: rl.retryAfter } : undefined
+            );
+        }
         const parsed = await parseApiBody(request, scanBodySchema);
         if (parsed instanceof NextResponse) return parsed;
         const body = parsed;

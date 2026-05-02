@@ -18,7 +18,7 @@
 1. **`StatusUiProvider`** (`components/status/StatusUiContext.tsx`): Direkt unter **`I18nProvider`** im Root-Layout (`app/layout.tsx`), damit Texte aus `locales/*` verfügbar sind.
 2. **`StatusUiChrome`**: Rendert **zentrale Flächen** (aktuell nur Single-Scan-Snackbar). Weitere Surfaces ( zweite Snackbar-Spur, kompakte Bottom-Bar, Header-Badge) werden **hier** ergänzt, nicht auf Einzelseiten.
 3. **`lib/status-ui/types.ts`**: `StatusJobKind` und pro-Job-State-Typen — erweitern für `domain_crawl`, `journey`, `geo_eeat`, …
-4. **APIs / Streams**: Weiter zentral in `lib/constants.ts` (Header `HEADER_CHECKION_SCAN_STREAM` usw.); Seiten rufen `useStatusUi()` auf und mappen Server-Events → `applyProgressLine` o. ä.
+4. **APIs / Streams**: `POST /api/scan` liefert **standardmäßig NDJSON-Stream** (Fehler als Zeile, HTTP 200); Legacy-JSON nur mit `x-checkion-scan-stream: 0` (`HEADER_CHECKION_SCAN_STREAM_OFF`). UI-Header in `lib/constants.ts`; Seiten mappen Server-Events → `applyProgressLine`. **Erster Request 500 (Legacy-Pfad):** Ohne Stream-Header landete der erste Aufruf auf dem JSON-Pfad; Exceptions vor Response → HTTP 500. Standard-Stream vermeidet das; zusätzlich **Puppeteer-Launch mit Retry** in `lib/scanner.ts` gegen flaky ersten Start. **Ganzes POST in try/catch:** Auth/Rate-Limit/Body-Parsing-Throws landen in `handleApiError`, nicht als unhandled 500. **`/scan` Projektliste:** `GET /api/projects` erst nach `sessionStatus !== 'loading'`, mit `fetchWithSessionCookies` + **`fetchOnceMoreOn5xx`** (`lib/fetch-retry-5xx.ts`) gegen einmaligen 5xx beim Mount (oft nicht `/api/scan`, sondern diese parallele Anfrage).
 
 ## Migrations-Reihenfolge (Vorschlag)
 

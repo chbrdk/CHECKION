@@ -43,6 +43,7 @@ import {
 import { readScanNdjsonStream } from '@/lib/scan-stream-parse';
 import { useStatusUi } from '@/components/status/StatusUiContext';
 import { ensureUrlWithScheme } from '@/lib/url-normalize';
+import { fetchOnceMoreOn5xx } from '@/lib/fetch-retry-5xx';
 
 /** Cookie-based API calls: always send credentials; retry once after 401 so the first click works once NextAuth session is synced. */
 async function fetchWithSessionCookies(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
@@ -91,11 +92,22 @@ export default function ScanPage() {
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
     useEffect(() => {
-        fetch(apiProjectsList, { credentials: 'same-origin' })
-            .then((r) => r.json())
-            .then((data) => setProjects(Array.isArray(data?.data) ? data.data : []))
-            .catch(() => setProjects([]));
-    }, []);
+        if (sessionStatus === 'loading') return;
+        let cancelled = false;
+        void (async () => {
+            try {
+                const res = await fetchOnceMoreOn5xx(() => fetchWithSessionCookies(apiProjectsList));
+                if (cancelled) return;
+                const data = await res.json();
+                setProjects(Array.isArray(data?.data) ? data.data : []);
+            } catch {
+                if (!cancelled) setProjects([]);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [sessionStatus]);
 
     useEffect(() => {
         if (scanMode !== 'journey') return;

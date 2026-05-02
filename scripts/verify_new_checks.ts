@@ -6,8 +6,11 @@ async function verify() {
         console.log('Starting scan of example.com...');
         const res = await fetch('http://localhost:3333/api/scan', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: 'https://example.com' })
+            headers: {
+                'Content-Type': 'application/json',
+                'x-checkion-scan-stream': '0',
+            },
+            body: JSON.stringify({ url: 'https://example.com' }),
         });
 
         if (!res.ok) {
