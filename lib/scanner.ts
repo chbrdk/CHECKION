@@ -29,6 +29,8 @@ import type {
 import { normalizeScanResultForPersist } from '@/lib/scan-result-shape';
 import { scanDebugLog, scanDebugWarn } from './scan-debug-log';
 import { buildPrivacyAudit } from '@/lib/privacy-scan-heuristics';
+import { inferInfraStackAndTracking, mergeTrackingFromThirdPartyHosts } from '@/lib/infra-detect';
+import type { DomInfraHints } from '@/lib/infra-detect';
 
 /** Puppeteer / CDP may return mixed-case header names — normalize for security audit. */
 function getHeader(headers: Record<string, string>, canonicalName: string): string | undefined {
@@ -943,6 +945,33 @@ export async function runScan(
                     appleTouchIcon: appleTouchIcon,
                     metaRefreshPresent: metaRefreshPresent,
                     fontDisplayIssues: (withoutFontDisplay > 0 || fontDisplayBlockCount > 0) ? { withoutFontDisplay: withoutFontDisplay, blockCount: fontDisplayBlockCount } : undefined
+                },
+                domInfraHints: {
+                    generatorMeta: (function () {
+                        const m = document.querySelector('meta[name="generator"]');
+                        const c = m && m.getAttribute('content');
+                        return c ? c.trim() : null;
+                    }()),
+                    scriptSrcs: Array.from(document.querySelectorAll('script[src]')).map(function (el) {
+                        try {
+                            return (el as HTMLScriptElement).src || el.getAttribute('src') || '';
+                        } catch {
+                            return el.getAttribute('src') || '';
+                        }
+                    }).filter(Boolean).slice(0, 150),
+                    linkHrefs: Array.from(document.querySelectorAll('link[href]')).map(function (el) {
+                        try {
+                            return (el as HTMLLinkElement).href || el.getAttribute('href') || '';
+                        } catch {
+                            return el.getAttribute('href') || '';
+                        }
+                    }).filter(Boolean).slice(0, 60),
+                    inlineScriptFingerprint: Array.from(document.querySelectorAll('script:not([src])')).slice(0, 30).map(function (s) {
+                        return (s.textContent || '').slice(0, 400);
+                    }).join('\n').slice(0, 15000),
+                    hasNextData: !!document.getElementById('__NEXT_DATA__'),
+                    hasWpJsonLink: !!document.querySelector('link[href*="wp-json"]'),
+                    hasWpContentScript: !!document.querySelector('script[src*="wp-content"], script[src*="wp-includes"]')
                 }
             };
         });
@@ -1017,6 +1046,13 @@ export async function runScan(
         const countryCode = locationData?.countryCode ?? null;
         const targetRegionMismatch = !!targetRegion && !!countryCode && !matchesTargetRegion(countryCode, targetRegion);
 
+        const domInfraHints = (seoAndMeta as { domInfraHints?: DomInfraHints }).domInfraHints;
+        const infra = inferInfraStackAndTracking({
+            hints: domInfraHints,
+            serverHeader: serverHdr || null,
+            xPoweredBy: getHeader(h, 'x-powered-by') ?? null
+        });
+
         const geoAudit = {
             serverIp,
             location: locationData,
@@ -1026,7 +1062,12 @@ export async function runScan(
             },
             languages: seoAndMeta.geo,
             ...(targetRegionMismatch && { targetRegionMismatch: true }),
-            ...(targetRegion && { targetRegion })
+            ...(targetRegion && { targetRegion }),
+            ...(infra.detectedPlatforms.length > 0 && { detectedPlatforms: infra.detectedPlatforms }),
+            ...(infra.detectedTracking.length > 0 && { detectedTracking: infra.detectedTracking }),
+            ...((infra.hostingHints.server || infra.hostingHints.poweredBy) && {
+                hostingHints: infra.hostingHints
+            })
         };
 
         // Security Headers Audit (main resource headers; Puppeteer returns lowercase keys)
@@ -1590,6 +1631,10 @@ export async function runScan(
         })();
         const thirdPartyDomains = Array.from(allRequestHosts).filter(host => host && host !== pageHost);
 
+        const mergedTracking = mergeTrackingFromThirdPartyHosts(geoAudit.detectedTracking ?? [], thirdPartyDomains);
+        const geoForResult =
+            mergedTracking.length > 0 ? { ...geoAudit, detectedTracking: mergedTracking } : geoAudit;
+
         const technicalInsights = {
             thirdPartyDomains,
             manifest: {
@@ -1655,7 +1700,7 @@ export async function runScan(
             ux: uxResult,
             seo: seoAudit,
             links: linkAudit,
-            geo: geoAudit,
+            geo: geoForResult,
             privacy: privacyAudit,
             eeatSignals: eeatSignals ?? undefined,
             generative: generativeAudit,

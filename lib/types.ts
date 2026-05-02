@@ -438,6 +438,12 @@ export interface GeoAudit {
     targetRegionMismatch?: boolean;
     /** Optional target region (e.g. DE, EU) from scan params */
     targetRegion?: string | null;
+    /** CMS / framework / shop signals (heuristic, from DOM + headers). */
+    detectedPlatforms?: string[];
+    /** Analytics, tags, CMPs detected from script URLs and inline snippets. */
+    detectedTracking?: Array<{ id: string; name: string }>;
+    /** Informative `Server` / `X-Powered-By` values when present. */
+    hostingHints?: { server: string | null; poweredBy: string | null };
 }
 
 /** YMYL page classification – stricter E-E-A-T for finance/health/legal. */

@@ -6,7 +6,7 @@ import {
 } from '@msqdx/react';
 import { MSQDX_SPACING, MSQDX_THEME, MSQDX_STATUS, MSQDX_BRAND_PRIMARY, MSQDX_NEUTRAL } from '@msqdx/tokens';
 import type { GeoAudit } from '@/lib/types';
-import { Globe, Server, Cloud, Languages } from 'lucide-react';
+import { Globe, Server, Cloud, Languages, Layers, Radar } from 'lucide-react';
 
 export function InfraCard({ geo }: { geo: GeoAudit }) {
     if (!geo) return null;
@@ -14,7 +14,7 @@ export function InfraCard({ geo }: { geo: GeoAudit }) {
     return (
         <MsqdxMoleculeCard
             title="Infrastruktur & Standort"
-            subtitle="Serverstandort, CDN und Spracheinstellungen."
+            subtitle="Serverstandort, CDN, Sprachen, erkannte Plattform und Tracking-Tools."
             variant="flat"
             borderRadius="lg"
             sx={{ bgcolor: 'var(--color-card-bg)', height: '100%' }}
@@ -48,6 +48,60 @@ export function InfraCard({ geo }: { geo: GeoAudit }) {
                         </Box>
                     )}
                 </Box>
+
+                {/* Stack / platform (heuristic) */}
+                {(geo.detectedPlatforms?.length ?? 0) > 0 || (geo.hostingHints?.server || geo.hostingHints?.poweredBy) ? (
+                    <Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-xs)', color: MSQDX_BRAND_PRIMARY.purple }}>
+                            <Layers size={18} />
+                            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600 }}>System & Hosting</MsqdxTypography>
+                        </Box>
+                        <Box sx={{ display: 'flex', gap: 'var(--msqdx-spacing-xs)', flexWrap: 'wrap', alignItems: 'center' }}>
+                            {(geo.detectedPlatforms ?? []).map((p) => (
+                                <MsqdxChip
+                                    key={p}
+                                    label={p}
+                                    size="small"
+                                    sx={{ bgcolor: alpha(MSQDX_BRAND_PRIMARY.purple, 0.12), color: MSQDX_BRAND_PRIMARY.purple, height: 22, fontSize: '0.7rem' }}
+                                />
+                            ))}
+                            {geo.hostingHints?.server ? (
+                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', fontFamily: 'monospace' }}>
+                                    Server: {geo.hostingHints.server}
+                                </MsqdxTypography>
+                            ) : null}
+                            {geo.hostingHints?.poweredBy ? (
+                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', fontFamily: 'monospace' }}>
+                                    X-Powered-By: {geo.hostingHints.poweredBy}
+                                </MsqdxTypography>
+                            ) : null}
+                        </Box>
+                    </Box>
+                ) : null}
+
+                {/* Tracking & tags */}
+                {(geo.detectedTracking?.length ?? 0) > 0 ? (
+                    <Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-xs)', color: MSQDX_STATUS.warning.base }}>
+                            <Radar size={18} />
+                            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600 }}>Tracking & Tags</MsqdxTypography>
+                        </Box>
+                        <Box sx={{ display: 'flex', gap: 'var(--msqdx-spacing-xs)', flexWrap: 'wrap' }}>
+                            {(geo.detectedTracking ?? []).map((t, i) => (
+                                <MsqdxChip
+                                    key={`${t.id}-${i}`}
+                                    label={t.name}
+                                    size="small"
+                                    variant="outlined"
+                                    sx={{ height: 22, fontSize: '0.65rem', borderColor: alpha(MSQDX_STATUS.warning.base, 0.4) }}
+                                />
+                            ))}
+                        </Box>
+                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mt: 0.5 }}>
+                            Heuristik aus eingebundenen Skripten und Abgleich mit Drittanbieter-Domains aus dem Seitenaufruf. Keine Garantie auf Vollständigkeit (z. B. Consent, später geladene Tags).
+                        </MsqdxTypography>
+                    </Box>
+                ) : null}
 
                 {/* Infrastructure */}
                 <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--msqdx-spacing-sm)' }}>
