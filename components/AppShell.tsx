@@ -113,8 +113,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                         sx={{
                             flex: 1,
                             zIndex: 0,
-                            overflowX: 'hidden',
                             overflowY: 'auto',
+                            isolation: 'isolate',
                             padding: { xs: '1rem', md: '1.5rem' },
                             minWidth: 0,
                             maxWidth: '100%',

@@ -40,6 +40,7 @@ export const ScannedPagesTableRow = memo(function ScannedPagesTableRow({
                 borderBottom: tableBorder,
                 alignItems: 'stretch',
                 minHeight: rowHeightPx,
+                contain: 'paint',
                 '&:hover': { backgroundColor: 'var(--color-theme-accent-tint, rgba(0,0,0,0.04))' },
             }}
         >
