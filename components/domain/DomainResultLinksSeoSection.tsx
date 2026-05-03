@@ -181,6 +181,7 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                                 borderRadius: 'var(--msqdx-radius-md)',
                                 border: '1px solid var(--color-secondary-dx-grey-light-tint)',
                                 px: 1,
+                                contain: 'paint',
                             }}
                         >
                             <MsqdxTypography variant="caption" sx={{ flex: 1, minWidth: 0 }} noWrap title={url}>
@@ -237,6 +238,7 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                     borderRadius: 'var(--msqdx-radius-md)',
                     border: '1px solid var(--color-secondary-dx-grey-light-tint)',
                     px: 1,
+                    contain: 'paint',
                 }}
             >
                 <MsqdxTypography variant="caption" sx={{ flex: 1, minWidth: 0 }} noWrap title={url}>
@@ -561,6 +563,7 @@ const DomainResultLinksPanel = memo(function DomainResultLinksPanel({ t, locale,
                                     px: 1,
                                     borderRadius: 'var(--msqdx-radius-md)',
                                     border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                                    contain: 'paint',
                                 }}
                             >
                                 <MsqdxTypography variant="caption" sx={{ flex: 1, minWidth: 0 }} noWrap title={url}>

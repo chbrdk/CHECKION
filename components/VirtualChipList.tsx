@@ -34,10 +34,10 @@ export function VirtualChipList<T>({
                 flexWrap: 'wrap',
                 gap: 0.5,
                 maxHeight,
-                overflow: 'auto',
+                overflow: maxHeight === 'none' ? 'visible' : 'auto',
                 alignContent: 'flex-start',
                 minWidth: 0,
-                WebkitOverflowScrolling: 'touch',
+                WebkitOverflowScrolling: maxHeight === 'none' ? 'auto' : 'touch',
             }}
         >
             {items.map((item, index) => (
