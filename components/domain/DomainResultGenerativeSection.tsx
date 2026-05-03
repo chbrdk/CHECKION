@@ -7,7 +7,7 @@ import { MSQDX_STATUS } from '@msqdx/tokens';
 import { VirtualScrollList } from '@/components/VirtualScrollList';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import type { AggregatedGenerative } from '@/lib/domain-aggregation';
-import { DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX, DOMAIN_TAB_VIRTUAL_OVERSCAN } from '@/lib/constants';
+import { DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX, DOMAIN_TAB_VIRTUAL_OVERSCAN, DOMAIN_TAB_VIRTUAL_SCROLL_GAP_PX } from '@/lib/constants';
 import { GenerativePageScrollRow } from '@/components/domain/GenerativePageScrollRow';
 import { MSQDX_INNER_CARD_BORDER_SX, THEME_ACCENT_CSS } from '@/lib/theme-accent';
 
