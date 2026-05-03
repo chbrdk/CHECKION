@@ -1,17 +1,12 @@
 'use client';
 
 import React, { memo } from 'react';
-import dynamic from 'next/dynamic';
 import { Box, CircularProgress } from '@mui/material';
 import { MsqdxTypography } from '@msqdx/react';
 import { useQuery } from '@tanstack/react-query';
 import { apiScanDomainGraph } from '@/lib/constants';
 import type { DomainScanResult } from '@/lib/types';
-
-const DomainGraph = dynamic(
-    () => import('@/components/DomainGraph').then((m) => ({ default: m.DomainGraph })),
-    { ssr: false, loading: () => <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={32} /></Box> }
-);
+import { DomainGraph } from '@/components/DomainGraph';
 
 export type DomainResultVisualMapSectionProps = {
     t: (key: string) => string;

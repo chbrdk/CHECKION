@@ -6,21 +6,15 @@ import { MsqdxTypography, MsqdxMoleculeCard } from '@msqdx/react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { RemotePaginationBar } from '@/components/RemotePaginationBar';
 import { InfoTooltip } from '@/components/InfoTooltip';
-import dynamic from 'next/dynamic';
 import type { DomainSummaryApiResponse } from '@/lib/domain-summary';
 import type { SlimPage } from '@/lib/types';
 import {
     DOMAIN_SLIM_PAGES_PAGE_SIZE,
     apiScanDomainSlimPages,
 } from '@/lib/constants';
-import type { ScannedPagesSortKey } from '@/components/ScannedPagesTable';
+import { ScannedPagesTable, type ScannedPagesSortKey } from '@/components/ScannedPagesTable';
 import { DomainResultOverviewLeftColumn } from '@/components/domain/DomainResultOverviewLeftColumn';
 import { MSQDX_INNER_CARD_BORDER_SX } from '@/lib/theme-accent';
-
-const ScannedPagesTable = dynamic(
-    () => import('@/components/ScannedPagesTable').then((m) => ({ default: m.ScannedPagesTable })),
-    { ssr: false, loading: () => <Box sx={{ py: 2 }}><CircularProgress size={24} /></Box> }
-);
 
 export type DomainResultOverviewSectionProps = {
     t: (key: string, values?: Record<string, string | number>) => string;

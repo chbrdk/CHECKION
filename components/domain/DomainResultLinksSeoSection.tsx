@@ -403,8 +403,6 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                                     getItemKey={(kw, index) => `${index}:${kw.keyword}`}
                                     renderChip={renderCrossPageKeywordChip}
                                     maxHeight="100%"
-                                    /** Max 25 chips — keep flex-wrap path; virtual window + deferred bundle updates caused empty rows. */
-                                    inlineThreshold={50}
                                 />
                             </Box>
                         </MsqdxMoleculeCard>

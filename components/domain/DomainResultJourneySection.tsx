@@ -1,10 +1,9 @@
 'use client';
 
 import React, { memo } from 'react';
-import { Box, CircularProgress } from '@mui/material';
+import { Box } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxFormField, MsqdxMoleculeCard } from '@msqdx/react';
 import { MSQDX_STATUS } from '@msqdx/tokens';
-import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import type { JourneyResult, JourneyStep } from '@/lib/types';
 import type { SlimPage } from '@/lib/types';
@@ -14,11 +13,7 @@ import {
     API_JOURNEYS,
 } from '@/lib/constants';
 import { InfoTooltip } from '@/components/InfoTooltip';
-
-const JourneyFlowchart = dynamic(
-    () => import('@/components/JourneyFlowchart').then((m) => ({ default: m.JourneyFlowchart })),
-    { ssr: false, loading: () => <Box sx={{ py: 2 }}><CircularProgress size={24} /></Box> }
-);
+import { JourneyFlowchart } from '@/components/JourneyFlowchart';
 
 export type DomainResultJourneySectionProps = {
     t: (key: string) => string;

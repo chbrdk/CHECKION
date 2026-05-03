@@ -3,14 +3,9 @@
 import React, { memo } from 'react';
 import { Box } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard } from '@msqdx/react';
-import dynamic from 'next/dynamic';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import type { AggregatedInfra } from '@/lib/domain-aggregation';
-
-const DomainToolsCard = dynamic(
-    () => import('@/components/DomainToolsCard').then((m) => ({ default: m.DomainToolsCard })),
-    { ssr: false }
-);
+import { DomainToolsCard } from '@/components/DomainToolsCard';
 
 export type DomainResultInfraSectionProps = {
     t: (key: string) => string;

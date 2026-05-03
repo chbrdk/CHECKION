@@ -1,6 +1,6 @@
 'use client';
 
-import React, { memo, useCallback, useDeferredValue } from 'react';
+import React, { memo, useCallback } from 'react';
 import type { SlimPage } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { useDomainScanChrome, useDomainScanCore } from '@/context/DomainScanContext';
@@ -94,12 +94,10 @@ const DomainTabUxAudit = memo(function DomainTabUxAudit() {
     const { t } = useI18n();
     const { aggregated, openPageScanUrl } = useDomainScanCore();
     const ux = aggregated?.ux;
-    const deferredUx = useDeferredValue(ux);
     if (ux == null) {
         return <DomainResultUxAuditEmpty t={t} />;
     }
-    const uxForTable = deferredUx ?? ux;
-    return <DomainResultUxAuditSection t={t} ux={uxForTable} onOpenPageUrl={openPageScanUrl} />;
+    return <DomainResultUxAuditSection t={t} ux={ux} onOpenPageUrl={openPageScanUrl} />;
 });
 
 const DomainTabStructure = memo(function DomainTabStructure() {

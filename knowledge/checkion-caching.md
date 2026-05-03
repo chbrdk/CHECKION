@@ -52,7 +52,7 @@ Für **authentifizierte** Domain-Read-APIs (u. a. Summary, Slim-Pages, Issue-Gro
 ### Frontend (Domain-Seite)
 
 - **Tab-Sektionen:** Alle Domain-Tabs sind als eigene `memo`-Komponenten unter `components/domain/` ausgelagert (`DomainResultMain` orchestriert nur noch `activeSection`): u. a. `DomainResultOverviewSection`, `DomainResultListDetailsSection`, `DomainResultVisualMapSection`, `DomainResultUxCxSection`, `DomainResultVisualAnalysisSection`, `DomainResultUxAuditSection` (+ `DomainResultUxAuditEmpty`), `DomainResultStructureSection` (+ Empty), `DomainResultLinksSeoSection` (+ Empty), `DomainResultInfraTab`, `DomainResultGenerativeSection` (+ Empty), `DomainResultJourneySection`. So triggern Kontext-Updates in einem Tab nicht unnötig die JSX-Auswertung der anderen.
-- **Code-Splitting:** Schwere Tab-Inhalte in `DomainResultMain` (`DomainResultUxAuditSection`, Links/SEO, Structure, Infra, Generative, Page Topics, Overview-Tab usw.) sowie `DomainGraph`, `DomainAggregatedIssueList` und `JourneyFlowchart` werden per `next/dynamic` mit Loading-Fallback nachgeladen; der initiale JS-Bundle wird kleiner.
+- **Domain-Route / Rendering-Stabilität:** Tab-Sektionen in `DomainResultMain` sind **statisch importiert** (kein `next/dynamic` für diese Module). `ScannedPagesTable` (Übersicht) und `VirtualChipList` rendern **alle Zeilen/Chips im DOM** (kein TanStack-Windowing). Listen in den Domain-Tabs nutzen `VirtualScrollList` mit **`virtualize={false}`** (normales Scrollen). Trade-off: größeres initiales JS, dafür weniger Flackern beim Tab- und Listen-Scroll.
 
 ### Search-API
 

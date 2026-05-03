@@ -1,18 +1,13 @@
 'use client';
 
 import React, { memo } from 'react';
-import { Box, CircularProgress, alpha } from '@mui/material';
+import { Box, alpha } from '@mui/material';
 import { MsqdxChip, MsqdxMoleculeCard } from '@msqdx/react';
 import { MSQDX_STATUS } from '@msqdx/tokens';
-import dynamic from 'next/dynamic';
 import { InfoTooltip } from '@/components/InfoTooltip';
+import { DomainIssuesMasterDetail } from '@/components/DomainIssuesMasterDetail';
 import type { DomainScanContextValue } from '@/context/DomainScanContext';
 import type { SlimPage } from '@/lib/types';
-
-const DomainIssuesMasterDetail = dynamic(
-    () => import('@/components/DomainIssuesMasterDetail').then((m) => ({ default: m.DomainIssuesMasterDetail })),
-    { ssr: false, loading: () => <Box sx={{ py: 2, display: 'flex', justifyContent: 'center' }}><CircularProgress size={24} /></Box> }
-);
 
 export type DomainResultListDetailsSectionProps = {
     t: (key: string, values?: Record<string, string | number>) => string;
