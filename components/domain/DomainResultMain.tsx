@@ -3,7 +3,7 @@
 import React, { useCallback } from 'react';
 import type { SlimPage } from '@/lib/types';
 import { useRouter } from 'next/navigation';
-import { useDomainScan } from '@/context/DomainScanContext';
+import { useDomainScanCore } from '@/context/DomainScanContext';
 import { pathResults } from '@/lib/constants';
 import { DomainResultGenerativeEmpty, DomainResultGenerativeSection } from './DomainResultGenerativeSection';
 import { DomainResultInfraTab } from './DomainResultInfraSection';
@@ -40,7 +40,7 @@ export function DomainResultMain() {
         clearIssuesGroupSelection,
         setIssuesFilters,
         domainLinkQuery,
-    } = useDomainScan();
+    } = useDomainScanCore();
 
     const openScannedPage = useCallback(
         (page: SlimPage) => {

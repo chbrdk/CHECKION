@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Box } from '@mui/material';
@@ -59,8 +59,10 @@ export default function DashboardPage() {
   const runSearch = useCallback(async (q: string) => {
     const trimmed = q.trim();
     if (!trimmed) {
-      setSearchMatches([]);
-      setLastSearchedQuery('');
+      startTransition(() => {
+        setSearchMatches([]);
+        setLastSearchedQuery('');
+      });
       return;
     }
     setLastSearchedQuery(trimmed);
@@ -68,9 +70,14 @@ export default function DashboardPage() {
     try {
       const res = await fetch(apiSearch(trimmed, 50));
       const data = await res.json();
-      setSearchMatches(Array.isArray(data?.matches) ? data.matches : []);
+      const next = Array.isArray(data?.matches) ? data.matches : [];
+      startTransition(() => {
+        setSearchMatches(next);
+      });
     } catch {
-      setSearchMatches([]);
+      startTransition(() => {
+        setSearchMatches([]);
+      });
     } finally {
       setSearchLoading(false);
     }
@@ -82,8 +89,10 @@ export default function DashboardPage() {
 
   const clearSearch = useCallback(() => {
     setSearchQuery('');
-    setLastSearchedQuery('');
-    setSearchMatches([]);
+    startTransition(() => {
+      setLastSearchedQuery('');
+      setSearchMatches([]);
+    });
   }, []);
 
   const handleSelectMatch = useCallback(

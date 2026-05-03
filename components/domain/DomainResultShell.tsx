@@ -8,7 +8,7 @@ import { SharePanel } from '@/components/SharePanel';
 import { AddToProject } from '@/components/AddToProject';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
-import { useDomainScan } from '@/context/DomainScanContext';
+import { useDomainScanCore } from '@/context/DomainScanContext';
 import { apiScanDomainSummary, LAYOUT_MAX_CONTENT_WIDTH_PX, PATH_HOME } from '@/lib/constants';
 import { MSQDX_BUTTON_THEME_ACCENT_SX } from '@/lib/theme-accent';
 import { industryDisplayLabel } from '@/lib/industry-pool';
@@ -28,7 +28,7 @@ export function DomainResultShell({ children }: { children: React.ReactNode }) {
     const { t, locale } = useI18n();
     const router = useRouter();
     const { loadError, result, domainId, projectId, setProjectId, activeSection, fromProjectId, domainLinkQuery } =
-        useDomainScan();
+        useDomainScanCore();
 
     if (loadError) {
         return (

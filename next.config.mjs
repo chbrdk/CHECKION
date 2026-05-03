@@ -22,6 +22,8 @@ const mcpBase = process.env.MCP_SERVER_URL?.replace(/\/$/, '') ?? '';
 
 const nextConfig = {
     reactStrictMode: true,
+    /** Automatic memoization via React Compiler (requires `babel-plugin-react-compiler`). */
+    reactCompiler: true,
     transpilePackages: ['@msqdx/react', '@msqdx/tokens'],
     experimental: {
         optimizePackageImports: ['@mui/material', '@msqdx/tokens'],

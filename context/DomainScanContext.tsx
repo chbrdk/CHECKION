@@ -25,7 +25,11 @@ import {
 
 const BUNDLE_QUERY_KEY = (domainId: string) => ['domain-scan-bundle', domainId] as const;
 
-export type DomainScanContextValue = {
+/**
+ * URL-scoped domain summary, pages, issues deep-link state, and project — updates with bundle and search params.
+ * Use `useDomainScanCore()` in shell and tab orchestrators so UI does not re-render when only journey/summary session state changes.
+ */
+export type DomainScanCoreValue = {
     domainId: string;
     activeSection: DomainResultSectionSlug;
     result: DomainSummaryApiResponse | null;
@@ -37,24 +41,6 @@ export type DomainScanContextValue = {
     fromProjectId: string | null;
     /** Merge into `pathDomainSection` third argument to keep `?projectId=` on tab links. */
     domainLinkQuery: Record<string, string>;
-    summarizing: boolean;
-    setSummarizing: React.Dispatch<React.SetStateAction<boolean>>;
-    summarizeError: string | null;
-    setSummarizeError: React.Dispatch<React.SetStateAction<string | null>>;
-    journeyGoal: string;
-    setJourneyGoal: React.Dispatch<React.SetStateAction<string>>;
-    journeyLoading: boolean;
-    setJourneyLoading: React.Dispatch<React.SetStateAction<boolean>>;
-    journeyResult: JourneyResult | null;
-    setJourneyResult: React.Dispatch<React.SetStateAction<JourneyResult | null>>;
-    journeyError: string | null;
-    setJourneyError: React.Dispatch<React.SetStateAction<string | null>>;
-    journeySaving: boolean;
-    setJourneySaving: React.Dispatch<React.SetStateAction<boolean>>;
-    journeySaved: boolean;
-    setJourneySaved: React.Dispatch<React.SetStateAction<boolean>>;
-    journeySaveName: string;
-    setJourneySaveName: React.Dispatch<React.SetStateAction<string>>;
     /** From bundle: total rows for slim-pages pagination (DB or payload). */
     totalSlimRows: number | null;
     /** Legacy: embedded pages when present (bundle uses light payload → usually empty). */
@@ -81,12 +67,48 @@ export type DomainScanContextValue = {
     setIssuesFilters: (next: { type?: string | null; wcag?: string | null; q?: string | null }) => void;
 };
 
-const DomainScanContext = createContext<DomainScanContextValue | null>(null);
+/** Client-only journey + LLM summary controls — isolated so domain shell/tabs do not re-render on keystrokes here. */
+export type DomainScanSessionValue = {
+    summarizing: boolean;
+    setSummarizing: React.Dispatch<React.SetStateAction<boolean>>;
+    summarizeError: string | null;
+    setSummarizeError: React.Dispatch<React.SetStateAction<string | null>>;
+    journeyGoal: string;
+    setJourneyGoal: React.Dispatch<React.SetStateAction<string>>;
+    journeyLoading: boolean;
+    setJourneyLoading: React.Dispatch<React.SetStateAction<boolean>>;
+    journeyResult: JourneyResult | null;
+    setJourneyResult: React.Dispatch<React.SetStateAction<JourneyResult | null>>;
+    journeyError: string | null;
+    setJourneyError: React.Dispatch<React.SetStateAction<string | null>>;
+    journeySaving: boolean;
+    setJourneySaving: React.Dispatch<React.SetStateAction<boolean>>;
+    journeySaved: boolean;
+    setJourneySaved: React.Dispatch<React.SetStateAction<boolean>>;
+    journeySaveName: string;
+    setJourneySaveName: React.Dispatch<React.SetStateAction<string>>;
+};
 
-export function useDomainScan(): DomainScanContextValue {
-    const ctx = useContext(DomainScanContext);
-    if (!ctx) throw new Error('useDomainScan must be used within DomainScanProvider');
+export type DomainScanContextValue = DomainScanCoreValue & DomainScanSessionValue;
+
+const DomainScanCoreContext = createContext<DomainScanCoreValue | null>(null);
+const DomainScanSessionContext = createContext<DomainScanSessionValue | null>(null);
+
+export function useDomainScanCore(): DomainScanCoreValue {
+    const ctx = useContext(DomainScanCoreContext);
+    if (!ctx) throw new Error('useDomainScanCore must be used within DomainScanProvider');
     return ctx;
+}
+
+export function useDomainScanSession(): DomainScanSessionValue {
+    const ctx = useContext(DomainScanSessionContext);
+    if (!ctx) throw new Error('useDomainScanSession must be used within DomainScanProvider');
+    return ctx;
+}
+
+/** Subscribes to both core and session — prefer `useDomainScanCore` / `useDomainScanSession` when only one slice is needed. */
+export function useDomainScan(): DomainScanContextValue {
+    return { ...useDomainScanCore(), ...useDomainScanSession() };
 }
 
 export function DomainScanProvider({
@@ -340,7 +362,7 @@ export function DomainScanProvider({
         });
     }, [restoreJourneyId, hasIssuesDeepLink, domainId, router, searchParams]);
 
-    const value = useMemo<DomainScanContextValue>(
+    const coreValue = useMemo<DomainScanCoreValue>(
         () => ({
             domainId,
             activeSection,
@@ -351,24 +373,6 @@ export function DomainScanProvider({
             setProjectId,
             fromProjectId,
             domainLinkQuery,
-            summarizing,
-            setSummarizing,
-            summarizeError,
-            setSummarizeError,
-            journeyGoal,
-            setJourneyGoal,
-            journeyLoading,
-            setJourneyLoading,
-            journeyResult,
-            setJourneyResult,
-            journeyError,
-            setJourneyError,
-            journeySaving,
-            setJourneySaving,
-            journeySaved,
-            setJourneySaved,
-            journeySaveName,
-            setJourneySaveName,
             totalSlimRows,
             pages,
             totalPageCount,
@@ -399,15 +403,6 @@ export function DomainScanProvider({
             projectId,
             fromProjectId,
             domainLinkQuery,
-            summarizing,
-            summarizeError,
-            journeyGoal,
-            journeyLoading,
-            journeyResult,
-            journeyError,
-            journeySaving,
-            journeySaved,
-            journeySaveName,
             totalSlimRows,
             pages,
             totalPageCount,
@@ -431,5 +426,43 @@ export function DomainScanProvider({
         ]
     );
 
-    return <DomainScanContext.Provider value={value}>{children}</DomainScanContext.Provider>;
+    const sessionValue = useMemo<DomainScanSessionValue>(
+        () => ({
+            summarizing,
+            setSummarizing,
+            summarizeError,
+            setSummarizeError,
+            journeyGoal,
+            setJourneyGoal,
+            journeyLoading,
+            setJourneyLoading,
+            journeyResult,
+            setJourneyResult,
+            journeyError,
+            setJourneyError,
+            journeySaving,
+            setJourneySaving,
+            journeySaved,
+            setJourneySaved,
+            journeySaveName,
+            setJourneySaveName,
+        }),
+        [
+            summarizing,
+            summarizeError,
+            journeyGoal,
+            journeyLoading,
+            journeyResult,
+            journeyError,
+            journeySaving,
+            journeySaved,
+            journeySaveName,
+        ]
+    );
+
+    return (
+        <DomainScanSessionContext.Provider value={sessionValue}>
+            <DomainScanCoreContext.Provider value={coreValue}>{children}</DomainScanCoreContext.Provider>
+        </DomainScanSessionContext.Provider>
+    );
 }
