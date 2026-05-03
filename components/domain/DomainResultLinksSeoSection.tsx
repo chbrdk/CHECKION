@@ -399,12 +399,13 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                             }}
                         >
                             <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                                <VirtualChipList
-                                    items={crossPageKeywordItems}
-                                    getItemKey={(kw, index) => `${index}:${kw.keyword}`}
-                                    renderChip={renderCrossPageKeywordChip}
-                                    maxHeight="none"
-                                />
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, alignContent: 'flex-start' }}>
+                                    {crossPageKeywordItems.map((kw, index) => (
+                                        <React.Fragment key={`${index}:${kw.keyword}`}>
+                                            {renderCrossPageKeywordChip(kw)}
+                                        </React.Fragment>
+                                    ))}
+                                </Box>
                             </Box>
                         </MsqdxMoleculeCard>
                     </Box>
@@ -445,16 +446,22 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                         <CircularProgress size={28} sx={{ color: 'var(--color-theme-accent)' }} />
                     </Box>
                 ) : (
-                    <VirtualScrollList
-                        items={seoRows}
-                        maxHeight="none"
-                        estimateSize={DOMAIN_TAB_SEO_PAGE_ROW_ESTIMATE_PX}
-                        overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
-                        gap={DOMAIN_TAB_VIRTUAL_SCROLL_GAP_PX}
-                        virtualize={false}
-                        getItemKey={(row) => row.url}
-                        renderItem={renderSeoRow}
-                    />
+                    <Box
+                        component="div"
+                        sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: `${DOMAIN_TAB_VIRTUAL_SCROLL_GAP_PX}px`,
+                            flex: '1 1 auto',
+                            minHeight: 0,
+                        }}
+                    >
+                        {seoRows.map((row, index) => (
+                            <React.Fragment key={row.url}>
+                                {renderSeoRow(row, index)}
+                            </React.Fragment>
+                        ))}
+                    </Box>
                 )}
                 <RemotePaginationBar
                     page={seoPageIndex}
