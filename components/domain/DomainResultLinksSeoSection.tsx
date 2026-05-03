@@ -399,9 +399,11 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                             <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                                 <VirtualChipList
                                     items={crossPageKeywordItems}
-                                    getItemKey={(kw) => kw.keyword}
+                                    getItemKey={(kw, index) => `${index}:${kw.keyword}`}
                                     renderChip={renderCrossPageKeywordChip}
                                     maxHeight="100%"
+                                    /** Max 25 chips — keep flex-wrap path; virtual window + deferred bundle updates caused empty rows. */
+                                    inlineThreshold={50}
                                 />
                             </Box>
                         </MsqdxMoleculeCard>

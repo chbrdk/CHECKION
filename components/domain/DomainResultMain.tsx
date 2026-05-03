@@ -181,8 +181,6 @@ const DomainTabStructure = memo(function DomainTabStructure() {
 const DomainTabLinksSeo = memo(function DomainTabLinksSeo() {
     const { t, locale } = useI18n();
     const { domainId, aggregated, openPageScanUrl } = useDomainScanCore();
-    const deferredAgg = useDeferredValue(aggregated);
-    const aggForHeavyLists = deferredAgg ?? aggregated;
     if (!aggregated) return null;
     if (aggregated.seo || aggregated.links) {
         return (
@@ -190,7 +188,7 @@ const DomainTabLinksSeo = memo(function DomainTabLinksSeo() {
                 t={t}
                 locale={locale}
                 domainId={domainId}
-                aggregated={aggForHeavyLists!}
+                aggregated={aggregated}
                 onOpenPageUrl={openPageScanUrl}
             />
         );
