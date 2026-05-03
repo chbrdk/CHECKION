@@ -33,7 +33,6 @@ export const SeoDensityScrollRow = memo(function SeoDensityScrollRow({
                 py: 0.75,
                 border: '1px solid var(--color-secondary-dx-grey-light-tint, #e0e0e0)',
                 borderRadius: 1,
-                contain: 'paint',
             }}
         >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, width: '100%' }}>

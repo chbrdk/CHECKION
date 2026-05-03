@@ -181,7 +181,6 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                                 borderRadius: 'var(--msqdx-radius-md)',
                                 border: '1px solid var(--color-secondary-dx-grey-light-tint)',
                                 px: 1,
-                                contain: 'paint',
                             }}
                         >
                             <MsqdxTypography variant="caption" sx={{ flex: 1, minWidth: 0 }} noWrap title={url}>
@@ -238,7 +237,6 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                     borderRadius: 'var(--msqdx-radius-md)',
                     border: '1px solid var(--color-secondary-dx-grey-light-tint)',
                     px: 1,
-                    contain: 'paint',
                 }}
             >
                 <MsqdxTypography variant="caption" sx={{ flex: 1, minWidth: 0 }} noWrap title={url}>
@@ -345,7 +343,7 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                     display: 'grid',
                     gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
                     gap: 2,
-                    alignItems: 'stretch',
+                    alignItems: 'flex-start',
                     width: '100%',
                     minWidth: 0,
                 }}
@@ -358,7 +356,7 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                         variant="flat"
                         borderRadius="1.5xl"
                         footerDivider={false}
-                        sx={{ ...INNER_CARD_SX, height: { md: '100%' } }}
+                        sx={INNER_CARD_SX}
                     >
                         <Stack spacing={1.5}>
                             <Box
@@ -570,7 +568,6 @@ const DomainResultLinksPanel = memo(function DomainResultLinksPanel({ t, locale,
                                     px: 1,
                                     borderRadius: 'var(--msqdx-radius-md)',
                                     border: '1px solid var(--color-secondary-dx-grey-light-tint)',
-                                    contain: 'paint',
                                 }}
                             >
                                 <MsqdxTypography variant="caption" sx={{ flex: 1, minWidth: 0 }} noWrap title={url}>
@@ -632,7 +629,7 @@ function DomainResultLinksSeoSectionInner({
                 sx={{
                     display: 'flex',
                     flexDirection: { xs: 'column', lg: twoCol ? 'row' : 'column' },
-                    alignItems: 'stretch',
+                    alignItems: 'flex-start',
                     gap: 2,
                     width: '100%',
                     minWidth: 0,
