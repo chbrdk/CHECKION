@@ -122,6 +122,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                             zIndex: 0,
                             overflowX: 'hidden',
                             overflowY: 'auto',
+                            transform: 'translateZ(0)',
+                            willChange: 'transform',
                             padding: { xs: '1rem', md: '1.5rem' },
                             paddingTop: {
                                 xs: `calc(${HEADER_HEIGHT_XS}px + 1rem)`,

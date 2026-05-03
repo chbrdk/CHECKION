@@ -49,6 +49,8 @@ function VirtualScrollListStatic<T>({
                 minWidth: 0,
                 flexShrink: 1,
                 WebkitOverflowScrolling: 'touch',
+                transform: 'translateZ(0)',
+                willChange: 'transform',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: gap != null && gap > 0 ? `${gap}px` : 0,
@@ -102,6 +104,8 @@ function VirtualScrollListWindowed<T>({
                 flexShrink: 1,
                 WebkitOverflowScrolling: 'touch',
                 overflowAnchor: 'none',
+                transform: 'translateZ(0)',
+                willChange: 'transform',
             }}
         >
             <Box sx={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative', width: '100%' }}>

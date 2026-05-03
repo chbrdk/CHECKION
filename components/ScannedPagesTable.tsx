@@ -142,7 +142,6 @@ function ScannedPagesTableInner({
                     border: tableBorder,
                     borderRadius: 1,
                     overflow: 'hidden',
-                    maxHeight: '65vh',
                     backgroundColor: MSQDX_THEME.light.surface.primary,
                     display: 'flex',
                     flexDirection: 'column',
@@ -174,12 +173,9 @@ function ScannedPagesTableInner({
                     component="div"
                     aria-label={t('domainResult.scannedPages')}
                     sx={{
-                        overflow: 'auto',
                         flex: '1 1 auto',
                         minHeight: 0,
-                        maxHeight: 'calc(65vh - 32px)',
-                        WebkitOverflowScrolling: 'touch',
-                        overflowAnchor: 'none',
+                        transform: 'translateZ(0)',
                     }}
                 >
                     {sortedPages.map((page) => (
