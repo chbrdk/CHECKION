@@ -87,14 +87,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                         flexDirection: 'column',
                     }}
                 >
-                    {/* Header bar: im Inhaltsbereich neben der CornerBox (Layout); kein zusätzliches left — sonst schrumpft die Nav auf Mobile stark ein. */}
+                    {/* Header bar: Standard Flex */}
                     <Box
                         component="header"
                         sx={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            right: 0,
                             zIndex: 100001,
                             display: 'flex',
                             alignItems: 'center',
@@ -105,30 +101,21 @@ export function AppShell({ children }: { children: ReactNode }) {
                             overflow: 'visible',
                             color: '#000',
                             minWidth: 0,
+                            flexShrink: 0,
                         }}
                     >
                         <AppShellHeaderNav />
                     </Box>
-                    {/* Main content – full area with paddingTop to clear header (Audion-style). */}
+                    {/* Main content: Standard Flex */}
                     <Box
                         component="main"
                         data-checkion-content
                         sx={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
+                            flex: 1,
                             zIndex: 0,
                             overflowX: 'hidden',
                             overflowY: 'auto',
-                            transform: 'translateZ(0)',
-                            willChange: 'transform',
                             padding: { xs: '1rem', md: '1.5rem' },
-                            paddingTop: {
-                                xs: `calc(${HEADER_HEIGHT_XS}px + 1rem)`,
-                                md: `calc(${HEADER_HEIGHT_MD}px + 1.5rem)`,
-                            },
                             minWidth: 0,
                             maxWidth: '100%',
                             width: '100%',

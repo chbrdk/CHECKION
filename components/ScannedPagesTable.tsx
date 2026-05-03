@@ -175,7 +175,6 @@ function ScannedPagesTableInner({
                     sx={{
                         flex: '1 1 auto',
                         minHeight: 0,
-                        transform: 'translateZ(0)',
                     }}
                 >
                     {sortedPages.map((page) => (
