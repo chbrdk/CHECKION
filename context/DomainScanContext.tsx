@@ -25,9 +25,36 @@ import {
 
 const BUNDLE_QUERY_KEY = (domainId: string) => ['domain-scan-bundle', domainId] as const;
 
+/** Header classification row only — stable when heavy `aggregated` / bundle JSON changes. */
+export type DomainScanShellHeader = {
+    domain: string;
+    timestamp: string;
+    industry: string | null;
+    projectTags: string[];
+    scanTags: string[];
+};
+
+/**
+ * Narrow slice for {@link DomainResultShell}: avoids re-rendering the sticky header when only
+ * aggregated blobs or slim-page maps update (tabs still subscribe to {@link useDomainScanCore}).
+ */
+export type DomainScanChromeValue = {
+    loadError: string | null;
+    /** True while the initial bundle request has no data yet. */
+    bundlePending: boolean;
+    domainId: string;
+    activeSection: DomainResultSectionSlug;
+    domainLinkQuery: Record<string, string>;
+    projectId: string | null;
+    setProjectId: React.Dispatch<React.SetStateAction<string | null>>;
+    fromProjectId: string | null;
+    /** Null until first successful bundle; primitives/tags only (no aggregated graph). */
+    shellHeader: DomainScanShellHeader | null;
+};
+
 /**
  * URL-scoped domain summary, pages, issues deep-link state, and project — updates with bundle and search params.
- * Use `useDomainScanCore()` in shell and tab orchestrators so UI does not re-render when only journey/summary session state changes.
+ * Heavy tab content should use `useDomainScanCore()`; the shell uses `useDomainScanChrome()` instead.
  */
 export type DomainScanCoreValue = {
     domainId: string;
@@ -92,11 +119,18 @@ export type DomainScanSessionValue = {
 export type DomainScanContextValue = DomainScanCoreValue & DomainScanSessionValue;
 
 const DomainScanCoreContext = createContext<DomainScanCoreValue | null>(null);
+const DomainScanChromeContext = createContext<DomainScanChromeValue | null>(null);
 const DomainScanSessionContext = createContext<DomainScanSessionValue | null>(null);
 
 export function useDomainScanCore(): DomainScanCoreValue {
     const ctx = useContext(DomainScanCoreContext);
     if (!ctx) throw new Error('useDomainScanCore must be used within DomainScanProvider');
+    return ctx;
+}
+
+export function useDomainScanChrome(): DomainScanChromeValue {
+    const ctx = useContext(DomainScanChromeContext);
+    if (!ctx) throw new Error('useDomainScanChrome must be used within DomainScanProvider');
     return ctx;
 }
 
@@ -106,7 +140,7 @@ export function useDomainScanSession(): DomainScanSessionValue {
     return ctx;
 }
 
-/** Subscribes to both core and session — prefer `useDomainScanCore` / `useDomainScanSession` when only one slice is needed. */
+/** Subscribes to core data + session — prefer granular hooks to limit re-renders. */
 export function useDomainScan(): DomainScanContextValue {
     return { ...useDomainScanCore(), ...useDomainScanSession() };
 }
@@ -147,6 +181,7 @@ export function DomainScanProvider({
 
     const result = bundleQuery.data ?? null;
     const loadError = bundleQuery.isError ? 'not_found' : null;
+    const bundlePending = bundleQuery.isPending;
 
     const setResult = useCallback<React.Dispatch<React.SetStateAction<DomainSummaryApiResponse | null>>>(
         (action) => {
@@ -362,6 +397,45 @@ export function DomainScanProvider({
         });
     }, [restoreJourneyId, hasIssuesDeepLink, domainId, router, searchParams]);
 
+    const projectTagsSig = useMemo(() => (result?.projectTags ?? []).join('\u0001'), [result?.projectTags]);
+    const scanTagsSig = useMemo(() => (result?.scanTags ?? []).join('\u0001'), [result?.scanTags]);
+
+    const shellHeader = useMemo((): DomainScanShellHeader | null => {
+        if (!result) return null;
+        return {
+            domain: result.domain,
+            timestamp: result.timestamp,
+            industry: result.industry ?? null,
+            projectTags: [...(result.projectTags ?? [])],
+            scanTags: [...(result.scanTags ?? [])],
+        };
+    }, [result?.domain, result?.timestamp, result?.industry, projectTagsSig, scanTagsSig]);
+
+    const chromeValue = useMemo<DomainScanChromeValue>(
+        () => ({
+            loadError,
+            bundlePending,
+            domainId,
+            activeSection,
+            domainLinkQuery,
+            projectId,
+            setProjectId,
+            fromProjectId,
+            shellHeader,
+        }),
+        [
+            loadError,
+            bundlePending,
+            domainId,
+            activeSection,
+            domainLinkQuery,
+            projectId,
+            setProjectId,
+            fromProjectId,
+            shellHeader,
+        ]
+    );
+
     const coreValue = useMemo<DomainScanCoreValue>(
         () => ({
             domainId,
@@ -462,7 +536,9 @@ export function DomainScanProvider({
 
     return (
         <DomainScanSessionContext.Provider value={sessionValue}>
-            <DomainScanCoreContext.Provider value={coreValue}>{children}</DomainScanCoreContext.Provider>
+            <DomainScanCoreContext.Provider value={coreValue}>
+                <DomainScanChromeContext.Provider value={chromeValue}>{children}</DomainScanChromeContext.Provider>
+            </DomainScanCoreContext.Provider>
         </DomainScanSessionContext.Provider>
     );
 }

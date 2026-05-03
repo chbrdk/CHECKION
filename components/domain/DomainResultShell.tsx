@@ -8,7 +8,7 @@ import { SharePanel } from '@/components/SharePanel';
 import { AddToProject } from '@/components/AddToProject';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
-import { useDomainScanCore } from '@/context/DomainScanContext';
+import { useDomainScanChrome } from '@/context/DomainScanContext';
 import { apiScanDomainSummary, LAYOUT_MAX_CONTENT_WIDTH_PX, PATH_HOME } from '@/lib/constants';
 import { MSQDX_BUTTON_THEME_ACCENT_SX } from '@/lib/theme-accent';
 import { industryDisplayLabel } from '@/lib/industry-pool';
@@ -27,8 +27,8 @@ const shellContainerSx = {
 export function DomainResultShell({ children }: { children: React.ReactNode }) {
     const { t, locale } = useI18n();
     const router = useRouter();
-    const { loadError, result, domainId, projectId, setProjectId, activeSection, fromProjectId, domainLinkQuery } =
-        useDomainScanCore();
+    const { loadError, shellHeader, domainId, projectId, setProjectId, activeSection, fromProjectId, domainLinkQuery } =
+        useDomainScanChrome();
 
     if (loadError) {
         return (
@@ -50,7 +50,7 @@ export function DomainResultShell({ children }: { children: React.ReactNode }) {
         );
     }
 
-    if (!result) {
+    if (!shellHeader) {
         return (
             <Box sx={shellContainerSx}>
                 <Box sx={{ display: 'flex', justifyContent: 'center', flexDirection: 'column', alignItems: 'center', gap: 'var(--msqdx-spacing-md)', py: 8 }}>
@@ -61,17 +61,15 @@ export function DomainResultShell({ children }: { children: React.ReactNode }) {
         );
     }
 
-    const scanDateLabel = new Date(result.timestamp).toLocaleDateString(locale === 'en' ? 'en-US' : 'de-DE', {
+    const scanDateLabel = new Date(shellHeader.timestamp).toLocaleDateString(locale === 'en' ? 'en-US' : 'de-DE', {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
     });
 
-    const industryRaw = result.industry?.trim() ?? '';
+    const industryRaw = shellHeader.industry?.trim() ?? '';
     const industry = industryDisplayLabel(industryRaw || null, t);
-    const mergedTags = [
-        ...new Set([...(result.projectTags ?? []), ...(result.scanTags ?? [])]),
-    ];
+    const mergedTags = [...new Set([...shellHeader.projectTags, ...shellHeader.scanTags])];
     const showClassification = Boolean(industryRaw || mergedTags.length > 0);
 
     return (
@@ -80,7 +78,7 @@ export function DomainResultShell({ children }: { children: React.ReactNode }) {
                 <MsqdxMoleculeCard
                     title={t('domainResult.title')}
                     titleVariant="h4"
-                    subtitle={`${result.domain} • ${scanDateLabel}`}
+                    subtitle={`${shellHeader.domain} • ${scanDateLabel}`}
                     variant="flat"
                     borderRadius="1.5xl"
                     footerDivider={false}

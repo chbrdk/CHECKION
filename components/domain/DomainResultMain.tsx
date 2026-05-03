@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useCallback } from 'react';
+import React, { memo, useCallback } from 'react';
 import type { SlimPage } from '@/lib/types';
 import { useRouter } from 'next/navigation';
-import { useDomainScanCore } from '@/context/DomainScanContext';
+import { useDomainScanChrome, useDomainScanCore } from '@/context/DomainScanContext';
 import { pathResults } from '@/lib/constants';
 import { DomainResultGenerativeEmpty, DomainResultGenerativeSection } from './DomainResultGenerativeSection';
 import { DomainResultInfraTab } from './DomainResultInfraSection';
@@ -16,19 +16,45 @@ import { DomainResultUxAuditEmpty, DomainResultUxAuditSection } from './DomainRe
 import { DomainResultVisualMapSection } from './DomainResultVisualMapSection';
 import { useI18n } from '@/components/i18n/I18nProvider';
 
-export function DomainResultMain() {
-    const { t, locale } = useI18n();
+/** Subscribes to full bundle context — only mount the active tab so heavy updates don’t re-run the orchestrator. */
+const DomainTabOverview = memo(function DomainTabOverview() {
+    const { t } = useI18n();
     const router = useRouter();
+    const { result, domainId, totalPageCount, totalSlimRows, domainLinkQuery } = useDomainScanCore();
+    const openScannedPage = useCallback(
+        (page: SlimPage) => {
+            router.push(pathResults(page.id));
+        },
+        [router]
+    );
+    if (!result) return null;
+    return (
+        <DomainResultOverviewSection
+            t={t}
+            result={result}
+            domainId={domainId}
+            totalPageCount={totalPageCount}
+            totalSlimRows={totalSlimRows}
+            domainLinkQuery={domainLinkQuery}
+            onScannedPageOpen={openScannedPage}
+        />
+    );
+});
+
+/** No `aggregated` / bundle subscription — only chrome (domain id). */
+const DomainTabVisualMap = memo(function DomainTabVisualMap() {
+    const { t } = useI18n();
+    const { domainId } = useDomainScanChrome();
+    return <DomainResultVisualMapSection t={t} domainId={domainId} />;
+});
+
+const DomainTabListDetails = memo(function DomainTabListDetails() {
+    const { t } = useI18n();
     const {
         domainId,
-        activeSection,
-        result,
         totalPageCount,
-        totalSlimRows,
         aggregated,
         pagesById,
-        openPageScanUrl,
-        handleIssuePageClick,
         selectedGroupKey,
         selectedPageId,
         issuesType,
@@ -39,109 +65,121 @@ export function DomainResultMain() {
         clearIssuesPageSelection,
         clearIssuesGroupSelection,
         setIssuesFilters,
-        domainLinkQuery,
+        handleIssuePageClick,
     } = useDomainScanCore();
-
-    const openScannedPage = useCallback(
-        (page: SlimPage) => {
-            router.push(pathResults(page.id));
-        },
-        [router]
-    );
-
-    if (!result) return null;
-
     const issueStats = aggregated?.issues?.stats ?? null;
+    return (
+        <DomainResultListDetailsSection
+            t={t}
+            domainId={domainId}
+            totalPageCount={totalPageCount}
+            issueStats={issueStats}
+            pagesById={pagesById}
+            selectedGroupKey={selectedGroupKey}
+            selectedPageId={selectedPageId}
+            issuesType={issuesType}
+            issuesWcag={issuesWcag}
+            issuesQ={issuesQ}
+            onChangeFilters={setIssuesFilters}
+            onSelectGroup={selectGroup}
+            onSelectPage={selectPage}
+            onOpenPageScan={handleIssuePageClick}
+            onBackToGroups={clearIssuesGroupSelection}
+            onBackToPages={clearIssuesPageSelection}
+        />
+    );
+});
+
+const DomainTabUxAudit = memo(function DomainTabUxAudit() {
+    const { t } = useI18n();
+    const { aggregated, openPageScanUrl } = useDomainScanCore();
+    if (aggregated?.ux) {
+        return <DomainResultUxAuditSection t={t} ux={aggregated.ux} onOpenPageUrl={openPageScanUrl} />;
+    }
+    return <DomainResultUxAuditEmpty t={t} />;
+});
+
+const DomainTabStructure = memo(function DomainTabStructure() {
+    const { t } = useI18n();
+    const { aggregated, openPageScanUrl } = useDomainScanCore();
+    if (aggregated?.structure) {
+        return <DomainResultStructureSection t={t} structure={aggregated.structure} onOpenPageUrl={openPageScanUrl} />;
+    }
+    return <DomainResultStructureEmpty t={t} />;
+});
+
+const DomainTabLinksSeo = memo(function DomainTabLinksSeo() {
+    const { t, locale } = useI18n();
+    const { domainId, aggregated, openPageScanUrl } = useDomainScanCore();
+    if (!aggregated) return null;
+    if (aggregated.seo || aggregated.links) {
+        return (
+            <DomainResultLinksSeoSection
+                t={t}
+                locale={locale}
+                domainId={domainId}
+                aggregated={aggregated}
+                onOpenPageUrl={openPageScanUrl}
+            />
+        );
+    }
+    return <DomainResultLinksSeoEmpty t={t} />;
+});
+
+const DomainTabInfra = memo(function DomainTabInfra() {
+    const { t } = useI18n();
+    const { result, aggregated, openPageScanUrl } = useDomainScanCore();
+    if (!result) return null;
+    return (
+        <DomainResultInfraTab
+            t={t}
+            domainHost={result.domain}
+            infra={aggregated?.infra}
+            onOpenPageUrl={openPageScanUrl}
+        />
+    );
+});
+
+const DomainTabGenerative = memo(function DomainTabGenerative() {
+    const { t, locale } = useI18n();
+    const { aggregated, openPageScanUrl } = useDomainScanCore();
+    if (aggregated?.generative) {
+        return (
+            <DomainResultGenerativeSection
+                t={t}
+                locale={locale}
+                generative={aggregated.generative}
+                onOpenPageUrl={openPageScanUrl}
+            />
+        );
+    }
+    return <DomainResultGenerativeEmpty t={t} />;
+});
+
+const DomainTabPageTopics = memo(function DomainTabPageTopics() {
+    const { t } = useI18n();
+    const { aggregated } = useDomainScanCore();
+    return <DomainResultPageTopicsSection t={t} pageClassification={aggregated?.pageClassification} />;
+});
+
+/**
+ * Router-only: uses chrome (`activeSection`) — does not subscribe to heavy bundle context,
+ * so aggregated/slim refetches don’t re-render this component tree root.
+ */
+export function DomainResultMain() {
+    const { activeSection } = useDomainScanChrome();
 
     return (
         <>
-            {activeSection === 'overview' && (
-                <DomainResultOverviewSection
-                    t={t}
-                    result={result}
-                    domainId={domainId}
-                    totalPageCount={totalPageCount}
-                    totalSlimRows={totalSlimRows}
-                    domainLinkQuery={domainLinkQuery}
-                    onScannedPageOpen={openScannedPage}
-                />
-            )}
-
-            {activeSection === 'visual-map' && <DomainResultVisualMapSection t={t} domainId={domainId} />}
-
-            {activeSection === 'list-details' && (
-                <DomainResultListDetailsSection
-                    t={t}
-                    domainId={domainId}
-                    totalPageCount={totalPageCount}
-                    issueStats={issueStats}
-                    pagesById={pagesById}
-                    selectedGroupKey={selectedGroupKey}
-                    selectedPageId={selectedPageId}
-                    issuesType={issuesType}
-                    issuesWcag={issuesWcag}
-                    issuesQ={issuesQ}
-                    onChangeFilters={setIssuesFilters}
-                    onSelectGroup={selectGroup}
-                    onSelectPage={selectPage}
-                    onOpenPageScan={handleIssuePageClick}
-                    onBackToGroups={clearIssuesGroupSelection}
-                    onBackToPages={clearIssuesPageSelection}
-                />
-            )}
-
-            {activeSection === 'ux-audit' &&
-                (aggregated?.ux ? (
-                    <DomainResultUxAuditSection t={t} ux={aggregated.ux} onOpenPageUrl={openPageScanUrl} />
-                ) : (
-                    <DomainResultUxAuditEmpty t={t} />
-                ))}
-
-            {activeSection === 'structure' &&
-                (aggregated?.structure ? (
-                    <DomainResultStructureSection
-                        t={t}
-                        structure={aggregated.structure}
-                        onOpenPageUrl={openPageScanUrl}
-                    />
-                ) : (
-                    <DomainResultStructureEmpty t={t} />
-                ))}
-
-            {activeSection === 'links-seo' &&
-                aggregated &&
-                ((aggregated.seo || aggregated.links) ? (
-                    <DomainResultLinksSeoSection
-                        t={t}
-                        locale={locale}
-                        domainId={domainId}
-                        aggregated={aggregated}
-                        onOpenPageUrl={openPageScanUrl}
-                    />
-                ) : (
-                    <DomainResultLinksSeoEmpty t={t} />
-                ))}
-
-            {activeSection === 'infra' && (
-                <DomainResultInfraTab t={t} domainHost={result.domain} infra={aggregated?.infra} onOpenPageUrl={openPageScanUrl} />
-            )}
-
-            {activeSection === 'generative' &&
-                (aggregated?.generative ? (
-                    <DomainResultGenerativeSection
-                        t={t}
-                        locale={locale}
-                        generative={aggregated.generative}
-                        onOpenPageUrl={openPageScanUrl}
-                    />
-                ) : (
-                    <DomainResultGenerativeEmpty t={t} />
-                ))}
-
-            {activeSection === 'page-topics' && (
-                <DomainResultPageTopicsSection t={t} pageClassification={aggregated?.pageClassification} />
-            )}
-
+            {activeSection === 'overview' && <DomainTabOverview />}
+            {activeSection === 'visual-map' && <DomainTabVisualMap />}
+            {activeSection === 'list-details' && <DomainTabListDetails />}
+            {activeSection === 'ux-audit' && <DomainTabUxAudit />}
+            {activeSection === 'structure' && <DomainTabStructure />}
+            {activeSection === 'links-seo' && <DomainTabLinksSeo />}
+            {activeSection === 'infra' && <DomainTabInfra />}
+            {activeSection === 'generative' && <DomainTabGenerative />}
+            {activeSection === 'page-topics' && <DomainTabPageTopics />}
         </>
     );
 }
