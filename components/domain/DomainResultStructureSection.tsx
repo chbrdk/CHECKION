@@ -70,15 +70,13 @@ function DomainResultStructureSectionInner({ t, structure, onOpenPageUrl }: Doma
             sx={INNER_CARD_SX}
         >
             {urls.length > 0 ? (
-                <VirtualScrollList
-                    items={urls}
-                    maxHeight={320}
-                    estimateSize={DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX}
-                    overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
-                    virtualize={false}
-                    getItemKey={(url) => url}
-                    renderItem={(url) => <StructureUrlScrollRow url={url} t={t} onOpenPageUrl={onOpenPageUrl} />}
-                />
+                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                    {urls.map((url) => (
+                        <React.Fragment key={url}>
+                            <StructureUrlScrollRow url={url} t={t} onOpenPageUrl={onOpenPageUrl} />
+                        </React.Fragment>
+                    ))}
+                </Box>
             ) : (
                 <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', lineHeight: 1.45 }}>
                     {t('domainResult.structureListEmpty')}

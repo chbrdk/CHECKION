@@ -93,16 +93,17 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                         </Box>
                     ) : (
                         <Box sx={{ minHeight: 0, maxWidth: '100%', overflowX: 'hidden' }}>
-                            <VirtualScrollList
-                                items={issues}
-                                maxHeight={400}
-                                estimateSize={DOMAIN_TAB_SYSTEMIC_ISSUE_ROW_ESTIMATE_PX}
-                                overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
-                                virtualize={false}
-                                ariaLabel={t('domainResult.systemicIssues')}
-                                getItemKey={(issue, idx) => `${issue.issueId}-${idx}`}
-                                renderItem={(issue) => <SystemicIssueScrollRow issue={issue} t={t} />}
-                            />
+                            <Box
+                                component="div"
+                                aria-label={t('domainResult.systemicIssues')}
+                                sx={{ display: 'flex', flexDirection: 'column' }}
+                            >
+                                {issues.map((issue, idx) => (
+                                    <React.Fragment key={`${issue.issueId}-${idx}`}>
+                                        <SystemicIssueScrollRow issue={issue} t={t} />
+                                    </React.Fragment>
+                                ))}
+                            </Box>
                         </Box>
                     )}
                 </MsqdxMoleculeCard>

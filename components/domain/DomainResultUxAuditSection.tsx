@@ -178,7 +178,7 @@ function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl }: DomainResultU
                 flexDirection: 'row',
                 flexWrap: 'wrap',
                 gap: 2,
-                alignItems: 'stretch',
+                alignItems: 'flex-start',
                 alignContent: 'flex-start',
                 minWidth: 0,
                 width: '100%',

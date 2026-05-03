@@ -40,43 +40,35 @@ function DomainResultVisualAnalysisSectionInner({ t, domainId, domainLinkQuery, 
                     {ux!.focusOrderByPage.length > 0 && (
                         <Box>
                             <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Seiten mit Focus-Order-Einträgen</MsqdxTypography>
-                            <VirtualScrollList
-                                items={ux!.focusOrderByPage}
-                                maxHeight={260}
-                                estimateSize={DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX}
-                                overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
-                                virtualize={false}
-                                getItemKey={(row) => row.url}
-                                renderItem={({ url, count }) => (
-                                    <VisualUxUrlCountScrollRow
-                                        variant="focus"
-                                        url={url}
-                                        count={count}
-                                        onOpenPageUrl={onOpenPageUrl}
-                                    />
-                                )}
-                            />
+                            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                {ux!.focusOrderByPage.map(({ url, count }) => (
+                                    <React.Fragment key={url}>
+                                        <VisualUxUrlCountScrollRow
+                                            variant="focus"
+                                            url={url}
+                                            count={count}
+                                            onOpenPageUrl={onOpenPageUrl}
+                                        />
+                                    </React.Fragment>
+                                ))}
+                            </Box>
                         </Box>
                     )}
                     {ux!.tapTargets.detailsByPage.length > 0 && (
                         <Box>
                             <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Seiten mit Touch-Target-Problemen</MsqdxTypography>
-                            <VirtualScrollList
-                                items={ux!.tapTargets.detailsByPage}
-                                maxHeight={260}
-                                estimateSize={DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX}
-                                overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
-                                virtualize={false}
-                                getItemKey={(row) => row.url}
-                                renderItem={({ url, count }) => (
-                                    <VisualUxUrlCountScrollRow
-                                        variant="tap"
-                                        url={url}
-                                        count={count}
-                                        onOpenPageUrl={onOpenPageUrl}
-                                    />
-                                )}
-                            />
+                            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                {ux!.tapTargets.detailsByPage.map(({ url, count }) => (
+                                    <React.Fragment key={url}>
+                                        <VisualUxUrlCountScrollRow
+                                            variant="tap"
+                                            url={url}
+                                            count={count}
+                                            onOpenPageUrl={onOpenPageUrl}
+                                        />
+                                    </React.Fragment>
+                                ))}
+                            </Box>
                         </Box>
                     )}
                 </Box>
