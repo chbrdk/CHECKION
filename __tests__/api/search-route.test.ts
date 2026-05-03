@@ -14,23 +14,23 @@ vi.mock('@/lib/auth-api-token', () => ({
 vi.mock('@/lib/db/scans', () => ({
     getDomainScan: vi.fn(),
     listDomainScanSummariesForSearch: vi.fn(),
-    listScansByGroupIdOmitImageBlobs: vi.fn(),
+    listScansByGroupIdForSearch: vi.fn(),
     listStandaloneScansFull: vi.fn(),
 }));
 
 import { getRequestUser } from '@/lib/auth-api-token';
-import { getDomainScan, listDomainScanSummariesForSearch, listScansByGroupIdOmitImageBlobs, listStandaloneScansFull } from '@/lib/db/scans';
+import { getDomainScan, listDomainScanSummariesForSearch, listScansByGroupIdForSearch, listStandaloneScansFull } from '@/lib/db/scans';
 
 describe('GET /api/search — domain branch uses lightweight rows', () => {
     beforeEach(() => {
         vi.mocked(getRequestUser).mockResolvedValue({ id: 'u1' } as any);
         vi.mocked(listStandaloneScansFull).mockResolvedValue([]);
         vi.mocked(listDomainScanSummariesForSearch).mockReset();
-        vi.mocked(listScansByGroupIdOmitImageBlobs).mockReset();
+        vi.mocked(listScansByGroupIdForSearch).mockReset();
         vi.mocked(getDomainScan).mockReset();
     });
 
-    it('uses listScansByGroupIdOmitImageBlobs when hasStoredAggregated, does not call getDomainScan', async () => {
+    it('uses listScansByGroupIdForSearch when hasStoredAggregated, does not call getDomainScan', async () => {
         vi.mocked(listDomainScanSummariesForSearch).mockResolvedValue([
             {
                 id: 'd1',
@@ -48,7 +48,7 @@ describe('GET /api/search — domain branch uses lightweight rows', () => {
                 hasStoredAggregated: true,
             },
         ]);
-        vi.mocked(listScansByGroupIdOmitImageBlobs).mockResolvedValue([
+        vi.mocked(listScansByGroupIdForSearch).mockResolvedValue([
             {
                 id: 'p1',
                 url: 'https://example.com/foo',
@@ -63,7 +63,7 @@ describe('GET /api/search — domain branch uses lightweight rows', () => {
         expect(res.status).toBe(200);
         const body = await res.json();
         expect(body.matches.length).toBeGreaterThan(0);
-        expect(listScansByGroupIdOmitImageBlobs).toHaveBeenCalledWith('u1', 'd1');
+        expect(listScansByGroupIdForSearch).toHaveBeenCalledWith('u1', 'd1');
         expect(getDomainScan).not.toHaveBeenCalled();
     });
 
@@ -105,6 +105,6 @@ describe('GET /api/search — domain branch uses lightweight rows', () => {
         const body = await res.json();
         expect(body.matches.length).toBeGreaterThan(0);
         expect(getDomainScan).toHaveBeenCalledWith('d2', 'u1');
-        expect(listScansByGroupIdOmitImageBlobs).not.toHaveBeenCalled();
+        expect(listScansByGroupIdForSearch).not.toHaveBeenCalled();
     });
 });

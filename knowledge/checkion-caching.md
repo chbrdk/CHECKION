@@ -41,7 +41,7 @@ Mutationen (POST/PATCH/DELETE) bleiben in `lib/db/*` und triggern danach die zug
 
 ## HTTP `Cache-Control` (Browser)
 
-Für **authentifizierte** Domain-Read-APIs (u. a. Summary, Slim-Pages, Issue-Groups/Page-Issues) setzen die Routen `Cache-Control: private, max-age=<CACHE_REVALIDATE_DOMAIN>` über `HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON` in `lib/constants.ts`. Das ist ein **Hinweis für den Browser** (kurzes Wiederholen identischer GETs), **kein** öffentliches CDN-Caching (`private`).
+Für **authentifizierte** Domain-Read-APIs (u. a. Summary, Slim-Pages, Issue-Groups/Page-Issues, Bundle) setzen die Routen `Cache-Control: private, max-age=<CACHE_REVALIDATE_DOMAIN>, stale-while-revalidate=<CACHE_DOMAIN_JSON_STALE_WHILE_REVALIDATE>` über `HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON` in `lib/constants.ts`. Das ist ein **Hinweis für den Browser** (kurzes Wiederholen identischer GETs), **kein** öffentliches CDN-Caching (`private`). `stale-while-revalidate` ist mit dem TanStack-Query-Bundle (`staleTime` / `gcTime` in `DomainScanProvider`) grob abgestimmt.
 
 **Next.js Cache-Limit:** `unstable_cache` speichert nur Einträge ≤ 2 MB. Sehr große Domain-Scans (viele Seiten + Aggregation) können dieses Limit überschreiten; dann erscheint „items over 2MB can not be cached“. Die Status-Route umgeht das durch schlanke Antwort ohne Cache. Summary/Detail nutzen weiterhin `getCachedDomainScan`; bei > 2 MB schlägt nur das Speichern im Cache fehl, die Antwort wird trotzdem geliefert.
 
@@ -52,11 +52,11 @@ Für **authentifizierte** Domain-Read-APIs (u. a. Summary, Slim-Pages, Issue-Gro
 ### Frontend (Domain-Seite)
 
 - **Tab-Sektionen:** Alle Domain-Tabs sind als eigene `memo`-Komponenten unter `components/domain/` ausgelagert (`DomainResultMain` orchestriert nur noch `activeSection`): u. a. `DomainResultOverviewSection`, `DomainResultListDetailsSection`, `DomainResultVisualMapSection`, `DomainResultUxCxSection`, `DomainResultVisualAnalysisSection`, `DomainResultUxAuditSection` (+ `DomainResultUxAuditEmpty`), `DomainResultStructureSection` (+ Empty), `DomainResultLinksSeoSection` (+ Empty), `DomainResultInfraTab`, `DomainResultGenerativeSection` (+ Empty), `DomainResultJourneySection`. So triggern Kontext-Updates in einem Tab nicht unnötig die JSX-Auswertung der anderen.
-- **Code-Splitting:** `DomainGraph`, `DomainAggregatedIssueList` und `JourneyFlowchart` werden auf der Domain-Ergebnisseite per `next/dynamic` mit `ssr: false` nachgeladen. Sie erscheinen nur in bestimmten Tabs; der initiale JS-Bundle wird kleiner, der Long Task beim ersten Load reduziert.
+- **Code-Splitting:** Schwere Tab-Inhalte in `DomainResultMain` (`DomainResultUxAuditSection`, Links/SEO, Structure, Infra, Generative, Page Topics, Overview-Tab usw.) sowie `DomainGraph`, `DomainAggregatedIssueList` und `JourneyFlowchart` werden per `next/dynamic` mit Loading-Fallback nachgeladen; der initiale JS-Bundle wird kleiner.
 
 ### Search-API
 
-- **Domain-Zweig:** Lädt **keine** vollen `domain_scans.payload`-Zeilen mehr: `listDomainScanSummariesForSearch` (Metadaten + `hasStoredAggregated` per JSONB) und `listScansByGroupId` bzw. bei Legacy `getDomainScan`. Einzelscan-Dashboard: **`listCachedStandaloneScanSummaries`** (relationale Spalten, kein großes JSONB); Volltext-Suche: **`listStandaloneScansFull`** (teuer).
+- **Domain-Zweig:** Lädt **keine** vollen `domain_scans.payload`-Zeilen mehr: `listDomainScanSummariesForSearch` (Metadaten + `hasStoredAggregated` per JSONB) und `listScansByGroupIdForSearch` (schmale `result`-Projektion für Volltext) bzw. bei Legacy `getDomainScan`. Einzelscan-Dashboard: **`listCachedStandaloneScanSummaries`** (relationale Spalten, kein großes JSONB); Volltext-Suche: **`listStandaloneScansFull`** (teuer).
 - **Gecachte Suchergebnisse:** Das Ergebnis von `GET /api/search` wird pro (userId, q, typeFilter, limit) mit `unstable_cache` und Tags `scans-list-${userId}`, `domain-list-${userId}` gecacht (Revalidate wie Listen). Wiederholte gleiche Suchanfragen treffen nicht erneut die DB.
 
 ### Results-Seite (Einzelscan)

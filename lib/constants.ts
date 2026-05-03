@@ -621,14 +621,17 @@ export const SHARE_PATH = '/share';
 /** Cache revalidate times (seconds). Used by lib/cache with unstable_cache. */
 export const CACHE_REVALIDATE_SCAN = 60;
 export const CACHE_REVALIDATE_DOMAIN = 60;
+/** Browser hint (seconds): serve stale JSON while revalidating; aligns with React Query bundle `staleTime` / refetch. */
+export const CACHE_DOMAIN_JSON_STALE_WHILE_REVALIDATE = 120;
 export const CACHE_REVALIDATE_SHARE = 300;
 export const CACHE_REVALIDATE_LIST = 30;
 
 /**
- * HTTP `Cache-Control` for authenticated domain-scan JSON GETs (summary, slim-pages, paged issues).
- * `private` — not shared CDNs; `max-age` aligns with {@link CACHE_REVALIDATE_DOMAIN}.
+ * HTTP `Cache-Control` for authenticated domain-scan JSON GETs (summary, bundle, slim-pages, graph).
+ * `private` — not shared CDNs; `max-age` matches CACHE_REVALIDATE_DOMAIN (also DomainScanProvider bundle staleTime ms).
  */
-export const HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON = `private, max-age=${CACHE_REVALIDATE_DOMAIN}` as const;
+export const HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON =
+    `private, max-age=${CACHE_REVALIDATE_DOMAIN}, stale-while-revalidate=${CACHE_DOMAIN_JSON_STALE_WHILE_REVALIDATE}` as const;
 
 /** Screenshot storage: env key for backend (local disk vs S3). Use "s3" for shared storage across instances. */
 export const ENV_SCREENSHOT_STORAGE = 'SCREENSHOT_STORAGE';

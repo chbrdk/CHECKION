@@ -1,6 +1,8 @@
 /**
  * Refresh domain scan payload from current scan results (e.g. after page classification).
  * Rebuilds SlimPage[] and aggregated from listScansByGroupIdOmitImageBlobs and updates domain_scans.payload.
+ *
+ * Call sites and optimization notes: `knowledge/checkion-refresh-domain-payload-callers.md`.
  */
 
 import { getDomainScan, listScansByGroupIdOmitImageBlobs, updateDomainScan } from '@/lib/db/scans';

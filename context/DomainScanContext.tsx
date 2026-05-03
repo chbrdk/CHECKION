@@ -11,7 +11,7 @@ import React, {
     useState,
 } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import type { JourneyResult } from '@/lib/types';
 import type { DomainSummaryApiResponse } from '@/lib/domain-summary';
@@ -174,9 +174,13 @@ export function DomainScanProvider({
             };
         },
         enabled: Boolean(domainId?.trim()),
-        /** Reduces full-page flicker when switching back to the tab; invalidate manually or rely on staleTime. */
+        /** Aligns with CACHE_REVALIDATE_DOMAIN (seconds) and HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON max-age; invalidate via invalidateDomainScan. */
         staleTime: 60_000,
+        gcTime: 5 * 60_000,
         refetchOnWindowFocus: false,
+        structuralSharing: true,
+        /** Keeps prior bundle visible during background refetch (same idea as slim-pages `keepPreviousData`). */
+        placeholderData: keepPreviousData,
     });
 
     const result = bundleQuery.data ?? null;

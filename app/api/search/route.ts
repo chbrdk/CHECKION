@@ -7,7 +7,7 @@ import { unstable_cache } from 'next/cache';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { listStandaloneScansFull } from '@/lib/db/scans';
-import { getDomainScan, listDomainScanSummariesForSearch, listScansByGroupIdOmitImageBlobs } from '@/lib/db/scans';
+import { getDomainScan, listDomainScanSummariesForSearch, listScansByGroupIdForSearch } from '@/lib/db/scans';
 import type { ScanResult, SearchMatch, SearchMatchType } from '@/lib/types';
 import { CACHE_REVALIDATE_LIST } from '@/lib/constants';
 
@@ -101,7 +101,7 @@ async function runSearch(
             if (allMatches.length >= limit) break;
             const domain = row.domain;
             const pagesToSearch = row.hasStoredAggregated
-                ? await listScansByGroupIdOmitImageBlobs(userId, row.id)
+                ? await listScansByGroupIdForSearch(userId, row.id)
                 : ((await getDomainScan(row.id, userId))?.pages ?? []) as ScanResult[];
             for (const page of pagesToSearch) {
                 if (allMatches.length >= limit) break;

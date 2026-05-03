@@ -25,6 +25,14 @@ import { formatDeepScanInfraListLines } from '@/lib/deep-scan-list-summary';
  */
 const scanResultForBulkRead = sql<ScanResult>`(${scans.result})::jsonb - 'screenshot' - 'saliencyHeatmap' - 'passes'`;
 
+/** For GET /api/search over domain page rows: slimmer JSON than bulk read (see `searchInScan` fields). */
+const scanResultForSearch = sql<ScanResult>`(${scans.result})::jsonb
+  - 'screenshot' - 'saliencyHeatmap' - 'passes'
+  - 'performance' - 'eco' - 'ux' - 'links' - 'geo' - 'privacy' - 'consentSignals'
+  - 'eeatSignals' - 'generative' - 'security' - 'technicalInsights' - 'llmSummary'
+  - 'scanpath' - 'bodyTextExcerpt' - 'ymyl' - 'pageClassification' - 'contentFreshness'
+  - 'documentCacheHints' - 'allLinks' - 'allLinksWithLabels' - 'runners'`;
+
 export type DomainScanSummaryRow = {
     id: string;
     domain: string;
@@ -685,6 +693,26 @@ export async function listScansByGroupIdOmitImageBlobs(
     );
     const rows = await db
         .select({ result: scanResultForBulkRead })
+        .from(scans)
+        .where(and(eq(scans.groupId, groupId), access));
+    return rows.map((r) => r.result as unknown as ScanResult);
+}
+
+/**
+ * Like {@link listScansByGroupIdOmitImageBlobs} but with a slimmer JSON projection for dashboard search only.
+ */
+export async function listScansByGroupIdForSearch(userId: string, groupId: string): Promise<ScanResult[]> {
+    const db = getDb();
+    const access = or(
+        eq(scans.userId, userId),
+        sql`exists (
+            select 1 from standalone_scan_entitlements e
+            where e.user_id = ${userId}
+            and e.scan_session_id = ${scans.scanSessionId}
+        )`
+    );
+    const rows = await db
+        .select({ result: scanResultForSearch })
         .from(scans)
         .where(and(eq(scans.groupId, groupId), access));
     return rows.map((r) => r.result as unknown as ScanResult);

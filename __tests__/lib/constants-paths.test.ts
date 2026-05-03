@@ -45,6 +45,7 @@ import {
     DOMAIN_SEO_PAGES_PAGE_SIZE,
     DOMAIN_ISSUES_PAGE_SIZE,
     HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON,
+    CACHE_DOMAIN_JSON_STALE_WHILE_REVALIDATE,
     CACHE_REVALIDATE_DOMAIN,
     VIRTUAL_CHIP_LIST_ROW_ESTIMATE_PX,
     VIRTUAL_CHIP_LIST_OVERSCAN,
@@ -309,7 +310,10 @@ describe('Pretext reference constants', () => {
 });
 
 describe('HTTP cache hints (domain JSON APIs)', () => {
-    it('private max-age matches CACHE_REVALIDATE_DOMAIN', () => {
-        expect(HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON).toBe(`private, max-age=${CACHE_REVALIDATE_DOMAIN}`);
+    it('private max-age and stale-while-revalidate align with constants', () => {
+        expect(CACHE_DOMAIN_JSON_STALE_WHILE_REVALIDATE).toBeGreaterThan(0);
+        expect(HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON).toBe(
+            `private, max-age=${CACHE_REVALIDATE_DOMAIN}, stale-while-revalidate=${CACHE_DOMAIN_JSON_STALE_WHILE_REVALIDATE}`
+        );
     });
 });

@@ -1,20 +1,86 @@
 'use client';
 
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useDeferredValue } from 'react';
+import dynamic from 'next/dynamic';
+import { Box, CircularProgress } from '@mui/material';
 import type { SlimPage } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { useDomainScanChrome, useDomainScanCore } from '@/context/DomainScanContext';
 import { pathResults } from '@/lib/constants';
-import { DomainResultGenerativeEmpty, DomainResultGenerativeSection } from './DomainResultGenerativeSection';
-import { DomainResultInfraTab } from './DomainResultInfraSection';
-import { DomainResultPageTopicsSection } from './DomainResultPageTopicsSection';
-import { DomainResultLinksSeoEmpty, DomainResultLinksSeoSection } from './DomainResultLinksSeoSection';
-import { DomainResultListDetailsSection } from './DomainResultListDetailsSection';
-import { DomainResultOverviewSection } from './DomainResultOverviewSection';
-import { DomainResultStructureEmpty, DomainResultStructureSection } from './DomainResultStructureSection';
-import { DomainResultUxAuditEmpty, DomainResultUxAuditSection } from './DomainResultUxAuditSection';
-import { DomainResultVisualMapSection } from './DomainResultVisualMapSection';
 import { useI18n } from '@/components/i18n/I18nProvider';
+
+function TabChunkFallback() {
+    return (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+            <CircularProgress size={28} sx={{ color: 'var(--color-theme-accent)' }} />
+        </Box>
+    );
+}
+
+const DomainResultOverviewSection = dynamic(
+    () => import('./DomainResultOverviewSection').then((m) => ({ default: m.DomainResultOverviewSection })),
+    { loading: TabChunkFallback, ssr: false }
+);
+
+const DomainResultListDetailsSection = dynamic(
+    () => import('./DomainResultListDetailsSection').then((m) => ({ default: m.DomainResultListDetailsSection })),
+    { loading: TabChunkFallback, ssr: false }
+);
+
+const DomainResultUxAuditSection = dynamic(
+    () => import('./DomainResultUxAuditSection').then((m) => ({ default: m.DomainResultUxAuditSection })),
+    { ssr: false }
+);
+
+const DomainResultUxAuditEmpty = dynamic(
+    () => import('./DomainResultUxAuditSection').then((m) => ({ default: m.DomainResultUxAuditEmpty })),
+    { ssr: false }
+);
+
+const DomainResultStructureSection = dynamic(
+    () => import('./DomainResultStructureSection').then((m) => ({ default: m.DomainResultStructureSection })),
+    { ssr: false }
+);
+
+const DomainResultStructureEmpty = dynamic(
+    () => import('./DomainResultStructureSection').then((m) => ({ default: m.DomainResultStructureEmpty })),
+    { ssr: false }
+);
+
+const DomainResultLinksSeoSection = dynamic(
+    () => import('./DomainResultLinksSeoSection').then((m) => ({ default: m.DomainResultLinksSeoSection })),
+    { ssr: false }
+);
+
+const DomainResultLinksSeoEmpty = dynamic(
+    () => import('./DomainResultLinksSeoSection').then((m) => ({ default: m.DomainResultLinksSeoEmpty })),
+    { ssr: false }
+);
+
+const DomainResultInfraTab = dynamic(
+    () => import('./DomainResultInfraSection').then((m) => ({ default: m.DomainResultInfraTab })),
+    { loading: TabChunkFallback, ssr: false }
+);
+
+const DomainResultGenerativeSection = dynamic(
+    () => import('./DomainResultGenerativeSection').then((m) => ({ default: m.DomainResultGenerativeSection })),
+    { ssr: false }
+);
+
+const DomainResultGenerativeEmpty = dynamic(
+    () => import('./DomainResultGenerativeSection').then((m) => ({ default: m.DomainResultGenerativeEmpty })),
+    { ssr: false }
+);
+
+const DomainResultPageTopicsSection = dynamic(
+    () => import('./DomainResultPageTopicsSection').then((m) => ({ default: m.DomainResultPageTopicsSection })),
+    { loading: TabChunkFallback, ssr: false }
+);
+
+const DomainResultVisualMapSection = dynamic(
+    () => import('./DomainResultVisualMapSection').then((m) => ({ default: m.DomainResultVisualMapSection })),
+    { loading: TabChunkFallback, ssr: false }
+);
 
 /** Subscribes to full bundle context — only mount the active tab so heavy updates don’t re-run the orchestrator. */
 const DomainTabOverview = memo(function DomainTabOverview() {
@@ -93,8 +159,11 @@ const DomainTabListDetails = memo(function DomainTabListDetails() {
 const DomainTabUxAudit = memo(function DomainTabUxAudit() {
     const { t } = useI18n();
     const { aggregated, openPageScanUrl } = useDomainScanCore();
-    if (aggregated?.ux) {
-        return <DomainResultUxAuditSection t={t} ux={aggregated.ux} onOpenPageUrl={openPageScanUrl} />;
+    const ux = aggregated?.ux;
+    const deferredUx = useDeferredValue(ux);
+    const uxForTable = deferredUx ?? ux;
+    if (ux) {
+        return <DomainResultUxAuditSection t={t} ux={uxForTable} onOpenPageUrl={openPageScanUrl} />;
     }
     return <DomainResultUxAuditEmpty t={t} />;
 });
@@ -111,6 +180,8 @@ const DomainTabStructure = memo(function DomainTabStructure() {
 const DomainTabLinksSeo = memo(function DomainTabLinksSeo() {
     const { t, locale } = useI18n();
     const { domainId, aggregated, openPageScanUrl } = useDomainScanCore();
+    const deferredAgg = useDeferredValue(aggregated);
+    const aggForHeavyLists = deferredAgg ?? aggregated;
     if (!aggregated) return null;
     if (aggregated.seo || aggregated.links) {
         return (
@@ -118,7 +189,7 @@ const DomainTabLinksSeo = memo(function DomainTabLinksSeo() {
                 t={t}
                 locale={locale}
                 domainId={domainId}
-                aggregated={aggregated}
+                aggregated={aggForHeavyLists!}
                 onOpenPageUrl={openPageScanUrl}
             />
         );
