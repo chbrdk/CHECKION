@@ -43,7 +43,11 @@ function DomainResultVisualMapSectionInner({ t, domainId }: DomainResultVisualMa
                     {t('domainResult.visualMapLoadError')}
                 </MsqdxTypography>
             )}
-            {!isPending && !isError && graph ? <DomainGraph data={graph} width={1200} height={800} /> : null}
+            {!isPending && !isError && graph ? (
+                <Box sx={{ width: '100%', maxWidth: '100%', overflow: 'auto', borderRadius: 2 }}>
+                    <DomainGraph data={graph} width={1200} height={800} />
+                </Box>
+            ) : null}
         </Box>
     );
 }

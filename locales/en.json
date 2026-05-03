@@ -1148,6 +1148,7 @@
     "journeyNextStep": "Next step",
     "journeyNotFound": "Journey not found",
     "issuePagesCount": "{count} pages",
+    "systemicIssueRuleDoc": "Rule documentation (external)",
     "fixingRuleAffects": "Fixing rule ({issueId}) affects {count} pages."
   },
   "geoEeat": {
