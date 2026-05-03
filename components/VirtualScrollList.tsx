@@ -13,6 +13,8 @@ export type VirtualScrollListProps<T> = {
     estimateSize?: number;
     /** Default: `DOMAIN_TAB_VIRTUAL_OVERSCAN` */
     overscan?: number;
+    /** Space between rows (TanStack `gap`). Use this instead of margin-bottom on row content — margins break measured heights while scrolling. */
+    gap?: number;
     getItemKey: (item: T, index: number) => string | number;
     renderItem: (item: T, index: number) => React.ReactNode;
     ariaLabel?: string;
@@ -27,6 +29,7 @@ export function VirtualScrollList<T>({
     minHeight = 0,
     estimateSize = DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX,
     overscan = DOMAIN_TAB_VIRTUAL_OVERSCAN,
+    gap = 0,
     getItemKey,
     renderItem,
     ariaLabel,
@@ -37,6 +40,8 @@ export function VirtualScrollList<T>({
         getScrollElement: () => parentRef.current,
         estimateSize: () => estimateSize,
         overscan,
+        gap,
+        useAnimationFrameWithResizeObserver: true,
         getItemKey: (index) => {
             const item = items[index];
             return item !== undefined ? getItemKey(item, index) : String(index);
@@ -58,7 +63,7 @@ export function VirtualScrollList<T>({
                 minWidth: 0,
                 flexShrink: 1,
                 WebkitOverflowScrolling: 'touch',
-                contain: 'content',
+                overflowAnchor: 'none',
             }}
         >
             <Box sx={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative', width: '100%' }}>

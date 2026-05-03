@@ -29,7 +29,6 @@ export const SeoDensityScrollRow = memo(function SeoDensityScrollRow({
             sx={{
                 width: '100%',
                 boxSizing: 'border-box',
-                mb: 0.75,
                 px: 1,
                 py: 0.75,
                 border: '1px solid var(--color-secondary-dx-grey-light-tint, #e0e0e0)',

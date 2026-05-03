@@ -17,6 +17,7 @@ import {
     DOMAIN_SEO_PAGES_PAGE_SIZE,
     DOMAIN_TAB_SEO_PAGE_ROW_ESTIMATE_PX,
     DOMAIN_TAB_VIRTUAL_OVERSCAN,
+    DOMAIN_TAB_VIRTUAL_SCROLL_GAP_PX,
     apiScanDomainSeoPages,
 } from '@/lib/constants';
 import { MSQDX_INNER_CARD_BORDER_SX, MSQDX_BUTTON_THEME_ACCENT_SX } from '@/lib/theme-accent';
@@ -450,6 +451,7 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                         maxHeight={320}
                         estimateSize={DOMAIN_TAB_SEO_PAGE_ROW_ESTIMATE_PX}
                         overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
+                        gap={DOMAIN_TAB_VIRTUAL_SCROLL_GAP_PX}
                         getItemKey={(row) => row.url}
                         renderItem={renderSeoRow}
                     />

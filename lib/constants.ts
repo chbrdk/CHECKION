@@ -550,7 +550,9 @@ export const SHARE_DOMAIN_PAGES_PAGE_SIZE = 10;
 /** Domain result tabs: default row height estimate (px) for `VirtualScrollList` (SEO/GEO URL rows). */
 export const DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX = 52;
 /** Links & SEO tab: SEO page rows (URL + metrics) — two lines + padding; virtual list initial estimate. */
-export const DOMAIN_TAB_SEO_PAGE_ROW_ESTIMATE_PX = 76;
+export const DOMAIN_TAB_SEO_PAGE_ROW_ESTIMATE_PX = 88;
+/** Vertical gap between virtualized rows (px). Prefer virtualizer `gap` over `margin` on row children so measurements stay stable. */
+export const DOMAIN_TAB_VIRTUAL_SCROLL_GAP_PX = 6;
 /** Extra rows above/below viewport when virtualizing domain tab lists. */
 export const DOMAIN_TAB_VIRTUAL_OVERSCAN = 12;
 /** Virtual chip lists (`VirtualChipList`): one chip per row when scroll mode; ~MsqdxChip small + gap. */
