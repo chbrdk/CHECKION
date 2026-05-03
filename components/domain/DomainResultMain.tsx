@@ -161,11 +161,12 @@ const DomainTabUxAudit = memo(function DomainTabUxAudit() {
     const { aggregated, openPageScanUrl } = useDomainScanCore();
     const ux = aggregated?.ux;
     const deferredUx = useDeferredValue(ux);
-    const uxForTable = deferredUx ?? ux;
-    if (ux) {
-        return <DomainResultUxAuditSection t={t} ux={uxForTable} onOpenPageUrl={openPageScanUrl} />;
+    if (ux == null) {
+        return <DomainResultUxAuditEmpty t={t} />;
     }
-    return <DomainResultUxAuditEmpty t={t} />;
+    /** After null check, `deferredUx ?? ux` is always `AggregatedUx` (deferred may lag one frame). */
+    const uxForTable = deferredUx ?? ux;
+    return <DomainResultUxAuditSection t={t} ux={uxForTable} onOpenPageUrl={openPageScanUrl} />;
 });
 
 const DomainTabStructure = memo(function DomainTabStructure() {
