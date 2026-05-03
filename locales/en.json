@@ -725,7 +725,13 @@
     "classifyPageTopicsLabel": "Page topics (LLM)",
     "classifyPageTopicsOption": "After a successful scan, re-run LLM page-topic classification in the background (extra usage)",
     "aiFillProjectMetadataLabel": "Project: industry & tags (AI)",
-    "aiFillProjectMetadataOption": "After the scan, suggest project industry and tags via AI from domain/themes (when empty or per overwrite env)"
+    "aiFillProjectMetadataOption": "After the scan, suggest project industry and tags via AI from domain/themes (when empty or per overwrite env)",
+    "snackbar": {
+      "title": "Deep scan running",
+      "liveLink": "Live progress",
+      "resultsLink": "Open results",
+      "dismiss": "Dismiss"
+    }
   },
   "results": {
     "errorNotFound": "Result not found",

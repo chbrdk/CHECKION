@@ -60,7 +60,7 @@ export default function ScanPage() {
     const router = useRouter();
     const { t } = useI18n();
     const { status: sessionStatus } = useSession();
-    const { singlePageScan } = useStatusUi();
+    const { singlePageScan, domainScan } = useStatusUi();
     const STANDARDS: { value: WcagStandard; label: string }[] = [
         { value: 'WCAG2A', label: t('standards.wcag2a') },
         { value: 'WCAG2AA', label: t('standards.wcag2aa') },
@@ -281,10 +281,25 @@ export default function ScanPage() {
                     return;
                 }
 
-                // Redirect to the Domain Scan Progress page
-                // We pass the URL parameter so the page knows what we are looking for, 
-                // but since we already started it, let's redirect to monitoring
-                router.push(pathScanDomain({ url: urlForRequest }));
+                const scanId = (data.data as { id?: string })?.id;
+                if (scanId) {
+                    domainScan.attach({
+                        scanId,
+                        startUrl: urlForRequest,
+                        maxPages: 1000,
+                        projectId: selectedProjectId ?? null,
+                        classifyPageTopics: false,
+                        aiFillProjectMetadata: true,
+                    });
+                }
+                router.push(
+                    pathScanDomain({
+                        url: urlForRequest,
+                        ...(scanId ? { scanId } : {}),
+                        ...(selectedProjectId ? { projectId: selectedProjectId } : {}),
+                    })
+                );
+                setScanning(false);
             }
 
         } catch (err) {

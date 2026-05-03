@@ -34,6 +34,7 @@ import {
     pathProjectPageTopics,
 } from '@/lib/constants';
 import { InfoTooltip } from '@/components/InfoTooltip';
+import { useStatusUi } from '@/components/status/StatusUiContext';
 import Link from 'next/link';
 import { THEME_ACCENT_CSS } from '@/lib/theme-accent';
 import type { AggregatedPageClassification } from '@/lib/types';
@@ -89,6 +90,7 @@ export default function ProjectDetailPage() {
     const params = useParams();
     const router = useRouter();
     const { t } = useI18n();
+    const { domainScan } = useStatusUi();
     const id = typeof params.id === 'string' ? params.id : params.id?.[0] ?? null;
     const [project, setProject] = useState<ProjectData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -380,10 +382,22 @@ export default function ProjectDetailPage() {
             });
             const data = await r.json();
             if (data?.success && data?.data?.id) {
+                const scanId = data.data.id as string;
+                const startUrl = toScanStartUrl(project.domain);
+                if (startUrl) {
+                    domainScan.attach({
+                        scanId,
+                        startUrl,
+                        maxPages: 1000,
+                        projectId: id,
+                        classifyPageTopics: false,
+                        aiFillProjectMetadata: true,
+                    });
+                }
                 router.push(
                     pathScanDomainResume({
                         domainOrUrl: project.domain,
-                        scanId: data.data.id as string,
+                        scanId,
                         projectId: id,
                     })
                 );
@@ -394,7 +408,7 @@ export default function ProjectDetailPage() {
         } finally {
             setRestartDeepScanLoading(false);
         }
-    }, [id, project?.domain, router]);
+    }, [id, project?.domain, router, domainScan.attach]);
 
     const handleStartCompetitorDeepScan = useCallback(
         async (domain: string) => {
@@ -408,7 +422,19 @@ export default function ProjectDetailPage() {
                     body: JSON.stringify({ domain }),
                 });
                 const data = await r.json().catch(() => ({}));
-                if (r.ok && data?.success) {
+                if (r.ok && data?.success && data?.data?.scanId) {
+                    const d = data.data as { scanId: string; domain: string };
+                    const startUrl = toScanStartUrl(d.domain);
+                    if (startUrl) {
+                        domainScan.attach({
+                            scanId: d.scanId,
+                            startUrl,
+                            maxPages: 1000,
+                            projectId: id,
+                            classifyPageTopics: false,
+                            aiFillProjectMetadata: true,
+                        });
+                    }
                     await loadDomainSummaryAll();
                 }
             } catch {
@@ -417,7 +443,7 @@ export default function ProjectDetailPage() {
                 setCompetitorScanLoadingDomain(null);
             }
         },
-        [id, loadDomainSummaryAll]
+        [id, loadDomainSummaryAll, domainScan.attach]
     );
 
     const handleScanAllDeepScan = useCallback(async () => {
@@ -452,13 +478,46 @@ export default function ProjectDetailPage() {
                     }
                 }
                 if (rows.length > 0) setActiveDeepScans(rows);
+
+                let attached = false;
+                if (own?.scanId && project?.domain?.trim()) {
+                    const su = toScanStartUrl(project.domain);
+                    if (su) {
+                        domainScan.attach({
+                            scanId: own.scanId,
+                            startUrl: su,
+                            maxPages: 1000,
+                            projectId: id,
+                            classifyPageTopics: false,
+                            aiFillProjectMetadata: true,
+                        });
+                        attached = true;
+                    }
+                }
+                if (!attached) {
+                    const firstNew = Object.entries(comps ?? {}).find(([, info]) => info?.scanId && !info.reused);
+                    if (firstNew) {
+                        const [dom, info] = firstNew;
+                        const su = toScanStartUrl(dom);
+                        if (su) {
+                            domainScan.attach({
+                                scanId: info.scanId,
+                                startUrl: su,
+                                maxPages: 1000,
+                                projectId: id,
+                                classifyPageTopics: false,
+                                aiFillProjectMetadata: true,
+                            });
+                        }
+                    }
+                }
             }
         } catch {
             // ignore
         } finally {
             setScanAllDeepScanLoading(false);
         }
-    }, [id, loadDomainSummaryAll, project?.domain, t]);
+    }, [id, loadDomainSummaryAll, project?.domain, t, domainScan.attach]);
 
     const handleDeepScanControl = useCallback(
         async (scanId: string, action: 'pause' | 'resume' | 'cancel') => {
