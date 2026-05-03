@@ -1,6 +1,6 @@
 'use client';
 
-import React, { memo, useCallback, useDeferredValue } from 'react';
+import React, { memo, useCallback, useDeferredValue, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Box, CircularProgress } from '@mui/material';
 import type { SlimPage } from '@/lib/types';
@@ -17,6 +17,62 @@ function TabChunkFallback() {
     );
 }
 
+function scheduleIdleTask(fn: () => void, timeout: number): number {
+    const w = typeof window !== 'undefined' ? window : undefined;
+    if (!w) return 0;
+    const ric = w.requestIdleCallback;
+    if (typeof ric === 'function') {
+        return ric.call(w, fn, { timeout });
+    }
+    return w.setTimeout(fn, Math.min(timeout, 600));
+}
+
+function cancelIdleTask(id: number): void {
+    if (!id) return;
+    const w = typeof window !== 'undefined' ? window : undefined;
+    if (!w) return;
+    const cic = w.cancelIdleCallback;
+    if (typeof cic === 'function') {
+        cic.call(w, id);
+    } else {
+        clearTimeout(id);
+    }
+}
+
+/**
+ * Warm tab code-split chunks after bundle load (idle). First open of Links & SEO / UX Audit
+ * then spends less time in script parse on the critical path (Chrome Performance: FunctionCall on `links-seo`).
+ */
+function DomainTabChunksIdlePrefetch() {
+    const { bundlePending, domainId } = useDomainScanChrome();
+
+    useEffect(() => {
+        if (bundlePending || !domainId?.trim()) return;
+        const id1 = scheduleIdleTask(() => {
+            void import('./DomainResultLinksSeoSection');
+        }, 2000);
+        const id2 = scheduleIdleTask(() => {
+            void import('./DomainResultUxAuditSection');
+            void import('./DomainResultStructureSection');
+            void import('./DomainResultListDetailsSection');
+        }, 4500);
+        const id3 = scheduleIdleTask(() => {
+            void import('./DomainResultGenerativeSection');
+            void import('./DomainResultPageTopicsSection');
+            void import('./DomainResultInfraSection');
+            void import('./DomainResultVisualMapSection');
+            void import('./DomainResultOverviewSection');
+        }, 7000);
+        return () => {
+            cancelIdleTask(id1);
+            cancelIdleTask(id2);
+            cancelIdleTask(id3);
+        };
+    }, [bundlePending, domainId]);
+
+    return null;
+}
+
 const DomainResultOverviewSection = dynamic(
     () => import('./DomainResultOverviewSection').then((m) => ({ default: m.DomainResultOverviewSection })),
     { loading: TabChunkFallback, ssr: false }
@@ -29,32 +85,32 @@ const DomainResultListDetailsSection = dynamic(
 
 const DomainResultUxAuditSection = dynamic(
     () => import('./DomainResultUxAuditSection').then((m) => ({ default: m.DomainResultUxAuditSection })),
-    { ssr: false }
+    { loading: TabChunkFallback, ssr: false }
 );
 
 const DomainResultUxAuditEmpty = dynamic(
     () => import('./DomainResultUxAuditSection').then((m) => ({ default: m.DomainResultUxAuditEmpty })),
-    { ssr: false }
+    { loading: TabChunkFallback, ssr: false }
 );
 
 const DomainResultStructureSection = dynamic(
     () => import('./DomainResultStructureSection').then((m) => ({ default: m.DomainResultStructureSection })),
-    { ssr: false }
+    { loading: TabChunkFallback, ssr: false }
 );
 
 const DomainResultStructureEmpty = dynamic(
     () => import('./DomainResultStructureSection').then((m) => ({ default: m.DomainResultStructureEmpty })),
-    { ssr: false }
+    { loading: TabChunkFallback, ssr: false }
 );
 
 const DomainResultLinksSeoSection = dynamic(
     () => import('./DomainResultLinksSeoSection').then((m) => ({ default: m.DomainResultLinksSeoSection })),
-    { ssr: false }
+    { loading: TabChunkFallback, ssr: false }
 );
 
 const DomainResultLinksSeoEmpty = dynamic(
     () => import('./DomainResultLinksSeoSection').then((m) => ({ default: m.DomainResultLinksSeoEmpty })),
-    { ssr: false }
+    { loading: TabChunkFallback, ssr: false }
 );
 
 const DomainResultInfraTab = dynamic(
@@ -64,12 +120,12 @@ const DomainResultInfraTab = dynamic(
 
 const DomainResultGenerativeSection = dynamic(
     () => import('./DomainResultGenerativeSection').then((m) => ({ default: m.DomainResultGenerativeSection })),
-    { ssr: false }
+    { loading: TabChunkFallback, ssr: false }
 );
 
 const DomainResultGenerativeEmpty = dynamic(
     () => import('./DomainResultGenerativeSection').then((m) => ({ default: m.DomainResultGenerativeEmpty })),
-    { ssr: false }
+    { loading: TabChunkFallback, ssr: false }
 );
 
 const DomainResultPageTopicsSection = dynamic(
@@ -241,6 +297,7 @@ export function DomainResultMain() {
 
     return (
         <>
+            <DomainTabChunksIdlePrefetch />
             {activeSection === 'overview' && <DomainTabOverview />}
             {activeSection === 'visual-map' && <DomainTabVisualMap />}
             {activeSection === 'list-details' && <DomainTabListDetails />}

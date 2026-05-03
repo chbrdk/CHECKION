@@ -29,6 +29,7 @@
 
 # Chrome DevTools / profiler traces (do not commit)
 Trace-*.json
+Trace-*.json.gz
 
 # SpecStory chat exports (large; regenerate locally if needed)
 .specstory/
