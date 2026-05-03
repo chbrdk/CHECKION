@@ -452,6 +452,7 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                         estimateSize={DOMAIN_TAB_SEO_PAGE_ROW_ESTIMATE_PX}
                         overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
                         gap={DOMAIN_TAB_VIRTUAL_SCROLL_GAP_PX}
+                        virtualize={false}
                         getItemKey={(row) => row.url}
                         renderItem={renderSeoRow}
                     />

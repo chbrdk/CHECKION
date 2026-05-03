@@ -45,6 +45,7 @@ function DomainResultVisualAnalysisSectionInner({ t, domainId, domainLinkQuery, 
                                 maxHeight={260}
                                 estimateSize={DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX}
                                 overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
+                                virtualize={false}
                                 getItemKey={(row) => row.url}
                                 renderItem={({ url, count }) => (
                                     <VisualUxUrlCountScrollRow
@@ -65,6 +66,7 @@ function DomainResultVisualAnalysisSectionInner({ t, domainId, domainLinkQuery, 
                                 maxHeight={260}
                                 estimateSize={DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX}
                                 overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
+                                virtualize={false}
                                 getItemKey={(row) => row.url}
                                 renderItem={({ url, count }) => (
                                     <VisualUxUrlCountScrollRow

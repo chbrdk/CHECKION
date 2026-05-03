@@ -97,6 +97,7 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                             maxHeight={400}
                             estimateSize={DOMAIN_TAB_SYSTEMIC_ISSUE_ROW_ESTIMATE_PX}
                             overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
+                            virtualize={false}
                             ariaLabel={t('domainResult.systemicIssues')}
                             getItemKey={(issue, idx) => `${issue.issueId}-${idx}`}
                             renderItem={(issue) => <SystemicIssueScrollRow issue={issue} t={t} />}

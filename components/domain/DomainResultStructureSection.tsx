@@ -75,6 +75,7 @@ function DomainResultStructureSectionInner({ t, structure, onOpenPageUrl }: Doma
                     maxHeight={320}
                     estimateSize={DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX}
                     overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
+                    virtualize={false}
                     getItemKey={(url) => url}
                     renderItem={(url) => <StructureUrlScrollRow url={url} t={t} onOpenPageUrl={onOpenPageUrl} />}
                 />

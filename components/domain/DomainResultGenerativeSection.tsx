@@ -221,6 +221,7 @@ function DomainResultGenerativeSectionInner({
                         maxHeight={360}
                         estimateSize={DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX}
                         overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
+                        virtualize={false}
                         getItemKey={(p) => p.url}
                         renderItem={(p) => <GenerativePageScrollRow page={p} onOpenPageUrl={onOpenPageUrl} t={t} />}
                     />
