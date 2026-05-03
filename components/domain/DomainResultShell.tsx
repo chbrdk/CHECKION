@@ -12,6 +12,7 @@ import { useDomainScanChrome } from '@/context/DomainScanContext';
 import { apiScanDomainSummary, LAYOUT_MAX_CONTENT_WIDTH_PX, PATH_HOME } from '@/lib/constants';
 import { MSQDX_BUTTON_THEME_ACCENT_SX } from '@/lib/theme-accent';
 import { industryDisplayLabel } from '@/lib/industry-pool';
+import { formatScanDateLabelUtc } from '@/lib/format-scan-date-label';
 import { DomainResultNav } from '@/components/domain/DomainResultNav';
 
 const shellContainerSx = {
@@ -61,11 +62,7 @@ export function DomainResultShell({ children }: { children: React.ReactNode }) {
         );
     }
 
-    const scanDateLabel = new Date(shellHeader.timestamp).toLocaleDateString(locale === 'en' ? 'en-US' : 'de-DE', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-    });
+    const scanDateLabel = formatScanDateLabelUtc(shellHeader.timestamp, locale === 'en' ? 'en' : 'de');
 
     const industryRaw = shellHeader.industry?.trim() ?? '';
     const industry = industryDisplayLabel(industryRaw || null, t);
