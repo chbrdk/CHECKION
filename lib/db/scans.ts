@@ -16,6 +16,7 @@ import { normalizeScanUrl } from '@/lib/url-normalize';
 import { buildDomainScanLineageKey } from '@/lib/domain-scan-lineage';
 import { getProject } from './projects';
 import { replaceScanIssuesForScan } from '@/lib/db/scan-issues-persist';
+import { formatDeepScanInfraListLines } from '@/lib/deep-scan-list-summary';
 
 /**
  * Drop heavy top-level keys in SQL (Postgres `jsonb - key`) for bulk reads.
@@ -41,6 +42,13 @@ export type DomainScanSummaryRow = {
     projectTags: string[];
     /** Scan-level tags (union with project tags for filters). */
     tags: string[];
+    /**
+     * Derived from `payload.aggregated.infra` when present (typically complete scans).
+     * Omitted or null fields when aggregate missing (queued/error/legacy).
+     */
+    platformsLine?: string | null;
+    infraLine?: string | null;
+    privacyLine?: string | null;
 };
 
 /** Summary row + flag whether payload has `aggregated` (avoids loading full JSONB for search). */
@@ -912,6 +920,7 @@ async function queryDomainScanSummaries(
             status: domainScans.status,
             score: sql<number>`(${domainScans.payload}->>'score')::int`,
             totalPages: sql<number>`(${domainScans.payload}->>'totalPages')::int`,
+            aggregatedInfra: sql<unknown>`${domainScans.payload}->'aggregated'->'infra'`,
             lineageVersion: domainScans.lineageVersion,
             projectId: domainScans.projectId,
             userId: domainScans.userId,
@@ -927,20 +936,26 @@ async function queryDomainScanSummaries(
     const rows = options?.limit != null || options?.offset != null
         ? await base.limit(options.limit ?? 10000).offset(options.offset ?? 0)
         : await base;
-    return rows.map((r) => ({
-        id: r.id,
-        domain: r.domain,
-        timestamp: r.timestamp,
-        status: r.status,
-        score: r.score ?? 0,
-        totalPages: r.totalPages ?? 0,
-        lineageVersion: r.lineageVersion ?? 1,
-        projectId: r.projectId ?? null,
-        userId: r.userId,
-        industry: r.industry ?? null,
-        projectTags: coerceJsonStringArray(r.projectTagsJson),
-        tags: coerceJsonStringArray(r.scanTagsJson),
-    }));
+    return rows.map((r) => {
+        const lines = formatDeepScanInfraListLines(r.aggregatedInfra);
+        return {
+            id: r.id,
+            domain: r.domain,
+            timestamp: r.timestamp,
+            status: r.status,
+            score: r.score ?? 0,
+            totalPages: r.totalPages ?? 0,
+            lineageVersion: r.lineageVersion ?? 1,
+            projectId: r.projectId ?? null,
+            userId: r.userId,
+            industry: r.industry ?? null,
+            projectTags: coerceJsonStringArray(r.projectTagsJson),
+            tags: coerceJsonStringArray(r.scanTagsJson),
+            platformsLine: lines.platformsLine,
+            infraLine: lines.infraLine,
+            privacyLine: lines.privacyLine,
+        };
+    });
 }
 
 export async function listDomainScanSummaries(userId: string, options?: DomainScanListQueryOptions): Promise<DomainScanSummaryRow[]> {

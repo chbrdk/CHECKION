@@ -15,7 +15,7 @@ import type { StandaloneScanListQueryOptions } from '@/lib/db/scans';
 import * as dbShares from '@/lib/db/shares';
 import * as dbJourneys from '@/lib/db/journeys';
 import type { ScanResult, DomainScanResult, DomainScanStatus, StandaloneScanSummary } from '@/lib/types';
-import { DOMAIN_SCAN_LIST_QUERY_MAX_LEN } from '@/lib/db/scans';
+import { DOMAIN_SCAN_LIST_QUERY_MAX_LEN, type DomainScanSummaryRow } from '@/lib/db/scans';
 import { normalizeIndustry, normalizeTagFilter } from '@/lib/tag-utils';
 import type { UxCxSummary } from '@/lib/llm-summary-types';
 import type { ShareLinkRow } from '@/lib/db/shares';
@@ -116,7 +116,7 @@ export async function listCachedDomainScans(
     return dbScans.listDomainScans(userId, { limit, offset, projectId: options?.projectId });
 }
 
-/** Cached: domain scan summaries only (id, domain, timestamp, status, score, totalPages). Optional projectId / q / status filter. Stays under 2MB. */
+/** Cached: domain scan summaries only (incl. infra-derived lines from aggregated.infra). Optional projectId / q / status filter. Stays under 2MB. */
 export async function listCachedDomainScanSummaries(
     userId: string,
     options?: {
@@ -128,22 +128,7 @@ export async function listCachedDomainScanSummaries(
         industry?: string;
         tag?: string;
     }
-): Promise<
-    Array<{
-        id: string;
-        domain: string;
-        timestamp: string;
-        status: string;
-        score: number;
-        totalPages: number;
-        lineageVersion: number;
-        projectId: string | null;
-        userId: string;
-        industry: string | null;
-        projectTags: string[];
-        tags: string[];
-    }>
-> {
+): Promise<DomainScanSummaryRow[]> {
     const limit = options?.limit ?? 100;
     const offset = options?.offset ?? 0;
     const qKey = options?.q?.trim().slice(0, DOMAIN_SCAN_LIST_QUERY_MAX_LEN) ?? '';
@@ -161,7 +146,7 @@ export async function listCachedDomainScanSummaries(
                 industry: options?.industry,
                 tag: options?.tag,
             }),
-        ['domain-summaries', userId, String(limit), String(offset), projectKey, qKey, statusKey, filterKey],
+        ['domain-summaries', 'v2', userId, String(limit), String(offset), projectKey, qKey, statusKey, filterKey],
         { revalidate: CACHE_REVALIDATE_LIST, tags: [`domain-list-${userId}`] }
     )();
 }

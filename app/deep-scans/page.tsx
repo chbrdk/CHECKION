@@ -41,6 +41,9 @@ type Row = {
     industry?: string | null;
     projectTags?: string[];
     tags?: string[];
+    platformsLine?: string | null;
+    infraLine?: string | null;
+    privacyLine?: string | null;
 };
 
 const STATUSES: DomainScanStatus[] = [
@@ -340,6 +343,9 @@ export default function DeepScansPage() {
                                 {listScope === 'allUsers' ? <TableCell>{t('deepScans.colOwner')}</TableCell> : null}
                                 <TableCell>{t('deepScans.colIndustry')}</TableCell>
                                 <TableCell>{t('deepScans.colTags')}</TableCell>
+                                <TableCell>{t('deepScans.colStack')}</TableCell>
+                                <TableCell>{t('deepScans.colInfra')}</TableCell>
+                                <TableCell title={t('deepScans.colPrivacyHint')}>{t('deepScans.colPrivacy')}</TableCell>
                                 <TableCell>{t('deepScans.colProject')}</TableCell>
                                 <TableCell>{t('deepScans.colDate')}</TableCell>
                                 <TableCell>{t('deepScans.colStatus')}</TableCell>
@@ -397,6 +403,36 @@ export default function DeepScansPage() {
                                     <TableCell>
                                         <Typography variant="body2" noWrap sx={{ maxWidth: 200 }} title={tagSummary(r)}>
                                             {tagSummary(r)}
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Typography
+                                            variant="body2"
+                                            noWrap
+                                            sx={{ maxWidth: 200 }}
+                                            title={r.platformsLine ?? ''}
+                                        >
+                                            {r.platformsLine?.trim() ? r.platformsLine : '—'}
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Typography
+                                            variant="body2"
+                                            noWrap
+                                            sx={{ maxWidth: 220 }}
+                                            title={r.infraLine ?? ''}
+                                        >
+                                            {r.infraLine?.trim() ? r.infraLine : '—'}
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Typography
+                                            variant="body2"
+                                            noWrap
+                                            sx={{ maxWidth: 260 }}
+                                            title={r.privacyLine?.trim() ? r.privacyLine : t('deepScans.colPrivacyHint')}
+                                        >
+                                            {r.privacyLine?.trim() ? r.privacyLine : '—'}
                                         </Typography>
                                     </TableCell>
                                     <TableCell>
