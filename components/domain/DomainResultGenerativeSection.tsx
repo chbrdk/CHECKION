@@ -216,15 +216,22 @@ function DomainResultGenerativeSectionInner({
                     footerDivider={false}
                     sx={INNER_CARD_SX}
                 >
-                    <VirtualScrollList
-                        items={generative.pages}
-                        maxHeight={360}
-                        estimateSize={DOMAIN_TAB_VIRTUAL_ROW_ESTIMATE_PX}
-                        overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
-                        virtualize={false}
-                        getItemKey={(p) => p.url}
-                        renderItem={(p) => <GenerativePageScrollRow page={p} onOpenPageUrl={onOpenPageUrl} t={t} />}
-                    />
+                    <Box
+                        component="div"
+                        sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: `${DOMAIN_TAB_VIRTUAL_SCROLL_GAP_PX}px`,
+                            flex: '1 1 auto',
+                            minHeight: 0,
+                        }}
+                    >
+                        {generative.pages.map((p) => (
+                            <React.Fragment key={p.url}>
+                                <GenerativePageScrollRow page={p} onOpenPageUrl={onOpenPageUrl} t={t} />
+                            </React.Fragment>
+                        ))}
+                    </Box>
                 </MsqdxMoleculeCard>
             </Stack>
         </MsqdxMoleculeCard>
