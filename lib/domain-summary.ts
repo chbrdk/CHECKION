@@ -351,9 +351,18 @@ export function toStoredAggregated(
 }
 
 export function toLightDomainSummaryApiPayload(summary: DomainSummaryResponse): DomainSummaryApiResponse {
+    const systemicIssues =
+        summary.systemicIssues?.map(({ issueId, title, count }) => ({
+            issueId,
+            title,
+            count,
+            pages: [] as string[],
+        })) ?? summary.systemicIssues;
     return {
         ...summary,
         pages: [],
+        graph: { nodes: [], links: [] },
+        systemicIssues,
         aggregated: summary.aggregated ? toLightAggregated(summary.aggregated) : summary.aggregated,
         summaryMeta: LIGHT_META,
     };

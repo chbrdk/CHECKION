@@ -38,6 +38,7 @@ import {
     PRETEXT_REPO_URL,
     apiScanDomainSlimPages,
     apiScanDomainBundle,
+    apiScanDomainGraph,
     apiScanDomainSeoPages,
     apiScanDomainPageResolve,
     DOMAIN_SLIM_PAGES_PAGE_SIZE,
@@ -213,6 +214,10 @@ describe('API path builders', () => {
 
     it('apiScanDomainBundle builds bundle URL', () => {
         expect(apiScanDomainBundle('d1')).toBe('/api/scan/domain/d1/bundle');
+    });
+
+    it('apiScanDomainGraph builds graph URL', () => {
+        expect(apiScanDomainGraph('d1')).toBe('/api/scan/domain/d1/graph');
     });
 
     it('apiScanDomainSeoPages builds seo-pages URL with sort', () => {

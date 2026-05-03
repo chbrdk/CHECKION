@@ -840,6 +840,27 @@ export async function getDomainScan(id: string, userId: string): Promise<DomainS
     return rows[0].payload as unknown as DomainScanResult;
 }
 
+/** Single JSONB slice — avoids loading full `domain_scans.payload` for the visual map tab. */
+export async function getDomainScanGraph(id: string, userId: string): Promise<DomainScanResult['graph'] | null> {
+    const db = getDb();
+    const rows = await db
+        .select({
+            graphJson: sql<unknown>`${domainScans.payload}->'graph'`,
+        })
+        .from(domainScans)
+        .where(and(eq(domainScans.id, id), eq(domainScans.userId, userId)))
+        .limit(1);
+    if (rows.length === 0) return null;
+    const raw = rows[0].graphJson;
+    if (raw == null || typeof raw !== 'object' || Array.isArray(raw)) {
+        return { nodes: [], links: [] };
+    }
+    const g = raw as { nodes?: unknown; links?: unknown };
+    const nodes = Array.isArray(g.nodes) ? g.nodes : [];
+    const links = Array.isArray(g.links) ? g.links : [];
+    return { nodes, links } as DomainScanResult['graph'];
+}
+
 /** DB `project_id` for a domain scan (not stored inside JSON payload). */
 export async function getDomainScanProjectId(id: string, userId: string): Promise<string | null> {
     const db = getDb();

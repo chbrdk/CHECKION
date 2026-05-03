@@ -1059,6 +1059,7 @@
     "eeatAvgCitations": "Ø {{avg}} Zitate/Seite",
     "eeatAuthoritativeness": "Authoritativeness",
     "visualMapDescription": "Knoten = gescannte Seiten, Linien = Verlinkung (von welcher Seite auf welche). Basierend auf den pro Seite erfassten Links.",
+    "visualMapLoadError": "Link-Graph konnte nicht geladen werden. Bitte erneut versuchen oder Seite neu laden.",
     "tabJourney": "User Journey",
     "journeyTitle": "User Journey / Nutzerpfad",
     "journeyDescription": "Gib ein Ziel ein (z. B. „Finde Produkt XY“). Ein Agent simuliert die Navigation über die gescannten Seiten und zeigt den Pfad als Flowchart.",

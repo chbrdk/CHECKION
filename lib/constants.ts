@@ -249,6 +249,8 @@ export const apiScanDomainSummary = (id: string, opts?: { light?: boolean; seoFu
 };
 /** Build: GET /api/scan/domain/[id]/bundle — single read: light aggregates + totalSlimRows. */
 export const apiScanDomainBundle = (id: string) => `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/bundle`;
+/** Build: GET /api/scan/domain/[id]/graph — link graph only (lazy-load visual map). */
+export const apiScanDomainGraph = (id: string) => `${API_SCAN_DOMAIN}/${encodeURIComponent(id)}/graph`;
 /** Default page size for domain slim + SEO tables (server max per request remains 500 for slim-pages). */
 export const DOMAIN_SLIM_PAGES_PAGE_SIZE = 100;
 /** Page size for GET .../seo-pages (server max 200). */

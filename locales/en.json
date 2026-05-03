@@ -1059,6 +1059,7 @@
     "eeatAvgCitations": "Ø {{avg}} citations/page",
     "eeatAuthoritativeness": "Authoritativeness",
     "visualMapDescription": "Nodes = scanned pages, lines = link from one page to another (from our per-page link index).",
+    "visualMapLoadError": "Could not load the link graph. Try again or reload the page.",
     "tabJourney": "User Journey",
     "journeyTitle": "User Journey",
     "journeyDescription": "Enter a goal (e.g. \"Find product XY\"). An agent simulates navigation across the scanned pages and shows the path as a flowchart.",

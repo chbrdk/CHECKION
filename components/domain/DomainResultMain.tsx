@@ -67,7 +67,7 @@ export function DomainResultMain() {
                 />
             )}
 
-            {activeSection === 'visual-map' && <DomainResultVisualMapSection t={t} graph={result.graph} />}
+            {activeSection === 'visual-map' && <DomainResultVisualMapSection t={t} domainId={domainId} />}
 
             {activeSection === 'list-details' && (
                 <DomainResultListDetailsSection
