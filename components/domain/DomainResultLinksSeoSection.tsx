@@ -394,7 +394,6 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                             sx={{
                                 ...INNER_CARD_SX,
                                 height: { md: '100%' },
-                                ...KEYWORDS_CARD_STRETCH_SX,
                             }}
                         >
                             <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
@@ -402,7 +401,7 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                                     items={crossPageKeywordItems}
                                     getItemKey={(kw, index) => `${index}:${kw.keyword}`}
                                     renderChip={renderCrossPageKeywordChip}
-                                    maxHeight="100%"
+                                    maxHeight="none"
                                 />
                             </Box>
                         </MsqdxMoleculeCard>
@@ -446,7 +445,7 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                 ) : (
                     <VirtualScrollList
                         items={seoRows}
-                        maxHeight={320}
+                        maxHeight="none"
                         estimateSize={DOMAIN_TAB_SEO_PAGE_ROW_ESTIMATE_PX}
                         overscan={DOMAIN_TAB_VIRTUAL_OVERSCAN}
                         gap={DOMAIN_TAB_VIRTUAL_SCROLL_GAP_PX}
