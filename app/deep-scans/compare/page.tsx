@@ -2,11 +2,29 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Box, LinearProgress, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
+import {
+    Box,
+    LinearProgress,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Typography,
+} from '@mui/material';
 import { MsqdxButton, MsqdxMoleculeCard, MsqdxTypography } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { API_SCANS_DOMAIN_COMPARE, PATH_DEEP_SCANS, pathDomain } from '@/lib/constants';
 import type { DomainScanCompareDto } from '@/lib/domain-compare-dto';
+
+const COMPARE_HEAD_CELL_SX = {
+    color: 'var(--color-text-on-light, #0f172a)',
+    fontWeight: 600,
+    whiteSpace: 'nowrap' as const,
+    bgcolor: 'rgba(15, 23, 42, 0.06)',
+    borderBottomColor: 'var(--color-secondary-dx-grey-light-tint)',
+};
 
 const UUID_RE =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -120,15 +138,16 @@ function CompareInner() {
 
             {left && right && !loading && !error && (
                 <MsqdxMoleculeCard title="" variant="flat" borderRadius="lg" footerDivider={false} sx={{ bgcolor: 'var(--color-card-bg)' }}>
-                    <Table size="small">
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>{t('deepScans.metricDomain')}</TableCell>
-                                <TableCell>{left.domain}</TableCell>
-                                <TableCell>{right.domain}</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
+                    <TableContainer sx={{ width: '100%', maxWidth: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                        <Table size="small" sx={{ minWidth: 520, color: 'var(--color-text-on-light, #0f172a)' }}>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell sx={COMPARE_HEAD_CELL_SX}>{t('deepScans.metricDomain')}</TableCell>
+                                    <TableCell sx={COMPARE_HEAD_CELL_SX}>{left.domain}</TableCell>
+                                    <TableCell sx={COMPARE_HEAD_CELL_SX}>{right.domain}</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
                             <TableRow>
                                 <TableCell>{t('deepScans.metricDate')}</TableCell>
                                 <TableCell>
@@ -179,7 +198,7 @@ function CompareInner() {
                                 <TableCell>{right.uxScore ?? '—'}</TableCell>
                             </TableRow>
                             <TableRow>
-                                <TableCell colSpan={3} sx={{ fontWeight: 600 }}>
+                                <TableCell colSpan={3} sx={{ fontWeight: 600, color: 'var(--color-text-on-light, #0f172a)' }}>
                                     {t('deepScans.metricTopThemes')}
                                 </TableCell>
                             </TableRow>
@@ -206,8 +225,9 @@ function CompareInner() {
                                           ))}
                                 </TableCell>
                             </TableRow>
-                        </TableBody>
-                    </Table>
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
                 </MsqdxMoleculeCard>
             )}
         </Box>

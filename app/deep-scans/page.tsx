@@ -8,6 +8,7 @@ import {
     Table,
     TableBody,
     TableCell,
+    TableContainer,
     TableHead,
     TableRow,
     Typography,
@@ -45,6 +46,18 @@ type Row = {
     infraLine?: string | null;
     privacyLine?: string | null;
 };
+
+/** Light-card context: MUI theme header color can be illegible on `--color-card-bg`. */
+const DEEP_SCANS_HEAD_CELL_SX = {
+    color: 'var(--color-text-on-light, #0f172a)',
+    fontWeight: 600,
+    whiteSpace: 'nowrap' as const,
+    bgcolor: 'rgba(15, 23, 42, 0.06)',
+    borderBottomColor: 'var(--color-secondary-dx-grey-light-tint)',
+};
+
+const DEEP_SCANS_BODY_TEXT = 'var(--color-text-on-light, #0f172a)';
+const DEEP_SCANS_BODY_CELL_SX = { color: DEEP_SCANS_BODY_TEXT };
 
 const STATUSES: DomainScanStatus[] = [
     'queued',
@@ -335,121 +348,153 @@ export default function DeepScansPage() {
                 ) : rows.length === 0 ? (
                     <MsqdxTypography variant="body2">{t('deepScans.empty')}</MsqdxTypography>
                 ) : (
-                    <Table size="small">
-                        <TableHead>
-                            <TableRow>
-                                <TableCell padding="checkbox">{t('deepScans.colSelect')}</TableCell>
-                                <TableCell>{t('deepScans.colDomain')}</TableCell>
-                                {listScope === 'allUsers' ? <TableCell>{t('deepScans.colOwner')}</TableCell> : null}
-                                <TableCell>{t('deepScans.colIndustry')}</TableCell>
-                                <TableCell>{t('deepScans.colTags')}</TableCell>
-                                <TableCell>{t('deepScans.colStack')}</TableCell>
-                                <TableCell>{t('deepScans.colInfra')}</TableCell>
-                                <TableCell title={t('deepScans.colPrivacyHint')}>{t('deepScans.colPrivacy')}</TableCell>
-                                <TableCell>{t('deepScans.colProject')}</TableCell>
-                                <TableCell>{t('deepScans.colDate')}</TableCell>
-                                <TableCell>{t('deepScans.colStatus')}</TableCell>
-                                <TableCell align="right">{t('deepScans.colScore')}</TableCell>
-                                <TableCell align="right">{t('deepScans.colPages')}</TableCell>
-                                <TableCell align="right">{t('deepScans.colActions')}</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {rows.map((r) => (
-                                <TableRow key={r.id} hover>
-                                    <TableCell padding="checkbox">
-                                        <Checkbox
-                                            checked={selected.includes(r.id)}
-                                            onChange={() => toggleSelect(r.id)}
-                                            inputProps={{ 'aria-label': `${t('deepScans.colSelect')} ${r.domain}` }}
-                                        />
+                    <TableContainer sx={{ width: '100%', maxWidth: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                        <Table size="small" sx={{ minWidth: 1120 }}>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell padding="checkbox" sx={DEEP_SCANS_HEAD_CELL_SX}>
+                                        {t('deepScans.colSelect')}
                                     </TableCell>
-                                    <TableCell>
-                                        <Typography variant="body2" noWrap sx={{ maxWidth: 280 }}>
-                                            {r.domain}
-                                            {typeof r.lineageVersion === 'number' ? (
-                                                <Typography
-                                                    component="span"
-                                                    variant="caption"
-                                                    sx={{ ml: 0.75, color: 'var(--color-text-secondary)' }}
-                                                >
-                                                    {t('deepScans.lineageVersion').replace(
-                                                        '{version}',
-                                                        String(r.lineageVersion)
-                                                    )}
-                                                </Typography>
-                                            ) : null}
-                                        </Typography>
-                                    </TableCell>
+                                    <TableCell sx={DEEP_SCANS_HEAD_CELL_SX}>{t('deepScans.colDomain')}</TableCell>
                                     {listScope === 'allUsers' ? (
-                                        <TableCell>
-                                            <Typography variant="body2" noWrap sx={{ maxWidth: 140 }} title={r.userId ?? ''}>
-                                                {r.userId
-                                                    ? `${r.userId.slice(0, 8)}…`
-                                                    : t('deepScans.ownerUnknown')}
+                                        <TableCell sx={DEEP_SCANS_HEAD_CELL_SX}>{t('deepScans.colOwner')}</TableCell>
+                                    ) : null}
+                                    <TableCell sx={DEEP_SCANS_HEAD_CELL_SX}>{t('deepScans.colIndustry')}</TableCell>
+                                    <TableCell sx={DEEP_SCANS_HEAD_CELL_SX}>{t('deepScans.colTags')}</TableCell>
+                                    <TableCell sx={DEEP_SCANS_HEAD_CELL_SX}>{t('deepScans.colStack')}</TableCell>
+                                    <TableCell sx={DEEP_SCANS_HEAD_CELL_SX}>{t('deepScans.colInfra')}</TableCell>
+                                    <TableCell sx={DEEP_SCANS_HEAD_CELL_SX} title={t('deepScans.colPrivacyHint')}>
+                                        {t('deepScans.colPrivacy')}
+                                    </TableCell>
+                                    <TableCell sx={DEEP_SCANS_HEAD_CELL_SX}>{t('deepScans.colProject')}</TableCell>
+                                    <TableCell sx={DEEP_SCANS_HEAD_CELL_SX}>{t('deepScans.colDate')}</TableCell>
+                                    <TableCell sx={DEEP_SCANS_HEAD_CELL_SX}>{t('deepScans.colStatus')}</TableCell>
+                                    <TableCell align="right" sx={DEEP_SCANS_HEAD_CELL_SX}>
+                                        {t('deepScans.colScore')}
+                                    </TableCell>
+                                    <TableCell align="right" sx={DEEP_SCANS_HEAD_CELL_SX}>
+                                        {t('deepScans.colPages')}
+                                    </TableCell>
+                                    <TableCell align="right" sx={DEEP_SCANS_HEAD_CELL_SX}>
+                                        {t('deepScans.colActions')}
+                                    </TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {rows.map((r) => (
+                                    <TableRow key={r.id} hover>
+                                        <TableCell padding="checkbox">
+                                            <Checkbox
+                                                checked={selected.includes(r.id)}
+                                                onChange={() => toggleSelect(r.id)}
+                                                inputProps={{ 'aria-label': `${t('deepScans.colSelect')} ${r.domain}` }}
+                                            />
+                                        </TableCell>
+                                        <TableCell sx={DEEP_SCANS_BODY_CELL_SX}>
+                                            <Typography variant="body2" noWrap sx={{ maxWidth: 280, color: DEEP_SCANS_BODY_TEXT }}>
+                                                {r.domain}
+                                                {typeof r.lineageVersion === 'number' ? (
+                                                    <Typography
+                                                        component="span"
+                                                        variant="caption"
+                                                        sx={{ ml: 0.75, color: 'var(--color-text-secondary)' }}
+                                                    >
+                                                        {t('deepScans.lineageVersion').replace(
+                                                            '{version}',
+                                                            String(r.lineageVersion)
+                                                        )}
+                                                    </Typography>
+                                                ) : null}
                                             </Typography>
                                         </TableCell>
-                                    ) : null}
-                                    <TableCell>
-                                        <Typography
-                                            variant="body2"
-                                            noWrap
-                                            sx={{ maxWidth: 160 }}
-                                            title={r.industry?.trim() ? industryDisplayLabel(r.industry, t) : ''}
-                                        >
-                                            {r.industry?.trim() ? industryDisplayLabel(r.industry, t) : '—'}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography variant="body2" noWrap sx={{ maxWidth: 200 }} title={tagSummary(r)}>
-                                            {tagSummary(r)}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography
-                                            variant="body2"
-                                            noWrap
-                                            sx={{ maxWidth: 200 }}
-                                            title={r.platformsLine ?? ''}
-                                        >
-                                            {r.platformsLine?.trim() ? r.platformsLine : '—'}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography
-                                            variant="body2"
-                                            noWrap
-                                            sx={{ maxWidth: 220 }}
-                                            title={r.infraLine ?? ''}
-                                        >
-                                            {r.infraLine?.trim() ? r.infraLine : '—'}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography
-                                            variant="body2"
-                                            noWrap
-                                            sx={{ maxWidth: 260 }}
-                                            title={r.privacyLine?.trim() ? r.privacyLine : t('deepScans.colPrivacyHint')}
-                                        >
-                                            {r.privacyLine?.trim() ? r.privacyLine : '—'}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography variant="body2" noWrap sx={{ maxWidth: 120 }} title={r.projectId ?? ''}>
-                                            {r.projectId == null || r.projectId === ''
-                                                ? t('deepScans.noProject')
-                                                : `${r.projectId.slice(0, 8)}…`}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        <span suppressHydrationWarning>{new Date(r.timestamp).toLocaleString()}</span>
-                                    </TableCell>
-                                    <TableCell>{r.status}</TableCell>
-                                    <TableCell align="right">{r.status === 'complete' ? r.score : '—'}</TableCell>
-                                    <TableCell align="right">{r.totalPages}</TableCell>
-                                    <TableCell align="right">
-                                        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                                        {listScope === 'allUsers' ? (
+                                            <TableCell sx={DEEP_SCANS_BODY_CELL_SX}>
+                                                <Typography
+                                                    variant="body2"
+                                                    noWrap
+                                                    sx={{ maxWidth: 140, color: DEEP_SCANS_BODY_TEXT }}
+                                                    title={r.userId ?? ''}
+                                                >
+                                                    {r.userId
+                                                        ? `${r.userId.slice(0, 8)}…`
+                                                        : t('deepScans.ownerUnknown')}
+                                                </Typography>
+                                            </TableCell>
+                                        ) : null}
+                                        <TableCell sx={DEEP_SCANS_BODY_CELL_SX}>
+                                            <Typography
+                                                variant="body2"
+                                                noWrap
+                                                sx={{ maxWidth: 160, color: DEEP_SCANS_BODY_TEXT }}
+                                                title={r.industry?.trim() ? industryDisplayLabel(r.industry, t) : ''}
+                                            >
+                                                {r.industry?.trim() ? industryDisplayLabel(r.industry, t) : '—'}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell sx={DEEP_SCANS_BODY_CELL_SX}>
+                                            <Typography
+                                                variant="body2"
+                                                noWrap
+                                                sx={{ maxWidth: 200, color: DEEP_SCANS_BODY_TEXT }}
+                                                title={tagSummary(r)}
+                                            >
+                                                {tagSummary(r)}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell sx={DEEP_SCANS_BODY_CELL_SX}>
+                                            <Typography
+                                                variant="body2"
+                                                noWrap
+                                                sx={{ maxWidth: 200, color: DEEP_SCANS_BODY_TEXT }}
+                                                title={r.platformsLine ?? ''}
+                                            >
+                                                {r.platformsLine?.trim() ? r.platformsLine : '—'}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell sx={DEEP_SCANS_BODY_CELL_SX}>
+                                            <Typography
+                                                variant="body2"
+                                                noWrap
+                                                sx={{ maxWidth: 220, color: DEEP_SCANS_BODY_TEXT }}
+                                                title={r.infraLine ?? ''}
+                                            >
+                                                {r.infraLine?.trim() ? r.infraLine : '—'}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell sx={DEEP_SCANS_BODY_CELL_SX}>
+                                            <Typography
+                                                variant="body2"
+                                                noWrap
+                                                sx={{ maxWidth: 260, color: DEEP_SCANS_BODY_TEXT }}
+                                                title={r.privacyLine?.trim() ? r.privacyLine : t('deepScans.colPrivacyHint')}
+                                            >
+                                                {r.privacyLine?.trim() ? r.privacyLine : '—'}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell sx={DEEP_SCANS_BODY_CELL_SX}>
+                                            <Typography
+                                                variant="body2"
+                                                noWrap
+                                                sx={{ maxWidth: 120, color: DEEP_SCANS_BODY_TEXT }}
+                                                title={r.projectId ?? ''}
+                                            >
+                                                {r.projectId == null || r.projectId === ''
+                                                    ? t('deepScans.noProject')
+                                                    : `${r.projectId.slice(0, 8)}…`}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell sx={DEEP_SCANS_BODY_CELL_SX}>
+                                            <span suppressHydrationWarning>{new Date(r.timestamp).toLocaleString()}</span>
+                                        </TableCell>
+                                        <TableCell sx={DEEP_SCANS_BODY_CELL_SX}>{r.status}</TableCell>
+                                        <TableCell align="right" sx={DEEP_SCANS_BODY_CELL_SX}>
+                                            {r.status === 'complete' ? r.score : '—'}
+                                        </TableCell>
+                                        <TableCell align="right" sx={DEEP_SCANS_BODY_CELL_SX}>
+                                            {r.totalPages}
+                                        </TableCell>
+                                        <TableCell align="right">
+                                            <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
                                             <MsqdxButton
                                                 variant="text"
                                                 size="small"
@@ -486,12 +531,13 @@ export default function DeepScansPage() {
                                                     {t('deepScans.delete')}
                                                 </MsqdxButton>
                                             )}
-                                        </Box>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                                            </Box>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
                 )}
                 {totalPages > 1 && (
                     <Box sx={{ mt: 2 }}>
