@@ -60,6 +60,33 @@ const DEEP_SCANS_HEAD_CELL_SX = {
 const DEEP_SCANS_BODY_TEXT = 'var(--color-text-on-light, #0f172a)';
 const DEEP_SCANS_BODY_CELL_SX = { color: DEEP_SCANS_BODY_TEXT };
 
+/** Stays visible on horizontal scroll; bg matches row hover (MUI default ~4% dark). */
+const DEEP_SCANS_HEAD_ACTIONS_CELL_SX = {
+    ...DEEP_SCANS_HEAD_CELL_SX,
+    position: 'sticky' as const,
+    right: 0,
+    zIndex: 5,
+    minWidth: 220,
+    whiteSpace: 'nowrap' as const,
+    boxShadow: '-8px 0 14px -6px rgba(15, 23, 42, 0.18)',
+    borderLeft: '1px solid var(--color-secondary-dx-grey-light-tint, rgba(148, 163, 184, 0.45))',
+};
+
+const DEEP_SCANS_BODY_ACTIONS_CELL_SX = {
+    ...DEEP_SCANS_BODY_CELL_SX,
+    position: 'sticky' as const,
+    right: 0,
+    zIndex: 3,
+    minWidth: 220,
+    whiteSpace: 'nowrap' as const,
+    bgcolor: 'var(--color-card-bg, #ffffff)',
+    boxShadow: '-8px 0 14px -6px rgba(15, 23, 42, 0.18)',
+    borderLeft: '1px solid var(--color-secondary-dx-grey-light-tint, rgba(148, 163, 184, 0.45))',
+    '.MuiTableRow-root:hover &': {
+        bgcolor: 'rgba(15, 23, 42, 0.04)',
+    },
+};
+
 const STATUSES: DomainScanStatus[] = [
     'queued',
     'scanning',
@@ -376,7 +403,7 @@ export default function DeepScansPage() {
                                     <TableCell align="right" sx={DEEP_SCANS_HEAD_CELL_SX}>
                                         {t('deepScans.colPages')}
                                     </TableCell>
-                                    <TableCell align="right" sx={DEEP_SCANS_HEAD_CELL_SX}>
+                                    <TableCell align="right" sx={DEEP_SCANS_HEAD_ACTIONS_CELL_SX}>
                                         {t('deepScans.colActions')}
                                     </TableCell>
                                 </TableRow>
@@ -498,8 +525,16 @@ export default function DeepScansPage() {
                                         <TableCell align="right" sx={DEEP_SCANS_BODY_CELL_SX}>
                                             {r.totalPages}
                                         </TableCell>
-                                        <TableCell align="right">
-                                            <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                                        <TableCell align="right" sx={DEEP_SCANS_BODY_ACTIONS_CELL_SX}>
+                                            <Box
+                                                sx={{
+                                                    display: 'flex',
+                                                    flexWrap: 'nowrap',
+                                                    gap: 0.5,
+                                                    justifyContent: 'flex-end',
+                                                    alignItems: 'center',
+                                                }}
+                                            >
                                             <MsqdxButton
                                                 variant="text"
                                                 size="small"
