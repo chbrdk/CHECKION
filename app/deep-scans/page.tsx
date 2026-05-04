@@ -25,6 +25,7 @@ import {
     pathDeepScansCompare,
     pathDomain,
 } from '@/lib/constants';
+import { COMPACT_DATA_TABLE_SX } from '@/lib/compact-data-table-sx';
 import { parseTagsFromInput } from '@/lib/tag-utils';
 import { INDUSTRY_POOL, industryDisplayLabel } from '@/lib/industry-pool';
 import type { DomainScanStatus } from '@/lib/types';
@@ -349,7 +350,7 @@ export default function DeepScansPage() {
                     <MsqdxTypography variant="body2">{t('deepScans.empty')}</MsqdxTypography>
                 ) : (
                     <TableContainer sx={{ width: '100%', maxWidth: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                        <Table size="small" sx={{ minWidth: 1120 }}>
+                        <Table size="small" sx={{ minWidth: 1120, ...COMPACT_DATA_TABLE_SX }}>
                             <TableHead>
                                 <TableRow>
                                     <TableCell padding="checkbox" sx={DEEP_SCANS_HEAD_CELL_SX}>
@@ -397,7 +398,11 @@ export default function DeepScansPage() {
                                                     <Typography
                                                         component="span"
                                                         variant="caption"
-                                                        sx={{ ml: 0.75, color: 'var(--color-text-secondary)' }}
+                                                        sx={{
+                                                            ml: 0.75,
+                                                            color: 'var(--color-text-secondary)',
+                                                            fontSize: '0.75rem',
+                                                        }}
                                                     >
                                                         {t('deepScans.lineageVersion').replace(
                                                             '{version}',

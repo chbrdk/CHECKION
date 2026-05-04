@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { MsqdxButton, MsqdxMoleculeCard, MsqdxTypography } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
+import { COMPACT_DATA_TABLE_SX } from '@/lib/compact-data-table-sx';
 import { API_SCANS_DOMAIN_COMPARE, PATH_DEEP_SCANS, pathDomain } from '@/lib/constants';
 import type { DomainScanCompareDto } from '@/lib/domain-compare-dto';
 
@@ -139,7 +140,14 @@ function CompareInner() {
             {left && right && !loading && !error && (
                 <MsqdxMoleculeCard title="" variant="flat" borderRadius="lg" footerDivider={false} sx={{ bgcolor: 'var(--color-card-bg)' }}>
                     <TableContainer sx={{ width: '100%', maxWidth: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                        <Table size="small" sx={{ minWidth: 520, color: 'var(--color-text-on-light, #0f172a)' }}>
+                        <Table
+                            size="small"
+                            sx={{
+                                minWidth: 520,
+                                color: 'var(--color-text-on-light, #0f172a)',
+                                ...COMPACT_DATA_TABLE_SX,
+                            }}
+                        >
                             <TableHead>
                                 <TableRow>
                                     <TableCell sx={COMPARE_HEAD_CELL_SX}>{t('deepScans.metricDomain')}</TableCell>
