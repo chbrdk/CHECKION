@@ -14,7 +14,7 @@ import {
     Tooltip,
     Typography,
 } from '@mui/material';
-import { Eye, Tags, Trash2 } from 'lucide-react';
+import { Eye, Trash2 } from 'lucide-react';
 import { MsqdxButton, MsqdxFormField, MsqdxIconButton, MsqdxMoleculeCard, MsqdxTypography } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { PaginationBar } from '@/components/PaginationBar';
@@ -23,12 +23,10 @@ import {
     DASHBOARD_SCANS_PAGE_SIZE,
     apiScansDomainDelete,
     apiScansDomainList,
-    apiScansDomainTags,
     pathDeepScansCompare,
     pathDomain,
 } from '@/lib/constants';
 import { COMPACT_DATA_TABLE_SX } from '@/lib/compact-data-table-sx';
-import { parseTagsFromInput } from '@/lib/tag-utils';
 import { INDUSTRY_POOL, industryDisplayLabel } from '@/lib/industry-pool';
 import type { DomainScanStatus } from '@/lib/types';
 
@@ -79,7 +77,7 @@ const DEEP_SCANS_HEAD_ACTIONS_CELL_SX = {
     position: 'sticky' as const,
     right: 0,
     zIndex: 5,
-    minWidth: 132,
+    minWidth: 96,
     whiteSpace: 'nowrap' as const,
     boxShadow: '-8px 0 14px -6px rgba(15, 23, 42, 0.18)',
     borderLeft: '1px solid var(--color-secondary-dx-grey-light-tint, rgba(148, 163, 184, 0.45))',
@@ -90,7 +88,7 @@ const DEEP_SCANS_BODY_ACTIONS_CELL_SX = {
     position: 'sticky' as const,
     right: 0,
     zIndex: 3,
-    minWidth: 132,
+    minWidth: 96,
     whiteSpace: 'nowrap' as const,
     bgcolor: 'var(--color-card-bg, #ffffff)',
     boxShadow: '-8px 0 14px -6px rgba(15, 23, 42, 0.18)',
@@ -190,23 +188,6 @@ export default function DeepScansPage() {
         setQApplied(qInput);
         setIndustryApplied(industryInput);
         setTagApplied(tagInput);
-    };
-
-    const editScanTags = async (scanId: string, current: string[]) => {
-        const raw = window.prompt(t('deepScans.editTagsPrompt'), current.join(', '));
-        if (raw == null) return;
-        const tags = parseTagsFromInput(raw);
-        try {
-            const res = await fetch(apiScansDomainTags(scanId), {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify({ tags }),
-            });
-            if (res.ok) void load();
-        } catch {
-            /* ignore */
-        }
     };
 
     const tagSummary = (r: Row) => {
@@ -565,19 +546,6 @@ export default function DeepScansPage() {
                                                         <Eye size={16} strokeWidth={2} />
                                                     </MsqdxIconButton>
                                                 </Tooltip>
-                                                {(listScope === 'mine' ||
-                                                    (sessionUserId != null && r.userId === sessionUserId)) && (
-                                                    <Tooltip title={t('deepScans.editTags')}>
-                                                        <MsqdxIconButton
-                                                            size="small"
-                                                            aria-label={t('deepScans.editTags')}
-                                                            onClick={() => void editScanTags(r.id, [...(r.tags ?? [])])}
-                                                            sx={{ color: 'var(--color-text-on-light, #0f172a)' }}
-                                                        >
-                                                            <Tags size={16} strokeWidth={2} />
-                                                        </MsqdxIconButton>
-                                                    </Tooltip>
-                                                )}
                                                 {(listScope === 'mine' ||
                                                     (sessionUserId != null && r.userId === sessionUserId)) && (
                                                     <Tooltip title={t('deepScans.delete')}>
