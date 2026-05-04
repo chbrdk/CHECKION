@@ -65,8 +65,15 @@ export const pathDomain = (id: string, query?: Record<string, string>) => {
 };
 /** Build app route: /journey-agent/[jobId] */
 export const pathJourneyAgent = (jobId: string) => `${PATH_JOURNEY_AGENT}/${encodeURIComponent(jobId)}`;
+/** Optional query when opening GEO result (e.g. scroll to competitive). */
+export type PathGeoEeatQuery = { focus?: 'competitive' };
+
 /** Build app route: /geo-eeat/[jobId] */
-export const pathGeoEeat = (jobId: string) => `${PATH_GEO_EEAT}/${encodeURIComponent(jobId)}`;
+export const pathGeoEeat = (jobId: string, query?: PathGeoEeatQuery) => {
+  const base = `${PATH_GEO_EEAT}/${encodeURIComponent(jobId)}`;
+  if (query?.focus === 'competitive') return `${base}?focus=competitive`;
+  return base;
+};
 /** Build app route: /projects/[id] */
 export const pathProject = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}`;
 /** Build app route: /projects/[id]/rankings */

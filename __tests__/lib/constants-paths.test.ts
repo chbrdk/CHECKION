@@ -169,6 +169,10 @@ describe('Path constants', () => {
         expect(pathGeoEeat('geo-1')).toBe('/geo-eeat/geo-1');
     });
 
+    it('pathGeoEeat with focus=competitive appends query', () => {
+        expect(pathGeoEeat('geo-1', { focus: 'competitive' })).toBe('/geo-eeat/geo-1?focus=competitive');
+    });
+
     it('pathShare builds /share/[token]', () => {
         expect(pathShare('tok_abc')).toBe('/share/tok_abc');
     });

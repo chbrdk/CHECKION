@@ -44,6 +44,9 @@ import { readScanNdjsonStream } from '@/lib/scan-stream-parse';
 import { useStatusUi } from '@/components/status/StatusUiContext';
 import { ensureUrlWithScheme } from '@/lib/url-normalize';
 import { fetchOnceMoreOn5xx } from '@/lib/fetch-retry-5xx';
+import { extractHostname } from '@/lib/geo-eeat/suggest-parse';
+
+const GEO_EEAT_QUICK_QUERY_MAX = 500;
 
 /** Cookie-based API calls: always send credentials; retry once after 401 so the first click works once NextAuth session is synced. */
 async function fetchWithSessionCookies(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
@@ -82,6 +85,9 @@ export default function ScanPage() {
     const [task, setTask] = useState('');
     const [journeyHistory, setJourneyHistory] = useState<Array<{ id: string; url: string; task: string; status: string; createdAt: string }>>([]);
     const [geoEeatHistory, setGeoEeatHistory] = useState<Array<{ id: string; url: string; status: string; createdAt: string }>>([]);
+    const [geoEeatFormMode, setGeoEeatFormMode] = useState<'quick' | 'full'>('full');
+    const [geoEeatQuickQuestion, setGeoEeatQuickQuestion] = useState('');
+    const [geoEeatQuickCompetitor, setGeoEeatQuickCompetitor] = useState('');
     const [geoEeatCompetitive, setGeoEeatCompetitive] = useState(false);
     const [geoEeatCompetitors, setGeoEeatCompetitors] = useState('');
     const [geoEeatQueries, setGeoEeatQueries] = useState('');
@@ -145,7 +151,24 @@ export default function ScanPage() {
 
             if (scanMode === 'geoEeat') {
                 const body: { url: string; runCompetitive?: boolean; competitors?: string[]; queries?: string[]; projectId?: string | null } = { url: urlForRequest };
-                if (geoEeatCompetitive) {
+                if (geoEeatFormMode === 'quick') {
+                    const q = geoEeatQuickQuestion.trim().slice(0, GEO_EEAT_QUICK_QUERY_MAX);
+                    const rawComp = geoEeatQuickCompetitor.trim();
+                    if (!q || !rawComp) {
+                        setError(t('scan.geoEeatQuickValidation'));
+                        setScanning(false);
+                        return;
+                    }
+                    const host = extractHostname(rawComp).trim();
+                    if (!host) {
+                        setError(t('scan.geoEeatQuickCompetitorInvalid'));
+                        setScanning(false);
+                        return;
+                    }
+                    body.runCompetitive = true;
+                    body.queries = [q];
+                    body.competitors = [host];
+                } else if (geoEeatCompetitive) {
                     body.runCompetitive = true;
                     body.competitors = geoEeatCompetitors.trim().split(/\n/).map((s) => s.trim()).filter(Boolean);
                     body.queries = geoEeatQueries.trim().split(/\n/).map((s) => s.trim()).filter(Boolean);
@@ -163,7 +186,7 @@ export default function ScanPage() {
                     return;
                 }
                 const jobId = data.jobId as string;
-                router.push(pathGeoEeat(jobId));
+                router.push(pathGeoEeat(jobId, geoEeatFormMode === 'quick' ? { focus: 'competitive' } : undefined));
                 return;
             }
             if (scanMode === 'journey') {
@@ -348,7 +371,10 @@ export default function ScanPage() {
                             !url.trim() ||
                             scanning ||
                             sessionStatus === 'loading' ||
-                            (scanMode === 'journey' && !task.trim())
+                            (scanMode === 'journey' && !task.trim()) ||
+                            (scanMode === 'geoEeat' &&
+                                geoEeatFormMode === 'quick' &&
+                                (!geoEeatQuickQuestion.trim() || !geoEeatQuickCompetitor.trim()))
                         }
                         loading={scanning}
                         sx={{ minWidth: 150 }}
@@ -372,7 +398,15 @@ export default function ScanPage() {
                             ]}
                         />
                         <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 1, color: 'var(--color-text-muted-on-light)' }}>
-                            {scanMode === 'single' ? t('scan.singleHint') : scanMode === 'deep' ? t('scan.deepHint') : scanMode === 'journey' ? t('scan.journeyHint') : t('scan.geoEeatHint')}
+                            {scanMode === 'single'
+                                ? t('scan.singleHint')
+                                : scanMode === 'deep'
+                                  ? t('scan.deepHint')
+                                  : scanMode === 'journey'
+                                    ? t('scan.journeyHint')
+                                    : geoEeatFormMode === 'quick'
+                                      ? t('scan.geoEeatQuickHint')
+                                      : t('scan.geoEeatHint')}
                         </MsqdxTypography>
                     </Box>
 
@@ -434,119 +468,157 @@ export default function ScanPage() {
                         </Box>
                     )}
 
-                    {/* GEO/E-E-A-T: Competitive Benchmark (optional) */}
+                    {/* GEO/E-E-A-T: Kurzmodus (1 Frage + 1 Konkurrent) oder Vollmodus */}
                     {scanMode === 'geoEeat' && (
-                        <Box sx={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            <MsqdxCheckboxField
-                                label={t('scan.geoEeatCompetitiveLabel')}
-                                options={[{ value: 'on', label: t('scan.geoEeatCompetitiveCheckbox') }]}
-                                value={geoEeatCompetitive ? ['on'] : []}
-                                onChange={(val) => setGeoEeatCompetitive(Array.isArray(val) && val.includes('on'))}
+                        <Box sx={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                            <MsqdxTabs
+                                value={geoEeatFormMode}
+                                onChange={(v: string) => {
+                                    setGeoEeatFormMode(v as 'quick' | 'full');
+                                    setError(null);
+                                }}
+                                tabs={[
+                                    { value: 'quick', label: t('scan.geoEeatModeQuick') },
+                                    { value: 'full', label: t('scan.geoEeatModeFull') },
+                                ]}
                             />
-                            {geoEeatCompetitive && (
+                            {geoEeatFormMode === 'quick' ? (
                                 <>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                                        <MsqdxButton
-                                            variant="outlined"
-                                            size="small"
-                                            disabled={!url.trim() || scanning || geoEeatSuggesting}
-                                            onClick={async () => {
-                                                if (!url.trim()) return;
-                                                const suggestUrl = ensureUrlWithScheme(url);
-                                                if (!suggestUrl) return;
-                                                if (suggestUrl !== url) setUrl(suggestUrl);
-                                                setGeoEeatSuggestError(null);
-                                                setGeoEeatSuggestMessage(null);
-                                                setGeoEeatSuggesting(true);
-                                                const controller = new AbortController();
-                                                const timeoutId = setTimeout(() => controller.abort(), 60000);
-                                                try {
-                                                    const res = await fetchWithSessionCookies(apiScanGeoEeatSuggestQueries, {
-                                                        method: 'POST',
-                                                        headers: { 'Content-Type': 'application/json' },
-                                                        body: JSON.stringify({ url: suggestUrl }),
-                                                        signal: controller.signal,
-                                                    });
-                                                    clearTimeout(timeoutId);
-                                                    const text = await res.text();
-                                                    let data: { error?: string; competitors?: string[]; queries?: string[] } = {};
-                                                    if (text.trim()) {
+                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                        {t('scan.geoEeatQuickHint')}
+                                    </MsqdxTypography>
+                                    <MsqdxFormField
+                                        label={t('scan.geoEeatQuickQuestionLabel')}
+                                        placeholder={t('scan.geoEeatQuickQuestionPlaceholder')}
+                                        value={geoEeatQuickQuestion}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGeoEeatQuickQuestion(e.target.value)}
+                                        disabled={scanning}
+                                        fullWidth
+                                        inputProps={{ maxLength: GEO_EEAT_QUICK_QUERY_MAX }}
+                                    />
+                                    <MsqdxFormField
+                                        label={t('scan.geoEeatQuickCompetitorLabel')}
+                                        placeholder={t('scan.geoEeatQuickCompetitorPlaceholder')}
+                                        value={geoEeatQuickCompetitor}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGeoEeatQuickCompetitor(e.target.value)}
+                                        disabled={scanning}
+                                        fullWidth
+                                    />
+                                </>
+                            ) : (
+                                <>
+                                    <MsqdxCheckboxField
+                                        label={t('scan.geoEeatCompetitiveLabel')}
+                                        options={[{ value: 'on', label: t('scan.geoEeatCompetitiveCheckbox') }]}
+                                        value={geoEeatCompetitive ? ['on'] : []}
+                                        onChange={(val) => setGeoEeatCompetitive(Array.isArray(val) && val.includes('on'))}
+                                    />
+                                    {geoEeatCompetitive && (
+                                        <>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                                                <MsqdxButton
+                                                    variant="outlined"
+                                                    size="small"
+                                                    disabled={!url.trim() || scanning || geoEeatSuggesting}
+                                                    onClick={async () => {
+                                                        if (!url.trim()) return;
+                                                        const suggestUrl = ensureUrlWithScheme(url);
+                                                        if (!suggestUrl) return;
+                                                        if (suggestUrl !== url) setUrl(suggestUrl);
+                                                        setGeoEeatSuggestError(null);
+                                                        setGeoEeatSuggestMessage(null);
+                                                        setGeoEeatSuggesting(true);
+                                                        const controller = new AbortController();
+                                                        const timeoutId = setTimeout(() => controller.abort(), 60000);
                                                         try {
-                                                            data = JSON.parse(text) as typeof data;
-                                                        } catch {
-                                                            setGeoEeatSuggestError(t('scan.geoEeatSuggestError'));
-                                                            return;
+                                                            const res = await fetchWithSessionCookies(apiScanGeoEeatSuggestQueries, {
+                                                                method: 'POST',
+                                                                headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify({ url: suggestUrl }),
+                                                                signal: controller.signal,
+                                                            });
+                                                            clearTimeout(timeoutId);
+                                                            const text = await res.text();
+                                                            let data: { error?: string; competitors?: string[]; queries?: string[] } = {};
+                                                            if (text.trim()) {
+                                                                try {
+                                                                    data = JSON.parse(text) as typeof data;
+                                                                } catch {
+                                                                    setGeoEeatSuggestError(t('scan.geoEeatSuggestError'));
+                                                                    return;
+                                                                }
+                                                            }
+                                                            if (!res.ok) {
+                                                                setGeoEeatSuggestError(data.error || t('scan.geoEeatSuggestError'));
+                                                                return;
+                                                            }
+                                                            const comp = Array.isArray(data.competitors) ? data.competitors : [];
+                                                            const q = Array.isArray(data.queries) ? data.queries : [];
+                                                            setGeoEeatCompetitors(comp.join('\n'));
+                                                            setGeoEeatQueries(q.join('\n'));
+                                                            if (comp.length === 0 && q.length === 0) {
+                                                                setGeoEeatSuggestMessage(t('scan.geoEeatSuggestEmpty'));
+                                                            } else {
+                                                                setGeoEeatSuggestMessage(t('scan.geoEeatSuggestSuccess', { competitors: comp.length, queries: q.length }));
+                                                            }
+                                                        } catch (err) {
+                                                            clearTimeout(timeoutId);
+                                                            if (err instanceof Error && err.name === 'AbortError') {
+                                                                setGeoEeatSuggestError(t('scan.geoEeatSuggestTimeout'));
+                                                            } else {
+                                                                setGeoEeatSuggestError(t('scan.networkError'));
+                                                            }
+                                                        } finally {
+                                                            setGeoEeatSuggesting(false);
                                                         }
-                                                    }
-                                                    if (!res.ok) {
-                                                        setGeoEeatSuggestError(data.error || t('scan.geoEeatSuggestError'));
-                                                        return;
-                                                    }
-                                                    const comp = Array.isArray(data.competitors) ? data.competitors : [];
-                                                    const q = Array.isArray(data.queries) ? data.queries : [];
-                                                    setGeoEeatCompetitors(comp.join('\n'));
-                                                    setGeoEeatQueries(q.join('\n'));
-                                                    if (comp.length === 0 && q.length === 0) {
-                                                        setGeoEeatSuggestMessage(t('scan.geoEeatSuggestEmpty'));
-                                                    } else {
-                                                        setGeoEeatSuggestMessage(t('scan.geoEeatSuggestSuccess', { competitors: comp.length, queries: q.length }));
-                                                    }
-                                                } catch (err) {
-                                                    clearTimeout(timeoutId);
-                                                    if (err instanceof Error && err.name === 'AbortError') {
-                                                        setGeoEeatSuggestError(t('scan.geoEeatSuggestTimeout'));
-                                                    } else {
-                                                        setGeoEeatSuggestError(t('scan.networkError'));
-                                                    }
-                                                } finally {
-                                                    setGeoEeatSuggesting(false);
-                                                }
-                                            }}
-                                        >
-                                            {geoEeatSuggesting ? t('scan.geoEeatSuggestLoading') : t('scan.geoEeatSuggestCta')}
-                                        </MsqdxButton>
-                                        {(geoEeatSuggestError || geoEeatSuggestMessage) && (
-                                            <Box
-                                                sx={{
-                                                    width: '100%',
-                                                    py: 0.5,
-                                                    px: 1,
-                                                    borderRadius: 1,
-                                                    backgroundColor: geoEeatSuggestError
-                                                        ? alpha(MSQDX_STATUS.error.base, 0.1)
-                                                        : alpha(MSQDX_STATUS.success?.base ?? MSQDX_BRAND_PRIMARY, 0.08),
-                                                    border: `1px solid ${geoEeatSuggestError ? alpha(MSQDX_STATUS.error.base, 0.25) : alpha(MSQDX_STATUS.success?.base ?? MSQDX_BRAND_PRIMARY, 0.2)}`,
-                                                }}
-                                            >
-                                                <MsqdxTypography
-                                                    variant="body2"
-                                                    sx={{ color: geoEeatSuggestError ? MSQDX_STATUS.error.light : 'var(--color-text-secondary)' }}
+                                                    }}
                                                 >
-                                                    {geoEeatSuggestError ?? geoEeatSuggestMessage}
-                                                </MsqdxTypography>
+                                                    {geoEeatSuggesting ? t('scan.geoEeatSuggestLoading') : t('scan.geoEeatSuggestCta')}
+                                                </MsqdxButton>
+                                                {(geoEeatSuggestError || geoEeatSuggestMessage) && (
+                                                    <Box
+                                                        sx={{
+                                                            width: '100%',
+                                                            py: 0.5,
+                                                            px: 1,
+                                                            borderRadius: 1,
+                                                            backgroundColor: geoEeatSuggestError
+                                                                ? alpha(MSQDX_STATUS.error.base, 0.1)
+                                                                : alpha(MSQDX_STATUS.success?.base ?? MSQDX_BRAND_PRIMARY, 0.08),
+                                                            border: `1px solid ${geoEeatSuggestError ? alpha(MSQDX_STATUS.error.base, 0.25) : alpha(MSQDX_STATUS.success?.base ?? MSQDX_BRAND_PRIMARY, 0.2)}`,
+                                                        }}
+                                                    >
+                                                        <MsqdxTypography
+                                                            variant="body2"
+                                                            sx={{ color: geoEeatSuggestError ? MSQDX_STATUS.error.light : 'var(--color-text-secondary)' }}
+                                                        >
+                                                            {geoEeatSuggestError ?? geoEeatSuggestMessage}
+                                                        </MsqdxTypography>
+                                                    </Box>
+                                                )}
                                             </Box>
-                                        )}
-                                    </Box>
-                                    <MsqdxFormField
-                                        label={t('scan.geoEeatCompetitorsLabel')}
-                                        placeholder={t('scan.geoEeatCompetitorsPlaceholder')}
-                                        value={geoEeatCompetitors}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGeoEeatCompetitors(e.target.value)}
-                                        disabled={scanning}
-                                        fullWidth
-                                        multiline
-                                        minRows={2}
-                                    />
-                                    <MsqdxFormField
-                                        label={t('scan.geoEeatQueriesLabel')}
-                                        placeholder={t('scan.geoEeatQueriesPlaceholder')}
-                                        value={geoEeatQueries}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGeoEeatQueries(e.target.value)}
-                                        disabled={scanning}
-                                        fullWidth
-                                        multiline
-                                        minRows={2}
-                                    />
+                                            <MsqdxFormField
+                                                label={t('scan.geoEeatCompetitorsLabel')}
+                                                placeholder={t('scan.geoEeatCompetitorsPlaceholder')}
+                                                value={geoEeatCompetitors}
+                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGeoEeatCompetitors(e.target.value)}
+                                                disabled={scanning}
+                                                fullWidth
+                                                multiline
+                                                minRows={2}
+                                            />
+                                            <MsqdxFormField
+                                                label={t('scan.geoEeatQueriesLabel')}
+                                                placeholder={t('scan.geoEeatQueriesPlaceholder')}
+                                                value={geoEeatQueries}
+                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGeoEeatQueries(e.target.value)}
+                                                disabled={scanning}
+                                                fullWidth
+                                                multiline
+                                                minRows={2}
+                                            />
+                                        </>
+                                    )}
                                 </>
                             )}
                         </Box>

@@ -70,7 +70,7 @@ Im ersten Schritt (Scan-Formular) kann der Nutzer Konkurrenten und Suchanfragen 
 
 ## UI
 
-- **Scan-Seite:** Vierter Tab „GEO / E-E-A-T“, URL-Pflicht, optional Competitive (Checkbox + Competitors/Queries, je eine pro Zeile). Submit → Redirect zu `/geo-eeat/[jobId]`.
+- **Scan-Seite:** Vierter Tab „GEO / E-E-A-T“, URL-Pflicht. **Kurzmodus:** eine Frage + eine Konkurrenten-Domain → `POST /api/scan/geo-eeat` mit `runCompetitive: true` und je einem Eintrag in `queries`/`competitors`; Redirect zu `/geo-eeat/[jobId]?focus=competitive` (Ergebnis scrollt zum Competitive-Block, Query wird danach optional per History ersetzt). **Vollmodus:** optional Competitive (Checkbox + Competitors/Queries, je eine pro Zeile), KI-Vorschlag unverändert; Submit ohne Kurzmodus → `/geo-eeat/[jobId]`.
 - **Ergebnis-Seite:** `/geo-eeat/[jobId]` – Status-Polling, bei Complete: On-Page (E-E-A-T + GEO), Empfehlungen, Competitive-Benchmark. Share-Button nutzt `SharePanel` mit `resourceType="geo_eeat"`.
 
 ---

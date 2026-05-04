@@ -1,7 +1,7 @@
 'use client';
 
-import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useParams, usePathname, useSearchParams } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Box, CircularProgress, alpha } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard, MsqdxChip, MsqdxAccordion, MsqdxAccordionItem, MsqdxTooltip, MsqdxTabs } from '@msqdx/react';
@@ -33,6 +33,8 @@ interface CompetitiveHistoryRun {
 
 export default function GeoEeatResultPage() {
     const params = useParams();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
     const { t } = useI18n();
     const rawJobId = params?.jobId;
     const jobId = typeof rawJobId === 'string' ? rawJobId : Array.isArray(rawJobId) ? rawJobId[0] : undefined;
@@ -48,6 +50,11 @@ export default function GeoEeatResultPage() {
     const [selectedCompetitiveRunId, setSelectedCompetitiveRunId] = useState<string | null>(null);
     const [historyCompetitiveByModel, setHistoryCompetitiveByModel] = useState<Record<string, CompetitiveBenchmarkResult> | null>(null);
     const [historyLoading, setHistoryLoading] = useState(false);
+    const focusCompetitiveScrolled = useRef(false);
+
+    useEffect(() => {
+        focusCompetitiveScrolled.current = false;
+    }, [jobId]);
 
     useEffect(() => {
         if (!jobId) return;
@@ -106,6 +113,23 @@ export default function GeoEeatResultPage() {
             setCompetitiveModelIndex(competitiveModelsFromSource.length - 1);
         }
     }, [hasMultiModelFromSource, competitiveModelsFromSource.length, competitiveModelIndex]);
+
+    const hasAnyCompetitiveForScroll =
+        Boolean(payload?.competitive?.metrics?.length) || Boolean(hasMultiModelFromSource);
+
+    useEffect(() => {
+        if (searchParams.get('focus') !== 'competitive') return;
+        if (status !== 'complete') return;
+        if (!hasAnyCompetitiveForScroll) return;
+        if (focusCompetitiveScrolled.current) return;
+        const el = document.getElementById('geo-eeat-competitive');
+        if (!el) return;
+        focusCompetitiveScrolled.current = true;
+        requestAnimationFrame(() => {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (pathname) window.history.replaceState(null, '', pathname);
+        });
+    }, [searchParams, pathname, status, hasAnyCompetitiveForScroll]);
 
     useEffect(() => {
         if (!jobId || status !== 'complete') return;
@@ -410,6 +434,7 @@ export default function GeoEeatResultPage() {
                 </MsqdxMoleculeCard>
             )}
 
+            <Box id="geo-eeat-competitive" sx={{ scrollMarginTop: 80 }}>
             {(hasMultiModelFromSource || hasCompetitive) && (() => {
                 if (selectedCompetitiveRunId != null && historyLoading) {
                     return (
@@ -683,6 +708,7 @@ export default function GeoEeatResultPage() {
                     </MsqdxMoleculeCard>
                 );
             })()}
+            </Box>
 
             {payload && (!payload.pages || payload.pages.length === 0) && !hasCompetitive && !hasMultiModelFromSource && (
                 <MsqdxTypography variant="body2" color="text.secondary">
