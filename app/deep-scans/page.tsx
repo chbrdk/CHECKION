@@ -11,9 +11,11 @@ import {
     TableContainer,
     TableHead,
     TableRow,
+    Tooltip,
     Typography,
 } from '@mui/material';
-import { MsqdxButton, MsqdxFormField, MsqdxMoleculeCard, MsqdxTypography } from '@msqdx/react';
+import { Eye, Tags, Trash2 } from 'lucide-react';
+import { MsqdxButton, MsqdxFormField, MsqdxIconButton, MsqdxMoleculeCard, MsqdxTypography } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { PaginationBar } from '@/components/PaginationBar';
 import {
@@ -61,12 +63,23 @@ const DEEP_SCANS_BODY_TEXT = 'var(--color-text-on-light, #0f172a)';
 const DEEP_SCANS_BODY_CELL_SX = { color: DEEP_SCANS_BODY_TEXT };
 
 /** Stays visible on horizontal scroll; bg matches row hover (MUI default ~4% dark). */
+const DEEP_SCANS_DELETE_ICON_SX = {
+    color: 'var(--color-status-error)',
+    borderColor: 'var(--color-status-error)',
+    '&:hover': {
+        backgroundColor: 'var(--color-status-error)',
+        color: '#fff',
+        borderColor: 'var(--color-status-error)',
+    },
+    '& svg': { color: 'inherit' },
+} as const;
+
 const DEEP_SCANS_HEAD_ACTIONS_CELL_SX = {
     ...DEEP_SCANS_HEAD_CELL_SX,
     position: 'sticky' as const,
     right: 0,
     zIndex: 5,
-    minWidth: 220,
+    minWidth: 132,
     whiteSpace: 'nowrap' as const,
     boxShadow: '-8px 0 14px -6px rgba(15, 23, 42, 0.18)',
     borderLeft: '1px solid var(--color-secondary-dx-grey-light-tint, rgba(148, 163, 184, 0.45))',
@@ -77,7 +90,7 @@ const DEEP_SCANS_BODY_ACTIONS_CELL_SX = {
     position: 'sticky' as const,
     right: 0,
     zIndex: 3,
-    minWidth: 220,
+    minWidth: 132,
     whiteSpace: 'nowrap' as const,
     bgcolor: 'var(--color-card-bg, #ffffff)',
     boxShadow: '-8px 0 14px -6px rgba(15, 23, 42, 0.18)',
@@ -530,47 +543,55 @@ export default function DeepScansPage() {
                                                 sx={{
                                                     display: 'flex',
                                                     flexWrap: 'nowrap',
-                                                    gap: 0.5,
+                                                    gap: 0.25,
                                                     justifyContent: 'flex-end',
                                                     alignItems: 'center',
                                                 }}
                                             >
-                                            <MsqdxButton
-                                                variant="text"
-                                                size="small"
-                                                onClick={() =>
-                                                    router.push(
-                                                        pathDomain(
-                                                            r.id,
-                                                            r.projectId ? { projectId: r.projectId } : undefined
-                                                        )
-                                                    )
-                                                }
-                                            >
-                                                {t('deepScans.open')}
-                                            </MsqdxButton>
-                                            {(listScope === 'mine' ||
-                                                (sessionUserId != null && r.userId === sessionUserId)) && (
-                                                <MsqdxButton
-                                                    variant="text"
-                                                    size="small"
-                                                    onClick={() =>
-                                                        void editScanTags(r.id, [...(r.tags ?? [])])
-                                                    }
-                                                >
-                                                    {t('deepScans.editTags')}
-                                                </MsqdxButton>
-                                            )}
-                                            {(listScope === 'mine' ||
-                                                (sessionUserId != null && r.userId === sessionUserId)) && (
-                                                <MsqdxButton
-                                                    variant="text"
-                                                    size="small"
-                                                    onClick={() => void handleDelete(r.id)}
-                                                >
-                                                    {t('deepScans.delete')}
-                                                </MsqdxButton>
-                                            )}
+                                                <Tooltip title={t('deepScans.open')}>
+                                                    <MsqdxIconButton
+                                                        size="small"
+                                                        aria-label={t('deepScans.open')}
+                                                        onClick={() =>
+                                                            router.push(
+                                                                pathDomain(
+                                                                    r.id,
+                                                                    r.projectId ? { projectId: r.projectId } : undefined
+                                                                )
+                                                            )
+                                                        }
+                                                        sx={{ color: 'var(--color-text-on-light, #0f172a)' }}
+                                                    >
+                                                        <Eye size={16} strokeWidth={2} />
+                                                    </MsqdxIconButton>
+                                                </Tooltip>
+                                                {(listScope === 'mine' ||
+                                                    (sessionUserId != null && r.userId === sessionUserId)) && (
+                                                    <Tooltip title={t('deepScans.editTags')}>
+                                                        <MsqdxIconButton
+                                                            size="small"
+                                                            aria-label={t('deepScans.editTags')}
+                                                            onClick={() => void editScanTags(r.id, [...(r.tags ?? [])])}
+                                                            sx={{ color: 'var(--color-text-on-light, #0f172a)' }}
+                                                        >
+                                                            <Tags size={16} strokeWidth={2} />
+                                                        </MsqdxIconButton>
+                                                    </Tooltip>
+                                                )}
+                                                {(listScope === 'mine' ||
+                                                    (sessionUserId != null && r.userId === sessionUserId)) && (
+                                                    <Tooltip title={t('deepScans.delete')}>
+                                                        <MsqdxIconButton
+                                                            size="small"
+                                                            color="error"
+                                                            aria-label={t('deepScans.delete')}
+                                                            onClick={() => void handleDelete(r.id)}
+                                                            sx={DEEP_SCANS_DELETE_ICON_SX}
+                                                        >
+                                                            <Trash2 size={16} strokeWidth={2} />
+                                                        </MsqdxIconButton>
+                                                    </Tooltip>
+                                                )}
                                             </Box>
                                         </TableCell>
                                     </TableRow>
