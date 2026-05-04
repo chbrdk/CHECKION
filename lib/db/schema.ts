@@ -145,6 +145,8 @@ export const domainScans = pgTable(
         lineageVersion: integer('lineage_version').notNull().default(1),
         /** Scan-level tags (normalized strings); union with project.tags for filters. */
         tags: jsonb('tags').notNull().default([]),
+        /** Industry pool id (or legacy text); inferred from crawl rollup without requiring a project. */
+        industry: text('industry'),
     },
     (t) => [
         uniqueIndex('domain_scans_lineage_key_version_uniq')

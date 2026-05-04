@@ -40,8 +40,17 @@ vi.mock('@/lib/domain-scan-page-classification-job', () => ({
   runDomainScanPageClassificationJob: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock('@/lib/project-industry-auto', () => ({
+  maybeAutoFillDomainScanClassificationFromAggregated: vi.fn().mockResolvedValue(undefined),
+  maybeAutoFillProjectClassificationFromDomainScan: vi.fn().mockResolvedValue(undefined),
+}));
+
 import { reportUsage } from '@/lib/usage-report';
 import { runDomainScanPageClassificationJob } from '@/lib/domain-scan-page-classification-job';
+import {
+    maybeAutoFillDomainScanClassificationFromAggregated,
+    maybeAutoFillProjectClassificationFromDomainScan,
+} from '@/lib/project-industry-auto';
 import { runDomainScan } from '@/lib/spider';
 import { startDomainScan } from '@/lib/domain-scan-start';
 import type { DomainScanResultWithFullPages } from '@/lib/types';
@@ -51,6 +60,8 @@ describe('startDomainScan usage', () => {
   beforeEach(() => {
     vi.mocked(reportUsage).mockClear();
     vi.mocked(runDomainScanPageClassificationJob).mockClear();
+    vi.mocked(maybeAutoFillDomainScanClassificationFromAggregated).mockClear();
+    vi.mocked(maybeAutoFillProjectClassificationFromDomainScan).mockClear();
   });
 
   it('reports domain_scan_page per finished page with per-page idempotency keys', async () => {
@@ -97,6 +108,14 @@ describe('startDomainScan usage', () => {
     const { id } = await startDomainScan('user-plexon-1', 'https://example.com');
 
     await vi.waitFor(() => expect(vi.mocked(reportUsage)).toHaveBeenCalledTimes(2));
+
+    await vi.waitFor(() =>
+        expect(vi.mocked(maybeAutoFillDomainScanClassificationFromAggregated)).toHaveBeenCalledWith({
+            userId: 'user-plexon-1',
+            domainScanId: id,
+        })
+    );
+    expect(vi.mocked(maybeAutoFillProjectClassificationFromDomainScan)).not.toHaveBeenCalled();
 
     expect(vi.mocked(reportUsage)).toHaveBeenNthCalledWith(1, {
       userId: 'user-plexon-1',

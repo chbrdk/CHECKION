@@ -12,7 +12,10 @@ import {
 } from '@/lib/llm/page-classification';
 import { getAnthropicKey } from '@/lib/llm/config';
 import { reportUsage } from '@/lib/usage-report';
-import { maybeAutoFillProjectClassificationFromDomainScan } from '@/lib/project-industry-auto';
+import {
+    maybeAutoFillDomainScanClassificationFromAggregated,
+    maybeAutoFillProjectClassificationFromDomainScan,
+} from '@/lib/project-industry-auto';
 
 const CLASSIFY_DELAY_MS = 150;
 
@@ -80,7 +83,10 @@ export async function runDomainScanPageClassificationJob(
         await refreshDomainPayloadFromScans(domainScanId, userId);
         const payload = await getDomainScan(domainScanId, userId);
         if (shouldAiFillProjectMetadata(payload)) {
-            void maybeAutoFillProjectClassificationFromDomainScan({ userId, domainScanId });
+            void (async () => {
+                await maybeAutoFillDomainScanClassificationFromAggregated({ userId, domainScanId });
+                await maybeAutoFillProjectClassificationFromDomainScan({ userId, domainScanId });
+            })();
         }
     } catch (e) {
         console.error('[CHECKION] domain page classification job', domainScanId, e);

@@ -1,15 +1,22 @@
 /**
- * After a deep scan (or page-classification refresh), infer `projects.tags` from rollup themes and
- * `projects.industry` from themes and/or domain name when still empty (unless disabled / overwrite env).
+ * After a deep scan (or page-classification refresh):
+ * - `domain_scans.tags` + `domain_scans.industry` from aggregated themes (project-independent).
+ * - When a project is linked: also infer `projects.tags` / `projects.industry` and sync tags onto scans.
  */
 import {
     ENV_CHECKION_AUTO_TAGS_OVERWRITE,
     ENV_CHECKION_DISABLE_AUTO_PROJECT_TAGS,
 } from '@/lib/constants';
-import { invalidateDomainList, invalidateScansList } from '@/lib/cache';
+import { invalidateDomainList, invalidateDomainScan, invalidateScansList } from '@/lib/cache';
 import { syncDomainScanTagsForProjectId } from '@/lib/db/sync-domain-scan-tags-from-projects';
 import { syncStandaloneScansTagsForProjectId } from '@/lib/db/sync-standalone-scan-tags-from-projects';
-import { getDomainScan, getDomainScanProjectId } from '@/lib/db/scans';
+import {
+    getDomainScan,
+    getDomainScanClassificationColumns,
+    getDomainScanProjectId,
+    updateDomainScanIndustry,
+    updateDomainScanTags,
+} from '@/lib/db/scans';
 import { getProject, updateProject } from '@/lib/db/projects';
 import { extractHostname } from '@/lib/geo-eeat/suggest-parse';
 import { PAGE_TOPIC_ROLLUP_REFINE_CLAUDE_MODEL } from '@/lib/llm/config';
@@ -255,4 +262,101 @@ export async function maybeAutoFillProjectClassificationFromStandaloneScan(args:
         scanSessionId: args.scanSessionId,
         desktopResult: args.desktopResult,
     });
+}
+
+/** Persist rollup themes onto `domain_scans.tags` (no project required). */
+export async function maybeAutoFillDomainScanTagsFromAggregated(args: {
+    userId: string;
+    domainScanId: string;
+}): Promise<void> {
+    const { userId, domainScanId } = args;
+    try {
+        if (isAutoProjectTagsDisabled()) return;
+
+        const meta = await getDomainScanClassificationColumns(domainScanId, userId);
+        if (!meta) return;
+        if (meta.tags.length > 0 && !shouldOverwriteExistingTags()) return;
+
+        const row = await getDomainScan(domainScanId, userId);
+        const pc = row?.aggregated?.pageClassification as AggregatedPageClassification | undefined;
+        const nextTags = rollupThemesToProjectTags(pc, 12);
+        if (nextTags.length === 0) return;
+
+        const ok = await updateDomainScanTags(domainScanId, userId, nextTags);
+        if (!ok) return;
+
+        invalidateDomainScan(domainScanId);
+        invalidateDomainList(userId);
+    } catch (e) {
+        console.warn(
+            '[CHECKION] maybeAutoFillDomainScanTagsFromAggregated:',
+            e instanceof Error ? e.message : e
+        );
+    }
+}
+
+/** Infer industry pool id onto `domain_scans.industry` (no project required). */
+export async function maybeAutoFillDomainScanIndustryFromAggregated(args: {
+    userId: string;
+    domainScanId: string;
+}): Promise<void> {
+    const { userId, domainScanId } = args;
+    try {
+        if (isAutoProjectIndustryInferDisabled()) return;
+
+        const meta = await getDomainScanClassificationColumns(domainScanId, userId);
+        if (!meta) return;
+        if (meta.industry?.trim() && !shouldOverwriteExistingIndustry()) return;
+
+        const row = await getDomainScan(domainScanId, userId);
+        const pc = row?.aggregated?.pageClassification as AggregatedPageClassification | undefined;
+        const themes = buildThemesForIndustryInfer(pc, 18);
+        const domainOrigin = meta.domain.trim() || row?.domain?.trim() || 'unknown';
+
+        const { industry, usage } = await inferProjectIndustryWithLlm({
+            domainOrigin,
+            projectName: null,
+            themes,
+        });
+
+        if (!industry?.trim()) return;
+
+        const ok = await updateDomainScanIndustry(domainScanId, userId, industry);
+        if (!ok) return;
+
+        invalidateDomainScan(domainScanId);
+        invalidateDomainList(userId);
+
+        if (usage && (usage.input_tokens > 0 || usage.output_tokens > 0)) {
+            try {
+                reportUsage({
+                    userId,
+                    eventType: 'domain_scan_industry_infer',
+                    rawUnits: {
+                        input_tokens: usage.input_tokens,
+                        output_tokens: usage.output_tokens,
+                        domain_scan_id: domainScanId,
+                        model: PAGE_TOPIC_ROLLUP_REFINE_CLAUDE_MODEL,
+                    },
+                    idempotencyKey: `domain_scan_industry_infer:${domainScanId}`,
+                });
+            } catch {
+                /* ignore */
+            }
+        }
+    } catch (e) {
+        console.warn(
+            '[CHECKION] maybeAutoFillDomainScanIndustryFromAggregated:',
+            e instanceof Error ? e.message : e
+        );
+    }
+}
+
+/** Scan-row classification after payload aggregate exists (runs with or without `project_id`). */
+export async function maybeAutoFillDomainScanClassificationFromAggregated(args: {
+    userId: string;
+    domainScanId: string;
+}): Promise<void> {
+    await maybeAutoFillDomainScanTagsFromAggregated(args);
+    await maybeAutoFillDomainScanIndustryFromAggregated(args);
 }

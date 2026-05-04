@@ -17,7 +17,10 @@ import type { DomainScanResult } from '@/lib/types';
 import { rebuildDomainIssuesFromPages } from '@/lib/db/domain-issues';
 import { runDomainScanPageClassificationJob } from '@/lib/domain-scan-page-classification-job';
 import { shouldAiFillProjectMetadata } from '@/lib/domain-scan-ai-metadata';
-import { maybeAutoFillProjectClassificationFromDomainScan } from '@/lib/project-industry-auto';
+import {
+  maybeAutoFillDomainScanClassificationFromAggregated,
+  maybeAutoFillProjectClassificationFromDomainScan,
+} from '@/lib/project-industry-auto';
 
 export interface StartDomainScanOptions {
   projectId?: string | null;
@@ -199,10 +202,12 @@ export async function startDomainScan(
           );
           await updateDomainScan(id, userId, stored);
           invalidateDomainScan(id);
-          if (projectIdForPages && !classifyPageTopics) {
+          if (!classifyPageTopics) {
             void (async () => {
               const row = await getDomainScan(id, userId);
-              if (shouldAiFillProjectMetadata(row)) {
+              if (!shouldAiFillProjectMetadata(row)) return;
+              await maybeAutoFillDomainScanClassificationFromAggregated({ userId, domainScanId: id });
+              if (projectIdForPages) {
                 await maybeAutoFillProjectClassificationFromDomainScan({ userId, domainScanId: id });
               }
             })();

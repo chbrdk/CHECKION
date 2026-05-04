@@ -17,6 +17,7 @@ import { buildDomainScanLineageKey } from '@/lib/domain-scan-lineage';
 import { getProject } from './projects';
 import { replaceScanIssuesForScan } from '@/lib/db/scan-issues-persist';
 import { formatDeepScanInfraListLines } from '@/lib/deep-scan-list-summary';
+import { normalizeStoredProjectIndustry } from '@/lib/industry-pool';
 
 /**
  * Drop heavy top-level keys in SQL (Postgres `jsonb - key`) for bulk reads.
@@ -45,7 +46,7 @@ export type DomainScanSummaryRow = {
     projectId: string | null;
     /** Owner (`domain_scans.user_id`). */
     userId: string;
-    /** From linked project when `project_id` is set. */
+    /** `coalesce(projects.industry, domain_scans.industry)` — project wins when both set. */
     industry: string | null;
     projectTags: string[];
     /** Scan-level tags (union with project tags for filters). */
@@ -74,7 +75,7 @@ export type DomainScanListQueryOptions = {
     /** Case-insensitive substring match on `domain_scans.domain`; `%` `_` `\` stripped from input. */
     q?: string;
     status?: DomainScanStatus;
-    /** Exact match on `projects.industry` when the scan has a project. */
+    /** Exact match on `coalesce(domain_scans.industry, projects.industry)`. */
     industry?: string;
     /** Normalized tag: scan or project tags must contain this tag. */
     tag?: string;
@@ -125,7 +126,7 @@ function buildDomainScanLineageWhere(
     if (!ind && !tag) return base;
     const parts: SQL[] = [base];
     if (ind) {
-        parts.push(eq(projects.industry, ind));
+        parts.push(sql`coalesce(${domainScans.industry}, ${projects.industry}) = ${ind}`);
     }
     if (tag) {
         const jsonbLiteral = `'${JSON.stringify([tag]).replace(/'/g, "''")}'::jsonb`;
@@ -918,7 +919,7 @@ export async function getDomainScanWithProjectId(
             payload: domainScans.payload,
             projectId: domainScans.projectId,
             scanTagsCol: domainScans.tags,
-            industry: projects.industry,
+            industry: sql<string | null>`coalesce(${projects.industry}, ${domainScans.industry})`,
             projectTagsCol: projects.tags,
         })
         .from(domainScans)
@@ -952,6 +953,40 @@ export async function updateDomainScanTags(id: string, userId: string, tags: str
     return (updated.rowCount ?? 0) > 0;
 }
 
+/** Scan row meta for classification auto-fill (no full payload). */
+export async function getDomainScanClassificationColumns(
+    id: string,
+    userId: string
+): Promise<{ domain: string; tags: string[]; industry: string | null } | null> {
+    const db = getDb();
+    const rows = await db
+        .select({
+            domain: domainScans.domain,
+            tags: domainScans.tags,
+            industry: domainScans.industry,
+        })
+        .from(domainScans)
+        .where(and(eq(domainScans.id, id), eq(domainScans.userId, userId)))
+        .limit(1);
+    if (rows.length === 0) return null;
+    const r = rows[0];
+    return {
+        domain: r.domain,
+        tags: coerceJsonStringArray(r.tags),
+        industry: r.industry?.trim() ? r.industry.trim() : null,
+    };
+}
+
+export async function updateDomainScanIndustry(id: string, userId: string, industry: string | null): Promise<boolean> {
+    const db = getDb();
+    const normalized = normalizeStoredProjectIndustry(industry ?? undefined);
+    const updated = await db
+        .update(domainScans)
+        .set({ industry: normalized })
+        .where(and(eq(domainScans.id, id), eq(domainScans.userId, userId)));
+    return (updated.rowCount ?? 0) > 0;
+}
+
 /** List only summary fields (no payload) to keep response small for list/cache. Optional projectId / q / status filter. */
 async function queryDomainScanSummaries(
     filterUserId: string | undefined,
@@ -973,7 +1008,7 @@ async function queryDomainScanSummaries(
             lineageVersion: domainScans.lineageVersion,
             projectId: domainScans.projectId,
             userId: domainScans.userId,
-            industry: projects.industry,
+            industry: sql<string | null>`coalesce(${projects.industry}, ${domainScans.industry})`,
             projectTagsJson: projects.tags,
             scanTagsJson: domainScans.tags,
         })
@@ -1040,7 +1075,7 @@ export async function listDomainScanSummariesForSearch(
             lineageVersion: domainScans.lineageVersion,
             projectId: domainScans.projectId,
             userId: domainScans.userId,
-            industry: projects.industry,
+            industry: sql<string | null>`coalesce(${projects.industry}, ${domainScans.industry})`,
             projectTagsJson: projects.tags,
             scanTagsJson: domainScans.tags,
         })
