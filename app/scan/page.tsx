@@ -138,13 +138,16 @@ export default function ScanPage() {
 
     const handleScan = async () => {
         const isGeoCompetitiveOnly = scanMode === 'geoEeat' && geoEeatFormMode === 'quick';
-        let urlForRequest: string | null = null;
-        if (!isGeoCompetitiveOnly) {
-            if (!url.trim()) return;
-            urlForRequest = ensureUrlWithScheme(url);
-            if (!urlForRequest) return;
-            if (urlForRequest !== url) setUrl(urlForRequest);
-        }
+        const urlForRequest = (() => {
+            if (isGeoCompetitiveOnly) return '';
+            if (!url.trim()) return null;
+            const next = ensureUrlWithScheme(url);
+            if (!next) return null;
+            if (next !== url) setUrl(next);
+            return next;
+        })();
+        if (!isGeoCompetitiveOnly && !urlForRequest) return;
+        const startUrl = isGeoCompetitiveOnly ? null : (urlForRequest as string);
         if (scanMode === 'journey' && !task.trim()) return;
         setError(null);
         setScanning(true);
@@ -188,7 +191,7 @@ export default function ScanPage() {
                     router.push(pathGeoEeat(jobId, { focus: 'competitive' }));
                     return;
                 } else if (geoEeatCompetitive) {
-                    const body: { url: string; runCompetitive?: boolean; competitors?: string[]; queries?: string[]; projectId?: string | null } = { url: urlForRequest! };
+                    const body: { url: string; runCompetitive?: boolean; competitors?: string[]; queries?: string[]; projectId?: string | null } = { url: startUrl! };
                     body.runCompetitive = true;
                     body.competitors = geoEeatCompetitors.trim().split(/\n/).map((s) => s.trim()).filter(Boolean);
                     body.queries = geoEeatQueries.trim().split(/\n/).map((s) => s.trim()).filter(Boolean);
@@ -213,7 +216,7 @@ export default function ScanPage() {
                 const res = await fetchWithSessionCookies(apiScanGeoEeatCreate, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: urlForRequest!, ...(selectedProjectId ? { projectId: selectedProjectId } : {}) }),
+                    body: JSON.stringify({ url: startUrl!, ...(selectedProjectId ? { projectId: selectedProjectId } : {}) }),
                 });
                 const data = await res.json();
                 if (!res.ok || !data.success) {
@@ -229,7 +232,7 @@ export default function ScanPage() {
                 const res = await fetchWithSessionCookies(apiScanJourneyAgentCreate, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: urlForRequest, task: task.trim(), ...(selectedProjectId && { projectId: selectedProjectId }) }),
+                    body: JSON.stringify({ url: startUrl!, task: task.trim(), ...(selectedProjectId && { projectId: selectedProjectId }) }),
                 });
                 const data = await res.json();
                 if (res.status === 501) {
@@ -256,7 +259,7 @@ export default function ScanPage() {
                         [HEADER_CHECKION_SCAN_STREAM]: HEADER_CHECKION_SCAN_STREAM_ON,
                     },
                     body: JSON.stringify({
-                        url: urlForRequest,
+                        url: startUrl!,
                         standard,
                         runners: selectedRunners,
                         ...(targetRegion.trim() && { targetRegion: targetRegion.trim() }),
@@ -330,7 +333,7 @@ export default function ScanPage() {
                 const res = await fetchWithSessionCookies(apiScanDomainCreate, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: urlForRequest, ...(selectedProjectId && { projectId: selectedProjectId }) }),
+                    body: JSON.stringify({ url: startUrl!, ...(selectedProjectId && { projectId: selectedProjectId }) }),
                 });
 
                 const data = await res.json();
@@ -344,7 +347,7 @@ export default function ScanPage() {
                 if (scanId) {
                     domainScan.attach({
                         scanId,
-                        startUrl: urlForRequest,
+                        startUrl: startUrl!,
                         maxPages: 1000,
                         projectId: selectedProjectId ?? null,
                         classifyPageTopics: false,
@@ -353,7 +356,7 @@ export default function ScanPage() {
                 }
                 router.push(
                     pathScanDomain({
-                        url: urlForRequest,
+                        url: startUrl!,
                         ...(scanId ? { scanId } : {}),
                         ...(selectedProjectId ? { projectId: selectedProjectId } : {}),
                     })
