@@ -29,6 +29,7 @@ import {
     apiScanJourneyAgentCreate,
     apiScanJourneyAgentHistory,
     apiScanGeoEeatCreate,
+    apiScanGeoEeatCompetitiveOnlyCreate,
     apiScanGeoEeatHistory,
     apiScanGeoEeatSuggestQueries,
     apiScanCreate,
@@ -136,10 +137,14 @@ export default function ScanPage() {
     }, [scanMode]);
 
     const handleScan = async () => {
-        if (!url.trim()) return;
-        const urlForRequest = ensureUrlWithScheme(url);
-        if (!urlForRequest) return;
-        if (urlForRequest !== url) setUrl(urlForRequest);
+        const isGeoCompetitiveOnly = scanMode === 'geoEeat' && geoEeatFormMode === 'quick';
+        let urlForRequest: string | null = null;
+        if (!isGeoCompetitiveOnly) {
+            if (!url.trim()) return;
+            urlForRequest = ensureUrlWithScheme(url);
+            if (!urlForRequest) return;
+            if (urlForRequest !== url) setUrl(urlForRequest);
+        }
         if (scanMode === 'journey' && !task.trim()) return;
         setError(null);
         setScanning(true);
@@ -150,34 +155,65 @@ export default function ScanPage() {
             }
 
             if (scanMode === 'geoEeat') {
-                const body: { url: string; runCompetitive?: boolean; competitors?: string[]; queries?: string[]; projectId?: string | null } = { url: urlForRequest };
                 if (geoEeatFormMode === 'quick') {
                     const q = geoEeatQuickQuestion.trim().slice(0, GEO_EEAT_QUICK_QUERY_MAX);
-                    const rawComp = geoEeatQuickCompetitor.trim();
-                    if (!q || !rawComp) {
+                    const rawCompany = geoEeatQuickCompetitor.trim();
+                    if (!q || !rawCompany) {
                         setError(t('scan.geoEeatQuickValidation'));
                         setScanning(false);
                         return;
                     }
-                    const host = extractHostname(rawComp).trim();
+                    const host = extractHostname(rawCompany).trim();
                     if (!host) {
                         setError(t('scan.geoEeatQuickCompetitorInvalid'));
                         setScanning(false);
                         return;
                     }
-                    body.runCompetitive = true;
-                    body.queries = [q];
-                    body.competitors = [host];
+                    const res = await fetchWithSessionCookies(apiScanGeoEeatCompetitiveOnlyCreate, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            company: host,
+                            question: q,
+                            ...(selectedProjectId ? { projectId: selectedProjectId } : {}),
+                        }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok || !data.success) {
+                        setError(data.error || t('scan.error'));
+                        setScanning(false);
+                        return;
+                    }
+                    const jobId = data.jobId as string;
+                    router.push(pathGeoEeat(jobId, { focus: 'competitive' }));
+                    return;
                 } else if (geoEeatCompetitive) {
+                    const body: { url: string; runCompetitive?: boolean; competitors?: string[]; queries?: string[]; projectId?: string | null } = { url: urlForRequest! };
                     body.runCompetitive = true;
                     body.competitors = geoEeatCompetitors.trim().split(/\n/).map((s) => s.trim()).filter(Boolean);
                     body.queries = geoEeatQueries.trim().split(/\n/).map((s) => s.trim()).filter(Boolean);
+                    if (selectedProjectId) body.projectId = selectedProjectId;
+                    const res = await fetchWithSessionCookies(apiScanGeoEeatCreate, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body),
+                    });
+                    const data = await res.json();
+                    if (!res.ok || !data.success) {
+                        setError(data.error || t('scan.error'));
+                        setScanning(false);
+                        return;
+                    }
+                    const jobId = data.jobId as string;
+                    router.push(pathGeoEeat(jobId));
+                    return;
                 }
-                if (selectedProjectId) body.projectId = selectedProjectId;
+
+                // Full mode without competitive benchmark: still requires URL and runs on-page + LLM stages only.
                 const res = await fetchWithSessionCookies(apiScanGeoEeatCreate, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body),
+                    body: JSON.stringify({ url: urlForRequest!, ...(selectedProjectId ? { projectId: selectedProjectId } : {}) }),
                 });
                 const data = await res.json();
                 if (!res.ok || !data.success) {
@@ -186,7 +222,7 @@ export default function ScanPage() {
                     return;
                 }
                 const jobId = data.jobId as string;
-                router.push(pathGeoEeat(jobId, geoEeatFormMode === 'quick' ? { focus: 'competitive' } : undefined));
+                router.push(pathGeoEeat(jobId));
                 return;
             }
             if (scanMode === 'journey') {
@@ -368,7 +404,7 @@ export default function ScanPage() {
                         size="medium"
                         onClick={handleScan}
                         disabled={
-                            !url.trim() ||
+                            ((scanMode !== 'geoEeat' || geoEeatFormMode !== 'quick') && !url.trim()) ||
                             scanning ||
                             sessionStatus === 'loading' ||
                             (scanMode === 'journey' && !task.trim()) ||
@@ -410,24 +446,26 @@ export default function ScanPage() {
                         </MsqdxTypography>
                     </Box>
 
-                    {/* URL Input - Grows to fill available space */}
-                    <Box sx={{ flex: 1 }}>
-                        <MsqdxFormField
-                            label={t('scan.urlLabel')}
-                            placeholder={scanMode === 'single' ? t('scan.urlPlaceholderSingle') : scanMode === 'deep' ? t('scan.urlPlaceholderDeep') : scanMode === 'geoEeat' ? t('scan.urlPlaceholderSingle') : 'https://example.com'}
-                            value={url}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUrl(e.target.value)}
-                            onBlur={() => {
-                                if (!url.trim() || scanning) return;
-                                const next = ensureUrlWithScheme(url);
-                                if (next && next !== url) setUrl(next);
-                            }}
-                            disabled={scanning}
-                            onKeyDown={(e: React.KeyboardEvent) => e.key === 'Enter' && handleScan()}
-                            autoFocus
-                            fullWidth
-                        />
-                    </Box>
+                    {/* URL Input - Not required for GEO competitive-only */}
+                    {!(scanMode === 'geoEeat' && geoEeatFormMode === 'quick') && (
+                        <Box sx={{ flex: 1 }}>
+                            <MsqdxFormField
+                                label={t('scan.urlLabel')}
+                                placeholder={scanMode === 'single' ? t('scan.urlPlaceholderSingle') : scanMode === 'deep' ? t('scan.urlPlaceholderDeep') : scanMode === 'geoEeat' ? t('scan.urlPlaceholderSingle') : 'https://example.com'}
+                                value={url}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUrl(e.target.value)}
+                                onBlur={() => {
+                                    if (!url.trim() || scanning) return;
+                                    const next = ensureUrlWithScheme(url);
+                                    if (next && next !== url) setUrl(next);
+                                }}
+                                disabled={scanning}
+                                onKeyDown={(e: React.KeyboardEvent) => e.key === 'Enter' && handleScan()}
+                                autoFocus
+                                fullWidth
+                            />
+                        </Box>
+                    )}
 
                     {/* Target Region (optional, single scan only) */}
                     {scanMode === 'single' && (

@@ -23,6 +23,7 @@ import {
     apiShareTokenPagesScreenshot,
     apiScanJourneyAgent,
     apiScanGeoEeat,
+    apiScanGeoEeatCompetitiveOnlyCreate,
     apiSearch,
     apiSaliencyResult,
     apiShareByResource,
@@ -171,6 +172,10 @@ describe('Path constants', () => {
 
     it('pathGeoEeat with focus=competitive appends query', () => {
         expect(pathGeoEeat('geo-1', { focus: 'competitive' })).toBe('/geo-eeat/geo-1?focus=competitive');
+    });
+
+    it('apiScanGeoEeatCompetitiveOnlyCreate is /api/scan/geo-eeat/competitive-only', () => {
+        expect(apiScanGeoEeatCompetitiveOnlyCreate).toBe('/api/scan/geo-eeat/competitive-only');
     });
 
     it('pathShare builds /share/[token]', () => {

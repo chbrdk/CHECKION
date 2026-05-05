@@ -104,6 +104,15 @@ export const geoEeatBodySchema = z.object({
   { message: 'When runCompetitive is true, provide competitors and/or queries.' }
 );
 
+/** POST /api/scan/geo-eeat/competitive-only */
+export const geoEeatCompetitiveOnlyBodySchema = z.object({
+  /** Company to check for citations (domain or URL). */
+  company: z.string().trim().min(1, 'Company is required').max(512),
+  /** Single query/question. */
+  question: z.string().trim().min(1, 'Question is required').max(2000),
+  projectId: z.string().uuid().nullable().optional(),
+});
+
 /** Password complexity: min 8 chars, at least one uppercase, one lowercase, one digit */
 const PASSWORD_MIN_LENGTH = 8;
 const passwordSchema = z

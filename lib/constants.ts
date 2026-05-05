@@ -170,6 +170,7 @@ export const API_SCANS_DOMAIN = `${APP_BASE_URL}/api/scans/domain`;
 export const API_SCAN_DOMAIN = `${APP_BASE_URL}/api/scan/domain`;
 export const API_SCAN_JOURNEY_AGENT = `${APP_BASE_URL}/api/scan/journey-agent`;
 export const API_SCAN_GEO_EEAT = `${APP_BASE_URL}/api/scan/geo-eeat`;
+export const API_SCAN_GEO_EEAT_COMPETITIVE_ONLY = `${API_SCAN_GEO_EEAT}/competitive-only`;
 export const API_SALIENCY_GENERATE = `${APP_BASE_URL}/api/saliency/generate`;
 export const API_SALIENCY_RESULT = `${APP_BASE_URL}/api/saliency/result`;
 export const API_SHARE = `${APP_BASE_URL}/api/share`;
@@ -323,6 +324,8 @@ export const apiScanJourneyAgentLiveStream = (jobId: string) => `${apiScanJourne
 
 /** Build: POST /api/scan/geo-eeat */
 export const apiScanGeoEeatCreate = API_SCAN_GEO_EEAT;
+/** Build: POST /api/scan/geo-eeat/competitive-only */
+export const apiScanGeoEeatCompetitiveOnlyCreate = API_SCAN_GEO_EEAT_COMPETITIVE_ONLY;
 /** Build: GET /api/scan/geo-eeat/history?limit=&projectId= */
 export const apiScanGeoEeatHistory = (params?: { limit?: number; projectId?: string | null }) => {
   const search = new URLSearchParams();
