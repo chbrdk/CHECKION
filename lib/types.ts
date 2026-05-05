@@ -982,6 +982,10 @@ export interface GeoEeatIntensiveResult {
     /** Per-model competitive benchmark (gpt-5-nano, gpt-5-mini, gpt-5). */
     competitiveByModel?: Record<string, CompetitiveBenchmarkResult>;
     error?: string;
+    /** True when this job skipped on-page GEO/E-E-A-T and only ran the competitive LLM benchmark. */
+    competitiveOnly?: boolean;
+    /** Normalized hostname/domain checked (competitive-only runs). */
+    companyHost?: string;
 }
 
 export interface TouchTargetIssue {

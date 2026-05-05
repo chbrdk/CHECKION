@@ -293,7 +293,9 @@ export default function GeoEeatResultPage() {
 
             {url && (
                 <MsqdxTypography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {url}
+                    {payload?.competitiveOnly && payload?.companyHost
+                        ? t('geoEeat.competitiveOnlyCompanyLine', { company: payload.companyHost })
+                        : url}
                 </MsqdxTypography>
             )}
 

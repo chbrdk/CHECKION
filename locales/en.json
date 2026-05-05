@@ -1173,6 +1173,7 @@
     "onPageTitle": "On-Page (E-E-A-T + GEO)",
     "recommendationsTitle": "Recommendations",
     "competitiveTitle": "Competitive benchmark",
+    "competitiveOnlyCompanyLine": "Competitive check · Company: {company}",
     "backToScan": "Back to scan",
     "pageUrl": "URL",
     "geoScore": "GEO score",

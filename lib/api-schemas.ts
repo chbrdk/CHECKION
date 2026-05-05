@@ -110,7 +110,15 @@ export const geoEeatCompetitiveOnlyBodySchema = z.object({
   company: z.string().trim().min(1, 'Company is required').max(512),
   /** Single query/question. */
   question: z.string().trim().min(1, 'Question is required').max(2000),
-  projectId: z.string().uuid().nullable().optional(),
+  projectId: z.preprocess(
+    (v) => {
+      if (v == null) return undefined;
+      if (typeof v !== 'string') return undefined;
+      const s = v.trim();
+      return s === '' ? undefined : s;
+    },
+    z.string().uuid().optional()
+  ),
 });
 
 /** Password complexity: min 8 chars, at least one uppercase, one lowercase, one digit */
