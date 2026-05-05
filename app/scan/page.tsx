@@ -60,6 +60,16 @@ async function fetchWithSessionCookies(input: RequestInfo | URL, init?: RequestI
     return res;
 }
 
+async function readJsonSafe<T = unknown>(res: Response): Promise<T | null> {
+    const text = await res.text().catch(() => '');
+    if (!text.trim()) return null;
+    try {
+        return JSON.parse(text) as T;
+    } catch {
+        return null;
+    }
+}
+
 export default function ScanPage() {
     const router = useRouter();
     const { t } = useI18n();
@@ -181,9 +191,9 @@ export default function ScanPage() {
                             ...(selectedProjectId ? { projectId: selectedProjectId } : {}),
                         }),
                     });
-                    const data = await res.json();
-                    if (!res.ok || !data.success) {
-                        setError(data.error || t('scan.error'));
+                    const data = await readJsonSafe<{ success?: boolean; jobId?: string; error?: string }>(res);
+                    if (!res.ok || !data?.success) {
+                        setError(data?.error || t('scan.error'));
                         setScanning(false);
                         return;
                     }
@@ -201,9 +211,9 @@ export default function ScanPage() {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(body),
                     });
-                    const data = await res.json();
-                    if (!res.ok || !data.success) {
-                        setError(data.error || t('scan.error'));
+                    const data = await readJsonSafe<{ success?: boolean; jobId?: string; error?: string }>(res);
+                    if (!res.ok || !data?.success) {
+                        setError(data?.error || t('scan.error'));
                         setScanning(false);
                         return;
                     }
@@ -218,9 +228,9 @@ export default function ScanPage() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url: startUrl!, ...(selectedProjectId ? { projectId: selectedProjectId } : {}) }),
                 });
-                const data = await res.json();
-                if (!res.ok || !data.success) {
-                    setError(data.error || t('scan.error'));
+                const data = await readJsonSafe<{ success?: boolean; jobId?: string; error?: string }>(res);
+                if (!res.ok || !data?.success) {
+                    setError(data?.error || t('scan.error'));
                     setScanning(false);
                     return;
                 }
@@ -234,14 +244,14 @@ export default function ScanPage() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url: startUrl!, task: task.trim(), ...(selectedProjectId && { projectId: selectedProjectId }) }),
                 });
-                const data = await res.json();
+                const data = await readJsonSafe<{ success?: boolean; jobId?: string; error?: string; hint?: string }>(res);
                 if (res.status === 501) {
-                    setError(data.hint || data.error || t('scan.journeyNotConfigured'));
+                    setError(data?.hint || data?.error || t('scan.journeyNotConfigured'));
                     setScanning(false);
                     return;
                 }
-                if (!res.ok || !data.success) {
-                    setError(data.error || t('scan.journeyError'));
+                if (!res.ok || !data?.success) {
+                    setError(data?.error || t('scan.journeyError'));
                     setScanning(false);
                     return;
                 }
