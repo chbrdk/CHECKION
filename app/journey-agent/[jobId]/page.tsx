@@ -351,6 +351,20 @@ export default function JourneyAgentStatusPage() {
         let cancelled = false;
         const poll = async () => {
             try {
+                // Feature flag: if UX Journey Agent is disabled, treat as unavailable.
+                try {
+                    const capRes = await fetch('/api/auth/capabilities', { credentials: 'same-origin' });
+                    const caps = (await capRes.json().catch(() => ({}))) as { uxJourneyAgentEnabled?: boolean };
+                    if (caps.uxJourneyAgentEnabled !== true) {
+                        setStatus('unavailable');
+                        setError(null);
+                        return;
+                    }
+                } catch {
+                    setStatus('unavailable');
+                    setError(null);
+                    return;
+                }
                 const res = await fetch(apiScanJourneyAgent(jobId));
                 const data = await res.json();
                 if (cancelled) return;

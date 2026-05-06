@@ -93,6 +93,7 @@ export default function ScanPage() {
     const [error, setError] = useState<string | null>(null);
 
     const [scanMode, setScanMode] = useState<'single' | 'deep' | 'journey' | 'geoEeat'>('single');
+    const [journeyEnabled, setJourneyEnabled] = useState(false);
     const [task, setTask] = useState('');
     const [journeyHistory, setJourneyHistory] = useState<Array<{ id: string; url: string; task: string; status: string; createdAt: string }>>([]);
     const [geoEeatHistory, setGeoEeatHistory] = useState<Array<{ id: string; url: string; status: string; createdAt: string }>>([]);
@@ -127,6 +128,22 @@ export default function ScanPage() {
     }, [sessionStatus]);
 
     useEffect(() => {
+        void (async () => {
+            try {
+                const res = await fetch('/api/auth/capabilities', { credentials: 'same-origin' });
+                const data = (await res.json()) as { uxJourneyAgentEnabled?: boolean };
+                const enabled = data.uxJourneyAgentEnabled === true;
+                setJourneyEnabled(enabled);
+                if (!enabled && scanMode === 'journey') setScanMode('single');
+            } catch {
+                setJourneyEnabled(false);
+                if (scanMode === 'journey') setScanMode('single');
+            }
+        })();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    useEffect(() => {
         if (scanMode !== 'journey') return;
         fetch(apiScanJourneyAgentHistory({ limit: 15 }))
             .then((res) => res.ok ? res.json() : { runs: [] })
@@ -158,7 +175,7 @@ export default function ScanPage() {
         })();
         if (!isGeoCompetitiveOnly && !urlForRequest) return;
         const startUrl = isGeoCompetitiveOnly ? null : (urlForRequest as string);
-        if (scanMode === 'journey' && !task.trim()) return;
+        if (scanMode === 'journey' && (!journeyEnabled || !task.trim())) return;
         setError(null);
         setScanning(true);
 
@@ -239,6 +256,11 @@ export default function ScanPage() {
                 return;
             }
             if (scanMode === 'journey') {
+                if (!journeyEnabled) {
+                    setError(t('scan.journeyNotConfigured'));
+                    setScanning(false);
+                    return;
+                }
                 const res = await fetchWithSessionCookies(apiScanJourneyAgentCreate, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -442,7 +464,7 @@ export default function ScanPage() {
                             tabs={[
                                 { value: 'single', label: t('scan.singleTab') },
                                 { value: 'deep', label: t('scan.deepTab') },
-                                { value: 'journey', label: t('scan.journeyTab') },
+                                ...(journeyEnabled ? [{ value: 'journey', label: t('scan.journeyTab') }] : []),
                                 { value: 'geoEeat', label: t('scan.geoEeatTab') },
                             ]}
                         />

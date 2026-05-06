@@ -711,6 +711,9 @@ export const ENV_CHECKION_AUTO_TAGS_OVERWRITE = 'CHECKION_AUTO_TAGS_OVERWRITE';
 /** Optional base URL for the UX Journey Agent (Python/Browser Use). If set, POST /api/scan/journey-agent forwards to this service. On Coolify: use internal service URL (e.g. http://ux-journey-agent:8320). */
 export const ENV_UX_JOURNEY_AGENT_URL = 'UX_JOURNEY_AGENT_URL';
 
+/** When truthy (`1`, `true`, `yes`), enables the UX Journey Agent UI + API in CHECKION. */
+export const ENV_CHECKION_ENABLE_UX_JOURNEY_AGENT = 'CHECKION_ENABLE_UX_JOURNEY_AGENT';
+
 /** Optional base URL for GEO/E-E-A-T intensive + competitive benchmark service. If set, POST /api/scan/geo-eeat can delegate long-running jobs to this service. */
 export const ENV_GEO_EEAT_SERVICE_URL = 'GEO_EEAT_SERVICE_URL';
 

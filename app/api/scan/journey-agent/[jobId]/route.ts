@@ -9,6 +9,7 @@ import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { ENV_UX_JOURNEY_AGENT_URL } from '@/lib/constants';
 import { getJourneyRun, upsertJourneyRunResult } from '@/lib/db/journey-runs';
+import { uxJourneyAgentEnabled } from '@/lib/ux-journey-agent-enabled';
 
 function buildResponse(jobId: string, data: { status: string; result?: Record<string, unknown>; error?: string }) {
     const out = { ...data, jobId };
@@ -25,6 +26,9 @@ export async function GET(
     const user = await getRequestUser(request);
     if (!user) {
         return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
+    }
+    if (!uxJourneyAgentEnabled()) {
+        return apiError('Not found', API_STATUS.NOT_FOUND);
     }
 
     const { jobId } = await params;

@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { canListAllUsersDomainScans } from '@/lib/auth-global-domain-list';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
+import { uxJourneyAgentEnabled } from '@/lib/ux-journey-agent-enabled';
 
 export async function GET(request: Request) {
     const user = await getRequestUser(request);
@@ -12,5 +13,6 @@ export async function GET(request: Request) {
     return NextResponse.json({
         userId: user.id,
         domainScansListAllUsers: canListAllUsersDomainScans(request, user.id),
+        uxJourneyAgentEnabled: uxJourneyAgentEnabled(),
     });
 }

@@ -9,6 +9,9 @@ vi.mock('@/lib/auth-global-domain-list', () => ({ canListAllUsersDomainScans: vi
 import { GET } from '@/app/api/auth/capabilities/route';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { canListAllUsersDomainScans } from '@/lib/auth-global-domain-list';
+import { uxJourneyAgentEnabled } from '@/lib/ux-journey-agent-enabled';
+
+vi.mock('@/lib/ux-journey-agent-enabled', () => ({ uxJourneyAgentEnabled: vi.fn() }));
 
 describe('GET /api/auth/capabilities', () => {
     beforeEach(() => {
@@ -25,13 +28,16 @@ describe('GET /api/auth/capabilities', () => {
     it('returns userId and domainScansListAllUsers', async () => {
         vi.mocked(getRequestUser).mockResolvedValue({ id: 'u-op' } as never);
         vi.mocked(canListAllUsersDomainScans).mockReturnValue(true);
+        vi.mocked(uxJourneyAgentEnabled).mockReturnValue(false);
         const res = await GET(new Request('http://localhost/api/auth/capabilities'));
         expect(res.status).toBe(200);
         const body = (await res.json()) as {
             userId: string;
             domainScansListAllUsers: boolean;
+            uxJourneyAgentEnabled: boolean;
         };
         expect(body.userId).toBe('u-op');
         expect(body.domainScansListAllUsers).toBe(true);
+        expect(body.uxJourneyAgentEnabled).toBe(false);
     });
 });
