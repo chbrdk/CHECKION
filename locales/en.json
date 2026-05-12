@@ -7,7 +7,8 @@
     "close": "Close",
     "error": "Error",
     "unknownError": "Unknown error",
-    "info": "Information"
+    "info": "Information",
+    "backToPlexon": "Back to PLEXON"
   },
   "share": {
     "alreadyShared": "Already shared",

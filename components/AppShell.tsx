@@ -7,6 +7,7 @@ import { Box, IconButton, useMediaQuery, useTheme } from '@mui/material';
 import { MsqdxAppLayout, MsqdxIcon } from '@msqdx/react';
 import { Sidebar } from './Sidebar';
 import { AppShellHeaderNav } from './AppShellHeaderNav';
+import { PlexonReturnLink } from './federation/PlexonReturnLink';
 import { BrandColorInitializer } from './settings/BrandColorInitializer';
 import { THEME_ACCENT_WITH_FALLBACK } from '@/lib/theme-accent';
 import { APP_LAYOUT_INNER_BORDER_WIDTH_PX, PATH_LOGIN, PATH_REGISTER, PATH_SHARE } from '@/lib/constants';
@@ -104,7 +105,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                             flexShrink: 0,
                         }}
                     >
-                        <AppShellHeaderNav />
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                            <PlexonReturnLink compact />
+                            <AppShellHeaderNav />
+                        </Box>
                     </Box>
                     {/* Main content: Standard Flex */}
                     <Box

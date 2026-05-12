@@ -14,6 +14,7 @@ import {
 } from '@msqdx/react';
 import { MSQDX_TYPOGRAPHY } from '@msqdx/tokens';
 import { AuthBrandColorSelector } from '@/components/auth/AuthBrandColorSelector';
+import { PlexonReturnLink } from '@/components/federation/PlexonReturnLink';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { PATH_REGISTER } from '@/lib/constants';
 
@@ -213,6 +214,7 @@ function LoginForm() {
                                 {t('auth.login.link')}
                             </Link>
                         </MsqdxTypography>
+                        <PlexonReturnLink fullWidth />
                     </Stack>
                 </MsqdxMoleculeCard>
             </Box>
