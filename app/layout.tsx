@@ -4,13 +4,14 @@ import { AppShell } from '@/components/AppShell';
 import { Providers } from '@/components/Providers';
 import { I18nProvider } from '@/components/i18n/I18nProvider';
 import { StatusUiProvider } from '@/components/status/StatusUiContext';
+import { getPublicAssetPath } from '@/lib/constants';
 import { getServerLocale } from '@/lib/i18n/server';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
   title: 'CHECKION – WCAG Accessibility Checker',
   description: 'Automated WCAG accessibility checks powered by pa11y and axe-core.',
-  icons: { icon: '/favicon.svg' },
+  icons: { icon: getPublicAssetPath('/favicon.svg') },
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

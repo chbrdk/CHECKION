@@ -10,17 +10,15 @@ PARENT="$(dirname "$ROOT")"
 LINK="${PARENT}/msqdx-design-system"
 TARGET="${PARENT}/MSQDX-DS/msqdx-design-system"
 
-if [ ! -d "$TARGET" ]; then
+if [ -d "$LINK" ]; then
+  echo "[CHECKION] Using existing design system workspace: $LINK"
+elif [ ! -d "$TARGET" ]; then
   echo "[CHECKION] Design system not found at: $TARGET"
-  echo "  Create it or adjust this script (e.g. clone msqdx-design-system there)."
+  echo "  Expected either an existing sibling workspace at $LINK or a clone at $TARGET."
   exit 1
-fi
-
-if [ ! -e "$LINK" ]; then
+else
   echo "[CHECKION] Creating symlink: $LINK -> $TARGET"
   ln -snf "$TARGET" "$LINK"
-else
-  echo "[CHECKION] Design system link exists: $LINK"
 fi
 
 cd "$ROOT"

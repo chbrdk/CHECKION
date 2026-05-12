@@ -3,6 +3,8 @@
  * Fire-and-forget; errors are logged only, no impact on response.
  */
 
+import { getPlexonContractHeaders } from '@/lib/plexon-contract';
+
 const PLEXON_AUTH_URL = process.env.PLEXON_AUTH_URL ?? '';
 const PLEXON_SERVICE_SECRET = process.env.PLEXON_SERVICE_SECRET ?? '';
 
@@ -38,7 +40,7 @@ export function reportUsage(params: UsageReportParams): void {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Service-Secret': PLEXON_SERVICE_SECRET,
+        ...getPlexonContractHeaders(PLEXON_SERVICE_SECRET),
       },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(5000),

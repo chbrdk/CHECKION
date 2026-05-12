@@ -5,8 +5,21 @@
 
 import { toScanStartUrl } from '@/lib/url-normalize';
 
-/** When the app is served under a subpath (e.g. /checkion), set NEXT_PUBLIC_APP_BASE_URL to that path so API fetches hit the correct origin path. */
-const APP_BASE_URL = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_APP_BASE_URL) ? process.env.NEXT_PUBLIC_APP_BASE_URL.replace(/\/$/, '') : '';
+/** When the app is served under a subpath (e.g. /checkion), set NEXT_PUBLIC_APP_BASE_URL and ideally BASE_PATH to that path so API fetches, redirects, and assets stay aligned. */
+const APP_BASE_URL =
+  typeof process !== 'undefined' && (process.env?.NEXT_PUBLIC_APP_BASE_URL || process.env?.BASE_PATH)
+    ? (process.env.NEXT_PUBLIC_APP_BASE_URL || process.env.BASE_PATH || '').replace(/\/$/, '')
+    : '';
+export const CHECKION_PLATFORM_PRODUCT_ID = 'checkion';
+
+export function getAppBasePath(): string {
+  return APP_BASE_URL;
+}
+
+export function getPublicAssetPath(path: string): string {
+  const normalized = path.startsWith('/') ? path : `/${path}`;
+  return `${APP_BASE_URL}${normalized}`;
+}
 
 /**
  * Puppeteer CDP `protocolTimeout` (ms). Full-page `page.screenshot()` maps to `Page.captureScreenshot`
