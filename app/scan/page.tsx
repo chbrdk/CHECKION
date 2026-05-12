@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession, getSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Box, CircularProgress, alpha } from '@mui/material';
 import {
@@ -46,6 +46,7 @@ import { useStatusUi } from '@/components/status/StatusUiContext';
 import { ensureUrlWithScheme } from '@/lib/url-normalize';
 import { fetchOnceMoreOn5xx } from '@/lib/fetch-retry-5xx';
 import { extractHostname } from '@/lib/geo-eeat/suggest-parse';
+import { resolveLaunchProjectId } from '@/lib/launch-project';
 
 const GEO_EEAT_QUICK_QUERY_MAX = 500;
 
@@ -72,9 +73,11 @@ async function readJsonSafe<T = unknown>(res: Response): Promise<T | null> {
 
 export default function ScanPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { t } = useI18n();
     const { status: sessionStatus } = useSession();
     const { singlePageScan, domainScan } = useStatusUi();
+    const launchProjectId = searchParams.get('projectId');
     const STANDARDS: { value: WcagStandard; label: string }[] = [
         { value: 'WCAG2A', label: t('standards.wcag2a') },
         { value: 'WCAG2AA', label: t('standards.wcag2aa') },
@@ -126,6 +129,16 @@ export default function ScanPage() {
             cancelled = true;
         };
     }, [sessionStatus]);
+
+    useEffect(() => {
+        const nextProjectId = resolveLaunchProjectId(
+            projects.map((project) => project.id),
+            { currentProjectId: selectedProjectId, launchProjectId }
+        );
+        if (nextProjectId && nextProjectId !== selectedProjectId) {
+            setSelectedProjectId(nextProjectId);
+        }
+    }, [launchProjectId, projects, selectedProjectId]);
 
     useEffect(() => {
         void (async () => {
