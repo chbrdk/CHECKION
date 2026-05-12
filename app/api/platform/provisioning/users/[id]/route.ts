@@ -4,7 +4,8 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { API_STATUS, apiError } from '@/lib/api-error-handler';
 import { getDb } from '@/lib/db';
-import { apiTokens, users } from '@/lib/db/schema';
+import { replacePlatformManagedProjectMemberships } from '@/lib/db/project-members';
+import { apiTokens, projects, PROJECT_MEMBER_ROLE, users } from '@/lib/db/schema';
 import {
   PLEXON_CONTRACT_VERSION_HEADER,
   PLEXON_FEDERATION_CONTRACT_VERSION,
@@ -29,6 +30,14 @@ const provisioningBodySchema = z.object({
     })
     .nullable()
     .optional(),
+  projectAssignments: z
+    .array(
+      z.object({
+        projectId: z.string().min(1),
+        role: z.enum(['admin', 'member']),
+      })
+    )
+    .default([]),
   contractVersion: z.string().min(1),
   source: z.string().min(1),
   requestedAt: z.string().min(1),
@@ -82,10 +91,20 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   }
 
   const [existingUser] = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  let projectAssignments: Array<{ projectId: string; role: 'admin' | 'member' | 'owner' }>;
+  try {
+    projectAssignments = await validateProjectAssignments(body.projectAssignments);
+  } catch (error) {
+    return apiError(
+      error instanceof Error ? error.message : 'Invalid project assignments',
+      API_STATUS.BAD_REQUEST
+    );
+  }
 
   if (body.desiredState === 'disabled') {
     if (existingUser) {
       await db.delete(apiTokens).where(eq(apiTokens.userId, id));
+      await replacePlatformManagedProjectMemberships(id, []);
     }
     return NextResponse.json({
       status: 'disabled',
@@ -117,6 +136,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         createdAt: now,
       })
       .returning({ id: users.id });
+    await replacePlatformManagedProjectMemberships(id, projectAssignments);
     return NextResponse.json({
       status: 'applied',
       externalUserRef: created.id,
@@ -132,6 +152,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   if ((existingUser.locale ?? null) !== (locale ?? null)) updates.locale = locale ?? null;
 
   if (Object.keys(updates).length === 0) {
+    await replacePlatformManagedProjectMemberships(id, projectAssignments);
     return NextResponse.json({
       status: 'no_change',
       externalUserRef: existingUser.id,
@@ -140,9 +161,37 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   }
 
   await db.update(users).set(updates).where(eq(users.id, id));
+  await replacePlatformManagedProjectMemberships(id, projectAssignments);
   return NextResponse.json({
     status: 'applied',
     externalUserRef: existingUser.id,
     details: 'Local shadow user updated.',
   });
+}
+
+async function validateProjectAssignments(
+  assignments: Array<{ projectId: string; role: 'admin' | 'member' }>
+) {
+  const db = getDb();
+  const normalized: Array<{ projectId: string; role: 'admin' | 'member' | 'owner' }> = [];
+  const seen = new Set<string>();
+  for (const assignment of assignments) {
+    const projectId = assignment.projectId.trim();
+    if (!projectId) throw new Error('Project assignment requires a projectId');
+    if (seen.has(projectId)) throw new Error('Duplicate projectId in project assignments');
+    seen.add(projectId);
+    const [project] = await db
+      .select({ id: projects.id })
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1);
+    if (!project) {
+      throw new Error(`Project assignment target not found: ${projectId}`);
+    }
+    normalized.push({
+      projectId,
+      role: assignment.role === 'admin' ? PROJECT_MEMBER_ROLE.ADMIN : PROJECT_MEMBER_ROLE.MEMBER,
+    });
+  }
+  return normalized;
 }

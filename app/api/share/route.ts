@@ -13,6 +13,9 @@ import { createShare, getShareByResource } from '@/lib/db/shares';
 import type { ShareResourceType } from '@/lib/db/shares';
 import { SHARE_PATH } from '@/lib/constants';
 import { randomBytes } from 'crypto';
+import { getDomainScanAccess } from '@/lib/domain-scan-access';
+import { resolveGeoEeatRunProjectAssignmentContext } from '@/lib/db/geo-eeat-runs';
+import { resolveJourneyRunProjectAssignmentContext } from '@/lib/db/journey-runs';
 
 function generateToken(): string {
     return randomBytes(24).toString('base64url');
@@ -40,16 +43,22 @@ export async function POST(request: Request) {
         const scan = await getScan(id, user.id);
         if (!scan) return apiError('Scan not found', API_STATUS.NOT_FOUND);
     } else if (type === 'domain') {
-        const domain = await getDomainScan(id, user.id);
+        const access = await getDomainScanAccess(request, id);
+        if (!access.ok) return apiError('Domain scan not found', API_STATUS.NOT_FOUND);
+        const domain = await getDomainScan(id, access.ownerUserId);
         if (!domain) return apiError('Domain scan not found', API_STATUS.NOT_FOUND);
     } else if (type === 'geo_eeat') {
-        const run = await getGeoEeatRun(id, user.id);
+        const access = await resolveGeoEeatRunProjectAssignmentContext(id, user.id);
+        if (!access) return apiError('GEO/E-E-A-T run not found', API_STATUS.NOT_FOUND);
+        const run = await getGeoEeatRun(id, access.resourceUserId);
         if (!run) return apiError('GEO/E-E-A-T run not found', API_STATUS.NOT_FOUND);
         if (run.status !== 'complete') {
             return apiError('Run must be complete to share', API_STATUS.BAD_REQUEST);
         }
     } else {
-        const run = await getJourneyRun(id, user.id);
+        const access = await resolveJourneyRunProjectAssignmentContext(id, user.id);
+        if (!access) return apiError('Journey not found', API_STATUS.NOT_FOUND);
+        const run = await getJourneyRun(id, access.resourceUserId);
         if (!run) return apiError('Journey not found', API_STATUS.NOT_FOUND);
         if (run.status !== 'complete') {
             return apiError('Journey must be complete to share', API_STATUS.BAD_REQUEST);

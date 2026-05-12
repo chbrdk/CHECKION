@@ -5,7 +5,15 @@
 import { eq, and, desc, isNull, count, sql, inArray, ilike, or } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 import { getDb } from './index';
-import { scans, domainScans, projects, scanSessions, standaloneScanEntitlements } from './schema';
+import {
+    scans,
+    domainScans,
+    projects,
+    projectMembers,
+    PROJECT_MEMBER_STATUS,
+    scanSessions,
+    standaloneScanEntitlements,
+} from './schema';
 import { mergeScanResultPatch, normalizeScanResultForPersist } from '@/lib/scan-result-shape';
 import { coerceJsonStringArray, normalizeIndustry, normalizeTagFilter, normalizeTagList } from '@/lib/tag-utils';
 import { getProjectDomainScanReferences } from './project-domain-references';
@@ -133,6 +141,33 @@ function buildDomainScanLineageWhere(
         parts.push(sql`(coalesce(${domainScans.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)} OR coalesce(${projects.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)})`);
     }
     return and(...parts)!;
+}
+
+function buildDomainScanLineageProjectIdsWhere(
+    projectIds: string[],
+    options?: Pick<DomainScanListQueryOptions, 'q' | 'status' | 'industry' | 'tag'>
+): SQL {
+    const parts: SQL[] = [inArray(domainScans.projectId, projectIds)];
+    const rawQ = options?.q?.trim();
+    if (rawQ) {
+        const safe = rawQ.slice(0, DOMAIN_SCAN_LIST_QUERY_MAX_LEN).replace(/[%_\\]/g, '');
+        if (safe.length > 0) {
+            parts.push(ilike(domainScans.domain, `%${safe}%`));
+        }
+    }
+    if (options?.status) {
+        parts.push(eq(domainScans.status, options.status));
+    }
+    const ind = normalizeIndustry(options?.industry ?? undefined);
+    if (ind) {
+        parts.push(sql`coalesce(${domainScans.industry}, ${projects.industry}) = ${ind}`);
+    }
+    const tag = normalizeTagFilter(options?.tag);
+    if (tag) {
+        const jsonbLiteral = `'${JSON.stringify([tag]).replace(/'/g, "''")}'::jsonb`;
+        parts.push(sql`(coalesce(${domainScans.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)} OR coalesce(${projects.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)})`);
+    }
+    return parts.length === 1 ? parts[0] : and(...parts)!;
 }
 
 function isPgUniqueViolation(err: unknown): boolean {
@@ -352,7 +387,95 @@ export async function getScan(id: string, userId: string): Promise<ScanResult | 
         .where(and(eq(standaloneScanEntitlements.userId, userId), eq(standaloneScanEntitlements.canonicalDesktopScanId, id)))
         .limit(1);
     if (borrowed.length > 0) return borrowed[0].result as unknown as ScanResult;
+
+    const shared = await resolveScanProjectAssignmentContext(id, userId);
+    if (shared && shared.mode === 'scan' && shared.resourceUserId !== userId) {
+        const owner = await db
+            .select({ result: scans.result })
+            .from(scans)
+            .where(and(eq(scans.id, id), eq(scans.userId, shared.resourceUserId)))
+            .limit(1);
+        if (owner.length > 0) return owner[0].result as unknown as ScanResult;
+    }
     return null;
+}
+
+export async function getScanById(id: string): Promise<ScanResult | null> {
+    const db = getDb();
+    const rows = await db
+        .select({ result: scans.result })
+        .from(scans)
+        .where(eq(scans.id, id))
+        .limit(1);
+    if (rows.length === 0) return null;
+    return rows[0].result as unknown as ScanResult;
+}
+
+export type ScanProjectAssignmentContext = {
+    resourceUserId: string;
+    currentProjectId: string | null;
+    mode: 'scan' | 'entitlement';
+};
+
+export async function resolveScanProjectAssignmentContext(
+    scanId: string,
+    viewerUserId: string
+): Promise<ScanProjectAssignmentContext | null> {
+    const db = getDb();
+    const own = await db
+        .select({
+            userId: scans.userId,
+            projectId: scans.projectId,
+        })
+        .from(scans)
+        .where(and(eq(scans.id, scanId), eq(scans.userId, viewerUserId)))
+        .limit(1);
+    if (own.length > 0) {
+        return {
+            resourceUserId: own[0].userId,
+            currentProjectId: own[0].projectId ?? null,
+            mode: 'scan',
+        };
+    }
+
+    const borrowed = await db
+        .select({
+            projectId: standaloneScanEntitlements.projectId,
+        })
+        .from(standaloneScanEntitlements)
+        .where(
+            and(
+                eq(standaloneScanEntitlements.userId, viewerUserId),
+                eq(standaloneScanEntitlements.canonicalDesktopScanId, scanId)
+            )
+        )
+        .limit(1);
+    if (borrowed.length > 0) {
+        return {
+            resourceUserId: viewerUserId,
+            currentProjectId: borrowed[0].projectId ?? null,
+            mode: 'entitlement',
+        };
+    }
+
+    const shared = await db
+        .select({
+            userId: scans.userId,
+            projectId: scans.projectId,
+        })
+        .from(scans)
+        .where(eq(scans.id, scanId))
+        .limit(1);
+    if (shared.length === 0) return null;
+    const currentProjectId = shared[0].projectId ?? null;
+    if (!currentProjectId) return null;
+    const project = await getProject(currentProjectId, viewerUserId);
+    if (!project) return null;
+    return {
+        resourceUserId: shared[0].userId,
+        currentProjectId,
+        mode: 'scan',
+    };
 }
 
 /** Returns scan result plus llm_summary and projectId for API response. */
@@ -385,12 +508,34 @@ export async function getScanWithSummary(id: string, userId: string): Promise<{ 
         .innerJoin(scans, eq(scans.id, standaloneScanEntitlements.canonicalDesktopScanId))
         .where(and(eq(standaloneScanEntitlements.userId, userId), eq(standaloneScanEntitlements.canonicalDesktopScanId, id)))
         .limit(1);
-    if (borrowed.length === 0) return null;
-    return {
-        result: borrowed[0].result as unknown as ScanResult,
-        llmSummary: (borrowed[0].llmSummary as UxCxSummary | null) ?? null,
-        projectId: borrowed[0].projectId ?? null,
-    };
+    if (borrowed.length > 0) {
+        return {
+            result: borrowed[0].result as unknown as ScanResult,
+            llmSummary: (borrowed[0].llmSummary as UxCxSummary | null) ?? null,
+            projectId: borrowed[0].projectId ?? null,
+        };
+    }
+
+    const shared = await resolveScanProjectAssignmentContext(id, userId);
+    if (shared && shared.mode === 'scan' && shared.resourceUserId !== userId) {
+        const owner = await db
+            .select({
+                result: scans.result,
+                llmSummary: scans.llmSummary,
+                projectId: scans.projectId,
+            })
+            .from(scans)
+            .where(and(eq(scans.id, id), eq(scans.userId, shared.resourceUserId)))
+            .limit(1);
+        if (owner.length > 0) {
+            return {
+                result: owner[0].result as unknown as ScanResult,
+                llmSummary: (owner[0].llmSummary as UxCxSummary | null) ?? null,
+                projectId: owner[0].projectId ?? null,
+            };
+        }
+    }
+    return null;
 }
 
 export async function updateScanSummary(id: string, userId: string, summary: UxCxSummary | UxCheckV2Summary): Promise<boolean> {
@@ -447,6 +592,31 @@ function standaloneScanBaseWhere(userId: string, projectId?: string | null): SQL
         return and(eq(scans.userId, userId), notDomainCrawlPage, oneDevicePerBatch, isNull(scans.projectId))!;
     }
     return and(eq(scans.userId, userId), notDomainCrawlPage, oneDevicePerBatch, eq(scans.projectId, projectId))!;
+}
+
+function standaloneScanSharedProjectWhere(
+    projectIds: string[],
+    options?: { industry?: string; tag?: string }
+): SQL {
+    const notDomainCrawlPage = or(
+        isNull(scans.groupId),
+        sql`NOT EXISTS (SELECT 1 FROM ${domainScans} WHERE ${domainScans.id} = ${scans.groupId})`
+    )!;
+    const oneDevicePerBatch = or(isNull(scans.groupId), eq(scans.device, 'desktop'))!;
+    let cond = and(inArray(scans.projectId, projectIds), notDomainCrawlPage, oneDevicePerBatch)!;
+    const ind = normalizeIndustry(options?.industry ?? undefined);
+    if (ind) {
+        cond = and(cond, eq(projects.industry, ind))!;
+    }
+    const tag = normalizeTagFilter(options?.tag);
+    if (tag) {
+        const jsonbLiteral = `'${JSON.stringify([tag]).replace(/'/g, "''")}'::jsonb`;
+        cond = and(
+            cond,
+            sql`(coalesce(${scans.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)} OR coalesce(${projects.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)})`
+        )!;
+    }
+    return cond;
 }
 
 /** Standalone dashboard list: base filters + optional industry / tag (scan ∪ project tags). Requires `projects` join. */
@@ -630,6 +800,51 @@ export async function listStandaloneScanSummaries(
     return merged.slice(offset, offset + limit);
 }
 
+export async function listSharedProjectStandaloneScanSummaries(
+    projectIds: string[],
+    options?: { limit?: number; offset?: number; industry?: string; tag?: string }
+): Promise<StandaloneScanSummary[]> {
+    if (projectIds.length === 0) return [];
+    const db = getDb();
+    const whereCond = standaloneScanSharedProjectWhere(projectIds, {
+        industry: options?.industry,
+        tag: options?.tag,
+    });
+    const base = db
+        .select({
+            id: scans.id,
+            url: scans.url,
+            timestamp: scans.timestamp,
+            score: scans.score,
+            errorsCount: scans.errorsCount,
+            warningsCount: scans.warningsCount,
+            noticesCount: scans.noticesCount,
+            projectId: scans.projectId,
+            groupId: scans.groupId,
+            scanSessionId: scans.scanSessionId,
+            device: scans.device,
+            targetRegion: scanSessions.targetRegion,
+            scanTagsJson: scans.tags,
+            projectTagsJson: projects.tags,
+            industry: projects.industry,
+        })
+        .from(scans)
+        .leftJoin(projects, eq(scans.projectId, projects.id))
+        .leftJoin(scanSessions, eq(scans.scanSessionId, scanSessions.id))
+        .where(whereCond)
+        .orderBy(desc(scans.timestamp));
+    const rows =
+        options?.limit != null || options?.offset != null
+            ? await base.limit(options.limit ?? 10000).offset(options.offset ?? 0)
+            : await base;
+    return rows.map((r) =>
+        mapRowToStandaloneScanSummary({
+            ...r,
+            targetRegion: r.targetRegion ?? null,
+        })
+    );
+}
+
 /**
  * Full `ScanResult` JSON per row — expensive; use for search indexing or rare bulk export.
  * Prefer {@link listStandaloneScanSummaries} for lists.
@@ -657,17 +872,46 @@ export async function listStandaloneScansFull(
     return rows.map((r) => r.result as unknown as ScanResult);
 }
 
-/** All single-scan results belonging to a domain (deep) scan; for journey/buildPageContexts. */
-export async function listScansByGroupId(userId: string, groupId: string): Promise<ScanResult[]> {
+export async function listSharedProjectStandaloneScansFull(
+    projectIds: string[],
+    options?: { limit?: number; offset?: number }
+): Promise<ScanResult[]> {
+    if (projectIds.length === 0) return [];
     const db = getDb();
-    const access = or(
+    const base = db
+        .select({ result: scanResultForBulkRead })
+        .from(scans)
+        .leftJoin(projects, eq(scans.projectId, projects.id))
+        .where(standaloneScanSharedProjectWhere(projectIds))
+        .orderBy(desc(scans.timestamp));
+    const rows =
+        options?.limit != null || options?.offset != null
+            ? await base.limit(options.limit ?? 10000).offset(options.offset ?? 0)
+            : await base;
+    return rows.map((r) => r.result as unknown as ScanResult);
+}
+
+function buildSharedStandaloneGroupAccess(userId: string): SQL {
+    return or(
         eq(scans.userId, userId),
         sql`exists (
             select 1 from standalone_scan_entitlements e
             where e.user_id = ${userId}
             and e.scan_session_id = ${scans.scanSessionId}
+        )`,
+        sql`exists (
+            select 1 from ${projectMembers} pm
+            where pm.project_id = ${scans.projectId}
+            and pm.user_id = ${userId}
+            and pm.status = ${PROJECT_MEMBER_STATUS.ACTIVE}
         )`
-    );
+    )!;
+}
+
+/** All single-scan results belonging to a domain (deep) scan; for journey/buildPageContexts. */
+export async function listScansByGroupId(userId: string, groupId: string): Promise<ScanResult[]> {
+    const db = getDb();
+    const access = buildSharedStandaloneGroupAccess(userId);
     const rows = await db
         .select({ result: scans.result })
         .from(scans)
@@ -684,14 +928,7 @@ export async function listScansByGroupIdOmitImageBlobs(
     groupId: string
 ): Promise<ScanResult[]> {
     const db = getDb();
-    const access = or(
-        eq(scans.userId, userId),
-        sql`exists (
-            select 1 from standalone_scan_entitlements e
-            where e.user_id = ${userId}
-            and e.scan_session_id = ${scans.scanSessionId}
-        )`
-    );
+    const access = buildSharedStandaloneGroupAccess(userId);
     const rows = await db
         .select({ result: scanResultForBulkRead })
         .from(scans)
@@ -704,14 +941,7 @@ export async function listScansByGroupIdOmitImageBlobs(
  */
 export async function listScansByGroupIdForSearch(userId: string, groupId: string): Promise<ScanResult[]> {
     const db = getDb();
-    const access = or(
-        eq(scans.userId, userId),
-        sql`exists (
-            select 1 from standalone_scan_entitlements e
-            where e.user_id = ${userId}
-            and e.scan_session_id = ${scans.scanSessionId}
-        )`
-    );
+    const access = buildSharedStandaloneGroupAccess(userId);
     const rows = await db
         .select({ result: scanResultForSearch })
         .from(scans)
@@ -746,6 +976,24 @@ export async function getStandaloneScansCount(
         .leftJoin(projects, eq(projects.id, standaloneScanEntitlements.projectId))
         .where(whereBorrowed);
     return Number(ownedRows[0]?.count ?? 0) + Number(borrowedRows[0]?.count ?? 0);
+}
+
+export async function getSharedProjectStandaloneScansCount(
+    projectIds: string[],
+    options?: { industry?: string; tag?: string }
+): Promise<number> {
+    if (projectIds.length === 0) return 0;
+    const db = getDb();
+    const whereCond = standaloneScanSharedProjectWhere(projectIds, {
+        industry: options?.industry,
+        tag: options?.tag,
+    });
+    const rows = await db
+        .select({ count: count() })
+        .from(scans)
+        .leftJoin(projects, eq(scans.projectId, projects.id))
+        .where(whereCond);
+    return Number(rows[0]?.count ?? 0);
 }
 
 export async function updateScanProject(scanId: string, userId: string, projectId: string | null): Promise<boolean> {
@@ -869,6 +1117,13 @@ export async function getDomainScan(id: string, userId: string): Promise<DomainS
     return rows[0].payload as unknown as DomainScanResult;
 }
 
+export async function getDomainScanById(id: string): Promise<DomainScanResult | null> {
+    const db = getDb();
+    const rows = await db.select().from(domainScans).where(eq(domainScans.id, id)).limit(1);
+    if (rows.length === 0) return null;
+    return rows[0].payload as unknown as DomainScanResult;
+}
+
 /** Single JSONB slice — avoids loading full `domain_scans.payload` for the visual map tab. */
 export async function getDomainScanGraph(id: string, userId: string): Promise<DomainScanResult['graph'] | null> {
     const db = getDb();
@@ -900,6 +1155,50 @@ export async function getDomainScanProjectId(id: string, userId: string): Promis
         .limit(1);
     const pid = rows[0]?.projectId;
     return pid != null && pid !== '' ? pid : null;
+}
+
+export type DomainScanProjectAssignmentContext = {
+    resourceUserId: string;
+    currentProjectId: string | null;
+};
+
+export async function resolveDomainScanProjectAssignmentContext(
+    id: string,
+    viewerUserId: string
+): Promise<DomainScanProjectAssignmentContext | null> {
+    const db = getDb();
+    const own = await db
+        .select({
+            userId: domainScans.userId,
+            projectId: domainScans.projectId,
+        })
+        .from(domainScans)
+        .where(and(eq(domainScans.id, id), eq(domainScans.userId, viewerUserId)))
+        .limit(1);
+    if (own.length > 0) {
+        return {
+            resourceUserId: own[0].userId,
+            currentProjectId: own[0].projectId ?? null,
+        };
+    }
+
+    const shared = await db
+        .select({
+            userId: domainScans.userId,
+            projectId: domainScans.projectId,
+        })
+        .from(domainScans)
+        .where(eq(domainScans.id, id))
+        .limit(1);
+    if (shared.length === 0) return null;
+    const currentProjectId = shared[0].projectId ?? null;
+    if (!currentProjectId) return null;
+    const project = await getProject(currentProjectId, viewerUserId);
+    if (!project) return null;
+    return {
+        resourceUserId: shared[0].userId,
+        currentProjectId,
+    };
 }
 
 /** Returns domain scan payload, project link, and project classification fields (when joined). */
@@ -1104,6 +1403,116 @@ export async function listDomainScanSummariesForSearch(
     }));
 }
 
+export async function listSharedProjectDomainScanSummariesForSearch(
+    projectIds: string[],
+    options?: { limit?: number; offset?: number }
+): Promise<DomainScanSearchRow[]> {
+    if (projectIds.length === 0) return [];
+    const db = getDb();
+    const lineageWhere = buildDomainScanLineageProjectIdsWhere(projectIds);
+    const latestSq = buildLatestDomainScanHeadSubquery(db, lineageWhere);
+    const joinLatest = sql`coalesce(${domainScans.lineageKey}, ${domainScans.id}) = ${latestSq.groupKey} AND ${domainScans.lineageVersion} = ${latestSq.maxVersion}`;
+    const base = db
+        .select({
+            id: domainScans.id,
+            domain: domainScans.domain,
+            timestamp: domainScans.timestamp,
+            status: domainScans.status,
+            score: sql<number>`(${domainScans.payload}->>'score')::int`,
+            totalPages: sql<number>`(${domainScans.payload}->>'totalPages')::int`,
+            hasStoredAggregated: sql<boolean>`(${domainScans.payload}->'aggregated') IS NOT NULL`,
+            lineageVersion: domainScans.lineageVersion,
+            projectId: domainScans.projectId,
+            userId: domainScans.userId,
+            industry: sql<string | null>`coalesce(${projects.industry}, ${domainScans.industry})`,
+            projectTagsJson: projects.tags,
+            scanTagsJson: domainScans.tags,
+        })
+        .from(domainScans)
+        .innerJoin(latestSq, joinLatest)
+        .leftJoin(projects, eq(domainScans.projectId, projects.id))
+        .where(lineageWhere)
+        .orderBy(desc(domainScans.timestamp));
+    const rows = options?.limit != null || options?.offset != null
+        ? await base.limit(options.limit ?? 10000).offset(options.offset ?? 0)
+        : await base;
+    return rows.map((r) => ({
+        id: r.id,
+        domain: r.domain,
+        timestamp: r.timestamp,
+        status: r.status,
+        score: r.score ?? 0,
+        totalPages: r.totalPages ?? 0,
+        hasStoredAggregated: Boolean(r.hasStoredAggregated),
+        lineageVersion: r.lineageVersion ?? 1,
+        projectId: r.projectId ?? null,
+        userId: r.userId,
+        industry: r.industry ?? null,
+        projectTags: coerceJsonStringArray(r.projectTagsJson),
+        tags: coerceJsonStringArray(r.scanTagsJson),
+    }));
+}
+
+export async function listSharedProjectDomainScanSummaries(
+    projectIds: string[],
+    options?: { limit?: number; offset?: number; q?: string; status?: DomainScanStatus; industry?: string; tag?: string }
+): Promise<DomainScanSummaryRow[]> {
+    if (projectIds.length === 0) return [];
+    const db = getDb();
+    const lineageWhere = buildDomainScanLineageProjectIdsWhere(projectIds, {
+        q: options?.q,
+        status: options?.status,
+        industry: options?.industry,
+        tag: options?.tag,
+    });
+    const latestSq = buildLatestDomainScanHeadSubquery(db, lineageWhere);
+    const joinLatest = sql`coalesce(${domainScans.lineageKey}, ${domainScans.id}) = ${latestSq.groupKey} AND ${domainScans.lineageVersion} = ${latestSq.maxVersion}`;
+    const base = db
+        .select({
+            id: domainScans.id,
+            domain: domainScans.domain,
+            timestamp: domainScans.timestamp,
+            status: domainScans.status,
+            score: sql<number>`(${domainScans.payload}->>'score')::int`,
+            totalPages: sql<number>`(${domainScans.payload}->>'totalPages')::int`,
+            aggregatedInfra: sql<unknown>`${domainScans.payload}->'aggregated'->'infra'`,
+            lineageVersion: domainScans.lineageVersion,
+            projectId: domainScans.projectId,
+            userId: domainScans.userId,
+            industry: sql<string | null>`coalesce(${projects.industry}, ${domainScans.industry})`,
+            projectTagsJson: projects.tags,
+            scanTagsJson: domainScans.tags,
+        })
+        .from(domainScans)
+        .innerJoin(latestSq, joinLatest)
+        .leftJoin(projects, eq(domainScans.projectId, projects.id))
+        .where(lineageWhere)
+        .orderBy(desc(domainScans.timestamp));
+    const rows = options?.limit != null || options?.offset != null
+        ? await base.limit(options.limit ?? 10000).offset(options.offset ?? 0)
+        : await base;
+    return rows.map((r) => {
+        const lines = formatDeepScanInfraListLines(r.aggregatedInfra);
+        return {
+            id: r.id,
+            domain: r.domain,
+            timestamp: r.timestamp,
+            status: r.status,
+            score: r.score ?? 0,
+            totalPages: r.totalPages ?? 0,
+            lineageVersion: r.lineageVersion ?? 1,
+            projectId: r.projectId ?? null,
+            userId: r.userId,
+            industry: r.industry ?? null,
+            projectTags: coerceJsonStringArray(r.projectTagsJson),
+            tags: coerceJsonStringArray(r.scanTagsJson),
+            platformsLine: lines.platformsLine,
+            infraLine: lines.infraLine,
+            privacyLine: lines.privacyLine,
+        };
+    });
+}
+
 export async function listDomainScans(userId: string, options?: { limit?: number; offset?: number; projectId?: string | null }): Promise<DomainScanResult[]> {
     const db = getDb();
     const lineageWhere = buildDomainScanLineageWhere(userId, { projectId: options?.projectId });
@@ -1144,6 +1553,24 @@ export async function getDomainScansCount(
     options?: Pick<DomainScanListQueryOptions, 'projectId' | 'q' | 'status' | 'industry' | 'tag'>
 ): Promise<number> {
     return queryDomainScansCount(userId, options);
+}
+
+export async function getSharedProjectDomainScansCount(
+    projectIds: string[],
+    options?: Pick<DomainScanListQueryOptions, 'q' | 'status' | 'industry' | 'tag'>
+): Promise<number> {
+    if (projectIds.length === 0) return 0;
+    const db = getDb();
+    const lineageWhere = buildDomainScanLineageProjectIdsWhere(projectIds, options);
+    const latestSq = buildLatestDomainScanHeadSubquery(db, lineageWhere);
+    const joinLatest = sql`coalesce(${domainScans.lineageKey}, ${domainScans.id}) = ${latestSq.groupKey} AND ${domainScans.lineageVersion} = ${latestSq.maxVersion}`;
+    const rows = await db
+        .select({ count: count() })
+        .from(domainScans)
+        .innerJoin(latestSq, joinLatest)
+        .leftJoin(projects, eq(domainScans.projectId, projects.id))
+        .where(lineageWhere);
+    return Number(rows[0]?.count ?? 0);
 }
 
 /** Count across all users (ops). Enforce auth in the API layer. */

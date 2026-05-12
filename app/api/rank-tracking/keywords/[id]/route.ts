@@ -5,7 +5,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
-import { deleteKeyword } from '@/lib/db/rank-tracking-keywords';
+import { getProject } from '@/lib/db/projects';
+import { deleteKeyword, getKeyword, getKeywordById } from '@/lib/db/rank-tracking-keywords';
 
 export async function DELETE(
     _request: NextRequest,
@@ -16,7 +17,16 @@ export async function DELETE(
     const { id } = await context.params;
     if (!id) return apiError('Keyword ID required', API_STATUS.BAD_REQUEST);
 
-    const deleted = await deleteKeyword(id, user.id);
+    const ownKeyword = await getKeyword(id, user.id);
+    const keyword = ownKeyword ?? await getKeywordById(id);
+    if (!keyword) return apiError('Keyword not found', API_STATUS.NOT_FOUND);
+    if (keyword.userId !== user.id) {
+        if (!keyword.projectId) return apiError('Keyword not found', API_STATUS.NOT_FOUND);
+        const project = await getProject(keyword.projectId, user.id);
+        if (!project) return apiError('Keyword not found', API_STATUS.NOT_FOUND);
+    }
+
+    const deleted = await deleteKeyword(id, keyword.userId);
     if (!deleted) return apiError('Keyword not found', API_STATUS.NOT_FOUND);
     return NextResponse.json({ success: true });
 }

@@ -29,8 +29,9 @@ export async function GET(
 
     const project = await getProject(projectId, user.id);
     if (!project) return apiError('Project not found', API_STATUS.NOT_FOUND);
+    const projectUserId = project.userId;
 
-    const keywords = await listKeywordsByProject(user.id, projectId);
+    const keywords = await listKeywordsByProject(projectUserId, projectId);
     const keywordIds = keywords.map((k) => k.id);
     if (keywordIds.length === 0) {
         return NextResponse.json({

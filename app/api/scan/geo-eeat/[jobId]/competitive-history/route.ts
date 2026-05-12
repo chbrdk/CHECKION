@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
-import { getGeoEeatRun } from '@/lib/db/geo-eeat-runs';
+import { getGeoEeatRun, resolveGeoEeatRunProjectAssignmentContext } from '@/lib/db/geo-eeat-runs';
 import { listCompetitiveRunsByGeoEeatJob } from '@/lib/db/geo-eeat-competitive-runs';
 
 const DEFAULT_LIMIT = 20;
@@ -25,7 +25,12 @@ export async function GET(
         return apiError('jobId required.', API_STATUS.BAD_REQUEST);
     }
 
-    const run = await getGeoEeatRun(jobId, user.id);
+    const access = await resolveGeoEeatRunProjectAssignmentContext(jobId, user.id);
+    if (!access) {
+        return apiError('Run not found.', API_STATUS.NOT_FOUND);
+    }
+    const ownerUserId = access.resourceUserId;
+    const run = await getGeoEeatRun(jobId, ownerUserId);
     if (!run) {
         return apiError('Run not found.', API_STATUS.NOT_FOUND);
     }
@@ -33,7 +38,7 @@ export async function GET(
     const limitParam = request.nextUrl.searchParams.get('limit');
     const limit = limitParam ? Math.min(Math.max(1, parseInt(limitParam, 10)), 100) : DEFAULT_LIMIT;
 
-    const rows = await listCompetitiveRunsByGeoEeatJob(jobId, user.id, limit);
+    const rows = await listCompetitiveRunsByGeoEeatJob(jobId, ownerUserId, limit);
 
     const runs = rows.map((r) => ({
         id: r.id,

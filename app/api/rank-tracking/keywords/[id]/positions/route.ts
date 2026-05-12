@@ -5,7 +5,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
-import { getKeyword } from '@/lib/db/rank-tracking-keywords';
+import { getProject } from '@/lib/db/projects';
+import { getKeyword, getKeywordById } from '@/lib/db/rank-tracking-keywords';
 import { listPositionsByKeyword } from '@/lib/db/rank-tracking-positions';
 
 export async function GET(
@@ -17,12 +18,18 @@ export async function GET(
     const { id } = await context.params;
     if (!id) return apiError('Keyword ID required', API_STATUS.BAD_REQUEST);
 
-    const keyword = await getKeyword(id, user.id);
+    const ownKeyword = await getKeyword(id, user.id);
+    const keyword = ownKeyword ?? await getKeywordById(id);
     if (!keyword) return apiError('Keyword not found', API_STATUS.NOT_FOUND);
+    if (keyword.userId !== user.id) {
+        if (!keyword.projectId) return apiError('Keyword not found', API_STATUS.NOT_FOUND);
+        const project = await getProject(keyword.projectId, user.id);
+        if (!project) return apiError('Keyword not found', API_STATUS.NOT_FOUND);
+    }
 
     const limitParam = request.nextUrl.searchParams.get('limit');
     const limit = limitParam ? Math.min(Math.max(1, parseInt(limitParam, 10)), 365) : 90;
-    const positions = await listPositionsByKeyword(id, user.id, limit);
+    const positions = await listPositionsByKeyword(id, keyword.userId, limit);
     const data = positions.map((p) => ({
         position: p.position,
         recordedAt: p.recordedAt.toISOString(),

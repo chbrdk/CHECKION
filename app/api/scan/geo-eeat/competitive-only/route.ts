@@ -10,6 +10,7 @@ import { parseApiBody, geoEeatCompetitiveOnlyBodySchema } from '@/lib/api-schema
 import { checkRateLimit } from '@/lib/rate-limit';
 import { insertGeoEeatRun, updateGeoEeatRun } from '@/lib/db/geo-eeat-runs';
 import { insertCompetitiveRun, updateCompetitiveRun } from '@/lib/db/geo-eeat-competitive-runs';
+import { getProject } from '@/lib/db/projects';
 import { runCompetitiveBenchmarkMultiModel } from '@/lib/geo-eeat/competitive-benchmark';
 import { emptyUsageTotals } from '@/lib/llm/usage-totals';
 import { extractHostname } from '@/lib/geo-eeat/suggest-parse';
@@ -37,6 +38,14 @@ export async function POST(request: NextRequest) {
         const parsed = await parseApiBody(request, geoEeatCompetitiveOnlyBodySchema);
         if (parsed instanceof NextResponse) return parsed;
         const { company, question, projectId } = parsed;
+        let projectUserId = user.id;
+        if (projectId) {
+            const project = await getProject(projectId, user.id);
+            if (!project) {
+                return apiError('Project not found', API_STATUS.NOT_FOUND);
+            }
+            projectUserId = project.userId;
+        }
 
         const companyHost = extractHostname(company).trim();
         if (!companyHost) {
@@ -53,7 +62,7 @@ export async function POST(request: NextRequest) {
         };
 
         try {
-            await insertGeoEeatRun(jobId, user.id, canonicalUrl, {
+            await insertGeoEeatRun(jobId, projectUserId, canonicalUrl, {
                 projectId: projectId ?? undefined,
             });
         } catch (e) {
@@ -66,12 +75,12 @@ export async function POST(request: NextRequest) {
 
         void (async () => {
             try {
-                await updateGeoEeatRun(jobId, user.id, { status: 'running' });
+                await updateGeoEeatRun(jobId, projectUserId, { status: 'running' });
 
                 const qs = [question];
                 const comps: string[] = [];
                 const competitiveRunId = uuidv4();
-                const userId = user.id;
+                const userId = projectUserId;
                 await insertCompetitiveRun(competitiveRunId, jobId, userId, qs, comps);
 
                 const usageTotals = emptyUsageTotals();
@@ -111,7 +120,7 @@ export async function POST(request: NextRequest) {
                     const hasLlmTokens =
                         usageTotals.input_tokens > 0 || usageTotals.output_tokens > 0;
                     reportUsage({
-                        userId: userId,
+                        userId: user.id,
                         eventType: 'geo_eeat',
                         rawUnits: hasLlmTokens
                             ? {
@@ -128,7 +137,7 @@ export async function POST(request: NextRequest) {
             } catch (e) {
                 const message = e instanceof Error ? e.message : String(e);
                 console.error('[CHECKION] GEO/E-E-A-T competitive-only run failed:', e);
-                await updateGeoEeatRun(jobId, user.id, {
+                await updateGeoEeatRun(jobId, projectUserId, {
                     status: 'error',
                     error: message,
                 });

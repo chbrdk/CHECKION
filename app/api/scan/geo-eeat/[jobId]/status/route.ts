@@ -5,7 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
-import { getGeoEeatRun } from '@/lib/db/geo-eeat-runs';
+import { getGeoEeatRun, resolveGeoEeatRunProjectAssignmentContext } from '@/lib/db/geo-eeat-runs';
 
 export async function GET(
     request: NextRequest,
@@ -21,7 +21,11 @@ export async function GET(
         return apiError('jobId required.', API_STATUS.BAD_REQUEST);
     }
 
-    const run = await getGeoEeatRun(jobId, user.id);
+    const access = await resolveGeoEeatRunProjectAssignmentContext(jobId, user.id);
+    if (!access) {
+        return apiError('Run not found.', API_STATUS.NOT_FOUND);
+    }
+    const run = await getGeoEeatRun(jobId, access.resourceUserId);
     if (!run) {
         return apiError('Run not found.', API_STATUS.NOT_FOUND);
     }

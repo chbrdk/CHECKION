@@ -44,7 +44,10 @@ function targetRegionKey(s: string | null | undefined): string {
  */
 export async function tryReuseStandaloneScan(
     userId: string,
-    body: ScanBody
+    body: ScanBody,
+    options?: {
+        skipSessionUserId?: string;
+    }
 ): Promise<{ desktopResult: ScanResult } | null> {
     if (isReuseDisabled()) return null;
 
@@ -73,8 +76,10 @@ export async function tryReuseStandaloneScan(
         .orderBy(desc(scanSessions.createdAt))
         .limit(400);
 
+    const skipSessionUserId = options?.skipSessionUserId ?? userId;
+
     for (const c of candidates) {
-        if (c.sessionUserId === userId) continue;
+        if (c.sessionUserId === skipSessionUserId) continue;
         if (normalizeScanUrl(c.sessionUrl) !== normalizedUrl) continue;
         if (standardKey(c.standard) !== stdKey) continue;
         if (stableRunnersKey(c.runners) !== runnersKey) continue;

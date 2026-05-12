@@ -7,11 +7,11 @@ import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { addSavedJourney } from '@/lib/db/journeys';
 import {
-    getCachedDomainScan,
     listCachedSavedJourneys,
     getCachedSavedJourneysCount,
     invalidateJourneys,
 } from '@/lib/cache';
+import { getDomainScanAccess } from '@/lib/domain-scan-access';
 import type { JourneyResult } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -54,8 +54,8 @@ export async function POST(request: Request) {
     if (!domainScanId || !goal || !result || !Array.isArray(result.steps)) {
         return apiError('Body must include domainScanId, goal, and result (JourneyResult with steps).', API_STATUS.BAD_REQUEST);
     }
-    const domain = await getCachedDomainScan(domainScanId, user.id);
-    if (!domain) {
+    const access = await getDomainScanAccess(request, domainScanId);
+    if (!access.ok) {
         return apiError('Domain scan not found.', API_STATUS.NOT_FOUND);
     }
     const id = uuidv4();

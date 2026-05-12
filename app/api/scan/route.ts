@@ -10,10 +10,12 @@ import { parseApiBody, scanBodySchema } from '@/lib/api-schemas';
 import { checkRateLimit } from '@/lib/rate-limit';
 import {
     insertScanSession,
+    getSharedProjectStandaloneScansCount,
+    listSharedProjectStandaloneScanSummaries,
     persistStandaloneScanRow,
     listScansByGroupId,
 } from '@/lib/db/scans';
-import { getProject } from '@/lib/db/projects';
+import { getProject, listProjects } from '@/lib/db/projects';
 import { normalizeTagList } from '@/lib/tag-utils';
 import { listCachedStandaloneScanSummaries, getCachedStandaloneScansCount, invalidateScansList } from '@/lib/cache';
 import type { Device, ScanDevicePhase, ScanResult } from '@/lib/types';
@@ -36,6 +38,11 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 type ScanBody = z.infer<typeof scanBodySchema>;
+type ScanExecutionContext = {
+    projectId: string | null;
+    projectUserId: string;
+    projectTags: string[];
+};
 
 /** NDJSON unless client explicitly opts into legacy JSON (`x-checkion-scan-stream: 0`). */
 function wantsNdjsonStream(request: Request): boolean {
@@ -45,17 +52,23 @@ function wantsNdjsonStream(request: Request): boolean {
 async function executeStandaloneScan(
     user: { id: string },
     body: ScanBody,
+    context: ScanExecutionContext,
     hooks?: {
         onDeviceProgress?: (e: { phase: ScanDevicePhase; device: Device }) => void;
         afterSessionInsert?: () => void | Promise<void>;
         beforePersist?: () => void | Promise<void>;
     }
 ): Promise<ScanResult> {
-    const reused = await tryReuseStandaloneScan(user.id, body);
+    const reused = await tryReuseStandaloneScan(context.projectUserId, {
+        ...body,
+        projectId: context.projectId,
+    }, {
+        skipSessionUserId: user.id,
+    });
     if (reused) {
         await hooks?.afterSessionInsert?.();
         await hooks?.beforePersist?.();
-        invalidateScansList(user.id);
+        invalidateScansList(context.projectUserId);
         try {
             reportUsage({
                 userId: user.id,
@@ -76,9 +89,9 @@ async function executeStandaloneScan(
 
     await insertScanSession({
         id: groupId,
-        userId: user.id,
+        userId: context.projectUserId,
         url: body.url,
-        projectId: body.projectId,
+        projectId: context.projectId,
         standard: body.standard ?? null,
         runners: body.runners ?? null,
         targetRegion: body.targetRegion?.trim() || null,
@@ -86,11 +99,7 @@ async function executeStandaloneScan(
 
     await hooks?.afterSessionInsert?.();
 
-    let sessionTags: string[] = [];
-    if (body.projectId) {
-        const proj = await getProject(body.projectId, user.id);
-        if (proj) sessionTags = normalizeTagList(proj.tags);
-    }
+    const sessionTags = context.projectTags;
 
     let results: ScanResult[];
     if (devices.length <= 1) {
@@ -103,7 +112,7 @@ async function executeStandaloneScan(
                     device,
                     groupId,
                     targetRegion: body.targetRegion,
-                    userId: user.id,
+                    userId: context.projectUserId,
                     onProgress: hooks?.onDeviceProgress,
                 })
             )
@@ -122,7 +131,7 @@ async function executeStandaloneScan(
                         device,
                         groupId,
                         targetRegion: body.targetRegion,
-                        userId: user.id,
+                        userId: context.projectUserId,
                         onProgress: hooks?.onDeviceProgress,
                         sharedBrowser,
                     })
@@ -141,13 +150,13 @@ async function executeStandaloneScan(
     await hooks?.beforePersist?.();
 
     for (const result of results) {
-        await persistStandaloneScanRow(user.id, result, {
-            projectId: body.projectId,
+        await persistStandaloneScanRow(context.projectUserId, result, {
+            projectId: context.projectId,
             scanSessionId: groupId,
             tags: sessionTags,
         });
     }
-    invalidateScansList(user.id);
+    invalidateScansList(context.projectUserId);
 
     try {
         reportUsage({
@@ -161,10 +170,10 @@ async function executeStandaloneScan(
 
     const desktopResult = results.find((r) => r.device === 'desktop') || results[0];
 
-    if (body.projectId) {
+    if (context.projectId) {
         void maybeAutoFillProjectClassificationFromStandaloneScan({
-            userId: user.id,
-            projectId: body.projectId,
+            userId: context.projectUserId,
+            projectId: context.projectId,
             scanUrl: body.url,
             scanSessionId: groupId,
             desktopResult,
@@ -172,6 +181,25 @@ async function executeStandaloneScan(
     }
 
     return desktopResult;
+}
+
+async function resolveScanExecutionContext(userId: string, projectId: string | null | undefined): Promise<ScanExecutionContext> {
+    if (!projectId) {
+        return {
+            projectId: null,
+            projectUserId: userId,
+            projectTags: [],
+        };
+    }
+    const project = await getProject(projectId, userId);
+    if (!project) {
+        throw new Error('Project not found');
+    }
+    return {
+        projectId,
+        projectUserId: project.userId,
+        projectTags: normalizeTagList(project.tags),
+    };
 }
 
 export async function POST(request: Request) {
@@ -204,6 +232,15 @@ export async function POST(request: Request) {
         const parsed = await parseApiBody(request, scanBodySchema);
         if (parsed instanceof NextResponse) return parsed;
         const body = parsed;
+        let executionContext: ScanExecutionContext;
+        try {
+            executionContext = await resolveScanExecutionContext(user.id, body.projectId);
+        } catch (error) {
+            return apiError(
+                error instanceof Error ? error.message : 'Project not found',
+                API_STATUS.NOT_FOUND
+            );
+        }
 
         if (wantsNdjsonStream(request)) {
             const encoder = new TextEncoder();
@@ -217,7 +254,7 @@ export async function POST(request: Request) {
                         }
                     };
                     try {
-                        const desktopResult = await executeStandaloneScan(user, body, {
+                        const desktopResult = await executeStandaloneScan(user, body, executionContext, {
                             afterSessionInsert: () => {
                                 send({ type: 'progress', phase: 'session_created' });
                             },
@@ -252,7 +289,7 @@ export async function POST(request: Request) {
         }
 
         try {
-            const desktopResult = await executeStandaloneScan(user, body);
+            const desktopResult = await executeStandaloneScan(user, body, executionContext);
             return NextResponse.json({
                 success: true,
                 data: desktopResult,
@@ -295,12 +332,68 @@ export async function GET(req: NextRequest) {
     const page = Math.max(1, Number(searchParams.get('page')) || 1);
     const offset = (page - 1) * limit;
     const projectIdParam = searchParams.get('projectId');
-    const projectId = projectIdParam === '' || projectIdParam === null ? null : projectIdParam ?? undefined;
+    const projectId =
+        projectIdParam === null
+            ? undefined
+            : projectIdParam === ''
+              ? null
+              : projectIdParam;
     const industryRaw = searchParams.get('industry');
     const industry =
         industryRaw && industryRaw.trim().length > 0 ? industryRaw.trim().slice(0, 128) : undefined;
     const tagRaw = searchParams.get('tag');
     const tag = tagRaw && tagRaw.trim().length > 0 ? tagRaw.trim().slice(0, 48) : undefined;
+
+    if (typeof projectId === 'string') {
+        const project = await getProject(projectId, user.id);
+        if (!project) {
+            return apiError('Project not found', API_STATUS.NOT_FOUND);
+        }
+        const listOpts = { limit, offset, projectId, industry, tag };
+        const [list, total] = await Promise.all([
+            listCachedStandaloneScanSummaries(project.userId, listOpts),
+            getCachedStandaloneScansCount(project.userId, { projectId, industry, tag }),
+        ]);
+        const totalPages = Math.ceil(total / limit) || 1;
+        return NextResponse.json({
+            data: list,
+            pagination: { total, page, limit, totalPages },
+        });
+    }
+
+    if (projectId === undefined) {
+        const sharedProjectIds = (await listProjects(user.id))
+            .filter((project) => project.userId !== user.id)
+            .map((project) => project.id);
+        const fetchLimit = offset + limit;
+        const [ownList, ownTotal, sharedList, sharedTotal] = await Promise.all([
+            listCachedStandaloneScanSummaries(user.id, { limit: fetchLimit, offset: 0, projectId, industry, tag }),
+            getCachedStandaloneScansCount(user.id, { projectId, industry, tag }),
+            sharedProjectIds.length > 0
+                ? listSharedProjectStandaloneScanSummaries(sharedProjectIds, {
+                      limit: fetchLimit,
+                      offset: 0,
+                      industry,
+                      tag,
+                  })
+                : Promise.resolve([]),
+            sharedProjectIds.length > 0
+                ? getSharedProjectStandaloneScansCount(sharedProjectIds, { industry, tag })
+                : Promise.resolve(0),
+        ]);
+        const merged = [...ownList, ...sharedList].sort((a, b) => {
+            if (a.timestamp < b.timestamp) return 1;
+            if (a.timestamp > b.timestamp) return -1;
+            return 0;
+        });
+        const total = ownTotal + sharedTotal;
+        const totalPages = Math.ceil(total / limit) || 1;
+        return NextResponse.json({
+            data: merged.slice(offset, offset + limit),
+            pagination: { total, page, limit, totalPages },
+        });
+    }
+
     const listOpts = { limit, offset, projectId, industry, tag };
     const [list, total] = await Promise.all([
         listCachedStandaloneScanSummaries(user.id, listOpts),

@@ -58,6 +58,9 @@ Wenn die App unter einem Subpath läuft (z. B. `https://example.com/checkion`)
 | `API_SCAN`      | `/api/scan`          |
 | `API_SCANS`     | `/api/scans`         |
 | `API_SCANS_DOMAIN` | `/api/scans/domain` |
+Hinweise:
+- `API_SCAN` ist der bevorzugte Listenpfad fuer paginierte Standalone-Scan-Summaries im Dashboard.
+- `API_SCANS` bleibt ein Legacy-Pfad fuer rohe Standalone-History und ist kein kombinierter Dashboard-Pagination-Endpoint.
 | `API_SCAN_DOMAIN`  | `/api/scan/domain`  |
 | `API_SCAN_JOURNEY_AGENT` | `/api/scan/journey-agent` |
 | `API_SCAN_GEO_EEAT`      | `/api/scan/geo-eeat`      |

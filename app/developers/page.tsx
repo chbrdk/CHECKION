@@ -46,7 +46,8 @@ export default function DevelopersPage() {
                         <InfoTooltip title={t('info.scanData')} ariaLabel={t('common.info')} />
                     </Box>
 
-                    <Endpoint method="GET" path="/api/scans" desc={t('developers.scansDesc')} />
+                    <Endpoint method="GET" path="/api/scan" desc={t('developers.scanListDesc')} params="?page=1&limit=20&projectId=&industry=&tag=" />
+                    <Endpoint method="GET" path="/api/scans" desc={t('developers.scansLegacyDesc')} />
                     <Endpoint method="POST" path="/api/scan" desc={t('developers.scanPostDesc')} body='{ "url": "..." }' />
                     <Endpoint method="GET" path="/api/scans/domain" desc={t('developers.scansDomainDesc')} params="?page=1&limit=20&q=&status=complete&projectId=" />
                     <Endpoint method="POST" path="/api/scans/domain/compare" desc={t('developers.scansDomainCompareDesc')} body='{ "ids": ["uuid-a", "uuid-b"] }' />

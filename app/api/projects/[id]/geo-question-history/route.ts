@@ -46,6 +46,7 @@ export async function GET(
 
     const project = await getProject(projectId, user.id);
     if (!project) return apiError('Project not found', API_STATUS.NOT_FOUND);
+    const projectUserId = project.userId;
 
     const targetDomain = project.domain
         ? extractHostname(project.domain.includes('://') ? project.domain : `https://${project.domain}`)
@@ -62,7 +63,7 @@ export async function GET(
 
     const limitParam = request.nextUrl.searchParams.get('limit');
     const limit = limitParam ? Math.min(Math.max(1, parseInt(limitParam, 10)), 100) : 50;
-    const runs = await listGeoEeatRuns(user.id, limit, { projectId });
+    const runs = await listGeoEeatRuns(projectUserId, limit, { projectId });
 
     /** Collect (recordedAt, competitiveByModel) from main run payload and from competitive runs. */
     const samples: { recordedAt: Date; competitiveByModel: Record<string, CompetitiveBenchmarkResult> }[] = [];
@@ -77,7 +78,7 @@ export async function GET(
             });
         }
 
-        const competitiveRuns = await listCompetitiveRunsByGeoEeatJob(run.id, user.id, 20);
+        const competitiveRuns = await listCompetitiveRunsByGeoEeatJob(run.id, projectUserId, 20);
         for (const cr of competitiveRuns) {
             if (cr.status !== 'complete' || !cr.competitiveByModel || !cr.completedAt) continue;
             samples.push({

@@ -17,6 +17,7 @@ import { runCompetitiveBenchmarkMultiModel } from '@/lib/geo-eeat/competitive-be
 import { emptyUsageTotals, mergeUsageTotals } from '@/lib/llm/usage-totals';
 import { v4 as uuidv4 } from 'uuid';
 import { reportUsage } from '@/lib/usage-report';
+import { getProject } from '@/lib/db/projects';
 
 export const maxDuration = 60;
 
@@ -37,16 +38,24 @@ export async function POST(request: NextRequest) {
     const parsed = await parseApiBody(request, geoEeatBodySchema);
     if (parsed instanceof NextResponse) return parsed;
     const { url, domainScanId, projectId, runCompetitive, competitors, queries } = parsed;
+    let projectUserId = user.id;
+    if (projectId) {
+        const project = await getProject(projectId, user.id);
+        if (!project) {
+            return apiError('Project not found', API_STATUS.NOT_FOUND);
+        }
+        projectUserId = project.userId;
+    }
 
     const jobId = uuidv4();
-    await insertGeoEeatRun(jobId, user.id, url, {
+    await insertGeoEeatRun(jobId, projectUserId, url, {
         domainScanId: domainScanId ?? undefined,
         projectId: projectId ?? undefined,
     });
 
     (async () => {
         try {
-            await updateGeoEeatRun(jobId, user.id, { status: 'running' });
+            await updateGeoEeatRun(jobId, projectUserId, { status: 'running' });
             const scan = await runScan({
                 url,
                 standard: 'WCAG2AA',
@@ -66,7 +75,7 @@ export async function POST(request: NextRequest) {
                 const qs = queries ?? [];
                 const comps = competitors ?? [];
                 const competitiveRunId = uuidv4();
-                const userId = user.id;
+                const userId = projectUserId;
                 await insertCompetitiveRun(competitiveRunId, jobId, userId, qs, comps);
                 const competitiveUsageTotals = emptyUsageTotals();
                 const competitiveByModel = await runCompetitiveBenchmarkMultiModel(
@@ -94,7 +103,7 @@ export async function POST(request: NextRequest) {
                     competitiveByModel: Object.keys(competitiveByModel).length > 0 ? competitiveByModel : null,
                 });
             }
-            await updateGeoEeatRun(jobId, user.id, {
+            await updateGeoEeatRun(jobId, projectUserId, {
                 status: 'complete',
                 payload,
             });
@@ -119,7 +128,7 @@ export async function POST(request: NextRequest) {
         } catch (e) {
             const message = e instanceof Error ? e.message : String(e);
             console.error('[CHECKION] GEO/E-E-A-T run failed:', e);
-            await updateGeoEeatRun(jobId, user.id, {
+            await updateGeoEeatRun(jobId, projectUserId, {
                 status: 'error',
                 error: message,
             });

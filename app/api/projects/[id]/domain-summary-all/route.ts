@@ -23,6 +23,7 @@ export async function GET(
 
   const project = await getProject(projectId, user.id);
   if (!project) return apiError('Project not found', API_STATUS.NOT_FOUND);
+  const projectUserId = project.userId;
 
   type OwnSummary = {
     scanId: string;
@@ -52,10 +53,10 @@ export async function GET(
   } | null;
 
   let own: OwnSummary = null;
-  const summaries = await listDomainScanSummaries(user.id, { projectId, limit: 1 });
+  const summaries = await listDomainScanSummaries(projectUserId, { projectId, limit: 1 });
   if (summaries.length > 0) {
     const scanId = summaries[0]!.id;
-    const row = await getDomainScanWithProjectId(scanId, user.id);
+    const row = await getDomainScanWithProjectId(scanId, projectUserId);
     if (row) {
       const summary = buildDomainSummary(row.result);
       const pageCount = summary.totalPageCount ?? summary.pages?.length ?? (summary as { totalPages?: number }).totalPages ?? 0;
@@ -90,7 +91,7 @@ export async function GET(
   const refs = await getProjectDomainScanReferences(projectId);
   const competitors: Record<string, CompetitorSummary> = {};
   for (const ref of refs) {
-    const row = await getDomainScanWithProjectId(ref.domainScanId, user.id);
+    const row = await getDomainScanWithProjectId(ref.domainScanId, projectUserId);
     if (!row) {
       competitors[ref.domain] = null;
       continue;

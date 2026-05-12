@@ -33,6 +33,7 @@ export async function POST(
 
   const project = await getProject(projectId, user.id);
   if (!project) return apiError('Project not found', API_STATUS.NOT_FOUND);
+  const projectUserId = project.userId;
 
   const skipUnchangedPages = req.nextUrl.searchParams.get('skipUnchangedPages') === 'true';
   const classifyPageTopics = req.nextUrl.searchParams.get('classifyPageTopics') === 'true';
@@ -41,7 +42,7 @@ export async function POST(
   const own = project.domain?.trim() ? await (async () => {
     const raw = project.domain!.trim();
     const url = raw.startsWith('http://') || raw.startsWith('https://') ? raw : `https://${raw}`;
-    const { id } = await startDomainScan(user.id, url, {
+    const { id } = await startDomainScan(projectUserId, url, {
       projectId,
       useSitemap: true,
       ...(skipUnchangedPages ? { skipUnchangedPages: true } : {}),
@@ -59,7 +60,7 @@ export async function POST(
   /** Always start a new crawl per competitor (same as own domain). Reusing a completed scan skipped new work and hid rows in the UI (`reused`). */
   const competitors: Record<string, { scanId: string; reused: false }> = {};
   for (const domain of uniqueCompetitors) {
-    const { scanId } = await startProjectCompetitorDomainScan(user.id, projectId, domain, {
+    const { scanId } = await startProjectCompetitorDomainScan(projectUserId, projectId, domain, {
       ...(skipUnchangedPages ? { skipUnchangedPages: true } : {}),
       ...(classifyPageTopics ? { classifyPageTopics: true } : {}),
       ...(aiFillProjectMetadataDisabled ? { aiFillProjectMetadata: false } : {}),

@@ -6,9 +6,10 @@
 import { NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
-import { getCachedShareByToken, getCachedScan, getCachedDomainScan } from '@/lib/cache';
-import { getJourneyRun } from '@/lib/db/journey-runs';
-import { getGeoEeatRun } from '@/lib/db/geo-eeat-runs';
+import { getCachedShareByToken } from '@/lib/cache';
+import { getJourneyRunById } from '@/lib/db/journey-runs';
+import { getGeoEeatRunById } from '@/lib/db/geo-eeat-runs';
+import { getDomainScanById, getScanById } from '@/lib/db/scans';
 import { buildDomainSummary } from '@/lib/domain-summary';
 import { verifyShareAccessToken } from '@/lib/share-access';
 import { apiShareTokenVideo } from '@/lib/constants';
@@ -33,13 +34,13 @@ export async function GET(
     }
 
     if (share.resourceType === 'single') {
-        const scan = await getCachedScan(share.resourceId, share.userId);
+        const scan = await getScanById(share.resourceId);
         if (!scan) return apiError('Scan not found', API_STATUS.NOT_FOUND);
         return NextResponse.json({ type: 'single' as const, data: scan });
     }
 
     if (share.resourceType === 'journey') {
-        const run = await getJourneyRun(share.resourceId, share.userId);
+        const run = await getJourneyRunById(share.resourceId);
         if (!run || run.status !== 'complete') return apiError('Journey not found', API_STATUS.NOT_FOUND);
         const result = (run.result ?? {}) as Record<string, unknown>;
         const videoPath = apiShareTokenVideo(token);
@@ -54,7 +55,7 @@ export async function GET(
     }
 
     if (share.resourceType === 'geo_eeat') {
-        const run = await getGeoEeatRun(share.resourceId, share.userId);
+        const run = await getGeoEeatRunById(share.resourceId);
         if (!run || run.status !== 'complete') return apiError('GEO/E-E-A-T run not found', API_STATUS.NOT_FOUND);
         return NextResponse.json({
             type: 'geo_eeat' as const,
@@ -66,7 +67,7 @@ export async function GET(
         });
     }
 
-    const domain = await getCachedDomainScan(share.resourceId, share.userId);
+    const domain = await getDomainScanById(share.resourceId);
     if (!domain) return apiError('Domain scan not found', API_STATUS.NOT_FOUND);
     const summary = buildDomainSummary(domain);
     return NextResponse.json({ type: 'domain' as const, data: summary });

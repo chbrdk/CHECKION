@@ -6,8 +6,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/lib/cache', () => ({
   getCachedShareByToken: vi.fn(),
-  getCachedScan: vi.fn(),
-  getCachedDomainScan: vi.fn(),
   invalidateShare: vi.fn(),
 }));
 
@@ -22,13 +20,27 @@ vi.mock('@/lib/db/shares', () => ({
   deleteShare: vi.fn(),
 }));
 
+vi.mock('@/lib/db/scans', () => ({
+  getScanById: vi.fn(),
+  getDomainScanById: vi.fn(),
+}));
+
+vi.mock('@/lib/db/journey-runs', () => ({
+  getJourneyRunById: vi.fn(),
+}));
+
+vi.mock('@/lib/db/geo-eeat-runs', () => ({
+  getGeoEeatRunById: vi.fn(),
+}));
+
 vi.mock('@/lib/auth-api-token', () => ({
   getRequestUser: vi.fn(),
 }));
 
-import { getCachedShareByToken, getCachedScan } from '@/lib/cache';
+import { getCachedShareByToken } from '@/lib/cache';
 import { verifyShareAccessToken, createShareAccessToken } from '@/lib/share-access';
 import { getShareByToken, verifySharePassword, deleteShare } from '@/lib/db/shares';
+import { getScanById } from '@/lib/db/scans';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { GET as GET_SHARE, DELETE as DELETE_SHARE } from '@/app/api/share/[token]/route';
 import { POST as POST_ACCESS } from '@/app/api/share/[token]/access/route';
@@ -36,7 +48,6 @@ import { POST as POST_ACCESS } from '@/app/api/share/[token]/access/route';
 describe('Share token public access', () => {
   beforeEach(() => {
     vi.mocked(getCachedShareByToken).mockReset();
-    vi.mocked(getCachedScan).mockReset();
     vi.mocked(verifyShareAccessToken).mockReset();
     vi.mocked(createShareAccessToken).mockReset();
     vi.mocked(getShareByToken).mockReset();
@@ -82,7 +93,7 @@ describe('Share token public access', () => {
     } as any);
 
     vi.mocked(verifyShareAccessToken).mockReturnValue({ shareToken: 't-1' } as any);
-    vi.mocked(getCachedScan).mockResolvedValue({ id: 'scan-1', userId: 'u-1' } as any);
+    vi.mocked(getScanById).mockResolvedValue({ id: 'scan-1', userId: 'owner-1' } as any);
 
     const req = new Request('http://localhost/api/share/t-1', {
       headers: { authorization: 'Bearer bearer-1' },

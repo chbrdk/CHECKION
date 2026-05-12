@@ -701,9 +701,11 @@
     "pagespeedDesc": "Performance, Accessibility, SEO scores (Google PageSpeed API).",
     "waybackDesc": "Domain age/history (Wayback Machine).",
     "techStackDesc": "Detect CMS, frameworks, analytics (Wappalyzer).",
+    "scanListDesc": "List paginated standalone scan summaries. Shared-project filters resolve owner-backed; omitted projectId returns all accessible scans, empty projectId only unassigned scans.",
     "scansDesc": "Retrieve a history of recent single-page scans.",
+    "scansLegacyDesc": "Legacy raw standalone scan history. Includes accessible shared-project scans, but is not the preferred paginated dashboard list endpoint.",
     "scanPostDesc": "Trigger a single page scan.",
-    "scansDomainDesc": "List deep domain scans (summaries). Optional: page, limit, q (domain substring), status, projectId (omit = all; empty = unassigned only).",
+    "scansDomainDesc": "List deep domain scans (summaries). Optional: page, limit, q (domain substring), status, projectId (omit = all accessible; empty = unassigned only). Shared project filters resolve owner-backed.",
     "scansDomainCompareDesc": "Compare two deep scans: JSON body with exactly two domain scan UUIDs in ids.",
     "scanDomainPostDesc": "Trigger a deep domain scan (async). Uses sitemap URLs when available, otherwise link crawl. Body: url, optional useSitemap (true/false).",
     "deleteDesc": "Delete a scan result from memory."

@@ -6,7 +6,7 @@
 import { NextResponse } from 'next/server';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getShareByToken } from '@/lib/db/shares';
-import { getDomainScan, getScan } from '@/lib/db/scans';
+import { getDomainScanById, getScanById } from '@/lib/db/scans';
 import { readScreenshot } from '@/lib/screenshot-storage';
 import { canAccessShare, isSharedDomainPageAllowed } from '@/lib/share-access';
 
@@ -48,10 +48,10 @@ export async function GET(
         return apiError('Not found', API_STATUS.NOT_FOUND);
     }
 
-    const domain = await getDomainScan(share.resourceId, share.userId);
+    const domain = await getDomainScanById(share.resourceId);
     if (!domain) return apiError('Not found', API_STATUS.NOT_FOUND);
 
-    const page = await getScan(pageId, share.userId);
+    const page = await getScanById(pageId);
     if (!isSharedDomainPageAllowed(domain, pageId, page)) {
         return new NextResponse(PLACEHOLDER_SVG, {
             headers: { 'Content-Type': 'image/svg+xml' },

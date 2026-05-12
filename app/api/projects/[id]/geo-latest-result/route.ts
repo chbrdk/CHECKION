@@ -23,8 +23,9 @@ export async function GET(
 
   const project = await getProject(projectId, user.id);
   if (!project) return apiError('Project not found', API_STATUS.NOT_FOUND);
+  const projectUserId = project.userId;
 
-  const runs = await listGeoEeatRuns(user.id, RUNS_LIMIT, { projectId });
+  const runs = await listGeoEeatRuns(projectUserId, RUNS_LIMIT, { projectId });
   const completeRun = runs.find((r) => r.status === 'complete' && r.payload != null);
 
   if (!completeRun || !completeRun.payload) {

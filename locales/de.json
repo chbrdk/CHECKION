@@ -701,9 +701,11 @@
     "pagespeedDesc": "Performance, Accessibility, SEO scores (Google PageSpeed API).",
     "waybackDesc": "Domain age/history (Wayback Machine).",
     "techStackDesc": "Detect CMS, frameworks, analytics (Wappalyzer).",
-    "scansDesc": "Retrieve a history of recent single-page scans.",
+    "scanListDesc": "Listet paginierte Standalone-Scan-Summaries. Shared-Project-Filter werden owner-backed aufgeloest; fehlendes projectId liefert alle zugaenglichen Scans, leeres projectId nur unzugeordnete.",
+    "scansDesc": "Liefert eine Historie kuerzlich ausgefuehrter Single-Page-Scans.",
+    "scansLegacyDesc": "Legacy-Endpoint fuer rohe Standalone-Scan-Historie. Enthaelt auch zugaengliche Shared-Project-Scans, ist aber nicht der bevorzugte paginierte Dashboard-Listenpfad.",
     "scanPostDesc": "Trigger a single page scan.",
-    "scansDomainDesc": "Liste der Domain-Deep-Scans (Summaries). Optional: page, limit, q (Domain-Substring), status, projectId (fehlt = alle; leer = ohne Projekt).",
+    "scansDomainDesc": "Liste der Domain-Deep-Scans (Summaries). Optional: page, limit, q (Domain-Substring), status, projectId (fehlt = alle zugaenglichen; leer = ohne Projekt). Shared-Project-Filter werden owner-backed aufgeloest.",
     "scansDomainCompareDesc": "Vergleich von zwei Deep Scans: JSON mit genau zwei domain_scan-UUIDs im ids-Array.",
     "scanDomainPostDesc": "Startet einen Deep Domain Scan (async). Nutzt bei vorhandener Sitemap deren URLs, sonst Link-Crawl. Body: url, optional useSitemap (true/false).",
     "deleteDesc": "Delete a scan result from memory."

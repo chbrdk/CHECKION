@@ -35,7 +35,8 @@ Stand: Nach Prüfung der Codebasis (API-Routen, MCP-Tools, Features).
 | Method | Pfad | Beschreibung |
 |--------|------|--------------|
 | POST | `/api/scan` | Scan starten (url, standard?, runners?, projectId?) → desktop/tablet/mobile |
-| GET | `/api/scan` | Scans auflisten (limit, page, projectId) |
+| GET | `/api/scan` | Standalone-Scans auflisten (limit, page, projectId, industry, tag). Fehlendes `projectId` = alle zugänglichen, leeres `projectId` = nur unzugeordnet, Shared Projects owner-backed |
+| GET | `/api/scans` | Legacy: rohe Standalone-Scan-History ohne Dashboard-Paginationvertrag, inkl. zugänglicher Shared-Project-Scans |
 | GET | `/api/scan/[id]` | Einzelergebnis |
 | DELETE | `/api/scans/[id]` | Scan löschen |
 | PATCH | `/api/scan/[id]/project` | Scan einem Projekt zuweisen |
@@ -46,7 +47,7 @@ Stand: Nach Prüfung der Codebasis (API-Routen, MCP-Tools, Features).
 | Method | Pfad | Beschreibung |
 |--------|------|--------------|
 | POST | `/api/scan/domain` | Domain-Scan starten (url, useSitemap?, maxPages?, projectId?) |
-| GET | `/api/scans/domain` | Domain-Scans auflisten (limit, page, projectId) |
+| GET | `/api/scans/domain` | Domain-Scans auflisten (limit, page, projectId, q, status, industry, tag). Fehlendes `projectId` = alle zugänglichen, leeres `projectId` = nur unzugeordnet, Shared Projects owner-backed |
 | GET | `/api/scan/domain/[id]/status` | Fortschritt/Status |
 | GET | `/api/scan/domain/[id]/summary` | Gespeicherte Summary |
 | POST | `/api/scan/domain/[id]/summarize` | LLM-Domain-Summary |

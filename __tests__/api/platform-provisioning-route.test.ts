@@ -4,6 +4,10 @@ vi.mock('@/lib/db', () => ({
   getDb: vi.fn(),
 }));
 
+vi.mock('@/lib/db/project-members', () => ({
+  replacePlatformManagedProjectMemberships: vi.fn(),
+}));
+
 vi.mock('@/lib/plexon-auth', () => ({
   getPlexonDerivedPassword: vi.fn(() => 'derived-password'),
 }));
@@ -15,14 +19,17 @@ vi.mock('bcryptjs', () => ({
 }));
 
 import { getDb } from '@/lib/db';
+import { replacePlatformManagedProjectMemberships } from '@/lib/db/project-members';
 
 function mockDb({
   emailOwner = [],
   existingUsers = [],
+  existingProjects = [],
   insertedId = 'user-1',
 }: {
   emailOwner?: Array<{ id: string }>;
   existingUsers?: Array<Record<string, unknown>>;
+  existingProjects?: Array<{ id: string }>;
   insertedId?: string;
 }) {
   let selectCall = 0;
@@ -31,7 +38,9 @@ function mockDb({
       where: () => ({
         limit: async () => {
           selectCall += 1;
-          return selectCall === 1 ? emailOwner : existingUsers;
+          if (selectCall === 1) return emailOwner;
+          if (selectCall === 2) return existingUsers;
+          return existingProjects;
         },
       }),
     }),
@@ -158,5 +167,40 @@ describe('PUT /api/platform/provisioning/users/[id]', () => {
       externalUserRef: 'user-1',
     });
     expect(deleteWhere).toHaveBeenCalled();
+  });
+
+  it('syncs explicit platform-managed project memberships', async () => {
+    mockDb({
+      existingProjects: [{ id: 'project-1' }],
+    });
+
+    const { PUT } = await import('@/app/api/platform/provisioning/users/[id]/route');
+    const response = await PUT(
+      new Request('http://localhost/api/platform/provisioning/users/user-1', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Service-Secret': 'test-secret',
+          'X-Plexon-Contract-Version': '2026-05-plexon-federation-v2',
+        },
+        body: JSON.stringify({
+          userId: 'user-1',
+          email: 'user@example.com',
+          desiredState: 'granted',
+          platformRole: 'member',
+          defaultContext: null,
+          projectAssignments: [{ projectId: 'project-1', role: 'admin' }],
+          contractVersion: '2026-05-plexon-federation-v2',
+          source: 'plexon-admin-sync',
+          requestedAt: '2026-05-12T20:00:00.000Z',
+        }),
+      }),
+      { params: Promise.resolve({ id: 'user-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(replacePlatformManagedProjectMemberships).toHaveBeenCalledWith('user-1', [
+      { projectId: 'project-1', role: 'admin' },
+    ]);
   });
 });

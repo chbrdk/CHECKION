@@ -8,7 +8,11 @@ import { NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { ENV_UX_JOURNEY_AGENT_URL } from '@/lib/constants';
-import { getJourneyRun, upsertJourneyRunResult } from '@/lib/db/journey-runs';
+import {
+    getJourneyRun,
+    resolveJourneyRunProjectAssignmentContext,
+    upsertJourneyRunResult,
+} from '@/lib/db/journey-runs';
 import { uxJourneyAgentEnabled } from '@/lib/ux-journey-agent-enabled';
 
 function buildResponse(jobId: string, data: { status: string; result?: Record<string, unknown>; error?: string }) {
@@ -36,7 +40,11 @@ export async function GET(
         return apiError('jobId required.', API_STATUS.BAD_REQUEST);
     }
 
-    const userId = user.id;
+    const access = await resolveJourneyRunProjectAssignmentContext(jobId, user.id);
+    if (!access) {
+        return apiError('Run not found.', API_STATUS.NOT_FOUND);
+    }
+    const userId = access.resourceUserId;
 
     const row = await getJourneyRun(jobId, userId);
     if (row && (row.status === 'complete' || row.status === 'error')) {

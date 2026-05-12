@@ -51,6 +51,16 @@ export async function getKeyword(id: string, userId: string): Promise<RankTracki
     return rows.length > 0 ? (rows[0] as RankTrackingKeywordRow) : null;
 }
 
+export async function getKeywordById(id: string): Promise<RankTrackingKeywordRow | null> {
+    const db = getDb();
+    const rows = await db
+        .select()
+        .from(rankTrackingKeywords)
+        .where(eq(rankTrackingKeywords.id, id))
+        .limit(1);
+    return rows.length > 0 ? (rows[0] as RankTrackingKeywordRow) : null;
+}
+
 export async function listKeywordsByProject(userId: string, projectId: string): Promise<RankTrackingKeywordRow[]> {
     const db = getDb();
     const rows = await db

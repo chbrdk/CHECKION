@@ -23,8 +23,9 @@ export async function GET(
 
     const project = await getProject(projectId, user.id);
     if (!project) return apiError('Project not found', API_STATUS.NOT_FOUND);
+    const projectUserId = project.userId;
 
-    const summaries = await listDomainScanSummaries(user.id, { projectId, limit: 1 });
+    const summaries = await listDomainScanSummaries(projectUserId, { projectId, limit: 1 });
     if (summaries.length === 0) {
         return NextResponse.json({
             success: true,
@@ -33,7 +34,7 @@ export async function GET(
     }
 
     const scanId = summaries[0]!.id;
-    const row = await getDomainScanWithProjectId(scanId, user.id);
+    const row = await getDomainScanWithProjectId(scanId, projectUserId);
     if (!row) {
         return NextResponse.json({
             success: true,

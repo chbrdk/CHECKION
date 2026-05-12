@@ -21,8 +21,9 @@ export async function GET(request: NextRequest) {
     if (!projectId) return apiError('projectId is required', API_STATUS.BAD_REQUEST);
     const project = await getProject(projectId, user.id);
     if (!project) return apiError('Project not found', API_STATUS.NOT_FOUND);
+    const projectUserId = project.userId;
 
-    const keywords = await listKeywordsByProject(user.id, projectId);
+    const keywords = await listKeywordsByProject(projectUserId, projectId);
     const ids = keywords.map((k) => k.id);
     const lastPositions = await getLastPositionsByKeywordIds(ids);
 
@@ -51,9 +52,10 @@ export async function POST(request: NextRequest) {
 
     const project = await getProject(parsed.projectId, user.id);
     if (!project) return apiError('Project not found', API_STATUS.NOT_FOUND);
+    const projectUserId = project.userId;
 
     const id = uuidv4();
-    await insertKeyword(id, user.id, parsed.projectId, {
+    await insertKeyword(id, projectUserId, parsed.projectId, {
         domain: parsed.domain,
         keyword: parsed.keyword,
         country: parsed.country,

@@ -2,9 +2,10 @@
 /*  CHECKION – GEO / E-E-A-T intensive run history (DB)               */
 /* ------------------------------------------------------------------ */
 
-import { eq, and, desc, isNull } from 'drizzle-orm';
+import { eq, and, desc, inArray, isNull } from 'drizzle-orm';
 import { getDb } from './index';
 import { geoEeatRuns } from './schema';
+import { getProject } from './projects';
 import type { GeoEeatIntensiveResult } from '@/lib/types';
 
 export type GeoEeatRunStatus = 'queued' | 'running' | 'complete' | 'error';
@@ -57,6 +58,50 @@ export async function getGeoEeatRun(id: string, userId: string): Promise<GeoEeat
     return rows.length > 0 ? (rows[0] as GeoEeatRunRow) : null;
 }
 
+export async function getGeoEeatRunById(id: string): Promise<GeoEeatRunRow | null> {
+    const db = getDb();
+    const rows = await db
+        .select()
+        .from(geoEeatRuns)
+        .where(eq(geoEeatRuns.id, id))
+        .limit(1);
+    return rows.length > 0 ? (rows[0] as GeoEeatRunRow) : null;
+}
+
+export type GeoEeatRunProjectAssignmentContext = {
+    resourceUserId: string;
+    currentProjectId: string | null;
+};
+
+export async function resolveGeoEeatRunProjectAssignmentContext(
+    id: string,
+    viewerUserId: string
+): Promise<GeoEeatRunProjectAssignmentContext | null> {
+    const own = await getGeoEeatRun(id, viewerUserId);
+    if (own) {
+        return {
+            resourceUserId: own.userId,
+            currentProjectId: own.projectId ?? null,
+        };
+    }
+
+    const db = getDb();
+    const rows = await db
+        .select()
+        .from(geoEeatRuns)
+        .where(eq(geoEeatRuns.id, id))
+        .limit(1);
+    if (rows.length === 0) return null;
+    const row = rows[0] as GeoEeatRunRow;
+    if (!row.projectId) return null;
+    const project = await getProject(row.projectId, viewerUserId);
+    if (!project) return null;
+    return {
+        resourceUserId: row.userId,
+        currentProjectId: row.projectId,
+    };
+}
+
 export async function updateGeoEeatRun(
     id: string,
     userId: string,
@@ -93,6 +138,21 @@ export async function listGeoEeatRuns(
         .select()
         .from(geoEeatRuns)
         .where(whereCond)
+        .orderBy(desc(geoEeatRuns.createdAt))
+        .limit(limit);
+    return rows as GeoEeatRunRow[];
+}
+
+export async function listSharedProjectGeoEeatRuns(
+    projectIds: string[],
+    limit: number = 50
+): Promise<GeoEeatRunRow[]> {
+    if (projectIds.length === 0) return [];
+    const db = getDb();
+    const rows = await db
+        .select()
+        .from(geoEeatRuns)
+        .where(inArray(geoEeatRuns.projectId, projectIds))
         .orderBy(desc(geoEeatRuns.createdAt))
         .limit(limit);
     return rows as GeoEeatRunRow[];

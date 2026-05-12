@@ -6,10 +6,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
-import { listStandaloneScansFull } from '@/lib/db/scans';
-import { getDomainScan, listDomainScanSummariesForSearch, listScansByGroupIdForSearch } from '@/lib/db/scans';
+import { listStandaloneScansFull, listSharedProjectStandaloneScansFull } from '@/lib/db/scans';
+import { getDomainScan, listDomainScanSummariesForSearch, listScansByGroupIdForSearch, listSharedProjectDomainScanSummariesForSearch } from '@/lib/db/scans';
 import type { ScanResult, SearchMatch, SearchMatchType } from '@/lib/types';
 import { CACHE_REVALIDATE_LIST } from '@/lib/constants';
+import { listProjects } from '@/lib/db/projects';
 
 const MAX_SINGLE_LOAD = 300;
 const MAX_DOMAIN_LOAD = 30;
@@ -82,9 +83,22 @@ async function runSearch(
     limit: number
 ): Promise<SearchMatch[]> {
     const allMatches: SearchMatch[] = [];
+    const sharedProjectIds = (await listProjects(userId))
+        .filter((project) => project.userId !== userId)
+        .map((project) => project.id);
 
     if (typeFilter === 'all' || typeFilter === 'single') {
-        const singleScans = await listStandaloneScansFull(userId, { limit: MAX_SINGLE_LOAD });
+        const [ownSingleScans, sharedSingleScans] = await Promise.all([
+            listStandaloneScansFull(userId, { limit: MAX_SINGLE_LOAD }),
+            sharedProjectIds.length > 0
+                ? listSharedProjectStandaloneScansFull(sharedProjectIds, { limit: MAX_SINGLE_LOAD })
+                : Promise.resolve([]),
+        ]);
+        const singleScans = [...ownSingleScans, ...sharedSingleScans].sort((a, b) => {
+            if (a.timestamp < b.timestamp) return 1;
+            if (a.timestamp > b.timestamp) return -1;
+            return 0;
+        });
         for (const result of singleScans) {
             const list = searchInScan(result, q, 'single', result.id);
             for (const m of list) {
@@ -96,13 +110,23 @@ async function runSearch(
     }
 
     if ((typeFilter === 'all' || typeFilter === 'domain') && allMatches.length < limit) {
-        const domainRows = await listDomainScanSummariesForSearch(userId, { limit: MAX_DOMAIN_LOAD });
+        const [ownDomainRows, sharedDomainRows] = await Promise.all([
+            listDomainScanSummariesForSearch(userId, { limit: MAX_DOMAIN_LOAD }),
+            sharedProjectIds.length > 0
+                ? listSharedProjectDomainScanSummariesForSearch(sharedProjectIds, { limit: MAX_DOMAIN_LOAD })
+                : Promise.resolve([]),
+        ]);
+        const domainRows = [...ownDomainRows, ...sharedDomainRows].sort((a, b) => {
+            if (a.timestamp < b.timestamp) return 1;
+            if (a.timestamp > b.timestamp) return -1;
+            return 0;
+        });
         for (const row of domainRows) {
             if (allMatches.length >= limit) break;
             const domain = row.domain;
             const pagesToSearch = row.hasStoredAggregated
-                ? await listScansByGroupIdForSearch(userId, row.id)
-                : ((await getDomainScan(row.id, userId))?.pages ?? []) as ScanResult[];
+                ? await listScansByGroupIdForSearch(row.userId, row.id)
+                : ((await getDomainScan(row.id, row.userId))?.pages ?? []) as ScanResult[];
             for (const page of pagesToSearch) {
                 if (allMatches.length >= limit) break;
                 const list = searchInScan(page, q, 'domain', row.id, domain);

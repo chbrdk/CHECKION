@@ -2,9 +2,10 @@
 /*  CHECKION – Projects (DB)                                          */
 /* ------------------------------------------------------------------ */
 
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, or } from 'drizzle-orm';
 import { getDb } from './index';
-import { projects } from './schema';
+import { getProjectMembership, canDeleteProject, canManageProject } from './project-members';
+import { projects, projectMembers, PROJECT_MEMBER_ROLE, PROJECT_MEMBER_STATUS, type ProjectMemberRole } from './schema';
 import { normalizeTagList } from '@/lib/tag-utils';
 import { normalizeStoredProjectIndustry } from '@/lib/industry-pool';
 
@@ -18,12 +19,18 @@ export interface ProjectRow {
     competitors: string[];
     geoQueries: string[];
     tags: string[];
+    membershipRole?: ProjectMemberRole;
     createdAt: Date;
     updatedAt: Date;
 }
 
 function mapProjectRow(row: Record<string, unknown>): ProjectRow {
-    const r = row as unknown as ProjectRow & { competitors?: unknown; geoQueries?: unknown; tags?: unknown };
+    const r = row as unknown as ProjectRow & {
+        competitors?: unknown;
+        geoQueries?: unknown;
+        tags?: unknown;
+        membershipRole?: unknown;
+    };
     return {
         id: r.id,
         userId: r.userId,
@@ -34,6 +41,7 @@ function mapProjectRow(row: Record<string, unknown>): ProjectRow {
         competitors: Array.isArray(r.competitors) ? (r.competitors as string[]) : [],
         geoQueries: Array.isArray(r.geoQueries) ? (r.geoQueries as string[]) : [],
         tags: normalizeTagList(r.tags),
+        membershipRole: typeof r.membershipRole === 'string' ? (r.membershipRole as ProjectMemberRole) : undefined,
         createdAt: r.createdAt,
         updatedAt: r.updatedAt,
     };
@@ -57,40 +65,103 @@ export async function insertProject(
     const competitors = Array.isArray(data.competitors) ? data.competitors : [];
     const geoQueries = Array.isArray(data.geoQueries) ? data.geoQueries : [];
     const tags = normalizeTagList(data.tags ?? []);
-    await db.insert(projects).values({
-        id,
-        userId,
-        name: data.name,
-        domain: data.domain ?? null,
-        industry: normalizeStoredProjectIndustry(data.industry ?? undefined),
-        valueProposition: data.valueProposition ?? null,
-        competitors,
-        geoQueries,
-        tags,
-        createdAt: now,
-        updatedAt: now,
+    await db.transaction(async (tx) => {
+        await tx.insert(projects).values({
+            id,
+            userId,
+            name: data.name,
+            domain: data.domain ?? null,
+            industry: normalizeStoredProjectIndustry(data.industry ?? undefined),
+            valueProposition: data.valueProposition ?? null,
+            competitors,
+            geoQueries,
+            tags,
+            createdAt: now,
+            updatedAt: now,
+        });
+        await tx.insert(projectMembers).values({
+            projectId: id,
+            userId,
+            role: PROJECT_MEMBER_ROLE.OWNER,
+            status: PROJECT_MEMBER_STATUS.ACTIVE,
+            createdAt: now,
+            updatedAt: now,
+        });
     });
 }
 
 export async function getProject(id: string, userId: string): Promise<ProjectRow | null> {
     const db = getDb();
     const rows = await db
-        .select()
+        .select({
+            id: projects.id,
+            userId: projects.userId,
+            name: projects.name,
+            domain: projects.domain,
+            industry: projects.industry,
+            valueProposition: projects.valueProposition,
+            competitors: projects.competitors,
+            geoQueries: projects.geoQueries,
+            tags: projects.tags,
+            createdAt: projects.createdAt,
+            updatedAt: projects.updatedAt,
+            membershipRole: projectMembers.role,
+        })
         .from(projects)
-        .where(and(eq(projects.id, id), eq(projects.userId, userId)))
+        .leftJoin(
+            projectMembers,
+            and(
+                eq(projectMembers.projectId, projects.id),
+                eq(projectMembers.userId, userId),
+                eq(projectMembers.status, PROJECT_MEMBER_STATUS.ACTIVE)
+            )
+        )
+        .where(and(eq(projects.id, id), or(eq(projects.userId, userId), eq(projectMembers.userId, userId))))
         .limit(1);
     if (rows.length === 0) return null;
-    return mapProjectRow(rows[0] as Record<string, unknown>);
+    const row = rows[0] as Record<string, unknown> & { userId: string; membershipRole?: string | null };
+    return mapProjectRow({
+        ...row,
+        membershipRole: row.membershipRole ?? (row.userId === userId ? PROJECT_MEMBER_ROLE.OWNER : undefined),
+    });
 }
 
 export async function listProjects(userId: string): Promise<ProjectRow[]> {
     const db = getDb();
     const rows = await db
-        .select()
+        .select({
+            id: projects.id,
+            userId: projects.userId,
+            name: projects.name,
+            domain: projects.domain,
+            industry: projects.industry,
+            valueProposition: projects.valueProposition,
+            competitors: projects.competitors,
+            geoQueries: projects.geoQueries,
+            tags: projects.tags,
+            createdAt: projects.createdAt,
+            updatedAt: projects.updatedAt,
+            membershipRole: projectMembers.role,
+        })
         .from(projects)
-        .where(eq(projects.userId, userId))
+        .leftJoin(
+            projectMembers,
+            and(
+                eq(projectMembers.projectId, projects.id),
+                eq(projectMembers.userId, userId),
+                eq(projectMembers.status, PROJECT_MEMBER_STATUS.ACTIVE)
+            )
+        )
+        .where(or(eq(projects.userId, userId), eq(projectMembers.userId, userId)))
         .orderBy(desc(projects.updatedAt));
-    return rows.map((row) => mapProjectRow(row as Record<string, unknown>));
+    return rows.map((row) => {
+        const mapped = row as Record<string, unknown> & { userId: string; membershipRole?: string | null };
+        return mapProjectRow({
+            ...mapped,
+            membershipRole:
+                mapped.membershipRole ?? (mapped.userId === userId ? PROJECT_MEMBER_ROLE.OWNER : undefined),
+        });
+    });
 }
 
 export async function updateProject(
@@ -107,6 +178,10 @@ export async function updateProject(
     }
 ): Promise<boolean> {
     const db = getDb();
+    const membership = await getProjectMembership(id, userId);
+    if (!canManageProject(membership?.role)) {
+        return false;
+    }
     const updated = await db
         .update(projects)
         .set({
@@ -119,14 +194,18 @@ export async function updateProject(
             ...(data.tags !== undefined && { tags: normalizeTagList(data.tags) }),
             updatedAt: new Date(),
         })
-        .where(and(eq(projects.id, id), eq(projects.userId, userId)));
+        .where(eq(projects.id, id));
     return (updated.rowCount ?? 0) > 0;
 }
 
 export async function deleteProject(id: string, userId: string): Promise<boolean> {
     const db = getDb();
+    const membership = await getProjectMembership(id, userId);
+    if (!canDeleteProject(membership?.role)) {
+        return false;
+    }
     const deleted = await db
         .delete(projects)
-        .where(and(eq(projects.id, id), eq(projects.userId, userId)));
+        .where(eq(projects.id, id));
     return (deleted.rowCount ?? 0) > 0;
 }

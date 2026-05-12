@@ -6,7 +6,7 @@
 import { NextResponse } from 'next/server';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getCachedShareByToken } from '@/lib/cache';
-import { getJourneyRun } from '@/lib/db/journey-runs';
+import { getJourneyRunById } from '@/lib/db/journey-runs';
 import { ENV_UX_JOURNEY_AGENT_URL } from '@/lib/constants';
 import { canAccessShare } from '@/lib/share-access';
 
@@ -23,7 +23,7 @@ export async function GET(
         return apiError('Password required', API_STATUS.FORBIDDEN, { requiresPassword: true });
     }
 
-    const run = await getJourneyRun(share.resourceId, share.userId);
+    const run = await getJourneyRunById(share.resourceId);
     if (!run || run.status !== 'complete') {
         return apiError('Journey not found', API_STATUS.NOT_FOUND);
     }

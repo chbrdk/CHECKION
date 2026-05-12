@@ -3,6 +3,7 @@ import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { parseApiBody, scanDomainBodySchema } from '@/lib/api-schemas';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { getProject } from '@/lib/db/projects';
 import { startDomainScan } from '@/lib/domain-scan-start';
 
 export const maxDuration = 10;
@@ -22,8 +23,16 @@ export async function POST(req: NextRequest) {
     }
     const parsed = await parseApiBody(req, scanDomainBodySchema);
     if (parsed instanceof NextResponse) return parsed;
+    let projectUserId = user.id;
+    if (parsed.projectId) {
+        const project = await getProject(parsed.projectId, user.id);
+        if (!project) {
+            return apiError('Project not found', API_STATUS.NOT_FOUND);
+        }
+        projectUserId = project.userId;
+    }
     const url = parsed.url.trim().toLowerCase().startsWith('http') ? parsed.url.trim() : `https://${parsed.url.trim()}`;
-    const { id } = await startDomainScan(user.id, url, {
+    const { id } = await startDomainScan(projectUserId, url, {
         projectId: parsed.projectId,
         useSitemap: parsed.useSitemap,
         maxPages: parsed.maxPages,

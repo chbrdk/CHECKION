@@ -19,8 +19,9 @@ export async function GET(
 
   const project = await getProject(projectId, user.id);
   if (!project) return apiError('Project not found', API_STATUS.NOT_FOUND);
+  const projectUserId = project.userId;
 
-  const scans = await listActiveDomainScansForProject(user.id, projectId);
+  const scans = await listActiveDomainScansForProject(projectUserId, projectId);
 
   return NextResponse.json({
     success: true,

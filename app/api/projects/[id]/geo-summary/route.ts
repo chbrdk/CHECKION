@@ -95,8 +95,9 @@ export async function GET(
 
     const project = await getProject(projectId, user.id);
     if (!project) return apiError('Project not found', API_STATUS.NOT_FOUND);
+    const projectUserId = project.userId;
 
-    const runs = await listGeoEeatRuns(user.id, RUNS_LIMIT, { projectId });
+    const runs = await listGeoEeatRuns(projectUserId, RUNS_LIMIT, { projectId });
 
     const projectDomain = project.domain ?? '';
     const competitorDomains = (project.competitors ?? [])

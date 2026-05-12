@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
-import { getGeoEeatRun } from '@/lib/db/geo-eeat-runs';
+import { getGeoEeatRun, resolveGeoEeatRunProjectAssignmentContext } from '@/lib/db/geo-eeat-runs';
 import { getCompetitiveRun } from '@/lib/db/geo-eeat-competitive-runs';
 
 export async function GET(
@@ -23,12 +23,17 @@ export async function GET(
         return apiError('jobId and runId required.', API_STATUS.BAD_REQUEST);
     }
 
-    const run = await getGeoEeatRun(jobId, user.id);
+    const access = await resolveGeoEeatRunProjectAssignmentContext(jobId, user.id);
+    if (!access) {
+        return apiError('Run not found.', API_STATUS.NOT_FOUND);
+    }
+    const ownerUserId = access.resourceUserId;
+    const run = await getGeoEeatRun(jobId, ownerUserId);
     if (!run) {
         return apiError('Run not found.', API_STATUS.NOT_FOUND);
     }
 
-    const competitiveRun = await getCompetitiveRun(runId, user.id);
+    const competitiveRun = await getCompetitiveRun(runId, ownerUserId);
     if (!competitiveRun || competitiveRun.geoEeatRunId !== jobId) {
         return apiError('Competitive run not found.', API_STATUS.NOT_FOUND);
     }

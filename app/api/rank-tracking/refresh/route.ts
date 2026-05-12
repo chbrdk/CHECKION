@@ -10,6 +10,7 @@ import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { parseApiBody, rankTrackingRefreshBodySchema } from '@/lib/api-schemas';
 import {
     getKeyword,
+    getKeywordById,
     listKeywordIdsByProject,
     touchKeywordUpdatedAt,
 } from '@/lib/db/rank-tracking-keywords';
@@ -30,10 +31,24 @@ export async function POST(request: NextRequest) {
         return apiError('SERP rank tracking is not configured (SERP_API_KEY missing)', API_STATUS.BAD_GATEWAY);
     }
 
+    let projectUserId: string | null = null;
+    if (parsed.projectId) {
+        const project = await getProject(parsed.projectId, user.id);
+        if (!project) return apiError('Project not found', API_STATUS.NOT_FOUND);
+        projectUserId = project.userId;
+    }
+
     const keywordIds: string[] = [];
     if (parsed.keywordId) {
-        const kw = await getKeyword(parsed.keywordId, user.id);
+        const ownKeyword = await getKeyword(parsed.keywordId, user.id);
+        const kw = ownKeyword ?? await getKeywordById(parsed.keywordId);
         if (!kw) return apiError('Keyword not found', API_STATUS.NOT_FOUND);
+        if (kw.userId !== user.id) {
+            if (!kw.projectId) return apiError('Keyword not found', API_STATUS.NOT_FOUND);
+            const project = await getProject(kw.projectId, user.id);
+            if (!project) return apiError('Keyword not found', API_STATUS.NOT_FOUND);
+            projectUserId = kw.userId;
+        }
         keywordIds.push(parsed.keywordId);
     } else if (parsed.projectId) {
         keywordIds.push(...(await listKeywordIdsByProject(parsed.projectId)));
@@ -41,7 +56,7 @@ export async function POST(request: NextRequest) {
 
     const results: Array<{ keywordId: string; position: number | null; competitorPositions?: Record<string, number | null> }> = [];
     for (const kid of keywordIds) {
-        const kw = await getKeyword(kid, user.id);
+        const kw = await getKeyword(kid, projectUserId ?? user.id);
         if (!kw) continue;
         const competitorDomains = kw.projectId
             ? (await getProject(kw.projectId, user.id))?.competitors ?? []
@@ -55,7 +70,7 @@ export async function POST(request: NextRequest) {
                 competitorDomains,
             });
             await insertPosition(kid, position, uuidv4(), competitorPositions);
-            await touchKeywordUpdatedAt(kid, user.id);
+            await touchKeywordUpdatedAt(kid, kw.userId);
             results.push({ keywordId: kid, position, competitorPositions });
         } catch (err) {
             const msg = err instanceof Error ? err.message : 'SERP request failed';

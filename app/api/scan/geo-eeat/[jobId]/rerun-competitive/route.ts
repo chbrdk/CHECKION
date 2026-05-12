@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
-import { getGeoEeatRun, updateGeoEeatRun } from '@/lib/db/geo-eeat-runs';
+import { getGeoEeatRun, resolveGeoEeatRunProjectAssignmentContext, updateGeoEeatRun } from '@/lib/db/geo-eeat-runs';
 import { insertCompetitiveRun, updateCompetitiveRun } from '@/lib/db/geo-eeat-competitive-runs';
 import { runCompetitiveBenchmarkMultiModel } from '@/lib/geo-eeat/competitive-benchmark';
 import { reportUsage } from '@/lib/usage-report';
@@ -42,7 +42,14 @@ export async function POST(
         return apiError('jobId required.', API_STATUS.BAD_REQUEST);
     }
 
-    const run = await getGeoEeatRun(jobId, user.id);
+    const access = await resolveGeoEeatRunProjectAssignmentContext(jobId, user.id);
+    if (!access) {
+        return apiError('Run not found.', API_STATUS.NOT_FOUND);
+    }
+    if (access.resourceUserId !== user.id) {
+        return apiError('Forbidden', API_STATUS.FORBIDDEN);
+    }
+    const run = await getGeoEeatRun(jobId, access.resourceUserId);
     if (!run) {
         return apiError('Run not found.', API_STATUS.NOT_FOUND);
     }
@@ -57,7 +64,7 @@ export async function POST(
 
     const currentPayload: GeoEeatIntensiveResult = run.payload ?? { pages: [], recommendations: [] };
     const competitiveRunId = uuidv4();
-    const userId = user.id;
+    const userId = access.resourceUserId;
 
     await insertCompetitiveRun(competitiveRunId, jobId, userId, prev.queries, prev.competitors);
     await updateGeoEeatRun(jobId, userId, { status: 'running' });

@@ -7,6 +7,7 @@ import { NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { ENV_UX_JOURNEY_AGENT_URL } from '@/lib/constants';
+import { resolveJourneyRunProjectAssignmentContext } from '@/lib/db/journey-runs';
 import { uxJourneyAgentEnabled } from '@/lib/ux-journey-agent-enabled';
 
 export async function GET(
@@ -24,6 +25,10 @@ export async function GET(
     const { jobId } = await params;
     if (!jobId) {
         return apiError('jobId required.', API_STATUS.BAD_REQUEST);
+    }
+    const access = await resolveJourneyRunProjectAssignmentContext(jobId, user.id);
+    if (!access) {
+        return apiError('Run not found.', API_STATUS.NOT_FOUND);
     }
 
     const agentBaseUrl = process.env[ENV_UX_JOURNEY_AGENT_URL];

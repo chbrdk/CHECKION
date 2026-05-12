@@ -32,11 +32,12 @@ export async function GET(
     if (!project) {
         return apiError('Project not found', API_STATUS.NOT_FOUND);
     }
+    const projectUserId = project.userId;
     const [domainScansCount, journeyRunsCount, geoEeatRunsCount, singleScansCount, rankTrackingKeywordsCount] = await Promise.all([
-        getDomainScansCount(user.id, { projectId: id }),
-        listJourneyRuns(user.id, 10000, { projectId: id }).then((r) => r.length),
-        listGeoEeatRuns(user.id, 10000, { projectId: id }).then((r) => r.length),
-        getStandaloneScansCount(user.id, { projectId: id }),
+        getDomainScansCount(projectUserId, { projectId: id }),
+        listJourneyRuns(projectUserId, 10000, { projectId: id }).then((r) => r.length),
+        listGeoEeatRuns(projectUserId, 10000, { projectId: id }).then((r) => r.length),
+        getStandaloneScansCount(projectUserId, { projectId: id }),
         getKeywordsCountByProject(id),
     ]);
     return NextResponse.json({

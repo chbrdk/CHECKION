@@ -11,6 +11,7 @@ import { parseApiBody, journeyAgentBodySchema } from '@/lib/api-schemas';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { ENV_UX_JOURNEY_AGENT_URL } from '@/lib/constants';
 import { insertJourneyRun } from '@/lib/db/journey-runs';
+import { getProject } from '@/lib/db/projects';
 import { reportUsage } from '@/lib/usage-report';
 import { uxJourneyAgentEnabled } from '@/lib/ux-journey-agent-enabled';
 
@@ -34,6 +35,14 @@ export async function POST(request: NextRequest) {
     const parsed = await parseApiBody(request, journeyAgentBodySchema);
     if (parsed instanceof NextResponse) return parsed;
     const { url, task, projectId } = parsed;
+    let projectUserId = user.id;
+    if (projectId) {
+        const project = await getProject(projectId, user.id);
+        if (!project) {
+            return apiError('Project not found', API_STATUS.NOT_FOUND);
+        }
+        projectUserId = project.userId;
+    }
 
     const agentBaseUrl = process.env[ENV_UX_JOURNEY_AGENT_URL];
     if (!agentBaseUrl) {
@@ -61,7 +70,7 @@ export async function POST(request: NextRequest) {
         }
         const jobId = data.jobId as string;
         try {
-            await insertJourneyRun(jobId, user.id, url, task, projectId !== undefined ? { projectId } : undefined);
+            await insertJourneyRun(jobId, projectUserId, url, task, projectId !== undefined ? { projectId } : undefined);
         } catch (err) {
             // non-fatal: history unavailable if table missing or DB error
             console.warn('[journey-agent] Could not save run to history:', err instanceof Error ? err.message : err);

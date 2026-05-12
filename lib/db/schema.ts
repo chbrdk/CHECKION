@@ -5,6 +5,19 @@
 import { sql } from 'drizzle-orm';
 import { pgTable, text, timestamp, jsonb, integer, primaryKey, uniqueIndex, index } from 'drizzle-orm/pg-core';
 
+export const PROJECT_MEMBER_ROLE = {
+    OWNER: 'owner',
+    ADMIN: 'admin',
+    MEMBER: 'member',
+} as const;
+export type ProjectMemberRole = (typeof PROJECT_MEMBER_ROLE)[keyof typeof PROJECT_MEMBER_ROLE];
+
+export const PROJECT_MEMBER_STATUS = {
+    ACTIVE: 'active',
+    INVITED: 'invited',
+} as const;
+export type ProjectMemberStatus = (typeof PROJECT_MEMBER_STATUS)[keyof typeof PROJECT_MEMBER_STATUS];
+
 export const users = pgTable('users', {
     id: text('id').primaryKey(),
     email: text('email').notNull().unique(),
@@ -41,6 +54,38 @@ export const projects = pgTable('projects', {
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** Explicit project memberships. `projects.user_id` remains the owner anchor. */
+export const projectMembers = pgTable(
+    'project_members',
+    {
+        projectId: text('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+        userId: text('user_id').notNull(), // PLEXON user id when using central auth
+        role: text('role').notNull().default(PROJECT_MEMBER_ROLE.MEMBER),
+        status: text('status').notNull().default(PROJECT_MEMBER_STATUS.ACTIVE),
+        createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    },
+    (t) => ({
+        pk: primaryKey({ columns: [t.projectId, t.userId] }),
+        userProjectRoleIdx: index('project_members_user_project_role_idx').on(t.userId, t.projectId, t.role),
+    })
+);
+
+/** Tracks which memberships are platform-managed so later resyncs only touch those rows. */
+export const platformManagedProjectMemberships = pgTable(
+    'platform_managed_project_memberships',
+    {
+        projectId: text('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+        userId: text('user_id').notNull(),
+        role: text('role').notNull().default(PROJECT_MEMBER_ROLE.MEMBER),
+        createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    },
+    (t) => ({
+        pk: primaryKey({ columns: [t.projectId, t.userId] }),
+    })
+);
 
 /** One multi-device standalone run (POST /api/scan); `id` matches `scans.group_id` for that batch. */
 export const scanSessions = pgTable('scan_sessions', {

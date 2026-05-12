@@ -31,6 +31,7 @@ export async function POST(
 
   const project = await getProject(projectId, user.id);
   if (!project) return apiError('Project not found', API_STATUS.NOT_FOUND);
+  const projectUserId = project.userId;
 
   const parsed = await parseApiBody(req, projectCompetitorDomainScanBodySchema);
   if (parsed instanceof NextResponse) return parsed;
@@ -52,7 +53,7 @@ export async function POST(
   const classifyPageTopics = req.nextUrl.searchParams.get('classifyPageTopics') === 'true';
   const aiFillProjectMetadataDisabled = req.nextUrl.searchParams.get('aiFillProjectMetadata') === 'false';
 
-  const { scanId } = await startProjectCompetitorDomainScan(user.id, projectId, normalized, {
+  const { scanId } = await startProjectCompetitorDomainScan(projectUserId, projectId, normalized, {
     ...(skipUnchangedPages ? { skipUnchangedPages: true } : {}),
     ...(classifyPageTopics ? { classifyPageTopics: true } : {}),
     ...(aiFillProjectMetadataDisabled ? { aiFillProjectMetadata: false } : {}),

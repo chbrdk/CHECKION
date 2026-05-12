@@ -6,6 +6,7 @@ import { NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { canMutateDomainScanAsOwner, getDomainScanAccess } from '@/lib/domain-scan-access';
 import { getDomainScan, listScansByGroupIdOmitImageBlobs } from '@/lib/db/scans';
 import { PAGE_CLASSIFY_MIN_BODY_EXCERPT_CHARS } from '@/lib/llm/page-classification';
 import { runDomainScanPageClassificationJob } from '@/lib/domain-scan-page-classification-job';
@@ -28,11 +29,19 @@ export async function POST(
     }
 
     const { id: domainId } = await params;
-    const domainScan = await getDomainScan(domainId, user.id);
+    const access = await getDomainScanAccess(_request, domainId);
+    if (!access.ok) {
+        return apiError('Domain scan not found.', API_STATUS.NOT_FOUND);
+    }
+    if (!canMutateDomainScanAsOwner(access)) {
+        return apiError('Forbidden', API_STATUS.FORBIDDEN);
+    }
+    const ownerUserId = access.ownerUserId;
+    const domainScan = await getDomainScan(domainId, ownerUserId);
     if (!domainScan) {
         return apiError('Domain scan not found.', API_STATUS.NOT_FOUND);
     }
-    const pages = await listScansByGroupIdOmitImageBlobs(user.id, domainId);
+    const pages = await listScansByGroupIdOmitImageBlobs(ownerUserId, domainId);
     const toClassify = pages.filter(
         (p) => (p.bodyTextExcerpt ?? '').trim().length >= PAGE_CLASSIFY_MIN_BODY_EXCERPT_CHARS
     );
@@ -46,7 +55,7 @@ export async function POST(
         });
     }
 
-    void runDomainScanPageClassificationJob({ domainScanId: domainId, userId: user.id });
+    void runDomainScanPageClassificationJob({ domainScanId: domainId, userId: ownerUserId });
 
     return NextResponse.json(
         {
