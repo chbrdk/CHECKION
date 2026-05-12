@@ -2,6 +2,7 @@
 /*  CHECKION – Auth via PLEXON (zentrale User-DB nur in PLEXON)       */
 /* ------------------------------------------------------------------ */
 
+import { createHmac } from 'crypto';
 import { getPlexonContractHeaders } from '@/lib/plexon-contract';
 
 const PLEXON_AUTH_URL = process.env.PLEXON_AUTH_URL ?? '';
@@ -12,6 +13,13 @@ export function isPlexonAuthConfigured(): boolean {
 }
 
 export type PlexonAuthUser = { id: string; email: string; name?: string };
+
+export function getPlexonDerivedPassword(plexonUserId: string): string {
+  return createHmac('sha256', PLEXON_SERVICE_SECRET)
+    .update(plexonUserId)
+    .digest('base64url')
+    .slice(0, 32);
+}
 
 /**
  * Validiert E-Mail/Passwort gegen PLEXON. Nur wenn PLEXON_AUTH_URL und
