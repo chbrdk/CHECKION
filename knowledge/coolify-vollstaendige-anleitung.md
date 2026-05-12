@@ -88,6 +88,8 @@ In Coolify unter **CHECKION** → **Environment Variables** eintragen:
 | **Weitere (optional):** | | |
 | `OPENAI_API_KEY` | Optional | Für AI-Features (GEO, Journey, Saliency, …) |
 | `DS_BASE` | Build (Docker) | Im Dockerfile gesetzt; normalerweise nicht in Coolify setzen |
+| `BASE_PATH` | Optional | Nur für echten URL-Prefix, dann **nur als Pfad** setzen, z. B. `/checkion` |
+| `NEXT_PUBLIC_APP_BASE_URL` | Optional | Für Client/API-Pfade unter Subpath, ebenfalls **nur als Pfad**, z. B. `/checkion` |
 | `SALIENCY_SERVICE_URL`, `UX_JOURNEY_AGENT_URL`, S3, etc. | Optional | Siehe CHECKION `.env.example` |
 | `CHECKION_BACKFILL_DOMAIN_SCAN_LINEAGE_ON_START` | Optional (einmalig) | `1` = vor App-Start `scripts/backfill-domain-scan-lineage.ts` ausführen (nach Schema-Push). Nach erstem Deploy setzen, danach wieder entfernen. Siehe `knowledge/checkion-domain-scan-lineage.md` |
 | `CHECKION_REFRESH_DOMAIN_PAYLOADS_ON_START` | Optional (einmalig) | Siehe `knowledge/checkion-docker-refresh-domain-payloads.md` |
@@ -96,6 +98,7 @@ In Coolify unter **CHECKION** → **Environment Variables** eintragen:
 - `NEXTAUTH_URL` = exakt die CHECKION-URL.  
 - `PLEXON_AUTH_URL` = exakt die PLEXON-URL (ohne trailing slash).  
 - `PLEXON_SERVICE_SECRET` muss in **PLEXON** und **CHECKION** identisch sein.
+- `BASE_PATH` und `NEXT_PUBLIC_APP_BASE_URL` sind **keine** Full URLs. Verwende `/checkion`, nicht `https://checkion.example.com`.
 
 ### 3.3 Datenbank für CHECKION (wenn in Coolify)
 

@@ -5,10 +5,26 @@
 
 import { toScanStartUrl } from '@/lib/url-normalize';
 
-/** When the app is served under a subpath (e.g. /checkion), set NEXT_PUBLIC_APP_BASE_URL and ideally BASE_PATH to that path so API fetches, redirects, and assets stay aligned. */
+function normalizeAppBasePath(value: string | undefined): string {
+  const raw = value?.trim() ?? '';
+  if (!raw) return '';
+  let candidate = raw;
+  if (/^https?:\/\//i.test(candidate)) {
+    try {
+      candidate = new URL(candidate).pathname || '';
+    } catch {
+      candidate = '';
+    }
+  }
+  if (!candidate || candidate === '/') return '';
+  if (!candidate.startsWith('/')) candidate = `/${candidate}`;
+  return candidate.replace(/\/$/, '');
+}
+
+/** When the app is served under a subpath (e.g. /checkion), set NEXT_PUBLIC_APP_BASE_URL and ideally BASE_PATH to that path so API fetches, redirects, and assets stay aligned. Full URLs are reduced to their pathname. */
 const APP_BASE_URL =
-  typeof process !== 'undefined' && (process.env?.NEXT_PUBLIC_APP_BASE_URL || process.env?.BASE_PATH)
-    ? (process.env.NEXT_PUBLIC_APP_BASE_URL || process.env.BASE_PATH || '').replace(/\/$/, '')
+  typeof process !== 'undefined'
+    ? normalizeAppBasePath(process.env?.NEXT_PUBLIC_APP_BASE_URL || process.env?.BASE_PATH)
     : '';
 export const CHECKION_PLATFORM_PRODUCT_ID = 'checkion';
 

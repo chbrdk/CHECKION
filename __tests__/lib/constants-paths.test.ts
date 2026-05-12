@@ -84,6 +84,14 @@ describe('Path constants', () => {
         expect(PATH_SCAN).toBe('/scan');
     });
 
+    it('normalizes absolute app URLs to a safe base path', async () => {
+        vi.resetModules();
+        vi.stubEnv('NEXT_PUBLIC_APP_BASE_URL', 'https://checkion.example.com/checkion/');
+        const { getAppBasePath, getPublicAssetPath } = await import('@/lib/constants');
+        expect(getAppBasePath()).toBe('/checkion');
+        expect(getPublicAssetPath('/favicon.svg')).toBe('/checkion/favicon.svg');
+    });
+
     it('pathResults builds /results/[id]', () => {
         expect(pathResults('abc-123')).toBe('/results/abc-123');
     });

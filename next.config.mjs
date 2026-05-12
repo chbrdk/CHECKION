@@ -19,7 +19,23 @@ const dsBase = process.env.DS_BASE
 // Proxy /mcp to MCP server when MCP_SERVER_URL is set (see lib/constants.ts ENV_MCP_SERVER_URL).
 // Enables single-domain deployment: https://checkion.example.com/mcp → MCP server.
 const mcpBase = process.env.MCP_SERVER_URL?.replace(/\/$/, '') ?? '';
-const basePath = (process.env.BASE_PATH ?? process.env.NEXT_PUBLIC_APP_BASE_URL ?? '').replace(/\/$/, '');
+function normalizeBasePath(value) {
+    const raw = (value ?? '').trim();
+    if (!raw) return '';
+    let candidate = raw;
+    if (/^https?:\/\//i.test(candidate)) {
+        try {
+            candidate = new URL(candidate).pathname || '';
+        } catch {
+            candidate = '';
+        }
+    }
+    if (!candidate || candidate === '/') return '';
+    if (!candidate.startsWith('/')) candidate = `/${candidate}`;
+    return candidate.replace(/\/$/, '');
+}
+
+const basePath = normalizeBasePath(process.env.BASE_PATH ?? process.env.NEXT_PUBLIC_APP_BASE_URL ?? '');
 
 const nextConfig = {
     basePath: basePath || undefined,
