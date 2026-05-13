@@ -1580,6 +1580,15 @@ export async function getDomainScansCountAllUsers(
     return queryDomainScansCount(undefined, options);
 }
 
+export async function countScansByProjectId(projectId: string): Promise<number> {
+    const db = getDb();
+    const [row] = await db
+        .select({ n: count() })
+        .from(scans)
+        .where(eq(scans.projectId, projectId));
+    return Number(row?.n ?? 0);
+}
+
 export async function deleteDomainScan(id: string, userId: string): Promise<boolean> {
     const db = getDb();
     const deleted = await db.delete(domainScans).where(and(eq(domainScans.id, id), eq(domainScans.userId, userId)));

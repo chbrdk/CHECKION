@@ -98,7 +98,7 @@ describe('PUT /api/platform/provisioning/users/[id]', () => {
         headers: {
           'Content-Type': 'application/json',
           'X-Service-Secret': 'test-secret',
-          'X-Plexon-Contract-Version': '2026-05-plexon-federation-v2',
+          'X-Plexon-Contract-Version': '2026-05-plexon-federation-v3',
         },
         body: JSON.stringify({
           userId: 'user-1',
@@ -110,7 +110,7 @@ describe('PUT /api/platform/provisioning/users/[id]', () => {
           desiredState: 'granted',
           platformRole: 'member',
           defaultContext: null,
-          contractVersion: '2026-05-plexon-federation-v2',
+          contractVersion: '2026-05-plexon-federation-v3',
           source: 'plexon-admin-sync',
           requestedAt: '2026-05-12T20:00:00.000Z',
         }),
@@ -145,7 +145,7 @@ describe('PUT /api/platform/provisioning/users/[id]', () => {
         headers: {
           'Content-Type': 'application/json',
           'X-Service-Secret': 'test-secret',
-          'X-Plexon-Contract-Version': '2026-05-plexon-federation-v2',
+          'X-Plexon-Contract-Version': '2026-05-plexon-federation-v3',
         },
         body: JSON.stringify({
           userId: 'user-1',
@@ -153,7 +153,7 @@ describe('PUT /api/platform/provisioning/users/[id]', () => {
           desiredState: 'disabled',
           platformRole: 'member',
           defaultContext: null,
-          contractVersion: '2026-05-plexon-federation-v2',
+          contractVersion: '2026-05-plexon-federation-v3',
           source: 'plexon-admin-sync',
           requestedAt: '2026-05-12T20:00:00.000Z',
         }),
@@ -181,7 +181,7 @@ describe('PUT /api/platform/provisioning/users/[id]', () => {
         headers: {
           'Content-Type': 'application/json',
           'X-Service-Secret': 'test-secret',
-          'X-Plexon-Contract-Version': '2026-05-plexon-federation-v2',
+          'X-Plexon-Contract-Version': '2026-05-plexon-federation-v3',
         },
         body: JSON.stringify({
           userId: 'user-1',
@@ -190,7 +190,7 @@ describe('PUT /api/platform/provisioning/users/[id]', () => {
           platformRole: 'member',
           defaultContext: null,
           projectAssignments: [{ projectId: 'project-1', role: 'admin' }],
-          contractVersion: '2026-05-plexon-federation-v2',
+          contractVersion: '2026-05-plexon-federation-v3',
           source: 'plexon-admin-sync',
           requestedAt: '2026-05-12T20:00:00.000Z',
         }),

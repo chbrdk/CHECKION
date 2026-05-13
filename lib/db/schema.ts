@@ -39,21 +39,33 @@ export const apiTokens = pgTable('api_tokens', {
 });
 
 /** User projects: group domain/scans/journeys/geo-runs for a customer or domain. Competitors = single source of truth for rank tracking and GEO. */
-export const projects = pgTable('projects', {
-    id: text('id').primaryKey(),
-    userId: text('user_id').notNull(), // PLEXON user id when using central auth
-    name: text('name').notNull(),
-    domain: text('domain'),
-    /** Optional sector label for filtering (e.g. healthcare, saas). */
-    industry: text('industry'),
-    valueProposition: text('value_proposition'),
-    competitors: jsonb('competitors').notNull().default([]), // string[] – competitor domains
-    geoQueries: jsonb('geo_queries').notNull().default([]), // string[] – GEO/E-E-A-T queries for this project
-    /** Normalized tag strings (lowercase) for list filters. */
-    tags: jsonb('tags').notNull().default([]),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-});
+export const projects = pgTable(
+    'projects',
+    {
+        id: text('id').primaryKey(),
+        userId: text('user_id').notNull(), // PLEXON user id when using central auth
+        name: text('name').notNull(),
+        domain: text('domain'),
+        /** Optional sector label for filtering (e.g. healthcare, saas). */
+        industry: text('industry'),
+        valueProposition: text('value_proposition'),
+        competitors: jsonb('competitors').notNull().default([]), // string[] – competitor domains
+        geoQueries: jsonb('geo_queries').notNull().default([]), // string[] – GEO/E-E-A-T queries for this project
+        /** Normalized tag strings (lowercase) for list filters. */
+        tags: jsonb('tags').notNull().default([]),
+        /** Canonical PLEXON platform project id (mirror). */
+        platformProjectId: text('platform_project_id'),
+        platformCompanyId: text('platform_company_id'),
+        createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    },
+    (t) => ({
+        platformProjectIdUnique: uniqueIndex('projects_platform_project_id_unique')
+            .on(t.platformProjectId)
+            // Multiple legacy rows have NULL platform id
+            .where(sql`${t.platformProjectId} IS NOT NULL`),
+    })
+);
 
 /** Explicit project memberships. `projects.user_id` remains the owner anchor. */
 export const projectMembers = pgTable(

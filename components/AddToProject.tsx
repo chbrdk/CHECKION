@@ -1,5 +1,10 @@
 'use client';
 
+/**
+ * Assigns a resource to a CHECKION project. For multi-product setups, prefer creating canonical
+ * platform projects in PLEXON and running product sync so CHECKION mirrors stay aligned.
+ */
+
 import { useCallback, useEffect, useState } from 'react';
 import { Box, Dialog, DialogTitle, DialogContent, DialogActions, Menu, MenuItem } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxFormField } from '@msqdx/react';

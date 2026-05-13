@@ -12,7 +12,7 @@ describe('CHECKION runtime metadata', () => {
       app: 'checkion',
       runtime: 'nextjs',
       version: '0.1.0',
-      federationContractVersion: '2026-05-plexon-federation-v2',
+      federationContractVersion: '2026-05-plexon-federation-v3',
     });
   });
 

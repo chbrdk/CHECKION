@@ -58,6 +58,8 @@ export async function insertProject(
         competitors?: string[];
         geoQueries?: string[];
         tags?: string[];
+        platformProjectId?: string | null;
+        platformCompanyId?: string | null;
     }
 ): Promise<void> {
     const db = getDb();
@@ -76,6 +78,8 @@ export async function insertProject(
             competitors,
             geoQueries,
             tags,
+            platformProjectId: data.platformProjectId ?? null,
+            platformCompanyId: data.platformCompanyId ?? null,
             createdAt: now,
             updatedAt: now,
         });
@@ -88,6 +92,16 @@ export async function insertProject(
             updatedAt: now,
         });
     });
+}
+
+export async function getProjectRowByPlatformProjectId(platformProjectId: string) {
+    const db = getDb();
+    const [row] = await db
+        .select()
+        .from(projects)
+        .where(eq(projects.platformProjectId, platformProjectId))
+        .limit(1);
+    return row ?? null;
 }
 
 export async function getProject(id: string, userId: string): Promise<ProjectRow | null> {

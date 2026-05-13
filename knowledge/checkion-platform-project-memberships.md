@@ -3,6 +3,9 @@
 ## Goal
 Enable `PLEXON` to grant explicit `CHECKION` project access per user without replacing `CHECKION` as the local authorization authority.
 
+## Related (PLEXON)
+Operational rollout, Env-Variablen und Smoke-Checks für die gesamte Plattform: im **PLEXON**-Repository `knowledge/platform-rollout-checkliste.md`.
+
 ## Local Model
 - `projects.userId` remains the owner anchor for legacy rows and shared-project data ownership.
 - `project_members` adds explicit memberships per `projectId + userId`.
