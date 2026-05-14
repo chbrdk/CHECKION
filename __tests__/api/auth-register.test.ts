@@ -8,6 +8,7 @@ import { __resetRateLimitStoresForTests } from '@/lib/rate-limit';
 
 describe('POST /api/auth/register', () => {
   const originalEnv = process.env;
+  const originalFetch = globalThis.fetch;
 
   beforeEach(() => {
     vi.resetModules();
@@ -22,6 +23,7 @@ describe('POST /api/auth/register', () => {
 
   afterEach(() => {
     process.env = originalEnv;
+    globalThis.fetch = originalFetch;
     __resetRateLimitStoresForTests();
   });
 
@@ -130,5 +132,31 @@ describe('POST /api/auth/register', () => {
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.error).toMatch(/digit/i);
+  });
+
+  it('registers at PLEXON and skips local insert when PLEXON auth is configured', async () => {
+    process.env.PLEXON_AUTH_URL = 'https://plexon.test';
+    process.env.PLEXON_SERVICE_SECRET = 'test-secret-16chars';
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ userId: 'plexon-user-1' }), { status: 200 })
+    );
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    const req = new Request('http://localhost/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'new@example.com', password: 'Password123', name: 'Ada' }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json).toEqual({ success: true, userId: 'plexon-user-1', plexon: true });
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://plexon.test/api/auth/register',
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.stringContaining('new@example.com'),
+      })
+    );
   });
 });

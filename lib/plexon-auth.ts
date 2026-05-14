@@ -5,17 +5,23 @@
 import { createHmac } from 'crypto';
 import { getPlexonContractHeaders } from '@/lib/plexon-contract';
 
-const PLEXON_AUTH_URL = process.env.PLEXON_AUTH_URL ?? '';
-const PLEXON_SERVICE_SECRET = process.env.PLEXON_SERVICE_SECRET ?? '';
+/** Read env at call time so runtime config and tests see current `process.env`. */
+function getPlexonAuthUrl(): string {
+  return (process.env.PLEXON_AUTH_URL ?? '').trim();
+}
+
+function getPlexonServiceSecret(): string {
+  return (process.env.PLEXON_SERVICE_SECRET ?? '').trim();
+}
 
 export function isPlexonAuthConfigured(): boolean {
-  return Boolean(PLEXON_AUTH_URL.trim() && PLEXON_SERVICE_SECRET.trim());
+  return Boolean(getPlexonAuthUrl() && getPlexonServiceSecret());
 }
 
 export type PlexonAuthUser = { id: string; email: string; name?: string };
 
 export function getPlexonDerivedPassword(plexonUserId: string): string {
-  return createHmac('sha256', PLEXON_SERVICE_SECRET)
+  return createHmac('sha256', getPlexonServiceSecret())
     .update(plexonUserId)
     .digest('base64url')
     .slice(0, 32);
@@ -29,14 +35,16 @@ export async function validateCredentialsWithPlexon(
   email: string,
   password: string
 ): Promise<PlexonAuthUser | null> {
-  if (!PLEXON_AUTH_URL.trim() || !PLEXON_SERVICE_SECRET.trim()) return null;
-  const url = `${PLEXON_AUTH_URL.replace(/\/$/, '')}/api/auth/validate-credentials`;
+  const baseUrl = getPlexonAuthUrl();
+  const secret = getPlexonServiceSecret();
+  if (!baseUrl || !secret) return null;
+  const url = `${baseUrl.replace(/\/$/, '')}/api/auth/validate-credentials`;
   try {
     const res = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...getPlexonContractHeaders(PLEXON_SERVICE_SECRET),
+        ...getPlexonContractHeaders(secret),
       },
       body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
     });
@@ -86,11 +94,13 @@ function mapPlexonServiceUser(raw: unknown): PlexonProfile | null {
 }
 
 export async function getPlexonProfile(userId: string): Promise<PlexonProfile | null> {
-  if (!PLEXON_AUTH_URL.trim() || !PLEXON_SERVICE_SECRET.trim()) return null;
-  const base = PLEXON_AUTH_URL.replace(/\/$/, '');
+  const baseUrl = getPlexonAuthUrl();
+  const secret = getPlexonServiceSecret();
+  if (!baseUrl || !secret) return null;
+  const base = baseUrl.replace(/\/$/, '');
   try {
     const res = await fetch(`${base}/api/services/profile?user_id=${encodeURIComponent(userId)}`, {
-      headers: getPlexonContractHeaders(PLEXON_SERVICE_SECRET),
+      headers: getPlexonContractHeaders(secret),
     });
     if (!res.ok) return null;
     const data = (await res.json()) as { user?: unknown };
@@ -103,13 +113,15 @@ export async function getPlexonProfile(userId: string): Promise<PlexonProfile | 
 
 /** Profil per E-Mail aus PLEXON (Fallback wenn Abfrage per user_id fehlschlägt). */
 export async function getPlexonProfileByEmail(email: string): Promise<PlexonProfile | null> {
-  if (!PLEXON_AUTH_URL.trim() || !PLEXON_SERVICE_SECRET.trim()) return null;
-  const base = PLEXON_AUTH_URL.replace(/\/$/, '');
+  const baseUrl = getPlexonAuthUrl();
+  const secret = getPlexonServiceSecret();
+  if (!baseUrl || !secret) return null;
+  const base = baseUrl.replace(/\/$/, '');
   const normalized = email?.trim()?.toLowerCase();
   if (!normalized) return null;
   try {
     const res = await fetch(`${base}/api/services/profile?email=${encodeURIComponent(normalized)}`, {
-      headers: getPlexonContractHeaders(PLEXON_SERVICE_SECRET),
+      headers: getPlexonContractHeaders(secret),
     });
     if (!res.ok) return null;
     const data = (await res.json()) as { user?: unknown };
@@ -124,8 +136,10 @@ export async function patchPlexonProfile(
   userId: string,
   updates: { name?: string | null; email?: string; company?: string | null; avatar_url?: string | null; locale?: string | null }
 ): Promise<PlexonProfile | null> {
-  if (!PLEXON_AUTH_URL.trim() || !PLEXON_SERVICE_SECRET.trim()) return null;
-  const base = PLEXON_AUTH_URL.replace(/\/$/, '');
+  const baseUrl = getPlexonAuthUrl();
+  const secret = getPlexonServiceSecret();
+  if (!baseUrl || !secret) return null;
+  const base = baseUrl.replace(/\/$/, '');
   const body: Record<string, unknown> = { user_id: userId };
   if (updates.name !== undefined) body.name = updates.name;
   if (updates.email !== undefined) body.email = updates.email;
@@ -137,7 +151,7 @@ export async function patchPlexonProfile(
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        ...getPlexonContractHeaders(PLEXON_SERVICE_SECRET),
+        ...getPlexonContractHeaders(secret),
       },
       body: JSON.stringify(body),
     });
@@ -147,5 +161,44 @@ export async function patchPlexonProfile(
   } catch (e) {
     console.error('[CHECKION] PLEXON patchProfile error:', e);
     return null;
+  }
+}
+
+export type PlexonRegisterResult =
+  | { ok: true; userId: string }
+  | { ok: false; status: number; error: string };
+
+/** Public PLEXON `POST /api/auth/register` (no service secret). */
+export async function registerUserAtPlexon(params: {
+  email: string;
+  password: string;
+  name?: string | null;
+}): Promise<PlexonRegisterResult> {
+  const baseUrl = getPlexonAuthUrl();
+  if (!baseUrl) {
+    return { ok: false, status: 503, error: 'PLEXON not configured' };
+  }
+  const base = baseUrl.replace(/\/$/, '');
+  const email = params.email.trim().toLowerCase();
+  try {
+    const res = await fetch(`${base}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        password: params.password,
+        ...(params.name?.trim() ? { name: params.name.trim() } : {}),
+      }),
+    });
+    const data = (await res.json().catch(() => ({}))) as { userId?: string; error?: string };
+    if (!res.ok) {
+      return { ok: false, status: res.status, error: data.error || res.statusText };
+    }
+    const userId = typeof data.userId === 'string' ? data.userId : '';
+    if (!userId) return { ok: false, status: 502, error: 'Invalid PLEXON response' };
+    return { ok: true, userId };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'fetch failed';
+    return { ok: false, status: 503, error: msg };
   }
 }

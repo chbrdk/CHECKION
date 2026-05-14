@@ -354,7 +354,8 @@
       "ctaLoading": "Signing in…",
       "error": "Sign in failed",
       "prompt": "Don't have an account?",
-      "link": "Register"
+      "link": "Register",
+      "forgotPasswordLink": "Forgot password?"
     },
     "register": {
       "title": "Create account",

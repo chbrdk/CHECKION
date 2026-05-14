@@ -17,12 +17,14 @@ import { AuthBrandColorSelector } from '@/components/auth/AuthBrandColorSelector
 import { PlexonReturnLink } from '@/components/federation/PlexonReturnLink';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { PATH_REGISTER } from '@/lib/constants';
+import { getPlexonForgotPasswordUrl } from '@/lib/plexon-links';
 
 function LoginForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { t } = useI18n();
     const redirectTo = searchParams.get('redirect') ?? '/';
+    const plexonForgotUrl = getPlexonForgotPasswordUrl();
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -188,6 +190,18 @@ function LoginForm() {
                                     required
                                     fullWidth
                                 />
+                                {plexonForgotUrl ? (
+                                    <Box sx={{ textAlign: 'right', mt: 'calc(-1 * var(--msqdx-spacing-xs))' }}>
+                                        <Link
+                                            href={plexonForgotUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            style={{ color: 'inherit', fontWeight: 600, fontSize: '0.875rem' }}
+                                        >
+                                            {t('auth.login.forgotPasswordLink')}
+                                        </Link>
+                                    </Box>
+                                ) : null}
                                 <MsqdxButton
                                     type="submit"
                                     variant="contained"

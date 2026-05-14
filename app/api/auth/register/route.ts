@@ -11,6 +11,7 @@ import { getDb } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
+import { isPlexonAuthConfigured, registerUserAtPlexon } from '@/lib/plexon-auth';
 
 const SALT_ROUNDS = 10;
 
@@ -34,6 +35,17 @@ export async function POST(request: Request) {
         const email = parsed.email.trim().toLowerCase();
         const password = parsed.password;
         const name = parsed.name?.trim() ?? null;
+
+        if (isPlexonAuthConfigured()) {
+            const pr = await registerUserAtPlexon({ email, password, name });
+            if (!pr.ok) {
+                if (pr.status === 409) {
+                    return apiError('Email already registered.', API_STATUS.CONFLICT);
+                }
+                return apiError(pr.error || 'PLEXON registration failed.', pr.status);
+            }
+            return NextResponse.json({ success: true, userId: pr.userId, plexon: true });
+        }
 
         const db = getDb();
         const existing = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
