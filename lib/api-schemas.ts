@@ -7,6 +7,7 @@ import { NextResponse } from 'next/server';
 import { apiError, API_STATUS } from './api-error-handler';
 import { isSafeUrlForServerFetch } from './url-safety';
 import { projectIndustryApiZod } from './industry-pool';
+import { PLATFORM_COMPANY_ID_MAX_LEN } from './platform-company-context';
 
 /** URL string that must be valid HTTP/HTTPS */
 export const urlSchema = z
@@ -203,6 +204,8 @@ export const projectCreateBodySchema = z.object({
   domain: z.string().optional().nullable(),
   industry: projectIndustryApiZod,
   tags: projectTagsSchema,
+  /** PLEXON `companies.id`; optional — server fills from PLEXON profile when omitted. */
+  platformCompanyId: z.string().max(PLATFORM_COMPANY_ID_MAX_LEN).optional().nullable(),
 });
 
 /** PATCH /api/projects/[id] (update project) */

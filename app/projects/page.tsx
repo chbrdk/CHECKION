@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Box, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import {
     MsqdxTypography,
@@ -10,8 +10,13 @@ import {
     MsqdxFormField,
 } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
-import { apiProjectsList, apiProjectsCreate, apiProject, pathProject } from '@/lib/constants';
+import { API_AUTH_PROFILE, apiProjectsList, apiProjectsCreate, apiProject, pathProject } from '@/lib/constants';
 import { MSQDX_BUTTON_THEME_ACCENT_SX } from '@/lib/theme-accent';
+import {
+    persistPlatformCompanyIdFromUrl,
+    resolvePlatformCompanyIdForApi,
+    seedSessionPlatformCompanyFromProfile,
+} from '@/lib/platform-company-context';
 
 interface ProjectRow {
     id: string;
@@ -21,8 +26,9 @@ interface ProjectRow {
     updatedAt: string;
 }
 
-export default function ProjectsPage() {
+function ProjectsPageInner() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { t } = useI18n();
     const [projects, setProjects] = useState<ProjectRow[]>([]);
     const [loading, setLoading] = useState(true);
@@ -32,6 +38,39 @@ export default function ProjectsPage() {
     const [formDomain, setFormDomain] = useState('');
     const [submitLoading, setSubmitLoading] = useState(false);
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+    const [profileDefaultCo, setProfileDefaultCo] = useState<string | null>(null);
+
+    useEffect(() => {
+        persistPlatformCompanyIdFromUrl(searchParams);
+    }, [searchParams]);
+
+    useEffect(() => {
+        let alive = true;
+        (async () => {
+            try {
+                const res = await fetch(API_AUTH_PROFILE, { credentials: 'same-origin' });
+                if (!res.ok || !alive) return;
+                const data = (await res.json()) as {
+                    user?: { default_platform_company_id?: string | null };
+                };
+                const u = data?.user;
+                if (!u) return;
+                const raw = u.default_platform_company_id;
+                setProfileDefaultCo(typeof raw === 'string' && raw.trim() ? raw.trim() : null);
+                seedSessionPlatformCompanyFromProfile(u);
+            } catch {
+                /* ignore */
+            }
+        })();
+        return () => {
+            alive = false;
+        };
+    }, []);
+
+    const resolvedPlatformCompanyId = useMemo(
+        () => resolvePlatformCompanyIdForApi(searchParams, { plexonDefaultCompanyId: profileDefaultCo }),
+        [searchParams, profileDefaultCo]
+    );
 
     const loadProjects = useCallback(async () => {
         setLoading(true);
@@ -81,11 +120,18 @@ export default function ProjectsPage() {
                     loadProjects();
                 }
             } else {
+                const body: Record<string, unknown> = {
+                    name,
+                    domain: formDomain.trim() || null,
+                };
+                if (resolvedPlatformCompanyId) {
+                    body.platformCompanyId = resolvedPlatformCompanyId;
+                }
                 const res = await fetch(apiProjectsCreate, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'same-origin',
-                    body: JSON.stringify({ name, domain: formDomain.trim() || null }),
+                    body: JSON.stringify(body),
                 });
                 const data = await res.json();
                 if (data?.id) {
@@ -259,5 +305,22 @@ export default function ProjectsPage() {
                 </DialogActions>
             </Dialog>
         </Box>
+    );
+}
+
+export default function ProjectsPage() {
+    const { t } = useI18n();
+    return (
+        <Suspense
+            fallback={
+                <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1200, mx: 'auto' }}>
+                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                        {t('common.loading')}
+                    </MsqdxTypography>
+                </Box>
+            }
+        >
+            <ProjectsPageInner />
+        </Suspense>
     );
 }

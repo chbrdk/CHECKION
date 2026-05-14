@@ -56,7 +56,34 @@ export type PlexonProfile = {
   company?: string;
   avatar_url?: string;
   locale?: string;
+  /** PLEXON `companies.id` from service profile (oldest company membership). */
+  default_platform_company_id?: string;
 };
+
+const MAX_PLATFORM_COMPANY_ID_LEN = 64;
+
+function mapPlexonServiceUser(raw: unknown): PlexonProfile | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const u = raw as Record<string, unknown>;
+  const id = u.id;
+  const email = u.email;
+  if (typeof id !== 'string' || typeof email !== 'string') return null;
+  let default_platform_company_id: string | undefined;
+  const defRaw = u.default_platform_company_id;
+  if (typeof defRaw === 'string') {
+    const t = defRaw.trim();
+    if (t && t.length <= MAX_PLATFORM_COMPANY_ID_LEN) default_platform_company_id = t;
+  }
+  return {
+    id,
+    email,
+    name: typeof u.name === 'string' ? u.name : undefined,
+    company: typeof u.company === 'string' ? u.company : undefined,
+    avatar_url: typeof u.avatar_url === 'string' ? u.avatar_url : undefined,
+    locale: typeof u.locale === 'string' ? u.locale : undefined,
+    default_platform_company_id,
+  };
+}
 
 export async function getPlexonProfile(userId: string): Promise<PlexonProfile | null> {
   if (!PLEXON_AUTH_URL.trim() || !PLEXON_SERVICE_SECRET.trim()) return null;
@@ -66,8 +93,8 @@ export async function getPlexonProfile(userId: string): Promise<PlexonProfile | 
       headers: getPlexonContractHeaders(PLEXON_SERVICE_SECRET),
     });
     if (!res.ok) return null;
-    const data = (await res.json()) as { user?: PlexonProfile };
-    return data?.user ?? null;
+    const data = (await res.json()) as { user?: unknown };
+    return mapPlexonServiceUser(data?.user);
   } catch (e) {
     console.error('[CHECKION] PLEXON getProfile error:', e);
     return null;
@@ -85,8 +112,8 @@ export async function getPlexonProfileByEmail(email: string): Promise<PlexonProf
       headers: getPlexonContractHeaders(PLEXON_SERVICE_SECRET),
     });
     if (!res.ok) return null;
-    const data = (await res.json()) as { user?: PlexonProfile };
-    return data?.user ?? null;
+    const data = (await res.json()) as { user?: unknown };
+    return mapPlexonServiceUser(data?.user);
   } catch (e) {
     console.error('[CHECKION] PLEXON getProfileByEmail error:', e);
     return null;
@@ -115,8 +142,8 @@ export async function patchPlexonProfile(
       body: JSON.stringify(body),
     });
     if (!res.ok) return null;
-    const data = (await res.json()) as { user?: PlexonProfile };
-    return data?.user ?? null;
+    const data = (await res.json()) as { user?: unknown };
+    return mapPlexonServiceUser(data?.user);
   } catch (e) {
     console.error('[CHECKION] PLEXON patchProfile error:', e);
     return null;
