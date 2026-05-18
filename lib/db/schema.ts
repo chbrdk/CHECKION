@@ -29,6 +29,24 @@ export const users = pgTable('users', {
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+/** Auditable marketing opt-in (e.g. AMC / demo registration). Migration 0022. */
+export const userMarketingConsents = pgTable(
+    'user_marketing_consents',
+    {
+        id: text('id').primaryKey(),
+        userId: text('user_id').notNull(),
+        email: text('email').notNull(),
+        name: text('name'),
+        company: text('company'),
+        marketingOptInAt: timestamp('marketing_opt_in_at', { withTimezone: true }).notNull().defaultNow(),
+        source: text('source').notNull().default('amc'),
+    },
+    (t) => ({
+        emailIdx: index('user_marketing_consents_email_idx').on(t.email),
+        userIdIdx: index('user_marketing_consents_user_id_idx').on(t.userId),
+    })
+);
+
 /** API tokens for programmatic access (e.g. MCP server). Bearer token → user. */
 export const apiTokens = pgTable('api_tokens', {
     id: text('id').primaryKey(),
