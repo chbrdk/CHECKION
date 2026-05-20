@@ -34,6 +34,8 @@ export async function GET(
         position: p.position,
         recordedAt: p.recordedAt.toISOString(),
         competitorPositions: p.competitorPositions ?? undefined,
+        serpLeaderDomain: p.serpLeaderDomain ?? undefined,
+        serpLeaderUrl: p.serpLeaderUrl ?? undefined,
     }));
     return NextResponse.json({ success: true, data });
 }

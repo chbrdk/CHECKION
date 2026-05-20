@@ -142,6 +142,8 @@
     "keyword": "Keyword",
     "keywordPlaceholder": "e.g. my search term",
     "lastPosition": "Position",
+    "serpLeader": "Rank #1",
+    "serpLeaderYou": "You rank #1",
     "lastUpdate": "Last update",
     "country": "Country",
     "countryPlaceholder": "e.g. de",

@@ -39,6 +39,8 @@ export async function GET(request: NextRequest) {
             lastPosition: last?.position ?? undefined,
             lastRecordedAt: last?.recordedAt?.toISOString() ?? undefined,
             lastCompetitorPositions: last?.competitorPositions ?? undefined,
+            lastSerpLeaderDomain: last?.serpLeaderDomain ?? undefined,
+            lastSerpLeaderUrl: last?.serpLeaderUrl ?? undefined,
         };
     });
     return NextResponse.json({ success: true, data });

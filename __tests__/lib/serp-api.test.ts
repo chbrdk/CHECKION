@@ -31,7 +31,27 @@ describe('fetchSerpPosition', () => {
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockRes));
         const result = await fetchSerpPosition('test query', 'example.com', { country: 'de', language: 'de' });
         expect(result.position).toBe(1);
+        expect(result.serpLeader).toEqual({ domain: 'example.com', url: 'https://example.com/page' });
         expect(fetch).toHaveBeenCalled(); // Serper calls fetch per page (default 10)
+    });
+
+    it('returns serpLeader from first organic result even when our domain is not ranked', async () => {
+        vi.stubGlobal(
+            'fetch',
+            vi.fn().mockResolvedValue({
+                ok: true,
+                json: () =>
+                    Promise.resolve({
+                        organic: [
+                            { link: 'https://leader.com/article' },
+                            { link: 'https://other.com' },
+                        ],
+                    }),
+            })
+        );
+        const result = await fetchSerpPosition('test', 'example.com', { country: 'de', language: 'de' });
+        expect(result.position).toBeNull();
+        expect(result.serpLeader).toEqual({ domain: 'leader.com', url: 'https://leader.com/article' });
     });
 
     it('returns position 2 when domain appears in second organic result', async () => {

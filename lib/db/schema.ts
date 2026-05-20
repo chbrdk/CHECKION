@@ -376,11 +376,13 @@ export const rankTrackingKeywords = pgTable('rank_tracking_keywords', {
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-/** Rank tracking: position history per keyword (1–100 or null if not in top 100). competitor_positions = domain -> position for project competitors (same SERP). */
+/** Rank tracking: position history per keyword (1–100 or null if not in top 100). competitor_positions = domain -> position for project competitors (same SERP). serp_leader_* = organic #1 at snapshot time. */
 export const rankTrackingPositions = pgTable('rank_tracking_positions', {
     id: text('id').primaryKey(),
     keywordId: text('keyword_id').notNull().references(() => rankTrackingKeywords.id, { onDelete: 'cascade' }),
     position: integer('position'), // 1–100 or null
     competitorPositions: jsonb('competitor_positions'), // Record<string, number | null> – domain -> position
+    serpLeaderDomain: text('serp_leader_domain'),
+    serpLeaderUrl: text('serp_leader_url'),
     recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull().defaultNow(),
 });

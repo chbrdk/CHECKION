@@ -10,6 +10,19 @@ import { SERP_DEFAULT_COUNTRY, SERP_DEFAULT_LANGUAGE, SERP_NUM_PAGES } from './s
 
 export type SerpApiProvider = 'serper' | 'scrapingrobot';
 
+/** First organic SERP result (position 1) for display and competitive context. */
+export interface SerpLeader {
+    domain: string;
+    url: string;
+}
+
+export interface FetchSerpPositionResult {
+    position: number | null;
+    competitorPositions: Record<string, number | null>;
+    /** Who holds organic position 1 in the fetched SERP (always captured when results exist). */
+    serpLeader: SerpLeader | null;
+}
+
 export interface FetchSerpPositionOptions {
     /** Country for results (gl), e.g. de, us. Always sent for Serper. */
     country?: string;
@@ -29,6 +42,26 @@ function normalizeDomain(domain: string): string {
     let d = domain.trim().toLowerCase();
     d = d.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
     return d;
+}
+
+function domainFromUrl(url: string): string | null {
+    try {
+        const u = new URL(url.startsWith('http') ? url : `https://${url}`);
+        return u.hostname.toLowerCase().replace(/^www\./, '');
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Returns the first organic result (position 1) from the combined URL list.
+ */
+function getSerpLeaderFromUrls(allUrls: string[]): SerpLeader | null {
+    const firstUrl = allUrls[0];
+    if (!firstUrl) return null;
+    const domain = domainFromUrl(firstUrl);
+    if (!domain) return null;
+    return { domain, url: firstUrl };
 }
 
 /**
@@ -100,7 +133,7 @@ export async function fetchSerpPosition(
     keyword: string,
     domain: string,
     options?: FetchSerpPositionOptions
-): Promise<{ position: number | null; competitorPositions: Record<string, number | null> }> {
+): Promise<FetchSerpPositionResult> {
     const apiKey = process.env.SERP_API_KEY;
     if (!apiKey) {
         throw new Error('SERP_API_KEY is not configured');
@@ -128,7 +161,8 @@ export async function fetchSerpPosition(
         }
         const data = (await res.json()) as unknown;
         const urls = getOrganicUrls(data, 'scrapingrobot');
-        return computePositionsFromUrls(urls, domain, competitorDomains);
+        const { position, competitorPositions } = computePositionsFromUrls(urls, domain, competitorDomains);
+        return { position, competitorPositions, serpLeader: getSerpLeaderFromUrls(urls) };
     }
 
     // Serper (default): up to numPages (default 10), gl/hl always set
@@ -168,5 +202,6 @@ export async function fetchSerpPosition(
         if (pageUrls.length === 0) break; // no more results
     }
 
-    return computePositionsFromUrls(allUrls, domain, competitorDomains);
+    const { position, competitorPositions } = computePositionsFromUrls(allUrls, domain, competitorDomains);
+    return { position, competitorPositions, serpLeader: getSerpLeaderFromUrls(allUrls) };
 }

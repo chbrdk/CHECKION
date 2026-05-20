@@ -9,13 +9,14 @@ Rank tracking uses the Serper API (google.serper.dev) to determine at which **po
 - **10 pages**: For each keyword we request up to 10 SERP pages (configurable via `SERP_NUM_PAGES` in `lib/serp-markets.ts`). Each Serper request uses `page: 1`, `page: 2`, … and we concatenate organic results in order.
 - **Position**: We still check at which **position** the domain appears in this combined list (1-based). If not in top ~100, position is stored as `null`.
 - **Competitor positions**: If the project has competitors (see project page), `fetchSerpPosition` is called with `competitorDomains`. The same SERP response is used to compute the first position of each competitor domain. Results are stored in `rank_tracking_positions.competitor_positions` (jsonb: domain → position). No extra API calls.
+- **Erstplatziert / SERP leader**: The first organic result (position 1) is always captured as `serpLeader` (`domain`, `url`) and stored per snapshot in `rank_tracking_positions.serp_leader_domain` / `serp_leader_url`. Shown on the project rankings page after refresh.
 - **gl / hl**: Every Serper request sends `gl` (country) and `hl` (language). Defaults: `de`/`de`; main markets are defined in `lib/serp-markets.ts` (`SERP_MAIN_MARKETS`).
 
 ## Key files
 
 - `lib/serp-markets.ts` – Main markets (country/language), defaults, `SERP_NUM_PAGES`.
-- `lib/serp-api.ts` – `fetchSerpPosition(keyword, domain, { country, language, numPages, competitorDomains })`; returns `position` and `competitorPositions` (same SERP).
-- `lib/db/schema.ts` – `rank_tracking_keywords`, `rank_tracking_positions` (includes `competitor_positions` jsonb). `projects.competitors` (jsonb string[]).
+- `lib/serp-api.ts` – `fetchSerpPosition(...)` returns `position`, `competitorPositions`, and `serpLeader` (organic #1).
+- `lib/db/schema.ts` – `rank_tracking_keywords`, `rank_tracking_positions` (`competitor_positions`, `serp_leader_domain`, `serp_leader_url`). `projects.competitors` (jsonb string[]).
 - `app/api/rank-tracking/refresh/route.ts` – Loads project competitors, calls `fetchSerpPosition` with `competitorDomains`, stores `competitorPositions` per snapshot.
 
 ## API (Serper)

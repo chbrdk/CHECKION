@@ -54,7 +54,12 @@ export async function POST(request: NextRequest) {
         keywordIds.push(...(await listKeywordIdsByProject(parsed.projectId)));
     }
 
-    const results: Array<{ keywordId: string; position: number | null; competitorPositions?: Record<string, number | null> }> = [];
+    const results: Array<{
+        keywordId: string;
+        position: number | null;
+        competitorPositions?: Record<string, number | null>;
+        serpLeader?: { domain: string; url: string } | null;
+    }> = [];
     for (const kid of keywordIds) {
         const kw = await getKeyword(kid, projectUserId ?? user.id);
         if (!kw) continue;
@@ -62,16 +67,16 @@ export async function POST(request: NextRequest) {
             ? (await getProject(kw.projectId, user.id))?.competitors ?? []
             : [];
         try {
-            const { position, competitorPositions } = await fetchSerpPosition(kw.keyword, kw.domain, {
+            const { position, competitorPositions, serpLeader } = await fetchSerpPosition(kw.keyword, kw.domain, {
                 country: kw.country,
                 language: kw.language,
                 device: kw.device ?? undefined,
                 numPages: SERP_NUM_PAGES,
                 competitorDomains,
             });
-            await insertPosition(kid, position, uuidv4(), competitorPositions);
+            await insertPosition(kid, position, uuidv4(), competitorPositions, serpLeader);
             await touchKeywordUpdatedAt(kid, kw.userId);
-            results.push({ keywordId: kid, position, competitorPositions });
+            results.push({ keywordId: kid, position, competitorPositions, serpLeader });
         } catch (err) {
             const msg = err instanceof Error ? err.message : 'SERP request failed';
             return apiError(`Rank refresh failed: ${msg}`, API_STATUS.BAD_GATEWAY);

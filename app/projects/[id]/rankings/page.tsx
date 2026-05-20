@@ -37,6 +37,12 @@ interface RankKeywordItem {
     lastPosition?: number;
     lastRecordedAt?: string;
     lastCompetitorPositions?: Record<string, number | null>;
+    lastSerpLeaderDomain?: string;
+    lastSerpLeaderUrl?: string;
+}
+
+function normalizeRankDomain(domain: string): string {
+    return domain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
 }
 
 interface RankingSummaryData {
@@ -444,7 +450,7 @@ export default function ProjectRankingsPage() {
                                             <Trash2 size={16} strokeWidth={2} />
                                         </MsqdxIconButton>
                                     </Box>
-                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1.5 }}>
+                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1 }}>
                                         {k.country && k.language ? `${k.country}/${k.language} · ` : ''}
                                         {t('projects.lastPosition')}: {k.lastPosition != null ? k.lastPosition : '—'}
                                         {k.lastCompetitorPositions && Object.keys(k.lastCompetitorPositions).length > 0 && (
@@ -456,6 +462,38 @@ export default function ProjectRankingsPage() {
                                         )}
                                         {' · '}{t('projects.lastUpdate')}: {k.lastRecordedAt ? new Date(k.lastRecordedAt).toLocaleDateString() : '—'}
                                     </MsqdxTypography>
+                                    {k.lastSerpLeaderDomain && (
+                                        <Box sx={{ mb: 1.5 }}>
+                                            {k.lastPosition === 1 && normalizeRankDomain(k.domain) === normalizeRankDomain(k.lastSerpLeaderDomain) ? (
+                                                <MsqdxChip
+                                                    label={t('projects.serpLeaderYou')}
+                                                    size="small"
+                                                    color="success"
+                                                    variant="filled"
+                                                    sx={{ maxWidth: '100%' }}
+                                                />
+                                            ) : (
+                                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                                                    {t('projects.serpLeader')}:{' '}
+                                                    {k.lastSerpLeaderUrl ? (
+                                                        <Box
+                                                            component="a"
+                                                            href={k.lastSerpLeaderUrl.startsWith('http') ? k.lastSerpLeaderUrl : `https://${k.lastSerpLeaderUrl}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'underline' }}
+                                                        >
+                                                            {k.lastSerpLeaderDomain}
+                                                        </Box>
+                                                    ) : (
+                                                        <Box component="span" sx={{ fontWeight: 600 }}>
+                                                            {k.lastSerpLeaderDomain}
+                                                        </Box>
+                                                    )}
+                                                </MsqdxTypography>
+                                            )}
+                                        </Box>
+                                    )}
                                     <Box sx={{ flex: 1, minHeight: 200, width: '100%' }}>
                                         <RankTrackingChart
                                             keywordId={k.id}
