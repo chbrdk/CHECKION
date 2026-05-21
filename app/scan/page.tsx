@@ -78,6 +78,7 @@ export default function ScanPage() {
     const { status: sessionStatus } = useSession();
     const { singlePageScan, domainScan } = useStatusUi();
     const launchProjectId = searchParams.get('projectId');
+    const launchUrl = searchParams.get('url');
     const STANDARDS: { value: WcagStandard; label: string }[] = [
         { value: 'WCAG2A', label: t('standards.wcag2a') },
         { value: 'WCAG2AA', label: t('standards.wcag2aa') },

@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
     Box,
     CircularProgress,
@@ -12,8 +13,10 @@ import {
 import { MsqdxTypography, MsqdxChip, MsqdxButton } from '@msqdx/react';
 import { X } from 'lucide-react';
 import { useI18n } from '@/components/i18n/I18nProvider';
-import { apiRankTrackingKeywordSerpPreview } from '@/lib/constants';
+import { apiRankTrackingKeywordSerpPreview, pathScanSinglePage } from '@/lib/constants';
 import { domainMatchesOrganic, type SerpOrganicResult } from '@/lib/serp-organic';
+import { SERP_PREVIEW_DISPLAY_LIMIT } from '@/lib/serp-markets';
+import { ensureUrlWithScheme } from '@/lib/url-normalize';
 
 export interface SerpGooglePreviewModalProps {
     open: boolean;
@@ -21,6 +24,8 @@ export interface SerpGooglePreviewModalProps {
     keywordId: string | null;
     ourDomain: string;
     competitorDomains?: string[];
+    /** When set, single-scan links assign the scan to this project. */
+    projectId?: string | null;
 }
 
 interface SerpPreviewData {
@@ -62,8 +67,10 @@ export function SerpGooglePreviewModal({
     keywordId,
     ourDomain,
     competitorDomains = [],
+    projectId,
 }: SerpGooglePreviewModalProps) {
     const { t } = useI18n();
+    const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<SerpPreviewData | null>(null);
@@ -100,8 +107,30 @@ export function SerpGooglePreviewModal({
         }
     }, [open, keywordId, loadPreview]);
 
+    const visibleOrganic = useMemo(() => {
+        if (!data?.organic.length) return [];
+        return data.organic.slice(0, SERP_PREVIEW_DISPLAY_LIMIT);
+    }, [data?.organic]);
+
+    const totalOrganic = data?.organic.length ?? 0;
+
     const marketLabel =
         data?.country && data?.language ? `${data.country.toUpperCase()} · ${data.language}` : '';
+
+    const handleScanPage = useCallback(
+        (link: string) => {
+            const scanUrl = ensureUrlWithScheme(link);
+            if (!scanUrl) return;
+            onClose();
+            router.push(
+                pathScanSinglePage({
+                    url: scanUrl,
+                    ...(projectId ? { projectId } : {}),
+                })
+            );
+        },
+        [onClose, projectId, router]
+    );
 
     return (
         <Dialog
@@ -134,7 +163,7 @@ export function SerpGooglePreviewModal({
                     {data && (
                         <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
                             {t('projects.serpPreviewSubtitle', {
-                                count: String(data.organic.length),
+                                count: String(totalOrganic),
                                 date: new Date(data.recordedAt).toLocaleString(),
                             })}
                             {marketLabel ? ` · ${marketLabel}` : ''}
@@ -221,7 +250,12 @@ export function SerpGooglePreviewModal({
                                     fontSize: '0.875rem',
                                 }}
                             >
-                                {t('projects.serpPreviewAbout', { count: String(data.organic.length) })}
+                                {totalOrganic > SERP_PREVIEW_DISPLAY_LIMIT
+                                    ? t('projects.serpPreviewAboutPaged', {
+                                          shown: String(SERP_PREVIEW_DISPLAY_LIMIT),
+                                          total: String(totalOrganic),
+                                      })
+                                    : t('projects.serpPreviewAbout', { count: String(totalOrganic) })}
                                 {data.position != null
                                     ? ` · ${t('projects.serpPreviewYourPosition', { position: String(data.position) })}`
                                     : ` · ${t('projects.serpPreviewNotRanked')}`}
@@ -237,7 +271,7 @@ export function SerpGooglePreviewModal({
                                 overflowY: 'auto',
                             }}
                         >
-                            {data.organic.map((item) => {
+                            {visibleOrganic.map((item) => {
                                 const role = getResultRole(item, ourDomain, competitorDomains);
                                 return (
                                     <Box
@@ -334,11 +368,19 @@ export function SerpGooglePreviewModal({
                                                     fontFamily: 'Arial, sans-serif',
                                                     fontSize: '0.875rem',
                                                     lineHeight: 1.58,
+                                                    mb: 1,
                                                 }}
                                             >
                                                 {item.snippet}
                                             </MsqdxTypography>
                                         )}
+                                        <MsqdxButton
+                                            variant="outlined"
+                                            size="small"
+                                            onClick={() => handleScanPage(item.link)}
+                                        >
+                                            {t('projects.serpPreviewScanPage')}
+                                        </MsqdxButton>
                                     </Box>
                                 );
                             })}

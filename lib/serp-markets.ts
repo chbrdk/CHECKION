@@ -21,6 +21,8 @@ export const SERP_DEFAULT_COUNTRY = 'de';
 export const SERP_DEFAULT_LANGUAGE = 'de';
 /** Number of SERP pages to fetch per keyword (1–100); position is then 1–(numPages*~10). */
 export const SERP_NUM_PAGES = 10;
+/** Max organic results shown in the Google-style SERP preview modal (first results page). */
+export const SERP_PREVIEW_DISPLAY_LIMIT = 10;
 
 export function getMarketByCountryAndLanguage(country: string, language: string): SerpMarket | undefined {
     const c = country.toLowerCase().trim();

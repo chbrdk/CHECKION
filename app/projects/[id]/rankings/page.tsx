@@ -515,6 +515,7 @@ export default function ProjectRankingsPage() {
                                             keywordLabel={k.keyword}
                                             ourDomain={k.domain}
                                             competitorDomains={competitors}
+                projectId={id}
                                             t={t}
                                         />
                                     </Box>
@@ -534,6 +535,7 @@ export default function ProjectRankingsPage() {
                 keywordId={serpPreviewKeyword?.id ?? null}
                 ourDomain={serpPreviewKeyword?.domain ?? project.domain ?? ''}
                 competitorDomains={competitors}
+                projectId={id}
             />
 
             <Dialog open={addKeywordOpen} onClose={() => setAddKeywordOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 'var(--msqdx-spacing-md, 8px)' } }}>

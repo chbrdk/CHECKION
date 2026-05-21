@@ -7,6 +7,7 @@ import {
     pathResults,
     pathDomain,
     pathScanDomain,
+    pathScanSinglePage,
     pathScanDomainResume,
     pathDeepScansCompare,
     PATH_DEEP_SCANS,
