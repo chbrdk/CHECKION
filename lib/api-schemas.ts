@@ -248,7 +248,8 @@ function isKnownSerpMarket(country: string, language: string): boolean {
 /** POST /api/rank-tracking/keywords – country and language required (main markets) */
 export const rankTrackingKeywordCreateBodySchema = z.object({
   projectId: z.string().uuid().min(1, 'projectId is required'),
-  domain: z.string().min(1, 'domain is required'),
+  /** Optional — defaults to project company URL/domain. */
+  domain: z.string().min(1).optional(),
   keyword: z.string().min(1, 'keyword is required'),
   country: twoLetterLocale,
   language: twoLetterLocale,
@@ -260,7 +261,7 @@ export const rankTrackingKeywordCreateBodySchema = z.object({
 /** POST /api/rank-tracking/keywords/bulk */
 export const rankTrackingKeywordsBulkBodySchema = z.object({
   projectId: z.string().uuid(),
-  domain: z.string().min(1),
+  domain: z.string().min(1).optional(),
   intentKey: z.string().max(80).optional().nullable(),
   intentLabel: z.string().max(120).optional().nullable(),
   device: z.string().max(20).optional().nullable(),
@@ -282,7 +283,7 @@ export const rankTrackingKeywordsBulkBodySchema = z.object({
 /** POST /api/rank-tracking/keywords/localize */
 export const rankTrackingKeywordsLocalizeBodySchema = z.object({
   projectId: z.string().uuid(),
-  domain: z.string().min(1),
+  domain: z.string().min(1).optional(),
   seedKeyword: z.string().min(1).max(200),
   intentLabel: z.string().max(120).optional().nullable(),
   marketKeys: z.array(z.string().regex(/^[a-z]{2}-[a-z]{2}$/)).min(1).max(10),

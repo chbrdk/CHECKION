@@ -113,6 +113,8 @@
     "startGeoEeat": "GEO/E-E-A-T starten",
     "startNewGeoEeat": "Neue GEO-Analyse starten",
     "domainRequiredForGeo": "Bitte zuerst die Projekt-URL (Domain) unter Unternehmensinformationen hinterlegen.",
+    "domainRequiredForRankings": "Bitte zuerst die Unternehmens-URL im Projekt hinterlegen (Einstellungen / Firmeninfo).",
+    "rankTrackingDomainHint": "Getrackte Domain aus dem Projekt: {{domain}}",
     "open": "Öffnen",
     "restartDeepScan": "Deep Scan neu starten",
     "scanAllDeepScan": "Deep Scan für alle starten",

@@ -12,6 +12,7 @@ import {
     insertKeyword,
 } from '@/lib/db/rank-tracking-keywords';
 import { getLastPositionsByKeywordIds } from '@/lib/db/rank-tracking-positions';
+import { projectTrackDomain } from '@/lib/project-track-domain';
 import { resolveIntentFields } from '@/lib/serp-intent';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -59,6 +60,11 @@ export async function POST(request: NextRequest) {
     if (!project) return apiError('Project not found', API_STATUS.NOT_FOUND);
     const projectUserId = project.userId;
 
+    const domain = (parsed.domain?.trim() || projectTrackDomain(project.domain) || '').trim();
+    if (!domain) {
+        return apiError('Project has no domain. Set company URL on the project first.', API_STATUS.BAD_REQUEST);
+    }
+
     const { intentKey, intentLabel } = resolveIntentFields(
         parsed.keyword,
         parsed.intentKey,
@@ -66,7 +72,7 @@ export async function POST(request: NextRequest) {
     );
     const id = uuidv4();
     await insertKeyword(id, projectUserId, parsed.projectId, {
-        domain: parsed.domain,
+        domain,
         keyword: parsed.keyword,
         country: parsed.country,
         language: parsed.language,

@@ -8,6 +8,7 @@ import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { parseApiBody, rankTrackingKeywordsBulkBodySchema } from '@/lib/api-schemas';
 import { getProject } from '@/lib/db/projects';
 import { insertKeywords } from '@/lib/db/rank-tracking-keywords';
+import { projectTrackDomain } from '@/lib/project-track-domain';
 import { resolveIntentFields } from '@/lib/serp-intent';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -19,6 +20,11 @@ export async function POST(request: NextRequest) {
 
     const project = await getProject(parsed.projectId, user.id);
     if (!project) return apiError('Project not found', API_STATUS.NOT_FOUND);
+
+    const domain = (parsed.domain?.trim() || projectTrackDomain(project.domain) || '').trim();
+    if (!domain) {
+        return apiError('Project has no domain. Set company URL on the project first.', API_STATUS.BAD_REQUEST);
+    }
 
     const seedLabel =
         parsed.intentLabel?.trim() ||
@@ -33,7 +39,7 @@ export async function POST(request: NextRequest) {
     const rows = parsed.variants.map((v) => ({
         id: uuidv4(),
         data: {
-            domain: parsed.domain,
+            domain,
             keyword: v.keyword.trim(),
             country: v.country,
             language: v.language,

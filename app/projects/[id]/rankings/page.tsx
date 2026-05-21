@@ -24,6 +24,7 @@ import {
     API_RANK_TRACKING_KEYWORDS_LOCALIZE,
 } from '@/lib/constants';
 import { SERP_MAIN_MARKETS, parseMarketKey } from '@/lib/serp-markets';
+import { projectTrackDomain } from '@/lib/project-track-domain';
 import { groupKeywordsByIntent, marketLabelForKeyword } from '@/lib/serp-intent';
 import { MSQDX_BUTTON_THEME_ACCENT_SX, THEME_ACCENT_CSS, msqdxChipThemeAccentSx } from '@/lib/theme-accent';
 import { RankTrackingChart } from '@/components/RankTrackingChart';
@@ -67,7 +68,6 @@ export default function ProjectRankingsPage() {
     const [loading, setLoading] = useState(true);
     const [rankKeywords, setRankKeywords] = useState<RankKeywordItem[]>([]);
     const [addKeywordOpen, setAddKeywordOpen] = useState(false);
-    const [addKeywordDomain, setAddKeywordDomain] = useState('');
     const [addKeywordKeyword, setAddKeywordKeyword] = useState('');
     const [addKeywordMarket, setAddKeywordMarket] = useState('');
     const [addKeywordMarkets, setAddKeywordMarkets] = useState<string[]>(['de-de']);
@@ -131,11 +131,12 @@ export default function ProjectRankingsPage() {
     }, [loadRankingSummary]);
 
     const competitors = Array.isArray(project?.competitors) ? project.competitors : [];
+    const trackDomain = useMemo(() => projectTrackDomain(project?.domain), [project?.domain]);
 
     const intentGroups = useMemo(() => groupKeywordsByIntent(rankKeywords), [rankKeywords]);
 
     const handleAddKeyword = useCallback(async () => {
-        if (!id || !addKeywordDomain.trim() || !addKeywordKeyword.trim()) return;
+        if (!id || !trackDomain || !addKeywordKeyword.trim()) return;
         const markets = addKeywordMultiMarket
             ? addKeywordMarkets
             : addKeywordMarket
@@ -145,7 +146,7 @@ export default function ProjectRankingsPage() {
 
         setAddKeywordSubmitting(true);
         try {
-            const domain = addKeywordDomain.trim();
+            const domain = trackDomain;
             const seed = addKeywordKeyword.trim();
             const device = addKeywordDevice.trim() || undefined;
 
@@ -188,7 +189,6 @@ export default function ProjectRankingsPage() {
             }
 
             setAddKeywordOpen(false);
-            setAddKeywordDomain('');
             setAddKeywordKeyword('');
             setAddKeywordMarket('');
             setAddKeywordMarkets(['de-de']);
@@ -202,7 +202,7 @@ export default function ProjectRankingsPage() {
         }
     }, [
         id,
-        addKeywordDomain,
+        trackDomain,
         addKeywordKeyword,
         addKeywordMarket,
         addKeywordMarkets,
@@ -266,8 +266,8 @@ export default function ProjectRankingsPage() {
     );
 
     const handleAddSelectedKeywords = useCallback(async () => {
-        if (!id || !project?.domain || selectedSuggestedKeywords.size === 0 || bulkMarketKeys.length === 0) return;
-        const domain = project.domain.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0] ?? project.domain;
+        if (!id || !trackDomain || selectedSuggestedKeywords.size === 0 || bulkMarketKeys.length === 0) return;
+        const domain = trackDomain;
         for (const keyword of selectedSuggestedKeywords) {
             try {
                 if (bulkMarketKeys.length === 1) {
@@ -309,7 +309,7 @@ export default function ProjectRankingsPage() {
         loadProject();
         loadKeywords();
         loadRankingSummary();
-    }, [id, project?.domain, selectedSuggestedKeywords, bulkMarketKeys, loadProject, loadKeywords, loadRankingSummary]);
+    }, [id, trackDomain, selectedSuggestedKeywords, bulkMarketKeys, loadProject, loadKeywords, loadRankingSummary]);
 
     const handleRefreshRankings = useCallback(async () => {
         if (!id) return;
@@ -425,14 +425,20 @@ export default function ProjectRankingsPage() {
                     footerDivider={false}
                     headerActions={
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                            <MsqdxButton variant="contained" size="small" onClick={() => setAddKeywordOpen(true)} sx={MSQDX_BUTTON_THEME_ACCENT_SX}>
+                            <MsqdxButton
+                                variant="contained"
+                                size="small"
+                                onClick={() => setAddKeywordOpen(true)}
+                                disabled={!trackDomain}
+                                sx={MSQDX_BUTTON_THEME_ACCENT_SX}
+                            >
                                 {t('projects.addKeyword')}
                             </MsqdxButton>
                             <MsqdxButton
                                 variant="outlined"
                                 size="small"
                                 onClick={handleSuggestKeywords}
-                                disabled={suggestKeywordsLoading || !project.domain}
+                                disabled={suggestKeywordsLoading || !trackDomain}
                             >
                                 {suggestKeywordsLoading ? t('common.loading') : t('projects.suggestKeywordsWithAi')}
                             </MsqdxButton>
@@ -503,7 +509,12 @@ export default function ProjectRankingsPage() {
                             <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
                                 {t('projects.emptyRankings')}
                             </MsqdxTypography>
-                            <MsqdxButton variant="contained" onClick={() => setAddKeywordOpen(true)} sx={MSQDX_BUTTON_THEME_ACCENT_SX}>
+                            <MsqdxButton
+                                variant="contained"
+                                onClick={() => setAddKeywordOpen(true)}
+                                disabled={!trackDomain}
+                                sx={MSQDX_BUTTON_THEME_ACCENT_SX}
+                            >
                                 {t('projects.addKeyword')}
                             </MsqdxButton>
                         </Box>
@@ -724,13 +735,16 @@ export default function ProjectRankingsPage() {
                 <DialogTitle sx={{ fontWeight: 600 }}>{t('projects.addKeyword')}</DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 320, pt: 0.5 }}>
-                        <MsqdxFormField
-                            label={t('projects.domain')}
-                            placeholder={t('projects.domainPlaceholder')}
-                            value={addKeywordDomain}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddKeywordDomain(e.target.value)}
-                            fullWidth
-                        />
+                        {trackDomain ? (
+                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                {t('projects.rankTrackingDomainHint').replace('{{domain}}', trackDomain)}
+                                {project?.name ? ` · ${project.name}` : ''}
+                            </MsqdxTypography>
+                        ) : (
+                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-status-error)' }}>
+                                {t('projects.domainRequiredForRankings')}
+                            </MsqdxTypography>
+                        )}
                         <MsqdxFormField
                             label={t('projects.intentLabel')}
                             placeholder={t('projects.intentLabelPlaceholder')}
@@ -789,7 +803,7 @@ export default function ProjectRankingsPage() {
                         variant="contained"
                         onClick={handleAddKeyword}
                         disabled={
-                            !addKeywordDomain.trim() ||
+                            !trackDomain ||
                             !addKeywordKeyword.trim() ||
                             (addKeywordMultiMarket ? addKeywordMarkets.length === 0 : !addKeywordMarket) ||
                             addKeywordSubmitting

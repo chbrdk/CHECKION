@@ -9,6 +9,7 @@ import { parseApiBody, rankTrackingKeywordsLocalizeBodySchema } from '@/lib/api-
 import { getProject } from '@/lib/db/projects';
 import { insertKeywords } from '@/lib/db/rank-tracking-keywords';
 import { localizeKeywordsForMarkets } from '@/lib/llm/localize-keywords';
+import { projectTrackDomain } from '@/lib/project-track-domain';
 import { parseMarketKey } from '@/lib/serp-markets';
 import { reportUsage } from '@/lib/usage-report';
 import { v4 as uuidv4 } from 'uuid';
@@ -22,12 +23,17 @@ export async function POST(request: NextRequest) {
     const project = await getProject(parsed.projectId, user.id);
     if (!project) return apiError('Project not found', API_STATUS.NOT_FOUND);
 
+    const domain = (parsed.domain?.trim() || projectTrackDomain(project.domain) || '').trim();
+    if (!domain) {
+        return apiError('Project has no domain. Set company URL on the project first.', API_STATUS.BAD_REQUEST);
+    }
+
     try {
         const result = await localizeKeywordsForMarkets({
             seedKeyword: parsed.seedKeyword,
             intentLabel: parsed.intentLabel ?? undefined,
             marketKeys: parsed.marketKeys,
-            domain: parsed.domain,
+            domain,
             projectName: project.name,
         });
 
@@ -39,7 +45,7 @@ export async function POST(request: NextRequest) {
                 return {
                     id: uuidv4(),
                     data: {
-                        domain: parsed.domain,
+                        domain,
                         keyword: v.keyword.trim(),
                         country: mk.country,
                         language: mk.language,
