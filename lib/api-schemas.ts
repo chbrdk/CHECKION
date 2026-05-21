@@ -216,6 +216,7 @@ export const projectUpdateBodySchema = z.object({
   valueProposition: z.string().max(2000).optional().nullable(),
   competitors: z.array(z.string().trim().min(1)).optional(),
   geoQueries: z.array(z.string().trim().min(1)).optional(),
+  geoQueriesByMarket: z.record(z.string(), z.array(z.string().trim().min(1))).optional(),
   tags: projectTagsSchema,
 });
 
@@ -238,6 +239,12 @@ export const projectAssignmentBodySchema = z.object({
 /** 2-letter locale code (gl or hl) for SERP main markets */
 const twoLetterLocale = z.string().length(2, 'Use 2-letter code (e.g. de, en)').transform((s) => s.toLowerCase().trim());
 
+import { isValidCountryLanguage } from '@/lib/serp-markets';
+
+function isKnownSerpMarket(country: string, language: string): boolean {
+  return isValidCountryLanguage(country, language);
+}
+
 /** POST /api/rank-tracking/keywords – country and language required (main markets) */
 export const rankTrackingKeywordCreateBodySchema = z.object({
   projectId: z.string().uuid().min(1, 'projectId is required'),
@@ -245,7 +252,48 @@ export const rankTrackingKeywordCreateBodySchema = z.object({
   keyword: z.string().min(1, 'keyword is required'),
   country: twoLetterLocale,
   language: twoLetterLocale,
+  intentKey: z.string().max(80).optional().nullable(),
+  intentLabel: z.string().max(120).optional().nullable(),
   device: z.string().max(20).optional().nullable(),
+}).refine((d) => isKnownSerpMarket(d.country, d.language), { message: 'Unknown country/language pair' });
+
+/** POST /api/rank-tracking/keywords/bulk */
+export const rankTrackingKeywordsBulkBodySchema = z.object({
+  projectId: z.string().uuid(),
+  domain: z.string().min(1),
+  intentKey: z.string().max(80).optional().nullable(),
+  intentLabel: z.string().max(120).optional().nullable(),
+  device: z.string().max(20).optional().nullable(),
+  variants: z
+    .array(
+      z.object({
+        keyword: z.string().min(1),
+        country: twoLetterLocale,
+        language: twoLetterLocale,
+      })
+    )
+    .min(1)
+    .max(30),
+}).refine(
+  (d) => d.variants.every((v) => isKnownSerpMarket(v.country, v.language)),
+  { message: 'Unknown country/language in variants' }
+);
+
+/** POST /api/rank-tracking/keywords/localize */
+export const rankTrackingKeywordsLocalizeBodySchema = z.object({
+  projectId: z.string().uuid(),
+  domain: z.string().min(1),
+  seedKeyword: z.string().min(1).max(200),
+  intentLabel: z.string().max(120).optional().nullable(),
+  marketKeys: z.array(z.string().regex(/^[a-z]{2}-[a-z]{2}$/)).min(1).max(10),
+  device: z.string().max(20).optional().nullable(),
+  persist: z.boolean().optional(),
+});
+
+/** POST /api/projects/[id]/research – optional target markets */
+export const projectResearchBodySchema = z.object({
+  url: z.string().max(2048).optional(),
+  marketKeys: z.array(z.string().regex(/^[a-z]{2}-[a-z]{2}$/)).min(1).max(10).optional(),
 });
 
 /** POST /api/rank-tracking/refresh */

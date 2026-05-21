@@ -10,6 +10,7 @@ import { invalidateDomainList, invalidateScansList } from '@/lib/cache';
 import { syncDomainScanTagsForProjectId } from '@/lib/db/sync-domain-scan-tags-from-projects';
 import { syncStandaloneScansTagsForProjectId } from '@/lib/db/sync-standalone-scan-tags-from-projects';
 import { getProject, updateProject, deleteProject } from '@/lib/db/projects';
+import { mergeGeoQueriesByMarket } from '@/lib/geo-queries-by-market';
 import { getDomainScansCount } from '@/lib/db/scans';
 import { listJourneyRuns } from '@/lib/db/journey-runs';
 import { listGeoEeatRuns } from '@/lib/db/geo-eeat-runs';
@@ -73,13 +74,20 @@ export async function PATCH(
     if (!exists) {
         return apiError('Project not found', API_STATUS.NOT_FOUND);
     }
+    let geoQueriesPatch: Record<string, string[]> | string[] | undefined;
+    if (parsed.geoQueriesByMarket !== undefined) {
+        geoQueriesPatch = mergeGeoQueriesByMarket(exists.geoQueriesByMarket ?? exists.geoQueries, parsed.geoQueriesByMarket);
+    } else if (parsed.geoQueries !== undefined) {
+        geoQueriesPatch = parsed.geoQueries;
+    }
+
     const updated = await updateProject(id, user.id, {
         ...(parsed.name !== undefined && { name: parsed.name }),
         ...(parsed.domain !== undefined && { domain: parsed.domain }),
         ...(parsed.industry !== undefined && { industry: parsed.industry }),
         ...(parsed.valueProposition !== undefined && { valueProposition: parsed.valueProposition }),
         ...(parsed.competitors !== undefined && { competitors: parsed.competitors }),
-        ...(parsed.geoQueries !== undefined && { geoQueries: parsed.geoQueries }),
+        ...(geoQueriesPatch !== undefined && { geoQueries: geoQueriesPatch }),
         ...(parsed.tags !== undefined && { tags: parsed.tags }),
     });
     if (updated) {

@@ -14,16 +14,28 @@ export interface RankTrackingKeywordRow {
     keyword: string;
     country: string;
     language: string;
+    intentKey: string | null;
+    intentLabel: string | null;
     device: string | null;
     createdAt: Date;
     updatedAt: Date;
 }
 
+export type RankTrackingKeywordInsert = {
+    domain: string;
+    keyword: string;
+    country: string;
+    language: string;
+    intentKey?: string | null;
+    intentLabel?: string | null;
+    device?: string | null;
+};
+
 export async function insertKeyword(
     id: string,
     userId: string,
     projectId: string | null,
-    data: { domain: string; keyword: string; country: string; language: string; device?: string | null }
+    data: RankTrackingKeywordInsert
 ): Promise<void> {
     const db = getDb();
     const now = new Date();
@@ -35,10 +47,38 @@ export async function insertKeyword(
         keyword: data.keyword,
         country: data.country,
         language: data.language,
+        intentKey: data.intentKey ?? null,
+        intentLabel: data.intentLabel ?? null,
         device: data.device ?? null,
         createdAt: now,
         updatedAt: now,
     });
+}
+
+export async function insertKeywords(
+    userId: string,
+    projectId: string | null,
+    rows: { id: string; data: RankTrackingKeywordInsert }[]
+): Promise<void> {
+    if (rows.length === 0) return;
+    const db = getDb();
+    const now = new Date();
+    await db.insert(rankTrackingKeywords).values(
+        rows.map(({ id, data }) => ({
+            id,
+            userId,
+            projectId,
+            domain: data.domain,
+            keyword: data.keyword,
+            country: data.country,
+            language: data.language,
+            intentKey: data.intentKey ?? null,
+            intentLabel: data.intentLabel ?? null,
+            device: data.device ?? null,
+            createdAt: now,
+            updatedAt: now,
+        }))
+    );
 }
 
 export async function getKeyword(id: string, userId: string): Promise<RankTrackingKeywordRow | null> {

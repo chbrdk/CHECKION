@@ -68,7 +68,8 @@ export const projects = pgTable(
         industry: text('industry'),
         valueProposition: text('value_proposition'),
         competitors: jsonb('competitors').notNull().default([]), // string[] – competitor domains
-        geoQueries: jsonb('geo_queries').notNull().default([]), // string[] – GEO/E-E-A-T queries for this project
+        /** GEO queries: legacy string[] or Record<marketKey, string[]> (e.g. "de-de"). See lib/geo-queries-by-market.ts */
+        geoQueries: jsonb('geo_queries').notNull().default([]),
         /** Normalized tag strings (lowercase) for list filters. */
         tags: jsonb('tags').notNull().default([]),
         /** Canonical PLEXON platform project id (mirror). */
@@ -371,6 +372,9 @@ export const rankTrackingKeywords = pgTable('rank_tracking_keywords', {
     keyword: text('keyword').notNull(),
     country: text('country').notNull(), // gl, e.g. de, us
     language: text('language').notNull(), // hl, e.g. de, en
+    /** Shared slug across localized keyword rows (e.g. industrial-pumps). */
+    intentKey: text('intent_key'),
+    intentLabel: text('intent_label'),
     device: text('device'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

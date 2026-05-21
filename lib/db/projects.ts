@@ -8,6 +8,7 @@ import { getProjectMembership, canDeleteProject, canManageProject } from './proj
 import { projects, projectMembers, PROJECT_MEMBER_ROLE, PROJECT_MEMBER_STATUS, type ProjectMemberRole } from './schema';
 import { normalizeTagList } from '@/lib/tag-utils';
 import { normalizeStoredProjectIndustry } from '@/lib/industry-pool';
+import { flattenGeoQueries, normalizeGeoQueriesToByMarket, type GeoQueriesByMarket } from '@/lib/geo-queries-by-market';
 
 export interface ProjectRow {
     id: string;
@@ -18,6 +19,7 @@ export interface ProjectRow {
     valueProposition: string | null;
     competitors: string[];
     geoQueries: string[];
+    geoQueriesByMarket: GeoQueriesByMarket;
     tags: string[];
     membershipRole?: ProjectMemberRole;
     createdAt: Date;
@@ -39,7 +41,8 @@ function mapProjectRow(row: Record<string, unknown>): ProjectRow {
         industry: r.industry ?? null,
         valueProposition: r.valueProposition ?? null,
         competitors: Array.isArray(r.competitors) ? (r.competitors as string[]) : [],
-        geoQueries: Array.isArray(r.geoQueries) ? (r.geoQueries as string[]) : [],
+        geoQueries: flattenGeoQueries(r.geoQueries),
+        geoQueriesByMarket: normalizeGeoQueriesToByMarket(r.geoQueries),
         tags: normalizeTagList(r.tags),
         membershipRole: typeof r.membershipRole === 'string' ? (r.membershipRole as ProjectMemberRole) : undefined,
         createdAt: r.createdAt,
@@ -56,7 +59,7 @@ export async function insertProject(
         industry?: string | null;
         valueProposition?: string | null;
         competitors?: string[];
-        geoQueries?: string[];
+        geoQueries?: string[] | GeoQueriesByMarket;
         tags?: string[];
         platformProjectId?: string | null;
         platformCompanyId?: string | null;
@@ -65,7 +68,12 @@ export async function insertProject(
     const db = getDb();
     const now = new Date();
     const competitors = Array.isArray(data.competitors) ? data.competitors : [];
-    const geoQueries = Array.isArray(data.geoQueries) ? data.geoQueries : [];
+    const geoQueries =
+        data.geoQueries != null && !Array.isArray(data.geoQueries)
+            ? data.geoQueries
+            : Array.isArray(data.geoQueries)
+              ? data.geoQueries
+              : [];
     const tags = normalizeTagList(data.tags ?? []);
     await db.transaction(async (tx) => {
         await tx.insert(projects).values({
@@ -187,7 +195,7 @@ export async function updateProject(
         industry?: string | null;
         valueProposition?: string | null;
         competitors?: string[];
-        geoQueries?: string[];
+        geoQueries?: string[] | GeoQueriesByMarket;
         tags?: string[];
     }
 ): Promise<boolean> {

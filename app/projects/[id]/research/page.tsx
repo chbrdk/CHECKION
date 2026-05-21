@@ -6,8 +6,15 @@ import { Box, Stack } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { MSQDX_BUTTON_THEME_ACCENT_SX } from '@/lib/theme-accent';
-import { apiProject, apiProjectResearch, API_RANK_TRACKING_KEYWORDS } from '@/lib/constants';
-import { SERP_MAIN_MARKETS } from '@/lib/serp-markets';
+import {
+    apiProject,
+    apiProjectResearch,
+    API_RANK_TRACKING_KEYWORDS,
+    API_RANK_TRACKING_KEYWORDS_LOCALIZE,
+} from '@/lib/constants';
+import { parseMarketKey } from '@/lib/serp-markets';
+import { mergeGeoQueriesByMarket } from '@/lib/geo-queries-by-market';
+import { SerpMarketSelect } from '@/components/SerpMarketSelect';
 import { ProjectResearchResultForm } from '@/components/ProjectResearchResultForm';
 import type { ProjectResearchResult } from '@/lib/research/schema';
 
@@ -31,6 +38,8 @@ export default function ProjectResearchPage() {
     const [researchAddKeyword, setResearchAddKeyword] = useState('');
     const [researchAddGeoQuery, setResearchAddGeoQuery] = useState('');
     const [researchAddCompetitor, setResearchAddCompetitor] = useState('');
+    const [researchMarketKeys, setResearchMarketKeys] = useState<string[]>(['de-de', 'us-en', 'gb-en']);
+    const [applyMarketKeys, setApplyMarketKeys] = useState<string[]>(['de-de', 'us-en', 'gb-en']);
 
     const loadProject = useCallback(async () => {
         if (!id) return;
@@ -63,7 +72,7 @@ export default function ProjectResearchPage() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'same-origin',
-                body: JSON.stringify({}),
+                body: JSON.stringify({ marketKeys: researchMarketKeys }),
             });
             const data = await res.json().catch(() => ({}));
             if (res.ok && data && Array.isArray(data.targetGroups)) {
@@ -117,47 +126,99 @@ export default function ProjectResearchPage() {
     }, [id, researchResult?.competitors, competitors, loadProject]);
 
     const handleApplyResearchGeoQueries = useCallback(async () => {
-        if (!id || !researchResult?.geoQueries?.length) return;
-        const merged = [...new Set([...geoQueries, ...researchResult.geoQueries])];
+        if (!id || !researchResult) return;
+        const additions = researchResult.geoQueriesByMarket ?? {};
+        const hasByMarket = Object.keys(additions).length > 0;
+        const payload = hasByMarket
+            ? { geoQueriesByMarket: mergeGeoQueriesByMarket(project?.geoQueries, additions) }
+            : researchResult.geoQueries?.length
+              ? { geoQueries: [...new Set([...geoQueries, ...researchResult.geoQueries])] }
+              : null;
+        if (!payload) return;
         try {
             const res = await fetch(apiProject(id), {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'same-origin',
-                body: JSON.stringify({ geoQueries: merged }),
+                body: JSON.stringify(payload),
             });
             if (res.ok) loadProject();
         } catch {
             // ignore
         }
-    }, [id, researchResult?.geoQueries, geoQueries, loadProject]);
+    }, [id, researchResult, project?.geoQueries, geoQueries, loadProject]);
 
     const handleApplyResearchKeywords = useCallback(async () => {
-        if (!id || !project?.domain || selectedResearchKeywords.size === 0) return;
-        const market = SERP_MAIN_MARKETS[0];
-        const [country, language] = market ? [market.country, market.language] : ['de', 'de'];
+        if (!id || !project?.domain || selectedResearchKeywords.size === 0 || applyMarketKeys.length === 0) return;
         const domain = project.domain.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0] ?? project.domain;
+        const byMarket = researchResult?.seoKeywordsByMarket;
+        const deList = byMarket?.['de-de'] ?? researchResult?.seoKeywords ?? [];
+
         for (const keyword of selectedResearchKeywords) {
             try {
-                await fetch(API_RANK_TRACKING_KEYWORDS, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'same-origin',
-                    body: JSON.stringify({
-                        projectId: id,
-                        domain,
-                        keyword: keyword.trim(),
-                        country,
-                        language,
-                    }),
-                });
+                if (byMarket && Object.keys(byMarket).length > 0) {
+                    const seedIndex = deList.findIndex((k) => k.toLowerCase() === keyword.toLowerCase());
+                    for (const mk of applyMarketKeys) {
+                        const kw =
+                            seedIndex >= 0 && byMarket[mk]?.[seedIndex]
+                                ? byMarket[mk][seedIndex]
+                                : mk === 'de-de'
+                                  ? keyword
+                                  : null;
+                        if (!kw) continue;
+                        const parsed = parseMarketKey(mk);
+                        if (!parsed) continue;
+                        await fetch(API_RANK_TRACKING_KEYWORDS, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'same-origin',
+                            body: JSON.stringify({
+                                projectId: id,
+                                domain,
+                                keyword: kw.trim(),
+                                country: parsed.country,
+                                language: parsed.language,
+                                intentLabel: keyword.trim(),
+                            }),
+                        });
+                    }
+                } else if (applyMarketKeys.length === 1) {
+                    const mk = parseMarketKey(applyMarketKeys[0]);
+                    if (!mk) continue;
+                    await fetch(API_RANK_TRACKING_KEYWORDS, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({
+                            projectId: id,
+                            domain,
+                            keyword: keyword.trim(),
+                            country: mk.country,
+                            language: mk.language,
+                        }),
+                    });
+                } else {
+                    await fetch(API_RANK_TRACKING_KEYWORDS_LOCALIZE, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({
+                            projectId: id,
+                            domain,
+                            seedKeyword: keyword.trim(),
+                            intentLabel: keyword.trim(),
+                            marketKeys: applyMarketKeys,
+                            persist: true,
+                        }),
+                    });
+                }
             } catch {
                 // continue
             }
         }
         setSelectedResearchKeywords(new Set());
         loadProject();
-    }, [id, project?.domain, selectedResearchKeywords, loadProject]);
+    }, [id, project?.domain, selectedResearchKeywords, applyMarketKeys, researchResult?.seoKeywordsByMarket, loadProject]);
 
     const handleToggleResearchKeyword = useCallback((kw: string) => {
         setSelectedResearchKeywords((prev) => {
@@ -261,11 +322,19 @@ export default function ProjectResearchPage() {
                     <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1.5 }}>
                         {t('projects.researchDescription')}
                     </MsqdxTypography>
+                    <Box sx={{ mb: 2 }}>
+                        <SerpMarketSelect
+                            label={t('projects.researchMarkets')}
+                            multiple
+                            selectedKeys={researchMarketKeys}
+                            onSelectedKeysChange={setResearchMarketKeys}
+                        />
+                    </Box>
                     <MsqdxButton
                         variant="contained"
                         size="small"
                         onClick={handleRunResearch}
-                        disabled={researchLoading || !project.domain}
+                        disabled={researchLoading || !project.domain || researchMarketKeys.length === 0}
                         sx={MSQDX_BUTTON_THEME_ACCENT_SX}
                     >
                         {researchLoading ? t('common.loading') : t('projects.researchStart')}
@@ -282,6 +351,14 @@ export default function ProjectResearchPage() {
                     ) : null}
                     {projectResearchResultFormProps != null ? (
                         <Box sx={{ mt: 2 }}>
+                            <Box sx={{ mb: 2 }}>
+                                <SerpMarketSelect
+                                    label={t('projects.applyToMarkets')}
+                                    multiple
+                                    selectedKeys={applyMarketKeys}
+                                    onSelectedKeysChange={setApplyMarketKeys}
+                                />
+                            </Box>
                             {researchResult?.valueProposition != null && (
                                 <MsqdxButton variant="outlined" size="small" onClick={handleSaveValueProposition} sx={{ mb: 1 }}>
                                     {t('projects.saveValueProposition')}

@@ -33,3 +33,16 @@ export function getMarketByCountryAndLanguage(country: string, language: string)
 export function isValidCountryLanguage(country: string, language: string): boolean {
     return getMarketByCountryAndLanguage(country, language) !== undefined;
 }
+
+/** Stable key for maps/UI, e.g. `de-de`, `us-en`. */
+export function marketKey(country: string, language: string): string {
+    return `${country.toLowerCase().trim()}-${language.toLowerCase().trim()}`;
+}
+
+export function parseMarketKey(key: string): { country: string; language: string } | undefined {
+    const parts = key.toLowerCase().trim().split('-');
+    if (parts.length !== 2 || parts[0].length !== 2 || parts[1].length !== 2) return undefined;
+    const [country, language] = parts;
+    return isValidCountryLanguage(country, language) ? { country, language } : undefined;
+}
+

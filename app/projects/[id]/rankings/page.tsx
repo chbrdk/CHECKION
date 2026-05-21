@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Box, Dialog, DialogTitle, DialogContent, DialogActions, Stack } from '@mui/material';
 import {
@@ -21,11 +21,15 @@ import {
     apiRankTrackingKeyword,
     apiRankTrackingRefresh,
     API_RANK_TRACKING_KEYWORDS,
+    API_RANK_TRACKING_KEYWORDS_LOCALIZE,
 } from '@/lib/constants';
-import { SERP_MAIN_MARKETS } from '@/lib/serp-markets';
+import { SERP_MAIN_MARKETS, parseMarketKey } from '@/lib/serp-markets';
+import { groupKeywordsByIntent, marketLabelForKeyword } from '@/lib/serp-intent';
 import { MSQDX_BUTTON_THEME_ACCENT_SX, THEME_ACCENT_CSS, msqdxChipThemeAccentSx } from '@/lib/theme-accent';
 import { RankTrackingChart } from '@/components/RankTrackingChart';
+import { RankIntentCompareChart } from '@/components/RankIntentCompareChart';
 import { SerpGooglePreviewModal } from '@/components/SerpGooglePreviewModal';
+import { SerpMarketSelect } from '@/components/SerpMarketSelect';
 import { VirtualChipList } from '@/components/VirtualChipList';
 
 interface RankKeywordItem {
@@ -34,6 +38,8 @@ interface RankKeywordItem {
     keyword: string;
     country?: string;
     language?: string;
+    intentKey?: string;
+    intentLabel?: string;
     device?: string;
     lastPosition?: number;
     lastRecordedAt?: string;
@@ -64,7 +70,12 @@ export default function ProjectRankingsPage() {
     const [addKeywordDomain, setAddKeywordDomain] = useState('');
     const [addKeywordKeyword, setAddKeywordKeyword] = useState('');
     const [addKeywordMarket, setAddKeywordMarket] = useState('');
+    const [addKeywordMarkets, setAddKeywordMarkets] = useState<string[]>(['de-de']);
+    const [addKeywordMultiMarket, setAddKeywordMultiMarket] = useState(false);
+    const [addIntentLabel, setAddIntentLabel] = useState('');
     const [addKeywordDevice, setAddKeywordDevice] = useState('');
+    const [rankingsView, setRankingsView] = useState<'flat' | 'intent'>('intent');
+    const [bulkMarketKeys, setBulkMarketKeys] = useState<string[]>(['de-de', 'us-en', 'gb-en']);
     const [addKeywordSubmitting, setAddKeywordSubmitting] = useState(false);
     const [refreshLoading, setRefreshLoading] = useState(false);
     const [refreshError, setRefreshError] = useState<string | null>(null);
@@ -121,39 +132,87 @@ export default function ProjectRankingsPage() {
 
     const competitors = Array.isArray(project?.competitors) ? project.competitors : [];
 
+    const intentGroups = useMemo(() => groupKeywordsByIntent(rankKeywords), [rankKeywords]);
+
     const handleAddKeyword = useCallback(async () => {
-        const [country, language] = addKeywordMarket ? addKeywordMarket.split('-') : ['', ''];
-        if (!id || !addKeywordDomain.trim() || !addKeywordKeyword.trim() || !country || !language) return;
+        if (!id || !addKeywordDomain.trim() || !addKeywordKeyword.trim()) return;
+        const markets = addKeywordMultiMarket
+            ? addKeywordMarkets
+            : addKeywordMarket
+              ? [addKeywordMarket]
+              : [];
+        if (markets.length === 0) return;
+
         setAddKeywordSubmitting(true);
         try {
-            const res = await fetch(API_RANK_TRACKING_KEYWORDS, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify({
-                    projectId: id,
-                    domain: addKeywordDomain.trim(),
-                    keyword: addKeywordKeyword.trim(),
-                    country,
-                    language,
-                    device: addKeywordDevice.trim() || undefined,
-                }),
-            });
-            const data = await res.json();
-            if (data?.success) {
-                setAddKeywordOpen(false);
-                setAddKeywordDomain('');
-                setAddKeywordKeyword('');
-                setAddKeywordMarket('');
-                setAddKeywordDevice('');
-                loadProject();
-                loadKeywords();
-                loadRankingSummary();
+            const domain = addKeywordDomain.trim();
+            const seed = addKeywordKeyword.trim();
+            const device = addKeywordDevice.trim() || undefined;
+
+            if (markets.length === 1) {
+                const mk = parseMarketKey(markets[0]);
+                if (!mk) return;
+                const res = await fetch(API_RANK_TRACKING_KEYWORDS, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        projectId: id,
+                        domain,
+                        keyword: seed,
+                        country: mk.country,
+                        language: mk.language,
+                        intentLabel: addIntentLabel.trim() || undefined,
+                        device,
+                    }),
+                });
+                const data = await res.json();
+                if (!data?.success) return;
+            } else {
+                const res = await fetch(API_RANK_TRACKING_KEYWORDS_LOCALIZE, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        projectId: id,
+                        domain,
+                        seedKeyword: seed,
+                        intentLabel: addIntentLabel.trim() || seed,
+                        marketKeys: markets,
+                        device,
+                        persist: true,
+                    }),
+                });
+                const data = await res.json();
+                if (!data?.success) return;
             }
+
+            setAddKeywordOpen(false);
+            setAddKeywordDomain('');
+            setAddKeywordKeyword('');
+            setAddKeywordMarket('');
+            setAddKeywordMarkets(['de-de']);
+            setAddIntentLabel('');
+            setAddKeywordDevice('');
+            loadProject();
+            loadKeywords();
+            loadRankingSummary();
         } finally {
             setAddKeywordSubmitting(false);
         }
-    }, [id, addKeywordDomain, addKeywordKeyword, addKeywordMarket, addKeywordDevice, loadProject, loadKeywords, loadRankingSummary]);
+    }, [
+        id,
+        addKeywordDomain,
+        addKeywordKeyword,
+        addKeywordMarket,
+        addKeywordMarkets,
+        addKeywordMultiMarket,
+        addIntentLabel,
+        addKeywordDevice,
+        loadProject,
+        loadKeywords,
+        loadRankingSummary,
+    ]);
 
     const handleSuggestKeywords = useCallback(async () => {
         if (!id) return;
@@ -207,24 +266,40 @@ export default function ProjectRankingsPage() {
     );
 
     const handleAddSelectedKeywords = useCallback(async () => {
-        if (!id || !project?.domain || selectedSuggestedKeywords.size === 0) return;
-        const market = SERP_MAIN_MARKETS[0];
-        const [country, language] = market ? [market.country, market.language] : ['de', 'de'];
+        if (!id || !project?.domain || selectedSuggestedKeywords.size === 0 || bulkMarketKeys.length === 0) return;
         const domain = project.domain.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0] ?? project.domain;
         for (const keyword of selectedSuggestedKeywords) {
             try {
-                await fetch(API_RANK_TRACKING_KEYWORDS, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'same-origin',
-                    body: JSON.stringify({
-                        projectId: id,
-                        domain,
-                        keyword: keyword.trim(),
-                        country,
-                        language,
-                    }),
-                });
+                if (bulkMarketKeys.length === 1) {
+                    const mk = parseMarketKey(bulkMarketKeys[0]);
+                    if (!mk) continue;
+                    await fetch(API_RANK_TRACKING_KEYWORDS, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({
+                            projectId: id,
+                            domain,
+                            keyword: keyword.trim(),
+                            country: mk.country,
+                            language: mk.language,
+                        }),
+                    });
+                } else {
+                    await fetch(API_RANK_TRACKING_KEYWORDS_LOCALIZE, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({
+                            projectId: id,
+                            domain,
+                            seedKeyword: keyword.trim(),
+                            intentLabel: keyword.trim(),
+                            marketKeys: bulkMarketKeys,
+                            persist: true,
+                        }),
+                    });
+                }
             } catch {
                 // continue
             }
@@ -234,7 +309,7 @@ export default function ProjectRankingsPage() {
         loadProject();
         loadKeywords();
         loadRankingSummary();
-    }, [id, project?.domain, selectedSuggestedKeywords, loadProject, loadKeywords, loadRankingSummary]);
+    }, [id, project?.domain, selectedSuggestedKeywords, bulkMarketKeys, loadProject, loadKeywords, loadRankingSummary]);
 
     const handleRefreshRankings = useCallback(async () => {
         if (!id) return;
@@ -381,15 +456,41 @@ export default function ProjectRankingsPage() {
                             <Box sx={{ mb: 1 }}>
                                 <VirtualChipList items={suggestedKeywords} getItemKey={(kw) => kw} renderChip={renderSuggestedKeywordChip} />
                             </Box>
+                            <Box sx={{ mb: 1.5 }}>
+                                <SerpMarketSelect
+                                    label={t('projects.bulkMarkets')}
+                                    multiple
+                                    selectedKeys={bulkMarketKeys}
+                                    onSelectedKeysChange={setBulkMarketKeys}
+                                />
+                            </Box>
                             <MsqdxButton
                                 variant="contained"
                                 size="small"
                                 onClick={handleAddSelectedKeywords}
-                                disabled={selectedSuggestedKeywords.size === 0}
+                                disabled={selectedSuggestedKeywords.size === 0 || bulkMarketKeys.length === 0}
                                 sx={MSQDX_BUTTON_THEME_ACCENT_SX}
                             >
                                 {t('projects.addSelectedKeywords')} ({selectedSuggestedKeywords.size})
                             </MsqdxButton>
+                        </Box>
+                    )}
+                    {rankKeywords.length > 0 && (
+                        <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                            <MsqdxChip
+                                label={t('projects.rankingsViewIntent')}
+                                variant={rankingsView === 'intent' ? 'filled' : 'outlined'}
+                                size="small"
+                                onClick={() => setRankingsView('intent')}
+                                sx={msqdxChipThemeAccentSx(rankingsView === 'intent')}
+                            />
+                            <MsqdxChip
+                                label={t('projects.rankingsViewFlat')}
+                                variant={rankingsView === 'flat' ? 'filled' : 'outlined'}
+                                size="small"
+                                onClick={() => setRankingsView('flat')}
+                                sx={msqdxChipThemeAccentSx(rankingsView === 'flat')}
+                            />
                         </Box>
                     )}
                     {refreshError && (
@@ -406,6 +507,88 @@ export default function ProjectRankingsPage() {
                                 {t('projects.addKeyword')}
                             </MsqdxButton>
                         </Box>
+                    ) : rankingsView === 'intent' ? (
+                        <Stack sx={{ gap: 2 }}>
+                            {intentGroups.map((group) => (
+                                <MsqdxCard
+                                    key={group.intentKey}
+                                    variant="flat"
+                                    borderRadius="button"
+                                    sx={{
+                                        p: 2,
+                                        border: `1px solid ${THEME_ACCENT_CSS}`,
+                                        bgcolor: 'var(--color-card-bg)',
+                                    }}
+                                >
+                                    <MsqdxTypography variant="subtitle1" weight="semibold" sx={{ mb: 1 }}>
+                                        {group.intentLabel}
+                                    </MsqdxTypography>
+                                    <Box
+                                        sx={{
+                                            display: 'grid',
+                                            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: `repeat(${Math.min(group.variants.length, 4)}, 1fr)` },
+                                            gap: 1,
+                                            mb: 2,
+                                        }}
+                                    >
+                                        {group.variants.map((v) => (
+                                            <Box
+                                                key={v.id}
+                                                sx={{
+                                                    p: 1,
+                                                    borderRadius: 1,
+                                                    border: '1px solid var(--color-border-subtle, #eee)',
+                                                }}
+                                            >
+                                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                                                    {v.country && v.language
+                                                        ? marketLabelForKeyword(v.country, v.language, SERP_MAIN_MARKETS)
+                                                        : ''}
+                                                </MsqdxTypography>
+                                                <MsqdxTypography variant="body2" weight="semibold" sx={{ wordBreak: 'break-word' }}>
+                                                    {v.keyword}
+                                                </MsqdxTypography>
+                                                <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 0.5 }}>
+                                                    {t('projects.lastPosition')}: {v.lastPosition != null ? v.lastPosition : '—'}
+                                                </MsqdxTypography>
+                                                <Box sx={{ display: 'flex', gap: 0.5, mt: 1, flexWrap: 'wrap' }}>
+                                                    <MsqdxButton
+                                                        variant="outlined"
+                                                        size="small"
+                                                        onClick={() => {
+                                                            setSerpPreviewKeyword(v);
+                                                            setSerpPreviewOpen(true);
+                                                        }}
+                                                    >
+                                                        {t('projects.viewSerpPreview')}
+                                                    </MsqdxButton>
+                                                    <MsqdxIconButton
+                                                        size="small"
+                                                        color="error"
+                                                        onClick={() => handleDeleteKeyword(v.id)}
+                                                        aria-label={t('projects.deleteKeyword')}
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </MsqdxIconButton>
+                                                </Box>
+                                            </Box>
+                                        ))}
+                                    </Box>
+                                    {group.variants.length > 1 && (
+                                        <RankIntentCompareChart
+                                            variants={group.variants.map((v) => ({
+                                                keywordId: v.id,
+                                                seriesLabel:
+                                                    v.country && v.language
+                                                        ? marketLabelForKeyword(v.country, v.language, SERP_MAIN_MARKETS)
+                                                        : v.keyword,
+                                            }))}
+                                            t={t}
+                                        />
+                                    )}
+                                </MsqdxCard>
+                            ))}
+                        </Stack>
                     ) : (
                         <Box
                             sx={{
@@ -549,39 +732,46 @@ export default function ProjectRankingsPage() {
                             fullWidth
                         />
                         <MsqdxFormField
+                            label={t('projects.intentLabel')}
+                            placeholder={t('projects.intentLabelPlaceholder')}
+                            value={addIntentLabel}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddIntentLabel(e.target.value)}
+                            fullWidth
+                        />
+                        <MsqdxFormField
                             label={t('projects.keyword')}
                             placeholder={t('projects.keywordPlaceholder')}
                             value={addKeywordKeyword}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddKeywordKeyword(e.target.value)}
                             fullWidth
                         />
-                        <Box>
-                            <MsqdxTypography component="label" variant="body2" sx={{ display: 'block', mb: 0.5, fontWeight: 500 }}>
-                                {t('projects.market')}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <input
+                                type="checkbox"
+                                id="add-keyword-multi-market"
+                                checked={addKeywordMultiMarket}
+                                onChange={(e) => setAddKeywordMultiMarket(e.target.checked)}
+                            />
+                            <MsqdxTypography component="label" htmlFor="add-keyword-multi-market" variant="body2">
+                                {t('projects.compareAcrossMarkets')}
                             </MsqdxTypography>
-                            <Box
-                                component="select"
-                                value={addKeywordMarket}
-                                onChange={(e) => setAddKeywordMarket(e.target.value)}
-                                required
-                                sx={{
-                                    width: '100%',
-                                    py: 1,
-                                    px: 1.5,
-                                    borderRadius: 'var(--msqdx-radius-sm, 4px)',
-                                    border: '1px solid var(--color-border-subtle, #ccc)',
-                                    fontSize: 'inherit',
-                                    fontFamily: 'inherit',
-                                }}
-                            >
-                                <option value="">{t('projects.marketPlaceholder')}</option>
-                                {SERP_MAIN_MARKETS.map((m) => (
-                                    <option key={`${m.country}-${m.language}`} value={`${m.country}-${m.language}`}>
-                                        {m.label} ({m.country}/{m.language})
-                                    </option>
-                                ))}
-                            </Box>
                         </Box>
+                        {addKeywordMultiMarket ? (
+                            <SerpMarketSelect
+                                label={t('projects.marketsCompare')}
+                                multiple
+                                selectedKeys={addKeywordMarkets}
+                                onSelectedKeysChange={setAddKeywordMarkets}
+                            />
+                        ) : (
+                            <SerpMarketSelect
+                                label={t('projects.market')}
+                                value={addKeywordMarket}
+                                onChange={setAddKeywordMarket}
+                                required
+                                placeholder={t('projects.marketPlaceholder')}
+                            />
+                        )}
                         <MsqdxFormField
                             label={t('projects.device')}
                             placeholder={t('projects.devicePlaceholder')}
@@ -598,7 +788,12 @@ export default function ProjectRankingsPage() {
                     <MsqdxButton
                         variant="contained"
                         onClick={handleAddKeyword}
-                        disabled={!addKeywordDomain.trim() || !addKeywordKeyword.trim() || !addKeywordMarket || addKeywordSubmitting}
+                        disabled={
+                            !addKeywordDomain.trim() ||
+                            !addKeywordKeyword.trim() ||
+                            (addKeywordMultiMarket ? addKeywordMarkets.length === 0 : !addKeywordMarket) ||
+                            addKeywordSubmitting
+                        }
                         sx={MSQDX_BUTTON_THEME_ACCENT_SX}
                     >
                         {addKeywordSubmitting ? t('projects.creating') : t('projects.save')}

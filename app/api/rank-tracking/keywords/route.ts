@@ -12,6 +12,7 @@ import {
     insertKeyword,
 } from '@/lib/db/rank-tracking-keywords';
 import { getLastPositionsByKeywordIds } from '@/lib/db/rank-tracking-positions';
+import { resolveIntentFields } from '@/lib/serp-intent';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function GET(request: NextRequest) {
@@ -35,6 +36,8 @@ export async function GET(request: NextRequest) {
             keyword: k.keyword,
             country: k.country,
             language: k.language,
+            intentKey: k.intentKey ?? undefined,
+            intentLabel: k.intentLabel ?? undefined,
             device: k.device,
             lastPosition: last?.position ?? undefined,
             lastRecordedAt: last?.recordedAt?.toISOString() ?? undefined,
@@ -56,12 +59,19 @@ export async function POST(request: NextRequest) {
     if (!project) return apiError('Project not found', API_STATUS.NOT_FOUND);
     const projectUserId = project.userId;
 
+    const { intentKey, intentLabel } = resolveIntentFields(
+        parsed.keyword,
+        parsed.intentKey,
+        parsed.intentLabel
+    );
     const id = uuidv4();
     await insertKeyword(id, projectUserId, parsed.projectId, {
         domain: parsed.domain,
         keyword: parsed.keyword,
         country: parsed.country,
         language: parsed.language,
+        intentKey,
+        intentLabel,
         device: parsed.device ?? undefined,
     });
     return NextResponse.json({ success: true, id });

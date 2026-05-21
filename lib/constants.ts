@@ -209,6 +209,8 @@ export const API_PROJECTS = `${APP_BASE_URL}/api/projects`;
 /** POST — Bearer CHECKION_ADMIN_API_KEY: copy `projects.tags` → `domain_scans.tags` for existing scans; invalidates domain lists. */
 export const API_ADMIN_DOMAIN_SCANS_SYNC_PROJECT_TAGS = `${APP_BASE_URL}/api/admin/domain-scans/sync-project-tags`;
 export const API_RANK_TRACKING_KEYWORDS = `${APP_BASE_URL}/api/rank-tracking/keywords`;
+export const API_RANK_TRACKING_KEYWORDS_BULK = `${APP_BASE_URL}/api/rank-tracking/keywords/bulk`;
+export const API_RANK_TRACKING_KEYWORDS_LOCALIZE = `${APP_BASE_URL}/api/rank-tracking/keywords/localize`;
 export const API_RANK_TRACKING_REFRESH = `${APP_BASE_URL}/api/rank-tracking/refresh`;
 
 /** Build: GET /api/rank-tracking/keywords?projectId= */
