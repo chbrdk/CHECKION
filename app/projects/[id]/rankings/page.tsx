@@ -515,7 +515,6 @@ export default function ProjectRankingsPage() {
                                             keywordLabel={k.keyword}
                                             ourDomain={k.domain}
                                             competitorDomains={competitors}
-                projectId={id}
                                             t={t}
                                         />
                                     </Box>
