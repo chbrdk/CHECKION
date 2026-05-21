@@ -53,6 +53,7 @@ export async function listPositionsByKeyword(
             competitorPositions: rankTrackingPositions.competitorPositions,
             serpLeaderDomain: rankTrackingPositions.serpLeaderDomain,
             serpLeaderUrl: rankTrackingPositions.serpLeaderUrl,
+            serpOrganic: rankTrackingPositions.serpOrganic,
             recordedAt: rankTrackingPositions.recordedAt,
         })
         .from(rankTrackingPositions)
@@ -63,6 +64,7 @@ export async function listPositionsByKeyword(
     return rows.map((r) => ({
         ...r,
         competitorPositions: (r.competitorPositions as Record<string, number | null> | null) ?? undefined,
+        serpOrganic: (r.serpOrganic as SerpOrganicResult[] | null) ?? undefined,
     })) as RankTrackingPositionRow[];
 }
 
@@ -89,6 +91,7 @@ export async function getLastPositionsByKeywordIds(
             competitorPositions?: Record<string, number | null>;
             serpLeaderDomain?: string | null;
             serpLeaderUrl?: string | null;
+            serpOrganic?: SerpOrganicResult[];
         }
     >
 > {
@@ -102,6 +105,7 @@ export async function getLastPositionsByKeywordIds(
             competitorPositions: rankTrackingPositions.competitorPositions,
             serpLeaderDomain: rankTrackingPositions.serpLeaderDomain,
             serpLeaderUrl: rankTrackingPositions.serpLeaderUrl,
+            serpOrganic: rankTrackingPositions.serpOrganic,
         })
         .from(rankTrackingPositions)
         .where(inArray(rankTrackingPositions.keywordId, keywordIds))
@@ -114,19 +118,48 @@ export async function getLastPositionsByKeywordIds(
             competitorPositions?: Record<string, number | null>;
             serpLeaderDomain?: string | null;
             serpLeaderUrl?: string | null;
+            serpOrganic?: SerpOrganicResult[];
         }
     >();
     for (const row of rows) {
         if (!map.has(row.keywordId)) {
             const comp = row.competitorPositions as Record<string, number | null> | null | undefined;
+            const organic = row.serpOrganic as SerpOrganicResult[] | null | undefined;
             map.set(row.keywordId, {
                 position: row.position,
                 recordedAt: row.recordedAt,
                 ...(comp && typeof comp === 'object' && !Array.isArray(comp) && { competitorPositions: comp }),
                 ...(row.serpLeaderDomain != null && { serpLeaderDomain: row.serpLeaderDomain }),
                 ...(row.serpLeaderUrl != null && { serpLeaderUrl: row.serpLeaderUrl }),
+                ...(Array.isArray(organic) && organic.length > 0 && { serpOrganic: organic }),
             });
         }
     }
     return map;
+}
+
+export async function getLastSerpOrganicForKeyword(
+    keywordId: string,
+    userId: string
+): Promise<{ organic: SerpOrganicResult[]; recordedAt: Date; position: number | null } | null> {
+    const db = getDb();
+    const rows = await db
+        .select({
+            serpOrganic: rankTrackingPositions.serpOrganic,
+            recordedAt: rankTrackingPositions.recordedAt,
+            position: rankTrackingPositions.position,
+        })
+        .from(rankTrackingPositions)
+        .innerJoin(rankTrackingKeywords, eq(rankTrackingPositions.keywordId, rankTrackingKeywords.id))
+        .where(and(eq(rankTrackingPositions.keywordId, keywordId), eq(rankTrackingKeywords.userId, userId)))
+        .orderBy(desc(rankTrackingPositions.recordedAt))
+        .limit(1);
+    if (rows.length === 0) return null;
+    const organic = rows[0].serpOrganic as SerpOrganicResult[] | null;
+    if (!Array.isArray(organic) || organic.length === 0) return null;
+    return {
+        organic,
+        recordedAt: rows[0].recordedAt,
+        position: rows[0].position,
+    };
 }
