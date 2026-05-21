@@ -47,19 +47,9 @@ import { ensureUrlWithScheme } from '@/lib/url-normalize';
 import { fetchOnceMoreOn5xx } from '@/lib/fetch-retry-5xx';
 import { extractHostname } from '@/lib/geo-eeat/suggest-parse';
 import { resolveLaunchProjectId } from '@/lib/launch-project';
+import { fetchWithSessionCookies } from '@/lib/client/fetch-with-session';
 
 const GEO_EEAT_QUICK_QUERY_MAX = 500;
-
-/** Cookie-based API calls: always send credentials; retry once after 401 so the first click works once NextAuth session is synced. */
-async function fetchWithSessionCookies(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-    const merged: RequestInit = { ...init, credentials: 'include' };
-    let res = await fetch(input, merged);
-    if (res.status === 401) {
-        await getSession();
-        res = await fetch(input, merged);
-    }
-    return res;
-}
 
 async function readJsonSafe<T = unknown>(res: Response): Promise<T | null> {
     const text = await res.text().catch(() => '');
@@ -78,7 +68,6 @@ export default function ScanPage() {
     const { status: sessionStatus } = useSession();
     const { singlePageScan, domainScan } = useStatusUi();
     const launchProjectId = searchParams.get('projectId');
-    const launchUrl = searchParams.get('url');
     const STANDARDS: { value: WcagStandard; label: string }[] = [
         { value: 'WCAG2A', label: t('standards.wcag2a') },
         { value: 'WCAG2AA', label: t('standards.wcag2aa') },

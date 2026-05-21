@@ -156,6 +156,7 @@
     "serpPreviewRetry": "Erneut versuchen",
     "serpPreviewAboutPaged": "Ungefähr {shown} von {total} Ergebnissen (erste Seite)",
     "serpPreviewScanPage": "Seite scannen",
+    "serpPreviewScanning": "Scan läuft…",
     "lastUpdate": "Letzte Aktualisierung",
     "country": "Land",
     "countryPlaceholder": "z. B. de",

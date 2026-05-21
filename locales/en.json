@@ -156,6 +156,7 @@
     "serpPreviewRetry": "Try again",
     "serpPreviewAboutPaged": "About {shown} of {total} results (first page)",
     "serpPreviewScanPage": "Scan this page",
+    "serpPreviewScanning": "Scanning…",
     "lastUpdate": "Last update",
     "country": "Country",
     "countryPlaceholder": "e.g. de",

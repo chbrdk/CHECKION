@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import {
     Box,
     CircularProgress,
@@ -13,10 +12,10 @@ import {
 import { MsqdxTypography, MsqdxChip, MsqdxButton } from '@msqdx/react';
 import { X } from 'lucide-react';
 import { useI18n } from '@/components/i18n/I18nProvider';
-import { apiRankTrackingKeywordSerpPreview, pathScanSinglePage } from '@/lib/constants';
+import { apiRankTrackingKeywordSerpPreview } from '@/lib/constants';
+import { useSinglePageScanRunner } from '@/hooks/useSinglePageScanRunner';
 import { domainMatchesOrganic, type SerpOrganicResult } from '@/lib/serp-organic';
 import { SERP_PREVIEW_DISPLAY_LIMIT } from '@/lib/serp-markets';
-import { ensureUrlWithScheme } from '@/lib/url-normalize';
 
 export interface SerpGooglePreviewModalProps {
     open: boolean;
@@ -70,7 +69,7 @@ export function SerpGooglePreviewModal({
     projectId,
 }: SerpGooglePreviewModalProps) {
     const { t } = useI18n();
-    const router = useRouter();
+    const { runScan, scanningUrl, scanError, clearScanError } = useSinglePageScanRunner();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<SerpPreviewData | null>(null);
@@ -79,6 +78,7 @@ export function SerpGooglePreviewModal({
         if (!keywordId) return;
         setLoading(true);
         setError(null);
+        clearScanError();
         setData(null);
         try {
             const res = await fetch(apiRankTrackingKeywordSerpPreview(keywordId), { credentials: 'same-origin' });
@@ -97,15 +97,16 @@ export function SerpGooglePreviewModal({
         } finally {
             setLoading(false);
         }
-    }, [keywordId, t]);
+    }, [keywordId, t, clearScanError]);
 
     useEffect(() => {
         if (open && keywordId) loadPreview();
         if (!open) {
             setData(null);
             setError(null);
+            clearScanError();
         }
-    }, [open, keywordId, loadPreview]);
+    }, [open, keywordId, loadPreview, clearScanError]);
 
     const visibleOrganic = useMemo(() => {
         if (!data?.organic.length) return [];
@@ -116,21 +117,6 @@ export function SerpGooglePreviewModal({
 
     const marketLabel =
         data?.country && data?.language ? `${data.country.toUpperCase()} · ${data.language}` : '';
-
-    const handleScanPage = useCallback(
-        (link: string) => {
-            const scanUrl = ensureUrlWithScheme(link);
-            if (!scanUrl) return;
-            onClose();
-            router.push(
-                pathScanSinglePage({
-                    url: scanUrl,
-                    ...(projectId ? { projectId } : {}),
-                })
-            );
-        },
-        [onClose, projectId, router]
-    );
 
     return (
         <Dialog
@@ -180,10 +166,10 @@ export function SerpGooglePreviewModal({
                         <CircularProgress size={32} sx={{ color: 'var(--color-theme-accent)' }} />
                     </Box>
                 )}
-                {error && !loading && (
+                {(error || scanError) && !loading && (
                     <Box sx={{ py: 4, textAlign: 'center' }}>
                         <MsqdxTypography variant="body2" sx={{ color: 'var(--color-status-error)', mb: 2 }}>
-                            {error}
+                            {error || scanError}
                         </MsqdxTypography>
                         <MsqdxButton variant="outlined" size="small" onClick={loadPreview}>
                             {t('projects.serpPreviewRetry')}
@@ -377,9 +363,20 @@ export function SerpGooglePreviewModal({
                                         <MsqdxButton
                                             variant="outlined"
                                             size="small"
-                                            onClick={() => handleScanPage(item.link)}
+                                            disabled={scanningUrl != null}
+                                            onClick={() =>
+                                                runScan(item.link, {
+                                                    projectId,
+                                                    onSessionOpen: onClose,
+                                                })
+                                            }
                                         >
-                                            {t('projects.serpPreviewScanPage')}
+                                            {scanningUrl != null &&
+                                            (scanningUrl === item.link ||
+                                                scanningUrl ===
+                                                    (item.link.startsWith('http') ? item.link : `https://${item.link}`))
+                                                ? t('projects.serpPreviewScanning')
+                                                : t('projects.serpPreviewScanPage')}
                                         </MsqdxButton>
                                     </Box>
                                 );
