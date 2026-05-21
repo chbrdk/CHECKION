@@ -67,14 +67,18 @@ export async function POST(request: NextRequest) {
             ? (await getProject(kw.projectId, user.id))?.competitors ?? []
             : [];
         try {
-            const { position, competitorPositions, serpLeader } = await fetchSerpPosition(kw.keyword, kw.domain, {
-                country: kw.country,
-                language: kw.language,
-                device: kw.device ?? undefined,
-                numPages: SERP_NUM_PAGES,
-                competitorDomains,
-            });
-            await insertPosition(kid, position, uuidv4(), competitorPositions, serpLeader);
+            const { position, competitorPositions, serpLeader, organicResults } = await fetchSerpPosition(
+                kw.keyword,
+                kw.domain,
+                {
+                    country: kw.country,
+                    language: kw.language,
+                    device: kw.device ?? undefined,
+                    numPages: SERP_NUM_PAGES,
+                    competitorDomains,
+                }
+            );
+            await insertPosition(kid, position, uuidv4(), competitorPositions, serpLeader, organicResults);
             await touchKeywordUpdatedAt(kid, kw.userId);
             results.push({ keywordId: kid, position, competitorPositions, serpLeader });
         } catch (err) {

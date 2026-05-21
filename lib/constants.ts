@@ -221,6 +221,9 @@ export const apiRankTrackingKeywordPositions = (id: string, limit?: number) => {
   const base = `${API_RANK_TRACKING_KEYWORDS}/${encodeURIComponent(id)}/positions`;
   return limit != null ? `${base}?limit=${limit}` : base;
 };
+/** Build: GET /api/rank-tracking/keywords/[id]/serp-preview */
+export const apiRankTrackingKeywordSerpPreview = (id: string) =>
+  `${API_RANK_TRACKING_KEYWORDS}/${encodeURIComponent(id)}/serp-preview`;
 /** Build: POST /api/rank-tracking/refresh */
 export const apiRankTrackingRefresh = () => API_RANK_TRACKING_REFRESH;
 

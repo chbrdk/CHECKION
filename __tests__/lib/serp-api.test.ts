@@ -24,9 +24,9 @@ describe('fetchSerpPosition', () => {
         const mockRes = {
             ok: true,
             json: () =>
-                Promise.resolve({
-                    organic: [{ link: 'https://example.com/page' }],
-                }),
+                    Promise.resolve({
+                        organic: [{ title: 'Example', link: 'https://example.com/page', snippet: 'Test snippet' }],
+                    }),
         };
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockRes));
         const result = await fetchSerpPosition('test query', 'example.com', { country: 'de', language: 'de' });

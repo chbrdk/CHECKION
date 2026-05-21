@@ -25,6 +25,7 @@ import {
 import { SERP_MAIN_MARKETS } from '@/lib/serp-markets';
 import { MSQDX_BUTTON_THEME_ACCENT_SX, THEME_ACCENT_CSS, msqdxChipThemeAccentSx } from '@/lib/theme-accent';
 import { RankTrackingChart } from '@/components/RankTrackingChart';
+import { SerpGooglePreviewModal } from '@/components/SerpGooglePreviewModal';
 import { VirtualChipList } from '@/components/VirtualChipList';
 
 interface RankKeywordItem {
@@ -72,6 +73,8 @@ export default function ProjectRankingsPage() {
     const [suggestedKeywords, setSuggestedKeywords] = useState<string[]>([]);
     const [selectedSuggestedKeywords, setSelectedSuggestedKeywords] = useState<Set<string>>(new Set());
     const [rankingSummary, setRankingSummary] = useState<RankingSummaryData | null>(null);
+    const [serpPreviewOpen, setSerpPreviewOpen] = useState(false);
+    const [serpPreviewKeyword, setSerpPreviewKeyword] = useState<RankKeywordItem | null>(null);
 
     const loadProject = useCallback(async () => {
         if (!id) return;
@@ -462,6 +465,18 @@ export default function ProjectRankingsPage() {
                                         )}
                                         {' · '}{t('projects.lastUpdate')}: {k.lastRecordedAt ? new Date(k.lastRecordedAt).toLocaleDateString() : '—'}
                                     </MsqdxTypography>
+                                    <Box sx={{ mb: 1.5 }}>
+                                        <MsqdxButton
+                                            variant="outlined"
+                                            size="small"
+                                            onClick={() => {
+                                                setSerpPreviewKeyword(k);
+                                                setSerpPreviewOpen(true);
+                                            }}
+                                        >
+                                            {t('projects.viewSerpPreview')}
+                                        </MsqdxButton>
+                                    </Box>
                                     {k.lastSerpLeaderDomain && (
                                         <Box sx={{ mb: 1.5 }}>
                                             {k.lastPosition === 1 && normalizeRankDomain(k.domain) === normalizeRankDomain(k.lastSerpLeaderDomain) ? (
@@ -509,6 +524,17 @@ export default function ProjectRankingsPage() {
                     )}
                 </MsqdxMoleculeCard>
             </Stack>
+
+            <SerpGooglePreviewModal
+                open={serpPreviewOpen}
+                onClose={() => {
+                    setSerpPreviewOpen(false);
+                    setSerpPreviewKeyword(null);
+                }}
+                keywordId={serpPreviewKeyword?.id ?? null}
+                ourDomain={serpPreviewKeyword?.domain ?? project.domain ?? ''}
+                competitorDomains={competitors}
+            />
 
             <Dialog open={addKeywordOpen} onClose={() => setAddKeywordOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 'var(--msqdx-spacing-md, 8px)' } }}>
                 <DialogTitle sx={{ fontWeight: 600 }}>{t('projects.addKeyword')}</DialogTitle>

@@ -384,5 +384,7 @@ export const rankTrackingPositions = pgTable('rank_tracking_positions', {
     competitorPositions: jsonb('competitor_positions'), // Record<string, number | null> – domain -> position
     serpLeaderDomain: text('serp_leader_domain'),
     serpLeaderUrl: text('serp_leader_url'),
+    /** SerpOrganicResult[] – titles, snippets, URLs for Google-style preview */
+    serpOrganic: jsonb('serp_organic'),
     recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull().defaultNow(),
 });

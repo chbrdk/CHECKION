@@ -104,7 +104,12 @@ describe('POST /api/rank-tracking/refresh', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     } as any);
-    vi.mocked(fetchSerpPosition).mockResolvedValue({ position: 3, competitorPositions: {} });
+    vi.mocked(fetchSerpPosition).mockResolvedValue({
+      position: 3,
+      competitorPositions: {},
+      serpLeader: null,
+      organicResults: [],
+    });
     vi.mocked(insertPosition).mockResolvedValue(undefined as any);
     vi.mocked(touchKeywordUpdatedAt).mockResolvedValue(undefined as any);
 

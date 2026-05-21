@@ -6,7 +6,14 @@
  */
 
 import { API_SERP_BASE, API_SCRAPINGROBOT_BASE } from './external-apis';
+import {
+    parseScrapingRobotOrganic,
+    parseSerperOrganicPage,
+    type SerpOrganicResult,
+} from './serp-organic';
 import { SERP_DEFAULT_COUNTRY, SERP_DEFAULT_LANGUAGE, SERP_NUM_PAGES } from './serp-markets';
+
+export type { SerpOrganicResult } from './serp-organic';
 
 export type SerpApiProvider = 'serper' | 'scrapingrobot';
 
@@ -21,6 +28,8 @@ export interface FetchSerpPositionResult {
     competitorPositions: Record<string, number | null>;
     /** Who holds organic position 1 in the fetched SERP (always captured when results exist). */
     serpLeader: SerpLeader | null;
+    /** Full organic listings (titles, snippets, URLs) for Google-style SERP preview. */
+    organicResults: SerpOrganicResult[];
 }
 
 export interface FetchSerpPositionOptions {
@@ -76,20 +85,6 @@ function urlMatchesDomain(url: string, domain: string): boolean {
     } catch {
         return false;
     }
-}
-
-/**
- * Returns the list of organic result URLs from the raw API response (provider-agnostic).
- */
-function getOrganicUrls(data: unknown, provider: SerpApiProvider): string[] {
-    if (provider === 'scrapingrobot') {
-        const r = data as { result?: { organicResults?: Array<{ url?: string }> } };
-        const list = r?.result?.organicResults ?? [];
-        return list.map((item) => item?.url ?? '').filter(Boolean);
-    }
-    const serper = data as { organic?: Array<{ link?: string }> };
-    const list = serper?.organic ?? [];
-    return list.map((item) => item?.link ?? '').filter(Boolean);
 }
 
 /**
@@ -160,9 +155,10 @@ export async function fetchSerpPosition(
             throw new Error(`SERP API error (ScrapingRobot): ${res.status} ${text.slice(0, 200)}`);
         }
         const data = (await res.json()) as unknown;
-        const urls = getOrganicUrls(data, 'scrapingrobot');
+        const organicResults = parseScrapingRobotOrganic(data);
+        const urls = organicResults.map((o) => o.link);
         const { position, competitorPositions } = computePositionsFromUrls(urls, domain, competitorDomains);
-        return { position, competitorPositions, serpLeader: getSerpLeaderFromUrls(urls) };
+        return { position, competitorPositions, serpLeader: getSerpLeaderFromUrls(urls), organicResults };
     }
 
     // Serper (default): up to numPages (default 10), gl/hl always set
@@ -170,6 +166,7 @@ export async function fetchSerpPosition(
     const hl = (options?.language ?? SERP_DEFAULT_LANGUAGE).toLowerCase().trim();
     const numPages = Math.min(100, Math.max(1, options?.numPages ?? SERP_NUM_PAGES));
     const allUrls: string[] = [];
+    const organicResults: SerpOrganicResult[] = [];
 
     for (let page = 1; page <= numPages; page++) {
         const url = `${API_SERP_BASE}/search`;
@@ -197,11 +194,18 @@ export async function fetchSerpPosition(
         }
 
         const data = (await res.json()) as unknown;
-        const pageUrls = getOrganicUrls(data, 'serper');
+        const pageOrganic = parseSerperOrganicPage(data, allUrls.length + 1);
+        const pageUrls = pageOrganic.map((o) => o.link);
+        organicResults.push(...pageOrganic);
         allUrls.push(...pageUrls);
         if (pageUrls.length === 0) break; // no more results
     }
 
     const { position, competitorPositions } = computePositionsFromUrls(allUrls, domain, competitorDomains);
-    return { position, competitorPositions, serpLeader: getSerpLeaderFromUrls(allUrls) };
+    return {
+        position,
+        competitorPositions,
+        serpLeader: getSerpLeaderFromUrls(allUrls),
+        organicResults,
+    };
 }

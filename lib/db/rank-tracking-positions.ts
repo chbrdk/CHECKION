@@ -5,6 +5,7 @@
 import { eq, and, desc, inArray } from 'drizzle-orm';
 import { getDb } from './index';
 import { rankTrackingPositions, rankTrackingKeywords } from './schema';
+import type { SerpOrganicResult } from '@/lib/serp-organic';
 
 export interface RankTrackingPositionRow {
     id: string;
@@ -13,6 +14,7 @@ export interface RankTrackingPositionRow {
     competitorPositions?: Record<string, number | null> | null;
     serpLeaderDomain?: string | null;
     serpLeaderUrl?: string | null;
+    serpOrganic?: SerpOrganicResult[] | null;
     recordedAt: Date;
 }
 
@@ -21,7 +23,8 @@ export async function insertPosition(
     position: number | null,
     id: string,
     competitorPositions?: Record<string, number | null>,
-    serpLeader?: { domain: string; url: string } | null
+    serpLeader?: { domain: string; url: string } | null,
+    serpOrganic?: SerpOrganicResult[] | null
 ): Promise<void> {
     const db = getDb();
     await db.insert(rankTrackingPositions).values({
@@ -31,6 +34,7 @@ export async function insertPosition(
         competitorPositions: competitorPositions ?? null,
         serpLeaderDomain: serpLeader?.domain ?? null,
         serpLeaderUrl: serpLeader?.url ?? null,
+        serpOrganic: serpOrganic?.length ? serpOrganic : null,
         recordedAt: new Date(),
     });
 }
