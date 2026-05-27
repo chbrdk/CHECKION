@@ -8,8 +8,9 @@ export interface RankKeywordIntentFields {
     intentKey?: string | null;
     intentLabel?: string | null;
     keyword: string;
-    country: string;
-    language: string;
+    /** Omitted on legacy rows until localized; UI guards before market labels. */
+    country?: string;
+    language?: string;
 }
 
 export interface IntentKeywordGroup<T extends RankKeywordIntentFields> {

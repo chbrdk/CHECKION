@@ -759,14 +759,18 @@ export default function ProjectRankingsPage() {
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddKeywordKeyword(e.target.value)}
                             fullWidth
                         />
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box
+                            component="label"
+                            htmlFor="add-keyword-multi-market"
+                            sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}
+                        >
                             <input
                                 type="checkbox"
                                 id="add-keyword-multi-market"
                                 checked={addKeywordMultiMarket}
                                 onChange={(e) => setAddKeywordMultiMarket(e.target.checked)}
                             />
-                            <MsqdxTypography component="label" htmlFor="add-keyword-multi-market" variant="body2">
+                            <MsqdxTypography variant="body2">
                                 {t('projects.compareAcrossMarkets')}
                             </MsqdxTypography>
                         </Box>
