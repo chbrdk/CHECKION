@@ -405,6 +405,13 @@ export interface ContentFreshness {
     notes?: ContentFreshnessNoteCode[];
 }
 
+export type ScanPageQualityCode = 'placeholder_page' | 'thin_content';
+
+export interface ScanPageQualityIssue {
+    code: ScanPageQualityCode;
+    message: string;
+}
+
 export interface TechnicalInsights {
     thirdPartyDomains: string[];
     manifest: { present: boolean; hasName: boolean; hasIcons: boolean; url?: string };
@@ -413,6 +420,8 @@ export interface TechnicalInsights {
     serviceWorkerRegistered?: boolean;
     redirectCount?: number;
     metaRefreshPresent?: boolean;
+    /** Set when navigation likely hit a bot wall or placeholder (WCAG may be misleading). */
+    scanPageQuality?: ScanPageQualityIssue[];
     /** Main HTML `Cache-Control` / `ETag` hints (lab snapshot). */
     mainDocumentCache?: {
         cacheControl: string | null;

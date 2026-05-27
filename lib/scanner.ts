@@ -43,6 +43,11 @@ import { estimateDwellTime } from '@/lib/estimate-dwell-time';
 import { inferInfraStackAndTracking, mergeTrackingFromThirdPartyHosts } from '@/lib/infra-detect';
 import type { DomInfraHints } from '@/lib/infra-detect';
 import { buildConsentSignals, extractConsentModeHintsFromInline, type ConsentPageProbe } from '@/lib/consent-signals-merge';
+import { applyScanBrowserContext, PUPPETEER_STEALTH_LAUNCH_ARGS } from '@/lib/browser-scan-context';
+import {
+    buildScanPageQualityProbe,
+    detectScanPageQuality,
+} from '@/lib/scan-page-quality';
 
 /** Puppeteer / CDP may return mixed-case header names — normalize for security audit. */
 function getHeader(headers: Record<string, string>, canonicalName: string): string | undefined {
@@ -161,7 +166,7 @@ async function launchPuppeteerWithRetry(): Promise<Awaited<ReturnType<typeof pup
     for (let attempt = 0; attempt < PUPPETEER_LAUNCH_RETRIES; attempt++) {
         try {
             return await puppeteer.launch({
-                args: ['--no-sandbox', '--disable-setuid-sandbox'],
+                args: [...PUPPETEER_STEALTH_LAUNCH_ARGS],
                 headless: true,
                 protocolTimeout: PUPPETEER_PROTOCOL_TIMEOUT_MS,
             });
@@ -214,6 +219,7 @@ export async function runScan(
     const page = await browser.newPage();
     const viewport = VIEWPORTS[device];
     await page.setViewport(viewport);
+    await applyScanBrowserContext(page, device);
     report('browser_ready');
 
     // Inject CLS, LCP, INP observers immediately
@@ -347,13 +353,6 @@ export async function runScan(
         }
     });
 
-    // Set User Agent based on device (simplified)
-    if (device === 'mobile') {
-        await page.setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1');
-    } else if (device === 'tablet') {
-        await page.setUserAgent('Mozilla/5.0 (iPad; CPU OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1');
-    }
-
     phaseTiming.mark('browser_setup');
 
     try {
@@ -365,6 +364,17 @@ export async function runScan(
         report('navigate');
         await page.goto(url, { waitUntil: 'networkidle2', timeout: SCAN_NAVIGATION_TIMEOUT_MS });
         await dismissCookieBanner(page);
+        const pageQualityProbeRaw = await page.evaluate(() => ({
+            title: document.title || '',
+            bodyText: (document.body?.innerText || '').slice(0, 8000),
+            linkCount: document.querySelectorAll('a[href]').length,
+        }));
+        const scanPageQualityIssues = detectScanPageQuality(
+            buildScanPageQualityProbe(pageQualityProbeRaw),
+        );
+        if (scanPageQualityIssues.length > 0) {
+            scanDebugWarn('scan_page_quality', { url, issues: scanPageQualityIssues });
+        }
         phaseTiming.mark('navigation');
 
         report('wcag_checks');
@@ -2057,6 +2067,7 @@ export async function runScan(
                 htmlLongCache,
             },
             staticAssetCacheWeak,
+            ...(scanPageQualityIssues.length > 0 ? { scanPageQuality: scanPageQualityIssues } : {}),
         };
 
         const pageOrigin = new URL(url).origin;
