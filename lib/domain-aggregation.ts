@@ -621,8 +621,6 @@ export interface AggregatedTechnicalCounts {
   withMetaRefresh: number;
   pagesWithRedirects: number;
   totalThirdPartyDomains: number;
-  /** Pages where scan hit a maintenance/placeholder or thin-content wall. */
-  pagesWithScanQualityWarning?: number;
 }
 
 /** Infra: counts and URL lists per category. */
@@ -718,7 +716,6 @@ export function aggregateInfra(pages: ScanResult[]): AggregatedInfra | null {
   if (withTech.length > 0) {
     let withManifest = 0, withThemeColor = 0, withAppleTouchIcon = 0, withServiceWorker = 0;
     let withMetaRefresh = 0, pagesWithRedirects = 0, totalThirdPartyDomains = 0;
-    let pagesWithScanQualityWarning = 0;
     for (const p of withTech) {
       const t = p.technicalInsights!;
       if (t.manifest?.present) withManifest++;
@@ -727,7 +724,6 @@ export function aggregateInfra(pages: ScanResult[]): AggregatedInfra | null {
       if (t.serviceWorkerRegistered) withServiceWorker++;
       if (t.metaRefreshPresent) withMetaRefresh++;
       if ((t.redirectCount ?? 0) > 0) pagesWithRedirects++;
-      if ((t.scanPageQuality?.length ?? 0) > 0) pagesWithScanQualityWarning++;
       totalThirdPartyDomains += (t.thirdPartyDomains?.length ?? 0);
     }
     technicalCounts = {
@@ -739,7 +735,6 @@ export function aggregateInfra(pages: ScanResult[]): AggregatedInfra | null {
       withMetaRefresh,
       pagesWithRedirects,
       totalThirdPartyDomains,
-      ...(pagesWithScanQualityWarning > 0 ? { pagesWithScanQualityWarning } : {}),
     };
   }
 

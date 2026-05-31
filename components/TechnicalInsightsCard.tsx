@@ -2,12 +2,10 @@ import { Box, alpha } from '@mui/material';
 import { MsqdxTypography, MsqdxMoleculeCard, MsqdxChip } from '@msqdx/react';
 import { MSQDX_STATUS, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
 import type { TechnicalInsights } from '@/lib/types';
-import { Globe, Smartphone, Palette, CheckCircle2, Cog, Repeat, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Globe, Smartphone, Palette, CheckCircle2, Cog, Repeat, RefreshCw } from 'lucide-react';
 
 export function TechnicalInsightsCard({ insights }: { insights: TechnicalInsights }) {
     if (!insights) return null;
-
-    const qualityWarnings = insights.scanPageQuality ?? [];
 
     return (
         <MsqdxMoleculeCard
@@ -18,35 +16,6 @@ export function TechnicalInsightsCard({ insights }: { insights: TechnicalInsight
             sx={{ bgcolor: 'var(--color-card-bg)', height: '100%' }}
         >
             <Box sx={{ display: 'grid', gap: 'var(--msqdx-spacing-sm)' }}>
-                {qualityWarnings.length > 0 && (
-                    <Box
-                        sx={{
-                            p: 'var(--msqdx-spacing-sm)',
-                            borderRadius: 1,
-                            bgcolor: alpha(MSQDX_STATUS.warning.base, 0.12),
-                            border: `1px solid ${alpha(MSQDX_STATUS.warning.base, 0.35)}`,
-                        }}
-                    >
-                        <MsqdxTypography
-                            variant="caption"
-                            sx={{
-                                fontWeight: 600,
-                                color: MSQDX_STATUS.warning.base,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 'var(--msqdx-spacing-xxs)',
-                                mb: 'var(--msqdx-spacing-xxs)',
-                            }}
-                        >
-                            <AlertTriangle size={14} /> Scan-Qualität
-                        </MsqdxTypography>
-                        {qualityWarnings.map((w, i) => (
-                            <MsqdxTypography key={i} variant="caption" sx={{ color: 'var(--color-text-on-light)', display: 'block' }}>
-                                {w.message}
-                            </MsqdxTypography>
-                        ))}
-                    </Box>
-                )}
                 {insights.thirdPartyDomains.length > 0 && (
                     <Box>
                         <MsqdxTypography variant="caption" sx={{ fontWeight: 600, color: 'var(--color-text-on-light)', display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xxs)', mb: 'var(--msqdx-spacing-xxs)' }}>
