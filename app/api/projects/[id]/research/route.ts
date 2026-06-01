@@ -14,7 +14,11 @@ import { zodResponseFormat } from 'openai/helpers/zod';
 import { getOpenAIKey } from '@/lib/llm/config';
 import { reportUsage } from '@/lib/usage-report';
 import { extractHostname } from '@/lib/geo-eeat/suggest-parse';
-import { projectResearchResultSchema, type ProjectResearchResult } from '@/lib/research/schema';
+import {
+    normalizeResearchResult,
+    projectResearchOpenAISchema,
+    type ProjectResearchOpenAIResult,
+} from '@/lib/research/schema';
 import { marketKey, parseMarketKey, SERP_MAIN_MARKETS, SERP_DEFAULT_COUNTRY, SERP_DEFAULT_LANGUAGE } from '@/lib/serp-markets';
 
 const RESEARCH_MODEL = process.env.OPENAI_SUGGEST_MODEL ?? 'gpt-4o-mini';
@@ -48,7 +52,7 @@ Antworte ausschließlich mit der geforderten JSON-Struktur.
 - targetGroups, valueProposition, competitors: auf Deutsch (Marktübergreifend).
 ${
     multi
-        ? `- seoKeywordsByMarket und geoQueriesByMarket: für JEDEN marketKey natürliche Suchbegriffe in der jeweiligen Marktsprache (hl), keine wörtliche 1:1-Übersetzung wenn Nutzer andere Formulierungen verwenden.
+        ? `- seoKeywordsByMarket und geoQueriesByMarket: Arrays mit { marketKey, items } für JEDEN marketKey – natürliche Suchbegriffe in der jeweiligen Marktsprache (hl), keine wörtliche 1:1-Übersetzung.
 - seoKeywords und geoQueries: Kopie des ersten marketKey in der Liste (Abwärtskompatibilität).
 - marketKeys: exakt die angeforderten Keys zurückgeben.`
         : `- seoKeywords und geoQueries: auf Deutsch.
@@ -62,21 +66,6 @@ ${
 
 Zielmärkte:
 ${marketDescriptions(marketKeys)}`;
-}
-
-function normalizeResearchResult(data: ProjectResearchResult, marketKeys: string[]): ProjectResearchResult {
-    const keys = data.marketKeys?.length ? data.marketKeys : marketKeys;
-    const primary = keys[0] ?? marketKey(SERP_DEFAULT_COUNTRY, SERP_DEFAULT_LANGUAGE);
-    const seoBy = data.seoKeywordsByMarket ?? {};
-    const geoBy = data.geoQueriesByMarket ?? {};
-    return {
-        ...data,
-        marketKeys: keys,
-        seoKeywords: seoBy[primary]?.length ? seoBy[primary] : data.seoKeywords,
-        geoQueries: geoBy[primary]?.length ? geoBy[primary] : data.geoQueries,
-        seoKeywordsByMarket: Object.keys(seoBy).length ? seoBy : null,
-        geoQueriesByMarket: Object.keys(geoBy).length ? geoBy : null,
-    };
 }
 
 export async function POST(
@@ -134,7 +123,7 @@ export async function POST(
                     }Erstelle das Research-Ergebnis im JSON-Format.`,
                 },
             ],
-            response_format: zodResponseFormat(projectResearchResultSchema, 'project_research'),
+            response_format: zodResponseFormat(projectResearchOpenAISchema, 'project_research'),
         });
 
         const message = completion.choices[0]?.message;
@@ -149,12 +138,12 @@ export async function POST(
             );
         }
 
-        const parsed = message.parsed as ProjectResearchResult | null | undefined;
+        const parsed = message.parsed as ProjectResearchOpenAIResult | null | undefined;
         if (!parsed) {
             return apiError('Could not parse research result', API_STATUS.INTERNAL_ERROR);
         }
 
-        const validated = projectResearchResultSchema.safeParse(parsed);
+        const validated = projectResearchOpenAISchema.safeParse(parsed);
         if (!validated.success) {
             return apiError('Research result did not match schema', API_STATUS.INTERNAL_ERROR);
         }
