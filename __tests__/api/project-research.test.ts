@@ -43,8 +43,11 @@ const validResearchResult = {
     targetGroups: ['B2B decision-makers', 'SMBs in tech'],
     valueProposition: 'We help companies scale.',
     seoKeywords: ['seo tool', 'rank tracking', 'keyword research'],
+    seoKeywordsByMarket: null,
     geoQueries: ['best SEO tool 2024', 'top rank tracking software'],
+    geoQueriesByMarket: null,
     competitors: ['competitor1.com', 'competitor2.com'],
+    marketKeys: null,
 };
 
 describe('POST /api/projects/[id]/research', () => {

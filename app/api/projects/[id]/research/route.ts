@@ -52,7 +52,7 @@ ${
 - seoKeywords und geoQueries: Kopie des ersten marketKey in der Liste (Abwärtskompatibilität).
 - marketKeys: exakt die angeforderten Keys zurückgeben.`
         : `- seoKeywords und geoQueries: auf Deutsch.
-- seoKeywordsByMarket / geoQueriesByMarket: optional weglassen.`
+- seoKeywordsByMarket, geoQueriesByMarket, marketKeys: null setzen (nicht verwendet).`
 }
 
 - targetGroups: 5–10 Zielgruppen
@@ -74,8 +74,8 @@ function normalizeResearchResult(data: ProjectResearchResult, marketKeys: string
         marketKeys: keys,
         seoKeywords: seoBy[primary]?.length ? seoBy[primary] : data.seoKeywords,
         geoQueries: geoBy[primary]?.length ? geoBy[primary] : data.geoQueries,
-        seoKeywordsByMarket: Object.keys(seoBy).length ? seoBy : undefined,
-        geoQueriesByMarket: Object.keys(geoBy).length ? geoBy : undefined,
+        seoKeywordsByMarket: Object.keys(seoBy).length ? seoBy : null,
+        geoQueriesByMarket: Object.keys(geoBy).length ? geoBy : null,
     };
 }
 
