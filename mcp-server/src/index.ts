@@ -4,7 +4,7 @@
  * Env:
  * - MCP_TRANSPORT=stdio  → stdio (Claude Desktop: command + args in config)
  * - MCP_TRANSPORT=http   → Streamable HTTP on MCP_PORT (default 3100)
- * - MCP_STATELESS=true   → stateless HTTP: one JSON-RPC request → one JSON response (no SDK Streamable transport)
+ * - MCP_STATELESS=true   → one Streamable HTTP transport + McpServer per request (AnythingLLM-compatible)
  *
  * Always set: CHECKION_API_URL, CHECKION_API_TOKEN
  */
@@ -43,16 +43,8 @@ async function parseBody(req: IncomingMessage): Promise<unknown> {
   });
 }
 
-function sendJson(res: ServerResponse, status: number, body: unknown): void {
-  const raw = JSON.stringify(body);
-  res.statusCode = status;
-  res.setHeader('Content-Type', 'application/json');
-  res.setHeader('Content-Length', Buffer.byteLength(raw, 'utf8'));
-  res.end(raw);
-}
-
-/** Returns a new McpServer with tools registered. Used for stateless so we never reuse a connected server. */
-function createStatelessMcpServer(): McpServer {
+/** New McpServer with tools registered (stateless: one instance per HTTP request). */
+function createMcpServer(): McpServer {
   const server = new McpServer(
     { name: 'checkion-mcp', version: '1.0.0' },
     { capabilities: {} }
@@ -61,107 +53,33 @@ function createStatelessMcpServer(): McpServer {
   return server;
 }
 
-/** Stateless: one server instance per request (avoids "Already connected"); minimal transport captures response and we write it to res. */
-async function handleStatelessRequest(
+/**
+ * Stateless Streamable HTTP: SDK transport with sessionIdGenerator undefined.
+ * Handles notifications/initialized correctly (unlike the legacy custom transport).
+ */
+async function handleStatelessHttpRequest(
   req: IncomingMessage,
   res: ServerResponse,
   parsedBody: unknown
 ): Promise<void> {
-  const message = parsedBody && typeof parsedBody === 'object' && 'method' in parsedBody ? parsedBody : undefined;
-  if (!message || typeof (message as { method?: unknown }).method !== 'string') {
-    sendJson(res, 400, { jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Invalid JSON-RPC' } });
-    return;
-  }
-
-  let resolveResponse!: (value: unknown) => void;
-  const responsePromise = new Promise<unknown>((resolve) => {
-    resolveResponse = resolve;
+  const transport = new StreamableHTTPServerTransport({
+    sessionIdGenerator: undefined,
+    enableJsonResponse: true,
   });
+  transport.onerror = (err) => log('Stateless transport error: ' + String(err));
 
-  const transport = {
-    onmessage: null as ((msg: unknown, extra?: unknown) => void) | null,
-    send(msg: unknown): Promise<void> {
-      resolveResponse(msg);
-      return Promise.resolve();
-    },
-    start(): Promise<void> {
-      return Promise.resolve();
-    },
-    close(): Promise<void> {
-      return Promise.resolve();
-    },
-  };
-
-  const mcpServer = createStatelessMcpServer();
-  log('Stateless new server for ' + String((message as { method?: string }).method));
+  const mcpServer = createMcpServer();
   try {
-    await mcpServer.connect(transport as Parameters<McpServer['connect']>[0]);
-  } catch (e) {
-    log('Stateless connect error: ' + String(e));
-    sendJson(res, 500, {
-      jsonrpc: '2.0',
-      id: (message as { id?: unknown }).id ?? null,
-      error: { code: -32603, message: 'Server connect error: ' + String(e) },
-    });
-    return;
-  }
-
-  const baseUrl = `http://localhost:${PORT}`;
-  const requestInfo = {
-    headers: (req.headers as Record<string, string | string[] | undefined>) ?? {},
-    url: new URL(req.url ?? '/', baseUrl),
-  };
-  try {
-    transport.onmessage!(message, { requestInfo });
-  } catch (e) {
-    log('Stateless onmessage error: ' + String(e));
-    sendJson(res, 500, {
-      jsonrpc: '2.0',
-      id: (message as { id?: unknown }).id ?? null,
-      error: { code: -32603, message: 'Server error: ' + String(e) },
-    });
-    return;
-  }
-
-  const timeout = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error('MCP response timeout')), 15000)
-  );
-  let response: unknown;
-  try {
-    response = await Promise.race([responsePromise, timeout]);
-  } catch (e) {
-    log('Stateless response error: ' + String(e));
-    sendJson(res, 500, {
-      jsonrpc: '2.0',
-      id: (message as { id?: unknown }).id ?? null,
-      error: { code: -32603, message: String(e instanceof Error ? e.message : e) },
-    });
-    return;
-  }
-
-  try {
-    const body = JSON.stringify(response);
-    log('Stateless sending 200 bodyLen=' + body.length);
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Content-Length', Buffer.byteLength(body, 'utf8'));
-    res.end(body);
-  } catch (e) {
-    log('Stateless send error: ' + String(e));
-    sendJson(res, 500, {
-      jsonrpc: '2.0',
-      id: (message as { id?: unknown }).id ?? null,
-      error: { code: -32603, message: 'Response serialize error' },
-    });
+    await mcpServer.connect(transport);
+    await transport.handleRequest(req as Parameters<typeof transport.handleRequest>[0], res, parsedBody);
+  } finally {
+    await mcpServer.close().catch(() => undefined);
+    await transport.close().catch(() => undefined);
   }
 }
 
 async function main() {
-  const mcpServer = new McpServer(
-    { name: 'checkion-mcp', version: '1.0.0' },
-    { capabilities: {} }
-  );
-  registerCheckionTools(mcpServer);
+  const mcpServer = createMcpServer();
 
   if (USE_STDIO) {
     const transport = new StdioServerTransport(process.stdin, process.stdout);
@@ -190,29 +108,38 @@ async function main() {
     await mcpServer.connect(sharedTransport);
   }
 
-  const handleWithTransport = async (
-    req: IncomingMessage,
-    res: ServerResponse,
-    parsedBody: unknown,
-    transport: StreamableHTTPServerTransport
-  ): Promise<void> => {
-    await transport.handleRequest(req as Parameters<typeof transport.handleRequest>[0], res, parsedBody);
-  };
-
   const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
     log(`${req.method} ${req.url ?? '/'}`);
     try {
       const parsedBody = req.method === 'POST' ? await parseBody(req) : undefined;
-      const method = parsedBody && typeof parsedBody === 'object' && 'method' in parsedBody ? String((parsedBody as { method?: unknown }).method) : '';
+      const method =
+        parsedBody && typeof parsedBody === 'object' && 'method' in parsedBody
+          ? String((parsedBody as { method?: unknown }).method)
+          : '';
       if (method) log('Body method: ' + method);
 
       if (STATELESS) {
-        requestQueue = requestQueue.then(async () => {
-          await handleStatelessRequest(req, res, parsedBody);
-        });
-        await requestQueue;
+        // GET may open a long-lived SSE stream — must not block the POST queue (tools/list, etc.).
+        if (req.method === 'GET') {
+          void handleStatelessHttpRequest(req, res, parsedBody).catch((err) => {
+            log('Stateless GET error: ' + String(err));
+            if (!res.headersSent) {
+              res.statusCode = 500;
+              res.end();
+            }
+          });
+        } else {
+          requestQueue = requestQueue.then(async () => {
+            await handleStatelessHttpRequest(req, res, parsedBody);
+          });
+          await requestQueue;
+        }
       } else {
-        await handleWithTransport(req, res, parsedBody, sharedTransport!);
+        await sharedTransport!.handleRequest(
+          req as Parameters<StreamableHTTPServerTransport['handleRequest']>[0],
+          res,
+          parsedBody
+        );
       }
     } catch (err) {
       log('Request error: ' + String(err));
@@ -234,7 +161,7 @@ async function main() {
   });
 
   server.listen(PORT, () => {
-    log(`Server listening on port ${PORT} (stateless=${STATELESS})`);
+    log(`Server listening on port ${PORT} (stateless=${STATELESS}, sdk=streamable-http)`);
     if (!process.env.CHECKION_API_URL || !process.env.CHECKION_API_TOKEN) {
       log('CHECKION_API_URL or CHECKION_API_TOKEN not set – tools will return configuration errors.');
     }

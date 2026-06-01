@@ -4,7 +4,7 @@
  * Env:
  * - MCP_TRANSPORT=stdio  → stdio (Claude Desktop: command + args in config)
  * - MCP_TRANSPORT=http   → Streamable HTTP on MCP_PORT (default 3100)
- * - MCP_STATELESS=true   → stateless HTTP: one JSON-RPC request → one JSON response (no SDK Streamable transport)
+ * - MCP_STATELESS=true   → one Streamable HTTP transport + McpServer per request (AnythingLLM-compatible)
  *
  * Always set: CHECKION_API_URL, CHECKION_API_TOKEN
  */
@@ -40,49 +40,34 @@ async function parseBody(req) {
         req.on('error', reject);
     });
 }
-/** Stateless: minimal transport that captures the first response and we write it directly to res. No SDK Streamable HTTP. */
-async function handleStatelessRequest(mcpServer, req, res, parsedBody) {
-    const message = parsedBody && typeof parsedBody === 'object' && 'method' in parsedBody ? parsedBody : undefined;
-    if (!message || typeof message.method !== 'string') {
-        res.statusCode = 400;
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Invalid JSON-RPC' } }));
-        return;
-    }
-    let resolveResponse;
-    const responsePromise = new Promise((resolve) => {
-        resolveResponse = resolve;
+/** New McpServer with tools registered (stateless: one instance per HTTP request). */
+function createMcpServer() {
+    const server = new McpServer({ name: 'checkion-mcp', version: '1.0.0' }, { capabilities: {} });
+    registerCheckionTools(server);
+    return server;
+}
+/**
+ * Stateless Streamable HTTP: SDK transport with sessionIdGenerator undefined.
+ * Handles notifications/initialized correctly (unlike the legacy custom transport).
+ */
+async function handleStatelessHttpRequest(req, res, parsedBody) {
+    const transport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: undefined,
+        enableJsonResponse: true,
     });
-    const transport = {
-        onmessage: null,
-        send(msg) {
-            resolveResponse(msg);
-            return Promise.resolve();
-        },
-        start() {
-            return Promise.resolve();
-        },
-        close() {
-            return Promise.resolve();
-        },
-    };
-    await mcpServer.close().catch(() => { });
-    await mcpServer.connect(transport);
-    const baseUrl = `http://localhost:${PORT}`;
-    const requestInfo = {
-        headers: req.headers ?? {},
-        url: new URL(req.url ?? '/', baseUrl),
-    };
-    transport.onmessage(message, { requestInfo });
-    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('MCP response timeout')), 30000));
-    const response = await Promise.race([responsePromise, timeout]);
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(response));
+    transport.onerror = (err) => log('Stateless transport error: ' + String(err));
+    const mcpServer = createMcpServer();
+    try {
+        await mcpServer.connect(transport);
+        await transport.handleRequest(req, res, parsedBody);
+    }
+    finally {
+        await mcpServer.close().catch(() => undefined);
+        await transport.close().catch(() => undefined);
+    }
 }
 async function main() {
-    const mcpServer = new McpServer({ name: 'checkion-mcp', version: '1.0.0' }, { capabilities: {} });
-    registerCheckionTools(mcpServer);
+    const mcpServer = createMcpServer();
     if (USE_STDIO) {
         const transport = new StdioServerTransport(process.stdin, process.stdout);
         await mcpServer.connect(transport);
@@ -106,24 +91,35 @@ async function main() {
         sharedTransport.onerror = (err) => log('Transport error: ' + String(err));
         await mcpServer.connect(sharedTransport);
     }
-    const handleWithTransport = async (req, res, parsedBody, transport) => {
-        await transport.handleRequest(req, res, parsedBody);
-    };
     const server = createServer(async (req, res) => {
         log(`${req.method} ${req.url ?? '/'}`);
         try {
             const parsedBody = req.method === 'POST' ? await parseBody(req) : undefined;
-            const method = parsedBody && typeof parsedBody === 'object' && 'method' in parsedBody ? String(parsedBody.method) : '';
+            const method = parsedBody && typeof parsedBody === 'object' && 'method' in parsedBody
+                ? String(parsedBody.method)
+                : '';
             if (method)
                 log('Body method: ' + method);
             if (STATELESS) {
-                requestQueue = requestQueue.then(async () => {
-                    await handleStatelessRequest(mcpServer, req, res, parsedBody);
-                });
-                await requestQueue;
+                // GET may open a long-lived SSE stream — must not block the POST queue (tools/list, etc.).
+                if (req.method === 'GET') {
+                    void handleStatelessHttpRequest(req, res, parsedBody).catch((err) => {
+                        log('Stateless GET error: ' + String(err));
+                        if (!res.headersSent) {
+                            res.statusCode = 500;
+                            res.end();
+                        }
+                    });
+                }
+                else {
+                    requestQueue = requestQueue.then(async () => {
+                        await handleStatelessHttpRequest(req, res, parsedBody);
+                    });
+                    await requestQueue;
+                }
             }
             else {
-                await handleWithTransport(req, res, parsedBody, sharedTransport);
+                await sharedTransport.handleRequest(req, res, parsedBody);
             }
         }
         catch (err) {
@@ -143,7 +139,7 @@ async function main() {
         }
     });
     server.listen(PORT, () => {
-        log(`Server listening on port ${PORT} (stateless=${STATELESS})`);
+        log(`Server listening on port ${PORT} (stateless=${STATELESS}, sdk=streamable-http)`);
         if (!process.env.CHECKION_API_URL || !process.env.CHECKION_API_TOKEN) {
             log('CHECKION_API_URL or CHECKION_API_TOKEN not set – tools will return configuration errors.');
         }

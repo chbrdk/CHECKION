@@ -229,5 +229,16 @@ In Claude/Cursor dann z. B. `https://checkion.projects-a.plygrnd.tech/mcp` (mi
 
 ## Troubleshooting
 
+- **AnythingLLM: `MCP response timeout` (500)**  
+  AnythingLLM sends `initialize`, then `notifications/initialized`, then often **GET** (SSE) + `tools/list`. Old MCP builds hung on notifications (15s timeout). **Redeploy** current `mcp-server` (SDK Streamable HTTP per request). Optional client headers:
+  ```json
+  "headers": { "Accept": "application/json, text/event-stream" }
+  ```
+  Verify after deploy:
+  ```bash
+  curl -sS -m 5 -X POST 'https://YOUR-MCP-URL' -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' -d '{"jsonrpc":"2.0","method":"notifications/initialized","params":{}}' -w '\nHTTP %{http_code}\n'
+  ```
+  Must return in &lt;2s (not hang). `MCP_STATELESS=true` is fine on a direct MCP domain.
+
 - **500 on `tools/list` (stateless)**  
   The MCP SDK does not allow reusing a stateless Streamable HTTP transport for a second request. With `MCP_STATELESS=true`, the server now creates a **new transport per request** and serializes handling so `initialize` and `tools/list` (and later `tools/call`) each get a fresh transport and respond with 200 and a proper JSON body.
