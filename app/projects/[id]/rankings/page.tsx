@@ -766,9 +766,9 @@ export default function ProjectRankingsPage() {
                                 checked={addKeywordMultiMarket}
                                 onChange={(e) => setAddKeywordMultiMarket(e.target.checked)}
                             />
-                            <MsqdxTypography component="label" htmlFor="add-keyword-multi-market" variant="body2">
-                                {t('projects.compareAcrossMarkets')}
-                            </MsqdxTypography>
+                            <Box component="label" htmlFor="add-keyword-multi-market" sx={{ cursor: 'pointer' }}>
+                                <MsqdxTypography variant="body2">{t('projects.compareAcrossMarkets')}</MsqdxTypography>
+                            </Box>
                         </Box>
                         {addKeywordMultiMarket ? (
                             <SerpMarketSelect

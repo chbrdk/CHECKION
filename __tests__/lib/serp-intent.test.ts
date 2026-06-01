@@ -35,4 +35,13 @@ describe('serp-intent', () => {
         expect(groups).toHaveLength(1);
         expect(groups[0]?.variants).toHaveLength(2);
     });
+
+    it('groupKeywordsByIntent accepts keywords without country/language', () => {
+        const groups = groupKeywordsByIntent([
+            { id: '1', keyword: 'foo', intentKey: 'foo-intent', intentLabel: 'Foo' },
+            { id: '2', keyword: 'bar', intentKey: 'foo-intent', intentLabel: 'Foo' },
+        ]);
+        expect(groups).toHaveLength(1);
+        expect(groups[0]?.variants).toHaveLength(2);
+    });
 });
