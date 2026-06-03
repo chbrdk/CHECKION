@@ -1,16 +1,23 @@
 /**
  * LLM config: model and API keys.
  * OPENAI_API_KEY is required for GEO/EEAT; ANTHROPIC_API_KEY optional for Claude benchmark.
+ *
+ * GEO competitive benchmark model lists (stand 03.06.2026):
+ * - OpenAI: gpt-5.4-nano, gpt-5.4-mini, gpt-5.5
+ * - Claude: claude-opus-4-8, claude-sonnet-4-6, claude-haiku-4-5-20251001
+ * - Gemini: gemini-3.5-flash, gemini-3.1-flash-lite, gemini-3.1-pro-preview
+ *   (gemini-2.0-* retired 01.06.2026 — do not use)
  */
 
-export const OPENAI_MODEL = process.env.OPENAI_MODEL ?? 'gpt-5-nano';
+/** Default for GEO on-page stages and single-model competitive runs. */
+export const OPENAI_MODEL = process.env.OPENAI_MODEL ?? 'gpt-5.4-nano';
 
-/** OpenAI models for competitive benchmark (each query run with each model). */
-export const COMPETITIVE_BENCHMARK_MODELS = ['gpt-5-nano', 'gpt-5-mini', 'gpt-5'] as const;
+/** OpenAI models for competitive benchmark (nano / mini / frontier per query). */
+export const COMPETITIVE_BENCHMARK_MODELS = ['gpt-5.4-nano', 'gpt-5.4-mini', 'gpt-5.5'] as const;
 
-/** Claude models for competitive benchmark (stand 1.3.2026: latest Opus, Sonnet, Haiku). */
+/** Claude models for competitive benchmark (stand 03.06.2026: Opus 4.8, Sonnet 4.6, Haiku 4.5). */
 export const COMPETITIVE_BENCHMARK_MODELS_CLAUDE = [
-    'claude-opus-4-6',
+    'claude-opus-4-8',
     'claude-sonnet-4-6',
     'claude-haiku-4-5-20251001',
 ] as const;
@@ -32,12 +39,10 @@ export const PAGE_TOPIC_ROLLUP_REFINE_MAX_TOKENS = Math.min(
     Math.max(256, parseInt(process.env.PAGE_TOPIC_ROLLUP_REFINE_MAX_TOKENS ?? '2048', 10) || 2048)
 );
 
-/** Gemini models for competitive benchmark (stand 01.03.2026: 2.5/3.x family). */
+/** Gemini models for competitive benchmark (stand 03.06.2026). */
 export const COMPETITIVE_BENCHMARK_MODELS_GEMINI = [
-    'gemini-2.5-flash',
-    'gemini-2.5-pro',
-    'gemini-2.5-flash-lite',
-    'gemini-3-flash-preview',
+    'gemini-3.5-flash',
+    'gemini-3.1-flash-lite',
     'gemini-3.1-pro-preview',
 ] as const;
 

@@ -35,9 +35,9 @@ Für den **Competitive Benchmark** und andere GEO/EEAT-LLM-Calls: `OPENAI_MODEL=
 
 ## Multi-Model Competitive Benchmark ✅ umgesetzt
 
-- **OpenAI:** Jede Frage wird mit `gpt-5-nano`, `gpt-5-mini`, `gpt-5` ausgeführt (`COMPETITIVE_BENCHMARK_MODELS` in `lib/llm/config.ts`). Erfordert `OPENAI_API_KEY`.
-- **Claude (Anthropic):** Zusätzlich werden bei gesetztem `ANTHROPIC_API_KEY` die Modelle `claude-opus-4-6`, `claude-sonnet-4-6`, `claude-haiku-4-5-20251001` abgefragt (Stand 1.3.2026, `COMPETITIVE_BENCHMARK_MODELS_CLAUDE`). Claude nutzt prompt-basiertes JSON (kein Structured Output).
-- **Gemini (Google):** Zusätzlich werden bei gesetztem `GEMINI_API_KEY` die Modelle `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.5-flash-lite`, `gemini-3-flash-preview`, `gemini-3.1-pro-preview` abgefragt (Stand 01.03.2026, `COMPETITIVE_BENCHMARK_MODELS_GEMINI`). Gemini nutzt prompt-basiertes JSON mit `responseMimeType: application/json`.
+- **OpenAI:** Jede Frage wird mit `gpt-5.4-nano`, `gpt-5.4-mini`, `gpt-5.5` ausgeführt (`COMPETITIVE_BENCHMARK_MODELS` in `lib/llm/config.ts`). Erfordert `OPENAI_API_KEY`.
+- **Claude (Anthropic):** Zusätzlich werden bei gesetztem `ANTHROPIC_API_KEY` die Modelle `claude-opus-4-8`, `claude-sonnet-4-6`, `claude-haiku-4-5-20251001` abgefragt (Stand 03.06.2026, `COMPETITIVE_BENCHMARK_MODELS_CLAUDE`). Claude nutzt prompt-basiertes JSON (kein Structured Output).
+- **Gemini (Google):** Zusätzlich werden bei gesetztem `GEMINI_API_KEY` die Modelle `gemini-3.5-flash`, `gemini-3.1-flash-lite`, `gemini-3.1-pro-preview` abgefragt (Stand 03.06.2026, `COMPETITIVE_BENCHMARK_MODELS_GEMINI`). Gemini nutzt prompt-basiertes JSON mit `responseMimeType: application/json`. `gemini-2.0-*` ist seit 01.06.2026 abgeschaltet.
 - API speichert `competitiveByModel: Record<string, CompetitiveBenchmarkResult>` (ein Eintrag pro Modell, OpenAI + Claude + Gemini).
 - Dashboard: Tabs pro Modell, gleiche SoV-Übersicht und „Pro Frage“-Details je Modell.
 

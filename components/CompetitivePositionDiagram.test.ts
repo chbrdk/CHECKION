@@ -6,7 +6,7 @@ import type { CompetitiveBenchmarkResult } from '@/lib/types';
 describe('CompetitivePositionDiagram', () => {
     it('accepts competitiveByModel with runs and builds display data', () => {
         const competitiveByModel: Record<string, CompetitiveBenchmarkResult> = {
-            'gpt-5-nano': {
+            'gpt-5.4-nano': {
                 queries: ['Who makes pumps?'],
                 competitors: ['a.com', 'b.com'],
                 runs: [
@@ -27,8 +27,8 @@ describe('CompetitivePositionDiagram', () => {
             },
         };
         const targetUrl = 'https://www.ksb.com/de-de';
-        expect(competitiveByModel['gpt-5-nano']?.runs).toHaveLength(1);
-        expect(competitiveByModel['gpt-5-nano']?.runs?.[0]?.citations?.find((c) => c.domain === 'ksb.com')?.position).toBe(1);
+        expect(competitiveByModel['gpt-5.4-nano']?.runs).toHaveLength(1);
+        expect(competitiveByModel['gpt-5.4-nano']?.runs?.[0]?.citations?.find((c) => c.domain === 'ksb.com')?.position).toBe(1);
         expect(targetUrl).toContain('ksb.com');
     });
 });

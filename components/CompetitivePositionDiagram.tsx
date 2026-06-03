@@ -17,6 +17,7 @@ import { MsqdxTypography } from '@msqdx/react';
 import { MSQDX_BRAND_PRIMARY, MSQDX_SPACING, MSQDX_NEUTRAL, MSQDX_THEME } from '@msqdx/tokens';
 import type { CompetitiveBenchmarkResult } from '@/lib/types';
 import { extractHostname, buildPositionMatrix, type PositionMatrixRow } from '@/lib/geo-eeat/position-matrix';
+import { CHART_SERIES_PALETTE, buildSeriesColorMap } from '@/lib/chart-series-colors';
 
 export { extractHostname, buildPositionMatrix };
 export type { PositionMatrixRow } from '@/lib/geo-eeat/position-matrix';
@@ -28,17 +29,6 @@ const TABLE_RADIUS = typeof br?.sm === 'number' ? br.sm : 4;
 const BAR_RADIUS = typeof br?.xs === 'number' ? br.xs : 2;
 const scale = MSQDX_SPACING.scale as Record<string, unknown> | undefined;
 const spacingSm = typeof scale?.sm === 'number' ? scale.sm : 12;
-
-const CHART_COLORS = [
-    MSQDX_BRAND_PRIMARY?.green ?? '#22c55e',
-    MSQDX_BRAND_PRIMARY?.purple ?? '#7c3aed',
-    '#0ea5e9',
-    '#f59e0b',
-    '#ef4444',
-    '#ec4899',
-    '#14b8a6',
-    '#6366f1',
-];
 
 export interface CompetitivePositionDiagramProps {
     competitiveByModel: Record<string, CompetitiveBenchmarkResult>;
@@ -56,6 +46,8 @@ export function CompetitivePositionDiagram({
         () => buildPositionMatrix(competitiveByModel, targetDomain),
         [competitiveByModel, targetDomain]
     );
+
+    const modelColorMap = useMemo(() => buildSeriesColorMap(modelIds), [modelIds]);
 
     if (rows.length === 0 || modelIds.length === 0) return null;
 
@@ -137,12 +129,14 @@ export function CompetitivePositionDiagram({
                             formatter={(value) => value}
                             iconType="square"
                         />
-                        {modelIds.map((modelId, idx) => (
+                        {modelIds.map((modelId) => {
+                            const fill = modelColorMap.get(modelId) ?? CHART_SERIES_PALETTE[0];
+                            return (
                             <Bar
                                 key={modelId}
                                 dataKey={modelId}
                                 name={modelId}
-                                fill={CHART_COLORS[idx % CHART_COLORS.length]}
+                                fill={fill}
                                 radius={[BAR_RADIUS, BAR_RADIUS, 0, 0]}
                                 maxBarSize={48}
                                 isAnimationActive={true}
@@ -152,17 +146,14 @@ export function CompetitivePositionDiagram({
                                     return (
                                         <Cell
                                             key={`${modelId}-${i}`}
-                                            fill={
-                                                num === 0
-                                                    ? borderColor
-                                                    : CHART_COLORS[idx % CHART_COLORS.length]
-                                            }
+                                            fill={num === 0 ? borderColor : fill}
                                             opacity={num === 0 ? 0.4 : 1}
                                         />
                                     );
                                 })}
                             </Bar>
-                        ))}
+                            );
+                        })}
                     </BarChart>
                 </ResponsiveContainer>
             </Box>

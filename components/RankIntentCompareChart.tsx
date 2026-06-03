@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
 import {
     LineChart,
     Line,
@@ -15,9 +15,9 @@ import { Box } from '@mui/material';
 import { MsqdxTypography, MsqdxChip } from '@msqdx/react';
 import { apiRankTrackingKeywordPositions } from '@/lib/constants';
 import type { PositionPoint } from '@/components/RankTrackingChart';
-import { THEME_ACCENT_CSS, msqdxChipThemeAccentSx } from '@/lib/theme-accent';
-
-const MARKET_COLORS = ['#22c55e', '#7c3aed', '#0ea5e9', '#f59e0b', '#ef4444', '#ec4899', '#14b8a6', '#6366f1'];
+import { msqdxChipThemeAccentSx } from '@/lib/theme-accent';
+import { buildSeriesColorMap } from '@/lib/chart-series-colors';
+import { GeoPositionLineTooltip } from '@/components/chart/GeoPositionLineTooltip';
 
 const TIME_RANGES = [
     { label: '7d', limit: 7 },
@@ -94,6 +94,15 @@ export function RankIntentCompareChart({ variants, t }: RankIntentCompareChartPr
         return [...dateMap.values()].sort((a, b) => String(a.date).localeCompare(String(b.date)));
     }, [seriesById, variants]);
 
+    const seriesColorMap = useMemo(
+        () => buildSeriesColorMap(variants.map((v) => v.seriesLabel)),
+        [variants]
+    );
+    const formatPositionValue = useCallback(
+        (value: unknown) => (typeof value === 'number' && value > 0 ? String(value) : '—'),
+        []
+    );
+
     const textMuted = 'var(--color-text-muted-on-light)';
     const gridStroke = 'var(--color-border-on-light)';
 
@@ -158,16 +167,28 @@ export function RankIntentCompareChart({ variants, t }: RankIntentCompareChartPr
                             stroke={gridStroke}
                             width={28}
                         />
-                        <Tooltip />
+                        <Tooltip
+                            shared={false}
+                            content={({ active, payload, label }) => (
+                                <GeoPositionLineTooltip
+                                    active={active}
+                                    payload={payload}
+                                    label={label}
+                                    formatPositionValue={formatPositionValue}
+                                />
+                            )}
+                        />
                         <Legend />
-                        {variants.map((v, i) => (
+                        {variants.map((v) => (
                             <Line
                                 key={v.keywordId}
                                 type="monotone"
                                 dataKey={v.seriesLabel}
-                                stroke={MARKET_COLORS[i % MARKET_COLORS.length]}
+                                name={v.seriesLabel}
+                                stroke={seriesColorMap.get(v.seriesLabel) ?? '#2563eb'}
                                 strokeWidth={2}
                                 dot={{ r: 3 }}
+                                activeDot={{ r: 4 }}
                                 connectNulls
                             />
                         ))}

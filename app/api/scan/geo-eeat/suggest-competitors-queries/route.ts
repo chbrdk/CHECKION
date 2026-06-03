@@ -10,7 +10,7 @@ import OpenAI from 'openai';
 import { getOpenAIKey } from '@/lib/llm/config';
 import { reportUsage } from '@/lib/usage-report';
 
-const SUGGEST_MODEL = process.env.OPENAI_SUGGEST_MODEL ?? 'gpt-5-nano';
+const SUGGEST_MODEL = process.env.OPENAI_SUGGEST_MODEL ?? 'gpt-5.4-nano';
 import { extractHostname, parseSuggestResponse } from '@/lib/geo-eeat/suggest-parse';
 
 const SYSTEM_PROMPT = `Du bist ein Experte für Marktforschung und SEO. Zu einer Unternehmens-URL schlägst du vor:

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
 import {
     LineChart,
     Line,
@@ -15,17 +15,8 @@ import { Box } from '@mui/material';
 import { MsqdxTypography, MsqdxChip } from '@msqdx/react';
 import { apiRankTrackingKeywordPositions } from '@/lib/constants';
 import { THEME_ACCENT_CSS, msqdxChipThemeAccentSx } from '@/lib/theme-accent';
-
-const CHART_COLORS = [
-    '#22c55e', // green – our domain
-    '#7c3aed',
-    '#0ea5e9',
-    '#f59e0b',
-    '#ef4444',
-    '#ec4899',
-    '#14b8a6',
-    '#6366f1',
-];
+import { buildSeriesColorMap } from '@/lib/chart-series-colors';
+import { GeoPositionLineTooltip } from '@/components/chart/GeoPositionLineTooltip';
 
 export interface PositionPoint {
     recordedAt: string;
@@ -51,15 +42,6 @@ export interface RankTrackingChartProps {
 function formatDate(iso: string): string {
     const d = new Date(iso);
     return d.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: '2-digit' });
-}
-
-function formatPositionTooltip(value: unknown, name: string): [string, string] {
-    const display = typeof value === 'number' ? String(value) : '—';
-    return [display, name];
-}
-
-function formatTooltipLabel(label: string): string {
-    return label;
 }
 
 function formatLegendValue(value: string): string {
@@ -123,16 +105,20 @@ export function RankTrackingChart({
     }, [points, ourDomain]);
 
     const allDomains = useMemo(() => [ourDomain, ...competitorDomains], [ourDomain, competitorDomains]);
+    const seriesColorMap = useMemo(
+        () =>
+            buildSeriesColorMap(allDomains, {
+                highlightKey: ourDomain,
+                highlightColor: THEME_ACCENT_CSS,
+            }),
+        [allDomains, ourDomain]
+    );
+    const formatPositionValue = useCallback(
+        (value: unknown) => (typeof value === 'number' && value > 0 ? String(value) : '—'),
+        []
+    );
     const textMuted = 'var(--color-text-muted-on-light)';
-    const borderColor = 'var(--color-border-subtle, #eee)';
     const gridStroke = 'var(--color-border-on-light)';
-    const tooltipContentStyle = {
-        backgroundColor: 'var(--color-card-bg, #fff)',
-        border: `1px solid ${borderColor}`,
-        borderRadius: 8,
-        fontSize: 12,
-    };
-    const tooltipLabelStyle = { color: 'var(--color-text-on-light)' };
 
     if (loading) {
         return (
@@ -206,32 +192,31 @@ export function RankTrackingChart({
                             width={28}
                         />
                         <Tooltip
-                            contentStyle={tooltipContentStyle}
-                            labelStyle={tooltipLabelStyle}
+                            shared={false}
+                            content={({ active, payload, label }) => (
+                                <GeoPositionLineTooltip
+                                    active={active}
+                                    payload={payload}
+                                    label={label}
+                                    formatPositionValue={formatPositionValue}
+                                />
+                            )}
                         />
                         <Legend
                             wrapperStyle={{ fontSize: 11 }}
                             formatter={formatLegendValue}
                             iconType="line"
                         />
-                        <Line
-                            type="monotone"
-                            dataKey={ourDomain}
-                            name={ourDomain}
-                            stroke={THEME_ACCENT_CSS}
-                            strokeWidth={2.5}
-                            dot={{ r: 3 }}
-                            connectNulls
-                        />
-                        {competitorDomains.map((dom, idx) => (
+                        {allDomains.map((dom) => (
                             <Line
                                 key={dom}
                                 type="monotone"
                                 dataKey={dom}
                                 name={dom}
-                                stroke={CHART_COLORS[(idx + 1) % CHART_COLORS.length]}
-                                strokeWidth={2}
-                                dot={{ r: 2.5 }}
+                                stroke={seriesColorMap.get(dom) ?? THEME_ACCENT_CSS}
+                                strokeWidth={dom === ourDomain ? 2.5 : 2}
+                                dot={{ r: dom === ourDomain ? 3 : 2.5 }}
+                                activeDot={{ r: dom === ourDomain ? 5 : 4 }}
                                 connectNulls
                             />
                         ))}

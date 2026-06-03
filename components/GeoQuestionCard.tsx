@@ -13,20 +13,10 @@ import {
 } from 'recharts';
 import { Box } from '@mui/material';
 import { MsqdxTypography, MsqdxCard, MsqdxChip } from '@msqdx/react';
-import { MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
 import { THEME_ACCENT_CSS, msqdxChipThemeAccentSx } from '@/lib/theme-accent';
+import { buildSeriesColorMap } from '@/lib/chart-series-colors';
+import { GeoPositionLineTooltip } from '@/components/chart/GeoPositionLineTooltip';
 import { VirtualChipList } from '@/components/VirtualChipList';
-
-const CHART_COLORS = [
-    MSQDX_BRAND_PRIMARY?.green ?? '#22c55e',
-    MSQDX_BRAND_PRIMARY?.purple ?? '#7c3aed',
-    '#0ea5e9',
-    '#f59e0b',
-    '#ef4444',
-    '#ec4899',
-    '#14b8a6',
-    '#6366f1',
-];
 
 const TIME_RANGES = [
     { label: '7d', limit: 7 },
@@ -147,15 +137,26 @@ export function GeoQuestionCard({ queryText, queryIndex, points, targetDomain, c
         return { chartData: data, maxPos: Math.max(max, 6) };
     }, [points, limit, hasCompetitors, selectedModel, targetDomain, competitorDomains, allDomains, modelIds]);
 
+    const seriesColorMap = useMemo(() => {
+        if (hasCompetitors && selectedModel) {
+            return buildSeriesColorMap(allDomains, {
+                highlightKey: targetDomain,
+                highlightColor: THEME_ACCENT_CSS,
+            });
+        }
+        return buildSeriesColorMap(modelIds);
+    }, [hasCompetitors, selectedModel, allDomains, targetDomain, modelIds]);
+
+    const formatPositionValue = useCallback(
+        (value: unknown) =>
+            typeof value === 'number' && value > 0
+                ? `${t('geoEeat.positionShort')} ${value}`
+                : t('geoEeat.positionNotCited'),
+        [t]
+    );
+
     const textMuted = 'var(--color-text-muted-on-light)';
     const gridStroke = 'var(--color-border-subtle, #eee)';
-    const tooltipContentStyle = {
-        backgroundColor: 'var(--color-card-bg, #fff)',
-        border: `1px solid ${gridStroke}`,
-        borderRadius: 8,
-        fontSize: 11,
-    };
-
     if (points.length === 0) {
         return (
             <MsqdxCard
@@ -248,32 +249,41 @@ export function GeoQuestionCard({ queryText, queryIndex, points, targetDomain, c
                             width={28}
                         />
                         <Tooltip
-                            contentStyle={tooltipContentStyle}
-                            formatter={(value: unknown) => (typeof value === 'number' && value > 0 ? `${t('geoEeat.positionShort')} ${value}` : t('geoEeat.positionNotCited'))}
+                            shared={false}
+                            content={({ active, payload, label }) => (
+                                <GeoPositionLineTooltip
+                                    active={active}
+                                    payload={payload}
+                                    label={label}
+                                    formatPositionValue={formatPositionValue}
+                                />
+                            )}
                         />
                         <Legend wrapperStyle={{ fontSize: 10 }} iconType="line" />
                         {hasCompetitors && selectedModel
-                            ? allDomains.map((dom, idx) => (
+                            ? allDomains.map((dom) => (
                                   <Line
                                       key={dom}
                                       type="monotone"
                                       dataKey={dom}
                                       name={dom}
-                                      stroke={idx === 0 ? THEME_ACCENT_CSS : CHART_COLORS[idx % CHART_COLORS.length]}
+                                      stroke={seriesColorMap.get(dom) ?? THEME_ACCENT_CSS}
                                       strokeWidth={dom === targetDomain ? 2.5 : 2}
                                       dot={{ r: dom === targetDomain ? 3 : 2.5 }}
+                                      activeDot={{ r: dom === targetDomain ? 5 : 4 }}
                                       connectNulls
                                   />
                               ))
-                            : modelIds.map((modelId, idx) => (
+                            : modelIds.map((modelId) => (
                                   <Line
                                       key={modelId}
                                       type="monotone"
                                       dataKey={modelId}
                                       name={modelId}
-                                      stroke={CHART_COLORS[idx % CHART_COLORS.length]}
+                                      stroke={seriesColorMap.get(modelId) ?? THEME_ACCENT_CSS}
                                       strokeWidth={2}
                                       dot={{ r: 2.5 }}
+                                      activeDot={{ r: 4 }}
                                       connectNulls
                                   />
                               ))}

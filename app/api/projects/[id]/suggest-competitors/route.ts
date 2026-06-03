@@ -12,7 +12,7 @@ import { getOpenAIKey } from '@/lib/llm/config';
 import { reportUsage } from '@/lib/usage-report';
 import { extractHostname, parseSuggestResponse } from '@/lib/geo-eeat/suggest-parse';
 
-const SUGGEST_MODEL = process.env.OPENAI_SUGGEST_MODEL ?? 'gpt-5-nano';
+const SUGGEST_MODEL = process.env.OPENAI_SUGGEST_MODEL ?? 'gpt-5.4-nano';
 
 const SYSTEM_PROMPT = `Du bist ein Experte für Marktforschung und SEO. Zu einer Unternehmens-URL oder einem Firmennamen schlägst du vor:
 1. Genau 5 direkte Wettbewerber (Unternehmen derselben Branche). Als Domains (z. B. wettbewerber.de) oder Firmennamen, je ein Eintrag.

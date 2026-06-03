@@ -979,7 +979,7 @@ export interface GeoEeatIntensiveResult {
     aggregated?: Record<string, unknown>;
     /** Single-model competitive result (legacy). */
     competitive?: CompetitiveBenchmarkResult;
-    /** Per-model competitive benchmark (gpt-5-nano, gpt-5-mini, gpt-5). */
+    /** Per-model competitive benchmark (gpt-5.4-nano, gpt-5.4-mini, gpt-5.5, Claude, Gemini, …). */
     competitiveByModel?: Record<string, CompetitiveBenchmarkResult>;
     error?: string;
     /** True when this job skipped on-page GEO/E-E-A-T and only ran the competitive LLM benchmark. */
