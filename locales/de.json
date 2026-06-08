@@ -1332,6 +1332,16 @@
     "freshnessHint": "Datenstand siehe Report-Anhang nach Generierung.",
     "historyTitle": "Report-Historie",
     "historyEmpty": "Noch keine Reports für dieses Projekt.",
-    "navReport": "Reports"
+    "navReport": "Reports",
+    "statusQueued": "Warteschlange",
+    "statusRunning": "Wird erstellt…",
+    "statusComplete": "Fertig",
+    "statusError": "Fehler",
+    "pollingHint": "Status wird alle 2 Sekunden aktualisiert.",
+    "variantExecutive": "Executive (~2 Min.)",
+    "variantComprehensive": "Umfassend (~15 Min.)",
+    "variantLabel": "Report-Typ",
+    "progressLabel": "Fortschritt",
+    "comprehensiveDescription": "Tiefenanalyse mit Einzelmetriken, Multi-Agent-KI und erweitertem PDF (15+ Seiten)."
   }
 }

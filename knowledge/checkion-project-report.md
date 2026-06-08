@@ -5,7 +5,7 @@
 
 # CHECKION Projekt-Report
 
-**Stand:** Implementierung Projekt-Executive-Report (Bundle + async Job + PDF + LLM-Synthese).
+**Stand:** Executive + **Comprehensive** Variant (Bundle v2.0, Multi-Agent, Progress, Deep Collector).
 
 ## Ziel
 
@@ -14,11 +14,21 @@ Aus **einem Projekt** alle relevanten Daten aggregieren, optional per LLM interp
 ## Architektur (4 Schichten)
 
 1. **Collector** — [`lib/project-report/collector.ts`](../lib/project-report/collector.ts): deterministische Fakten aus DB/APIs
-2. **Agent** — [`lib/project-report/agent-pipeline.ts`](../lib/project-report/agent-pipeline.ts): OpenAI-Synthese mit Evidence-QA
-3. **Charts** — [`lib/project-report/chart-specs.ts`](../lib/project-report/chart-specs.ts) + [`components/pdf/charts/`](../components/pdf/charts/)
-4. **PDF** — [`components/pdf/ProjectReportDocument.tsx`](../components/pdf/ProjectReportDocument.tsx)
+2. **Deep Collector** — [`lib/project-report/collector-deep.ts`](../lib/project-report/collector-deep.ts): GEO-Fragen-Historie, Keyword-Positionen (90 Tage), Issue-Gruppen, SEO-Rollup, KPI-Metriken
+3. **Agent (executive)** — [`lib/project-report/agent-pipeline.ts`](../lib/project-report/agent-pipeline.ts): eine OpenAI-Synthese
+4. **Multi-Agent (comprehensive)** — [`lib/project-report/multi-agent-pipeline.ts`](../lib/project-report/multi-agent-pipeline.ts): Spezialisten (Site Quality, SEO, GEO, Wettbewerb, Journey) + Synthesizer
+5. **Charts** — [`lib/project-report/chart-specs.ts`](../lib/project-report/chart-specs.ts) + [`components/pdf/charts/`](../components/pdf/charts/)
+6. **PDF** — [`components/pdf/ProjectReportDocument.tsx`](../components/pdf/ProjectReportDocument.tsx) + [`ProjectReportDeepSections.tsx`](../components/pdf/ProjectReportDeepSections.tsx)
 
-Async Job: [`lib/project-report/run-job.ts`](../lib/project-report/run-job.ts) (Fire-and-forget IIFE, DB-Status wie GEO/E-E-A-T).
+Async Job: [`lib/project-report/run-job.ts`](../lib/project-report/run-job.ts) — Executive **120s**, Comprehensive **900s (15 min)**; Fortschritt in `project_report_runs.progress` (Migration `0027`).
+
+## Varianten
+
+| Variant | Dauer | LLM | PDF |
+|---------|-------|-----|-----|
+| `executive` | ~1–2 min | 1 Call | ~8 Seiten |
+| `comprehensive` | ~5–15 min | 5–6 Calls (Multi-Agent) | 15+ Seiten, KPI-Tabelle, Findings, Sektionsanalysen |
+| `full` | ~2–3 min | 1 Call | Executive + Deep-Daten im Anhang (ohne Multi-Agent) |
 
 ## API-Pfade (siehe `lib/constants.ts`)
 
@@ -32,10 +42,11 @@ Konstanten: `apiProjectReport(id)`, `apiProjectReportRun(projectId, runId)`, `pa
 
 ## Bundle-Schema
 
-Version `1.0` — Typ [`ProjectReportBundle`](../lib/project-report/types.ts):
+Version `1.0` (executive) / `2.0` (full/comprehensive) — Typ [`ProjectReportBundle`](../lib/project-report/types.ts):
 
 - `project`, `domain`, `competitors`, `rankings`, `geo`, `rankTrends`, `journey`
 - `visuals`, `narrative`, `provenance`, `freshness`, `links`
+- `deep` (optional): `metrics`, `sections`, `geoQuestionHistory`, `geoPages`, `rankKeywordDetails`, `issueGroups`, `seoRollup`
 
 ## Evidence-ID-Konvention
 
@@ -56,7 +67,7 @@ Ohne `OPENAI_API_KEY` oder bei Fehler: Report mit Fakten + Platzhalter-Text, PDF
 
 ## DB
 
-Tabelle `project_report_runs` — Migration [`lib/db/migrations/0026_project_report_runs.sql`](../lib/db/migrations/0026_project_report_runs.sql).
+Tabelle `project_report_runs` — Migrationen `0026` (Runs), `0027` (`progress` JSONB).
 
 ## Abgrenzung
 
@@ -70,4 +81,6 @@ Tabelle `project_report_runs` — Migration [`lib/db/migrations/0026_project_rep
 - `__tests__/lib/project-report-narrative-schema.test.ts`
 - `__tests__/lib/project-report-agent-qa.test.ts`
 - `__tests__/lib/project-report-chart-specs.test.ts`
+- `__tests__/lib/project-report-metrics-builder.test.ts`
+- `__tests__/lib/project-report-progress.test.ts`
 - `__tests__/api/project-report-route.test.ts`

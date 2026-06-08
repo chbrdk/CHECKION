@@ -13,6 +13,8 @@ import {
     RiskAmpelPills,
 } from '@/components/pdf/shared/PdfPrimitives';
 import { PdfScoreCardsFromSpec, PdfVisualSpec } from '@/components/pdf/charts/PdfChartComponents';
+import { buildDeepReportPages } from '@/components/pdf/ProjectReportDeepSections';
+import type { VisualSpec } from '@/lib/project-report/chart-specs';
 
 interface ProjectReportDocumentProps {
     bundle: ProjectReportBundle;
@@ -30,8 +32,19 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
     const geoChart = bundle.visuals.find((v) => v.kind === 'geoCompetitive');
     const topicsChart = bundle.visuals.find((v) => v.kind === 'pageTopics');
     const rankTrend = bundle.visuals.find((v) => v.kind === 'rankTrend');
+    const geoQuestionTrend = bundle.visuals.find((v) => v.kind === 'geoQuestionTrend');
+    const competitorRankingScores = bundle.visuals.find((v) => v.kind === 'competitorRankingScores');
     const narrative = bundle.narrative;
     const dateLocale = bundle.locale === 'de' ? 'de-DE' : 'en-US';
+    const isComprehensive = bundle.variant === 'comprehensive' || bundle.variant === 'full';
+    const deepPages = isComprehensive
+        ? buildDeepReportPages(bundle, labels, {
+              geoQuestionTrend: geoQuestionTrend as VisualSpec | undefined,
+              competitorRankingScores: competitorRankingScores as VisualSpec | undefined,
+              rankTrend: rankTrend as VisualSpec | undefined,
+          })
+        : [];
+    const totalPages = 8 + deepPages.length;
 
     const pages: React.ReactNode[] = [];
 
@@ -42,7 +55,9 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
             <View style={pdfStyles.coverLogoWrap}>
                 <MsqdxLogoPdf width={100} height={24} />
             </View>
-            <Text style={pdfStyles.coverSubtitle}>{labels.reportSubtitle}</Text>
+            <Text style={pdfStyles.coverSubtitle}>
+                {isComprehensive ? labels.comprehensiveSubtitle : labels.reportSubtitle}
+            </Text>
             <Text style={pdfStyles.coverTitle}>{labels.reportTitle}</Text>
             <View style={pdfStyles.coverUrlBox}>
                 <Text style={pdfStyles.coverUrl}>{bundle.project.name}</Text>
@@ -94,7 +109,7 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
                     <Text style={pdfStyles.bodyText}>{bundle.domain.llmSummary.summary}</Text>
                 </>
             ) : null}
-            <PdfFooter pageNumber={2} totalPages={8} title={labels.footerTitle} locale={bundle.locale} />
+            <PdfFooter pageNumber={2} totalPages={totalPages} title={labels.footerTitle} locale={bundle.locale} />
         </Page>
     );
 
@@ -154,7 +169,7 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
             ) : (
                 <Text style={pdfStyles.metaText}>{labels.noData}</Text>
             )}
-            <PdfFooter pageNumber={3} totalPages={8} title={labels.footerTitle} locale={bundle.locale} />
+            <PdfFooter pageNumber={3} totalPages={totalPages} title={labels.footerTitle} locale={bundle.locale} />
         </Page>
     );
 
@@ -191,7 +206,7 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
                     <PdfVisualSpec spec={rankTrend} />
                 </>
             ) : null}
-            <PdfFooter pageNumber={4} totalPages={8} title={labels.footerTitle} locale={bundle.locale} />
+            <PdfFooter pageNumber={4} totalPages={totalPages} title={labels.footerTitle} locale={bundle.locale} />
         </Page>
     );
 
@@ -222,7 +237,7 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
             ) : (
                 <Text style={pdfStyles.metaText}>{labels.noData}</Text>
             )}
-            <PdfFooter pageNumber={5} totalPages={8} title={labels.footerTitle} locale={bundle.locale} />
+            <PdfFooter pageNumber={5} totalPages={totalPages} title={labels.footerTitle} locale={bundle.locale} />
         </Page>
     );
 
@@ -251,7 +266,7 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
                         </View>
                     ))
             )}
-            <PdfFooter pageNumber={6} totalPages={8} title={labels.footerTitle} locale={bundle.locale} />
+            <PdfFooter pageNumber={6} totalPages={totalPages} title={labels.footerTitle} locale={bundle.locale} />
         </Page>
     );
 
@@ -284,9 +299,26 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
                     ) : null}
                 </>
             ) : null}
-            <PdfFooter pageNumber={7} totalPages={8} title={labels.footerTitle} locale={bundle.locale} />
+            <PdfFooter pageNumber={7} totalPages={totalPages} title={labels.footerTitle} locale={bundle.locale} />
         </Page>
     );
+
+    deepPages.forEach((deepPage, i) => {
+        const pageNum = 8 + i;
+        const deepChildren = (deepPage.props as { children?: React.ReactNode }).children;
+        pages.push(
+            React.cloneElement(deepPage, {}, [
+                ...React.Children.toArray(deepChildren),
+                <PdfFooter
+                    key="footer"
+                    pageNumber={pageNum}
+                    totalPages={totalPages}
+                    title={labels.footerTitle}
+                    locale={bundle.locale}
+                />,
+            ])
+        );
+    });
 
     // Appendix (+ technical for full variant)
     pages.push(
@@ -324,7 +356,7 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
                 <Text style={pdfStyles.tableLabel}>Rankings</Text>
                 <Text style={pdfStyles.tableValue}>{bundle.links.rankingsPath}</Text>
             </View>
-            {bundle.variant === 'full' && bundle.rankings ? (
+            {(bundle.variant === 'full' || bundle.variant === 'comprehensive') && bundle.rankings ? (
                 <>
                     <PdfSectionHeader title={labels.technicalAppendix} chapter="issues" />
                     {bundle.rankings.topKeywords.map((kw) => (
@@ -343,7 +375,7 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
                     ))}
                 </>
             ) : null}
-            <PdfFooter pageNumber={8} totalPages={8} title={labels.footerTitle} locale={bundle.locale} />
+            <PdfFooter pageNumber={8 + deepPages.length} totalPages={totalPages} title={labels.footerTitle} locale={bundle.locale} />
         </Page>
     );
 

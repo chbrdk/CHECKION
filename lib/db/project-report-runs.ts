@@ -6,6 +6,7 @@ import { eq, and, desc } from 'drizzle-orm';
 import { getDb } from './index';
 import { projectReportRuns } from './schema';
 import type { ProjectReportBundle, ProjectReportRunStatus } from '@/lib/project-report/types';
+import type { ReportProgress } from '@/lib/project-report/progress';
 
 export interface ProjectReportRunRow {
     id: string;
@@ -15,6 +16,7 @@ export interface ProjectReportRunRow {
     locale: string;
     variant: string;
     bundle: ProjectReportBundle | null;
+    progress: ReportProgress | null;
     error: string | null;
     createdAt: Date;
     completedAt: Date | null;
@@ -45,6 +47,7 @@ export async function updateProjectReportRun(
     data: {
         status?: ProjectReportRunStatus;
         bundle?: ProjectReportBundle | null;
+        progress?: ReportProgress | null;
         error?: string | null;
         completedAt?: Date | null;
     }
@@ -55,6 +58,7 @@ export async function updateProjectReportRun(
         .set({
             ...(data.status != null && { status: data.status }),
             ...(data.bundle !== undefined && { bundle: data.bundle }),
+            ...(data.progress !== undefined && { progress: data.progress }),
             ...(data.error !== undefined && { error: data.error }),
             ...(data.completedAt !== undefined && { completedAt: data.completedAt }),
         })

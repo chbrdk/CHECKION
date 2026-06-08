@@ -1,11 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Box, Dialog, DialogContent, DialogTitle, LinearProgress } from '@mui/material';
+import { Box, Dialog, DialogContent, DialogTitle, LinearProgress, MenuItem, TextField } from '@mui/material';
 import { MsqdxButton, MsqdxTypography, MsqdxMoleculeCard } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { apiProjectReport, apiProjectReportRun } from '@/lib/constants';
-import type { ProjectReportBundle } from '@/lib/project-report/types';
+import type { ProjectReportBundle, ProjectReportVariant } from '@/lib/project-report/types';
+import type { ReportProgress } from '@/lib/project-report/progress';
 
 type ReportStatus = 'idle' | 'queued' | 'running' | 'complete' | 'error';
 
@@ -16,6 +17,8 @@ export function ProjectReportExport({ projectId }: { projectId: string }) {
     const [bundle, setBundle] = useState<ProjectReportBundle | null>(null);
     const [previewOpen, setPreviewOpen] = useState(false);
     const [pdfExporting, setPdfExporting] = useState(false);
+    const [variant, setVariant] = useState<ProjectReportVariant>('executive');
+    const [progress, setProgress] = useState<ReportProgress | null>(null);
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const runIdRef = useRef<string | null>(null);
 
@@ -43,6 +46,7 @@ export function ProjectReportExport({ projectId }: { projectId: string }) {
                     }
                     const data = json.data;
                     setStatus(data.status);
+                    if (data.progress) setProgress(data.progress);
                     if (data.status === 'complete') {
                         setBundle(data.bundle);
                         setPreviewOpen(true);
@@ -65,13 +69,14 @@ export function ProjectReportExport({ projectId }: { projectId: string }) {
         setError(null);
         setStatus('queued');
         setBundle(null);
+        setProgress(null);
         try {
             const res = await fetch(apiProjectReport(projectId), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     locale: locale === 'en' ? 'en' : 'de',
-                    variant: 'executive',
+                    variant,
                 }),
             });
             const json = await res.json();
@@ -122,9 +127,37 @@ export function ProjectReportExport({ projectId }: { projectId: string }) {
                     {t('projectReport.title')}
                 </MsqdxTypography>
                 <MsqdxTypography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {t('projectReport.description')}
+                    {variant === 'comprehensive'
+                        ? t('projectReport.comprehensiveDescription')
+                        : t('projectReport.description')}
                 </MsqdxTypography>
-                {isLoading ? <LinearProgress sx={{ mb: 2 }} /> : null}
+                <TextField
+                    select
+                    size="small"
+                    label={t('projectReport.variantLabel')}
+                    value={variant}
+                    onChange={(e) => setVariant(e.target.value as ProjectReportVariant)}
+                    disabled={isLoading}
+                    sx={{ mb: 2, minWidth: 260 }}
+                >
+                    <MenuItem value="executive">{t('projectReport.variantExecutive')}</MenuItem>
+                    <MenuItem value="comprehensive">{t('projectReport.variantComprehensive')}</MenuItem>
+                </TextField>
+                {isLoading ? (
+                    <>
+                        <LinearProgress
+                            variant={progress?.percent != null ? 'determinate' : 'indeterminate'}
+                            value={progress?.percent ?? 0}
+                            sx={{ mb: 1 }}
+                        />
+                        {progress?.label ? (
+                            <MsqdxTypography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
+                                {t('projectReport.progressLabel')}: {progress.label}
+                                {progress.percent != null ? ` (${progress.percent}%)` : ''}
+                            </MsqdxTypography>
+                        ) : null}
+                    </>
+                ) : null}
                 {error ? (
                     <MsqdxTypography variant="body2" color="error" sx={{ mb: 1 }}>
                         {error}

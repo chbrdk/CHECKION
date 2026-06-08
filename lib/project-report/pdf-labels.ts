@@ -31,6 +31,18 @@ export interface ProjectReportPdfLabels {
     footerTitle: string;
     technicalAppendix: string;
     journeySummary: string;
+    metricsOverview: string;
+    keyFindings: string;
+    metricLabel: string;
+    metricValue: string;
+    metricBenchmark: string;
+    keywordDetails: string;
+    geoQuestionHistory: string;
+    geoPageAnalysis: string;
+    issueGroups: string;
+    seoTechnical: string;
+    sectionAnalysis: string;
+    comprehensiveSubtitle: string;
 }
 
 const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
@@ -61,6 +73,18 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         footerTitle: 'CHECKION Projekt-Report',
         technicalAppendix: 'Technischer Anhang',
         journeySummary: 'UX Journey Agent',
+        metricsOverview: 'KPI-Übersicht',
+        keyFindings: 'Zentrale Erkenntnisse',
+        metricLabel: 'Metrik',
+        metricValue: 'Wert',
+        metricBenchmark: 'Einordnung',
+        keywordDetails: 'Keyword-Details & Trends',
+        geoQuestionHistory: 'GEO-Fragen-Verlauf',
+        geoPageAnalysis: 'GEO Seitenanalyse',
+        issueGroups: 'Issue-Gruppen',
+        seoTechnical: 'SEO Technik-Rollup',
+        sectionAnalysis: 'Tiefenanalyse',
+        comprehensiveSubtitle: 'Umfassende Analyse',
     },
     en: {
         reportTitle: 'Project Report',
@@ -89,6 +113,18 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         footerTitle: 'CHECKION Project Report',
         technicalAppendix: 'Technical Appendix',
         journeySummary: 'UX Journey Agent',
+        metricsOverview: 'KPI Overview',
+        keyFindings: 'Key Findings',
+        metricLabel: 'Metric',
+        metricValue: 'Value',
+        metricBenchmark: 'Benchmark',
+        keywordDetails: 'Keyword Details & Trends',
+        geoQuestionHistory: 'GEO Question History',
+        geoPageAnalysis: 'GEO Page Analysis',
+        issueGroups: 'Issue Groups',
+        seoTechnical: 'SEO Technical Rollup',
+        sectionAnalysis: 'Deep Analysis',
+        comprehensiveSubtitle: 'Comprehensive Analysis',
     },
 };
 

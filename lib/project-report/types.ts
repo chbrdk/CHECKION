@@ -8,9 +8,13 @@ import type { UxCxSummary } from '@/lib/llm-summary-types';
 import type { ProjectReportNarrative } from '@/lib/project-report/narrative-schema';
 import type { VisualSpec } from '@/lib/project-report/chart-specs';
 
+import type { ReportProgress } from '@/lib/project-report/progress';
+
 export type ProjectReportLocale = 'de' | 'en';
-export type ProjectReportVariant = 'executive' | 'full';
+/** executive = fast (~1–2 min); full = appendix; comprehensive = deep multi-agent (~5–15 min) */
+export type ProjectReportVariant = 'executive' | 'full' | 'comprehensive';
 export type ProjectReportRunStatus = 'queued' | 'running' | 'complete' | 'error';
+export type ProjectReportBundleVersion = '1.0' | '2.0';
 
 export interface ProvenanceEntry {
     evidenceId: string;
@@ -164,8 +168,97 @@ export interface JourneySummaryFact {
     summary: string | null;
 }
 
+/** Single KPI with interpretation for comprehensive reports. */
+export interface MetricInsight {
+    id: string;
+    pillar: 'wcag' | 'seo' | 'geo' | 'rankings' | 'performance' | 'eco' | 'competitive';
+    label: string;
+    value: string | number | null;
+    unit?: string;
+    benchmark?: string;
+    interpretation?: string;
+    evidenceId: string;
+}
+
+export interface SectionAnalysis {
+    title: string;
+    summary: string;
+    keyFindings: string[];
+    metricsHighlighted: string[];
+}
+
+export interface GeoQuestionHistoryPointFact {
+    recordedAt: string;
+    avgPosition: number | null;
+}
+
+export interface GeoQuestionHistoryFact {
+    queryText: string;
+    queryIndex: number;
+    points: GeoQuestionHistoryPointFact[];
+    latestPosition: number | null;
+    trend: 'improving' | 'declining' | 'stable' | 'unknown';
+    evidenceId: string;
+}
+
+export interface GeoPageAnalysisFact {
+    url: string;
+    title?: string;
+    geoFitnessScore: number | null;
+    trustScore: number | null;
+    experienceScore: number | null;
+    expertiseScore: number | null;
+    missingElements: string[];
+}
+
+export interface RankKeywordDetailFact {
+    id: string;
+    keyword: string;
+    position: number | null;
+    previousPosition: number | null;
+    positionDelta: number | null;
+    serpLeaderDomain: string | null;
+    competitorPositions: Record<string, number | null>;
+    points: RankTrendPoint[];
+    evidenceId: string;
+}
+
+export interface IssueGroupFact {
+    groupKey: string;
+    title: string;
+    type: string;
+    pageCount: number;
+    wcagLevel?: string;
+    evidenceId: string;
+}
+
+export interface SeoRollupFacts {
+    pagesMissingTitle: number | null;
+    pagesMissingMeta: number | null;
+    pagesMissingH1: number | null;
+    duplicateTitles: number | null;
+    brokenLinksCount: number | null;
+    jsonLdPages: number | null;
+}
+
+export interface ProjectReportDeepAnalysis {
+    metrics: MetricInsight[];
+    sections: {
+        siteQuality: SectionAnalysis | null;
+        seoRankings: SectionAnalysis | null;
+        geo: SectionAnalysis | null;
+        competitive: SectionAnalysis | null;
+        journey: SectionAnalysis | null;
+    };
+    geoQuestionHistory: GeoQuestionHistoryFact[];
+    geoPages: GeoPageAnalysisFact[];
+    rankKeywordDetails: RankKeywordDetailFact[];
+    issueGroups: IssueGroupFact[];
+    seoRollup: SeoRollupFacts | null;
+}
+
 export interface ProjectReportBundle {
-    version: '1.0';
+    version: ProjectReportBundleVersion;
     generatedAt: string;
     locale: ProjectReportLocale;
     variant: ProjectReportVariant;
@@ -178,6 +271,8 @@ export interface ProjectReportBundle {
     journey: JourneySummaryFact | null;
     visuals: VisualSpec[];
     narrative: ProjectReportNarrative | null;
+    /** Populated for full/comprehensive variants */
+    deep: ProjectReportDeepAnalysis | null;
     provenance: ProvenanceEntry[];
     freshness: FreshnessMeta;
     /** Deep links for appendix (paths only — resolve with origin in client). */

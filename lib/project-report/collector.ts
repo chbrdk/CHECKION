@@ -363,6 +363,7 @@ export async function collectProjectReportFacts(
         geo,
         rankTrends,
         journey,
+        deep: null,
         provenance,
         freshness,
         links: {

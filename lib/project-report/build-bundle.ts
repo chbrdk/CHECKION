@@ -3,49 +3,102 @@
  */
 
 import { collectProjectReportFacts } from '@/lib/project-report/collector';
+import { collectDeepProjectReportData } from '@/lib/project-report/collector-deep';
 import { buildChartSpecs } from '@/lib/project-report/chart-specs';
 import { synthesizeProjectReportNarrative } from '@/lib/project-report/agent-pipeline';
-import type {
-    CollectProjectReportOptions,
-    ProjectReportBundle,
-} from '@/lib/project-report/types';
+import { synthesizeComprehensiveReport } from '@/lib/project-report/multi-agent-pipeline';
+import { makeReportProgress, STAGE_LABELS } from '@/lib/project-report/progress';
+import type { CollectProjectReportOptions, ProjectReportBundle } from '@/lib/project-report/types';
+import type { ReportProgress } from '@/lib/project-report/progress';
 
-export interface BuildProjectReportBundleOptions extends CollectProjectReportOptions {
+export interface BuildProjectReportBundleOptionsExtended extends CollectProjectReportOptions {
     userId: string;
     projectId: string;
     runId: string;
     skipLlm?: boolean;
+    onProgress?: (progress: ReportProgress) => Promise<void>;
+}
+
+function isDeepVariant(variant: string): boolean {
+    return variant === 'full' || variant === 'comprehensive';
 }
 
 export async function buildProjectReportBundle(
     projectId: string,
     viewerUserId: string,
-    options: BuildProjectReportBundleOptions
+    options: BuildProjectReportBundleOptionsExtended
 ): Promise<ProjectReportBundle> {
+    const reportProgress = async (stage: keyof typeof STAGE_LABELS) => {
+        if (options.onProgress) {
+            const labels = STAGE_LABELS[stage];
+            await options.onProgress(
+                makeReportProgress(stage, labels.de, labels.en, options.locale)
+            );
+        }
+    };
+
+    await reportProgress('collecting');
     const facts = await collectProjectReportFacts(projectId, viewerUserId, {
         locale: options.locale,
         variant: options.variant,
     });
 
-    const narrative = await synthesizeProjectReportNarrative(facts, {
-        userId: options.userId,
-        projectId: options.projectId,
-        runId: options.runId,
-        skipLlm: options.skipLlm,
-    });
+    let deep = null;
+    if (isDeepVariant(options.variant)) {
+        await reportProgress('collecting_deep');
+        deep = await collectDeepProjectReportData(facts, viewerUserId, projectId);
+        // enrich rank trends for comprehensive
+        if (options.variant === 'comprehensive' && deep.rankKeywordDetails.length > 0) {
+            facts.rankTrends = deep.rankKeywordDetails.slice(0, 10).map((k) => ({
+                keywordId: k.id,
+                keyword: k.keyword,
+                points: k.points,
+            }));
+        }
+    }
 
+    let narrative;
+    if (options.variant === 'comprehensive' && deep) {
+        const result = await synthesizeComprehensiveReport(facts, deep, {
+            userId: options.userId,
+            projectId: options.projectId,
+            runId: options.runId,
+            skipLlm: options.skipLlm,
+            onProgress: options.onProgress,
+            locale: options.locale,
+        });
+        narrative = result.narrative;
+        deep = result.deep;
+    } else {
+        narrative = await synthesizeProjectReportNarrative(facts, {
+            userId: options.userId,
+            projectId: options.projectId,
+            runId: options.runId,
+            skipLlm: options.skipLlm,
+        });
+    }
+
+    await reportProgress('building_charts');
     const visuals = buildChartSpecs(
         facts.domain,
         facts.competitors,
         facts.rankings,
         facts.geo,
         facts.project.domain,
-        facts.rankTrends
+        facts.rankTrends,
+        deep
     );
+
+    const version = isDeepVariant(options.variant) ? '2.0' : '1.0';
 
     return {
         ...facts,
+        version,
         visuals,
         narrative,
+        deep,
     };
 }
+
+// Re-export for backwards compatibility
+export type { BuildProjectReportBundleOptionsExtended as BuildProjectReportBundleOptions };

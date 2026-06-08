@@ -39,6 +39,7 @@ export async function GET(
             error: run.error,
             createdAt: run.createdAt.toISOString(),
             completedAt: run.completedAt?.toISOString() ?? null,
+            progress: run.progress,
             bundle: run.status === 'complete' ? run.bundle : null,
         },
     });

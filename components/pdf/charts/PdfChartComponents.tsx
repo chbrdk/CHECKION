@@ -165,6 +165,10 @@ export function PdfVisualSpec({ spec }: { spec: VisualSpec }) {
             return <TopicBars items={spec.items} />;
         case 'rankTrend':
             return <RankTrendChart series={spec.series} />;
+        case 'geoQuestionTrend':
+            return <HorizontalBarChart title="GEO Question Visibility" items={spec.items} />;
+        case 'competitorRankingScores':
+            return <HorizontalBarChart title="Ranking Score by Domain" items={spec.items} />;
         case 'scoreCards':
         default:
             return null;

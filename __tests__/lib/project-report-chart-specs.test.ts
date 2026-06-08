@@ -84,4 +84,38 @@ describe('buildChartSpecs', () => {
         expect(specs).toHaveLength(1);
         expect(specs[0]!.kind).toBe('scoreCards');
     });
+
+    it('adds geo question trend and competitor ranking charts from deep data', () => {
+        const rankingsWithCompetitors: RankingFacts = {
+            ...rankings,
+            competitorScores: { 'rival.com': 55 },
+        };
+        const specs = buildChartSpecs(domain, competitors, rankingsWithCompetitors, geo, 'example.com', [], {
+            metrics: [],
+            sections: {
+                siteQuality: null,
+                seoRankings: null,
+                geo: null,
+                competitive: null,
+                journey: null,
+            },
+            geoQuestionHistory: [
+                {
+                    queryText: 'best product',
+                    queryIndex: 0,
+                    points: [],
+                    latestPosition: 3,
+                    trend: 'improving',
+                    evidenceId: 'ev-q0',
+                },
+            ],
+            geoPages: [],
+            rankKeywordDetails: [],
+            issueGroups: [],
+            seoRollup: null,
+        });
+        const kinds = specs.map((s) => s.kind);
+        expect(kinds).toContain('geoQuestionTrend');
+        expect(kinds).toContain('competitorRankingScores');
+    });
 });

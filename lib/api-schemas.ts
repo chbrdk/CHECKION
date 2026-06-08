@@ -308,7 +308,7 @@ export const rankTrackingRefreshBodySchema = z.object({
 /** POST /api/projects/[id]/report */
 export const projectReportBodySchema = z.object({
   locale: z.enum(['de', 'en']).optional(),
-  variant: z.enum(['executive', 'full']).optional(),
+  variant: z.enum(['executive', 'full', 'comprehensive']).optional(),
   skipLlm: z.boolean().optional(),
 });
 

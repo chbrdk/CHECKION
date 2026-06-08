@@ -7,6 +7,7 @@ import type {
     DomainFacts,
     GeoFacts,
     ProjectReportBundle,
+    ProjectReportDeepAnalysis,
     RankingFacts,
 } from '@/lib/project-report/types';
 import { CHART_SERIES_PALETTE } from '@/lib/chart-series-colors';
@@ -17,7 +18,9 @@ export type VisualSpecKind =
     | 'rankingKeywords'
     | 'geoCompetitive'
     | 'pageTopics'
-    | 'rankTrend';
+    | 'rankTrend'
+    | 'geoQuestionTrend'
+    | 'competitorRankingScores';
 
 export interface ScoreCardItem {
     label: string;
@@ -63,7 +66,9 @@ export type VisualSpec =
     | { kind: 'rankingKeywords'; items: KeywordBarItem[] }
     | { kind: 'geoCompetitive'; items: BarChartItem[] }
     | { kind: 'pageTopics'; items: TopicBarItem[] }
-    | { kind: 'rankTrend'; series: TrendSeries[] };
+    | { kind: 'rankTrend'; series: TrendSeries[] }
+    | { kind: 'geoQuestionTrend'; items: BarChartItem[] }
+    | { kind: 'competitorRankingScores'; items: BarChartItem[] };
 
 const MAX_KEYWORDS = 10;
 const MAX_TOPICS = 5;
@@ -75,7 +80,8 @@ export function buildChartSpecs(
     rankings: RankingFacts | null,
     geo: GeoFacts | null,
     projectDomain: string | null,
-    rankTrends?: ProjectReportBundle['rankTrends']
+    rankTrends?: ProjectReportBundle['rankTrends'],
+    deep?: ProjectReportDeepAnalysis | null
 ): VisualSpec[] {
     const specs: VisualSpec[] = [];
 
@@ -167,11 +173,20 @@ export function buildChartSpecs(
         });
     }
 
-    if (rankTrends && rankTrends.length > 0) {
-        const series: TrendSeries[] = rankTrends.slice(0, 5).map((t, i) => ({
+    const trendSource =
+        rankTrends && rankTrends.length > 0
+            ? rankTrends
+            : deep?.rankKeywordDetails.map((k) => ({
+                  keywordId: k.id,
+                  keyword: k.keyword,
+                  points: k.points,
+              })) ?? [];
+
+    if (trendSource.length > 0) {
+        const series: TrendSeries[] = trendSource.slice(0, 8).map((t, i) => ({
             keyword: t.keyword,
             color: CHART_SERIES_PALETTE[i % CHART_SERIES_PALETTE.length],
-            points: t.points.slice(-12).map((p, idx) => ({
+            points: t.points.slice(-24).map((p, idx) => ({
                 x: idx,
                 y: p.position != null ? Math.min(100, p.position) : 100,
                 label: p.recordedAt.slice(0, 10),
@@ -179,6 +194,39 @@ export function buildChartSpecs(
         }));
         if (series.some((s) => s.points.length >= 2)) {
             specs.push({ kind: 'rankTrend', series });
+        }
+    }
+
+    if (deep?.geoQuestionHistory && deep.geoQuestionHistory.length > 0) {
+        specs.push({
+            kind: 'geoQuestionTrend',
+            items: deep.geoQuestionHistory.slice(0, 8).map((q, i) => ({
+                label: q.queryText.slice(0, 40),
+                value: q.latestPosition != null ? Math.max(1, 101 - q.latestPosition) : 0,
+                color: CHART_SERIES_PALETTE[i % CHART_SERIES_PALETTE.length],
+            })),
+        });
+    }
+
+    if (rankings && Object.keys(rankings.competitorScores).length > 0) {
+        const items: BarChartItem[] = [];
+        if (rankings.score != null) {
+            items.push({
+                label: projectDomain ?? 'Own',
+                value: rankings.score,
+                color: CHART_SERIES_PALETTE[0],
+                isHighlight: true,
+            });
+        }
+        for (const [domain, score] of Object.entries(rankings.competitorScores).slice(0, MAX_COMPETITORS)) {
+            items.push({
+                label: domain,
+                value: score,
+                color: CHART_SERIES_PALETTE[(items.length) % CHART_SERIES_PALETTE.length],
+            });
+        }
+        if (items.length > 1) {
+            specs.push({ kind: 'competitorRankingScores', items });
         }
     }
 

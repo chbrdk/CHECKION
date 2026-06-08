@@ -400,8 +400,10 @@ export const projectReportRuns = pgTable('project_report_runs', {
     projectId: text('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
     status: text('status').notNull(), // 'queued' | 'running' | 'complete' | 'error'
     locale: text('locale').notNull().default('de'),
-    variant: text('variant').notNull().default('executive'), // 'executive' | 'full'
+    variant: text('variant').notNull().default('executive'), // 'executive' | 'full' | 'comprehensive'
     bundle: jsonb('bundle'),
+    /** Stage progress for long comprehensive reports: { stage, label, percent } */
+    progress: jsonb('progress'),
     error: text('error'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     completedAt: timestamp('completed_at', { withTimezone: true }),

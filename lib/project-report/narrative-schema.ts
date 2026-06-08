@@ -27,17 +27,34 @@ export const ProjectReportRiskAmpelSchema = z.object({
     rankings: RiskLevelSchema,
 });
 
+export const SectionAnalysisSchema = z.object({
+    title: z.string(),
+    summary: z.string(),
+    keyFindings: z.array(z.string()),
+    metricsHighlighted: z.array(z.string()),
+});
+
 export const ProjectReportNarrativeSchema = z.object({
     executiveSummary: z.string(),
     competitiveLandscape: z.string().optional(),
     findings: z.array(ProjectReportFindingSchema),
     recommendations: z.array(ProjectReportRecommendationSchema),
     riskAmpel: ProjectReportRiskAmpelSchema,
+    sections: z
+        .object({
+            siteQuality: SectionAnalysisSchema.optional(),
+            seoRankings: SectionAnalysisSchema.optional(),
+            geo: SectionAnalysisSchema.optional(),
+            competitive: SectionAnalysisSchema.optional(),
+            journey: SectionAnalysisSchema.optional(),
+        })
+        .optional(),
     modelUsed: z.string().optional(),
     generatedAt: z.string().optional(),
     synthesisAvailable: z.boolean().optional(),
 });
 
+export type SectionAnalysis = z.infer<typeof SectionAnalysisSchema>;
 export type ProjectReportFinding = z.infer<typeof ProjectReportFindingSchema>;
 export type ProjectReportRecommendation = z.infer<typeof ProjectReportRecommendationSchema>;
 export type ProjectReportRiskAmpel = z.infer<typeof ProjectReportRiskAmpelSchema>;

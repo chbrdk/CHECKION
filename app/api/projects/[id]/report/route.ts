@@ -86,6 +86,7 @@ export async function GET(
             createdAt: r.createdAt.toISOString(),
             completedAt: r.completedAt?.toISOString() ?? null,
             hasBundle: r.bundle != null,
+            progress: r.progress,
         })),
     });
 }
