@@ -1350,6 +1350,7 @@
       "audion_http_503": "AUDION Integration nicht verfügbar (503)",
       "audion_inbound_not_configured": "CHECKION_INBOUND_SERVICE_TOKEN fehlt auf AUDION API",
       "audion_endpoint_not_found": "AUDION Integrations-Endpunkt nicht gefunden (404)",
+      "audience_export_failed": "AUDION Persona-Export fehlgeschlagen",
       "no_audion_link": "Keine Verknüpfung",
       "no_audion_project_for_checkion_id": "Kein AUDION-Projekt für diese CHECKION-ID",
       "no_personas": "Verknüpft, aber keine Personas in AUDION"
