@@ -45,6 +45,7 @@ Konstanten: `apiProjectReport(id)`, `apiProjectReportRun(projectId, runId)`, `pa
 Version `1.0` (executive) / `2.0` (full/comprehensive) — Typ [`ProjectReportBundle`](../lib/project-report/types.ts):
 
 - `project`, `domain`, `competitors`, `rankings`, `geo`, `rankTrends`, `journey`
+- `audience` (comprehensive, optional): AUDION personas + fit matrix when `AUDION_API_*` configured and project linked via `checkion_project_id` in AUDION
 - `visuals`, `narrative`, `provenance`, `freshness`, `links`
 - `deep` (optional): `metrics`, `sections`, `geoQuestionHistory`, `geoPages`, `rankKeywordDetails`, `issueGroups`, `seoRollup`
 
@@ -73,7 +74,18 @@ Tabelle `project_report_runs` — Migrationen `0026` (Runs), `0027` (`progress` 
 
 - **Single-Scan PDF:** [`components/pdf/ScanReportDocument.tsx`](../components/pdf/ScanReportDocument.tsx) — eine URL
 - **Projekt-Report:** aggregiert Deep Scan, Rankings, GEO, Wettbewerber
+- **AUDION Audience Layer:** [`lib/project-report/audience-alignment.ts`](../lib/project-report/audience-alignment.ts), [`lib/integrations/audion-audience-client.ts`](../lib/integrations/audion-audience-client.ts), PDF [`ProjectReportAudienceSections.tsx`](../components/pdf/ProjectReportAudienceSections.tsx)
 - **GEO Einzel-PDF:** weiterhin nicht auf Run-Ebene; Projekt-Report enthält GEO-Sektion
+
+### AUDION integration (comprehensive)
+
+| Env (CHECKION) | Env (AUDION) | Beschreibung |
+|----------------|--------------|--------------|
+| `AUDION_API_BASE_URL` | — | Persona-API origin (no trailing slash) |
+| `AUDION_SERVICE_TOKEN` | `CHECKION_INBOUND_SERVICE_TOKEN` | Shared secret for server-to-server |
+| — | `checkion_project_id` on AUDION project | Links AUDION ↔ CHECKION project |
+
+Endpoint: `GET /integrations/checkion/projects/{checkionProjectId}/audience-report`
 
 ## Tests
 

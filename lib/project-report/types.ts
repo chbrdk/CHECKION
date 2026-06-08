@@ -397,6 +397,8 @@ export interface ProjectReportBundle {
     narrative: ProjectReportNarrative | null;
     /** Populated for full/comprehensive variants */
     deep: ProjectReportDeepAnalysis | null;
+    /** AUDION personas aligned with CHECKION metrics (comprehensive, when linked) */
+    audience: AudienceReportOverlay | null;
     provenance: ProvenanceEntry[];
     freshness: FreshnessMeta;
     /** Deep links for appendix (paths only — resolve with origin in client). */
@@ -411,4 +413,67 @@ export interface ProjectReportBundle {
 export interface CollectProjectReportOptions {
     locale: ProjectReportLocale;
     variant: ProjectReportVariant;
+}
+
+export type AudienceFitLevel = 'strong' | 'mixed' | 'weak' | 'unknown';
+
+export interface AudiencePillarFit {
+    pillar: 'wcag' | 'seo' | 'geo' | 'rankings' | 'performance' | 'topics';
+    level: AudienceFitLevel;
+    score: number | null;
+}
+
+export interface AudienceInsightFact {
+    id: string;
+    kind: 'gap' | 'content' | 'geo' | 'journey' | 'summary';
+    title: string;
+    description: string;
+    evidenceId: string;
+}
+
+export interface GeoQuestionPersonaMatchFact {
+    queryText: string;
+    latestPosition: number | null;
+    relevance: number;
+}
+
+export interface AudiencePersonaUxJourneyFact {
+    task: string | null;
+    success: boolean | null;
+    stepsCount: number | null;
+    createdAt: string | null;
+}
+
+export interface AudiencePersonaFitFact {
+    personaId: string;
+    personaName: string;
+    targetGroupId: string | null;
+    targetGroupName: string | null;
+    headline: string;
+    painPoints: string[];
+    goals: string[];
+    pillars: AudiencePillarFit[];
+    overallFit: AudienceFitLevel;
+    insights: AudienceInsightFact[];
+    geoQuestionMatches: GeoQuestionPersonaMatchFact[];
+    latestUxJourney: AudiencePersonaUxJourneyFact | null;
+    evidenceId: string;
+}
+
+export interface AudienceTargetGroupFact {
+    id: string;
+    name: string;
+    segment: string;
+    description: string | null;
+    personaCount: number;
+}
+
+export interface AudienceReportOverlay {
+    available: boolean;
+    reason?: string;
+    audionProjectId: string | null;
+    audionProjectName: string | null;
+    targetGroups: AudienceTargetGroupFact[];
+    personas: AudiencePersonaFitFact[];
+    summaryInsights: string[];
 }

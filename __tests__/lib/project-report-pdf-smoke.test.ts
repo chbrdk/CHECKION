@@ -68,6 +68,7 @@ const minimalBundle: ProjectReportBundle = {
         synthesisAvailable: false,
     },
     deep: null,
+    audience: null,
     provenance: [],
     freshness: { sources: [] },
     links: {

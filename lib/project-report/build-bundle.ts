@@ -4,6 +4,7 @@
 
 import { collectProjectReportFacts } from '@/lib/project-report/collector';
 import { collectDeepProjectReportData } from '@/lib/project-report/collector-deep';
+import { collectAudienceReportOverlay } from '@/lib/project-report/collector-audience';
 import { buildChartSpecs } from '@/lib/project-report/chart-specs';
 import { synthesizeProjectReportNarrative } from '@/lib/project-report/agent-pipeline';
 import { synthesizeComprehensiveReport } from '@/lib/project-report/multi-agent-pipeline';
@@ -44,6 +45,7 @@ export async function buildProjectReportBundle(
     });
 
     let deep = null;
+    let audience = null;
     if (isDeepVariant(options.variant)) {
         await reportProgress('collecting_deep');
         deep = await collectDeepProjectReportData(facts, viewerUserId, projectId);
@@ -54,6 +56,17 @@ export async function buildProjectReportBundle(
                 keyword: k.keyword,
                 points: k.points,
             }));
+        }
+        if (options.variant === 'comprehensive') {
+            audience = await collectAudienceReportOverlay(projectId, { ...facts, deep }, options.locale);
+            if (audience.available) {
+                facts.provenance.push({
+                    evidenceId: 'ev-audience-overlay',
+                    source: 'audion',
+                    label: 'AUDION audience overlay',
+                    value: audience.audionProjectName,
+                });
+            }
         }
     }
 
@@ -97,6 +110,7 @@ export async function buildProjectReportBundle(
         visuals,
         narrative,
         deep,
+        audience,
     };
 }
 

@@ -21,6 +21,7 @@ import {
 } from '@/components/pdf/shared/PdfLayout';
 import { PdfScoreCardsFromSpec, PdfVisualSpec } from '@/components/pdf/charts/PdfChartComponents';
 import { buildDeepReportPages } from '@/components/pdf/ProjectReportDeepSections';
+import { buildAudienceReportPages } from '@/components/pdf/ProjectReportAudienceSections';
 import type { VisualSpec } from '@/lib/project-report/chart-specs';
 
 interface ProjectReportDocumentProps {
@@ -58,6 +59,13 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
               rankTrend: rankTrend as VisualSpec | undefined,
           })
         : [];
+    const audiencePages =
+        bundle.audience?.available && bundle.audience.personas.length > 0
+            ? buildAudienceReportPages(bundle.audience, labels)
+            : [];
+    const hasAudience = audiencePages.length > 0;
+    const actionsChapter = hasAudience ? '07' : '06';
+    const deepChapter = hasAudience ? (deepPages.length > 0 ? '08' : null) : deepPages.length > 0 ? '07' : null;
 
     const pages: React.ReactElement[] = [];
 
@@ -374,11 +382,25 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
         </PdfContentPage>
     );
 
-    // 06 Actions
+    // 06 Audience (AUDION overlay, comprehensive only)
+    if (hasAudience) {
+        pages.push(
+            <PdfChapterIntroPage
+                key="ch-intro-audience"
+                chapterNumber="06"
+                title={labels.audienceReality}
+                subtitle={labels.chapterIntros.audience}
+                chapter="ux"
+            />
+        );
+        pages.push(...audiencePages);
+    }
+
+    // Actions
     pages.push(
         <PdfChapterIntroPage
             key="ch-intro-actions"
-            chapterNumber="06"
+            chapterNumber={actionsChapter}
             title={labels.actionPlan}
             subtitle={labels.chapterIntros.actions}
             chapter="summary"
@@ -411,12 +433,12 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
         </PdfContentPage>
     );
 
-    // 07+ Deep dive (comprehensive)
-    if (deepPages.length > 0) {
+    // Deep dive (comprehensive)
+    if (deepPages.length > 0 && deepChapter) {
         pages.push(
             <PdfChapterIntroPage
                 key="ch-intro-deep"
-                chapterNumber="07"
+                chapterNumber={deepChapter}
                 title={labels.metricsOverview}
                 subtitle={labels.chapterIntros.deepDive}
                 chapter="visual"

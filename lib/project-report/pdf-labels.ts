@@ -65,12 +65,33 @@ export interface ProjectReportPdfLabels {
         stable: string;
         unknown: string;
     };
+    audienceReality: string;
+    audienceTargetGroups: string;
+    audiencePersonas: string;
+    audienceStrongFit: string;
+    audienceWeakFit: string;
+    audiencePainPoints: string;
+    audiencePillar: string;
+    audienceFit: string;
+    audienceScore: string;
+    audiencePillarRankings: string;
+    audiencePillarPerformance: string;
+    audiencePillarTopics: string;
+    audienceGeoMatches: string;
+    audienceMorePersonas: string;
+    audienceFitLabels: {
+        strong: string;
+        mixed: string;
+        weak: string;
+        unknown: string;
+    };
     chapterIntros: {
         executive: string;
         siteQuality: string;
         seo: string;
         geo: string;
         topics: string;
+        audience: string;
         actions: string;
         deepDive: string;
         appendix: string;
@@ -139,12 +160,33 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
             stable: 'stabil',
             unknown: 'unbekannt',
         },
+        audienceReality: 'Zielgruppen & Personas (AUDION)',
+        audienceTargetGroups: 'Zielgruppen',
+        audiencePersonas: 'Personas',
+        audienceStrongFit: 'Starke Passung',
+        audienceWeakFit: 'Schwache Passung',
+        audiencePainPoints: 'Pain Points',
+        audiencePillar: 'Säule',
+        audienceFit: 'Passung',
+        audienceScore: 'Score',
+        audiencePillarRankings: 'Rankings',
+        audiencePillarPerformance: 'Performance',
+        audiencePillarTopics: 'Themen',
+        audienceGeoMatches: 'Relevante GEO-Fragen',
+        audienceMorePersonas: 'weitere Personas im AUDION-Projekt',
+        audienceFitLabels: {
+            strong: 'stark',
+            mixed: 'gemischt',
+            weak: 'schwach',
+            unknown: '–',
+        },
         chapterIntros: {
             executive: 'Lagebild, Risiken und strategische Einordnung auf Basis aller Projekt-Daten.',
             siteQuality: 'WCAG, Performance, Nachhaltigkeit und systemische Qualitätsissues.',
             seo: 'On-Page SEO, Keyword-Rankings und SERP-Trends.',
             geo: 'GEO-Score, E-E-A-T, AI-Sichtbarkeit und Empfehlungen.',
             topics: 'Seitenthemen und Deep-Scan-Vergleich mit Wettbewerbern.',
+            audience: 'AUDION-Personas abgeglichen mit CHECKION-Site-Metriken — wer findet was?',
             actions: 'Priorisierte Maßnahmen und UX-Journey-Erkenntnisse.',
             deepDive: 'Einzelmetriken, Benchmarks und KI-Tiefenanalysen.',
             appendix: 'Datenquellen, Links und technischer Anhang.',
@@ -211,12 +253,33 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
             stable: 'stable',
             unknown: 'unknown',
         },
+        audienceReality: 'Audiences & Personas (AUDION)',
+        audienceTargetGroups: 'Target groups',
+        audiencePersonas: 'Personas',
+        audienceStrongFit: 'Strong fit',
+        audienceWeakFit: 'Weak fit',
+        audiencePainPoints: 'Pain points',
+        audiencePillar: 'Pillar',
+        audienceFit: 'Fit',
+        audienceScore: 'Score',
+        audiencePillarRankings: 'Rankings',
+        audiencePillarPerformance: 'Performance',
+        audiencePillarTopics: 'Topics',
+        audienceGeoMatches: 'Relevant GEO questions',
+        audienceMorePersonas: 'more personas in AUDION project',
+        audienceFitLabels: {
+            strong: 'strong',
+            mixed: 'mixed',
+            weak: 'weak',
+            unknown: '–',
+        },
         chapterIntros: {
             executive: 'Executive overview, risks, and strategic context across all project data.',
             siteQuality: 'WCAG, performance, sustainability, and systemic quality issues.',
             seo: 'On-page SEO, keyword rankings, and SERP trends.',
             geo: 'GEO score, E-E-A-T, AI visibility, and recommendations.',
             topics: 'Page topics and deep-scan competitor comparison.',
+            audience: 'AUDION personas aligned with CHECKION site metrics — who finds what?',
             actions: 'Prioritized actions and UX journey insights.',
             deepDive: 'Individual metrics, benchmarks, and AI deep-dive analyses.',
             appendix: 'Data sources, links, and technical appendix.',
