@@ -4,7 +4,9 @@
 
 import { collectProjectReportFacts } from '@/lib/project-report/collector';
 import { collectDeepProjectReportData } from '@/lib/project-report/collector-deep';
-import { collectAudienceReportOverlay } from '@/lib/project-report/collector-audience';
+import { collectAudienceReportData } from '@/lib/project-report/collector-audience';
+import { enrichAudienceOverlayWithPersonaAgents } from '@/lib/project-report/persona-audience-agent';
+import type { AudionPersonaFact } from '@/lib/integrations/audion-audience-client';
 import { buildChartSpecs } from '@/lib/project-report/chart-specs';
 import { synthesizeProjectReportNarrative } from '@/lib/project-report/agent-pipeline';
 import { synthesizeComprehensiveReport } from '@/lib/project-report/multi-agent-pipeline';
@@ -46,6 +48,7 @@ export async function buildProjectReportBundle(
 
     let deep = null;
     let audience = null;
+    let audienceSourcePersonas: AudionPersonaFact[] = [];
     if (isDeepVariant(options.variant)) {
         await reportProgress('collecting_deep');
         deep = await collectDeepProjectReportData(facts, viewerUserId, projectId);
@@ -57,21 +60,26 @@ export async function buildProjectReportBundle(
                 points: k.points,
             }));
         }
-        if (options.variant === 'comprehensive') {
-            audience = await collectAudienceReportOverlay(projectId, { ...facts, deep }, options.locale);
-            if (audience.available) {
-                facts.provenance.push({
-                    evidenceId: 'ev-audience-overlay',
-                    source: 'audion',
-                    label: 'AUDION audience overlay',
-                    value: audience.audionProjectName,
-                });
-            }
-        }
     }
 
     let narrative;
     if (options.variant === 'comprehensive' && deep) {
+        const audienceData = await collectAudienceReportData(
+            projectId,
+            { ...facts, deep },
+            options.locale
+        );
+        audience = audienceData.overlay;
+        audienceSourcePersonas = audienceData.sourcePersonas;
+        if (audience.available) {
+            facts.provenance.push({
+                evidenceId: 'ev-audience-overlay',
+                source: 'audion',
+                label: 'AUDION audience overlay',
+                value: audience.audionProjectName,
+            });
+        }
+
         const result = await synthesizeComprehensiveReport(facts, deep, {
             userId: options.userId,
             projectId: options.projectId,
@@ -82,6 +90,24 @@ export async function buildProjectReportBundle(
         });
         narrative = result.narrative;
         deep = result.deep;
+
+        if (audience.available && audienceSourcePersonas.length > 0) {
+            audience = await enrichAudienceOverlayWithPersonaAgents(
+                audience,
+                facts,
+                deep,
+                narrative.sections,
+                {
+                    locale: options.locale,
+                    skipLlm: options.skipLlm,
+                    userId: options.userId,
+                    projectId: options.projectId,
+                    runId: options.runId,
+                    onProgress: options.onProgress,
+                    audionPersonas: audienceSourcePersonas,
+                }
+            );
+        }
     } else {
         narrative = await synthesizeProjectReportNarrative(facts, {
             userId: options.userId,

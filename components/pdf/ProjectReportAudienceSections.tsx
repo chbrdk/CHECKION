@@ -29,21 +29,26 @@ function PillarRow({
     pillar,
     level,
     score,
+    note,
     labels,
 }: {
     pillar: string;
     level: AudienceFitLevel;
     score: number | null;
+    note?: string | null;
     labels: ProjectReportPdfLabels;
 }) {
     return (
         <View style={pdfStyles.geoQuestionTableRow}>
-            <Text style={[pdfStyles.geoQuestionCell, { width: '28%' }]}>{pillar}</Text>
-            <Text style={[pdfStyles.geoQuestionCell, { width: '22%', color: fitColor(level), fontWeight: 'bold' }]}>
+            <Text style={[pdfStyles.geoQuestionCell, { width: '22%' }]}>{pillar}</Text>
+            <Text style={[pdfStyles.geoQuestionCell, { width: '18%', color: fitColor(level), fontWeight: 'bold' }]}>
                 {fitLabel(level, labels)}
             </Text>
-            <Text style={[pdfStyles.geoQuestionCell, { width: '18%' }]}>
+            <Text style={[pdfStyles.geoQuestionCell, { width: '12%' }]}>
                 {score != null ? String(score) : '–'}
+            </Text>
+            <Text style={[pdfStyles.geoQuestionCell, { width: '48%', fontSize: 7 }]}>
+                {note?.trim() ? note : '–'}
             </Text>
         </View>
     );
@@ -79,6 +84,12 @@ function PersonaAudienceCard({
                 </Text>
             </View>
 
+            {persona.personaPerspective ? (
+                <Text style={[pdfStyles.metaText, { fontSize: 7, marginBottom: 4, fontStyle: 'italic' }]}>
+                    {labels.audiencePersonaPerspective}: {persona.personaPerspective}
+                </Text>
+            ) : null}
+
             {persona.painPoints.length > 0 ? (
                 <Text style={[pdfStyles.metaText, { fontSize: 7, marginBottom: 3 }]}>
                     {labels.audiencePainPoints}: {persona.painPoints.slice(0, 3).join(' · ')}
@@ -87,14 +98,17 @@ function PersonaAudienceCard({
 
             <View style={[pdfStyles.geoQuestionTablePanel, { marginTop: 3 }]}>
                 <View style={pdfStyles.geoQuestionTableHeader}>
-                    <Text style={[pdfStyles.geoQuestionTableHeaderCell, { width: '28%' }]}>
+                    <Text style={[pdfStyles.geoQuestionTableHeaderCell, { width: '22%' }]}>
                         {labels.audiencePillar}
                     </Text>
-                    <Text style={[pdfStyles.geoQuestionTableHeaderCell, { width: '22%' }]}>
+                    <Text style={[pdfStyles.geoQuestionTableHeaderCell, { width: '18%' }]}>
                         {labels.audienceFit}
                     </Text>
-                    <Text style={[pdfStyles.geoQuestionTableHeaderCell, { width: '18%' }]}>
+                    <Text style={[pdfStyles.geoQuestionTableHeaderCell, { width: '12%' }]}>
                         {labels.audienceScore}
+                    </Text>
+                    <Text style={[pdfStyles.geoQuestionTableHeaderCell, { width: '48%' }]}>
+                        {labels.audiencePillarNote}
                     </Text>
                 </View>
                 {persona.pillars.map((p) => (
@@ -103,10 +117,32 @@ function PersonaAudienceCard({
                         pillar={pillarLabels[p.pillar] ?? p.pillar}
                         level={p.level}
                         score={p.score}
+                        note={p.note}
                         labels={labels}
                     />
                 ))}
             </View>
+
+            {persona.subScores && persona.subScores.length > 0 ? (
+                <View style={[pdfStyles.geoQuestionTablePanel, { marginTop: 4 }]}>
+                    <Text style={pdfStyles.geoQuestionSectionLabel}>{labels.audienceSubScores}</Text>
+                    {persona.subScores.map((s) => (
+                        <View key={s.id} style={pdfStyles.geoQuestionTableRow}>
+                            <Text style={[pdfStyles.geoQuestionCell, { width: '28%' }]}>{s.label}</Text>
+                            <Text
+                                style={[
+                                    pdfStyles.geoQuestionCell,
+                                    { width: '14%', color: fitColor(s.level), fontWeight: 'bold' },
+                                ]}
+                            >
+                                {fitLabel(s.level, labels)}
+                            </Text>
+                            <Text style={[pdfStyles.geoQuestionCell, { width: '10%' }]}>{s.score}</Text>
+                            <Text style={[pdfStyles.geoQuestionCell, { width: '48%', fontSize: 7 }]}>{s.note}</Text>
+                        </View>
+                    ))}
+                </View>
+            ) : null}
 
             {persona.geoQuestionMatches.length > 0 ? (
                 <View style={[pdfStyles.geoQuestionTablePanel, { marginTop: 4 }]}>

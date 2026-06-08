@@ -11,6 +11,7 @@ const AGENT_STAGES: ReportProgressStage[] = [
     'agent_competitive',
     'agent_journey',
     'agent_synthesizer',
+    'agent_persona_audience',
 ];
 
 /** LLM agent steps can sit on one % for several minutes — expected, not a crash. */

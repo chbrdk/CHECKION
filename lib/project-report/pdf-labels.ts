@@ -81,6 +81,9 @@ export interface ProjectReportPdfLabels {
     audiencePillarTopics: string;
     audienceGeoMatches: string;
     audienceMorePersonas: string;
+    audiencePersonaPerspective: string;
+    audienceSubScores: string;
+    audiencePillarNote: string;
     audienceFitLabels: {
         strong: string;
         mixed: string;
@@ -178,6 +181,9 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         audiencePillarTopics: 'Themen',
         audienceGeoMatches: 'Relevante GEO-Fragen',
         audienceMorePersonas: 'weitere Personas im AUDION-Projekt',
+        audiencePersonaPerspective: 'Persona-Sicht',
+        audienceSubScores: 'Detail-Scores (Persona-Sicht)',
+        audiencePillarNote: 'Hinweis',
         audienceFitLabels: {
             strong: 'stark',
             mixed: 'gemischt',
@@ -190,7 +196,7 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
             seo: 'On-Page SEO, Keyword-Rankings und SERP-Trends.',
             geo: 'GEO-Score, E-E-A-T, AI-Sichtbarkeit und Empfehlungen.',
             topics: 'Seitenthemen und Deep-Scan-Vergleich mit Wettbewerbern.',
-            audience: 'AUDION-Personas abgeglichen mit CHECKION-Site-Metriken — wer findet was?',
+            audience: 'AUDION-Personas: KI bewertet Scans aus Persona-Sicht — vergleichbare Säulen, individuelle Insights.',
             actions: 'Priorisierte Maßnahmen und UX-Journey-Erkenntnisse.',
             deepDive: 'Einzelmetriken, Benchmarks und KI-Tiefenanalysen.',
             appendix: 'Datenquellen, Links und technischer Anhang.',
@@ -273,6 +279,9 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         audiencePillarTopics: 'Topics',
         audienceGeoMatches: 'Relevant GEO questions',
         audienceMorePersonas: 'more personas in AUDION project',
+        audiencePersonaPerspective: 'Persona perspective',
+        audienceSubScores: 'Detail scores (persona view)',
+        audiencePillarNote: 'Note',
         audienceFitLabels: {
             strong: 'strong',
             mixed: 'mixed',
@@ -285,7 +294,7 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
             seo: 'On-page SEO, keyword rankings, and SERP trends.',
             geo: 'GEO score, E-E-A-T, AI visibility, and recommendations.',
             topics: 'Page topics and deep-scan competitor comparison.',
-            audience: 'AUDION personas aligned with CHECKION site metrics — who finds what?',
+            audience: 'AUDION personas: AI evaluates scans from each persona view — comparable pillars, unique insights.',
             actions: 'Prioritized actions and UX journey insights.',
             deepDive: 'Individual metrics, benchmarks, and AI deep-dive analyses.',
             appendix: 'Data sources, links, and technical appendix.',

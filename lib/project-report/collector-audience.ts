@@ -4,6 +4,7 @@
 
 import { getProjectPlatformIds } from '@/lib/db/projects';
 import { fetchAudionAudienceReport } from '@/lib/integrations/audion-audience-client';
+import type { AudionPersonaFact } from '@/lib/integrations/audion-audience-client';
 import {
     buildAudienceReportOverlay,
     unavailableAudienceOverlay,
@@ -15,13 +16,21 @@ import type {
     ProjectReportLocale,
 } from '@/lib/project-report/types';
 
-export async function collectAudienceReportOverlay(
+export interface AudienceCollectionResult {
+    overlay: AudienceReportOverlay;
+    sourcePersonas: AudionPersonaFact[];
+}
+
+export async function collectAudienceReportData(
     projectId: string,
     facts: Omit<ProjectReportBundle, 'visuals' | 'narrative' | 'audience'>,
     locale: ProjectReportLocale
-): Promise<AudienceReportOverlay> {
+): Promise<AudienceCollectionResult> {
     if (!getAudionApiBaseUrl() || !getAudionServiceToken()) {
-        return unavailableAudienceOverlay('audion_not_configured');
+        return {
+            overlay: unavailableAudienceOverlay('audion_not_configured'),
+            sourcePersonas: [],
+        };
     }
 
     const platform = await getProjectPlatformIds(projectId);
@@ -29,8 +38,24 @@ export async function collectAudienceReportOverlay(
         platformProjectId: platform?.platformProjectId,
     });
     if (!audion.available) {
-        return unavailableAudienceOverlay(audion.reason ?? 'no_audion_link');
+        return {
+            overlay: unavailableAudienceOverlay(audion.reason ?? 'no_audion_link'),
+            sourcePersonas: [],
+        };
     }
 
-    return buildAudienceReportOverlay(audion, facts, locale);
+    return {
+        overlay: buildAudienceReportOverlay(audion, facts, locale),
+        sourcePersonas: audion.personas ?? [],
+    };
+}
+
+/** @deprecated Use collectAudienceReportData — returns overlay only. */
+export async function collectAudienceReportOverlay(
+    projectId: string,
+    facts: Omit<ProjectReportBundle, 'visuals' | 'narrative' | 'audience'>,
+    locale: ProjectReportLocale
+): Promise<AudienceReportOverlay> {
+    const { overlay } = await collectAudienceReportData(projectId, facts, locale);
+    return overlay;
 }

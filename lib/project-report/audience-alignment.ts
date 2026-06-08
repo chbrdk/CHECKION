@@ -404,6 +404,7 @@ function buildPersonaFit(
               }
             : null,
         evidenceId: `ev-audience-${persona.id}`,
+        evaluationSource: 'deterministic',
     };
 }
 

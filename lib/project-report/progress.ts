@@ -12,6 +12,7 @@ export type ReportProgressStage =
     | 'agent_competitive'
     | 'agent_journey'
     | 'agent_synthesizer'
+    | 'agent_persona_audience'
     | 'building_charts'
     | 'complete'
     | 'error';
@@ -32,7 +33,8 @@ export const REPORT_STAGE_PERCENT: Record<ReportProgressStage, number> = {
     agent_geo: 54,
     agent_competitive: 66,
     agent_journey: 74,
-    agent_synthesizer: 86,
+    agent_synthesizer: 84,
+    agent_persona_audience: 90,
     building_charts: 94,
     complete: 100,
     error: 0,
@@ -65,6 +67,7 @@ export const STAGE_LABELS: Record<
     agent_competitive: { de: 'Agent: Wettbewerb', en: 'Agent: Competitive landscape' },
     agent_journey: { de: 'Agent: UX Journey', en: 'Agent: UX journey' },
     agent_synthesizer: { de: 'Agent: Executive Summary', en: 'Agent: Executive summary' },
+    agent_persona_audience: { de: 'Agent: Persona-Sicht', en: 'Agent: Persona perspective' },
     building_charts: { de: 'Visualisierungen erstellen', en: 'Building visualizations' },
     complete: { de: 'Fertig', en: 'Complete' },
     error: { de: 'Fehler', en: 'Error' },

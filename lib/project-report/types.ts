@@ -421,11 +421,21 @@ export interface AudiencePillarFit {
     pillar: 'wcag' | 'seo' | 'geo' | 'rankings' | 'performance' | 'topics';
     level: AudienceFitLevel;
     score: number | null;
+    /** Persona-specific one-liner (agent evaluation). */
+    note?: string | null;
+}
+
+export interface AudienceSubScoreFact {
+    id: string;
+    label: string;
+    score: number;
+    level: AudienceFitLevel;
+    note: string;
 }
 
 export interface AudienceInsightFact {
     id: string;
-    kind: 'gap' | 'content' | 'geo' | 'journey' | 'summary';
+    kind: 'gap' | 'content' | 'geo' | 'journey' | 'summary' | 'persona_voice' | 'win';
     title: string;
     description: string;
     evidenceId: string;
@@ -458,6 +468,9 @@ export interface AudiencePersonaFitFact {
     geoQuestionMatches: GeoQuestionPersonaMatchFact[];
     latestUxJourney: AudiencePersonaUxJourneyFact | null;
     evidenceId: string;
+    evaluationSource?: 'deterministic' | 'agent';
+    personaPerspective?: string | null;
+    subScores?: AudienceSubScoreFact[];
 }
 
 export interface AudienceTargetGroupFact {
