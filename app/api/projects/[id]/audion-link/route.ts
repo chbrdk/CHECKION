@@ -14,7 +14,7 @@ import {
     linkCheckionProjectToAudion,
     listAudionProjectsForLink,
 } from '@/lib/integrations/audion-link-client';
-import { getAudionApiBaseUrl, getAudionServiceToken } from '@/lib/paths/audion-api';
+import { getAudionIntegrationEnvSnapshot } from '@/lib/paths/audion-api';
 
 const linkBodySchema = z.object({
     audionProjectId: z.string().uuid(),
@@ -31,14 +31,16 @@ export async function GET(
     const project = await getProject(projectId, user.id);
     if (!project) return apiError('Project not found', API_STATUS.NOT_FOUND);
 
-    const configured = Boolean(getAudionApiBaseUrl() && getAudionServiceToken());
-    if (!configured) {
+    const audionEnv = getAudionIntegrationEnvSnapshot();
+    if (!audionEnv.configured) {
         return NextResponse.json({
             success: true,
             data: {
                 configured: false,
                 linked: false,
                 reason: 'audion_not_configured',
+                configMissing: audionEnv.missing,
+                wrongTokenOnCheckion: audionEnv.checkionInboundTokenSet,
                 platformProjectId: null,
                 audionProjectId: null,
                 audionProjectName: null,
@@ -83,7 +85,7 @@ export async function PUT(
     const project = await getProject(projectId, user.id);
     if (!project) return apiError('Project not found', API_STATUS.NOT_FOUND);
 
-    if (!getAudionApiBaseUrl() || !getAudionServiceToken()) {
+    if (!getAudionIntegrationEnvSnapshot().configured) {
         return apiError('AUDION integration not configured', API_STATUS.UNAVAILABLE);
     }
 

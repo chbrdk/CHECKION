@@ -12,5 +12,11 @@ describe('GET /api/health', () => {
     const json = await res.json();
     expect(json.status).toBe('ok');
     expect(json.federationContractVersion).toBe('2026-05-plexon-federation-v3');
+    expect(json.integrations?.audion).toMatchObject({
+      apiBaseUrlSet: expect.any(Boolean),
+      serviceTokenSet: expect.any(Boolean),
+      configured: expect.any(Boolean),
+      missing: expect.any(Array),
+    });
   });
 });

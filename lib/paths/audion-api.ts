@@ -12,6 +12,27 @@ export function getAudionServiceToken(): string | null {
     return token || null;
 }
 
+/** Booleans only — safe for /api/health (no secrets). */
+export function getAudionIntegrationEnvSnapshot() {
+    const apiBaseUrlSet = Boolean((process.env.AUDION_API_BASE_URL ?? '').trim());
+    const serviceTokenSet = Boolean((process.env.AUDION_SERVICE_TOKEN ?? '').trim());
+    const missing: Array<'AUDION_API_BASE_URL' | 'AUDION_SERVICE_TOKEN'> = [];
+    if (!apiBaseUrlSet) missing.push('AUDION_API_BASE_URL');
+    if (!serviceTokenSet) missing.push('AUDION_SERVICE_TOKEN');
+    return {
+        apiBaseUrlSet,
+        serviceTokenSet,
+        configured: apiBaseUrlSet && serviceTokenSet,
+        missing,
+        /** Hint when AUDION-side token name was set on CHECKION by mistake. */
+        checkionInboundTokenSet: Boolean((process.env.CHECKION_INBOUND_SERVICE_TOKEN ?? '').trim()),
+    };
+}
+
+export function isAudionIntegrationConfigured(): boolean {
+    return getAudionIntegrationEnvSnapshot().configured;
+}
+
 export function audionAudienceReportPath(checkionProjectId: string, platformProjectId?: string | null): string {
     const base = `/integrations/checkion/projects/${encodeURIComponent(checkionProjectId)}/audience-report`;
     const ppid = (platformProjectId ?? '').trim();

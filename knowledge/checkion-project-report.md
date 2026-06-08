@@ -85,7 +85,7 @@ Tabelle `project_report_runs` — Migrationen `0026` (Runs), `0027` (`progress` 
 
 | Env (CHECKION) | Env (AUDION) | Beschreibung |
 |----------------|--------------|--------------|
-| `AUDION_API_BASE_URL` | — | Persona-API origin (no trailing slash) |
+| `AUDION_API_BASE_URL` | — | AUDION web origin + `/api` (e.g. `https://audion.projects-a.plygrnd.tech/api`) — proxies to internal persona-api |
 | `AUDION_SERVICE_TOKEN` | `CHECKION_INBOUND_SERVICE_TOKEN` | Shared secret for server-to-server |
 | — | `checkion_project_id` on AUDION project **or** shared `platform_project_id` | Links AUDION ↔ CHECKION |
 | CHECKION UI | `components/projects/ProjectAudionLink.tsx` | Status + manual AUDION project picker |

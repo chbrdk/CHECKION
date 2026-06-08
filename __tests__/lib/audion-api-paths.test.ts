@@ -1,5 +1,9 @@
-import { describe, it, expect } from 'vitest';
-import { audionAudienceReportPath, audionAudienceReportUrl } from '@/lib/paths/audion-api';
+import { describe, it, expect, afterEach } from 'vitest';
+import {
+    audionAudienceReportPath,
+    audionAudienceReportUrl,
+    getAudionIntegrationEnvSnapshot,
+} from '@/lib/paths/audion-api';
 
 describe('audion-api paths', () => {
     it('builds audience report URL', () => {
@@ -15,5 +19,24 @@ describe('audion-api paths', () => {
             'https://audion.example.com/integrations/checkion/projects/p1/audience-report'
         );
         process.env.AUDION_API_BASE_URL = prev;
+    });
+
+    it('reports missing AUDION env vars', () => {
+        const prevBase = process.env.AUDION_API_BASE_URL;
+        const prevToken = process.env.AUDION_SERVICE_TOKEN;
+        const prevInbound = process.env.CHECKION_INBOUND_SERVICE_TOKEN;
+        delete process.env.AUDION_API_BASE_URL;
+        delete process.env.AUDION_SERVICE_TOKEN;
+        process.env.CHECKION_INBOUND_SERVICE_TOKEN = 'wrong-place';
+        expect(getAudionIntegrationEnvSnapshot()).toEqual({
+            apiBaseUrlSet: false,
+            serviceTokenSet: false,
+            configured: false,
+            missing: ['AUDION_API_BASE_URL', 'AUDION_SERVICE_TOKEN'],
+            checkionInboundTokenSet: true,
+        });
+        process.env.AUDION_API_BASE_URL = prevBase;
+        process.env.AUDION_SERVICE_TOKEN = prevToken;
+        process.env.CHECKION_INBOUND_SERVICE_TOKEN = prevInbound;
     });
 });

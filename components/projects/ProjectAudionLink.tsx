@@ -16,6 +16,8 @@ interface AudionLinkStatus {
     configured: boolean;
     linked: boolean;
     reason: string | null;
+    configMissing?: Array<'AUDION_API_BASE_URL' | 'AUDION_SERVICE_TOKEN'>;
+    wrongTokenOnCheckion?: boolean;
     resolvedVia: string | null;
     platformProjectId: string | null;
     audionProjectId: string | null;
@@ -118,7 +120,19 @@ export function ProjectAudionLink({ projectId }: { projectId: string }) {
 
             {!loading && status && !status.configured ? (
                 <Alert severity="warning" sx={{ mb: 1 }}>
-                    {t('projectAudionLink.notConfigured')}
+                    {status.configMissing?.length
+                        ? t('projectAudionLink.notConfiguredDetail', {
+                              missing: status.configMissing.join(', '),
+                          })
+                        : t('projectAudionLink.notConfigured')}
+                    {status.wrongTokenOnCheckion ? (
+                        <Box component="span" sx={{ display: 'block', mt: 0.5 }}>
+                            {t('projectAudionLink.wrongTokenHint')}
+                        </Box>
+                    ) : null}
+                    <Box component="span" sx={{ display: 'block', mt: 0.5 }}>
+                        {t('projectAudionLink.redeployHint')}
+                    </Box>
                 </Alert>
             ) : null}
 

@@ -20,9 +20,15 @@
 Env:
 
 ```
-AUDION_API_BASE_URL=https://audion.example.com
+# Public AUDION web origin + /api (Next.js BFF proxy → internal persona-api)
+AUDION_API_BASE_URL=https://audion.projects-a.plygrnd.tech/api
 AUDION_SERVICE_TOKEN=<shared-secret>
 ```
+
+There is **no** separate `persona-api` hostname on plygrnd. Paths like
+`/integrations/checkion/...` are served at `{origin}/api/integrations/checkion/...`
+via `apps/web/app/api/integrations/checkion/[[...path]]/route.ts` (Bearer token forwarded).
+Do **not** use `/api/persona-backend` on this deployment — that path is not exposed.
 
 ## AUDION
 
