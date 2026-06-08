@@ -6,7 +6,7 @@ import type { AudienceFitLevel, AudienceReportOverlay } from '@/lib/project-repo
 import type { ProjectReportPdfLabels } from '@/lib/project-report/pdf-labels';
 import { pdfColors, pdfStyles } from '@/components/pdf/shared/pdf-styles';
 import { PdfSectionHeader } from '@/components/pdf/shared/PdfPrimitives';
-import { PdfContentPage, PdfLeadText, PdfStatGrid } from '@/components/pdf/shared/PdfLayout';
+import { PdfContentPage, PdfLeadText, PdfStatGrid, contentSideForIndex } from '@/components/pdf/shared/PdfLayout';
 
 function fitLabel(level: AudienceFitLevel, labels: ProjectReportPdfLabels): string {
     return labels.audienceFitLabels[level];
@@ -172,13 +172,14 @@ function PersonaAudienceCard({
 
 export function buildAudienceReportPages(
     audience: AudienceReportOverlay,
-    labels: ProjectReportPdfLabels
+    labels: ProjectReportPdfLabels,
+    startPageIndex: number
 ): React.ReactElement[] {
     if (!audience.available || audience.personas.length === 0) return [];
 
-    const pages: React.ReactElement[] = [];
-    pages.push(
-        <PdfContentPage key="audience">
+    const side = contentSideForIndex(startPageIndex);
+    return [
+        <PdfContentPage key="audience" side={side}>
             <PdfSectionHeader title={labels.audienceReality} chapter="ux" />
             {audience.audionProjectName ? (
                 <Text style={[pdfStyles.metaText, { marginBottom: 6 }]}>
@@ -216,7 +217,6 @@ export function buildAudienceReportPages(
                     + {audience.personas.length - 8} {labels.audienceMorePersonas}
                 </Text>
             ) : null}
-        </PdfContentPage>
-    );
-    return pages;
+        </PdfContentPage>,
+    ];
 }

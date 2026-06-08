@@ -4,9 +4,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Box, Dialog, DialogContent, DialogTitle, LinearProgress, MenuItem, TextField } from '@mui/material';
 import { MsqdxButton, MsqdxTypography, MsqdxMoleculeCard } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
-import { apiProjectReport, apiProjectReportRun } from '@/lib/constants';
+import { apiProjectReport, apiProjectReportRun, apiProjectReportLatest } from '@/lib/constants';
 import type { ProjectReportBundle, ProjectReportVariant } from '@/lib/project-report/types';
 import type { ReportProgress } from '@/lib/project-report/progress';
+import { downloadProjectReportPdf } from '@/lib/project-report/export-project-report-pdf';
 import {
     formatProgressDuration,
     isAgentProgressStage,
@@ -15,6 +16,13 @@ import {
 } from '@/lib/project-report/progress-ui';
 
 type ReportStatus = 'idle' | 'queued' | 'running' | 'complete' | 'error';
+
+interface StoredReportMeta {
+    id: string;
+    completedAt: string | null;
+    variant: string;
+    bundle: ProjectReportBundle;
+}
 
 export function ProjectReportExport({ projectId }: { projectId: string }) {
     const { t, locale } = useI18n();
@@ -25,6 +33,8 @@ export function ProjectReportExport({ projectId }: { projectId: string }) {
     const [pdfExporting, setPdfExporting] = useState(false);
     const [variant, setVariant] = useState<ProjectReportVariant>('executive');
     const [progress, setProgress] = useState<ReportProgress | null>(null);
+    const [storedReport, setStoredReport] = useState<StoredReportMeta | null>(null);
+    const [storedLoading, setStoredLoading] = useState(true);
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const runIdRef = useRef<string | null>(null);
     const [nowMs, setNowMs] = useState(() => Date.now());
@@ -37,6 +47,26 @@ export function ProjectReportExport({ projectId }: { projectId: string }) {
     }, []);
 
     useEffect(() => () => stopPolling(), [stopPolling]);
+
+    const loadStoredReport = useCallback(async () => {
+        if (!projectId) return;
+        setStoredLoading(true);
+        try {
+            const res = await fetch(apiProjectReportLatest(projectId));
+            const json = await res.json();
+            if (json.success && json.data?.bundle) {
+                setStoredReport(json.data as StoredReportMeta);
+            } else {
+                setStoredReport(null);
+            }
+        } finally {
+            setStoredLoading(false);
+        }
+    }, [projectId]);
+
+    useEffect(() => {
+        void loadStoredReport();
+    }, [loadStoredReport]);
 
     const isLoading = status === 'queued' || status === 'running';
     const stepSeconds = secondsSinceProgressUpdate(progress, nowMs);
@@ -69,6 +99,7 @@ export function ProjectReportExport({ projectId }: { projectId: string }) {
                     if (data.status === 'complete') {
                         setBundle(data.bundle);
                         setPreviewOpen(true);
+                        void loadStoredReport();
                         stopPolling();
                     } else if (data.status === 'error') {
                         setError(data.error ?? 'Report generation failed');
@@ -81,7 +112,7 @@ export function ProjectReportExport({ projectId }: { projectId: string }) {
                 }
             }, 2000);
         },
-        [projectId, stopPolling]
+        [projectId, stopPolling, loadStoredReport]
     );
 
     const handleCreateReport = async () => {
@@ -113,22 +144,12 @@ export function ProjectReportExport({ projectId }: { projectId: string }) {
         }
     };
 
-    const handlePdfDownload = async () => {
-        if (!bundle) return;
+    const handlePdfDownload = async (sourceBundle?: ProjectReportBundle) => {
+        const target = sourceBundle ?? bundle;
+        if (!target) return;
         setPdfExporting(true);
         try {
-            const [{ pdf }, { ProjectReportDocument }] = await Promise.all([
-                import('@react-pdf/renderer'),
-                import('@/components/pdf/ProjectReportDocument'),
-            ]);
-            const blob = await pdf(<ProjectReportDocument bundle={bundle} />).toBlob();
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            const slug = bundle.project.name.replace(/[^a-z0-9]+/gi, '-').slice(0, 40);
-            a.href = url;
-            a.download = `checkion-project-report-${slug}-${new Date().toISOString().slice(0, 10)}.pdf`;
-            a.click();
-            URL.revokeObjectURL(url);
+            await downloadProjectReportPdf(target);
         } catch (e) {
             console.error('[CHECKION] project report PDF export', e);
             setError(e instanceof Error ? e.message : 'PDF export failed');
@@ -222,6 +243,32 @@ export function ProjectReportExport({ projectId }: { projectId: string }) {
                 ) : null}
             </MsqdxMoleculeCard>
 
+            {!storedLoading && storedReport ? (
+                <MsqdxMoleculeCard sx={{ p: 2, mt: 2 }}>
+                    <MsqdxTypography variant="subtitle2" weight="semibold" sx={{ mb: 0.5 }}>
+                        {t('projectReport.reexportPdfTitle')}
+                    </MsqdxTypography>
+                    <MsqdxTypography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        {t('projectReport.reexportPdfDescription')}
+                    </MsqdxTypography>
+                    <MsqdxTypography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
+                        {t('projectReport.lastReportAt', {
+                            date: new Date(
+                                storedReport.completedAt ?? storedReport.bundle.generatedAt
+                            ).toLocaleString(),
+                        })}{' '}
+                        · {storedReport.variant}
+                    </MsqdxTypography>
+                    <MsqdxButton
+                        variant="outlined"
+                        loading={pdfExporting}
+                        onClick={() => void handlePdfDownload(storedReport.bundle)}
+                    >
+                        {pdfExporting ? t('projectReport.pdfExporting') : t('projectReport.reexportPdf')}
+                    </MsqdxButton>
+                </MsqdxMoleculeCard>
+            ) : null}
+
             <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="sm" fullWidth>
                 <DialogTitle>{t('projectReport.previewTitle')}</DialogTitle>
                 <DialogContent>
@@ -252,7 +299,7 @@ export function ProjectReportExport({ projectId }: { projectId: string }) {
                             </Box>
                             <MsqdxButton
                                 variant="contained"
-                                onClick={handlePdfDownload}
+                                onClick={() => void handlePdfDownload()}
                                 disabled={pdfExporting}
                             >
                                 {pdfExporting ? t('projectReport.pdfExporting') : t('projectReport.downloadPdf')}

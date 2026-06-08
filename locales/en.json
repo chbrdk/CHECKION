@@ -1382,6 +1382,11 @@
     "agentStillRunning": "AI agent still working — on comprehensive reports a single step can take 2–5 minutes. Progress only advances when the agent finishes.",
     "agentStepHint": "From ~30% onward several AI agents run in sequence (WCAG, SEO, GEO, competitive …). The percentage often stays the same for minutes per step — that is expected.",
     "stillPolling": "Connection active — status refreshes every 2 seconds.",
-    "comprehensiveDescription": "Deep analysis with individual metrics, multi-agent AI, and extended PDF (15+ min.)"
+    "comprehensiveDescription": "Deep analysis with individual metrics, multi-agent AI, and extended PDF (15+ min.)",
+    "reexportPdfTitle": "Re-render PDF (no AI)",
+    "reexportPdfDescription": "Uses the last saved report — no LLM, only the new print layout.",
+    "reexportPdf": "PDF in new layout",
+    "reexportPdfFromRun": "Re-export PDF",
+    "lastReportAt": "Last report: {date}"
   }
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Document, Page, View, Text } from '@react-pdf/renderer';
+import { Document, View, Text } from '@react-pdf/renderer';
 import type { ProjectReportBundle } from '@/lib/project-report/types';
 import { getProjectReportPdfLabels } from '@/lib/project-report/pdf-labels';
 import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
@@ -11,17 +11,20 @@ import {
     RiskAmpelPills,
 } from '@/components/pdf/shared/PdfPrimitives';
 import {
-    PdfChapterIntroPage,
+    PdfCoverPage,
     PdfContentPage,
     PdfStatGrid,
     PdfLeadText,
     applyReportFooters,
     isChapterIntroPage,
+    appendChapterSpread,
+    contentSideForIndex,
 } from '@/components/pdf/shared/PdfLayout';
 import { PdfScoreCardsFromSpec, PdfVisualSpec } from '@/components/pdf/charts/PdfChartComponents';
 import { buildDeepReportPages } from '@/components/pdf/ProjectReportDeepSections';
 import { buildAudienceReportPages } from '@/components/pdf/ProjectReportAudienceSections';
 import type { VisualSpec } from '@/lib/project-report/chart-specs';
+import type { PdfChapterKey } from '@/components/pdf/shared/pdf-styles';
 
 interface ProjectReportDocumentProps {
     bundle: ProjectReportBundle;
@@ -29,6 +32,20 @@ interface ProjectReportDocumentProps {
 
 function formatDate(iso: string, locale: 'de' | 'en'): string {
     return new Date(iso).toLocaleDateString(locale === 'de' ? 'de-DE' : 'en-US');
+}
+
+function pushContent(
+    pages: React.ReactElement[],
+    key: string,
+    children: React.ReactNode
+): React.ReactElement[] {
+    const side = contentSideForIndex(pages.length);
+    return [
+        ...pages,
+        <PdfContentPage key={key} side={side}>
+            {children}
+        </PdfContentPage>,
+    ];
 }
 
 export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
@@ -47,77 +64,67 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
     const competitorTopicOverlap = bundle.visuals.find((v) => v.kind === 'competitorTopicOverlap');
     const narrative = bundle.narrative;
     const isComprehensive = bundle.variant === 'comprehensive' || bundle.variant === 'full';
-    const deepPages = isComprehensive
-        ? buildDeepReportPages(bundle, labels, {
-              geoQuestionTrend: geoQuestionTrend as VisualSpec | undefined,
-              geoModelVisibility: geoModelVisibility as VisualSpec | undefined,
-              geoQuestionTrendSeries: geoQuestionTrendSeries as VisualSpec | undefined,
-              competitorRankingScores: competitorRankingScores as VisualSpec | undefined,
-              competitorSeoBarChart: competitorSeoBarChart as VisualSpec | undefined,
-              competitorTopicOverlap: competitorTopicOverlap as VisualSpec | undefined,
-              rankTrend: rankTrend as VisualSpec | undefined,
-          })
-        : [];
-    const audiencePages =
-        bundle.audience?.available && bundle.audience.personas.length > 0
-            ? buildAudienceReportPages(bundle.audience, labels)
-            : [];
-    const hasAudience = audiencePages.length > 0;
-    const actionsChapter = hasAudience ? '07' : '06';
-    const deepChapter = hasAudience ? (deepPages.length > 0 ? '08' : null) : deepPages.length > 0 ? '07' : null;
 
-    const pages: React.ReactElement[] = [];
+    let pages: React.ReactElement[] = [];
 
-    // Cover
+    const chapter = (props: {
+        chapterNumber: string;
+        title: string;
+        subtitle?: string;
+        chapter: PdfChapterKey;
+    }) => {
+        pages = appendChapterSpread(pages, { ...props, chapterPrefix: labels.chapterPrefix });
+    };
+
+    // Deckblatt
     pages.push(
-        <Page key="cover" size="A4" style={pdfStyles.page}>
-            <View style={pdfStyles.coverAccentBar} fixed />
-            <View style={{ flex: 1, justifyContent: 'center' }}>
-                <View style={pdfStyles.coverLogoWrap}>
-                    <MsqdxLogoPdf width={110} height={26} />
-                </View>
-                <Text style={pdfStyles.coverSubtitle}>
-                    {isComprehensive ? labels.comprehensiveSubtitle : labels.reportSubtitle}
-                </Text>
-                <Text style={pdfStyles.coverTitle}>{labels.reportTitle}</Text>
-                <View style={pdfStyles.coverUrlBox}>
-                    <Text style={pdfStyles.coverUrl}>{bundle.project.name}</Text>
-                </View>
-                <View style={pdfStyles.coverMeta}>
-                    {bundle.project.domain ? (
-                        <Text style={pdfStyles.coverMetaItem}>
-                            {labels.domain}: {bundle.project.domain}
-                        </Text>
-                    ) : null}
-                    {bundle.project.industry ? (
-                        <Text style={pdfStyles.coverMetaItem}>
-                            {labels.industry}: {bundle.project.industry}
-                        </Text>
-                    ) : null}
-                    <Text style={pdfStyles.coverMetaItem}>
-                        {labels.date}: {formatDate(bundle.generatedAt, bundle.locale)}
-                    </Text>
-                </View>
-                <PdfScoreCardsFromSpec spec={scoreCards?.kind === 'scoreCards' ? scoreCards : undefined} />
-                {bundle.project.valueProposition ? (
-                    <Text style={[pdfStyles.leadText, { marginTop: 16 }]}>{bundle.project.valueProposition}</Text>
-                ) : null}
+        <PdfCoverPage key="cover">
+            <View style={pdfStyles.coverLogoWrap}>
+                <Text style={pdfStyles.coverSubtitle}>CHECKION</Text>
             </View>
-        </Page>
+            <Text style={pdfStyles.coverSubtitle}>
+                {isComprehensive ? labels.comprehensiveSubtitle : labels.reportSubtitle}
+            </Text>
+            <Text style={pdfStyles.coverTitle}>{labels.reportTitle}</Text>
+            <View style={pdfStyles.coverUrlBox}>
+                <Text style={pdfStyles.coverUrl}>{bundle.project.name}</Text>
+            </View>
+            <View style={pdfStyles.coverMeta}>
+                {bundle.project.domain ? (
+                    <Text style={pdfStyles.coverMetaItem}>
+                        {labels.domain}: {bundle.project.domain}
+                    </Text>
+                ) : null}
+                {bundle.project.industry ? (
+                    <Text style={pdfStyles.coverMetaItem}>
+                        {labels.industry}: {bundle.project.industry}
+                    </Text>
+                ) : null}
+                <Text style={pdfStyles.coverMetaItem}>
+                    {labels.date}: {formatDate(bundle.generatedAt, bundle.locale)}
+                </Text>
+            </View>
+            <PdfScoreCardsFromSpec spec={scoreCards?.kind === 'scoreCards' ? scoreCards : undefined} />
+            {bundle.project.valueProposition ? (
+                <Text style={[pdfStyles.leadText, { marginTop: 16 }]}>{bundle.project.valueProposition}</Text>
+            ) : null}
+            <View style={{ marginTop: 24, alignItems: 'flex-end' }}>
+                <MsqdxLogoPdf width={100} height={24} />
+            </View>
+        </PdfCoverPage>
     );
 
     // 01 Executive
-    pages.push(
-        <PdfChapterIntroPage
-            key="ch-intro-executive"
-            chapterNumber="01"
-            title={labels.executiveSummary}
-            subtitle={labels.chapterIntros.executive}
-            chapter="summary"
-        />
-    );
-    pages.push(
-        <PdfContentPage key="executive">
+    chapter({
+        chapterNumber: '01',
+        title: labels.executiveSummary,
+        subtitle: labels.chapterIntros.executive,
+        chapter: 'summary',
+    });
+    pages = pushContent(
+        pages,
+        'executive',
+        <>
             <PdfSectionHeader title={labels.executiveSummary} chapter="summary" />
             {narrative?.riskAmpel ? (
                 <RiskAmpelPills ampel={narrative.riskAmpel} labels={labels.riskAmpel} />
@@ -139,21 +146,20 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
                     <PdfLeadText>{bundle.domain.llmSummary.summary}</PdfLeadText>
                 </View>
             ) : null}
-        </PdfContentPage>
+        </>
     );
 
     // 02 Site Quality
-    pages.push(
-        <PdfChapterIntroPage
-            key="ch-intro-quality"
-            chapterNumber="02"
-            title={labels.siteQuality}
-            subtitle={labels.chapterIntros.siteQuality}
-            chapter="issues"
-        />
-    );
-    pages.push(
-        <PdfContentPage key="quality">
+    chapter({
+        chapterNumber: '02',
+        title: labels.siteQuality,
+        subtitle: labels.chapterIntros.siteQuality,
+        chapter: 'issues',
+    });
+    pages = pushContent(
+        pages,
+        'quality',
+        <>
             <PdfSectionHeader title={labels.siteQuality} chapter="issues" />
             {bundle.domain ? (
                 <>
@@ -195,21 +201,20 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
             ) : (
                 <Text style={pdfStyles.metaText}>{labels.noData}</Text>
             )}
-        </PdfContentPage>
+        </>
     );
 
     // 03 SEO
-    pages.push(
-        <PdfChapterIntroPage
-            key="ch-intro-seo"
-            chapterNumber="03"
-            title={labels.seoRankings}
-            subtitle={labels.chapterIntros.seo}
-            chapter="seo"
-        />
-    );
-    pages.push(
-        <PdfContentPage key="seo">
+    chapter({
+        chapterNumber: '03',
+        title: labels.seoRankings,
+        subtitle: labels.chapterIntros.seo,
+        chapter: 'seo',
+    });
+    pages = pushContent(
+        pages,
+        'seo',
+        <>
             <PdfSectionHeader title={labels.seoRankings} chapter="seo" />
             {bundle.domain ? (
                 <PdfStatGrid
@@ -249,21 +254,20 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
                     <PdfVisualSpec spec={rankTrend} />
                 </>
             ) : null}
-        </PdfContentPage>
+        </>
     );
 
     // 04 GEO
-    pages.push(
-        <PdfChapterIntroPage
-            key="ch-intro-geo"
-            chapterNumber="04"
-            title={labels.geoEeat}
-            subtitle={labels.chapterIntros.geo}
-            chapter="geo"
-        />
-    );
-    pages.push(
-        <PdfContentPage key="geo">
+    chapter({
+        chapterNumber: '04',
+        title: labels.geoEeat,
+        subtitle: labels.chapterIntros.geo,
+        chapter: 'geo',
+    });
+    pages = pushContent(
+        pages,
+        'geo',
+        <>
             <PdfSectionHeader title={labels.geoEeat} chapter="geo" />
             {bundle.geo ? (
                 <>
@@ -338,21 +342,20 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
             ) : (
                 <Text style={pdfStyles.metaText}>{labels.noData}</Text>
             )}
-        </PdfContentPage>
+        </>
     );
 
     // 05 Topics & Competitors
-    pages.push(
-        <PdfChapterIntroPage
-            key="ch-intro-topics"
-            chapterNumber="05"
-            title={labels.contentTopics}
-            subtitle={labels.chapterIntros.topics}
-            chapter="structure"
-        />
-    );
-    pages.push(
-        <PdfContentPage key="topics">
+    chapter({
+        chapterNumber: '05',
+        title: labels.contentTopics,
+        subtitle: labels.chapterIntros.topics,
+        chapter: 'structure',
+    });
+    pages = pushContent(
+        pages,
+        'topics',
+        <>
             <PdfSectionHeader title={labels.contentTopics} chapter="structure" />
             {topicsChart ? (
                 <PdfVisualSpec spec={topicsChart} />
@@ -378,35 +381,42 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
             ) : (
                 <Text style={pdfStyles.metaText}>{labels.noData}</Text>
             )}
-        </PdfContentPage>
+        </>
     );
 
-    // 06 Audience (AUDION overlay, comprehensive only)
-    if (hasAudience) {
-        pages.push(
-            <PdfChapterIntroPage
-                key="ch-intro-audience"
-                chapterNumber="06"
-                title={labels.audienceReality}
-                subtitle={labels.chapterIntros.audience}
-                chapter="ux"
-            />
-        );
-        pages.push(...audiencePages);
+    const hasAudience =
+        bundle.audience?.available === true && (bundle.audience.personas.length ?? 0) > 0;
+    const actionsChapter = hasAudience ? '07' : '06';
+    const deepChapter = hasAudience
+        ? isComprehensive && bundle.deep
+            ? '08'
+            : null
+        : isComprehensive && bundle.deep
+          ? '07'
+          : null;
+
+    // 06 Audience
+    if (hasAudience && bundle.audience) {
+        chapter({
+            chapterNumber: '06',
+            title: labels.audienceReality,
+            subtitle: labels.chapterIntros.audience,
+            chapter: 'ux',
+        });
+        pages.push(...buildAudienceReportPages(bundle.audience, labels, pages.length));
     }
 
     // Actions
-    pages.push(
-        <PdfChapterIntroPage
-            key="ch-intro-actions"
-            chapterNumber={actionsChapter}
-            title={labels.actionPlan}
-            subtitle={labels.chapterIntros.actions}
-            chapter="summary"
-        />
-    );
-    pages.push(
-        <PdfContentPage key="actions">
+    chapter({
+        chapterNumber: actionsChapter,
+        title: labels.actionPlan,
+        subtitle: labels.chapterIntros.actions,
+        chapter: 'summary',
+    });
+    pages = pushContent(
+        pages,
+        'actions',
+        <>
             <PdfSectionHeader title={labels.actionPlan} chapter="summary" />
             {narrative?.recommendations && narrative.recommendations.length > 0 ? (
                 narrative.recommendations.map((rec, i) => (
@@ -429,21 +439,28 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
                     {bundle.journey.summary ? <PdfLeadText>{bundle.journey.summary}</PdfLeadText> : null}
                 </View>
             ) : null}
-        </PdfContentPage>
+        </>
     );
 
-    // Deep dive (comprehensive)
-    if (deepPages.length > 0 && deepChapter) {
+    // Deep dive
+    if (isComprehensive && bundle.deep && deepChapter) {
+        chapter({
+            chapterNumber: deepChapter,
+            title: labels.metricsOverview,
+            subtitle: labels.chapterIntros.deepDive,
+            chapter: 'visual',
+        });
         pages.push(
-            <PdfChapterIntroPage
-                key="ch-intro-deep"
-                chapterNumber={deepChapter}
-                title={labels.metricsOverview}
-                subtitle={labels.chapterIntros.deepDive}
-                chapter="visual"
-            />
+            ...buildDeepReportPages(bundle, labels, {
+                geoQuestionTrend: geoQuestionTrend as VisualSpec | undefined,
+                geoModelVisibility: geoModelVisibility as VisualSpec | undefined,
+                geoQuestionTrendSeries: geoQuestionTrendSeries as VisualSpec | undefined,
+                competitorRankingScores: competitorRankingScores as VisualSpec | undefined,
+                competitorSeoBarChart: competitorSeoBarChart as VisualSpec | undefined,
+                competitorTopicOverlap: competitorTopicOverlap as VisualSpec | undefined,
+                rankTrend: rankTrend as VisualSpec | undefined,
+            }, pages.length)
         );
-        pages.push(...deepPages);
     }
 
     const finalPages = applyReportFooters(pages, {

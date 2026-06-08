@@ -7,7 +7,7 @@ import type { ProjectReportPdfLabels } from '@/lib/project-report/pdf-labels';
 import type { SectionAnalysis } from '@/lib/project-report/narrative-schema';
 import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
 import { PdfSectionHeader } from '@/components/pdf/shared/PdfPrimitives';
-import { PdfContentPage, PdfLeadText, PdfStatGrid } from '@/components/pdf/shared/PdfLayout';
+import { PdfContentPage, PdfLeadText, PdfStatGrid, contentSideForIndex } from '@/components/pdf/shared/PdfLayout';
 import { PdfGeoQuestionCard } from '@/components/pdf/shared/PdfGeoQuestionCard';
 import { PdfVisualSpec } from '@/components/pdf/charts/PdfChartComponents';
 import type { VisualSpec } from '@/lib/project-report/chart-specs';
@@ -45,17 +45,29 @@ export function buildDeepReportPages(
         competitorSeoBarChart?: VisualSpec;
         competitorTopicOverlap?: VisualSpec;
         rankTrend?: VisualSpec;
-    }
+    },
+    startPageIndex: number
 ): React.ReactElement[] {
     const deep = bundle.deep;
     if (!deep) return [];
 
     const pages: React.ReactElement[] = [];
+    let pageOffset = 0;
+    const addPage = (key: string, children: React.ReactNode) => {
+        pages.push(
+            <PdfContentPage key={key} side={contentSideForIndex(startPageIndex + pageOffset)}>
+                {children}
+            </PdfContentPage>
+        );
+        pageOffset += 1;
+    };
+
     const narrative = bundle.narrative;
     const sections = narrative?.sections ?? deep.sections;
 
-    pages.push(
-        <PdfContentPage key="deep-metrics">
+    addPage(
+        'deep-metrics',
+        <>
             <PdfSectionHeader title={labels.metricsOverview} chapter="visual" />
             <View style={pdfStyles.contentPanel}>
                 <View style={pdfStyles.dataTableHeader}>
@@ -72,12 +84,13 @@ export function buildDeepReportPages(
                     </View>
                 ))}
             </View>
-        </PdfContentPage>
+        </>
     );
 
     if (narrative?.findings && narrative.findings.length > 0) {
-        pages.push(
-            <PdfContentPage key="deep-findings">
+        addPage(
+            'deep-findings',
+            <>
                 <PdfSectionHeader title={labels.keyFindings} chapter="summary" />
                 {narrative.findings.map((f, i) => (
                     <View key={i} style={pdfStyles.recommendationRow}>
@@ -87,14 +100,15 @@ export function buildDeepReportPages(
                         <Text style={pdfStyles.recommendationDesc}>{f.description}</Text>
                     </View>
                 ))}
-            </PdfContentPage>
+            </>
         );
     }
 
     const benchmark = bundle.deep?.competitiveBenchmark;
     if (benchmark && benchmark.scoreboard.length > 0) {
-        pages.push(
-            <PdfContentPage key="deep-competitive">
+        addPage(
+            'deep-competitive',
+            <>
                 <PdfSectionHeader title={labels.competitiveBenchmark} chapter="competitors" />
                 <PdfStatGrid
                     items={[
@@ -158,7 +172,7 @@ export function buildDeepReportPages(
                         ) : null}
                     </>
                 ) : null}
-            </PdfContentPage>
+            </>
         );
     }
 
@@ -171,17 +185,19 @@ export function buildDeepReportPages(
 
     for (const [key, section] of sectionEntries) {
         if (!section) continue;
-        pages.push(
-            <PdfContentPage key={`deep-section-${key}`}>
+        addPage(
+            `deep-section-${key}`,
+            <>
                 <PdfSectionHeader title={labels.sectionAnalysis} chapter="ux" />
                 <SectionAnalysisBlock section={section} />
-            </PdfContentPage>
+            </>
         );
     }
 
     if (deep.rankKeywordDetails.length > 0) {
-        pages.push(
-            <PdfContentPage key="deep-keywords">
+        addPage(
+            'deep-keywords',
+            <>
                 <PdfSectionHeader title={labels.keywordDetails} chapter="seo" />
                 {visuals.competitorRankingScores ? (
                     <PdfVisualSpec spec={visuals.competitorRankingScores} />
@@ -200,14 +216,15 @@ export function buildDeepReportPages(
                     ))}
                 </View>
                 {visuals.rankTrend ? <PdfVisualSpec spec={visuals.rankTrend} /> : null}
-            </PdfContentPage>
+            </>
         );
     }
 
     const geoDeep = deep.geoDeep;
     if (geoDeep && geoDeep.modelBenchmarks.length > 0) {
-        pages.push(
-            <PdfContentPage key="deep-geo-models">
+        addPage(
+            'deep-geo-models',
+            <>
                 <PdfSectionHeader title={labels.geoModelBenchmark} chapter="geo" />
                 {visuals.geoModelVisibility ? <PdfVisualSpec spec={visuals.geoModelVisibility} /> : null}
                 <View style={pdfStyles.contentPanel}>
@@ -236,13 +253,14 @@ export function buildDeepReportPages(
                         </View>
                     ))}
                 </View>
-            </PdfContentPage>
+            </>
         );
     }
 
     if (geoDeep && geoDeep.questionDetails.length > 0) {
-        pages.push(
-            <PdfContentPage key="deep-geo-questions">
+        addPage(
+            'deep-geo-questions',
+            <>
                 <PdfSectionHeader title={labels.geoQuestionAnalysis} chapter="geo" />
                 {visuals.geoQuestionTrendSeries ? (
                     <PdfVisualSpec spec={visuals.geoQuestionTrendSeries} />
@@ -252,14 +270,15 @@ export function buildDeepReportPages(
                 {geoDeep.questionDetails.slice(0, 16).map((q) => (
                     <PdfGeoQuestionCard key={q.evidenceId} question={q} labels={labels} />
                 ))}
-            </PdfContentPage>
+            </>
         );
     }
 
     const geoPages = geoDeep?.pages.length ? geoDeep.pages : deep.geoPages;
     if (geoPages.length > 0) {
-        pages.push(
-            <PdfContentPage key="deep-geo-pages">
+        addPage(
+            'deep-geo-pages',
+            <>
                 <PdfSectionHeader title={labels.geoOnPageEeat} chapter="geo" />
                 <PdfStatGrid
                     items={[
@@ -312,22 +331,24 @@ export function buildDeepReportPages(
                         </Text>
                     </View>
                 ))}
-            </PdfContentPage>
+            </>
         );
     }
 
     if (sections.geo && !pages.some((p) => p.key === 'deep-section-geo')) {
-        pages.push(
-            <PdfContentPage key="deep-section-geo">
+        addPage(
+            'deep-section-geo',
+            <>
                 <PdfSectionHeader title={labels.geoAgentAnalysis} chapter="geo" />
                 <SectionAnalysisBlock section={sections.geo} />
-            </PdfContentPage>
+            </>
         );
     }
 
     if (deep.issueGroups.length > 0 || deep.seoRollup) {
-        pages.push(
-            <PdfContentPage key="deep-issues-seo">
+        addPage(
+            'deep-issues-seo',
+            <>
                 {deep.issueGroups.length > 0 ? (
                     <>
                         <PdfSectionHeader title={labels.issueGroups} chapter="issues" />
@@ -363,7 +384,7 @@ export function buildDeepReportPages(
                         />
                     </>
                 ) : null}
-            </PdfContentPage>
+            </>
         );
     }
 

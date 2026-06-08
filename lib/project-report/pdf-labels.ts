@@ -101,6 +101,7 @@ export interface ProjectReportPdfLabels {
         deepDive: string;
         appendix: string;
     };
+    chapterPrefix: string;
 }
 
 const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
@@ -201,6 +202,7 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
             deepDive: 'Einzelmetriken, Benchmarks und KI-Tiefenanalysen.',
             appendix: 'Datenquellen, Links und technischer Anhang.',
         },
+        chapterPrefix: 'Kapitel',
     },
     en: {
         reportTitle: 'Project Report',
@@ -299,6 +301,7 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
             deepDive: 'Individual metrics, benchmarks, and AI deep-dive analyses.',
             appendix: 'Data sources, links, and technical appendix.',
         },
+        chapterPrefix: 'Chapter',
     },
 };
 

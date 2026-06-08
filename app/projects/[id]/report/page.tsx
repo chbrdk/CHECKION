@@ -8,6 +8,7 @@ import { useI18n } from '@/components/i18n/I18nProvider';
 import { apiProjectReport, apiProjectReportRun } from '@/lib/constants';
 import type { ProjectReportBundle, ProjectReportVariant } from '@/lib/project-report/types';
 import type { ReportProgress } from '@/lib/project-report/progress';
+import { downloadProjectReportPdf } from '@/lib/project-report/export-project-report-pdf';
 
 interface ReportRunListItem {
     id: string;
@@ -92,17 +93,7 @@ export default function ProjectReportHistoryPage() {
             const json = await res.json();
             if (!json.success || !json.data?.bundle) return;
             const bundle = json.data.bundle as ProjectReportBundle;
-            const [{ pdf }, { ProjectReportDocument }] = await Promise.all([
-                import('@react-pdf/renderer'),
-                import('@/components/pdf/ProjectReportDocument'),
-            ]);
-            const blob = await pdf(<ProjectReportDocument bundle={bundle} />).toBlob();
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `checkion-project-report-${runId.slice(0, 8)}.pdf`;
-            a.click();
-            URL.revokeObjectURL(url);
+            await downloadProjectReportPdf(bundle);
         } finally {
             setPdfExporting(null);
         }
@@ -162,12 +153,13 @@ export default function ProjectReportHistoryPage() {
             ) : runs.length === 0 ? (
                 <MsqdxTypography variant="body2">{t('projectReport.historyEmpty')}</MsqdxTypography>
             ) : (
-                runs.map((run) => (
+                runs.map((run, index) => (
                     <MsqdxMoleculeCard key={run.id} sx={{ mb: 1, p: 2 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
                             <Box>
                                 <MsqdxTypography variant="subtitle2">
                                     {new Date(run.createdAt).toLocaleString()}
+                                    {index === 0 && run.status === 'complete' ? ' · ' + t('projectReport.reexportPdfTitle') : ''}
                                 </MsqdxTypography>
                                 <MsqdxTypography variant="caption" color="text.secondary">
                                     {statusLabel(run.status, t)} · {run.variant} · {run.locale}
@@ -184,11 +176,13 @@ export default function ProjectReportHistoryPage() {
                             {run.status === 'complete' && run.hasBundle ? (
                                 <MsqdxButton
                                     size="small"
-                                    variant="outlined"
+                                    variant={index === 0 ? 'contained' : 'outlined'}
                                     loading={pdfExporting === run.id}
-                                    onClick={() => downloadPdf(run.id)}
+                                    onClick={() => void downloadPdf(run.id)}
                                 >
-                                    {t('projectReport.downloadPdf')}
+                                    {index === 0
+                                        ? t('projectReport.reexportPdfFromRun')
+                                        : t('projectReport.downloadPdf')}
                                 </MsqdxButton>
                             ) : null}
                         </Box>

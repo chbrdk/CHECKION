@@ -525,6 +525,9 @@ export const apiProjectAudionLink = (id: string) =>
     `${API_PROJECTS}/${encodeURIComponent(id)}/audion-link`;
 
 export const apiProjectReport = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/report`;
+/** GET /api/projects/[id]/report/latest – latest completed report bundle (PDF re-export, no LLM). */
+export const apiProjectReportLatest = (id: string) =>
+    `${API_PROJECTS}/${encodeURIComponent(id)}/report/latest`;
 /** GET /api/projects/[id]/report/[runId] – poll report job status and bundle. */
 export const apiProjectReportRun = (projectId: string, runId: string) =>
   `${API_PROJECTS}/${encodeURIComponent(projectId)}/report/${encodeURIComponent(runId)}`;
