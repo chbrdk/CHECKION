@@ -8,6 +8,7 @@ import type { SectionAnalysis } from '@/lib/project-report/narrative-schema';
 import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
 import { PdfSectionHeader } from '@/components/pdf/shared/PdfPrimitives';
 import { PdfContentPage, PdfLeadText, PdfStatGrid } from '@/components/pdf/shared/PdfLayout';
+import { PdfGeoQuestionCard } from '@/components/pdf/shared/PdfGeoQuestionCard';
 import { PdfVisualSpec } from '@/components/pdf/charts/PdfChartComponents';
 import type { VisualSpec } from '@/lib/project-report/chart-specs';
 
@@ -249,26 +250,7 @@ export function buildDeepReportPages(
                     <PdfVisualSpec spec={visuals.geoQuestionTrend} />
                 ) : null}
                 {geoDeep.questionDetails.slice(0, 12).map((q) => (
-                    <View key={q.evidenceId} style={pdfStyles.contentPanel}>
-                        <Text style={pdfStyles.recommendationTitle}>{q.queryText}</Text>
-                        <Text style={pdfStyles.metaText}>
-                            Trend: {q.trend} · Avg position: {q.latestPosition ?? 'not cited'}
-                        </Text>
-                        {q.positionsByModel.length > 0 ? (
-                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
-                                {q.positionsByModel.map((p) => (
-                                    <Text key={p.modelId} style={{ fontSize: 8, color: '#4B5563' }}>
-                                        {p.modelId}: {p.position != null ? `#${p.position}` : '–'}
-                                    </Text>
-                                ))}
-                            </View>
-                        ) : null}
-                        {q.topCitedDomains.length > 0 ? (
-                            <Text style={[pdfStyles.metaText, { marginTop: 4 }]}>
-                                Top cited: {q.topCitedDomains.join(', ')}
-                            </Text>
-                        ) : null}
-                    </View>
+                    <PdfGeoQuestionCard key={q.evidenceId} question={q} labels={labels} />
                 ))}
             </PdfContentPage>
         );

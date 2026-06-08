@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { View, Text, Svg, Rect, Circle, Path, G } from '@react-pdf/renderer';
+import { View, Text, Svg, Rect, Circle, Path } from '@react-pdf/renderer';
 import type { VisualSpec } from '@/lib/project-report/chart-specs';
 import { pdfColors, pdfStyles } from '@/components/pdf/shared/pdf-styles';
 
@@ -109,6 +109,49 @@ function ScoreRingsGrid({
     );
 }
 
+function formatBarValue(value: number): string {
+    return Number.isInteger(value) ? String(value) : String(Math.round(value * 10) / 10);
+}
+
+function BarValueLabel({
+    value,
+    barHeight,
+    insideBar,
+}: {
+    value: number;
+    barHeight: number;
+    insideBar: boolean;
+}) {
+    const text = formatBarValue(value);
+    if (insideBar) {
+        return (
+            <Text
+                style={{
+                    fontSize: 8,
+                    fontWeight: 'bold',
+                    color: pdfColors.white,
+                    textAlign: 'center',
+                }}
+            >
+                {text}
+            </Text>
+        );
+    }
+    return (
+        <Text
+            style={{
+                fontSize: 7,
+                fontWeight: 'bold',
+                color: pdfColors.gray700,
+                textAlign: 'center',
+                marginBottom: 2,
+            }}
+        >
+            {text}
+        </Text>
+    );
+}
+
 function VerticalBarChart({
     title,
     items,
@@ -121,41 +164,78 @@ function VerticalBarChart({
     const max = maxValue ?? Math.max(...items.map((i) => i.value), 1);
     const count = items.length;
     const barWidth = Math.min(44, Math.floor((CHART_WIDTH - BAR_GAP * (count + 1)) / Math.max(count, 1)));
-    const chartInnerHeight = CHART_HEIGHT - 28;
+    const chartInnerHeight = CHART_HEIGHT - 36;
+    const minInsideHeight = 16;
 
     return (
         <View style={pdfStyles.chartCard}>
             {title ? <Text style={pdfStyles.chartTitle}>{title}</Text> : null}
-            <Svg width={CHART_WIDTH} height={CHART_HEIGHT}>
-                {items.map((item, i) => {
+            <View
+                style={{
+                    flexDirection: 'row',
+                    alignItems: 'flex-end',
+                    justifyContent: 'flex-start',
+                    gap: BAR_GAP,
+                    paddingHorizontal: BAR_GAP,
+                    minHeight: chartInnerHeight + 24,
+                }}
+            >
+                {items.map((item) => {
                     const h = Math.max(2, (item.value / max) * chartInnerHeight);
-                    const x = BAR_GAP + i * (barWidth + BAR_GAP);
-                    const y = chartInnerHeight - h + 4;
+                    const insideBar = h >= minInsideHeight;
+                    const shortLabel =
+                        item.label.length > 12 ? `${item.label.slice(0, 10)}…` : item.label;
                     return (
-                        <G key={item.label}>
-                            <Rect
-                                x={x}
-                                y={4}
-                                width={barWidth}
-                                height={chartInnerHeight}
-                                fill={pdfColors.gray100}
-                                rx={4}
-                            />
-                            <Rect x={x} y={y} width={barWidth} height={h} fill={item.color} rx={4} />
-                        </G>
+                        <View
+                            key={item.label}
+                            style={{ width: barWidth, alignItems: 'center' }}
+                        >
+                            {!insideBar ? (
+                                <BarValueLabel value={item.value} barHeight={h} insideBar={false} />
+                            ) : null}
+                            <View
+                                style={{
+                                    width: barWidth,
+                                    height: chartInnerHeight,
+                                    backgroundColor: pdfColors.gray100,
+                                    borderRadius: 4,
+                                    justifyContent: 'flex-end',
+                                    overflow: 'hidden',
+                                }}
+                            >
+                                <View
+                                    style={{
+                                        width: barWidth,
+                                        height: h,
+                                        backgroundColor: item.color,
+                                        borderRadius: 4,
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        paddingVertical: 2,
+                                    }}
+                                >
+                                    {insideBar ? (
+                                        <BarValueLabel
+                                            value={item.value}
+                                            barHeight={h}
+                                            insideBar
+                                        />
+                                    ) : null}
+                                </View>
+                            </View>
+                            <Text
+                                style={{
+                                    fontSize: 6,
+                                    color: pdfColors.gray600,
+                                    marginTop: 4,
+                                    textAlign: 'center',
+                                }}
+                            >
+                                {shortLabel}
+                            </Text>
+                        </View>
                     );
                 })}
-            </Svg>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
-                {items.map((item) => (
-                    <View key={item.label} style={pdfStyles.chartLegendItem}>
-                        <View style={[pdfStyles.chartLegendSwatch, { backgroundColor: item.color }]} />
-                        <Text style={pdfStyles.chartLegendLabel}>
-                            {item.label.length > 18 ? `${item.label.slice(0, 16)}…` : item.label}:{' '}
-                            {Math.round(item.value)}
-                        </Text>
-                    </View>
-                ))}
             </View>
         </View>
     );
@@ -189,43 +269,86 @@ function TopicVerticalChart({
     return <VerticalBarChart title="Content themes (aggregated score)" items={mapped} />;
 }
 
+function MiniVerticalBar({
+    displayValue,
+    barHeight,
+    color,
+    label,
+    trackHeight,
+}: {
+    displayValue: number;
+    barHeight: number;
+    color: string;
+    label: string;
+    trackHeight: number;
+}) {
+    const h = Math.max(4, barHeight);
+    const inside = h >= 14;
+    return (
+        <View style={{ alignItems: 'center', width: 40 }}>
+            {!inside ? (
+                <BarValueLabel value={displayValue} barHeight={h} insideBar={false} />
+            ) : null}
+            <View
+                style={{
+                    width: 24,
+                    height: trackHeight,
+                    backgroundColor: pdfColors.gray100,
+                    borderRadius: 3,
+                    justifyContent: 'flex-end',
+                }}
+            >
+                <View
+                    style={{
+                        width: 24,
+                        height: h,
+                        backgroundColor: color,
+                        borderRadius: 3,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                    }}
+                >
+                    {inside ? (
+                        <BarValueLabel value={displayValue} barHeight={h} insideBar />
+                    ) : null}
+                </View>
+            </View>
+            <Text style={{ fontSize: 6, marginTop: 2, color: pdfColors.gray600 }}>{label}</Text>
+        </View>
+    );
+}
+
 function TopicOverlapVertical({
     rows,
 }: {
     rows: Array<{ theme: string; ownScore: number; bestCompetitorScore: number; bestCompetitor: string }>;
 }) {
+    const barMax = 64;
     return (
         <View style={pdfStyles.chartCard}>
             <Text style={pdfStyles.chartTitle}>Topic strength — own vs best competitor</Text>
             {rows.map((row) => {
                 const max = Math.max(row.ownScore, row.bestCompetitorScore, 1);
-                const ownH = (row.ownScore / max) * 60;
-                const compH = (row.bestCompetitorScore / max) * 60;
+                const ownH = (row.ownScore / max) * barMax;
+                const compH = (row.bestCompetitorScore / max) * barMax;
                 return (
                     <View key={row.theme} style={{ marginBottom: 10 }}>
                         <Text style={{ fontSize: 8, fontWeight: 'bold', marginBottom: 4 }}>{row.theme}</Text>
-                        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8, height: 68 }}>
-                            <View style={{ alignItems: 'center', width: 36 }}>
-                                <Svg width={28} height={64}>
-                                    <Rect x={4} y={64 - ownH} width={20} height={ownH} fill={pdfColors.brand} rx={3} />
-                                </Svg>
-                                <Text style={{ fontSize: 6, marginTop: 2 }}>Own</Text>
-                            </View>
-                            <View style={{ alignItems: 'center', width: 36 }}>
-                                <Svg width={28} height={64}>
-                                    <Rect
-                                        x={4}
-                                        y={64 - compH}
-                                        width={20}
-                                        height={compH}
-                                        fill={pdfColors.gray500}
-                                        rx={3}
-                                    />
-                                </Svg>
-                                <Text style={{ fontSize: 6, marginTop: 2 }}>
-                                    {row.bestCompetitor.slice(0, 8)}
-                                </Text>
-                            </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 12 }}>
+                            <MiniVerticalBar
+                                displayValue={Math.round(row.ownScore)}
+                                barHeight={ownH}
+                                color={pdfColors.brand}
+                                label="Own"
+                                trackHeight={barMax}
+                            />
+                            <MiniVerticalBar
+                                displayValue={Math.round(row.bestCompetitorScore)}
+                                barHeight={compH}
+                                color={pdfColors.gray500}
+                                label={row.bestCompetitor.slice(0, 8)}
+                                trackHeight={barMax}
+                            />
                         </View>
                     </View>
                 );

@@ -52,6 +52,19 @@ export interface ProjectReportPdfLabels {
     geoOnPageEeat: string;
     geoAgentAnalysis: string;
     geoInsights: string;
+    geoTrend: string;
+    geoAvgPosition: string;
+    geoModel: string;
+    geoRank: string;
+    geoTopCited: string;
+    geoDomain: string;
+    geoNotCited: string;
+    geoTrendLabels: {
+        improving: string;
+        declining: string;
+        stable: string;
+        unknown: string;
+    };
     chapterIntros: {
         executive: string;
         siteQuality: string;
@@ -113,6 +126,19 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         geoOnPageEeat: 'On-Page GEO & E-E-A-T',
         geoAgentAnalysis: 'KI-Bewertung GEO',
         geoInsights: 'GEO-Erkenntnisse',
+        geoTrend: 'Trend',
+        geoAvgPosition: 'Ø Position',
+        geoModel: 'LLM-Modell',
+        geoRank: 'Rang',
+        geoTopCited: 'Top-Zitationen',
+        geoDomain: 'Domain',
+        geoNotCited: 'nicht zitiert',
+        geoTrendLabels: {
+            improving: 'steigend',
+            declining: 'fallend',
+            stable: 'stabil',
+            unknown: 'unbekannt',
+        },
         chapterIntros: {
             executive: 'Lagebild, Risiken und strategische Einordnung auf Basis aller Projekt-Daten.',
             siteQuality: 'WCAG, Performance, Nachhaltigkeit und systemische Qualitätsissues.',
@@ -172,6 +198,19 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         geoOnPageEeat: 'On-page GEO & E-E-A-T',
         geoAgentAnalysis: 'AI GEO assessment',
         geoInsights: 'GEO insights',
+        geoTrend: 'Trend',
+        geoAvgPosition: 'Avg position',
+        geoModel: 'LLM model',
+        geoRank: 'Rank',
+        geoTopCited: 'Top citations',
+        geoDomain: 'Domain',
+        geoNotCited: 'not cited',
+        geoTrendLabels: {
+            improving: 'improving',
+            declining: 'declining',
+            stable: 'stable',
+            unknown: 'unknown',
+        },
         chapterIntros: {
             executive: 'Executive overview, risks, and strategic context across all project data.',
             siteQuality: 'WCAG, performance, sustainability, and systemic quality issues.',
