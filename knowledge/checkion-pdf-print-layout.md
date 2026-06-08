@@ -12,8 +12,22 @@ Print-optimiertes Report-Layout mit App-Frame und Doppelseiten.
 | Seiten-Typen | `components/pdf/shared/PdfPrintPages.tsx` |
 | Styles | `components/pdf/shared/pdf-styles.ts` |
 | Projekt-Report | `components/pdf/ProjectReportDocument.tsx` |
+| **Browser-Preview** | `app/dev/pdf-print/page.tsx` → `/dev/pdf-print` |
+| Preview-Komponenten | `components/pdf/preview/` |
 
-## Visuelles Konzept
+## Lokal stylen (Browser)
+
+Dev-Server starten (`npm run dev` → **Port 3333**), dann:
+
+**http://localhost:3333/dev/pdf-print**
+
+(Mit `BASE_PATH`, z. B. `/checkion`: `http://localhost:3333/checkion/dev/pdf-print`)
+
+- Gleiche SVG-Rahmen-Pfade wie im PDF (`pdf-frame-path.ts`)
+- Doppelseiten nebeneinander: Deckblatt, Kapitel-Spread, Inhalt-Spread
+- Zoom, Kapitel-Akzent, Brand-Farbe, Corner-Tab togglen
+- Workflow: Preview anpassen → Token/Styles in `pdf-print-tokens.ts` + `pdf-styles.ts` → PDF-Re-Export ohne LLM
+
 
 - **Deckblatt** (`PdfCoverPage`): Vollflächiger Brand-Hintergrund (#00ca55), innerer Offwhite-Panel mit abgerundeten Ecken (wie `MsqdxAppLayout`), Corner-Tab mit Logo (wie `MsqdxCornerBox` cutdown).
 - **Kapitel-Doppelseite** (`PdfChapterSpreadPages`): Links große Kapitelnummer + Akzentring, rechts Titel + Intro-Text.
@@ -27,6 +41,16 @@ Print-optimiertes Report-Layout mit App-Frame und Doppelseiten.
 - **Rechte Seite:** Rahmen nur oben, rechts, unten — links bis zur Bindung
 - PDF-Metadaten: `Document pageLayout="twoPageRight"` (Deckblatt allein, dann Spreads)
 - Kapitel starten mit **linker** Dekor-Seite (gerade Seitenzahl) → ggf. `PdfSpreadPadPage`
+
+## Frame-Layer (kein Stroke-Border)
+
+1. **Layer 1 — Brand:** Vollflächiger Seitenhintergrund (`PDF_BRAND_COLOR`)
+2. **Layer 2 — Innen-Panel:** Offwhite (`PDF_INNER_BACKGROUND`), kleiner als Seite → sichtbarer Brand-Spalt (`PDF_FRAME_INSET_PT` = 10pt, kein SVG-Stroke)
+3. **Layer 3 — Corner-Tab:** `MsqdxCornerBox` — **nur oben links**, nur auf **Deckblatt** und **linken Spread-Seiten** (gerade Seitenzahl &gt; 1). Ungerade Seiten (rechts / verso) ohne Logo-Ecke. Geometrie: `cutdown-a` (top außen), `cutdown-b` (bottom innen), gegenüber `rounded`. Steuerung: `pdfShowsCornerTabForSide()` in `pdf-print-tokens.ts`. Preview nutzt echte `@msqdx/react`-Komponente; PDF nutzt `buildMsqdxCornerBoxPath`.
+
+Innen-Panel-Radien wie CHECKION mit Sidebar: **topRight + bottomRight = 1.5xl**, **bottomLeft = button**, topLeft = 0 (Logo-Tab).
+
+Karten/Flächen im Content: nur Hintergrund + Radius, **keine** 2px-Ränder.
 
 ## Design-Referenz Web
 

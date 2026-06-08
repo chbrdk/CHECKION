@@ -77,6 +77,7 @@ export const PATH_REGISTER = '/register';
 export const PATH_SETTINGS = '/settings';
 export const PATH_HISTORY = '/history';
 export const PATH_DEVELOPERS = '/developers';
+export { PATH_DEV_PDF_PRINT_PREVIEW } from '@/lib/paths/pdf-print-preview';
 export const PATH_PROJECTS = '/projects';
 /** Central list of all domain deep scans for the signed-in user (filters, compare). */
 export const PATH_DEEP_SCANS = '/deep-scans';

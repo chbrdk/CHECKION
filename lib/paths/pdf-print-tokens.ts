@@ -1,7 +1,10 @@
 /**
  * Central print / PDF layout tokens — aligned with MsqdxAppLayout + MsqdxCornerBox.
- * Doppelseiten: linke Seite Rand oben/links/unten, rechte Seite oben/rechts/unten.
+ * Doppelseiten: linke Seite Rand oben/links/unten + Bindung rechts;
+ * rechte Seite oben/rechts/unten bis Seitenrand, Bindung links.
  */
+
+import { APP_LAYOUT_INNER_BORDER_WIDTH_PX } from '@/lib/constants';
 
 /** DIN A4 in PDF points */
 export const PDF_PAGE_WIDTH_PT = 595.28;
@@ -15,13 +18,15 @@ export const PDF_INNER_BACKGROUND = '#f8f6f0';
 /** Scaled from MSQDX_SPACING.borderRadius for print */
 export const PDF_RADIUS_BUTTON_PT = 16;
 export const PDF_RADIUS_1_5XL_PT = 28;
-export const PDF_CORNER_CUT_PT = 12;
 
-/** MsqdxAppLayout thin border */
-export const PDF_FRAME_BORDER_PT = 3;
+/** Sichtbarer Brand-Rand — MsqdxAppLayout `borderWidth="thin"` (3px → 3pt print). */
+export const PDF_FRAME_BORDER_PT = APP_LAYOUT_INNER_BORDER_WIDTH_PX;
 
-/** Außenrand (nur auf der äußeren Seite + oben/unten) */
-export const PDF_FRAME_INSET_PT = 18;
+/** Brand-Spalt zwischen Seitenkante und Innen-Panel (Layer, kein Border). */
+export const PDF_FRAME_INSET_PT = 10;
+
+/** Corner-Tab ragt über das Innen-Panel (oberer Brand-Layer). */
+export const PDF_CORNER_TAB_OVERLAP_PT = 8;
 
 /** Schmaler Spalt an der Bindung zwischen linker/rechter Seite */
 export const PDF_BINDING_GUTTER_PT = 6;
@@ -36,8 +41,15 @@ export const PDF_SPREAD_GUTTER_PT = PDF_BINDING_GUTTER_PT;
 export const PDF_BASE_MARGIN_PT = 32;
 
 /** Corner tab (logo badge) — MsqdxCornerBox header strip */
-export const PDF_CORNER_TAB_WIDTH_PT = 128;
-export const PDF_CORNER_TAB_HEIGHT_PT = 40;
+export const PDF_CORNER_TAB_WIDTH_PT = 136;
+export const PDF_CORNER_TAB_HEIGHT_PT = 44;
+/** MsqdxCornerBox padding on print preview tab (matches browser-tuned layout). */
+export const PDF_CORNER_TAB_PADDING_TOP_PT = 6;
+export const PDF_CORNER_TAB_PADDING_BOTTOM_PT = 0;
+export const PDF_CORNER_TAB_PADDING_X_PT = 12;
+
+/** Tab extends below header into inner panel (cutdown-b transition). */
+export const PDF_CORNER_TAB_TOTAL_HEIGHT_PT = PDF_CORNER_TAB_HEIGHT_PT + PDF_CORNER_TAB_OVERLAP_PT;
 
 export type PdfSpreadSide = 'cover' | 'left' | 'right';
 
@@ -63,6 +75,14 @@ export function pdfSpreadSideFromIndex(index: number): PdfSpreadSide {
     const pageNumber = index + 1;
     if (pageNumber === 1) return 'cover';
     return pageNumber % 2 === 0 ? 'left' : 'right';
+}
+
+/**
+ * Logo corner tab (MsqdxCornerBox, top-left cutdown) only on cover + left spread pages.
+ * Odd pages (right / verso), except page 1, have no corner tab.
+ */
+export function pdfShowsCornerTabForSide(side: PdfSpreadSide): boolean {
+    return side === 'cover' || side === 'left';
 }
 
 /**
@@ -102,23 +122,23 @@ export function pdfFrameRectForSide(side: PdfSpreadSide): PdfFrameRect {
     return {
         x: bind,
         y,
-        width: PDF_PAGE_WIDTH_PT - inset - bind,
+        width: PDF_PAGE_WIDTH_PT - bind,
         height,
     };
 }
 
-/** Corner radii: rounded on outer corners, square at binding. */
+/** Corner radii — aligned with MsqdxAppLayout + sidebar (CHECKION default). */
 export function pdfFrameRadiiForSide(side: PdfSpreadSide): PdfFrameRadii {
     const rBtn = PDF_RADIUS_BUTTON_PT;
     const r15 = PDF_RADIUS_1_5XL_PT;
 
     if (side === 'cover') {
-        return { topLeft: 0, topRight: rBtn, bottomLeft: r15, bottomRight: r15 };
+        return { topLeft: 0, topRight: r15, bottomLeft: rBtn, bottomRight: r15 };
     }
     if (side === 'left') {
-        return { topLeft: rBtn, topRight: 0, bottomLeft: r15, bottomRight: 0 };
+        return { topLeft: 0, topRight: 0, bottomLeft: rBtn, bottomRight: 0 };
     }
-    return { topLeft: 0, topRight: rBtn, bottomLeft: 0, bottomRight: r15 };
+    return { topLeft: 0, topRight: 0, bottomLeft: 0, bottomRight: r15 };
 }
 
 export function pdfContentMarginsForSide(side: PdfSpreadSide): {
@@ -128,36 +148,36 @@ export function pdfContentMarginsForSide(side: PdfSpreadSide): {
     paddingRight: number;
 } {
     const base = PDF_CONTENT_PADDING_PT;
-    const border = PDF_FRAME_BORDER_PT;
     const inset = PDF_FRAME_INSET_PT;
+    const border = PDF_FRAME_BORDER_PT;
     const bind = PDF_BINDING_GUTTER_PT;
-    const tab = PDF_CORNER_TAB_HEIGHT_PT;
+    const tab = pdfShowsCornerTabForSide(side) ? PDF_CORNER_TAB_TOTAL_HEIGHT_PT : 0;
     const bottomExtra = 24;
+    const topChrome = inset + border + tab + base;
 
     if (side === 'cover') {
-        const frame = inset + border;
         return {
-            paddingTop: frame + tab + base,
-            paddingBottom: frame + base + bottomExtra,
-            paddingLeft: frame + base,
-            paddingRight: frame + base,
+            paddingTop: topChrome,
+            paddingBottom: inset + base + bottomExtra,
+            paddingLeft: inset + base,
+            paddingRight: inset + base,
         };
     }
 
     if (side === 'left') {
         return {
-            paddingTop: inset + border + tab + base,
-            paddingBottom: inset + border + base + bottomExtra,
-            paddingLeft: inset + border + base,
-            paddingRight: border + base + bind,
+            paddingTop: topChrome,
+            paddingBottom: inset + base + bottomExtra,
+            paddingLeft: inset + base,
+            paddingRight: base + bind,
         };
     }
 
     return {
-        paddingTop: inset + border + tab + base,
-        paddingBottom: inset + border + base + bottomExtra,
-        paddingLeft: border + base + bind,
-        paddingRight: inset + border + base,
+        paddingTop: topChrome,
+        paddingBottom: inset + base + bottomExtra,
+        paddingLeft: base + bind,
+        paddingRight: base,
     };
 }
 
@@ -177,5 +197,5 @@ export function pdfFooterInsetsForSide(side: PdfSpreadSide): {
     if (side === 'left') {
         return { left: inset + pad, right: pad + bind, bottom };
     }
-    return { left: pad + bind, right: inset + pad, bottom };
+    return { left: pad + bind, right: pad, bottom };
 }

@@ -27,8 +27,6 @@ export const scanPdfStyles = StyleSheet.create({
         paddingHorizontal: 10,
         paddingVertical: 6,
         borderRadius: PDF_RADIUS_BUTTON_PT / 2,
-        borderWidth: 1,
-        borderColor: pdfColors.gray200,
         backgroundColor: pdfColors.white,
     },
     issueSeverity: {

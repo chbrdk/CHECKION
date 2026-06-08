@@ -5,6 +5,7 @@ import { Page, View, Text } from '@react-pdf/renderer';
 import {
     pdfNeedsSpreadPadBeforeChapter,
     pdfContentMarginsForSide,
+    pdfShowsCornerTabForSide,
     pdfSpreadSideFromIndex,
     PDF_DOCUMENT_PAGE_LAYOUT,
     PDF_PAGE_HEIGHT_PT,
@@ -26,12 +27,13 @@ export function PdfPrintPage({
     side,
     children,
     accentColor,
-    showCornerTab = true,
+    showCornerTab = pdfShowsCornerTabForSide(side),
     innerFill,
 }: {
     side: PdfSpreadSide;
     children: React.ReactNode;
     accentColor?: string;
+    /** Override side rule; default follows {@link pdfShowsCornerTabForSide}. */
     showCornerTab?: boolean;
     innerFill?: string;
 }) {
@@ -162,7 +164,7 @@ export function PdfStatGrid({
                     key={item.label}
                     style={[
                         pdfStyles.statTile,
-                        item.accent ? { borderColor: item.accent, borderWidth: 2 } : {},
+                        item.accent ? { backgroundColor: pdfColors.brandTint } : {},
                     ]}
                 >
                     <Text style={pdfStyles.statTileLabel}>{item.label}</Text>

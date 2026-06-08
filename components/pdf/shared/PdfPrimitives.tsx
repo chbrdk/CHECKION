@@ -37,7 +37,7 @@ export function PdfSectionHeader({ title, chapter }: { title: string; chapter: P
                     pdfStyles.sectionTitle,
                     {
                         backgroundColor: c.bg,
-                        borderColor: c.main,
+                        color: c.main,
                         fontSize: 13,
                         paddingVertical: 8,
                     },

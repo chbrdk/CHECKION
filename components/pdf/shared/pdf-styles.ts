@@ -100,8 +100,6 @@ export const pdfStyles = StyleSheet.create({
         paddingHorizontal: 16,
         borderRadius: PDF_RADIUS_BUTTON_PT / 2,
         marginBottom: 22,
-        borderWidth: 2,
-        borderColor: pdfColors.brand,
     },
     coverUrl: {
         fontFamily: PDF_FONT_FAMILIES.headline,
@@ -131,8 +129,6 @@ export const pdfStyles = StyleSheet.create({
         padding: 12,
         borderRadius: PDF_RADIUS_BUTTON_PT / 2,
         backgroundColor: pdfColors.white,
-        borderWidth: 2,
-        borderColor: pdfColors.brandTint,
     },
     scoreCardValue: {
         fontFamily: PDF_FONT_FAMILIES.headline,
@@ -178,8 +174,6 @@ export const pdfStyles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 8,
         borderRadius: PDF_RADIUS_BUTTON_PT / 2,
-        borderWidth: 1,
-        borderColor: pdfColors.gray200,
     },
     subsectionTitle: {
         fontFamily: PDF_FONT_FAMILIES.headline,
@@ -218,15 +212,11 @@ export const pdfStyles = StyleSheet.create({
         padding: 12,
         borderRadius: PDF_RADIUS_BUTTON_PT / 2,
         marginBottom: 10,
-        borderWidth: 1,
-        borderColor: pdfColors.gray200,
     },
     recommendationRow: {
         marginBottom: 10,
         paddingHorizontal: 12,
         paddingVertical: 8,
-        borderWidth: 1,
-        borderColor: pdfColors.brandTint,
         backgroundColor: pdfColors.brandTint,
         borderRadius: PDF_RADIUS_BUTTON_PT / 2,
     },
@@ -261,8 +251,7 @@ export const pdfStyles = StyleSheet.create({
         borderRadius: 999,
         marginRight: 8,
         marginBottom: 6,
-        borderWidth: 1,
-        borderColor: pdfColors.gray200,
+        backgroundColor: pdfColors.gray100,
     },
     chapterSpreadLeft: {
         flex: 1,
@@ -282,8 +271,8 @@ export const pdfStyles = StyleSheet.create({
         width: 180,
         height: 180,
         borderRadius: 90,
-        borderWidth: 3,
-        opacity: 0.35,
+        borderWidth: 1,
+        opacity: 0.25,
     },
     chapterSpreadRight: {
         flex: 1,
@@ -329,8 +318,6 @@ export const pdfStyles = StyleSheet.create({
         borderRadius: PDF_RADIUS_BUTTON_PT / 2,
         padding: 16,
         marginBottom: 14,
-        borderWidth: 1,
-        borderColor: pdfColors.gray200,
     },
     statGrid: {
         flexDirection: 'row',
@@ -343,8 +330,6 @@ export const pdfStyles = StyleSheet.create({
         backgroundColor: pdfColors.white,
         borderRadius: PDF_RADIUS_BUTTON_PT / 2,
         padding: 12,
-        borderWidth: 2,
-        borderColor: pdfColors.brandTint,
     },
     statTileLabel: {
         fontFamily: PDF_FONT_FAMILIES.headline,
@@ -387,8 +372,6 @@ export const pdfStyles = StyleSheet.create({
         borderRadius: PDF_RADIUS_BUTTON_PT / 2,
         padding: 14,
         marginBottom: 14,
-        borderWidth: 2,
-        borderColor: pdfColors.brandTint,
     },
     chartTitle: {
         fontFamily: PDF_FONT_FAMILIES.headline,
@@ -422,8 +405,6 @@ export const pdfStyles = StyleSheet.create({
         borderRadius: PDF_RADIUS_BUTTON_PT / 2,
         padding: 10,
         marginBottom: 8,
-        borderWidth: 2,
-        borderColor: pdfChapterColors.geo.main,
     },
     geoQuestionHeaderRow: {
         flexDirection: 'row',
@@ -449,10 +430,8 @@ export const pdfStyles = StyleSheet.create({
         lineHeight: 1.3,
     },
     geoQuestionTablePanel: {
-        backgroundColor: pdfColors.white,
+        backgroundColor: pdfColors.gray100,
         borderRadius: 4,
-        borderWidth: 1,
-        borderColor: pdfColors.gray200,
         paddingHorizontal: 6,
         paddingVertical: 4,
     },

@@ -65,11 +65,11 @@ export function ScanReportDocument({ scan }: ScanReportProps) {
                 <Text style={pdfStyles.coverMetaItem}>Gerät: {scan.device ?? 'Desktop'}</Text>
             </View>
             <View style={pdfStyles.scoreGrid}>
-                <View style={[pdfStyles.scoreCard, { borderColor: pdfColors.brand }]}>
+                <View style={pdfStyles.scoreCard}>
                     <Text style={pdfStyles.scoreCardValue}>{scan.score}/100</Text>
                     <Text style={pdfStyles.scoreCardLabel}>Score</Text>
                 </View>
-                <View style={[pdfStyles.scoreCard, { borderColor: pdfColors.error }]}>
+                <View style={pdfStyles.scoreCard}>
                     <Text style={[pdfStyles.scoreCardValue, { color: pdfColors.error }]}>
                         {scan.stats.errors}
                     </Text>
@@ -77,7 +77,7 @@ export function ScanReportDocument({ scan }: ScanReportProps) {
                         Fehler
                     </Text>
                 </View>
-                <View style={[pdfStyles.scoreCard, { borderColor: pdfColors.warning }]}>
+                <View style={pdfStyles.scoreCard}>
                     <Text style={[pdfStyles.scoreCardValue, { color: pdfColors.warning }]}>
                         {scan.stats.warnings}
                     </Text>
@@ -85,7 +85,7 @@ export function ScanReportDocument({ scan }: ScanReportProps) {
                         Warnungen
                     </Text>
                 </View>
-                <View style={[pdfStyles.scoreCard, { borderColor: pdfColors.notice }]}>
+                <View style={pdfStyles.scoreCard}>
                     <Text style={[pdfStyles.scoreCardValue, { color: pdfColors.notice }]}>
                         {scan.stats.notices}
                     </Text>
@@ -94,7 +94,7 @@ export function ScanReportDocument({ scan }: ScanReportProps) {
                     </Text>
                 </View>
                 {scan.ux != null && (
-                    <View style={[pdfStyles.scoreCard, { borderColor: pdfColors.gray500 }]}>
+                    <View style={pdfStyles.scoreCard}>
                         <Text style={pdfStyles.scoreCardValue}>
                             {scan.ux.cls != null ? scan.ux.cls.toFixed(2) : '–'}
                         </Text>
@@ -102,7 +102,7 @@ export function ScanReportDocument({ scan }: ScanReportProps) {
                     </View>
                 )}
                 {scan.eco != null && (
-                    <View style={[pdfStyles.scoreCard, { borderColor: pdfColors.success }]}>
+                    <View style={pdfStyles.scoreCard}>
                         <Text style={[pdfStyles.scoreCardValue, { color: pdfColors.success }]}>
                             {scan.eco.grade}
                         </Text>

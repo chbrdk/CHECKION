@@ -58,7 +58,7 @@ export function PdfAppFrameBackground({
                 }}
                 fixed
             >
-                <Path d={innerPath} fill={innerFill} stroke={brand} strokeWidth={3} />
+                <Path d={innerPath} fill={innerFill} />
                 {showCornerTab ? <Path d={tabPath} fill={brand} /> : null}
             </Svg>
             {showCornerTab ? (

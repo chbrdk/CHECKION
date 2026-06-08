@@ -1,8 +1,6 @@
 import {
-    PDF_CORNER_CUT_PT,
-    PDF_CORNER_TAB_HEIGHT_PT,
+    PDF_CORNER_TAB_TOTAL_HEIGHT_PT,
     PDF_CORNER_TAB_WIDTH_PT,
-    PDF_FRAME_BORDER_PT,
     PDF_PAGE_HEIGHT_PT,
     PDF_PAGE_WIDTH_PT,
     PDF_RADIUS_BUTTON_PT,
@@ -13,6 +11,9 @@ import {
 } from '@/lib/paths/pdf-print-tokens';
 
 export type RoundedRectRadii = PdfFrameRadii;
+
+/** MsqdxCornerBox corner styles used on the logo tab (see MsqdxAppLayout). */
+export type PdfCornerTabAnchor = 'left' | 'right';
 
 /** Clockwise rounded-rect path (SVG moveto/lineto/quadratic). */
 export function buildRoundedRectPath(
@@ -41,7 +42,7 @@ export function buildRoundedRectPath(
     ].join(' ');
 }
 
-/** Inner app panel — spread-aware (asymmetric insets). */
+/** Inner content panel (Layer 2 on brand page background). */
 export function buildAppInnerFramePath(
     side: PdfSpreadSide = 'cover',
     pageW = PDF_PAGE_WIDTH_PT,
@@ -52,80 +53,84 @@ export function buildAppInnerFramePath(
     return buildRoundedRectPath(rect.x, rect.y, rect.width, rect.height, radii);
 }
 
-/**
- * Brand corner tab at the outer top corner (MsqdxCornerBox cutdown geometry).
- * Left/cover: top-left; right page: top-right (mirrored).
- */
-export function buildCornerTabPath(
-    side: PdfSpreadSide = 'cover',
-    pageW = PDF_PAGE_WIDTH_PT
-): string {
+export function pdfCornerTabAnchor(side: PdfSpreadSide): PdfCornerTabAnchor {
+    return side === 'right' ? 'right' : 'left';
+}
+
+function cornerTabOrigin(side: PdfSpreadSide): { x: number; y: number } {
     const rect = pdfFrameRectForSide(side);
     const tabW = PDF_CORNER_TAB_WIDTH_PT;
-    const tabH = PDF_CORNER_TAB_HEIGHT_PT;
-    const cut = PDF_CORNER_CUT_PT;
-    const rBr = PDF_RADIUS_BUTTON_PT;
 
     if (side === 'right') {
-        const x = rect.x + rect.width - tabW;
-        const y = rect.y;
+        return {
+            x: rect.x + rect.width - tabW,
+            y: rect.y,
+        };
+    }
+    return {
+        x: rect.x,
+        y: rect.y,
+    };
+}
+
+/**
+ * MsqdxCornerBox SVG path — cutdown-a (top outer), cutdown-b (bottom inner), rounded opposite corner.
+ * Matches `MsqdxAppLayout` logo strip: square logo corner, scooped transitions to inner panel.
+ */
+export function buildMsqdxCornerBoxPath(
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    radius: number,
+    anchor: PdfCornerTabAnchor
+): string {
+    const R = Math.min(radius, w / 2, h / 2);
+
+    if (anchor === 'left') {
         return [
-            `M ${x + cut} ${y}`,
-            `L ${x + tabW} ${y}`,
-            `L ${x + tabW} ${y + tabH - cut}`,
-            `Q ${x + tabW} ${y + tabH} ${x + tabW - cut} ${y + tabH}`,
-            `L ${x + rBr} ${y + tabH}`,
-            `Q ${x} ${y + tabH} ${x} ${y + tabH - rBr}`,
-            `L ${x} ${y + cut}`,
-            `Q ${x} ${y} ${x + cut} ${y}`,
+            `M ${x} ${y}`,
+            `L ${x + w - R} ${y}`,
+            `A ${R} ${R} 0 0 1 ${x + w} ${y + R}`,
+            `L ${x + w} ${y + h - R}`,
+            `A ${R} ${R} 0 0 1 ${x + w - R} ${y + h}`,
+            `L ${x + R} ${y + h}`,
+            `A ${R} ${R} 0 0 1 ${x} ${y + h - R}`,
             'Z',
         ].join(' ');
     }
 
-    const x = rect.x;
-    const y = rect.y;
     return [
-        `M ${x} ${y}`,
-        `L ${x + tabW - cut} ${y}`,
-        `Q ${x + tabW} ${y} ${x + tabW} ${y + cut}`,
-        `L ${x + tabW} ${y + tabH - rBr}`,
-        `Q ${x + tabW} ${y + tabH} ${x + tabW - rBr} ${y + tabH}`,
-        `L ${x + cut} ${y + tabH}`,
-        `Q ${x} ${y + tabH} ${x} ${y + tabH - cut}`,
+        `M ${x + w} ${y}`,
+        `L ${x + R} ${y}`,
+        `A ${R} ${R} 0 0 0 ${x} ${y + R}`,
+        `L ${x} ${y + h - R}`,
+        `A ${R} ${R} 0 0 0 ${x + R} ${y + h}`,
+        `L ${x + w - R} ${y + h}`,
+        `A ${R} ${R} 0 0 0 ${x + w} ${y + h - R}`,
         'Z',
     ].join(' ');
 }
 
-export function cornerTabLogoPosition(side: PdfSpreadSide): { top: number; left: number } {
-    const rect = pdfFrameRectForSide(side);
+/** Brand corner tab (Layer 3) — MsqdxCornerBox geometry on the page. */
+export function buildCornerTabPath(side: PdfSpreadSide = 'cover'): string {
+    const { x, y } = cornerTabOrigin(side);
     const tabW = PDF_CORNER_TAB_WIDTH_PT;
-    const top = rect.y + 8;
-    if (side === 'right') {
-        return { top, left: rect.x + rect.width - tabW + 8 };
-    }
-    return { top, left: rect.x + 8 };
+    const tabH = PDF_CORNER_TAB_TOTAL_HEIGHT_PT;
+    return buildMsqdxCornerBoxPath(x, y, tabW, tabH, PDF_RADIUS_BUTTON_PT, pdfCornerTabAnchor(side));
 }
 
-export function buildAppFrameStrokePath(
-    side: PdfSpreadSide = 'cover',
-    pageW = PDF_PAGE_WIDTH_PT,
-    pageH = PDF_PAGE_HEIGHT_PT
-): string {
-    const rect = pdfFrameRectForSide(side);
-    const radii = pdfFrameRadiiForSide(side);
-    const border = PDF_FRAME_BORDER_PT;
-    const outer = buildAppInnerFramePath(side, pageW, pageH);
-    const inner = buildRoundedRectPath(
-        rect.x + border,
-        rect.y + border,
-        rect.width - border * 2,
-        rect.height - border * 2,
-        {
-            topLeft: Math.max(radii.topLeft - border, 0),
-            topRight: Math.max(radii.topRight - border, 0),
-            bottomLeft: Math.max(radii.bottomLeft - border, 0),
-            bottomRight: Math.max(radii.bottomRight - border, 0),
-        }
-    );
-    return `${outer} ${inner}`;
+export function cornerTabLogoPosition(side: PdfSpreadSide): { top: number; left: number } {
+    const { x, y } = cornerTabOrigin(side);
+    return { top: y + 10, left: x + 10 };
+}
+
+export function cornerTabBox(side: PdfSpreadSide): { x: number; y: number; width: number; height: number } {
+    const { x, y } = cornerTabOrigin(side);
+    return {
+        x,
+        y,
+        width: PDF_CORNER_TAB_WIDTH_PT,
+        height: PDF_CORNER_TAB_TOTAL_HEIGHT_PT,
+    };
 }
