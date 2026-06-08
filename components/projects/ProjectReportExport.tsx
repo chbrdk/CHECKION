@@ -117,13 +117,10 @@ export function ProjectReportExport({ projectId }: { projectId: string }) {
         if (!bundle) return;
         setPdfExporting(true);
         try {
-            const [{ pdf }, { ProjectReportDocument }, { ensurePdfFontsLoaded }] =
-                await Promise.all([
-                    import('@react-pdf/renderer'),
-                    import('@/components/pdf/ProjectReportDocument'),
-                    import('@/components/pdf/shared/register-pdf-fonts'),
-                ]);
-            await ensurePdfFontsLoaded();
+            const [{ pdf }, { ProjectReportDocument }] = await Promise.all([
+                import('@react-pdf/renderer'),
+                import('@/components/pdf/ProjectReportDocument'),
+            ]);
             const blob = await pdf(<ProjectReportDocument bundle={bundle} />).toBlob();
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');

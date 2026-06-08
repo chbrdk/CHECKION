@@ -1,6 +1,5 @@
 'use client';
 
-import '@/components/pdf/shared/register-pdf-fonts';
 import React from 'react';
 import { Page, Text, View, Document, StyleSheet, Svg, Path } from '@react-pdf/renderer';
 import type { ScanResult } from '@/lib/types';

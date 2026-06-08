@@ -6,6 +6,9 @@ describe('audion-api paths', () => {
         expect(audionAudienceReportPath('proj-123')).toBe(
             '/integrations/checkion/projects/proj-123/audience-report'
         );
+        expect(audionAudienceReportPath('proj-123', 'plat-1')).toBe(
+            '/integrations/checkion/projects/proj-123/audience-report?platform_project_id=plat-1'
+        );
         const prev = process.env.AUDION_API_BASE_URL;
         process.env.AUDION_API_BASE_URL = 'https://audion.example.com/';
         expect(audionAudienceReportUrl('p1')).toBe(

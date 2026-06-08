@@ -32,14 +32,14 @@ const minimalScan: ScanResult = {
 };
 
 describe('ScanReportDocument smoke', () => {
-    it('exports a document component using MSQDX PDF fonts', async () => {
+    it('exports a document component using built-in Helvetica fonts', async () => {
         const { ScanReportDocument } = await import('@/components/pdf/ScanReportDocument');
         const { pdf } = await import('@react-pdf/renderer');
         const element = React.createElement(ScanReportDocument, { scan: minimalScan });
         expect(element).toBeTruthy();
         const blob = await pdf(element).toBlob();
         expect(blob).toBeInstanceOf(Blob);
-        expect(PDF_FONT_FAMILIES.body).toBe('Noto Sans');
-        expect(PDF_FONT_FAMILIES.headline).toBe('IBM Plex Mono');
+        expect(PDF_FONT_FAMILIES.body).toBe('Helvetica');
+        expect(PDF_FONT_FAMILIES.headline).toBe('Helvetica');
     });
 });

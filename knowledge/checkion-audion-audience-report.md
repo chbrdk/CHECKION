@@ -4,8 +4,9 @@
 
 ## Flow
 
-1. AUDION project has `checkion_project_id` = CHECKION project UUID.
-2. CHECKION comprehensive report calls `GET {AUDION}/integrations/checkion/projects/{id}/audience-report`.
+1. AUDION project linked via `checkion_project_id` = CHECKION UUID **or** same `platform_project_id` (PLEXON).
+2. Manual link: CHECKION project page → **AUDION-Verknüpfung** → `PUT /api/projects/{id}/audion-link`.
+3. CHECKION comprehensive report calls `GET {AUDION}/integrations/checkion/projects/{id}/audience-report?platform_project_id=…`.
 3. CHECKION aligns personas (pain points, goals) with site metrics (WCAG, SEO, GEO, topics, rankings, performance).
 4. PDF chapter **06 — Zielgruppen & Personas (AUDION)** when data available.
 

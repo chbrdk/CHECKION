@@ -521,6 +521,9 @@ export const apiProjectDomainScanCompetitor = (id: string) =>
 export const apiProjectDomainScansActive = (id: string) =>
   `${API_PROJECTS}/${encodeURIComponent(id)}/domain-scans/active`;
 /** POST /api/projects/[id]/report – start async project executive report generation. */
+export const apiProjectAudionLink = (id: string) =>
+    `${API_PROJECTS}/${encodeURIComponent(id)}/audion-link`;
+
 export const apiProjectReport = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/report`;
 /** GET /api/projects/[id]/report/[runId] – poll report job status and bundle. */
 export const apiProjectReportRun = (projectId: string, runId: string) =>

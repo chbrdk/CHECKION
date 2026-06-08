@@ -3,7 +3,7 @@
 import { StyleSheet } from '@react-pdf/renderer';
 import { PDF_FONT_FAMILIES } from '@/lib/paths/pdf-fonts';
 
-export { PDF_FONT_FAMILIES as pdfFontFamilies };
+export const pdfFontFamilies = PDF_FONT_FAMILIES;
 
 export const PDF_MARGIN = 40;
 export const PDF_HEADER_HEIGHT = 36;

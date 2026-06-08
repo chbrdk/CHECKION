@@ -34,6 +34,7 @@ import {
     pathProjectPageTopics,
 } from '@/lib/constants';
 import { InfoTooltip } from '@/components/InfoTooltip';
+import { ProjectAudionLink } from '@/components/projects/ProjectAudionLink';
 import { ProjectReportExport } from '@/components/projects/ProjectReportExport';
 import { useStatusUi } from '@/components/status/StatusUiContext';
 import Link from 'next/link';
@@ -1242,6 +1243,7 @@ export default function ProjectDetailPage() {
                 </MsqdxMoleculeCard>
 
                 <Box sx={{ gridColumn: { xs: 1, md: '1 / -1' } }}>
+                    <ProjectAudionLink projectId={id} />
                     <ProjectReportExport projectId={id} />
                 </Box>
             </Box>

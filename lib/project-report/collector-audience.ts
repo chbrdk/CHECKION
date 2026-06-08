@@ -2,6 +2,7 @@
  * Collect AUDION audience data and align with CHECKION report facts.
  */
 
+import { getProjectPlatformIds } from '@/lib/db/projects';
 import { fetchAudionAudienceReport } from '@/lib/integrations/audion-audience-client';
 import {
     buildAudienceReportOverlay,
@@ -23,7 +24,10 @@ export async function collectAudienceReportOverlay(
         return unavailableAudienceOverlay('audion_not_configured');
     }
 
-    const audion = await fetchAudionAudienceReport(projectId);
+    const platform = await getProjectPlatformIds(projectId);
+    const audion = await fetchAudionAudienceReport(projectId, {
+        platformProjectId: platform?.platformProjectId,
+    });
     if (!audion) {
         return unavailableAudienceOverlay('audion_fetch_failed');
     }

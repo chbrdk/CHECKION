@@ -1,5 +1,5 @@
 /**
- * Fetch audience context from AUDION (linked via checkion_project_id on AUDION project).
+ * Fetch audience context from AUDION (linked via checkion_project_id or platform_project_id).
  */
 
 import { audionAudienceReportUrl, getAudionServiceToken } from '@/lib/paths/audion-api';
@@ -38,6 +38,7 @@ export interface AudionTargetGroupFact {
 export interface AudionAudienceReportResponse {
     available: boolean;
     reason?: string;
+    resolvedVia?: 'checkion_project_id' | 'platform_project_id';
     audionProjectId?: string;
     audionProjectName?: string;
     checkionProjectId?: string;
@@ -47,12 +48,13 @@ export interface AudionAudienceReportResponse {
 
 export async function fetchAudionAudienceReport(
     checkionProjectId: string,
-    timeoutMs = 25_000
+    options?: { platformProjectId?: string | null; timeoutMs?: number }
 ): Promise<AudionAudienceReportResponse | null> {
-    const url = audionAudienceReportUrl(checkionProjectId);
+    const url = audionAudienceReportUrl(checkionProjectId, options?.platformProjectId);
     const token = getAudionServiceToken();
     if (!url || !token) return null;
 
+    const timeoutMs = options?.timeoutMs ?? 25_000;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
@@ -62,8 +64,7 @@ export async function fetchAudionAudienceReport(
             cache: 'no-store',
         });
         if (!res.ok) return null;
-        const data = (await res.json()) as AudionAudienceReportResponse;
-        return data;
+        return (await res.json()) as AudionAudienceReportResponse;
     } catch {
         return null;
     } finally {

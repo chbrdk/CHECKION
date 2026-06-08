@@ -1,6 +1,5 @@
 'use client';
 
-import '@/components/pdf/shared/register-pdf-fonts';
 import React from 'react';
 import { Document, Page, View, Text } from '@react-pdf/renderer';
 import type { ProjectReportBundle } from '@/lib/project-report/types';

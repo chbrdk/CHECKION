@@ -1320,6 +1320,27 @@
     "pageTopicsCompareMatrix": "Eine Matrix mischt die Top-Themen aller Quellen (eigene Domain + Konkurrenten) in einem Diagramm: gleiche Achsen wie im Einzel-Scan (Ø-Tier vs. Seitenanzahl), Füllfarbe nach höchstem Tag-Tier, Randfarbe nach Quelle. Legende: eine Quelle isolieren. Kreis: gleiches Thema (normalisierter Tag-Schlüssel) über Quellen mit gestrichelter Linie verbinden. Pro Quelle werden Themen begrenzt, dann global nach Score gekappt.",
     "pageTopicsLowTierDominant": "Pro Seite zählt die Klassifikation, wie viele Themen-Tags in Tier 1–5 vorkommen. Hier gezählt: Seiten, auf denen die Summe der T1- und T2-Tags größer ist als die Summe der T4- und T5-Tags. Tier 3 zählt für diese Kennzahl nicht. Das ist eine Heuristik für eine eher rand-/boilerplate-lastige vs. kernthematische Tag-Verteilung – kein inhaltliches Urteil über die Seitenqualität."
   },
+  "projectAudionLink": {
+    "title": "AUDION-Verknüpfung",
+    "description": "Personas aus AUDION erscheinen im umfassenden Projekt-Report (Kapitel 06). Verknüpfung wird in AUDION gespeichert.",
+    "notConfigured": "AUDION-Integration ist nicht konfiguriert (AUDION_API_BASE_URL / AUDION_SERVICE_TOKEN).",
+    "notLinked": "Kein AUDION-Projekt verknüpft.",
+    "linked": "Verknüpft mit „{name}“ — {count} Persona(s).",
+    "viaPlatform": "über PLEXON platform_project_id",
+    "platformId": "Plattform-Projekt-ID",
+    "selectProject": "AUDION-Projekt",
+    "selectPlaceholder": "Projekt wählen…",
+    "linkedElsewhere": "anderes CHECKION-Projekt",
+    "save": "Verknüpfung speichern",
+    "saving": "Speichern…",
+    "reason": {
+      "audion_not_configured": "AUDION nicht konfiguriert",
+      "audion_fetch_failed": "AUDION nicht erreichbar",
+      "no_audion_link": "Keine Verknüpfung",
+      "no_audion_project_for_checkion_id": "Kein AUDION-Projekt für diese CHECKION-ID",
+      "no_personas": "Verknüpft, aber keine Personas in AUDION"
+    }
+  },
   "projectReport": {
     "title": "Projekt-Report",
     "description": "Executive PDF mit WCAG, SEO, Rankings, GEO und Wettbewerbsvergleich — inkl. KI-Synthese.",

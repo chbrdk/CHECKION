@@ -102,6 +102,25 @@ export async function insertProject(
     });
 }
 
+export async function getProjectPlatformIds(
+    projectId: string
+): Promise<{ platformProjectId: string | null; platformCompanyId: string | null } | null> {
+    const db = getDb();
+    const [row] = await db
+        .select({
+            platformProjectId: projects.platformProjectId,
+            platformCompanyId: projects.platformCompanyId,
+        })
+        .from(projects)
+        .where(eq(projects.id, projectId))
+        .limit(1);
+    if (!row) return null;
+    return {
+        platformProjectId: row.platformProjectId ?? null,
+        platformCompanyId: row.platformCompanyId ?? null,
+    };
+}
+
 export async function getProjectRowByPlatformProjectId(platformProjectId: string) {
     const db = getDb();
     const [row] = await db

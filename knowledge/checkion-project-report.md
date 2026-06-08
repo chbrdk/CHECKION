@@ -70,13 +70,9 @@ Ohne `OPENAI_API_KEY` oder bei Fehler: Report mit Fakten + Platzhalter-Text, PDF
 
 Tabelle `project_report_runs` — Migrationen `0026` (Runs), `0027` (`progress` JSONB).
 
-## PDF fonts (MSQDX)
+## PDF fonts
 
-- Paths: [`lib/paths/pdf-fonts.ts`](../lib/paths/pdf-fonts.ts) → `public/fonts/msqdx/`
-- Body: **Noto Sans** (TTF, full Latin + DE umlauts)
-- Headlines: **IBM Plex Mono** (WOFF2 **latin-ext** in `public/fonts/msqdx/` — covers DE umlauts/quotes; latin-only subset crashes on `ü`/`„` during PDF embed)
-- **Do not** use Google gstatic IBM Plex Mono TTF — fontkit crashes on spaces during layout.
-- Registration: [`components/pdf/shared/register-pdf-fonts.ts`](../components/pdf/shared/register-pdf-fonts.ts); call `ensurePdfFontsLoaded()` before client `pdf().toBlob()`.
+- Built-in **Helvetica** via [`lib/paths/pdf-fonts.ts`](../lib/paths/pdf-fonts.ts) (react-pdf standard fonts — reliable glyph coverage, no custom embed).
 
 ## Abgrenzung
 
@@ -91,7 +87,8 @@ Tabelle `project_report_runs` — Migrationen `0026` (Runs), `0027` (`progress` 
 |----------------|--------------|--------------|
 | `AUDION_API_BASE_URL` | — | Persona-API origin (no trailing slash) |
 | `AUDION_SERVICE_TOKEN` | `CHECKION_INBOUND_SERVICE_TOKEN` | Shared secret for server-to-server |
-| — | `checkion_project_id` on AUDION project | Links AUDION ↔ CHECKION project |
+| — | `checkion_project_id` on AUDION project **or** shared `platform_project_id` | Links AUDION ↔ CHECKION |
+| CHECKION UI | `components/projects/ProjectAudionLink.tsx` | Status + manual AUDION project picker |
 
 Endpoint: `GET /integrations/checkion/projects/{checkionProjectId}/audience-report`
 
