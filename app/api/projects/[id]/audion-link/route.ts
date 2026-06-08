@@ -84,7 +84,7 @@ export async function PUT(
     if (!project) return apiError('Project not found', API_STATUS.NOT_FOUND);
 
     if (!getAudionApiBaseUrl() || !getAudionServiceToken()) {
-        return apiError('AUDION integration not configured', API_STATUS.SERVICE_UNAVAILABLE);
+        return apiError('AUDION integration not configured', API_STATUS.UNAVAILABLE);
     }
 
     const parsed = await parseApiBody(request, linkBodySchema);
