@@ -1,10 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import {
+    chunkPairs,
     formatGeoAvgPosition,
     formatGeoPosition,
     geoPositionColor,
     geoTrendColor,
     geoTrendSymbol,
+    splitIndexedIntoColumns,
 } from '@/lib/project-report/geo-question-pdf';
 
 describe('geo-question-pdf helpers', () => {
@@ -30,5 +32,19 @@ describe('geo-question-pdf helpers', () => {
         expect(geoTrendSymbol('declining')).toBe('↓');
         expect(geoTrendSymbol('stable')).toBe('→');
         expect(geoTrendSymbol('unknown')).toBe('·');
+    });
+
+    it('chunks models and citations into compact columns', () => {
+        expect(chunkPairs([1, 2, 3])).toEqual([
+            [1, 2],
+            [3, undefined],
+        ]);
+        expect(splitIndexedIntoColumns(['a.de', 'b.de', 'c.de'])).toEqual([
+            [
+                { domain: 'a.de', rank: 1 },
+                { domain: 'c.de', rank: 3 },
+            ],
+            [{ domain: 'b.de', rank: 2 }],
+        ]);
     });
 });

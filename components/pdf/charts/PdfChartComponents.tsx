@@ -3,7 +3,7 @@
 import React from 'react';
 import { View, Text, Svg, Rect, Circle, Path } from '@react-pdf/renderer';
 import type { VisualSpec } from '@/lib/project-report/chart-specs';
-import { pdfColors, pdfStyles } from '@/components/pdf/shared/pdf-styles';
+import { pdfColors, pdfFontFamilies, pdfStyles } from '@/components/pdf/shared/pdf-styles';
 
 const CHART_WIDTH = 480;
 const CHART_HEIGHT = 130;
@@ -66,13 +66,21 @@ function ScoreRing({
                         alignItems: 'center',
                     }}
                 >
-                    <Text style={{ fontSize: 14, fontWeight: 'bold', color: pdfColors.gray900 }}>
+                    <Text
+                        style={{
+                            fontFamily: pdfFontFamilies.headline,
+                            fontSize: 14,
+                            fontWeight: 'bold',
+                            color: pdfColors.gray900,
+                        }}
+                    >
                         {value != null ? Math.round(value) : '–'}
                     </Text>
                 </View>
             </View>
             <Text
                 style={{
+                    fontFamily: pdfFontFamilies.headline,
                     fontSize: 7,
                     color: pdfColors.gray500,
                     textTransform: 'uppercase',
@@ -127,6 +135,7 @@ function BarValueLabel({
         return (
             <Text
                 style={{
+                    fontFamily: pdfFontFamilies.headline,
                     fontSize: 8,
                     fontWeight: 'bold',
                     color: pdfColors.white,
@@ -140,6 +149,7 @@ function BarValueLabel({
     return (
         <Text
             style={{
+                fontFamily: pdfFontFamilies.headline,
                 fontSize: 7,
                 fontWeight: 'bold',
                 color: pdfColors.gray700,

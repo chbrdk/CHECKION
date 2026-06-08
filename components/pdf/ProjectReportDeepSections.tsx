@@ -249,7 +249,7 @@ export function buildDeepReportPages(
                 ) : visuals.geoQuestionTrend ? (
                     <PdfVisualSpec spec={visuals.geoQuestionTrend} />
                 ) : null}
-                {geoDeep.questionDetails.slice(0, 12).map((q) => (
+                {geoDeep.questionDetails.slice(0, 16).map((q) => (
                     <PdfGeoQuestionCard key={q.evidenceId} question={q} labels={labels} />
                 ))}
             </PdfContentPage>

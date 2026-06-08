@@ -5,71 +5,80 @@ import { View, Text } from '@react-pdf/renderer';
 import type { GeoQuestionDetailFact } from '@/lib/project-report/types';
 import type { ProjectReportPdfLabels } from '@/lib/project-report/pdf-labels';
 import {
+    chunkPairs,
     formatGeoAvgPosition,
     formatGeoPosition,
     geoPositionColor,
     geoTrendColor,
     geoTrendSymbol,
+    splitIndexedIntoColumns,
 } from '@/lib/project-report/geo-question-pdf';
-import { pdfColors, pdfStyles } from '@/components/pdf/shared/pdf-styles';
+import { pdfColors, pdfFontFamilies, pdfStyles } from '@/components/pdf/shared/pdf-styles';
 
-function RankBadge({ position }: { position: number | null }) {
+function RankBadge({ position, compact = false }: { position: number | null; compact?: boolean }) {
     const color = geoPositionColor(position);
-    const bg =
-        position == null
-            ? pdfColors.gray100
-            : position <= 1
-              ? 'rgba(5, 150, 105, 0.12)'
-              : position <= 3
-                ? 'rgba(37, 99, 235, 0.12)'
-                : position <= 10
-                  ? 'rgba(217, 119, 6, 0.12)'
-                  : 'rgba(220, 38, 38, 0.12)';
-
     return (
-        <View
+        <Text
             style={{
-                backgroundColor: bg,
-                borderRadius: 4,
-                paddingVertical: 2,
-                paddingHorizontal: 6,
-                alignSelf: 'flex-start',
-                minWidth: 28,
-                alignItems: 'center',
+                fontFamily: pdfFontFamilies.headline,
+                fontSize: compact ? 7 : 8,
+                fontWeight: 'bold',
+                color,
             }}
         >
-            <Text style={{ fontSize: 8, fontWeight: 'bold', color }}>{formatGeoPosition(position)}</Text>
-        </View>
+            {formatGeoPosition(position)}
+        </Text>
     );
 }
 
-function TrendBadge({
-    trend,
-    label,
-}: {
-    trend: GeoQuestionDetailFact['trend'];
-    label: string;
-}) {
-    const color = geoTrendColor(trend);
+function CompactTableHeader({ columns }: { columns: Array<{ label: string; width: string }> }) {
     return (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Text style={{ fontSize: 10, fontWeight: 'bold', color }}>{geoTrendSymbol(trend)}</Text>
-            <Text style={{ fontSize: 9, fontWeight: 'bold', color: pdfColors.gray900 }}>{label}</Text>
-        </View>
-    );
-}
-
-function InnerTableHeader({ columns }: { columns: Array<{ label: string; width: string }> }) {
-    return (
-        <View style={[pdfStyles.dataTableHeader, { marginTop: 0 }]}>
+        <View style={pdfStyles.geoQuestionTableHeader}>
             {columns.map((col) => (
                 <Text
                     key={col.label}
-                    style={[pdfStyles.dataTableHeaderCell, { width: col.width }]}
+                    style={[pdfStyles.geoQuestionTableHeaderCell, { width: col.width }]}
                 >
                     {col.label}
                 </Text>
             ))}
+        </View>
+    );
+}
+
+function ModelPairRow({
+    left,
+    right,
+    rowIndex,
+}: {
+    left: GeoQuestionDetailFact['positionsByModel'][number];
+    right?: GeoQuestionDetailFact['positionsByModel'][number];
+    rowIndex: number;
+}) {
+    return (
+        <View
+            style={[
+                pdfStyles.geoQuestionTableRow,
+                rowIndex % 2 === 1 ? { backgroundColor: pdfColors.gray100 } : {},
+            ]}
+        >
+            <Text style={[pdfStyles.geoQuestionCell, { width: '36%' }]}>{left.modelId}</Text>
+            <View style={{ width: '14%' }}>
+                <RankBadge position={left.position} compact />
+            </View>
+            {right ? (
+                <>
+                    <Text style={[pdfStyles.geoQuestionCell, { width: '36%' }]}>{right.modelId}</Text>
+                    <View style={{ width: '14%' }}>
+                        <RankBadge position={right.position} compact />
+                    </View>
+                </>
+            ) : (
+                <>
+                    <Text style={[pdfStyles.geoQuestionCell, { width: '36%' }]} />
+                    <View style={{ width: '14%' }} />
+                </>
+            )}
         </View>
     );
 }
@@ -84,79 +93,71 @@ export function PdfGeoQuestionCard({
     const trendLabel = labels.geoTrendLabels[question.trend];
     const avgPos = formatGeoAvgPosition(question.latestPosition);
     const avgPosDisplay = question.latestPosition != null ? avgPos : labels.geoNotCited;
+    const trendColor = geoTrendColor(question.trend);
+    const modelPairs = chunkPairs(question.positionsByModel);
+    const citationCols = splitIndexedIntoColumns(question.topCitedDomains, 2);
 
     return (
         <View style={pdfStyles.geoQuestionCard}>
-            <Text style={pdfStyles.geoQuestionTitle}>{question.queryText}</Text>
-
-            <View style={pdfStyles.geoQuestionSummaryRow}>
-                <View style={pdfStyles.geoQuestionSummaryCell}>
-                    <Text style={pdfStyles.statTileLabel}>{labels.geoTrend}</Text>
-                    <TrendBadge trend={question.trend} label={trendLabel} />
-                </View>
-                <View style={[pdfStyles.geoQuestionSummaryCell, pdfStyles.geoQuestionSummaryCellBorder]}>
-                    <Text style={pdfStyles.statTileLabel}>{labels.geoAvgPosition}</Text>
-                    <Text style={pdfStyles.geoQuestionSummaryValue}>{avgPosDisplay}</Text>
-                </View>
+            <View style={pdfStyles.geoQuestionHeaderRow}>
+                <Text style={pdfStyles.geoQuestionTitle}>{question.queryText}</Text>
+                <Text style={pdfStyles.geoQuestionMeta}>
+                    <Text style={{ color: trendColor, fontWeight: 'bold' }}>
+                        {geoTrendSymbol(question.trend)} {trendLabel}
+                    </Text>
+                    {' · '}
+                    <Text style={{ fontWeight: 'bold', color: pdfColors.gray700 }}>
+                        {labels.geoAvgPosition} {avgPosDisplay}
+                    </Text>
+                </Text>
             </View>
 
             {question.positionsByModel.length > 0 ? (
                 <View style={pdfStyles.geoQuestionTablePanel}>
-                    <InnerTableHeader
+                    <CompactTableHeader
                         columns={[
-                            { label: labels.geoModel, width: '62%' },
-                            { label: labels.geoRank, width: '38%' },
+                            { label: labels.geoModel, width: '36%' },
+                            { label: labels.geoRank, width: '14%' },
+                            { label: labels.geoModel, width: '36%' },
+                            { label: labels.geoRank, width: '14%' },
                         ]}
                     />
-                    {question.positionsByModel.map((row, i) => (
-                        <View
-                            key={row.modelId}
-                            style={[
-                                pdfStyles.dataTableRow,
-                                i % 2 === 1 ? { backgroundColor: pdfColors.gray100 } : {},
-                            ]}
-                        >
-                            <Text style={[pdfStyles.tableValue, { width: '62%', fontSize: 8 }]}>
-                                {row.modelId}
-                            </Text>
-                            <View style={{ width: '38%' }}>
-                                <RankBadge position={row.position} />
-                            </View>
-                        </View>
+                    {modelPairs.map(([left, right], i) => (
+                        <ModelPairRow key={left.modelId} left={left} right={right} rowIndex={i} />
                     ))}
                 </View>
             ) : null}
 
             {question.topCitedDomains.length > 0 ? (
-                <View style={[pdfStyles.geoQuestionTablePanel, { marginTop: 8 }]}>
-                    <Text style={[pdfStyles.statTileLabel, { marginBottom: 4 }]}>{labels.geoTopCited}</Text>
-                    <InnerTableHeader
-                        columns={[
-                            { label: '#', width: '10%' },
-                            { label: labels.geoDomain, width: '90%' },
-                        ]}
-                    />
-                    {question.topCitedDomains.map((domain, i) => (
-                        <View
-                            key={`${domain}-${i}`}
-                            style={[
-                                pdfStyles.dataTableRow,
-                                i % 2 === 1 ? { backgroundColor: pdfColors.gray100 } : {},
-                            ]}
-                        >
-                            <Text
-                                style={[
-                                    pdfStyles.tableValue,
-                                    { width: '10%', fontSize: 8, color: pdfColors.gray500 },
-                                ]}
-                            >
-                                {i + 1}
-                            </Text>
-                            <Text style={[pdfStyles.tableValue, { width: '90%', fontSize: 8 }]}>
-                                {domain}
-                            </Text>
-                        </View>
-                    ))}
+                <View style={[pdfStyles.geoQuestionTablePanel, { marginTop: 4 }]}>
+                    <Text style={pdfStyles.geoQuestionSectionLabel}>{labels.geoTopCited}</Text>
+                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                        {citationCols.map((col, colIdx) => (
+                            <View key={colIdx} style={{ width: '50%' }}>
+                                {col.map((entry, i) => (
+                                    <View
+                                        key={`${entry.domain}-${entry.rank}`}
+                                        style={[
+                                            pdfStyles.geoQuestionTableRow,
+                                            i % 2 === 1 ? { backgroundColor: pdfColors.gray100 } : {},
+                                        ]}
+                                    >
+                                        <Text
+                                            style={[
+                                                pdfStyles.geoQuestionCell,
+                                                { width: '14%', color: pdfColors.gray500 },
+                                            ]}
+                                        >
+                                            {entry.rank}
+                                        </Text>
+                                        <Text style={[pdfStyles.geoQuestionCell, { width: '86%' }]}>
+                                            {entry.domain}
+                                        </Text>
+                                    </View>
+                                ))}
+                            </View>
+                        ))}
+                    </View>
                 </View>
             ) : null}
         </View>

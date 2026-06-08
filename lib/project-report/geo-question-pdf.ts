@@ -45,3 +45,33 @@ export function geoTrendSymbol(trend: GeoTrendKey): string {
             return '·';
     }
 }
+
+export function chunkPairs<T>(items: T[]): Array<[T, T | undefined]> {
+    const pairs: Array<[T, T | undefined]> = [];
+    for (let i = 0; i < items.length; i += 2) {
+        pairs.push([items[i], items[i + 1]]);
+    }
+    return pairs;
+}
+
+export function splitIntoColumns<T>(items: T[], columns = 2): T[][] {
+    const cols: T[][] = Array.from({ length: columns }, () => []);
+    items.forEach((item, i) => {
+        cols[i % columns].push(item);
+    });
+    return cols;
+}
+
+export function splitIndexedIntoColumns(
+    items: string[],
+    columns = 2
+): Array<Array<{ domain: string; rank: number }>> {
+    const cols: Array<Array<{ domain: string; rank: number }>> = Array.from(
+        { length: columns },
+        () => []
+    );
+    items.forEach((domain, i) => {
+        cols[i % columns].push({ domain, rank: i + 1 });
+    });
+    return cols;
+}

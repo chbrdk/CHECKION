@@ -1,9 +1,11 @@
 'use client';
 
+import '@/components/pdf/shared/register-pdf-fonts';
 import React from 'react';
 import { Page, Text, View, Document, StyleSheet, Svg, Path } from '@react-pdf/renderer';
 import type { ScanResult } from '@/lib/types';
 import { isUxCheckV2Summary } from '@/lib/ux-check-types';
+import { PDF_FONT_FAMILIES } from '@/lib/paths/pdf-fonts';
 
 /* DIN A4: 595.28 x 841.89 pt. Margins for print. */
 const MARGIN = 40;
@@ -48,7 +50,7 @@ const styles = StyleSheet.create({
         paddingBottom: MARGIN,
         paddingLeft: MARGIN,
         paddingRight: MARGIN,
-        fontFamily: 'Helvetica',
+        fontFamily: PDF_FONT_FAMILIES.body,
         fontSize: 10,
     },
     /* Cover page */
@@ -66,6 +68,7 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     coverTitle: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 22,
         fontWeight: 'bold',
         color: colors.gray900,
@@ -73,6 +76,7 @@ const styles = StyleSheet.create({
         letterSpacing: -0.5,
     },
     coverSubtitle: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 10,
         color: colors.gray500,
         textTransform: 'uppercase',
@@ -89,6 +93,7 @@ const styles = StyleSheet.create({
         borderLeftColor: colors.brand,
     },
     coverUrl: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 11,
         color: colors.gray900,
         fontWeight: 'bold',
@@ -118,12 +123,14 @@ const styles = StyleSheet.create({
         borderLeftWidth: 4,
     },
     scoreCardValue: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 20,
         fontWeight: 'bold',
         color: colors.gray900,
         marginBottom: 2,
     },
     scoreCardLabel: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 8,
         color: colors.gray500,
         textTransform: 'uppercase',
@@ -140,6 +147,7 @@ const styles = StyleSheet.create({
         borderBottomColor: colors.gray200,
     },
     headerFallback: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 13,
         fontWeight: 'bold',
         color: colors.black,
@@ -161,6 +169,7 @@ const styles = StyleSheet.create({
     },
     /* Section styling – base; use sectionTitleChap for chapter-specific */
     sectionTitle: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 12,
         fontWeight: 'bold',
         color: colors.gray900,
@@ -172,6 +181,7 @@ const styles = StyleSheet.create({
         borderRadius: 4,
     },
     subsectionTitle: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 9,
         fontWeight: 'bold',
         color: colors.gray700,
@@ -209,6 +219,7 @@ const styles = StyleSheet.create({
         marginBottom: 2,
     },
     url: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 11,
         color: colors.gray900,
         marginBottom: 6,
@@ -228,11 +239,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     scoreValue: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 18,
         fontWeight: 'bold',
         color: colors.gray900,
     },
     scoreLabel: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 8,
         color: colors.gray500,
         textTransform: 'uppercase',
@@ -250,6 +263,7 @@ const styles = StyleSheet.create({
         borderLeftColor: colors.gray200,
     },
     issueSeverity: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         width: 52,
         fontSize: 8,
         fontWeight: 'bold',
@@ -265,7 +279,7 @@ const styles = StyleSheet.create({
     issueSelector: {
         fontSize: 7,
         color: colors.gray400,
-        fontFamily: 'Courier',
+        fontFamily: PDF_FONT_FAMILIES.headline,
     },
     bulletItem: {
         flexDirection: 'row',
@@ -298,6 +312,7 @@ const styles = StyleSheet.create({
         marginBottom: 2,
     },
     outlineLevel: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         width: 24,
         fontSize: 8,
         color: colors.gray500,
@@ -317,6 +332,7 @@ const styles = StyleSheet.create({
         borderRadius: 4,
     },
     recommendationTitle: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 9,
         fontWeight: 'bold',
         color: colors.gray900,

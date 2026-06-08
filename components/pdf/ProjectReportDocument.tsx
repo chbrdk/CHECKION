@@ -1,5 +1,6 @@
 'use client';
 
+import '@/components/pdf/shared/register-pdf-fonts';
 import React from 'react';
 import { Document, Page, View, Text } from '@react-pdf/renderer';
 import type { ProjectReportBundle } from '@/lib/project-report/types';
@@ -45,7 +46,6 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
     const competitorSeoBarChart = bundle.visuals.find((v) => v.kind === 'competitorSeoBarChart');
     const competitorTopicOverlap = bundle.visuals.find((v) => v.kind === 'competitorTopicOverlap');
     const narrative = bundle.narrative;
-    const dateLocale = bundle.locale === 'de' ? 'de-DE' : 'en-US';
     const isComprehensive = bundle.variant === 'comprehensive' || bundle.variant === 'full';
     const deepPages = isComprehensive
         ? buildDeepReportPages(bundle, labels, {
@@ -424,72 +424,6 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
         );
         pages.push(...deepPages);
     }
-
-    // Appendix
-    pages.push(
-        <PdfChapterIntroPage
-            key="ch-intro-appendix"
-            chapterNumber={deepPages.length > 0 ? '08' : '07'}
-            title={labels.appendix}
-            subtitle={labels.chapterIntros.appendix}
-            chapter="infra"
-        />
-    );
-    pages.push(
-        <PdfContentPage key="appendix">
-            <PdfSectionHeader title={labels.dataSources} chapter="infra" />
-            <View style={pdfStyles.contentPanel}>
-                {bundle.freshness.sources.map((src) => (
-                    <View key={src.key} style={pdfStyles.dataTableRow}>
-                        <Text style={[pdfStyles.tableLabel, { width: '45%' }]}>{src.label}</Text>
-                        <Text style={pdfStyles.tableValue}>
-                            {src.available && src.updatedAt
-                                ? new Date(src.updatedAt).toLocaleString(dateLocale)
-                                : labels.noData}
-                        </Text>
-                    </View>
-                ))}
-            </View>
-            <PdfSectionHeader title="Links" chapter="infra" />
-            <View style={pdfStyles.contentPanel}>
-                <View style={pdfStyles.dataTableRow}>
-                    <Text style={pdfStyles.tableLabel}>Project</Text>
-                    <Text style={pdfStyles.tableValue}>{bundle.links.projectPath}</Text>
-                </View>
-                {bundle.links.domainScanPath ? (
-                    <View style={pdfStyles.dataTableRow}>
-                        <Text style={pdfStyles.tableLabel}>Deep Scan</Text>
-                        <Text style={pdfStyles.tableValue}>{bundle.links.domainScanPath}</Text>
-                    </View>
-                ) : null}
-                {bundle.links.geoRunPath ? (
-                    <View style={pdfStyles.dataTableRow}>
-                        <Text style={pdfStyles.tableLabel}>GEO Run</Text>
-                        <Text style={pdfStyles.tableValue}>{bundle.links.geoRunPath}</Text>
-                    </View>
-                ) : null}
-                <View style={pdfStyles.dataTableRow}>
-                    <Text style={pdfStyles.tableLabel}>Rankings</Text>
-                    <Text style={pdfStyles.tableValue}>{bundle.links.rankingsPath}</Text>
-                </View>
-            </View>
-            {(bundle.variant === 'full' || bundle.variant === 'comprehensive') && bundle.rankings ? (
-                <>
-                    <PdfSectionHeader title={labels.technicalAppendix} chapter="issues" />
-                    <View style={pdfStyles.contentPanel}>
-                        {bundle.rankings.topKeywords.map((kw) => (
-                            <View key={kw.id} style={pdfStyles.dataTableRow}>
-                                <Text style={[pdfStyles.tableLabel, { width: '55%' }]}>{kw.keyword}</Text>
-                                <Text style={pdfStyles.tableValue}>
-                                    {kw.position != null ? `#${kw.position}` : '–'}
-                                </Text>
-                            </View>
-                        ))}
-                    </View>
-                </>
-            ) : null}
-        </PdfContentPage>
-    );
 
     const finalPages = applyReportFooters(pages, {
         title: labels.footerTitle,

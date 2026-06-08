@@ -1,6 +1,9 @@
 'use client';
 
 import { StyleSheet } from '@react-pdf/renderer';
+import { PDF_FONT_FAMILIES } from '@/lib/paths/pdf-fonts';
+
+export { PDF_FONT_FAMILIES as pdfFontFamilies };
 
 export const PDF_MARGIN = 40;
 export const PDF_HEADER_HEIGHT = 36;
@@ -46,7 +49,7 @@ export const pdfStyles = StyleSheet.create({
         paddingBottom: PDF_MARGIN,
         paddingLeft: PDF_MARGIN,
         paddingRight: PDF_MARGIN,
-        fontFamily: 'Helvetica',
+        fontFamily: PDF_FONT_FAMILIES.body,
         fontSize: 10,
     },
     coverAccentBar: {
@@ -63,6 +66,7 @@ export const pdfStyles = StyleSheet.create({
         marginBottom: 24,
     },
     coverTitle: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 32,
         fontWeight: 'bold',
         color: pdfColors.gray900,
@@ -70,6 +74,7 @@ export const pdfStyles = StyleSheet.create({
         letterSpacing: -1,
     },
     coverSubtitle: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 10,
         color: pdfColors.gray500,
         textTransform: 'uppercase',
@@ -86,6 +91,7 @@ export const pdfStyles = StyleSheet.create({
         borderLeftColor: pdfColors.brand,
     },
     coverUrl: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 11,
         color: pdfColors.gray900,
         fontWeight: 'bold',
@@ -115,12 +121,14 @@ export const pdfStyles = StyleSheet.create({
         borderLeftWidth: 4,
     },
     scoreCardValue: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 18,
         fontWeight: 'bold',
         color: pdfColors.gray900,
         marginBottom: 2,
     },
     scoreCardLabel: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 8,
         color: pdfColors.gray500,
         textTransform: 'uppercase',
@@ -150,6 +158,7 @@ export const pdfStyles = StyleSheet.create({
         color: pdfColors.gray500,
     },
     sectionTitle: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 12,
         fontWeight: 'bold',
         color: pdfColors.gray900,
@@ -161,6 +170,7 @@ export const pdfStyles = StyleSheet.create({
         borderRadius: 4,
     },
     subsectionTitle: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 9,
         fontWeight: 'bold',
         color: pdfColors.gray700,
@@ -209,6 +219,7 @@ export const pdfStyles = StyleSheet.create({
         borderRadius: 4,
     },
     recommendationTitle: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 9,
         fontWeight: 'bold',
         color: pdfColors.gray900,
@@ -260,6 +271,7 @@ export const pdfStyles = StyleSheet.create({
         paddingVertical: 48,
     },
     chapterIntroNumber: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 56,
         fontWeight: 'bold',
         letterSpacing: -2,
@@ -267,6 +279,7 @@ export const pdfStyles = StyleSheet.create({
         opacity: 0.95,
     },
     chapterIntroTitle: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 28,
         fontWeight: 'bold',
         color: pdfColors.gray900,
@@ -312,6 +325,7 @@ export const pdfStyles = StyleSheet.create({
         borderColor: pdfColors.gray200,
     },
     statTileLabel: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 7,
         color: pdfColors.gray500,
         textTransform: 'uppercase',
@@ -319,6 +333,7 @@ export const pdfStyles = StyleSheet.create({
         marginBottom: 4,
     },
     statTileValue: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 16,
         fontWeight: 'bold',
         color: pdfColors.gray900,
@@ -332,6 +347,7 @@ export const pdfStyles = StyleSheet.create({
         marginTop: 4,
     },
     dataTableHeaderCell: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 7,
         fontWeight: 'bold',
         color: pdfColors.gray500,
@@ -353,6 +369,7 @@ export const pdfStyles = StyleSheet.create({
         borderColor: pdfColors.gray200,
     },
     chartTitle: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 10,
         fontWeight: 'bold',
         color: pdfColors.gray900,
@@ -380,49 +397,74 @@ export const pdfStyles = StyleSheet.create({
     },
     geoQuestionCard: {
         backgroundColor: pdfColors.gray100,
-        borderRadius: 10,
-        padding: 14,
-        marginBottom: 12,
-        borderLeftWidth: 4,
+        borderRadius: 6,
+        padding: 8,
+        marginBottom: 6,
+        borderLeftWidth: 3,
         borderLeftColor: pdfChapterColors.geo.main,
     },
-    geoQuestionTitle: {
-        fontSize: 10,
-        fontWeight: 'bold',
-        color: pdfColors.gray900,
-        lineHeight: 1.4,
-        marginBottom: 10,
-    },
-    geoQuestionSummaryRow: {
+    geoQuestionHeaderRow: {
         flexDirection: 'row',
-        backgroundColor: pdfColors.white,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: pdfColors.gray200,
-        marginBottom: 10,
-        overflow: 'hidden',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        gap: 8,
+        marginBottom: 4,
     },
-    geoQuestionSummaryCell: {
-        width: '50%',
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-    },
-    geoQuestionSummaryCellBorder: {
-        borderLeftWidth: 1,
-        borderLeftColor: pdfColors.gray200,
-    },
-    geoQuestionSummaryValue: {
-        fontSize: 16,
+    geoQuestionTitle: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
+        fontSize: 8.5,
         fontWeight: 'bold',
         color: pdfColors.gray900,
-        marginTop: 2,
+        lineHeight: 1.3,
+        flex: 1,
+        maxWidth: '72%',
+    },
+    geoQuestionMeta: {
+        fontSize: 7,
+        color: pdfColors.gray600,
+        textAlign: 'right',
+        maxWidth: '28%',
+        lineHeight: 1.3,
     },
     geoQuestionTablePanel: {
         backgroundColor: pdfColors.white,
-        borderRadius: 8,
+        borderRadius: 4,
         borderWidth: 1,
         borderColor: pdfColors.gray200,
-        paddingHorizontal: 10,
-        paddingVertical: 8,
+        paddingHorizontal: 6,
+        paddingVertical: 4,
+    },
+    geoQuestionSectionLabel: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
+        fontSize: 6,
+        color: pdfColors.gray500,
+        textTransform: 'uppercase',
+        letterSpacing: 0.6,
+        marginBottom: 2,
+    },
+    geoQuestionTableHeader: {
+        flexDirection: 'row',
+        borderBottomWidth: 1,
+        borderBottomColor: pdfColors.gray200,
+        paddingBottom: 2,
+        marginBottom: 1,
+    },
+    geoQuestionTableHeaderCell: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
+        fontSize: 6,
+        fontWeight: 'bold',
+        color: pdfColors.gray500,
+        textTransform: 'uppercase',
+        letterSpacing: 0.4,
+    },
+    geoQuestionTableRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 2,
+        paddingHorizontal: 2,
+    },
+    geoQuestionCell: {
+        fontSize: 7,
+        color: pdfColors.gray700,
     },
 });

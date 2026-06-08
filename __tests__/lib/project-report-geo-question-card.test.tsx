@@ -6,6 +6,7 @@ import { getProjectReportPdfLabels } from '@/lib/project-report/pdf-labels';
 vi.mock('@react-pdf/renderer', () => ({
     View: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
     Text: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+    Font: { register: vi.fn() },
     StyleSheet: { create: (s: object) => s },
 }));
 
