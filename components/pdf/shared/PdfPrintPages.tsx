@@ -120,11 +120,12 @@ export function PdfChapterSpreadPages({
 export function PdfContentPage({
     side,
     children,
-    showHeader = true,
+    showHeader = false,
     accentColor,
 }: {
     side: PdfSpreadSide;
     children: React.ReactNode;
+    /** Legacy top logo bar — print layout uses corner tab instead. */
     showHeader?: boolean;
     accentColor?: string;
 }) {

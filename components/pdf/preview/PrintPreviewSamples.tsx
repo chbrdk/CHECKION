@@ -2,6 +2,8 @@
 
 import { Box } from '@mui/material';
 import { pdfColors, pdfChapterColors } from '@/components/pdf/shared/pdf-styles';
+import { pdfCoverEyebrow } from '@/lib/paths/pdf-cover-copy';
+import { getProjectReportPdfLabels } from '@/lib/project-report/pdf-labels';
 import { pdfPtToCssPx } from '@/lib/paths/pdf-print-preview';
 import { PDF_RADIUS_BUTTON_PT } from '@/lib/paths/pdf-print-tokens';
 
@@ -9,15 +11,17 @@ function pt(ptValue: number) {
     return pdfPtToCssPx(ptValue);
 }
 
+const previewLabels = getProjectReportPdfLabels('de');
+
 export function PrintPreviewCoverContent() {
     const r = pt(PDF_RADIUS_BUTTON_PT / 2);
     return (
         <>
             <Box sx={{ fontSize: pt(9), letterSpacing: '0.14em', textTransform: 'uppercase', color: pdfColors.gray500, mb: 1 }}>
-                CHECKION · Executive Lagebild
+                {pdfCoverEyebrow(previewLabels.reportSubtitle)}
             </Box>
             <Box sx={{ fontSize: pt(36), fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.05, mb: 1.5 }}>
-                Projekt-Report
+                {previewLabels.reportTitle}
             </Box>
             <Box
                 sx={{
@@ -57,7 +61,15 @@ export function PrintPreviewCoverContent() {
                 ))}
             </Box>
             <Box sx={{ fontSize: pt(11), color: pdfColors.gray700, lineHeight: 1.55 }}>
-                Executive Summary Vorschau — hier stylen wir Typo, Karten und Abstände live, bevor es ins PDF geht.
+                Executive Summary Vorschau — Typo, Karten und Abstände werden über{' '}
+                <Box component="span" sx={{ fontFamily: 'monospace', fontSize: pt(9) }}>
+                    PdfProjectReportCoverContent
+                </Box>{' '}
+                und{' '}
+                <Box component="span" sx={{ fontFamily: 'monospace', fontSize: pt(9) }}>
+                    pdf-styles.ts
+                </Box>{' '}
+                mit dem PDF-Export geteilt.
             </Box>
         </>
     );
@@ -178,8 +190,8 @@ export function PrintPreviewContentSample() {
                     color: pdfColors.gray700,
                 }}
             >
-                Lorem ipsum für Fließtext, Listen und Karten. Änderungen an `PrintPreviewSamples` und den Token-Dateien
-                spiegeln sich 1:1 in den PDF-Komponenten wider.
+                Lorem ipsum für Fließtext, Listen und Karten. Inhaltsseiten nutzen denselben App-Frame
+                (`PdfContentPage`) ohne zusätzliche Header-Leiste — Branding kommt über den Corner-Tab.
             </Box>
         </>
     );

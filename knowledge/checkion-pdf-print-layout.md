@@ -14,6 +14,7 @@ Print-optimiertes Report-Layout mit App-Frame und Doppelseiten.
 | Projekt-Report | `components/pdf/ProjectReportDocument.tsx` |
 | **Browser-Preview** | `app/dev/pdf-print/page.tsx` → `/dev/pdf-print` |
 | Preview-Komponenten | `components/pdf/preview/` |
+| Cover-Inhalt (PDF + Preview) | `components/pdf/shared/PdfCoverContent.tsx`, `lib/paths/pdf-cover-copy.ts` |
 
 ## Lokal stylen (Browser)
 
@@ -26,7 +27,7 @@ Dev-Server starten (`npm run dev` → **Port 3333**), dann:
 - Gleiche SVG-Rahmen-Pfade wie im PDF (`pdf-frame-path.ts`)
 - Doppelseiten nebeneinander: Deckblatt, Kapitel-Spread, Inhalt-Spread
 - Zoom, Kapitel-Akzent, Brand-Farbe, Corner-Tab togglen
-- Workflow: Preview anpassen → Token/Styles in `pdf-print-tokens.ts` + `pdf-styles.ts` → PDF-Re-Export ohne LLM
+- Workflow: Preview anpassen → Token/Styles in `pdf-print-tokens.ts` + `pdf-styles.ts` → gemeinsame Cover-Komponente `PdfCoverContent.tsx` → PDF-Re-Export ohne LLM
 
 
 - **Deckblatt** (`PdfCoverPage`): Vollflächiger Brand-Hintergrund (#00ca55), innerer Offwhite-Panel mit abgerundeten Ecken (wie `MsqdxAppLayout`), Corner-Tab mit Logo (wie `MsqdxCornerBox` cutdown).

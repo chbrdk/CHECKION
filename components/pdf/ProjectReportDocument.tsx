@@ -4,12 +4,10 @@ import React from 'react';
 import { Document, View, Text } from '@react-pdf/renderer';
 import type { ProjectReportBundle } from '@/lib/project-report/types';
 import { getProjectReportPdfLabels } from '@/lib/project-report/pdf-labels';
-import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
+import { pdfCoverEyebrow } from '@/lib/paths/pdf-cover-copy';
 import {
-    MsqdxLogoPdf,
-    PdfSectionHeader,
-    RiskAmpelPills,
-} from '@/components/pdf/shared/PdfPrimitives';
+    PdfProjectReportCoverContent,
+} from '@/components/pdf/shared/PdfCoverContent';
 import {
     PdfCoverPage,
     PdfContentPage,
@@ -21,7 +19,9 @@ import {
     contentSideForIndex,
     PDF_DOCUMENT_PAGE_LAYOUT,
 } from '@/components/pdf/shared/PdfLayout';
-import { PdfScoreCardsFromSpec, PdfVisualSpec } from '@/components/pdf/charts/PdfChartComponents';
+import { PdfSectionHeader, RiskAmpelPills } from '@/components/pdf/shared/PdfPrimitives';
+import { PdfVisualSpec } from '@/components/pdf/charts/PdfChartComponents';
+import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
 import { buildDeepReportPages } from '@/components/pdf/ProjectReportDeepSections';
 import { buildAudienceReportPages } from '@/components/pdf/ProjectReportAudienceSections';
 import type { VisualSpec } from '@/lib/project-report/chart-specs';
@@ -29,10 +29,6 @@ import type { PdfChapterKey } from '@/components/pdf/shared/pdf-styles';
 
 interface ProjectReportDocumentProps {
     bundle: ProjectReportBundle;
-}
-
-function formatDate(iso: string, locale: 'de' | 'en'): string {
-    return new Date(iso).toLocaleDateString(locale === 'de' ? 'de-DE' : 'en-US');
 }
 
 function pushContent(
@@ -77,41 +73,23 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
         pages = appendChapterSpread(pages, { ...props, chapterPrefix: labels.chapterPrefix });
     };
 
-    // Deckblatt
+    const coverSubtitle = isComprehensive ? labels.comprehensiveSubtitle : labels.reportSubtitle;
+    const projectLine = [bundle.project.name, bundle.project.domain].filter(Boolean).join(' · ');
+    const coverLead =
+        bundle.project.valueProposition?.trim() ||
+        narrative?.executiveSummary?.split(/\n\n+/)[0]?.trim() ||
+        null;
+
+    // Deckblatt — gleiche Struktur wie `/dev/pdf-print` Preview
     pages.push(
         <PdfCoverPage key="cover">
-            <View style={pdfStyles.coverLogoWrap}>
-                <Text style={pdfStyles.coverSubtitle}>CHECKION</Text>
-            </View>
-            <Text style={pdfStyles.coverSubtitle}>
-                {isComprehensive ? labels.comprehensiveSubtitle : labels.reportSubtitle}
-            </Text>
-            <Text style={pdfStyles.coverTitle}>{labels.reportTitle}</Text>
-            <View style={pdfStyles.coverUrlBox}>
-                <Text style={pdfStyles.coverUrl}>{bundle.project.name}</Text>
-            </View>
-            <View style={pdfStyles.coverMeta}>
-                {bundle.project.domain ? (
-                    <Text style={pdfStyles.coverMetaItem}>
-                        {labels.domain}: {bundle.project.domain}
-                    </Text>
-                ) : null}
-                {bundle.project.industry ? (
-                    <Text style={pdfStyles.coverMetaItem}>
-                        {labels.industry}: {bundle.project.industry}
-                    </Text>
-                ) : null}
-                <Text style={pdfStyles.coverMetaItem}>
-                    {labels.date}: {formatDate(bundle.generatedAt, bundle.locale)}
-                </Text>
-            </View>
-            <PdfScoreCardsFromSpec spec={scoreCards?.kind === 'scoreCards' ? scoreCards : undefined} />
-            {bundle.project.valueProposition ? (
-                <Text style={[pdfStyles.leadText, { marginTop: 16 }]}>{bundle.project.valueProposition}</Text>
-            ) : null}
-            <View style={{ marginTop: 24, alignItems: 'flex-end' }}>
-                <MsqdxLogoPdf width={100} height={24} />
-            </View>
+            <PdfProjectReportCoverContent
+                eyebrow={pdfCoverEyebrow(coverSubtitle)}
+                title={labels.reportTitle}
+                projectLine={projectLine || bundle.project.name}
+                scoreCards={scoreCards?.kind === 'scoreCards' ? scoreCards : undefined}
+                leadText={coverLead}
+            />
         </PdfCoverPage>
     );
 

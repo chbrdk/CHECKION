@@ -442,20 +442,35 @@ export function PdfVisualSpec({ spec }: { spec: VisualSpec }) {
     }
 }
 
+export function PdfFlatScoreCards({
+    spec,
+}: {
+    spec: Extract<VisualSpec, { kind: 'scoreCards' }> | undefined;
+}) {
+    if (!spec?.items.length) return null;
+    return (
+        <View style={pdfStyles.scoreGrid}>
+            {spec.items.map((item) => (
+                <View key={item.label} style={pdfStyles.scoreCard}>
+                    <Text
+                        style={[
+                            pdfStyles.scoreCardValue,
+                            item.color ? { color: item.color } : {},
+                        ]}
+                    >
+                        {item.value != null ? Math.round(item.value) : '–'}
+                    </Text>
+                    <Text style={pdfStyles.scoreCardLabel}>{item.label}</Text>
+                </View>
+            ))}
+        </View>
+    );
+}
+
 export function PdfScoreCardsFromSpec({
     spec,
 }: {
     spec: Extract<VisualSpec, { kind: 'scoreCards' }> | undefined;
 }) {
-    if (!spec) return null;
-    return (
-        <ScoreRingsGrid
-            items={spec.items.map((item) => ({
-                label: item.label,
-                value: item.value,
-                color: item.color,
-                max: item.max ?? 100,
-            }))}
-        />
-    );
+    return <PdfFlatScoreCards spec={spec} />;
 }

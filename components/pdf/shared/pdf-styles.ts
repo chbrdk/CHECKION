@@ -86,6 +86,15 @@ export const pdfStyles = StyleSheet.create({
         letterSpacing: -1.2,
         lineHeight: 1.05,
     },
+    coverEyebrow: {
+        fontFamily: PDF_FONT_FAMILIES.headline,
+        fontSize: 9,
+        color: pdfColors.gray500,
+        textTransform: 'uppercase',
+        letterSpacing: 1.4,
+        marginBottom: 4,
+    },
+    /** @deprecated use coverEyebrow — kept for legacy scan subtitle line */
     coverSubtitle: {
         fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 9,

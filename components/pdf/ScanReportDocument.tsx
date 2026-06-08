@@ -3,8 +3,9 @@
 import React from 'react';
 import { Document, View, Text } from '@react-pdf/renderer';
 import type { ScanResult } from '@/lib/types';
+import { pdfCoverEyebrow } from '@/lib/paths/pdf-cover-copy';
+import { PdfScanReportCoverContent } from '@/components/pdf/shared/PdfCoverContent';
 import { pdfColors, pdfStyles, type PdfChapterKey } from '@/components/pdf/shared/pdf-styles';
-import { MsqdxLogoPdf } from '@/components/pdf/shared/PdfPrimitives';
 import {
     PdfCoverPage,
     PdfContentPage,
@@ -48,70 +49,56 @@ export function ScanReportDocument({ scan }: ScanReportProps) {
 
     pages.push(
         <PdfCoverPage key="cover">
-            <View style={pdfStyles.coverLogoWrap}>
-                <MsqdxLogoPdf width={100} height={24} />
-            </View>
-            <Text style={pdfStyles.coverSubtitle}>Accessibility &amp; UX Audit</Text>
-            <Text style={pdfStyles.coverTitle}>Scan-Report</Text>
-            <View style={pdfStyles.coverUrlBox}>
-                <Text style={pdfStyles.coverUrl}>{scan.url}</Text>
-            </View>
-            <View style={pdfStyles.coverMeta}>
-                <Text style={pdfStyles.coverMetaItem}>Scan-ID: {scan.id.slice(0, 8)}</Text>
-                <Text style={pdfStyles.coverMetaItem}>
-                    Datum: {new Date(scan.timestamp).toLocaleDateString('de-DE')}
-                </Text>
-                <Text style={pdfStyles.coverMetaItem}>Standard: {scan.standard}</Text>
-                <Text style={pdfStyles.coverMetaItem}>Gerät: {scan.device ?? 'Desktop'}</Text>
-            </View>
-            <View style={pdfStyles.scoreGrid}>
-                <View style={pdfStyles.scoreCard}>
-                    <Text style={pdfStyles.scoreCardValue}>{scan.score}/100</Text>
-                    <Text style={pdfStyles.scoreCardLabel}>Score</Text>
-                </View>
-                <View style={pdfStyles.scoreCard}>
-                    <Text style={[pdfStyles.scoreCardValue, { color: pdfColors.error }]}>
-                        {scan.stats.errors}
-                    </Text>
-                    <Text style={[pdfStyles.scoreCardLabel, { color: pdfColors.error }]}>
-                        Fehler
-                    </Text>
-                </View>
-                <View style={pdfStyles.scoreCard}>
-                    <Text style={[pdfStyles.scoreCardValue, { color: pdfColors.warning }]}>
-                        {scan.stats.warnings}
-                    </Text>
-                    <Text style={[pdfStyles.scoreCardLabel, { color: pdfColors.warning }]}>
-                        Warnungen
-                    </Text>
-                </View>
-                <View style={pdfStyles.scoreCard}>
-                    <Text style={[pdfStyles.scoreCardValue, { color: pdfColors.notice }]}>
-                        {scan.stats.notices}
-                    </Text>
-                    <Text style={[pdfStyles.scoreCardLabel, { color: pdfColors.notice }]}>
-                        Hinweise
-                    </Text>
-                </View>
-                {scan.ux != null && (
-                    <View style={pdfStyles.scoreCard}>
-                        <Text style={pdfStyles.scoreCardValue}>
-                            {scan.ux.cls != null ? scan.ux.cls.toFixed(2) : '–'}
-                        </Text>
-                        <Text style={pdfStyles.scoreCardLabel}>CLS</Text>
-                    </View>
-                )}
-                {scan.eco != null && (
-                    <View style={pdfStyles.scoreCard}>
-                        <Text style={[pdfStyles.scoreCardValue, { color: pdfColors.success }]}>
-                            {scan.eco.grade}
-                        </Text>
-                        <Text style={[pdfStyles.scoreCardLabel, { color: pdfColors.success }]}>
-                            Eco
-                        </Text>
-                    </View>
-                )}
-            </View>
+            <PdfScanReportCoverContent
+                eyebrow={pdfCoverEyebrow('Accessibility & UX Audit')}
+                title="Scan-Report"
+                urlLine={scan.url}
+                metaLines={[
+                    `Scan-ID: ${scan.id.slice(0, 8)}`,
+                    `Datum: ${new Date(scan.timestamp).toLocaleDateString('de-DE')}`,
+                    `Standard: ${scan.standard}`,
+                    `Gerät: ${scan.device ?? 'Desktop'}`,
+                ]}
+                scoreItems={[
+                    { label: 'Score', value: `${scan.score}/100` },
+                    {
+                        label: 'Fehler',
+                        value: String(scan.stats.errors),
+                        valueColor: pdfColors.error,
+                        labelColor: pdfColors.error,
+                    },
+                    {
+                        label: 'Warnungen',
+                        value: String(scan.stats.warnings),
+                        valueColor: pdfColors.warning,
+                        labelColor: pdfColors.warning,
+                    },
+                    {
+                        label: 'Hinweise',
+                        value: String(scan.stats.notices),
+                        valueColor: pdfColors.notice,
+                        labelColor: pdfColors.notice,
+                    },
+                    ...(scan.ux != null
+                        ? [
+                              {
+                                  label: 'CLS',
+                                  value: scan.ux.cls != null ? scan.ux.cls.toFixed(2) : '–',
+                              },
+                          ]
+                        : []),
+                    ...(scan.eco != null
+                        ? [
+                              {
+                                  label: 'Eco',
+                                  value: scan.eco.grade,
+                                  valueColor: pdfColors.success,
+                                  labelColor: pdfColors.success,
+                              },
+                          ]
+                        : []),
+                ]}
+            />
             {scan.eco?.greenWebHosted !== undefined && scan.eco?.greenWebHosted !== null && (
                 <Text style={[pdfStyles.metaText, { marginTop: 6 }]}>
                     Green Web (heuristic): {scan.eco.greenWebHosted ? 'listed' : 'not listed'}
