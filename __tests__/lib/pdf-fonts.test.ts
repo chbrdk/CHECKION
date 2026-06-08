@@ -13,14 +13,15 @@ describe('pdf fonts', () => {
         vi.resetModules();
     });
 
-    it('exposes MSQDX-aligned font families and Google sources', () => {
+    it('exposes MSQDX-aligned font families and bundled public sources', () => {
         expect(PDF_FONT_FAMILIES.body).toBe('Noto Sans');
         expect(PDF_FONT_FAMILIES.headline).toBe('IBM Plex Mono');
-        expect(PDF_FONT_SOURCES.notoSans.regular).toContain('fonts.gstatic.com');
-        expect(PDF_FONT_SOURCES.ibmPlexMono.bold).toContain('fonts.gstatic.com');
+        expect(PDF_FONT_SOURCES.notoSans.regular).toBe('/fonts/msqdx/noto-sans-regular.ttf');
+        expect(PDF_FONT_SOURCES.ibmPlexMono.regular).toContain('ibm-plex-mono-latin-400-normal.woff2');
     });
 
     it('registers body and headline fonts once', async () => {
+        vi.resetModules();
         const { registerPdfFonts } = await import('@/components/pdf/shared/register-pdf-fonts');
         registerPdfFonts();
         registerPdfFonts();

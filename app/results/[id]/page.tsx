@@ -415,8 +415,13 @@ export default function ResultsPage() {
         if (!result) return;
         setPdfExporting(true);
         try {
-            const { pdf } = await import('@react-pdf/renderer');
-            const { ScanReportDocument } = await import('@/components/pdf/ScanReportDocument');
+            const [{ pdf }, { ScanReportDocument }, { ensurePdfFontsLoaded }] =
+                await Promise.all([
+                    import('@react-pdf/renderer'),
+                    import('@/components/pdf/ScanReportDocument'),
+                    import('@/components/pdf/shared/register-pdf-fonts'),
+                ]);
+            await ensurePdfFontsLoaded();
             const blob = await pdf(<ScanReportDocument scan={result} />).toBlob();
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');

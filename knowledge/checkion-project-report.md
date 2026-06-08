@@ -70,6 +70,14 @@ Ohne `OPENAI_API_KEY` oder bei Fehler: Report mit Fakten + Platzhalter-Text, PDF
 
 Tabelle `project_report_runs` — Migrationen `0026` (Runs), `0027` (`progress` JSONB).
 
+## PDF fonts (MSQDX)
+
+- Paths: [`lib/paths/pdf-fonts.ts`](../lib/paths/pdf-fonts.ts) → `public/fonts/msqdx/`
+- Body: **Noto Sans** (TTF, full Latin + DE umlauts)
+- Headlines: **IBM Plex Mono** (WOFF2 latin subset from Fontsource)
+- **Do not** use Google gstatic IBM Plex Mono TTF — fontkit crashes on spaces (`RangeError: DataView` in react-pdf layout).
+- Registration: [`components/pdf/shared/register-pdf-fonts.ts`](../components/pdf/shared/register-pdf-fonts.ts); call `ensurePdfFontsLoaded()` before client `pdf().toBlob()`.
+
 ## Abgrenzung
 
 - **Single-Scan PDF:** [`components/pdf/ScanReportDocument.tsx`](../components/pdf/ScanReportDocument.tsx) — eine URL
