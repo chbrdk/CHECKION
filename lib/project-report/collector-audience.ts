@@ -28,9 +28,6 @@ export async function collectAudienceReportOverlay(
     const audion = await fetchAudionAudienceReport(projectId, {
         platformProjectId: platform?.platformProjectId,
     });
-    if (!audion) {
-        return unavailableAudienceOverlay('audion_fetch_failed');
-    }
     if (!audion.available) {
         return unavailableAudienceOverlay(audion.reason ?? 'no_audion_link');
     }

@@ -14,6 +14,7 @@ import {
     linkCheckionProjectToAudion,
     listAudionProjectsForLink,
 } from '@/lib/integrations/audion-link-client';
+import { resolveAudionLinkStatus } from '@/lib/integrations/audion-link-status';
 import { getAudionIntegrationEnvSnapshot } from '@/lib/paths/audion-api';
 
 const linkBodySchema = z.object({
@@ -55,21 +56,25 @@ export async function GET(
         platformProjectId: platform?.platformProjectId,
     });
 
-    const listProjects = request.nextUrl.searchParams.get('list') === '1';
-    const audionProjects = listProjects ? await listAudionProjectsForLink() : null;
+    // Always load project list when integration is configured — proves reachability
+    // and is required for correct link status (not “AUDION unreachable”).
+    const audionProjects = await listAudionProjectsForLink();
+    const linkStatus = resolveAudionLinkStatus(projectId, audience, audionProjects);
 
     return NextResponse.json({
         success: true,
         data: {
             configured: true,
-            linked: audience?.available === true,
-            reason: audience?.available ? null : (audience?.reason ?? 'audion_fetch_failed'),
-            resolvedVia: audience?.resolvedVia ?? null,
+            linked: linkStatus.linked,
+            reason: linkStatus.reason,
+            reportWarning: linkStatus.reportWarning,
+            audionReachable: linkStatus.audionReachable,
+            resolvedVia: linkStatus.resolvedVia,
             platformProjectId: platform?.platformProjectId ?? null,
-            audionProjectId: audience?.audionProjectId ?? null,
-            audionProjectName: audience?.audionProjectName ?? null,
-            personaCount: audience?.personas?.length ?? 0,
-            audionProjects: audionProjects ?? undefined,
+            audionProjectId: linkStatus.audionProjectId,
+            audionProjectName: linkStatus.audionProjectName,
+            personaCount: linkStatus.personaCount,
+            audionProjects: audionProjects ?? [],
         },
     });
 }

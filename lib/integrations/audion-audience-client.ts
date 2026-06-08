@@ -2,7 +2,8 @@
  * Fetch audience context from AUDION (linked via checkion_project_id or platform_project_id).
  */
 
-import { audionAudienceReportUrl, getAudionServiceToken } from '@/lib/paths/audion-api';
+import { audionAudienceReportPath } from '@/lib/paths/audion-api';
+import { audionServiceFetchJson } from '@/lib/integrations/audion-service-fetch';
 
 export interface AudionUxJourneyRunFact {
     id: string;
@@ -49,25 +50,17 @@ export interface AudionAudienceReportResponse {
 export async function fetchAudionAudienceReport(
     checkionProjectId: string,
     options?: { platformProjectId?: string | null; timeoutMs?: number }
-): Promise<AudionAudienceReportResponse | null> {
-    const url = audionAudienceReportUrl(checkionProjectId, options?.platformProjectId);
-    const token = getAudionServiceToken();
-    if (!url || !token) return null;
+): Promise<AudionAudienceReportResponse> {
+    const path = audionAudienceReportPath(checkionProjectId, options?.platformProjectId);
+    const res = await audionServiceFetchJson<AudionAudienceReportResponse>(
+        path,
+        undefined,
+        options?.timeoutMs ?? 25_000
+    );
 
-    const timeoutMs = options?.timeoutMs ?? 25_000;
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-        const res = await fetch(url, {
-            headers: { Authorization: `Bearer ${token}` },
-            signal: controller.signal,
-            cache: 'no-store',
-        });
-        if (!res.ok) return null;
-        return (await res.json()) as AudionAudienceReportResponse;
-    } catch {
-        return null;
-    } finally {
-        clearTimeout(timer);
+    if (!res.ok) {
+        return { available: false, reason: res.reason };
     }
+
+    return res.data;
 }

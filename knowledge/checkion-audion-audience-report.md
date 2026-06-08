@@ -20,8 +20,10 @@
 Env:
 
 ```
-# Public AUDION web origin + /api (Next.js BFF proxy → internal persona-api)
+# Public AUDION web origin + optional base path + /api (Next.js BFF proxy → internal persona-api)
 AUDION_API_BASE_URL=https://audion.projects-a.plygrnd.tech/api
+# When AUDION uses NEXT_PUBLIC_BASE_PATH=/audion:
+# AUDION_API_BASE_URL=https://audion.projects-a.plygrnd.tech/audion/api
 AUDION_SERVICE_TOKEN=<shared-secret>
 ```
 

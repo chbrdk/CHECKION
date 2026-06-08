@@ -16,6 +16,8 @@ interface AudionLinkStatus {
     configured: boolean;
     linked: boolean;
     reason: string | null;
+    reportWarning?: string | null;
+    audionReachable?: boolean;
     configMissing?: Array<'AUDION_API_BASE_URL' | 'AUDION_SERVICE_TOKEN'>;
     wrongTokenOnCheckion?: boolean;
     resolvedVia: string | null;
@@ -55,7 +57,7 @@ export function ProjectAudionLink({ projectId }: { projectId: string }) {
             }
             const data = json.data as AudionLinkStatus & { audionProjects?: AudionProjectOption[] };
             setStatus(data);
-            if (withList && data.audionProjects) {
+            if (data.audionProjects) {
                 setOptions(data.audionProjects);
             }
             if (data.audionProjectId) {
@@ -87,7 +89,7 @@ export function ProjectAudionLink({ projectId }: { projectId: string }) {
                 setError(json.error ?? 'Link failed');
                 return;
             }
-            await loadStatus(false);
+            await loadStatus(true);
         } catch (e) {
             setError(e instanceof Error ? e.message : 'Link failed');
         } finally {
@@ -154,6 +156,20 @@ export function ProjectAudionLink({ projectId }: { projectId: string }) {
                             {status.reason ? ` — ${reasonLabel(status.reason)}` : ''}
                         </Alert>
                     )}
+
+                    {status.reportWarning ? (
+                        <Alert severity="warning" sx={{ mb: 1 }}>
+                            {t('projectAudionLink.reportWarning', {
+                                detail: reasonLabel(status.reportWarning) ?? status.reportWarning,
+                            })}
+                        </Alert>
+                    ) : null}
+
+                    {status.audionReachable && options.length > 0 ? (
+                        <MsqdxTypography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                            {t('projectAudionLink.connected', { count: String(options.length) })}
+                        </MsqdxTypography>
+                    ) : null}
 
                     {status.platformProjectId ? (
                         <MsqdxTypography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
