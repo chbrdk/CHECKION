@@ -34,6 +34,8 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
     const rankTrend = bundle.visuals.find((v) => v.kind === 'rankTrend');
     const geoQuestionTrend = bundle.visuals.find((v) => v.kind === 'geoQuestionTrend');
     const competitorRankingScores = bundle.visuals.find((v) => v.kind === 'competitorRankingScores');
+    const competitorSeoBarChart = bundle.visuals.find((v) => v.kind === 'competitorSeoBarChart');
+    const competitorTopicOverlap = bundle.visuals.find((v) => v.kind === 'competitorTopicOverlap');
     const narrative = bundle.narrative;
     const dateLocale = bundle.locale === 'de' ? 'de-DE' : 'en-US';
     const isComprehensive = bundle.variant === 'comprehensive' || bundle.variant === 'full';
@@ -41,6 +43,8 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
         ? buildDeepReportPages(bundle, labels, {
               geoQuestionTrend: geoQuestionTrend as VisualSpec | undefined,
               competitorRankingScores: competitorRankingScores as VisualSpec | undefined,
+              competitorSeoBarChart: competitorSeoBarChart as VisualSpec | undefined,
+              competitorTopicOverlap: competitorTopicOverlap as VisualSpec | undefined,
               rankTrend: rankTrend as VisualSpec | undefined,
           })
         : [];

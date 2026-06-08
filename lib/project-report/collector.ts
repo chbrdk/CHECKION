@@ -160,7 +160,10 @@ export async function collectProjectReportFacts(
 
     const competitors: CompetitorFacts[] = [];
     for (const [domain, comp] of Object.entries(domainAll.competitors)) {
-        const ev = `ev-competitor-wcag-${slugDomain(domain)}`;
+        const slug = slugDomain(domain);
+        const wcagEv = `ev-competitor-wcag-${slug}`;
+        const seoEv = `ev-competitor-seo-${slug}`;
+        const domainEv = `ev-competitor-domain-${slug}`;
         if (!comp) {
             competitors.push({
                 domain,
@@ -172,11 +175,21 @@ export async function collectProjectReportFacts(
                 seoOnPageLabel: 'critical',
                 totalPageCount: 0,
                 pageClassification: null,
-                evidenceId: ev,
+                issueStats: { errors: 0, warnings: 0, notices: 0 },
+                performance: null,
+                eco: null,
+                systemicIssues: [],
+                llmSummary: null,
+                evidenceIds: { wcagScore: wcagEv, seoScore: seoEv, domainScore: domainEv },
+                evidenceId: wcagEv,
             });
             continue;
         }
-        register(ev, 'competitor-scan', `${domain} WCAG`, comp.wcagScore);
+        register(wcagEv, 'competitor-scan', `${domain} WCAG`, comp.wcagScore);
+        register(seoEv, 'competitor-scan', `${domain} SEO`, comp.seoOnPageScore);
+        register(domainEv, 'competitor-scan', `${domain} Domain Score`, comp.score);
+        const perf = comp.aggregated.performance;
+        const ecoAgg = comp.aggregated.eco;
         competitors.push({
             domain,
             scanId: comp.scanId,
@@ -187,7 +200,29 @@ export async function collectProjectReportFacts(
             seoOnPageLabel: comp.seoOnPageLabel,
             totalPageCount: comp.totalPageCount,
             pageClassification: comp.aggregated.pageClassification,
-            evidenceId: ev,
+            issueStats: comp.issueStats,
+            performance: perf
+                ? {
+                      avgTtfb: perf.avgTtfb ?? null,
+                      avgFcp: perf.avgFcp ?? null,
+                      avgLcp: perf.avgLcp ?? null,
+                  }
+                : null,
+            eco: ecoAgg
+                ? {
+                      avgCo2: ecoAgg.avgCo2 ?? null,
+                      gradeDistribution: ecoAgg.gradeDistribution ?? {},
+                  }
+                : null,
+            systemicIssues: comp.systemicIssues.slice(0, 5).map((issue, i) => ({
+                issueId: issue.issueId,
+                title: issue.title,
+                count: issue.count,
+                evidenceId: `ev-competitor-issue-${slug}-${i}`,
+            })),
+            llmSummary: comp.llmSummary,
+            evidenceIds: { wcagScore: wcagEv, seoScore: seoEv, domainScore: domainEv },
+            evidenceId: wcagEv,
         });
     }
 

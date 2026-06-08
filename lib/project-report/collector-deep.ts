@@ -11,6 +11,7 @@ import { listGeoEeatRuns } from '@/lib/db/geo-eeat-runs';
 import { listIssueGroupsPaged } from '@/lib/db/domain-issues';
 import { buildProjectGeoQuestionHistory, normalizeProjectDomainHost } from '@/lib/project-summaries/geo-question-history';
 import { buildMetricInsights } from '@/lib/project-report/metrics-builder';
+import { buildCompetitiveBenchmark } from '@/lib/project-report/competitive-analysis';
 import type {
     GeoPageAnalysisFact,
     IssueGroupFact,
@@ -152,6 +153,17 @@ export async function collectDeepProjectReportData(
     facts.project.counts.rankTrackingKeywords = rankCount;
 
     const metrics = buildMetricInsights(facts);
+    const competitiveBenchmark = buildCompetitiveBenchmark(facts);
+
+    if (competitiveBenchmark) {
+        for (const insight of competitiveBenchmark.deterministicInsights) {
+            facts.provenance.push({
+                evidenceId: insight.evidenceId,
+                source: 'competitive-benchmark',
+                label: insight.title,
+            });
+        }
+    }
 
     return {
         metrics,
@@ -167,5 +179,6 @@ export async function collectDeepProjectReportData(
         rankKeywordDetails,
         issueGroups,
         seoRollup,
+        competitiveBenchmark,
     };
 }

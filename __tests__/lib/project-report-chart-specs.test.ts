@@ -44,6 +44,16 @@ describe('buildChartSpecs', () => {
             seoOnPageLabel: 'fair',
             totalPageCount: 80,
             pageClassification: null,
+            issueStats: { errors: 0, warnings: 0, notices: 0 },
+            performance: null,
+            eco: null,
+            systemicIssues: [],
+            llmSummary: null,
+            evidenceIds: {
+                wcagScore: 'ev-competitor-wcag-competitor-com',
+                seoScore: 'ev-competitor-seo-competitor-com',
+                domainScore: 'ev-competitor-domain-competitor-com',
+            },
             evidenceId: 'ev-competitor-wcag-competitor-com',
         },
     ];
@@ -113,9 +123,90 @@ describe('buildChartSpecs', () => {
             rankKeywordDetails: [],
             issueGroups: [],
             seoRollup: null,
+            competitiveBenchmark: null,
         });
         const kinds = specs.map((s) => s.kind);
         expect(kinds).toContain('geoQuestionTrend');
         expect(kinds).toContain('competitorRankingScores');
+    });
+
+    it('adds SEO and topic overlap charts from competitive benchmark', () => {
+        const specs = buildChartSpecs(domain, competitors, rankings, geo, 'example.com', [], {
+            metrics: [],
+            sections: {
+                siteQuality: null,
+                seoRankings: null,
+                geo: null,
+                competitive: null,
+                journey: null,
+            },
+            geoQuestionHistory: [],
+            geoPages: [],
+            rankKeywordDetails: [],
+            issueGroups: [],
+            seoRollup: null,
+            competitiveBenchmark: {
+                scoreboard: [
+                    {
+                        domain: 'example.com',
+                        isOwn: true,
+                        scanStatus: 'complete',
+                        domainScore: 80,
+                        wcagScore: 72,
+                        seoOnPageScore: 65,
+                        totalPageCount: 100,
+                        wcagErrors: 5,
+                        avgLcp: null,
+                        avgCo2: null,
+                        geoScore: 55,
+                        rankingScore: 75,
+                        wcagDeltaVsOwn: 0,
+                        seoDeltaVsOwn: 0,
+                        evidenceId: 'ev-own',
+                    },
+                    {
+                        domain: 'competitor.com',
+                        isOwn: false,
+                        scanStatus: 'complete',
+                        domainScore: 70,
+                        wcagScore: 60,
+                        seoOnPageScore: 55,
+                        totalPageCount: 80,
+                        wcagErrors: 2,
+                        avgLcp: null,
+                        avgCo2: null,
+                        geoScore: null,
+                        rankingScore: null,
+                        wcagDeltaVsOwn: -12,
+                        seoDeltaVsOwn: -10,
+                        evidenceId: 'ev-comp',
+                    },
+                ],
+                topicOverlap: [
+                    {
+                        themeTag: 'Product',
+                        themeTagKey: 'product',
+                        own: { score: 100, pageCount: 10, maxTier: 5, avgTier: 4 },
+                        competitors: {
+                            'competitor.com': { score: 80, pageCount: 8, maxTier: 4, avgTier: 3 },
+                        },
+                        presentOn: ['example.com', 'competitor.com'],
+                        evidenceId: 'ev-topic',
+                    },
+                ],
+                deterministicInsights: [],
+                summary: {
+                    completeCompetitorCount: 1,
+                    ownWcagRank: 1,
+                    ownSeoRank: 1,
+                    sharedThemeCount: 1,
+                    uniqueOwnThemes: 0,
+                    themesOnlyCompetitorsHave: 0,
+                },
+            },
+        });
+        const kinds = specs.map((s) => s.kind);
+        expect(kinds).toContain('competitorSeoBarChart');
+        expect(kinds).toContain('competitorTopicOverlap');
     });
 });

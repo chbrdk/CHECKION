@@ -38,7 +38,13 @@ export interface DomainCompetitorSummaryData {
     seoOnPageScore: number;
     seoOnPageLabel: string;
     status: string;
+    domain: string;
+    issueStats: { errors: number; warnings: number; notices: number };
+    systemicIssues: Array<{ issueId: string; title: string; count: number; pages: string[] }>;
+    llmSummary: UxCxSummary | null;
     aggregated: {
+        performance: AggregatedPerformance | null;
+        eco: AggregatedEco | null;
         pageClassification: AggregatedPageClassification | null;
     };
 }
@@ -141,7 +147,15 @@ export async function buildProjectDomainSummaryAll(
                 seoOnPageScore: 0,
                 seoOnPageLabel: 'critical',
                 status,
-                aggregated: { pageClassification: null },
+                domain: ref.domain,
+                issueStats: { errors: 0, warnings: 0, notices: 0 },
+                systemicIssues: [],
+                llmSummary: null,
+                aggregated: {
+                    performance: null,
+                    eco: null,
+                    pageClassification: null,
+                },
             };
             continue;
         }
@@ -154,7 +168,13 @@ export async function buildProjectDomainSummaryAll(
             seoOnPageScore: extracted.seoOnPage.score,
             seoOnPageLabel: extracted.seoOnPage.label,
             status: 'complete',
+            domain: extracted.domain || ref.domain,
+            issueStats: extracted.issuesStats,
+            systemicIssues: extracted.systemicIssues.slice(0, 20),
+            llmSummary: extracted.llmSummary,
             aggregated: {
+                performance: (extracted.summary.aggregated?.performance as AggregatedPerformance) ?? null,
+                eco: (extracted.summary.aggregated?.eco as AggregatedEco) ?? null,
                 pageClassification: extracted.lightAgg?.pageClassification ?? null,
             },
         };

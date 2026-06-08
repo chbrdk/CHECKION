@@ -101,7 +101,70 @@ export interface CompetitorFacts {
     seoOnPageLabel: string;
     totalPageCount: number;
     pageClassification: AggregatedPageClassification | null;
+    issueStats: { errors: number; warnings: number; notices: number };
+    performance: DomainPerformanceFacts | null;
+    eco: DomainEcoFacts | null;
+    systemicIssues: SystemicIssueFact[];
+    llmSummary: UxCxSummary | null;
+    evidenceIds: { wcagScore: string; seoScore: string; domainScore: string };
     evidenceId: string;
+}
+
+/** Per-domain score row in competitive benchmark (own + deep-scanned competitors). */
+export interface CompetitorScoreComparison {
+    domain: string;
+    isOwn: boolean;
+    scanStatus: string;
+    domainScore: number;
+    wcagScore: number;
+    seoOnPageScore: number;
+    totalPageCount: number;
+    wcagErrors: number | null;
+    avgLcp: number | null;
+    avgCo2: number | null;
+    geoScore: number | null;
+    rankingScore: number | null;
+    wcagDeltaVsOwn: number | null;
+    seoDeltaVsOwn: number | null;
+    evidenceId: string;
+}
+
+export interface TopicOverlapThemeSnapshot {
+    score: number;
+    pageCount: number;
+    maxTier: number;
+    avgTier: number;
+}
+
+export interface TopicOverlapRow {
+    themeTag: string;
+    themeTagKey: string;
+    own: TopicOverlapThemeSnapshot | null;
+    competitors: Record<string, TopicOverlapThemeSnapshot>;
+    presentOn: string[];
+    evidenceId: string;
+}
+
+export interface CompetitiveInsightFact {
+    id: string;
+    kind: 'lead' | 'gap' | 'parity' | 'topic_gap' | 'topic_lead';
+    title: string;
+    description: string;
+    evidenceId: string;
+}
+
+export interface CompetitiveBenchmarkFacts {
+    scoreboard: CompetitorScoreComparison[];
+    topicOverlap: TopicOverlapRow[];
+    deterministicInsights: CompetitiveInsightFact[];
+    summary: {
+        completeCompetitorCount: number;
+        ownWcagRank: number;
+        ownSeoRank: number;
+        sharedThemeCount: number;
+        uniqueOwnThemes: number;
+        themesOnlyCompetitorsHave: number;
+    };
 }
 
 export interface RankingKeywordFact {
@@ -255,6 +318,7 @@ export interface ProjectReportDeepAnalysis {
     rankKeywordDetails: RankKeywordDetailFact[];
     issueGroups: IssueGroupFact[];
     seoRollup: SeoRollupFacts | null;
+    competitiveBenchmark: CompetitiveBenchmarkFacts | null;
 }
 
 export interface ProjectReportBundle {

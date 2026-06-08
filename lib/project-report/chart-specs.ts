@@ -20,7 +20,9 @@ export type VisualSpecKind =
     | 'pageTopics'
     | 'rankTrend'
     | 'geoQuestionTrend'
-    | 'competitorRankingScores';
+    | 'competitorRankingScores'
+    | 'competitorSeoBarChart'
+    | 'competitorTopicOverlap';
 
 export interface ScoreCardItem {
     label: string;
@@ -68,7 +70,12 @@ export type VisualSpec =
     | { kind: 'pageTopics'; items: TopicBarItem[] }
     | { kind: 'rankTrend'; series: TrendSeries[] }
     | { kind: 'geoQuestionTrend'; items: BarChartItem[] }
-    | { kind: 'competitorRankingScores'; items: BarChartItem[] };
+    | { kind: 'competitorRankingScores'; items: BarChartItem[] }
+    | { kind: 'competitorSeoBarChart'; title: string; items: BarChartItem[] }
+    | {
+          kind: 'competitorTopicOverlap';
+          rows: Array<{ theme: string; ownScore: number; bestCompetitorScore: number; bestCompetitor: string }>;
+      };
 
 const MAX_KEYWORDS = 10;
 const MAX_TOPICS = 5;
@@ -206,6 +213,37 @@ export function buildChartSpecs(
                 color: CHART_SERIES_PALETTE[i % CHART_SERIES_PALETTE.length],
             })),
         });
+    }
+
+    if (deep?.competitiveBenchmark && deep.competitiveBenchmark.scoreboard.length > 1) {
+        const seoBars: BarChartItem[] = deep.competitiveBenchmark.scoreboard.map((row, i) => ({
+            label: row.isOwn ? (projectDomain ?? 'Own') : row.domain,
+            value: row.seoOnPageScore,
+            color: CHART_SERIES_PALETTE[row.isOwn ? 0 : (i % CHART_SERIES_PALETTE.length)],
+            isHighlight: row.isOwn,
+        }));
+        specs.push({
+            kind: 'competitorSeoBarChart',
+            title: 'SEO On-Page — Own vs Competitors',
+            items: seoBars,
+        });
+
+        const topicRows = deep.competitiveBenchmark.topicOverlap
+            .filter((t) => t.own || Object.keys(t.competitors).length > 0)
+            .slice(0, 8)
+            .map((t) => {
+                const compEntries = Object.entries(t.competitors);
+                const best = compEntries.sort((a, b) => b[1].score - a[1].score)[0];
+                return {
+                    theme: t.themeTag,
+                    ownScore: t.own?.score ?? 0,
+                    bestCompetitorScore: best?.[1].score ?? 0,
+                    bestCompetitor: best?.[0] ?? '–',
+                };
+            });
+        if (topicRows.length > 0) {
+            specs.push({ kind: 'competitorTopicOverlap', rows: topicRows });
+        }
     }
 
     if (rankings && Object.keys(rankings.competitorScores).length > 0) {

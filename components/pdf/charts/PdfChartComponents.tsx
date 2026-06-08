@@ -169,6 +169,24 @@ export function PdfVisualSpec({ spec }: { spec: VisualSpec }) {
             return <HorizontalBarChart title="GEO Question Visibility" items={spec.items} />;
         case 'competitorRankingScores':
             return <HorizontalBarChart title="Ranking Score by Domain" items={spec.items} />;
+        case 'competitorSeoBarChart':
+            return <HorizontalBarChart title={spec.title} items={spec.items} />;
+        case 'competitorTopicOverlap':
+            return (
+                <View style={pdfStyles.cardBox}>
+                    {spec.rows.map((row) => (
+                        <View key={row.theme} style={{ marginBottom: BAR_GAP }}>
+                            <View style={pdfStyles.tableRow}>
+                                <Text style={[pdfStyles.tableLabel, { width: 140 }]}>{row.theme}</Text>
+                                <Text style={pdfStyles.tableValue}>
+                                    Own {Math.round(row.ownScore)} · {row.bestCompetitor}{' '}
+                                    {Math.round(row.bestCompetitorScore)}
+                                </Text>
+                            </View>
+                        </View>
+                    ))}
+                </View>
+            );
         case 'scoreCards':
         default:
             return null;

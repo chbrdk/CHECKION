@@ -155,5 +155,24 @@ export function buildMetricInsights(
         }
     }
 
+    if (facts.rankings?.competitorScores) {
+        const ownRank = facts.rankings.score;
+        if (ownRank != null) {
+            const compScores = Object.values(facts.rankings.competitorScores);
+            if (compScores.length > 0) {
+                const best = Math.max(...compScores);
+                push({
+                    id: 'ranking-vs-best-competitor',
+                    pillar: 'competitive',
+                    label: 'Ranking score vs best competitor',
+                    value: ownRank - best,
+                    unit: ' pts',
+                    benchmark: ownRank >= best ? 'leading' : 'trailing',
+                    evidenceId: facts.rankings.evidenceId,
+                });
+            }
+        }
+    }
+
     return metrics;
 }

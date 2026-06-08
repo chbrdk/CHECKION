@@ -7,6 +7,7 @@ import OpenAI from 'openai';
 import { OPENAI_MODEL, getOpenAIKey } from '@/lib/llm/config';
 import { reportUsage } from '@/lib/usage-report';
 import { validateNarrativeEvidence } from '@/lib/project-report/agent-qa';
+import { buildCompetitiveAgentPayload } from '@/lib/project-report/competitive-analysis';
 import { synthesizeProjectReportNarrative } from '@/lib/project-report/agent-pipeline';
 import {
     PLACEHOLDER_NARRATIVE,
@@ -165,16 +166,19 @@ export async function synthesizeComprehensiveReport(
         );
 
         await progress('agent_competitive');
+        const competitivePayload = buildCompetitiveAgentPayload(
+            facts,
+            deep.competitiveBenchmark
+        );
         deep.sections.competitive = await callSectionAgent(
             openai,
             options.locale,
             'competitive intelligence',
-            'Compare own domain vs competitors across WCAG, SEO, GEO, rankings, page topics.',
+            `Compare own domain vs deep-scanned competitors using the scoreboard, topic overlap matrix, and deterministic insights.
+Highlight: WCAG/SEO/performance/eco deltas, ranking & GEO scores, shared vs unique page topics (content pillars), systemic issue differences, and competitor LLM summaries.
+Call out concrete gaps and leads. Reference evidenceIds where applicable.`,
             {
-                competitors: facts.competitors,
-                rankings: facts.rankings?.competitorScores,
-                geo: facts.geo?.competitorScores,
-                pageTopics: facts.domain?.pageClassification?.topThemes?.slice(0, 8),
+                ...competitivePayload,
                 evidenceIds,
             }
         );

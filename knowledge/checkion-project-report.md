@@ -14,7 +14,7 @@ Aus **einem Projekt** alle relevanten Daten aggregieren, optional per LLM interp
 ## Architektur (4 Schichten)
 
 1. **Collector** — [`lib/project-report/collector.ts`](../lib/project-report/collector.ts): deterministische Fakten aus DB/APIs
-2. **Deep Collector** — [`lib/project-report/collector-deep.ts`](../lib/project-report/collector-deep.ts): GEO-Fragen-Historie, Keyword-Positionen (90 Tage), Issue-Gruppen, SEO-Rollup, KPI-Metriken
+2. **Deep Collector** — [`lib/project-report/collector-deep.ts`](../lib/project-report/collector-deep.ts): GEO-Fragen-Historie, Keyword-Positionen (90 Tage), Issue-Gruppen, SEO-Rollup, KPI-Metriken, **Competitive Benchmark** ([`competitive-analysis.ts`](../lib/project-report/competitive-analysis.ts): Deep-Scan-Vergleich inkl. Page Topics)
 3. **Agent (executive)** — [`lib/project-report/agent-pipeline.ts`](../lib/project-report/agent-pipeline.ts): eine OpenAI-Synthese
 4. **Multi-Agent (comprehensive)** — [`lib/project-report/multi-agent-pipeline.ts`](../lib/project-report/multi-agent-pipeline.ts): Spezialisten (Site Quality, SEO, GEO, Wettbewerb, Journey) + Synthesizer
 5. **Charts** — [`lib/project-report/chart-specs.ts`](../lib/project-report/chart-specs.ts) + [`components/pdf/charts/`](../components/pdf/charts/)

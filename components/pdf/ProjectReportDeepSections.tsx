@@ -31,6 +31,8 @@ export function buildDeepReportPages(
     visuals: {
         geoQuestionTrend?: VisualSpec;
         competitorRankingScores?: VisualSpec;
+        competitorSeoBarChart?: VisualSpec;
+        competitorTopicOverlap?: VisualSpec;
         rankTrend?: VisualSpec;
     }
 ): React.ReactElement[] {
@@ -70,6 +72,68 @@ export function buildDeepReportPages(
                         <Text style={pdfStyles.recommendationDesc}>{f.description}</Text>
                     </View>
                 ))}
+            </Page>
+        );
+    }
+
+    const benchmark = bundle.deep?.competitiveBenchmark;
+    if (benchmark && benchmark.scoreboard.length > 0) {
+        pages.push(
+            <Page key="competitive-benchmark" size="A4" style={pdfStyles.page}>
+                <PdfHeader />
+                <PdfSectionHeader title={labels.competitiveBenchmark} chapter="competitors" />
+                <PdfSectionHeader title={labels.scoreboard} chapter="competitors" />
+                {benchmark.scoreboard.map((row) => (
+                    <View key={row.domain} style={pdfStyles.tableRow}>
+                        <Text style={[pdfStyles.tableLabel, { width: 120 }]}>
+                            {row.isOwn ? `${row.domain} (own)` : row.domain}
+                        </Text>
+                        <Text style={pdfStyles.tableValue}>
+                            WCAG {row.wcagScore}
+                            {row.wcagDeltaVsOwn != null && !row.isOwn
+                                ? ` (${row.wcagDeltaVsOwn > 0 ? '+' : ''}${row.wcagDeltaVsOwn})`
+                                : ''}{' '}
+                            · SEO {row.seoOnPageScore} · {row.totalPageCount} pages
+                            {row.geoScore != null ? ` · GEO ${row.geoScore}` : ''}
+                            {row.rankingScore != null ? ` · Rank ${row.rankingScore}` : ''}
+                        </Text>
+                    </View>
+                ))}
+                {visuals.competitorSeoBarChart ? (
+                    <PdfVisualSpec spec={visuals.competitorSeoBarChart} />
+                ) : null}
+                {benchmark.deterministicInsights.length > 0 ? (
+                    <>
+                        <PdfSectionHeader title={labels.competitiveInsights} chapter="competitors" />
+                        {benchmark.deterministicInsights.map((ins) => (
+                            <View key={ins.id} style={pdfStyles.recommendationRow}>
+                                <Text style={pdfStyles.recommendationTitle}>
+                                    [{ins.kind}] {ins.title}
+                                </Text>
+                                <Text style={pdfStyles.recommendationDesc}>{ins.description}</Text>
+                            </View>
+                        ))}
+                    </>
+                ) : null}
+                {benchmark.topicOverlap.length > 0 ? (
+                    <>
+                        <PdfSectionHeader title={labels.topicOverlap} chapter="structure" />
+                        {visuals.competitorTopicOverlap ? (
+                            <PdfVisualSpec spec={visuals.competitorTopicOverlap} />
+                        ) : null}
+                        {benchmark.topicOverlap.slice(0, 12).map((row) => (
+                            <View key={row.themeTagKey} style={pdfStyles.tableRow}>
+                                <Text style={[pdfStyles.tableLabel, { width: 140 }]}>{row.themeTag}</Text>
+                                <Text style={pdfStyles.tableValue}>
+                                    {row.presentOn.join(' · ')}
+                                    {row.own
+                                        ? ` · own ${row.own.pageCount}p`
+                                        : ''}
+                                </Text>
+                            </View>
+                        ))}
+                    </>
+                ) : null}
             </Page>
         );
     }

@@ -43,6 +43,10 @@ export interface ProjectReportPdfLabels {
     seoTechnical: string;
     sectionAnalysis: string;
     comprehensiveSubtitle: string;
+    competitiveBenchmark: string;
+    topicOverlap: string;
+    competitiveInsights: string;
+    scoreboard: string;
 }
 
 const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
@@ -85,6 +89,10 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         seoTechnical: 'SEO Technik-Rollup',
         sectionAnalysis: 'Tiefenanalyse',
         comprehensiveSubtitle: 'Umfassende Analyse',
+        competitiveBenchmark: 'Wettbewerbs-Benchmark (Deep Scan)',
+        topicOverlap: 'Seitenthemen — Overlap',
+        competitiveInsights: 'Wettbewerbs-Erkenntnisse',
+        scoreboard: 'Scoreboard',
     },
     en: {
         reportTitle: 'Project Report',
@@ -125,6 +133,10 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         seoTechnical: 'SEO Technical Rollup',
         sectionAnalysis: 'Deep Analysis',
         comprehensiveSubtitle: 'Comprehensive Analysis',
+        competitiveBenchmark: 'Competitive Benchmark (Deep Scan)',
+        topicOverlap: 'Page Topics — Overlap',
+        competitiveInsights: 'Competitive Insights',
+        scoreboard: 'Scoreboard',
     },
 };
 
