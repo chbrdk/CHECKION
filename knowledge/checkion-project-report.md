@@ -74,8 +74,8 @@ Tabelle `project_report_runs` — Migrationen `0026` (Runs), `0027` (`progress` 
 
 - Paths: [`lib/paths/pdf-fonts.ts`](../lib/paths/pdf-fonts.ts) → `public/fonts/msqdx/`
 - Body: **Noto Sans** (TTF, full Latin + DE umlauts)
-- Headlines: **IBM Plex Mono** (WOFF2 latin subset from Fontsource)
-- **Do not** use Google gstatic IBM Plex Mono TTF — fontkit crashes on spaces (`RangeError: DataView` in react-pdf layout).
+- Headlines: **IBM Plex Mono** (WOFF2 **latin-ext** in `public/fonts/msqdx/` — covers DE umlauts/quotes; latin-only subset crashes on `ü`/`„` during PDF embed)
+- **Do not** use Google gstatic IBM Plex Mono TTF — fontkit crashes on spaces during layout.
 - Registration: [`components/pdf/shared/register-pdf-fonts.ts`](../components/pdf/shared/register-pdf-fonts.ts); call `ensurePdfFontsLoaded()` before client `pdf().toBlob()`.
 
 ## Abgrenzung

@@ -28,6 +28,8 @@ export type ProgressCallback = (progress: ReportProgress) => Promise<void>;
 
 const MAX_PAYLOAD_CHARS = 14_000;
 const SECTION_AGENT_RETRIES = 1;
+/** Per-agent OpenAI call timeout (comprehensive report runs several in sequence). */
+const OPENAI_AGENT_TIMEOUT_MS = 180_000;
 
 function sectionsForNarrative(
     sections: ProjectReportDeepAnalysis['sections']
@@ -190,7 +192,7 @@ export async function synthesizeComprehensiveReport(
 
     let openai: OpenAI;
     try {
-        openai = new OpenAI({ apiKey: getOpenAIKey() });
+        openai = new OpenAI({ apiKey: getOpenAIKey(), timeout: OPENAI_AGENT_TIMEOUT_MS });
     } catch {
         const narrative = await synthesizeProjectReportNarrative(facts, {
             ...options,

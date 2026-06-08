@@ -1342,6 +1342,10 @@
     "variantComprehensive": "Comprehensive (~15 min)",
     "variantLabel": "Report type",
     "progressLabel": "Progress",
-    "comprehensiveDescription": "Deep analysis with individual metrics, multi-agent AI, and extended PDF (15+ pages)."
+    "stepDuration": "Current step running for",
+    "agentStillRunning": "AI agent still working — on comprehensive reports a single step can take 2–5 minutes. Progress only advances when the agent finishes.",
+    "agentStepHint": "From ~30% onward several AI agents run in sequence (WCAG, SEO, GEO, competitive …). The percentage often stays the same for minutes per step — that is expected.",
+    "stillPolling": "Connection active — status refreshes every 2 seconds.",
+    "comprehensiveDescription": "Deep analysis with individual metrics, multi-agent AI, and extended PDF (15+ min.)"
   }
 }

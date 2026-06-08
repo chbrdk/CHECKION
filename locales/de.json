@@ -1342,6 +1342,10 @@
     "variantComprehensive": "Umfassend (~15 Min.)",
     "variantLabel": "Report-Typ",
     "progressLabel": "Fortschritt",
-    "comprehensiveDescription": "Tiefenanalyse mit Einzelmetriken, Multi-Agent-KI und erweitertem PDF (15+ Seiten)."
+    "stepDuration": "Aktueller Schritt läuft seit",
+    "agentStillRunning": "KI-Agent arbeitet noch — bei umfassenden Reports kann ein Schritt 2–5 Minuten dauern. Der Fortschritt springt erst weiter, wenn der Agent fertig ist.",
+    "agentStepHint": "Ab ~30 % laufen mehrere KI-Agenten nacheinander (WCAG, SEO, GEO, Wettbewerb …). Die Prozentzahl bleibt pro Schritt oft minutenlang gleich — das ist normal.",
+    "stillPolling": "Verbindung aktiv — Status wird alle 2 Sekunden abgefragt.",
+    "comprehensiveDescription": "Tiefenanalyse mit Einzelmetriken, Multi-Agent-KI und erweitertem PDF (15+ Min.)"
   }
 }

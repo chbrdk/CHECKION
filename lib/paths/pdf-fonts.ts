@@ -1,6 +1,6 @@
 /**
  * MSQDX PDF font families and bundled sources (public/fonts/msqdx).
- * Noto Sans: body (TTF). IBM Plex Mono: headlines (WOFF2 latin — Google TTF breaks fontkit on spaces).
+ * Noto Sans: body (TTF). IBM Plex Mono: headlines (WOFF2 latin-ext — latin-only misses ü/„/"; Google TTF breaks on spaces).
  */
 
 export const PDF_FONT_FAMILIES = {
@@ -17,6 +17,7 @@ export const PDF_FONT_SOURCES = {
         bold: `${PDF_FONT_BASE_PATH}/noto-sans-bold.ttf`,
     },
     ibmPlexMono: {
+        /** latin-ext subset (includes DE umlauts & quotes); file id kept for stable public URLs */
         regular: `${PDF_FONT_BASE_PATH}/ibm-plex-mono-latin-400-normal.woff2`,
         bold: `${PDF_FONT_BASE_PATH}/ibm-plex-mono-latin-700-normal.woff2`,
     },

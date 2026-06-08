@@ -7,6 +7,12 @@ import { useI18n } from '@/components/i18n/I18nProvider';
 import { apiProjectReport, apiProjectReportRun } from '@/lib/constants';
 import type { ProjectReportBundle, ProjectReportVariant } from '@/lib/project-report/types';
 import type { ReportProgress } from '@/lib/project-report/progress';
+import {
+    formatProgressDuration,
+    isAgentProgressStage,
+    secondsSinceProgressUpdate,
+    shouldShowAgentStillRunningHint,
+} from '@/lib/project-report/progress-ui';
 
 type ReportStatus = 'idle' | 'queued' | 'running' | 'complete' | 'error';
 
@@ -21,6 +27,7 @@ export function ProjectReportExport({ projectId }: { projectId: string }) {
     const [progress, setProgress] = useState<ReportProgress | null>(null);
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const runIdRef = useRef<string | null>(null);
+    const [nowMs, setNowMs] = useState(() => Date.now());
 
     const stopPolling = useCallback(() => {
         if (pollRef.current) {
@@ -30,6 +37,18 @@ export function ProjectReportExport({ projectId }: { projectId: string }) {
     }, []);
 
     useEffect(() => () => stopPolling(), [stopPolling]);
+
+    const isLoading = status === 'queued' || status === 'running';
+    const stepSeconds = secondsSinceProgressUpdate(progress, nowMs);
+    const showAgentHint =
+        variant === 'comprehensive' && isLoading && isAgentProgressStage(progress?.stage);
+    const showStillRunning = shouldShowAgentStillRunningHint(progress, nowMs);
+
+    useEffect(() => {
+        if (!isLoading) return;
+        const tick = setInterval(() => setNowMs(Date.now()), 1000);
+        return () => clearInterval(tick);
+    }, [isLoading]);
 
     const pollRun = useCallback(
         (runId: string) => {
@@ -121,8 +140,6 @@ export function ProjectReportExport({ projectId }: { projectId: string }) {
         }
     };
 
-    const isLoading = status === 'queued' || status === 'running';
-
     return (
         <>
             <MsqdxMoleculeCard sx={{ p: 2 }}>
@@ -154,11 +171,32 @@ export function ProjectReportExport({ projectId }: { projectId: string }) {
                             sx={{ mb: 1 }}
                         />
                         {progress?.label ? (
-                            <MsqdxTypography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
+                            <MsqdxTypography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
                                 {t('projectReport.progressLabel')}: {progress.label}
                                 {progress.percent != null ? ` (${progress.percent}%)` : ''}
                             </MsqdxTypography>
                         ) : null}
+                        {isLoading ? (
+                            <MsqdxTypography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                                {t('projectReport.stillPolling')}
+                            </MsqdxTypography>
+                        ) : null}
+                        {showAgentHint && stepSeconds > 0 ? (
+                            <MsqdxTypography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                                {t('projectReport.stepDuration')}: {formatProgressDuration(stepSeconds)}
+                            </MsqdxTypography>
+                        ) : null}
+                        {showAgentHint ? (
+                            <MsqdxTypography variant="caption" color="text.secondary" sx={{ mb: showStillRunning ? 0.5 : 2, display: 'block' }}>
+                                {t('projectReport.agentStepHint')}
+                            </MsqdxTypography>
+                        ) : null}
+                        {showStillRunning ? (
+                            <MsqdxTypography variant="caption" color="warning.main" sx={{ mb: 2, display: 'block' }}>
+                                {t('projectReport.agentStillRunning')}
+                            </MsqdxTypography>
+                        ) : null}
+                        {!showAgentHint && isLoading ? <Box sx={{ mb: 2 }} /> : null}
                     </>
                 ) : null}
                 {error ? (

@@ -25,8 +25,16 @@ describe('pdf font render', () => {
             React.createElement(
                 Page,
                 { style: styles.page },
-                React.createElement(Text, { style: styles.headline }, 'Kapitel 06 — Zielgruppen'),
-                React.createElement(Text, null, 'WCAG/SEO/GEO · „äöüß“')
+                React.createElement(
+                    Text,
+                    { style: styles.headline },
+                    'Kapitel 06 — Zielgruppen & „Übersicht“'
+                ),
+                React.createElement(
+                    Text,
+                    null,
+                    'WCAG/SEO/GEO · „äöüß“ · model: gpt-4 citation_score: 0.82'
+                )
             )
         );
         await expect(pdf(doc).toBuffer()).resolves.toBeTruthy();
