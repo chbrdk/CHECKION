@@ -7,7 +7,7 @@ import { Box, Tabs, Tab, useMediaQuery, useTheme } from '@mui/material';
 import { MsqdxButton } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { useFetchOnceForId } from '@/hooks/useFetchOnceForId';
-import { apiProject, pathProject, pathProjectRankings, pathProjectGeo, pathProjectGeoAnalysis, pathProjectResearch, pathProjectWcag, pathProjectSeo, pathProjectPageTopics } from '@/lib/constants';
+import { apiProject, pathProject, pathProjectRankings, pathProjectGeo, pathProjectGeoAnalysis, pathProjectResearch, pathProjectWcag, pathProjectSeo, pathProjectPageTopics, pathProjectReport } from '@/lib/constants';
 import { MSQDX_TABS_THEME_ACCENT_SX } from '@/lib/theme-accent';
 
 /** Renders back button + project sub-nav for use in the app header (headerEnd) when on a project route. */
@@ -52,6 +52,7 @@ export function ProjectHeaderNav() {
     const isWcag = pathname === basePath + '/wcag';
     const isSeo = pathname === basePath + '/seo';
     const isPageTopics = pathname === basePath + '/page-topics';
+    const isReport = pathname === basePath + '/report';
     const activeTab =
         isRankings ? 'rankings'
         : isGeo ? 'geo'
@@ -59,6 +60,7 @@ export function ProjectHeaderNav() {
         : isSeo ? 'seo'
         : isWcag ? 'wcag'
         : isPageTopics ? 'pageTopics'
+        : isReport ? 'report'
         : 'overview';
 
     return (
@@ -129,6 +131,7 @@ export function ProjectHeaderNav() {
                 <Tab label={`${t('projects.navPerformance')} (${t('projects.navComingSoon')})`} value="performance" disabled sx={{ opacity: 0.6 }} />
                 <Tab label={t('projects.navWcag')} value="wcag" href={id ? pathProjectWcag(id) : '#'} component={Link} />
                 <Tab label={t('projects.navPageTopics')} value="pageTopics" href={id ? pathProjectPageTopics(id) : '#'} component={Link} />
+                <Tab label={t('projectReport.navReport')} value="report" href={id ? pathProjectReport(id) : '#'} component={Link} />
             </Tabs>
         </Box>
     );

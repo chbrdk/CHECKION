@@ -1319,5 +1319,19 @@
     "pageTopicsCompareCard": "Nutzt dieselben gekappten Themen-Aggregate wie die Domain-Summary-API. Vergleicht den Deep Scan des Projekts mit jedem verknüpften Konkurrenz-Scan.",
     "pageTopicsCompareMatrix": "Eine Matrix mischt die Top-Themen aller Quellen (eigene Domain + Konkurrenten) in einem Diagramm: gleiche Achsen wie im Einzel-Scan (Ø-Tier vs. Seitenanzahl), Füllfarbe nach höchstem Tag-Tier, Randfarbe nach Quelle. Legende: eine Quelle isolieren. Kreis: gleiches Thema (normalisierter Tag-Schlüssel) über Quellen mit gestrichelter Linie verbinden. Pro Quelle werden Themen begrenzt, dann global nach Score gekappt.",
     "pageTopicsLowTierDominant": "Pro Seite zählt die Klassifikation, wie viele Themen-Tags in Tier 1–5 vorkommen. Hier gezählt: Seiten, auf denen die Summe der T1- und T2-Tags größer ist als die Summe der T4- und T5-Tags. Tier 3 zählt für diese Kennzahl nicht. Das ist eine Heuristik für eine eher rand-/boilerplate-lastige vs. kernthematische Tag-Verteilung – kein inhaltliches Urteil über die Seitenqualität."
+  },
+  "projectReport": {
+    "title": "Projekt-Report",
+    "description": "Executive PDF mit WCAG, SEO, Rankings, GEO und Wettbewerbsvergleich — inkl. KI-Synthese.",
+    "create": "Report erstellen",
+    "generating": "Report wird erstellt…",
+    "preview": "Vorschau",
+    "previewTitle": "Report-Vorschau",
+    "downloadPdf": "PDF herunterladen",
+    "pdfExporting": "PDF wird erstellt…",
+    "freshnessHint": "Datenstand siehe Report-Anhang nach Generierung.",
+    "historyTitle": "Report-Historie",
+    "historyEmpty": "Noch keine Reports für dieses Projekt.",
+    "navReport": "Reports"
   }
 }

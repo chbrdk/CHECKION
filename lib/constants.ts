@@ -119,6 +119,8 @@ export const pathProjectSeo = (id: string) => `${PATH_PROJECTS}/${encodeURICompo
 export const pathProjectPageTopics = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}/page-topics`;
 /** Build app route: /projects/[id]/research */
 export const pathProjectResearch = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}/research`;
+/** Build app route: /projects/[id]/report — report history (optional UI) */
+export const pathProjectReport = (id: string) => `${PATH_PROJECTS}/${encodeURIComponent(id)}/report`;
 /** Build app route: /deep-scans/compare?ids=uuid1,uuid2 */
 export const pathDeepScansCompare = (scanIdA: string, scanIdB: string) => {
     const params = new URLSearchParams({ ids: `${scanIdA},${scanIdB}` });
@@ -518,6 +520,11 @@ export const apiProjectDomainScanCompetitor = (id: string) =>
 /** GET /api/projects/[id]/domain-scans/active – queued/scanning/paused/cancelling deep scans for this project. */
 export const apiProjectDomainScansActive = (id: string) =>
   `${API_PROJECTS}/${encodeURIComponent(id)}/domain-scans/active`;
+/** POST /api/projects/[id]/report – start async project executive report generation. */
+export const apiProjectReport = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/report`;
+/** GET /api/projects/[id]/report/[runId] – poll report job status and bundle. */
+export const apiProjectReportRun = (projectId: string, runId: string) =>
+  `${API_PROJECTS}/${encodeURIComponent(projectId)}/report/${encodeURIComponent(runId)}`;
 /** GET /api/scan/domain/by-domain?domain= – latest completed scan for domain (current user). */
 export const apiScanDomainByDomain = (domain: string) => `${API_SCAN_DOMAIN}/by-domain?domain=${encodeURIComponent(domain)}`;
 

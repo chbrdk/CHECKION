@@ -1,0 +1,195 @@
+'use client';
+
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Box, Dialog, DialogContent, DialogTitle, LinearProgress } from '@mui/material';
+import { MsqdxButton, MsqdxTypography, MsqdxMoleculeCard } from '@msqdx/react';
+import { useI18n } from '@/components/i18n/I18nProvider';
+import { apiProjectReport, apiProjectReportRun } from '@/lib/constants';
+import type { ProjectReportBundle } from '@/lib/project-report/types';
+
+type ReportStatus = 'idle' | 'queued' | 'running' | 'complete' | 'error';
+
+export function ProjectReportExport({ projectId }: { projectId: string }) {
+    const { t, locale } = useI18n();
+    const [status, setStatus] = useState<ReportStatus>('idle');
+    const [error, setError] = useState<string | null>(null);
+    const [bundle, setBundle] = useState<ProjectReportBundle | null>(null);
+    const [previewOpen, setPreviewOpen] = useState(false);
+    const [pdfExporting, setPdfExporting] = useState(false);
+    const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const runIdRef = useRef<string | null>(null);
+
+    const stopPolling = useCallback(() => {
+        if (pollRef.current) {
+            clearInterval(pollRef.current);
+            pollRef.current = null;
+        }
+    }, []);
+
+    useEffect(() => () => stopPolling(), [stopPolling]);
+
+    const pollRun = useCallback(
+        (runId: string) => {
+            stopPolling();
+            pollRef.current = setInterval(async () => {
+                try {
+                    const res = await fetch(apiProjectReportRun(projectId, runId));
+                    const json = await res.json();
+                    if (!json.success) {
+                        setStatus('error');
+                        setError(json.error ?? 'Poll failed');
+                        stopPolling();
+                        return;
+                    }
+                    const data = json.data;
+                    setStatus(data.status);
+                    if (data.status === 'complete') {
+                        setBundle(data.bundle);
+                        setPreviewOpen(true);
+                        stopPolling();
+                    } else if (data.status === 'error') {
+                        setError(data.error ?? 'Report generation failed');
+                        stopPolling();
+                    }
+                } catch (e) {
+                    setStatus('error');
+                    setError(e instanceof Error ? e.message : 'Poll failed');
+                    stopPolling();
+                }
+            }, 2000);
+        },
+        [projectId, stopPolling]
+    );
+
+    const handleCreateReport = async () => {
+        setError(null);
+        setStatus('queued');
+        setBundle(null);
+        try {
+            const res = await fetch(apiProjectReport(projectId), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    locale: locale === 'en' ? 'en' : 'de',
+                    variant: 'executive',
+                }),
+            });
+            const json = await res.json();
+            if (!json.success) {
+                setStatus('error');
+                setError(json.error ?? 'Failed to start report');
+                return;
+            }
+            runIdRef.current = json.data.runId;
+            setStatus(json.data.status);
+            pollRun(json.data.runId);
+        } catch (e) {
+            setStatus('error');
+            setError(e instanceof Error ? e.message : 'Failed to start report');
+        }
+    };
+
+    const handlePdfDownload = async () => {
+        if (!bundle) return;
+        setPdfExporting(true);
+        try {
+            const [{ pdf }, { ProjectReportDocument }] = await Promise.all([
+                import('@react-pdf/renderer'),
+                import('@/components/pdf/ProjectReportDocument'),
+            ]);
+            const blob = await pdf(<ProjectReportDocument bundle={bundle} />).toBlob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const slug = bundle.project.name.replace(/[^a-z0-9]+/gi, '-').slice(0, 40);
+            a.href = url;
+            a.download = `checkion-project-report-${slug}-${new Date().toISOString().slice(0, 10)}.pdf`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            console.error('[CHECKION] project report PDF export', e);
+            setError(e instanceof Error ? e.message : 'PDF export failed');
+        } finally {
+            setPdfExporting(false);
+        }
+    };
+
+    const isLoading = status === 'queued' || status === 'running';
+
+    return (
+        <>
+            <MsqdxMoleculeCard sx={{ p: 2 }}>
+                <MsqdxTypography variant="subtitle1" weight="semibold" sx={{ mb: 1 }}>
+                    {t('projectReport.title')}
+                </MsqdxTypography>
+                <MsqdxTypography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {t('projectReport.description')}
+                </MsqdxTypography>
+                {isLoading ? <LinearProgress sx={{ mb: 2 }} /> : null}
+                {error ? (
+                    <MsqdxTypography variant="body2" color="error" sx={{ mb: 1 }}>
+                        {error}
+                    </MsqdxTypography>
+                ) : null}
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    <MsqdxButton
+                        variant="contained"
+                        onClick={handleCreateReport}
+                        disabled={isLoading}
+                    >
+                        {isLoading ? t('projectReport.generating') : t('projectReport.create')}
+                    </MsqdxButton>
+                    {bundle ? (
+                        <MsqdxButton variant="outlined" onClick={() => setPreviewOpen(true)}>
+                            {t('projectReport.preview')}
+                        </MsqdxButton>
+                    ) : null}
+                </Box>
+                {bundle?.freshness?.sources?.length ? (
+                    <MsqdxTypography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                        {t('projectReport.freshnessHint')}
+                    </MsqdxTypography>
+                ) : null}
+            </MsqdxMoleculeCard>
+
+            <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>{t('projectReport.previewTitle')}</DialogTitle>
+                <DialogContent>
+                    {bundle ? (
+                        <>
+                            {bundle.narrative?.executiveSummary ? (
+                                <MsqdxTypography variant="body2" sx={{ mb: 2, whiteSpace: 'pre-wrap' }}>
+                                    {bundle.narrative.executiveSummary.slice(0, 600)}
+                                    {bundle.narrative.executiveSummary.length > 600 ? '…' : ''}
+                                </MsqdxTypography>
+                            ) : null}
+                            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
+                                {[
+                                    { label: 'WCAG', value: bundle.domain?.wcagScore },
+                                    { label: 'SEO', value: bundle.domain?.seoOnPageScore },
+                                    { label: 'GEO', value: bundle.geo?.score },
+                                    { label: 'Rank', value: bundle.rankings?.score },
+                                ].map((kpi) => (
+                                    <Box key={kpi.label}>
+                                        <MsqdxTypography variant="caption" color="text.secondary">
+                                            {kpi.label}
+                                        </MsqdxTypography>
+                                        <MsqdxTypography variant="h6">
+                                            {kpi.value != null ? kpi.value : '–'}
+                                        </MsqdxTypography>
+                                    </Box>
+                                ))}
+                            </Box>
+                            <MsqdxButton
+                                variant="contained"
+                                onClick={handlePdfDownload}
+                                disabled={pdfExporting}
+                            >
+                                {pdfExporting ? t('projectReport.pdfExporting') : t('projectReport.downloadPdf')}
+                            </MsqdxButton>
+                        </>
+                    ) : null}
+                </DialogContent>
+            </Dialog>
+        </>
+    );
+}

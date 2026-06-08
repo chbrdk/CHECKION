@@ -305,6 +305,13 @@ export const rankTrackingRefreshBodySchema = z.object({
   message: 'Provide keywordId or projectId',
 });
 
+/** POST /api/projects/[id]/report */
+export const projectReportBodySchema = z.object({
+  locale: z.enum(['de', 'en']).optional(),
+  variant: z.enum(['executive', 'full']).optional(),
+  skipLlm: z.boolean().optional(),
+});
+
 function formatZodError(err: z.ZodError): string {
   const first = err.issues[0];
   if (!first) return 'Validation failed';

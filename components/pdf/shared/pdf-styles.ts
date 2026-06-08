@@ -1,0 +1,242 @@
+'use client';
+
+import { StyleSheet } from '@react-pdf/renderer';
+
+export const PDF_MARGIN = 40;
+export const PDF_HEADER_HEIGHT = 36;
+export const PDF_BRAND_PURPLE = '#b638ff';
+export const PDF_ACCENT_LIGHT = 'rgba(182, 56, 255, 0.08)';
+
+export const pdfColors = {
+    black: '#000000',
+    gray900: '#111827',
+    gray700: '#374151',
+    gray600: '#4B5563',
+    gray500: '#6B7280',
+    gray400: '#9CA3AF',
+    gray200: '#E5E7EB',
+    gray100: '#F3F4F6',
+    white: '#FFFFFF',
+    error: '#DC2626',
+    warning: '#D97706',
+    notice: '#2563EB',
+    success: '#059669',
+    brand: PDF_BRAND_PURPLE,
+};
+
+export const pdfChapterColors = {
+    issues: { main: '#B91C1C', bg: 'rgba(185, 28, 28, 0.08)' },
+    summary: { main: PDF_BRAND_PURPLE, bg: PDF_ACCENT_LIGHT },
+    visual: { main: '#1D4ED8', bg: 'rgba(29, 78, 216, 0.08)' },
+    ux: { main: '#0D9488', bg: 'rgba(13, 148, 136, 0.08)' },
+    structure: { main: '#4F46E5', bg: 'rgba(79, 70, 229, 0.08)' },
+    seo: { main: '#047857', bg: 'rgba(4, 120, 87, 0.08)' },
+    infra: { main: '#C2410C', bg: 'rgba(194, 65, 12, 0.08)' },
+    geo: { main: '#0891B2', bg: 'rgba(8, 145, 178, 0.08)' },
+    competitors: { main: '#7C3AED', bg: 'rgba(124, 58, 237, 0.08)' },
+} as const;
+
+export type PdfChapterKey = keyof typeof pdfChapterColors;
+
+export const pdfStyles = StyleSheet.create({
+    page: {
+        flexDirection: 'column',
+        backgroundColor: pdfColors.white,
+        paddingTop: PDF_MARGIN,
+        paddingBottom: PDF_MARGIN,
+        paddingLeft: PDF_MARGIN,
+        paddingRight: PDF_MARGIN,
+        fontFamily: 'Helvetica',
+        fontSize: 10,
+    },
+    coverAccentBar: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 6,
+        backgroundColor: pdfColors.brand,
+    },
+    coverLogoWrap: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        marginBottom: 24,
+    },
+    coverTitle: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: pdfColors.gray900,
+        marginBottom: 6,
+        letterSpacing: -0.5,
+    },
+    coverSubtitle: {
+        fontSize: 10,
+        color: pdfColors.gray500,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+        marginBottom: 20,
+    },
+    coverUrlBox: {
+        backgroundColor: pdfColors.gray100,
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+        borderRadius: 6,
+        marginBottom: 24,
+        borderLeftWidth: 4,
+        borderLeftColor: pdfColors.brand,
+    },
+    coverUrl: {
+        fontSize: 11,
+        color: pdfColors.gray900,
+        fontWeight: 'bold',
+    },
+    coverMeta: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 16,
+        marginBottom: 20,
+    },
+    coverMetaItem: {
+        fontSize: 9,
+        color: pdfColors.gray500,
+    },
+    scoreGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 10,
+        marginBottom: 8,
+    },
+    scoreCard: {
+        width: '22%',
+        minWidth: 90,
+        padding: 12,
+        borderRadius: 8,
+        backgroundColor: pdfColors.gray100,
+        borderLeftWidth: 4,
+    },
+    scoreCardValue: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: pdfColors.gray900,
+        marginBottom: 2,
+    },
+    scoreCardLabel: {
+        fontSize: 8,
+        color: pdfColors.gray500,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        height: PDF_HEADER_HEIGHT,
+        marginBottom: 14,
+        borderBottomWidth: 1,
+        borderBottomColor: pdfColors.gray200,
+    },
+    footer: {
+        position: 'absolute',
+        bottom: PDF_MARGIN,
+        left: PDF_MARGIN,
+        right: PDF_MARGIN,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingTop: 8,
+        borderTopWidth: 1,
+        borderTopColor: pdfColors.gray200,
+        fontSize: 8,
+        color: pdfColors.gray500,
+    },
+    sectionTitle: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: pdfColors.gray900,
+        marginTop: 10,
+        marginBottom: 6,
+        paddingLeft: 10,
+        paddingVertical: 6,
+        borderLeftWidth: 4,
+        borderRadius: 4,
+    },
+    subsectionTitle: {
+        fontSize: 9,
+        fontWeight: 'bold',
+        color: pdfColors.gray700,
+        marginTop: 6,
+        marginBottom: 4,
+    },
+    bodyText: {
+        fontSize: 9,
+        color: pdfColors.gray700,
+        marginBottom: 4,
+        lineHeight: 1.45,
+    },
+    metaText: {
+        fontSize: 9,
+        color: pdfColors.gray500,
+        marginBottom: 2,
+    },
+    tableRow: {
+        flexDirection: 'row',
+        marginBottom: 4,
+        fontSize: 9,
+    },
+    tableLabel: {
+        width: 130,
+        color: pdfColors.gray500,
+    },
+    tableValue: {
+        flex: 1,
+        color: pdfColors.gray700,
+    },
+    cardBox: {
+        backgroundColor: pdfColors.gray100,
+        padding: 12,
+        borderRadius: 6,
+        marginBottom: 10,
+        borderLeftWidth: 4,
+        borderLeftColor: pdfColors.gray200,
+    },
+    recommendationRow: {
+        marginBottom: 10,
+        paddingLeft: 12,
+        paddingVertical: 6,
+        borderLeftWidth: 3,
+        borderLeftColor: pdfColors.brand,
+        backgroundColor: PDF_ACCENT_LIGHT,
+        borderRadius: 4,
+    },
+    recommendationTitle: {
+        fontSize: 9,
+        fontWeight: 'bold',
+        color: pdfColors.gray900,
+        marginBottom: 2,
+    },
+    recommendationDesc: {
+        fontSize: 8,
+        color: pdfColors.gray600,
+        lineHeight: 1.35,
+    },
+    bulletItem: {
+        flexDirection: 'row',
+        marginBottom: 4,
+        paddingLeft: 8,
+    },
+    bulletDot: {
+        width: 4,
+        marginRight: 8,
+        marginTop: 5,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: pdfColors.brand,
+    },
+    riskPill: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 4,
+        marginRight: 8,
+        marginBottom: 6,
+    },
+});

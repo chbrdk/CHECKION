@@ -34,6 +34,7 @@ import {
     pathProjectPageTopics,
 } from '@/lib/constants';
 import { InfoTooltip } from '@/components/InfoTooltip';
+import { ProjectReportExport } from '@/components/projects/ProjectReportExport';
 import { useStatusUi } from '@/components/status/StatusUiContext';
 import Link from 'next/link';
 import { THEME_ACCENT_CSS } from '@/lib/theme-accent';
@@ -1239,6 +1240,10 @@ export default function ProjectDetailPage() {
                         </MsqdxTypography>
                     )}
                 </MsqdxMoleculeCard>
+
+                <Box sx={{ gridColumn: { xs: 1, md: '1 / -1' } }}>
+                    <ProjectReportExport projectId={id} />
+                </Box>
             </Box>
         </Box>
     );

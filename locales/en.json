@@ -1319,5 +1319,19 @@
     "pageTopicsCompareCard": "Uses the same capped topic aggregates as the domain summary API. Compare your project’s deep scan with each competitor scan linked to this project.",
     "pageTopicsCompareMatrix": "One chart blends top themes from every source (your domain + competitors): same axes as single-domain view (avg tier vs. page count), fill color by highest tag tier, stroke color by source. Legend isolates one source. Clicking a bubble connects the same normalized topic across sources with a dashed line. Per source we cap themes, then cap globally by score so the chart stays readable.",
     "pageTopicsLowTierDominant": "Per page we count how many topic tags fall in tiers T1–T5. This metric counts pages where the sum of T1 and T2 tag counts is greater than the sum of T4 and T5 tag counts. Tier 3 is not part of this comparison. It is a heuristic for a more peripheral/boilerplate-heavy vs. core-topic tag mix—not a verdict on page quality."
+  },
+  "projectReport": {
+    "title": "Project Report",
+    "description": "Executive PDF with WCAG, SEO, rankings, GEO and competitor comparison — including AI synthesis.",
+    "create": "Create report",
+    "generating": "Generating report…",
+    "preview": "Preview",
+    "previewTitle": "Report preview",
+    "downloadPdf": "Download PDF",
+    "pdfExporting": "Creating PDF…",
+    "freshnessHint": "See report appendix for data freshness after generation.",
+    "historyTitle": "Report history",
+    "historyEmpty": "No reports for this project yet.",
+    "navReport": "Reports"
   }
 }

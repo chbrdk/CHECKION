@@ -392,3 +392,17 @@ export const rankTrackingPositions = pgTable('rank_tracking_positions', {
     serpOrganic: jsonb('serp_organic'),
     recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** Project executive report generation runs (async bundle + optional LLM synthesis). */
+export const projectReportRuns = pgTable('project_report_runs', {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull(),
+    projectId: text('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+    status: text('status').notNull(), // 'queued' | 'running' | 'complete' | 'error'
+    locale: text('locale').notNull().default('de'),
+    variant: text('variant').notNull().default('executive'), // 'executive' | 'full'
+    bundle: jsonb('bundle'),
+    error: text('error'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+});

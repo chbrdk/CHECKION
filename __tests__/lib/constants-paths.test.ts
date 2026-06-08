@@ -58,6 +58,9 @@ import {
     PUPPETEER_PROTOCOL_TIMEOUT_MS,
     ENV_REDIS_URL,
     ENV_CHECKION_DISABLE_REDIS_RATE_LIMIT,
+    apiProjectReport,
+    apiProjectReportRun,
+    pathProjectReport,
 } from '@/lib/constants';
 
 describe('Redis env key', () => {
@@ -333,5 +336,15 @@ describe('HTTP cache hints (domain JSON APIs)', () => {
         expect(HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON).toBe(
             `private, max-age=${CACHE_REVALIDATE_DOMAIN}, stale-while-revalidate=${CACHE_DOMAIN_JSON_STALE_WHILE_REVALIDATE}`
         );
+    });
+});
+
+describe('Project report API paths', () => {
+    it('builds report POST and poll URLs', () => {
+        expect(apiProjectReport('proj-uuid')).toBe('/api/projects/proj-uuid/report');
+        expect(apiProjectReportRun('proj-uuid', 'run-uuid')).toBe(
+            '/api/projects/proj-uuid/report/run-uuid'
+        );
+        expect(pathProjectReport('proj-uuid')).toBe('/projects/proj-uuid/report');
     });
 });

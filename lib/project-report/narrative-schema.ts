@@ -1,0 +1,52 @@
+/**
+ * Zod schema for LLM-generated project report narrative.
+ */
+
+import { z } from 'zod';
+
+export const RiskLevelSchema = z.enum(['low', 'medium', 'high', 'unknown']);
+
+export const ProjectReportFindingSchema = z.object({
+    title: z.string(),
+    description: z.string(),
+    severity: RiskLevelSchema.optional(),
+    evidenceIds: z.array(z.string()).min(1),
+});
+
+export const ProjectReportRecommendationSchema = z.object({
+    title: z.string(),
+    description: z.string(),
+    priority: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]),
+    category: z.string().optional(),
+    evidenceIds: z.array(z.string()).min(1),
+});
+
+export const ProjectReportRiskAmpelSchema = z.object({
+    wcag: RiskLevelSchema,
+    geo: RiskLevelSchema,
+    rankings: RiskLevelSchema,
+});
+
+export const ProjectReportNarrativeSchema = z.object({
+    executiveSummary: z.string(),
+    competitiveLandscape: z.string().optional(),
+    findings: z.array(ProjectReportFindingSchema),
+    recommendations: z.array(ProjectReportRecommendationSchema),
+    riskAmpel: ProjectReportRiskAmpelSchema,
+    modelUsed: z.string().optional(),
+    generatedAt: z.string().optional(),
+    synthesisAvailable: z.boolean().optional(),
+});
+
+export type ProjectReportFinding = z.infer<typeof ProjectReportFindingSchema>;
+export type ProjectReportRecommendation = z.infer<typeof ProjectReportRecommendationSchema>;
+export type ProjectReportRiskAmpel = z.infer<typeof ProjectReportRiskAmpelSchema>;
+export type ProjectReportNarrative = z.infer<typeof ProjectReportNarrativeSchema>;
+
+export const PLACEHOLDER_NARRATIVE: ProjectReportNarrative = {
+    executiveSummary: '',
+    findings: [],
+    recommendations: [],
+    riskAmpel: { wcag: 'unknown', geo: 'unknown', rankings: 'unknown' },
+    synthesisAvailable: false,
+};
