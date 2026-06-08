@@ -399,6 +399,7 @@ export async function collectProjectReportFacts(
         rankTrends,
         journey,
         deep: null,
+        audience: null,
         provenance,
         freshness,
         links: {
