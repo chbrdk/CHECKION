@@ -124,7 +124,7 @@ export interface CompetitorScoreComparison {
     avgCo2: number | null;
     geoScore: number | null;
     rankingScore: number | null;
-    wcagDeltaVsOwn: number | null;
+    domainScoreDeltaVsOwn: number | null;
     seoDeltaVsOwn: number | null;
     evidenceId: string;
 }
@@ -159,7 +159,7 @@ export interface CompetitiveBenchmarkFacts {
     deterministicInsights: CompetitiveInsightFact[];
     summary: {
         completeCompetitorCount: number;
-        ownWcagRank: number;
+        ownDomainScoreRank: number;
         ownSeoRank: number;
         sharedThemeCount: number;
         uniqueOwnThemes: number;

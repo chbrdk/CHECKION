@@ -33,7 +33,7 @@ function buildReducedFactsPayload(bundle: Omit<ProjectReportBundle, 'visuals' | 
             competitors: bundle.project.competitors,
         },
         scores: {
-            wcag: bundle.domain?.wcagScore ?? null,
+            domainScore: bundle.domain?.score ?? null,
             seo: bundle.domain?.seoOnPageScore ?? null,
             geo: bundle.geo?.score ?? null,
             rankings: bundle.rankings?.score ?? null,
@@ -54,7 +54,7 @@ function buildReducedFactsPayload(bundle: Omit<ProjectReportBundle, 'visuals' | 
             .filter((c) => c.status === 'complete')
             .map((c) => ({
                 domain: c.domain,
-                wcagScore: c.wcagScore,
+                domainScore: c.score,
                 seoScore: c.seoOnPageScore,
                 evidenceId: c.evidenceId,
             })),

@@ -82,10 +82,10 @@ function minimalFacts(): Omit<ProjectReportBundle, 'visuals' | 'narrative' | 'de
 }
 
 describe('buildMetricInsights', () => {
-    it('builds WCAG, SEO, rankings, geo and performance metrics', () => {
+    it('builds domain score, SEO, rankings, geo and performance metrics', () => {
         const metrics = buildMetricInsights(minimalFacts());
         const ids = metrics.map((m) => m.id);
-        expect(ids).toContain('wcag-score');
+        expect(ids).toContain('domain-score');
         expect(ids).toContain('seo-onpage');
         expect(ids).toContain('ranking-score');
         expect(ids).toContain('geo-score');

@@ -227,8 +227,8 @@ function buildPersonaFit(
     const pillars: AudiencePillarFit[] = [
         {
             pillar: 'wcag',
-            level: scoreFromMetric(facts.domain?.wcagScore),
-            score: facts.domain?.wcagScore ?? null,
+            level: scoreFromMetric(facts.domain?.score),
+            score: facts.domain?.score ?? null,
         },
         {
             pillar: 'seo',

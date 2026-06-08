@@ -57,7 +57,7 @@ function PersonaAudienceCard({
     labels: ProjectReportPdfLabels;
 }) {
     const pillarLabels: Record<string, string> = {
-        wcag: 'WCAG',
+        wcag: labels.domainScore,
         seo: 'SEO',
         geo: 'GEO',
         rankings: labels.audiencePillarRankings,

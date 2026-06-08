@@ -21,13 +21,13 @@ export function buildMetricInsights(
     if (facts.domain) {
         const d = facts.domain;
         push({
-            id: 'wcag-score',
+            id: 'domain-score',
             pillar: 'wcag',
-            label: 'WCAG Score',
-            value: d.wcagScore,
+            label: 'Domain Score (UX)',
+            value: d.score,
             unit: '/100',
-            benchmark: d.wcagScore >= 80 ? 'good' : d.wcagScore >= 60 ? 'fair' : 'critical',
-            evidenceId: d.evidenceIds.wcagScore,
+            benchmark: d.score >= 80 ? 'good' : d.score >= 60 ? 'fair' : 'critical',
+            evidenceId: d.evidenceIds.domainScore,
         });
         push({
             id: 'wcag-errors',
@@ -51,14 +51,6 @@ export function buildMetricInsights(
             unit: '/100',
             benchmark: d.seoOnPageLabel,
             evidenceId: d.evidenceIds.seoScore,
-        });
-        push({
-            id: 'domain-score',
-            pillar: 'wcag',
-            label: 'Domain Scan Score',
-            value: d.score,
-            unit: '/100',
-            evidenceId: d.evidenceIds.domainScore,
         });
         push({
             id: 'pages-scanned',
@@ -133,12 +125,12 @@ export function buildMetricInsights(
 
     for (const c of facts.competitors.filter((x) => x.status === 'complete').slice(0, 5)) {
         push({
-            id: `comp-wcag-${c.domain}`,
+            id: `comp-domain-${c.domain}`,
             pillar: 'competitive',
-            label: `Competitor WCAG: ${c.domain}`,
-            value: c.wcagScore,
+            label: `Competitor domain score: ${c.domain}`,
+            value: c.score,
             unit: '/100',
-            evidenceId: c.evidenceId,
+            evidenceId: c.evidenceIds.domainScore,
         });
     }
 

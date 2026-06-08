@@ -159,7 +159,7 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
                 <>
                     <PdfStatGrid
                         items={[
-                            { label: 'WCAG Score', value: `${bundle.domain.wcagScore}/100`, accent: '#B91C1C' },
+                            { label: labels.domainScore, value: `${bundle.domain.score}/100`, accent: '#B91C1C' },
                             { label: labels.pages, value: String(bundle.domain.totalPageCount) },
                             {
                                 label: labels.wcagErrors,
@@ -370,7 +370,7 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
                             <View key={c.domain} style={pdfStyles.dataTableRow}>
                                 <Text style={[pdfStyles.tableLabel, { width: '40%' }]}>{c.domain}</Text>
                                 <Text style={pdfStyles.tableValue}>
-                                    WCAG {c.wcagScore} · SEO {c.seoOnPageScore}
+                                    {labels.domainScore} {c.score} · SEO {c.seoOnPageScore}
                                 </Text>
                             </View>
                         ))}

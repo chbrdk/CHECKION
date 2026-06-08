@@ -235,7 +235,7 @@ export function ProjectReportExport({ projectId }: { projectId: string }) {
                             ) : null}
                             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
                                 {[
-                                    { label: 'WCAG', value: bundle.domain?.wcagScore },
+                                    { label: t('domainResult.domainScore'), value: bundle.domain?.score },
                                     { label: 'SEO', value: bundle.domain?.seoOnPageScore },
                                     { label: 'GEO', value: bundle.geo?.score },
                                     { label: 'Rank', value: bundle.rankings?.score },

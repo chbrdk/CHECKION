@@ -135,7 +135,7 @@ describe('buildCompetitiveBenchmark', () => {
         expect(bench).not.toBeNull();
         expect(bench!.scoreboard).toHaveLength(2);
         const rival = bench!.scoreboard.find((r) => r.domain === 'rival.com');
-        expect(rival?.wcagDeltaVsOwn).toBe(5);
+        expect(rival?.domainScoreDeltaVsOwn).toBe(-8);
         expect(bench!.topicOverlap.some((t) => t.themeTag === 'Product')).toBe(true);
         expect(bench!.summary.sharedThemeCount).toBeGreaterThanOrEqual(1);
     });

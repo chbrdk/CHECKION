@@ -59,7 +59,7 @@ export const STAGE_LABELS: Record<
     queued: { de: 'In Warteschlange', en: 'Queued' },
     collecting: { de: 'Basisdaten sammeln', en: 'Collecting base data' },
     collecting_deep: { de: 'Tiefenanalyse-Daten laden', en: 'Loading deep analysis data' },
-    agent_site_quality: { de: 'Agent: Site Quality & WCAG', en: 'Agent: Site quality & WCAG' },
+    agent_site_quality: { de: 'Agent: Site Quality & UX', en: 'Agent: Site quality & UX' },
     agent_seo: { de: 'Agent: SEO & Rankings', en: 'Agent: SEO & rankings' },
     agent_geo: { de: 'Agent: GEO & E-E-A-T', en: 'Agent: GEO & E-E-A-T' },
     agent_competitive: { de: 'Agent: Wettbewerb', en: 'Agent: Competitive landscape' },

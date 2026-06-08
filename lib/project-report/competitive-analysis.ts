@@ -52,7 +52,7 @@ export function buildCompetitiveBenchmark(
     const completeCompetitors = facts.competitors.filter((c) => c.status === 'complete');
     if (!facts.domain && completeCompetitors.length === 0) return null;
 
-    const ownWcag = facts.domain?.wcagScore ?? 0;
+    const ownDomainScore = facts.domain?.score ?? 0;
     const ownSeo = facts.domain?.seoOnPageScore ?? 0;
 
     const scoreboard: CompetitorScoreComparison[] = [];
@@ -71,7 +71,7 @@ export function buildCompetitiveBenchmark(
             avgCo2: facts.domain.eco?.avgCo2 ?? null,
             geoScore: facts.geo?.score ?? null,
             rankingScore: facts.rankings?.score ?? null,
-            wcagDeltaVsOwn: 0,
+            domainScoreDeltaVsOwn: 0,
             seoDeltaVsOwn: 0,
             evidenceId: facts.domain.evidenceIds.domainScore,
         });
@@ -91,7 +91,7 @@ export function buildCompetitiveBenchmark(
             avgCo2: comp.eco?.avgCo2 ?? null,
             geoScore: facts.geo?.competitorScores[comp.domain] ?? null,
             rankingScore: facts.rankings?.competitorScores[comp.domain] ?? null,
-            wcagDeltaVsOwn: comp.wcagScore - ownWcag,
+            domainScoreDeltaVsOwn: comp.score - ownDomainScore,
             seoDeltaVsOwn: comp.seoOnPageScore - ownSeo,
             evidenceId: comp.evidenceIds.domainScore,
         });
@@ -153,23 +153,23 @@ export function buildCompetitiveBenchmark(
     const insights: CompetitiveInsightFact[] = [];
 
     if (facts.domain && completeCompetitors.length > 0) {
-        const bestWcag = Math.max(...completeCompetitors.map((c) => c.wcagScore));
-        const worstWcag = Math.min(...completeCompetitors.map((c) => c.wcagScore));
-        if (ownWcag > bestWcag) {
+        const bestDomain = Math.max(...completeCompetitors.map((c) => c.score));
+        const worstDomain = Math.min(...completeCompetitors.map((c) => c.score));
+        if (ownDomainScore > bestDomain) {
             insights.push({
-                id: 'wcag-lead',
+                id: 'domain-score-lead',
                 kind: 'lead',
-                title: 'WCAG ahead of all scanned competitors',
-                description: `Own WCAG ${ownWcag} vs best competitor ${bestWcag} (+${ownWcag - bestWcag} points).`,
-                evidenceId: facts.domain.evidenceIds.wcagScore,
+                title: 'Domain score ahead of all scanned competitors',
+                description: `Own domain score ${ownDomainScore} vs best competitor ${bestDomain} (+${ownDomainScore - bestDomain} points).`,
+                evidenceId: facts.domain.evidenceIds.domainScore,
             });
-        } else if (ownWcag < worstWcag) {
+        } else if (ownDomainScore < worstDomain) {
             insights.push({
-                id: 'wcag-gap',
+                id: 'domain-score-gap',
                 kind: 'gap',
-                title: 'WCAG behind all scanned competitors',
-                description: `Own WCAG ${ownWcag} vs weakest competitor ${worstWcag} (${ownWcag - worstWcag} points).`,
-                evidenceId: facts.domain.evidenceIds.wcagScore,
+                title: 'Domain score behind all scanned competitors',
+                description: `Own domain score ${ownDomainScore} vs weakest competitor ${worstDomain} (${ownDomainScore - worstDomain} points).`,
+                evidenceId: facts.domain.evidenceIds.domainScore,
             });
         }
 
@@ -219,7 +219,7 @@ export function buildCompetitiveBenchmark(
         }
     }
 
-    const wcagRankValues = scoreboard.map((r) => ({ domain: r.domain, value: r.wcagScore }));
+    const domainRankValues = scoreboard.map((r) => ({ domain: r.domain, value: r.domainScore }));
     const seoRankValues = scoreboard.map((r) => ({ domain: r.domain, value: r.seoOnPageScore }));
 
     return {
@@ -228,7 +228,7 @@ export function buildCompetitiveBenchmark(
         deterministicInsights: insights.slice(0, MAX_INSIGHTS),
         summary: {
             completeCompetitorCount: completeCompetitors.length,
-            ownWcagRank: rankAmong(wcagRankValues, ownDomain),
+            ownDomainScoreRank: rankAmong(domainRankValues, ownDomain),
             ownSeoRank: rankAmong(seoRankValues, ownDomain),
             sharedThemeCount,
             uniqueOwnThemes,
@@ -248,7 +248,7 @@ export function buildCompetitiveAgentPayload(
             .filter((c) => c.status === 'complete')
             .map((c: CompetitorFacts) => ({
                 domain: c.domain,
-                wcagScore: c.wcagScore,
+                domainScore: c.score,
                 seoOnPageScore: c.seoOnPageScore,
                 seoOnPageLabel: c.seoOnPageLabel,
                 totalPageCount: c.totalPageCount,
@@ -267,7 +267,7 @@ export function buildCompetitiveAgentPayload(
         own: facts.domain
             ? {
                   domain: facts.project.domain,
-                  wcagScore: facts.domain.wcagScore,
+                  domainScore: facts.domain.score,
                   seoOnPageScore: facts.domain.seoOnPageScore,
                   topThemes: facts.domain.pageClassification?.topThemes?.slice(0, 8),
                   llmSummary: facts.domain.llmSummary?.summary?.slice(0, 400) ?? null,

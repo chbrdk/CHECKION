@@ -99,8 +99,8 @@ export function buildDeepReportPages(
                 <PdfStatGrid
                     items={[
                         {
-                            label: 'WCAG rank',
-                            value: `#${benchmark.summary.ownWcagRank}`,
+                            label: labels.domainScoreRank,
+                            value: `#${benchmark.summary.ownDomainScoreRank}`,
                             accent: '#7C3AED',
                         },
                         {
@@ -125,9 +125,9 @@ export function buildDeepReportPages(
                                 {row.isOwn ? `${row.domain} (own)` : row.domain}
                             </Text>
                             <Text style={pdfStyles.tableValue}>
-                                WCAG {row.wcagScore}
-                                {row.wcagDeltaVsOwn != null && !row.isOwn
-                                    ? ` (${row.wcagDeltaVsOwn > 0 ? '+' : ''}${row.wcagDeltaVsOwn})`
+                                {labels.domainScore} {row.domainScore}
+                                {row.domainScoreDeltaVsOwn != null && !row.isOwn
+                                    ? ` (${row.domainScoreDeltaVsOwn > 0 ? '+' : ''}${row.domainScoreDeltaVsOwn})`
                                     : ''}{' '}
                                 · SEO {row.seoOnPageScore}
                             </Text>

@@ -62,7 +62,7 @@ Always return non-empty "title", "summary", "keyFindings" (array), and "metricsH
 function slimDomainForAgent(domain: DomainFacts | null) {
     if (!domain) return null;
     return {
-        wcagScore: domain.wcagScore,
+        domainScore: domain.score,
         seoOnPageScore: domain.seoOnPageScore,
         seoOnPageLabel: domain.seoOnPageLabel,
         score: domain.score,
@@ -219,15 +219,15 @@ export async function synthesizeComprehensiveReport(
     deep.sections.siteQuality = await callSectionAgent(
         openai,
         options.locale,
-        'WCAG, UX and site quality',
-        'Analyze WCAG scores, systemic issues, performance, eco, and domain LLM summary themes.',
+        'UX domain score and site quality',
+        'Analyze domain score (UX), systemic issues, performance, eco, and domain LLM summary themes.',
         {
             domain: slimDomainForAgent(facts.domain),
             metrics: deep.metrics.filter((m) => ['wcag', 'performance', 'eco'].includes(m.pillar)),
             issueGroups: deep.issueGroups.slice(0, 10),
             evidenceIds: evidenceIds.slice(0, 40),
         },
-        options.locale === 'de' ? 'Site Quality & WCAG' : 'Site Quality & WCAG'
+        options.locale === 'de' ? 'Site Quality & UX' : 'Site Quality & UX'
     );
 
     await progress('agent_seo');
@@ -303,7 +303,7 @@ Use keyFindings for concrete per-question and per-page bullets. Reference eviden
         options.locale,
         'competitive intelligence',
         `Compare own domain vs deep-scanned competitors using scoreboard, topic overlap, and deterministic insights.
-Highlight WCAG/SEO/performance/eco deltas, ranking & GEO scores, shared vs unique page topics, and competitor summaries.`,
+Highlight domain/SEO/performance/eco deltas, ranking & GEO scores, shared vs unique page topics, and competitor summaries.`,
         {
             ...competitivePayload,
             evidenceIds: evidenceIds.slice(0, 40),
@@ -336,7 +336,7 @@ Highlight WCAG/SEO/performance/eco deltas, ranking & GEO scores, shared vs uniqu
                 industry: facts.project.industry,
             },
             scores: {
-                wcag: facts.domain?.wcagScore,
+                domainScore: facts.domain?.score,
                 seo: facts.domain?.seoOnPageScore,
                 geo: facts.geo?.score,
                 rankings: facts.rankings?.score,
@@ -403,9 +403,9 @@ ${stringifyPayload(synthesizerPayload)}`
                 recommendations: [],
                 riskAmpel: {
                     wcag:
-                        (facts.domain?.wcagScore ?? 0) >= 80
+                        (facts.domain?.score ?? 0) >= 80
                             ? 'low'
-                            : (facts.domain?.wcagScore ?? 0) >= 60
+                            : (facts.domain?.score ?? 0) >= 60
                               ? 'medium'
                               : 'high',
                     geo:

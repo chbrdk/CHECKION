@@ -19,6 +19,8 @@ export interface ProjectReportPdfLabels {
     industry: string;
     date: string;
     pages: string;
+    domainScore: string;
+    domainScoreRank: string;
     wcagErrors: string;
     performance: string;
     eco: string;
@@ -103,7 +105,7 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         reportTitle: 'Projekt-Report',
         reportSubtitle: 'Executive Lagebild',
         executiveSummary: 'Executive Summary',
-        siteQuality: 'Site Quality & WCAG',
+        siteQuality: 'Site Quality & UX',
         seoRankings: 'SEO & Rankings',
         geoEeat: 'GEO & E-E-A-T',
         contentTopics: 'Content & Seitenthemen',
@@ -114,6 +116,8 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         industry: 'Branche',
         date: 'Datum',
         pages: 'Seiten',
+        domainScore: 'Domain-Score (UX)',
+        domainScoreRank: 'Domain-Rang',
         wcagErrors: 'WCAG Fehler / Warnungen',
         performance: 'Performance (TTFB / FCP / LCP)',
         eco: 'CO₂ / Eco',
@@ -122,7 +126,7 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         recommendations: 'Empfehlungen',
         systemicIssues: 'Systemische Issues',
         dataSources: 'Datenquellen',
-        riskAmpel: { wcag: 'WCAG', geo: 'GEO', rankings: 'Rankings' },
+        riskAmpel: { wcag: 'Domain', geo: 'GEO', rankings: 'Rankings' },
         footerTitle: 'CHECKION Projekt-Report',
         technicalAppendix: 'Technischer Anhang',
         journeySummary: 'UX Journey Agent',
@@ -182,7 +186,7 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         },
         chapterIntros: {
             executive: 'Lagebild, Risiken und strategische Einordnung auf Basis aller Projekt-Daten.',
-            siteQuality: 'WCAG, Performance, Nachhaltigkeit und systemische Qualitätsissues.',
+            siteQuality: 'Domain-Score (UX), Performance, Nachhaltigkeit und systemische Qualitätsissues.',
             seo: 'On-Page SEO, Keyword-Rankings und SERP-Trends.',
             geo: 'GEO-Score, E-E-A-T, AI-Sichtbarkeit und Empfehlungen.',
             topics: 'Seitenthemen und Deep-Scan-Vergleich mit Wettbewerbern.',
@@ -196,7 +200,7 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         reportTitle: 'Project Report',
         reportSubtitle: 'Executive Overview',
         executiveSummary: 'Executive Summary',
-        siteQuality: 'Site Quality & WCAG',
+        siteQuality: 'Site Quality & UX',
         seoRankings: 'SEO & Rankings',
         geoEeat: 'GEO & E-E-A-T',
         contentTopics: 'Content & Page Topics',
@@ -207,6 +211,8 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         industry: 'Industry',
         date: 'Date',
         pages: 'Pages',
+        domainScore: 'Domain Score (UX)',
+        domainScoreRank: 'Domain rank',
         wcagErrors: 'WCAG errors / warnings',
         performance: 'Performance (TTFB / FCP / LCP)',
         eco: 'CO₂ / Eco',
@@ -215,7 +221,7 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         recommendations: 'Recommendations',
         systemicIssues: 'Systemic Issues',
         dataSources: 'Data sources',
-        riskAmpel: { wcag: 'WCAG', geo: 'GEO', rankings: 'Rankings' },
+        riskAmpel: { wcag: 'Domain', geo: 'GEO', rankings: 'Rankings' },
         footerTitle: 'CHECKION Project Report',
         technicalAppendix: 'Technical Appendix',
         journeySummary: 'UX Journey Agent',
@@ -275,7 +281,7 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         },
         chapterIntros: {
             executive: 'Executive overview, risks, and strategic context across all project data.',
-            siteQuality: 'WCAG, performance, sustainability, and systemic quality issues.',
+            siteQuality: 'Domain score (UX), performance, sustainability, and systemic quality issues.',
             seo: 'On-page SEO, keyword rankings, and SERP trends.',
             geo: 'GEO score, E-E-A-T, AI visibility, and recommendations.',
             topics: 'Page topics and deep-scan competitor comparison.',

@@ -100,8 +100,8 @@ export function buildChartSpecs(
         kind: 'scoreCards',
         items: [
             {
-                label: 'WCAG',
-                value: domain?.wcagScore ?? null,
+                label: 'Domain',
+                value: domain?.score ?? null,
                 color: CHART_SERIES_PALETTE[0],
             },
             {
@@ -126,7 +126,7 @@ export function buildChartSpecs(
     if (domain) {
         competitorBars.push({
             label: projectDomain ?? 'Own',
-            value: domain.wcagScore,
+            value: domain.score,
             color: CHART_SERIES_PALETTE[0],
             isHighlight: true,
         });
@@ -135,14 +135,14 @@ export function buildChartSpecs(
         if (c.status !== 'complete') continue;
         competitorBars.push({
             label: c.domain,
-            value: c.wcagScore,
+            value: c.score,
             color: CHART_SERIES_PALETTE[(i + 1) % CHART_SERIES_PALETTE.length],
         });
     }
     if (competitorBars.length > 1) {
         specs.push({
             kind: 'competitorBarChart',
-            title: 'WCAG Score Comparison',
+            title: 'Domain Score Comparison',
             items: competitorBars,
         });
     }

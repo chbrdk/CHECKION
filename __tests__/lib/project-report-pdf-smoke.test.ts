@@ -53,7 +53,7 @@ const minimalBundle: ProjectReportBundle = {
         {
             kind: 'scoreCards',
             items: [
-                { label: 'WCAG', value: null, color: '#2563eb' },
+                { label: 'Domain', value: null, color: '#2563eb' },
                 { label: 'SEO', value: null, color: '#0891b2' },
                 { label: 'GEO', value: null, color: '#7c3aed' },
                 { label: 'Rankings', value: null, color: '#dc2626' },
