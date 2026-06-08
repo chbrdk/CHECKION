@@ -39,6 +39,8 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
     const topicsChart = bundle.visuals.find((v) => v.kind === 'pageTopics');
     const rankTrend = bundle.visuals.find((v) => v.kind === 'rankTrend');
     const geoQuestionTrend = bundle.visuals.find((v) => v.kind === 'geoQuestionTrend');
+    const geoModelVisibility = bundle.visuals.find((v) => v.kind === 'geoModelVisibility');
+    const geoQuestionTrendSeries = bundle.visuals.find((v) => v.kind === 'geoQuestionTrendSeries');
     const competitorRankingScores = bundle.visuals.find((v) => v.kind === 'competitorRankingScores');
     const competitorSeoBarChart = bundle.visuals.find((v) => v.kind === 'competitorSeoBarChart');
     const competitorTopicOverlap = bundle.visuals.find((v) => v.kind === 'competitorTopicOverlap');
@@ -48,6 +50,8 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
     const deepPages = isComprehensive
         ? buildDeepReportPages(bundle, labels, {
               geoQuestionTrend: geoQuestionTrend as VisualSpec | undefined,
+              geoModelVisibility: geoModelVisibility as VisualSpec | undefined,
+              geoQuestionTrendSeries: geoQuestionTrendSeries as VisualSpec | undefined,
               competitorRankingScores: competitorRankingScores as VisualSpec | undefined,
               competitorSeoBarChart: competitorSeoBarChart as VisualSpec | undefined,
               competitorTopicOverlap: competitorTopicOverlap as VisualSpec | undefined,
@@ -263,15 +267,61 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
                                 value: bundle.geo.score != null ? `${bundle.geo.score}/100` : '–',
                                 accent: '#0891B2',
                             },
+                            ...(bundle.deep?.geoDeep
+                                ? [
+                                      {
+                                          label: 'LLM models',
+                                          value: String(bundle.deep.geoDeep.summary.modelCount),
+                                      },
+                                      {
+                                          label: labels.geoQuestionAnalysis,
+                                          value: String(bundle.deep.geoDeep.summary.questionCount),
+                                      },
+                                      {
+                                          label: labels.geoOnPageEeat,
+                                          value: String(bundle.deep.geoDeep.summary.pageCount),
+                                      },
+                                  ]
+                                : []),
                         ]}
                     />
+                    {narrative?.sections?.geo ? (
+                        <View style={pdfStyles.contentPanel}>
+                            <PdfSectionHeader title={labels.geoAgentAnalysis} chapter="geo" />
+                            <Text style={[pdfStyles.subsectionTitle, { marginBottom: 6 }]}>
+                                {narrative.sections.geo.title}
+                            </Text>
+                            <PdfLeadText>{narrative.sections.geo.summary}</PdfLeadText>
+                            {narrative.sections.geo.keyFindings.slice(0, 6).map((f, i) => (
+                                <View key={i} style={pdfStyles.bulletItem}>
+                                    <View style={pdfStyles.bulletDot} />
+                                    <Text style={pdfStyles.bodyText}>{f}</Text>
+                                </View>
+                            ))}
+                        </View>
+                    ) : null}
+                    {geoModelVisibility ? <PdfVisualSpec spec={geoModelVisibility} /> : null}
                     {geoChart ? <PdfVisualSpec spec={geoChart} /> : null}
+                    {bundle.deep?.geoDeep?.deterministicInsights.length ? (
+                        <>
+                            <PdfSectionHeader title={labels.geoInsights} chapter="geo" />
+                            {bundle.deep.geoDeep.deterministicInsights.slice(0, 5).map((ins) => (
+                                <View key={ins.id} style={pdfStyles.recommendationRow}>
+                                    <Text style={pdfStyles.recommendationTitle}>{ins.title}</Text>
+                                    <Text style={pdfStyles.recommendationDesc}>{ins.description}</Text>
+                                </View>
+                            ))}
+                        </>
+                    ) : null}
                     {bundle.geo.recommendations.length > 0 ? (
                         <>
                             <PdfSectionHeader title={labels.recommendations} chapter="geo" />
                             {bundle.geo.recommendations.map((rec, i) => (
                                 <View key={i} style={pdfStyles.recommendationRow}>
-                                    <Text style={pdfStyles.recommendationTitle}>{rec.title}</Text>
+                                    <Text style={pdfStyles.recommendationTitle}>
+                                        {rec.priority != null ? `P${rec.priority}: ` : ''}
+                                        {rec.title}
+                                    </Text>
                                     <Text style={pdfStyles.recommendationDesc}>{rec.description}</Text>
                                 </View>
                             ))}

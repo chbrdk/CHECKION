@@ -38,6 +38,8 @@ export function buildDeepReportPages(
     labels: ProjectReportPdfLabels,
     visuals: {
         geoQuestionTrend?: VisualSpec;
+        geoModelVisibility?: VisualSpec;
+        geoQuestionTrendSeries?: VisualSpec;
         competitorRankingScores?: VisualSpec;
         competitorSeoBarChart?: VisualSpec;
         competitorTopicOverlap?: VisualSpec;
@@ -162,7 +164,6 @@ export function buildDeepReportPages(
     const sectionEntries: Array<[string, SectionAnalysis | null | undefined]> = [
         ['siteQuality', sections.siteQuality],
         ['seoRankings', sections.seoRankings],
-        ['geo', sections.geo],
         ['competitive', sections.competitive],
         ['journey', sections.journey],
     ];
@@ -202,30 +203,142 @@ export function buildDeepReportPages(
         );
     }
 
-    if (deep.geoQuestionHistory.length > 0 || deep.geoPages.length > 0) {
+    const geoDeep = deep.geoDeep;
+    if (geoDeep && geoDeep.modelBenchmarks.length > 0) {
         pages.push(
-            <PdfContentPage key="deep-geo">
-                {deep.geoQuestionHistory.length > 0 ? (
-                    <>
-                        <PdfSectionHeader title={labels.geoQuestionHistory} chapter="geo" />
-                        {visuals.geoQuestionTrend ? (
-                            <PdfVisualSpec spec={visuals.geoQuestionTrend} />
-                        ) : null}
-                    </>
+            <PdfContentPage key="deep-geo-models">
+                <PdfSectionHeader title={labels.geoModelBenchmark} chapter="geo" />
+                {visuals.geoModelVisibility ? <PdfVisualSpec spec={visuals.geoModelVisibility} /> : null}
+                <View style={pdfStyles.contentPanel}>
+                    <View style={pdfStyles.dataTableHeader}>
+                        <Text style={[pdfStyles.dataTableHeaderCell, { width: '28%' }]}>Model</Text>
+                        <Text style={[pdfStyles.dataTableHeaderCell, { width: '18%' }]}>Visibility</Text>
+                        <Text style={[pdfStyles.dataTableHeaderCell, { width: '18%' }]}>Avg pos.</Text>
+                        <Text style={[pdfStyles.dataTableHeaderCell, { width: '18%' }]}>SoV</Text>
+                        <Text style={[pdfStyles.dataTableHeaderCell, { width: '18%' }]}>Mentions</Text>
+                    </View>
+                    {geoDeep.modelBenchmarks.map((m) => (
+                        <View key={m.modelId} style={pdfStyles.dataTableRow}>
+                            <Text style={[pdfStyles.tableLabel, { width: '28%' }]}>{m.modelId}</Text>
+                            <Text style={[pdfStyles.tableValue, { width: '18%' }]}>
+                                {m.visibilityScore ?? '–'}
+                            </Text>
+                            <Text style={[pdfStyles.tableValue, { width: '18%' }]}>
+                                {m.avgPosition ?? '–'}
+                            </Text>
+                            <Text style={[pdfStyles.tableValue, { width: '18%' }]}>
+                                {m.shareOfVoice != null ? `${Math.round(m.shareOfVoice * 100)}%` : '–'}
+                            </Text>
+                            <Text style={[pdfStyles.tableValue, { width: '18%' }]}>
+                                {m.mentionCount ?? '–'}
+                            </Text>
+                        </View>
+                    ))}
+                </View>
+            </PdfContentPage>
+        );
+    }
+
+    if (geoDeep && geoDeep.questionDetails.length > 0) {
+        pages.push(
+            <PdfContentPage key="deep-geo-questions">
+                <PdfSectionHeader title={labels.geoQuestionAnalysis} chapter="geo" />
+                {visuals.geoQuestionTrendSeries ? (
+                    <PdfVisualSpec spec={visuals.geoQuestionTrendSeries} />
+                ) : visuals.geoQuestionTrend ? (
+                    <PdfVisualSpec spec={visuals.geoQuestionTrend} />
                 ) : null}
-                {deep.geoPages.length > 0 ? (
-                    <>
-                        <PdfSectionHeader title={labels.geoPageAnalysis} chapter="geo" />
-                        {deep.geoPages.slice(0, 8).map((p) => (
-                            <View key={p.url} style={pdfStyles.recommendationRow}>
-                                <Text style={pdfStyles.recommendationTitle}>{p.title ?? p.url}</Text>
-                                <Text style={pdfStyles.recommendationDesc}>
-                                    GEO {p.geoFitnessScore ?? '–'} · Trust {p.trustScore ?? '–'}
-                                </Text>
+                {geoDeep.questionDetails.slice(0, 12).map((q) => (
+                    <View key={q.evidenceId} style={pdfStyles.contentPanel}>
+                        <Text style={pdfStyles.recommendationTitle}>{q.queryText}</Text>
+                        <Text style={pdfStyles.metaText}>
+                            Trend: {q.trend} · Avg position: {q.latestPosition ?? 'not cited'}
+                        </Text>
+                        {q.positionsByModel.length > 0 ? (
+                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
+                                {q.positionsByModel.map((p) => (
+                                    <Text key={p.modelId} style={{ fontSize: 8, color: '#4B5563' }}>
+                                        {p.modelId}: {p.position != null ? `#${p.position}` : '–'}
+                                    </Text>
+                                ))}
                             </View>
-                        ))}
-                    </>
-                ) : null}
+                        ) : null}
+                        {q.topCitedDomains.length > 0 ? (
+                            <Text style={[pdfStyles.metaText, { marginTop: 4 }]}>
+                                Top cited: {q.topCitedDomains.join(', ')}
+                            </Text>
+                        ) : null}
+                    </View>
+                ))}
+            </PdfContentPage>
+        );
+    }
+
+    const geoPages = geoDeep?.pages.length ? geoDeep.pages : deep.geoPages;
+    if (geoPages.length > 0) {
+        pages.push(
+            <PdfContentPage key="deep-geo-pages">
+                <PdfSectionHeader title={labels.geoOnPageEeat} chapter="geo" />
+                <PdfStatGrid
+                    items={[
+                        {
+                            label: 'Avg GEO fitness',
+                            value:
+                                geoDeep?.summary.avgGeoFitness != null
+                                    ? String(geoDeep.summary.avgGeoFitness)
+                                    : '–',
+                        },
+                        {
+                            label: 'Avg trust',
+                            value:
+                                geoDeep?.summary.avgTrust != null
+                                    ? `${geoDeep.summary.avgTrust}/5`
+                                    : '–',
+                        },
+                        {
+                            label: 'Pages below threshold',
+                            value: String(geoDeep?.summary.pagesBelowGeoThreshold ?? 0),
+                        },
+                    ]}
+                />
+                {geoPages.slice(0, 10).map((p) => (
+                    <View key={p.url} style={pdfStyles.recommendationRow}>
+                        <Text style={pdfStyles.recommendationTitle}>{p.title ?? p.url}</Text>
+                        <Text style={pdfStyles.recommendationDesc}>
+                            GEO {p.geoFitnessScore ?? '–'}/100 · Trust {p.trustScore ?? '–'}/5 · Exp{' '}
+                            {p.experienceScore ?? '–'} · Expertise {p.expertiseScore ?? '–'}
+                            {p.authoritativenessScore != null
+                                ? ` · Auth ${p.authoritativenessScore}`
+                                : ''}
+                        </Text>
+                        {p.geoFitnessReasoning ? (
+                            <Text style={[pdfStyles.bodyText, { marginTop: 4 }]}>
+                                {p.geoFitnessReasoning.slice(0, 280)}
+                                {p.geoFitnessReasoning.length > 280 ? '…' : ''}
+                            </Text>
+                        ) : null}
+                        {p.trustReasoning ? (
+                            <Text style={pdfStyles.metaText}>Trust: {p.trustReasoning.slice(0, 160)}…</Text>
+                        ) : null}
+                        {p.missingElements.length > 0 ? (
+                            <Text style={pdfStyles.metaText}>
+                                Missing: {p.missingElements.join(', ')}
+                            </Text>
+                        ) : null}
+                        <Text style={pdfStyles.metaText}>
+                            Privacy {p.hasPrivacy ? '✓' : '✗'} · Impressum {p.hasImpressum ? '✓' : '✗'}
+                        </Text>
+                    </View>
+                ))}
+            </PdfContentPage>
+        );
+    }
+
+    if (sections.geo && !pages.some((p) => p.key === 'deep-section-geo')) {
+        pages.push(
+            <PdfContentPage key="deep-section-geo">
+                <PdfSectionHeader title={labels.geoAgentAnalysis} chapter="geo" />
+                <SectionAnalysisBlock section={sections.geo} />
             </PdfContentPage>
         );
     }

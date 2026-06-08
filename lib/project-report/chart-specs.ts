@@ -22,7 +22,9 @@ export type VisualSpecKind =
     | 'geoQuestionTrend'
     | 'competitorRankingScores'
     | 'competitorSeoBarChart'
-    | 'competitorTopicOverlap';
+    | 'competitorTopicOverlap'
+    | 'geoModelVisibility'
+    | 'geoQuestionTrendSeries';
 
 export interface ScoreCardItem {
     label: string;
@@ -75,7 +77,9 @@ export type VisualSpec =
     | {
           kind: 'competitorTopicOverlap';
           rows: Array<{ theme: string; ownScore: number; bestCompetitorScore: number; bestCompetitor: string }>;
-      };
+      }
+    | { kind: 'geoModelVisibility'; items: BarChartItem[] }
+    | { kind: 'geoQuestionTrendSeries'; series: TrendSeries[] };
 
 const MAX_KEYWORDS = 10;
 const MAX_TOPICS = 5;
@@ -204,7 +208,16 @@ export function buildChartSpecs(
         }
     }
 
-    if (deep?.geoQuestionHistory && deep.geoQuestionHistory.length > 0) {
+    if (deep?.geoDeep?.modelBenchmarks && deep.geoDeep.modelBenchmarks.length > 0) {
+        specs.push({
+            kind: 'geoModelVisibility',
+            items: deep.geoDeep.modelBenchmarks.map((m, i) => ({
+                label: m.modelId,
+                value: m.visibilityScore ?? 0,
+                color: CHART_SERIES_PALETTE[i % CHART_SERIES_PALETTE.length],
+            })),
+        });
+    } else if (deep?.geoQuestionHistory && deep.geoQuestionHistory.length > 0) {
         specs.push({
             kind: 'geoQuestionTrend',
             items: deep.geoQuestionHistory.slice(0, 8).map((q, i) => ({
@@ -213,6 +226,25 @@ export function buildChartSpecs(
                 color: CHART_SERIES_PALETTE[i % CHART_SERIES_PALETTE.length],
             })),
         });
+    }
+
+    const geoTrendSource =
+        deep?.geoDeep?.questionDetails.filter((q) => q.points.length >= 2) ??
+        deep?.geoQuestionHistory.filter((q) => q.points.length >= 2) ??
+        [];
+    if (geoTrendSource.length > 0) {
+        const series: TrendSeries[] = geoTrendSource.slice(0, 6).map((q, i) => ({
+            keyword: q.queryText.slice(0, 36),
+            color: CHART_SERIES_PALETTE[i % CHART_SERIES_PALETTE.length],
+            points: q.points.slice(-12).map((p, idx) => ({
+                x: idx,
+                y: p.avgPosition != null ? Math.min(100, p.avgPosition) : 100,
+                label: p.recordedAt.slice(0, 10),
+            })),
+        }));
+        if (series.some((s) => s.points.length >= 2)) {
+            specs.push({ kind: 'geoQuestionTrendSeries', series });
+        }
     }
 
     if (deep?.competitiveBenchmark && deep.competitiveBenchmark.scoreboard.length > 1) {

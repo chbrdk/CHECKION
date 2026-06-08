@@ -243,7 +243,7 @@ function RankTrendChart({
     const width = CHART_WIDTH;
     return (
         <View style={pdfStyles.chartCard}>
-            <Text style={pdfStyles.chartTitle}>Rank trends (lower position = better)</Text>
+            <Text style={pdfStyles.chartTitle}>Position trends (lower = better citation rank)</Text>
             {series.map((s) => {
                 if (s.points.length < 2) return null;
                 const xs = s.points.map((p) => p.x);
@@ -293,6 +293,10 @@ export function PdfVisualSpec({ spec }: { spec: VisualSpec }) {
             return <RankTrendChart series={spec.series} />;
         case 'geoQuestionTrend':
             return <VerticalBarChart title="GEO question visibility" items={spec.items} />;
+        case 'geoModelVisibility':
+            return <VerticalBarChart title="LLM visibility by model" items={spec.items} maxValue={100} />;
+        case 'geoQuestionTrendSeries':
+            return <RankTrendChart series={spec.series} />;
         case 'competitorRankingScores':
             return <VerticalBarChart title="Ranking score by domain" items={spec.items} maxValue={100} />;
         case 'competitorSeoBarChart':

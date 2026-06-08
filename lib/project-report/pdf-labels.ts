@@ -47,6 +47,11 @@ export interface ProjectReportPdfLabels {
     topicOverlap: string;
     competitiveInsights: string;
     scoreboard: string;
+    geoModelBenchmark: string;
+    geoQuestionAnalysis: string;
+    geoOnPageEeat: string;
+    geoAgentAnalysis: string;
+    geoInsights: string;
     chapterIntros: {
         executive: string;
         siteQuality: string;
@@ -103,6 +108,11 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         topicOverlap: 'Seitenthemen — Overlap',
         competitiveInsights: 'Wettbewerbs-Erkenntnisse',
         scoreboard: 'Scoreboard',
+        geoModelBenchmark: 'LLM-Sichtbarkeit nach Modell',
+        geoQuestionAnalysis: 'GEO-Testfragen & Zitationen',
+        geoOnPageEeat: 'On-Page GEO & E-E-A-T',
+        geoAgentAnalysis: 'KI-Bewertung GEO',
+        geoInsights: 'GEO-Erkenntnisse',
         chapterIntros: {
             executive: 'Lagebild, Risiken und strategische Einordnung auf Basis aller Projekt-Daten.',
             siteQuality: 'WCAG, Performance, Nachhaltigkeit und systemische Qualitätsissues.',
@@ -157,6 +167,11 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         topicOverlap: 'Page Topics — Overlap',
         competitiveInsights: 'Competitive Insights',
         scoreboard: 'Scoreboard',
+        geoModelBenchmark: 'LLM visibility by model',
+        geoQuestionAnalysis: 'GEO test queries & citations',
+        geoOnPageEeat: 'On-page GEO & E-E-A-T',
+        geoAgentAnalysis: 'AI GEO assessment',
+        geoInsights: 'GEO insights',
         chapterIntros: {
             executive: 'Executive overview, risks, and strategic context across all project data.',
             siteQuality: 'WCAG, performance, sustainability, and systemic quality issues.',

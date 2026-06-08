@@ -124,6 +124,7 @@ describe('buildChartSpecs', () => {
             issueGroups: [],
             seoRollup: null,
             competitiveBenchmark: null,
+            geoDeep: null,
         });
         const kinds = specs.map((s) => s.kind);
         expect(kinds).toContain('geoQuestionTrend');
@@ -145,6 +146,7 @@ describe('buildChartSpecs', () => {
             rankKeywordDetails: [],
             issueGroups: [],
             seoRollup: null,
+            geoDeep: null,
             competitiveBenchmark: {
                 scoreboard: [
                     {

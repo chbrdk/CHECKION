@@ -13,7 +13,6 @@ import { buildProjectGeoQuestionHistory, normalizeProjectDomainHost } from '@/li
 import { buildMetricInsights } from '@/lib/project-report/metrics-builder';
 import { buildCompetitiveBenchmark } from '@/lib/project-report/competitive-analysis';
 import type {
-    GeoPageAnalysisFact,
     IssueGroupFact,
     ProjectReportBundle,
     ProjectReportDeepAnalysis,
@@ -21,13 +20,11 @@ import type {
     RankTrendPoint,
     SeoRollupFacts,
 } from '@/lib/project-report/types';
-import type { GeoEeatIntensiveResult, GeoEeatPageResult } from '@/lib/types';
+import { buildGeoDeepAnalysis, mapGeoPagesDeep } from '@/lib/project-report/geo-deep-analysis';
 
 const MAX_KEYWORD_DETAILS = 20;
 const MAX_POSITION_POINTS = 90;
 const MAX_ISSUE_GROUPS = 20;
-const MAX_GEO_PAGES = 15;
-
 function extractSeoRollup(
     aggregated: Record<string, unknown> | null | undefined
 ): SeoRollupFacts | null {
@@ -44,19 +41,6 @@ function extractSeoRollup(
         brokenLinksCount: typeof links?.brokenCount === 'number' ? links.brokenCount : null,
         jsonLdPages: typeof generative?.pagesWithJsonLd === 'number' ? generative.pagesWithJsonLd : null,
     };
-}
-
-function mapGeoPages(payload: GeoEeatIntensiveResult | null): GeoPageAnalysisFact[] {
-    if (!payload?.pages?.length) return [];
-    return payload.pages.slice(0, MAX_GEO_PAGES).map((p: GeoEeatPageResult) => ({
-        url: p.url,
-        title: p.title,
-        geoFitnessScore: p.geoFitnessScore ?? null,
-        trustScore: p.eeatScores?.trust?.score ?? null,
-        experienceScore: p.eeatScores?.experience?.score ?? null,
-        expertiseScore: p.eeatScores?.expertise?.score ?? null,
-        missingElements: (p.missingGeoElements ?? []).slice(0, 8),
-    }));
 }
 
 export async function collectDeepProjectReportData(
@@ -82,7 +66,8 @@ export async function collectDeepProjectReportData(
 
     const latestGeoPayload =
         geoRuns.find((r) => r.status === 'complete' && r.payload)?.payload ?? null;
-    const geoPages = mapGeoPages(latestGeoPayload);
+    const geoPages = mapGeoPagesDeep(latestGeoPayload);
+    const geoDeep = buildGeoDeepAnalysis(latestGeoPayload, targetDomain, geoQuestionHistory);
 
     const keywordIds = keywords.map((k) => k.id);
     const lastPositions = await getLastPositionsByKeywordIds(keywordIds);
@@ -164,6 +149,15 @@ export async function collectDeepProjectReportData(
             });
         }
     }
+    if (geoDeep) {
+        for (const ins of geoDeep.deterministicInsights) {
+            facts.provenance.push({
+                evidenceId: ins.evidenceId,
+                source: 'geo-deep',
+                label: ins.title,
+            });
+        }
+    }
 
     return {
         metrics,
@@ -176,6 +170,7 @@ export async function collectDeepProjectReportData(
         },
         geoQuestionHistory,
         geoPages,
+        geoDeep,
         rankKeywordDetails,
         issueGroups,
         seoRollup,

@@ -268,10 +268,69 @@ export interface GeoPageAnalysisFact {
     url: string;
     title?: string;
     geoFitnessScore: number | null;
+    geoFitnessReasoning?: string | null;
     trustScore: number | null;
     experienceScore: number | null;
     expertiseScore: number | null;
+    authoritativenessScore: number | null;
+    trustReasoning?: string | null;
+    experienceReasoning?: string | null;
+    expertiseReasoning?: string | null;
     missingElements: string[];
+    hasPrivacy: boolean;
+    hasImpressum: boolean;
+    evidenceId: string;
+}
+
+export interface GeoModelPositionFact {
+    modelId: string;
+    position: number | null;
+    cited: boolean;
+}
+
+export interface GeoQuestionDetailFact {
+    queryText: string;
+    queryIndex: number;
+    latestPosition: number | null;
+    trend: GeoQuestionHistoryFact['trend'];
+    positionsByModel: GeoModelPositionFact[];
+    topCitedDomains: string[];
+    points: GeoQuestionHistoryPointFact[];
+    evidenceId: string;
+}
+
+export interface GeoModelBenchmarkFact {
+    modelId: string;
+    shareOfVoice: number | null;
+    avgPosition: number | null;
+    mentionCount: number | null;
+    queryCount: number | null;
+    visibilityScore: number | null;
+    evidenceId: string;
+}
+
+export interface GeoInsightFact {
+    id: string;
+    kind: 'question' | 'page' | 'model' | 'eeat' | 'recommendation';
+    title: string;
+    description: string;
+    evidenceId: string;
+}
+
+export interface GeoDeepAnalysisFact {
+    modelBenchmarks: GeoModelBenchmarkFact[];
+    questionDetails: GeoQuestionDetailFact[];
+    pages: GeoPageAnalysisFact[];
+    deterministicInsights: GeoInsightFact[];
+    summary: {
+        modelCount: number;
+        questionCount: number;
+        pageCount: number;
+        avgGeoFitness: number | null;
+        avgTrust: number | null;
+        questionsNotCited: number;
+        pagesBelowGeoThreshold: number;
+    };
 }
 
 export interface RankKeywordDetailFact {
@@ -315,6 +374,7 @@ export interface ProjectReportDeepAnalysis {
     };
     geoQuestionHistory: GeoQuestionHistoryFact[];
     geoPages: GeoPageAnalysisFact[];
+    geoDeep: GeoDeepAnalysisFact | null;
     rankKeywordDetails: RankKeywordDetailFact[];
     issueGroups: IssueGroupFact[];
     seoRollup: SeoRollupFacts | null;

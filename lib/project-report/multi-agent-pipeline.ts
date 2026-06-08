@@ -8,6 +8,7 @@ import { OPENAI_MODEL, getOpenAIKey } from '@/lib/llm/config';
 import { reportUsage } from '@/lib/usage-report';
 import { validateNarrativeEvidence } from '@/lib/project-report/agent-qa';
 import { buildCompetitiveAgentPayload } from '@/lib/project-report/competitive-analysis';
+import { buildGeoAgentPayload } from '@/lib/project-report/geo-deep-analysis';
 import { synthesizeProjectReportNarrative } from '@/lib/project-report/agent-pipeline';
 import {
     buildExecutiveSummaryFromSections,
@@ -261,22 +262,34 @@ export async function synthesizeComprehensiveReport(
     );
 
     await progress('agent_geo');
+    const geoAgentPayload = buildGeoAgentPayload(
+        facts.geo
+            ? {
+                  score: facts.geo.score,
+                  recommendations: facts.geo.recommendations,
+                  competitiveDomains: facts.geo.competitiveDomains.map((d) => ({
+                      domain: d.domain,
+                      score: d.score,
+                      avgPosition: d.avgPosition,
+                  })),
+              }
+            : null,
+        deep.geoDeep
+    );
     deep.sections.geo = await callSectionAgent(
         openai,
         options.locale,
         'GEO, E-E-A-T and AI visibility',
-        'Analyze GEO competitive score, recommendations, per-page E-E-A-T, GEO question history trends.',
+        `Produce a thorough GEO / E-E-A-T analysis covering:
+1) Overall GEO score and competitive domain comparison
+2) Per-LLM-model visibility (GPT, Claude, Gemini, etc.) — who cites us where
+3) Each GEO test question: citation position per model, trend, top competing domains
+4) On-page analysis: GEO fitness, E-E-A-T dimensions (trust, experience, expertise), missing GEO elements, privacy/impressum
+5) Prioritized recommendations from scan + your interpretation
+Use keyFindings for concrete per-question and per-page bullets. Reference evidenceIds where possible.`,
         {
-            geo: facts.geo
-                ? {
-                      score: facts.geo.score,
-                      recommendations: facts.geo.recommendations.slice(0, 6),
-                      competitiveDomains: facts.geo.competitiveDomains.slice(0, 8),
-                  }
-                : null,
-            geoPages: deep.geoPages.slice(0, 8),
-            geoQuestionHistory: deep.geoQuestionHistory.slice(0, 8),
-            evidenceIds: evidenceIds.slice(0, 40),
+            ...geoAgentPayload,
+            evidenceIds: evidenceIds.slice(0, 60),
         },
         options.locale === 'de' ? 'GEO & E-E-A-T' : 'GEO & E-E-A-T'
     );
