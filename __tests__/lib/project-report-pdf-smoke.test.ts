@@ -14,6 +14,8 @@ vi.mock('@react-pdf/renderer', () => ({
     Svg: ({ children }: { children: React.ReactNode }) => children,
     Path: () => null,
     Rect: () => null,
+    Circle: () => null,
+    G: ({ children }: { children: React.ReactNode }) => children,
     pdf: vi.fn(() => ({
         toBlob: vi.fn().mockResolvedValue(new Blob(['pdf'], { type: 'application/pdf' })),
     })),
@@ -64,6 +66,7 @@ const minimalBundle: ProjectReportBundle = {
         riskAmpel: { wcag: 'unknown', geo: 'unknown', rankings: 'unknown' },
         synthesisAvailable: false,
     },
+    deep: null,
     provenance: [],
     freshness: { sources: [] },
     links: {

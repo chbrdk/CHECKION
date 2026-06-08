@@ -7,11 +7,17 @@ import { getProjectReportPdfLabels } from '@/lib/project-report/pdf-labels';
 import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
 import {
     MsqdxLogoPdf,
-    PdfFooter,
-    PdfHeader,
     PdfSectionHeader,
     RiskAmpelPills,
 } from '@/components/pdf/shared/PdfPrimitives';
+import {
+    PdfChapterIntroPage,
+    PdfContentPage,
+    PdfStatGrid,
+    PdfLeadText,
+    applyReportFooters,
+    isChapterIntroPage,
+} from '@/components/pdf/shared/PdfLayout';
 import { PdfScoreCardsFromSpec, PdfVisualSpec } from '@/components/pdf/charts/PdfChartComponents';
 import { buildDeepReportPages } from '@/components/pdf/ProjectReportDeepSections';
 import type { VisualSpec } from '@/lib/project-report/chart-specs';
@@ -48,111 +54,118 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
               rankTrend: rankTrend as VisualSpec | undefined,
           })
         : [];
-    const totalPages = 8 + deepPages.length;
 
-    const pages: React.ReactNode[] = [];
+    const pages: React.ReactElement[] = [];
 
     // Cover
     pages.push(
         <Page key="cover" size="A4" style={pdfStyles.page}>
             <View style={pdfStyles.coverAccentBar} fixed />
-            <View style={pdfStyles.coverLogoWrap}>
-                <MsqdxLogoPdf width={100} height={24} />
-            </View>
-            <Text style={pdfStyles.coverSubtitle}>
-                {isComprehensive ? labels.comprehensiveSubtitle : labels.reportSubtitle}
-            </Text>
-            <Text style={pdfStyles.coverTitle}>{labels.reportTitle}</Text>
-            <View style={pdfStyles.coverUrlBox}>
-                <Text style={pdfStyles.coverUrl}>{bundle.project.name}</Text>
-            </View>
-            <View style={pdfStyles.coverMeta}>
-                {bundle.project.domain ? (
-                    <Text style={pdfStyles.coverMetaItem}>
-                        {labels.domain}: {bundle.project.domain}
-                    </Text>
-                ) : null}
-                {bundle.project.industry ? (
-                    <Text style={pdfStyles.coverMetaItem}>
-                        {labels.industry}: {bundle.project.industry}
-                    </Text>
-                ) : null}
-                <Text style={pdfStyles.coverMetaItem}>
-                    {labels.date}: {formatDate(bundle.generatedAt, bundle.locale)}
+            <View style={{ flex: 1, justifyContent: 'center' }}>
+                <View style={pdfStyles.coverLogoWrap}>
+                    <MsqdxLogoPdf width={110} height={26} />
+                </View>
+                <Text style={pdfStyles.coverSubtitle}>
+                    {isComprehensive ? labels.comprehensiveSubtitle : labels.reportSubtitle}
                 </Text>
+                <Text style={pdfStyles.coverTitle}>{labels.reportTitle}</Text>
+                <View style={pdfStyles.coverUrlBox}>
+                    <Text style={pdfStyles.coverUrl}>{bundle.project.name}</Text>
+                </View>
+                <View style={pdfStyles.coverMeta}>
+                    {bundle.project.domain ? (
+                        <Text style={pdfStyles.coverMetaItem}>
+                            {labels.domain}: {bundle.project.domain}
+                        </Text>
+                    ) : null}
+                    {bundle.project.industry ? (
+                        <Text style={pdfStyles.coverMetaItem}>
+                            {labels.industry}: {bundle.project.industry}
+                        </Text>
+                    ) : null}
+                    <Text style={pdfStyles.coverMetaItem}>
+                        {labels.date}: {formatDate(bundle.generatedAt, bundle.locale)}
+                    </Text>
+                </View>
+                <PdfScoreCardsFromSpec spec={scoreCards?.kind === 'scoreCards' ? scoreCards : undefined} />
+                {bundle.project.valueProposition ? (
+                    <Text style={[pdfStyles.leadText, { marginTop: 16 }]}>{bundle.project.valueProposition}</Text>
+                ) : null}
             </View>
-            <PdfScoreCardsFromSpec spec={scoreCards?.kind === 'scoreCards' ? scoreCards : undefined} />
-            {bundle.project.valueProposition ? (
-                <Text style={[pdfStyles.bodyText, { marginTop: 12 }]}>{bundle.project.valueProposition}</Text>
-            ) : null}
         </Page>
     );
 
-    // Executive Summary
+    // 01 Executive
     pages.push(
-        <Page key="exec" size="A4" style={pdfStyles.page}>
-            <PdfHeader />
+        <PdfChapterIntroPage
+            key="ch-intro-executive"
+            chapterNumber="01"
+            title={labels.executiveSummary}
+            subtitle={labels.chapterIntros.executive}
+            chapter="summary"
+        />
+    );
+    pages.push(
+        <PdfContentPage key="executive">
             <PdfSectionHeader title={labels.executiveSummary} chapter="summary" />
             {narrative?.riskAmpel ? (
                 <RiskAmpelPills ampel={narrative.riskAmpel} labels={labels.riskAmpel} />
             ) : null}
             {narrative?.executiveSummary ? (
-                <Text style={pdfStyles.bodyText}>{narrative.executiveSummary}</Text>
+                <PdfLeadText>{narrative.executiveSummary}</PdfLeadText>
             ) : (
                 <Text style={pdfStyles.metaText}>{labels.noData}</Text>
             )}
             {narrative?.competitiveLandscape ? (
-                <>
+                <View style={pdfStyles.contentPanel}>
                     <PdfSectionHeader title={labels.competitorComparison} chapter="competitors" />
-                    <Text style={pdfStyles.bodyText}>{narrative.competitiveLandscape}</Text>
-                </>
+                    <PdfLeadText>{narrative.competitiveLandscape}</PdfLeadText>
+                </View>
             ) : null}
             {bundle.domain?.llmSummary?.summary ? (
-                <>
+                <View style={pdfStyles.contentPanel}>
                     <PdfSectionHeader title="Domain Summary" chapter="ux" />
-                    <Text style={pdfStyles.bodyText}>{bundle.domain.llmSummary.summary}</Text>
-                </>
+                    <PdfLeadText>{bundle.domain.llmSummary.summary}</PdfLeadText>
+                </View>
             ) : null}
-            <PdfFooter pageNumber={2} totalPages={totalPages} title={labels.footerTitle} locale={bundle.locale} />
-        </Page>
+        </PdfContentPage>
     );
 
-    // Site Quality
+    // 02 Site Quality
     pages.push(
-        <Page key="quality" size="A4" style={pdfStyles.page}>
-            <PdfHeader />
+        <PdfChapterIntroPage
+            key="ch-intro-quality"
+            chapterNumber="02"
+            title={labels.siteQuality}
+            subtitle={labels.chapterIntros.siteQuality}
+            chapter="issues"
+        />
+    );
+    pages.push(
+        <PdfContentPage key="quality">
             <PdfSectionHeader title={labels.siteQuality} chapter="issues" />
             {bundle.domain ? (
                 <>
-                    <View style={pdfStyles.tableRow}>
-                        <Text style={pdfStyles.tableLabel}>WCAG Score</Text>
-                        <Text style={pdfStyles.tableValue}>{bundle.domain.wcagScore}/100</Text>
-                    </View>
-                    <View style={pdfStyles.tableRow}>
-                        <Text style={pdfStyles.tableLabel}>{labels.pages}</Text>
-                        <Text style={pdfStyles.tableValue}>{bundle.domain.totalPageCount}</Text>
-                    </View>
-                    <View style={pdfStyles.tableRow}>
-                        <Text style={pdfStyles.tableLabel}>{labels.wcagErrors}</Text>
-                        <Text style={pdfStyles.tableValue}>
-                            {bundle.domain.issueStats.errors} / {bundle.domain.issueStats.warnings}
-                        </Text>
-                    </View>
+                    <PdfStatGrid
+                        items={[
+                            { label: 'WCAG Score', value: `${bundle.domain.wcagScore}/100`, accent: '#B91C1C' },
+                            { label: labels.pages, value: String(bundle.domain.totalPageCount) },
+                            {
+                                label: labels.wcagErrors,
+                                value: `${bundle.domain.issueStats.errors} / ${bundle.domain.issueStats.warnings}`,
+                            },
+                            ...(bundle.domain.eco?.avgCo2 != null
+                                ? [{ label: labels.eco, value: `${bundle.domain.eco.avgCo2}g` }]
+                                : []),
+                        ]}
+                    />
                     {bundle.domain.performance ? (
-                        <View style={pdfStyles.tableRow}>
-                            <Text style={pdfStyles.tableLabel}>{labels.performance}</Text>
-                            <Text style={pdfStyles.tableValue}>
-                                {bundle.domain.performance.avgTtfb ?? '–'} /{' '}
-                                {bundle.domain.performance.avgFcp ?? '–'} /{' '}
+                        <View style={pdfStyles.contentPanel}>
+                            <Text style={pdfStyles.subsectionTitle}>{labels.performance}</Text>
+                            <Text style={pdfStyles.bodyText}>
+                                TTFB {bundle.domain.performance.avgTtfb ?? '–'} · FCP{' '}
+                                {bundle.domain.performance.avgFcp ?? '–'} · LCP{' '}
                                 {bundle.domain.performance.avgLcp ?? '–'}
-                            </Text>
-                        </View>
-                    ) : null}
-                    {bundle.domain.eco ? (
-                        <View style={pdfStyles.tableRow}>
-                            <Text style={pdfStyles.tableLabel}>{labels.eco}</Text>
-                            <Text style={pdfStyles.tableValue}>
-                                {bundle.domain.eco.avgCo2 != null ? `${bundle.domain.eco.avgCo2}g` : '–'}
                             </Text>
                         </View>
                     ) : null}
@@ -160,11 +173,9 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
                         <>
                             <PdfSectionHeader title={labels.systemicIssues} chapter="issues" />
                             {bundle.domain.systemicIssues.map((issue) => (
-                                <View key={issue.issueId} style={pdfStyles.bulletItem}>
-                                    <View style={pdfStyles.bulletDot} />
-                                    <Text style={pdfStyles.bodyText}>
-                                        {issue.title} ({issue.count}×)
-                                    </Text>
+                                <View key={issue.issueId} style={pdfStyles.recommendationRow}>
+                                    <Text style={pdfStyles.recommendationTitle}>{issue.title}</Text>
+                                    <Text style={pdfStyles.recommendationDesc}>{issue.count} pages affected</Text>
                                 </View>
                             ))}
                         </>
@@ -173,31 +184,48 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
             ) : (
                 <Text style={pdfStyles.metaText}>{labels.noData}</Text>
             )}
-            <PdfFooter pageNumber={3} totalPages={totalPages} title={labels.footerTitle} locale={bundle.locale} />
-        </Page>
+        </PdfContentPage>
     );
 
-    // SEO & Rankings
+    // 03 SEO
     pages.push(
-        <Page key="seo" size="A4" style={pdfStyles.page}>
-            <PdfHeader />
+        <PdfChapterIntroPage
+            key="ch-intro-seo"
+            chapterNumber="03"
+            title={labels.seoRankings}
+            subtitle={labels.chapterIntros.seo}
+            chapter="seo"
+        />
+    );
+    pages.push(
+        <PdfContentPage key="seo">
             <PdfSectionHeader title={labels.seoRankings} chapter="seo" />
             {bundle.domain ? (
-                <View style={pdfStyles.tableRow}>
-                    <Text style={pdfStyles.tableLabel}>SEO On-Page</Text>
-                    <Text style={pdfStyles.tableValue}>
-                        {bundle.domain.seoOnPageScore}/100 ({bundle.domain.seoOnPageLabel})
-                    </Text>
-                </View>
+                <PdfStatGrid
+                    items={[
+                        {
+                            label: 'SEO On-Page',
+                            value: `${bundle.domain.seoOnPageScore}/100`,
+                            accent: '#047857',
+                        },
+                        { label: 'Label', value: bundle.domain.seoOnPageLabel },
+                    ]}
+                />
             ) : null}
             {bundle.rankings ? (
                 <>
-                    <View style={pdfStyles.tableRow}>
-                        <Text style={pdfStyles.tableLabel}>Ranking Score</Text>
-                        <Text style={pdfStyles.tableValue}>
-                            {bundle.rankings.score ?? '–'}/100 · {bundle.rankings.keywordCount} keywords
-                        </Text>
-                    </View>
+                    <PdfStatGrid
+                        items={[
+                            {
+                                label: 'Ranking Score',
+                                value: bundle.rankings.score != null ? `${bundle.rankings.score}/100` : '–',
+                            },
+                            {
+                                label: labels.keywords,
+                                value: String(bundle.rankings.keywordCount),
+                            },
+                        ]}
+                    />
                     <PdfSectionHeader title={labels.keywords} chapter="seo" />
                     {rankingChart ? <PdfVisualSpec spec={rankingChart} /> : null}
                 </>
@@ -210,21 +238,33 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
                     <PdfVisualSpec spec={rankTrend} />
                 </>
             ) : null}
-            <PdfFooter pageNumber={4} totalPages={totalPages} title={labels.footerTitle} locale={bundle.locale} />
-        </Page>
+        </PdfContentPage>
     );
 
-    // GEO
+    // 04 GEO
     pages.push(
-        <Page key="geo" size="A4" style={pdfStyles.page}>
-            <PdfHeader />
+        <PdfChapterIntroPage
+            key="ch-intro-geo"
+            chapterNumber="04"
+            title={labels.geoEeat}
+            subtitle={labels.chapterIntros.geo}
+            chapter="geo"
+        />
+    );
+    pages.push(
+        <PdfContentPage key="geo">
             <PdfSectionHeader title={labels.geoEeat} chapter="geo" />
             {bundle.geo ? (
                 <>
-                    <View style={pdfStyles.tableRow}>
-                        <Text style={pdfStyles.tableLabel}>GEO Score</Text>
-                        <Text style={pdfStyles.tableValue}>{bundle.geo.score ?? '–'}/100</Text>
-                    </View>
+                    <PdfStatGrid
+                        items={[
+                            {
+                                label: 'GEO Score',
+                                value: bundle.geo.score != null ? `${bundle.geo.score}/100` : '–',
+                                accent: '#0891B2',
+                            },
+                        ]}
+                    />
                     {geoChart ? <PdfVisualSpec spec={geoChart} /> : null}
                     {bundle.geo.recommendations.length > 0 ? (
                         <>
@@ -241,14 +281,21 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
             ) : (
                 <Text style={pdfStyles.metaText}>{labels.noData}</Text>
             )}
-            <PdfFooter pageNumber={5} totalPages={totalPages} title={labels.footerTitle} locale={bundle.locale} />
-        </Page>
+        </PdfContentPage>
     );
 
-    // Topics + Competitors
+    // 05 Topics & Competitors
     pages.push(
-        <Page key="topics" size="A4" style={pdfStyles.page}>
-            <PdfHeader />
+        <PdfChapterIntroPage
+            key="ch-intro-topics"
+            chapterNumber="05"
+            title={labels.contentTopics}
+            subtitle={labels.chapterIntros.topics}
+            chapter="structure"
+        />
+    );
+    pages.push(
+        <PdfContentPage key="topics">
             <PdfSectionHeader title={labels.contentTopics} chapter="structure" />
             {topicsChart ? (
                 <PdfVisualSpec spec={topicsChart} />
@@ -258,26 +305,37 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
             <PdfSectionHeader title={labels.competitorComparison} chapter="competitors" />
             {competitorChart ? (
                 <PdfVisualSpec spec={competitorChart} />
+            ) : bundle.competitors.filter((c) => c.status === 'complete').length > 0 ? (
+                <View style={pdfStyles.contentPanel}>
+                    {bundle.competitors
+                        .filter((c) => c.status === 'complete')
+                        .map((c) => (
+                            <View key={c.domain} style={pdfStyles.dataTableRow}>
+                                <Text style={[pdfStyles.tableLabel, { width: '40%' }]}>{c.domain}</Text>
+                                <Text style={pdfStyles.tableValue}>
+                                    WCAG {c.wcagScore} · SEO {c.seoOnPageScore}
+                                </Text>
+                            </View>
+                        ))}
+                </View>
             ) : (
-                bundle.competitors
-                    .filter((c) => c.status === 'complete')
-                    .map((c) => (
-                        <View key={c.domain} style={pdfStyles.tableRow}>
-                            <Text style={pdfStyles.tableLabel}>{c.domain}</Text>
-                            <Text style={pdfStyles.tableValue}>
-                                WCAG {c.wcagScore} · SEO {c.seoOnPageScore}
-                            </Text>
-                        </View>
-                    ))
+                <Text style={pdfStyles.metaText}>{labels.noData}</Text>
             )}
-            <PdfFooter pageNumber={6} totalPages={totalPages} title={labels.footerTitle} locale={bundle.locale} />
-        </Page>
+        </PdfContentPage>
     );
 
-    // Action plan
+    // 06 Actions
     pages.push(
-        <Page key="actions" size="A4" style={pdfStyles.page}>
-            <PdfHeader />
+        <PdfChapterIntroPage
+            key="ch-intro-actions"
+            chapterNumber="06"
+            title={labels.actionPlan}
+            subtitle={labels.chapterIntros.actions}
+            chapter="summary"
+        />
+    );
+    pages.push(
+        <PdfContentPage key="actions">
             <PdfSectionHeader title={labels.actionPlan} chapter="summary" />
             {narrative?.recommendations && narrative.recommendations.length > 0 ? (
                 narrative.recommendations.map((rec, i) => (
@@ -286,102 +344,108 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
                             P{rec.priority}: {rec.title}
                         </Text>
                         <Text style={pdfStyles.recommendationDesc}>{rec.description}</Text>
-                        <Text style={pdfStyles.metaText}>{rec.evidenceIds.join(', ')}</Text>
                     </View>
                 ))
             ) : (
                 <Text style={pdfStyles.metaText}>{labels.noData}</Text>
             )}
             {bundle.journey ? (
-                <>
+                <View style={[pdfStyles.contentPanel, { marginTop: 12 }]}>
                     <PdfSectionHeader title={labels.journeySummary} chapter="ux" />
                     <Text style={pdfStyles.bodyText}>
                         {bundle.journey.url} — {bundle.journey.task}
                     </Text>
-                    {bundle.journey.summary ? (
-                        <Text style={pdfStyles.bodyText}>{bundle.journey.summary}</Text>
-                    ) : null}
-                </>
+                    {bundle.journey.summary ? <PdfLeadText>{bundle.journey.summary}</PdfLeadText> : null}
+                </View>
             ) : null}
-            <PdfFooter pageNumber={7} totalPages={totalPages} title={labels.footerTitle} locale={bundle.locale} />
-        </Page>
+        </PdfContentPage>
     );
 
-    deepPages.forEach((deepPage, i) => {
-        const pageNum = 8 + i;
-        const deepChildren = (deepPage.props as { children?: React.ReactNode }).children;
+    // 07+ Deep dive (comprehensive)
+    if (deepPages.length > 0) {
         pages.push(
-            React.cloneElement(deepPage, {}, [
-                ...React.Children.toArray(deepChildren),
-                <PdfFooter
-                    key="footer"
-                    pageNumber={pageNum}
-                    totalPages={totalPages}
-                    title={labels.footerTitle}
-                    locale={bundle.locale}
-                />,
-            ])
+            <PdfChapterIntroPage
+                key="ch-intro-deep"
+                chapterNumber="07"
+                title={labels.metricsOverview}
+                subtitle={labels.chapterIntros.deepDive}
+                chapter="visual"
+            />
         );
-    });
+        pages.push(...deepPages);
+    }
 
-    // Appendix (+ technical for full variant)
+    // Appendix
     pages.push(
-        <Page key="appendix" size="A4" style={pdfStyles.page}>
-            <PdfHeader />
-            <PdfSectionHeader title={labels.appendix} chapter="infra" />
+        <PdfChapterIntroPage
+            key="ch-intro-appendix"
+            chapterNumber={deepPages.length > 0 ? '08' : '07'}
+            title={labels.appendix}
+            subtitle={labels.chapterIntros.appendix}
+            chapter="infra"
+        />
+    );
+    pages.push(
+        <PdfContentPage key="appendix">
             <PdfSectionHeader title={labels.dataSources} chapter="infra" />
-            {bundle.freshness.sources.map((src) => (
-                <View key={src.key} style={pdfStyles.tableRow}>
-                    <Text style={pdfStyles.tableLabel}>{src.label}</Text>
-                    <Text style={pdfStyles.tableValue}>
-                        {src.available && src.updatedAt
-                            ? new Date(src.updatedAt).toLocaleString(dateLocale)
-                            : labels.noData}
-                    </Text>
-                </View>
-            ))}
-            <View style={pdfStyles.tableRow}>
-                <Text style={pdfStyles.tableLabel}>Project</Text>
-                <Text style={pdfStyles.tableValue}>{bundle.links.projectPath}</Text>
+            <View style={pdfStyles.contentPanel}>
+                {bundle.freshness.sources.map((src) => (
+                    <View key={src.key} style={pdfStyles.dataTableRow}>
+                        <Text style={[pdfStyles.tableLabel, { width: '45%' }]}>{src.label}</Text>
+                        <Text style={pdfStyles.tableValue}>
+                            {src.available && src.updatedAt
+                                ? new Date(src.updatedAt).toLocaleString(dateLocale)
+                                : labels.noData}
+                        </Text>
+                    </View>
+                ))}
             </View>
-            {bundle.links.domainScanPath ? (
-                <View style={pdfStyles.tableRow}>
-                    <Text style={pdfStyles.tableLabel}>Deep Scan</Text>
-                    <Text style={pdfStyles.tableValue}>{bundle.links.domainScanPath}</Text>
+            <PdfSectionHeader title="Links" chapter="infra" />
+            <View style={pdfStyles.contentPanel}>
+                <View style={pdfStyles.dataTableRow}>
+                    <Text style={pdfStyles.tableLabel}>Project</Text>
+                    <Text style={pdfStyles.tableValue}>{bundle.links.projectPath}</Text>
                 </View>
-            ) : null}
-            {bundle.links.geoRunPath ? (
-                <View style={pdfStyles.tableRow}>
-                    <Text style={pdfStyles.tableLabel}>GEO Run</Text>
-                    <Text style={pdfStyles.tableValue}>{bundle.links.geoRunPath}</Text>
+                {bundle.links.domainScanPath ? (
+                    <View style={pdfStyles.dataTableRow}>
+                        <Text style={pdfStyles.tableLabel}>Deep Scan</Text>
+                        <Text style={pdfStyles.tableValue}>{bundle.links.domainScanPath}</Text>
+                    </View>
+                ) : null}
+                {bundle.links.geoRunPath ? (
+                    <View style={pdfStyles.dataTableRow}>
+                        <Text style={pdfStyles.tableLabel}>GEO Run</Text>
+                        <Text style={pdfStyles.tableValue}>{bundle.links.geoRunPath}</Text>
+                    </View>
+                ) : null}
+                <View style={pdfStyles.dataTableRow}>
+                    <Text style={pdfStyles.tableLabel}>Rankings</Text>
+                    <Text style={pdfStyles.tableValue}>{bundle.links.rankingsPath}</Text>
                 </View>
-            ) : null}
-            <View style={pdfStyles.tableRow}>
-                <Text style={pdfStyles.tableLabel}>Rankings</Text>
-                <Text style={pdfStyles.tableValue}>{bundle.links.rankingsPath}</Text>
             </View>
             {(bundle.variant === 'full' || bundle.variant === 'comprehensive') && bundle.rankings ? (
                 <>
                     <PdfSectionHeader title={labels.technicalAppendix} chapter="issues" />
-                    {bundle.rankings.topKeywords.map((kw) => (
-                        <View key={kw.id} style={pdfStyles.tableRow}>
-                            <Text style={pdfStyles.tableLabel}>{kw.keyword}</Text>
-                            <Text style={pdfStyles.tableValue}>
-                                {kw.position != null ? `#${kw.position}` : '–'}
-                            </Text>
-                        </View>
-                    ))}
-                    {bundle.domain?.systemicIssues.map((issue) => (
-                        <View key={issue.issueId} style={pdfStyles.tableRow}>
-                            <Text style={pdfStyles.tableLabel}>{issue.title}</Text>
-                            <Text style={pdfStyles.tableValue}>{issue.count}</Text>
-                        </View>
-                    ))}
+                    <View style={pdfStyles.contentPanel}>
+                        {bundle.rankings.topKeywords.map((kw) => (
+                            <View key={kw.id} style={pdfStyles.dataTableRow}>
+                                <Text style={[pdfStyles.tableLabel, { width: '55%' }]}>{kw.keyword}</Text>
+                                <Text style={pdfStyles.tableValue}>
+                                    {kw.position != null ? `#${kw.position}` : '–'}
+                                </Text>
+                            </View>
+                        ))}
+                    </View>
                 </>
             ) : null}
-            <PdfFooter pageNumber={8 + deepPages.length} totalPages={totalPages} title={labels.footerTitle} locale={bundle.locale} />
-        </Page>
+        </PdfContentPage>
     );
 
-    return <Document>{pages}</Document>;
+    const finalPages = applyReportFooters(pages, {
+        title: labels.footerTitle,
+        locale: bundle.locale,
+        skipFooter: (page, index) => index === 0 || isChapterIntroPage(page),
+    });
+
+    return <Document>{finalPages}</Document>;
 }

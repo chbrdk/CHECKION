@@ -8,10 +8,10 @@ import { reportUsage } from '@/lib/usage-report';
 import type { ProjectReportBundle, ProjectReportLocale } from '@/lib/project-report/types';
 import {
     PLACEHOLDER_NARRATIVE,
-    ProjectReportNarrativeSchema,
     type ProjectReportNarrative,
 } from '@/lib/project-report/narrative-schema';
 import { validateNarrativeEvidence } from '@/lib/project-report/agent-qa';
+import { sanitizeNarrativeRaw } from '@/lib/project-report/narrative-sanitize';
 
 const MAX_FINDINGS = 8;
 const MAX_RECOMMENDATIONS = 5;
@@ -157,13 +157,21 @@ export async function synthesizeProjectReportNarrative(
     try {
         const raw = await callLlm(openai, bundle.locale, 'full', payloadJson);
         const parsed = JSON.parse(extractJson(raw));
-        const validated = ProjectReportNarrativeSchema.parse({
-            ...parsed,
-            modelUsed: OPENAI_MODEL,
-            generatedAt: new Date().toISOString(),
-            synthesisAvailable: true,
-        });
-        const qa = validateNarrativeEvidence(validated, bundle.provenance);
+        const validIds = new Set(bundle.provenance.map((p) => p.evidenceId));
+        const fallbackId =
+            bundle.provenance.find((p) => p.evidenceId.startsWith('ev-wcag'))?.evidenceId ??
+            bundle.provenance[0]?.evidenceId ??
+            'ev-wcag-score';
+        const sanitized = sanitizeNarrativeRaw(parsed, validIds, fallbackId);
+        const qa = validateNarrativeEvidence(
+            {
+                ...sanitized,
+                modelUsed: OPENAI_MODEL,
+                generatedAt: new Date().toISOString(),
+                synthesisAvailable: true,
+            },
+            bundle.provenance
+        );
 
         reportUsage({
             userId: options.userId,

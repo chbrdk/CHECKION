@@ -47,6 +47,16 @@ export interface ProjectReportPdfLabels {
     topicOverlap: string;
     competitiveInsights: string;
     scoreboard: string;
+    chapterIntros: {
+        executive: string;
+        siteQuality: string;
+        seo: string;
+        geo: string;
+        topics: string;
+        actions: string;
+        deepDive: string;
+        appendix: string;
+    };
 }
 
 const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
@@ -93,6 +103,16 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         topicOverlap: 'Seitenthemen — Overlap',
         competitiveInsights: 'Wettbewerbs-Erkenntnisse',
         scoreboard: 'Scoreboard',
+        chapterIntros: {
+            executive: 'Lagebild, Risiken und strategische Einordnung auf Basis aller Projekt-Daten.',
+            siteQuality: 'WCAG, Performance, Nachhaltigkeit und systemische Qualitätsissues.',
+            seo: 'On-Page SEO, Keyword-Rankings und SERP-Trends.',
+            geo: 'GEO-Score, E-E-A-T, AI-Sichtbarkeit und Empfehlungen.',
+            topics: 'Seitenthemen und Deep-Scan-Vergleich mit Wettbewerbern.',
+            actions: 'Priorisierte Maßnahmen und UX-Journey-Erkenntnisse.',
+            deepDive: 'Einzelmetriken, Benchmarks und KI-Tiefenanalysen.',
+            appendix: 'Datenquellen, Links und technischer Anhang.',
+        },
     },
     en: {
         reportTitle: 'Project Report',
@@ -137,6 +157,16 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         topicOverlap: 'Page Topics — Overlap',
         competitiveInsights: 'Competitive Insights',
         scoreboard: 'Scoreboard',
+        chapterIntros: {
+            executive: 'Executive overview, risks, and strategic context across all project data.',
+            siteQuality: 'WCAG, performance, sustainability, and systemic quality issues.',
+            seo: 'On-page SEO, keyword rankings, and SERP trends.',
+            geo: 'GEO score, E-E-A-T, AI visibility, and recommendations.',
+            topics: 'Page topics and deep-scan competitor comparison.',
+            actions: 'Prioritized actions and UX journey insights.',
+            deepDive: 'Individual metrics, benchmarks, and AI deep-dive analyses.',
+            appendix: 'Data sources, links, and technical appendix.',
+        },
     },
 };
 

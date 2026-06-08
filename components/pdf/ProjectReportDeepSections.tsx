@@ -1,27 +1,35 @@
 'use client';
 
 import React from 'react';
-import { Page, View, Text } from '@react-pdf/renderer';
+import { View, Text } from '@react-pdf/renderer';
 import type { ProjectReportBundle } from '@/lib/project-report/types';
 import type { ProjectReportPdfLabels } from '@/lib/project-report/pdf-labels';
 import type { SectionAnalysis } from '@/lib/project-report/narrative-schema';
 import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
-import { PdfHeader, PdfSectionHeader } from '@/components/pdf/shared/PdfPrimitives';
+import { PdfSectionHeader } from '@/components/pdf/shared/PdfPrimitives';
+import { PdfContentPage, PdfLeadText, PdfStatGrid } from '@/components/pdf/shared/PdfLayout';
 import { PdfVisualSpec } from '@/components/pdf/charts/PdfChartComponents';
 import type { VisualSpec } from '@/lib/project-report/chart-specs';
 
 function SectionAnalysisBlock({ section }: { section: SectionAnalysis }) {
     return (
-        <>
-            <Text style={pdfStyles.subsectionTitle}>{section.title}</Text>
-            <Text style={pdfStyles.bodyText}>{section.summary}</Text>
-            {section.keyFindings.map((f, i) => (
-                <View key={i} style={pdfStyles.bulletItem}>
-                    <View style={pdfStyles.bulletDot} />
-                    <Text style={pdfStyles.bodyText}>{f}</Text>
-                </View>
-            ))}
-        </>
+        <View style={pdfStyles.contentPanel}>
+            <Text style={[pdfStyles.subsectionTitle, { fontSize: 11, marginBottom: 8 }]}>{section.title}</Text>
+            <PdfLeadText>{section.summary}</PdfLeadText>
+            {section.keyFindings.length > 0 ? (
+                <>
+                    <Text style={[pdfStyles.statTileLabel, { marginTop: 8, marginBottom: 4 }]}>
+                        Key findings
+                    </Text>
+                    {section.keyFindings.map((f, i) => (
+                        <View key={i} style={pdfStyles.bulletItem}>
+                            <View style={pdfStyles.bulletDot} />
+                            <Text style={pdfStyles.bodyText}>{f}</Text>
+                        </View>
+                    ))}
+                </>
+            ) : null}
+        </View>
     );
 }
 
@@ -44,25 +52,29 @@ export function buildDeepReportPages(
     const sections = narrative?.sections ?? deep.sections;
 
     pages.push(
-        <Page key="metrics" size="A4" style={pdfStyles.page}>
-            <PdfHeader />
-            <PdfSectionHeader title={labels.metricsOverview} chapter="summary" />
-            {deep.metrics.slice(0, 24).map((m) => (
-                <View key={m.id} style={pdfStyles.tableRow}>
-                    <Text style={[pdfStyles.tableLabel, { width: 200 }]}>{m.label}</Text>
-                    <Text style={pdfStyles.tableValue}>
-                        {m.value != null ? `${m.value}${m.unit ?? ''}` : '–'}
-                        {m.benchmark ? ` (${m.benchmark})` : ''}
-                    </Text>
+        <PdfContentPage key="deep-metrics">
+            <PdfSectionHeader title={labels.metricsOverview} chapter="visual" />
+            <View style={pdfStyles.contentPanel}>
+                <View style={pdfStyles.dataTableHeader}>
+                    <Text style={[pdfStyles.dataTableHeaderCell, { width: '50%' }]}>{labels.metricLabel}</Text>
+                    <Text style={[pdfStyles.dataTableHeaderCell, { width: '50%' }]}>{labels.metricValue}</Text>
                 </View>
-            ))}
-        </Page>
+                {deep.metrics.slice(0, 24).map((m) => (
+                    <View key={m.id} style={pdfStyles.dataTableRow}>
+                        <Text style={[pdfStyles.tableLabel, { width: '50%' }]}>{m.label}</Text>
+                        <Text style={[pdfStyles.tableValue, { width: '50%' }]}>
+                            {m.value != null ? `${m.value}${m.unit ?? ''}` : '–'}
+                            {m.benchmark ? ` · ${m.benchmark}` : ''}
+                        </Text>
+                    </View>
+                ))}
+            </View>
+        </PdfContentPage>
     );
 
     if (narrative?.findings && narrative.findings.length > 0) {
         pages.push(
-            <Page key="findings" size="A4" style={pdfStyles.page}>
-                <PdfHeader />
+            <PdfContentPage key="deep-findings">
                 <PdfSectionHeader title={labels.keyFindings} chapter="summary" />
                 {narrative.findings.map((f, i) => (
                     <View key={i} style={pdfStyles.recommendationRow}>
@@ -72,33 +84,53 @@ export function buildDeepReportPages(
                         <Text style={pdfStyles.recommendationDesc}>{f.description}</Text>
                     </View>
                 ))}
-            </Page>
+            </PdfContentPage>
         );
     }
 
     const benchmark = bundle.deep?.competitiveBenchmark;
     if (benchmark && benchmark.scoreboard.length > 0) {
         pages.push(
-            <Page key="competitive-benchmark" size="A4" style={pdfStyles.page}>
-                <PdfHeader />
+            <PdfContentPage key="deep-competitive">
                 <PdfSectionHeader title={labels.competitiveBenchmark} chapter="competitors" />
+                <PdfStatGrid
+                    items={[
+                        {
+                            label: 'WCAG rank',
+                            value: `#${benchmark.summary.ownWcagRank}`,
+                            accent: '#7C3AED',
+                        },
+                        {
+                            label: 'SEO rank',
+                            value: `#${benchmark.summary.ownSeoRank}`,
+                        },
+                        {
+                            label: 'Shared themes',
+                            value: String(benchmark.summary.sharedThemeCount),
+                        },
+                        {
+                            label: 'Competitors scanned',
+                            value: String(benchmark.summary.completeCompetitorCount),
+                        },
+                    ]}
+                />
                 <PdfSectionHeader title={labels.scoreboard} chapter="competitors" />
-                {benchmark.scoreboard.map((row) => (
-                    <View key={row.domain} style={pdfStyles.tableRow}>
-                        <Text style={[pdfStyles.tableLabel, { width: 120 }]}>
-                            {row.isOwn ? `${row.domain} (own)` : row.domain}
-                        </Text>
-                        <Text style={pdfStyles.tableValue}>
-                            WCAG {row.wcagScore}
-                            {row.wcagDeltaVsOwn != null && !row.isOwn
-                                ? ` (${row.wcagDeltaVsOwn > 0 ? '+' : ''}${row.wcagDeltaVsOwn})`
-                                : ''}{' '}
-                            · SEO {row.seoOnPageScore} · {row.totalPageCount} pages
-                            {row.geoScore != null ? ` · GEO ${row.geoScore}` : ''}
-                            {row.rankingScore != null ? ` · Rank ${row.rankingScore}` : ''}
-                        </Text>
-                    </View>
-                ))}
+                <View style={pdfStyles.contentPanel}>
+                    {benchmark.scoreboard.map((row) => (
+                        <View key={row.domain} style={pdfStyles.dataTableRow}>
+                            <Text style={[pdfStyles.tableLabel, { width: '35%' }]}>
+                                {row.isOwn ? `${row.domain} (own)` : row.domain}
+                            </Text>
+                            <Text style={pdfStyles.tableValue}>
+                                WCAG {row.wcagScore}
+                                {row.wcagDeltaVsOwn != null && !row.isOwn
+                                    ? ` (${row.wcagDeltaVsOwn > 0 ? '+' : ''}${row.wcagDeltaVsOwn})`
+                                    : ''}{' '}
+                                · SEO {row.seoOnPageScore}
+                            </Text>
+                        </View>
+                    ))}
+                </View>
                 {visuals.competitorSeoBarChart ? (
                     <PdfVisualSpec spec={visuals.competitorSeoBarChart} />
                 ) : null}
@@ -121,20 +153,9 @@ export function buildDeepReportPages(
                         {visuals.competitorTopicOverlap ? (
                             <PdfVisualSpec spec={visuals.competitorTopicOverlap} />
                         ) : null}
-                        {benchmark.topicOverlap.slice(0, 12).map((row) => (
-                            <View key={row.themeTagKey} style={pdfStyles.tableRow}>
-                                <Text style={[pdfStyles.tableLabel, { width: 140 }]}>{row.themeTag}</Text>
-                                <Text style={pdfStyles.tableValue}>
-                                    {row.presentOn.join(' · ')}
-                                    {row.own
-                                        ? ` · own ${row.own.pageCount}p`
-                                        : ''}
-                                </Text>
-                            </View>
-                        ))}
                     </>
                 ) : null}
-            </Page>
+            </PdfContentPage>
         );
     }
 
@@ -149,59 +170,47 @@ export function buildDeepReportPages(
     for (const [key, section] of sectionEntries) {
         if (!section) continue;
         pages.push(
-            <Page key={`section-${key}`} size="A4" style={pdfStyles.page}>
-                <PdfHeader />
+            <PdfContentPage key={`deep-section-${key}`}>
                 <PdfSectionHeader title={labels.sectionAnalysis} chapter="ux" />
                 <SectionAnalysisBlock section={section} />
-            </Page>
+            </PdfContentPage>
         );
     }
 
     if (deep.rankKeywordDetails.length > 0) {
         pages.push(
-            <Page key="keywords" size="A4" style={pdfStyles.page}>
-                <PdfHeader />
+            <PdfContentPage key="deep-keywords">
                 <PdfSectionHeader title={labels.keywordDetails} chapter="seo" />
                 {visuals.competitorRankingScores ? (
                     <PdfVisualSpec spec={visuals.competitorRankingScores} />
                 ) : null}
-                {deep.rankKeywordDetails.slice(0, 15).map((kw) => (
-                    <View key={kw.id} style={pdfStyles.tableRow}>
-                        <Text style={[pdfStyles.tableLabel, { width: 160 }]}>{kw.keyword}</Text>
-                        <Text style={pdfStyles.tableValue}>
-                            {kw.position != null ? `#${kw.position}` : '–'}
-                            {kw.positionDelta != null
-                                ? ` (${kw.positionDelta > 0 ? '+' : ''}${kw.positionDelta})`
-                                : ''}
-                            {kw.serpLeaderDomain ? ` · leader: ${kw.serpLeaderDomain}` : ''}
-                        </Text>
-                    </View>
-                ))}
+                <View style={pdfStyles.contentPanel}>
+                    {deep.rankKeywordDetails.slice(0, 15).map((kw) => (
+                        <View key={kw.id} style={pdfStyles.dataTableRow}>
+                            <Text style={[pdfStyles.tableLabel, { width: '40%' }]}>{kw.keyword}</Text>
+                            <Text style={pdfStyles.tableValue}>
+                                {kw.position != null ? `#${kw.position}` : '–'}
+                                {kw.positionDelta != null
+                                    ? ` (${kw.positionDelta > 0 ? '+' : ''}${kw.positionDelta})`
+                                    : ''}
+                            </Text>
+                        </View>
+                    ))}
+                </View>
                 {visuals.rankTrend ? <PdfVisualSpec spec={visuals.rankTrend} /> : null}
-            </Page>
+            </PdfContentPage>
         );
     }
 
     if (deep.geoQuestionHistory.length > 0 || deep.geoPages.length > 0) {
         pages.push(
-            <Page key="geo-deep" size="A4" style={pdfStyles.page}>
-                <PdfHeader />
+            <PdfContentPage key="deep-geo">
                 {deep.geoQuestionHistory.length > 0 ? (
                     <>
                         <PdfSectionHeader title={labels.geoQuestionHistory} chapter="geo" />
                         {visuals.geoQuestionTrend ? (
                             <PdfVisualSpec spec={visuals.geoQuestionTrend} />
                         ) : null}
-                        {deep.geoQuestionHistory.slice(0, 10).map((q) => (
-                            <View key={q.queryIndex} style={pdfStyles.tableRow}>
-                                <Text style={[pdfStyles.tableLabel, { width: 200 }]}>
-                                    {q.queryText.slice(0, 50)}
-                                </Text>
-                                <Text style={pdfStyles.tableValue}>
-                                    {q.latestPosition != null ? `#${q.latestPosition}` : '–'} · {q.trend}
-                                </Text>
-                            </View>
-                        ))}
                     </>
                 ) : null}
                 {deep.geoPages.length > 0 ? (
@@ -209,60 +218,57 @@ export function buildDeepReportPages(
                         <PdfSectionHeader title={labels.geoPageAnalysis} chapter="geo" />
                         {deep.geoPages.slice(0, 8).map((p) => (
                             <View key={p.url} style={pdfStyles.recommendationRow}>
-                                <Text style={pdfStyles.recommendationTitle}>
-                                    {p.title ?? p.url}
-                                </Text>
+                                <Text style={pdfStyles.recommendationTitle}>{p.title ?? p.url}</Text>
                                 <Text style={pdfStyles.recommendationDesc}>
-                                    GEO {p.geoFitnessScore ?? '–'} · T{p.trustScore ?? '–'} E
-                                    {p.experienceScore ?? '–'} X{p.expertiseScore ?? '–'}
+                                    GEO {p.geoFitnessScore ?? '–'} · Trust {p.trustScore ?? '–'}
                                 </Text>
                             </View>
                         ))}
                     </>
                 ) : null}
-            </Page>
+            </PdfContentPage>
         );
     }
 
     if (deep.issueGroups.length > 0 || deep.seoRollup) {
         pages.push(
-            <Page key="issues-seo" size="A4" style={pdfStyles.page}>
-                <PdfHeader />
+            <PdfContentPage key="deep-issues-seo">
                 {deep.issueGroups.length > 0 ? (
                     <>
                         <PdfSectionHeader title={labels.issueGroups} chapter="issues" />
-                        {deep.issueGroups.map((g) => (
-                            <View key={g.groupKey} style={pdfStyles.tableRow}>
-                                <Text style={[pdfStyles.tableLabel, { width: 200 }]}>{g.title}</Text>
-                                <Text style={pdfStyles.tableValue}>
-                                    {g.pageCount} pages · {g.type}
-                                    {g.wcagLevel ? ` · ${g.wcagLevel}` : ''}
-                                </Text>
-                            </View>
-                        ))}
+                        <View style={pdfStyles.contentPanel}>
+                            {deep.issueGroups.map((g) => (
+                                <View key={g.groupKey} style={pdfStyles.dataTableRow}>
+                                    <Text style={[pdfStyles.tableLabel, { width: '45%' }]}>{g.title}</Text>
+                                    <Text style={pdfStyles.tableValue}>
+                                        {g.pageCount} pages · {g.type}
+                                    </Text>
+                                </View>
+                            ))}
+                        </View>
                     </>
                 ) : null}
                 {deep.seoRollup ? (
                     <>
                         <PdfSectionHeader title={labels.seoTechnical} chapter="seo" />
-                        {(
-                            [
-                                ['Missing title', deep.seoRollup.pagesMissingTitle],
-                                ['Missing meta', deep.seoRollup.pagesMissingMeta],
-                                ['Missing H1', deep.seoRollup.pagesMissingH1],
-                                ['Duplicate titles', deep.seoRollup.duplicateTitles],
-                                ['Broken links', deep.seoRollup.brokenLinksCount],
-                                ['JSON-LD pages', deep.seoRollup.jsonLdPages],
-                            ] as const
-                        ).map(([label, value]) => (
-                            <View key={label} style={pdfStyles.tableRow}>
-                                <Text style={pdfStyles.tableLabel}>{label}</Text>
-                                <Text style={pdfStyles.tableValue}>{value ?? '–'}</Text>
-                            </View>
-                        ))}
+                        <PdfStatGrid
+                            items={(
+                                [
+                                    ['Missing title', deep.seoRollup.pagesMissingTitle],
+                                    ['Missing meta', deep.seoRollup.pagesMissingMeta],
+                                    ['Missing H1', deep.seoRollup.pagesMissingH1],
+                                    ['Duplicate titles', deep.seoRollup.duplicateTitles],
+                                    ['Broken links', deep.seoRollup.brokenLinksCount],
+                                    ['JSON-LD pages', deep.seoRollup.jsonLdPages],
+                                ] as const
+                            ).map(([label, value]) => ({
+                                label,
+                                value: value != null ? String(value) : '–',
+                            }))}
+                        />
                     </>
                 ) : null}
-            </Page>
+            </PdfContentPage>
         );
     }
 

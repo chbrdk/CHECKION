@@ -18,9 +18,21 @@ export function MsqdxLogoPdf({ width, height }: { width: number; height: number 
 export function PdfSectionHeader({ title, chapter }: { title: string; chapter: PdfChapterKey }) {
     const c = pdfChapterColors[chapter];
     return (
-        <Text style={[pdfStyles.sectionTitle, { backgroundColor: c.bg, borderLeftColor: c.main }]}>
-            {title}
-        </Text>
+        <View style={{ marginBottom: 10, marginTop: 4 }}>
+            <Text
+                style={[
+                    pdfStyles.sectionTitle,
+                    {
+                        backgroundColor: c.bg,
+                        borderLeftColor: c.main,
+                        fontSize: 13,
+                        paddingVertical: 8,
+                    },
+                ]}
+            >
+                {title}
+            </Text>
+        </View>
     );
 }
 
