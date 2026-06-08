@@ -43,7 +43,7 @@ export interface DomainCompetitorSummaryData {
     };
 }
 
-function extractSummaryFromRow(row: { result: DomainScanResult; id: string }) {
+function extractSummaryFromRow(row: { result: DomainScanResult }) {
     const summary = buildDomainSummary(row.result);
     const pageCount =
         summary.totalPageCount ??

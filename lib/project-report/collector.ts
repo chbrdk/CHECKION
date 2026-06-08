@@ -235,7 +235,7 @@ export async function collectProjectReportFacts(
         const recommendations = (latestGeo?.payload?.recommendations ?? [])
             .slice(0, MAX_GEO_RECOMMENDATIONS)
             .map((r, i) => ({
-                title: r.title ?? r.category ?? `Recommendation ${i + 1}`,
+                title: r.title || r.dimension || `Recommendation ${i + 1}`,
                 description: r.description ?? '',
                 priority: r.priority,
             }));
