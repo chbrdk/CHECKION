@@ -45,13 +45,15 @@ CHECKION_INBOUND_SERVICE_TOKEN=<same-shared-secret>
 
 ## Persona fit pillars
 
-| Pillar | CHECKION source |
-|--------|-----------------|
-| WCAG | `domain.wcagScore` |
-| SEO | `domain.seoOnPageScore` |
-| GEO | `geo.score` |
-| Rankings | `rankings.score` |
-| Performance | `domain.performance.avgLcp` |
-| Topics | token overlap persona ↔ `pageClassification.topThemes` |
+| Pillar | CHECKION source | Persona-specific? |
+|--------|-----------------|-------------------|
+| WCAG | `domain.wcagScore` | Yes — weighted by accessibility keywords in pain points / goals |
+| SEO | `domain.seoOnPageScore` | Yes — SEO / visibility keywords |
+| GEO | `geo.score` | Yes — LLM / AI-search keywords + per-persona GEO question overlap |
+| Rankings | `rankings.score` | Yes — ranking / SERP keywords |
+| Performance | `domain.performance.avgLcp` | Yes — speed / mobile keywords |
+| Topics | token overlap persona ↔ `pageClassification.topThemes` | Yes — distinctive tokens vs other personas in the report |
 
-GEO questions matched to persona via token overlap on `deep.geoDeep.questionDetails`.
+Site-wide metrics are **not** copied 1:1 to every persona. Each pillar uses **salience** (profile keyword overlap). Irrelevant pillars show `unknown` (–). Topic overlap uses **distinctive** tokens so similar personas still diverge.
+
+Implementation: `lib/project-report/persona-pillar-signals.ts`, `lib/project-report/audience-alignment.ts`.

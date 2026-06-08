@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { buildAudienceReportOverlay } from '@/lib/project-report/audience-alignment';
+import {
+    buildAudienceReportOverlay,
+    personaPillarSalience,
+    weightedTokensFromPersona,
+} from '@/lib/project-report/audience-alignment';
 import type { AudionAudienceReportResponse } from '@/lib/integrations/audion-audience-client';
 import type { ProjectReportBundle } from '@/lib/project-report/types';
 
@@ -136,5 +140,54 @@ describe('audience-alignment', () => {
     it('returns unavailable when no personas', () => {
         const overlay = buildAudienceReportOverlay({ available: false, reason: 'no_link' }, baseFacts, 'de');
         expect(overlay.available).toBe(false);
+    });
+
+    it('differentiates pillar scores between personas with distinct profiles', () => {
+        const audionTwo: AudionAudienceReportResponse = {
+            ...audionSample,
+            personas: [
+                audionSample.personas![0],
+                {
+                    id: 'persona-2',
+                    name: 'Tom',
+                    headline: 'Barrierefreiheits-Consultant',
+                    segment: 'Accessibility',
+                    targetGroupId: 'tg2',
+                    targetGroupName: 'A11y',
+                    painPoints: ['WCAG-Kontrast und Screenreader-Navigation'],
+                    goals: ['Barrierefreie Formulare'],
+                    interests: ['Accessibility', 'Inklusion'],
+                    latestUxJourney: null,
+                },
+            ],
+        };
+
+        const overlay = buildAudienceReportOverlay(audionTwo, baseFacts, 'de');
+        expect(overlay.personas).toHaveLength(2);
+
+        const sandraTopics = overlay.personas[0].pillars.find((p) => p.pillar === 'topics')?.score;
+        const tomTopics = overlay.personas[1].pillars.find((p) => p.pillar === 'topics')?.score;
+        expect(sandraTopics).not.toBe(tomTopics);
+
+        const sandraWcag = overlay.personas[0].pillars.find((p) => p.pillar === 'wcag');
+        const tomWcag = overlay.personas[1].pillars.find((p) => p.pillar === 'wcag');
+        expect(tomWcag?.level).not.toBe('unknown');
+        expect(sandraWcag?.score).not.toBe(tomWcag?.score);
+    });
+
+    it('assigns higher WCAG salience to accessibility-focused persona tokens', () => {
+        const brokerTokens = weightedTokensFromPersona(audionSample.personas![0]);
+        const a11yTokens = weightedTokensFromPersona({
+            ...audionSample.personas![0],
+            id: 'p-a11y',
+            painPoints: ['WCAG Kontrast Screenreader'],
+            goals: ['Barrierefreie Navigation'],
+            interests: ['Accessibility'],
+            headline: 'Accessibility Lead',
+            segment: 'A11y',
+        });
+        expect(personaPillarSalience(a11yTokens, 'wcag')).toBeGreaterThan(
+            personaPillarSalience(brokerTokens, 'wcag')
+        );
     });
 });
