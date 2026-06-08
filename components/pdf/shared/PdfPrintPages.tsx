@@ -5,6 +5,8 @@ import { Page, View, Text } from '@react-pdf/renderer';
 import {
     pdfNeedsSpreadPadBeforeChapter,
     pdfContentMarginsForSide,
+    pdfSpreadSideFromIndex,
+    PDF_DOCUMENT_PAGE_LAYOUT,
     PDF_PAGE_HEIGHT_PT,
     PDF_PAGE_WIDTH_PT,
     type PdfSpreadSide,
@@ -79,22 +81,26 @@ export function PdfChapterSpreadPages({
     subtitle,
     chapter,
     chapterPrefix = 'Kapitel',
+    startPageIndex,
 }: {
     chapterNumber: string;
     title: string;
     subtitle?: string;
     chapter: PdfChapterKey;
     chapterPrefix?: string;
+    startPageIndex: number;
 }) {
     const c = pdfChapterColors[chapter];
+    const leftSide = pdfSpreadSideFromIndex(startPageIndex);
+    const rightSide = pdfSpreadSideFromIndex(startPageIndex + 1);
     return [
-        <PdfPrintPage key={`ch-${chapterNumber}-left`} side="left" accentColor={c.main} innerFill={c.bg}>
+        <PdfPrintPage key={`ch-${chapterNumber}-left`} side={leftSide} accentColor={c.main} innerFill={c.bg}>
             <View style={pdfStyles.chapterSpreadLeft}>
                 <Text style={[pdfStyles.chapterSpreadGhost, { color: c.main }]}>{chapterNumber}</Text>
                 <View style={[pdfStyles.chapterSpreadAccentRing, { borderColor: c.main }]} />
             </View>
         </PdfPrintPage>,
-        <PdfPrintPage key={`ch-${chapterNumber}-right`} side="right" accentColor={c.main}>
+        <PdfPrintPage key={`ch-${chapterNumber}-right`} side={rightSide} accentColor={c.main}>
             <View style={pdfStyles.chapterSpreadRight}>
                 <Text style={[pdfStyles.chapterSpreadEyebrow, { color: c.main }]}>
                     {chapterPrefix} {chapterNumber}
@@ -140,7 +146,7 @@ export function PdfChapterIntroPage({
     subtitle?: string;
     chapter: PdfChapterKey;
 }) {
-    const pages = PdfChapterSpreadPages({ chapterNumber, title, subtitle, chapter });
+    const pages = PdfChapterSpreadPages({ chapterNumber, title, subtitle, chapter, startPageIndex: 0 });
     return pages[1] as React.ReactElement;
 }
 
@@ -243,6 +249,7 @@ export function applyReportFooters(
                 totalPages={total}
                 title={options.title}
                 locale={options.locale}
+                spreadSide={pdfSpreadSideFromIndex(index)}
             />,
         ]);
     });
@@ -265,16 +272,17 @@ export function appendChapterSpread(
 ): React.ReactElement[] {
     const next = [...pages];
     if (pdfNeedsSpreadPadBeforeChapter(next.length)) {
-        const side = next.length % 2 === 0 ? 'right' : 'left';
+        const padSide = pdfSpreadSideFromIndex(next.length);
         next.push(
-            <PdfSpreadPadPage key={`spread-pad-before-${props.chapterNumber}`} side={side} />
+            <PdfSpreadPadPage key={`spread-pad-before-${props.chapterNumber}`} side={padSide} />
         );
     }
-    next.push(...PdfChapterSpreadPages(props));
+    next.push(...PdfChapterSpreadPages({ ...props, startPageIndex: next.length }));
     return next;
 }
 
 export function contentSideForIndex(index: number): PdfSpreadSide {
-    const pageNumber = index + 1;
-    return pageNumber % 2 === 0 ? 'left' : 'right';
+    return pdfSpreadSideFromIndex(index);
 }
+
+export { PDF_DOCUMENT_PAGE_LAYOUT };

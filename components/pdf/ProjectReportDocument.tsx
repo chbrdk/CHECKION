@@ -19,6 +19,7 @@ import {
     isChapterIntroPage,
     appendChapterSpread,
     contentSideForIndex,
+    PDF_DOCUMENT_PAGE_LAYOUT,
 } from '@/components/pdf/shared/PdfLayout';
 import { PdfScoreCardsFromSpec, PdfVisualSpec } from '@/components/pdf/charts/PdfChartComponents';
 import { buildDeepReportPages } from '@/components/pdf/ProjectReportDeepSections';
@@ -469,5 +470,5 @@ export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
         skipFooter: (page, index) => index === 0 || isChapterIntroPage(page),
     });
 
-    return <Document>{finalPages}</Document>;
+    return <Document pageLayout={PDF_DOCUMENT_PAGE_LAYOUT}>{finalPages}</Document>;
 }

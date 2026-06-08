@@ -21,9 +21,12 @@ Print-optimiertes Report-Layout mit App-Frame und Doppelseiten.
 
 ## Doppelseiten-Logik
 
-- Seite 1 = Deckblatt (cover)
-- Seite 2+ = abwechselnd links/rechts (Druck: Buchbindung)
-- Kapitel starten immer mit **linker** Dekor-Seite (gerade Seitenzahl) → ggf. `PdfSpreadPadPage` einfügen
+- Seite 1 = Deckblatt (cover, alle Ränder)
+- Seite 2+ = abwechselnd **links** (gerade) / **rechts** (ungerade)
+- **Linke Seite:** Rahmen nur oben, links, unten — rechts bis zur Bindung
+- **Rechte Seite:** Rahmen nur oben, rechts, unten — links bis zur Bindung
+- PDF-Metadaten: `Document pageLayout="twoPageRight"` (Deckblatt allein, dann Spreads)
+- Kapitel starten mit **linker** Dekor-Seite (gerade Seitenzahl) → ggf. `PdfSpreadPadPage`
 
 ## Design-Referenz Web
 

@@ -7,11 +7,13 @@ import {
     PDF_INNER_BACKGROUND,
     PDF_PAGE_HEIGHT_PT,
     PDF_PAGE_WIDTH_PT,
+    pdfFrameRectForSide,
     type PdfSpreadSide,
 } from '@/lib/paths/pdf-print-tokens';
 import {
     buildAppInnerFramePath,
     buildCornerTabPath,
+    cornerTabLogoPosition,
 } from '@/components/pdf/shared/pdf-frame-path';
 import { MsqdxLogoPdf } from '@/components/pdf/shared/PdfPrimitives';
 
@@ -27,8 +29,10 @@ export function PdfAppFrameBackground({
     innerFill?: string;
 }) {
     const brand = accentColor ?? PDF_BRAND_COLOR;
-    const innerPath = buildAppInnerFramePath();
-    const tabPath = buildCornerTabPath();
+    const innerPath = buildAppInnerFramePath(side);
+    const tabPath = buildCornerTabPath(side);
+    const logoPos = cornerTabLogoPosition(side);
+    const frame = pdfFrameRectForSide(side);
 
     return (
         <>
@@ -61,11 +65,10 @@ export function PdfAppFrameBackground({
                 <View
                     style={{
                         position: 'absolute',
-                        top: 18,
-                        left: 26,
+                        top: logoPos.top,
+                        left: logoPos.left,
                         flexDirection: 'row',
                         alignItems: 'center',
-                        gap: 6,
                     }}
                     fixed
                 >
@@ -76,14 +79,26 @@ export function PdfAppFrameBackground({
                 <View
                     style={{
                         position: 'absolute',
-                        top: PDF_PAGE_HEIGHT_PT * 0.42,
-                        left: 0,
-                        width: 6,
-                        height: 120,
+                        top: frame.y + frame.height * 0.38,
+                        left: frame.x + frame.width - 4,
+                        width: 4,
+                        height: 100,
                         backgroundColor: brand,
-                        opacity: 0.35,
-                        borderTopRightRadius: 4,
-                        borderBottomRightRadius: 4,
+                        opacity: 0.4,
+                    }}
+                    fixed
+                />
+            ) : null}
+            {side === 'right' ? (
+                <View
+                    style={{
+                        position: 'absolute',
+                        top: frame.y + frame.height * 0.38,
+                        left: frame.x,
+                        width: 4,
+                        height: 100,
+                        backgroundColor: brand,
+                        opacity: 0.4,
                     }}
                     fixed
                 />

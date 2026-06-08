@@ -159,9 +159,6 @@ export const pdfStyles = StyleSheet.create({
     },
     footer: {
         position: 'absolute',
-        bottom: PDF_FRAME_INSET_PT + 12,
-        left: PDF_FRAME_INSET_PT + PDF_CONTENT_PADDING_PT,
-        right: PDF_FRAME_INSET_PT + PDF_CONTENT_PADDING_PT,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',

@@ -3,19 +3,16 @@ import {
     PDF_CORNER_TAB_HEIGHT_PT,
     PDF_CORNER_TAB_WIDTH_PT,
     PDF_FRAME_BORDER_PT,
-    PDF_FRAME_INSET_PT,
     PDF_PAGE_HEIGHT_PT,
     PDF_PAGE_WIDTH_PT,
-    PDF_RADIUS_1_5XL_PT,
     PDF_RADIUS_BUTTON_PT,
+    pdfFrameRadiiForSide,
+    pdfFrameRectForSide,
+    type PdfFrameRadii,
+    type PdfSpreadSide,
 } from '@/lib/paths/pdf-print-tokens';
 
-export type RoundedRectRadii = {
-    topLeft: number;
-    topRight: number;
-    bottomRight: number;
-    bottomLeft: number;
-};
+export type RoundedRectRadii = PdfFrameRadii;
 
 /** Clockwise rounded-rect path (SVG moveto/lineto/quadratic). */
 export function buildRoundedRectPath(
@@ -44,40 +41,49 @@ export function buildRoundedRectPath(
     ].join(' ');
 }
 
-/** Inner app panel — matches MsqdxAppLayout with corner tab (top-left square). */
+/** Inner app panel — spread-aware (asymmetric insets). */
 export function buildAppInnerFramePath(
+    side: PdfSpreadSide = 'cover',
     pageW = PDF_PAGE_WIDTH_PT,
     pageH = PDF_PAGE_HEIGHT_PT
 ): string {
-    const inset = PDF_FRAME_INSET_PT;
-    const x = inset;
-    const y = inset;
-    const w = pageW - inset * 2;
-    const h = pageH - inset * 2;
-
-    return buildRoundedRectPath(x, y, w, h, {
-        topLeft: 0,
-        topRight: PDF_RADIUS_BUTTON_PT,
-        bottomLeft: PDF_RADIUS_1_5XL_PT,
-        bottomRight: PDF_RADIUS_1_5XL_PT,
-    });
+    const rect = pdfFrameRectForSide(side);
+    const radii = pdfFrameRadiiForSide(side);
+    return buildRoundedRectPath(rect.x, rect.y, rect.width, rect.height, radii);
 }
 
 /**
- * Brand corner tab with cutdown-a (top-right) and cutdown-b (bottom-left) approximated via arcs.
+ * Brand corner tab at the outer top corner (MsqdxCornerBox cutdown geometry).
+ * Left/cover: top-left; right page: top-right (mirrored).
  */
 export function buildCornerTabPath(
-    pageW = PDF_PAGE_WIDTH_PT,
-    inset = PDF_FRAME_INSET_PT
+    side: PdfSpreadSide = 'cover',
+    pageW = PDF_PAGE_WIDTH_PT
 ): string {
+    const rect = pdfFrameRectForSide(side);
     const tabW = PDF_CORNER_TAB_WIDTH_PT;
     const tabH = PDF_CORNER_TAB_HEIGHT_PT;
     const cut = PDF_CORNER_CUT_PT;
-    const x = inset;
-    const y = inset;
-
     const rBr = PDF_RADIUS_BUTTON_PT;
 
+    if (side === 'right') {
+        const x = rect.x + rect.width - tabW;
+        const y = rect.y;
+        return [
+            `M ${x + cut} ${y}`,
+            `L ${x + tabW} ${y}`,
+            `L ${x + tabW} ${y + tabH - cut}`,
+            `Q ${x + tabW} ${y + tabH} ${x + tabW - cut} ${y + tabH}`,
+            `L ${x + rBr} ${y + tabH}`,
+            `Q ${x} ${y + tabH} ${x} ${y + tabH - rBr}`,
+            `L ${x} ${y + cut}`,
+            `Q ${x} ${y} ${x + cut} ${y}`,
+            'Z',
+        ].join(' ');
+    }
+
+    const x = rect.x;
+    const y = rect.y;
     return [
         `M ${x} ${y}`,
         `L ${x + tabW - cut} ${y}`,
@@ -90,23 +96,35 @@ export function buildCornerTabPath(
     ].join(' ');
 }
 
+export function cornerTabLogoPosition(side: PdfSpreadSide): { top: number; left: number } {
+    const rect = pdfFrameRectForSide(side);
+    const tabW = PDF_CORNER_TAB_WIDTH_PT;
+    const top = rect.y + 8;
+    if (side === 'right') {
+        return { top, left: rect.x + rect.width - tabW + 8 };
+    }
+    return { top, left: rect.x + 8 };
+}
+
 export function buildAppFrameStrokePath(
+    side: PdfSpreadSide = 'cover',
     pageW = PDF_PAGE_WIDTH_PT,
     pageH = PDF_PAGE_HEIGHT_PT
 ): string {
-    const inset = PDF_FRAME_INSET_PT;
+    const rect = pdfFrameRectForSide(side);
+    const radii = pdfFrameRadiiForSide(side);
     const border = PDF_FRAME_BORDER_PT;
-    const outer = buildAppInnerFramePath(pageW, pageH);
+    const outer = buildAppInnerFramePath(side, pageW, pageH);
     const inner = buildRoundedRectPath(
-        inset + border,
-        inset + border,
-        pageW - (inset + border) * 2,
-        pageH - (inset + border) * 2,
+        rect.x + border,
+        rect.y + border,
+        rect.width - border * 2,
+        rect.height - border * 2,
         {
-            topLeft: 0,
-            topRight: Math.max(PDF_RADIUS_BUTTON_PT - border, 4),
-            bottomLeft: Math.max(PDF_RADIUS_1_5XL_PT - border, 4),
-            bottomRight: Math.max(PDF_RADIUS_1_5XL_PT - border, 4),
+            topLeft: Math.max(radii.topLeft - border, 0),
+            topRight: Math.max(radii.topRight - border, 0),
+            bottomLeft: Math.max(radii.bottomLeft - border, 0),
+            bottomRight: Math.max(radii.bottomRight - border, 0),
         }
     );
     return `${outer} ${inner}`;

@@ -1,7 +1,6 @@
 /**
  * Central print / PDF layout tokens — aligned with MsqdxAppLayout + MsqdxCornerBox.
- * @see components/AppShell.tsx
- * @see msqdx-design-system MsqdxAppLayout
+ * Doppelseiten: linke Seite Rand oben/links/unten, rechte Seite oben/rechts/unten.
  */
 
 /** DIN A4 in PDF points */
@@ -21,14 +20,17 @@ export const PDF_CORNER_CUT_PT = 12;
 /** MsqdxAppLayout thin border */
 export const PDF_FRAME_BORDER_PT = 3;
 
-/** Brand margin around inner frame */
+/** Außenrand (nur auf der äußeren Seite + oben/unten) */
 export const PDF_FRAME_INSET_PT = 18;
+
+/** Schmaler Spalt an der Bindung zwischen linker/rechter Seite */
+export const PDF_BINDING_GUTTER_PT = 6;
 
 /** Content padding inside frame */
 export const PDF_CONTENT_PADDING_PT = 28;
 
-/** Extra inner margin on binding side (Doppelseite) */
-export const PDF_SPREAD_GUTTER_PT = 14;
+/** @deprecated use PDF_BINDING_GUTTER_PT */
+export const PDF_SPREAD_GUTTER_PT = PDF_BINDING_GUTTER_PT;
 
 /** Base margin when no frame (legacy fallback) */
 export const PDF_BASE_MARGIN_PT = 32;
@@ -38,6 +40,23 @@ export const PDF_CORNER_TAB_WIDTH_PT = 128;
 export const PDF_CORNER_TAB_HEIGHT_PT = 40;
 
 export type PdfSpreadSide = 'cover' | 'left' | 'right';
+
+export type PdfFrameRect = {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+};
+
+export type PdfFrameRadii = {
+    topLeft: number;
+    topRight: number;
+    bottomRight: number;
+    bottomLeft: number;
+};
+
+/** react-pdf Document pageLayout for cover + facing spreads in viewers. */
+export const PDF_DOCUMENT_PAGE_LAYOUT = 'twoPageRight' as const;
 
 /** 0-based page index → recto/verso for print spreads (page 1 = cover). */
 export function pdfSpreadSideFromIndex(index: number): PdfSpreadSide {
@@ -55,6 +74,53 @@ export function pdfNeedsSpreadPadBeforeChapter(currentPageCount: number): boolea
     return nextPageNumber % 2 !== 0;
 }
 
+/** Inner panel bounds — binding edge flush, outer edge inset. */
+export function pdfFrameRectForSide(side: PdfSpreadSide): PdfFrameRect {
+    const inset = PDF_FRAME_INSET_PT;
+    const bind = PDF_BINDING_GUTTER_PT;
+    const y = inset;
+    const height = PDF_PAGE_HEIGHT_PT - inset * 2;
+
+    if (side === 'cover') {
+        return {
+            x: inset,
+            y,
+            width: PDF_PAGE_WIDTH_PT - inset * 2,
+            height,
+        };
+    }
+
+    if (side === 'left') {
+        return {
+            x: inset,
+            y,
+            width: PDF_PAGE_WIDTH_PT - inset - bind,
+            height,
+        };
+    }
+
+    return {
+        x: bind,
+        y,
+        width: PDF_PAGE_WIDTH_PT - inset - bind,
+        height,
+    };
+}
+
+/** Corner radii: rounded on outer corners, square at binding. */
+export function pdfFrameRadiiForSide(side: PdfSpreadSide): PdfFrameRadii {
+    const rBtn = PDF_RADIUS_BUTTON_PT;
+    const r15 = PDF_RADIUS_1_5XL_PT;
+
+    if (side === 'cover') {
+        return { topLeft: 0, topRight: rBtn, bottomLeft: r15, bottomRight: r15 };
+    }
+    if (side === 'left') {
+        return { topLeft: rBtn, topRight: 0, bottomLeft: r15, bottomRight: 0 };
+    }
+    return { topLeft: 0, topRight: rBtn, bottomLeft: 0, bottomRight: r15 };
+}
+
 export function pdfContentMarginsForSide(side: PdfSpreadSide): {
     paddingTop: number;
     paddingBottom: number;
@@ -62,23 +128,54 @@ export function pdfContentMarginsForSide(side: PdfSpreadSide): {
     paddingRight: number;
 } {
     const base = PDF_CONTENT_PADDING_PT;
-    const frame = PDF_FRAME_INSET_PT + PDF_FRAME_BORDER_PT;
-    const bottom = base + 24;
+    const border = PDF_FRAME_BORDER_PT;
+    const inset = PDF_FRAME_INSET_PT;
+    const bind = PDF_BINDING_GUTTER_PT;
+    const tab = PDF_CORNER_TAB_HEIGHT_PT;
+    const bottomExtra = 24;
 
     if (side === 'cover') {
+        const frame = inset + border;
         return {
-            paddingTop: frame + PDF_CORNER_TAB_HEIGHT_PT + base,
-            paddingBottom: frame + bottom,
+            paddingTop: frame + tab + base,
+            paddingBottom: frame + base + bottomExtra,
             paddingLeft: frame + base,
             paddingRight: frame + base,
         };
     }
 
-    const gutter = PDF_SPREAD_GUTTER_PT;
+    if (side === 'left') {
+        return {
+            paddingTop: inset + border + tab + base,
+            paddingBottom: inset + border + base + bottomExtra,
+            paddingLeft: inset + border + base,
+            paddingRight: border + base + bind,
+        };
+    }
+
     return {
-        paddingTop: frame + PDF_CORNER_TAB_HEIGHT_PT + base,
-        paddingBottom: frame + bottom,
-        paddingLeft: frame + base + (side === 'right' ? gutter : 0),
-        paddingRight: frame + base + (side === 'left' ? gutter : 0),
+        paddingTop: inset + border + tab + base,
+        paddingBottom: inset + border + base + bottomExtra,
+        paddingLeft: border + base + bind,
+        paddingRight: inset + border + base,
     };
+}
+
+export function pdfFooterInsetsForSide(side: PdfSpreadSide): {
+    left: number;
+    right: number;
+    bottom: number;
+} {
+    const inset = PDF_FRAME_INSET_PT;
+    const bind = PDF_BINDING_GUTTER_PT;
+    const pad = PDF_CONTENT_PADDING_PT;
+    const bottom = PDF_FRAME_INSET_PT + 12;
+
+    if (side === 'cover') {
+        return { left: inset + pad, right: inset + pad, bottom };
+    }
+    if (side === 'left') {
+        return { left: inset + pad, right: pad + bind, bottom };
+    }
+    return { left: pad + bind, right: inset + pad, bottom };
 }

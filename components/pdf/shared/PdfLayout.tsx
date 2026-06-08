@@ -15,4 +15,5 @@ export {
     isChapterIntroPage,
     appendChapterSpread,
     contentSideForIndex,
+    PDF_DOCUMENT_PAGE_LAYOUT,
 } from '@/components/pdf/shared/PdfPrintPages';

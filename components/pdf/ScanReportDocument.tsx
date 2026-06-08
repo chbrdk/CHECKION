@@ -12,6 +12,7 @@ import {
     isChapterIntroPage,
     appendChapterSpread,
     contentSideForIndex,
+    PDF_DOCUMENT_PAGE_LAYOUT,
 } from '@/components/pdf/shared/PdfLayout';
 import { buildScanPage2Content, buildScanPage3Content } from '@/components/pdf/ScanReportSections';
 
@@ -176,5 +177,5 @@ export function ScanReportDocument({ scan }: ScanReportProps) {
         skipFooter: (page, index) => index === 0 || isChapterIntroPage(page),
     });
 
-    return <Document>{finalPages}</Document>;
+    return <Document pageLayout={PDF_DOCUMENT_PAGE_LAYOUT}>{finalPages}</Document>;
 }
