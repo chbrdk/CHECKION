@@ -96,7 +96,7 @@ export async function buildProjectReportBundle(
                 audience,
                 facts,
                 deep,
-                narrative.sections,
+                deep.sections,
                 {
                     locale: options.locale,
                     skipLlm: options.skipLlm,

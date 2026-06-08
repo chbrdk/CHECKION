@@ -104,7 +104,8 @@ function buildPersonaAgentUserPrompt(
             })),
             issueGroups: deep?.issueGroups.slice(0, 6).map((g) => ({
                 title: g.title,
-                count: g.count,
+                pageCount: g.pageCount,
+                type: g.type,
             })),
             rankKeywords: deep?.rankKeywordDetails.slice(0, 6).map((k) => ({
                 keyword: k.keyword,
