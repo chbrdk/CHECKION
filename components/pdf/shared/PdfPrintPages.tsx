@@ -12,7 +12,7 @@ import {
     PDF_PAGE_WIDTH_PT,
     type PdfSpreadSide,
 } from '@/lib/paths/pdf-print-tokens';
-import { pdfChapterColors, pdfStyles, type PdfChapterKey } from '@/components/pdf/shared/pdf-styles';
+import { pdfChapterColors, pdfColors, pdfStyles, type PdfChapterKey } from '@/components/pdf/shared/pdf-styles';
 import { PdfAppFrameBackground } from '@/components/pdf/shared/PdfAppFrame';
 import { MsqdxLogoPdf, PdfFooter, PdfHeader } from '@/components/pdf/shared/PdfPrimitives';
 
