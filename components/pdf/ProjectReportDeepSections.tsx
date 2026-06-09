@@ -6,6 +6,7 @@ import type { ProjectReportBundle } from '@/lib/project-report/types';
 import type { ProjectReportPdfLabels } from '@/lib/project-report/pdf-labels';
 import type { SectionAnalysis } from '@/lib/project-report/narrative-schema';
 import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
+import { PdfRecommendationRow } from '@/components/pdf/shared/PdfMetricInterpretation';
 import { PdfSectionHeader, PdfSectionIntro } from '@/components/pdf/shared/PdfPrimitives';
 import { PdfContentPage, PdfLeadText, PdfStatGrid, contentSideForIndex } from '@/components/pdf/shared/PdfLayout';
 import { PdfGeoQuestionCard } from '@/components/pdf/shared/PdfGeoQuestionCard';
@@ -94,12 +95,11 @@ export function buildDeepReportPages(
             <>
                 <PdfSectionHeader title={labels.keyFindings} chapter="summary" />
                 {narrative.findings.map((f, i) => (
-                    <View key={i} style={pdfStyles.recommendationRow}>
-                        <Text style={pdfStyles.recommendationTitle}>
-                            [{f.severity ?? 'info'}] {f.title}
-                        </Text>
-                        <Text style={pdfStyles.recommendationDesc}>{f.description}</Text>
-                    </View>
+                    <PdfRecommendationRow
+                        key={i}
+                        title={`[${f.severity ?? 'info'}] ${f.title}`}
+                        description={f.description}
+                    />
                 ))}
             </>
         );
@@ -156,12 +156,11 @@ export function buildDeepReportPages(
                     <>
                         <PdfSectionHeader title={labels.competitiveInsights} chapter="competitors" />
                         {benchmark.deterministicInsights.map((ins) => (
-                            <View key={ins.id} style={pdfStyles.recommendationRow}>
-                                <Text style={pdfStyles.recommendationTitle}>
-                                    [{ins.kind}] {ins.title}
-                                </Text>
-                                <Text style={pdfStyles.recommendationDesc}>{ins.description}</Text>
-                            </View>
+                            <PdfRecommendationRow
+                                key={ins.id}
+                                title={`[${ins.kind}] ${ins.title}`}
+                                description={ins.description}
+                            />
                         ))}
                     </>
                 ) : null}
@@ -305,14 +304,18 @@ export function buildDeepReportPages(
                 />
                 {geoPages.slice(0, 10).map((p) => (
                     <View key={p.url} style={pdfStyles.recommendationRow}>
-                        <Text style={pdfStyles.recommendationTitle}>{p.title ?? p.url}</Text>
-                        <Text style={pdfStyles.recommendationDesc}>
-                            GEO {p.geoFitnessScore ?? '–'}/100 · Trust {p.trustScore ?? '–'}/5 · Exp{' '}
-                            {p.experienceScore ?? '–'} · Expertise {p.expertiseScore ?? '–'}
-                            {p.authoritativenessScore != null
-                                ? ` · Auth ${p.authoritativenessScore}`
-                                : ''}
-                        </Text>
+                        <View style={pdfStyles.recommendationTitleBlock}>
+                            <Text style={pdfStyles.recommendationTitle}>{p.title ?? p.url}</Text>
+                        </View>
+                        <View style={pdfStyles.recommendationDescBlock}>
+                            <Text style={pdfStyles.recommendationDesc}>
+                                GEO {p.geoFitnessScore ?? '–'}/100 · Trust {p.trustScore ?? '–'}/5 · Exp{' '}
+                                {p.experienceScore ?? '–'} · Expertise {p.expertiseScore ?? '–'}
+                                {p.authoritativenessScore != null
+                                    ? ` · Auth ${p.authoritativenessScore}`
+                                    : ''}
+                            </Text>
+                        </View>
                         {p.geoFitnessReasoning ? (
                             <Text style={[pdfStyles.bodyText, { marginTop: 4 }]}>
                                 {p.geoFitnessReasoning.slice(0, 280)}

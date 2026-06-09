@@ -11,7 +11,7 @@ import {
 } from '@/lib/project-report/seo-rankings-interpretations';
 import { PdfSectionHeader, PdfSectionIntro } from '@/components/pdf/shared/PdfPrimitives';
 import { PdfLeadText, PdfStatGrid } from '@/components/pdf/shared/PdfLayout';
-import { PdfMetricInterpretationBlock } from '@/components/pdf/shared/PdfMetricInterpretation';
+import { PdfMetricInterpretationBlock, PdfRecommendationRow } from '@/components/pdf/shared/PdfMetricInterpretation';
 import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
 
 export function ProjectReportSeoSection({
@@ -97,13 +97,11 @@ export function ProjectReportSeoSection({
                         );
                         if (!insight) return null;
                         return (
-                            <View key={kw.id} style={pdfStyles.recommendationRow}>
-                                <Text style={pdfStyles.recommendationTitle}>
-                                    {kw.keyword}
-                                    {kw.position != null ? ` · #${kw.position}` : ''}
-                                </Text>
-                                <Text style={pdfStyles.recommendationDesc}>{insight}</Text>
-                            </View>
+                            <PdfRecommendationRow
+                                key={kw.id}
+                                title={`${kw.keyword}${kw.position != null ? ` · #${kw.position}` : ''}`}
+                                description={insight}
+                            />
                         );
                     })}
                 </>

@@ -5,6 +5,7 @@ import { View, Text } from '@react-pdf/renderer';
 import type { AudienceFitLevel, AudienceReportOverlay } from '@/lib/project-report/types';
 import type { ProjectReportPdfLabels } from '@/lib/project-report/pdf-labels';
 import { pdfColors, pdfStyles } from '@/components/pdf/shared/pdf-styles';
+import { PdfRecommendationRow } from '@/components/pdf/shared/PdfMetricInterpretation';
 import { PdfSectionHeader, PdfSectionIntro } from '@/components/pdf/shared/PdfPrimitives';
 import { PdfContentPage, PdfLeadText, PdfStatGrid, contentSideForIndex } from '@/components/pdf/shared/PdfLayout';
 
@@ -167,10 +168,12 @@ function PersonaAudienceCard({
             ) : null}
 
             {persona.insights.slice(0, 2).map((ins) => (
-                <View key={ins.id} style={[pdfStyles.recommendationRow, { marginTop: 4, paddingVertical: 4 }]}>
-                    <Text style={pdfStyles.recommendationTitle}>{ins.title}</Text>
-                    <Text style={pdfStyles.recommendationDesc}>{ins.description}</Text>
-                </View>
+                <PdfRecommendationRow
+                    key={ins.id}
+                    title={ins.title}
+                    description={ins.description}
+                    style={{ marginTop: 4, paddingVertical: 4 }}
+                />
             ))}
         </View>
     );

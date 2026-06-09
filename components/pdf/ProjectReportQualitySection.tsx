@@ -11,7 +11,7 @@ import {
 } from '@/lib/project-report/site-quality-interpretations';
 import { PdfSectionHeader, PdfSectionIntro } from '@/components/pdf/shared/PdfPrimitives';
 import { PdfLeadText, PdfStatGrid } from '@/components/pdf/shared/PdfLayout';
-import { PdfMetricInterpretationBlock } from '@/components/pdf/shared/PdfMetricInterpretation';
+import { PdfMetricInterpretationBlock, PdfRecommendationRow } from '@/components/pdf/shared/PdfMetricInterpretation';
 import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
 
 export function ProjectReportQualitySection({
@@ -101,12 +101,11 @@ export function ProjectReportQualitySection({
                         />
                     ) : null}
                     {domain.systemicIssues.map((issue) => (
-                        <View key={issue.issueId} style={pdfStyles.recommendationRow}>
-                            <Text style={pdfStyles.recommendationTitle}>{issue.title}</Text>
-                            <Text style={pdfStyles.recommendationDesc}>
-                                {systemicIssueDescription(issue, keyFindings, bundle.locale)}
-                            </Text>
-                        </View>
+                        <PdfRecommendationRow
+                            key={issue.issueId}
+                            title={issue.title}
+                            description={systemicIssueDescription(issue, keyFindings, bundle.locale)}
+                        />
                     ))}
                 </>
             ) : null}

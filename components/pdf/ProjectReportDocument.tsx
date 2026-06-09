@@ -17,6 +17,7 @@ import {
     contentSideForIndex,
     PDF_DOCUMENT_PAGE_LAYOUT,
 } from '@/components/pdf/shared/PdfLayout';
+import { PdfRecommendationRow } from '@/components/pdf/shared/PdfMetricInterpretation';
 import { PdfSectionHeader, PdfSectionIntro, RiskAmpelPills } from '@/components/pdf/shared/PdfPrimitives';
 import { PdfScoreCardsFromSpec, PdfVisualSpec } from '@/components/pdf/charts/PdfChartComponents';
 import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
@@ -210,12 +211,11 @@ export function buildProjectReportPages(bundle: ProjectReportBundle): React.Reac
             <PdfSectionIntro text={labels.chapterIntros.actions} />
             {narrative?.recommendations && narrative.recommendations.length > 0 ? (
                 narrative.recommendations.map((rec, i) => (
-                    <View key={i} style={pdfStyles.recommendationRow}>
-                        <Text style={pdfStyles.recommendationTitle}>
-                            P{rec.priority}: {rec.title}
-                        </Text>
-                        <Text style={pdfStyles.recommendationDesc}>{rec.description}</Text>
-                    </View>
+                    <PdfRecommendationRow
+                        key={i}
+                        title={`P${rec.priority}: ${rec.title}`}
+                        description={rec.description}
+                    />
                 ))
             ) : (
                 <Text style={pdfStyles.metaText}>{labels.noData}</Text>

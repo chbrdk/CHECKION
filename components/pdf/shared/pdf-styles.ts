@@ -2,7 +2,7 @@
 
 import { StyleSheet } from '@react-pdf/renderer';
 import { PDF_FONT_FAMILIES } from '@/lib/paths/pdf-fonts';
-import { pdfLineHeightPt, PDF_TYPE_WEIGHT } from '@/lib/paths/pdf-typography';
+import { PDF_TYPE_LINE_HEIGHT, PDF_TYPE_WEIGHT } from '@/lib/paths/pdf-typography';
 import {
     PDF_BRAND_COLOR,
     PDF_BRAND_TINT,
@@ -60,7 +60,7 @@ export const pdfStyles = StyleSheet.create({
         backgroundColor: pdfColors.white,
         fontFamily: PDF_FONT_FAMILIES.body,
         fontSize: 10,
-        lineHeight: pdfLineHeightPt(10, 'body'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.body,
     },
     coverPage: {
         backgroundColor: pdfColors.white,
@@ -87,7 +87,7 @@ export const pdfStyles = StyleSheet.create({
         color: pdfColors.gray900,
         marginBottom: 8,
         letterSpacing: -1.4,
-        lineHeight: pdfLineHeightPt(34, 'tight'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.tight,
     },
     coverEyebrow: {
         fontFamily: PDF_FONT_FAMILIES.body,
@@ -97,7 +97,7 @@ export const pdfStyles = StyleSheet.create({
         textTransform: 'uppercase',
         letterSpacing: 1.6,
         marginBottom: 6,
-        lineHeight: pdfLineHeightPt(8, 'snug'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
     },
     /** @deprecated use coverEyebrow — kept for legacy scan subtitle line */
     coverSubtitle: {
@@ -116,7 +116,7 @@ export const pdfStyles = StyleSheet.create({
         fontSize: 11,
         fontWeight: PDF_TYPE_WEIGHT.regular,
         color: pdfColors.gray700,
-        lineHeight: pdfLineHeightPt(11, 'snug'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
     },
     coverMeta: {
         flexDirection: 'row',
@@ -128,7 +128,7 @@ export const pdfStyles = StyleSheet.create({
         fontSize: 8,
         fontWeight: PDF_TYPE_WEIGHT.light,
         color: pdfColors.gray400,
-        lineHeight: pdfLineHeightPt(8, 'snug'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
     },
     scoreGrid: {
         flexDirection: 'row',
@@ -155,7 +155,7 @@ export const pdfStyles = StyleSheet.create({
         fontWeight: PDF_TYPE_WEIGHT.bold,
         color: pdfColors.gray900,
         marginBottom: 2,
-        lineHeight: pdfLineHeightPt(17, 'tight'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.tight,
     },
     scoreCardLabel: {
         fontFamily: PDF_FONT_FAMILIES.body,
@@ -164,7 +164,7 @@ export const pdfStyles = StyleSheet.create({
         color: pdfColors.gray400,
         textTransform: 'uppercase',
         letterSpacing: 0.8,
-        lineHeight: pdfLineHeightPt(7, 'snug'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
     },
     header: {
         flexDirection: 'row',
@@ -180,7 +180,7 @@ export const pdfStyles = StyleSheet.create({
         fontSize: 7,
         fontWeight: PDF_TYPE_WEIGHT.light,
         color: pdfColors.gray400,
-        lineHeight: pdfLineHeightPt(7, 'snug'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
     },
     footerLogoGap: {
         width: PDF_FOOTER_LOGO_GAP_PT,
@@ -192,7 +192,7 @@ export const pdfStyles = StyleSheet.create({
         color: pdfColors.gray900,
         marginTop: 14,
         marginBottom: 5,
-        lineHeight: pdfLineHeightPt(12, 'tight'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.tight,
         letterSpacing: -0.3,
     },
     subsectionTitle: {
@@ -202,27 +202,27 @@ export const pdfStyles = StyleSheet.create({
         color: pdfColors.gray700,
         marginTop: 6,
         marginBottom: 3,
-        lineHeight: pdfLineHeightPt(9, 'snug'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
     },
     bodyText: {
         fontSize: 9,
         fontWeight: PDF_TYPE_WEIGHT.regular,
         color: pdfColors.gray700,
         marginBottom: 4,
-        lineHeight: pdfLineHeightPt(9, 'body'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.body,
     },
     metaText: {
         fontSize: 8,
         fontWeight: PDF_TYPE_WEIGHT.light,
         color: pdfColors.gray500,
         marginBottom: 2,
-        lineHeight: pdfLineHeightPt(8, 'snug'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
     },
     tableRow: {
         flexDirection: 'row',
         marginBottom: 4,
         fontSize: 9,
-        lineHeight: pdfLineHeightPt(9, 'snug'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
     },
     tableLabel: {
         width: 130,
@@ -241,23 +241,25 @@ export const pdfStyles = StyleSheet.create({
         marginBottom: 10,
     },
     recommendationRow: {
-        marginBottom: 10,
-        paddingVertical: 6,
+        marginBottom: 8,
+        paddingVertical: 4,
+    },
+    recommendationTitleBlock: {
+        marginBottom: 3,
     },
     recommendationTitle: {
         fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 9,
         fontWeight: PDF_TYPE_WEIGHT.bold,
         color: pdfColors.gray900,
-        marginBottom: 4,
-        lineHeight: pdfLineHeightPt(9, 'snug'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
     },
+    recommendationDescBlock: {},
     recommendationDesc: {
         fontSize: 8,
         fontWeight: PDF_TYPE_WEIGHT.light,
         color: pdfColors.gray600,
-        lineHeight: pdfLineHeightPt(8, 'snug'),
-        marginTop: 2,
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
     },
     bulletItem: {
         flexDirection: 'row',
@@ -294,7 +296,7 @@ export const pdfStyles = StyleSheet.create({
         letterSpacing: 1.4,
         marginBottom: 10,
         color: pdfColors.gray400,
-        lineHeight: pdfLineHeightPt(7, 'snug'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
     },
     chapterSpreadTitle: {
         fontFamily: PDF_FONT_FAMILIES.headline,
@@ -303,20 +305,20 @@ export const pdfStyles = StyleSheet.create({
         color: pdfColors.gray900,
         letterSpacing: -1,
         marginBottom: 12,
-        lineHeight: pdfLineHeightPt(28, 'tight'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.tight,
     },
     chapterSpreadSubtitle: {
         fontSize: 10,
         fontWeight: PDF_TYPE_WEIGHT.regular,
         color: pdfColors.gray600,
-        lineHeight: pdfLineHeightPt(10, 'body'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.body,
         maxWidth: 380,
     },
     leadText: {
         fontSize: 10,
         fontWeight: PDF_TYPE_WEIGHT.regular,
         color: pdfColors.gray700,
-        lineHeight: pdfLineHeightPt(10, 'body'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.body,
         marginBottom: 12,
     },
     /** Static section explainer below `sectionTitle` — distinct from dynamic `leadText`. */
@@ -324,7 +326,7 @@ export const pdfStyles = StyleSheet.create({
         fontSize: 9,
         fontWeight: PDF_TYPE_WEIGHT.regular,
         color: pdfColors.gray600,
-        lineHeight: pdfLineHeightPt(9, 'body'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.body,
         marginTop: 0,
         marginBottom: 12,
     },
@@ -337,7 +339,7 @@ export const pdfStyles = StyleSheet.create({
         fontSize: 9,
         fontWeight: PDF_TYPE_WEIGHT.regular,
         color: pdfColors.gray700,
-        lineHeight: pdfLineHeightPt(9, 'snug'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
         flexShrink: 1,
         paddingRight: 4,
     },
@@ -353,14 +355,14 @@ export const pdfStyles = StyleSheet.create({
         fontSize: 9,
         fontWeight: PDF_TYPE_WEIGHT.bold,
         color: pdfColors.gray900,
-        lineHeight: pdfLineHeightPt(9, 'snug'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
         width: 18,
         textAlign: 'right',
         flexShrink: 0,
     },
     metricInterpretationBlock: {
         marginTop: 4,
-        marginBottom: 12,
+        marginBottom: 10,
         paddingLeft: 2,
     },
     metricInterpretationLabel: {
@@ -369,14 +371,17 @@ export const pdfStyles = StyleSheet.create({
         color: pdfColors.gray500,
         textTransform: 'uppercase',
         letterSpacing: 0.5,
-        marginBottom: 4,
-        lineHeight: pdfLineHeightPt(7, 'snug'),
+        marginBottom: 3,
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
+    },
+    metricInterpretationParagraph: {
+        marginTop: 4,
     },
     metricInterpretationText: {
         fontSize: 8.5,
         fontWeight: PDF_TYPE_WEIGHT.regular,
         color: pdfColors.gray700,
-        lineHeight: pdfLineHeightPt(8.5, 'body'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.body,
     },
     contentPanel: {
         marginBottom: 12,
@@ -400,14 +405,14 @@ export const pdfStyles = StyleSheet.create({
         textTransform: 'uppercase',
         letterSpacing: 0.8,
         marginBottom: 4,
-        lineHeight: pdfLineHeightPt(7, 'snug'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
     },
     statTileValue: {
         fontFamily: PDF_FONT_FAMILIES.headline,
         fontSize: 15,
         fontWeight: PDF_TYPE_WEIGHT.bold,
         color: pdfColors.gray900,
-        lineHeight: pdfLineHeightPt(15, 'tight'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.tight,
     },
     dataTableHeader: {
         flexDirection: 'row',
@@ -422,7 +427,7 @@ export const pdfStyles = StyleSheet.create({
         color: pdfColors.gray400,
         textTransform: 'uppercase',
         letterSpacing: 0.6,
-        lineHeight: pdfLineHeightPt(7, 'snug'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
     },
     dataTableRow: {
         flexDirection: 'row',
@@ -440,7 +445,7 @@ export const pdfStyles = StyleSheet.create({
         fontWeight: PDF_TYPE_WEIGHT.bold,
         color: pdfColors.gray900,
         marginBottom: 8,
-        lineHeight: pdfLineHeightPt(10, 'tight'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.tight,
     },
     chartLegendRow: {
         flexDirection: 'row',
@@ -462,7 +467,7 @@ export const pdfStyles = StyleSheet.create({
         fontSize: 7,
         fontWeight: PDF_TYPE_WEIGHT.light,
         color: pdfColors.gray500,
-        lineHeight: pdfLineHeightPt(7, 'snug'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
     },
     geoQuestionCard: {
         backgroundColor: pdfColors.white,
@@ -493,21 +498,21 @@ export const pdfStyles = StyleSheet.create({
         fontSize: 10,
         fontWeight: PDF_TYPE_WEIGHT.bold,
         color: pdfColors.gray900,
-        lineHeight: pdfLineHeightPt(10, 'tight'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.tight,
         marginBottom: 4,
     },
     personaCardSubtitle: {
         fontSize: 7,
         fontWeight: PDF_TYPE_WEIGHT.light,
         color: pdfColors.gray500,
-        lineHeight: pdfLineHeightPt(7, 'body'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.body,
     },
     personaCardFit: {
         fontSize: 7,
         fontWeight: PDF_TYPE_WEIGHT.bold,
         textAlign: 'right',
         maxWidth: '28%',
-        lineHeight: pdfLineHeightPt(7, 'snug'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
     },
     geoQuestionHeaderRow: {
         flexDirection: 'row',
@@ -521,7 +526,7 @@ export const pdfStyles = StyleSheet.create({
         fontSize: 8.5,
         fontWeight: PDF_TYPE_WEIGHT.bold,
         color: pdfColors.gray900,
-        lineHeight: pdfLineHeightPt(8.5, 'snug'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
         flex: 1,
         maxWidth: '72%',
     },
@@ -531,7 +536,7 @@ export const pdfStyles = StyleSheet.create({
         color: pdfColors.gray500,
         textAlign: 'right',
         maxWidth: '28%',
-        lineHeight: pdfLineHeightPt(7, 'snug'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
     },
     geoQuestionTablePanel: {
         backgroundColor: pdfColors.gray100,
@@ -547,7 +552,7 @@ export const pdfStyles = StyleSheet.create({
         textTransform: 'uppercase',
         letterSpacing: 0.6,
         marginBottom: 2,
-        lineHeight: pdfLineHeightPt(6, 'snug'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
     },
     geoQuestionTableHeader: {
         flexDirection: 'row',
@@ -561,7 +566,7 @@ export const pdfStyles = StyleSheet.create({
         color: pdfColors.gray400,
         textTransform: 'uppercase',
         letterSpacing: 0.4,
-        lineHeight: pdfLineHeightPt(6, 'snug'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
     },
     geoQuestionTableRow: {
         flexDirection: 'row',
@@ -573,6 +578,6 @@ export const pdfStyles = StyleSheet.create({
         fontSize: 7,
         fontWeight: PDF_TYPE_WEIGHT.regular,
         color: pdfColors.gray700,
-        lineHeight: pdfLineHeightPt(7, 'snug'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
     },
 });

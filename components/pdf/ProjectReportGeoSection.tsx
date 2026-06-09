@@ -11,7 +11,7 @@ import {
 } from '@/lib/project-report/geo-interpretations';
 import { PdfSectionHeader, PdfSectionIntro } from '@/components/pdf/shared/PdfPrimitives';
 import { PdfLeadText, PdfStatGrid } from '@/components/pdf/shared/PdfLayout';
-import { PdfMetricInterpretationBlock } from '@/components/pdf/shared/PdfMetricInterpretation';
+import { PdfMetricInterpretationBlock, PdfRecommendationRow } from '@/components/pdf/shared/PdfMetricInterpretation';
 import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
 
 export function ProjectReportGeoSection({
@@ -131,12 +131,11 @@ export function ProjectReportGeoSection({
                         />
                     ) : null}
                     {geoDeep.deterministicInsights.slice(0, 5).map((ins) => (
-                        <View key={ins.id} style={pdfStyles.recommendationRow}>
-                            <Text style={pdfStyles.recommendationTitle}>{ins.title}</Text>
-                            <Text style={pdfStyles.recommendationDesc}>
-                                {geoInsightDescription(ins, keyFindings, bundle.locale)}
-                            </Text>
-                        </View>
+                        <PdfRecommendationRow
+                            key={ins.id}
+                            title={ins.title}
+                            description={geoInsightDescription(ins, keyFindings, bundle.locale)}
+                        />
                     ))}
                 </>
             ) : null}
@@ -146,13 +145,11 @@ export function ProjectReportGeoSection({
                     <PdfSectionHeader title={labels.recommendations} chapter="geo" />
                     <PdfSectionIntro text={labels.chapterIntros.geoRecommendations} />
                     {geo.recommendations.map((rec, i) => (
-                        <View key={i} style={pdfStyles.recommendationRow}>
-                            <Text style={pdfStyles.recommendationTitle}>
-                                {rec.priority != null ? `P${rec.priority}: ` : ''}
-                                {rec.title}
-                            </Text>
-                            <Text style={pdfStyles.recommendationDesc}>{rec.description}</Text>
-                        </View>
+                        <PdfRecommendationRow
+                            key={i}
+                            title={`${rec.priority != null ? `P${rec.priority}: ` : ''}${rec.title}`}
+                            description={rec.description}
+                        />
                     ))}
                 </>
             ) : null}

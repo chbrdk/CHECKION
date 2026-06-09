@@ -35,19 +35,21 @@ type PdfPageShellProps = {
 function PdfPageShell({ side, children, footer, contentJustify = 'flex-start' }: PdfPageShellProps) {
     const margins = pdfContentMarginsForSide(side);
     return (
-        <Page size="A4" style={[printPageBase, { padding: 0, position: 'relative' }]}>
+        <Page
+            size="A4"
+            style={[
+                printPageBase,
+                {
+                    paddingTop: margins.paddingTop,
+                    paddingBottom: margins.paddingBottom,
+                    paddingLeft: margins.paddingLeft,
+                    paddingRight: margins.paddingRight,
+                    position: 'relative',
+                },
+            ]}
+        >
             <PdfMinimalPageChrome side={side} />
-            <View
-                style={{
-                    position: 'absolute',
-                    top: margins.paddingTop,
-                    left: margins.paddingLeft,
-                    right: margins.paddingRight,
-                    bottom: margins.paddingBottom,
-                    alignItems: 'center',
-                    justifyContent: contentJustify,
-                }}
-            >
+            <View style={{ alignItems: 'center', justifyContent: contentJustify }}>
                 <PdfContentColumn>{children}</PdfContentColumn>
             </View>
             {footer}

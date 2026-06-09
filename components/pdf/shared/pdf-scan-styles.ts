@@ -2,7 +2,7 @@
 
 import { StyleSheet } from '@react-pdf/renderer';
 import { PDF_FONT_FAMILIES } from '@/lib/paths/pdf-fonts';
-import { pdfLineHeightPt, PDF_TYPE_WEIGHT } from '@/lib/paths/pdf-typography';
+import { PDF_TYPE_LINE_HEIGHT, PDF_TYPE_WEIGHT } from '@/lib/paths/pdf-typography';
 import { PDF_RADIUS_BUTTON_PT } from '@/lib/paths/pdf-print-tokens';
 import { pdfColors } from '@/components/pdf/shared/pdf-styles';
 
@@ -43,7 +43,7 @@ export const scanPdfStyles = StyleSheet.create({
         fontSize: 8,
         fontWeight: PDF_TYPE_WEIGHT.regular,
         color: pdfColors.gray700,
-        lineHeight: pdfLineHeightPt(8, 'snug'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
     },
     kvInline: {
         flexDirection: 'row',
@@ -55,14 +55,14 @@ export const scanPdfStyles = StyleSheet.create({
         fontSize: 8,
         fontWeight: PDF_TYPE_WEIGHT.light,
         color: pdfColors.gray500,
-        lineHeight: pdfLineHeightPt(8, 'snug'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
     },
     kvVal: {
         flex: 1,
         fontSize: 8,
         fontWeight: PDF_TYPE_WEIGHT.regular,
         color: pdfColors.gray700,
-        lineHeight: pdfLineHeightPt(8, 'snug'),
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
     },
     outlineItem: {
         flexDirection: 'row',
