@@ -32,6 +32,11 @@ describe('pdf-styles line heights', () => {
         expect(pdfStyles.leadText.lineHeight).toBeLessThan(2);
     });
 
+    it('styles metric interpretation as a padded gray group', () => {
+        expect(pdfStyles.metricInterpretationGroup.backgroundColor).toBeDefined();
+        expect(pdfStyles.metricInterpretationGroup.paddingVertical).toBeGreaterThan(8);
+    });
+
     it('does not use negative intro spacing that pulls text upward', () => {
         expect(pdfStyles.sectionIntroText.marginTop).toBeGreaterThanOrEqual(0);
     });

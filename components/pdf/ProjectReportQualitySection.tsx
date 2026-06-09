@@ -11,7 +11,11 @@ import {
 } from '@/lib/project-report/site-quality-interpretations';
 import { PdfSectionHeader, PdfSectionIntro } from '@/components/pdf/shared/PdfPrimitives';
 import { PdfLeadText, PdfStatGrid } from '@/components/pdf/shared/PdfLayout';
-import { PdfMetricInterpretationBlock, PdfRecommendationRow } from '@/components/pdf/shared/PdfMetricInterpretation';
+import {
+    PdfMetricInterpretationGroup,
+    pdfInterpretationTexts,
+    PdfRecommendationRow,
+} from '@/components/pdf/shared/PdfMetricInterpretation';
 import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
 
 export function ProjectReportQualitySection({
@@ -46,19 +50,9 @@ export function ProjectReportQualitySection({
                 ]}
             />
 
-            {interpretations.domainScore ? (
-                <PdfMetricInterpretationBlock
-                    label={`${labels.agentAssessment}: ${labels.domainScore}`}
-                    text={interpretations.domainScore}
-                />
-            ) : null}
-
-            {interpretations.wcagErrors ? (
-                <PdfMetricInterpretationBlock
-                    label={`${labels.agentAssessment}: ${labels.wcagErrors}`}
-                    text={interpretations.wcagErrors}
-                />
-            ) : null}
+            <PdfMetricInterpretationGroup
+                texts={pdfInterpretationTexts(interpretations.domainScore, interpretations.wcagErrors)}
+            />
 
             {domain.performance ? (
                 <View style={pdfStyles.contentPanel}>
@@ -67,20 +61,14 @@ export function ProjectReportQualitySection({
                         TTFB {domain.performance.avgTtfb ?? '–'} · FCP{' '}
                         {domain.performance.avgFcp ?? '–'} · LCP {domain.performance.avgLcp ?? '–'}
                     </Text>
-                    {interpretations.performance ? (
-                        <PdfMetricInterpretationBlock
-                            label={`${labels.agentAssessment}: ${labels.performance}`}
-                            text={interpretations.performance}
-                        />
-                    ) : null}
+                    <PdfMetricInterpretationGroup
+                        texts={pdfInterpretationTexts(interpretations.performance)}
+                    />
                 </View>
             ) : null}
 
-            {domain.eco?.avgCo2 != null && interpretations.eco ? (
-                <PdfMetricInterpretationBlock
-                    label={`${labels.agentAssessment}: ${labels.eco}`}
-                    text={interpretations.eco}
-                />
+            {domain.eco?.avgCo2 != null ? (
+                <PdfMetricInterpretationGroup texts={pdfInterpretationTexts(interpretations.eco)} />
             ) : null}
 
             {siteQuality?.summary ? (
@@ -94,12 +82,9 @@ export function ProjectReportQualitySection({
                 <>
                     <PdfSectionHeader title={labels.systemicIssues} chapter="issues" />
                     <PdfSectionIntro text={labels.chapterIntros.systemicIssues} />
-                    {interpretations.systemicIssues ? (
-                        <PdfMetricInterpretationBlock
-                            label={labels.agentAssessment}
-                            text={interpretations.systemicIssues}
-                        />
-                    ) : null}
+                    <PdfMetricInterpretationGroup
+                        texts={pdfInterpretationTexts(interpretations.systemicIssues)}
+                    />
                     {domain.systemicIssues.map((issue) => (
                         <PdfRecommendationRow
                             key={issue.issueId}

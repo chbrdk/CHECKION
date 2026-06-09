@@ -11,7 +11,11 @@ import {
 } from '@/lib/project-report/geo-interpretations';
 import { PdfSectionHeader, PdfSectionIntro } from '@/components/pdf/shared/PdfPrimitives';
 import { PdfLeadText, PdfStatGrid } from '@/components/pdf/shared/PdfLayout';
-import { PdfMetricInterpretationBlock, PdfRecommendationRow } from '@/components/pdf/shared/PdfMetricInterpretation';
+import {
+    PdfMetricInterpretationGroup,
+    pdfInterpretationTexts,
+    PdfRecommendationRow,
+} from '@/components/pdf/shared/PdfMetricInterpretation';
 import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
 
 export function ProjectReportGeoSection({
@@ -63,33 +67,14 @@ export function ProjectReportGeoSection({
                 ]}
             />
 
-            {interpretations.geoScore ? (
-                <PdfMetricInterpretationBlock
-                    label={`${labels.agentAssessment}: ${labels.geoScore}`}
-                    text={interpretations.geoScore}
-                />
-            ) : null}
-
-            {interpretations.llmVisibility ? (
-                <PdfMetricInterpretationBlock
-                    label={`${labels.agentAssessment}: ${labels.llmModels}`}
-                    text={interpretations.llmVisibility}
-                />
-            ) : null}
-
-            {interpretations.geoQuestions ? (
-                <PdfMetricInterpretationBlock
-                    label={`${labels.agentAssessment}: ${labels.geoQuestionAnalysis}`}
-                    text={interpretations.geoQuestions}
-                />
-            ) : null}
-
-            {interpretations.geoOnPageEeat ? (
-                <PdfMetricInterpretationBlock
-                    label={`${labels.agentAssessment}: ${labels.geoOnPageEeat}`}
-                    text={interpretations.geoOnPageEeat}
-                />
-            ) : null}
+            <PdfMetricInterpretationGroup
+                texts={pdfInterpretationTexts(
+                    interpretations.geoScore,
+                    interpretations.llmVisibility,
+                    interpretations.geoQuestions,
+                    interpretations.geoOnPageEeat,
+                )}
+            />
 
             {geoSection?.summary ? (
                 <View style={[pdfStyles.contentPanel, { marginTop: 8 }]}>
@@ -110,12 +95,9 @@ export function ProjectReportGeoSection({
                 <>
                     <PdfSectionHeader title={labels.competitorComparison} chapter="geo" />
                     <PdfSectionIntro text={labels.chapterIntros.geoCompetitive} />
-                    {interpretations.geoCompetitive ? (
-                        <PdfMetricInterpretationBlock
-                            label={labels.agentAssessment}
-                            text={interpretations.geoCompetitive}
-                        />
-                    ) : null}
+                    <PdfMetricInterpretationGroup
+                        texts={pdfInterpretationTexts(interpretations.geoCompetitive)}
+                    />
                     {geoCompetitiveChart}
                 </>
             ) : null}
@@ -124,12 +106,9 @@ export function ProjectReportGeoSection({
                 <>
                     <PdfSectionHeader title={labels.geoInsights} chapter="geo" />
                     <PdfSectionIntro text={labels.chapterIntros.geoInsights} />
-                    {interpretations.geoInsights ? (
-                        <PdfMetricInterpretationBlock
-                            label={labels.agentAssessment}
-                            text={interpretations.geoInsights}
-                        />
-                    ) : null}
+                    <PdfMetricInterpretationGroup
+                        texts={pdfInterpretationTexts(interpretations.geoInsights)}
+                    />
                     {geoDeep.deterministicInsights.slice(0, 5).map((ins) => (
                         <PdfRecommendationRow
                             key={ins.id}

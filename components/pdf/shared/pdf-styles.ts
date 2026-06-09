@@ -360,19 +360,19 @@ export const pdfStyles = StyleSheet.create({
         textAlign: 'right',
         flexShrink: 0,
     },
-    metricInterpretationBlock: {
-        marginTop: 4,
-        marginBottom: 10,
-        paddingLeft: 2,
+    metricInterpretationGroup: {
+        backgroundColor: pdfColors.gray100,
+        borderRadius: PDF_RADIUS_BUTTON_PT / 2,
+        paddingHorizontal: 12,
+        paddingVertical: 11,
+        marginTop: 6,
+        marginBottom: 12,
     },
-    metricInterpretationLabel: {
-        fontSize: 7,
-        fontWeight: PDF_TYPE_WEIGHT.bold,
-        color: pdfColors.gray500,
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
-        marginBottom: 3,
-        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
+    metricInterpretationEntry: {
+        marginTop: 8,
+        paddingTop: 8,
+        borderTopWidth: 0.5,
+        borderTopColor: pdfColors.gray200,
     },
     metricInterpretationParagraph: {
         marginTop: 4,

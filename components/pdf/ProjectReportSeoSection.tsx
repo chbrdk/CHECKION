@@ -11,7 +11,11 @@ import {
 } from '@/lib/project-report/seo-rankings-interpretations';
 import { PdfSectionHeader, PdfSectionIntro } from '@/components/pdf/shared/PdfPrimitives';
 import { PdfLeadText, PdfStatGrid } from '@/components/pdf/shared/PdfLayout';
-import { PdfMetricInterpretationBlock, PdfRecommendationRow } from '@/components/pdf/shared/PdfMetricInterpretation';
+import {
+    PdfMetricInterpretationGroup,
+    pdfInterpretationTexts,
+    PdfRecommendationRow,
+} from '@/components/pdf/shared/PdfMetricInterpretation';
 import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
 
 export function ProjectReportSeoSection({
@@ -49,12 +53,9 @@ export function ProjectReportSeoSection({
                             { label: labels.seoOnPageLabel, value: domain.seoOnPageLabel },
                         ]}
                     />
-                    {interpretations.seoOnPage ? (
-                        <PdfMetricInterpretationBlock
-                            label={`${labels.agentAssessment}: ${labels.seoOnPage}`}
-                            text={interpretations.seoOnPage}
-                        />
-                    ) : null}
+                    <PdfMetricInterpretationGroup
+                        texts={pdfInterpretationTexts(interpretations.seoOnPage)}
+                    />
                 </>
             ) : null}
 
@@ -72,21 +73,13 @@ export function ProjectReportSeoSection({
                             },
                         ]}
                     />
-                    {interpretations.rankingScore ? (
-                        <PdfMetricInterpretationBlock
-                            label={`${labels.agentAssessment}: ${labels.rankingScore}`}
-                            text={interpretations.rankingScore}
-                        />
-                    ) : null}
+                    <PdfMetricInterpretationGroup
+                        texts={pdfInterpretationTexts(interpretations.rankingScore)}
+                    />
 
                     <PdfSectionHeader title={labels.keywords} chapter="seo" />
                     <PdfSectionIntro text={labels.chapterIntros.keywords} />
-                    {interpretations.keywords ? (
-                        <PdfMetricInterpretationBlock
-                            label={labels.agentAssessment}
-                            text={interpretations.keywords}
-                        />
-                    ) : null}
+                    <PdfMetricInterpretationGroup texts={pdfInterpretationTexts(interpretations.keywords)} />
                     {rankingChart}
                     {rankings.topKeywords.slice(0, 5).map((kw) => {
                         const insight = keywordInsightDescription(
@@ -120,12 +113,7 @@ export function ProjectReportSeoSection({
                 <>
                     <PdfSectionHeader title={labels.rankTrends} chapter="seo" />
                     <PdfSectionIntro text={labels.chapterIntros.rankTrends} />
-                    {interpretations.rankTrend ? (
-                        <PdfMetricInterpretationBlock
-                            label={labels.agentAssessment}
-                            text={interpretations.rankTrend}
-                        />
-                    ) : null}
+                    <PdfMetricInterpretationGroup texts={pdfInterpretationTexts(interpretations.rankTrend)} />
                     {rankTrendChart}
                 </>
             ) : null}
