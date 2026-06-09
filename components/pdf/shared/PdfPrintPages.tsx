@@ -99,7 +99,7 @@ export function PdfChapterSpreadPages({
         <PdfPrintPage key={`ch-${chapterNumber}-left`} side={leftSide} accentColor={c.main} innerFill={c.bg}>
             <View style={pdfStyles.chapterSpreadLeft}>
                 <Text style={[pdfStyles.chapterSpreadGhost, { color: c.main }]}>{chapterNumber}</Text>
-                <View style={[pdfStyles.chapterSpreadAccentRing, { borderColor: c.main }]} />
+                <View style={[pdfStyles.chapterSpreadAccentRing, { backgroundColor: c.main }]} />
             </View>
         </PdfPrintPage>,
         <PdfPrintPage key={`ch-${chapterNumber}-right`} side={rightSide} accentColor={c.main}>

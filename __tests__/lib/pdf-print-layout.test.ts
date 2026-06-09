@@ -2,8 +2,10 @@ import { describe, it, expect } from 'vitest';
 import {
     buildAppInnerFramePath,
     buildCornerTabPath,
+    buildMsqdxCornerBoxPath,
     buildRoundedRectPath,
     cornerTabBox,
+    pdfCornerTabStyles,
 } from '@/components/pdf/shared/pdf-frame-path';
 import {
     pdfNeedsSpreadPadBeforeChapter,
@@ -16,6 +18,7 @@ import {
     PDF_FRAME_INSET_PT,
     PDF_FRAME_BORDER_PT,
     PDF_CORNER_TAB_PADDING_X_PT,
+    PDF_CORNER_TAB_WIDTH_PT,
     PDF_CORNER_TAB_TOTAL_HEIGHT_PT,
     PDF_RADIUS_1_5XL_PT,
     PDF_RADIUS_BUTTON_PT,
@@ -40,13 +43,30 @@ describe('pdf-frame-path', () => {
         expect(buildAppInnerFramePath('right')).toContain('M');
     });
 
-    it('builds corner tab with MsqdxCornerBox cutdown arcs', () => {
-        const left = buildCornerTabPath('cover');
-        expect(left).toContain('A ');
-        expect(left).not.toContain('Q ');
+    it('builds corner tab with concave cutdown arcs (not convex rounded corners)', () => {
+        const cover = buildCornerTabPath('cover');
+        const styles = pdfCornerTabStyles('left');
+        expect(styles.topRight).toBe('cutdown-a');
+        expect(styles.bottomLeft).toBe('cutdown-b');
+        expect(cover).toContain('A ');
+        expect(cover).not.toContain('Q ');
+        // cutdown-a at top-right: concave sweep 0
+        expect(cover).toMatch(/A [\d.]+ [\d.]+ 0 0 0 [\d.]+ [\d.]+/);
+        expect(cover).toMatch(/A [\d.]+ [\d.]+ 0 0 1 [\d.]+ [\d.]+/);
 
         const right = buildCornerTabPath('right');
         expect(right).toContain('A ');
+    });
+
+    it('left anchor uses square top-left and cutdown transitions like MsqdxAppLayout', () => {
+        const d = buildMsqdxCornerBoxPath(10, 10, 96, 31, 16, 'left');
+        expect(d.startsWith('M 10 10')).toBe(true);
+        expect(d).toContain('0 0 0');
+        expect(d).toContain('0 0 1');
+    });
+
+    it('corner tab width matches logo + padding (fit-content)', () => {
+        expect(PDF_CORNER_TAB_WIDTH_PT).toBe(72 + 2 * PDF_CORNER_TAB_PADDING_X_PT);
     });
 
     it('maps cover radii like CHECKION app shell with sidebar', () => {

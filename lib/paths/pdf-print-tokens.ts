@@ -40,13 +40,24 @@ export const PDF_SPREAD_GUTTER_PT = PDF_BINDING_GUTTER_PT;
 /** Base margin when no frame (legacy fallback) */
 export const PDF_BASE_MARGIN_PT = 32;
 
-/** Corner tab (logo badge) — MsqdxCornerBox header strip */
-export const PDF_CORNER_TAB_WIDTH_PT = 136;
-export const PDF_CORNER_TAB_HEIGHT_PT = 44;
 /** MsqdxCornerBox padding on print preview tab (matches browser-tuned layout). */
 export const PDF_CORNER_TAB_PADDING_TOP_PT = 6;
 export const PDF_CORNER_TAB_PADDING_BOTTOM_PT = 0;
 export const PDF_CORNER_TAB_PADDING_X_PT = 12;
+
+/** Logo size inside the corner tab (matches PdfAppFrame / MsqdxLogoPdf). */
+export const PDF_CORNER_TAB_LOGO_WIDTH_PT = 72;
+export const PDF_CORNER_TAB_LOGO_HEIGHT_PT = 17;
+
+/** Corner tab width = logo + horizontal padding (fit-content, like MsqdxCornerBox). */
+export const PDF_CORNER_TAB_WIDTH_PT =
+    PDF_CORNER_TAB_LOGO_WIDTH_PT + 2 * PDF_CORNER_TAB_PADDING_X_PT;
+
+/**
+ * Header strip before overlap — must fit logo + cutdown arcs (≥ 2× corner radius).
+ * Tuned to match MsqdxCornerBox tab body in `/dev/pdf-print`.
+ */
+export const PDF_CORNER_TAB_HEIGHT_PT = 44;
 
 /** Tab extends below header into inner panel (cutdown-b transition). */
 export const PDF_CORNER_TAB_TOTAL_HEIGHT_PT = PDF_CORNER_TAB_HEIGHT_PT + PDF_CORNER_TAB_OVERLAP_PT;
@@ -149,11 +160,11 @@ export function pdfContentMarginsForSide(side: PdfSpreadSide): {
 } {
     const base = PDF_CONTENT_PADDING_PT;
     const inset = PDF_FRAME_INSET_PT;
-    const border = PDF_FRAME_BORDER_PT;
     const bind = PDF_BINDING_GUTTER_PT;
     const tab = pdfShowsCornerTabForSide(side) ? PDF_CORNER_TAB_TOTAL_HEIGHT_PT : 0;
     const bottomExtra = 24;
-    const topChrome = inset + border + tab + base;
+    /** Brand gap is the inset layer only — no extra stroke offset (see checkion-pdf-print-layout.md). */
+    const topChrome = inset + tab + base;
 
     if (side === 'cover') {
         return {

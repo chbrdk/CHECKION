@@ -4,6 +4,8 @@ import React from 'react';
 import { View, Svg, Path } from '@react-pdf/renderer';
 import {
     PDF_BRAND_COLOR,
+    PDF_CORNER_TAB_LOGO_HEIGHT_PT,
+    PDF_CORNER_TAB_LOGO_WIDTH_PT,
     PDF_INNER_BACKGROUND,
     PDF_PAGE_HEIGHT_PT,
     PDF_PAGE_WIDTH_PT,
@@ -72,7 +74,11 @@ export function PdfAppFrameBackground({
                     }}
                     fixed
                 >
-                    <MsqdxLogoPdf width={72} height={17} color="#000000" />
+                    <MsqdxLogoPdf
+                        width={PDF_CORNER_TAB_LOGO_WIDTH_PT}
+                        height={PDF_CORNER_TAB_LOGO_HEIGHT_PT}
+                        color="#000000"
+                    />
                 </View>
             ) : null}
             {side === 'left' ? (

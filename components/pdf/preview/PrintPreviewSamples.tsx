@@ -102,8 +102,8 @@ export function PrintPreviewChapterLeftContent({
                     width: pt(180),
                     height: pt(180),
                     borderRadius: '50%',
-                    border: `1px solid ${color}`,
-                    opacity: 0.25,
+                    bgcolor: color,
+                    opacity: 0.12,
                 }}
             />
         </Box>

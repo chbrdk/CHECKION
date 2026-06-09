@@ -159,8 +159,6 @@ export const pdfStyles = StyleSheet.create({
         alignItems: 'center',
         height: PDF_HEADER_HEIGHT,
         marginBottom: 14,
-        borderBottomWidth: 1,
-        borderBottomColor: pdfColors.gray200,
     },
     footer: {
         position: 'absolute',
@@ -168,8 +166,6 @@ export const pdfStyles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingTop: 8,
-        borderTopWidth: 1,
-        borderTopColor: pdfColors.gray200,
         fontSize: 8,
         color: pdfColors.gray500,
     },
@@ -280,8 +276,7 @@ export const pdfStyles = StyleSheet.create({
         width: 180,
         height: 180,
         borderRadius: 90,
-        borderWidth: 1,
-        opacity: 0.25,
+        opacity: 0.12,
     },
     chapterSpreadRight: {
         flex: 1,
@@ -356,8 +351,6 @@ export const pdfStyles = StyleSheet.create({
     },
     dataTableHeader: {
         flexDirection: 'row',
-        borderBottomWidth: 2,
-        borderBottomColor: pdfColors.gray200,
         paddingBottom: 6,
         marginBottom: 6,
         marginTop: 4,
@@ -373,8 +366,6 @@ export const pdfStyles = StyleSheet.create({
     dataTableRow: {
         flexDirection: 'row',
         paddingVertical: 6,
-        borderBottomWidth: 1,
-        borderBottomColor: pdfColors.gray100,
     },
     chartCard: {
         backgroundColor: pdfColors.white,
@@ -454,8 +445,6 @@ export const pdfStyles = StyleSheet.create({
     },
     geoQuestionTableHeader: {
         flexDirection: 'row',
-        borderBottomWidth: 1,
-        borderBottomColor: pdfColors.gray200,
         paddingBottom: 2,
         marginBottom: 1,
     },
