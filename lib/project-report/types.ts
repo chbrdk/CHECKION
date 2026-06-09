@@ -434,7 +434,7 @@ export interface AudienceSubScoreFact {
 
 export interface AudienceInsightFact {
     id: string;
-    kind: 'gap' | 'content' | 'geo' | 'journey' | 'summary' | 'persona_voice' | 'win';
+    kind: 'gap' | 'content' | 'geo' | 'journey' | 'summary' | 'persona_voice' | 'win' | 'friction';
     title: string;
     description: string;
     evidenceId: string;
