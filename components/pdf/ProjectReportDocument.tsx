@@ -217,7 +217,7 @@ export function buildProjectReportPages(bundle: ProjectReportBundle): React.Reac
         bundle.audience?.available === true && (bundle.audience.personas.length ?? 0) > 0;
 
     if (hasAudience && bundle.audience) {
-        pages.push(...buildAudienceReportPages(bundle.audience, labels, pages.length));
+        pages.push(...buildAudienceReportPages(bundle.audience, labels, pages.length, bundle.locale));
     }
 
     pages = pushContent(

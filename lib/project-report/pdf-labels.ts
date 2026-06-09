@@ -4,6 +4,20 @@
 
 import type { ProjectReportLocale } from '@/lib/project-report/types';
 
+export function formatAudiencePersonasPdfCaption(
+    locale: 'de' | 'en',
+    shown: number,
+    total: number,
+    morePersonasLabel: string
+): string {
+    if (locale === 'de') {
+        const base = `${shown} differenzierendste Personas von ${total}`;
+        return total > shown ? `${base} · ${morePersonasLabel}` : base;
+    }
+    const base = `${shown} most distinct personas of ${total}`;
+    return total > shown ? `${base} · ${morePersonasLabel}` : base;
+}
+
 export interface ProjectReportPdfLabels {
     reportTitle: string;
     reportSubtitle: string;

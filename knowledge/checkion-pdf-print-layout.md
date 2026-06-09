@@ -15,7 +15,8 @@ Weiße A4-Seiten, einheitliche Ränder, kleines Logo **nur auf dem Deckblatt** o
 | **Browser-Preview** | `app/dev/pdf-print` → react-pdf Blob + pdf.js **Doppelseiten** (`PrintPreviewSpreadViewer`) |
 | pdf.js Worker | `public/pdf.worker.min.mjs` (`scripts/copy-pdfjs-worker.sh`) |
 | Preview-Bundle | `lib/paths/pdf-print-preview-bundle.ts` (variant: comprehensive) |
-| Preview-Dokument | `components/pdf/preview/PdfPrintPreviewDocument.tsx` → `ProjectReportDocument` |
+| Persona-Auswahl (PDF) | `lib/project-report/audience-pdf-personas.ts` — max. 5 differenzierendste Personas, 2 pro Seite |
+| Audience-PDF-Sections | `components/pdf/ProjectReportAudienceSections.tsx` |
 
 ## Lokal stylen
 
@@ -45,4 +46,5 @@ Projekt-Seite → „PDF neu rendern (ohne KI)“ oder `downloadProjectReportPdf
 - `__tests__/lib/pdf-typography.test.ts`
 - `__tests__/lib/pdf-print-preview-document.test.ts`
 - `__tests__/lib/pdf-spread-groups.test.ts`
-- `__tests__/lib/project-report-pdf-smoke.test.ts`
+- `__tests__/lib/audience-pdf-personas.test.ts`
+- `__tests__/lib/pdf-audience-persona-layout.test.ts`

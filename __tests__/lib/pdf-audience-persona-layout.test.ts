@@ -14,20 +14,23 @@ const pdfStylesSrc = readFileSync(join(process.cwd(), 'components/pdf/shared/pdf
 describe('PDF audience persona layout', () => {
     it('defines persona-specific card and name styles', () => {
         expect(pdfStylesSrc).toContain('personaCardName');
-        expect(pdfStylesSrc).toContain('marginBottom: 4');
+        expect(pdfStylesSrc).toContain('personaPillarStrip');
+        expect(pdfStylesSrc).toContain('personaInsightsBlock');
         const nameBlock = pdfStylesSrc.split('personaCardName:')[1]?.split('personaCardSubtitle:')[0] ?? '';
         expect(nameBlock).not.toContain('flex: 1');
     });
 
-    it('keeps persona header from splitting across pages', () => {
-        expect(audienceSectionsSrc).toContain('wrap={false}');
-        expect(audienceSectionsSrc).toContain('minPresenceAhead={72}');
-        expect(audienceSectionsSrc).toContain('pdfStyles.personaCardName');
-        expect(audienceSectionsSrc).not.toContain('geoQuestionTitle}>{persona.personaName}');
+    it('uses compact persona cards and distinct persona selection', () => {
+        expect(audienceSectionsSrc).toContain('selectDistinctPersonasForPdf');
+        expect(audienceSectionsSrc).toContain('PersonaPillarStrip');
+        expect(audienceSectionsSrc).toContain('PersonaInsightsBlock');
+        expect(audienceSectionsSrc).not.toContain('PdfRecommendationRow');
+        expect(audienceSectionsSrc).not.toContain('.slice(0, 8)');
     });
 
-    it('renders personas on a dedicated page after the intro', () => {
+    it('renders personas on dedicated pages after the intro', () => {
         expect(audienceSectionsSrc).toContain('key="audience-intro"');
-        expect(audienceSectionsSrc).toContain('key="audience-personas"');
+        expect(audienceSectionsSrc).toContain("'audience-personas'");
+        expect(audienceSectionsSrc).toContain('chunkPersonasForPdfPages');
     });
 });

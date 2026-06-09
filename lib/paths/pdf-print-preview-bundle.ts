@@ -2,9 +2,50 @@
  * Comprehensive project-report bundle for `/dev/pdf-print` — drives `ProjectReportDocument`.
  */
 import { buildChartSpecs } from '@/lib/project-report/chart-specs';
-import type { DomainFacts, ProjectReportBundle } from '@/lib/project-report/types';
+import type { AudiencePersonaFitFact, DomainFacts, ProjectReportBundle } from '@/lib/project-report/types';
 
 const EVIDENCE = 'preview-evidence-1';
+
+const PREVIEW_PILLARS = ['wcag', 'seo', 'geo', 'rankings', 'performance', 'topics'] as const;
+
+function previewAudiencePersona(
+    personaId: string,
+    personaName: string,
+    headline: string,
+    pillarScores: readonly [number, number, number, number, number, number],
+    overallFit: AudiencePersonaFitFact['overallFit'] = 'mixed'
+): AudiencePersonaFitFact {
+    return {
+        personaId,
+        personaName,
+        targetGroupId: 'tg-1',
+        targetGroupName: 'Verantwortungsbewusste Hundehalter',
+        headline,
+        painPoints: [],
+        goals: [],
+        pillars: PREVIEW_PILLARS.map((pillar, index) => {
+            const score = pillarScores[index] ?? 50;
+            const level =
+                score >= 75 ? 'strong' : score >= 50 ? 'mixed' : ('weak' as const);
+            return { pillar, level, score, note: '' };
+        }),
+        overallFit,
+        insights: [
+            {
+                id: `${personaId}-ins`,
+                kind: 'persona_voice',
+                title: 'Perspektive',
+                description: headline,
+                evidenceId: EVIDENCE,
+            },
+        ],
+        geoQuestionMatches: [],
+        latestUxJourney: null,
+        evidenceId: EVIDENCE,
+        evaluationSource: 'agent',
+        personaPerspective: headline,
+    };
+}
 
 export function buildComprehensivePreviewBundle(): ProjectReportBundle {
     const domain: DomainFacts = {
@@ -550,7 +591,7 @@ export function buildComprehensivePreviewBundle(): ProjectReportBundle {
                     name: 'Verantwortungsbewusste Hundehalter',
                     segment: 'B2C',
                     description: 'Besitzer großer Rassen, hohe Schadensrisiko-Sensibilität',
-                    personaCount: 2,
+                    personaCount: 6,
                 },
             ],
             personas: [
@@ -625,6 +666,34 @@ export function buildComprehensivePreviewBundle(): ProjectReportBundle {
                     evaluationSource: 'agent',
                     personaPerspective: 'Ich möchte zwei Tarife direkt nebeneinander sehen können.',
                 },
+                previewAudiencePersona(
+                    'p-3',
+                    'Lea, 29',
+                    'Sucht günstige Einstiegs-Tarife',
+                    [45, 52, 38, 42, 70, 48],
+                    'weak'
+                ),
+                previewAudiencePersona(
+                    'p-4',
+                    'Markus, 52',
+                    'Priorisiert Service-Hotline und Schadenhistorie',
+                    [88, 76, 82, 79, 85, 90],
+                    'strong'
+                ),
+                previewAudiencePersona(
+                    'p-5',
+                    'Aylin, 33',
+                    'Nutzt primär Mobile und Social Proof',
+                    [58, 44, 55, 40, 62, 51],
+                    'mixed'
+                ),
+                previewAudiencePersona(
+                    'p-6',
+                    'Jonas, 41',
+                    'Vergleicht nur Haftpflicht-Grundschutz',
+                    [72, 68, 30, 65, 74, 58],
+                    'mixed'
+                ),
             ],
             summaryInsights: [
                 'Personas bestätigen Relevanz der Haftpflicht-Themen, kritisieren Formular-UX.',
