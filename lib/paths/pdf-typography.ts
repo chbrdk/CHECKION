@@ -15,6 +15,23 @@ export const PDF_TYPE_LINE_HEIGHT = {
 
 export type PdfTypeLineHeight = (typeof PDF_TYPE_LINE_HEIGHT)[keyof typeof PDF_TYPE_LINE_HEIGHT];
 
+export type PdfTypeLineHeightToken = keyof typeof PDF_TYPE_LINE_HEIGHT;
+
+/**
+ * Absolute line height in pt for @react-pdf/renderer.
+ * textkit treats `lineHeight` as a fixed line box — unitless ratios must be converted and
+ * small body sizes need a higher effective ratio so wrapped lines do not overlap glyphs.
+ */
+export function pdfLineHeightPt(
+    fontSize: number,
+    token: PdfTypeLineHeightToken = 'body',
+): number {
+    const ratio = PDF_TYPE_LINE_HEIGHT[token];
+    const minRatio = fontSize <= 11 ? 1.4 : ratio;
+    const effectiveRatio = fontSize <= 11 ? Math.max(ratio, minRatio) : ratio;
+    return Math.round(fontSize * effectiveRatio * 10) / 10;
+}
+
 /** react-pdf / Helvetica — no separate Thin/Light face; use weight + color for rhythm */
 export const PDF_TYPE_WEIGHT = {
     light: 'normal' as const,
