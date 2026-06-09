@@ -4,8 +4,11 @@ import React from 'react';
 import { View, Text, Svg, Path } from '@react-pdf/renderer';
 import { pdfColors, pdfStyles, type PdfChapterKey } from '@/components/pdf/shared/pdf-styles';
 import {
+    PDF_CONTENT_COLUMN_MAX_WIDTH_PT,
+    PDF_MINIMAL_LOGO_HEIGHT_PT,
+    PDF_MINIMAL_LOGO_WIDTH_PT,
+    pdfFooterAlignsOuterLeft,
     pdfFooterInsetsForSide,
-    pdfSpreadSideFromIndex,
     type PdfSpreadSide,
 } from '@/lib/paths/pdf-print-tokens';
 
@@ -32,6 +35,20 @@ export function PdfSectionHeader({ title }: { title: string; chapter?: PdfChapte
     return <Text style={pdfStyles.sectionTitle}>{title}</Text>;
 }
 
+/** Fixed reader guidance per report section (from `chapterIntros` in pdf-labels). */
+export function PdfSectionIntro({ text }: { text: string }) {
+    return <Text style={pdfStyles.sectionIntroText}>{text}</Text>;
+}
+
+/** Mittig auf der Seite, Inhalt linksbündig in fester Spaltenbreite */
+export function PdfContentColumn({ children }: { children: React.ReactNode }) {
+    return (
+        <View style={{ width: '100%', alignItems: 'center' }}>
+            <View style={{ width: PDF_CONTENT_COLUMN_MAX_WIDTH_PT }}>{children}</View>
+        </View>
+    );
+}
+
 export function PdfHeader() {
     return (
         <View style={pdfStyles.header} fixed>
@@ -43,19 +60,29 @@ export function PdfHeader() {
 export function PdfFooter({
     pageNumber,
     totalPages,
-    title,
     locale,
     spreadSide = 'cover',
 }: {
     pageNumber: number;
     totalPages: number;
-    title: string;
+    /** @deprecated Report title no longer shown in footer */
+    title?: string;
     locale: 'de' | 'en';
     spreadSide?: PdfSpreadSide;
 }) {
     const pageLabel = locale === 'de' ? 'Seite' : 'Page';
     const ofLabel = locale === 'de' ? 'von' : 'of';
     const insets = pdfFooterInsetsForSide(spreadSide);
+    const outerLeft = pdfFooterAlignsOuterLeft(pageNumber);
+    const pageText = `${pageLabel} ${pageNumber} ${ofLabel} ${totalPages}`;
+    const logo = (
+        <MsqdxLogoPdf
+            width={PDF_MINIMAL_LOGO_WIDTH_PT}
+            height={PDF_MINIMAL_LOGO_HEIGHT_PT}
+            color={pdfColors.gray400}
+        />
+    );
+
     return (
         <View
             style={[
@@ -64,14 +91,24 @@ export function PdfFooter({
                     left: insets.left,
                     right: insets.right,
                     bottom: insets.bottom,
+                    justifyContent: outerLeft ? 'flex-start' : 'flex-end',
                 },
             ]}
             fixed
         >
-            <Text>{title}</Text>
-            <Text>
-                {pageLabel} {pageNumber} {ofLabel} {totalPages}
-            </Text>
+            {outerLeft ? (
+                <>
+                    <Text>{pageText}</Text>
+                    <View style={pdfStyles.footerLogoGap} />
+                    {logo}
+                </>
+            ) : (
+                <>
+                    {logo}
+                    <View style={pdfStyles.footerLogoGap} />
+                    <Text>{pageText}</Text>
+                </>
+            )}
         </View>
     );
 }

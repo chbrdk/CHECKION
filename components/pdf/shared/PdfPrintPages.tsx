@@ -14,7 +14,7 @@ import {
 } from '@/lib/paths/pdf-print-tokens';
 import { pdfColors, pdfStyles, type PdfChapterKey } from '@/components/pdf/shared/pdf-styles';
 import { PdfMinimalPageChrome } from '@/components/pdf/shared/PdfAppFrame';
-import { PdfFooter } from '@/components/pdf/shared/PdfPrimitives';
+import { PdfContentColumn, PdfFooter } from '@/components/pdf/shared/PdfPrimitives';
 
 const printPageBase = {
     width: PDF_PAGE_WIDTH_PT,
@@ -24,36 +24,82 @@ const printPageBase = {
     backgroundColor: PDF_PAGE_BACKGROUND,
 };
 
+type PdfPageShellProps = {
+    side: PdfSpreadSide;
+    children: React.ReactNode;
+    /** Rendered at page bottom — outside the centered content column */
+    footer?: React.ReactNode;
+    contentJustify?: 'flex-start' | 'center';
+};
+
+function PdfPageShell({ side, children, footer, contentJustify = 'flex-start' }: PdfPageShellProps) {
+    const margins = pdfContentMarginsForSide(side);
+    return (
+        <Page size="A4" style={[printPageBase, { padding: 0, position: 'relative' }]}>
+            <PdfMinimalPageChrome side={side} />
+            <View
+                style={{
+                    position: 'absolute',
+                    top: margins.paddingTop,
+                    left: margins.paddingLeft,
+                    right: margins.paddingRight,
+                    bottom: margins.paddingBottom,
+                    alignItems: 'center',
+                    justifyContent: contentJustify,
+                }}
+            >
+                <PdfContentColumn>{children}</PdfContentColumn>
+            </View>
+            {footer}
+        </Page>
+    );
+}
+
 export function PdfPrintPage({
     side,
     children,
+    footer,
 }: {
     side: PdfSpreadSide;
     children: React.ReactNode;
+    footer?: React.ReactNode;
 }) {
-    const margins = pdfContentMarginsForSide(side);
     return (
-        <Page size="A4" style={[printPageBase, { padding: 0 }]}>
-            <PdfMinimalPageChrome side={side} />
-            <View style={{ flex: 1, ...margins }}>{children}</View>
-        </Page>
+        <PdfPageShell side={side} footer={footer}>
+            {children}
+        </PdfPageShell>
     );
 }
 
-export function PdfCoverPage({ children }: { children: React.ReactNode }) {
-    const margins = pdfContentMarginsForSide('cover');
+export function PdfCoverPage({
+    children,
+    footer,
+}: {
+    children: React.ReactNode;
+    footer?: React.ReactNode;
+}) {
     return (
-        <Page size="A4" style={[printPageBase, { padding: 0 }]}>
-            <PdfMinimalPageChrome side="cover" />
-            <View style={{ flex: 1, ...margins, justifyContent: 'flex-start' }}>{children}</View>
-        </Page>
+        <PdfPageShell side="cover" footer={footer}>
+            {children}
+        </PdfPageShell>
     );
 }
 
-export function PdfSpreadPadPage({ side }: { side: PdfSpreadSide }) {
-    return <PdfPrintPage side={side}>{null}</PdfPrintPage>;
+export function PdfSpreadPadPage({
+    side,
+    footer,
+}: {
+    side: PdfSpreadSide;
+    footer?: React.ReactNode;
+}) {
+    return (
+        <PdfPrintPage side={side} footer={footer}>
+            {null}
+        </PdfPrintPage>
+    );
 }
 
+/** @deprecated Chapter intro pages removed from reports — kept for legacy callers. */
 export function PdfChapterSpreadPages({
     chapterNumber,
     title,
@@ -68,15 +114,9 @@ export function PdfChapterSpreadPages({
     chapterPrefix?: string;
     startPageIndex: number;
 }) {
-    const leftSide = pdfSpreadSideFromIndex(startPageIndex);
-    const rightSide = pdfSpreadSideFromIndex(startPageIndex + 1);
+    const side = pdfSpreadSideFromIndex(startPageIndex);
     return [
-        <PdfPrintPage key={`ch-${chapterNumber}-left`} side={leftSide}>
-            <View style={pdfStyles.chapterSpreadLeft}>
-                <Text style={pdfStyles.chapterSpreadGhost}>{chapterNumber}</Text>
-            </View>
-        </PdfPrintPage>,
-        <PdfPrintPage key={`ch-${chapterNumber}-right`} side={rightSide}>
+        <PdfPrintPage key={`ch-${chapterNumber}-intro`} side={side}>
             <View style={pdfStyles.chapterSpreadRight}>
                 <Text style={pdfStyles.chapterSpreadEyebrow}>
                     {chapterPrefix} {chapterNumber}
@@ -91,11 +131,17 @@ export function PdfChapterSpreadPages({
 export function PdfContentPage({
     side,
     children,
+    footer,
 }: {
     side: PdfSpreadSide;
     children: React.ReactNode;
+    footer?: React.ReactNode;
 }) {
-    return <PdfPrintPage side={side}>{children}</PdfPrintPage>;
+    return (
+        <PdfPrintPage side={side} footer={footer}>
+            {children}
+        </PdfPrintPage>
+    );
 }
 
 /** @deprecated Use PdfChapterSpreadPages */
@@ -117,7 +163,7 @@ export function PdfChapterIntroPage({
         chapter,
         startPageIndex: 0,
     });
-    return pages[1] as React.ReactElement;
+    return pages[0] as React.ReactElement;
 }
 
 export function PdfStatGrid({
@@ -199,12 +245,7 @@ export function applyReportFooters(
     const total = pages.length;
     return pages.map((page, index) => {
         if (options.skipFooter?.(page, index)) return page;
-        const children = React.Children.toArray((page.props as { children?: React.ReactNode }).children);
-        const withoutFooter = children.filter(
-            (child) => !React.isValidElement(child) || child.key !== 'report-footer'
-        );
-        return React.cloneElement(page, {}, [
-            ...withoutFooter,
+        const footer = (
             <PdfFooter
                 key="report-footer"
                 pageNumber={index + 1}
@@ -212,16 +253,18 @@ export function applyReportFooters(
                 title={options.title}
                 locale={options.locale}
                 spreadSide={pdfSpreadSideFromIndex(index)}
-            />,
-        ]);
+            />
+        );
+        return React.cloneElement(page, { footer } as { footer: React.ReactNode });
     });
 }
 
 export function isChapterIntroPage(page: React.ReactElement): boolean {
     const key = page.key != null ? String(page.key) : '';
-    return key.startsWith('ch-') && (key.includes('-left') || key.includes('-right') || key.startsWith('ch-intro-'));
+    return key.startsWith('ch-') && key.endsWith('-intro');
 }
 
+/** @deprecated Chapter intro pages removed — no-op pad + intro append. */
 export function appendChapterSpread(
     pages: React.ReactElement[],
     props: {

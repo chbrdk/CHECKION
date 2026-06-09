@@ -5,13 +5,11 @@ import { Document, View, Text } from '@react-pdf/renderer';
 import type { ScanResult } from '@/lib/types';
 import { pdfCoverEyebrow } from '@/lib/paths/pdf-cover-copy';
 import { PdfScanReportCoverContent } from '@/components/pdf/shared/PdfCoverContent';
-import { pdfColors, pdfStyles, type PdfChapterKey } from '@/components/pdf/shared/pdf-styles';
+import { pdfColors, pdfStyles } from '@/components/pdf/shared/pdf-styles';
 import {
     PdfCoverPage,
     PdfContentPage,
     applyReportFooters,
-    isChapterIntroPage,
-    appendChapterSpread,
     contentSideForIndex,
     PDF_DOCUMENT_PAGE_LAYOUT,
 } from '@/components/pdf/shared/PdfLayout';
@@ -37,15 +35,6 @@ function pushContent(
 
 export function ScanReportDocument({ scan }: ScanReportProps) {
     let pages: React.ReactElement[] = [];
-
-    const chapter = (props: {
-        chapterNumber: string;
-        title: string;
-        subtitle?: string;
-        chapter: PdfChapterKey;
-    }) => {
-        pages = appendChapterSpread(pages, { ...props, chapterPrefix: 'Kapitel' });
-    };
 
     pages.push(
         <PdfCoverPage key="cover">
@@ -142,26 +131,13 @@ export function ScanReportDocument({ scan }: ScanReportProps) {
         </PdfCoverPage>
     );
 
-    chapter({
-        chapterNumber: '01',
-        title: 'Issues & UX',
-        subtitle: 'Accessibility, UX/CX und visuelle Analyse',
-        chapter: 'issues',
-    });
     pages = pushContent(pages, 'page2', buildScanPage2Content(scan));
-
-    chapter({
-        chapterNumber: '02',
-        title: 'Struktur & GEO',
-        subtitle: 'Semantik, SEO, Infrastruktur und Generative Search',
-        chapter: 'structure',
-    });
     pages = pushContent(pages, 'page3', buildScanPage3Content(scan));
 
     const finalPages = applyReportFooters(pages, {
         title: 'Accessibility & UX Audit Report',
         locale: 'de',
-        skipFooter: (page, index) => index === 0 || isChapterIntroPage(page),
+        skipFooter: (_page, index) => index === 0,
     });
 
     return <Document pageLayout={PDF_DOCUMENT_PAGE_LAYOUT}>{finalPages}</Document>;

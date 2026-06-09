@@ -9,7 +9,7 @@ export function checkionDevPdfPrintPreviewUrl(basePath = ''): string {
     return `http://localhost:${CHECKION_DEV_SERVER_PORT}${path}`;
 }
 
-/** PDF points used 1:1 as CSS px in browser preview (no zoom / scale). */
+/** PDF points → CSS px helpers (legacy; dev preview uses react-pdf PDFViewer). */
 export function pdfPtToCssPx(pt: number): number {
     return pt;
 }

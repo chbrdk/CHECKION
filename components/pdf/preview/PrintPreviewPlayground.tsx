@@ -1,16 +1,10 @@
 'use client';
 
-import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { Box, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { MsqdxButton, MsqdxTypography } from '@msqdx/react';
-import { PrintPreviewFrame } from '@/components/pdf/preview/PrintPreviewFrame';
-import {
-    PrintPreviewChapterLeftContent,
-    PrintPreviewChapterRightContent,
-    PrintPreviewContentSample,
-    PrintPreviewCoverContent,
-} from '@/components/pdf/preview/PrintPreviewSamples';
+import type { PdfPrintPreviewScene } from '@/components/pdf/preview/PdfPrintPreviewDocument';
+import { PrintPreviewPdfViewer } from '@/components/pdf/preview/PrintPreviewPdfViewer';
 import {
     PATH_DEV_PDF_PRINT_PREVIEW,
     CHECKION_DEV_SERVER_PORT,
@@ -18,75 +12,19 @@ import {
 } from '@/lib/paths/pdf-print-preview';
 import { getPublicAssetPath } from '@/lib/constants';
 
-type PreviewScene = 'cover' | 'chapter-spread' | 'content-spread' | 'all-spreads';
-
-const SCENES: { id: PreviewScene; label: string }[] = [
+const SCENES: { id: PdfPrintPreviewScene; label: string }[] = [
+    { id: 'all-spreads', label: 'Vollständig (Comprehensive)' },
     { id: 'cover', label: 'Deckblatt' },
-    { id: 'chapter-spread', label: 'Kapitel-Spread' },
-    { id: 'content-spread', label: 'Inhalt-Spread' },
-    { id: 'all-spreads', label: 'Alle Spreads' },
+    { id: 'content-spread', label: 'Executive Summary' },
 ];
 
 export function PrintPreviewPlayground() {
-    const [scene, setScene] = useState<PreviewScene>('all-spreads');
+    const [scene, setScene] = useState<PdfPrintPreviewScene>('all-spreads');
     const previewPath = getPublicAssetPath(PATH_DEV_PDF_PRINT_PREVIEW);
     const previewUrl =
         typeof window !== 'undefined'
             ? `${window.location.origin}${previewPath}`
             : checkionDevPdfPrintPreviewUrl();
-
-    const coverPage = (
-        <PrintPreviewFrame side="cover">
-            <PrintPreviewCoverContent />
-        </PrintPreviewFrame>
-    );
-
-    const chapterSpread = (
-        <Box sx={{ display: 'flex', gap: 0, alignItems: 'flex-start' }}>
-            <PrintPreviewFrame side="left">
-                <PrintPreviewChapterLeftContent chapterNumber="01" />
-            </PrintPreviewFrame>
-            <PrintPreviewFrame side="right">
-                <PrintPreviewChapterRightContent
-                    chapterNumber="01"
-                    title="Executive Summary"
-                    subtitle="Lagebild, Risiken und strategische Einordnung auf Basis aller Projekt-Daten."
-                />
-            </PrintPreviewFrame>
-        </Box>
-    );
-
-    const contentSpread = (
-        <Box sx={{ display: 'flex', gap: 0, alignItems: 'flex-start' }}>
-            <PrintPreviewFrame side="left">
-                <PrintPreviewContentSample />
-            </PrintPreviewFrame>
-            <PrintPreviewFrame side="right">
-                <PrintPreviewContentSample />
-            </PrintPreviewFrame>
-        </Box>
-    );
-
-    let preview: ReactNode;
-    switch (scene) {
-        case 'cover':
-            preview = coverPage;
-            break;
-        case 'chapter-spread':
-            preview = chapterSpread;
-            break;
-        case 'content-spread':
-            preview = contentSpread;
-            break;
-        default:
-            preview = (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
-                    {coverPage}
-                    {chapterSpread}
-                    {contentSpread}
-                </Box>
-            );
-    }
 
     return (
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 3, p: { xs: 2, md: 3 } }}>
@@ -103,7 +41,7 @@ export function PrintPreviewPlayground() {
                     PDF Print Preview
                 </MsqdxTypography>
                 <MsqdxTypography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    Minimal-Layout (weiß, kleines Logo nur Deckblatt).
+                    Comprehensive-Report — Doppelseiten-Ansicht (`twoPageRight`) via pdf.js.
                     <br />
                     <Box component="a" href={previewPath} sx={{ fontSize: '0.85em', color: 'inherit' }}>
                         {previewUrl}
@@ -129,9 +67,9 @@ export function PrintPreviewPlayground() {
                 </ToggleButtonGroup>
 
                 <MsqdxTypography variant="caption" color="text.secondary" component="div" sx={{ mb: 2 }}>
-                    lib/paths/pdf-print-tokens.ts
+                    lib/paths/pdf-print-preview-bundle.ts
                     <br />
-                    components/pdf/shared/PdfPrintPages.tsx
+                    components/pdf/ProjectReportDocument.tsx
                 </MsqdxTypography>
 
                 <MsqdxButton
@@ -147,16 +85,13 @@ export function PrintPreviewPlayground() {
                 sx={{
                     flex: 1,
                     minWidth: 0,
-                    overflow: 'auto',
+                    overflow: 'hidden',
                     bgcolor: 'rgba(15, 23, 42, 0.06)',
                     borderRadius: 2,
-                    p: 3,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'flex-start',
+                    p: { xs: 1, md: 2 },
                 }}
             >
-                {preview}
+                <PrintPreviewPdfViewer key={scene} scene={scene} />
             </Box>
         </Box>
     );

@@ -101,18 +101,16 @@ function ScoreRingsGrid({
     items: Array<{ label: string; value: number | null; color: string; max?: number }>;
 }) {
     return (
-        <View style={pdfStyles.chartCard}>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-around', gap: 8 }}>
-                {items.map((item) => (
-                    <ScoreRing
-                        key={item.label}
-                        label={item.label}
-                        value={item.value}
-                        color={item.color}
-                        max={item.max ?? 100}
-                    />
-                ))}
-            </View>
+        <View style={pdfStyles.scoreRingsRow}>
+            {items.map((item) => (
+                <ScoreRing
+                    key={item.label}
+                    label={item.label}
+                    value={item.value}
+                    color={item.color}
+                    max={item.max ?? 100}
+                />
+            ))}
         </View>
     );
 }
@@ -472,5 +470,15 @@ export function PdfScoreCardsFromSpec({
 }: {
     spec: Extract<VisualSpec, { kind: 'scoreCards' }> | undefined;
 }) {
-    return <PdfFlatScoreCards spec={spec} />;
+    if (!spec?.items.length) return null;
+    return (
+        <ScoreRingsGrid
+            items={spec.items.map((item) => ({
+                label: item.label,
+                value: item.value,
+                color: item.color,
+                max: item.max ?? 100,
+            }))}
+        />
+    );
 }

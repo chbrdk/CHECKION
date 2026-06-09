@@ -1,5 +1,5 @@
 /**
- * Cover content uses the same structure as `/dev/pdf-print` preview.
+ * Cover content is shared by PDF export and `/dev/pdf-print` (react-pdf PDFViewer).
  */
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
@@ -10,9 +10,6 @@ vi.mock('@react-pdf/renderer', () => ({
     StyleSheet: { create: (s: object) => s },
 }));
 
-vi.mock('@/components/pdf/charts/PdfChartComponents', () => ({
-    PdfFlatScoreCards: () => null,
-}));
 
 describe('PdfCoverContent', () => {
     it('exports project and scan cover components', async () => {
@@ -30,6 +27,7 @@ describe('PdfCoverContent', () => {
         );
         expect(src).toContain('PdfProjectReportCoverContent');
         expect(src).toContain('pdfCoverEyebrow');
-        expect(src).not.toContain('PdfScoreCardsFromSpec');
+        expect(src).toContain('PdfScoreCardsFromSpec');
+        expect(src).not.toMatch(/PdfProjectReportCoverContent[\s\S]*scoreCards=/);
     });
 });

@@ -6,7 +6,7 @@ import type { ProjectReportBundle } from '@/lib/project-report/types';
 import type { ProjectReportPdfLabels } from '@/lib/project-report/pdf-labels';
 import type { SectionAnalysis } from '@/lib/project-report/narrative-schema';
 import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
-import { PdfSectionHeader } from '@/components/pdf/shared/PdfPrimitives';
+import { PdfSectionHeader, PdfSectionIntro } from '@/components/pdf/shared/PdfPrimitives';
 import { PdfContentPage, PdfLeadText, PdfStatGrid, contentSideForIndex } from '@/components/pdf/shared/PdfLayout';
 import { PdfGeoQuestionCard } from '@/components/pdf/shared/PdfGeoQuestionCard';
 import { PdfVisualSpec } from '@/components/pdf/charts/PdfChartComponents';
@@ -69,6 +69,7 @@ export function buildDeepReportPages(
         'deep-metrics',
         <>
             <PdfSectionHeader title={labels.metricsOverview} chapter="visual" />
+            <PdfSectionIntro text={labels.chapterIntros.deepDive} />
             <View style={pdfStyles.contentPanel}>
                 <View style={pdfStyles.dataTableHeader}>
                     <Text style={[pdfStyles.dataTableHeaderCell, { width: '50%' }]}>{labels.metricLabel}</Text>

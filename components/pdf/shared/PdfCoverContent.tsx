@@ -3,20 +3,15 @@
 import React from 'react';
 import { View, Text } from '@react-pdf/renderer';
 import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
-import { PdfFlatScoreCards } from '@/components/pdf/charts/PdfChartComponents';
-import type { VisualSpec } from '@/lib/project-report/chart-specs';
-
 export function PdfProjectReportCoverContent({
     eyebrow,
     title,
     projectLine,
-    scoreCards,
     leadText,
 }: {
     eyebrow: string;
     title: string;
     projectLine: string;
-    scoreCards?: Extract<VisualSpec, { kind: 'scoreCards' }>;
     leadText?: string | null;
 }) {
     return (
@@ -26,7 +21,6 @@ export function PdfProjectReportCoverContent({
             <View style={pdfStyles.coverUrlBox}>
                 <Text style={pdfStyles.coverUrl}>{projectLine}</Text>
             </View>
-            <PdfFlatScoreCards spec={scoreCards} />
             {leadText ? <Text style={pdfStyles.leadText}>{leadText}</Text> : null}
         </>
     );

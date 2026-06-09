@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "postinstall": "sh scripts/copy-pdfjs-worker.sh",
     "dev": "next dev --webpack --port 3333",
-    "build": "next build --webpack",
+    "build": "sh scripts/copy-pdfjs-worker.sh && next build --webpack",
     "build:local": "sh scripts/ensure-design-system-and-build.sh",
     "analyze": "cross-env ANALYZE=true next build --webpack",
     "start": "next start --port 3333",
@@ -40,6 +41,7 @@
     "next-auth": "^5.0.0-beta.30",
     "openai": "^6.22.0",
     "pa11y": "^8.0.0",
+    "pdfjs-dist": "^4.10.38",
     "pg": "^8.18.0",
     "puppeteer": "^24.37.2",
     "react": "19.2.4",

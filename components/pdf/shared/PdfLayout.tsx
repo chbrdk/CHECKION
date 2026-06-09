@@ -1,6 +1,7 @@
 'use client';
 
 /** Re-exports print layout primitives (Doppelseiten + App-Frame). */
+export { PdfContentColumn } from '@/components/pdf/shared/PdfPrimitives';
 export {
     PdfCoverPage,
     PdfPrintPage,

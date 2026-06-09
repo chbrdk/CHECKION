@@ -5,7 +5,7 @@ import { View, Text } from '@react-pdf/renderer';
 import type { AudienceFitLevel, AudienceReportOverlay } from '@/lib/project-report/types';
 import type { ProjectReportPdfLabels } from '@/lib/project-report/pdf-labels';
 import { pdfColors, pdfStyles } from '@/components/pdf/shared/pdf-styles';
-import { PdfSectionHeader } from '@/components/pdf/shared/PdfPrimitives';
+import { PdfSectionHeader, PdfSectionIntro } from '@/components/pdf/shared/PdfPrimitives';
 import { PdfContentPage, PdfLeadText, PdfStatGrid, contentSideForIndex } from '@/components/pdf/shared/PdfLayout';
 
 function fitLabel(level: AudienceFitLevel, labels: ProjectReportPdfLabels): string {
@@ -57,9 +57,11 @@ function PillarRow({
 function PersonaAudienceCard({
     persona,
     labels,
+    isFirst = false,
 }: {
     persona: AudienceReportOverlay['personas'][number];
     labels: ProjectReportPdfLabels;
+    isFirst?: boolean;
 }) {
     const pillarLabels: Record<string, string> = {
         wcag: labels.domainScore,
@@ -71,15 +73,19 @@ function PersonaAudienceCard({
     };
 
     return (
-        <View style={pdfStyles.geoQuestionCard}>
-            <View style={pdfStyles.geoQuestionHeaderRow}>
-                <View style={{ flex: 1 }}>
-                    <Text style={pdfStyles.geoQuestionTitle}>{persona.personaName}</Text>
-                    <Text style={[pdfStyles.metaText, { fontSize: 7 }]}>
+        <View
+            wrap={false}
+            minPresenceAhead={72}
+            style={isFirst ? { ...pdfStyles.personaCard, marginTop: 0 } : pdfStyles.personaCard}
+        >
+            <View wrap={false} style={pdfStyles.personaCardHeader}>
+                <View style={pdfStyles.personaCardIdentity}>
+                    <Text style={pdfStyles.personaCardName}>{persona.personaName}</Text>
+                    <Text style={pdfStyles.personaCardSubtitle}>
                         {persona.targetGroupName ?? '–'} · {persona.headline.slice(0, 80)}
                     </Text>
                 </View>
-                <Text style={[pdfStyles.geoQuestionMeta, { color: fitColor(persona.overallFit), fontWeight: 'bold' }]}>
+                <Text style={[pdfStyles.personaCardFit, { color: fitColor(persona.overallFit) }]}>
                     {fitLabel(persona.overallFit, labels)}
                 </Text>
             </View>
@@ -177,10 +183,14 @@ export function buildAudienceReportPages(
 ): React.ReactElement[] {
     if (!audience.available || audience.personas.length === 0) return [];
 
-    const side = contentSideForIndex(startPageIndex);
+    const introSide = contentSideForIndex(startPageIndex);
+    const personasSide = contentSideForIndex(startPageIndex + 1);
+    const personas = audience.personas.slice(0, 8);
+
     return [
-        <PdfContentPage key="audience" side={side}>
+        <PdfContentPage key="audience-intro" side={introSide}>
             <PdfSectionHeader title={labels.audienceReality} chapter="ux" />
+            <PdfSectionIntro text={labels.chapterIntros.audience} />
             {audience.audionProjectName ? (
                 <Text style={[pdfStyles.metaText, { marginBottom: 6 }]}>
                     AUDION: {audience.audionProjectName}
@@ -209,8 +219,15 @@ export function buildAudienceReportPages(
                     },
                 ]}
             />
-            {audience.personas.slice(0, 8).map((persona) => (
-                <PersonaAudienceCard key={persona.personaId} persona={persona} labels={labels} />
+        </PdfContentPage>,
+        <PdfContentPage key="audience-personas" side={personasSide}>
+            {personas.map((persona, index) => (
+                <PersonaAudienceCard
+                    key={persona.personaId}
+                    persona={persona}
+                    labels={labels}
+                    isFirst={index === 0}
+                />
             ))}
             {audience.personas.length > 8 ? (
                 <Text style={pdfStyles.metaText}>

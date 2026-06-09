@@ -19,16 +19,27 @@ export const PDF_RADIUS_BUTTON_PT = 8;
 /** Uniform page margin */
 export const PDF_PAGE_MARGIN_PT = 40;
 
+/** Centered content column — text remains left-aligned inside */
+export const PDF_CONTENT_COLUMN_MAX_WIDTH_PT = 420;
+
 /** Extra inner padding on binding side (spread) */
 export const PDF_BINDING_GUTTER_PT = 8;
 
 /** Space reserved above footer line */
 export const PDF_FOOTER_RESERVE_PT = 22;
 
-/** Small msqdx logo on cover only */
+/** Small msqdx logo on cover + footer */
 export const PDF_MINIMAL_LOGO_WIDTH_PT = 52;
 export const PDF_MINIMAL_LOGO_HEIGHT_PT = 12;
 export const PDF_MINIMAL_LOGO_GAP_PT = 10;
+
+/** Gap between footer page number and logo */
+export const PDF_FOOTER_LOGO_GAP_PT = 6;
+
+/** Even pages: page number then logo, outer left. Odd: logo then page number, outer right. */
+export function pdfFooterAlignsOuterLeft(pageNumber: number): boolean {
+    return pageNumber % 2 === 0;
+}
 
 /** @deprecated minimal layout — no app frame inset */
 export const PDF_FRAME_INSET_PT = 0;
@@ -55,9 +66,16 @@ export function pdfShowsCornerTabForSide(_side: PdfSpreadSide): boolean {
     return false;
 }
 
+/** Chapter intros start on gerade (even) page numbers — pad only when the next page would be odd. */
 export function pdfNeedsSpreadPadBeforeChapter(currentPageCount: number): boolean {
     const nextPageNumber = currentPageCount + 1;
     return nextPageNumber % 2 !== 0;
+}
+
+/** 1-based page number of the chapter intro after optional spread pad. */
+export function pdfChapterIntroPageNumber(currentPageCount: number): number {
+    const pad = pdfNeedsSpreadPadBeforeChapter(currentPageCount) ? 1 : 0;
+    return currentPageCount + pad + 1;
 }
 
 export function pdfContentMarginsForSide(side: PdfSpreadSide): {
@@ -104,7 +122,7 @@ export function pdfFooterInsetsForSide(side: PdfSpreadSide): {
 } {
     const m = PDF_PAGE_MARGIN_PT;
     const bind = PDF_BINDING_GUTTER_PT;
-    const bottom = 14;
+    const bottom = PDF_PAGE_MARGIN_PT;
 
     if (side === 'cover') {
         return { left: m, right: m, bottom };

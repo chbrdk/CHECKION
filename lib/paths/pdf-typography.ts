@@ -1,5 +1,5 @@
 /**
- * Print typography — shared by PDF (`pdf-styles`) and `/dev/pdf-print` preview.
+ * Print typography — shared by PDF export and `/dev/pdf-print` (react-pdf PDFViewer).
  * Helvetica standard fonts: light = regular weight + muted color; bold = fontWeight bold.
  */
 
