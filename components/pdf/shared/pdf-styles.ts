@@ -357,6 +357,26 @@ export const pdfStyles = StyleSheet.create({
         textAlign: 'right',
         flexShrink: 0,
     },
+    metricInterpretationBlock: {
+        marginTop: 4,
+        marginBottom: 10,
+        paddingLeft: 2,
+    },
+    metricInterpretationLabel: {
+        fontSize: 7,
+        fontWeight: PDF_TYPE_WEIGHT.bold,
+        color: pdfColors.gray500,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        marginBottom: 3,
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
+    },
+    metricInterpretationText: {
+        fontSize: 8.5,
+        fontWeight: PDF_TYPE_WEIGHT.regular,
+        color: pdfColors.gray700,
+        lineHeight: PDF_TYPE_LINE_HEIGHT.body,
+    },
     contentPanel: {
         marginBottom: 12,
         paddingVertical: 4,

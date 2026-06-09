@@ -56,7 +56,8 @@ function systemPrompt(locale: ProjectReportLocale, role: string): string {
 Respond in ${lang}. Output valid JSON only.
 Use only evidenceIds from the provided evidenceIds list when citing evidence.
 Do not invent metrics. Be specific and cite numbers from the input.
-Always return non-empty "title", "summary", "keyFindings" (array), and "metricsHighlighted" (array) for section analyses.`;
+Always return non-empty "title", "summary", "keyFindings" (array), and "metricsHighlighted" (array) for section analyses.
+For site quality sections also return "metricInterpretations" with plain-language explanations for non-experts.`;
 }
 
 function slimDomainForAgent(domain: DomainFacts | null) {
@@ -110,6 +111,196 @@ async function callOpenAiJson(openai: OpenAI, system: string, user: string): Pro
         response_format: { type: 'json_object' },
     });
     return completion.choices[0]?.message?.content ?? '{}';
+}
+
+async function callSiteQualitySectionAgent(
+    openai: OpenAI,
+    locale: ProjectReportLocale,
+    payload: unknown,
+    titleFallback: string
+): Promise<SectionAnalysis> {
+    const lang = locale === 'de' ? 'German' : 'English';
+    const userContent = `Analyze domain score (UX), WCAG errors/warnings, performance (TTFB/FCP/LCP), eco/CO₂, and systemic issues.
+Explain each metric so a non-technical reader understands severity and business impact.
+Describe systemic issues as recurring patterns across many pages (not one-off bugs).
+
+Return JSON exactly:
+{
+  "title": "section title",
+  "summary": "2-3 short paragraphs — overall site quality assessment",
+  "keyFindings": ["..."],
+  "metricsHighlighted": ["metric labels"],
+  "metricInterpretations": {
+    "domainScore": "1-2 sentences",
+    "wcagErrors": "1-2 sentences on errors/warnings and accessibility impact",
+    "performance": "1-2 sentences on TTFB/FCP/LCP and user/SEO impact",
+    "eco": "1-2 sentences on CO₂ / sustainability (omit if no eco data)",
+    "systemicIssues": "1-2 sentences explaining what systemic issues mean for this site"
+  }
+}
+
+Respond in ${lang}. Use numbers from the data.
+
+Data:
+${stringifyPayload(payload)}`;
+
+    let lastError: unknown;
+    for (let attempt = 0; attempt <= SECTION_AGENT_RETRIES; attempt++) {
+        try {
+            const raw = await callOpenAiJson(
+                openai,
+                systemPrompt(locale, 'UX domain score and site quality'),
+                userContent
+            );
+            const parsed = JSON.parse(extractJson(raw));
+            return sanitizeSectionRaw(parsed, titleFallback);
+        } catch (e) {
+            lastError = e;
+            console.warn(
+                `[CHECKION] site quality agent attempt ${attempt + 1} failed:`,
+                e instanceof Error ? e.message : e
+            );
+        }
+    }
+    console.error('[CHECKION] site quality agent failed after retries:', lastError);
+    return sanitizeSectionRaw(
+        {
+            title: titleFallback,
+            summary:
+                locale === 'de'
+                    ? 'Diese Bereichs-Analyse konnte nicht erzeugt werden. Nutze die Metriken und Tabellen im Report.'
+                    : 'This section analysis could not be generated. Use the metrics and tables in the report.',
+            keyFindings: [],
+            metricsHighlighted: [],
+        },
+        titleFallback
+    );
+}
+
+async function callSeoSectionAgent(
+    openai: OpenAI,
+    locale: ProjectReportLocale,
+    payload: unknown,
+    titleFallback: string
+): Promise<SectionAnalysis> {
+    const lang = locale === 'de' ? 'German' : 'English';
+    const userContent = `Analyze SEO on-page score, ranking score, tracked keywords, position trends, SERP leaders, and competitor ranking scores.
+Explain each metric for non-technical readers: what the number means, whether it is good/mixed/weak, and business impact.
+
+Return JSON exactly:
+{
+  "title": "section title",
+  "summary": "2-3 short paragraphs — overall SEO & rankings assessment",
+  "keyFindings": ["..."],
+  "metricsHighlighted": ["metric labels"],
+  "metricInterpretations": {
+    "seoOnPage": "1-2 sentences on on-page score and label",
+    "rankingScore": "1-2 sentences on aggregate ranking score (omit if unavailable)",
+    "keywords": "1-2 sentences on keyword count, top positions, examples",
+    "rankTrend": "1-2 sentences on rank trends over time (omit if no trend data)"
+  }
+}
+
+Respond in ${lang}. Use numbers from the data.
+
+Data:
+${stringifyPayload(payload)}`;
+
+    let lastError: unknown;
+    for (let attempt = 0; attempt <= SECTION_AGENT_RETRIES; attempt++) {
+        try {
+            const raw = await callOpenAiJson(
+                openai,
+                systemPrompt(locale, 'SEO and rank tracking'),
+                userContent
+            );
+            const parsed = JSON.parse(extractJson(raw));
+            return sanitizeSectionRaw(parsed, titleFallback);
+        } catch (e) {
+            lastError = e;
+            console.warn(
+                `[CHECKION] SEO agent attempt ${attempt + 1} failed:`,
+                e instanceof Error ? e.message : e
+            );
+        }
+    }
+    console.error('[CHECKION] SEO agent failed after retries:', lastError);
+    return sanitizeSectionRaw(
+        {
+            title: titleFallback,
+            summary:
+                locale === 'de'
+                    ? 'Diese SEO-Analyse konnte nicht erzeugt werden. Nutze die Metriken und Tabellen im Report.'
+                    : 'This SEO analysis could not be generated. Use the metrics and tables in the report.',
+            keyFindings: [],
+            metricsHighlighted: [],
+        },
+        titleFallback
+    );
+}
+
+async function callGeoSectionAgent(
+    openai: OpenAI,
+    locale: ProjectReportLocale,
+    payload: unknown,
+    titleFallback: string
+): Promise<SectionAnalysis> {
+    const lang = locale === 'de' ? 'German' : 'English';
+    const userContent = `Produce a thorough GEO / E-E-A-T analysis for non-technical readers.
+Cover: overall GEO score, LLM model visibility, GEO test questions & citations, on-page GEO/E-E-A-T, competitive comparison, and insights.
+
+Return JSON exactly:
+{
+  "title": "section title",
+  "summary": "2-3 short paragraphs — overall GEO & E-E-A-T assessment",
+  "keyFindings": ["concrete bullets per question/model/page where possible"],
+  "metricsHighlighted": ["metric labels"],
+  "metricInterpretations": {
+    "geoScore": "1-2 sentences on overall GEO score",
+    "llmVisibility": "1-2 sentences on LLM model visibility (omit if no model data)",
+    "geoQuestions": "1-2 sentences on test questions and citation rate",
+    "geoOnPageEeat": "1-2 sentences on on-page GEO fitness and trust (omit if no page data)",
+    "geoCompetitive": "1-2 sentences on competitive GEO comparison",
+    "geoInsights": "1-2 sentences explaining what the detected GEO patterns mean"
+  }
+}
+
+Respond in ${lang}. Use numbers from the data. Reference evidenceIds where possible.
+
+Data:
+${stringifyPayload(payload)}`;
+
+    let lastError: unknown;
+    for (let attempt = 0; attempt <= SECTION_AGENT_RETRIES; attempt++) {
+        try {
+            const raw = await callOpenAiJson(
+                openai,
+                systemPrompt(locale, 'GEO, E-E-A-T and AI visibility'),
+                userContent
+            );
+            const parsed = JSON.parse(extractJson(raw));
+            return sanitizeSectionRaw(parsed, titleFallback);
+        } catch (e) {
+            lastError = e;
+            console.warn(
+                `[CHECKION] GEO agent attempt ${attempt + 1} failed:`,
+                e instanceof Error ? e.message : e
+            );
+        }
+    }
+    console.error('[CHECKION] GEO agent failed after retries:', lastError);
+    return sanitizeSectionRaw(
+        {
+            title: titleFallback,
+            summary:
+                locale === 'de'
+                    ? 'Diese GEO-Analyse konnte nicht erzeugt werden. Nutze die Metriken und Tabellen im Report.'
+                    : 'This GEO analysis could not be generated. Use the metrics and tables in the report.',
+            keyFindings: [],
+            metricsHighlighted: [],
+        },
+        titleFallback
+    );
 }
 
 async function callSectionAgent(
@@ -216,11 +407,9 @@ export async function synthesizeComprehensiveReport(
     const fallbackEvidenceId = defaultFallbackEvidenceId(evidenceIds);
 
     await progress('agent_site_quality');
-    deep.sections.siteQuality = await callSectionAgent(
+    deep.sections.siteQuality = await callSiteQualitySectionAgent(
         openai,
         options.locale,
-        'UX domain score and site quality',
-        'Analyze domain score (UX), systemic issues, performance, eco, and domain LLM summary themes.',
         {
             domain: slimDomainForAgent(facts.domain),
             metrics: deep.metrics.filter((m) => ['wcag', 'performance', 'eco'].includes(m.pillar)),
@@ -231,11 +420,9 @@ export async function synthesizeComprehensiveReport(
     );
 
     await progress('agent_seo');
-    deep.sections.seoRankings = await callSectionAgent(
+    deep.sections.seoRankings = await callSeoSectionAgent(
         openai,
         options.locale,
-        'SEO and rank tracking',
-        'Analyze SEO on-page score, keyword positions, trends, SERP leaders, competitor ranking scores.',
         {
             domain: facts.domain
                 ? {
@@ -251,6 +438,10 @@ export async function synthesizeComprehensiveReport(
                       competitorScores: facts.rankings.competitorScores,
                   }
                 : null,
+            rankTrends: facts.rankTrends?.slice(0, 8).map((s) => ({
+                keyword: s.keyword,
+                points: s.points.slice(-6),
+            })),
             rankKeywordDetails: deep.rankKeywordDetails.slice(0, 12).map((k) => ({
                 keyword: k.keyword,
                 position: k.position,
@@ -278,17 +469,9 @@ export async function synthesizeComprehensiveReport(
             : null,
         deep.geoDeep
     );
-    deep.sections.geo = await callSectionAgent(
+    deep.sections.geo = await callGeoSectionAgent(
         openai,
         options.locale,
-        'GEO, E-E-A-T and AI visibility',
-        `Produce a thorough GEO / E-E-A-T analysis covering:
-1) Overall GEO score and competitive domain comparison
-2) Per-LLM-model visibility (GPT, Claude, Gemini, etc.) — who cites us where
-3) Each GEO test question: citation position per model, trend, top competing domains
-4) On-page analysis: GEO fitness, E-E-A-T dimensions (trust, experience, expertise), missing GEO elements, privacy/impressum
-5) Prioritized recommendations from scan + your interpretation
-Use keyFindings for concrete per-question and per-page bullets. Reference evidenceIds where possible.`,
         {
             ...geoAgentPayload,
             evidenceIds: evidenceIds.slice(0, 60),

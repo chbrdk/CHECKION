@@ -27,12 +27,27 @@ export const ProjectReportRiskAmpelSchema = z.object({
     rankings: RiskLevelSchema,
 });
 
+export const SiteQualityMetricInterpretationsSchema = z.object({
+    domainScore: z.string().optional(),
+    wcagErrors: z.string().optional(),
+    performance: z.string().optional(),
+    eco: z.string().optional(),
+    systemicIssues: z.string().optional(),
+});
+
+/** Section-specific KPI explanations — keys vary by chapter (site quality, SEO, …). */
+export const MetricInterpretationsSchema = z.record(z.string(), z.string()).optional();
+
 export const SectionAnalysisSchema = z.object({
     title: z.string(),
     summary: z.string(),
     keyFindings: z.array(z.string()),
     metricsHighlighted: z.array(z.string()),
+    metricInterpretations: MetricInterpretationsSchema,
 });
+
+export type SiteQualityMetricInterpretations = z.infer<typeof SiteQualityMetricInterpretationsSchema>;
+export type MetricInterpretations = z.infer<typeof MetricInterpretationsSchema>;
 
 export const ProjectReportNarrativeSchema = z.object({
     executiveSummary: z.string(),

@@ -5,7 +5,13 @@
 import type { AggregatedEco, AggregatedPerformance } from '@/lib/domain-aggregation';
 import type { AggregatedPageClassification } from '@/lib/types';
 import type { UxCxSummary } from '@/lib/llm-summary-types';
-import type { ProjectReportNarrative } from '@/lib/project-report/narrative-schema';
+import type {
+    ProjectReportNarrative,
+    SectionAnalysis,
+    SiteQualityMetricInterpretations,
+} from '@/lib/project-report/narrative-schema';
+
+export type { SectionAnalysis, SiteQualityMetricInterpretations };
 import type { VisualSpec } from '@/lib/project-report/chart-specs';
 
 import type { ReportProgress } from '@/lib/project-report/progress';
@@ -241,13 +247,6 @@ export interface MetricInsight {
     benchmark?: string;
     interpretation?: string;
     evidenceId: string;
-}
-
-export interface SectionAnalysis {
-    title: string;
-    summary: string;
-    keyFindings: string[];
-    metricsHighlighted: string[];
 }
 
 export interface GeoQuestionHistoryPointFact {

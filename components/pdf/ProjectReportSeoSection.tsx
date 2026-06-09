@@ -1,0 +1,136 @@
+'use client';
+
+import React from 'react';
+import { View, Text } from '@react-pdf/renderer';
+import type { ProjectReportBundle } from '@/lib/project-report/types';
+import type { ProjectReportPdfLabels } from '@/lib/project-report/pdf-labels';
+import {
+    getSeoSectionAnalysis,
+    keywordInsightDescription,
+    resolveSeoInterpretations,
+} from '@/lib/project-report/seo-rankings-interpretations';
+import { PdfSectionHeader, PdfSectionIntro } from '@/components/pdf/shared/PdfPrimitives';
+import { PdfLeadText, PdfStatGrid } from '@/components/pdf/shared/PdfLayout';
+import { PdfMetricInterpretationBlock } from '@/components/pdf/shared/PdfMetricInterpretation';
+import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
+
+export function ProjectReportSeoSection({
+    bundle,
+    labels,
+    rankingChart,
+    rankTrendChart,
+}: {
+    bundle: ProjectReportBundle;
+    labels: ProjectReportPdfLabels;
+    rankingChart?: React.ReactNode;
+    rankTrendChart?: React.ReactNode;
+}) {
+    const domain = bundle.domain;
+    const rankings = bundle.rankings;
+    const seoSection = getSeoSectionAnalysis(bundle);
+    const interpretations = resolveSeoInterpretations(bundle);
+    const keyFindings = seoSection?.keyFindings ?? [];
+
+    if (!domain && !rankings) {
+        return <Text style={pdfStyles.metaText}>{labels.noData}</Text>;
+    }
+
+    return (
+        <>
+            {domain ? (
+                <>
+                    <PdfStatGrid
+                        items={[
+                            {
+                                label: labels.seoOnPage,
+                                value: `${domain.seoOnPageScore}/100`,
+                                accent: '#047857',
+                            },
+                            { label: labels.seoOnPageLabel, value: domain.seoOnPageLabel },
+                        ]}
+                    />
+                    {interpretations.seoOnPage ? (
+                        <PdfMetricInterpretationBlock
+                            label={`${labels.agentAssessment}: ${labels.seoOnPage}`}
+                            text={interpretations.seoOnPage}
+                        />
+                    ) : null}
+                </>
+            ) : null}
+
+            {rankings ? (
+                <>
+                    <PdfStatGrid
+                        items={[
+                            {
+                                label: labels.rankingScore,
+                                value: rankings.score != null ? `${rankings.score}/100` : '–',
+                            },
+                            {
+                                label: labels.keywords,
+                                value: String(rankings.keywordCount),
+                            },
+                        ]}
+                    />
+                    {interpretations.rankingScore ? (
+                        <PdfMetricInterpretationBlock
+                            label={`${labels.agentAssessment}: ${labels.rankingScore}`}
+                            text={interpretations.rankingScore}
+                        />
+                    ) : null}
+
+                    <PdfSectionHeader title={labels.keywords} chapter="seo" />
+                    <PdfSectionIntro text={labels.chapterIntros.keywords} />
+                    {interpretations.keywords ? (
+                        <PdfMetricInterpretationBlock
+                            label={labels.agentAssessment}
+                            text={interpretations.keywords}
+                        />
+                    ) : null}
+                    {rankingChart}
+                    {rankings.topKeywords.slice(0, 5).map((kw) => {
+                        const insight = keywordInsightDescription(
+                            kw.keyword,
+                            kw.position,
+                            keyFindings,
+                            bundle.locale
+                        );
+                        if (!insight) return null;
+                        return (
+                            <View key={kw.id} style={pdfStyles.recommendationRow}>
+                                <Text style={pdfStyles.recommendationTitle}>
+                                    {kw.keyword}
+                                    {kw.position != null ? ` · #${kw.position}` : ''}
+                                </Text>
+                                <Text style={pdfStyles.recommendationDesc}>{insight}</Text>
+                            </View>
+                        );
+                    })}
+                </>
+            ) : domain ? null : (
+                <Text style={pdfStyles.metaText}>{labels.noData}</Text>
+            )}
+
+            {seoSection?.summary ? (
+                <View style={[pdfStyles.contentPanel, { marginTop: 8 }]}>
+                    <Text style={pdfStyles.subsectionTitle}>{labels.agentAssessment}</Text>
+                    <PdfLeadText>{seoSection.summary}</PdfLeadText>
+                </View>
+            ) : null}
+
+            {rankTrendChart ? (
+                <>
+                    <PdfSectionHeader title={labels.rankTrends} chapter="seo" />
+                    <PdfSectionIntro text={labels.chapterIntros.rankTrends} />
+                    {interpretations.rankTrend ? (
+                        <PdfMetricInterpretationBlock
+                            label={labels.agentAssessment}
+                            text={interpretations.rankTrend}
+                        />
+                    ) : null}
+                    {rankTrendChart}
+                </>
+            ) : null}
+        </>
+    );
+}

@@ -220,21 +220,63 @@ export function buildComprehensivePreviewBundle(): ProjectReportBundle {
         sections: {
             siteQuality: {
                 title: 'Site Quality',
-                summary: 'Technische Qualität ist solide, WCAG-Fehler konzentrieren sich auf Bilder und Formulare.',
-                keyFindings: ['12 kritische WCAG-Fehler', 'LCP unter 2.5s auf 78% der Seiten'],
+                summary:
+                    'Technische Qualität ist solide, aber WCAG-Fehler und Formular-Reibung bremsen Vertrauen. Performance liegt im grünen Bereich, Eco leicht über dem Zielwert.',
+                keyFindings: [
+                    '12 kritische WCAG-Fehler',
+                    'LCP unter 2.5s auf 78% der Seiten',
+                    'Fehlende Alt-Texte auf 34 Seiten',
+                ],
                 metricsHighlighted: ['Domain Score', 'WCAG'],
+                metricInterpretations: {
+                    domainScore:
+                        'Mit 72/100 liegt die Domain leicht über dem Branchendurchschnitt — Nutzer finden Inhalte, aber wiederkehrende UX- und Barrierefreiheits-Lücken kosten Conversion.',
+                    wcagErrors:
+                        '12 Fehler und 34 Warnungen bedeuten: Screenreader-Nutzer stoßen auf strukturelle Hürden. Die häufigsten Muster betreffen Bilder ohne Alt-Text und Formular-Labels.',
+                    performance:
+                        'Ø LCP 2,4s ist akzeptabel (Google-Ziel ≤2,5s). TTFB 420ms deutet auf moderate Server-Antwortzeiten — bei Traffic-Spitzen spürbar.',
+                    eco: '0,42g CO₂ pro Aufruf ist moderat — Bildoptimierung und weniger Third-Party-Skripte würden Nachhaltigkeit und Ladezeit verbessern.',
+                    systemicIssues:
+                        'Die drei häufigsten Issue-Typen wiederholen sich auf Dutzenden Seiten. Template- oder Komponenten-Fixes haben hier den größten Hebel.',
+                },
             },
             seoRankings: {
                 title: 'SEO & Rankings',
-                summary: 'Starke On-Page-Basis, Rankings mit Verbesserungspotenzial bei Long-Tail-Keywords.',
+                summary:
+                    'Starke On-Page-Basis, Rankings mit Verbesserungspotenzial bei Long-Tail-Keywords. Der Kernbegriff „hundehalterhaftpflicht“ steigt Richtung Top 5.',
                 keyFindings: ['48 Keywords getrackt', 'Top-10 für 6 Kernbegriffe'],
                 metricsHighlighted: ['SEO On-Page', 'Ranking Score'],
+                metricInterpretations: {
+                    seoOnPage:
+                        '81/100 On-Page: Titel, Meta und H1 sind überwiegend sauber — gute Grundlage für Crawling und Snippets.',
+                    rankingScore:
+                        '58/100 Ranking-Score: sichtbar bei Kernbegriffen, aber viele Long-Tail-Begriffe noch außerhalb der Top 10.',
+                    keywords:
+                        '48 Keywords im Tracking — 6 in den Top 10. „hundehalterhaftpflicht“ (#8) ist der stärkste Hebel für organischen Traffic.',
+                    rankTrend:
+                        'Positiver Trend bei „hundehalterhaftpflicht“ (#14 → #8) — Content und interne Verlinkung wirken.',
+                },
             },
             geo: {
                 title: 'GEO / EEAT',
-                summary: 'Sichtbarkeit in LLM-Antworten wächst, Wettbewerber A dominiert Share of Voice.',
+                summary:
+                    'Sichtbarkeit in LLM-Antworten wächst, Wettbewerber A dominiert bei Share of Voice. On-Page E-E-A-T ist solide, FAQ-Content fehlt für Kernfragen.',
                 keyFindings: ['2 von 5 Kernfragen zitiert', 'FAQ-Content unterrepräsentiert'],
                 metricsHighlighted: ['GEO Score', 'Share of Voice'],
+                metricInterpretations: {
+                    geoScore:
+                        '64/100 GEO-Score: mittlere KI-Sichtbarkeit — bei Kernfragen teils zitiert, bei Long-Tail noch Lücken.',
+                    llmVisibility:
+                        '2 Modelle (GPT, Claude) — GPT führt mit 72/100 Sichtbarkeit, Claude folgt mit 61.',
+                    geoQuestions:
+                        '2 Testfragen — 1 ohne Zitation der eigenen Domain. FAQ- und Schema-Inhalte erhöhen Zitierwahrscheinlichkeit.',
+                    geoOnPageEeat:
+                        '1 Seite analysiert — GEO-Fitness 71/100, Vertrauen 4/5. Fehlende FAQ und Autor-Bio bremsen E-E-A-T.',
+                    geoCompetitive:
+                        'competitor-a.de führt mit GEO-Score 78 vs. eigene 64 — höherer Share of Voice in LLM-Antworten.',
+                    geoInsights:
+                        '40% der Testfragen ohne Eigen-Zitation — Content-Lücken bei strukturierten Antworten.',
+                },
             },
             competitive: {
                 title: 'Wettbewerb',

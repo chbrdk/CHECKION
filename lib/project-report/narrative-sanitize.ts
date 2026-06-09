@@ -47,16 +47,33 @@ export function pickEvidenceIds(
     return first ? [first] : [fallbackId];
 }
 
+function sanitizeMetricInterpretations(
+    metricRaw: Record<string, unknown>
+): Record<string, string> | undefined {
+    const out: Record<string, string> = {};
+    for (const [key, value] of Object.entries(metricRaw)) {
+        const text = asString(value);
+        if (text) out[key] = text;
+    }
+    return Object.keys(out).length > 0 ? out : undefined;
+}
+
 export function sanitizeSectionRaw(raw: unknown, titleFallback: string): SectionAnalysis {
     const o =
         raw && typeof raw === 'object' && !Array.isArray(raw)
             ? (raw as Record<string, unknown>)
             : {};
+    const metricRaw =
+        o.metricInterpretations && typeof o.metricInterpretations === 'object'
+            ? (o.metricInterpretations as Record<string, unknown>)
+            : {};
+
     return SectionAnalysisSchema.parse({
         title: asString(o.title, titleFallback),
         summary: asString(o.summary, 'Analysis unavailable for this section.'),
         keyFindings: asStringArray(o.keyFindings),
         metricsHighlighted: asStringArray(o.metricsHighlighted),
+        metricInterpretations: sanitizeMetricInterpretations(metricRaw),
     });
 }
 
