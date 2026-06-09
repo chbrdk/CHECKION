@@ -77,7 +77,7 @@ export function ProjectReportSeoSection({
                         texts={pdfInterpretationTexts(interpretations.rankingScore)}
                     />
 
-                    <PdfSectionHeader title={labels.keywords} chapter="seo" />
+                    <PdfSectionHeader outlineId="seo.keywords" level={1} title={labels.keywords} chapter="seo" />
                     <PdfSectionIntro text={labels.chapterIntros.keywords} />
                     <PdfMetricInterpretationGroup texts={pdfInterpretationTexts(interpretations.keywords)} />
                     {rankingChart}
@@ -111,7 +111,7 @@ export function ProjectReportSeoSection({
 
             {rankTrendChart ? (
                 <>
-                    <PdfSectionHeader title={labels.rankTrends} chapter="seo" />
+                    <PdfSectionHeader outlineId="seo.rank-trends" level={1} title={labels.rankTrends} chapter="seo" />
                     <PdfSectionIntro text={labels.chapterIntros.rankTrends} />
                     <PdfMetricInterpretationGroup texts={pdfInterpretationTexts(interpretations.rankTrend)} />
                     {rankTrendChart}

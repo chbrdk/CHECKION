@@ -221,7 +221,7 @@ export function buildChartSpecs(
         specs.push({
             kind: 'geoQuestionTrend',
             items: deep.geoQuestionHistory.slice(0, 8).map((q, i) => ({
-                label: q.queryText.slice(0, 40),
+                label: q.queryText,
                 value: q.latestPosition != null ? Math.max(1, 101 - q.latestPosition) : 0,
                 color: CHART_SERIES_PALETTE[i % CHART_SERIES_PALETTE.length],
             })),
@@ -234,7 +234,7 @@ export function buildChartSpecs(
         [];
     if (geoTrendSource.length > 0) {
         const series: TrendSeries[] = geoTrendSource.slice(0, 6).map((q, i) => ({
-            keyword: q.queryText.slice(0, 36),
+            keyword: q.queryText,
             color: CHART_SERIES_PALETTE[i % CHART_SERIES_PALETTE.length],
             points: q.points.slice(-12).map((p, idx) => ({
                 x: idx,

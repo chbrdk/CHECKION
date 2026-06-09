@@ -8,6 +8,9 @@ import {
 } from '@/components/pdf/ProjectReportDocument';
 import { PDF_DOCUMENT_PAGE_LAYOUT } from '@/components/pdf/shared/PdfLayout';
 import { buildComprehensivePreviewBundle } from '@/lib/paths/pdf-print-preview-bundle';
+import { buildProjectReportOutline } from '@/lib/paths/pdf-chapter-numbering';
+import { getProjectReportPdfLabels } from '@/lib/project-report/pdf-labels';
+import { PdfChapterNumberingProvider } from '@/components/pdf/shared/PdfChapterNumbering';
 
 export type PdfPrintPreviewScene = 'cover' | 'content-spread' | 'all-spreads';
 
@@ -34,9 +37,17 @@ export function buildPdfPrintPreviewPages(scene: PdfPrintPreviewScene): React.Re
 }
 
 export function PdfPrintPreviewDocument({ scene }: { scene: PdfPrintPreviewScene }) {
+    const bundle = buildComprehensivePreviewBundle();
+    const labels = getProjectReportPdfLabels(bundle.locale);
+    const outline = buildProjectReportOutline(bundle, labels);
+    const pages = finalizeProjectReportPages(
+        filterPreviewPages(buildProjectReportPages(bundle), scene),
+        bundle
+    );
+
     return (
         <Document pageLayout={PDF_DOCUMENT_PAGE_LAYOUT} title="CHECKION Comprehensive PDF Preview">
-            {buildPdfPrintPreviewPages(scene)}
+            <PdfChapterNumberingProvider outline={outline}>{pages}</PdfChapterNumberingProvider>
         </Document>
     );
 }

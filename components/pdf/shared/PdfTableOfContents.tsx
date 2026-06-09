@@ -6,11 +6,11 @@ import type { PdfTocResolvedEntry } from '@/lib/paths/pdf-table-of-contents';
 import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
 
 export function PdfTableOfContentsRow({ entry }: { entry: PdfTocResolvedEntry }) {
-    const indent = entry.level === 1 ? 12 : 0;
+    const indent = entry.level === 1 ? 14 : 0;
     return (
         <View wrap={false} style={[pdfStyles.tocRow, { paddingLeft: indent }]}>
             <Text wrap={false} style={pdfStyles.tocTitle}>
-                {entry.title}
+                {entry.number} {entry.title}
             </Text>
             <View style={pdfStyles.tocLeader} />
             <Text wrap={false} style={pdfStyles.tocPageNumber}>

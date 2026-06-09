@@ -31,6 +31,8 @@ import {
     insertProjectReportTableOfContents,
     type PdfTocResolvedEntry,
 } from '@/lib/paths/pdf-table-of-contents';
+import { buildProjectReportOutline } from '@/lib/paths/pdf-chapter-numbering';
+import { PdfChapterNumberingProvider } from '@/components/pdf/shared/PdfChapterNumbering';
 import type { VisualSpec } from '@/lib/project-report/chart-specs';
 
 interface ProjectReportDocumentProps {
@@ -93,7 +95,7 @@ export function buildProjectReportPages(bundle: ProjectReportBundle): React.Reac
         pages,
         'executive',
         <>
-            <PdfSectionHeader title={labels.executiveSummary} chapter="summary" />
+            <PdfSectionHeader outlineId="executive" title={labels.executiveSummary} chapter="summary" />
             <PdfSectionIntro text={labels.chapterIntros.executive} />
             {scoreCards?.kind === 'scoreCards' ? (
                 <PdfScoreCardsFromSpec spec={scoreCards} />
@@ -108,13 +110,23 @@ export function buildProjectReportPages(bundle: ProjectReportBundle): React.Reac
             )}
             {narrative?.competitiveLandscape ? (
                 <View style={pdfStyles.contentPanel}>
-                    <PdfSectionHeader title={labels.competitorComparison} chapter="competitors" />
+                    <PdfSectionHeader
+                        outlineId="executive.competitors"
+                        level={1}
+                        title={labels.competitorComparison}
+                        chapter="competitors"
+                    />
                     <PdfLeadText>{narrative.competitiveLandscape}</PdfLeadText>
                 </View>
             ) : null}
             {bundle.domain?.llmSummary?.summary ? (
                 <View style={pdfStyles.contentPanel}>
-                    <PdfSectionHeader title="Domain Summary" chapter="ux" />
+                    <PdfSectionHeader
+                        outlineId="executive.domain-summary"
+                        level={1}
+                        title="Domain Summary"
+                        chapter="ux"
+                    />
                     <PdfLeadText>{bundle.domain.llmSummary.summary}</PdfLeadText>
                 </View>
             ) : null}
@@ -125,7 +137,7 @@ export function buildProjectReportPages(bundle: ProjectReportBundle): React.Reac
         pages,
         'quality',
         <>
-            <PdfSectionHeader title={labels.siteQuality} chapter="issues" />
+            <PdfSectionHeader outlineId="quality" title={labels.siteQuality} chapter="issues" />
             <PdfSectionIntro text={labels.chapterIntros.siteQuality} />
             <ProjectReportQualitySection bundle={bundle} labels={labels} />
         </>
@@ -135,7 +147,7 @@ export function buildProjectReportPages(bundle: ProjectReportBundle): React.Reac
         pages,
         'seo',
         <>
-            <PdfSectionHeader title={labels.seoRankings} chapter="seo" />
+            <PdfSectionHeader outlineId="seo" title={labels.seoRankings} chapter="seo" />
             <PdfSectionIntro text={labels.chapterIntros.seo} />
             <ProjectReportSeoSection
                 bundle={bundle}
@@ -150,7 +162,7 @@ export function buildProjectReportPages(bundle: ProjectReportBundle): React.Reac
         pages,
         'geo',
         <>
-            <PdfSectionHeader title={labels.geoEeat} chapter="geo" />
+            <PdfSectionHeader outlineId="geo" title={labels.geoEeat} chapter="geo" />
             <PdfSectionIntro text={labels.chapterIntros.geo} />
             <ProjectReportGeoSection
                 bundle={bundle}
@@ -167,14 +179,19 @@ export function buildProjectReportPages(bundle: ProjectReportBundle): React.Reac
         pages,
         'topics',
         <>
-            <PdfSectionHeader title={labels.contentTopics} chapter="structure" />
+            <PdfSectionHeader outlineId="topics" title={labels.contentTopics} chapter="structure" />
             <PdfSectionIntro text={labels.chapterIntros.topics} />
             {topicsChart ? (
                 <PdfVisualSpec spec={topicsChart} />
             ) : (
                 <Text style={pdfStyles.metaText}>{labels.noData}</Text>
             )}
-            <PdfSectionHeader title={labels.competitorComparison} chapter="competitors" />
+            <PdfSectionHeader
+                outlineId="topics.competitors"
+                level={1}
+                title={labels.competitorComparison}
+                chapter="competitors"
+            />
             {competitorChart ? (
                 <PdfVisualSpec spec={competitorChart} />
             ) : bundle.competitors.filter((c) => c.status === 'complete').length > 0 ? (
@@ -207,7 +224,7 @@ export function buildProjectReportPages(bundle: ProjectReportBundle): React.Reac
         pages,
         'actions',
         <>
-            <PdfSectionHeader title={labels.actionPlan} chapter="summary" />
+            <PdfSectionHeader outlineId="actions" title={labels.actionPlan} chapter="summary" />
             <PdfSectionIntro text={labels.chapterIntros.actions} />
             {narrative?.recommendations && narrative.recommendations.length > 0 ? (
                 narrative.recommendations.map((rec, i) => (
@@ -222,7 +239,12 @@ export function buildProjectReportPages(bundle: ProjectReportBundle): React.Reac
             )}
             {bundle.journey ? (
                 <View style={[pdfStyles.contentPanel, { marginTop: 12 }]}>
-                    <PdfSectionHeader title={labels.journeySummary} chapter="ux" />
+                    <PdfSectionHeader
+                        outlineId="actions.journey"
+                        level={1}
+                        title={labels.journeySummary}
+                        chapter="ux"
+                    />
                     <Text style={pdfStyles.bodyText}>
                         {bundle.journey.url} — {bundle.journey.task}
                     </Text>
@@ -278,9 +300,12 @@ export function finalizeProjectReportPages(
 }
 
 export function ProjectReportDocument({ bundle }: ProjectReportDocumentProps) {
+    const outline = buildProjectReportOutline(bundle, getProjectReportPdfLabels(bundle.locale));
+    const pages = finalizeProjectReportPages(buildProjectReportPages(bundle), bundle);
+
     return (
         <Document pageLayout={PDF_DOCUMENT_PAGE_LAYOUT}>
-            {finalizeProjectReportPages(buildProjectReportPages(bundle), bundle)}
+            <PdfChapterNumberingProvider outline={outline}>{pages}</PdfChapterNumberingProvider>
         </Document>
     );
 }

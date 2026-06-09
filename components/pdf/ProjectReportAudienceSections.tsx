@@ -192,7 +192,7 @@ export function buildAudienceReportPages(
 
     return [
         <PdfContentPage key="audience-intro" side={introSide}>
-            <PdfSectionHeader title={labels.audienceReality} chapter="ux" />
+            <PdfSectionHeader outlineId="audience" title={labels.audienceReality} chapter="ux" />
             <PdfSectionIntro text={labels.chapterIntros.audience} />
             {audience.audionProjectName ? (
                 <Text style={[pdfStyles.metaText, { marginBottom: 6 }]}>
@@ -224,6 +224,7 @@ export function buildAudienceReportPages(
             />
         </PdfContentPage>,
         <PdfContentPage key="audience-personas" side={personasSide}>
+            <PdfSectionHeader outlineId="audience.personas" title={labels.audiencePersonas} chapter="ux" />
             {personas.map((persona, index) => (
                 <PersonaAudienceCard
                     key={persona.personaId}

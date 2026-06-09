@@ -3,6 +3,7 @@
 import React from 'react';
 import { View, Text, Svg, Rect, Circle, Path } from '@react-pdf/renderer';
 import type { VisualSpec } from '@/lib/project-report/chart-specs';
+import { pdfChartLegendEntries } from '@/lib/paths/pdf-chart-labels';
 import { pdfColors, pdfFontFamilies, pdfStyles } from '@/components/pdf/shared/pdf-styles';
 
 const CHART_WIDTH = 480;
@@ -160,6 +161,27 @@ function BarValueLabel({
     );
 }
 
+function PdfChartLegend({
+    items,
+}: {
+    items: Array<{ label: string; color: string; value?: number }>;
+}) {
+    if (items.length === 0) return null;
+    return (
+        <View style={pdfStyles.chartLegendRow}>
+            {items.map((item) => (
+                <View key={`${item.label}-${item.color}`} style={[pdfStyles.chartLegendItem, { maxWidth: '100%' }]}>
+                    <View style={[pdfStyles.chartLegendSwatch, { backgroundColor: item.color }]} />
+                    <Text style={pdfStyles.chartLegendLabel} wrap>
+                        {item.label}
+                        {item.value != null ? ` · ${formatBarValue(item.value)}` : ''}
+                    </Text>
+                </View>
+            ))}
+        </View>
+    );
+}
+
 function VerticalBarChart({
     title,
     items,
@@ -191,8 +213,6 @@ function VerticalBarChart({
                 {items.map((item) => {
                     const h = Math.max(2, (item.value / max) * chartInnerHeight);
                     const insideBar = h >= minInsideHeight;
-                    const shortLabel =
-                        item.label.length > 12 ? `${item.label.slice(0, 10)}…` : item.label;
                     return (
                         <View
                             key={item.label}
@@ -231,20 +251,19 @@ function VerticalBarChart({
                                     ) : null}
                                 </View>
                             </View>
-                            <Text
-                                style={{
-                                    fontSize: 6,
-                                    color: pdfColors.gray600,
-                                    marginTop: 4,
-                                    textAlign: 'center',
-                                }}
-                            >
-                                {shortLabel}
-                            </Text>
                         </View>
                     );
                 })}
             </View>
+            <PdfChartLegend
+                items={pdfChartLegendEntries(
+                    items.map((item) => ({
+                        label: item.label,
+                        color: item.color,
+                        value: item.value,
+                    }))
+                )}
+            />
         </View>
     );
 }
@@ -321,7 +340,9 @@ function MiniVerticalBar({
                     ) : null}
                 </View>
             </View>
-            <Text style={{ fontSize: 6, marginTop: 2, color: pdfColors.gray600 }}>{label}</Text>
+            <Text style={{ fontSize: 6, marginTop: 2, color: pdfColors.gray600, textAlign: 'center' }} wrap>
+                {label}
+            </Text>
         </View>
     );
 }
@@ -354,10 +375,13 @@ function TopicOverlapVertical({
                                 displayValue={Math.round(row.bestCompetitorScore)}
                                 barHeight={compH}
                                 color={pdfColors.gray500}
-                                label={row.bestCompetitor.slice(0, 8)}
+                                label="Competitor"
                                 trackHeight={barMax}
                             />
                         </View>
+                        <Text style={[pdfStyles.metaText, { marginTop: 4 }]} wrap>
+                            Best competitor: {row.bestCompetitor}
+                        </Text>
                     </View>
                 );
             })}

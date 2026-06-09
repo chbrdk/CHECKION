@@ -3,6 +3,8 @@
 import React from 'react';
 import { View, Text, Svg, Path } from '@react-pdf/renderer';
 import { pdfColors, pdfStyles, type PdfChapterKey } from '@/components/pdf/shared/pdf-styles';
+import { formatNumberedTitle } from '@/lib/paths/pdf-chapter-numbering';
+import { usePdfChapterNumber } from '@/components/pdf/shared/PdfChapterNumbering';
 import {
     PDF_CONTENT_COLUMN_MAX_WIDTH_PT,
     PDF_MINIMAL_LOGO_HEIGHT_PT,
@@ -31,8 +33,21 @@ export function MsqdxLogoPdf({
     );
 }
 
-export function PdfSectionHeader({ title }: { title: string; chapter?: PdfChapterKey }) {
-    return <Text style={pdfStyles.sectionTitle}>{title}</Text>;
+export function PdfSectionHeader({
+    title,
+    outlineId,
+    level = 0,
+}: {
+    title: string;
+    outlineId?: string;
+    level?: 0 | 1;
+    /** @deprecated visual chapter tint not used in minimal layout */
+    chapter?: PdfChapterKey;
+}) {
+    const number = usePdfChapterNumber(outlineId);
+    const displayTitle = formatNumberedTitle(number, title);
+    const style = level === 1 ? pdfStyles.subsectionTitle : pdfStyles.sectionTitle;
+    return <Text style={style}>{displayTitle}</Text>;
 }
 
 /** Fixed reader guidance per report section (from `chapterIntros` in pdf-labels). */

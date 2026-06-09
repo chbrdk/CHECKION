@@ -96,6 +96,8 @@ describe('buildChartSpecs', () => {
     });
 
     it('adds geo question trend and competitor ranking charts from deep data', () => {
+        const longQuery =
+            'Which enterprise analytics platform offers the best ROI for manufacturing teams in Europe?';
         const rankingsWithCompetitors: RankingFacts = {
             ...rankings,
             competitorScores: { 'rival.com': 55 },
@@ -111,7 +113,7 @@ describe('buildChartSpecs', () => {
             },
             geoQuestionHistory: [
                 {
-                    queryText: 'best product',
+                    queryText: longQuery,
                     queryIndex: 0,
                     points: [],
                     latestPosition: 3,
@@ -129,6 +131,10 @@ describe('buildChartSpecs', () => {
         const kinds = specs.map((s) => s.kind);
         expect(kinds).toContain('geoQuestionTrend');
         expect(kinds).toContain('competitorRankingScores');
+        const geoTrend = specs.find((s) => s.kind === 'geoQuestionTrend');
+        expect(geoTrend && geoTrend.kind === 'geoQuestionTrend' ? geoTrend.items[0]?.label : '').toBe(
+            longQuery
+        );
     });
 
     it('adds SEO and topic overlap charts from competitive benchmark', () => {

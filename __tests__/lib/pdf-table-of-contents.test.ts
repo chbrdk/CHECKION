@@ -76,16 +76,20 @@ describe('pdf-table-of-contents', () => {
         expect(chunkTocEntries(overflow)).toHaveLength(2);
     });
 
-    it('keeps comprehensive preview TOC on a single page', async () => {
+    it('includes numbered sub-chapters in comprehensive preview TOC', async () => {
         const { buildComprehensivePreviewBundle } = await import(
             '@/lib/paths/pdf-print-preview-bundle'
         );
         const { buildProjectReportPages } = await import('@/components/pdf/ProjectReportDocument');
+        const { buildProjectReportOutline } = await import('@/lib/paths/pdf-chapter-numbering');
         const labels = getProjectReportPdfLabels('de');
         const bundle = buildComprehensivePreviewBundle();
         const pages = buildProjectReportPages(bundle);
-        const chunks = buildProjectReportTocChunks(pages, buildProjectReportTocPlan(bundle, labels));
-        expect(chunks).toHaveLength(1);
+        const outline = buildProjectReportOutline(bundle, labels);
+        const chunks = buildProjectReportTocChunks(pages, outline);
+        expect(outline.some((e) => e.level === 1)).toBe(true);
+        expect(chunks.flat().every((e) => e.number.includes('.' ) || /^\d+$/.test(e.number))).toBe(true);
+        expect(chunks.length).toBeGreaterThanOrEqual(1);
     });
 
     it('shifts page numbers by inserted TOC length', () => {
@@ -96,6 +100,7 @@ describe('pdf-table-of-contents', () => {
 
         const executive = resolved.find((e) => e.title === labels.executiveSummary);
         expect(executive?.pageNumber).toBe(3);
+        expect(executive?.number).toBe('1');
     });
 
     it('inserts TOC after cover', () => {
@@ -144,5 +149,6 @@ describe('pdf-table-of-contents', () => {
 
         expect(plan.some((e) => e.pageKey === 'audience-intro')).toBe(true);
         expect(plan.some((e) => e.pageKey === 'audience-personas')).toBe(true);
+        expect(plan.some((e) => e.id === 'audience.personas' && e.level === 1)).toBe(true);
     });
 });

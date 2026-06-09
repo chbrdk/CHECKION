@@ -69,7 +69,7 @@ export function buildDeepReportPages(
     addPage(
         'deep-metrics',
         <>
-            <PdfSectionHeader title={labels.metricsOverview} chapter="visual" />
+            <PdfSectionHeader outlineId="deep.metrics" title={labels.metricsOverview} chapter="visual" />
             <PdfSectionIntro text={labels.chapterIntros.deepDive} />
             <View style={pdfStyles.contentPanel}>
                 <View style={pdfStyles.dataTableHeader}>
@@ -93,7 +93,7 @@ export function buildDeepReportPages(
         addPage(
             'deep-findings',
             <>
-                <PdfSectionHeader title={labels.keyFindings} chapter="summary" />
+                <PdfSectionHeader outlineId="deep.findings" title={labels.keyFindings} chapter="summary" />
                 {narrative.findings.map((f, i) => (
                     <PdfRecommendationRow
                         key={i}
@@ -110,7 +110,11 @@ export function buildDeepReportPages(
         addPage(
             'deep-competitive',
             <>
-                <PdfSectionHeader title={labels.competitiveBenchmark} chapter="competitors" />
+                <PdfSectionHeader
+                    outlineId="deep.competitive"
+                    title={labels.competitiveBenchmark}
+                    chapter="competitors"
+                />
                 <PdfStatGrid
                     items={[
                         {
@@ -132,7 +136,12 @@ export function buildDeepReportPages(
                         },
                     ]}
                 />
-                <PdfSectionHeader title={labels.scoreboard} chapter="competitors" />
+                <PdfSectionHeader
+                    outlineId="deep.competitive.scoreboard"
+                    level={1}
+                    title={labels.scoreboard}
+                    chapter="competitors"
+                />
                 <View style={pdfStyles.contentPanel}>
                     {benchmark.scoreboard.map((row) => (
                         <View key={row.domain} style={pdfStyles.dataTableRow}>
@@ -154,7 +163,12 @@ export function buildDeepReportPages(
                 ) : null}
                 {benchmark.deterministicInsights.length > 0 ? (
                     <>
-                        <PdfSectionHeader title={labels.competitiveInsights} chapter="competitors" />
+                        <PdfSectionHeader
+                            outlineId="deep.competitive.insights"
+                            level={1}
+                            title={labels.competitiveInsights}
+                            chapter="competitors"
+                        />
                         {benchmark.deterministicInsights.map((ins) => (
                             <PdfRecommendationRow
                                 key={ins.id}
@@ -166,7 +180,12 @@ export function buildDeepReportPages(
                 ) : null}
                 {benchmark.topicOverlap.length > 0 ? (
                     <>
-                        <PdfSectionHeader title={labels.topicOverlap} chapter="structure" />
+                        <PdfSectionHeader
+                            outlineId="deep.competitive.topics"
+                            level={1}
+                            title={labels.topicOverlap}
+                            chapter="structure"
+                        />
                         {visuals.competitorTopicOverlap ? (
                             <PdfVisualSpec spec={visuals.competitorTopicOverlap} />
                         ) : null}
@@ -198,7 +217,7 @@ export function buildDeepReportPages(
         addPage(
             'deep-keywords',
             <>
-                <PdfSectionHeader title={labels.keywordDetails} chapter="seo" />
+                <PdfSectionHeader outlineId="deep.keywords" title={labels.keywordDetails} chapter="seo" />
                 {visuals.competitorRankingScores ? (
                     <PdfVisualSpec spec={visuals.competitorRankingScores} />
                 ) : null}
@@ -225,7 +244,7 @@ export function buildDeepReportPages(
         addPage(
             'deep-geo-models',
             <>
-                <PdfSectionHeader title={labels.geoModelBenchmark} chapter="geo" />
+                <PdfSectionHeader outlineId="deep.geo-models" title={labels.geoModelBenchmark} chapter="geo" />
                 {visuals.geoModelVisibility ? <PdfVisualSpec spec={visuals.geoModelVisibility} /> : null}
                 <View style={pdfStyles.contentPanel}>
                     <View style={pdfStyles.dataTableHeader}>
@@ -261,7 +280,7 @@ export function buildDeepReportPages(
         addPage(
             'deep-geo-questions',
             <>
-                <PdfSectionHeader title={labels.geoQuestionAnalysis} chapter="geo" />
+                <PdfSectionHeader outlineId="deep.geo-questions" title={labels.geoQuestionAnalysis} chapter="geo" />
                 {visuals.geoQuestionTrendSeries ? (
                     <PdfVisualSpec spec={visuals.geoQuestionTrendSeries} />
                 ) : visuals.geoQuestionTrend ? (
@@ -279,7 +298,7 @@ export function buildDeepReportPages(
         addPage(
             'deep-geo-pages',
             <>
-                <PdfSectionHeader title={labels.geoOnPageEeat} chapter="geo" />
+                <PdfSectionHeader outlineId="deep.geo-pages" title={labels.geoOnPageEeat} chapter="geo" />
                 <PdfStatGrid
                     items={[
                         {
@@ -353,9 +372,19 @@ export function buildDeepReportPages(
         addPage(
             'deep-issues-seo',
             <>
+                <PdfSectionHeader
+                    outlineId="deep.issues-seo"
+                    title={labels.technicalAppendix}
+                    chapter="issues"
+                />
                 {deep.issueGroups.length > 0 ? (
                     <>
-                        <PdfSectionHeader title={labels.issueGroups} chapter="issues" />
+                        <PdfSectionHeader
+                            outlineId="deep.issues-seo.groups"
+                            level={1}
+                            title={labels.issueGroups}
+                            chapter="issues"
+                        />
                         <View style={pdfStyles.contentPanel}>
                             {deep.issueGroups.map((g) => (
                                 <View key={g.groupKey} style={pdfStyles.dataTableRow}>
@@ -370,7 +399,12 @@ export function buildDeepReportPages(
                 ) : null}
                 {deep.seoRollup ? (
                     <>
-                        <PdfSectionHeader title={labels.seoTechnical} chapter="seo" />
+                        <PdfSectionHeader
+                            outlineId="deep.issues-seo.technical"
+                            level={1}
+                            title={labels.seoTechnical}
+                            chapter="seo"
+                        />
                         <PdfStatGrid
                             items={(
                                 [

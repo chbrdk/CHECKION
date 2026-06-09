@@ -448,15 +448,15 @@ export const pdfStyles = StyleSheet.create({
         lineHeight: PDF_TYPE_LINE_HEIGHT.tight,
     },
     chartLegendRow: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 10,
-        marginTop: 8,
+        flexDirection: 'column',
+        gap: 4,
+        marginTop: 10,
     },
     chartLegendItem: {
         flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
+        alignItems: 'flex-start',
+        gap: 6,
+        maxWidth: '100%',
     },
     chartLegendSwatch: {
         width: 8,
@@ -465,9 +465,11 @@ export const pdfStyles = StyleSheet.create({
     },
     chartLegendLabel: {
         fontSize: 7,
-        fontWeight: PDF_TYPE_WEIGHT.light,
-        color: pdfColors.gray500,
+        fontWeight: PDF_TYPE_WEIGHT.regular,
+        color: pdfColors.gray700,
         lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
+        flexGrow: 1,
+        flexShrink: 1,
     },
     geoQuestionCard: {
         backgroundColor: pdfColors.white,

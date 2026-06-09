@@ -85,7 +85,12 @@ export function ProjectReportGeoSection({
 
             {geoModelVisibilityChart ? (
                 <>
-                    <PdfSectionHeader title={labels.geoModelBenchmark} chapter="geo" />
+                    <PdfSectionHeader
+                        outlineId="geo.model-benchmark"
+                        level={1}
+                        title={labels.geoModelBenchmark}
+                        chapter="geo"
+                    />
                     <PdfSectionIntro text={labels.chapterIntros.geoModelVisibility} />
                     {geoModelVisibilityChart}
                 </>
@@ -93,7 +98,12 @@ export function ProjectReportGeoSection({
 
             {geoCompetitiveChart ? (
                 <>
-                    <PdfSectionHeader title={labels.competitorComparison} chapter="geo" />
+                    <PdfSectionHeader
+                        outlineId="geo.competitive"
+                        level={1}
+                        title={labels.competitorComparison}
+                        chapter="geo"
+                    />
                     <PdfSectionIntro text={labels.chapterIntros.geoCompetitive} />
                     <PdfMetricInterpretationGroup
                         texts={pdfInterpretationTexts(interpretations.geoCompetitive)}
@@ -104,7 +114,7 @@ export function ProjectReportGeoSection({
 
             {geoDeep && geoDeep.deterministicInsights.length > 0 ? (
                 <>
-                    <PdfSectionHeader title={labels.geoInsights} chapter="geo" />
+                    <PdfSectionHeader outlineId="geo.insights" level={1} title={labels.geoInsights} chapter="geo" />
                     <PdfSectionIntro text={labels.chapterIntros.geoInsights} />
                     <PdfMetricInterpretationGroup
                         texts={pdfInterpretationTexts(interpretations.geoInsights)}
@@ -121,7 +131,12 @@ export function ProjectReportGeoSection({
 
             {geo.recommendations.length > 0 ? (
                 <>
-                    <PdfSectionHeader title={labels.recommendations} chapter="geo" />
+                    <PdfSectionHeader
+                        outlineId="geo.recommendations"
+                        level={1}
+                        title={labels.recommendations}
+                        chapter="geo"
+                    />
                     <PdfSectionIntro text={labels.chapterIntros.geoRecommendations} />
                     {geo.recommendations.map((rec, i) => (
                         <PdfRecommendationRow

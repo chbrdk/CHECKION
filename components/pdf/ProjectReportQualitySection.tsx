@@ -80,7 +80,12 @@ export function ProjectReportQualitySection({
 
             {domain.systemicIssues.length > 0 ? (
                 <>
-                    <PdfSectionHeader title={labels.systemicIssues} chapter="issues" />
+                    <PdfSectionHeader
+                        outlineId="quality.systemic-issues"
+                        level={1}
+                        title={labels.systemicIssues}
+                        chapter="issues"
+                    />
                     <PdfSectionIntro text={labels.chapterIntros.systemicIssues} />
                     <PdfMetricInterpretationGroup
                         texts={pdfInterpretationTexts(interpretations.systemicIssues)}
