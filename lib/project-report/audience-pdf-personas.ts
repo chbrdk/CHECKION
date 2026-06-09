@@ -4,11 +4,21 @@
 import type { AudienceInsightFact, AudiencePersonaFitFact, AudienceFitLevel } from '@/lib/project-report/types';
 
 export const PDF_AUDIENCE_PERSONA_LIMIT = 5;
-export const PDF_AUDIENCE_PERSONAS_PER_PAGE = 2;
-export const PDF_AUDIENCE_PERSONA_INSIGHT_LIMIT = 2;
+export const PDF_AUDIENCE_PERSONAS_PER_PAGE = 3;
+export const PDF_AUDIENCE_PERSONA_INSIGHT_LIMIT = 3;
 export const PDF_AUDIENCE_GEO_MATCH_LIMIT = 1;
+export const PDF_AUDIENCE_PERSONA_INSIGHT_DESCRIPTION_MAX = 90;
 
 const PILLAR_ORDER = ['wcag', 'seo', 'geo', 'rankings', 'performance', 'topics'] as const;
+
+export const PDF_PERSONA_PILLAR_SHORT_LABELS: Record<(typeof PILLAR_ORDER)[number], string> = {
+    wcag: 'WCAG',
+    seo: 'SEO',
+    geo: 'GEO',
+    rankings: 'Rank',
+    performance: 'Perf',
+    topics: 'Topics',
+};
 
 const INSIGHT_KIND_PRIORITY: Record<AudienceInsightFact['kind'], number> = {
     persona_voice: 0,
@@ -49,6 +59,25 @@ function vectorDistance(a: number[], b: number[]): number {
         sum += delta * delta;
     }
     return Math.sqrt(sum);
+}
+
+export function formatPersonaPillarChipText(
+    shortLabel: string,
+    score: number | null | undefined,
+    level: AudienceFitLevel
+): string {
+    const fitSymbol = level === 'strong' ? '+' : level === 'weak' ? '−' : '~';
+    const scoreText = score != null ? String(Math.round(score)) : '–';
+    return `${shortLabel} ${scoreText}${fitSymbol}`;
+}
+
+export function truncatePersonaInsightText(
+    text: string,
+    max = PDF_AUDIENCE_PERSONA_INSIGHT_DESCRIPTION_MAX
+): string {
+    const trimmed = text.trim();
+    if (trimmed.length <= max) return trimmed;
+    return `${trimmed.slice(0, max - 1).trim()}…`;
 }
 
 /** Pick personas that differ most in pillar/fit profile (farthest-point sampling). */
@@ -107,9 +136,14 @@ export function selectDistinctPersonasForPdf(
 
 export function rankPersonaInsightsForPdf(
     insights: AudienceInsightFact[],
-    limit = PDF_AUDIENCE_PERSONA_INSIGHT_LIMIT
+    limit = PDF_AUDIENCE_PERSONA_INSIGHT_LIMIT,
+    options?: { omitPersonaVoice?: boolean }
 ): AudienceInsightFact[] {
-    return [...insights]
+    const filtered = options?.omitPersonaVoice
+        ? insights.filter((insight) => insight.kind !== 'persona_voice')
+        : insights;
+
+    return [...filtered]
         .sort(
             (a, b) =>
                 (INSIGHT_KIND_PRIORITY[a.kind] ?? 99) - (INSIGHT_KIND_PRIORITY[b.kind] ?? 99)

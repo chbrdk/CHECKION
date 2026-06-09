@@ -4,13 +4,16 @@ import React from 'react';
 import { View, Text } from '@react-pdf/renderer';
 import type { AudienceFitLevel, AudienceReportOverlay } from '@/lib/project-report/types';
 import type { ProjectReportLocale } from '@/lib/project-report/types';
-import { formatAudiencePersonasPdfCaption, type ProjectReportPdfLabels } from '@/lib/project-report/pdf-labels';
+import { formatAudiencePersonasPdfCaption, formatAudiencePillarFitLegend, type ProjectReportPdfLabels } from '@/lib/project-report/pdf-labels';
 import {
     chunkPersonasForPdfPages,
+    formatPersonaPillarChipText,
     PDF_AUDIENCE_GEO_MATCH_LIMIT,
     PDF_AUDIENCE_PERSONA_INSIGHT_LIMIT,
+    PDF_PERSONA_PILLAR_SHORT_LABELS,
     rankPersonaInsightsForPdf,
     selectDistinctPersonasForPdf,
+    truncatePersonaInsightText,
 } from '@/lib/project-report/audience-pdf-personas';
 import { pdfColors, pdfStyles } from '@/components/pdf/shared/pdf-styles';
 import { PdfSectionHeader, PdfSectionIntro } from '@/components/pdf/shared/PdfPrimitives';
@@ -35,33 +38,26 @@ function fitColor(level: AudienceFitLevel): string {
 
 function PersonaPillarStrip({
     persona,
-    labels,
 }: {
     persona: AudienceReportOverlay['personas'][number];
-    labels: ProjectReportPdfLabels;
 }) {
-    const pillarLabels: Record<string, string> = {
-        wcag: labels.domainScore,
-        seo: 'SEO',
-        geo: 'GEO',
-        rankings: labels.audiencePillarRankings,
-        performance: labels.audiencePillarPerformance,
-        topics: labels.audiencePillarTopics,
-    };
-
     return (
-        <View style={pdfStyles.personaPillarStrip}>
+        <View style={pdfStyles.personaPillarGrid}>
             {persona.pillars.map((pillar) => (
-                <Text
-                    key={pillar.pillar}
-                    style={[
-                        pdfStyles.personaPillarChip,
-                        { color: fitColor(pillar.level) },
-                    ]}
-                >
-                    {pillarLabels[pillar.pillar] ?? pillar.pillar}:{' '}
-                    {pillar.score != null ? pillar.score : '–'} · {fitLabel(pillar.level, labels)}
-                </Text>
+                <View key={pillar.pillar} style={pdfStyles.personaPillarChipWrap}>
+                    <Text
+                        style={[
+                            pdfStyles.personaPillarChip,
+                            { color: fitColor(pillar.level) },
+                        ]}
+                    >
+                        {formatPersonaPillarChipText(
+                            PDF_PERSONA_PILLAR_SHORT_LABELS[pillar.pillar] ?? pillar.pillar,
+                            pillar.score,
+                            pillar.level
+                        )}
+                    </Text>
+                </View>
             ))}
         </View>
     );
@@ -69,21 +65,34 @@ function PersonaPillarStrip({
 
 function PersonaInsightsBlock({
     insights,
+    omitPersonaVoice = false,
 }: {
     insights: AudienceReportOverlay['personas'][number]['insights'];
+    omitPersonaVoice?: boolean;
 }) {
-    const ranked = rankPersonaInsightsForPdf(insights, PDF_AUDIENCE_PERSONA_INSIGHT_LIMIT);
+    const ranked = rankPersonaInsightsForPdf(insights, PDF_AUDIENCE_PERSONA_INSIGHT_LIMIT, {
+        omitPersonaVoice,
+    });
     if (ranked.length === 0) return null;
 
     return (
         <View style={pdfStyles.personaInsightsBlock}>
             {ranked.map((insight) => (
                 <Text key={insight.id} style={pdfStyles.personaInsightText} wrap>
-                    <Text style={pdfStyles.personaInsightTitle}>{insight.title}. </Text>
-                    {insight.description}
+                    <Text style={pdfStyles.personaInsightBullet}>• </Text>
+                    <Text style={pdfStyles.personaInsightTitle}>{insight.title}: </Text>
+                    {truncatePersonaInsightText(insight.description)}
                 </Text>
             ))}
         </View>
+    );
+}
+
+function PersonaPillarFitLegend({ labels }: { labels: ProjectReportPdfLabels }) {
+    return (
+        <Text style={pdfStyles.personaPillarLegend}>
+            {formatAudiencePillarFitLegend(labels)}
+        </Text>
     );
 }
 
@@ -117,13 +126,16 @@ function PersonaAudienceCard({
             </View>
 
             {persona.personaPerspective ? (
-                <Text style={[pdfStyles.metaText, { fontSize: 6.5, marginBottom: 3 }]} wrap>
-                    {persona.personaPerspective}
+                <Text style={pdfStyles.personaPerspectiveText} wrap>
+                    „{truncatePersonaInsightText(persona.personaPerspective, 90)}“
                 </Text>
             ) : null}
 
-            <PersonaPillarStrip persona={persona} labels={labels} />
-            <PersonaInsightsBlock insights={persona.insights} />
+            <PersonaPillarStrip persona={persona} />
+            <PersonaInsightsBlock
+                insights={persona.insights}
+                omitPersonaVoice={Boolean(persona.personaPerspective)}
+            />
 
             {topGeo ? (
                 <Text style={pdfStyles.personaGeoMatchText} wrap>
@@ -198,7 +210,7 @@ export function buildAudienceReportPages(
                             title={labels.audiencePersonas}
                             chapter="ux"
                         />
-                        <Text style={[pdfStyles.metaText, { marginBottom: 8 }]}>
+                        <Text style={[pdfStyles.metaText, { marginBottom: 4 }]}>
                             {formatAudiencePersonasPdfCaption(
                                 locale,
                                 selected.length,
@@ -206,6 +218,7 @@ export function buildAudienceReportPages(
                                 labels.audienceMorePersonas
                             )}
                         </Text>
+                        <PersonaPillarFitLegend labels={labels} />
                     </>
                 ) : null}
                 {chunk.map((persona, index) => (

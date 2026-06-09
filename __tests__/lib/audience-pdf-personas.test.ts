@@ -2,11 +2,17 @@ import { describe, it, expect } from 'vitest';
 import type { AudiencePersonaFitFact } from '@/lib/project-report/types';
 import {
     chunkPersonasForPdfPages,
+    formatPersonaPillarChipText,
     PDF_AUDIENCE_PERSONA_LIMIT,
     rankPersonaInsightsForPdf,
     selectDistinctPersonasForPdf,
+    truncatePersonaInsightText,
 } from '@/lib/project-report/audience-pdf-personas';
-import { formatAudiencePersonasPdfCaption } from '@/lib/project-report/pdf-labels';
+import {
+    formatAudiencePersonasPdfCaption,
+    formatAudiencePillarFitLegend,
+    getProjectReportPdfLabels,
+} from '@/lib/project-report/pdf-labels';
 
 function persona(
     id: string,
@@ -60,39 +66,78 @@ describe('audience-pdf-personas', () => {
     });
 
     it('prioritises persona voice and gap insights', () => {
-        const ranked = rankPersonaInsightsForPdf([
-            {
-                id: '1',
-                kind: 'win',
-                title: 'Win',
-                description: 'x',
-                evidenceId: 'ev',
-            },
-            {
-                id: '2',
-                kind: 'persona_voice',
-                title: 'Voice',
-                description: 'y',
-                evidenceId: 'ev',
-            },
-            {
-                id: '3',
-                kind: 'gap',
-                title: 'Gap',
-                description: 'z',
-                evidenceId: 'ev',
-            },
-        ]);
+        const ranked = rankPersonaInsightsForPdf(
+            [
+                {
+                    id: '1',
+                    kind: 'win',
+                    title: 'Win',
+                    description: 'x',
+                    evidenceId: 'ev',
+                },
+                {
+                    id: '2',
+                    kind: 'persona_voice',
+                    title: 'Voice',
+                    description: 'y',
+                    evidenceId: 'ev',
+                },
+                {
+                    id: '3',
+                    kind: 'gap',
+                    title: 'Gap',
+                    description: 'z',
+                    evidenceId: 'ev',
+                },
+            ],
+            2
+        );
         expect(ranked.map((i) => i.id)).toEqual(['2', '3']);
     });
 
+    it('formats compact pillar chips and truncates insight text', () => {
+        expect(formatPersonaPillarChipText('WCAG', 68.4, 'mixed')).toBe('WCAG 68~');
+        expect(formatPersonaPillarChipText('SEO', null, 'strong')).toBe('SEO –+');
+        expect(truncatePersonaInsightText('abcdef', 4)).toBe('abc…');
+    });
+
+    it('can omit persona voice when perspective is shown elsewhere', () => {
+        const ranked = rankPersonaInsightsForPdf(
+            [
+                {
+                    id: '2',
+                    kind: 'persona_voice',
+                    title: 'Voice',
+                    description: 'y',
+                    evidenceId: 'ev',
+                },
+                {
+                    id: '3',
+                    kind: 'gap',
+                    title: 'Gap',
+                    description: 'z',
+                    evidenceId: 'ev',
+                },
+            ],
+            2,
+            { omitPersonaVoice: true }
+        );
+        expect(ranked.map((i) => i.id)).toEqual(['3']);
+    });
+
     it('chunks personas for multi-page PDF layout', () => {
-        expect(chunkPersonasForPdfPages([1, 2, 3, 4, 5])).toEqual([[1, 2], [3, 4], [5]]);
+        expect(chunkPersonasForPdfPages([1, 2, 3, 4, 5])).toEqual([[1, 2, 3], [4, 5]]);
     });
 
     it('formats localized persona caption', () => {
         expect(formatAudiencePersonasPdfCaption('de', 5, 12, 'weitere im AUDION-Projekt')).toContain(
             '5 differenzierendste Personas von 12'
         );
+    });
+
+    it('formats pillar fit legend from fit labels', () => {
+        const labels = getProjectReportPdfLabels('de');
+        expect(formatAudiencePillarFitLegend(labels)).toContain('+');
+        expect(formatAudiencePillarFitLegend(labels)).toContain(labels.audienceFitLabels.strong);
     });
 });

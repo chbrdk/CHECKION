@@ -15,7 +15,7 @@ Weiße A4-Seiten, einheitliche Ränder, kleines Logo **nur auf dem Deckblatt** o
 | **Browser-Preview** | `app/dev/pdf-print` → react-pdf Blob + pdf.js **Doppelseiten** (`PrintPreviewSpreadViewer`) |
 | pdf.js Worker | `public/pdf.worker.min.mjs` (`scripts/copy-pdfjs-worker.sh`) |
 | Preview-Bundle | `lib/paths/pdf-print-preview-bundle.ts` (variant: comprehensive) |
-| Persona-Auswahl (PDF) | `lib/project-report/audience-pdf-personas.ts` — max. 5 differenzierendste Personas, 2 pro Seite |
+| Persona-Auswahl (PDF) | `lib/project-report/audience-pdf-personas.ts` — max. 5 differenzierendste Personas, **3 pro Seite**, Fit-Legende (+/~/−) |
 | Audience-PDF-Sections | `components/pdf/ProjectReportAudienceSections.tsx` |
 
 ## Lokal stylen

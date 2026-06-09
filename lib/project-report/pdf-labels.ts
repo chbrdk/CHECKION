@@ -18,6 +18,10 @@ export function formatAudiencePersonasPdfCaption(
     return total > shown ? `${base} · ${morePersonasLabel}` : base;
 }
 
+export function formatAudiencePillarFitLegend(labels: ProjectReportPdfLabels): string {
+    return `+ ${labels.audienceFitLabels.strong} · ~ ${labels.audienceFitLabels.mixed} · − ${labels.audienceFitLabels.weak}`;
+}
+
 export interface ProjectReportPdfLabels {
     reportTitle: string;
     reportSubtitle: string;
