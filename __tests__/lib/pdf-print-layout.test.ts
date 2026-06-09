@@ -1,84 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import {
-    buildAppInnerFramePath,
-    buildCornerTabPath,
-    buildMsqdxCornerBoxPath,
-    buildRoundedRectPath,
-    cornerTabBox,
-    pdfCornerTabStyles,
-} from '@/components/pdf/shared/pdf-frame-path';
-import {
     pdfNeedsSpreadPadBeforeChapter,
     pdfSpreadSideFromIndex,
-    pdfFrameRectForSide,
     pdfContentMarginsForSide,
-    pdfFrameRadiiForSide,
+    pdfFooterInsetsForSide,
     PDF_PAGE_WIDTH_PT,
     PDF_BINDING_GUTTER_PT,
-    PDF_FRAME_INSET_PT,
-    PDF_FRAME_BORDER_PT,
-    PDF_CORNER_TAB_PADDING_X_PT,
-    PDF_CORNER_TAB_WIDTH_PT,
-    PDF_CORNER_TAB_TOTAL_HEIGHT_PT,
-    PDF_RADIUS_1_5XL_PT,
-    PDF_RADIUS_BUTTON_PT,
-    pdfContentMarginsForSide,
+    PDF_PAGE_MARGIN_PT,
+    PDF_MINIMAL_LOGO_HEIGHT_PT,
+    PDF_MINIMAL_LOGO_GAP_PT,
+    pdfShowsPageLogoForSide,
     pdfShowsCornerTabForSide,
 } from '@/lib/paths/pdf-print-tokens';
 
-describe('pdf-frame-path', () => {
-    it('builds closed rounded rect path', () => {
-        const d = buildRoundedRectPath(0, 0, 100, 50, {
-            topLeft: 8,
-            topRight: 8,
-            bottomRight: 8,
-            bottomLeft: 8,
-        });
-        expect(d.startsWith('M')).toBe(true);
-        expect(d.endsWith('Z')).toBe(true);
-    });
-
-    it('builds spread-aware inner frames', () => {
-        expect(buildAppInnerFramePath('left')).toContain('M');
-        expect(buildAppInnerFramePath('right')).toContain('M');
-    });
-
-    it('builds corner tab with rounded outer edge and cutdown panel transitions', () => {
-        const cover = buildCornerTabPath('cover');
-        const styles = pdfCornerTabStyles('left');
-        expect(styles.topRight).toBe('rounded');
-        expect(styles.bottomRight).toBe('cutdown-a');
-        expect(styles.bottomLeft).toBe('cutdown-b');
-        expect(cover).toContain('A ');
-        expect(cover).not.toContain('Q ');
-        // top-right convex (rounded), bottom-right concave (cutdown)
-        expect(cover).toMatch(/A [\d.]+ [\d.]+ 0 0 1 [\d.]+ [\d.]+/);
-        expect(cover).toMatch(/A [\d.]+ [\d.]+ 0 0 0 [\d.]+ [\d.]+/);
-
-        const right = buildCornerTabPath('right');
-        expect(right).toContain('A ');
-    });
-
-    it('left anchor: square top-left, rounded top-right, cutdown bottom edges', () => {
-        const d = buildMsqdxCornerBoxPath(10, 10, 96, 52, 16, 'left');
-        expect(d.startsWith('M 10 10')).toBe(true);
-        expect(d).toContain('0 0 0');
-        expect(d).toContain('0 0 1');
-    });
-
-    it('corner tab width matches logo + padding (fit-content)', () => {
-        expect(PDF_CORNER_TAB_WIDTH_PT).toBe(72 + 2 * PDF_CORNER_TAB_PADDING_X_PT);
-    });
-
-    it('maps cover radii like CHECKION app shell with sidebar', () => {
-        const radii = pdfFrameRadiiForSide('cover');
-        expect(radii.topLeft).toBe(0);
-        expect(radii.topRight).toBe(PDF_RADIUS_1_5XL_PT);
-        expect(radii.bottomLeft).toBe(PDF_RADIUS_BUTTON_PT);
-    });
-});
-
-describe('pdf-print-tokens spread helpers', () => {
+describe('pdf-print-tokens minimal layout', () => {
     it('maps cover and spread sides', () => {
         expect(pdfSpreadSideFromIndex(0)).toBe('cover');
         expect(pdfSpreadSideFromIndex(1)).toBe('left');
@@ -90,50 +25,34 @@ describe('pdf-print-tokens spread helpers', () => {
         expect(pdfNeedsSpreadPadBeforeChapter(4)).toBe(true);
     });
 
-    it('left page frame extends to binding edge (no right inset)', () => {
-        const rect = pdfFrameRectForSide('left');
-        expect(rect.x).toBe(PDF_FRAME_INSET_PT);
-        expect(rect.x + rect.width).toBeCloseTo(PDF_PAGE_WIDTH_PT - PDF_BINDING_GUTTER_PT, 0);
-    });
-
-    it('right page frame extends to outer page edge (no right inset)', () => {
-        const rect = pdfFrameRectForSide('right');
-        expect(rect.x).toBe(PDF_BINDING_GUTTER_PT);
-        expect(rect.x + rect.width).toBeCloseTo(PDF_PAGE_WIDTH_PT, 0);
-    });
-
-    it('right page content has no outer margin on the right', () => {
-        const m = pdfContentMarginsForSide('left');
-        const right = pdfContentMarginsForSide('right');
-        expect(right.paddingRight).toBeLessThan(m.paddingLeft);
-        expect(m.paddingLeft).toBeGreaterThan(right.paddingLeft);
-    });
-
-    it('uses layer inset with MsqdxAppLayout thin border width', () => {
-        expect(PDF_FRAME_BORDER_PT).toBe(3);
-        expect(PDF_FRAME_INSET_PT).toBe(10);
-    });
-
-    it('positions corner tab flush with frame inset (no border offset)', () => {
-        const tab = cornerTabBox('cover');
-        const rect = pdfFrameRectForSide('cover');
-        expect(tab.x).toBe(rect.x);
-        expect(tab.y).toBe(rect.y);
-    });
-
-    it('uses browser-tuned horizontal padding on the logo corner tab', () => {
-        expect(PDF_CORNER_TAB_PADDING_X_PT).toBe(12);
-    });
-
-    it('shows top-left corner tab only on cover and left spread pages', () => {
-        expect(pdfShowsCornerTabForSide('cover')).toBe(true);
-        expect(pdfShowsCornerTabForSide('left')).toBe(true);
-        expect(pdfShowsCornerTabForSide('right')).toBe(false);
-    });
-
-    it('reserves corner-tab height in top margin only when the tab is visible', () => {
+    it('uses uniform margins with binding gutter on spreads', () => {
+        const cover = pdfContentMarginsForSide('cover');
         const left = pdfContentMarginsForSide('left');
         const right = pdfContentMarginsForSide('right');
-        expect(left.paddingTop - right.paddingTop).toBe(PDF_CORNER_TAB_TOTAL_HEIGHT_PT);
+
+        expect(cover.paddingLeft).toBe(PDF_PAGE_MARGIN_PT);
+        expect(left.paddingRight).toBe(PDF_PAGE_MARGIN_PT + PDF_BINDING_GUTTER_PT);
+        expect(right.paddingLeft).toBe(PDF_PAGE_MARGIN_PT + PDF_BINDING_GUTTER_PT);
+    });
+
+    it('reserves logo block only on cover', () => {
+        const cover = pdfContentMarginsForSide('cover');
+        const left = pdfContentMarginsForSide('left');
+        const logoBlock = PDF_MINIMAL_LOGO_HEIGHT_PT + PDF_MINIMAL_LOGO_GAP_PT;
+        expect(cover.paddingTop).toBe(PDF_PAGE_MARGIN_PT + logoBlock);
+        expect(left.paddingTop).toBe(PDF_PAGE_MARGIN_PT);
+        expect(pdfShowsPageLogoForSide('cover')).toBe(true);
+        expect(pdfShowsPageLogoForSide('left')).toBe(false);
+        expect(pdfShowsCornerTabForSide('cover')).toBe(false);
+    });
+
+    it('footer insets follow page margins', () => {
+        const cover = pdfFooterInsetsForSide('cover');
+        expect(cover.left).toBe(PDF_PAGE_MARGIN_PT);
+        expect(cover.right).toBe(PDF_PAGE_MARGIN_PT);
+    });
+
+    it('page width is DIN A4', () => {
+        expect(PDF_PAGE_WIDTH_PT).toBeCloseTo(595.28, 1);
     });
 });

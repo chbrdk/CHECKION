@@ -5,83 +5,59 @@ import { Page, View, Text } from '@react-pdf/renderer';
 import {
     pdfNeedsSpreadPadBeforeChapter,
     pdfContentMarginsForSide,
-    pdfShowsCornerTabForSide,
     pdfSpreadSideFromIndex,
     PDF_DOCUMENT_PAGE_LAYOUT,
+    PDF_PAGE_BACKGROUND,
     PDF_PAGE_HEIGHT_PT,
     PDF_PAGE_WIDTH_PT,
     type PdfSpreadSide,
 } from '@/lib/paths/pdf-print-tokens';
-import { pdfChapterColors, pdfColors, pdfStyles, type PdfChapterKey } from '@/components/pdf/shared/pdf-styles';
-import { PdfAppFrameBackground } from '@/components/pdf/shared/PdfAppFrame';
-import { MsqdxLogoPdf, PdfFooter, PdfHeader } from '@/components/pdf/shared/PdfPrimitives';
+import { pdfColors, pdfStyles, type PdfChapterKey } from '@/components/pdf/shared/pdf-styles';
+import { PdfMinimalPageChrome } from '@/components/pdf/shared/PdfAppFrame';
+import { PdfFooter } from '@/components/pdf/shared/PdfPrimitives';
 
 const printPageBase = {
     width: PDF_PAGE_WIDTH_PT,
     height: PDF_PAGE_HEIGHT_PT,
     fontFamily: pdfStyles.page.fontFamily,
     fontSize: 10,
+    backgroundColor: PDF_PAGE_BACKGROUND,
 };
 
 export function PdfPrintPage({
     side,
     children,
-    accentColor,
-    showCornerTab = pdfShowsCornerTabForSide(side),
-    innerFill,
 }: {
     side: PdfSpreadSide;
     children: React.ReactNode;
-    accentColor?: string;
-    /** Override side rule; default follows {@link pdfShowsCornerTabForSide}. */
-    showCornerTab?: boolean;
-    innerFill?: string;
 }) {
     const margins = pdfContentMarginsForSide(side);
     return (
         <Page size="A4" style={[printPageBase, { padding: 0 }]}>
-            <PdfAppFrameBackground
-                side={side}
-                accentColor={accentColor}
-                showCornerTab={showCornerTab}
-                innerFill={innerFill}
-            />
+            <PdfMinimalPageChrome side={side} />
             <View style={{ flex: 1, ...margins }}>{children}</View>
         </Page>
     );
 }
 
-export function PdfCoverPage({
-    children,
-    accentColor,
-}: {
-    children: React.ReactNode;
-    accentColor?: string;
-}) {
+export function PdfCoverPage({ children }: { children: React.ReactNode }) {
     const margins = pdfContentMarginsForSide('cover');
     return (
-        <Page size="A4" style={[printPageBase, pdfStyles.coverPage, { padding: 0 }]}>
-            <PdfAppFrameBackground side="cover" accentColor={accentColor} showCornerTab />
-            <View style={{ flex: 1, ...margins, justifyContent: 'center' }}>{children}</View>
+        <Page size="A4" style={[printPageBase, { padding: 0 }]}>
+            <PdfMinimalPageChrome side="cover" />
+            <View style={{ flex: 1, ...margins, justifyContent: 'flex-start' }}>{children}</View>
         </Page>
     );
 }
 
 export function PdfSpreadPadPage({ side }: { side: PdfSpreadSide }) {
-    return (
-        <PdfPrintPage side={side} showCornerTab>
-            <View style={{ flex: 1, justifyContent: 'flex-end', alignItems: 'center', opacity: 0.2 }}>
-                <MsqdxLogoPdf width={100} height={24} />
-            </View>
-        </PdfPrintPage>
-    );
+    return <PdfPrintPage side={side}>{null}</PdfPrintPage>;
 }
 
 export function PdfChapterSpreadPages({
     chapterNumber,
     title,
     subtitle,
-    chapter,
     chapterPrefix = 'Kapitel',
     startPageIndex,
 }: {
@@ -92,26 +68,21 @@ export function PdfChapterSpreadPages({
     chapterPrefix?: string;
     startPageIndex: number;
 }) {
-    const c = pdfChapterColors[chapter];
     const leftSide = pdfSpreadSideFromIndex(startPageIndex);
     const rightSide = pdfSpreadSideFromIndex(startPageIndex + 1);
     return [
-        <PdfPrintPage key={`ch-${chapterNumber}-left`} side={leftSide} accentColor={c.main} innerFill={c.bg}>
+        <PdfPrintPage key={`ch-${chapterNumber}-left`} side={leftSide}>
             <View style={pdfStyles.chapterSpreadLeft}>
-                <Text style={[pdfStyles.chapterSpreadGhost, { color: c.main }]}>{chapterNumber}</Text>
-                <View style={[pdfStyles.chapterSpreadAccentRing, { backgroundColor: c.main }]} />
+                <Text style={pdfStyles.chapterSpreadGhost}>{chapterNumber}</Text>
             </View>
         </PdfPrintPage>,
-        <PdfPrintPage key={`ch-${chapterNumber}-right`} side={rightSide} accentColor={c.main}>
+        <PdfPrintPage key={`ch-${chapterNumber}-right`} side={rightSide}>
             <View style={pdfStyles.chapterSpreadRight}>
-                <Text style={[pdfStyles.chapterSpreadEyebrow, { color: c.main }]}>
+                <Text style={pdfStyles.chapterSpreadEyebrow}>
                     {chapterPrefix} {chapterNumber}
                 </Text>
                 <Text style={pdfStyles.chapterSpreadTitle}>{title}</Text>
                 {subtitle ? <Text style={pdfStyles.chapterSpreadSubtitle}>{subtitle}</Text> : null}
-                <View style={pdfStyles.chapterSpreadFooterLogo}>
-                    <MsqdxLogoPdf width={96} height={23} />
-                </View>
             </View>
         </PdfPrintPage>,
     ];
@@ -120,24 +91,14 @@ export function PdfChapterSpreadPages({
 export function PdfContentPage({
     side,
     children,
-    showHeader = false,
-    accentColor,
 }: {
     side: PdfSpreadSide;
     children: React.ReactNode;
-    /** Legacy top logo bar — print layout uses corner tab instead. */
-    showHeader?: boolean;
-    accentColor?: string;
 }) {
-    return (
-        <PdfPrintPage side={side} accentColor={accentColor}>
-            {showHeader ? <PdfHeader /> : null}
-            {children}
-        </PdfPrintPage>
-    );
+    return <PdfPrintPage side={side}>{children}</PdfPrintPage>;
 }
 
-/** @deprecated Use PdfChapterSpreadPages — kept for isChapterIntroPage detection */
+/** @deprecated Use PdfChapterSpreadPages */
 export function PdfChapterIntroPage({
     chapterNumber,
     title,
@@ -149,7 +110,13 @@ export function PdfChapterIntroPage({
     subtitle?: string;
     chapter: PdfChapterKey;
 }) {
-    const pages = PdfChapterSpreadPages({ chapterNumber, title, subtitle, chapter, startPageIndex: 0 });
+    const pages = PdfChapterSpreadPages({
+        chapterNumber,
+        title,
+        subtitle,
+        chapter,
+        startPageIndex: 0,
+    });
     return pages[1] as React.ReactElement;
 }
 
@@ -161,17 +128,9 @@ export function PdfStatGrid({
     return (
         <View style={pdfStyles.statGrid}>
             {items.map((item) => (
-                <View
-                    key={item.label}
-                    style={[
-                        pdfStyles.statTile,
-                        item.accent ? { backgroundColor: pdfColors.brandTint } : {},
-                    ]}
-                >
+                <View key={item.label} style={pdfStyles.statTile}>
                     <Text style={pdfStyles.statTileLabel}>{item.label}</Text>
-                    <Text style={[pdfStyles.statTileValue, item.accent ? { color: item.accent } : {}]}>
-                        {item.value}
-                    </Text>
+                    <Text style={pdfStyles.statTileValue}>{item.value}</Text>
                 </View>
             ))}
         </View>

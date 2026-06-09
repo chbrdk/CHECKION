@@ -6,8 +6,7 @@ import {
     checkionDevPdfPrintPreviewUrl,
 } from '@/lib/paths/pdf-print-preview';
 import {
-    PDF_CORNER_TAB_PADDING_TOP_PT,
-    PDF_CORNER_TAB_PADDING_X_PT,
+    PDF_PAGE_MARGIN_PT,
     pdfContentMarginsForSide,
 } from '@/lib/paths/pdf-print-tokens';
 
@@ -17,16 +16,15 @@ describe('pdf-print-preview', () => {
         expect(pdfPtToCssPx(18)).toBe(18);
     });
 
-    it('builds explicit css lengths for MUI sx padding (avoids theme spacing)', () => {
-        expect(pdfPtToCssLength(PDF_CORNER_TAB_PADDING_TOP_PT)).toBe('6px');
-        expect(pdfPtToCssLength(PDF_CORNER_TAB_PADDING_X_PT)).toBe('12px');
+    it('builds explicit css lengths for MUI sx padding', () => {
+        expect(pdfPtToCssLength(PDF_PAGE_MARGIN_PT)).toBe('40px');
     });
 
     it('maps asymmetric margins for spread pages', () => {
         const css = pdfMarginsToCss(pdfContentMarginsForSide('left'));
         const right = pdfMarginsToCss(pdfContentMarginsForSide('right'));
-        expect(css.paddingLeft).toBeGreaterThan(right.paddingLeft);
-        expect(right.paddingRight).toBeLessThan(css.paddingLeft);
+        expect(css.paddingRight).toBeGreaterThan(right.paddingRight);
+        expect(right.paddingLeft).toBeGreaterThan(css.paddingLeft);
     });
 
     it('builds dev preview url with checkion port', () => {

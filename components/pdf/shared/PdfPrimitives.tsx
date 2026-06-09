@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { View, Text, Svg, Path } from '@react-pdf/renderer';
-import { pdfColors, pdfChapterColors, pdfStyles, type PdfChapterKey } from '@/components/pdf/shared/pdf-styles';
+import { pdfColors, pdfStyles, type PdfChapterKey } from '@/components/pdf/shared/pdf-styles';
 import {
     pdfFooterInsetsForSide,
     pdfSpreadSideFromIndex,
@@ -28,25 +28,8 @@ export function MsqdxLogoPdf({
     );
 }
 
-export function PdfSectionHeader({ title, chapter }: { title: string; chapter: PdfChapterKey }) {
-    const c = pdfChapterColors[chapter];
-    return (
-        <View style={{ marginBottom: 10, marginTop: 4 }}>
-            <Text
-                style={[
-                    pdfStyles.sectionTitle,
-                    {
-                        backgroundColor: c.bg,
-                        color: c.main,
-                        fontSize: 13,
-                        paddingVertical: 8,
-                    },
-                ]}
-            >
-                {title}
-            </Text>
-        </View>
-    );
+export function PdfSectionHeader({ title }: { title: string; chapter?: PdfChapterKey }) {
+    return <Text style={pdfStyles.sectionTitle}>{title}</Text>;
 }
 
 export function PdfHeader() {

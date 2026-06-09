@@ -1,114 +1,50 @@
 'use client';
 
 import React from 'react';
-import { View, Svg, Path } from '@react-pdf/renderer';
+import { View } from '@react-pdf/renderer';
 import {
-    PDF_BRAND_COLOR,
-    PDF_CORNER_TAB_LOGO_HEIGHT_PT,
-    PDF_CORNER_TAB_LOGO_WIDTH_PT,
-    PDF_INNER_BACKGROUND,
-    PDF_PAGE_HEIGHT_PT,
-    PDF_PAGE_WIDTH_PT,
-    pdfFrameRectForSide,
+    PDF_MINIMAL_LOGO_HEIGHT_PT,
+    PDF_MINIMAL_LOGO_WIDTH_PT,
+    PDF_PAGE_BACKGROUND,
+    PDF_PAGE_MARGIN_PT,
+    pdfShowsPageLogoForSide,
     type PdfSpreadSide,
 } from '@/lib/paths/pdf-print-tokens';
-import {
-    buildAppInnerFramePath,
-    buildCornerTabPath,
-    cornerTabLogoPosition,
-} from '@/components/pdf/shared/pdf-frame-path';
 import { MsqdxLogoPdf } from '@/components/pdf/shared/PdfPrimitives';
 
-export function PdfAppFrameBackground({
-    side,
-    accentColor,
-    showCornerTab = true,
-    innerFill = PDF_INNER_BACKGROUND,
-}: {
-    side: PdfSpreadSide;
-    accentColor?: string;
-    showCornerTab?: boolean;
-    innerFill?: string;
-}) {
-    const brand = accentColor ?? PDF_BRAND_COLOR;
-    const innerPath = buildAppInnerFramePath(side);
-    const tabPath = buildCornerTabPath(side);
-    const logoPos = cornerTabLogoPosition(side);
-    const frame = pdfFrameRectForSide(side);
-
+/** White page + optional small cover logo (no brand frame, no corner shapes). */
+export function PdfMinimalPageChrome({ side }: { side: PdfSpreadSide }) {
     return (
         <>
             <View
+                fixed
                 style={{
                     position: 'absolute',
                     top: 0,
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    backgroundColor: brand,
+                    backgroundColor: PDF_PAGE_BACKGROUND,
                 }}
-                fixed
             />
-            <Svg
-                viewBox={`0 0 ${PDF_PAGE_WIDTH_PT} ${PDF_PAGE_HEIGHT_PT}`}
-                style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: PDF_PAGE_WIDTH_PT,
-                    height: PDF_PAGE_HEIGHT_PT,
-                }}
-                fixed
-            >
-                <Path d={innerPath} fill={innerFill} />
-                {showCornerTab ? <Path d={tabPath} fill={brand} /> : null}
-            </Svg>
-            {showCornerTab ? (
+            {pdfShowsPageLogoForSide(side) ? (
                 <View
+                    fixed
                     style={{
                         position: 'absolute',
-                        top: logoPos.top,
-                        left: logoPos.left,
-                        flexDirection: 'row',
-                        alignItems: 'center',
+                        top: PDF_PAGE_MARGIN_PT,
+                        left: PDF_PAGE_MARGIN_PT,
                     }}
-                    fixed
                 >
                     <MsqdxLogoPdf
-                        width={PDF_CORNER_TAB_LOGO_WIDTH_PT}
-                        height={PDF_CORNER_TAB_LOGO_HEIGHT_PT}
-                        color="#000000"
+                        width={PDF_MINIMAL_LOGO_WIDTH_PT}
+                        height={PDF_MINIMAL_LOGO_HEIGHT_PT}
                     />
                 </View>
-            ) : null}
-            {side === 'left' ? (
-                <View
-                    style={{
-                        position: 'absolute',
-                        top: frame.y + frame.height * 0.38,
-                        left: frame.x + frame.width - 4,
-                        width: 4,
-                        height: 100,
-                        backgroundColor: brand,
-                        opacity: 0.4,
-                    }}
-                    fixed
-                />
-            ) : null}
-            {side === 'right' ? (
-                <View
-                    style={{
-                        position: 'absolute',
-                        top: frame.y + frame.height * 0.38,
-                        left: frame.x,
-                        width: 4,
-                        height: 100,
-                        backgroundColor: brand,
-                        opacity: 0.4,
-                    }}
-                    fixed
-                />
             ) : null}
         </>
     );
 }
+
+/** @deprecated alias — minimal chrome only */
+export const PdfAppFrameBackground = PdfMinimalPageChrome;

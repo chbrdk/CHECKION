@@ -2,15 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { useState } from 'react';
-import {
-    Box,
-    FormControlLabel,
-    MenuItem,
-    Switch,
-    TextField,
-    ToggleButton,
-    ToggleButtonGroup,
-} from '@mui/material';
+import { Box, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { MsqdxButton, MsqdxTypography } from '@msqdx/react';
 import { PrintPreviewFrame } from '@/components/pdf/preview/PrintPreviewFrame';
 import {
@@ -19,14 +11,12 @@ import {
     PrintPreviewContentSample,
     PrintPreviewCoverContent,
 } from '@/components/pdf/preview/PrintPreviewSamples';
-import { pdfChapterColors, type PdfChapterKey } from '@/components/pdf/shared/pdf-styles';
 import {
     PATH_DEV_PDF_PRINT_PREVIEW,
     CHECKION_DEV_SERVER_PORT,
     checkionDevPdfPrintPreviewUrl,
 } from '@/lib/paths/pdf-print-preview';
 import { getPublicAssetPath } from '@/lib/constants';
-import { PDF_BRAND_COLOR, pdfShowsCornerTabForSide } from '@/lib/paths/pdf-print-tokens';
 
 type PreviewScene = 'cover' | 'chapter-spread' | 'content-spread' | 'all-spreads';
 
@@ -39,51 +29,28 @@ const SCENES: { id: PreviewScene; label: string }[] = [
 
 export function PrintPreviewPlayground() {
     const [scene, setScene] = useState<PreviewScene>('all-spreads');
-    const [chapterKey, setChapterKey] = useState<PdfChapterKey>('summary');
-    const [brandColor, setBrandColor] = useState(PDF_BRAND_COLOR);
-    const [showBinding, setShowBinding] = useState(true);
-    const [showCornerTab, setShowCornerTab] = useState(true);
     const previewPath = getPublicAssetPath(PATH_DEV_PDF_PRINT_PREVIEW);
     const previewUrl =
         typeof window !== 'undefined'
             ? `${window.location.origin}${previewPath}`
             : checkionDevPdfPrintPreviewUrl();
 
-    const chapter = pdfChapterColors[chapterKey];
-
     const coverPage = (
-        <PrintPreviewFrame
-            side="cover"
-            accentColor={brandColor}
-            showCornerTab={showCornerTab && pdfShowsCornerTabForSide('cover')}
-            showBindingMarker={showBinding}
-        >
+        <PrintPreviewFrame side="cover">
             <PrintPreviewCoverContent />
         </PrintPreviewFrame>
     );
 
     const chapterSpread = (
         <Box sx={{ display: 'flex', gap: 0, alignItems: 'flex-start' }}>
-            <PrintPreviewFrame
-                side="left"
-                accentColor={chapter.main}
-                innerFill={chapter.bg}
-                showCornerTab={showCornerTab && pdfShowsCornerTabForSide('left')}
-                showBindingMarker={showBinding}
-            >
-                <PrintPreviewChapterLeftContent chapterNumber="01" color={chapter.main} />
+            <PrintPreviewFrame side="left">
+                <PrintPreviewChapterLeftContent chapterNumber="01" />
             </PrintPreviewFrame>
-            <PrintPreviewFrame
-                side="right"
-                accentColor={chapter.main}
-                showCornerTab={showCornerTab && pdfShowsCornerTabForSide('right')}
-                showBindingMarker={showBinding}
-            >
+            <PrintPreviewFrame side="right">
                 <PrintPreviewChapterRightContent
                     chapterNumber="01"
                     title="Executive Summary"
                     subtitle="Lagebild, Risiken und strategische Einordnung auf Basis aller Projekt-Daten."
-                    color={chapter.main}
                 />
             </PrintPreviewFrame>
         </Box>
@@ -91,20 +58,10 @@ export function PrintPreviewPlayground() {
 
     const contentSpread = (
         <Box sx={{ display: 'flex', gap: 0, alignItems: 'flex-start' }}>
-            <PrintPreviewFrame
-                side="left"
-                accentColor={brandColor}
-                showCornerTab={showCornerTab && pdfShowsCornerTabForSide('left')}
-                showBindingMarker={showBinding}
-            >
+            <PrintPreviewFrame side="left">
                 <PrintPreviewContentSample />
             </PrintPreviewFrame>
-            <PrintPreviewFrame
-                side="right"
-                accentColor={brandColor}
-                showCornerTab={showCornerTab && pdfShowsCornerTabForSide('right')}
-                showBindingMarker={showBinding}
-            >
+            <PrintPreviewFrame side="right">
                 <PrintPreviewContentSample />
             </PrintPreviewFrame>
         </Box>
@@ -135,7 +92,7 @@ export function PrintPreviewPlayground() {
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 3, p: { xs: 2, md: 3 } }}>
             <Box
                 sx={{
-                    width: { xs: '100%', lg: 320 },
+                    width: { xs: '100%', lg: 300 },
                     flexShrink: 0,
                     position: { lg: 'sticky' },
                     top: 16,
@@ -146,15 +103,14 @@ export function PrintPreviewPlayground() {
                     PDF Print Preview
                 </MsqdxTypography>
                 <MsqdxTypography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    Live-Vorschau mit denselben Token & SVG-Pfaden wie das PDF.
+                    Minimal-Layout (weiß, kleines Logo nur Deckblatt).
                     <br />
-                    URL:{' '}
                     <Box component="a" href={previewPath} sx={{ fontSize: '0.85em', color: 'inherit' }}>
                         {previewUrl}
                     </Box>
                     <br />
                     <Box component="span" sx={{ fontSize: '0.8em', opacity: 0.85 }}>
-                        CHECKION Dev-Server: Port {CHECKION_DEV_SERVER_PORT} (`npm run dev`), nicht 3000.
+                        Port {CHECKION_DEV_SERVER_PORT} (`npm run dev`)
                     </Box>
                 </MsqdxTypography>
 
@@ -172,60 +128,19 @@ export function PrintPreviewPlayground() {
                     ))}
                 </ToggleButtonGroup>
 
-                <TextField
-                    select
-                    fullWidth
+                <MsqdxTypography variant="caption" color="text.secondary" component="div" sx={{ mb: 2 }}>
+                    lib/paths/pdf-print-tokens.ts
+                    <br />
+                    components/pdf/shared/PdfPrintPages.tsx
+                </MsqdxTypography>
+
+                <MsqdxButton
+                    variant="outlined"
                     size="small"
-                    label="Kapitel-Akzent"
-                    value={chapterKey}
-                    onChange={(e) => setChapterKey(e.target.value as PdfChapterKey)}
-                    sx={{ mb: 2 }}
+                    onClick={() => window.open('/projects', '_blank')}
                 >
-                    {(Object.keys(pdfChapterColors) as PdfChapterKey[]).map((k) => (
-                        <MenuItem key={k} value={k}>
-                            {k}
-                        </MenuItem>
-                    ))}
-                </TextField>
-
-                <TextField
-                    fullWidth
-                    size="small"
-                    label="Brand-Farbe"
-                    value={brandColor}
-                    onChange={(e) => setBrandColor(e.target.value)}
-                    sx={{ mb: 2 }}
-                />
-
-                <FormControlLabel
-                    control={<Switch checked={showCornerTab} onChange={(e) => setShowCornerTab(e.target.checked)} />}
-                    label="Corner-Tab / Logo (Deckblatt + linke Seite)"
-                />
-                <FormControlLabel
-                    control={<Switch checked={showBinding} onChange={(e) => setShowBinding(e.target.checked)} />}
-                    label="Bindungs-Markierung"
-                />
-
-                <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <MsqdxTypography variant="caption" color="text.secondary">
-                        Token-Quellen (gemeinsam mit PDF):
-                    </MsqdxTypography>
-                    <MsqdxTypography variant="caption" component="div">
-                        lib/paths/pdf-print-tokens.ts
-                        <br />
-                        components/pdf/shared/pdf-frame-path.ts
-                        <br />
-                        components/pdf/preview/PrintPreviewFrame.tsx
-                    </MsqdxTypography>
-                    <MsqdxButton
-                        variant="outlined"
-                        size="small"
-                        onClick={() => window.open('/projects', '_blank')}
-                        sx={{ mt: 1, alignSelf: 'flex-start' }}
-                    >
-                        PDF aus gespeichertem Report testen
-                    </MsqdxButton>
-                </Box>
+                    PDF aus gespeichertem Report testen
+                </MsqdxButton>
             </Box>
 
             <Box
