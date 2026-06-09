@@ -47,7 +47,7 @@ Dev-Server starten (`npm run dev` → **Port 3333**), dann:
 
 1. **Layer 1 — Brand:** Vollflächiger Seitenhintergrund (`PDF_BRAND_COLOR`)
 2. **Layer 2 — Innen-Panel:** Offwhite (`PDF_INNER_BACKGROUND`), kleiner als Seite → sichtbarer Brand-Spalt (`PDF_FRAME_INSET_PT` = 10pt, kein SVG-Stroke)
-3. **Layer 3 — Corner-Tab:** `MsqdxCornerBox` — **nur oben links**, nur auf **Deckblatt** und **linken Spread-Seiten** (gerade Seitenzahl &gt; 1). Ungerade Seiten (rechts / verso) ohne Logo-Ecke. Geometrie: `cutdown-a` (top außen), `cutdown-b` (bottom innen), gegenüber `rounded`. Steuerung: `pdfShowsCornerTabForSide()` in `pdf-print-tokens.ts`. Preview nutzt echte `@msqdx/react`-Komponente; PDF nutzt `buildMsqdxCornerBoxPath`.
+3. **Layer 3 — Corner-Tab:** **nur oben links** auf Deckblatt + linken Spread-Seiten. Geometrie (Print): `topLeft=square`, `topRight=rounded` (Außenkante), `bottomRight=cutdown-a` + `bottomLeft=cutdown-b` (Übergang ins Innen-Panel). Steuerung: `pdfCornerTabStyles()` + `pdfShowsCornerTabForSide()`. Preview (`PrintPreviewFrame`) und PDF (`buildMsqdxCornerBoxPath`) teilen dieselbe Zuordnung.
 
 Innen-Panel-Radien wie CHECKION mit Sidebar: **topRight + bottomRight = 1.5xl**, **bottomLeft = button**, topLeft = 0 (Logo-Tab).
 

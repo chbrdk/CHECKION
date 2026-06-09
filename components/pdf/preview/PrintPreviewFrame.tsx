@@ -90,9 +90,9 @@ export function PrintPreviewFrame({
                         logo
                         borderRadius={cornerRadiusPx}
                         topLeft={tabAnchor === 'left' ? 'square' : 'cutdown-a'}
-                        topRight={tabAnchor === 'left' ? 'cutdown-a' : 'square'}
+                        topRight={tabAnchor === 'left' ? 'rounded' : 'square'}
                         bottomLeft={tabAnchor === 'left' ? 'cutdown-b' : 'rounded'}
-                        bottomRight={tabAnchor === 'left' ? 'rounded' : 'cutdown-b'}
+                        bottomRight={tabAnchor === 'left' ? 'cutdown-a' : 'cutdown-b'}
                         sx={{
                             width: 'fit-content',
                             height: 'fit-content',

@@ -43,23 +43,24 @@ describe('pdf-frame-path', () => {
         expect(buildAppInnerFramePath('right')).toContain('M');
     });
 
-    it('builds corner tab with concave cutdown arcs (not convex rounded corners)', () => {
+    it('builds corner tab with rounded outer edge and cutdown panel transitions', () => {
         const cover = buildCornerTabPath('cover');
         const styles = pdfCornerTabStyles('left');
-        expect(styles.topRight).toBe('cutdown-a');
+        expect(styles.topRight).toBe('rounded');
+        expect(styles.bottomRight).toBe('cutdown-a');
         expect(styles.bottomLeft).toBe('cutdown-b');
         expect(cover).toContain('A ');
         expect(cover).not.toContain('Q ');
-        // cutdown-a at top-right: concave sweep 0
-        expect(cover).toMatch(/A [\d.]+ [\d.]+ 0 0 0 [\d.]+ [\d.]+/);
+        // top-right convex (rounded), bottom-right concave (cutdown)
         expect(cover).toMatch(/A [\d.]+ [\d.]+ 0 0 1 [\d.]+ [\d.]+/);
+        expect(cover).toMatch(/A [\d.]+ [\d.]+ 0 0 0 [\d.]+ [\d.]+/);
 
         const right = buildCornerTabPath('right');
         expect(right).toContain('A ');
     });
 
-    it('left anchor uses square top-left and cutdown transitions like MsqdxAppLayout', () => {
-        const d = buildMsqdxCornerBoxPath(10, 10, 96, 31, 16, 'left');
+    it('left anchor: square top-left, rounded top-right, cutdown bottom edges', () => {
+        const d = buildMsqdxCornerBoxPath(10, 10, 96, 52, 16, 'left');
         expect(d.startsWith('M 10 10')).toBe(true);
         expect(d).toContain('0 0 0');
         expect(d).toContain('0 0 1');

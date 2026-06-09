@@ -1,5 +1,4 @@
 import {
-    PDF_CORNER_TAB_LOGO_HEIGHT_PT,
     PDF_CORNER_TAB_PADDING_TOP_PT,
     PDF_CORNER_TAB_PADDING_X_PT,
     PDF_CORNER_TAB_TOTAL_HEIGHT_PT,
@@ -20,16 +19,18 @@ export type PdfCornerTabAnchor = 'left' | 'right';
 
 export type PdfCornerStyle = 'square' | 'rounded' | 'cutdown-a' | 'cutdown-b';
 
-/** Per-corner styles — mirrors PrintPreviewFrame / MsqdxAppLayout logo strip. */
-export function pdfCornerTabStyles(anchor: PdfCornerTabAnchor): Record<
-    'topLeft' | 'topRight' | 'bottomRight' | 'bottomLeft',
-    PdfCornerStyle
-> {
+type CornerKey = 'topLeft' | 'topRight' | 'bottomRight' | 'bottomLeft';
+
+/**
+ * Print corner tab — transitions face the inner panel (cutdown) vs outer page edge (rounded).
+ * topRight is convex (rounded); bottomRight scoops into the panel (cutdown-a).
+ */
+export function pdfCornerTabStyles(anchor: PdfCornerTabAnchor): Record<CornerKey, PdfCornerStyle> {
     if (anchor === 'left') {
         return {
             topLeft: 'square',
-            topRight: 'cutdown-a',
-            bottomRight: 'rounded',
+            topRight: 'rounded',
+            bottomRight: 'cutdown-a',
             bottomLeft: 'cutdown-b',
         };
     }
@@ -39,6 +40,63 @@ export function pdfCornerTabStyles(anchor: PdfCornerTabAnchor): Record<
         bottomRight: 'cutdown-b',
         bottomLeft: 'rounded',
     };
+}
+
+/** SVG arc sweep: convex rounded = 1, concave cutdown = 0 (react-pdf SVG coords). */
+function arcSweep(style: PdfCornerStyle): 0 | 1 {
+    return style === 'rounded' ? 1 : 0;
+}
+
+function arc(
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    R: number,
+    style: PdfCornerStyle
+): string {
+    return `A ${R} ${R} 0 0 ${arcSweep(style)} ${x2} ${y2}`;
+}
+
+/**
+ * Clockwise outline for one corner tab — corner styles per {@link pdfCornerTabStyles}.
+ */
+export function buildMsqdxCornerBoxPath(
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    radius: number,
+    anchor: PdfCornerTabAnchor
+): string {
+    const R = Math.min(radius, w / 2, h / 2);
+    const c = pdfCornerTabStyles(anchor);
+
+    if (anchor === 'left') {
+        return [
+            `M ${x} ${y}`,
+            `L ${x + w - R} ${y}`,
+            arc(x + w - R, y, x + w, y + R, R, c.topRight),
+            `L ${x + w} ${y + h - R}`,
+            arc(x + w, y + h - R, x + w - R, y + h, R, c.bottomRight),
+            `L ${x + R} ${y + h}`,
+            arc(x + R, y + h, x, y + h - R, R, c.bottomLeft),
+            `L ${x} ${y}`,
+            'Z',
+        ].join(' ');
+    }
+
+    return [
+        `M ${x} ${y + R}`,
+        arc(x, y + R, x + R, y, R, c.topLeft),
+        `L ${x + w} ${y}`,
+        `L ${x + w} ${y + h - R}`,
+        arc(x + w, y + h - R, x + w - R, y + h, R, c.bottomRight),
+        `L ${x + R} ${y + h}`,
+        arc(x + R, y + h, x, y + h - R, R, c.bottomLeft),
+        `L ${x} ${y + R}`,
+        'Z',
+    ].join(' ');
 }
 
 /** Clockwise rounded-rect path (SVG moveto/lineto/quadratic). */
@@ -97,54 +155,6 @@ function cornerTabOrigin(side: PdfSpreadSide): { x: number; y: number } {
         x: rect.x,
         y: rect.y,
     };
-}
-
-/**
- * MsqdxCornerBox outline for PDF — concave cutdown-a/b + rounded, matching mask geometry in @msqdx/react.
- * Convex `rounded` uses sweep 1; concave cutdown uses sweep 0.
- */
-export function buildMsqdxCornerBoxPath(
-    x: number,
-    y: number,
-    w: number,
-    h: number,
-    radius: number,
-    anchor: PdfCornerTabAnchor
-): string {
-    const R = Math.min(radius, w / 2, h / 2);
-    const c = pdfCornerTabStyles(anchor);
-
-    if (anchor === 'left') {
-        return [
-            `M ${x} ${y}`,
-            `L ${x + w - R} ${y}`,
-            c.topRight === 'cutdown-a' ? `A ${R} ${R} 0 0 0 ${x + w} ${y + R}` : `L ${x + w} ${y}`,
-            `L ${x + w} ${y + h - R}`,
-            c.bottomRight === 'rounded'
-                ? `A ${R} ${R} 0 0 1 ${x + w - R} ${y + h}`
-                : `L ${x + w} ${y + h}`,
-            `L ${x + R} ${y + h}`,
-            c.bottomLeft === 'cutdown-b' ? `A ${R} ${R} 0 0 0 ${x} ${y + h - R}` : `L ${x} ${y + h}`,
-            `L ${x} ${y}`,
-            'Z',
-        ].join(' ');
-    }
-
-    return [
-        `M ${x} ${y + R}`,
-        c.topLeft === 'cutdown-a' ? `A ${R} ${R} 0 0 0 ${x + R} ${y}` : `L ${x} ${y}`,
-        `L ${x + w} ${y}`,
-        `L ${x + w} ${y + h - R}`,
-        c.bottomRight === 'cutdown-b'
-            ? `A ${R} ${R} 0 0 0 ${x + w - R} ${y + h}`
-            : `L ${x + w} ${y + h}`,
-        `L ${x + R} ${y + h}`,
-        c.bottomLeft === 'rounded'
-            ? `A ${R} ${R} 0 0 1 ${x} ${y + h - R}`
-            : `L ${x} ${y + h}`,
-        `L ${x} ${y + R}`,
-        'Z',
-    ].join(' ');
 }
 
 /** Brand corner tab (Layer 3) — MsqdxCornerBox geometry on the page. */
