@@ -104,10 +104,10 @@ export function ProjectReportGeoSection({
                         chapter="geo"
                     />
                     <PdfSectionIntro text={labels.chapterIntros.geoCompetitive} />
+                    {geoCompetitiveChart}
                     <PdfMetricInterpretationGroup
                         texts={pdfInterpretationTexts(interpretations.geoCompetitive)}
                     />
-                    {geoCompetitiveChart}
                     <PdfGeoCompetitiveTable
                         domains={sortGeoCompetitiveDomains(geo.competitiveDomains)}
                         labels={labels}

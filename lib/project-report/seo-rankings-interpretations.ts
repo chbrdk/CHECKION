@@ -2,6 +2,7 @@
  * Reader-facing interpretations for SEO & Rankings KPIs (agent + deterministic fallback).
  */
 import type { MetricInterpretations } from '@/lib/project-report/narrative-schema';
+import { interpretSerpCompetition } from '@/lib/project-report/competitive-interpretations';
 import type {
     DomainFacts,
     ProjectReportBundle,
@@ -15,6 +16,7 @@ export type SeoMetricInterpretations = {
     rankingScore?: string;
     keywords?: string;
     rankTrend?: string;
+    serpCompetition?: string;
 };
 
 export function getSeoSectionAnalysis(
@@ -147,12 +149,17 @@ export function resolveSeoInterpretations(bundle: ProjectReportBundle): SeoMetri
         bundle.rankTrends ?? [],
         bundle.locale
     );
+    const serpFallback = interpretSerpCompetition(
+        bundle.deep?.rankKeywordDetails ?? [],
+        bundle.locale
+    );
 
     return {
         seoOnPage: agent.seoOnPage?.trim() || fallback.seoOnPage,
         rankingScore: agent.rankingScore?.trim() || fallback.rankingScore,
         keywords: agent.keywords?.trim() || fallback.keywords,
         rankTrend: agent.rankTrend?.trim() || fallback.rankTrend,
+        serpCompetition: agent.serpCompetition?.trim() || serpFallback,
     };
 }
 

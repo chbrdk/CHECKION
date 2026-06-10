@@ -87,10 +87,15 @@ export function ProjectReportSeoSection({
                     <PdfMetricInterpretationGroup texts={pdfInterpretationTexts(interpretations.keywords)} />
                     {rankingChart}
                     {bundle.deep?.rankKeywordDetails && bundle.deep.rankKeywordDetails.length > 0 ? (
-                        <PdfKeywordSerpTable
-                            rows={selectKeywordSerpRows(bundle.deep.rankKeywordDetails)}
-                            labels={labels}
-                        />
+                        <>
+                            <PdfMetricInterpretationGroup
+                                texts={pdfInterpretationTexts(interpretations.serpCompetition)}
+                            />
+                            <PdfKeywordSerpTable
+                                rows={selectKeywordSerpRows(bundle.deep.rankKeywordDetails)}
+                                labels={labels}
+                            />
+                        </>
                     ) : null}
                     {(bundle.deep?.rankKeywordDetails?.length
                         ? topKeywordsWithPosition(

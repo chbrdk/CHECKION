@@ -80,14 +80,29 @@ function interpretGeoOnPageEeat(geoDeep: GeoDeepAnalysisFact | null | undefined,
         : `${pageCount} pages with GEO/E-E-A-T analysis — avg GEO fitness ${avgGeoFitness ?? '–'}/100, trust ${avgTrust ?? '–'}/5. ${pagesBelowGeoThreshold} page(s) below threshold.`;
 }
 
+function formatShareOfVoicePct(share: number | null): string {
+    if (share == null) return '–';
+    return `${Math.round(share * 100)}%`;
+}
+
 function interpretGeoCompetitive(geo: GeoFacts, locale: ProjectReportLocale): string | undefined {
     if (geo.competitiveDomains.length === 0) return undefined;
     const de = locale === 'de';
-    const leader = [...geo.competitiveDomains].sort((a, b) => (b.score ?? 0) - (a.score ?? 0))[0];
+    const sorted = [...geo.competitiveDomains].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    const leader = sorted[0];
     if (!leader) return undefined;
+    const sovLeader = [...geo.competitiveDomains].sort(
+        (a, b) => (b.shareOfVoice ?? 0) - (a.shareOfVoice ?? 0)
+    )[0];
+    const sovNote =
+        sovLeader && sovLeader.shareOfVoice != null
+            ? de
+                ? ` Höchster Share-of-Voice: ${sovLeader.domain} (${formatShareOfVoicePct(sovLeader.shareOfVoice)}).`
+                : ` Highest share of voice: ${sovLeader.domain} (${formatShareOfVoicePct(sovLeader.shareOfVoice)}).`
+            : '';
     return de
-        ? `Wettbewerbsvergleich GEO: ${leader.domain} führt mit Score ${leader.score ?? '–'}${leader.avgPosition != null ? ` (Ø Position ${leader.avgPosition})` : ''}. Share-of-Voice zeigt, wer in KI-Antworten dominiert.`
-        : `GEO competitive comparison: ${leader.domain} leads with score ${leader.score ?? '–'}${leader.avgPosition != null ? ` (avg position ${leader.avgPosition})` : ''}. Share of voice shows who dominates AI answers.`;
+        ? `Wettbewerbsvergleich GEO: ${leader.domain} führt mit Score ${leader.score ?? '–'}${leader.avgPosition != null ? ` (Ø Zitationsposition ${leader.avgPosition})` : ''}.${sovNote} Die Tabelle ergänzt Score mit SoV und Ø Position pro Domain.`
+        : `GEO competitive comparison: ${leader.domain} leads with score ${leader.score ?? '–'}${leader.avgPosition != null ? ` (avg citation position ${leader.avgPosition})` : ''}.${sovNote} The table adds score with SoV and avg position per domain.`;
 }
 
 function interpretGeoInsights(

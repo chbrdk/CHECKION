@@ -197,7 +197,8 @@ Return JSON exactly:
     "seoOnPage": "1-2 sentences on on-page score and label",
     "rankingScore": "1-2 sentences on aggregate ranking score (omit if unavailable)",
     "keywords": "1-2 sentences on keyword count, top positions, examples",
-    "rankTrend": "1-2 sentences on rank trends over time (omit if no trend data)"
+    "rankTrend": "1-2 sentences on rank trends over time (omit if no trend data)",
+    "serpCompetition": "2-3 sentences on SERP leaders vs own positions — who dominates comparison keywords (omit if no SERP data)"
   }
 }
 
@@ -260,7 +261,7 @@ Return JSON exactly:
     "llmVisibility": "1-2 sentences on LLM model visibility (omit if no model data)",
     "geoQuestions": "1-2 sentences on test questions and citation rate",
     "geoOnPageEeat": "1-2 sentences on on-page GEO fitness and trust (omit if no page data)",
-    "geoCompetitive": "1-2 sentences on competitive GEO comparison",
+    "geoCompetitive": "2-3 sentences on competitive GEO comparison — mention score, share of voice, and average citation position per domain",
     "geoInsights": "1-2 sentences explaining what the detected GEO patterns mean"
   }
 }
@@ -296,6 +297,87 @@ ${stringifyPayload(payload)}`;
                 locale === 'de'
                     ? 'Diese GEO-Analyse konnte nicht erzeugt werden. Nutze die Metriken und Tabellen im Report.'
                     : 'This GEO analysis could not be generated. Use the metrics and tables in the report.',
+            keyFindings: [],
+            metricsHighlighted: [],
+        },
+        titleFallback
+    );
+}
+
+function competitiveInsightInterpretationInstructions(payload: unknown): string {
+    const benchmark = (payload as { benchmark?: { deterministicInsights?: Array<{ id: string; title: string; kind: string }> } })
+        ?.benchmark;
+    const insights = benchmark?.deterministicInsights ?? [];
+    if (insights.length === 0) {
+        return '"insightsOverview": "omit if no deterministic insights"';
+    }
+    const perInsight = insights
+        .map(
+            (ins) =>
+                `    "insight:${ins.id}": "1-2 sentences — business impact and priority for [${ins.kind}] ${ins.title}"`
+        )
+        .join(',\n');
+    return `"insightsOverview": "1-2 sentences introducing the insight cards below",
+${perInsight}`;
+}
+
+async function callCompetitiveSectionAgent(
+    openai: OpenAI,
+    locale: ProjectReportLocale,
+    payload: unknown,
+    titleFallback: string
+): Promise<SectionAnalysis> {
+    const lang = locale === 'de' ? 'German' : 'English';
+    const insightBlock = competitiveInsightInterpretationInstructions(payload);
+    const userContent = `Compare own domain vs deep-scanned competitors using the scoreboard (UX, SEO, GEO, ranking, WCAG errors, LCP), topic overlap gaps/leads, and deterministic insights.
+Explain what the tables mean for non-technical stakeholders — where you lead, where competitors win, and what to prioritize.
+For EACH item in benchmark.deterministicInsights, write a short interpretation in metricInterpretations keyed as "insight:<id>".
+
+Return JSON exactly:
+{
+  "title": "section title",
+  "summary": "2-3 short paragraphs — overall competitive position",
+  "keyFindings": ["concrete bullets with numbers — one per major insight where possible"],
+  "metricsHighlighted": ["metric labels"],
+  "metricInterpretations": {
+    "competitiveOverview": "2-3 sentences on overall rank, theme gaps, and strategic picture",
+    "scoreboard": "2-3 sentences explaining the multi-pillar scoreboard — highlight biggest WCAG/SEO/GEO/LCP gaps vs leaders",
+    "topicOverlap": "2-3 sentences on content theme gaps vs unique own themes",
+${insightBlock}
+  }
+}
+
+Respond in ${lang}. Use numbers from the data. Do not include raw evidenceIds in prose.
+
+Data:
+${stringifyPayload(payload)}`;
+
+    let lastError: unknown;
+    for (let attempt = 0; attempt <= SECTION_AGENT_RETRIES; attempt++) {
+        try {
+            const raw = await callOpenAiJson(
+                openai,
+                systemPrompt(locale, 'competitive intelligence'),
+                userContent
+            );
+            const parsed = JSON.parse(extractJson(raw));
+            return sanitizeSectionRaw(parsed, titleFallback);
+        } catch (e) {
+            lastError = e;
+            console.warn(
+                `[CHECKION] competitive agent attempt ${attempt + 1} failed:`,
+                e instanceof Error ? e.message : e
+            );
+        }
+    }
+    console.error('[CHECKION] competitive agent failed after retries:', lastError);
+    return sanitizeSectionRaw(
+        {
+            title: titleFallback,
+            summary:
+                locale === 'de'
+                    ? 'Diese Wettbewerbs-Analyse konnte nicht erzeugt werden. Nutze die Tabellen im Report.'
+                    : 'This competitive analysis could not be generated. Use the tables in the report.',
             keyFindings: [],
             metricsHighlighted: [],
         },
@@ -464,6 +546,7 @@ export async function synthesizeComprehensiveReport(
                       domain: d.domain,
                       score: d.score,
                       avgPosition: d.avgPosition,
+                      shareOfVoice: d.shareOfVoice,
                   })),
               }
             : null,
@@ -481,12 +564,9 @@ export async function synthesizeComprehensiveReport(
 
     await progress('agent_competitive');
     const competitivePayload = buildCompetitiveAgentPayload(facts, deep.competitiveBenchmark);
-    deep.sections.competitive = await callSectionAgent(
+    deep.sections.competitive = await callCompetitiveSectionAgent(
         openai,
         options.locale,
-        'competitive intelligence',
-        `Compare own domain vs deep-scanned competitors using scoreboard, topic overlap, and deterministic insights.
-Highlight domain/SEO/performance/eco deltas, ranking & GEO scores, shared vs unique page topics, and competitor summaries.`,
         {
             ...competitivePayload,
             evidenceIds: evidenceIds.slice(0, 40),

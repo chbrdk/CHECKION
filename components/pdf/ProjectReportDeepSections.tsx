@@ -17,12 +17,21 @@ import {
     PdfTopicOverlapTable,
 } from '@/components/pdf/shared/PdfCompetitiveTables';
 import {
+    competitiveInsightDescription,
+    getCompetitiveSectionAnalysis,
+    resolveCompetitiveInterpretations,
+} from '@/lib/project-report/competitive-interpretations';
+import {
     formatCompetitiveInsightKind,
     hasSeoRollupData,
     prioritizeTopicOverlapRows,
     selectKeywordSerpRows,
     stripPdfEvidenceMarkers,
 } from '@/lib/project-report/pdf-competitive-display';
+import {
+    PdfMetricInterpretationGroup,
+    pdfInterpretationTexts,
+} from '@/components/pdf/shared/PdfMetricInterpretation';
 
 function SectionAnalysisBlock({ section }: { section: SectionAnalysis }) {
     return (
@@ -98,6 +107,15 @@ export function buildDeepReportPages(
 
     const benchmark = bundle.deep?.competitiveBenchmark;
     if (benchmark && benchmark.scoreboard.length > 0) {
+        const competitiveSection = getCompetitiveSectionAnalysis(bundle);
+        const competitiveInterpretations = resolveCompetitiveInterpretations(bundle);
+        const competitiveOverviewTexts = pdfInterpretationTexts(
+            competitiveSection?.summary
+                ? stripPdfEvidenceMarkers(competitiveSection.summary)
+                : undefined,
+            competitiveInterpretations.competitiveOverview
+        );
+
         addPage(
             'deep-competitive',
             <>
@@ -127,11 +145,17 @@ export function buildDeepReportPages(
                         },
                     ]}
                 />
+                {competitiveOverviewTexts.length > 0 ? (
+                    <PdfMetricInterpretationGroup texts={competitiveOverviewTexts} />
+                ) : null}
                 <PdfSectionHeader
                     outlineId="deep.competitive.scoreboard"
                     level={1}
                     title={labels.scoreboard}
                     chapter="competitors"
+                />
+                <PdfMetricInterpretationGroup
+                    texts={pdfInterpretationTexts(competitiveInterpretations.scoreboard)}
                 />
                 <PdfCompetitiveScoreboardTable rows={benchmark.scoreboard} labels={labels} />
                 {visuals.competitorSeoBarChart ? (
@@ -145,11 +169,14 @@ export function buildDeepReportPages(
                             title={labels.competitiveInsights}
                             chapter="competitors"
                         />
+                        <PdfMetricInterpretationGroup
+                            texts={pdfInterpretationTexts(competitiveInterpretations.insightsOverview)}
+                        />
                         {benchmark.deterministicInsights.map((ins) => (
                             <PdfRecommendationRow
                                 key={ins.id}
                                 title={`[${formatCompetitiveInsightKind(ins.kind, bundle.locale)}] ${ins.title}`}
-                                description={stripPdfEvidenceMarkers(ins.description)}
+                                description={competitiveInsightDescription(ins, bundle)}
                             />
                         ))}
                     </>
@@ -161,6 +188,9 @@ export function buildDeepReportPages(
                             level={1}
                             title={labels.topicOverlap}
                             chapter="structure"
+                        />
+                        <PdfMetricInterpretationGroup
+                            texts={pdfInterpretationTexts(competitiveInterpretations.topicOverlap)}
                         />
                         <PdfTopicOverlapTable
                             rows={prioritizeTopicOverlapRows(benchmark.topicOverlap)}

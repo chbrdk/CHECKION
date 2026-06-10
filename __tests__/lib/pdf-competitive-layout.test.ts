@@ -15,6 +15,15 @@ describe('PDF competitive layout', () => {
         expect(deepSrc).not.toContain('competitorTopicOverlap');
     });
 
+    it('wires agent interpretations on competitive deep page', () => {
+        expect(deepSrc).toContain('resolveCompetitiveInterpretations');
+        expect(deepSrc).toContain('PdfMetricInterpretationGroup');
+        expect(deepSrc).toContain('competitiveInterpretations.scoreboard');
+        expect(deepSrc).toContain('competitiveInterpretations.topicOverlap');
+        expect(deepSrc).toContain('competitiveInsightDescription');
+        expect(deepSrc).toContain('competitiveInterpretations.insightsOverview');
+    });
+
     it('moves findings before actions and skips redundant deep sections', () => {
         expect(docSrc).toContain("'findings'");
         expect(docSrc).toContain('formatFindingSeverity');
