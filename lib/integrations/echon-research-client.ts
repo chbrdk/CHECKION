@@ -1,15 +1,24 @@
 /**
  * ECHON research for CHECKION comprehensive reports.
- * Runs one persona-driven research chat per report (or fetches pinned thread as fallback).
+ * Creates a thread, starts research in the background, polls GET /threads/{id} until done.
  */
 
 import {
-    echonResearchChatPath,
+    echonResearchThreadMessagesPath,
     echonResearchThreadPath,
+    echonResearchThreadsPath,
     getEchonReportResearchDepth,
+    getEchonReportResearchPollIntervalMs,
+    getEchonReportResearchPollRequestTimeoutMs,
+    getEchonReportResearchStartRequestTimeoutMs,
     getEchonReportResearchTimeoutMs,
+    type EchonReportResearchDepth,
 } from '@/lib/paths/echon-api';
 import { echonServiceFetchJson } from '@/lib/integrations/echon-service-fetch';
+import {
+    waitForEchonResearchCompletion,
+    type EchonResearchPollAttempt,
+} from '@/lib/integrations/echon-research-poll';
 import {
     emptyEchonMarketContext,
     parseEchonResearchAnswerToMarketContext,
@@ -31,51 +40,85 @@ type EchonChatResponse = {
     citations?: unknown[];
 };
 
-export async function runEchonReportResearch(
-    query: string,
-    options?: { timeoutMs?: number }
-): Promise<EchonMarketContext> {
-    const trimmed = query.trim();
-    if (!trimmed) {
-        return emptyEchonMarketContext('echon_empty_query');
-    }
+type EchonThreadSummary = {
+    id?: string;
+};
 
-    const timeoutMs = options?.timeoutMs ?? getEchonReportResearchTimeoutMs();
-    const depth = getEchonReportResearchDepth();
-
-    const res = await echonServiceFetchJson<EchonChatResponse>(
-        echonResearchChatPath(),
-        {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                query: trimmed,
-                filters: { time_window_days: 30 },
-                options: {
-                    research_depth: depth,
-                    top_k_signals: depth === 'fast' ? 12 : 20,
-                    top_k_waves: depth === 'fast' ? 8 : 12,
-                },
-            }),
+function buildResearchRequestBody(query: string, depth: EchonReportResearchDepth) {
+    return {
+        query,
+        filters: { time_window_days: 30 },
+        options: {
+            research_depth: depth,
+            top_k_signals: depth === 'fast' ? 12 : 20,
+            top_k_waves: depth === 'fast' ? 8 : 12,
         },
-        timeoutMs
-    );
+    };
+}
 
-    if (!res.ok) {
-        return emptyEchonMarketContext(res.reason);
+function contextFromChatResponse(
+    data: EchonChatResponse,
+    fallbackThreadId: string
+): { ok: true; context: EchonMarketContext } | { ok: false; reason: string } {
+    const threadId =
+        typeof data.thread_id === 'string' && data.thread_id.trim()
+            ? data.thread_id.trim()
+            : fallbackThreadId;
+    if (!data.answer) {
+        return { ok: false, reason: 'echon_chat_response_invalid' };
     }
-
-    const data = res.data;
-    const threadId = typeof data.thread_id === 'string' ? data.thread_id : '';
-    if (!threadId || !data.answer) {
-        return emptyEchonMarketContext('echon_chat_response_invalid');
-    }
-
-    return parseEchonResearchAnswerToMarketContext(data.answer, {
+    const ctx = parseEchonResearchAnswerToMarketContext(data.answer, {
         threadId,
         citationCount: Array.isArray(data.citations) ? data.citations.length : 0,
         capturedAt: new Date().toISOString(),
     });
+    if (!ctx.available) {
+        return { ok: false, reason: ctx.reason ?? 'echon_no_structured_answer' };
+    }
+    return { ok: true, context: ctx };
+}
+
+async function createEchonResearchThread(): Promise<
+    { ok: true; threadId: string } | { ok: false; reason: string }
+> {
+    const res = await echonServiceFetchJson<EchonThreadSummary>(
+        echonResearchThreadsPath(),
+        {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: 'CHECKION report research' }),
+        },
+        getEchonReportResearchStartRequestTimeoutMs()
+    );
+    if (!res.ok) {
+        return { ok: false, reason: res.reason };
+    }
+    const threadId = typeof res.data.id === 'string' ? res.data.id.trim() : '';
+    if (!isValidEchonThreadId(threadId)) {
+        return { ok: false, reason: 'echon_thread_create_invalid' };
+    }
+    return { ok: true, threadId };
+}
+
+async function startEchonThreadResearch(
+    threadId: string,
+    query: string,
+    timeoutMs: number
+): Promise<{ ok: true; context: EchonMarketContext } | { ok: false; reason: string }> {
+    const depth = getEchonReportResearchDepth();
+    const res = await echonServiceFetchJson<EchonChatResponse>(
+        echonResearchThreadMessagesPath(threadId),
+        {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(buildResearchRequestBody(query, depth)),
+        },
+        timeoutMs
+    );
+    if (!res.ok) {
+        return { ok: false, reason: res.reason };
+    }
+    return contextFromChatResponse(res.data, threadId);
 }
 
 export async function fetchEchonMarketContext(
@@ -88,10 +131,47 @@ export async function fetchEchonMarketContext(
     }
 
     const path = echonResearchThreadPath(id);
-    const res = await echonServiceFetchJson<unknown>(path, undefined, options?.timeoutMs ?? 25_000);
+    const res = await echonServiceFetchJson<unknown>(
+        path,
+        undefined,
+        options?.timeoutMs ?? getEchonReportResearchPollRequestTimeoutMs()
+    );
     if (!res.ok) {
         return emptyEchonMarketContext(res.reason);
     }
 
     return parseEchonThreadToMarketContext(res.data, id);
+}
+
+export async function runEchonReportResearch(
+    query: string,
+    options?: {
+        timeoutMs?: number;
+        onPoll?: (attempt: EchonResearchPollAttempt) => void | Promise<void>;
+    }
+): Promise<EchonMarketContext> {
+    const trimmed = query.trim();
+    if (!trimmed) {
+        return emptyEchonMarketContext('echon_empty_query');
+    }
+
+    const totalTimeoutMs = options?.timeoutMs ?? getEchonReportResearchTimeoutMs();
+    const pollIntervalMs = getEchonReportResearchPollIntervalMs();
+    const pollRequestTimeoutMs = getEchonReportResearchPollRequestTimeoutMs();
+
+    return waitForEchonResearchCompletion(
+        {
+            createThread: createEchonResearchThread,
+            startResearch: (threadId) => startEchonThreadResearch(threadId, trimmed, totalTimeoutMs),
+            fetchThreadContext: (threadId) =>
+                fetchEchonMarketContext(threadId, { timeoutMs: pollRequestTimeoutMs }),
+            sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+            now: () => Date.now(),
+        },
+        {
+            totalTimeoutMs,
+            pollIntervalMs,
+            onPoll: options?.onPoll,
+        }
+    );
 }

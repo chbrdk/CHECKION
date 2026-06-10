@@ -8,7 +8,8 @@ import { makeReportProgress, STAGE_LABELS } from '@/lib/project-report/progress'
 import type { ProjectReportLocale, ProjectReportVariant } from '@/lib/project-report/types';
 
 const EXECUTIVE_TIMEOUT_MS = 120_000;
-const COMPREHENSIVE_TIMEOUT_MS = 900_000;
+/** ECHON poll (up to 10 min) + specialist agents + persona agents */
+const COMPREHENSIVE_TIMEOUT_MS = 1_800_000;
 
 function jobTimeoutMs(variant: ProjectReportVariant): number {
     return variant === 'comprehensive' ? COMPREHENSIVE_TIMEOUT_MS : EXECUTIVE_TIMEOUT_MS;

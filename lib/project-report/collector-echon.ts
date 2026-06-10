@@ -3,6 +3,7 @@
  */
 
 import type { AudionPersonaFact } from '@/lib/integrations/audion-audience-client';
+import type { EchonResearchPollAttempt } from '@/lib/integrations/echon-research-poll';
 import { fetchEchonMarketContext, runEchonReportResearch } from '@/lib/integrations/echon-research-client';
 import type { EchonMarketContext } from '@/lib/project-report/echon-market-context';
 import { emptyEchonMarketContext } from '@/lib/project-report/echon-market-context';
@@ -21,6 +22,8 @@ export interface RunEchonMarketResearchOptions {
     sourcePersonas: AudionPersonaFact[];
     /** Fallback when live research fails */
     pinnedThreadId?: string | null;
+    /** Called on each GET /threads poll while ECHON research runs */
+    onResearchPoll?: (attempt: EchonResearchPollAttempt) => void | Promise<void>;
 }
 
 export async function runEchonMarketResearchForReport(
@@ -38,7 +41,7 @@ export async function runEchonMarketResearchForReport(
         sourcePersonas: options.sourcePersonas,
     });
 
-    let ctx = await runEchonReportResearch(query);
+    let ctx = await runEchonReportResearch(query, { onPoll: options.onResearchPoll });
     if (!ctx.available && options.pinnedThreadId?.trim()) {
         ctx = await fetchEchonMarketContext(options.pinnedThreadId);
         if (ctx.available) {

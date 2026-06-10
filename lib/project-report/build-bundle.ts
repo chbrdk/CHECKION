@@ -93,6 +93,9 @@ export async function buildProjectReportBundle(
             audience,
             sourcePersonas: audienceSourcePersonas,
             pinnedThreadId: projectRow?.echonResearchThreadId,
+            onResearchPoll: async () => {
+                await reportProgress('agent_echon_research');
+            },
         });
         facts.marketContext = marketContext;
         if (marketContext.available) {

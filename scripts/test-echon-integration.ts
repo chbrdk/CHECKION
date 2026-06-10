@@ -35,7 +35,7 @@ async function main() {
 
     const runChat = process.argv.includes('--chat');
     if (!runChat) {
-        console.log('\nSkip live chat (pass --chat to run POST /research/chat, may take 1–5 min).');
+        console.log('\nSkip live chat (pass --chat to run research with poll, may take several min).');
         console.log('PASS: ECHON base URL reachable.');
         return;
     }
