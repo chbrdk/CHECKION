@@ -33,11 +33,8 @@ Pfade: `lib/paths/echon-api.ts`, `lib/project-report/echon-research-query.ts`
 
 `projects.echon_research_thread_id` — nur wenn der Live-Lauf fehlschlägt, wird ein manuell gepinnter Thread geladen.
 
-## Code
+## PDF
 
-| Datei | Rolle |
-|-------|--------|
-| `lib/project-report/echon-research-query.ts` | Persona → Research-Frage |
-| `lib/integrations/echon-research-client.ts` | `runEchonReportResearch` |
-| `lib/project-report/collector-echon.ts` | `runEchonMarketResearchForReport` |
-| `lib/project-report/build-bundle.ts` | Nach AUDION, vor Specialist-Agents |
+- Kapitel **„Markt & Signale“** (nach Executive Summary, vor Site Quality) — nur wenn `marketContext.available` und Inhalt nach Dedupe
+- Komponente: `components/pdf/ProjectReportMarketSection.tsx`
+- Dedupe: `lib/project-report/pdf-echon-display.ts` vs. Executive Summary

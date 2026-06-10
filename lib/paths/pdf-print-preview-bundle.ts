@@ -701,7 +701,22 @@ export function buildComprehensivePreviewBundle(): ProjectReportBundle {
                 'Personas bestätigen Relevanz der Haftpflicht-Themen, kritisieren Formular-UX.',
             ],
         },
-        marketContext: emptyEchonMarketContext('preview'),
+        marketContext: {
+            available: true,
+            threadId: 'a1b2c3d4-e5f6-4789-a012-3456789abcde',
+            executiveSummary:
+                'Versicherungsmarkt unter Digitalisierungsdruck; Makler und Endkunden erwarten transparente Online-Prozesse.',
+            keyFindings: [
+                'Regulatorische Meldepflichten verschärfen sich',
+                'Direktanbieter gewinnen an Sichtbarkeit in KI-Antworten',
+                'Haftpflicht-Themen dominieren Suchintentionen',
+            ],
+            implications:
+                'Website muss Tariftransparenz und Trust-Signale stärker nach außen tragen.',
+            watchlist: ['GDV-Publikationen', 'InsurTech-Waves'],
+            citationCount: 12,
+            confidence: 0.78,
+        },
         setup: buildProjectSetupContext({
             valueProposition: 'Transparente Haftpflicht für Hundehalter',
             industry: 'insurance',

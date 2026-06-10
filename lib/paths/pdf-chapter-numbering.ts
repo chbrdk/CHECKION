@@ -1,6 +1,7 @@
 /**
  * Hierarchical chapter numbering for project report PDFs (headings + TOC).
  */
+import { buildEchonMarketPdfContent } from '@/lib/project-report/pdf-echon-display';
 import { filterIssueGroupsForPdfAppendix } from '@/lib/project-report/pdf-issue-groups-display';
 import { PDF_KPI_EXCLUDED_METRIC_IDS } from '@/lib/project-report/pdf-metrics-display';
 import type { ProjectReportBundle } from '@/lib/project-report/types';
@@ -41,6 +42,12 @@ function hasAudience(bundle: ProjectReportBundle): boolean {
     return bundle.audience?.available === true && (bundle.audience.personas.length ?? 0) > 0;
 }
 
+function hasMarketSignals(bundle: ProjectReportBundle): boolean {
+    return buildEchonMarketPdfContent(bundle.marketContext, {
+        executiveSummaryNarrative: bundle.narrative?.executiveSummary,
+    }).show;
+}
+
 function isComprehensive(bundle: ProjectReportBundle): boolean {
     return bundle.variant === 'comprehensive' || bundle.variant === 'full';
 }
@@ -77,6 +84,10 @@ export function buildProjectReportOutline(
             title: 'Domain Summary',
             level: 1,
         });
+    }
+
+    if (hasMarketSignals(bundle)) {
+        push({ id: 'market', pageKey: 'market', title: labels.marketSignals, level: 0 });
     }
 
     push({ id: 'quality', pageKey: 'quality', title: labels.siteQuality, level: 0 });

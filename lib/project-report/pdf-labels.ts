@@ -130,8 +130,18 @@ export interface ProjectReportPdfLabels {
         weak: string;
         unknown: string;
     };
+    marketSignals: string;
+    marketSignalsSource: string;
+    marketSignalsFindings: string;
+    marketSignalsImplications: string;
+    marketSignalsWatchlist: string;
+    marketSignalsContradictions: string;
+    marketSignalsEvidenceGaps: string;
+    marketSignalsSources: string;
+    marketSignalsConfidence: string;
     chapterIntros: {
         executive: string;
+        marketSignals: string;
         siteQuality: string;
         systemicIssues: string;
         seo: string;
@@ -262,9 +272,20 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
             weak: 'schwach',
             unknown: '–',
         },
+        marketSignals: 'Markt & Signale',
+        marketSignalsSource: 'ECHON · externe Signale & Research (persona-bezogen)',
+        marketSignalsFindings: 'Zentrale Markt-Findings',
+        marketSignalsImplications: 'Implikationen für die Website',
+        marketSignalsWatchlist: 'Watchlist',
+        marketSignalsContradictions: 'Spannungsfelder',
+        marketSignalsEvidenceGaps: 'Evidenz-Lücken',
+        marketSignalsSources: 'Quellen (Signals/Waves)',
+        marketSignalsConfidence: 'Konfidenz',
         chapterIntros: {
             executive:
                 'Das Executive Summary bündelt das Gesamtlagebild: Wo steht die Domain, welche Risiken sind relevant und wie ordnen sich SEO, GEO und UX ein? Lesen Sie dieses Kapitel zuerst — die folgenden Abschnitte vertiefen die Einzelbereiche mit Messwerten und Detailanalysen.',
+            marketSignals:
+                'Markt & Signale fasst externe ECHON-Research zusammen — Trends, Regulierung und Wettbewerbsdynamik, abgeleitet aus den verknüpften Personas. Dieses Kapitel ergänzt Scan-Daten um den Marktdruck von außen; es wiederholt nicht die Executive Summary.',
             siteQuality:
                 'Site Quality & UX bewertet die technische und erlebnisbezogene Qualität Ihrer Website anhand des Domain-Scores, Performance-Kennzahlen und wiederkehrender Issues über viele Seiten. Hier erkennen Sie, ob Barrierefreiheit, Geschwindigkeit und Stabilität Ihre Nutzer und Rankings belasten.',
             systemicIssues:
@@ -408,9 +429,20 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
             weak: 'weak',
             unknown: '–',
         },
+        marketSignals: 'Market & Signals',
+        marketSignalsSource: 'ECHON · external signals & research (persona-driven)',
+        marketSignalsFindings: 'Key market findings',
+        marketSignalsImplications: 'Implications for the website',
+        marketSignalsWatchlist: 'Watchlist',
+        marketSignalsContradictions: 'Tension points',
+        marketSignalsEvidenceGaps: 'Evidence gaps',
+        marketSignalsSources: 'Sources (signals/waves)',
+        marketSignalsConfidence: 'Confidence',
         chapterIntros: {
             executive:
                 'The executive summary condenses the overall picture: domain health, key risks, and how SEO, GEO, and UX fit together. Read this section first — the following chapters drill into metrics and detailed analyses.',
+            marketSignals:
+                'Market & Signals summarizes external ECHON research — trends, regulation, and competitive dynamics derived from linked personas. It adds outside market pressure to scan data without repeating the executive summary.',
             siteQuality:
                 'Site Quality & UX assesses technical and experiential quality via the domain score, performance metrics, and recurring issues across pages. Use it to see whether accessibility, speed, or stability are holding back users and rankings.',
             systemicIssues:

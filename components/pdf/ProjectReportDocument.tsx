@@ -23,6 +23,10 @@ import { PdfScoreCardsFromSpec, PdfVisualSpec } from '@/components/pdf/charts/Pd
 import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
 import { buildDeepReportPages } from '@/components/pdf/ProjectReportDeepSections';
 import { buildAudienceReportPages } from '@/components/pdf/ProjectReportAudienceSections';
+import {
+    ProjectReportMarketSection,
+    shouldShowMarketSignalsPage,
+} from '@/components/pdf/ProjectReportMarketSection';
 import { ProjectReportQualitySection } from '@/components/pdf/ProjectReportQualitySection';
 import { ProjectReportSeoSection } from '@/components/pdf/ProjectReportSeoSection';
 import { ProjectReportGeoSection } from '@/components/pdf/ProjectReportGeoSection';
@@ -135,6 +139,18 @@ export function buildProjectReportPages(bundle: ProjectReportBundle): React.Reac
             ) : null}
         </>
     );
+
+    if (shouldShowMarketSignalsPage(bundle)) {
+        pages = pushContent(
+            pages,
+            'market',
+            <>
+                <PdfSectionHeader outlineId="market" title={labels.marketSignals} chapter="structure" />
+                <PdfSectionIntro text={labels.chapterIntros.marketSignals} />
+                <ProjectReportMarketSection bundle={bundle} labels={labels} />
+            </>
+        );
+    }
 
     pages = pushContent(
         pages,
