@@ -106,8 +106,9 @@ export async function buildProjectReportBundle(
                 value: marketContext.threadTitle ?? marketContext.threadId,
             });
         } else if (marketContext.reason && marketContext.reason !== 'echon_skipped') {
+            const detail = marketContext.errorDetail ? ` — ${marketContext.errorDetail}` : '';
             console.warn(
-                `[CHECKION] ECHON market research skipped for project ${projectId}: ${marketContext.reason}`
+                `[CHECKION] ECHON market research skipped for project ${projectId}: ${marketContext.reason}${detail}`
             );
         }
 

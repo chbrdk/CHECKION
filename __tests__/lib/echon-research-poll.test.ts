@@ -70,15 +70,14 @@ describe('waitForEchonResearchCompletion', () => {
         expect(result.available).toBe(true);
     });
 
-    it('times out with echon_poll_timeout when stream and poll never succeed', async () => {
+    it('times out with echon_poll_timeout when stream fails recoverably but thread never completes', async () => {
         const handlers = {
-            getActiveThreadId: () => null,
-            startAgentStream: vi.fn(
-                () =>
-                    new Promise<{ ok: false; reason: string }>((resolve) => {
-                        setTimeout(() => resolve({ ok: false, reason: 'echon_fetch_timeout' }), 50_000);
-                    })
-            ),
+            getActiveThreadId: () => THREAD_ID,
+            startAgentStream: vi.fn(async () => ({
+                ok: false as const,
+                reason: 'echon_fetch_timeout',
+                detail: 'proxy closed',
+            })),
             fetchThreadContext: vi.fn(async () => emptyEchonMarketContext('echon_no_structured_answer')),
             sleep: (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)),
             now: () => Date.now(),
@@ -94,6 +93,7 @@ describe('waitForEchonResearchCompletion', () => {
 
         expect(result.available).toBe(false);
         expect(result.reason).toBe('echon_poll_timeout');
+        expect(handlers.fetchThreadContext).toHaveBeenCalled();
     });
 
     it('calls onPoll once thread id is known', async () => {

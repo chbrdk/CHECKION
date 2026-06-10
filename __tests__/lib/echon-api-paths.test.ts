@@ -37,8 +37,8 @@ describe('echon-api paths', () => {
         );
     });
 
-    it('allows up to 10 min research with 10s poll interval', () => {
-        expect(ECHON_REPORT_RESEARCH_TIMEOUT_MS).toBe(600_000);
+    it('allows up to 30 min research with 10s poll interval', () => {
+        expect(ECHON_REPORT_RESEARCH_TIMEOUT_MS).toBe(1_800_000);
         expect(ECHON_REPORT_RESEARCH_POLL_INTERVAL_MS).toBe(10_000);
         expect(ECHON_REPORT_RESEARCH_POLL_REQUEST_TIMEOUT_MS).toBe(45_000);
     });

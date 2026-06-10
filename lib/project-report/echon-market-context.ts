@@ -33,6 +33,8 @@ const echonThreadSchema = z.object({
 export type EchonMarketContext = {
     available: boolean;
     reason?: string;
+    /** ECHON stream/HTTP detail (e.g. OpenAI 401 on ECHON server). */
+    errorDetail?: string;
     threadId?: string;
     threadTitle?: string | null;
     capturedAt?: string;
@@ -64,8 +66,8 @@ function truncateWords(text: string, maxWords: number): string {
     return `${words.slice(0, maxWords).join(' ')}…`;
 }
 
-export function emptyEchonMarketContext(reason?: string): EchonMarketContext {
-    return { available: false, reason };
+export function emptyEchonMarketContext(reason?: string, errorDetail?: string): EchonMarketContext {
+    return { available: false, reason, errorDetail: errorDetail?.trim() || undefined };
 }
 
 export function parseEchonResearchAnswerToMarketContext(

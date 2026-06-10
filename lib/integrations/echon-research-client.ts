@@ -80,7 +80,7 @@ export async function runEchonReportResearch(
                 }).then((res) =>
                     res.ok
                         ? { ok: true as const, threadId: res.threadId }
-                        : { ok: false as const, reason: res.reason }
+                        : { ok: false as const, reason: res.reason, detail: res.detail }
                 ),
             fetchThreadContext: (threadId) =>
                 fetchEchonMarketContext(threadId, { timeoutMs: pollRequestTimeoutMs }),

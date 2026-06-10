@@ -4,6 +4,10 @@
 
 import type { EchonMarketContext } from '@/lib/project-report/echon-market-context';
 import { emptyEchonMarketContext } from '@/lib/project-report/echon-market-context';
+import {
+    isFatalEchonStreamFailure,
+    isRecoverableEchonStreamFailure,
+} from '@/lib/integrations/echon-stream-failure';
 
 export type EchonResearchPollAttempt = {
     threadId: string;
@@ -13,7 +17,7 @@ export type EchonResearchPollAttempt = {
 
 export type EchonResearchStreamStartResult =
     | { ok: true; threadId: string }
-    | { ok: false; reason: string };
+    | { ok: false; reason: string; detail?: string };
 
 export type EchonResearchPollHandlers = {
     /** Starts ECHON research agent stream (same as dashboard). Resolves when stream completes. */
@@ -25,6 +29,30 @@ export type EchonResearchPollHandlers = {
     getActiveThreadId?: () => string | null;
 };
 
+function applyStreamResult(
+    res: EchonResearchStreamStartResult,
+    activeThreadId: string | null
+): { activeThreadId: string | null; fatal: EchonMarketContext | null; lastReason: string } {
+    if (res.ok) {
+        return { activeThreadId: res.threadId, fatal: null, lastReason: 'echon_research_pending' };
+    }
+    if (isFatalEchonStreamFailure(res.reason)) {
+        return {
+            activeThreadId,
+            fatal: emptyEchonMarketContext(res.reason, res.detail),
+            lastReason: res.reason,
+        };
+    }
+    if (!isRecoverableEchonStreamFailure(res.reason) && !activeThreadId) {
+        return {
+            activeThreadId,
+            fatal: emptyEchonMarketContext(res.reason, res.detail),
+            lastReason: res.reason,
+        };
+    }
+    return { activeThreadId, fatal: null, lastReason: res.reason };
+}
+
 export async function waitForEchonResearchCompletion(
     handlers: EchonResearchPollHandlers,
     options: {
@@ -34,7 +62,11 @@ export async function waitForEchonResearchCompletion(
     }
 ): Promise<EchonMarketContext> {
     let activeThreadId: string | null = null;
-    const streamPromise = handlers.startAgentStream();
+    let streamResult: EchonResearchStreamStartResult | null = null;
+    const streamPromise = handlers.startAgentStream().then((res) => {
+        streamResult = res;
+        return res;
+    });
 
     const startedAt = handlers.now();
     const deadline = startedAt + options.totalTimeoutMs;
@@ -66,24 +98,31 @@ export async function waitForEchonResearchCompletion(
         }
 
         const tickMs = Math.min(options.pollIntervalMs, remaining);
-        const raced = await Promise.race([
-            streamPromise.then((res) => ({ kind: 'stream' as const, res })),
-            handlers.sleep(tickMs).then(() => ({ kind: 'tick' as const })),
-        ]);
 
-        if (raced.kind === 'stream') {
-            if (raced.res.ok) {
-                activeThreadId = raced.res.threadId;
-                const ctx = await handlers.fetchThreadContext(raced.res.threadId);
-                if (ctx.available) {
-                    return ctx;
+        if (streamResult === null) {
+            const raced = await Promise.race([
+                streamPromise.then((res) => ({ kind: 'stream' as const, res })),
+                handlers.sleep(tickMs).then(() => ({ kind: 'tick' as const })),
+            ]);
+
+            if (raced.kind === 'stream') {
+                const applied = applyStreamResult(raced.res, activeThreadId);
+                if (applied.fatal) {
+                    return applied.fatal;
                 }
-                break;
+                activeThreadId = applied.activeThreadId ?? activeThreadId;
+                lastReason = applied.lastReason;
+
+                if (raced.res.ok) {
+                    const ctx = await handlers.fetchThreadContext(raced.res.threadId);
+                    if (ctx.available) {
+                        return ctx;
+                    }
+                    break;
+                }
             }
-            lastReason = raced.res.reason;
-            if (!activeThreadId) {
-                break;
-            }
+        } else {
+            await handlers.sleep(tickMs);
         }
     }
 
@@ -94,21 +133,27 @@ export async function waitForEchonResearchCompletion(
         }
     }
 
-    const streamResult = await Promise.race([
-        streamPromise.catch((): EchonResearchStreamStartResult => ({ ok: false, reason: 'echon_fetch_failed' })),
-        handlers.sleep(0).then((): EchonResearchStreamStartResult => ({ ok: false, reason: 'echon_research_pending' })),
-    ]);
+    if (streamResult === null) {
+        streamResult = await streamPromise.catch(
+            (): EchonResearchStreamStartResult => ({ ok: false, reason: 'echon_fetch_failed' })
+        );
+    }
 
     if (streamResult.ok) {
         const ctx = await handlers.fetchThreadContext(streamResult.threadId);
         if (ctx.available) {
             return ctx;
         }
-    } else if (streamResult.reason && streamResult.reason !== 'echon_research_pending') {
+    } else if (streamResult.reason) {
         lastReason = streamResult.reason;
+        if (isFatalEchonStreamFailure(streamResult.reason)) {
+            return emptyEchonMarketContext(lastReason, streamResult.detail);
+        }
     }
 
     return emptyEchonMarketContext(
-        lastReason === 'echon_research_pending' ? 'echon_poll_timeout' : lastReason
+        lastReason === 'echon_research_pending' || isRecoverableEchonStreamFailure(lastReason)
+            ? 'echon_poll_timeout'
+            : lastReason
     );
 }

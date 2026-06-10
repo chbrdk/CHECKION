@@ -11,8 +11,8 @@ export const ECHON_DASHBOARD_URL = 'https://echon.projects-a.plygrnd.tech/echon/
 
 export const ECHON_REPORT_RESEARCH_DEPTH = 'fast' as const;
 
-/** Max wait for one ECHON research run (poll + background POST). */
-export const ECHON_REPORT_RESEARCH_TIMEOUT_MS = 600_000;
+/** Max wait for one ECHON research run (poll + background stream). Retrieval can take 15–30 min. */
+export const ECHON_REPORT_RESEARCH_TIMEOUT_MS = 1_800_000;
 
 /** Interval between GET /threads/{id} polls while research runs. */
 export const ECHON_REPORT_RESEARCH_POLL_INTERVAL_MS = 10_000;

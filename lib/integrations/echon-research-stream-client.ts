@@ -41,7 +41,8 @@ function buildStreamRequestBody(query: string, depth: EchonReportResearchDepth) 
         filters: { time_window_days: 30 },
         options: {
             research_depth: depth,
-            top_k_signals: depth === 'fast' ? 22 : 45,
+            // Keep fast runs lighter — large retrieval (176+ signals) often hits proxy timeouts.
+            top_k_signals: depth === 'fast' ? 12 : 30,
             top_k_waves: depth === 'fast' ? 6 : 10,
             sources: ['internal'],
         },
