@@ -7,6 +7,7 @@ import {
     ECHON_REPORT_RESEARCH_POLL_REQUEST_TIMEOUT_MS,
     ECHON_REPORT_RESEARCH_TIMEOUT_MS,
     echonIntegrationUrl,
+    echonResearchStreamPath,
     echonResearchThreadMessagesPath,
     echonResearchThreadsPath,
     echonResearchThreadUrl,
@@ -27,6 +28,7 @@ describe('echon-api paths', () => {
             'https://echon.projects-a.plygrnd.tech/echon/api/v2/research/chat'
         );
         expect(echonResearchThreadsPath()).toBe('/api/v2/research/threads');
+        expect(echonResearchStreamPath()).toBe('/api/v2/research/stream');
         expect(echonResearchThreadMessagesPath('a1b2c3d4-e5f6-4789-a012-3456789abcde')).toBe(
             '/api/v2/research/threads/a1b2c3d4-e5f6-4789-a012-3456789abcde/messages'
         );

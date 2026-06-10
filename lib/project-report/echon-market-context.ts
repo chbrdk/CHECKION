@@ -3,6 +3,7 @@
  */
 
 import { z } from 'zod';
+import { extractEchonAnswerFromAssistantMessage } from '@/lib/project-report/echon-structured-answer';
 
 const echonResearchAnswerSchema = z.object({
     executive_summary: z.string().trim().optional(),
@@ -104,10 +105,9 @@ export function parseEchonThreadToMarketContext(raw: unknown, threadId: string):
     let answer: z.infer<typeof echonResearchAnswerSchema> | null = null;
     let citationCount = 0;
     for (const msg of assistantMessages) {
-        const structured = msg.structured ?? {};
-        const candidate = echonResearchAnswerSchema.safeParse(structured);
-        if (candidate.success && candidate.data.executive_summary?.trim()) {
-            answer = candidate.data;
+        const extracted = extractEchonAnswerFromAssistantMessage(msg);
+        if (extracted?.executive_summary?.trim()) {
+            answer = extracted;
             citationCount = Array.isArray(msg.citations) ? msg.citations.length : 0;
             break;
         }

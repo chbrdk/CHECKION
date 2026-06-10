@@ -51,9 +51,14 @@ export function isEchonIntegrationConfigured(): boolean {
     return true;
 }
 
-/** POST /api/v2/research/chat — sync research run for report pipeline */
+/** POST /api/v2/research/chat — legacy sync research (ECHON dashboard fallback) */
 export function echonResearchChatPath(): string {
     return '/api/v2/research/chat';
+}
+
+/** POST /api/v2/research/stream — multi-stage research agent (NDJSON, used by CHECKION reports) */
+export function echonResearchStreamPath(): string {
+    return '/api/v2/research/stream';
 }
 
 export type EchonReportResearchDepth = 'fast' | 'balanced' | 'deep';
@@ -102,6 +107,7 @@ export const ECHON_INTEGRATION_PATHS = {
     researchThread: (threadId: string) => echonResearchThreadPath(threadId),
     researchThreadMessages: (threadId: string) => echonResearchThreadMessagesPath(threadId),
     researchChat: echonResearchChatPath(),
+    researchStream: echonResearchStreamPath(),
 } as const;
 
 export function echonIntegrationUrl(path: string): string {

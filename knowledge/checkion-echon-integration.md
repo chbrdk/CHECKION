@@ -11,13 +11,14 @@ AUDION Personas laden
     ↓
 buildEchonReportResearchQuery(personas, domain, industry, competitors)
     ↓
-POST /api/v2/research/threads  → thread_id
-POST /api/v2/research/threads/{id}/messages  (background, research_depth: fast)
-    ↓  alle 10s
+POST /api/v2/research/stream  (Research Agent — wie ECHON Dashboard)
+    ↓  alle 10s parallel
 GET  /api/v2/research/threads/{id}  (poll bis executive_summary da)
     ↓
 bundle.marketContext → Synthesizer + Competitive + Persona-Agents
 ```
+
+**Wichtig:** Nicht `POST /threads` + `/messages` — das ist nur Sync-Chat ohne Agent-Schritte.
 
 **Ein** ECHON-Lauf pro Report (nicht N× pro Persona — zu langsam/teuer). Die Query fasst bis zu 5 Personas mit Pain Points & Zielen zusammen.
 
@@ -48,7 +49,9 @@ Weitere Pfade: `lib/project-report/echon-research-query.ts`
 
 | reason | Bedeutung |
 |--------|-----------|
-| `echon_poll_timeout` | 10 min abgelaufen, GET /threads hatte noch keine `executive_summary` |
+| `echon_poll_timeout` | 10 min abgelaufen, keine fertige Agent-Antwort |
+| `echon_stream_error` | Agent-Stream lieferte `{ type: "error" }` |
+| `echon_stream_incomplete` | Stream endete ohne `complete`-Event |
 | `echon_fetch_timeout` | Einzelner POST/GET abgebrochen (weiterer Poll versucht es erneut) |
 | `echon_no_structured_answer` | Thread da, Assistant-Antwort noch ohne Summary |
 

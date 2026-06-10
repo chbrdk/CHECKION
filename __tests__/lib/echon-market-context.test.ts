@@ -56,6 +56,37 @@ describe('echon market context', () => {
         expect(slimEchonMarketForAgent(ctx)).toBeNull();
     });
 
+    it('parses agent stream final assistant message', () => {
+        const ctx = parseEchonThreadToMarketContext(
+            {
+                id: THREAD_ID,
+                messages: [
+                    { id: 'm1', role: 'user', content: 'q' },
+                    {
+                        id: 'm2',
+                        role: 'assistant',
+                        content: 'Agent executive text',
+                        structured: {
+                            stage: 'final',
+                            payload: {
+                                answer: {
+                                    executive_summary: 'Agent executive text',
+                                    key_findings: ['Trend A'],
+                                    recommended_watchlist: ['Watch 1'],
+                                    confidence: 0.77,
+                                },
+                            },
+                        },
+                        citations: [{}],
+                    },
+                ],
+            },
+            THREAD_ID
+        );
+        expect(ctx.available).toBe(true);
+        expect(ctx.keyFindings).toEqual(['Trend A']);
+    });
+
     it('empty context helper', () => {
         expect(emptyEchonMarketContext('echon_thread_not_linked').reason).toBe(
             'echon_thread_not_linked'

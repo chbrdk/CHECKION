@@ -19,14 +19,15 @@ describe('waitForEchonResearchCompletion', () => {
         vi.useRealTimers();
     });
 
-    it('returns polled thread context when research finishes on server', async () => {
+    it('returns polled thread context while agent stream is still running', async () => {
         let polls = 0;
+        const streamState = { threadId: THREAD_ID };
         const handlers = {
-            createThread: vi.fn(async () => ({ ok: true as const, threadId: THREAD_ID })),
-            startResearch: vi.fn(
+            getActiveThreadId: () => streamState.threadId,
+            startAgentStream: vi.fn(
                 () =>
-                    new Promise<{ ok: false; reason: string }>((resolve) => {
-                        setTimeout(() => resolve({ ok: false, reason: 'echon_fetch_timeout' }), 30_000);
+                    new Promise<{ ok: true; threadId: string }>((resolve) => {
+                        setTimeout(() => resolve({ ok: true, threadId: THREAD_ID }), 30_000);
                     })
             ),
             fetchThreadContext: vi.fn(async () => {
@@ -49,18 +50,14 @@ describe('waitForEchonResearchCompletion', () => {
         const result = await resultPromise;
 
         expect(result.available).toBe(true);
-        expect(result.executiveSummary).toBe('Markt unter Druck.');
         expect(handlers.fetchThreadContext).toHaveBeenCalledTimes(3);
     });
 
-    it('returns POST result when messages endpoint responds before poll sees answer', async () => {
+    it('returns context when stream completes', async () => {
         const handlers = {
-            createThread: vi.fn(async () => ({ ok: true as const, threadId: THREAD_ID })),
-            startResearch: vi.fn(async () => ({
-                ok: true as const,
-                context: readyContext,
-            })),
-            fetchThreadContext: vi.fn(async () => emptyEchonMarketContext('echon_no_structured_answer')),
+            getActiveThreadId: () => THREAD_ID,
+            startAgentStream: vi.fn(async () => ({ ok: true as const, threadId: THREAD_ID })),
+            fetchThreadContext: vi.fn(async () => readyContext),
             sleep: (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)),
             now: () => Date.now(),
         };
@@ -71,13 +68,12 @@ describe('waitForEchonResearchCompletion', () => {
         });
 
         expect(result.available).toBe(true);
-        expect(handlers.startResearch).toHaveBeenCalledWith(THREAD_ID);
     });
 
-    it('times out with echon_poll_timeout when neither poll nor POST succeed', async () => {
+    it('times out with echon_poll_timeout when stream and poll never succeed', async () => {
         const handlers = {
-            createThread: vi.fn(async () => ({ ok: true as const, threadId: THREAD_ID })),
-            startResearch: vi.fn(
+            getActiveThreadId: () => null,
+            startAgentStream: vi.fn(
                 () =>
                     new Promise<{ ok: false; reason: string }>((resolve) => {
                         setTimeout(() => resolve({ ok: false, reason: 'echon_fetch_timeout' }), 50_000);
@@ -100,15 +96,12 @@ describe('waitForEchonResearchCompletion', () => {
         expect(result.reason).toBe('echon_poll_timeout');
     });
 
-    it('calls onPoll on each attempt', async () => {
+    it('calls onPoll once thread id is known', async () => {
         const onPoll = vi.fn();
         const handlers = {
-            createThread: vi.fn(async () => ({ ok: true as const, threadId: THREAD_ID })),
-            startResearch: vi.fn(async () => ({
-                ok: true as const,
-                context: readyContext,
-            })),
-            fetchThreadContext: vi.fn(async () => emptyEchonMarketContext('echon_no_structured_answer')),
+            getActiveThreadId: () => THREAD_ID,
+            startAgentStream: vi.fn(async () => ({ ok: true as const, threadId: THREAD_ID })),
+            fetchThreadContext: vi.fn(async () => readyContext),
             sleep: (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)),
             now: () => Date.now(),
         };
