@@ -10,12 +10,14 @@ import {
     resolveGeoInterpretations,
 } from '@/lib/project-report/geo-interpretations';
 import { PdfSectionHeader, PdfSectionIntro } from '@/components/pdf/shared/PdfPrimitives';
-import { PdfLeadText, PdfStatGrid } from '@/components/pdf/shared/PdfLayout';
+import { PdfStatGrid } from '@/components/pdf/shared/PdfLayout';
 import {
     PdfMetricInterpretationGroup,
     pdfInterpretationTexts,
     PdfRecommendationRow,
 } from '@/components/pdf/shared/PdfMetricInterpretation';
+import { sortGeoCompetitiveDomains } from '@/lib/project-report/pdf-competitive-display';
+import { PdfGeoCompetitiveTable } from '@/components/pdf/shared/PdfCompetitiveTables';
 import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
 
 export function ProjectReportGeoSection({
@@ -77,10 +79,7 @@ export function ProjectReportGeoSection({
             />
 
             {geoSection?.summary ? (
-                <View style={[pdfStyles.contentPanel, { marginTop: 8 }]}>
-                    <Text style={pdfStyles.subsectionTitle}>{labels.agentAssessment}</Text>
-                    <PdfLeadText>{geoSection.summary}</PdfLeadText>
-                </View>
+                <PdfMetricInterpretationGroup texts={[geoSection.summary]} />
             ) : null}
 
             {geoModelVisibilityChart ? (
@@ -109,6 +108,10 @@ export function ProjectReportGeoSection({
                         texts={pdfInterpretationTexts(interpretations.geoCompetitive)}
                     />
                     {geoCompetitiveChart}
+                    <PdfGeoCompetitiveTable
+                        domains={sortGeoCompetitiveDomains(geo.competitiveDomains)}
+                        labels={labels}
+                    />
                 </>
             ) : null}
 

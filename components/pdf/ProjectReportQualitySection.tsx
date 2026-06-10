@@ -10,7 +10,7 @@ import {
     systemicIssueDescription,
 } from '@/lib/project-report/site-quality-interpretations';
 import { PdfSectionHeader, PdfSectionIntro } from '@/components/pdf/shared/PdfPrimitives';
-import { PdfLeadText, PdfStatGrid } from '@/components/pdf/shared/PdfLayout';
+import { PdfStatGrid } from '@/components/pdf/shared/PdfLayout';
 import {
     PdfMetricInterpretationGroup,
     pdfInterpretationTexts,
@@ -72,10 +72,7 @@ export function ProjectReportQualitySection({
             ) : null}
 
             {siteQuality?.summary ? (
-                <View style={[pdfStyles.contentPanel, { marginTop: 8 }]}>
-                    <Text style={pdfStyles.subsectionTitle}>{labels.agentAssessment}</Text>
-                    <PdfLeadText>{siteQuality.summary}</PdfLeadText>
-                </View>
+                <PdfMetricInterpretationGroup texts={[siteQuality.summary]} />
             ) : null}
 
             {domain.systemicIssues.length > 0 ? (

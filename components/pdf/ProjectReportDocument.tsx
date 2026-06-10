@@ -33,6 +33,11 @@ import {
 } from '@/lib/paths/pdf-table-of-contents';
 import { buildProjectReportOutline } from '@/lib/paths/pdf-chapter-numbering';
 import { PdfChapterNumberingProvider } from '@/components/pdf/shared/PdfChapterNumbering';
+import {
+    formatFindingSeverity,
+    shouldShowRankingKeywordChart,
+    stripPdfEvidenceMarkers,
+} from '@/lib/project-report/pdf-competitive-display';
 import type { VisualSpec } from '@/lib/project-report/chart-specs';
 
 interface ProjectReportDocumentProps {
@@ -61,12 +66,10 @@ export function buildProjectReportPages(bundle: ProjectReportBundle): React.Reac
     const geoChart = bundle.visuals.find((v) => v.kind === 'geoCompetitive');
     const topicsChart = bundle.visuals.find((v) => v.kind === 'pageTopics');
     const rankTrend = bundle.visuals.find((v) => v.kind === 'rankTrend');
-    const geoQuestionTrend = bundle.visuals.find((v) => v.kind === 'geoQuestionTrend');
     const geoModelVisibility = bundle.visuals.find((v) => v.kind === 'geoModelVisibility');
-    const geoQuestionTrendSeries = bundle.visuals.find((v) => v.kind === 'geoQuestionTrendSeries');
     const competitorRankingScores = bundle.visuals.find((v) => v.kind === 'competitorRankingScores');
     const competitorSeoBarChart = bundle.visuals.find((v) => v.kind === 'competitorSeoBarChart');
-    const competitorTopicOverlap = bundle.visuals.find((v) => v.kind === 'competitorTopicOverlap');
+    const rankings = bundle.rankings;
     const narrative = bundle.narrative;
     const isComprehensive = bundle.variant === 'comprehensive' || bundle.variant === 'full';
 
@@ -152,7 +155,11 @@ export function buildProjectReportPages(bundle: ProjectReportBundle): React.Reac
             <ProjectReportSeoSection
                 bundle={bundle}
                 labels={labels}
-                rankingChart={rankingChart ? <PdfVisualSpec spec={rankingChart} /> : undefined}
+                rankingChart={
+                    rankings && shouldShowRankingKeywordChart(rankings.topKeywords) && rankingChart ? (
+                        <PdfVisualSpec spec={rankingChart} />
+                    ) : undefined
+                }
                 rankTrendChart={rankTrend ? <PdfVisualSpec spec={rankTrend} /> : undefined}
             />
         </>
@@ -220,6 +227,23 @@ export function buildProjectReportPages(bundle: ProjectReportBundle): React.Reac
         pages.push(...buildAudienceReportPages(bundle.audience, labels, pages.length, bundle.locale));
     }
 
+    if (narrative?.findings && narrative.findings.length > 0) {
+        pages = pushContent(
+            pages,
+            'findings',
+            <>
+                <PdfSectionHeader outlineId="findings" title={labels.keyFindings} chapter="summary" />
+                {narrative.findings.map((f, i) => (
+                    <PdfRecommendationRow
+                        key={i}
+                        title={`[${formatFindingSeverity(f.severity, bundle.locale)}] ${f.title}`}
+                        description={stripPdfEvidenceMarkers(f.description)}
+                    />
+                ))}
+            </>
+        );
+    }
+
     pages = pushContent(
         pages,
         'actions',
@@ -257,12 +281,8 @@ export function buildProjectReportPages(bundle: ProjectReportBundle): React.Reac
     if (isComprehensive && bundle.deep) {
         pages.push(
             ...buildDeepReportPages(bundle, labels, {
-                geoQuestionTrend: geoQuestionTrend as VisualSpec | undefined,
-                geoModelVisibility: geoModelVisibility as VisualSpec | undefined,
-                geoQuestionTrendSeries: geoQuestionTrendSeries as VisualSpec | undefined,
                 competitorRankingScores: competitorRankingScores as VisualSpec | undefined,
                 competitorSeoBarChart: competitorSeoBarChart as VisualSpec | undefined,
-                competitorTopicOverlap: competitorTopicOverlap as VisualSpec | undefined,
                 rankTrend: rankTrend as VisualSpec | undefined,
             }, pages.length)
         );

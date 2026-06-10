@@ -137,6 +137,10 @@ export function buildProjectReportOutline(
         });
     }
 
+    if ((narrative?.findings.length ?? 0) > 0) {
+        push({ id: 'findings', pageKey: 'findings', title: labels.keyFindings, level: 0 });
+    }
+
     push({ id: 'actions', pageKey: 'actions', title: labels.actionPlan, level: 0 });
     if (bundle.journey) {
         push({
@@ -154,15 +158,6 @@ export function buildProjectReportOutline(
             title: labels.metricsOverview,
             level: 0,
         });
-
-        if ((narrative?.findings.length ?? 0) > 0) {
-            push({
-                id: 'deep.findings',
-                pageKey: 'deep-findings',
-                title: labels.keyFindings,
-                level: 0,
-            });
-        }
 
         const benchmark = deep.competitiveBenchmark;
         if (benchmark && benchmark.scoreboard.length > 0) {
@@ -201,24 +196,6 @@ export function buildProjectReportOutline(
                 id: 'deep.keywords',
                 pageKey: 'deep-keywords',
                 title: labels.keywordDetails,
-                level: 0,
-            });
-        }
-
-        if (geoDeep && geoDeep.modelBenchmarks.length > 0) {
-            push({
-                id: 'deep.geo-models',
-                pageKey: 'deep-geo-models',
-                title: labels.geoModelBenchmark,
-                level: 0,
-            });
-        }
-
-        if (geoDeep && geoDeep.questionDetails.length > 0) {
-            push({
-                id: 'deep.geo-questions',
-                pageKey: 'deep-geo-questions',
-                title: labels.geoQuestionAnalysis,
                 level: 0,
             });
         }

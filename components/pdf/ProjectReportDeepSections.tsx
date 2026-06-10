@@ -9,9 +9,20 @@ import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
 import { PdfRecommendationRow } from '@/components/pdf/shared/PdfMetricInterpretation';
 import { PdfSectionHeader, PdfSectionIntro } from '@/components/pdf/shared/PdfPrimitives';
 import { PdfContentPage, PdfLeadText, PdfStatGrid, contentSideForIndex } from '@/components/pdf/shared/PdfLayout';
-import { PdfGeoQuestionCard } from '@/components/pdf/shared/PdfGeoQuestionCard';
 import { PdfVisualSpec } from '@/components/pdf/charts/PdfChartComponents';
 import type { VisualSpec } from '@/lib/project-report/chart-specs';
+import {
+    PdfCompetitiveScoreboardTable,
+    PdfKeywordSerpTable,
+    PdfTopicOverlapTable,
+} from '@/components/pdf/shared/PdfCompetitiveTables';
+import {
+    formatCompetitiveInsightKind,
+    hasSeoRollupData,
+    prioritizeTopicOverlapRows,
+    selectKeywordSerpRows,
+    stripPdfEvidenceMarkers,
+} from '@/lib/project-report/pdf-competitive-display';
 
 function SectionAnalysisBlock({ section }: { section: SectionAnalysis }) {
     return (
@@ -39,12 +50,8 @@ export function buildDeepReportPages(
     bundle: ProjectReportBundle,
     labels: ProjectReportPdfLabels,
     visuals: {
-        geoQuestionTrend?: VisualSpec;
-        geoModelVisibility?: VisualSpec;
-        geoQuestionTrendSeries?: VisualSpec;
         competitorRankingScores?: VisualSpec;
         competitorSeoBarChart?: VisualSpec;
-        competitorTopicOverlap?: VisualSpec;
         rankTrend?: VisualSpec;
     },
     startPageIndex: number
@@ -89,22 +96,6 @@ export function buildDeepReportPages(
         </>
     );
 
-    if (narrative?.findings && narrative.findings.length > 0) {
-        addPage(
-            'deep-findings',
-            <>
-                <PdfSectionHeader outlineId="deep.findings" title={labels.keyFindings} chapter="summary" />
-                {narrative.findings.map((f, i) => (
-                    <PdfRecommendationRow
-                        key={i}
-                        title={`[${f.severity ?? 'info'}] ${f.title}`}
-                        description={f.description}
-                    />
-                ))}
-            </>
-        );
-    }
-
     const benchmark = bundle.deep?.competitiveBenchmark;
     if (benchmark && benchmark.scoreboard.length > 0) {
         addPage(
@@ -123,16 +114,16 @@ export function buildDeepReportPages(
                             accent: '#7C3AED',
                         },
                         {
-                            label: 'SEO rank',
+                            label: labels.seoRank,
                             value: `#${benchmark.summary.ownSeoRank}`,
                         },
                         {
-                            label: 'Shared themes',
-                            value: String(benchmark.summary.sharedThemeCount),
+                            label: labels.uniqueOwnThemes,
+                            value: String(benchmark.summary.uniqueOwnThemes),
                         },
                         {
-                            label: 'Competitors scanned',
-                            value: String(benchmark.summary.completeCompetitorCount),
+                            label: labels.themesOnlyCompetitorsHave,
+                            value: String(benchmark.summary.themesOnlyCompetitorsHave),
                         },
                     ]}
                 />
@@ -142,22 +133,7 @@ export function buildDeepReportPages(
                     title={labels.scoreboard}
                     chapter="competitors"
                 />
-                <View style={pdfStyles.contentPanel}>
-                    {benchmark.scoreboard.map((row) => (
-                        <View key={row.domain} style={pdfStyles.dataTableRow}>
-                            <Text style={[pdfStyles.tableLabel, { width: '35%' }]}>
-                                {row.isOwn ? `${row.domain} (own)` : row.domain}
-                            </Text>
-                            <Text style={pdfStyles.tableValue}>
-                                {labels.domainScore} {row.domainScore}
-                                {row.domainScoreDeltaVsOwn != null && !row.isOwn
-                                    ? ` (${row.domainScoreDeltaVsOwn > 0 ? '+' : ''}${row.domainScoreDeltaVsOwn})`
-                                    : ''}{' '}
-                                · SEO {row.seoOnPageScore}
-                            </Text>
-                        </View>
-                    ))}
-                </View>
+                <PdfCompetitiveScoreboardTable rows={benchmark.scoreboard} labels={labels} />
                 {visuals.competitorSeoBarChart ? (
                     <PdfVisualSpec spec={visuals.competitorSeoBarChart} />
                 ) : null}
@@ -172,8 +148,8 @@ export function buildDeepReportPages(
                         {benchmark.deterministicInsights.map((ins) => (
                             <PdfRecommendationRow
                                 key={ins.id}
-                                title={`[${ins.kind}] ${ins.title}`}
-                                description={ins.description}
+                                title={`[${formatCompetitiveInsightKind(ins.kind, bundle.locale)}] ${ins.title}`}
+                                description={stripPdfEvidenceMarkers(ins.description)}
                             />
                         ))}
                     </>
@@ -186,24 +162,23 @@ export function buildDeepReportPages(
                             title={labels.topicOverlap}
                             chapter="structure"
                         />
-                        {visuals.competitorTopicOverlap ? (
-                            <PdfVisualSpec spec={visuals.competitorTopicOverlap} />
-                        ) : null}
+                        <PdfTopicOverlapTable
+                            rows={prioritizeTopicOverlapRows(benchmark.topicOverlap)}
+                            labels={labels}
+                        />
                     </>
                 ) : null}
             </>
         );
     }
 
+    const redundantSectionKeys = new Set(['siteQuality', 'seoRankings', 'competitive']);
     const sectionEntries: Array<[string, SectionAnalysis | null | undefined]> = [
-        ['siteQuality', sections.siteQuality],
-        ['seoRankings', sections.seoRankings],
-        ['competitive', sections.competitive],
         ['journey', sections.journey],
     ];
 
     for (const [key, section] of sectionEntries) {
-        if (!section) continue;
+        if (!section || redundantSectionKeys.has(key)) continue;
         addPage(
             `deep-section-${key}`,
             <>
@@ -218,80 +193,20 @@ export function buildDeepReportPages(
             'deep-keywords',
             <>
                 <PdfSectionHeader outlineId="deep.keywords" title={labels.keywordDetails} chapter="seo" />
+                <PdfKeywordSerpTable
+                    rows={selectKeywordSerpRows(deep.rankKeywordDetails)}
+                    labels={labels}
+                />
                 {visuals.competitorRankingScores ? (
                     <PdfVisualSpec spec={visuals.competitorRankingScores} />
                 ) : null}
-                <View style={pdfStyles.contentPanel}>
-                    {deep.rankKeywordDetails.slice(0, 15).map((kw) => (
-                        <View key={kw.id} style={pdfStyles.dataTableRow}>
-                            <Text style={[pdfStyles.tableLabel, { width: '40%' }]}>{kw.keyword}</Text>
-                            <Text style={pdfStyles.tableValue}>
-                                {kw.position != null ? `#${kw.position}` : '–'}
-                                {kw.positionDelta != null
-                                    ? ` (${kw.positionDelta > 0 ? '+' : ''}${kw.positionDelta})`
-                                    : ''}
-                            </Text>
-                        </View>
-                    ))}
-                </View>
                 {visuals.rankTrend ? <PdfVisualSpec spec={visuals.rankTrend} /> : null}
             </>
         );
     }
 
     const geoDeep = deep.geoDeep;
-    if (geoDeep && geoDeep.modelBenchmarks.length > 0) {
-        addPage(
-            'deep-geo-models',
-            <>
-                <PdfSectionHeader outlineId="deep.geo-models" title={labels.geoModelBenchmark} chapter="geo" />
-                {visuals.geoModelVisibility ? <PdfVisualSpec spec={visuals.geoModelVisibility} /> : null}
-                <View style={pdfStyles.contentPanel}>
-                    <View style={pdfStyles.dataTableHeader}>
-                        <Text style={[pdfStyles.dataTableHeaderCell, { width: '28%' }]}>Model</Text>
-                        <Text style={[pdfStyles.dataTableHeaderCell, { width: '18%' }]}>Visibility</Text>
-                        <Text style={[pdfStyles.dataTableHeaderCell, { width: '18%' }]}>Avg pos.</Text>
-                        <Text style={[pdfStyles.dataTableHeaderCell, { width: '18%' }]}>SoV</Text>
-                        <Text style={[pdfStyles.dataTableHeaderCell, { width: '18%' }]}>Mentions</Text>
-                    </View>
-                    {geoDeep.modelBenchmarks.map((m) => (
-                        <View key={m.modelId} style={pdfStyles.dataTableRow}>
-                            <Text style={[pdfStyles.tableLabel, { width: '28%' }]}>{m.modelId}</Text>
-                            <Text style={[pdfStyles.tableValue, { width: '18%' }]}>
-                                {m.visibilityScore ?? '–'}
-                            </Text>
-                            <Text style={[pdfStyles.tableValue, { width: '18%' }]}>
-                                {m.avgPosition ?? '–'}
-                            </Text>
-                            <Text style={[pdfStyles.tableValue, { width: '18%' }]}>
-                                {m.shareOfVoice != null ? `${Math.round(m.shareOfVoice * 100)}%` : '–'}
-                            </Text>
-                            <Text style={[pdfStyles.tableValue, { width: '18%' }]}>
-                                {m.mentionCount ?? '–'}
-                            </Text>
-                        </View>
-                    ))}
-                </View>
-            </>
-        );
-    }
-
-    if (geoDeep && geoDeep.questionDetails.length > 0) {
-        addPage(
-            'deep-geo-questions',
-            <>
-                <PdfSectionHeader outlineId="deep.geo-questions" title={labels.geoQuestionAnalysis} chapter="geo" />
-                {visuals.geoQuestionTrendSeries ? (
-                    <PdfVisualSpec spec={visuals.geoQuestionTrendSeries} />
-                ) : visuals.geoQuestionTrend ? (
-                    <PdfVisualSpec spec={visuals.geoQuestionTrend} />
-                ) : null}
-                {geoDeep.questionDetails.slice(0, 16).map((q) => (
-                    <PdfGeoQuestionCard key={q.evidenceId} question={q} labels={labels} />
-                ))}
-            </>
-        );
-    }
+    // LLM model benchmark chart is shown in the main GEO chapter — skip duplicate deep page.
 
     const geoPages = geoDeep?.pages.length ? geoDeep.pages : deep.geoPages;
     if (geoPages.length > 0) {
@@ -358,17 +273,7 @@ export function buildDeepReportPages(
         );
     }
 
-    if (sections.geo && !pages.some((p) => p.key === 'deep-section-geo')) {
-        addPage(
-            'deep-section-geo',
-            <>
-                <PdfSectionHeader title={labels.geoAgentAnalysis} chapter="geo" />
-                <SectionAnalysisBlock section={sections.geo} />
-            </>
-        );
-    }
-
-    if (deep.issueGroups.length > 0 || deep.seoRollup) {
+    if (deep.issueGroups.length > 0 || hasSeoRollupData(deep.seoRollup)) {
         addPage(
             'deep-issues-seo',
             <>
@@ -397,7 +302,7 @@ export function buildDeepReportPages(
                         </View>
                     </>
                 ) : null}
-                {deep.seoRollup ? (
+                {hasSeoRollupData(deep.seoRollup) && deep.seoRollup ? (
                     <>
                         <PdfSectionHeader
                             outlineId="deep.issues-seo.technical"

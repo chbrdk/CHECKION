@@ -16,7 +16,9 @@ Weiße A4-Seiten, einheitliche Ränder, kleines Logo **nur auf dem Deckblatt** o
 | pdf.js Worker | `public/pdf.worker.min.mjs` (`scripts/copy-pdfjs-worker.sh`) |
 | Preview-Bundle | `lib/paths/pdf-print-preview-bundle.ts` (variant: comprehensive) |
 | Persona-Auswahl (PDF) | `lib/project-report/audience-pdf-personas.ts` — max. 5 differenzierendste Personas, **3 pro Seite**, Fit-Legende (+/~/−) |
-| Audience-PDF-Sections | `components/pdf/ProjectReportAudienceSections.tsx` |
+- Wettbewerbs-Benchmark: Multi-Säulen-Scoreboard (UX/SEO/GEO/Ranking/WCAG/LCP), Topic-Gap-Tabelle, GEO-SoV-Tabelle, SERP-Leader-Tabelle
+- Zentrale Erkenntnisse vor Maßnahmenplan (nicht mehr im Deep-Appendix)
+- GEO-Testfragen-Detailseiten (Trend-Charts + Fragekarten) sind **nicht** mehr im PDF-Appendix
 
 ## Lokal stylen
 

@@ -63,7 +63,11 @@ describe('buildChartSpecs', () => {
         keywordCount: 5,
         lastUpdated: null,
         competitorScores: {},
-        topKeywords: [{ id: 'k1', keyword: 'test keyword', position: 3, evidenceId: 'ev-k1' }],
+        topKeywords: [
+            { id: 'k1', keyword: 'test keyword', position: 3, evidenceId: 'ev-k1' },
+            { id: 'k2', keyword: 'second keyword', position: 5, evidenceId: 'ev-k2' },
+            { id: 'k3', keyword: 'third keyword', position: 8, evidenceId: 'ev-k3' },
+        ],
         evidenceId: 'ev-ranking-score',
     };
 
@@ -89,15 +93,24 @@ describe('buildChartSpecs', () => {
         expect(kinds).toContain('pageTopics');
     });
 
+    it('skips ranking keyword chart when fewer than three positioned keywords', () => {
+        const sparseRankings: RankingFacts = {
+            ...rankings,
+            topKeywords: [{ id: 'k1', keyword: 'only one', position: 1, evidenceId: 'ev-k1' }],
+        };
+        const kinds = buildChartSpecs(domain, competitors, sparseRankings, geo, 'example.com', []).map(
+            (s) => s.kind
+        );
+        expect(kinds).not.toContain('rankingKeywords');
+    });
+
     it('returns only score cards when minimal data', () => {
         const specs = buildChartSpecs(null, [], null, null, null, []);
         expect(specs).toHaveLength(1);
         expect(specs[0]!.kind).toBe('scoreCards');
     });
 
-    it('adds geo question trend and competitor ranking charts from deep data', () => {
-        const longQuery =
-            'Which enterprise analytics platform offers the best ROI for manufacturing teams in Europe?';
+    it('adds competitor ranking charts from deep data without geo question trend charts', () => {
         const rankingsWithCompetitors: RankingFacts = {
             ...rankings,
             competitorScores: { 'rival.com': 55 },
@@ -113,7 +126,7 @@ describe('buildChartSpecs', () => {
             },
             geoQuestionHistory: [
                 {
-                    queryText: longQuery,
+                    queryText: 'Which enterprise analytics platform offers the best ROI?',
                     queryIndex: 0,
                     points: [],
                     latestPosition: 3,
@@ -129,12 +142,9 @@ describe('buildChartSpecs', () => {
             geoDeep: null,
         });
         const kinds = specs.map((s) => s.kind);
-        expect(kinds).toContain('geoQuestionTrend');
+        expect(kinds).not.toContain('geoQuestionTrend');
+        expect(kinds).not.toContain('geoQuestionTrendSeries');
         expect(kinds).toContain('competitorRankingScores');
-        const geoTrend = specs.find((s) => s.kind === 'geoQuestionTrend');
-        expect(geoTrend && geoTrend.kind === 'geoQuestionTrend' ? geoTrend.items[0]?.label : '').toBe(
-            longQuery
-        );
     });
 
     it('adds SEO and topic overlap charts from competitive benchmark', () => {

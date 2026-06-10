@@ -61,7 +61,6 @@ export interface ProjectReportPdfLabels {
     metricLabel: string;
     metricValue: string;
     metricBenchmark: string;
-    agentAssessment: string;
     keywordDetails: string;
     geoQuestionHistory: string;
     geoPageAnalysis: string;
@@ -73,6 +72,18 @@ export interface ProjectReportPdfLabels {
     topicOverlap: string;
     competitiveInsights: string;
     scoreboard: string;
+    competitiveOwnDomainNote: string;
+    topicOverlapTheme: string;
+    topicOverlapOwn: string;
+    topicOverlapBestCompetitor: string;
+    topicOverlapStatus: string;
+    topicOverlapStatusGap: string;
+    topicOverlapStatusLead: string;
+    topicOverlapStatusShared: string;
+    uniqueOwnThemes: string;
+    themesOnlyCompetitorsHave: string;
+    serpLeader: string;
+    seoRank: string;
     geoModelBenchmark: string;
     geoQuestionAnalysis: string;
     geoOnPageEeat: string;
@@ -177,7 +188,6 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         metricLabel: 'Metrik',
         metricValue: 'Wert',
         metricBenchmark: 'Einordnung',
-        agentAssessment: 'KI-Einordnung',
         keywordDetails: 'Keyword-Details & Trends',
         geoQuestionHistory: 'GEO-Fragen-Verlauf',
         geoPageAnalysis: 'GEO Seitenanalyse',
@@ -189,6 +199,18 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         topicOverlap: 'Seitenthemen — Overlap',
         competitiveInsights: 'Wettbewerbs-Erkenntnisse',
         scoreboard: 'Scoreboard',
+        competitiveOwnDomainNote: 'Eigene Domain',
+        topicOverlapTheme: 'Thema',
+        topicOverlapOwn: 'Eigene',
+        topicOverlapBestCompetitor: 'Bester Wettbewerber',
+        topicOverlapStatus: 'Status',
+        topicOverlapStatusGap: 'Lücke',
+        topicOverlapStatusLead: 'Alleinstellung',
+        topicOverlapStatusShared: 'Gemeinsam',
+        uniqueOwnThemes: 'Eigene Top-Themen',
+        themesOnlyCompetitorsHave: 'Nur beim Wettbewerb',
+        serpLeader: 'SERP-Leader',
+        seoRank: 'SEO-Rang',
         geoModelBenchmark: 'LLM-Sichtbarkeit nach Modell',
         geoQuestionAnalysis: 'GEO-Testfragen & Zitationen',
         geoOnPageEeat: 'On-Page GEO & E-E-A-T',
@@ -305,7 +327,6 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         metricLabel: 'Metric',
         metricValue: 'Value',
         metricBenchmark: 'Benchmark',
-        agentAssessment: 'AI assessment',
         keywordDetails: 'Keyword Details & Trends',
         geoQuestionHistory: 'GEO Question History',
         geoPageAnalysis: 'GEO Page Analysis',
@@ -317,6 +338,18 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         topicOverlap: 'Page Topics — Overlap',
         competitiveInsights: 'Competitive Insights',
         scoreboard: 'Scoreboard',
+        competitiveOwnDomainNote: 'Own domain',
+        topicOverlapTheme: 'Theme',
+        topicOverlapOwn: 'Own',
+        topicOverlapBestCompetitor: 'Best competitor',
+        topicOverlapStatus: 'Status',
+        topicOverlapStatusGap: 'Gap',
+        topicOverlapStatusLead: 'Unique',
+        topicOverlapStatusShared: 'Shared',
+        uniqueOwnThemes: 'Unique own themes',
+        themesOnlyCompetitorsHave: 'Competitor-only themes',
+        serpLeader: 'SERP leader',
+        seoRank: 'SEO rank',
         geoModelBenchmark: 'LLM visibility by model',
         geoQuestionAnalysis: 'GEO test queries & citations',
         geoOnPageEeat: 'On-page GEO & E-E-A-T',

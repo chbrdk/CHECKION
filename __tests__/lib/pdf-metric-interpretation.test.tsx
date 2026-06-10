@@ -52,3 +52,34 @@ describe('PdfRecommendationRow', () => {
         expect(html).toContain('Issue description');
     });
 });
+
+describe('PDF deep dive layout', () => {
+    it('does not render low-value GEO question trend appendix pages', async () => {
+        const { readFileSync } = await import('node:fs');
+        const { join } = await import('node:path');
+        const deepSrc = readFileSync(
+            join(process.cwd(), 'components/pdf/ProjectReportDeepSections.tsx'),
+            'utf8'
+        );
+        expect(deepSrc).not.toContain('deep-geo-questions');
+        expect(deepSrc).not.toContain('PdfGeoQuestionCard');
+    });
+});
+
+describe('PDF section interpretations', () => {
+    it('does not render KI-Einordnung labels in quality, seo, or geo sections', async () => {
+        const { readFileSync } = await import('node:fs');
+        const { join } = await import('node:path');
+        const files = [
+            'components/pdf/ProjectReportQualitySection.tsx',
+            'components/pdf/ProjectReportSeoSection.tsx',
+            'components/pdf/ProjectReportGeoSection.tsx',
+            'lib/project-report/pdf-labels.ts',
+        ];
+        for (const file of files) {
+            const src = readFileSync(join(process.cwd(), file), 'utf8');
+            expect(src).not.toContain('agentAssessment');
+            expect(src).not.toContain('KI-Einordnung');
+        }
+    });
+});

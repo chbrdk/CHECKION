@@ -648,4 +648,31 @@ export const pdfStyles = StyleSheet.create({
         color: pdfColors.gray700,
         lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
     },
+    competitiveTableHeader: {
+        flexDirection: 'row',
+        borderBottomWidth: 0.5,
+        borderBottomColor: pdfColors.gray200,
+        paddingBottom: 3,
+        marginBottom: 2,
+    },
+    competitiveTableHeaderCell: {
+        fontSize: 6,
+        fontWeight: PDF_TYPE_WEIGHT.bold,
+        color: pdfColors.gray500,
+        lineHeight: PDF_TYPE_LINE_HEIGHT.tight,
+        textTransform: 'uppercase',
+    },
+    competitiveTableRow: {
+        flexDirection: 'row',
+        paddingVertical: 2,
+        borderBottomWidth: 0.25,
+        borderBottomColor: pdfColors.gray200,
+    },
+    competitiveTableCell: {
+        fontSize: 6.5,
+        fontWeight: PDF_TYPE_WEIGHT.regular,
+        color: pdfColors.gray700,
+        lineHeight: PDF_TYPE_LINE_HEIGHT.snug,
+        paddingRight: 3,
+    },
 });

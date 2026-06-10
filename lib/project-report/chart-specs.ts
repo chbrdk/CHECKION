@@ -10,6 +10,7 @@ import type {
     ProjectReportDeepAnalysis,
     RankingFacts,
 } from '@/lib/project-report/types';
+import { shouldShowRankingKeywordChart, PDF_RANKING_CHART_MIN_POSITIONED_KEYWORDS } from '@/lib/project-report/pdf-competitive-display';
 import { CHART_SERIES_PALETTE } from '@/lib/chart-series-colors';
 
 export type VisualSpecKind =
@@ -147,7 +148,11 @@ export function buildChartSpecs(
         });
     }
 
-    if (rankings && rankings.topKeywords.length > 0) {
+    if (
+        rankings &&
+        rankings.topKeywords.length > 0 &&
+        shouldShowRankingKeywordChart(rankings.topKeywords, PDF_RANKING_CHART_MIN_POSITIONED_KEYWORDS)
+    ) {
         specs.push({
             kind: 'rankingKeywords',
             items: rankings.topKeywords.slice(0, MAX_KEYWORDS).map((k) => ({
@@ -217,34 +222,6 @@ export function buildChartSpecs(
                 color: CHART_SERIES_PALETTE[i % CHART_SERIES_PALETTE.length],
             })),
         });
-    } else if (deep?.geoQuestionHistory && deep.geoQuestionHistory.length > 0) {
-        specs.push({
-            kind: 'geoQuestionTrend',
-            items: deep.geoQuestionHistory.slice(0, 8).map((q, i) => ({
-                label: q.queryText,
-                value: q.latestPosition != null ? Math.max(1, 101 - q.latestPosition) : 0,
-                color: CHART_SERIES_PALETTE[i % CHART_SERIES_PALETTE.length],
-            })),
-        });
-    }
-
-    const geoTrendSource =
-        deep?.geoDeep?.questionDetails.filter((q) => q.points.length >= 2) ??
-        deep?.geoQuestionHistory.filter((q) => q.points.length >= 2) ??
-        [];
-    if (geoTrendSource.length > 0) {
-        const series: TrendSeries[] = geoTrendSource.slice(0, 6).map((q, i) => ({
-            keyword: q.queryText,
-            color: CHART_SERIES_PALETTE[i % CHART_SERIES_PALETTE.length],
-            points: q.points.slice(-12).map((p, idx) => ({
-                x: idx,
-                y: p.avgPosition != null ? Math.min(100, p.avgPosition) : 100,
-                label: p.recordedAt.slice(0, 10),
-            })),
-        }));
-        if (series.some((s) => s.points.length >= 2)) {
-            specs.push({ kind: 'geoQuestionTrendSeries', series });
-        }
     }
 
     if (deep?.competitiveBenchmark && deep.competitiveBenchmark.scoreboard.length > 1) {

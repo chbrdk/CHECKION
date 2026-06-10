@@ -10,12 +10,17 @@ import {
     resolveSeoInterpretations,
 } from '@/lib/project-report/seo-rankings-interpretations';
 import { PdfSectionHeader, PdfSectionIntro } from '@/components/pdf/shared/PdfPrimitives';
-import { PdfLeadText, PdfStatGrid } from '@/components/pdf/shared/PdfLayout';
+import { PdfStatGrid } from '@/components/pdf/shared/PdfLayout';
 import {
     PdfMetricInterpretationGroup,
     pdfInterpretationTexts,
     PdfRecommendationRow,
 } from '@/components/pdf/shared/PdfMetricInterpretation';
+import {
+    selectKeywordSerpRows,
+    topKeywordsWithPosition,
+} from '@/lib/project-report/pdf-competitive-display';
+import { PdfKeywordSerpTable } from '@/components/pdf/shared/PdfCompetitiveTables';
 import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
 
 export function ProjectReportSeoSection({
@@ -81,7 +86,23 @@ export function ProjectReportSeoSection({
                     <PdfSectionIntro text={labels.chapterIntros.keywords} />
                     <PdfMetricInterpretationGroup texts={pdfInterpretationTexts(interpretations.keywords)} />
                     {rankingChart}
-                    {rankings.topKeywords.slice(0, 5).map((kw) => {
+                    {bundle.deep?.rankKeywordDetails && bundle.deep.rankKeywordDetails.length > 0 ? (
+                        <PdfKeywordSerpTable
+                            rows={selectKeywordSerpRows(bundle.deep.rankKeywordDetails)}
+                            labels={labels}
+                        />
+                    ) : null}
+                    {(bundle.deep?.rankKeywordDetails?.length
+                        ? topKeywordsWithPosition(
+                              bundle.deep.rankKeywordDetails.map((kw) => ({
+                                  id: kw.id,
+                                  keyword: kw.keyword,
+                                  position: kw.position,
+                                  evidenceId: kw.evidenceId,
+                              }))
+                          )
+                        : rankings.topKeywords
+                    ).map((kw) => {
                         const insight = keywordInsightDescription(
                             kw.keyword,
                             kw.position,
@@ -103,10 +124,7 @@ export function ProjectReportSeoSection({
             )}
 
             {seoSection?.summary ? (
-                <View style={[pdfStyles.contentPanel, { marginTop: 8 }]}>
-                    <Text style={pdfStyles.subsectionTitle}>{labels.agentAssessment}</Text>
-                    <PdfLeadText>{seoSection.summary}</PdfLeadText>
-                </View>
+                <PdfMetricInterpretationGroup texts={[seoSection.summary]} />
             ) : null}
 
             {rankTrendChart ? (
