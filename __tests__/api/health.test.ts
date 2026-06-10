@@ -18,5 +18,10 @@ describe('GET /api/health', () => {
       configured: expect.any(Boolean),
       missing: expect.any(Array),
     });
+    expect(json.integrations?.echon).toMatchObject({
+      apiBaseUrlSet: true,
+      configured: true,
+      apiBaseUrl: expect.stringContaining('echon.projects-a.plygrnd.tech'),
+    });
   });
 });

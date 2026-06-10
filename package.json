@@ -18,7 +18,8 @@
     "test:scanpath": "tsx lib/scanpath.test.ts",
     "scripts:refresh-domain-payloads": "tsx scripts/refresh-domain-payloads.ts",
     "scripts:backfill-domain-scan-lineage": "tsx scripts/backfill-domain-scan-lineage.ts",
-    "scripts:backfill-scan-issues": "tsx scripts/backfill-scan-issues.ts"
+    "scripts:backfill-scan-issues": "tsx scripts/backfill-scan-issues.ts",
+    "scripts:test-echon-integration": "tsx scripts/test-echon-integration.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

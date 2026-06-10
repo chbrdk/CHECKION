@@ -1,14 +1,20 @@
 /**
- * ECHON integration URLs (server-side only).
- * ECHON has no project model — CHECKION pins a research thread id per project.
- *
- * Deploy URL (knowledge): https://echon.projects-a.plygrnd.tech/echon/dashboard
- * API base example: https://echon.projects-a.plygrnd.tech/echon
+ * ECHON integration URLs (server-side).
+ * Central source — do not read ECHON_API_BASE_URL from env.
+ * @see knowledge/checkion-echon-integration.md
  */
 
-export function getEchonApiBaseUrl(): string | null {
-    const base = (process.env.ECHON_API_BASE_URL ?? '').trim();
-    return base ? base.replace(/\/$/, '') : null;
+/** Nginx prefix → FastAPI `/api/v2/...` */
+export const ECHON_API_BASE_URL = 'https://echon.projects-a.plygrnd.tech/echon' as const;
+
+export const ECHON_DASHBOARD_URL = 'https://echon.projects-a.plygrnd.tech/echon/dashboard' as const;
+
+export const ECHON_REPORT_RESEARCH_DEPTH = 'fast' as const;
+
+export const ECHON_REPORT_RESEARCH_TIMEOUT_MS = 300_000;
+
+export function getEchonApiBaseUrl(): string {
+    return ECHON_API_BASE_URL.replace(/\/$/, '');
 }
 
 export function getEchonServiceToken(): string | null {
@@ -17,21 +23,20 @@ export function getEchonServiceToken(): string | null {
 }
 
 export function getEchonIntegrationEnvSnapshot() {
-    const apiBaseUrlSet = Boolean((process.env.ECHON_API_BASE_URL ?? '').trim());
     const serviceTokenSet = Boolean((process.env.ECHON_SERVICE_TOKEN ?? '').trim());
-    const missing: Array<'ECHON_API_BASE_URL' | 'ECHON_SERVICE_TOKEN'> = [];
-    if (!apiBaseUrlSet) missing.push('ECHON_API_BASE_URL');
-    if (!serviceTokenSet) missing.push('ECHON_SERVICE_TOKEN');
     return {
-        apiBaseUrlSet,
+        apiBaseUrl: ECHON_API_BASE_URL,
+        apiBaseUrlSet: true,
         serviceTokenSet,
-        configured: apiBaseUrlSet,
-        missing,
+        configured: true,
+        missing: serviceTokenSet ? ([] as const) : ([] as const),
+        researchDepth: ECHON_REPORT_RESEARCH_DEPTH,
+        researchTimeoutMs: ECHON_REPORT_RESEARCH_TIMEOUT_MS,
     };
 }
 
 export function isEchonIntegrationConfigured(): boolean {
-    return getEchonIntegrationEnvSnapshot().configured;
+    return true;
 }
 
 /** POST /api/v2/research/chat — sync research run for report pipeline */
@@ -42,14 +47,11 @@ export function echonResearchChatPath(): string {
 export type EchonReportResearchDepth = 'fast' | 'balanced' | 'deep';
 
 export function getEchonReportResearchDepth(): EchonReportResearchDepth {
-    const raw = (process.env.ECHON_REPORT_RESEARCH_DEPTH ?? 'fast').trim().toLowerCase();
-    if (raw === 'balanced' || raw === 'deep') return raw;
-    return 'fast';
+    return ECHON_REPORT_RESEARCH_DEPTH;
 }
 
 export function getEchonReportResearchTimeoutMs(): number {
-    const raw = Number(process.env.ECHON_REPORT_RESEARCH_TIMEOUT_MS ?? 300_000);
-    return Number.isFinite(raw) && raw >= 30_000 ? raw : 300_000;
+    return ECHON_REPORT_RESEARCH_TIMEOUT_MS;
 }
 
 /** GET /api/v2/research/threads/{threadId} */
@@ -57,19 +59,17 @@ export function echonResearchThreadPath(threadId: string): string {
     return `/api/v2/research/threads/${encodeURIComponent(threadId)}`;
 }
 
-export function echonResearchThreadUrl(threadId: string): string | null {
-    const apiBase = getEchonApiBaseUrl();
-    if (!apiBase) return null;
-    return `${apiBase}${echonResearchThreadPath(threadId)}`;
+export function echonResearchThreadUrl(threadId: string): string {
+    return `${getEchonApiBaseUrl()}${echonResearchThreadPath(threadId)}`;
 }
 
 export const ECHON_INTEGRATION_PATHS = {
     researchThreads: '/api/v2/research/threads',
     researchThread: (threadId: string) => echonResearchThreadPath(threadId),
+    researchChat: echonResearchChatPath(),
 } as const;
 
-export function echonIntegrationUrl(path: string): string | null {
-    const apiBase = getEchonApiBaseUrl();
-    if (!apiBase) return null;
-    return `${apiBase}${path}`;
+export function echonIntegrationUrl(path: string): string {
+    const normalized = path.startsWith('/') ? path : `/${path}`;
+    return `${getEchonApiBaseUrl()}${normalized}`;
 }

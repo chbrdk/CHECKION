@@ -26,7 +26,7 @@ export async function echonServiceFetchJson<T>(
 ): Promise<EchonServiceFetchResult<T>> {
     const url = echonIntegrationUrl(path);
     if (!url) {
-        return { ok: false, status: null, reason: 'echon_not_configured' };
+        return { ok: false, status: null, reason: 'echon_fetch_failed' };
     }
 
     const token = getEchonServiceToken();

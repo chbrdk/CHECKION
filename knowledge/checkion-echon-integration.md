@@ -11,23 +11,29 @@ AUDION Personas laden
     ↓
 buildEchonReportResearchQuery(personas, domain, industry, competitors)
     ↓
-POST {ECHON_API_BASE_URL}/api/v2/research/chat   (research_depth: fast default)
+POST {ECHON_API_BASE_URL}/api/v2/research/chat   (research_depth: fast, aus Code)
     ↓
 bundle.marketContext → Synthesizer + Competitive + Persona-Agents
 ```
 
 **Ein** ECHON-Lauf pro Report (nicht N× pro Persona — zu langsam/teuer). Die Query fasst bis zu 5 Personas mit Pain Points & Zielen zusammen.
 
-## Env (CHECKION Server)
+## Konfiguration (im Code)
 
-```bash
-ECHON_API_BASE_URL=https://echon.projects-a.plygrnd.tech/echon
-ECHON_SERVICE_TOKEN=          # optional, falls Auth aktiv
-ECHON_REPORT_RESEARCH_DEPTH=fast   # fast | balanced | deep
-ECHON_REPORT_RESEARCH_TIMEOUT_MS=300000
-```
+API-URL, Dashboard, Research-Depth und Timeout sind **fest im Code** — nicht über Env:
 
-Pfade: `lib/paths/echon-api.ts`, `lib/project-report/echon-research-query.ts`
+| Konstante | Wert |
+|-----------|------|
+| `ECHON_API_BASE_URL` | `https://echon.projects-a.plygrnd.tech/echon` |
+| `ECHON_DASHBOARD_URL` | `https://echon.projects-a.plygrnd.tech/echon/dashboard` |
+| `ECHON_REPORT_RESEARCH_DEPTH` | `fast` |
+| `ECHON_REPORT_RESEARCH_TIMEOUT_MS` | `300000` |
+
+Quelle: `lib/paths/echon-api.ts`
+
+Optional per Env (nur Auth): `ECHON_SERVICE_TOKEN`
+
+Weitere Pfade: `lib/project-report/echon-research-query.ts`
 
 ## Optional: gepinnter Thread (Fallback)
 

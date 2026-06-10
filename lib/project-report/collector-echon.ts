@@ -3,11 +3,7 @@
  */
 
 import type { AudionPersonaFact } from '@/lib/integrations/audion-audience-client';
-import {
-    fetchEchonMarketContext,
-    runEchonReportResearch,
-} from '@/lib/integrations/echon-research-client';
-import { isEchonIntegrationConfigured } from '@/lib/paths/echon-api';
+import { fetchEchonMarketContext, runEchonReportResearch } from '@/lib/integrations/echon-research-client';
 import type { EchonMarketContext } from '@/lib/project-report/echon-market-context';
 import { emptyEchonMarketContext } from '@/lib/project-report/echon-market-context';
 import { buildEchonReportResearchQuery } from '@/lib/project-report/echon-research-query';
@@ -32,9 +28,6 @@ export async function runEchonMarketResearchForReport(
 ): Promise<EchonMarketContext> {
     if (options.skipLlm) {
         return emptyEchonMarketContext('echon_skipped');
-    }
-    if (!isEchonIntegrationConfigured()) {
-        return emptyEchonMarketContext('echon_not_configured');
     }
 
     const query = buildEchonReportResearchQuery({
@@ -62,9 +55,6 @@ export async function collectEchonMarketContext(
     const threadId = (echonResearchThreadId ?? '').trim();
     if (!threadId) {
         return emptyEchonMarketContext('echon_thread_not_linked');
-    }
-    if (!isEchonIntegrationConfigured()) {
-        return emptyEchonMarketContext('echon_not_configured');
     }
     return fetchEchonMarketContext(threadId);
 }

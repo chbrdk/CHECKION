@@ -78,7 +78,7 @@ Quelle: **Live-Research-Lauf** im Report-Job; Personas aus AUDION (max. 5), sons
 - `lib/paths/echon-api.ts` (zentrale URLs, wie `audion-api.ts`)
 - `collector-market.ts` → `bundle.marketContext` + `provenance`
 
-Env: `ECHON_API_BASE_URL`, `ECHON_SERVICE_TOKEN` (symmetrisch zu AUDION).
+Env: optional nur `ECHON_SERVICE_TOKEN`. API-URL: `lib/paths/echon-api.ts` → `ECHON_API_BASE_URL`.
 
 ### 3. Report-Pipeline
 
