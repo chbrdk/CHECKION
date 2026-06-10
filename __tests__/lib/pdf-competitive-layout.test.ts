@@ -20,7 +20,7 @@ describe('PDF competitive layout', () => {
         expect(deepSrc).toContain('PdfMetricInterpretationGroup');
         expect(deepSrc).toContain('competitiveInterpretations.scoreboard');
         expect(deepSrc).toContain('competitiveInterpretations.topicOverlap');
-        expect(deepSrc).toContain('competitiveInsightDescription');
+        expect(deepSrc).toContain('competitiveInsightRowsForPdf');
         expect(deepSrc).toContain('competitiveInterpretations.insightsOverview');
     });
 

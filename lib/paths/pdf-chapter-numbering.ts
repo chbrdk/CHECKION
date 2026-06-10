@@ -1,6 +1,8 @@
 /**
  * Hierarchical chapter numbering for project report PDFs (headings + TOC).
  */
+import { filterIssueGroupsForPdfAppendix } from '@/lib/project-report/pdf-issue-groups-display';
+import { PDF_KPI_EXCLUDED_METRIC_IDS } from '@/lib/project-report/pdf-metrics-display';
 import type { ProjectReportBundle } from '@/lib/project-report/types';
 import type { ProjectReportPdfLabels } from '@/lib/project-report/pdf-labels';
 
@@ -88,8 +90,16 @@ export function buildProjectReportOutline(
     }
 
     push({ id: 'seo', pageKey: 'seo', title: labels.seoRankings, level: 0 });
+    if (domain) {
+        push({ id: 'seo.on-page', pageKey: 'seo', title: labels.seoOnPageSection, level: 1 });
+    }
     if (rankings) {
-        push({ id: 'seo.keywords', pageKey: 'seo', title: labels.keywords, level: 1 });
+        push({
+            id: 'seo.serp-rankings',
+            pageKey: 'seo',
+            title: labels.serpKeywordRankings,
+            level: 1,
+        });
         if (bundle.visuals.some((v) => v.kind === 'rankTrend')) {
             push({ id: 'seo.rank-trends', pageKey: 'seo', title: labels.rankTrends, level: 1 });
         }
@@ -152,12 +162,14 @@ export function buildProjectReportOutline(
     }
 
     if (comprehensive) {
-        push({
-            id: 'deep.metrics',
-            pageKey: 'deep-metrics',
-            title: labels.metricsOverview,
-            level: 0,
-        });
+        if (deep.metrics.some((m) => !PDF_KPI_EXCLUDED_METRIC_IDS.has(m.id))) {
+            push({
+                id: 'deep.metrics',
+                pageKey: 'deep-metrics',
+                title: labels.metricsOverview,
+                level: 0,
+            });
+        }
 
         const benchmark = deep.competitiveBenchmark;
         if (benchmark && benchmark.scoreboard.length > 0) {
@@ -191,11 +203,11 @@ export function buildProjectReportOutline(
             }
         }
 
-        if (deep.rankKeywordDetails.length > 0) {
+        if (bundle.visuals.some((v) => v.kind === 'competitorRankingScores')) {
             push({
-                id: 'deep.keywords',
-                pageKey: 'deep-keywords',
-                title: labels.keywordDetails,
+                id: 'deep.ranking-competitors',
+                pageKey: 'deep-ranking-competitors',
+                title: labels.rankingCompetitorComparison,
                 level: 0,
             });
         }
@@ -210,14 +222,18 @@ export function buildProjectReportOutline(
             });
         }
 
-        if (deep.issueGroups.length > 0 || deep.seoRollup) {
+        const appendixIssueGroups = filterIssueGroupsForPdfAppendix(
+            deep.issueGroups,
+            bundle.domain?.systemicIssues.map((issue) => issue.title) ?? []
+        );
+        if (appendixIssueGroups.length > 0 || deep.seoRollup) {
             push({
                 id: 'deep.issues-seo',
                 pageKey: 'deep-issues-seo',
                 title: labels.technicalAppendix,
                 level: 0,
             });
-            if (deep.issueGroups.length > 0) {
+            if (appendixIssueGroups.length > 0) {
                 push({
                     id: 'deep.issues-seo.groups',
                     pageKey: 'deep-issues-seo',

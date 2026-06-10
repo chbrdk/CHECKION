@@ -6,6 +6,8 @@ const INTRO_KEYS = [
     'siteQuality',
     'systemicIssues',
     'seo',
+    'seoOnPage',
+    'serpRankings',
     'keywords',
     'rankTrends',
     'geo',

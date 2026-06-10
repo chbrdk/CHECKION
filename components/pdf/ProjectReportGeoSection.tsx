@@ -16,6 +16,7 @@ import {
     pdfInterpretationTexts,
     PdfRecommendationRow,
 } from '@/components/pdf/shared/PdfMetricInterpretation';
+import { selectGeoInsightsForPdf } from '@/lib/project-report/pdf-geo-display';
 import { sortGeoCompetitiveDomains } from '@/lib/project-report/pdf-competitive-display';
 import { PdfGeoCompetitiveTable } from '@/components/pdf/shared/PdfCompetitiveTables';
 import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
@@ -78,10 +79,6 @@ export function ProjectReportGeoSection({
                 )}
             />
 
-            {geoSection?.summary ? (
-                <PdfMetricInterpretationGroup texts={[geoSection.summary]} />
-            ) : null}
-
             {geoModelVisibilityChart ? (
                 <>
                     <PdfSectionHeader
@@ -122,7 +119,7 @@ export function ProjectReportGeoSection({
                     <PdfMetricInterpretationGroup
                         texts={pdfInterpretationTexts(interpretations.geoInsights)}
                     />
-                    {geoDeep.deterministicInsights.slice(0, 5).map((ins) => (
+                    {selectGeoInsightsForPdf(geoDeep.deterministicInsights).map((ins) => (
                         <PdfRecommendationRow
                             key={ins.id}
                             title={ins.title}
@@ -132,7 +129,7 @@ export function ProjectReportGeoSection({
                 </>
             ) : null}
 
-            {geo.recommendations.length > 0 ? (
+            {geo.recommendations.length > 0 && !(bundle.narrative?.recommendations?.length) ? (
                 <>
                     <PdfSectionHeader
                         outlineId="geo.recommendations"

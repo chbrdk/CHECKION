@@ -14,6 +14,31 @@ import type { ProjectReportLocale } from '@/lib/project-report/types';
 export const PDF_RANKING_CHART_MIN_POSITIONED_KEYWORDS = 3;
 export const PDF_TOPIC_OVERLAP_TABLE_LIMIT = 12;
 export const PDF_KEYWORD_SERP_TABLE_LIMIT = 8;
+export const PDF_COMPETITIVE_INSIGHT_CARD_LIMIT = 3;
+
+const COMPETITIVE_INSIGHT_CARD_KINDS = new Set<CompetitiveInsightFact['kind']>(['gap', 'topic_gap']);
+
+const COMPETITIVE_INSIGHT_CARD_PRIORITY: Record<CompetitiveInsightFact['kind'], number> = {
+    topic_gap: 0,
+    gap: 1,
+    topic_lead: 2,
+    lead: 3,
+    parity: 4,
+};
+
+/** Top gap insights as cards — leads and parity stay in the overlap table only. */
+export function selectCompetitiveInsightsForPdf(
+    insights: CompetitiveInsightFact[],
+    limit = PDF_COMPETITIVE_INSIGHT_CARD_LIMIT
+): CompetitiveInsightFact[] {
+    return [...insights]
+        .filter((insight) => COMPETITIVE_INSIGHT_CARD_KINDS.has(insight.kind))
+        .sort(
+            (a, b) =>
+                COMPETITIVE_INSIGHT_CARD_PRIORITY[a.kind] - COMPETITIVE_INSIGHT_CARD_PRIORITY[b.kind]
+        )
+        .slice(0, limit);
+}
 
 export function shortenPdfDomain(domain: string): string {
     return domain.replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/\/$/, '');

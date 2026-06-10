@@ -40,8 +40,8 @@ describe('seo-rankings-interpretations', () => {
     it('builds German fallback texts for SEO metrics', () => {
         const t = buildFallbackSeoInterpretations(domain, rankings, [], 'de');
         expect(t.seoOnPage).toContain('81');
-        expect(t.rankingScore).toContain('58');
-        expect(t.keywords).toContain('48');
+        expect(t.serpRankingsOverview).toContain('58');
+        expect(t.serpRankingsOverview).toContain('48');
     });
 
     it('summarizes improving rank trends', () => {
@@ -101,7 +101,7 @@ describe('seo-rankings-interpretations', () => {
                         keyFindings: [],
                         metricsHighlighted: [],
                         metricInterpretations: {
-                            rankingScore: 'Agent ranking text',
+                            serpRankingsOverview: 'Agent SERP rankings text',
                         },
                     },
                     geo: null,
@@ -126,7 +126,7 @@ describe('seo-rankings-interpretations', () => {
                 rankingsPath: null,
             },
         });
-        expect(text.rankingScore).toBe('Agent ranking text');
+        expect(text.serpRankingsOverview).toBe('Agent SERP rankings text');
         expect(text.seoOnPage).toContain('81');
     });
 });

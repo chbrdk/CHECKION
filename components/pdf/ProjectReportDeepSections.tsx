@@ -13,19 +13,27 @@ import { PdfVisualSpec } from '@/components/pdf/charts/PdfChartComponents';
 import type { VisualSpec } from '@/lib/project-report/chart-specs';
 import {
     PdfCompetitiveScoreboardTable,
-    PdfKeywordSerpTable,
     PdfTopicOverlapTable,
 } from '@/components/pdf/shared/PdfCompetitiveTables';
 import {
-    competitiveInsightDescription,
+    competitiveInsightRowsForPdf,
     getCompetitiveSectionAnalysis,
     resolveCompetitiveInterpretations,
 } from '@/lib/project-report/competitive-interpretations';
 import {
+    PDF_GEO_DEEP_PAGE_LIMIT,
+    PDF_GEO_DEEP_REASONING_MAX,
+} from '@/lib/project-report/pdf-geo-display';
+import { filterIssueGroupsForPdfAppendix } from '@/lib/project-report/pdf-issue-groups-display';
+import {
+    filterSupplementaryMetricsForPdf,
+    hasSupplementaryMetricsForPdf,
+} from '@/lib/project-report/pdf-metrics-display';
+import {
     formatCompetitiveInsightKind,
     hasSeoRollupData,
     prioritizeTopicOverlapRows,
-    selectKeywordSerpRows,
+    selectCompetitiveInsightsForPdf,
     stripPdfEvidenceMarkers,
 } from '@/lib/project-report/pdf-competitive-display';
 import {
@@ -61,7 +69,6 @@ export function buildDeepReportPages(
     visuals: {
         competitorRankingScores?: VisualSpec;
         competitorSeoBarChart?: VisualSpec;
-        rankTrend?: VisualSpec;
     },
     startPageIndex: number
 ): React.ReactElement[] {
@@ -82,39 +89,50 @@ export function buildDeepReportPages(
     const narrative = bundle.narrative;
     const sections = narrative?.sections ?? deep.sections;
 
-    addPage(
-        'deep-metrics',
-        <>
-            <PdfSectionHeader outlineId="deep.metrics" title={labels.metricsOverview} chapter="visual" />
-            <PdfSectionIntro text={labels.chapterIntros.deepDive} />
-            <View style={pdfStyles.contentPanel}>
-                <View style={pdfStyles.dataTableHeader}>
-                    <Text style={[pdfStyles.dataTableHeaderCell, { width: '50%' }]}>{labels.metricLabel}</Text>
-                    <Text style={[pdfStyles.dataTableHeaderCell, { width: '50%' }]}>{labels.metricValue}</Text>
-                </View>
-                {deep.metrics.slice(0, 24).map((m) => (
-                    <View key={m.id} style={pdfStyles.dataTableRow}>
-                        <Text style={[pdfStyles.tableLabel, { width: '50%' }]}>{m.label}</Text>
-                        <Text style={[pdfStyles.tableValue, { width: '50%' }]}>
-                            {m.value != null ? `${m.value}${m.unit ?? ''}` : '–'}
-                            {m.benchmark ? ` · ${m.benchmark}` : ''}
+    const supplementaryMetrics = filterSupplementaryMetricsForPdf(deep.metrics);
+    if (hasSupplementaryMetricsForPdf(deep.metrics)) {
+        addPage(
+            'deep-metrics',
+            <>
+                <PdfSectionHeader outlineId="deep.metrics" title={labels.metricsOverview} chapter="visual" />
+                <PdfSectionIntro text={labels.chapterIntros.deepDive} />
+                <View style={pdfStyles.contentPanel}>
+                    <View style={pdfStyles.dataTableHeader}>
+                        <Text style={[pdfStyles.dataTableHeaderCell, { width: '50%' }]}>
+                            {labels.metricLabel}
+                        </Text>
+                        <Text style={[pdfStyles.dataTableHeaderCell, { width: '50%' }]}>
+                            {labels.metricValue}
                         </Text>
                     </View>
-                ))}
-            </View>
-        </>
-    );
+                    {supplementaryMetrics.map((m) => (
+                        <View key={m.id} style={pdfStyles.dataTableRow}>
+                            <Text style={[pdfStyles.tableLabel, { width: '50%' }]}>{m.label}</Text>
+                            <Text style={[pdfStyles.tableValue, { width: '50%' }]}>
+                                {m.value != null ? `${m.value}${m.unit ?? ''}` : '–'}
+                                {m.benchmark ? ` · ${m.benchmark}` : ''}
+                            </Text>
+                        </View>
+                    ))}
+                </View>
+            </>
+        );
+    }
 
     const benchmark = bundle.deep?.competitiveBenchmark;
     if (benchmark && benchmark.scoreboard.length > 0) {
         const competitiveSection = getCompetitiveSectionAnalysis(bundle);
         const competitiveInterpretations = resolveCompetitiveInterpretations(bundle);
         const competitiveOverviewTexts = pdfInterpretationTexts(
-            competitiveSection?.summary
+            competitiveInterpretations.competitiveOverview,
+            !competitiveInterpretations.competitiveOverview && competitiveSection?.summary
                 ? stripPdfEvidenceMarkers(competitiveSection.summary)
-                : undefined,
-            competitiveInterpretations.competitiveOverview
+                : undefined
         );
+        const competitiveInsightCards = selectCompetitiveInsightsForPdf(
+            benchmark.deterministicInsights
+        );
+        const competitiveInsightRows = competitiveInsightRowsForPdf(competitiveInsightCards, bundle);
 
         addPage(
             'deep-competitive',
@@ -158,10 +176,10 @@ export function buildDeepReportPages(
                     texts={pdfInterpretationTexts(competitiveInterpretations.scoreboard)}
                 />
                 <PdfCompetitiveScoreboardTable rows={benchmark.scoreboard} labels={labels} />
-                {visuals.competitorSeoBarChart ? (
+                {visuals.competitorSeoBarChart && benchmark.scoreboard.length <= 1 ? (
                     <PdfVisualSpec spec={visuals.competitorSeoBarChart} />
                 ) : null}
-                {benchmark.deterministicInsights.length > 0 ? (
+                {competitiveInsightCards.length > 0 ? (
                     <>
                         <PdfSectionHeader
                             outlineId="deep.competitive.insights"
@@ -172,11 +190,11 @@ export function buildDeepReportPages(
                         <PdfMetricInterpretationGroup
                             texts={pdfInterpretationTexts(competitiveInterpretations.insightsOverview)}
                         />
-                        {benchmark.deterministicInsights.map((ins) => (
+                        {competitiveInsightRows.map(({ insight, description }) => (
                             <PdfRecommendationRow
-                                key={ins.id}
-                                title={`[${formatCompetitiveInsightKind(ins.kind, bundle.locale)}] ${ins.title}`}
-                                description={competitiveInsightDescription(ins, bundle)}
+                                key={insight.id}
+                                title={`[${formatCompetitiveInsightKind(insight.kind, bundle.locale)}] ${insight.title}`}
+                                description={description}
                             />
                         ))}
                     </>
@@ -189,9 +207,11 @@ export function buildDeepReportPages(
                             title={labels.topicOverlap}
                             chapter="structure"
                         />
-                        <PdfMetricInterpretationGroup
-                            texts={pdfInterpretationTexts(competitiveInterpretations.topicOverlap)}
-                        />
+                        {competitiveInsightCards.length === 0 ? (
+                            <PdfMetricInterpretationGroup
+                                texts={pdfInterpretationTexts(competitiveInterpretations.topicOverlap)}
+                            />
+                        ) : null}
                         <PdfTopicOverlapTable
                             rows={prioritizeTopicOverlapRows(benchmark.topicOverlap)}
                             labels={labels}
@@ -218,19 +238,16 @@ export function buildDeepReportPages(
         );
     }
 
-    if (deep.rankKeywordDetails.length > 0) {
+    if (visuals.competitorRankingScores) {
         addPage(
-            'deep-keywords',
+            'deep-ranking-competitors',
             <>
-                <PdfSectionHeader outlineId="deep.keywords" title={labels.keywordDetails} chapter="seo" />
-                <PdfKeywordSerpTable
-                    rows={selectKeywordSerpRows(deep.rankKeywordDetails)}
-                    labels={labels}
+                <PdfSectionHeader
+                    outlineId="deep.ranking-competitors"
+                    title={labels.rankingCompetitorComparison}
+                    chapter="seo"
                 />
-                {visuals.competitorRankingScores ? (
-                    <PdfVisualSpec spec={visuals.competitorRankingScores} />
-                ) : null}
-                {visuals.rankTrend ? <PdfVisualSpec spec={visuals.rankTrend} /> : null}
+                <PdfVisualSpec spec={visuals.competitorRankingScores} />
             </>
         );
     }
@@ -266,7 +283,7 @@ export function buildDeepReportPages(
                         },
                     ]}
                 />
-                {geoPages.slice(0, 10).map((p) => (
+                {geoPages.slice(0, PDF_GEO_DEEP_PAGE_LIMIT).map((p) => (
                     <View key={p.url} style={pdfStyles.recommendationRow}>
                         <View style={pdfStyles.recommendationTitleBlock}>
                             <Text style={pdfStyles.recommendationTitle}>{p.title ?? p.url}</Text>
@@ -282,12 +299,9 @@ export function buildDeepReportPages(
                         </View>
                         {p.geoFitnessReasoning ? (
                             <Text style={[pdfStyles.bodyText, { marginTop: 4 }]}>
-                                {p.geoFitnessReasoning.slice(0, 280)}
-                                {p.geoFitnessReasoning.length > 280 ? '…' : ''}
+                                {p.geoFitnessReasoning.slice(0, PDF_GEO_DEEP_REASONING_MAX)}
+                                {p.geoFitnessReasoning.length > PDF_GEO_DEEP_REASONING_MAX ? '…' : ''}
                             </Text>
-                        ) : null}
-                        {p.trustReasoning ? (
-                            <Text style={pdfStyles.metaText}>Trust: {p.trustReasoning.slice(0, 160)}…</Text>
                         ) : null}
                         {p.missingElements.length > 0 ? (
                             <Text style={pdfStyles.metaText}>
@@ -303,7 +317,11 @@ export function buildDeepReportPages(
         );
     }
 
-    if (deep.issueGroups.length > 0 || hasSeoRollupData(deep.seoRollup)) {
+    const appendixIssueGroups = filterIssueGroupsForPdfAppendix(
+        deep.issueGroups,
+        bundle.domain?.systemicIssues.map((issue) => issue.title) ?? []
+    );
+    if (appendixIssueGroups.length > 0 || hasSeoRollupData(deep.seoRollup)) {
         addPage(
             'deep-issues-seo',
             <>
@@ -312,7 +330,7 @@ export function buildDeepReportPages(
                     title={labels.technicalAppendix}
                     chapter="issues"
                 />
-                {deep.issueGroups.length > 0 ? (
+                {appendixIssueGroups.length > 0 ? (
                     <>
                         <PdfSectionHeader
                             outlineId="deep.issues-seo.groups"
@@ -321,7 +339,7 @@ export function buildDeepReportPages(
                             chapter="issues"
                         />
                         <View style={pdfStyles.contentPanel}>
-                            {deep.issueGroups.map((g) => (
+                            {appendixIssueGroups.map((g) => (
                                 <View key={g.groupKey} style={pdfStyles.dataTableRow}>
                                     <Text style={[pdfStyles.tableLabel, { width: '45%' }]}>{g.title}</Text>
                                     <Text style={pdfStyles.tableValue}>

@@ -15,6 +15,7 @@ import {
     selectDistinctPersonasForPdf,
     truncatePersonaInsightText,
 } from '@/lib/project-report/audience-pdf-personas';
+import { dedupeInterpretationTexts } from '@/lib/project-report/pdf-text-dedupe';
 import { pdfColors, pdfStyles } from '@/components/pdf/shared/pdf-styles';
 import { PdfSectionHeader, PdfSectionIntro } from '@/components/pdf/shared/PdfPrimitives';
 import { PdfContentPage, PdfLeadText, PdfStatGrid, contentSideForIndex } from '@/components/pdf/shared/PdfLayout';
@@ -172,7 +173,9 @@ export function buildAudienceReportPages(
                 </Text>
             ) : null}
             {audience.summaryInsights.length > 0 ? (
-                <PdfLeadText>{audience.summaryInsights.join('\n\n')}</PdfLeadText>
+                <PdfLeadText>
+                    {dedupeInterpretationTexts(audience.summaryInsights).join('\n\n')}
+                </PdfLeadText>
             ) : null}
             <PdfStatGrid
                 items={[

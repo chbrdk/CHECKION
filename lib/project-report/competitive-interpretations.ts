@@ -15,6 +15,7 @@ import {
     shortenPdfDomain,
     stripPdfEvidenceMarkers,
 } from '@/lib/project-report/pdf-competitive-display';
+import { isNearDuplicateText } from '@/lib/project-report/pdf-text-dedupe';
 
 export const COMPETITIVE_INSIGHT_METRIC_PREFIX = 'insight:';
 
@@ -87,9 +88,10 @@ function interpretCompetitiveInsightsOverview(
     const de = locale === 'de';
     const gaps = insights.filter((i) => i.kind === 'gap' || i.kind === 'topic_gap').length;
     const leads = insights.filter((i) => i.kind === 'lead' || i.kind === 'topic_lead').length;
+    const cardLimit = 3;
     return de
-        ? `${insights.length} automatisch erkannte Wettbewerbs-Signale — ${gaps} Lücke(n), ${leads} Vorsprung/Vorteil. Jede Karte erklärt Auswirkung und Priorität.`
-        : `${insights.length} automatically detected competitive signals — ${gaps} gap(s), ${leads} lead(s). Each card explains impact and priority.`;
+        ? `${insights.length} Wettbewerbs-Signale — ${gaps} Lücke(n), ${leads} Vorsprung/Vorteil. Die ${Math.min(cardLimit, gaps)} wichtigsten Lücken als Karten; alle Themen im Overlap-Table.`
+        : `${insights.length} competitive signals — ${gaps} gap(s), ${leads} lead(s). Top ${Math.min(cardLimit, gaps)} gaps as cards; full theme list in the overlap table.`;
 }
 
 export function competitiveInsightDescription(
@@ -104,6 +106,21 @@ export function competitiveInsightDescription(
     if (matched) return stripPdfEvidenceMarkers(matched);
 
     return fallbackCompetitiveInsightInterpretation(insight, bundle.locale);
+}
+
+export function competitiveInsightRowsForPdf(
+    insights: CompetitiveInsightFact[],
+    bundle: ProjectReportBundle
+): Array<{ insight: CompetitiveInsightFact; description: string }> {
+    const usedDescriptions: string[] = [];
+    return insights.map((insight) => {
+        let description = competitiveInsightDescription(insight, bundle);
+        if (usedDescriptions.some((text) => isNearDuplicateText(text, description))) {
+            description = stripPdfEvidenceMarkers(insight.description);
+        }
+        usedDescriptions.push(description);
+        return { insight, description };
+    });
 }
 
 function interpretCompetitiveOverview(

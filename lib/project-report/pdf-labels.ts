@@ -41,7 +41,9 @@ export interface ProjectReportPdfLabels {
     domainScore: string;
     domainScoreRank: string;
     seoOnPage: string;
+    seoOnPageSection: string;
     seoOnPageLabel: string;
+    serpKeywordRankings: string;
     rankingScore: string;
     rankTrends: string;
     wcagErrors: string;
@@ -62,6 +64,7 @@ export interface ProjectReportPdfLabels {
     metricValue: string;
     metricBenchmark: string;
     keywordDetails: string;
+    rankingCompetitorComparison: string;
     geoQuestionHistory: string;
     geoPageAnalysis: string;
     issueGroups: string;
@@ -132,6 +135,8 @@ export interface ProjectReportPdfLabels {
         siteQuality: string;
         systemicIssues: string;
         seo: string;
+        seoOnPage: string;
+        serpRankings: string;
         keywords: string;
         rankTrends: string;
         geo: string;
@@ -154,7 +159,7 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         reportSubtitle: 'Executive Lagebild',
         executiveSummary: 'Executive Summary',
         siteQuality: 'Site Quality & UX',
-        seoRankings: 'SEO & Rankings',
+        seoRankings: 'SEO',
         geoEeat: 'GEO & E-E-A-T',
         contentTopics: 'Content & Seitenthemen',
         competitorComparison: 'Wettbewerbsvergleich',
@@ -168,7 +173,9 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         domainScore: 'Domain-Score (UX)',
         domainScoreRank: 'Domain-Rang',
         seoOnPage: 'SEO On-Page',
+        seoOnPageSection: 'On-Page SEO',
         seoOnPageLabel: 'On-Page-Einordnung',
+        serpKeywordRankings: 'SERP & Keyword-Rankings',
         rankingScore: 'Ranking-Score',
         rankTrends: 'Rank-Trends',
         wcagErrors: 'WCAG Fehler / Warnungen',
@@ -189,6 +196,7 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         metricValue: 'Wert',
         metricBenchmark: 'Einordnung',
         keywordDetails: 'Keyword-Details & Trends',
+        rankingCompetitorComparison: 'Ranking-Vergleich Wettbewerber',
         geoQuestionHistory: 'GEO-Fragen-Verlauf',
         geoPageAnalysis: 'GEO Seitenanalyse',
         issueGroups: 'Issue-Gruppen',
@@ -261,7 +269,11 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
                 'Site Quality & UX bewertet die technische und erlebnisbezogene Qualität Ihrer Website anhand des Domain-Scores, Performance-Kennzahlen und wiederkehrender Issues über viele Seiten. Hier erkennen Sie, ob Barrierefreiheit, Geschwindigkeit und Stabilität Ihre Nutzer und Rankings belasten.',
             systemicIssues:
                 'Systemische Issues sind wiederkehrende Fehler- oder UX-Muster, die auf vielen Seiten gleich auftreten. Im Gegensatz zu Einzelfunden lässt sich hier oft mit einer zentralen Korrektur (Template, Komponente, CSS) eine große Zahl von Seiten verbessern.',
-            seo: 'SEO & Rankings zeigt, wie gut Ihre Seiten für Suchmaschinen aufgestellt sind und wo Sie in den SERPs stehen. On-Page-Scores, Keyword-Positionen und Trends helfen, sichtbare Lücken gegenüber Wettbewerbern zu priorisieren.',
+            seo: 'SEO im Report trennt zwei Blickwinkel: die On-Page-Bewertung aus dem Domain-Scan (Meta, Überschriften, technische Basics) und die messbaren SERP-Positionen Ihrer getrackten Keywords.',
+            seoOnPage:
+                'On-Page SEO bewertet, wie gut Ihre Seiten im Domain-Scan für Crawler aufbereitet sind — Titel, Meta-Beschreibungen, Überschriften und strukturelle Signale. Das ist unabhängig davon, ob Sie für konkrete Suchbegriffe bereits ranken.',
+            serpRankings:
+                'SERP & Keyword-Rankings zeigt, wo Ihre Domain bei getrackten Suchbegriffen in den Ergebnissen steht — inklusive SERP-Leadern und Trends über die Zeit.',
             keywords:
                 'Getrackte Keywords sind Suchbegriffe, für die Ihre Domain in Google & Co. regelmäßig positioniert wird. Positionen (z. B. #8) zeigen, wie sichtbar Sie für konkrete Suchanfragen sind — Top 10 bedeutet erste Ergebnisseite.',
             rankTrends:
@@ -293,7 +305,7 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         reportSubtitle: 'Executive Overview',
         executiveSummary: 'Executive Summary',
         siteQuality: 'Site Quality & UX',
-        seoRankings: 'SEO & Rankings',
+        seoRankings: 'SEO',
         geoEeat: 'GEO & E-E-A-T',
         contentTopics: 'Content & Page Topics',
         competitorComparison: 'Competitor Comparison',
@@ -307,7 +319,9 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         domainScore: 'Domain Score (UX)',
         domainScoreRank: 'Domain rank',
         seoOnPage: 'SEO On-Page',
+        seoOnPageSection: 'On-page SEO',
         seoOnPageLabel: 'On-page rating',
+        serpKeywordRankings: 'SERP & keyword rankings',
         rankingScore: 'Ranking score',
         rankTrends: 'Rank trends',
         wcagErrors: 'WCAG errors / warnings',
@@ -328,6 +342,7 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         metricValue: 'Value',
         metricBenchmark: 'Benchmark',
         keywordDetails: 'Keyword Details & Trends',
+        rankingCompetitorComparison: 'Competitor ranking comparison',
         geoQuestionHistory: 'GEO Question History',
         geoPageAnalysis: 'GEO Page Analysis',
         issueGroups: 'Issue Groups',
@@ -400,7 +415,11 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
                 'Site Quality & UX assesses technical and experiential quality via the domain score, performance metrics, and recurring issues across pages. Use it to see whether accessibility, speed, or stability are holding back users and rankings.',
             systemicIssues:
                 'Systemic issues are recurring error or UX patterns that appear the same way on many pages. Unlike one-off findings, a single fix (template, component, CSS) can often improve a large share of the site.',
-            seo: 'SEO & Rankings shows on-page health and SERP positions. Scores, keyword ranks, and trends highlight gaps versus competitors that deserve priority.',
+            seo: 'SEO in this report separates two views: on-page quality from the domain scan (meta, headings, technical basics) and measurable SERP positions for your tracked keywords.',
+            seoOnPage:
+                'On-page SEO reflects how well pages are prepared for crawlers in the domain scan — titles, meta descriptions, headings, and structural signals. This is independent of whether you already rank for specific queries.',
+            serpRankings:
+                'SERP & keyword rankings show where your domain appears for tracked search terms — including SERP leaders and trends over time.',
             keywords:
                 'Tracked keywords are search terms your domain is monitored for in Google and other engines. Positions (e.g. #8) show visibility for specific queries — top 10 means the first results page.',
             rankTrends:

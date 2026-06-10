@@ -106,7 +106,7 @@ describe('competitive-interpretations', () => {
 
     it('includes insights overview in fallback when insights exist', () => {
         const t = buildFallbackCompetitiveInterpretations(benchmark, 'de');
-        expect(t.insightsOverview).toContain('1 automatisch erkannte');
+        expect(t.insightsOverview).toContain('1 Wettbewerbs-Signale');
     });
 
     it('prefers agent insight interpretation over fallback description', () => {

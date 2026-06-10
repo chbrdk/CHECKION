@@ -71,10 +71,6 @@ export function ProjectReportQualitySection({
                 <PdfMetricInterpretationGroup texts={pdfInterpretationTexts(interpretations.eco)} />
             ) : null}
 
-            {siteQuality?.summary ? (
-                <PdfMetricInterpretationGroup texts={[siteQuality.summary]} />
-            ) : null}
-
             {domain.systemicIssues.length > 0 ? (
                 <>
                     <PdfSectionHeader

@@ -13,8 +13,8 @@ import type {
 
 export type SeoMetricInterpretations = {
     seoOnPage?: string;
-    rankingScore?: string;
-    keywords?: string;
+    seoOnPageOverview?: string;
+    serpRankingsOverview?: string;
     rankTrend?: string;
     serpCompetition?: string;
 };
@@ -75,7 +75,7 @@ function countTopPositions(rankings: RankingFacts, maxPosition: number): number 
     ).length;
 }
 
-function interpretKeywords(rankings: RankingFacts, locale: ProjectReportLocale): string {
+function interpretSerpRankingsOverview(rankings: RankingFacts, locale: ProjectReportLocale): string {
     const de = locale === 'de';
     const top10 = countTopPositions(rankings, 10);
     const top3 = countTopPositions(rankings, 3);
@@ -84,9 +84,12 @@ function interpretKeywords(rankings: RankingFacts, locale: ProjectReportLocale):
         .map((k) => `"${k.keyword}"${k.position != null ? ` (#${k.position})` : ''}`)
         .join(', ');
 
-    return de
-        ? `${rankings.keywordCount} Keywords werden getrackt — ${top10} in den Top 10, ${top3} in den Top 3. Beispiele: ${sample || '–'}. Positionen zeigen, wo Nutzer Sie bei konkreten Suchanfragen finden.`
-        : `${rankings.keywordCount} keywords tracked — ${top10} in the top 10, ${top3} in the top 3. Examples: ${sample || '–'}. Positions show where users find you for specific queries.`;
+    const scoreLine = interpretRankingScore(rankings, locale);
+    const trackingLine = de
+        ? `${rankings.keywordCount} Keywords im Tracking — ${top10} in den Top 10, ${top3} in den Top 3${sample ? `. Beispiele: ${sample}` : ''}.`
+        : `${rankings.keywordCount} keywords tracked — ${top10} in the top 10, ${top3} in the top 3${sample ? `. Examples: ${sample}` : ''}.`;
+
+    return `${scoreLine} ${trackingLine}`;
 }
 
 export function summarizeRankTrends(
@@ -133,8 +136,7 @@ export function buildFallbackSeoInterpretations(
         out.seoOnPage = interpretSeoOnPageScore(domain, locale);
     }
     if (rankings) {
-        out.rankingScore = interpretRankingScore(rankings, locale);
-        out.keywords = interpretKeywords(rankings, locale);
+        out.serpRankingsOverview = interpretSerpRankingsOverview(rankings, locale);
     }
     const trend = summarizeRankTrends(rankTrends, locale);
     if (trend) out.rankTrend = trend;
@@ -154,10 +156,15 @@ export function resolveSeoInterpretations(bundle: ProjectReportBundle): SeoMetri
         bundle.locale
     );
 
+    const legacySerpOverview =
+        agent.serpRankingsOverview?.trim() ||
+        agent.rankingScore?.trim() ||
+        agent.keywords?.trim();
+
     return {
         seoOnPage: agent.seoOnPage?.trim() || fallback.seoOnPage,
-        rankingScore: agent.rankingScore?.trim() || fallback.rankingScore,
-        keywords: agent.keywords?.trim() || fallback.keywords,
+        seoOnPageOverview: agent.seoOnPageOverview?.trim() || undefined,
+        serpRankingsOverview: legacySerpOverview || fallback.serpRankingsOverview,
         rankTrend: agent.rankTrend?.trim() || fallback.rankTrend,
         serpCompetition: agent.serpCompetition?.trim() || serpFallback,
     };

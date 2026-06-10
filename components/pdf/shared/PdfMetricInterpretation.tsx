@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { View, Text } from '@react-pdf/renderer';
+import { dedupeInterpretationTexts } from '@/lib/project-report/pdf-text-dedupe';
 import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
 
 function splitPdfParagraphs(text: string): string[] {
@@ -13,7 +14,7 @@ export function pdfInterpretationTexts(...texts: Array<string | null | undefined
 }
 
 export function PdfMetricInterpretationGroup({ texts }: { texts: string[] }) {
-    const entries = pdfInterpretationTexts(...texts);
+    const entries = dedupeInterpretationTexts(pdfInterpretationTexts(...texts));
     if (entries.length === 0) return null;
 
     return (

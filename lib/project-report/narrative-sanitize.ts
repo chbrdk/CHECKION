@@ -109,7 +109,7 @@ export function sanitizeNarrativeRaw(
             };
         })
         .filter((x): x is NonNullable<typeof x> => x != null)
-        .slice(0, 12);
+        .slice(0, 4);
 
     const recommendations = recommendationsRaw
         .map((item) => {
@@ -127,7 +127,7 @@ export function sanitizeNarrativeRaw(
             };
         })
         .filter((x): x is NonNullable<typeof x> => x != null)
-        .slice(0, 8);
+        .slice(0, 6);
 
     return ProjectReportNarrativeSchema.parse({
         executiveSummary: asString(

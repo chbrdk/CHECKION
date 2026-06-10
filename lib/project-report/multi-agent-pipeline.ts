@@ -184,21 +184,22 @@ async function callSeoSectionAgent(
     titleFallback: string
 ): Promise<SectionAnalysis> {
     const lang = locale === 'de' ? 'German' : 'English';
-    const userContent = `Analyze SEO on-page score, ranking score, tracked keywords, position trends, SERP leaders, and competitor ranking scores.
-Explain each metric for non-technical readers: what the number means, whether it is good/mixed/weak, and business impact.
+    const userContent = `Analyze SEO in TWO separate parts — do not mix on-page scan quality with SERP keyword positions:
+1) On-page SEO from domain scan (meta, titles, headings, technical basics)
+2) SERP keyword rankings (tracked positions, SERP leaders, trends)
 
 Return JSON exactly:
 {
   "title": "section title",
-  "summary": "2-3 short paragraphs — overall SEO & rankings assessment",
+  "summary": "2-3 short paragraphs — keep on-page and SERP rankings clearly separated",
   "keyFindings": ["..."],
   "metricsHighlighted": ["metric labels"],
   "metricInterpretations": {
-    "seoOnPage": "1-2 sentences on on-page score and label",
-    "rankingScore": "1-2 sentences on aggregate ranking score (omit if unavailable)",
-    "keywords": "1-2 sentences on keyword count, top positions, examples",
+    "seoOnPage": "1-2 sentences on on-page score and label only — no keyword positions",
+    "seoOnPageOverview": "2-3 sentences on on-page SEO health only (omit if redundant with seoOnPage)",
+    "serpRankingsOverview": "2-3 sentences on tracked keywords, ranking score, and SERP visibility only — no meta/title discussion",
     "rankTrend": "1-2 sentences on rank trends over time (omit if no trend data)",
-    "serpCompetition": "2-3 sentences on SERP leaders vs own positions — who dominates comparison keywords (omit if no SERP data)"
+    "serpCompetition": "2-3 sentences on SERP leaders vs own positions for the keyword table (omit if no SERP data)"
   }
 }
 
@@ -314,7 +315,7 @@ function competitiveInsightInterpretationInstructions(payload: unknown): string 
     const perInsight = insights
         .map(
             (ins) =>
-                `    "insight:${ins.id}": "1-2 sentences — business impact and priority for [${ins.kind}] ${ins.title}"`
+                `    "insight:${ins.id}": "1-2 unique sentences for THIS insight only — business impact for [${ins.kind}] ${ins.title}; do not reuse text across insights"`
         )
         .join(',\n');
     return `"insightsOverview": "1-2 sentences introducing the insight cards below",
@@ -626,7 +627,8 @@ Return JSON:
   "recommendations": [{ "title": "", "description": "", "priority": 1, "category": "", "evidenceIds": ["ev-..."] }],
   "riskAmpel": { "wcag": "low|medium|high|unknown", "geo": "...", "rankings": "..." }
 }
-Each finding and recommendation MUST include at least one evidenceId from evidenceIds. Max 12 findings, max 8 recommendations.
+Do NOT repeat the executiveSummary in findings — max 4 findings, each with a distinct angle not already in executiveSummary.
+Each finding and recommendation MUST include at least one evidenceId from evidenceIds. Max 6 recommendations — each must be a concrete action, not a restatement of findings.
 
 Input:
 ${stringifyPayload(synthesizerPayload)}`
@@ -662,7 +664,7 @@ ${stringifyPayload(synthesizerPayload)}`
             {
                 executiveSummary: partialSummary,
                 competitiveLandscape: deep.sections.competitive?.summary,
-                findings: findingsFromBenchmark.slice(0, 12),
+                findings: findingsFromBenchmark.slice(0, 4),
                 recommendations: [],
                 riskAmpel: {
                     wcag:

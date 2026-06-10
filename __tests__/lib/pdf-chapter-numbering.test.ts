@@ -80,8 +80,9 @@ describe('pdf-chapter-numbering', () => {
         expect(numbers.get('quality')).toBe('2');
         expect(numbers.get('quality.systemic-issues')).toBe('2.1');
         expect(numbers.get('seo')).toBe('3');
-        expect(numbers.get('seo.keywords')).toBe('3.1');
-        expect(numbers.get('seo.rank-trends')).toBe('3.2');
+        expect(numbers.get('seo.on-page')).toBe('3.1');
+        expect(numbers.get('seo.serp-rankings')).toBe('3.2');
+        expect(numbers.get('seo.rank-trends')).toBe('3.3');
     });
 
     it('formats numbered titles', () => {

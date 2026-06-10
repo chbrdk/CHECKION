@@ -38,6 +38,8 @@ import {
     shouldShowRankingKeywordChart,
     stripPdfEvidenceMarkers,
 } from '@/lib/project-report/pdf-competitive-display';
+import { filterFindingsForPdf } from '@/lib/project-report/pdf-findings-display';
+import { filterRecommendationsForPdf } from '@/lib/project-report/pdf-recommendations-display';
 import type { VisualSpec } from '@/lib/project-report/chart-specs';
 
 interface ProjectReportDocumentProps {
@@ -77,10 +79,7 @@ export function buildProjectReportPages(bundle: ProjectReportBundle): React.Reac
 
     const coverSubtitle = isComprehensive ? labels.comprehensiveSubtitle : labels.reportSubtitle;
     const projectLine = [bundle.project.name, bundle.project.domain].filter(Boolean).join(' · ');
-    const coverLead =
-        bundle.project.valueProposition?.trim() ||
-        narrative?.executiveSummary?.split(/\n\n+/)[0]?.trim() ||
-        null;
+    const coverLead = bundle.project.valueProposition?.trim() || null;
 
     // Deckblatt — gleiche Struktur wie `/dev/pdf-print` Preview
     pages.push(
@@ -111,7 +110,8 @@ export function buildProjectReportPages(bundle: ProjectReportBundle): React.Reac
             ) : (
                 <Text style={pdfStyles.metaText}>{labels.noData}</Text>
             )}
-            {narrative?.competitiveLandscape ? (
+            {narrative?.competitiveLandscape &&
+            !(bundle.geo?.competitiveDomains.length || bundle.deep?.competitiveBenchmark) ? (
                 <View style={pdfStyles.contentPanel}>
                     <PdfSectionHeader
                         outlineId="executive.competitors"
@@ -122,7 +122,7 @@ export function buildProjectReportPages(bundle: ProjectReportBundle): React.Reac
                     <PdfLeadText>{narrative.competitiveLandscape}</PdfLeadText>
                 </View>
             ) : null}
-            {bundle.domain?.llmSummary?.summary ? (
+            {bundle.domain?.llmSummary?.summary && !bundle.domain.systemicIssues.length ? (
                 <View style={pdfStyles.contentPanel}>
                     <PdfSectionHeader
                         outlineId="executive.domain-summary"
@@ -193,30 +193,36 @@ export function buildProjectReportPages(bundle: ProjectReportBundle): React.Reac
             ) : (
                 <Text style={pdfStyles.metaText}>{labels.noData}</Text>
             )}
-            <PdfSectionHeader
-                outlineId="topics.competitors"
-                level={1}
-                title={labels.competitorComparison}
-                chapter="competitors"
-            />
-            {competitorChart ? (
-                <PdfVisualSpec spec={competitorChart} />
-            ) : bundle.competitors.filter((c) => c.status === 'complete').length > 0 ? (
-                <View style={pdfStyles.contentPanel}>
-                    {bundle.competitors
-                        .filter((c) => c.status === 'complete')
-                        .map((c) => (
-                            <View key={c.domain} style={pdfStyles.dataTableRow}>
-                                <Text style={[pdfStyles.tableLabel, { width: '40%' }]}>{c.domain}</Text>
-                                <Text style={pdfStyles.tableValue}>
-                                    {labels.domainScore} {c.score} · SEO {c.seoOnPageScore}
-                                </Text>
-                            </View>
-                        ))}
-                </View>
-            ) : (
-                <Text style={pdfStyles.metaText}>{labels.noData}</Text>
-            )}
+            {!bundle.deep?.competitiveBenchmark ? (
+                <>
+                    <PdfSectionHeader
+                        outlineId="topics.competitors"
+                        level={1}
+                        title={labels.competitorComparison}
+                        chapter="competitors"
+                    />
+                    {competitorChart ? (
+                        <PdfVisualSpec spec={competitorChart} />
+                    ) : bundle.competitors.filter((c) => c.status === 'complete').length > 0 ? (
+                        <View style={pdfStyles.contentPanel}>
+                            {bundle.competitors
+                                .filter((c) => c.status === 'complete')
+                                .map((c) => (
+                                    <View key={c.domain} style={pdfStyles.dataTableRow}>
+                                        <Text style={[pdfStyles.tableLabel, { width: '40%' }]}>
+                                            {c.domain}
+                                        </Text>
+                                        <Text style={pdfStyles.tableValue}>
+                                            {labels.domainScore} {c.score} · SEO {c.seoOnPageScore}
+                                        </Text>
+                                    </View>
+                                ))}
+                        </View>
+                    ) : (
+                        <Text style={pdfStyles.metaText}>{labels.noData}</Text>
+                    )}
+                </>
+            ) : null}
         </>
     );
 
@@ -227,13 +233,17 @@ export function buildProjectReportPages(bundle: ProjectReportBundle): React.Reac
         pages.push(...buildAudienceReportPages(bundle.audience, labels, pages.length, bundle.locale));
     }
 
-    if (narrative?.findings && narrative.findings.length > 0) {
+    const pdfFindings = filterFindingsForPdf(
+        narrative?.findings ?? [],
+        narrative?.executiveSummary
+    );
+    if (pdfFindings.length > 0) {
         pages = pushContent(
             pages,
             'findings',
             <>
                 <PdfSectionHeader outlineId="findings" title={labels.keyFindings} chapter="summary" />
-                {narrative.findings.map((f, i) => (
+                {pdfFindings.map((f, i) => (
                     <PdfRecommendationRow
                         key={i}
                         title={`[${formatFindingSeverity(f.severity, bundle.locale)}] ${f.title}`}
@@ -244,14 +254,19 @@ export function buildProjectReportPages(bundle: ProjectReportBundle): React.Reac
         );
     }
 
+    const pdfRecommendations = filterRecommendationsForPdf(
+        narrative?.recommendations ?? [],
+        pdfFindings
+    );
+
     pages = pushContent(
         pages,
         'actions',
         <>
             <PdfSectionHeader outlineId="actions" title={labels.actionPlan} chapter="summary" />
             <PdfSectionIntro text={labels.chapterIntros.actions} />
-            {narrative?.recommendations && narrative.recommendations.length > 0 ? (
-                narrative.recommendations.map((rec, i) => (
+            {pdfRecommendations.length > 0 ? (
+                pdfRecommendations.map((rec, i) => (
                     <PdfRecommendationRow
                         key={i}
                         title={`P${rec.priority}: ${rec.title}`}
@@ -280,11 +295,15 @@ export function buildProjectReportPages(bundle: ProjectReportBundle): React.Reac
 
     if (isComprehensive && bundle.deep) {
         pages.push(
-            ...buildDeepReportPages(bundle, labels, {
-                competitorRankingScores: competitorRankingScores as VisualSpec | undefined,
-                competitorSeoBarChart: competitorSeoBarChart as VisualSpec | undefined,
-                rankTrend: rankTrend as VisualSpec | undefined,
-            }, pages.length)
+            ...buildDeepReportPages(
+                bundle,
+                labels,
+                {
+                    competitorRankingScores: competitorRankingScores as VisualSpec | undefined,
+                    competitorSeoBarChart: competitorSeoBarChart as VisualSpec | undefined,
+                },
+                pages.length
+            )
         );
     }
 

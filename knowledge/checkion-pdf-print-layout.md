@@ -15,9 +15,10 @@ Weiße A4-Seiten, einheitliche Ränder, kleines Logo **nur auf dem Deckblatt** o
 | **Browser-Preview** | `app/dev/pdf-print` → react-pdf Blob + pdf.js **Doppelseiten** (`PrintPreviewSpreadViewer`) |
 | pdf.js Worker | `public/pdf.worker.min.mjs` (`scripts/copy-pdfjs-worker.sh`) |
 | Preview-Bundle | `lib/paths/pdf-print-preview-bundle.ts` (variant: comprehensive) |
-| Persona-Auswahl (PDF) | `lib/project-report/audience-pdf-personas.ts` — max. 5 differenzierendste Personas, **3 pro Seite**, Fit-Legende (+/~/−) |
+| Persona-Auswahl (PDF) | `lib/project-report/audience-pdf-personas.ts` — max. **3** differenzierendste Personas, Fit-Legende (+/~/−) |
 - Wettbewerbs-Benchmark: Multi-Säulen-Scoreboard (UX/SEO/GEO/Ranking/WCAG/LCP), Topic-Gap-Tabelle, GEO-SoV-Tabelle, SERP-Leader-Tabelle — jeweils mit grauen Agent-Einordnungen (`lib/project-report/competitive-interpretations.ts`, ohne „KI-Einordnung“-Label)
 - Wettbewerbs-Erkenntnisse (deterministic Insights): pro Karte Agent-Text unter `metricInterpretations["insight:<id>"]`, Fallback aus Key Findings oder Fakten + Prioritäts-Hinweis
+- SEO-Kapitel getrennt: **3.1 On-Page SEO** (Domain-Scan) und **3.2 SERP & Keyword-Rankings** (Tracking, SERP-Tabelle, Trends) — keine doppelten Keyword-Karten oder Gesamt-Summary am Ende
 - Zentrale Erkenntnisse vor Maßnahmenplan (nicht mehr im Deep-Appendix)
 - GEO-Testfragen-Detailseiten (Trend-Charts + Fragekarten) sind **nicht** mehr im PDF-Appendix
 

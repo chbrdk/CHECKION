@@ -3,9 +3,16 @@
  */
 import type { AudienceInsightFact, AudiencePersonaFitFact, AudienceFitLevel } from '@/lib/project-report/types';
 
-export const PDF_AUDIENCE_PERSONA_LIMIT = 5;
+export const PDF_AUDIENCE_PERSONA_LIMIT = 3;
 export const PDF_AUDIENCE_PERSONAS_PER_PAGE = 3;
-export const PDF_AUDIENCE_PERSONA_INSIGHT_LIMIT = 3;
+export const PDF_AUDIENCE_PERSONA_INSIGHT_LIMIT = 2;
+
+const SITE_WIDE_INSIGHT_PATTERNS = [
+    /\b26[,.]?953\b/,
+    /\bwcag[- ]?fehler\b/i,
+    /\bsystemische?\b/i,
+    /\bon-page[- ]?seo\b.*\b(poor|47)\b/i,
+];
 export const PDF_AUDIENCE_GEO_MATCH_LIMIT = 1;
 export const PDF_AUDIENCE_PERSONA_INSIGHT_DESCRIPTION_MAX = 90;
 
@@ -134,6 +141,10 @@ export function selectDistinctPersonasForPdf(
     return selected.map((entry) => entry.persona);
 }
 
+export function isSiteWideMetricBoilerplate(text: string): boolean {
+    return SITE_WIDE_INSIGHT_PATTERNS.some((pattern) => pattern.test(text));
+}
+
 export function rankPersonaInsightsForPdf(
     insights: AudienceInsightFact[],
     limit = PDF_AUDIENCE_PERSONA_INSIGHT_LIMIT,
@@ -144,6 +155,11 @@ export function rankPersonaInsightsForPdf(
         : insights;
 
     return [...filtered]
+        .filter(
+            (insight) =>
+                !isSiteWideMetricBoilerplate(insight.description) &&
+                !isSiteWideMetricBoilerplate(insight.title)
+        )
         .sort(
             (a, b) =>
                 (INSIGHT_KIND_PRIORITY[a.kind] ?? 99) - (INSIGHT_KIND_PRIORITY[b.kind] ?? 99)
