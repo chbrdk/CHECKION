@@ -24,6 +24,8 @@ import type {
     ProjectReportLocale,
 } from '@/lib/project-report/types';
 import type { SectionAnalysis } from '@/lib/project-report/narrative-schema';
+import { slimEchonMarketForAgent } from '@/lib/project-report/echon-market-context';
+
 import type { ReportProgress } from '@/lib/project-report/progress';
 
 const MAX_PERSONA_AGENTS = 8;
@@ -113,9 +115,11 @@ function buildPersonaAgentUserPrompt(
             })),
         },
         specialistSections: slimSections(sections),
+        externalMarketContext: slimEchonMarketForAgent(facts.marketContext),
     };
 
     return `Evaluate the website scan AS persona "${persona.name}" (${persona.headline}).
+If externalMarketContext is present, treat it as recent market/signal pressure relevant to this persona's segment — reflect it in personaPerspective and insights where it matters.
 Write personaPerspective in ${lang} — 2–3 sentences in first person ("I…" / "Ich…") about how the site feels for this persona.
 
 Return JSON exactly:

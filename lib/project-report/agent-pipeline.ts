@@ -12,6 +12,7 @@ import {
 } from '@/lib/project-report/narrative-schema';
 import { validateNarrativeEvidence } from '@/lib/project-report/agent-qa';
 import { sanitizeNarrativeRaw } from '@/lib/project-report/narrative-sanitize';
+import { slimProjectSetupForAgent } from '@/lib/project-report/project-setup-context';
 
 const MAX_FINDINGS = 8;
 const MAX_RECOMMENDATIONS = 5;
@@ -32,6 +33,7 @@ function buildReducedFactsPayload(bundle: Omit<ProjectReportBundle, 'visuals' | 
             valueProposition: bundle.project.valueProposition,
             competitors: bundle.project.competitors,
         },
+        projectSetup: slimProjectSetupForAgent(bundle.setup),
         scores: {
             domainScore: bundle.domain?.score ?? null,
             seo: bundle.domain?.seoOnPageScore ?? null,

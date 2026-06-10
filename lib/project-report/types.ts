@@ -57,6 +57,9 @@ export interface ProjectFacts {
     };
 }
 
+export type { ProjectSetupContext, ProjectSetupGaps } from '@/lib/project-report/project-setup-context';
+export type { EchonMarketContext } from '@/lib/project-report/echon-market-context';
+
 export interface DomainPerformanceFacts {
     avgTtfb: number | null;
     avgFcp: number | null;
@@ -398,6 +401,10 @@ export interface ProjectReportBundle {
     deep: ProjectReportDeepAnalysis | null;
     /** AUDION personas aligned with CHECKION metrics (comprehensive, when linked) */
     audience: AudienceReportOverlay | null;
+    /** Project research + configured keywords/competitors for agent context */
+    setup: import('@/lib/project-report/project-setup-context').ProjectSetupContext;
+    /** ECHON signals/research snapshot (comprehensive, when thread pinned + API configured) */
+    marketContext: import('@/lib/project-report/echon-market-context').EchonMarketContext;
     provenance: ProvenanceEntry[];
     freshness: FreshnessMeta;
     /** Deep links for appendix (paths only — resolve with origin in client). */

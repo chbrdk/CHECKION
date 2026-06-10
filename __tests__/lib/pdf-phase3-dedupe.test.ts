@@ -4,6 +4,8 @@ import { filterIssueGroupsForPdfAppendix } from '@/lib/project-report/pdf-issue-
 import { filterRecommendationsForPdf } from '@/lib/project-report/pdf-recommendations-display';
 import { selectGeoInsightsForPdf, PDF_GEO_INSIGHT_CARD_LIMIT } from '@/lib/project-report/pdf-geo-display';
 import { isSiteWideMetricBoilerplate } from '@/lib/project-report/audience-pdf-personas';
+import { emptyProjectSetupContext } from '@/lib/project-report/project-setup-context';
+import { emptyEchonMarketContext } from '@/lib/project-report/echon-market-context';
 import type { CompetitiveInsightFact } from '@/lib/project-report/types';
 
 describe('PDF phase-3 dedupe', () => {
@@ -80,6 +82,8 @@ describe('PDF phase-3 dedupe', () => {
                 competitiveBenchmark: null,
             },
             audience: null,
+    setup: emptyProjectSetupContext(),
+    marketContext: emptyEchonMarketContext(),
             provenance: [],
             freshness: { sources: [] },
             links: {

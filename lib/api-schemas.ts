@@ -218,6 +218,13 @@ export const projectUpdateBodySchema = z.object({
   geoQueries: z.array(z.string().trim().min(1)).optional(),
   geoQueriesByMarket: z.record(z.string(), z.array(z.string().trim().min(1))).optional(),
   tags: projectTagsSchema,
+  /** Pinned ECHON v2 research thread UUID for market context in reports. */
+  echonResearchThreadId: z
+    .string()
+    .trim()
+    .uuid('Invalid ECHON research thread id')
+    .nullable()
+    .optional(),
 });
 
 /** PATCH /api/scans/domain/[id]/tags — scan-level tags for filtering. */

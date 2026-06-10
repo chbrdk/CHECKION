@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { parseApiBody, projectResearchBodySchema } from '@/lib/api-schemas';
-import { getProject } from '@/lib/db/projects';
+import { getProject, saveProjectResearchSnapshot } from '@/lib/db/projects';
 import { flattenGeoQueries } from '@/lib/geo-queries-by-market';
 import OpenAI from 'openai';
 import { zodResponseFormat } from 'openai/helpers/zod';
@@ -165,7 +165,13 @@ export async function POST(
             /* never affect response */
         }
 
-        return NextResponse.json(normalizeResearchResult(validated.data, marketKeys));
+        const result = normalizeResearchResult(validated.data, marketKeys);
+        try {
+            await saveProjectResearchSnapshot(projectId, user.id, result);
+        } catch (persistErr) {
+            console.warn('[CHECKION] research snapshot persist failed:', persistErr);
+        }
+        return NextResponse.json(result);
     } catch (e) {
         const message = e instanceof Error ? e.message : 'Research failed';
         console.error('[CHECKION] project research:', e);

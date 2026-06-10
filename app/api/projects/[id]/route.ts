@@ -89,6 +89,9 @@ export async function PATCH(
         ...(parsed.competitors !== undefined && { competitors: parsed.competitors }),
         ...(geoQueriesPatch !== undefined && { geoQueries: geoQueriesPatch }),
         ...(parsed.tags !== undefined && { tags: parsed.tags }),
+        ...(parsed.echonResearchThreadId !== undefined && {
+            echonResearchThreadId: parsed.echonResearchThreadId,
+        }),
     });
     if (updated) {
         invalidateDomainList(user.id);

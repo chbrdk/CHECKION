@@ -4,6 +4,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import type { ProjectReportBundle } from '@/lib/project-report/types';
+import { emptyProjectSetupContext } from '@/lib/project-report/project-setup-context';
+import { emptyEchonMarketContext } from '@/lib/project-report/echon-market-context';
 
 vi.mock('@react-pdf/renderer', () => ({
     Document: ({ children }: { children: React.ReactNode }) => children,
@@ -69,6 +71,8 @@ const minimalBundle: ProjectReportBundle = {
     },
     deep: null,
     audience: null,
+    setup: emptyProjectSetupContext(),
+    marketContext: emptyEchonMarketContext(),
     provenance: [],
     freshness: { sources: [] },
     links: {

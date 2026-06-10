@@ -5,6 +5,7 @@
 import type { ReportProgress, ReportProgressStage } from '@/lib/project-report/progress';
 
 const AGENT_STAGES: ReportProgressStage[] = [
+    'agent_echon_research',
     'agent_site_quality',
     'agent_seo',
     'agent_geo',

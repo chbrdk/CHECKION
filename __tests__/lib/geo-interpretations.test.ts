@@ -3,6 +3,8 @@ import {
     buildFallbackGeoInterpretations,
     resolveGeoInterpretations,
 } from '@/lib/project-report/geo-interpretations';
+import { emptyProjectSetupContext } from '@/lib/project-report/project-setup-context';
+import { emptyEchonMarketContext } from '@/lib/project-report/echon-market-context';
 import type { GeoFacts } from '@/lib/project-report/types';
 
 const geo: GeoFacts = {
@@ -119,6 +121,8 @@ describe('geo-interpretations', () => {
                 competitiveBenchmark: null,
             },
             audience: null,
+    setup: emptyProjectSetupContext(),
+    marketContext: emptyEchonMarketContext(),
             provenance: [],
             freshness: { sources: [] },
             links: {

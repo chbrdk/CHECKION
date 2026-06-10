@@ -23,6 +23,8 @@ import type {
     ProjectReportLocale,
 } from '@/lib/project-report/types';
 import type { ReportProgress } from '@/lib/project-report/progress';
+import { slimProjectSetupForAgent } from '@/lib/project-report/project-setup-context';
+import { slimEchonMarketForAgent } from '@/lib/project-report/echon-market-context';
 
 export type ProgressCallback = (progress: ReportProgress) => Promise<void>;
 
@@ -488,6 +490,8 @@ export async function synthesizeComprehensiveReport(
     const evidenceIds = facts.provenance.map((p) => p.evidenceId);
     const validEvidence = new Set(evidenceIds);
     const fallbackEvidenceId = defaultFallbackEvidenceId(evidenceIds);
+    const projectSetup = slimProjectSetupForAgent(facts.setup);
+    const marketContext = slimEchonMarketForAgent(facts.marketContext);
 
     await progress('agent_site_quality');
     deep.sections.siteQuality = await callSiteQualitySectionAgent(
@@ -532,6 +536,7 @@ export async function synthesizeComprehensiveReport(
                 serpLeaderDomain: k.serpLeaderDomain,
             })),
             seoRollup: deep.seoRollup,
+            projectSetup,
             evidenceIds: evidenceIds.slice(0, 40),
         },
         options.locale === 'de' ? 'SEO & Rankings' : 'SEO & Rankings'
@@ -558,6 +563,7 @@ export async function synthesizeComprehensiveReport(
         options.locale,
         {
             ...geoAgentPayload,
+            projectSetup,
             evidenceIds: evidenceIds.slice(0, 60),
         },
         options.locale === 'de' ? 'GEO & E-E-A-T' : 'GEO & E-E-A-T'
@@ -570,6 +576,8 @@ export async function synthesizeComprehensiveReport(
         options.locale,
         {
             ...competitivePayload,
+            projectSetup,
+            marketContext,
             evidenceIds: evidenceIds.slice(0, 40),
         },
         options.locale === 'de' ? 'Wettbewerbsvergleich' : 'Competitive landscape'
@@ -598,7 +606,10 @@ export async function synthesizeComprehensiveReport(
                 name: facts.project.name,
                 domain: facts.project.domain,
                 industry: facts.project.industry,
+                valueProposition: facts.project.valueProposition,
             },
+            projectSetup,
+            marketContext,
             scores: {
                 domainScore: facts.domain?.score,
                 seo: facts.domain?.seoOnPageScore,

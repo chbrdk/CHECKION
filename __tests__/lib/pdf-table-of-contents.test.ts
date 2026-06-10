@@ -13,6 +13,8 @@ import {
 } from '@/lib/paths/pdf-table-of-contents';
 import { getProjectReportPdfLabels } from '@/lib/project-report/pdf-labels';
 import type { ProjectReportBundle } from '@/lib/project-report/types';
+import { emptyProjectSetupContext } from '@/lib/project-report/project-setup-context';
+import { emptyEchonMarketContext } from '@/lib/project-report/echon-market-context';
 
 const minimalBundle: ProjectReportBundle = {
     version: '1.0',
@@ -45,6 +47,8 @@ const minimalBundle: ProjectReportBundle = {
     narrative: null,
     deep: null,
     audience: null,
+    setup: emptyProjectSetupContext(),
+    marketContext: emptyEchonMarketContext(),
     provenance: [],
     freshness: { sources: [] },
     links: {

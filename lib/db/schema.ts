@@ -72,6 +72,11 @@ export const projects = pgTable(
         geoQueries: jsonb('geo_queries').notNull().default([]),
         /** Normalized tag strings (lowercase) for list filters. */
         tags: jsonb('tags').notNull().default([]),
+        /** Last CHECKION research agent result (see lib/research/schema.ts). */
+        researchSnapshot: jsonb('research_snapshot'),
+        researchCapturedAt: timestamp('research_captured_at', { withTimezone: true }),
+        /** Pinned ECHON v2 research thread UUID (market context for reports). */
+        echonResearchThreadId: text('echon_research_thread_id'),
         /** Canonical PLEXON platform project id (mirror). */
         platformProjectId: text('platform_project_id'),
         platformCompanyId: text('platform_company_id'),

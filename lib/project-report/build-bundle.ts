@@ -5,6 +5,8 @@
 import { collectProjectReportFacts } from '@/lib/project-report/collector';
 import { collectDeepProjectReportData } from '@/lib/project-report/collector-deep';
 import { collectAudienceReportData } from '@/lib/project-report/collector-audience';
+import { runEchonMarketResearchForReport } from '@/lib/project-report/collector-echon';
+import { getProject } from '@/lib/db/projects';
 import { enrichAudienceOverlayWithPersonaAgents } from '@/lib/project-report/persona-audience-agent';
 import type { AudionPersonaFact } from '@/lib/integrations/audion-audience-client';
 import { buildChartSpecs } from '@/lib/project-report/chart-specs';
@@ -63,7 +65,10 @@ export async function buildProjectReportBundle(
     }
 
     let narrative;
+    let marketContext = facts.marketContext;
     if (options.variant === 'comprehensive' && deep) {
+        const projectRow = await getProject(projectId, viewerUserId);
+
         const audienceData = await collectAudienceReportData(
             projectId,
             { ...facts, deep },
@@ -77,6 +82,25 @@ export async function buildProjectReportBundle(
                 source: 'audion',
                 label: 'AUDION audience overlay',
                 value: audience.audionProjectName,
+            });
+        }
+
+        await reportProgress('agent_echon_research');
+        marketContext = await runEchonMarketResearchForReport({
+            locale: options.locale,
+            skipLlm: options.skipLlm,
+            facts: { ...facts, deep },
+            audience,
+            sourcePersonas: audienceSourcePersonas,
+            pinnedThreadId: projectRow?.echonResearchThreadId,
+        });
+        facts.marketContext = marketContext;
+        if (marketContext.available) {
+            facts.provenance.push({
+                evidenceId: 'ev-echon-market',
+                source: 'echon',
+                label: 'ECHON market research',
+                value: marketContext.threadTitle ?? marketContext.threadId,
             });
         }
 
@@ -137,6 +161,7 @@ export async function buildProjectReportBundle(
         narrative,
         deep,
         audience,
+        marketContext,
     };
 }
 

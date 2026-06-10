@@ -6,6 +6,7 @@ export type ReportProgressStage =
     | 'queued'
     | 'collecting'
     | 'collecting_deep'
+    | 'agent_echon_research'
     | 'agent_site_quality'
     | 'agent_seo'
     | 'agent_geo'
@@ -28,6 +29,7 @@ export const REPORT_STAGE_PERCENT: Record<ReportProgressStage, number> = {
     queued: 0,
     collecting: 8,
     collecting_deep: 18,
+    agent_echon_research: 24,
     agent_site_quality: 30,
     agent_seo: 42,
     agent_geo: 54,
@@ -61,6 +63,7 @@ export const STAGE_LABELS: Record<
     queued: { de: 'In Warteschlange', en: 'Queued' },
     collecting: { de: 'Basisdaten sammeln', en: 'Collecting base data' },
     collecting_deep: { de: 'Tiefenanalyse-Daten laden', en: 'Loading deep analysis data' },
+    agent_echon_research: { de: 'Agent: ECHON Markt-Research', en: 'Agent: ECHON market research' },
     agent_site_quality: { de: 'Agent: Site Quality & UX', en: 'Agent: Site quality & UX' },
     agent_seo: { de: 'Agent: SEO & Rankings', en: 'Agent: SEO & rankings' },
     agent_geo: { de: 'Agent: GEO & E-E-A-T', en: 'Agent: GEO & E-E-A-T' },

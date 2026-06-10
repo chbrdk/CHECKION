@@ -21,6 +21,11 @@ import {
     pathDomain,
     pathGeoEeat,
 } from '@/lib/constants';
+import {
+    buildProjectSetupContext,
+    type ProjectSetupContext,
+} from '@/lib/project-report/project-setup-context';
+import { emptyEchonMarketContext } from '@/lib/project-report/echon-market-context';
 import type {
     CollectProjectReportOptions,
     CompetitorFacts,
@@ -363,6 +368,29 @@ export async function collectProjectReportFacts(
         };
     }
 
+    const setup: ProjectSetupContext = buildProjectSetupContext({
+        valueProposition: project.valueProposition,
+        industry: project.industry,
+        tags: project.tags ?? [],
+        competitors: project.competitors ?? [],
+        geoQueries: project.geoQueries,
+        geoQueriesByMarket: project.geoQueriesByMarket,
+        researchSnapshot: project.researchSnapshot,
+        researchCapturedAt: project.researchCapturedAt,
+        rankings,
+    });
+    if (setup.available) {
+        register('ev-project-setup', 'project-research', 'Project setup context');
+        if (setup.gaps.untrackedSuggestedKeywords.length > 0) {
+            register(
+                'ev-setup-keyword-gap',
+                'project-research',
+                'Keywords not yet tracked',
+                setup.gaps.untrackedSuggestedKeywords.length
+            );
+        }
+    }
+
     const freshness: FreshnessMeta = {
         sources: [
             {
@@ -400,6 +428,8 @@ export async function collectProjectReportFacts(
         journey,
         deep: null,
         audience: null,
+        setup,
+        marketContext: emptyEchonMarketContext('echon_collected_in_comprehensive'),
         provenance,
         freshness,
         links: {

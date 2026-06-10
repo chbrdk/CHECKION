@@ -13,6 +13,7 @@ vi.mock('@/lib/auth-api-token', () => ({
 }));
 vi.mock('@/lib/db/projects', () => ({
     getProject: vi.fn(),
+    saveProjectResearchSnapshot: vi.fn().mockResolvedValue(true),
 }));
 vi.mock('@/lib/llm/config', () => ({
     getOpenAIKey: () => 'sk-test',
@@ -37,7 +38,7 @@ vi.mock('openai/helpers/zod', () => ({
 
 import { POST } from '@/app/api/projects/[id]/research/route';
 import { getRequestUser } from '@/lib/auth-api-token';
-import { getProject } from '@/lib/db/projects';
+import { getProject, saveProjectResearchSnapshot } from '@/lib/db/projects';
 
 const validResearchResult = {
     targetGroups: ['B2B decision-makers', 'SMBs in tech'],
@@ -126,5 +127,10 @@ describe('POST /api/projects/[id]/research', () => {
         expect(json.targetGroups).toEqual(validResearchResult.targetGroups);
         expect(json.seoKeywords).toEqual(validResearchResult.seoKeywords);
         expect(json.competitors).toEqual(validResearchResult.competitors);
+        expect(saveProjectResearchSnapshot).toHaveBeenCalledWith(
+            'proj-1',
+            'user-1',
+            expect.objectContaining({ targetGroups: validResearchResult.targetGroups })
+        );
     });
 });

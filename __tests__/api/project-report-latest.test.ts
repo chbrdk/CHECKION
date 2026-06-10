@@ -12,6 +12,8 @@ vi.mock('@/lib/db/project-report-runs', () => ({
     getLatestCompleteProjectReportRun: vi.fn(),
 }));
 
+import { emptyProjectSetupContext } from '@/lib/project-report/project-setup-context';
+import { emptyEchonMarketContext } from '@/lib/project-report/echon-market-context';
 import { GET } from '@/app/api/projects/[id]/report/latest/route';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { getProject } from '@/lib/db/projects';
@@ -33,6 +35,8 @@ const minimalBundle = {
     narrative: null,
     deep: null,
     audience: null,
+    setup: emptyProjectSetupContext(),
+    marketContext: emptyEchonMarketContext(),
     provenance: [],
     freshness: { sources: [] },
     links: { projectPath: '/projects/p1', domainScanPath: null, geoRunPath: null, rankingsPath: '/projects/p1/rankings' },

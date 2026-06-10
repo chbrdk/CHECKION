@@ -9,6 +9,8 @@ import { projects, projectMembers, PROJECT_MEMBER_ROLE, PROJECT_MEMBER_STATUS, t
 import { normalizeTagList } from '@/lib/tag-utils';
 import { normalizeStoredProjectIndustry } from '@/lib/industry-pool';
 import { flattenGeoQueries, normalizeGeoQueriesToByMarket, type GeoQueriesByMarket } from '@/lib/geo-queries-by-market';
+import type { ProjectResearchResult } from '@/lib/research/schema';
+import { parseProjectResearchSnapshot } from '@/lib/project-report/project-setup-context';
 
 export interface ProjectRow {
     id: string;
@@ -21,6 +23,9 @@ export interface ProjectRow {
     geoQueries: string[];
     geoQueriesByMarket: GeoQueriesByMarket;
     tags: string[];
+    researchSnapshot: ProjectResearchResult | null;
+    researchCapturedAt: string | null;
+    echonResearchThreadId: string | null;
     membershipRole?: ProjectMemberRole;
     createdAt: Date;
     updatedAt: Date;
@@ -31,8 +36,19 @@ function mapProjectRow(row: Record<string, unknown>): ProjectRow {
         competitors?: unknown;
         geoQueries?: unknown;
         tags?: unknown;
+        researchSnapshot?: unknown;
+        researchCapturedAt?: unknown;
+        echonResearchThreadId?: unknown;
         membershipRole?: unknown;
     };
+    const snapshot = parseProjectResearchSnapshot(r.researchSnapshot);
+    const capturedAtRaw: unknown = r.researchCapturedAt;
+    const capturedAt =
+        capturedAtRaw instanceof Date
+            ? capturedAtRaw.toISOString()
+            : typeof capturedAtRaw === 'string' && capturedAtRaw.trim()
+              ? capturedAtRaw
+              : null;
     return {
         id: r.id,
         userId: r.userId,
@@ -44,6 +60,12 @@ function mapProjectRow(row: Record<string, unknown>): ProjectRow {
         geoQueries: flattenGeoQueries(r.geoQueries),
         geoQueriesByMarket: normalizeGeoQueriesToByMarket(r.geoQueries),
         tags: normalizeTagList(r.tags),
+        researchSnapshot: snapshot,
+        researchCapturedAt: capturedAt,
+        echonResearchThreadId:
+            typeof r.echonResearchThreadId === 'string' && r.echonResearchThreadId.trim()
+                ? r.echonResearchThreadId.trim()
+                : null,
         membershipRole: typeof r.membershipRole === 'string' ? (r.membershipRole as ProjectMemberRole) : undefined,
         createdAt: r.createdAt,
         updatedAt: r.updatedAt,
@@ -144,6 +166,9 @@ export async function getProject(id: string, userId: string): Promise<ProjectRow
             competitors: projects.competitors,
             geoQueries: projects.geoQueries,
             tags: projects.tags,
+            researchSnapshot: projects.researchSnapshot,
+            researchCapturedAt: projects.researchCapturedAt,
+            echonResearchThreadId: projects.echonResearchThreadId,
             createdAt: projects.createdAt,
             updatedAt: projects.updatedAt,
             membershipRole: projectMembers.role,
@@ -205,6 +230,28 @@ export async function listProjects(userId: string): Promise<ProjectRow[]> {
     });
 }
 
+export async function saveProjectResearchSnapshot(
+    id: string,
+    userId: string,
+    snapshot: ProjectResearchResult
+): Promise<boolean> {
+    const db = getDb();
+    const membership = await getProjectMembership(id, userId);
+    if (!canManageProject(membership?.role)) {
+        return false;
+    }
+    const now = new Date();
+    const updated = await db
+        .update(projects)
+        .set({
+            researchSnapshot: snapshot,
+            researchCapturedAt: now,
+            updatedAt: now,
+        })
+        .where(eq(projects.id, id));
+    return (updated.rowCount ?? 0) > 0;
+}
+
 export async function updateProject(
     id: string,
     userId: string,
@@ -216,6 +263,7 @@ export async function updateProject(
         competitors?: string[];
         geoQueries?: string[] | GeoQueriesByMarket;
         tags?: string[];
+        echonResearchThreadId?: string | null;
     }
 ): Promise<boolean> {
     const db = getDb();
@@ -233,6 +281,9 @@ export async function updateProject(
             ...(data.competitors !== undefined && { competitors: data.competitors }),
             ...(data.geoQueries !== undefined && { geoQueries: data.geoQueries }),
             ...(data.tags !== undefined && { tags: normalizeTagList(data.tags) }),
+            ...(data.echonResearchThreadId !== undefined && {
+                echonResearchThreadId: data.echonResearchThreadId?.trim() || null,
+            }),
             updatedAt: new Date(),
         })
         .where(eq(projects.id, id));

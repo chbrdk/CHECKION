@@ -2,6 +2,8 @@
  * Comprehensive project-report bundle for `/dev/pdf-print` — drives `ProjectReportDocument`.
  */
 import { buildChartSpecs } from '@/lib/project-report/chart-specs';
+import { buildProjectSetupContext } from '@/lib/project-report/project-setup-context';
+import { emptyEchonMarketContext } from '@/lib/project-report/echon-market-context';
 import type { AudiencePersonaFitFact, DomainFacts, ProjectReportBundle } from '@/lib/project-report/types';
 
 const EVIDENCE = 'preview-evidence-1';
@@ -699,6 +701,36 @@ export function buildComprehensivePreviewBundle(): ProjectReportBundle {
                 'Personas bestätigen Relevanz der Haftpflicht-Themen, kritisieren Formular-UX.',
             ],
         },
+        marketContext: emptyEchonMarketContext('preview'),
+        setup: buildProjectSetupContext({
+            valueProposition: 'Transparente Haftpflicht für Hundehalter',
+            industry: 'insurance',
+            tags: ['b2c'],
+            competitors: ['wettbewerber-a.de', 'wettbewerber-b.de'],
+            geoQueries: ['beste hundehaftpflicht', 'haftpflicht große hunde'],
+            geoQueriesByMarket: {},
+            researchSnapshot: {
+                targetGroups: ['Verantwortungsbewusste Hundehalter', 'Junge Familien'],
+                valueProposition: 'Transparente Haftpflicht für Hundehalter',
+                seoKeywords: ['hundehaftpflicht', 'hundehaftpflicht vergleich', 'große hunde versicherung'],
+                seoKeywordsByMarket: null,
+                geoQueries: ['beste hundehaftpflicht', 'haftpflicht große hunde', 'hundehaftpflicht kosten'],
+                geoQueriesByMarket: null,
+                competitors: ['wettbewerber-a.de'],
+                marketKeys: null,
+            },
+            researchCapturedAt: '2026-06-01T00:00:00.000Z',
+            rankings: {
+                score: 58,
+                keywordCount: 2,
+                lastUpdated: '2026-06-01T00:00:00.000Z',
+                competitorScores: {},
+                topKeywords: [
+                    { id: 'kw-1', keyword: 'hundehaftpflicht', position: 14, evidenceId: EVIDENCE },
+                ],
+                evidenceId: EVIDENCE,
+            },
+        }),
         provenance: [{ evidenceId: EVIDENCE, source: 'preview', label: 'Sample data' }],
         freshness: {
             sources: [

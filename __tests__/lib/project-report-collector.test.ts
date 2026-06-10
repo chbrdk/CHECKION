@@ -62,6 +62,9 @@ describe('collectProjectReportFacts', () => {
             geoQueries: [],
             geoQueriesByMarket: {},
             tags: [],
+            researchSnapshot: null,
+            researchCapturedAt: null,
+            echonResearchThreadId: null,
             createdAt: new Date(),
             updatedAt: new Date(),
         } as Awaited<ReturnType<typeof getProject>>);
@@ -144,6 +147,8 @@ describe('collectProjectReportFacts', () => {
         expect(result.provenance.some((p) => p.evidenceId === 'ev-wcag-score')).toBe(true);
         expect(result.provenance.some((p) => p.evidenceId === 'ev-ranking-score')).toBe(true);
         expect(result.links.projectPath).toContain('proj-1');
+        expect(result.setup.available).toBe(true);
+        expect(result.provenance.some((p) => p.evidenceId === 'ev-project-setup')).toBe(true);
     });
 
     it('throws when project not found', async () => {
