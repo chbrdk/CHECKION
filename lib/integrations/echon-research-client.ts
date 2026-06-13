@@ -1,6 +1,6 @@
 /**
  * ECHON research for CHECKION comprehensive reports.
- * Uses POST /api/v2/research/stream (research agent) + GET /threads/{id} polling.
+ * Uses POST /api/v2/research/runs (async) + GET /threads/{id} polling.
  */
 
 import {
@@ -12,7 +12,7 @@ import {
     waitForEchonResearchCompletion,
     type EchonResearchPollAttempt,
 } from '@/lib/integrations/echon-research-poll';
-import { runEchonResearchAgentStream } from '@/lib/integrations/echon-research-stream-client';
+import { enqueueEchonResearchRun } from '@/lib/integrations/echon-research-async-client';
 import { echonServiceFetchJson } from '@/lib/integrations/echon-service-fetch';
 import { echonResearchThreadPath } from '@/lib/paths/echon-api';
 import {
@@ -66,18 +66,12 @@ export async function runEchonReportResearch(
     const totalTimeoutMs = options?.timeoutMs ?? getEchonReportResearchTimeoutMs();
     const pollIntervalMs = getEchonReportResearchPollIntervalMs();
     const pollRequestTimeoutMs = getEchonReportResearchPollRequestTimeoutMs();
-    const streamState = { threadId: null as string | null };
 
     return waitForEchonResearchCompletion(
         {
-            getActiveThreadId: () => streamState.threadId,
+            getActiveThreadId: () => null,
             startAgentStream: () =>
-                runEchonResearchAgentStream(trimmed, {
-                    timeoutMs: totalTimeoutMs,
-                    onThreadId: (threadId) => {
-                        streamState.threadId = threadId;
-                    },
-                }).then((res) =>
+                enqueueEchonResearchRun(trimmed).then((res) =>
                     res.ok
                         ? { ok: true as const, threadId: res.threadId }
                         : { ok: false as const, reason: res.reason, detail: res.detail }

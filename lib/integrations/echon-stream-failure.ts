@@ -3,7 +3,8 @@ export function isRecoverableEchonStreamFailure(reason: string): boolean {
     return (
         reason === 'echon_fetch_timeout' ||
         reason === 'echon_stream_incomplete' ||
-        reason === 'echon_fetch_failed'
+        reason === 'echon_fetch_failed' ||
+        reason === 'echon_http_503'
     );
 }
 

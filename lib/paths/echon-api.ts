@@ -56,9 +56,18 @@ export function echonResearchChatPath(): string {
     return '/api/v2/research/chat';
 }
 
-/** POST /api/v2/research/stream — multi-stage research agent (NDJSON, used by CHECKION reports) */
+/** POST /api/v2/research/stream — multi-stage research agent (NDJSON, dashboard UI) */
 export function echonResearchStreamPath(): string {
     return '/api/v2/research/stream';
+}
+
+/** POST /api/v2/research/runs — async enqueue (returns 202, poll thread — CHECKION reports) */
+export function echonResearchRunsPath(): string {
+    return '/api/v2/research/runs';
+}
+
+export function echonResearchRunStatusPath(runId: string): string {
+    return `/api/v2/research/runs/${encodeURIComponent(runId)}`;
 }
 
 export type EchonReportResearchDepth = 'fast' | 'balanced' | 'deep';

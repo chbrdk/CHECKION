@@ -11,8 +11,8 @@ AUDION Personas laden
     ↓
 buildEchonReportResearchQuery(personas, domain, industry, competitors)
     ↓
-POST /api/v2/research/stream  (Research Agent — wie ECHON Dashboard)
-    ↓  alle 10s parallel
+POST /api/v2/research/runs  (async enqueue — kein Long-Stream, API bleibt frei)
+    ↓  alle 10s
 GET  /api/v2/research/threads/{id}  (poll bis executive_summary da)
     ↓
 bundle.marketContext → Synthesizer + Competitive + Persona-Agents
