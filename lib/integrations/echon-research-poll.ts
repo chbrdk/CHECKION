@@ -112,14 +112,8 @@ export async function waitForEchonResearchCompletion(
                 }
                 activeThreadId = applied.activeThreadId ?? activeThreadId;
                 lastReason = applied.lastReason;
-
-                if (raced.res.ok) {
-                    const ctx = await handlers.fetchThreadContext(raced.res.threadId);
-                    if (ctx.available) {
-                        return ctx;
-                    }
-                    break;
-                }
+                // Keep polling until deadline — async enqueue returns immediately while
+                // Celery still runs discovery → synthesis (minutes).
             }
         } else {
             await handlers.sleep(tickMs);

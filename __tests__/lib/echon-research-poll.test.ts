@@ -53,6 +53,34 @@ describe('waitForEchonResearchCompletion', () => {
         expect(handlers.fetchThreadContext).toHaveBeenCalledTimes(3);
     });
 
+    it('keeps polling after async enqueue until final answer exists', async () => {
+        let polls = 0;
+        const handlers = {
+            getActiveThreadId: () => null,
+            startAgentStream: vi.fn(async () => ({ ok: true as const, threadId: THREAD_ID })),
+            fetchThreadContext: vi.fn(async () => {
+                polls += 1;
+                if (polls < 5) {
+                    return emptyEchonMarketContext('echon_no_structured_answer');
+                }
+                return readyContext;
+            }),
+            sleep: (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)),
+            now: () => Date.now(),
+        };
+
+        const resultPromise = waitForEchonResearchCompletion(handlers, {
+            totalTimeoutMs: 120_000,
+            pollIntervalMs: 10_000,
+        });
+
+        await vi.advanceTimersByTimeAsync(50_000);
+        const result = await resultPromise;
+
+        expect(result.available).toBe(true);
+        expect(polls).toBeGreaterThanOrEqual(5);
+    });
+
     it('returns context when stream completes', async () => {
         const handlers = {
             getActiveThreadId: () => THREAD_ID,
