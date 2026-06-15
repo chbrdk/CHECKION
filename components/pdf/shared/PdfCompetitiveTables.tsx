@@ -4,6 +4,7 @@ import React from 'react';
 import { View, Text } from '@react-pdf/renderer';
 import type {
     CompetitorScoreComparison,
+    CompetitorScanChangeFact,
     GeoCompetitiveDomainFact,
     RankKeywordDetailFact,
     TopicOverlapRow,
@@ -232,6 +233,65 @@ export function PdfKeywordSerpTable({
                         {row.serpLeaderDomain
                             ? shortenPdfDomain(row.serpLeaderDomain)
                             : labels.noData}
+                    </Text>
+                </View>
+            ))}
+        </View>
+    );
+}
+
+export function PdfScanChangesTable({
+    rows,
+    labels,
+}: {
+    rows: CompetitorScanChangeFact[];
+    labels: ProjectReportPdfLabels;
+}) {
+    if (rows.length === 0) return null;
+
+    return (
+        <View style={pdfStyles.contentPanel}>
+            <View style={pdfStyles.competitiveTableHeader}>
+                <Text style={[pdfStyles.competitiveTableHeaderCell, { width: '28%' }]}>
+                    {labels.scanChangesDomain}
+                </Text>
+                <Text style={[pdfStyles.competitiveTableHeaderCell, { width: '18%' }]}>
+                    {labels.scanChangesNewPages}
+                </Text>
+                <Text style={[pdfStyles.competitiveTableHeaderCell, { width: '18%' }]}>
+                    {labels.scanChangesUpdatedPages}
+                </Text>
+                <Text style={[pdfStyles.competitiveTableHeaderCell, { width: '18%' }]}>
+                    {labels.scanChangesNewThemes}
+                </Text>
+                <Text style={[pdfStyles.competitiveTableHeaderCell, { width: '18%' }]}>
+                    Removed
+                </Text>
+            </View>
+            {rows.map((row) => (
+                <View key={row.evidenceId} style={pdfStyles.competitiveTableRow}>
+                    <Text
+                        style={[
+                            pdfStyles.competitiveTableCell,
+                            { width: '28%', fontWeight: 'bold' },
+                            row.isOwn ? { color: pdfColors.brand } : {},
+                        ]}
+                        wrap
+                    >
+                        {shortenPdfDomain(row.domain)}
+                        {row.isOwn ? ' *' : ''}
+                    </Text>
+                    <Text style={[pdfStyles.competitiveTableCell, { width: '18%' }]}>
+                        {row.summary.newCount}
+                    </Text>
+                    <Text style={[pdfStyles.competitiveTableCell, { width: '18%' }]}>
+                        {row.summary.likelyUpdatedCount}
+                    </Text>
+                    <Text style={[pdfStyles.competitiveTableCell, { width: '18%' }]}>
+                        {row.topNewThemes.length}
+                    </Text>
+                    <Text style={[pdfStyles.competitiveTableCell, { width: '18%' }]}>
+                        {row.summary.removedCount}
                     </Text>
                 </View>
             ))}

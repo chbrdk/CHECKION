@@ -72,6 +72,11 @@ export interface ProjectReportPdfLabels {
     sectionAnalysis: string;
     comprehensiveSubtitle: string;
     competitiveBenchmark: string;
+    competitiveScanChanges: string;
+    scanChangesNewPages: string;
+    scanChangesUpdatedPages: string;
+    scanChangesNewThemes: string;
+    scanChangesDomain: string;
     topicOverlap: string;
     competitiveInsights: string;
     scoreboard: string;
@@ -214,6 +219,11 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         sectionAnalysis: 'Tiefenanalyse',
         comprehensiveSubtitle: 'Umfassende Analyse',
         competitiveBenchmark: 'Wettbewerbs-Benchmark (Deep Scan)',
+        competitiveScanChanges: 'Änderungen seit letztem Scan',
+        scanChangesNewPages: 'Neue Seiten',
+        scanChangesUpdatedPages: 'Aktualisierte Seiten',
+        scanChangesNewThemes: 'Neue/verstärkte Themen',
+        scanChangesDomain: 'Domain',
         topicOverlap: 'Seitenthemen — Overlap',
         competitiveInsights: 'Wettbewerbs-Erkenntnisse',
         scoreboard: 'Scoreboard',
@@ -371,6 +381,11 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         sectionAnalysis: 'Deep Analysis',
         comprehensiveSubtitle: 'Comprehensive Analysis',
         competitiveBenchmark: 'Competitive Benchmark (Deep Scan)',
+        competitiveScanChanges: 'Changes since last scan',
+        scanChangesNewPages: 'New pages',
+        scanChangesUpdatedPages: 'Updated pages',
+        scanChangesNewThemes: 'New/strengthened themes',
+        scanChangesDomain: 'Domain',
         topicOverlap: 'Page Topics — Overlap',
         competitiveInsights: 'Competitive Insights',
         scoreboard: 'Scoreboard',

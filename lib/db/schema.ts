@@ -304,6 +304,27 @@ export const projectDomainScanReferences = pgTable('project_domain_scan_referenc
     pk: primaryKey({ columns: [t.projectId, t.domain] }),
 }));
 
+/** Diff between consecutive domain deep scans (same lineage). One row per current scan. */
+export const domainScanDiffs = pgTable(
+    'domain_scan_diffs',
+    {
+        currentDomainScanId: text('current_domain_scan_id')
+            .primaryKey()
+            .references(() => domainScans.id, { onDelete: 'cascade' }),
+        previousDomainScanId: text('previous_domain_scan_id').references(() => domainScans.id, {
+            onDelete: 'set null',
+        }),
+        userId: text('user_id').notNull(),
+        lineageKey: text('lineage_key').notNull(),
+        computedAt: timestamp('computed_at', { withTimezone: true }).notNull().defaultNow(),
+        payload: jsonb('payload').notNull(),
+    },
+    (t) => ({
+        userIdIdx: index('domain_scan_diffs_user_id_idx').on(t.userId),
+        lineageKeyIdx: index('domain_scan_diffs_lineage_key_idx').on(t.lineageKey),
+    }),
+);
+
 /** Share links: public landing page for a scan (single, domain, journey, or geo_eeat). Token in URL, optional password. */
 export const shareLinks = pgTable('share_links', {
     token: text('token').primaryKey(),

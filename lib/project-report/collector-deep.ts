@@ -12,6 +12,11 @@ import { listIssueGroupsPaged } from '@/lib/db/domain-issues';
 import { buildProjectGeoQuestionHistory, normalizeProjectDomainHost } from '@/lib/project-summaries/geo-question-history';
 import { buildMetricInsights } from '@/lib/project-report/metrics-builder';
 import { buildCompetitiveBenchmark } from '@/lib/project-report/competitive-analysis';
+import { buildProjectCompetitorChanges } from '@/lib/project-competitor-changes';
+import {
+    buildCompetitorScanChangeFactsFromProjectChanges,
+} from '@/lib/project-report/competitive-scan-changes';
+import { getDomainScanTimestamp } from '@/lib/db/domain-scan-lineage-queries';
 import type {
     IssueGroupFact,
     ProjectReportBundle,
@@ -138,7 +143,51 @@ export async function collectDeepProjectReportData(
     facts.project.counts.rankTrackingKeywords = rankCount;
 
     const metrics = buildMetricInsights(facts);
-    const competitiveBenchmark = buildCompetitiveBenchmark(facts);
+    let competitiveBenchmark = buildCompetitiveBenchmark(facts);
+
+    const changeData = await buildProjectCompetitorChanges(projectUserId, projectId, {
+        lazyCompute: true,
+    });
+    const ownDomain = facts.project.domain ?? facts.domain?.domain ?? 'own';
+    const timestampEntries: {
+        own?: { current: string | null; previous: string | null };
+        competitors: Record<string, { current: string | null; previous: string | null }>;
+    } = { competitors: {} };
+
+    if (changeData.own) {
+        const prev = changeData.own.previousScanId;
+        timestampEntries.own = {
+            current: await getDomainScanTimestamp(changeData.own.currentScanId, projectUserId),
+            previous: prev ? await getDomainScanTimestamp(prev, projectUserId) : null,
+        };
+    }
+    for (const [domain, diff] of Object.entries(changeData.competitors)) {
+        if (!diff) continue;
+        const prev = diff.previousScanId;
+        timestampEntries.competitors[domain] = {
+            current: await getDomainScanTimestamp(diff.currentScanId, projectUserId),
+            previous: prev ? await getDomainScanTimestamp(prev, projectUserId) : null,
+        };
+    }
+
+    const scanChanges = buildCompetitorScanChangeFactsFromProjectChanges(
+        ownDomain,
+        changeData,
+        timestampEntries,
+    );
+
+    if (competitiveBenchmark && scanChanges.length > 0) {
+        competitiveBenchmark = {
+            ...competitiveBenchmark,
+            scanChanges,
+            deterministicInsights: [
+                ...scanChanges.flatMap((s) => s.highlights),
+                ...competitiveBenchmark.deterministicInsights,
+            ].slice(0, 20),
+        };
+    } else if (competitiveBenchmark) {
+        competitiveBenchmark = { ...competitiveBenchmark, scanChanges };
+    }
 
     if (competitiveBenchmark) {
         for (const insight of competitiveBenchmark.deterministicInsights) {

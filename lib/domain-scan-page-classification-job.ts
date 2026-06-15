@@ -81,6 +81,11 @@ export async function runDomainScanPageClassificationJob(
         }
 
         await refreshDomainPayloadFromScans(domainScanId, userId);
+        void import('@/lib/domain-scan-diff-job')
+            .then(({ recomputeThemeSliceAndUpsertDiff }) =>
+                recomputeThemeSliceAndUpsertDiff(userId, domainScanId),
+            )
+            .catch((e) => console.error('[CHECKION] domain scan theme diff failed', domainScanId, e));
         const payload = await getDomainScan(domainScanId, userId);
         if (shouldAiFillProjectMetadata(payload)) {
             void (async () => {

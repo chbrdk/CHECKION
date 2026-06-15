@@ -3,6 +3,7 @@
  */
 import type {
     CompetitiveInsightFact,
+    CompetitorScanChangeFact,
     GeoCompetitiveDomainFact,
     RankKeywordDetailFact,
     RankingKeywordFact,
@@ -15,6 +16,7 @@ export const PDF_RANKING_CHART_MIN_POSITIONED_KEYWORDS = 3;
 export const PDF_TOPIC_OVERLAP_TABLE_LIMIT = 12;
 export const PDF_KEYWORD_SERP_TABLE_LIMIT = 8;
 export const PDF_COMPETITIVE_INSIGHT_CARD_LIMIT = 3;
+export const PDF_SCAN_CHANGES_TABLE_LIMIT = 6;
 
 const COMPETITIVE_INSIGHT_CARD_KINDS = new Set<CompetitiveInsightFact['kind']>(['gap', 'topic_gap']);
 
@@ -192,4 +194,28 @@ export function sortGeoCompetitiveDomains(
     domains: GeoCompetitiveDomainFact[]
 ): GeoCompetitiveDomainFact[] {
     return [...domains].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+}
+
+export function filterScanChangesForPdf(
+    changes: CompetitorScanChangeFact[] | undefined,
+    limit = PDF_SCAN_CHANGES_TABLE_LIMIT
+): CompetitorScanChangeFact[] {
+    if (!changes?.length) return [];
+    return changes
+        .filter((c) => {
+            if (c.previousScanId == null) return false;
+            const activity =
+                c.summary.newCount +
+                c.summary.likelyUpdatedCount +
+                c.summary.removedCount +
+                c.topNewThemes.length;
+            return activity > 0;
+        })
+        .sort((a, b) => {
+            const aActivity = a.summary.newCount + a.summary.likelyUpdatedCount;
+            const bActivity = b.summary.newCount + b.summary.likelyUpdatedCount;
+            if (bActivity !== aActivity) return bActivity - aActivity;
+            return a.isOwn === b.isOwn ? 0 : a.isOwn ? 1 : -1;
+        })
+        .slice(0, limit);
 }

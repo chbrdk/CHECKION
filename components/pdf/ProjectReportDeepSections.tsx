@@ -13,6 +13,7 @@ import { PdfVisualSpec } from '@/components/pdf/charts/PdfChartComponents';
 import type { VisualSpec } from '@/lib/project-report/chart-specs';
 import {
     PdfCompetitiveScoreboardTable,
+    PdfScanChangesTable,
     PdfTopicOverlapTable,
 } from '@/components/pdf/shared/PdfCompetitiveTables';
 import {
@@ -31,6 +32,7 @@ import {
 } from '@/lib/project-report/pdf-metrics-display';
 import {
     formatCompetitiveInsightKind,
+    filterScanChangesForPdf,
     hasSeoRollupData,
     prioritizeTopicOverlapRows,
     selectCompetitiveInsightsForPdf,
@@ -133,6 +135,7 @@ export function buildDeepReportPages(
             benchmark.deterministicInsights
         );
         const competitiveInsightRows = competitiveInsightRowsForPdf(competitiveInsightCards, bundle);
+        const scanChangesRows = filterScanChangesForPdf(benchmark.scanChanges);
 
         addPage(
             'deep-competitive',
@@ -176,6 +179,17 @@ export function buildDeepReportPages(
                     texts={pdfInterpretationTexts(competitiveInterpretations.scoreboard)}
                 />
                 <PdfCompetitiveScoreboardTable rows={benchmark.scoreboard} labels={labels} />
+                {scanChangesRows.length > 0 ? (
+                    <>
+                        <PdfSectionHeader
+                            outlineId="deep.competitive.scanChanges"
+                            level={1}
+                            title={labels.competitiveScanChanges}
+                            chapter="competitors"
+                        />
+                        <PdfScanChangesTable rows={scanChangesRows} labels={labels} />
+                    </>
+                ) : null}
                 {visuals.competitorSeoBarChart && benchmark.scoreboard.length <= 1 ? (
                     <PdfVisualSpec spec={visuals.competitorSeoBarChart} />
                 ) : null}

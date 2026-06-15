@@ -276,5 +276,14 @@ export function buildCompetitiveAgentPayload(
         rankings: facts.rankings?.competitorScores ?? null,
         geo: facts.geo?.competitorScores ?? null,
         deterministicInsights: benchmark?.deterministicInsights ?? [],
+        scanChanges: (benchmark?.scanChanges ?? []).map((s) => ({
+            domain: s.domain,
+            isOwn: s.isOwn,
+            summary: s.summary,
+            topNewPages: s.topNewPages.slice(0, 5),
+            topUpdatedPages: s.topUpdatedPages.slice(0, 5),
+            topNewThemes: s.topNewThemes.slice(0, 5),
+            highlights: s.highlights.slice(0, 4),
+        })),
     };
 }

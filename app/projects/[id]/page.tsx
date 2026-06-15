@@ -18,6 +18,7 @@ import {
     apiProjectRankingSummary,
     apiProjectGeoSummary,
     apiProjectDomainSummaryAll,
+    apiProjectCompetitorChanges,
     apiProjectDomainScansActive,
     apiProjectDomainScanAll,
     apiProjectDomainScanCompetitor,
@@ -36,6 +37,11 @@ import {
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { ProjectAudionLink } from '@/components/projects/ProjectAudionLink';
 import { ProjectReportExport } from '@/components/projects/ProjectReportExport';
+import {
+    CompetitorChangesPanel,
+    competitorChangeBadgeCount,
+    type CompetitorChangesPanelData,
+} from '@/components/CompetitorChangesPanel';
 import { useStatusUi } from '@/components/status/StatusUiContext';
 import Link from 'next/link';
 import { THEME_ACCENT_CSS } from '@/lib/theme-accent';
@@ -112,6 +118,8 @@ export default function ProjectDetailPage() {
             | null
         >
     >({});
+    const [competitorChanges, setCompetitorChanges] = useState<CompetitorChangesPanelData | null>(null);
+    const [competitorChangesLoading, setCompetitorChangesLoading] = useState(false);
     const [restartDeepScanLoading, setRestartDeepScanLoading] = useState(false);
     const [scanAllDeepScanLoading, setScanAllDeepScanLoading] = useState(false);
     const [competitorScanLoadingDomain, setCompetitorScanLoadingDomain] = useState<string | null>(null);
@@ -303,6 +311,18 @@ export default function ProjectDetailPage() {
             }
         } catch {
             // ignore
+        }
+        setCompetitorChangesLoading(true);
+        try {
+            const cr = await fetch(apiProjectCompetitorChanges(id), { credentials: 'same-origin' });
+            const cres = await cr.json();
+            if (cres?.success && cres?.data) {
+                setCompetitorChanges(cres.data as CompetitorChangesPanelData);
+            }
+        } catch {
+            // ignore
+        } finally {
+            setCompetitorChangesLoading(false);
         }
         await refreshActiveDomainScans();
     }, [id, refreshActiveDomainScans]);
@@ -988,6 +1008,9 @@ export default function ProjectDetailPage() {
                                             const scanBusy =
                                                 competitorScanLoadingDomain != null &&
                                                 normalizeDomain(competitorScanLoadingDomain) === normalizeDomain(domain);
+                                            const changeBadge = competitorChangeBadgeCount(
+                                                competitorChanges?.competitors[domain] ?? null,
+                                            );
                                             return (
                                             <Box
                                                 key={domain}
@@ -1003,6 +1026,7 @@ export default function ProjectDetailPage() {
                                             >
                                                 <MsqdxTypography variant="caption" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: '1 1 120px', minWidth: 0 }}>
                                                     {domain}
+                                                    {changeBadge > 0 ? ` · +${changeBadge}` : ''}
                                                     {comp
                                                         ? comp.status === 'complete'
                                                             ? ` · ${comp.score}`
@@ -1032,6 +1056,11 @@ export default function ProjectDetailPage() {
                                             );
                                         })}
                                     </Box>
+                                    <CompetitorChangesPanel
+                                        data={competitorChanges}
+                                        projectId={id}
+                                        loading={competitorChangesLoading}
+                                    />
                                 </Box>
                             )}
                         </>

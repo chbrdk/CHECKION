@@ -174,6 +174,35 @@ export interface CompetitiveBenchmarkFacts {
         uniqueOwnThemes: number;
         themesOnlyCompetitorsHave: number;
     };
+    /** Page/topic changes since previous deep scan per domain (own + competitors). */
+    scanChanges?: CompetitorScanChangeFact[];
+}
+
+export interface CompetitorScanChangeFact {
+    domain: string;
+    isOwn: boolean;
+    previousScanId: string | null;
+    currentScanId: string;
+    scannedAt: string | null;
+    previousScannedAt: string | null;
+    summary: {
+        newCount: number;
+        removedCount: number;
+        unchangedCount: number;
+        likelyUpdatedCount: number;
+        totalCurrent: number;
+        totalPrevious: number;
+    };
+    highlights: CompetitiveInsightFact[];
+    topNewPages: string[];
+    topUpdatedPages: string[];
+    topNewThemes: Array<{
+        themeTag: string;
+        themeTagKey: string;
+        kind: string;
+        newPageUrls?: string[];
+    }>;
+    evidenceId: string;
 }
 
 export interface RankingKeywordFact {

@@ -501,6 +501,9 @@ export const apiProjectGeoLatestResult = (id: string) => `${API_PROJECTS}/${enco
 export const apiProjectDomainSummary = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/domain-summary`;
 /** GET /api/projects/[id]/domain-summary-all – own + competitor domain summaries. */
 export const apiProjectDomainSummaryAll = (id: string) => `${API_PROJECTS}/${encodeURIComponent(id)}/domain-summary-all`;
+/** GET /api/projects/[id]/competitor-changes – scan diffs since previous crawl (own + competitors). */
+export const apiProjectCompetitorChanges = (id: string) =>
+    `${API_PROJECTS}/${encodeURIComponent(id)}/competitor-changes`;
 /** POST /api/projects/[id]/domain-scan-all — optional query flags match route search params. */
 export function apiProjectDomainScanAll(
   projectId: string,

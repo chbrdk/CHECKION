@@ -5,6 +5,7 @@ import {
     formatCompetitiveInsightKind,
     hasSeoRollupData,
     prioritizeTopicOverlapRows,
+    filterScanChangesForPdf,
     shouldShowRankingKeywordChart,
     stripPdfEvidenceMarkers,
 } from '@/lib/project-report/pdf-competitive-display';
@@ -77,5 +78,54 @@ describe('pdf-competitive-display', () => {
         ]);
         expect(classifyTopicOverlapRow(rows[0]!)).toBe('gap');
         expect(rows[0]!.themeTag).toBe('Gap');
+    });
+
+    it('filters scan changes for PDF by activity', () => {
+        const rows = filterScanChangesForPdf([
+            {
+                domain: 'quiet.com',
+                isOwn: false,
+                previousScanId: 's1',
+                currentScanId: 's2',
+                scannedAt: null,
+                previousScannedAt: null,
+                summary: {
+                    newCount: 0,
+                    removedCount: 0,
+                    unchangedCount: 5,
+                    likelyUpdatedCount: 0,
+                    totalCurrent: 5,
+                    totalPrevious: 5,
+                },
+                highlights: [],
+                topNewPages: [],
+                topUpdatedPages: [],
+                topNewThemes: [],
+                evidenceId: 'ev-1',
+            },
+            {
+                domain: 'rival.com',
+                isOwn: false,
+                previousScanId: 's1',
+                currentScanId: 's2',
+                scannedAt: null,
+                previousScannedAt: null,
+                summary: {
+                    newCount: 3,
+                    removedCount: 0,
+                    unchangedCount: 10,
+                    likelyUpdatedCount: 1,
+                    totalCurrent: 14,
+                    totalPrevious: 11,
+                },
+                highlights: [],
+                topNewPages: [],
+                topUpdatedPages: [],
+                topNewThemes: [],
+                evidenceId: 'ev-2',
+            },
+        ]);
+        expect(rows).toHaveLength(1);
+        expect(rows[0]?.domain).toBe('rival.com');
     });
 });

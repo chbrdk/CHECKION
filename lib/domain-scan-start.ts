@@ -202,6 +202,11 @@ export async function startDomainScan(
           );
           await updateDomainScan(id, userId, stored);
           invalidateDomainScan(id);
+          void import('@/lib/domain-scan-diff-job')
+            .then(({ computeAndPersistDomainScanDiff }) =>
+              computeAndPersistDomainScanDiff({ userId, domainScanId: id }),
+            )
+            .catch((e) => console.error('[CHECKION] domain scan diff failed', id, e));
           if (!classifyPageTopics) {
             void (async () => {
               const row = await getDomainScan(id, userId);
