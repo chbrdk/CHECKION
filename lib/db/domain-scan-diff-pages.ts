@@ -28,6 +28,18 @@ function parseDocumentCacheHints(raw: unknown): ScanResult['documentCacheHints']
     return h;
 }
 
+function parseReusedUnchanged(raw: unknown): boolean | undefined {
+    if (raw === true || raw === 'true') return true;
+    if (raw === false || raw === 'false') return false;
+    return undefined;
+}
+
+function parseContentFreshnessAgeDays(raw: unknown): number | null {
+    if (raw == null || raw === '') return null;
+    const n = typeof raw === 'number' ? raw : Number(raw);
+    return Number.isFinite(n) ? n : null;
+}
+
 /**
  * Load all pages for a domain scan with diff-relevant JSONB slices from linked scan rows.
  */
@@ -40,8 +52,8 @@ export async function listDomainScanDiffPageInputs(
         .select({
             url: domainPages.url,
             hintsJson: sql<unknown>`(${scans.result})::jsonb->'documentCacheHints'`,
-            reusedUnchanged: sql<boolean | null>`(${scans.result})::jsonb->>'reusedUnchanged'`,
-            contentFreshnessAge: sql<number | null>`(${scans.result})::jsonb->'contentFreshness'->>'ageDays'`,
+            reusedUnchanged: sql<unknown>`(${scans.result})::jsonb->'reusedUnchanged'`,
+            contentFreshnessAge: sql<unknown>`(${scans.result})::jsonb->'contentFreshness'->'ageDays'`,
             pageClassificationRaw: sql<unknown>`(${scans.result})::jsonb->'pageClassification'`,
         })
         .from(domainPages)
@@ -51,18 +63,14 @@ export async function listDomainScanDiffPageInputs(
 
     return rows.map((r) => {
         const url = normalizeDiffUrl(r.url);
-        const reusedRaw = r.reusedUnchanged;
-        const reusedUnchanged =
-            reusedRaw === true || reusedRaw === 'true' ? true : reusedRaw === false ? false : undefined;
-        const ageRaw = r.contentFreshnessAge;
-        const contentFreshnessAgeDays =
-            ageRaw != null && ageRaw !== '' ? Number(ageRaw) : null;
+        const reusedUnchanged = parseReusedUnchanged(r.reusedUnchanged);
+        const contentFreshnessAgeDays = parseContentFreshnessAgeDays(r.contentFreshnessAge);
 
         return {
             url,
             documentCacheHints: parseDocumentCacheHints(r.hintsJson),
             ...(reusedUnchanged !== undefined ? { reusedUnchanged } : {}),
-            contentFreshnessAgeDays: Number.isFinite(contentFreshnessAgeDays) ? contentFreshnessAgeDays : null,
+            contentFreshnessAgeDays,
             pageClassification: parsePageClassification(r.pageClassificationRaw),
         };
     });
