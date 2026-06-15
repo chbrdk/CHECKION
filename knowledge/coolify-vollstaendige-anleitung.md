@@ -37,8 +37,9 @@ In Coolify unter **PLEXON** → **Environment Variables** / **Env** eintragen:
 | `DATABASE_URL` | Ja (für echte User) | `postgresql://user:password@host:5432/plexon` – PLEXON-DB |
 | `NEXTAUTH_URL` | Ja (Production) | **Öffentliche URL der PLEXON-App**, z. B. `https://plexon.projects-a.plygrnd.tech` |
 | `PLEXON_SERVICE_SECRET` | Ja (wenn CHECKION per API login) | Min. 16 Zeichen; **derselbe Wert** wie bei CHECKION `PLEXON_SERVICE_SECRET` |
-| `CHECKION_API_URL` | Optional | Wenn PLEXON-Dashboard „CHECKION-Nutzer“ anzeigen soll: `https://checkion.deine-domain.de` |
-| `CHECKION_ADMIN_API_KEY` | Optional | Nur mit `CHECKION_API_URL`: Admin-API-Key von CHECKION (min. 16 Zeichen) |
+| `CHECKION_API_URL` | Ja (Assistant) | Basis für REST-Calls (Scan, Research, GEO). Z. B. `https://checkion.projects-a.plygrnd.tech` |
+| `CHECKION_API_TOKEN` | Ja (Assistant) | User-API-Token (`checkion_` + 64 Hex) aus CHECKION → Einstellungen → API-Zugang. **Auf PLEXON setzen**, nicht nur auf CHECKION-MCP. Alias: `CHECKION_SERVICE_TOKEN`. |
+| `CHECKION_ADMIN_API_KEY` | Optional | Nur für Dashboard „CHECKION-Nutzer“ — **ersetzt CHECKION_API_TOKEN nicht** |
 | `PLEXON_DEMO_EMAIL` | Optional | Demo-Login ohne DB (nur wenn `DATABASE_URL` leer) |
 | `PLEXON_DEMO_PASSWORD` | Optional | Demo-Passwort (nur mit `PLEXON_DEMO_EMAIL`) |
 | `BASE_PATH` | Optional | Nur wenn Coolify einen URL-Prefix setzt (z. B. `/plexon`) |
@@ -122,7 +123,8 @@ In Coolify unter **CHECKION** → **Environment Variables** eintragen:
 - [ ] `DATABASE_URL` (PLEXON-PostgreSQL)
 - [ ] `NEXTAUTH_URL` = öffentliche PLEXON-URL
 - [ ] `PLEXON_SERVICE_SECRET` (≥ 16 Zeichen; für CHECKION-Login)
-- [ ] Optional: `CHECKION_API_URL` + `CHECKION_ADMIN_API_KEY` (für Dashboard „CHECKION-Nutzer“)
+- [ ] `CHECKION_API_URL` + `CHECKION_API_TOKEN` (Assistant: Scan, GEO, Research)
+- [ ] Optional: `CHECKION_ADMIN_API_KEY` (nur Dashboard „CHECKION-Nutzer“)
 
 ### CHECKION
 

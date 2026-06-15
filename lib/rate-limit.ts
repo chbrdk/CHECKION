@@ -82,12 +82,18 @@ function checkRateLimitMemory(key: string, bucket: RateLimitBucket): RateLimitRe
 /**
  * Check rate limit. Call before processing expensive or abuse-prone requests.
  * Uses Redis when `REDIS_URL` is set; otherwise in-memory.
+ * Never throws — falls back to in-memory on unexpected errors (scan API must not 503).
  */
 export async function checkRateLimit(key: string, bucket: RateLimitBucket = 'default'): Promise<RateLimitResult> {
-    const { max, windowMs } = limitsForBucket(bucket);
-    const redisResult = await checkRateLimitRedis(key, bucket, max, windowMs);
-    if (redisResult != null) return redisResult;
-    return checkRateLimitMemory(key, bucket);
+    try {
+        const { max, windowMs } = limitsForBucket(bucket);
+        const redisResult = await checkRateLimitRedis(key, bucket, max, windowMs);
+        if (redisResult != null) return redisResult;
+        return checkRateLimitMemory(key, bucket);
+    } catch (e) {
+        console.error('[CHECKION] checkRateLimit unexpected error, using in-memory fallback:', e);
+        return checkRateLimitMemory(key, bucket);
+    }
 }
 
 /** Clears in-memory counters (Vitest only). */

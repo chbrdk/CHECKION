@@ -39,4 +39,18 @@ describe('rate-limit', () => {
         expect((await checkRateLimit(`register:203.0.113.1`, 'register')).allowed).toBe(true);
         expect((await checkRateLimit(`register:203.0.113.1`, 'register')).allowed).toBe(false);
     });
+
+    it('checkRateLimit never throws when Redis path fails unexpectedly', async () => {
+        vi.doMock('@/lib/rate-limit-redis', () => ({
+            checkRateLimitRedis: vi.fn(async () => {
+                throw new Error('redis exploded');
+            }),
+        }));
+        const { checkRateLimit, __resetRateLimitStoresForTests } = await import('@/lib/rate-limit');
+        __resetRateLimitStoresForTests();
+        await expect(checkRateLimit('scan:throw-test', 'default')).resolves.toMatchObject({
+            allowed: true,
+        });
+        vi.doUnmock('@/lib/rate-limit-redis');
+    });
 });
