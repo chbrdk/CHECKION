@@ -364,6 +364,32 @@ export function registerCheckionTools(server: { registerTool: (name: string, con
     }
   );
 
+  server.registerTool(
+    'checkion.project_research',
+    {
+      title: 'Run project research',
+      description:
+        'Run AI project research (target groups, SEO/GEO keywords, competitors). POST /api/projects/:id/research.',
+      inputSchema: z.object({
+        id: z.string().describe('CHECKION project ID'),
+        url: z.string().optional().describe('Optional URL override'),
+        marketKeys: z.array(z.string()).optional().describe('Optional market keys e.g. de-de'),
+      }),
+    },
+    async (args) => {
+      const { id, url, marketKeys } = args as { id: string; url?: string; marketKeys?: string[] };
+      const res = await base(`/api/projects/${encodeURIComponent(id)}/research`, {
+        method: 'POST',
+        body: JSON.stringify({
+          ...(url ? { url } : {}),
+          ...(marketKeys?.length ? { marketKeys } : {}),
+        }),
+      });
+      if (isCheckionError(res)) return { content: [{ type: 'text' as const, text: JSON.stringify(res) }] };
+      return { content: [{ type: 'text', text: toTextContent(res) }] };
+    }
+  );
+
   // --- micro-tools ---
   server.registerTool(
     'checkion.tools_contrast',
