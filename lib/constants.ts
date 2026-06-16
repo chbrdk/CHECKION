@@ -535,6 +535,8 @@ export const apiProjectReportLatest = (id: string) =>
 /** GET /api/projects/[id]/report/[runId] – poll report job status and bundle. */
 export const apiProjectReportRun = (projectId: string, runId: string) =>
   `${API_PROJECTS}/${encodeURIComponent(projectId)}/report/${encodeURIComponent(runId)}`;
+/** POST — PLEXON assistant curated report → PDF (service secret). */
+export const API_INTEGRATIONS_PLEXON_ASSISTANT_REPORT_PDF = '/api/integrations/plexon/assistant-report/pdf';
 /** GET /api/scan/domain/by-domain?domain= – latest completed scan for domain (current user). */
 export const apiScanDomainByDomain = (domain: string) => `${API_SCAN_DOMAIN}/by-domain?domain=${encodeURIComponent(domain)}`;
 
