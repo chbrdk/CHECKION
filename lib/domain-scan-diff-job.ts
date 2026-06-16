@@ -4,6 +4,7 @@
 
 import { listDomainScanDiffPageInputs } from '@/lib/db/domain-scan-diff-pages';
 import { upsertDomainScanDiff } from '@/lib/db/domain-scan-diffs';
+import { createAlertsForDomainScanDiff } from '@/lib/db/competitor-change-alerts';
 import {
     getDomainScanLineageMeta,
     getPreviousDomainScanId,
@@ -61,6 +62,9 @@ export async function computeAndPersistDomainScanDiff(
     const diff = await computeDomainScanDiff(options);
     if (!diff) return null;
     await upsertDomainScanDiff(options.userId, diff);
+    await createAlertsForDomainScanDiff(options.userId, options.domainScanId, diff).catch((e) =>
+        console.error('[CHECKION] competitor change alert failed', options.domainScanId, e),
+    );
     return diff;
 }
 

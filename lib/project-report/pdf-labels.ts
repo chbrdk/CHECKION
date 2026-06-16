@@ -75,6 +75,7 @@ export interface ProjectReportPdfLabels {
     competitiveScanChanges: string;
     scanChangesNewPages: string;
     scanChangesUpdatedPages: string;
+    scanChangesRemovedPages: string;
     scanChangesNewThemes: string;
     scanChangesDomain: string;
     topicOverlap: string;
@@ -223,6 +224,7 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         scanChangesNewPages: 'Neue Seiten',
         scanChangesUpdatedPages: 'Aktualisierte Seiten',
         scanChangesNewThemes: 'Neue/verstärkte Themen',
+        scanChangesRemovedPages: 'Entfernt',
         scanChangesDomain: 'Domain',
         topicOverlap: 'Seitenthemen — Overlap',
         competitiveInsights: 'Wettbewerbs-Erkenntnisse',
@@ -385,6 +387,7 @@ const LABELS: Record<ProjectReportLocale, ProjectReportPdfLabels> = {
         scanChangesNewPages: 'New pages',
         scanChangesUpdatedPages: 'Updated pages',
         scanChangesNewThemes: 'New/strengthened themes',
+        scanChangesRemovedPages: 'Removed',
         scanChangesDomain: 'Domain',
         topicOverlap: 'Page Topics — Overlap',
         competitiveInsights: 'Competitive Insights',

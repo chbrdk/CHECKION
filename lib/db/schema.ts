@@ -325,6 +325,28 @@ export const domainScanDiffs = pgTable(
     }),
 );
 
+/** Unread competitor / own-domain change notifications for project UI. */
+export const competitorChangeAlerts = pgTable(
+    'competitor_change_alerts',
+    {
+        id: text('id').primaryKey(),
+        projectId: text('project_id')
+            .notNull()
+            .references(() => projects.id, { onDelete: 'cascade' }),
+        userId: text('user_id').notNull(),
+        domain: text('domain').notNull(),
+        domainScanId: text('domain_scan_id')
+            .notNull()
+            .references(() => domainScans.id, { onDelete: 'cascade' }),
+        summary: jsonb('summary').notNull(),
+        readAt: timestamp('read_at', { withTimezone: true }),
+        createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    },
+    (t) => ({
+        projectUnreadIdx: index('competitor_change_alerts_project_unread_idx').on(t.projectId, t.readAt),
+    }),
+);
+
 /** Share links: public landing page for a scan (single, domain, journey, or geo_eeat). Token in URL, optional password. */
 export const shareLinks = pgTable('share_links', {
     token: text('token').primaryKey(),

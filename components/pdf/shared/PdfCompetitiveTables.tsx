@@ -265,7 +265,7 @@ export function PdfScanChangesTable({
                     {labels.scanChangesNewThemes}
                 </Text>
                 <Text style={[pdfStyles.competitiveTableHeaderCell, { width: '18%' }]}>
-                    Removed
+                    {labels.scanChangesRemovedPages}
                 </Text>
             </View>
             {rows.map((row) => (

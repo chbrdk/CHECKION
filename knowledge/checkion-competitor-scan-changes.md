@@ -5,6 +5,8 @@
 Between consecutive **deep scans** of the same normalized host (own project domain or competitor), CHECKION computes a **diff** and surfaces it in:
 
 - Project UI (`GET /api/projects/[id]/competitor-changes`)
+- Unread alerts (`GET /api/projects/[id]/competitor-alerts`)
+- Page topics compare (`/projects/[id]/page-topics`)
 - Deep project report / PDF (`competitiveBenchmark.scanChanges`)
 
 ## Lineage
@@ -22,8 +24,12 @@ See [checkion-domain-scan-lineage.md](./checkion-domain-scan-lineage.md).
 |------|---------|
 | `new` | URL only in current scan |
 | `removed` | URL only in previous scan |
-| `unchanged` | `reusedUnchanged` or matching ETag/Last-Modified |
-| `likely_updated` | Header change or full rescan without reuse |
+| `unchanged` | `reusedUnchanged` or matching ETag/Last-Modified or matching `contentFingerprint` |
+| `likely_updated` | Header change, fingerprint change, or full rescan without reuse |
+
+## Content fingerprint (Phase 5)
+
+`scans.result.contentFingerprint` = SHA-256 slice of normalized `title + h1 + bodyTextExcerpt` (`lib/content-fingerprint.ts`). Used when cache headers are missing.
 
 ## Theme diff
 
@@ -31,19 +37,45 @@ After optional `classifyPageTopics`, aggregated `topThemes` and per-page `pageCl
 
 ## Storage
 
-Table `domain_scan_diffs` — one row per `current_domain_scan_id`, JSON payload `DomainScanDiffResult`.
+- `domain_scan_diffs` — one row per `current_domain_scan_id`
+- `competitor_change_alerts` — unread notifications per project
 
-## API
+## API paths (`lib/constants.ts`)
 
-Central path: `apiProjectCompetitorChanges(projectId)` in `lib/constants.ts`.
-
-Query `?lazy=false` skips on-read recompute when diff row is missing.
+- `apiProjectCompetitorChanges(projectId)`
+- `apiProjectCompetitorAlerts(projectId)`
+- `API_CRON_COMPETITOR_RESCANS` — `POST /api/cron/competitor-rescans` with `Authorization: Bearer {CHECKION_CRON_SECRET}`
 
 ## Hooks
 
 - `lib/domain-scan-start.ts` — after scan `complete`
 - `lib/domain-scan-page-classification-job.ts` — after classification refresh
 
-## Re-scan recommendation
+## Re-scan defaults
 
-Use `skipUnchangedPages=true` on competitor re-scans to save cost while still detecting new URLs (sitemap) and header changes.
+`skipUnchangedPages` defaults to **true** when a prior complete scan exists (competitor + own domain). Override with `?skipUnchangedPages=false`.
+
+## Scheduled re-scans (Phase 6)
+
+Coolify/cron example (weekly):
+
+```http
+POST https://checkion.example/api/cron/competitor-rescans?minAgeDays=7
+Authorization: Bearer <CHECKION_CRON_SECRET>
+```
+
+Env:
+
+| Variable | Default | Meaning |
+|----------|---------|---------|
+| `CHECKION_CRON_SECRET` | — | Required for cron route |
+| `CHECKION_COMPETITOR_RESCAN_MIN_AGE_DAYS` | 7 | Min age before re-scan |
+| `CHECKION_COMPETITOR_RESCAN_MAX_PROJECTS` | 50 | Cap per cron run |
+
+## Backfill historical diffs
+
+```bash
+DATABASE_URL=... npx tsx scripts/backfill-domain-scan-diffs.ts
+```
+
+Docker one-shot: `CHECKION_BACKFILL_DOMAIN_SCAN_DIFFS_ON_START=1` in entrypoint (see `scripts/docker-entrypoint.sh`).

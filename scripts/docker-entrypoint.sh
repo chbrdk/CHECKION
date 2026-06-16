@@ -94,4 +94,22 @@ if [ -n "$DATABASE_URL" ] && [ -n "$CHECKION_REFRESH_DOMAIN_PAYLOADS_ON_START" ]
   esac
 fi
 
+# Optional: compute domain_scan_diffs for historical complete scans (idempotent).
+# Set CHECKION_BACKFILL_DOMAIN_SCAN_DIFFS_ON_START=1 once after deploy.
+if [ -n "$DATABASE_URL" ] && [ -n "$CHECKION_BACKFILL_DOMAIN_SCAN_DIFFS_ON_START" ]; then
+  case "$CHECKION_BACKFILL_DOMAIN_SCAN_DIFFS_ON_START" in
+    0|false|no|off|"")
+      ;;
+    1|true|yes|run)
+      echo "[CHECKION] Running backfill-domain-scan-diffs..."
+      if ! npx tsx scripts/backfill-domain-scan-diffs.ts; then
+        echo "[CHECKION] backfill-domain-scan-diffs failed — starting app anyway."
+      fi
+      ;;
+    *)
+      echo "[CHECKION] Unknown CHECKION_BACKFILL_DOMAIN_SCAN_DIFFS_ON_START=$CHECKION_BACKFILL_DOMAIN_SCAN_DIFFS_ON_START"
+      ;;
+  esac
+fi
+
 exec npm run start

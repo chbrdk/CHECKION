@@ -138,8 +138,13 @@
       "newThemes": "{count} new topics",
       "newPagesList": "New pages",
       "updatedPagesList": "Updated pages",
-      "newThemesList": "New topics"
+      "newThemesList": "New topics",
+      "allUnchanged": "No new or updated pages detected since the last scan.",
+      "alertsTitle": "{count} new competitor changes",
+      "alertChip": "{domain}: +{new} new, {updated} updated",
+      "alertsDismiss": "Mark as read"
     },
+    "pageTopicsChangeHighlightsTitle": "Topic changes since last scan",
     "save": "Save",
     "cancel": "Cancel",
     "creating": "Creating…",

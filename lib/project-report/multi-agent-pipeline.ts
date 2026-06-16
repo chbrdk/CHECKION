@@ -332,7 +332,8 @@ async function callCompetitiveSectionAgent(
 ): Promise<SectionAnalysis> {
     const lang = locale === 'de' ? 'German' : 'English';
     const insightBlock = competitiveInsightInterpretationInstructions(payload);
-    const userContent = `Compare own domain vs deep-scanned competitors using the scoreboard (UX, SEO, GEO, ranking, WCAG errors, LCP), topic overlap gaps/leads, and deterministic insights.
+    const userContent = `Compare own domain vs deep-scanned competitors using the scoreboard (UX, SEO, GEO, ranking, WCAG errors, LCP), topic overlap gaps/leads, deterministic insights, and scanChanges (new/updated pages and themes since the previous deep crawl).
+Prioritize recent competitor content moves from scanChanges when writing summary and keyFindings — call out new URLs and emerging topics with concrete counts.
 Explain what the tables mean for non-technical stakeholders — where you lead, where competitors win, and what to prioritize.
 For EACH item in benchmark.deterministicInsights, write a short interpretation in metricInterpretations keyed as "insight:<id>".
 

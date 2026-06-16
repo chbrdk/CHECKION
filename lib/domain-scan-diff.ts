@@ -11,6 +11,7 @@ export interface DomainPageDiffInput {
     url: string;
     documentCacheHints?: ScanResult['documentCacheHints'];
     reusedUnchanged?: boolean;
+    contentFingerprint?: string;
     contentFreshnessAgeDays?: number | null;
     pageClassification?: {
         primaryTag?: string;
@@ -22,12 +23,13 @@ export interface DomainPageChange {
     url: string;
     kind: DomainPageChangeKind;
     previousScanId?: string;
-    signals?: {
-        reusedUnchanged?: boolean;
-        etagChanged?: boolean;
-        lastModifiedChanged?: boolean;
-        contentFreshnessDeltaDays?: number | null;
-    };
+  signals?: {
+    reusedUnchanged?: boolean;
+    etagChanged?: boolean;
+    lastModifiedChanged?: boolean;
+    fingerprintChanged?: boolean;
+    contentFreshnessDeltaDays?: number | null;
+  };
     pageClassification?: { primaryTag?: string; tier?: number };
 }
 
@@ -130,6 +132,27 @@ function classifyPagePair(
                 lastModifiedChanged,
                 contentFreshnessDeltaDays,
             },
+            pageClassification: current.pageClassification,
+        };
+    }
+
+    const curFp = (current.contentFingerprint ?? '').trim();
+    const prevFp = (previous.contentFingerprint ?? '').trim();
+    if (curFp && prevFp) {
+        if (curFp === prevFp) {
+            return {
+                url: current.url,
+                kind: 'unchanged',
+                previousScanId,
+                signals: { reusedUnchanged: false },
+                pageClassification: current.pageClassification,
+            };
+        }
+        return {
+            url: current.url,
+            kind: 'likely_updated',
+            previousScanId,
+            signals: { fingerprintChanged: true },
             pageClassification: current.pageClassification,
         };
     }

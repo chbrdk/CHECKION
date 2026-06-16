@@ -19,6 +19,7 @@ import {
     apiProjectGeoSummary,
     apiProjectDomainSummaryAll,
     apiProjectCompetitorChanges,
+    apiProjectCompetitorAlerts,
     apiProjectDomainScansActive,
     apiProjectDomainScanAll,
     apiProjectDomainScanCompetitor,
@@ -42,6 +43,8 @@ import {
     competitorChangeBadgeCount,
     type CompetitorChangesPanelData,
 } from '@/components/CompetitorChangesPanel';
+import { CompetitorAlertsBanner } from '@/components/CompetitorAlertsBanner';
+import type { CompetitorChangeAlertRow } from '@/lib/db/competitor-change-alerts';
 import { useStatusUi } from '@/components/status/StatusUiContext';
 import Link from 'next/link';
 import { THEME_ACCENT_CSS } from '@/lib/theme-accent';
@@ -120,6 +123,7 @@ export default function ProjectDetailPage() {
     >({});
     const [competitorChanges, setCompetitorChanges] = useState<CompetitorChangesPanelData | null>(null);
     const [competitorChangesLoading, setCompetitorChangesLoading] = useState(false);
+    const [competitorAlerts, setCompetitorAlerts] = useState<CompetitorChangeAlertRow[]>([]);
     const [restartDeepScanLoading, setRestartDeepScanLoading] = useState(false);
     const [scanAllDeepScanLoading, setScanAllDeepScanLoading] = useState(false);
     const [competitorScanLoadingDomain, setCompetitorScanLoadingDomain] = useState<string | null>(null);
@@ -324,6 +328,15 @@ export default function ProjectDetailPage() {
         } finally {
             setCompetitorChangesLoading(false);
         }
+        try {
+            const ar = await fetch(apiProjectCompetitorAlerts(id), { credentials: 'same-origin' });
+            const ares = await ar.json();
+            if (ares?.success && ares?.data?.alerts) {
+                setCompetitorAlerts(ares.data.alerts as CompetitorChangeAlertRow[]);
+            }
+        } catch {
+            // ignore
+        }
         await refreshActiveDomainScans();
     }, [id, refreshActiveDomainScans]);
 
@@ -467,6 +480,21 @@ export default function ProjectDetailPage() {
         },
         [id, loadDomainSummaryAll, domainScan.attach]
     );
+
+    const dismissCompetitorAlerts = useCallback(async () => {
+        if (!id) return;
+        try {
+            await fetch(apiProjectCompetitorAlerts(id), {
+                method: 'PATCH',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({}),
+            });
+            setCompetitorAlerts([]);
+        } catch {
+            // ignore
+        }
+    }, [id]);
 
     const handleScanAllDeepScan = useCallback(async () => {
         if (!id) return;
@@ -666,6 +694,10 @@ export default function ProjectDetailPage() {
 
     return (
         <Box sx={{ p: 'var(--msqdx-spacing-md)', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+            <CompetitorAlertsBanner
+                alerts={competitorAlerts}
+                onDismiss={() => void dismissCompetitorAlerts()}
+            />
             <Box
                 sx={{
                     display: 'grid',

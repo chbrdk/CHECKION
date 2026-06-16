@@ -8,9 +8,11 @@ import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { useFetchOnceForId } from '@/hooks/useFetchOnceForId';
-import { apiProject, apiProjectDomainSummaryAll, pathDomain, pathProject } from '@/lib/constants';
+import { apiProject, apiProjectDomainSummaryAll, apiProjectCompetitorChanges, pathDomain, pathProject } from '@/lib/constants';
 import { DomainResultPageTopicsCard } from '@/components/domain/DomainResultPageTopicsCard';
 import { PageTopicsCompareBubbleMatrix } from '@/components/domain/PageTopicsCompareBubbleMatrix';
+import { PageTopicsChangeHighlights } from '@/components/PageTopicsChangeHighlights';
+import type { DomainScanDiffResult } from '@/lib/domain-scan-diff';
 import type { AggregatedPageClassification, AggregatedPageClassificationTheme } from '@/lib/types';
 
 type SummaryAggregated = {
@@ -36,6 +38,7 @@ export default function ProjectPageTopicsPage() {
     const [loading, setLoading] = useState(true);
     const [own, setOwn] = useState<OwnPayload>(null);
     const [competitors, setCompetitors] = useState<Record<string, CompetitorPayload | null>>({});
+    const [competitorChanges, setCompetitorChanges] = useState<Record<string, DomainScanDiffResult | null>>({});
     const fetchedForIdRef = useFetchOnceForId();
 
     useEffect(() => {
@@ -50,8 +53,9 @@ export default function ProjectPageTopicsPage() {
         Promise.all([
             fetch(apiProject(id), { credentials: 'same-origin', signal }).then((r) => r.json()),
             fetch(apiProjectDomainSummaryAll(id), { credentials: 'same-origin', signal }).then((r) => r.json()),
+            fetch(apiProjectCompetitorChanges(id), { credentials: 'same-origin', signal }).then((r) => r.json()),
         ])
-            .then(([projectRes, summaryRes]) => {
+            .then(([projectRes, summaryRes, changesRes]) => {
                 if (signal.aborted) return;
                 const p = projectRes?.data as { name?: string; domain?: string | null } | undefined;
                 if (p) setProject({ name: p.name ?? '', domain: p.domain ?? null });
@@ -60,6 +64,9 @@ export default function ProjectPageTopicsPage() {
                     const d = summaryRes.data as { own: OwnPayload; competitors: Record<string, CompetitorPayload | null> };
                     setOwn(d.own ?? null);
                     setCompetitors(d.competitors ?? {});
+                }
+                if (changesRes?.success && changesRes?.data?.competitors) {
+                    setCompetitorChanges(changesRes.data.competitors as Record<string, DomainScanDiffResult | null>);
                 }
             })
             .catch(() => {
@@ -135,6 +142,8 @@ export default function ProjectPageTopicsPage() {
             <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 3 }}>
                 {t('projects.pageTopicsCompareSubtitle')}
             </MsqdxTypography>
+
+            <PageTopicsChangeHighlights competitors={competitorChanges} />
 
             {!hasAnyTopics ? (
                 <MsqdxMoleculeCard

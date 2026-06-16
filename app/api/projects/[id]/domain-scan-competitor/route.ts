@@ -7,6 +7,10 @@ import { getProject } from '@/lib/db/projects';
 import { normalizeDomain } from '@/lib/domain-normalize';
 import { parseApiBody, projectCompetitorDomainScanBodySchema } from '@/lib/api-schemas';
 import { startProjectCompetitorDomainScan } from '@/lib/project-competitor-domain-scan';
+import {
+    hasPriorCompetitorCompleteScan,
+    resolveSkipUnchangedPagesFromQuery,
+} from '@/lib/competitor-scan-skip-default';
 
 export const maxDuration = 15;
 
@@ -49,7 +53,8 @@ export async function POST(
     return apiError('Domain is not a competitor on this project', API_STATUS.BAD_REQUEST);
   }
 
-  const skipUnchangedPages = req.nextUrl.searchParams.get('skipUnchangedPages') === 'true';
+  const hasPrior = await hasPriorCompetitorCompleteScan(projectUserId, normalized);
+  const skipUnchangedPages = resolveSkipUnchangedPagesFromQuery(req.nextUrl.searchParams, hasPrior);
   const classifyPageTopics = req.nextUrl.searchParams.get('classifyPageTopics') === 'true';
   const aiFillProjectMetadataDisabled = req.nextUrl.searchParams.get('aiFillProjectMetadata') === 'false';
 

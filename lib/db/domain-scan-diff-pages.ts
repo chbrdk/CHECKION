@@ -28,6 +28,12 @@ function parseDocumentCacheHints(raw: unknown): ScanResult['documentCacheHints']
     return h;
 }
 
+function parseContentFingerprint(raw: unknown): string | undefined {
+    if (typeof raw !== 'string') return undefined;
+    const t = raw.trim();
+    return t.length > 0 ? t : undefined;
+}
+
 function parseReusedUnchanged(raw: unknown): boolean | undefined {
     if (raw === true || raw === 'true') return true;
     if (raw === false || raw === 'false') return false;
@@ -52,6 +58,7 @@ export async function listDomainScanDiffPageInputs(
         .select({
             url: domainPages.url,
             hintsJson: sql<unknown>`(${scans.result})::jsonb->'documentCacheHints'`,
+            contentFingerprint: sql<unknown>`(${scans.result})::jsonb->>'contentFingerprint'`,
             reusedUnchanged: sql<unknown>`(${scans.result})::jsonb->'reusedUnchanged'`,
             contentFreshnessAge: sql<unknown>`(${scans.result})::jsonb->'contentFreshness'->'ageDays'`,
             pageClassificationRaw: sql<unknown>`(${scans.result})::jsonb->'pageClassification'`,
@@ -64,12 +71,14 @@ export async function listDomainScanDiffPageInputs(
     return rows.map((r) => {
         const url = normalizeDiffUrl(r.url);
         const reusedUnchanged = parseReusedUnchanged(r.reusedUnchanged);
+        const contentFingerprint = parseContentFingerprint(r.contentFingerprint);
         const contentFreshnessAgeDays = parseContentFreshnessAgeDays(r.contentFreshnessAge);
 
         return {
             url,
             documentCacheHints: parseDocumentCacheHints(r.hintsJson),
             ...(reusedUnchanged !== undefined ? { reusedUnchanged } : {}),
+            ...(contentFingerprint ? { contentFingerprint } : {}),
             contentFreshnessAgeDays,
             pageClassification: parsePageClassification(r.pageClassificationRaw),
         };

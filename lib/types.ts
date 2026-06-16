@@ -364,6 +364,8 @@ export type ScanResult = {
     contentFreshness?: ContentFreshness;
     /** Set when this row was cloned from a prior scan (ETag/Last-Modified match). */
     reusedUnchanged?: boolean;
+    /** SHA-256 slice of normalized title + h1 + body excerpt for diff when headers are absent. */
+    contentFingerprint?: string;
 }
 
 /** Raw hints from the page (JSON-LD + Open Graph) before server-side scoring. */

@@ -7,6 +7,11 @@ import { getProject } from '@/lib/db/projects';
 import { normalizeDomain } from '@/lib/domain-normalize';
 import { startDomainScan } from '@/lib/domain-scan-start';
 import { startProjectCompetitorDomainScan } from '@/lib/project-competitor-domain-scan';
+import {
+    hasPriorCompetitorCompleteScan,
+    hasPriorOwnDomainCompleteScan,
+    resolveSkipUnchangedPagesFromQuery,
+} from '@/lib/competitor-scan-skip-default';
 
 const MAX_COMPETITORS = 20;
 
@@ -35,7 +40,10 @@ export async function POST(
   if (!project) return apiError('Project not found', API_STATUS.NOT_FOUND);
   const projectUserId = project.userId;
 
-  const skipUnchangedPages = req.nextUrl.searchParams.get('skipUnchangedPages') === 'true';
+  const ownHasPrior = project.domain?.trim()
+    ? await hasPriorOwnDomainCompleteScan(projectUserId, projectId)
+    : false;
+  const skipOwnUnchanged = resolveSkipUnchangedPagesFromQuery(req.nextUrl.searchParams, ownHasPrior);
   const classifyPageTopics = req.nextUrl.searchParams.get('classifyPageTopics') === 'true';
   const aiFillProjectMetadataDisabled = req.nextUrl.searchParams.get('aiFillProjectMetadata') === 'false';
 
@@ -45,7 +53,7 @@ export async function POST(
     const { id } = await startDomainScan(projectUserId, url, {
       projectId,
       useSitemap: true,
-      ...(skipUnchangedPages ? { skipUnchangedPages: true } : {}),
+      ...(skipOwnUnchanged ? { skipUnchangedPages: true } : {}),
       ...(classifyPageTopics ? { classifyPageTopics: true } : {}),
       ...(aiFillProjectMetadataDisabled ? { aiFillProjectMetadata: false } : {}),
     });
@@ -60,8 +68,10 @@ export async function POST(
   /** Always start a new crawl per competitor (same as own domain). Reusing a completed scan skipped new work and hid rows in the UI (`reused`). */
   const competitors: Record<string, { scanId: string; reused: false }> = {};
   for (const domain of uniqueCompetitors) {
+    const compHasPrior = await hasPriorCompetitorCompleteScan(projectUserId, domain);
+    const skipComp = resolveSkipUnchangedPagesFromQuery(req.nextUrl.searchParams, compHasPrior);
     const { scanId } = await startProjectCompetitorDomainScan(projectUserId, projectId, domain, {
-      ...(skipUnchangedPages ? { skipUnchangedPages: true } : {}),
+      ...(skipComp ? { skipUnchangedPages: true } : {}),
       ...(classifyPageTopics ? { classifyPageTopics: true } : {}),
       ...(aiFillProjectMetadataDisabled ? { aiFillProjectMetadata: false } : {}),
     });

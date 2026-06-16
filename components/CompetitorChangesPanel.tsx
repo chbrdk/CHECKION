@@ -176,6 +176,10 @@ export function CompetitorChangesPanel({
         activityCount(data?.own ?? null) > 0 ||
         Object.values(data?.competitors ?? {}).some((d) => activityCount(d) > 0);
 
+    const hasComparable =
+        Boolean(data?.own?.previousScanId) ||
+        Object.values(data?.competitors ?? {}).some((d) => d?.previousScanId);
+
     return (
         <MsqdxMoleculeCard
             title={t('projects.competitorChanges.title')}
@@ -186,12 +190,20 @@ export function CompetitorChangesPanel({
         >
             {loading ? (
                 <MsqdxTypography variant="body2">{t('common.loading')}</MsqdxTypography>
-            ) : !anyActivity && !hasOwn ? (
+            ) : !hasComparable && !hasOwn ? (
                 <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
                     {t('projects.competitorChanges.empty')}
                 </MsqdxTypography>
             ) : (
                 <Box>
+                    {!anyActivity && hasComparable ? (
+                        <MsqdxTypography
+                            variant="body2"
+                            sx={{ color: 'var(--color-text-muted-on-light)', mb: 1 }}
+                        >
+                            {t('projects.competitorChanges.allUnchanged')}
+                        </MsqdxTypography>
+                    ) : null}
                     {data?.own ? (
                         <DomainDiffBlock
                             domain={data.own.lineageKey.split('|').pop() ?? t('projects.ownDomainScanLabel')}

@@ -519,8 +519,25 @@ export function apiProjectDomainScanAll(
   return s ? `${base}?${s}` : base;
 }
 /** POST /api/projects/[id]/domain-scan-competitor – body `{ domain }` (hostname or URL). */
-export const apiProjectDomainScanCompetitor = (id: string) =>
-  `${API_PROJECTS}/${encodeURIComponent(id)}/domain-scan-competitor`;
+export function apiProjectDomainScanCompetitor(
+    projectId: string,
+    query?: { classifyPageTopics?: boolean; skipUnchangedPages?: boolean; aiFillProjectMetadata?: boolean },
+): string {
+    const base = `${API_PROJECTS}/${encodeURIComponent(projectId)}/domain-scan-competitor`;
+    if (!query) return base;
+    const sp = new URLSearchParams();
+    if (query.classifyPageTopics) sp.set('classifyPageTopics', 'true');
+    if (query.skipUnchangedPages === true) sp.set('skipUnchangedPages', 'true');
+    if (query.skipUnchangedPages === false) sp.set('skipUnchangedPages', 'false');
+    if (query.aiFillProjectMetadata === false) sp.set('aiFillProjectMetadata', 'false');
+    const s = sp.toString();
+    return s ? `${base}?${s}` : base;
+}
+/** GET /api/cron/competitor-rescans – scheduled competitor re-scans (CHECKION_CRON_SECRET). */
+export const API_CRON_COMPETITOR_RESCANS = '/api/cron/competitor-rescans';
+/** GET /api/projects/[id]/competitor-alerts – unread competitor change alerts. */
+export const apiProjectCompetitorAlerts = (id: string) =>
+    `${API_PROJECTS}/${encodeURIComponent(id)}/competitor-alerts`;
 /** GET /api/projects/[id]/domain-scans/active – queued/scanning/paused/cancelling deep scans for this project. */
 export const apiProjectDomainScansActive = (id: string) =>
   `${API_PROJECTS}/${encodeURIComponent(id)}/domain-scans/active`;

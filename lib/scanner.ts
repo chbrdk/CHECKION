@@ -2147,6 +2147,16 @@ export async function runScan(
             ymyl: ymylResult
         };
 
+        const { buildContentFingerprint } = await import('./content-fingerprint');
+        const contentFingerprint = buildContentFingerprint({
+            title: seoAudit.title,
+            h1: seoAudit.h1,
+            bodyTextExcerpt,
+        });
+        if (contentFingerprint) {
+            result.contentFingerprint = contentFingerprint;
+        }
+
         const etag = getHeader(mainHeaders, 'etag')?.trim();
         const lastModified = getHeader(mainHeaders, 'last-modified')?.trim();
         if (etag || lastModified) {
