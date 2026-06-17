@@ -7,8 +7,8 @@ import type { PptxBrandTokens } from '@/lib/project-report/pptx/load-brand-token
 
 export interface PptxMasterConfig {
     tokens: PptxBrandTokens;
-    logoWhitePath: string;
-    logoBlackPath: string;
+    logoWhitePath: string | null;
+    logoBlackPath: string | null;
 }
 
 function footerBar(tokens: PptxBrandTokens) {
@@ -23,7 +23,8 @@ function footerBar(tokens: PptxBrandTokens) {
     };
 }
 
-function logoObject(path: string, darkBackground: boolean) {
+function logoObject(path: string | null, darkBackground: boolean) {
+    if (!path) return null;
     return {
         image: {
             path,
@@ -35,24 +36,32 @@ function logoObject(path: string, darkBackground: boolean) {
     };
 }
 
+type PptxMasterObject =
+    | { image: { path: string; x: number; y: number; w: number; h: number } }
+    | { rect: { x: number; y: number; w: number; h: number; fill: { color: string } } };
+
+function masterObjects(...objects: Array<PptxMasterObject | null>): PptxMasterObject[] {
+    return objects.filter((object): object is PptxMasterObject => object != null);
+}
+
 export function registerPptxMasters(pptx: PptxGenJS, config: PptxMasterConfig): void {
     const { tokens, logoWhitePath, logoBlackPath } = config;
 
     pptx.defineSlideMaster({
         title: PPTX_LAYOUT.TITLE,
         background: { color: tokens.text },
-        objects: [logoObject(logoWhitePath, true)],
+        objects: masterObjects(logoObject(logoWhitePath, true)),
         slideNumber: { x: 12.5, y: 5.2, color: tokens.textOnDark, fontSize: 9 },
     });
 
     pptx.defineSlideMaster({
         title: PPTX_LAYOUT.SECTION,
         background: { color: tokens.primary },
-        objects: [footerBar(tokens), logoObject(logoWhitePath, true)],
+        objects: masterObjects(footerBar(tokens), logoObject(logoWhitePath, true)),
         slideNumber: { x: 12.5, y: 5.2, color: tokens.textOnDark, fontSize: 9 },
     });
 
-    const contentObjects = [footerBar(tokens), logoObject(logoBlackPath, false)];
+    const contentObjects = masterObjects(footerBar(tokens), logoObject(logoBlackPath, false));
 
     pptx.defineSlideMaster({
         title: PPTX_LAYOUT.CONTENT,
@@ -71,14 +80,14 @@ export function registerPptxMasters(pptx: PptxGenJS, config: PptxMasterConfig): 
     pptx.defineSlideMaster({
         title: PPTX_LAYOUT.METRICS,
         background: { color: tokens.surface },
-        objects: [footerBar(tokens), logoObject(logoBlackPath, false)],
+        objects: masterObjects(footerBar(tokens), logoObject(logoBlackPath, false)),
         slideNumber: { x: 12.5, y: 5.2, color: tokens.muted, fontSize: 9 },
     });
 
     pptx.defineSlideMaster({
         title: PPTX_LAYOUT.CLOSING,
         background: { color: tokens.text },
-        objects: [logoObject(logoWhitePath, true)],
+        objects: masterObjects(logoObject(logoWhitePath, true)),
         slideNumber: { x: 12.5, y: 5.2, color: tokens.textOnDark, fontSize: 9 },
     });
 }

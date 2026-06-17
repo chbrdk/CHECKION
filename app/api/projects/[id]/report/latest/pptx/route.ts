@@ -43,7 +43,8 @@ export async function GET(
         });
     } catch (e) {
         const message = e instanceof Error ? e.message : 'pptx_render_failed';
-        console.error('[report/latest/pptx]', message);
+        const stack = e instanceof Error ? e.stack : undefined;
+        console.error('[report/latest/pptx]', message, stack);
         return NextResponse.json({ success: false, error: 'pptx_render_failed' }, { status: 503 });
     }
 }

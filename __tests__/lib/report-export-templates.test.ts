@@ -68,4 +68,12 @@ describe('renderProjectReportPptx', () => {
     expect(buffer.length).toBeGreaterThan(10_000);
     expect(buffer.subarray(0, 2).toString()).toBe('PK');
   });
+
+  it('renders without logo assets when paths are missing', async () => {
+    const plan = buildProjectReportPptxPlan(buildComprehensivePreviewBundle());
+    const buffer = await renderProjectReportPptx(plan, '/tmp/missing-checkion-assets');
+
+    expect(Buffer.isBuffer(buffer)).toBe(true);
+    expect(buffer.length).toBeGreaterThan(5_000);
+  });
 });

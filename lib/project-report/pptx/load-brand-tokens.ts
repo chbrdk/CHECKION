@@ -58,14 +58,22 @@ export function loadPptxBrandTokens(cwd = process.cwd()): PptxBrandTokens {
 
 export interface PptxRenderAssets {
     tokens: PptxBrandTokens;
-    logoWhitePath: string;
-    logoBlackPath: string;
+    logoWhitePath: string | null;
+    logoBlackPath: string | null;
+}
+
+function resolveExistingAssetPath(absolutePath: string): string | null {
+    try {
+        return fs.existsSync(absolutePath) ? absolutePath : null;
+    } catch {
+        return null;
+    }
 }
 
 export function loadPptxRenderAssets(cwd = process.cwd()): PptxRenderAssets {
     return {
         tokens: loadPptxBrandTokens(cwd),
-        logoWhitePath: getReportPptxLogoWhiteAbsolutePath(cwd),
-        logoBlackPath: getReportPptxLogoBlackAbsolutePath(cwd),
+        logoWhitePath: resolveExistingAssetPath(getReportPptxLogoWhiteAbsolutePath(cwd)),
+        logoBlackPath: resolveExistingAssetPath(getReportPptxLogoBlackAbsolutePath(cwd)),
     };
 }
