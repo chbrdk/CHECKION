@@ -16,7 +16,7 @@ function footerBar(tokens: PptxBrandTokens) {
         rect: {
             x: 0,
             y: 5.15,
-            w: '100%',
+            w: 13.33,
             h: 0.45,
             fill: { color: tokens.text },
         },

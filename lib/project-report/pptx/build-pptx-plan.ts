@@ -11,6 +11,7 @@ import { stripPdfEvidenceMarkers } from '@/lib/project-report/pdf-competitive-di
 import { filterFindingsForPdf } from '@/lib/project-report/pdf-findings-display';
 import { getProjectReportPdfLabels } from '@/lib/project-report/pdf-labels';
 import { filterRecommendationsForPdf } from '@/lib/project-report/pdf-recommendations-display';
+import { getSiteQualitySectionAnalysis } from '@/lib/project-report/site-quality-interpretations';
 import type { ProjectReportBundle } from '@/lib/project-report/types';
 import {
     PPTX_MAX_BULLETS,
@@ -217,8 +218,9 @@ export function buildProjectReportPptxPlan(bundle: ProjectReportBundle): Project
 
     if (bundle.domain && slides.length < PPTX_MAX_SLIDES) {
         const qualityBullets: string[] = [];
-        if (bundle.narrative?.siteQuality?.summary) {
-            qualityBullets.push(...splitParagraphToBullets(bundle.narrative.siteQuality.summary, 3));
+        const siteQuality = getSiteQualitySectionAnalysis(bundle);
+        if (siteQuality?.summary) {
+            qualityBullets.push(...splitParagraphToBullets(siteQuality.summary, 3));
         }
         const metrics = [
             {
@@ -257,8 +259,10 @@ export function buildProjectReportPptxPlan(bundle: ProjectReportBundle): Project
 
     if (bundle.rankings && slides.length < PPTX_MAX_SLIDES) {
         const leftBullets: string[] = [];
-        if (bundle.narrative?.seoRankings?.summary) {
-            leftBullets.push(...splitParagraphToBullets(bundle.narrative.seoRankings.summary, 4));
+        const seoSection =
+            bundle.deep?.sections.seoRankings ?? bundle.narrative?.sections?.seoRankings ?? null;
+        if (seoSection?.summary) {
+            leftBullets.push(...splitParagraphToBullets(seoSection.summary, 4));
         }
         const keywords = (bundle.rankings.topKeywords ?? []).slice(0, PPTX_MAX_TABLE_ROWS);
         const rightBullets = keywords.map((kw) => `${kw.keyword}: #${kw.position ?? '–'}`);
@@ -276,8 +280,9 @@ export function buildProjectReportPptxPlan(bundle: ProjectReportBundle): Project
     }
 
     if (bundle.geo && slides.length < PPTX_MAX_SLIDES) {
-        const geoBullets = bundle.narrative?.geo?.summary
-            ? splitParagraphToBullets(bundle.narrative.geo.summary, 3)
+        const geoSection = bundle.deep?.sections.geo ?? bundle.narrative?.sections?.geo ?? null;
+        const geoBullets = geoSection?.summary
+            ? splitParagraphToBullets(geoSection.summary, 3)
             : [];
         slides.push({
             kind: 'metrics',
@@ -354,10 +359,12 @@ export function buildProjectReportPptxPlan(bundle: ProjectReportBundle): Project
     }
 
     if (slides.length < PPTX_MAX_SLIDES) {
-        const closingBullets =
+        const closingBullets: string[] =
             recommendations.length > 0
                 ? recommendations.slice(0, 3).map((r) => r.title)
-                : [labels.reportTitle, bundle.project.domain].filter(Boolean);
+                : [labels.reportTitle, bundle.project.domain].filter(
+                      (value): value is string => Boolean(value)
+                  );
         slides.push({
             kind: 'closing',
             layout: 'CLOSING',

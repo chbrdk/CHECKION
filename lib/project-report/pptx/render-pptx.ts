@@ -7,6 +7,13 @@ import type { ProjectReportPptxPlan, ReportSlide, ReportSlideContent } from '@/l
 import { loadPptxRenderAssets } from '@/lib/project-report/pptx/load-brand-tokens';
 import { registerPptxMasters } from '@/lib/project-report/pptx/pptx-masters';
 
+function toTableRows(headers: string[], rows: string[][]): PptxGenJS.TableRow[] {
+    return [
+        headers.map((text) => ({ text })),
+        ...rows.map((row) => row.map((text) => ({ text }))),
+    ];
+}
+
 function layoutName(layout: ReportSlide['layout']): string {
     return PPTX_LAYOUT[layout];
 }
@@ -237,7 +244,7 @@ function renderSlide(
                 color: tokens.text,
                 fontFace: tokens.fontHeading,
             });
-            slide.addTable([slidePlan.headers, ...slidePlan.rows], {
+            slide.addTable(toTableRows(slidePlan.headers, slidePlan.rows), {
                 x: 0.6,
                 y: 1.35,
                 w: 11.5,
@@ -315,9 +322,10 @@ export async function renderProjectReportPptx(
         renderSlide(pptx, slidePlan, assets.tokens);
     }
 
-    const output = (await pptx.write({ outputType: 'nodebuffer' })) as Buffer | ArrayBuffer | Uint8Array;
+    const output = await pptx.write({ outputType: 'nodebuffer' });
     if (Buffer.isBuffer(output)) return output;
-    return Buffer.from(output);
+    if (output instanceof Uint8Array) return Buffer.from(output);
+    return Buffer.from(new Uint8Array(output as ArrayBuffer));
 }
 
 export async function renderProjectReportPptxFromBundle(

@@ -2,7 +2,7 @@
  * Scheduled competitor re-scans for projects with stale competitor deep scans.
  */
 
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { getDb } from '@/lib/db';
 import { domainScans, projectDomainScanReferences, projects } from '@/lib/db/schema';
 import { startProjectCompetitorDomainScan } from '@/lib/project-competitor-domain-scan';

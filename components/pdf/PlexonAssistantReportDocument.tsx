@@ -1,5 +1,6 @@
 import React from 'react';
 import { Document, View, Text } from '@react-pdf/renderer';
+import type { Style } from '@react-pdf/types';
 import type { PlexonAssistantReportPayload, PlexonUiBlock } from '@/lib/integrations/plexon/assistant-report-types';
 import { pdfCoverEyebrow } from '@/lib/paths/pdf-cover-copy';
 import {
@@ -28,8 +29,8 @@ function blockTitle(props: Record<string, unknown>): string | null {
   return typeof props.title === 'string' && props.title.trim() ? props.title.trim() : null;
 }
 
-function blockMargin(index: number): object | undefined {
-  return index > 0 ? { marginTop: 8 } : undefined;
+function blockMargin(index: number): Style {
+  return index > 0 ? { marginTop: 8 } : {};
 }
 
 function stepStatusSymbol(status: StepStatus): string {
