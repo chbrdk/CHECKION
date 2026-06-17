@@ -1405,6 +1405,9 @@
     "reexportPdfDescription": "Uses the last saved report — no LLM, only the new print layout.",
     "reexportPdf": "PDF in new layout",
     "reexportPdfFromRun": "Re-export PDF",
+    "reexportPptx": "Export PowerPoint",
+    "reexportPptxDescription": "Presentation slides from the last report — editable in PowerPoint.",
+    "pptxExporting": "Creating PowerPoint…",
     "lastReportAt": "Last report: {date}"
   }
 }

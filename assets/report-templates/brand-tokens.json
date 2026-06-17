@@ -1,0 +1,11 @@
+{
+  "primary": "#F256B6",
+  "secondary": "#00CA55",
+  "accent": "#FF693B",
+  "text": "#000000",
+  "textOnDark": "#FFFFFF",
+  "muted": "#716E6B",
+  "surface": "#EAE8E8",
+  "fontHeading": "Helvetica Neue",
+  "fontBody": "Helvetica Neue"
+}

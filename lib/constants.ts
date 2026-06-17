@@ -549,6 +549,9 @@ export const apiProjectReport = (id: string) => `${API_PROJECTS}/${encodeURIComp
 /** GET /api/projects/[id]/report/latest – latest completed report bundle (PDF re-export, no LLM). */
 export const apiProjectReportLatest = (id: string) =>
     `${API_PROJECTS}/${encodeURIComponent(id)}/report/latest`;
+/** GET /api/projects/[id]/report/latest/pptx – re-export latest report as PowerPoint (no LLM). */
+export const apiProjectReportLatestPptx = (id: string) =>
+    `${API_PROJECTS}/${encodeURIComponent(id)}/report/latest/pptx`;
 /** GET /api/projects/[id]/report/[runId] – poll report job status and bundle. */
 export const apiProjectReportRun = (projectId: string, runId: string) =>
   `${API_PROJECTS}/${encodeURIComponent(projectId)}/report/${encodeURIComponent(runId)}`;

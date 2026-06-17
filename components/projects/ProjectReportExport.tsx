@@ -8,6 +8,7 @@ import { apiProjectReport, apiProjectReportRun, apiProjectReportLatest } from '@
 import type { ProjectReportBundle, ProjectReportVariant } from '@/lib/project-report/types';
 import type { ReportProgress } from '@/lib/project-report/progress';
 import { downloadProjectReportPdf } from '@/lib/project-report/export-project-report-pdf';
+import { downloadProjectReportPptx } from '@/lib/project-report/export-project-report-pptx';
 import {
     formatProgressDuration,
     isAgentProgressStage,
@@ -31,6 +32,7 @@ export function ProjectReportExport({ projectId }: { projectId: string }) {
     const [bundle, setBundle] = useState<ProjectReportBundle | null>(null);
     const [previewOpen, setPreviewOpen] = useState(false);
     const [pdfExporting, setPdfExporting] = useState(false);
+    const [pptxExporting, setPptxExporting] = useState(false);
     const [variant, setVariant] = useState<ProjectReportVariant>('executive');
     const [progress, setProgress] = useState<ReportProgress | null>(null);
     const [storedReport, setStoredReport] = useState<StoredReportMeta | null>(null);
@@ -158,6 +160,19 @@ export function ProjectReportExport({ projectId }: { projectId: string }) {
         }
     };
 
+    const handlePptxDownload = async () => {
+        if (!projectId) return;
+        setPptxExporting(true);
+        try {
+            await downloadProjectReportPptx(projectId);
+        } catch (e) {
+            console.error('[CHECKION] project report PPTX export', e);
+            setError(e instanceof Error ? e.message : 'PPTX export failed');
+        } finally {
+            setPptxExporting(false);
+        }
+    };
+
     return (
         <>
             <MsqdxMoleculeCard sx={{ p: 2 }}>
@@ -251,6 +266,9 @@ export function ProjectReportExport({ projectId }: { projectId: string }) {
                     <MsqdxTypography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                         {t('projectReport.reexportPdfDescription')}
                     </MsqdxTypography>
+                    <MsqdxTypography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                        {t('projectReport.reexportPptxDescription')}
+                    </MsqdxTypography>
                     <MsqdxTypography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
                         {t('projectReport.lastReportAt', {
                             date: new Date(
@@ -259,13 +277,22 @@ export function ProjectReportExport({ projectId }: { projectId: string }) {
                         })}{' '}
                         · {storedReport.variant}
                     </MsqdxTypography>
-                    <MsqdxButton
-                        variant="outlined"
-                        loading={pdfExporting}
-                        onClick={() => void handlePdfDownload(storedReport.bundle)}
-                    >
-                        {pdfExporting ? t('projectReport.pdfExporting') : t('projectReport.reexportPdf')}
-                    </MsqdxButton>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <MsqdxButton
+                            variant="outlined"
+                            loading={pdfExporting}
+                            onClick={() => void handlePdfDownload(storedReport.bundle)}
+                        >
+                            {pdfExporting ? t('projectReport.pdfExporting') : t('projectReport.reexportPdf')}
+                        </MsqdxButton>
+                        <MsqdxButton
+                            variant="outlined"
+                            loading={pptxExporting}
+                            onClick={() => void handlePptxDownload()}
+                        >
+                            {pptxExporting ? t('projectReport.pptxExporting') : t('projectReport.reexportPptx')}
+                        </MsqdxButton>
+                    </Box>
                 </MsqdxMoleculeCard>
             ) : null}
 
