@@ -249,7 +249,7 @@ Neben „PDF exportieren“:
 POST /api/integrations/plexon/assistant-report/pptx
 ```
 
-Spiegel von `assistant-report/pdf` — gleiches `UiLayout` → vereinfachtes 8-Folien-Deck.
+Spiegel von `assistant-report/pdf` — gleiches `UiLayout` → MSQDX-Deck (max. 24 Folien, alle 15 Block-Typen). **Implementiert** in `lib/integrations/plexon/build-plexon-assistant-pptx-plan.ts`.
 
 ---
 
