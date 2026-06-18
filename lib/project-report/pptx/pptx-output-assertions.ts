@@ -15,7 +15,7 @@ export function readActivePresentationSlideXml(buffer: Buffer): string[] {
 
     try {
         fs.writeFileSync(archivePath, buffer);
-        execSync(`unzip -q ${JSON.stringify(archivePath)} -d ${JSON.stringify(extractDir)}`, { cwd });
+        execSync(`unzip -q ${JSON.stringify(archivePath)} -d ${JSON.stringify(extractDir)}`);
 
         const pres = fs.readFileSync(path.join(extractDir, 'ppt/presentation.xml'), 'utf8');
         const rels = fs.readFileSync(path.join(extractDir, 'ppt/_rels/presentation.xml.rels'), 'utf8');
