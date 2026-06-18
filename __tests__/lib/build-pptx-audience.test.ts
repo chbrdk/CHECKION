@@ -64,6 +64,17 @@ describe('buildProjectReportPptxPlan audience', () => {
         expect(audienceBullets.length).toBeGreaterThanOrEqual(2);
         expect(personaCharts.length).toBeGreaterThanOrEqual(1);
         expect(personaCharts[0]?.bullets?.length).toBeGreaterThan(0);
-        expect(personaCharts[0]?.bullets?.length).toBeLessThanOrEqual(2);
+
+        const allChartBullets = plan.slides.flatMap((slide) =>
+            slide.kind === 'chart' ? (slide.bullets ?? []) : []
+        );
+        const contextSlides = plan.slides.filter(
+            (slide) => slide.kind === 'bullets' && slide.title.includes('Kontext')
+        );
+        const contextBullets = contextSlides.flatMap((slide) =>
+            slide.kind === 'bullets' ? slide.bullets : []
+        );
+        expect(allChartBullets.length + contextBullets.length).toBeGreaterThan(0);
+        expect([...allChartBullets, ...contextBullets].every((line) => !line.endsWith('…'))).toBe(true);
     });
 });

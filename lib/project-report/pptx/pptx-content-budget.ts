@@ -1,6 +1,7 @@
 /**
  * Text budgets and slide-zone geometry for MSQDX 16:9 masters.
  * Values are calibrated from placeholder bounding boxes in the PPT master.
+ * Text is never truncated — overflow is split to additional slides.
  * @see assets/report-templates/msqdx-ppt-zone-calibration.json
  */
 import {
@@ -8,6 +9,18 @@ import {
     getMsqdxContentZoneCalibration,
     loadMsqdxPptZoneCalibration,
 } from '@/lib/project-report/pptx/load-msqdx-ppt-zone-calibration';
+import {
+    chunkBulletsForSlides,
+    measureTextHeightForString,
+    packBulletsByHeight,
+    packBulletsByLineBudget,
+    partitionTextToZone,
+    PPTX_ZONE_BUDGETS,
+    splitTextToPages,
+    wrapTextToLines,
+    type PptxTextZone,
+    type PptxZoneBudget,
+} from '@/lib/project-report/pptx/pptx-text-layout';
 import type { ReportSlide, ReportSlideChartType, ReportSlideContent } from '@/lib/project-report/pptx/types';
 
 const CONTENT_ZONES = getMsqdxContentZoneCalibration();
@@ -34,26 +47,8 @@ export const PPTX_ZONE_GEOMETRY = {
     columnMaxLines: getMsqdxColumnZoneCalibration()?.budget.maxLines ?? 21,
 } as const;
 
-export type PptxTextZone = 'title' | 'eyebrow' | 'body' | 'chartBullets' | 'column';
-
-export type PptxZoneBudget = {
-    maxLines: number;
-    maxCharsPerLine: number;
-    maxItems?: number;
-};
-
-const CHART_BULLET_CHARS = Math.floor(CONTENT_ZONES.body.budget.maxCharsPerLine * 0.95);
-
-export const PPTX_ZONE_BUDGETS: Record<PptxTextZone, PptxZoneBudget> = {
-    title: CONTENT_ZONES.title.budget,
-    eyebrow: CONTENT_ZONES.eyebrow.budget,
-    body: CONTENT_ZONES.body.budget,
-    chartBullets: { maxLines: 1, maxCharsPerLine: CHART_BULLET_CHARS, maxItems: 2 },
-    column: getMsqdxColumnZoneCalibration()?.budget ?? {
-        maxLines: PPTX_ZONE_GEOMETRY.columnMaxLines,
-        maxCharsPerLine: PPTX_ZONE_GEOMETRY.charsPerColumnLine,
-    },
-};
+export type { PptxTextZone, PptxZoneBudget };
+export { PPTX_ZONE_BUDGETS };
 
 export type PptxChartLayout = {
     x: number;
@@ -63,66 +58,15 @@ export type PptxChartLayout = {
     bulletTop: number;
     bulletHeight: number;
     fittedSubtitle?: string;
+    overflowSubtitle?: string;
     onSlideBullets: string[];
     overflowBullets: string[];
 };
 
-function ellipsis(text: string, maxChars: number): string {
-    const trimmed = text.trim();
-    if (trimmed.length <= maxChars) return trimmed;
-    if (maxChars <= 1) return '…';
-    return `${trimmed.slice(0, maxChars - 1).trim()}…`;
-}
+export { wrapTextToLines, partitionTextToZone, splitTextToPages, measureTextHeightForString };
 
 export function estimateLineCount(text: string, charsPerLine: number): number {
-    const normalized = text.trim();
-    if (!normalized) return 0;
-    const hardLines = normalized.split(/\n+/).length;
-    const wrapped = Math.ceil(normalized.length / Math.max(charsPerLine, 1));
-    return Math.max(hardLines, wrapped);
-}
-
-export function fitTextToZone(text: string, zone: PptxTextZone): string {
-    const budget = PPTX_ZONE_BUDGETS[zone];
-    const maxChars = budget.maxCharsPerLine * budget.maxLines;
-    return ellipsis(text.replace(/\s+/g, ' '), maxChars);
-}
-
-export function fitBulletsToZone(
-    bullets: string[],
-    zone: PptxTextZone
-): { fitted: string[]; overflow: string[] } {
-    const budget = PPTX_ZONE_BUDGETS[zone];
-    const maxItems = budget.maxItems ?? bullets.length;
-    const fitted: string[] = [];
-    const overflow: string[] = [];
-
-    for (const bullet of bullets) {
-        const normalized = ellipsis(bullet.replace(/\s+/g, ' '), budget.maxCharsPerLine);
-        if (fitted.length < maxItems) {
-            fitted.push(normalized);
-        } else {
-            overflow.push(normalized);
-        }
-    }
-
-    return { fitted, overflow };
-}
-
-export function fitColumnContent(content: ReportSlideContent): ReportSlideContent {
-    const budget = PPTX_ZONE_BUDGETS.column;
-    const maxChars = budget.maxCharsPerLine * budget.maxLines;
-
-    if (content.kind === 'text') {
-        return { kind: 'text', text: ellipsis(content.text.replace(/\s+/g, ' '), maxChars) };
-    }
-
-    const { fitted, overflow } = fitBulletsToZone(content.bullets, 'column');
-    if (overflow.length > 0 && fitted.length > 0) {
-        const last = fitted[fitted.length - 1]!;
-        fitted[fitted.length - 1] = ellipsis(`${last} (+${overflow.length})`, budget.maxCharsPerLine);
-    }
-    return { kind: 'bullets', bullets: fitted };
+    return wrapTextToLines(text, charsPerLine).length;
 }
 
 function chartMinHeight(chartType: ReportSlideChartType): number {
@@ -138,12 +82,39 @@ export function computeChartLayout(input: {
     chartType: ReportSlideChartType;
 }): PptxChartLayout {
     const chartZone = CONTENT_ZONES.chart;
-    const fittedSubtitle = input.subtitle ? fitTextToZone(input.subtitle, 'eyebrow') : undefined;
-    const { fitted, overflow } = fitBulletsToZone(input.bullets ?? [], 'chartBullets');
+    let overflowSubtitle: string | undefined;
+    let fittedSubtitle: string | undefined;
 
-    const bulletHeight = fitted.length > 0 ? chartZone.bulletBandHeight : 0;
-    const available = CONTENT_ZONES.footer.y - chartZone.gap - chartZone.y - bulletHeight;
-    const chartHeight = Math.max(chartMinHeight(input.chartType), available);
+    if (input.subtitle?.trim()) {
+        const partitioned = partitionTextToZone(input.subtitle, 'eyebrow');
+        fittedSubtitle = partitioned.onSlide || undefined;
+        overflowSubtitle = partitioned.overflow || undefined;
+    }
+
+    const maxBulletBand = Math.max(
+        0,
+        CONTENT_ZONES.footer.y - chartZone.gap - chartZone.y - chartMinHeight(input.chartType) - chartZone.gap
+    );
+
+    let { packed, overflow, bandHeight } = packBulletsByHeight(
+        input.bullets ?? [],
+        'chartBullets',
+        maxBulletBand,
+        PPTX_ZONE_GEOMETRY.bulletBandPadding
+    );
+
+    let available = CONTENT_ZONES.footer.y - chartZone.gap - chartZone.y - bandHeight - chartZone.gap;
+    let chartHeight = Math.max(chartMinHeight(input.chartType), available);
+
+    if (chartHeight > available && packed.length > 0) {
+        overflow = [...packed.splice(packed.length - 1), ...overflow];
+        const retry = packBulletsByHeight(packed, 'chartBullets', maxBulletBand, PPTX_ZONE_GEOMETRY.bulletBandPadding);
+        packed = retry.packed;
+        overflow = [...retry.overflow, ...overflow];
+        bandHeight = retry.bandHeight;
+        available = CONTENT_ZONES.footer.y - chartZone.gap - chartZone.y - bandHeight - chartZone.gap;
+        chartHeight = Math.max(chartMinHeight(input.chartType), available);
+    }
 
     return {
         x: chartZone.x,
@@ -151,28 +122,69 @@ export function computeChartLayout(input: {
         w: chartZone.w,
         h: chartHeight,
         bulletTop: chartZone.y + chartHeight + chartZone.gap,
-        bulletHeight,
+        bulletHeight: bandHeight,
         fittedSubtitle,
-        onSlideBullets: fitted,
+        overflowSubtitle,
+        onSlideBullets: packed,
         overflowBullets: overflow,
     };
 }
 
-export function fitBulletSlide(input: {
+export function layoutBulletSlide(input: {
     title: string;
     lead?: string;
     bullets: string[];
 }): {
     title: string;
+    titleOverflowPages: string[];
     lead?: string;
+    leadOverflow?: string;
     bullets: string[];
     overflowBullets: string[];
 } {
-    const title = fitTextToZone(input.title, 'title');
-    const lead = input.lead?.trim() ? fitTextToZone(input.lead, 'eyebrow') : undefined;
-    const { fitted, overflow } = fitBulletsToZone(input.bullets, 'body');
+    const titlePages = splitTextToPages(input.title, 'title');
+    const title = titlePages[0] ?? '';
+    const titleOverflowPages = titlePages.slice(1);
 
-    return { title, lead, bullets: fitted, overflowBullets: overflow };
+    let lead: string | undefined;
+    let leadOverflow: string | undefined;
+    if (input.lead?.trim()) {
+        const partitioned = partitionTextToZone(input.lead, 'eyebrow');
+        lead = partitioned.onSlide || undefined;
+        leadOverflow = partitioned.overflow || undefined;
+    }
+
+    const { packed, overflow } = packBulletsByLineBudget(input.bullets, 'body', PPTX_ZONE_BUDGETS.body.maxLines);
+
+    return {
+        title,
+        titleOverflowPages,
+        lead,
+        leadOverflow,
+        bullets: packed,
+        overflowBullets: overflow,
+    };
+}
+
+export function layoutColumnContent(content: ReportSlideContent): {
+    content: ReportSlideContent;
+    overflow: ReportSlideContent | null;
+} {
+    const budget = PPTX_ZONE_BUDGETS.column;
+
+    if (content.kind === 'text') {
+        const partitioned = partitionTextToZone(content.text, 'column');
+        return {
+            content: { kind: 'text', text: partitioned.onSlide },
+            overflow: partitioned.overflow ? { kind: 'text', text: partitioned.overflow } : null,
+        };
+    }
+
+    const { packed, overflow } = packBulletsByLineBudget(content.bullets, 'column', budget.maxLines);
+    return {
+        content: { kind: 'bullets', bullets: packed },
+        overflow: overflow.length > 0 ? { kind: 'bullets', bullets: overflow } : null,
+    };
 }
 
 export function overflowBulletsSlides(
@@ -181,11 +193,7 @@ export function overflowBulletsSlides(
     suffix: string
 ): Extract<ReportSlide, { kind: 'bullets' }>[] {
     if (overflowBullets.length === 0) return [];
-    const chunkSize = PPTX_ZONE_BUDGETS.body.maxItems ?? 6;
-    const chunks: string[][] = [];
-    for (let i = 0; i < overflowBullets.length; i += chunkSize) {
-        chunks.push(overflowBullets.slice(i, i + chunkSize));
-    }
+    const chunks = chunkBulletsForSlides(overflowBullets, 'body');
     return chunks.map((bullets, index) => ({
         kind: 'bullets' as const,
         layout: 'CONTENT' as const,
@@ -193,4 +201,27 @@ export function overflowBulletsSlides(
         bullets,
         footer: base.footer,
     }));
+}
+
+export function titleOverflowSlides(
+    baseTitle: string,
+    overflowPages: string[],
+    footer: string,
+    suffix: string
+): Extract<ReportSlide, { kind: 'bullets' }>[] {
+    return overflowPages.map((titlePart, index) => ({
+        kind: 'bullets' as const,
+        layout: 'CONTENT' as const,
+        title: titlePart,
+        lead: `${baseTitle}${suffix}${overflowPages.length > 1 ? ` (${index + 1}/${overflowPages.length})` : ''}`,
+        bullets: [],
+        footer,
+    }));
+}
+
+export function measureBulletBandHeight(bullets: string[], zone: PptxTextZone = 'chartBullets'): number {
+    if (bullets.length === 0) return 0;
+    const padding = PPTX_ZONE_GEOMETRY.bulletBandPadding;
+    const height = bullets.reduce((sum, bullet) => sum + measureTextHeightForString(bullet, zone), 0);
+    return padding + height;
 }

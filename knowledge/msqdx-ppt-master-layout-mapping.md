@@ -47,7 +47,7 @@ The master uses German default placeholder names. Map by **type**, not custom na
 
 ## Text zones & budgets (`pptx-content-budget.ts`)
 
-Calibrated from placeholder bounding boxes in `MSQDX_PPT-Master_27-05-26.pptx` (see `assets/report-templates/msqdx-ppt-zone-calibration.json`). Re-extract with `extract-msqdx-ppt-zones.ts` when the master changes.
+Calibrated from placeholder bounding boxes in `MSQDX_PPT-Master_27-05-26.pptx` (see `assets/report-templates/msqdx-ppt-zone-calibration.json`). **Text is never truncated** — `pptx-text-layout.ts` word-wraps, measures line height, and `normalizePptxPlan()` splits overflow onto continuation slides.
 
 **CONTENT layout (inches, measured):**
 
