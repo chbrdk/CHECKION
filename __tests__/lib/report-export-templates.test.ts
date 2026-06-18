@@ -14,7 +14,7 @@ import { loadPptxBrandTokens } from '@/lib/project-report/pptx/load-brand-tokens
 import { buildProjectReportPptxPlan } from '@/lib/project-report/pptx/build-pptx-plan';
 import { buildComprehensivePreviewBundle } from '@/lib/paths/pdf-print-preview-bundle';
 import { renderProjectReportPptx } from '@/lib/project-report/pptx/render-pptx';
-import { PPTX_MAX_SLIDES } from '@/lib/project-report/pptx/types';
+import { getPptxMaxSlides } from '@/lib/project-report/pptx/types';
 
 const CHECKION_ROOT = path.resolve(__dirname, '../..');
 
@@ -64,7 +64,8 @@ describe('buildProjectReportPptxPlan', () => {
     const plan = buildProjectReportPptxPlan(bundle);
 
     expect(plan.slides.length).toBeGreaterThan(3);
-    expect(plan.slides.length).toBeLessThanOrEqual(PPTX_MAX_SLIDES);
+    expect(plan.slides.length).toBeLessThanOrEqual(getPptxMaxSlides(bundle.variant));
+    expect(plan.slides.some((s) => s.kind === 'chart')).toBe(true);
     expect(plan.slides[0]?.kind).toBe('cover');
     expect(plan.slides.some((s) => s.kind === 'closing')).toBe(true);
   });

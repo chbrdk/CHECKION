@@ -8,6 +8,14 @@ export type ReportSlideContent =
     | { kind: 'text'; text: string }
     | { kind: 'bullets'; bullets: string[] };
 
+export type ReportSlideChartType = 'bar' | 'barHorizontal' | 'line' | 'radar';
+
+export type ReportSlideChartSeries = {
+    name: string;
+    labels: string[];
+    values: number[];
+};
+
 export type ReportSlide =
     | {
           kind: 'cover';
@@ -58,6 +66,21 @@ export type ReportSlide =
           footer: string;
       }
     | {
+          kind: 'chart';
+          layout: 'CONTENT';
+          title: string;
+          subtitle?: string;
+          chartType: ReportSlideChartType;
+          series: ReportSlideChartSeries[];
+          colors?: string[];
+          bullets?: string[];
+          footer: string;
+          valAxisTitle?: string;
+          catAxisTitle?: string;
+          showLegend?: boolean;
+          showValue?: boolean;
+      }
+    | {
           kind: 'closing';
           layout: 'CLOSING';
           title: string;
@@ -72,6 +95,15 @@ export type ProjectReportPptxPlan = {
     slides: ReportSlide[];
 };
 
-export const PPTX_MAX_SLIDES = 25;
+export const PPTX_MAX_SLIDES_EXECUTIVE = 22;
+export const PPTX_MAX_SLIDES_COMPREHENSIVE = 30;
+/** @deprecated use getPptxMaxSlides() */
+export const PPTX_MAX_SLIDES = PPTX_MAX_SLIDES_COMPREHENSIVE;
 export const PPTX_MAX_BULLETS = 6;
 export const PPTX_MAX_TABLE_ROWS = 8;
+
+export function getPptxMaxSlides(variant: string): number {
+    return variant === 'comprehensive' || variant === 'full'
+        ? PPTX_MAX_SLIDES_COMPREHENSIVE
+        : PPTX_MAX_SLIDES_EXECUTIVE;
+}

@@ -3,7 +3,12 @@
  */
 import PptxGenJS from 'pptxgenjs';
 import { PPTX_LAYOUT } from '@/lib/paths/report-export-templates';
-import type { ProjectReportPptxPlan, ReportSlide, ReportSlideContent } from '@/lib/project-report/pptx/types';
+import type {
+    ProjectReportPptxPlan,
+    ReportSlide,
+    ReportSlideChartSeries,
+    ReportSlideContent,
+} from '@/lib/project-report/pptx/types';
 import { loadPptxRenderAssets } from '@/lib/project-report/pptx/load-brand-tokens';
 import { registerPptxMasters } from '@/lib/project-report/pptx/pptx-masters';
 import {
@@ -47,6 +52,118 @@ function metricColor(tone: string | undefined, tokens: Tokens): string {
     if (tone === 'warn') return tokens.accent;
     if (tone === 'bad') return tokens.primary;
     return tokens.text;
+}
+
+function pptxHexColor(color: string): string {
+    return color.replace(/^#/, '').toUpperCase();
+}
+
+function defaultChartColors(tokens: Tokens): string[] {
+    return [tokens.primary, tokens.secondary, tokens.accent, tokens.muted].map(pptxHexColor);
+}
+
+function toChartData(series: ReportSlideChartSeries[]): PptxGenJS.OptsChartData[] {
+    return series.map((entry) => ({
+        name: entry.name,
+        labels: entry.labels,
+        values: entry.values,
+    }));
+}
+
+function renderChartSlide(
+    pptx: PptxGenJS,
+    slide: PptxGenJS.Slide,
+    slidePlan: Extract<ReportSlide, { kind: 'chart' }>,
+    tokens: Tokens
+): void {
+    const textBase = baseText(tokens);
+    addTitle(slide, slidePlan.title, tokens);
+
+    let chartTop = PPTX_SLIDE.contentTop;
+    if (slidePlan.subtitle) {
+        slide.addText(slidePlan.subtitle, {
+            x: PPTX_SLIDE.marginX,
+            y: PPTX_SLIDE.leadY,
+            w: PPTX_SLIDE.contentWidth,
+            h: PPTX_SLIDE.leadHeight,
+            fontSize: 13,
+            color: tokens.muted,
+            valign: 'top',
+            ...textBase,
+        });
+        chartTop = PPTX_SLIDE.leadY + PPTX_SLIDE.leadHeight + 0.12;
+    }
+
+    const bulletBand = slidePlan.bullets?.length ? 1.05 : 0;
+    const chartHeight = Math.max(2.4, PPTX_SLIDE.contentBottom - chartTop - bulletBand - 0.12);
+    const chartColors =
+        slidePlan.colors && slidePlan.colors.length > 0
+            ? slidePlan.colors
+            : defaultChartColors(tokens);
+
+    const chartOpts: PptxGenJS.IChartOpts = {
+        x: PPTX_SLIDE.marginX,
+        y: chartTop,
+        w: PPTX_SLIDE.contentWidth,
+        h: chartHeight,
+        chartColors,
+        showTitle: false,
+        showLegend: slidePlan.showLegend ?? slidePlan.series.length > 1,
+        showValue: slidePlan.showValue ?? false,
+        dataLabelFontFace: tokens.fontMono,
+        dataLabelFontSize: 9,
+        valGridLine: { style: 'none' },
+        catGridLine: { style: 'none' },
+        legendFontFace: tokens.fontBody,
+        legendFontSize: 10,
+    };
+
+    if (slidePlan.valAxisTitle) chartOpts.valAxisTitle = slidePlan.valAxisTitle;
+    if (slidePlan.catAxisTitle) chartOpts.catAxisTitle = slidePlan.catAxisTitle;
+
+    const chartData = toChartData(slidePlan.series);
+
+    switch (slidePlan.chartType) {
+        case 'bar':
+            chartOpts.barDir = 'col';
+            if (slidePlan.series.length > 1) chartOpts.barGrouping = 'clustered';
+            slide.addChart(pptx.ChartType.bar, chartData, chartOpts);
+            break;
+        case 'barHorizontal':
+            chartOpts.barDir = 'bar';
+            slide.addChart(pptx.ChartType.bar, chartData, chartOpts);
+            break;
+        case 'line':
+            chartOpts.lineSize = 2.25;
+            chartOpts.lineDataSymbolSize = 5;
+            slide.addChart(pptx.ChartType.line, chartData, chartOpts);
+            break;
+        case 'radar':
+            slide.addChart(pptx.ChartType.radar, chartData, chartOpts);
+            break;
+        default:
+            break;
+    }
+
+    if (slidePlan.bullets?.length) {
+        slide.addText(
+            slidePlan.bullets.map((bullet) => ({ text: bullet, options: { bullet: true, breakLine: true } })),
+            {
+                x: PPTX_SLIDE.marginX,
+                y: chartTop + chartHeight + 0.12,
+                w: PPTX_SLIDE.contentWidth,
+                h: bulletBand,
+                fontSize: 13,
+                color: tokens.text,
+                valign: 'top',
+                paraSpaceAfter: 6,
+                lineSpacingMultiple: 1.1,
+                ...textBase,
+            }
+        );
+    }
+
+    addFooter(slide, slidePlan.footer, tokens);
 }
 
 function renderContentBlock(
@@ -315,6 +432,10 @@ function renderSlide(pptx: PptxGenJS, slidePlan: ReportSlide, tokens: Tokens): v
             addFooter(slide, slidePlan.footer, tokens);
             break;
         }
+
+        case 'chart':
+            renderChartSlide(pptx, slide, slidePlan, tokens);
+            break;
 
         case 'closing':
             slide.addText(slidePlan.title, {
