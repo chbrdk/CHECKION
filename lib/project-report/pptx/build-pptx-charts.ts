@@ -168,7 +168,7 @@ function visualToChartSlide(
                 series,
                 colors,
                 footer,
-                valAxisTitle: labels.geoModelVisibility,
+                valAxisTitle: labels.geoScore,
                 showValue: true,
             });
         }
