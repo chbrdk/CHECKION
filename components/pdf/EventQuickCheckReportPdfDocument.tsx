@@ -2,6 +2,7 @@ import React from 'react';
 import { Text, View } from '@react-pdf/renderer';
 import type { Style } from '@react-pdf/types';
 import type { EventQuickCheckReportModel } from '@/lib/integrations/plexon/event-quick-check-report-types';
+import { EQC_REPORT_COPY, eqcSeverityLabel } from '@/lib/integrations/plexon/event-quick-check-report-copy';
 import { pdfCoverEyebrow } from '@/lib/paths/pdf-cover-copy';
 import {
   PdfCoverPage,
@@ -63,7 +64,7 @@ export function buildEventQuickCheckReportPages(report: EventQuickCheckReportMod
   pages.push(
     <PdfCoverPage key="cover">
       <PdfProjectReportCoverContent
-        eyebrow={pdfCoverEyebrow('Event Quick Check')}
+        eyebrow={pdfCoverEyebrow(EQC_REPORT_COPY.pdfCoverEyebrow)}
         title={report.meta.title}
         projectLine={`${report.meta.url} · ${report.meta.domain}`}
         leadText={report.executive.summary ?? null}
@@ -75,10 +76,10 @@ export function buildEventQuickCheckReportPages(report: EventQuickCheckReportMod
     pages,
     'executive',
     <View>
-      <PdfLeadText>Kernkennzahlen und Workflow-Übersicht.</PdfLeadText>
+      <PdfLeadText>{EQC_REPORT_COPY.pdfExecutiveLead}</PdfLeadText>
       {report.executive.fazit ? (
         <View style={[pdfStyles.cardBox, { marginBottom: 8 }]}>
-          <Text style={pdfStyles.subsectionTitle}>Fazit</Text>
+          <Text style={pdfStyles.subsectionTitle}>{EQC_REPORT_COPY.fazit}</Text>
           <Text style={pdfStyles.bodyText}>{report.executive.fazit}</Text>
         </View>
       ) : null}
@@ -88,7 +89,7 @@ export function buildEventQuickCheckReportPages(report: EventQuickCheckReportMod
           value: `${k.value}${k.unit ? ` ${k.unit}` : ''}`,
         }))}
       />
-      <PdfSectionHeader title="Workflow" />
+      <PdfSectionHeader title={EQC_REPORT_COPY.sectionWorkflow} />
       {report.workflow.steps.map((step) => (
         <Text key={step.id} style={pdfStyles.metaText}>
           {step.label}: {step.detail}
@@ -101,23 +102,23 @@ export function buildEventQuickCheckReportPages(report: EventQuickCheckReportMod
     pages,
     'domain',
     <View>
-      <PdfSectionHeader title="Domain & Top Issues" />
+      <PdfSectionHeader title={EQC_REPORT_COPY.pdfDomainSection} />
       {report.domain ? (
         <>
           <PdfStatGrid
             items={[
-              { label: 'Score', value: `${report.domain.score}/100` },
-              { label: 'Seiten', value: String(report.domain.totalPages) },
+              { label: EQC_REPORT_COPY.colScore, value: `${report.domain.score}/100` },
+              { label: EQC_REPORT_COPY.colPages, value: String(report.domain.totalPages) },
               { label: 'Fehler', value: String(report.domain.stats.errors) },
             ]}
           />
           {toPdfDataTable(
-            ['Issue', 'Count'],
+            [EQC_REPORT_COPY.colIssue, EQC_REPORT_COPY.colCount],
             report.domain.topIssues.map((i) => [i.title, i.count])
           )}
         </>
       ) : (
-        <PdfSectionIntro text="Kein Domain-Scan verfügbar." />
+        <PdfSectionIntro text={EQC_REPORT_COPY.noDomainScan} />
       )}
     </View>
   );
@@ -126,7 +127,7 @@ export function buildEventQuickCheckReportPages(report: EventQuickCheckReportMod
     pages,
     'persona',
     <View>
-      <PdfSectionHeader title="AUDION Persona" />
+      <PdfSectionHeader title={EQC_REPORT_COPY.sectionPersona} />
       {report.persona ? (
         <>
           <View style={[pdfStyles.cardBox, { marginBottom: 8 }]}>
@@ -136,9 +137,9 @@ export function buildEventQuickCheckReportPages(report: EventQuickCheckReportMod
             </Text>
             <Text style={pdfStyles.bodyText}>{report.persona.headline}</Text>
           </View>
-          <PdfSectionHeader title="Traits" />
+          <PdfSectionHeader title={EQC_REPORT_COPY.sectionPersonaTraits} />
           <TraitBarsPdf traits={report.persona.traits} />
-          <PdfSectionHeader title="Ziele & Pain Points" />
+          <PdfSectionHeader title={EQC_REPORT_COPY.pdfGoalsAndPain} />
           {report.persona.goals.map((g, i) => (
             <Text key={`g-${i}`} style={pdfStyles.bodyText}>• {g}</Text>
           ))}
@@ -147,7 +148,7 @@ export function buildEventQuickCheckReportPages(report: EventQuickCheckReportMod
           ))}
         </>
       ) : (
-        <PdfSectionIntro text="Keine Persona verfügbar." />
+        <PdfSectionIntro text={EQC_REPORT_COPY.noPersona} />
       )}
     </View>
   );
@@ -156,11 +157,11 @@ export function buildEventQuickCheckReportPages(report: EventQuickCheckReportMod
     pages,
     'geo',
     <View>
-      <PdfSectionHeader title="GEO Competitive Check" />
+      <PdfSectionHeader title={EQC_REPORT_COPY.sectionGeoCheck} />
       {(report.geo.status === 'failed' || report.geo.status === 'partial') && (
         <View style={[pdfStyles.cardBox, { marginBottom: 8 }]}>
-          <Text style={pdfStyles.subsectionTitle}>GEO nicht vollständig</Text>
-          <Text style={pdfStyles.bodyText}>{report.geo.errorMessage ?? 'Unbekannter Fehler'}</Text>
+          <Text style={pdfStyles.subsectionTitle}>{EQC_REPORT_COPY.geoIncompleteTitle}</Text>
+          <Text style={pdfStyles.bodyText}>{report.geo.errorMessage ?? EQC_REPORT_COPY.unknownError}</Text>
         </View>
       )}
       {report.geo.questions.map((q, i) => (
@@ -168,7 +169,7 @@ export function buildEventQuickCheckReportPages(report: EventQuickCheckReportMod
       ))}
       {report.geo.competitors.length > 0
         ? toPdfDataTable(
-            ['Name', 'Score', 'SoV'],
+            [EQC_REPORT_COPY.colName, EQC_REPORT_COPY.colScore, EQC_REPORT_COPY.colShareOfVoice],
             report.geo.competitors.map((c) => [
               c.name,
               c.score ?? '—',
@@ -183,11 +184,11 @@ export function buildEventQuickCheckReportPages(report: EventQuickCheckReportMod
     pages,
     'insights',
     <View>
-      <PdfSectionHeader title="Erkenntnisse & Empfehlungen" />
+      <PdfSectionHeader title={EQC_REPORT_COPY.sectionInsights} />
       {report.insights?.findings.map((f, i) => (
         <PdfRecommendationRow
           key={i}
-          title={f.severity ? `[${f.severity}] ${f.title}` : f.title}
+          title={f.severity ? `[${eqcSeverityLabel(f.severity)}] ${f.title}` : f.title}
           description={f.description}
         />
       )) ?? null}

@@ -1,4 +1,5 @@
 import type { EventQuickCheckReportModel } from '@/lib/integrations/plexon/event-quick-check-report-types';
+import { EQC_REPORT_COPY } from '@/lib/integrations/plexon/event-quick-check-report-copy';
 import type { ReportSlide, ReportSlideContent } from '@/lib/project-report/pptx/types';
 import type { PlexonAssistantPptxLabels } from '@/lib/integrations/plexon/plexon-assistant-pptx-labels';
 
@@ -16,7 +17,7 @@ export function mapEventQuickCheckReportToSlides(
   slides.push({
     kind: 'two_column',
     layout: 'TWO_COLUMN',
-    title: 'Kernkennzahlen',
+    title: EQC_REPORT_COPY.sectionKpi,
     footer,
     left: bullets(report.executive.kpiTiles.map((k) => `${k.label}: ${k.value}${k.unit ? ` ${k.unit}` : ''}`)),
     right: bullets(report.workflow.steps.map((s) => `${s.label}: ${s.detail}`)),
@@ -26,11 +27,11 @@ export function mapEventQuickCheckReportToSlides(
     slides.push({
       kind: 'two_column',
       layout: 'TWO_COLUMN',
-      title: 'Domain & A11y',
+      title: EQC_REPORT_COPY.sectionDomain,
       footer,
       left: bullets([
-        `Score: ${report.domain.score}/100`,
-        `Seiten: ${report.domain.totalPages}`,
+        `${EQC_REPORT_COPY.colScore}: ${report.domain.score}/100`,
+        `${EQC_REPORT_COPY.colPages}: ${report.domain.totalPages}`,
         `Fehler: ${report.domain.stats.errors}`,
       ]),
       right: bullets(report.domain.topIssues.map((i) => `${i.title} (${i.count})`)),
@@ -41,7 +42,7 @@ export function mapEventQuickCheckReportToSlides(
     slides.push({
       kind: 'two_column',
       layout: 'TWO_COLUMN',
-      title: 'AUDION Persona',
+      title: EQC_REPORT_COPY.sectionPersona,
       footer,
       left: bullets([
         `${report.persona.name} · ${Math.round(report.persona.confidence * 100)}%`,
@@ -49,8 +50,8 @@ export function mapEventQuickCheckReportToSlides(
         ...report.persona.traits.map((t) => `${t.displayName}: ${Math.round(t.score <= 1 ? t.score * 100 : t.score)}%`),
       ]),
       right: bullets([
-        ...report.persona.goals.map((g) => `Ziel: ${g}`),
-        ...report.persona.painPoints.map((p) => `Pain: ${p}`),
+        ...report.persona.goals.map((g) => `${EQC_REPORT_COPY.goalPrefix}: ${g}`),
+        ...report.persona.painPoints.map((p) => `${EQC_REPORT_COPY.painPrefix}: ${p}`),
       ]),
     });
   }
@@ -58,15 +59,16 @@ export function mapEventQuickCheckReportToSlides(
   slides.push({
     kind: 'two_column',
     layout: 'TWO_COLUMN',
-    title: 'GEO Competitive Check',
+    title: EQC_REPORT_COPY.sectionGeoCheck,
     footer,
     left: bullets([
-      report.geo.status !== 'complete' ? (report.geo.errorMessage ?? 'GEO unvollständig') : 'GEO abgeschlossen',
+      report.geo.status !== 'complete' ? (report.geo.errorMessage ?? EQC_REPORT_COPY.geoIncomplete) : EQC_REPORT_COPY.geoComplete,
       ...report.geo.questions.slice(0, 4),
     ]),
     right: bullets(
       report.geo.competitors.map(
-        (c) => `${c.name}: ${c.score ?? '—'}${c.shareOfVoice != null ? ` · SoV ${Math.round(c.shareOfVoice * 100)}%` : ''}`
+        (c) =>
+          `${c.name}: ${c.score ?? '—'}${c.shareOfVoice != null ? ` · ${EQC_REPORT_COPY.colShareOfVoice} ${Math.round(c.shareOfVoice * 100)}%` : ''}`
       )
     ),
   });
@@ -79,8 +81,10 @@ export function mapEventQuickCheckReportToSlides(
     report.insights?.findings.map((f) => `${f.title}: ${f.description}`) ?? [];
 
   const actionBullets = [
-    ...findingBullets.map((b) => `Erkenntnis: ${b}`),
-    ...(recBullets.length ? recBullets : [report.executive.fazit ?? '']).map((b) => `Empfehlung: ${b}`),
+    ...findingBullets.map((b) => `${EQC_REPORT_COPY.insightPrefix}: ${b}`),
+    ...(recBullets.length ? recBullets : [report.executive.fazit ?? '']).map(
+      (b) => `${EQC_REPORT_COPY.recommendationPrefix}: ${b}`
+    ),
   ].filter(Boolean);
 
   slides.push({
@@ -88,7 +92,7 @@ export function mapEventQuickCheckReportToSlides(
     layout: 'CLOSING',
     title: labels.recommendations,
     footer,
-    bullets: actionBullets.length ? actionBullets : ['Keine Empfehlungen'],
+    bullets: actionBullets.length ? actionBullets : [EQC_REPORT_COPY.noRecommendations],
   });
 
   return slides;
