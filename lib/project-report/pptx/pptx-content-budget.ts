@@ -9,6 +9,7 @@ import {
     getMsqdxContentZoneCalibration,
     loadMsqdxPptZoneCalibration,
 } from '@/lib/project-report/pptx/load-msqdx-ppt-zone-calibration';
+import { PPTX_TYPOGRAPHY } from '@/lib/project-report/pptx/pptx-typography';
 import {
     chunkBulletsForSlides,
     measureTextHeightForString,
@@ -36,7 +37,7 @@ export const PPTX_ZONE_GEOMETRY = {
     eyebrowMaxLines: CONTENT_ZONES.eyebrow.budget.maxLines,
     bodyTop: CONTENT_ZONES.body.y,
     elementGap: CONTENT_ZONES.chart.gap,
-    bulletLineHeight: +(13 * 1.2) / 72,
+    bulletLineHeight: +(PPTX_TYPOGRAPHY.chartBullet.fontPt * PPTX_TYPOGRAPHY.chartBullet.lineSpacing) / 72,
     bulletBandPadding: 0.14,
     minChartHeight: CONTENT_ZONES.chart.minHeightBar,
     maxChartHeight: CONTENT_ZONES.chart.maxHeight,

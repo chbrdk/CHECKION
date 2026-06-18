@@ -22,10 +22,10 @@ describe('pptx-text-layout', () => {
     });
 
     it('splits long title to continuation pages instead of ellipsis', () => {
-        const longTitle = 'Strategische Zielgruppenanalyse für verantwortungsbewusste Hundehalter mit Fokus auf Premium-Tarife';
+        const longTitle = Array.from({ length: 24 }, (_, index) => `Kapitelabschnitt ${index + 1}`).join(' ');
         const pages = splitTextToPages(longTitle, 'title');
         expect(pages.length).toBeGreaterThan(1);
-        expect(pages.join(' ')).toBe(longTitle.replace(/\s+/g, ' ').trim());
+        expect(pages.join(' ')).toBe(longTitle);
     });
 });
 
@@ -81,14 +81,14 @@ describe('pptx-content-budget', () => {
             kind: 'bullets',
             layout: 'CONTENT',
             title: 'Details',
-            bullets: Array.from({ length: 25 }, (_, index) => `Point ${index + 1}`),
+            bullets: Array.from({ length: 50 }, (_, index) => `Point ${index + 1}`),
             footer: 'CHECKION',
         };
         const normalized = normalizePptxPlan([slide], { locale: 'de' });
         const allBullets = normalized.flatMap((entry) => (entry.kind === 'bullets' ? entry.bullets : []));
         expect(normalized.length).toBeGreaterThan(1);
-        expect(allBullets).toHaveLength(25);
-        expect(allBullets[24]).toBe('Point 25');
+        expect(allBullets).toHaveLength(50);
+        expect(allBullets[49]).toBe('Point 50');
     });
 
     it('moves chart bullet overflow to context slide without truncation', () => {
@@ -114,11 +114,15 @@ describe('pptx-content-budget', () => {
         const laidOut = layoutBulletSlide({
             title: 'Audience',
             lead: 'Short lead',
-            bullets: Array.from({ length: 25 }, (_, index) => `Insight number ${index + 1}`),
+            bullets: Array.from(
+                { length: 50 },
+                (_, index) =>
+                    `Insight number ${index + 1} with additional narrative context for the audience slide`
+            ),
         });
         expect(laidOut.bullets.length).toBeGreaterThan(0);
         expect(laidOut.overflowBullets.length).toBeGreaterThan(0);
-        expect([...laidOut.bullets, ...laidOut.overflowBullets]).toHaveLength(25);
+        expect([...laidOut.bullets, ...laidOut.overflowBullets]).toHaveLength(50);
     });
 
     it('chunks continuation slides by measured line capacity', () => {

@@ -32,5 +32,6 @@ describe('pptx-automizer-text-style', () => {
         const slideXml = readActivePresentationSlideXml(buffer)[0] ?? '';
         expect(slideXml).toContain('val="FFFFFF"');
         expect(slideXml).not.toMatch(/val="000000"/);
+        expect(slideXml).toContain('IBM Plex Mono');
     });
 });

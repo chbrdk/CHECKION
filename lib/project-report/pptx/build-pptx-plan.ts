@@ -68,16 +68,16 @@ function cleanText(text: string): string {
     return stripPdfEvidenceMarkers(text).replace(/\s+/g, ' ').trim();
 }
 
-function splitParagraphToBullets(text: string, max = PPTX_MAX_BULLETS): string[] {
+function splitParagraphToBullets(text: string): string[] {
     const normalized = cleanText(text);
     if (!normalized) return [];
     const byLine = normalized
         .split(/\n+/)
         .map((line) => line.replace(/^[-•*]\s*/, '').trim())
         .filter(Boolean);
-    if (byLine.length > 1) return byLine.slice(0, max);
+    if (byLine.length > 1) return byLine;
     const sentences = normalized.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map((s) => s.trim()) ?? [normalized];
-    return sentences.filter(Boolean).slice(0, max);
+    return sentences.filter(Boolean);
 }
 
 function chunkBullets(bullets: string[], chunkSize = PPTX_MAX_BULLETS): string[][] {
@@ -135,7 +135,7 @@ function pushChartFromVisual(
     if (!visual) return false;
     const slide = chartSlideFromVisual(visual, labels, footer, bundle.locale);
     if (!slide) return false;
-    if (bullets?.length) slide.bullets = bullets.slice(0, 3);
+    if (bullets?.length) slide.bullets = bullets;
     return pushSlide(slides, slide, maxSlides);
 }
 
@@ -273,7 +273,7 @@ export function buildProjectReportPptxPlan(bundle: ProjectReportBundle): Project
         const qualityBullets: string[] = [];
         const siteQuality = getSiteQualitySectionAnalysis(bundle);
         if (siteQuality?.summary) {
-            qualityBullets.push(...splitParagraphToBullets(siteQuality.summary, 3));
+            qualityBullets.push(...splitParagraphToBullets(siteQuality.summary));
         }
         pushSlide(
             slides,
@@ -321,7 +321,7 @@ export function buildProjectReportPptxPlan(bundle: ProjectReportBundle): Project
         const seoSection =
             bundle.deep?.sections.seoRankings ?? bundle.narrative?.sections?.seoRankings ?? null;
         const seoBullets = seoSection?.summary
-            ? splitParagraphToBullets(seoSection.summary, 3)
+            ? splitParagraphToBullets(seoSection.summary)
             : [];
 
         const pushedKeywordChart = pushChartFromVisual(
@@ -369,7 +369,7 @@ export function buildProjectReportPptxPlan(bundle: ProjectReportBundle): Project
     if (bundle.geo) {
         const geoSection = bundle.deep?.sections.geo ?? bundle.narrative?.sections?.geo ?? null;
         const geoBullets = geoSection?.summary
-            ? splitParagraphToBullets(geoSection.summary, 3)
+            ? splitParagraphToBullets(geoSection.summary)
             : [];
         pushSlide(
             slides,

@@ -8,16 +8,9 @@ import type { ReportSlide, ReportSlideChartSeries } from '@/lib/project-report/p
 
 const MAX_BAR_ITEMS = 10;
 const MAX_LINE_SERIES = 6;
-const MAX_LABEL_LEN = 28;
 
 function pptxHex(color: string): string {
     return color.replace(/^#/, '').toUpperCase();
-}
-
-function truncateLabel(label: string, max = MAX_LABEL_LEN): string {
-    const trimmed = label.trim();
-    if (trimmed.length <= max) return trimmed;
-    return `${trimmed.slice(0, max - 1)}…`;
 }
 
 function barItemsToSeries(
@@ -29,7 +22,7 @@ function barItemsToSeries(
         series: [
             {
                 name: seriesName,
-                labels: slice.map((item) => truncateLabel(item.label)),
+                labels: slice.map((item) => item.label.trim()),
                 values: slice.map((item) => item.value),
             },
         ],
@@ -119,7 +112,7 @@ function visualToChartSlide(
                 series: [
                     {
                         name: labels.keywords,
-                        labels: items.map((item) => truncateLabel(item.keyword)),
+                        labels: items.map((item) => item.keyword.trim()),
                         values: items.map((item) => item.position ?? 0),
                     },
                 ],
@@ -138,7 +131,7 @@ function visualToChartSlide(
                 series: [
                     {
                         name: labels.contentTopics,
-                        labels: items.map((item) => truncateLabel(item.theme)),
+                        labels: items.map((item) => item.theme.trim()),
                         values: items.map((item) => item.score),
                     },
                 ],
@@ -175,7 +168,7 @@ function visualToChartSlide(
         case 'competitorTopicOverlap': {
             const rows = visual.rows.slice(0, 8);
             if (rows.length === 0) return null;
-            const labelsAxis = rows.map((row) => truncateLabel(row.theme));
+            const labelsAxis = rows.map((row) => row.theme.trim());
             return chartSlide({
                 title: labels.competitiveBenchmark,
                 chartType: 'bar',
@@ -202,7 +195,7 @@ function visualToChartSlide(
             if (seriesList.length === 0) return null;
             const labelsAxis = seriesList[0]!.points.map((p) => p.label.slice(5));
             const series: ReportSlideChartSeries[] = seriesList.map((s: TrendSeries) => ({
-                name: truncateLabel(s.keyword, 22),
+                name: s.keyword.trim(),
                 labels: labelsAxis,
                 values: s.points.map((p) => p.y),
             }));

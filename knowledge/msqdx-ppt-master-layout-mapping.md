@@ -49,6 +49,8 @@ The master uses German default placeholder names. Map by **type**, not custom na
 
 Calibrated from placeholder bounding boxes in `MSQDX_PPT-Master_27-05-26.pptx` (see `assets/report-templates/msqdx-ppt-zone-calibration.json`). **Text is never truncated** — `pptx-text-layout.ts` word-wraps, measures line height, and `normalizePptxPlan()` splits overflow onto continuation slides.
 
+Typography (`pptx-typography.ts`): smaller sizes than master defaults (body 11pt, eyebrow/chart bullets 10–11pt IBM Plex Mono, footer 8pt mono). Layout budgets are recomputed from placeholder width × font size.
+
 **CONTENT layout (inches, measured):**
 
 | Zone | Position (y → bottom) | Size (w × h) | Budget |

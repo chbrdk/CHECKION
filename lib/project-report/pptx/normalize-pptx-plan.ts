@@ -9,6 +9,7 @@ import {
     splitTextToPages,
     titleOverflowSlides,
 } from '@/lib/project-report/pptx/pptx-content-budget';
+import { packBulletsByLineBudget } from '@/lib/project-report/pptx/pptx-text-layout';
 import type { ReportSlide, ReportSlideContent } from '@/lib/project-report/pptx/types';
 
 function chartOverflowSlides(
@@ -165,12 +166,13 @@ export function normalizeReportSlide(slide: ReportSlide, locale: 'de' | 'en' = '
                 const parts = splitTextToPages(bullet, 'eyebrow');
                 return parts.length > 0 ? parts : [bullet];
             });
+            const { packed, overflow } = packBulletsByLineBudget(partitionedBullets, 'eyebrow');
 
             return [
                 {
                     ...slide,
                     title: titlePages[0] ?? slide.title,
-                    bullets: partitionedBullets.slice(0, 3),
+                    bullets: packed,
                 },
                 ...titleOverflowSlides(
                     slide.title,
@@ -178,7 +180,7 @@ export function normalizeReportSlide(slide: ReportSlide, locale: 'de' | 'en' = '
                     slide.footer ?? '',
                     locale === 'de' ? ' (Titel)' : ' (title)'
                 ),
-                ...(partitionedBullets.length > 3
+                ...(overflow.length > 0
                     ? overflowBulletsSlides(
                           {
                               kind: 'bullets',
@@ -187,7 +189,7 @@ export function normalizeReportSlide(slide: ReportSlide, locale: 'de' | 'en' = '
                               bullets: [],
                               footer: slide.footer ?? '',
                           },
-                          partitionedBullets.slice(3),
+                          overflow,
                           locale === 'de' ? ' (Metriken)' : ' (metrics)'
                       )
                     : []),

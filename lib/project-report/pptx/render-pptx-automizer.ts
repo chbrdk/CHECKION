@@ -15,6 +15,7 @@ import {
     setShapeText,
 } from '@/lib/project-report/pptx/pptx-automizer-text-style';
 import { computeChartLayout } from '@/lib/project-report/pptx/pptx-content-budget';
+import { PPTX_TYPOGRAPHY } from '@/lib/project-report/pptx/pptx-typography';
 import {
     MSQDX_SLIDE_SIZE,
     MSQDX_TEMPLATE_ALIAS,
@@ -28,14 +29,21 @@ import type {
     ReportSlideContent,
 } from '@/lib/project-report/pptx/types';
 
-type TextOptions = { onBlack: boolean; footer?: boolean };
+type TextOptions = { onBlack: boolean; footer?: boolean; role?: keyof typeof PPTX_TYPOGRAPHY };
 
-function textOpts(onBlack: boolean, footer = false): TextOptions {
-    return { onBlack, footer };
+function textOpts(onBlack: boolean, footer = false, role?: keyof typeof PPTX_TYPOGRAPHY): TextOptions {
+    return { onBlack, footer, role };
 }
 
-function setText(slide: ISlide, shapeName: string, text: string, onBlack: boolean, footer = false): void {
-    setShapeText(slide, shapeName, text, textOpts(onBlack, footer));
+function setText(
+    slide: ISlide,
+    shapeName: string,
+    text: string,
+    onBlack: boolean,
+    footer = false,
+    role?: keyof typeof PPTX_TYPOGRAPHY
+): void {
+    setShapeText(slide, shapeName, text, textOpts(onBlack, footer, role));
 }
 
 function clearText(slide: ISlide, shapeName: string, onBlack: boolean): void {
@@ -49,7 +57,7 @@ function clearTexts(slide: ISlide, shapeNames: string[], onBlack: boolean): void
 }
 
 function setBullets(slide: ISlide, shapeName: string, bullets: string[], onBlack: boolean): void {
-    setShapeBullets(slide, shapeName, bullets, onBlack);
+    setShapeBullets(slide, shapeName, bullets, { onBlack });
 }
 
 function applyContentBlock(
@@ -85,14 +93,14 @@ function applyChartSlide(
         chartType: slidePlan.chartType,
     });
 
-    setText(slide, shapes.title, slidePlan.title, onBlack);
+    setText(slide, shapes.title, slidePlan.title, onBlack, false, 'title');
     clearText(slide, shapes.body, onBlack);
     if (layout.fittedSubtitle) {
-        setText(slide, shapes.eyebrow, layout.fittedSubtitle, onBlack);
+        setText(slide, shapes.eyebrow, layout.fittedSubtitle, onBlack, false, 'eyebrow');
     } else {
         clearText(slide, shapes.eyebrow, onBlack);
     }
-    setText(slide, shapes.footer, slidePlan.footer, onBlack, true);
+    setText(slide, shapes.footer, slidePlan.footer, onBlack, true, 'footer');
 
     const chartData = toAutomizerChartData(slidePlan.series);
     const colors = slidePlan.colors;
@@ -136,19 +144,22 @@ function applyChartSlide(
         }
 
         if (layout.onSlideBullets.length > 0) {
+            const typo = PPTX_TYPOGRAPHY.chartBullet;
             pSlide.addText(
                 layout.onSlideBullets.map((bullet) => ({
                     text: bullet,
-                    options: { bullet: true, breakLine: true },
+                    options: { bullet: true, breakLine: true, fontFace: typo.fontFace },
                 })),
                 {
                     x: layout.x,
                     y: layout.bulletTop,
                     w: layout.w,
                     h: layout.bulletHeight,
-                    fontSize: 13,
+                    fontSize: typo.fontPt,
+                    fontFace: typo.fontFace,
                     color: onBlack ? MSQDX_TEXT_ON_BLACK : undefined,
                     valign: 'top',
+                    wrap: true,
                 }
             );
         }
@@ -161,12 +172,14 @@ function applySlidePlan(slide: ISlide, slidePlan: ReportSlide): void {
     switch (slidePlan.kind) {
         case 'cover': {
             const shapes = MSQDX_TEMPLATE_SHAPES.TITLE;
-            setText(slide, shapes.title, slidePlan.title, onBlack);
+            setText(slide, shapes.title, slidePlan.title, onBlack, false, 'title');
             setText(
                 slide,
                 shapes.body,
                 `${slidePlan.subtitle}\n${slidePlan.date} · ${slidePlan.variant}`,
-                onBlack
+                onBlack,
+                false,
+                'eyebrow'
             );
             break;
         }
@@ -175,50 +188,51 @@ function applySlidePlan(slide: ISlide, slidePlan: ReportSlide): void {
             const title = slidePlan.chapterNumber
                 ? `${slidePlan.chapterNumber}  ${slidePlan.title}`
                 : slidePlan.title;
-            setText(slide, shapes.title, title, onBlack);
+            setText(slide, shapes.title, title, onBlack, false, 'title');
             clearText(slide, shapes.body, onBlack);
-            setText(slide, shapes.footer, slidePlan.footer, onBlack, true);
+            setText(slide, shapes.footer, slidePlan.footer, onBlack, true, 'footer');
             break;
         }
         case 'bullets': {
             const shapes = MSQDX_TEMPLATE_SHAPES.CONTENT;
-            setText(slide, shapes.title, slidePlan.title, onBlack);
+            setText(slide, shapes.title, slidePlan.title, onBlack, false, 'title');
             if (slidePlan.lead) {
-                setText(slide, shapes.eyebrow, slidePlan.lead, onBlack);
+                setText(slide, shapes.eyebrow, slidePlan.lead, onBlack, false, 'eyebrow');
                 setBullets(slide, shapes.body, slidePlan.bullets, onBlack);
             } else {
                 clearText(slide, shapes.eyebrow, onBlack);
                 setBullets(slide, shapes.body, slidePlan.bullets, onBlack);
             }
-            setText(slide, shapes.footer, slidePlan.footer, onBlack, true);
+            setText(slide, shapes.footer, slidePlan.footer, onBlack, true, 'footer');
             break;
         }
         case 'metrics': {
             const shapes = MSQDX_TEMPLATE_SHAPES.METRICS;
-            setText(slide, shapes.title, slidePlan.title, onBlack);
+            setText(slide, shapes.title, slidePlan.title, onBlack, false, 'title');
             const tileItems = slidePlan.items.slice(0, shapes.values.length);
             tileItems.forEach((item, index) => {
-                setText(slide, shapes.values[index]!, item.value, onBlack);
-                setText(slide, shapes.labels[index]!, item.label, onBlack);
+                setText(slide, shapes.values[index]!, item.value, onBlack, false, 'metricsValue');
+                setText(slide, shapes.labels[index]!, item.label, onBlack, false, 'metricsLabel');
             });
             for (let index = tileItems.length; index < shapes.values.length; index += 1) {
                 clearText(slide, shapes.values[index]!, onBlack);
                 clearText(slide, shapes.labels[index]!, onBlack);
             }
             if (slidePlan.bullets?.length) {
-                setText(slide, shapes.eyebrow, slidePlan.bullets.join(' · '), onBlack);
+                setText(slide, shapes.eyebrow, slidePlan.bullets.join(' · '), onBlack, false, 'eyebrow');
             } else {
                 clearText(slide, shapes.eyebrow, onBlack);
             }
-            setText(slide, shapes.footer, slidePlan.footer, onBlack, true);
+            setText(slide, shapes.footer, slidePlan.footer, onBlack, true, 'footer');
             break;
         }
         case 'table': {
             const shapes = MSQDX_TEMPLATE_SHAPES.CONTENT;
-            setText(slide, shapes.title, slidePlan.title, onBlack);
+            setText(slide, shapes.title, slidePlan.title, onBlack, false, 'title');
             clearTexts(slide, [shapes.body, shapes.eyebrow], onBlack);
-            setText(slide, shapes.footer, slidePlan.footer, onBlack, true);
+            setText(slide, shapes.footer, slidePlan.footer, onBlack, true, 'footer');
             const rows = [slidePlan.headers, ...slidePlan.rows];
+            const tableTypo = PPTX_TYPOGRAPHY.table;
             slide.generate((pSlide) => {
                 pSlide.addTable(
                     rows.map((row) => row.map((cell) => ({ text: cell }))),
@@ -227,7 +241,8 @@ function applySlidePlan(slide: ISlide, slidePlan: ReportSlide): void {
                         y: 1.45,
                         w: MSQDX_SLIDE_SIZE.width - 1.3,
                         h: 4.8,
-                        fontSize: 12,
+                        fontSize: tableTypo.fontPt,
+                        fontFace: tableTypo.fontFace,
                         color: onBlack ? MSQDX_TEXT_ON_BLACK : undefined,
                         border: { type: 'solid', color: 'EAE8E8', pt: 1 },
                     }
@@ -237,11 +252,11 @@ function applySlidePlan(slide: ISlide, slidePlan: ReportSlide): void {
         }
         case 'two_column': {
             const shapes = MSQDX_TEMPLATE_SHAPES.TWO_COLUMN;
-            setText(slide, shapes.title, slidePlan.title, onBlack);
+            setText(slide, shapes.title, slidePlan.title, onBlack, false, 'title');
             clearText(slide, shapes.eyebrow, onBlack);
             applyContentBlock(slide, shapes.left, slidePlan.left, onBlack);
             applyContentBlock(slide, shapes.right, slidePlan.right, onBlack);
-            setText(slide, shapes.footer, slidePlan.footer, onBlack, true);
+            setText(slide, shapes.footer, slidePlan.footer, onBlack, true, 'footer');
             break;
         }
         case 'chart':
@@ -249,22 +264,25 @@ function applySlidePlan(slide: ISlide, slidePlan: ReportSlide): void {
             break;
         case 'closing': {
             const shapes = MSQDX_TEMPLATE_SHAPES.CLOSING;
-            setText(slide, shapes.title, slidePlan.title, onBlack);
-            setText(slide, shapes.footer, slidePlan.footer, onBlack, true);
+            setText(slide, shapes.title, slidePlan.title, onBlack, false, 'title');
+            setText(slide, shapes.footer, slidePlan.footer, onBlack, true, 'footer');
+            const closingTypo = PPTX_TYPOGRAPHY.closing;
             slide.generate((pSlide) => {
                 pSlide.addText(
                     slidePlan.bullets.map((bullet) => ({
                         text: bullet,
-                        options: { bullet: true, breakLine: true },
+                        options: { bullet: true, breakLine: true, fontFace: closingTypo.fontFace },
                     })),
                     {
                         x: 0.9,
                         y: 2.4,
                         w: MSQDX_SLIDE_SIZE.width - 1.8,
                         h: 3.6,
-                        fontSize: 20,
+                        fontSize: closingTypo.fontPt,
+                        fontFace: closingTypo.fontFace,
                         color: MSQDX_TEXT_ON_BLACK,
                         valign: 'top',
+                        wrap: true,
                     }
                 );
             }, 'report-closing-bullets');

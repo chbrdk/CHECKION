@@ -4,6 +4,12 @@
 import { ModifyColorHelper, modify } from 'pptx-automizer';
 import type { ISlide } from 'pptx-automizer';
 import type { ReportSlide } from '@/lib/project-report/pptx/types';
+import {
+    bulletTypographyRole,
+    PPTX_TYPOGRAPHY,
+    pptxFontSizeHundredths,
+    type PptxTypographyRole,
+} from '@/lib/project-report/pptx/pptx-typography';
 
 /** MSQDX text on black — matches brand-tokens.json textOnDark. */
 export const MSQDX_TEXT_ON_BLACK = 'FFFFFF';
@@ -52,25 +58,60 @@ export function applyFooterTextRuns() {
     };
 }
 
+export function applyShapeTypography(role: PptxTypographyRole) {
+    const style = PPTX_TYPOGRAPHY[role];
+    return (element: Element) => {
+        const size = pptxFontSizeHundredths(style.fontPt);
+        const tags = ['a:rPr', 'a:defRPr', 'a:endParaRPr'];
+        for (const tag of tags) {
+            const nodes = element.getElementsByTagName(tag);
+            for (let i = 0; i < nodes.length; i += 1) {
+                const node = nodes[i] as Element;
+                node.setAttribute('sz', String(size));
+                let latin = node.getElementsByTagName('a:latin')[0];
+                if (!latin) {
+                    latin = element.ownerDocument!.createElement('a:latin');
+                    node.appendChild(latin);
+                }
+                latin.setAttribute('typeface', style.fontFace);
+            }
+        }
+    };
+}
+
 export function chartOptionsOnBlack(
     opts: Record<string, unknown>
 ): Record<string, unknown> {
+    const axis = PPTX_TYPOGRAPHY.chartAxis;
     return {
         ...opts,
         catAxisLabelColor: MSQDX_TEXT_ON_BLACK,
         valAxisLabelColor: MSQDX_TEXT_ON_BLACK,
         legendColor: MSQDX_TEXT_ON_BLACK,
         dataLabelColor: MSQDX_TEXT_ON_BLACK,
+        catAxisLabelFontFace: axis.fontFace,
+        valAxisLabelFontFace: axis.fontFace,
+        legendFontFace: axis.fontFace,
+        catAxisLabelFontSize: axis.fontPt,
+        valAxisLabelFontSize: axis.fontPt,
+        legendFontSize: axis.fontPt,
     };
 }
+
+type ShapeTextOptions = {
+    onBlack?: boolean;
+    footer?: boolean;
+    role?: PptxTypographyRole;
+};
 
 export function setShapeText(
     slide: ISlide,
     shapeName: string,
     text: string,
-    options: { onBlack?: boolean; footer?: boolean } = {}
+    options: ShapeTextOptions = {}
 ): void {
     const callbacks = [modify.setText(text)];
+    if (options.role) callbacks.push(applyShapeTypography(options.role));
     if (options.onBlack) {
         callbacks.push(options.footer ? applyFooterTextRuns() : applyWhiteTextRuns());
     }
@@ -81,26 +122,49 @@ export function setShapeBullets(
     slide: ISlide,
     shapeName: string,
     bullets: string[],
-    onBlack = false
+    options: ShapeTextOptions = {}
 ): void {
     if (bullets.length === 0) {
-        setShapeText(slide, shapeName, '', { onBlack });
+        setShapeText(slide, shapeName, '', options);
         return;
     }
 
-    if (!onBlack) {
-        slide.modifyElement(shapeName, [modify.setBulletList(bullets)]);
-        return;
-    }
+    const onBlack = options.onBlack ?? false;
+    const whiteStyle = { color: WHITE_TEXT_COLOR, size: pptxFontSizeHundredths(PPTX_TYPOGRAPHY.body.fontPt) };
 
-    const whiteStyle = { color: WHITE_TEXT_COLOR };
     slide.modifyElement(
         shapeName,
         modify.setMultiText(
-            bullets.map((bullet) => ({
-                paragraph: { bullet: true },
-                textRuns: [{ text: bullet, style: whiteStyle }],
-            }))
+            bullets.map((bullet) => {
+                const role = options.role ?? bulletTypographyRole(bullet);
+                const typo = PPTX_TYPOGRAPHY[role];
+                return {
+                    paragraph: { bullet: true },
+                    textRuns: [
+                        {
+                            text: bullet,
+                            style: onBlack
+                                ? {
+                                      color: WHITE_TEXT_COLOR,
+                                      size: pptxFontSizeHundredths(typo.fontPt),
+                                  }
+                                : { size: pptxFontSizeHundredths(typo.fontPt) },
+                        },
+                    ],
+                };
+            })
         )
     );
+
+    slide.modifyElement(shapeName, (element: Element) => {
+        const paragraphs = element.getElementsByTagName('a:p');
+        for (let index = 0; index < paragraphs.length; index += 1) {
+            const role = options.role ?? bulletTypographyRole(bullets[index] ?? '');
+            applyShapeTypography(role)(paragraphs[index] as Element);
+        }
+    });
+
+    if (onBlack) {
+        slide.modifyElement(shapeName, [applyWhiteTextRuns()]);
+    }
 }

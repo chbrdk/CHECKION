@@ -1,63 +1,98 @@
 /**
- * Zone typography and wrapping — reads budgets from calibration only.
+ * Zone typography and wrapping — reads placeholder geometry from calibration.
  * Never truncates; splits overflow across slides.
  */
 import {
     getMsqdxColumnZoneCalibration,
     getMsqdxContentZoneCalibration,
 } from '@/lib/project-report/pptx/load-msqdx-ppt-zone-calibration';
+import { PPTX_TYPOGRAPHY, type PptxTypographyRole } from '@/lib/project-report/pptx/pptx-typography';
 
 const CONTENT_ZONES = getMsqdxContentZoneCalibration();
 const COLUMN_ZONES = getMsqdxColumnZoneCalibration();
 
 export type PptxTextZone = 'title' | 'eyebrow' | 'body' | 'chartBullets' | 'column';
 
+const ZONE_ROLE: Record<PptxTextZone, PptxTypographyRole> = {
+    title: 'title',
+    eyebrow: 'eyebrow',
+    body: 'body',
+    chartBullets: 'chartBullet',
+    column: 'body',
+};
+
+const ZONE_WIDTH: Record<PptxTextZone, number> = {
+    title: CONTENT_ZONES.title.w,
+    eyebrow: CONTENT_ZONES.eyebrow.w,
+    body: CONTENT_ZONES.body.w,
+    chartBullets: CONTENT_ZONES.body.w,
+    column: COLUMN_ZONES?.w ?? 6.141,
+};
+
+const ZONE_HEIGHT: Record<PptxTextZone, number> = {
+    title: CONTENT_ZONES.title.h,
+    eyebrow: CONTENT_ZONES.eyebrow.h,
+    body: CONTENT_ZONES.body.h,
+    chartBullets:
+        CONTENT_ZONES.footer.y -
+        CONTENT_ZONES.chart.y -
+        CONTENT_ZONES.chart.minHeightRadar -
+        CONTENT_ZONES.chart.gap * 2,
+    column: COLUMN_ZONES?.h ?? CONTENT_ZONES.body.h,
+};
+
 export type PptxZoneBudget = {
     maxLines: number;
     maxCharsPerLine: number;
 };
 
-export const PPTX_ZONE_BUDGETS: Record<PptxTextZone, PptxZoneBudget> = {
-    title: CONTENT_ZONES.title.budget,
-    eyebrow: CONTENT_ZONES.eyebrow.budget,
-    body: {
-        maxLines: CONTENT_ZONES.body.budget.maxLines,
-        maxCharsPerLine: CONTENT_ZONES.body.budget.maxCharsPerLine,
-    },
-    chartBullets: {
-        maxLines: CONTENT_ZONES.body.budget.maxLines,
-        maxCharsPerLine: Math.floor(CONTENT_ZONES.body.budget.maxCharsPerLine * 0.95),
-    },
-    column: COLUMN_ZONES?.budget ?? {
-        maxLines: 21,
-        maxCharsPerLine: 54,
-    },
-};
+function estimateCharsPerLine(widthIn: number, fontPt: number): number {
+    const avgCharWidthIn = (fontPt * 0.52) / 72;
+    return Math.max(1, Math.floor((widthIn / avgCharWidthIn) * 0.9));
+}
 
-export type PptxZoneTypography = {
+function estimateMaxLines(heightIn: number, fontPt: number, lineSpacing: number): number {
+    return Math.max(1, Math.floor(heightIn / ((fontPt * lineSpacing) / 72)));
+}
+
+export function getZoneTypography(zone: PptxTextZone): {
     fontPt: number;
     lineSpacing: number;
     charsPerLine: number;
     maxLines: number;
-};
-
-const ZONE_TYPOGRAPHY: Record<PptxTextZone, Omit<PptxZoneTypography, 'charsPerLine' | 'maxLines'>> = {
-    title: { fontPt: 32, lineSpacing: 1.15 },
-    eyebrow: { fontPt: 14, lineSpacing: 1.2 },
-    body: { fontPt: 14, lineSpacing: 1.2 },
-    chartBullets: { fontPt: 13, lineSpacing: 1.2 },
-    column: { fontPt: 14, lineSpacing: 1.2 },
-};
-
-export function getZoneTypography(zone: PptxTextZone): PptxZoneTypography {
-    const budget = PPTX_ZONE_BUDGETS[zone];
-    const typo = ZONE_TYPOGRAPHY[zone];
+} {
+    const role = ZONE_ROLE[zone];
+    const typo = PPTX_TYPOGRAPHY[role];
     return {
-        ...typo,
-        charsPerLine: budget.maxCharsPerLine,
-        maxLines: budget.maxLines,
+        fontPt: typo.fontPt,
+        lineSpacing: typo.lineSpacing,
+        charsPerLine: estimateCharsPerLine(ZONE_WIDTH[zone], typo.fontPt),
+        maxLines: estimateMaxLines(ZONE_HEIGHT[zone], typo.fontPt, typo.lineSpacing),
     };
 }
+
+export const PPTX_ZONE_BUDGETS: Record<PptxTextZone, PptxZoneBudget> = {
+    title: ((z: PptxTextZone) => {
+        const t = getZoneTypography(z);
+        return { maxLines: t.maxLines, maxCharsPerLine: t.charsPerLine };
+    })('title'),
+    eyebrow: ((z: PptxTextZone) => {
+        const t = getZoneTypography(z);
+        return { maxLines: t.maxLines, maxCharsPerLine: t.charsPerLine };
+    })('eyebrow'),
+    body: ((z: PptxTextZone) => {
+        const t = getZoneTypography(z);
+        return { maxLines: t.maxLines, maxCharsPerLine: t.charsPerLine };
+    })('body'),
+    chartBullets: ((z: PptxTextZone) => {
+        const t = getZoneTypography(z);
+        return { maxLines: Math.max(3, t.maxLines), maxCharsPerLine: t.charsPerLine };
+    })('chartBullets'),
+    column: ((z: PptxTextZone) => {
+        const t = getZoneTypography(z);
+        return { maxLines: t.maxLines, maxCharsPerLine: t.charsPerLine };
+    })('column'),
+};
 
 export function normalizeWhitespace(text: string): string {
     return text.replace(/\s+/g, ' ').trim();
