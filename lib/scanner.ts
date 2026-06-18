@@ -25,6 +25,7 @@ import { buildPageIndex } from './page-index';
 import { deduplicateIssues } from './issue-dedupe';
 import { computeGeoDimensionsScore } from './geo-dimensions-score';
 import { writeScreenshot } from './screenshot-storage';
+import { detectSkipLinkOnPage } from './skip-link-detect';
 import type {
     Issue,
     Pass,
@@ -1933,22 +1934,8 @@ export async function runScan(
             });
         } catch (_) {}
 
-        // Skip-link detection: first focusable anchor with href="#..." and skip-like text/aria-label
-        const skipLinkResult = await page.evaluate(function () {
-            const skipKeywords = ['skip', 'springen', 'content', 'main', 'zum inhalt', 'inhaltsverzeichnis', 'navigation überspringen'];
-            const links = Array.from(document.querySelectorAll('a[href^="#"]'));
-            for (const a of links) {
-                const href = (a.getAttribute('href') || '').trim();
-                const text = (a.textContent || '').toLowerCase().trim();
-                const ariaLabel = (a.getAttribute('aria-label') || '').toLowerCase();
-                const combined = text + ' ' + ariaLabel;
-                const looksLikeSkip = skipKeywords.some(kw => combined.includes(kw));
-                if (looksLikeSkip && href.length > 1) {
-                    return { hasSkipLink: true, skipLinkHref: href };
-                }
-            }
-            return { hasSkipLink: false, skipLinkHref: null };
-        });
+        // Skip-link detection (anchors + button/role=link bypass controls)
+        const skipLinkResult = await detectSkipLinkOnPage(page);
 
         // --- Calculate UX Score (Simple Algorithm) ---
         // 100 Base
