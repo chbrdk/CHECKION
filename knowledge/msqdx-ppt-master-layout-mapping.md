@@ -41,6 +41,6 @@ The master uses German default placeholder names. Map by **type**, not custom na
 
 ## Renderer strategy
 
-**Primary:** `pptx-automizer` clones slides from `MSQDX_PPT-Master_27-05-26.pptx` by layout (`PPTX_MSQDX_TEMPLATE_SLIDES` in `lib/paths/report-export-templates.ts`). Placeholders are filled via `modify.setText` / `setBulletList`; charts use `slide.generate()` (PptxGenJS bundled in automizer).
+**Primary:** `pptx-automizer` clones slides from `MSQDX_PPT-Master_27-05-26.pptx` by layout (`PPTX_MSQDX_TEMPLATE_SLIDES` in `lib/paths/report-export-templates.ts`). Placeholders are filled via `modify.setText` / `setMultiText`; layouts named `*(BK)` get **white** body/title text (`pptx-automizer-text-style.ts`). Charts use light axis/legend labels on black slides.
 
 **Fallback:** If the master file is missing (e.g. local dev without assets), `render-pptx.ts` falls back to PptxGenJS `defineSlideMaster()` in `pptx-masters.ts`.

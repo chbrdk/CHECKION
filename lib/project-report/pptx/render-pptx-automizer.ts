@@ -4,9 +4,16 @@
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import Automizer, { modify } from 'pptx-automizer';
+import Automizer from 'pptx-automizer';
 import type { ISlide } from 'pptx-automizer';
 import { getReportPptxMasterAbsolutePath } from '@/lib/paths/report-export-templates';
+import {
+    chartOptionsOnBlack,
+    layoutHasBlackBackground,
+    MSQDX_TEXT_ON_BLACK,
+    setShapeBullets,
+    setShapeText,
+} from '@/lib/project-report/pptx/pptx-automizer-text-style';
 import {
     MSQDX_SLIDE_SIZE,
     MSQDX_TEMPLATE_ALIAS,
@@ -20,34 +27,41 @@ import type {
     ReportSlideContent,
 } from '@/lib/project-report/pptx/types';
 
-function setText(slide: ISlide, shapeName: string, text: string): void {
-    slide.modifyElement(shapeName, [modify.setText(text)]);
+type TextOptions = { onBlack: boolean; footer?: boolean };
+
+function textOpts(onBlack: boolean, footer = false): TextOptions {
+    return { onBlack, footer };
 }
 
-function clearText(slide: ISlide, shapeName: string): void {
-    setText(slide, shapeName, '');
+function setText(slide: ISlide, shapeName: string, text: string, onBlack: boolean, footer = false): void {
+    setShapeText(slide, shapeName, text, textOpts(onBlack, footer));
 }
 
-function clearTexts(slide: ISlide, shapeNames: string[]): void {
+function clearText(slide: ISlide, shapeName: string, onBlack: boolean): void {
+    setText(slide, shapeName, '', onBlack);
+}
+
+function clearTexts(slide: ISlide, shapeNames: string[], onBlack: boolean): void {
     for (const shapeName of shapeNames) {
-        clearText(slide, shapeName);
+        clearText(slide, shapeName, onBlack);
     }
 }
 
-function setBullets(slide: ISlide, shapeName: string, bullets: string[]): void {
-    if (bullets.length === 0) {
-        setText(slide, shapeName, '');
-        return;
-    }
-    slide.modifyElement(shapeName, [modify.setBulletList(bullets)]);
+function setBullets(slide: ISlide, shapeName: string, bullets: string[], onBlack: boolean): void {
+    setShapeBullets(slide, shapeName, bullets, onBlack);
 }
 
-function applyContentBlock(slide: ISlide, shapeName: string, content: ReportSlideContent): void {
+function applyContentBlock(
+    slide: ISlide,
+    shapeName: string,
+    content: ReportSlideContent,
+    onBlack: boolean
+): void {
     if (content.kind === 'text') {
-        setText(slide, shapeName, content.text);
+        setText(slide, shapeName, content.text, onBlack);
         return;
     }
-    setBullets(slide, shapeName, content.bullets);
+    setBullets(slide, shapeName, content.bullets, onBlack);
 }
 
 function toAutomizerChartData(series: ReportSlideChartSeries[]) {
@@ -69,23 +83,27 @@ function chartArea(hasSubtitle: boolean, hasBullets: boolean) {
     };
 }
 
-function applyChartSlide(slide: ISlide, slidePlan: Extract<ReportSlide, { kind: 'chart' }>): void {
+function applyChartSlide(
+    slide: ISlide,
+    slidePlan: Extract<ReportSlide, { kind: 'chart' }>,
+    onBlack: boolean
+): void {
     const shapes = MSQDX_TEMPLATE_SHAPES.CONTENT;
-    setText(slide, shapes.title, slidePlan.title);
-    clearText(slide, shapes.body);
+    setText(slide, shapes.title, slidePlan.title, onBlack);
+    clearText(slide, shapes.body, onBlack);
     if (slidePlan.subtitle) {
-        setText(slide, shapes.eyebrow, slidePlan.subtitle);
+        setText(slide, shapes.eyebrow, slidePlan.subtitle, onBlack);
     } else {
-        clearText(slide, shapes.eyebrow);
+        clearText(slide, shapes.eyebrow, onBlack);
     }
-    setText(slide, shapes.footer, slidePlan.footer);
+    setText(slide, shapes.footer, slidePlan.footer, onBlack, true);
 
     const area = chartArea(Boolean(slidePlan.subtitle), Boolean(slidePlan.bullets?.length));
     const chartData = toAutomizerChartData(slidePlan.series);
     const colors = slidePlan.colors;
 
     slide.generate((pSlide, pptx) => {
-        const opts: Record<string, unknown> = {
+        let opts: Record<string, unknown> = {
             ...area,
             showTitle: false,
             showLegend: slidePlan.showLegend ?? slidePlan.series.length > 1,
@@ -93,6 +111,7 @@ function applyChartSlide(slide: ISlide, slidePlan: Extract<ReportSlide, { kind: 
             valGridLine: { style: 'none' },
             catGridLine: { style: 'none' },
         };
+        if (onBlack) opts = chartOptionsOnBlack(opts);
         if (colors?.length) opts.chartColors = colors;
         if (slidePlan.valAxisTitle) opts.valAxisTitle = slidePlan.valAxisTitle;
         if (slidePlan.catAxisTitle) opts.catAxisTitle = slidePlan.catAxisTitle;
@@ -127,6 +146,7 @@ function applyChartSlide(slide: ISlide, slidePlan: Extract<ReportSlide, { kind: 
                     w: area.w,
                     h: 0.95,
                     fontSize: 13,
+                    color: onBlack ? MSQDX_TEXT_ON_BLACK : undefined,
                     valign: 'top',
                 }
             );
@@ -135,14 +155,17 @@ function applyChartSlide(slide: ISlide, slidePlan: Extract<ReportSlide, { kind: 
 }
 
 function applySlidePlan(slide: ISlide, slidePlan: ReportSlide): void {
+    const onBlack = layoutHasBlackBackground(slidePlan.layout);
+
     switch (slidePlan.kind) {
         case 'cover': {
             const shapes = MSQDX_TEMPLATE_SHAPES.TITLE;
-            setText(slide, shapes.title, slidePlan.title);
+            setText(slide, shapes.title, slidePlan.title, onBlack);
             setText(
                 slide,
                 shapes.body,
-                `${slidePlan.subtitle}\n${slidePlan.date} · ${slidePlan.variant}`
+                `${slidePlan.subtitle}\n${slidePlan.date} · ${slidePlan.variant}`,
+                onBlack
             );
             break;
         }
@@ -151,49 +174,49 @@ function applySlidePlan(slide: ISlide, slidePlan: ReportSlide): void {
             const title = slidePlan.chapterNumber
                 ? `${slidePlan.chapterNumber}  ${slidePlan.title}`
                 : slidePlan.title;
-            setText(slide, shapes.title, title);
-            clearText(slide, shapes.body);
-            setText(slide, shapes.footer, slidePlan.footer);
+            setText(slide, shapes.title, title, onBlack);
+            clearText(slide, shapes.body, onBlack);
+            setText(slide, shapes.footer, slidePlan.footer, onBlack, true);
             break;
         }
         case 'bullets': {
             const shapes = MSQDX_TEMPLATE_SHAPES.CONTENT;
-            setText(slide, shapes.title, slidePlan.title);
+            setText(slide, shapes.title, slidePlan.title, onBlack);
             if (slidePlan.lead) {
-                setText(slide, shapes.eyebrow, slidePlan.lead);
-                setBullets(slide, shapes.body, slidePlan.bullets);
+                setText(slide, shapes.eyebrow, slidePlan.lead, onBlack);
+                setBullets(slide, shapes.body, slidePlan.bullets, onBlack);
             } else {
-                clearText(slide, shapes.eyebrow);
-                setBullets(slide, shapes.body, slidePlan.bullets);
+                clearText(slide, shapes.eyebrow, onBlack);
+                setBullets(slide, shapes.body, slidePlan.bullets, onBlack);
             }
-            setText(slide, shapes.footer, slidePlan.footer);
+            setText(slide, shapes.footer, slidePlan.footer, onBlack, true);
             break;
         }
         case 'metrics': {
             const shapes = MSQDX_TEMPLATE_SHAPES.METRICS;
-            setText(slide, shapes.title, slidePlan.title);
+            setText(slide, shapes.title, slidePlan.title, onBlack);
             const tileItems = slidePlan.items.slice(0, shapes.values.length);
             tileItems.forEach((item, index) => {
-                setText(slide, shapes.values[index]!, item.value);
-                setText(slide, shapes.labels[index]!, item.label);
+                setText(slide, shapes.values[index]!, item.value, onBlack);
+                setText(slide, shapes.labels[index]!, item.label, onBlack);
             });
             for (let index = tileItems.length; index < shapes.values.length; index += 1) {
-                setText(slide, shapes.values[index]!, '');
-                setText(slide, shapes.labels[index]!, '');
+                clearText(slide, shapes.values[index]!, onBlack);
+                clearText(slide, shapes.labels[index]!, onBlack);
             }
             if (slidePlan.bullets?.length) {
-                setText(slide, shapes.eyebrow, slidePlan.bullets.join(' · '));
+                setText(slide, shapes.eyebrow, slidePlan.bullets.join(' · '), onBlack);
             } else {
-                setText(slide, shapes.eyebrow, '');
+                clearText(slide, shapes.eyebrow, onBlack);
             }
-            setText(slide, shapes.footer, slidePlan.footer);
+            setText(slide, shapes.footer, slidePlan.footer, onBlack, true);
             break;
         }
         case 'table': {
             const shapes = MSQDX_TEMPLATE_SHAPES.CONTENT;
-            setText(slide, shapes.title, slidePlan.title);
-            clearTexts(slide, [shapes.body, shapes.eyebrow]);
-            setText(slide, shapes.footer, slidePlan.footer);
+            setText(slide, shapes.title, slidePlan.title, onBlack);
+            clearTexts(slide, [shapes.body, shapes.eyebrow], onBlack);
+            setText(slide, shapes.footer, slidePlan.footer, onBlack, true);
             const rows = [slidePlan.headers, ...slidePlan.rows];
             slide.generate((pSlide) => {
                 pSlide.addTable(
@@ -204,6 +227,7 @@ function applySlidePlan(slide: ISlide, slidePlan: ReportSlide): void {
                         w: MSQDX_SLIDE_SIZE.width - 1.3,
                         h: 4.8,
                         fontSize: 12,
+                        color: onBlack ? MSQDX_TEXT_ON_BLACK : undefined,
                         border: { type: 'solid', color: 'EAE8E8', pt: 1 },
                     }
                 );
@@ -212,20 +236,20 @@ function applySlidePlan(slide: ISlide, slidePlan: ReportSlide): void {
         }
         case 'two_column': {
             const shapes = MSQDX_TEMPLATE_SHAPES.TWO_COLUMN;
-            setText(slide, shapes.title, slidePlan.title);
-            clearText(slide, shapes.eyebrow);
-            applyContentBlock(slide, shapes.left, slidePlan.left);
-            applyContentBlock(slide, shapes.right, slidePlan.right);
-            setText(slide, shapes.footer, slidePlan.footer);
+            setText(slide, shapes.title, slidePlan.title, onBlack);
+            clearText(slide, shapes.eyebrow, onBlack);
+            applyContentBlock(slide, shapes.left, slidePlan.left, onBlack);
+            applyContentBlock(slide, shapes.right, slidePlan.right, onBlack);
+            setText(slide, shapes.footer, slidePlan.footer, onBlack, true);
             break;
         }
         case 'chart':
-            applyChartSlide(slide, slidePlan);
+            applyChartSlide(slide, slidePlan, onBlack);
             break;
         case 'closing': {
             const shapes = MSQDX_TEMPLATE_SHAPES.CLOSING;
-            setText(slide, shapes.title, slidePlan.title);
-            setText(slide, shapes.footer, slidePlan.footer);
+            setText(slide, shapes.title, slidePlan.title, onBlack);
+            setText(slide, shapes.footer, slidePlan.footer, onBlack, true);
             slide.generate((pSlide) => {
                 pSlide.addText(
                     slidePlan.bullets.map((bullet) => ({
@@ -238,7 +262,7 @@ function applySlidePlan(slide: ISlide, slidePlan: ReportSlide): void {
                         w: MSQDX_SLIDE_SIZE.width - 1.8,
                         h: 3.6,
                         fontSize: 20,
-                        color: 'FFFFFF',
+                        color: MSQDX_TEXT_ON_BLACK,
                         valign: 'top',
                     }
                 );
