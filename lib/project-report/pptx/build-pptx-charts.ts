@@ -274,13 +274,16 @@ export function buildPersonaRadarSlide(
     personaName: string,
     pillars: Array<{ pillar: string; score: number | null }>,
     footer: string,
-    locale: 'de' | 'en'
+    locale: 'de' | 'en',
+    options?: { subtitle?: string; bullets?: string[] }
 ): Extract<ReportSlide, { kind: 'chart' }> | null {
     const values = pillars.slice(0, 6).map((p) => p.score ?? 0);
     if (values.every((v) => v === 0)) return null;
+    const defaultSubtitle =
+        locale === 'de' ? 'Passung nach Säule (Persona-Sicht)' : 'Fit by pillar (persona view)';
     return chartSlide({
         title: personaName,
-        subtitle: locale === 'de' ? 'Passung nach Säule (Persona-Sicht)' : 'Fit by pillar (persona view)',
+        subtitle: options?.subtitle ?? defaultSubtitle,
         chartType: 'radar',
         series: [
             {
@@ -291,6 +294,7 @@ export function buildPersonaRadarSlide(
         ],
         colors: [pptxHex(CHART_SERIES_PALETTE[0])],
         footer,
+        bullets: options?.bullets,
         showLegend: false,
         showValue: true,
     });

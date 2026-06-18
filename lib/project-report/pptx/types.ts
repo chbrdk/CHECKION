@@ -96,7 +96,7 @@ export type ProjectReportPptxPlan = {
 };
 
 export const PPTX_MAX_SLIDES_EXECUTIVE = 22;
-export const PPTX_MAX_SLIDES_COMPREHENSIVE = 30;
+export const PPTX_MAX_SLIDES_COMPREHENSIVE = 36;
 /** @deprecated use getPptxMaxSlides() */
 export const PPTX_MAX_SLIDES = PPTX_MAX_SLIDES_COMPREHENSIVE;
 export const PPTX_MAX_BULLETS = 6;

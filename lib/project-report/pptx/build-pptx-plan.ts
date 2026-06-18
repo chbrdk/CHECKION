@@ -14,6 +14,16 @@ import { filterRecommendationsForPdf } from '@/lib/project-report/pdf-recommenda
 import { getSiteQualitySectionAnalysis } from '@/lib/project-report/site-quality-interpretations';
 import type { ProjectReportBundle } from '@/lib/project-report/types';
 import {
+    buildAudienceIntroBullets,
+    buildPersonaChartBullets,
+    buildPersonaChartSubtitle,
+    buildPersonaDetailBullets,
+    buildPersonasOverviewLead,
+    buildTargetGroupBullets,
+    personaDetailSlideTitle,
+    selectPersonasForPptx,
+} from '@/lib/project-report/pptx/build-pptx-audience';
+import {
     buildPersonaRadarSlide,
     chartSlideFromVisual,
     findVisual,
@@ -396,6 +406,9 @@ export function buildProjectReportPptxPlan(bundle: ProjectReportBundle): Project
     }
 
     if (comprehensive && hasAudience(bundle)) {
+        const audience = bundle.audience!;
+        const selectedPersonas = selectPersonasForPptx(audience.personas);
+
         pushSlide(
             slides,
             {
@@ -406,17 +419,60 @@ export function buildProjectReportPptxPlan(bundle: ProjectReportBundle): Project
             },
             maxSlides
         );
-        for (const persona of bundle.audience!.personas.slice(0, 3)) {
+
+        pushBulletSlides(
+            slides,
+            labels.audienceReality,
+            buildAudienceIntroBullets(audience, labels),
+            footer,
+            maxSlides,
+            labels.chapterIntros.audience
+        );
+
+        const targetGroupBullets = buildTargetGroupBullets(audience);
+        if (targetGroupBullets.length > 0) {
+            pushBulletSlides(slides, labels.audienceTargetGroups, targetGroupBullets, footer, maxSlides);
+        }
+
+        if (selectedPersonas.length > 0) {
+            pushBulletSlides(
+                slides,
+                labels.audiencePersonas,
+                [],
+                footer,
+                maxSlides,
+                buildPersonasOverviewLead(audience, labels, bundle.locale, selectedPersonas.length)
+            );
+        }
+
+        for (const persona of selectedPersonas) {
             if (!hasRoom(slides, maxSlides)) break;
+
             const radar = buildPersonaRadarSlide(
                 persona.personaName,
                 persona.pillars,
                 footer,
-                bundle.locale
+                bundle.locale,
+                {
+                    subtitle: buildPersonaChartSubtitle(persona, labels),
+                    bullets: buildPersonaChartBullets(persona, labels),
+                }
             );
+
             if (radar && pushSlide(slides, radar, maxSlides)) {
+                const detailBullets = buildPersonaDetailBullets(persona, labels, bundle.locale);
+                if (detailBullets.length > 0) {
+                    pushBulletSlides(
+                        slides,
+                        personaDetailSlideTitle(persona.personaName, labels),
+                        detailBullets,
+                        footer,
+                        maxSlides
+                    );
+                }
                 continue;
             }
+
             pushSlide(
                 slides,
                 {
@@ -425,13 +481,21 @@ export function buildProjectReportPptxPlan(bundle: ProjectReportBundle): Project
                     title: persona.personaName,
                     left: {
                         kind: 'text',
-                        text: cleanText(persona.headline || persona.personaPerspective || ''),
+                        text: cleanText(
+                            [
+                                persona.targetGroupName,
+                                persona.headline,
+                                persona.personaPerspective,
+                            ]
+                                .filter(Boolean)
+                                .join(' · ')
+                        ),
                     },
                     right: {
                         kind: 'bullets',
-                        bullets: persona.pillars
-                            .slice(0, PPTX_MAX_BULLETS)
-                            .map((p) => `${p.pillar}: ${p.score ?? '–'} (${p.level})`),
+                        bullets: buildPersonaChartBullets(persona, labels).concat(
+                            buildPersonaDetailBullets(persona, labels, bundle.locale)
+                        ).slice(0, PPTX_MAX_BULLETS),
                     },
                     footer,
                 },
